@@ -210,15 +210,21 @@ export const SearchIntentEntitiesSchema = z.object({
 
     // ── Availability dates ────────────────────────────────────────────────────
     /**
-     * Check-in date. The model may return ISO date strings (YYYY-MM-DD);
-     * `z.coerce.date()` converts them transparently.
+     * Check-in date as an ISO date string (YYYY-MM-DD).
+     *
+     * MUST be a string, NOT `z.coerce.date()`: this schema is serialized to JSON
+     * Schema for `generateObject` structured output, and `z.date()` has no JSON
+     * Schema representation ("Date cannot be represented in JSON Schema"). The
+     * model emits YYYY-MM-DD strings; the mapper passes them through after a
+     * lexicographic check (ISO date strings sort chronologically).
      */
-    checkIn: z.coerce.date().optional(),
+    checkIn: z.string().optional(),
 
     /**
-     * Check-out date. If `checkOut <= checkIn`, the mapper drops both dates.
+     * Check-out date as an ISO date string (YYYY-MM-DD).
+     * If `checkOut <= checkIn`, the mapper drops both dates.
      */
-    checkOut: z.coerce.date().optional()
+    checkOut: z.string().optional()
 });
 
 /** Inferred TypeScript type for {@link SearchIntentEntitiesSchema}. */

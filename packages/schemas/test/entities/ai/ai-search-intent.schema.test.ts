@@ -410,8 +410,6 @@ describe('SearchIntentEntitiesSchema', () => {
 
     it('accepts a full valid payload with all populated slots', () => {
         // Arrange
-        const checkIn = new Date('2026-12-20');
-        const checkOut = new Date('2026-12-27');
         const input = {
             locationType: 'city',
             city: 'Concepción del Uruguay',
@@ -436,8 +434,8 @@ describe('SearchIntentEntitiesSchema', () => {
             hasParking: true,
             amenitySlugs: ['pool', 'wifi'],
             featureSlugs: ['river_front', 'quiet_zone'],
-            checkIn,
-            checkOut
+            checkIn: '2026-12-20',
+            checkOut: '2026-12-27'
         };
 
         // Act
@@ -455,25 +453,27 @@ describe('SearchIntentEntitiesSchema', () => {
             expect(result.data.maxRating).toBe(5);
             expect(result.data.amenitySlugs).toEqual(['pool', 'wifi']);
             expect(result.data.featureSlugs).toEqual(['river_front', 'quiet_zone']);
-            expect(result.data.checkIn).toEqual(checkIn);
-            expect(result.data.checkOut).toEqual(checkOut);
+            expect(result.data.checkIn).toBe('2026-12-20');
+            expect(result.data.checkOut).toBe('2026-12-27');
         }
     });
 
-    it('coerces checkIn ISO date string to a Date object', () => {
-        // Arrange
+    it('accepts a valid ISO date string for checkIn and returns it as a string', () => {
+        // Arrange: checkIn is now z.string() — returned as-is, not coerced to Date.
         const input = { checkIn: '2026-12-20' };
         // Act
         const result = SearchIntentEntitiesSchema.safeParse(input);
         // Assert
         expect(result.success).toBe(true);
         if (result.success) {
-            expect(result.data.checkIn).toBeInstanceOf(Date);
+            expect(result.data.checkIn).toBe('2026-12-20');
         }
     });
 
-    it('rejects an invalid checkIn date string', () => {
-        const result = SearchIntentEntitiesSchema.safeParse({ checkIn: 'not-a-date' });
+    it('rejects a non-string checkIn value (format is not enforced at schema level)', () => {
+        // z.string() rejects non-strings; format guidance lives in the AI prompt,
+        // and the mapper normalises with .substring(0, 10).
+        const result = SearchIntentEntitiesSchema.safeParse({ checkIn: 20261220 });
         expect(result.success).toBe(false);
     });
 });

@@ -11,10 +11,6 @@ import { AccommodationTypeEnum, PriceCurrencyEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { mapIntentToSearchParams } from './search-intent.mapper.js';
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-const ISO_DATE = (d: Date): string => d.toISOString().substring(0, 10);
-
 // ─── Location priority ────────────────────────────────────────────────────────
 
 describe('mapIntentToSearchParams — location priority', () => {
@@ -475,39 +471,32 @@ describe('mapIntentToSearchParams — features', () => {
 
 describe('mapIntentToSearchParams — availability dates', () => {
     it('valid date range → both emitted as ISO YYYY-MM-DD strings', () => {
-        const checkIn = new Date('2026-07-01T00:00:00.000Z');
-        const checkOut = new Date('2026-07-08T00:00:00.000Z');
-        const result = mapIntentToSearchParams({ checkIn, checkOut });
+        const result = mapIntentToSearchParams({ checkIn: '2026-07-01', checkOut: '2026-07-08' });
         expect(result.checkIn).toBe('2026-07-01');
         expect(result.checkOut).toBe('2026-07-08');
     });
 
     it('AC-19: checkOut <= checkIn (same date) → both dropped', () => {
-        const d = new Date('2026-07-01T00:00:00.000Z');
-        const result = mapIntentToSearchParams({ checkIn: d, checkOut: d });
+        const result = mapIntentToSearchParams({ checkIn: '2026-07-01', checkOut: '2026-07-01' });
         expect(result.checkIn).toBeUndefined();
         expect(result.checkOut).toBeUndefined();
     });
 
     it('checkOut before checkIn → both dropped', () => {
-        const checkIn = new Date('2026-07-10T00:00:00.000Z');
-        const checkOut = new Date('2026-07-05T00:00:00.000Z');
-        const result = mapIntentToSearchParams({ checkIn, checkOut });
+        const result = mapIntentToSearchParams({ checkIn: '2026-07-10', checkOut: '2026-07-05' });
         expect(result.checkIn).toBeUndefined();
         expect(result.checkOut).toBeUndefined();
     });
 
     it('only checkIn provided → emitted alone', () => {
-        const checkIn = new Date('2026-08-01T00:00:00.000Z');
-        const result = mapIntentToSearchParams({ checkIn });
-        expect(result.checkIn).toBe(ISO_DATE(checkIn));
+        const result = mapIntentToSearchParams({ checkIn: '2026-08-01' });
+        expect(result.checkIn).toBe('2026-08-01');
         expect(result.checkOut).toBeUndefined();
     });
 
     it('only checkOut provided → emitted alone', () => {
-        const checkOut = new Date('2026-08-15T00:00:00.000Z');
-        const result = mapIntentToSearchParams({ checkOut });
-        expect(result.checkOut).toBe(ISO_DATE(checkOut));
+        const result = mapIntentToSearchParams({ checkOut: '2026-08-15' });
+        expect(result.checkOut).toBe('2026-08-15');
         expect(result.checkIn).toBeUndefined();
     });
 });
@@ -581,9 +570,6 @@ describe('mapIntentToSearchParams — AC-2 composite test', () => {
 
 describe('mapIntentToSearchParams — full slot output keys', () => {
     it('all expected output keys present for a maximal entity set', () => {
-        const checkIn = new Date('2026-09-01T00:00:00.000Z');
-        const checkOut = new Date('2026-09-10T00:00:00.000Z');
-
         const entities = {
             destinationId: 'b0000000-0000-4000-8000-000000000001',
             accommodationType: AccommodationTypeEnum.APARTMENT,
@@ -602,8 +588,8 @@ describe('mapIntentToSearchParams — full slot output keys', () => {
             hasWifi: true,
             allowsPets: true,
             hasParking: true,
-            checkIn,
-            checkOut
+            checkIn: '2026-09-01',
+            checkOut: '2026-09-10'
         };
 
         const result = mapIntentToSearchParams(entities, ['a-uuid-1'], ['f-uuid-1']);

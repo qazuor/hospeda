@@ -47,18 +47,6 @@ const MAX_RATING = 5;
  */
 type MappedParams = Record<string, string | string[]>;
 
-// ─── Private helpers ─────────────────────────────────────────────────────────
-
-/**
- * Converts a `Date` to an ISO date string in `YYYY-MM-DD` format.
- *
- * `toISOString()` always yields `YYYY-MM-DDTHH:mm:ss.sssZ`, so the first 10
- * characters are the date part — no split or non-null assertion needed.
- */
-function toIsoDateString(date: Date): string {
-    return date.toISOString().substring(0, 10);
-}
-
 // ─── Pure mapper ─────────────────────────────────────────────────────────────
 
 /**
@@ -248,22 +236,24 @@ export function mapIntentToSearchParams(
     }
 
     // ── Availability dates ────────────────────────────────────────────────────
-    // Both emitted as ISO date strings (YYYY-MM-DD).
+    // The model emits ISO date strings (YYYY-MM-DD); normalize to the date part
+    // (first 10 chars) in case a time component slips in. ISO date strings sort
+    // chronologically, so a lexicographic comparison is valid.
     // If checkOut <= checkIn, drop both.
     if (entities.checkIn !== undefined || entities.checkOut !== undefined) {
-        if (entities.checkIn !== undefined && entities.checkOut !== undefined) {
-            const checkInDate = entities.checkIn;
-            const checkOutDate = entities.checkOut;
+        const checkIn = entities.checkIn?.substring(0, 10);
+        const checkOut = entities.checkOut?.substring(0, 10);
 
-            if (checkOutDate > checkInDate) {
-                params.checkIn = toIsoDateString(checkInDate);
-                params.checkOut = toIsoDateString(checkOutDate);
+        if (checkIn !== undefined && checkOut !== undefined) {
+            if (checkOut > checkIn) {
+                params.checkIn = checkIn;
+                params.checkOut = checkOut;
             }
             // If checkOut <= checkIn: drop both — no-op.
-        } else if (entities.checkIn !== undefined) {
-            params.checkIn = toIsoDateString(entities.checkIn);
-        } else if (entities.checkOut !== undefined) {
-            params.checkOut = toIsoDateString(entities.checkOut);
+        } else if (checkIn !== undefined) {
+            params.checkIn = checkIn;
+        } else if (checkOut !== undefined) {
+            params.checkOut = checkOut;
         }
     }
 
