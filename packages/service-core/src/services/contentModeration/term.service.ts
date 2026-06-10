@@ -1,7 +1,7 @@
 import {
     invalidateModerationCache,
     invalidateModerationCacheByTermPattern
-} from '@repo/content-moderation/engine/index';
+} from '@repo/content-moderation';
 import {
     ContentModerationTermModel,
     and,

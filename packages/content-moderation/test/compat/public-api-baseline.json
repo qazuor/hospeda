@@ -2,6 +2,8 @@
     "exportKeys": [
         "MODERATION_PENDING_THRESHOLD",
         "MODERATION_REJECT_THRESHOLD",
+        "invalidateModerationCache",
+        "invalidateModerationCacheByTermPattern",
         "moderateText",
         "moderateTextInputSchema"
     ],
