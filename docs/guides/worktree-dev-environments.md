@@ -19,27 +19,39 @@ pnpm cli wt:up          # or: bash ~/.claude/skills/worktree/scripts/wt-up.sh
 
 # ...work, test in the browser at the printed URLs...
 
-# from INSIDE the worktree — tear down (stops servers, drops the DB)
+# from INSIDE the worktree — stop the servers (DB + worktree kept; wt:up restarts instantly)
 pnpm cli wt:down        # or: bash ~/.claude/skills/worktree/scripts/wt-down.sh
+
+# when fully done — tear EVERYTHING down (servers + DB + worktree + branch)
+pnpm cli wt:remove      # or: bash ~/.claude/skills/worktree/scripts/wt-remove.sh
 ```
+
+## Two pairs of commands
+
+The lifecycle splits into two symmetric axes — don't conflate them:
+
+- **`create` ⇄ `remove`** — the worktree itself (created ⇄ destroyed).
+- **`up` ⇄ `down`** — just the servers (running ⇄ stopped). The DB and worktree
+  survive a `down`, so `up` after `down` is instant (no re-provisioning).
 
 ## Where this lives
 
 The orchestrator scripts (`wt-up.sh`, `wt-down.sh`, `wt-db.sh`, …) live in the
 **global worktree skill** at `~/.claude/skills/worktree/scripts/`, driven by this
 repo's `.claude/project.config.json`. The repo only ships the CLI entry points
-(`wt:up` / `wt:down` / `wt:create` under `pnpm cli`) and that config. This is why
-the scripts are not under `scripts/` in the repo.
+(`wt:up` / `wt:down` / `wt:remove` / `wt:create` under `pnpm cli`) and that config.
+This is why the scripts are not under `scripts/` in the repo.
 
 ## Commands
 
 | Command | What it does |
 |---------|--------------|
 | `pnpm cli wt:up` | Idempotent bring-up. Discovers free ports → ensures the DB is ready → rewrites env → builds shared packages → starts the 3 servers → waits for health → prints the URLs + test logins. |
-| `pnpm cli wt:down` | Stops the servers, drops the worktree DB, frees the ports, and prints the `remove` command to delete the worktree from the main repo. |
+| `pnpm cli wt:down` | Stops the servers **only**. The DB and the worktree are preserved, so `wt:up` restarts instantly with no re-provisioning. |
+| `pnpm cli wt:remove` | Tears **everything** down: stops servers, drops the DB, removes the worktree, and deletes the branch. The opposite of `wt:create`. Works from inside the worktree (it cd's to the main repo for the git removal — see [Removing](#removing-a-worktree)). |
 | `pnpm cli wt:create` | Prints usage. The interactive CLI cannot pass `<type> <slug>` args, so run the script directly (see below). |
 
-Run `wt-up` / `wt-down` from **inside** the worktree directory.
+Run `wt-up` / `wt-down` / `wt-remove` from **inside** the worktree directory.
 
 ### Creating a worktree
 
@@ -130,12 +142,32 @@ To set extra env vars for a feature branch (e.g. a feature flag), create
 `{web}` port placeholders. This file is **versioned** — do not put secrets in it. See
 `.claude/worktree-extra-env.json.example`.
 
-## Tearing down
+## Stopping vs removing
 
-`wt:down` (from inside the worktree) stops the servers, drops the worktree DB, and
-frees the ports. It does **not** delete the worktree itself (git refuses to
-self-remove, and deleting a worktree with uncommitted work is irreversible) — it
-prints the exact `wt-cleanup.sh remove …` command to run from the main repo.
+There are two levels of teardown — pick by intent:
+
+- **`wt:down`** (from inside the worktree) — stops the servers and frees the ports.
+  The DB and the worktree stay. Use this between work sessions: `wt:up` brings it
+  back instantly.
+
+## Removing a worktree
+
+**`wt:remove`** is the full teardown — the opposite of `wt:create`. It stops the
+servers, drops the DB, removes the worktree, and deletes the local branch (add
+`--remote` to delete the remote branch too).
+
+It works from **inside** the worktree: it does the parts it can (stop servers, drop
+DB), then cd's to the main repo to run `git worktree remove` (git can't self-remove
+the worktree your shell sits in). Because a child process can't change your shell's
+directory, your terminal is left in a now-deleted folder — `wt:remove` prints a
+`cd <main-repo>` reminder. You can also run it from the main repo with an explicit
+path: `wt-remove.sh <worktree-path>`.
+
+**Safety (without `--force`):**
+
+- Uncommitted changes in the worktree → it **aborts before touching anything**.
+- An unmerged branch → `git branch -d` refuses, so the branch survives (committed
+  work is never lost). Re-run with `--force` to discard and `-D` the branch.
 
 ## Troubleshooting
 
@@ -144,7 +176,7 @@ prints the exact `wt-cleanup.sh remove …` command to run from the main repo.
 | api shows `TIMEOUT` in the health wait | Usually the DB is empty or missing. Re-run `wt:up` — `ensure-ready` auto-heals it. Check `.claude/wt-logs/api.log`. |
 | `createdb failed — template ... does not exist` | The `hospeda_template` was never built. Run `wt-db.sh build-template` once. |
 | `wt:up` says `already up` but a server is broken | The idempotency check passed (pid alive + serving). If a server is misbehaving, run `wt:down` then `wt:up`. |
-| Wrong DB name after switching branches | DB name is path-based now, so this should not happen; if a worktree has an old-style DB recorded in its state, `wt:down` drops it and the next `wt:up` uses the new `worktree_spec_<NNN>` name. |
+| Wrong DB name after switching branches | DB name is path-based now, so this should not happen. If a worktree has a stale DB recorded in its state, `wt:remove` (or a manual `dropdb`) clears it and the next `wt:up` provisions the correct `worktree_spec_<NNN>` name. |
 
 ## See Also
 
