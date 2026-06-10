@@ -3,6 +3,7 @@
  * Starts the Hono.js server with all configured middleware and routes
  */
 import { serve } from '@hono/node-server';
+import { resolveConfig } from '@repo/ai-core';
 import { validateBillingConfigOrThrow } from '@repo/billing';
 import {
     initializeModerationEngine,
@@ -146,25 +147,40 @@ const startServer = async (): Promise<void> => {
         }
         apiLogger.info(`Startup healthcheck OK: role_permission has ${rolePermissionCount} rows`);
 
-        // SPEC-198: fail-loud moderation-credential healthcheck.
-        // When HOSPEDA_AI_MODERATION_REQUIRED=true, AI content moderation
-        // (text-improve / chat) is treated as mandatory, so a missing OpenAI
-        // vault credential is a hard misconfiguration — refuse to start rather
-        // than run silently-unmoderated. The credential lives in the DB vault,
-        // so this MUST run after initializeDatabase(). Transient/disabled cases
-        // are out of scope here; this only checks credential presence.
+        // SPEC-198 (revised, opt-in semantics): fail-loud moderation healthcheck.
+        // When HOSPEDA_AI_MODERATION_REQUIRED=true, this asserts that:
+        //   (a) ai_settings.moderation.providerId is configured by an admin, AND
+        //   (b) that provider has a resolvable vault credential.
+        // Without a configured provider, moderation is opt-in disabled — the
+        // engine skips all moderation passes. Setting this flag declares that
+        // moderation is mandatory for this environment, so an unconfigured or
+        // uncredentialed provider is treated as a hard startup failure.
+        // This MUST run after initializeDatabase() since both resolveConfig()
+        // and getDecryptedAiProviderCredential() access the DB.
         if (env.HOSPEDA_AI_MODERATION_REQUIRED) {
-            const cred = await getDecryptedAiProviderCredential({ providerId: 'openai' });
-            if (!cred.data) {
+            const aiConfig = await resolveConfig();
+            const moderationProviderId = aiConfig.moderation?.providerId;
+            if (!moderationProviderId) {
                 apiLogger.error(
-                    'STARTUP HEALTHCHECK FAILED: HOSPEDA_AI_MODERATION_REQUIRED=true but no ' +
-                        'resolvable OpenAI credential in the AI vault. AI moderation cannot run. ' +
-                        'Store a credential via the admin credentials API (and ensure ' +
-                        'HOSPEDA_AI_VAULT_MASTER_KEY is set). Refusing to start.'
+                    'STARTUP HEALTHCHECK FAILED: HOSPEDA_AI_MODERATION_REQUIRED=true but ' +
+                        'ai_settings.moderation.providerId is not configured. ' +
+                        'An admin must set a moderation provider in AI settings. ' +
+                        'Refusing to start.'
                 );
                 process.exit(1);
             }
-            apiLogger.info('Startup healthcheck OK: OpenAI moderation credential resolved');
+            const cred = await getDecryptedAiProviderCredential({
+                providerId: moderationProviderId
+            });
+            if (!cred.data) {
+                apiLogger.error(
+                    `STARTUP HEALTHCHECK FAILED: HOSPEDA_AI_MODERATION_REQUIRED=true but no resolvable credential for moderation provider '${moderationProviderId}' in the AI vault. Store a credential via the admin credentials API (and ensure HOSPEDA_AI_VAULT_MASTER_KEY is set). Refusing to start.`
+                );
+                process.exit(1);
+            }
+            apiLogger.info(
+                `Startup healthcheck OK: moderation credential resolved for provider '${moderationProviderId}'`
+            );
         }
 
         // Validate billing configuration

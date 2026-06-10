@@ -288,7 +288,35 @@ export const AiSettingsValueSchema = z
          * Keys are model identifier strings (e.g. `'gpt-4o-mini'`, `'claude-3-5-sonnet-20241022'`).
          * Values are {@link AiModelRateSchema} objects (µUSD per 1M tokens).
          */
-        modelRates: z.record(z.string(), AiModelRateSchema).optional()
+        modelRates: z.record(z.string(), AiModelRateSchema).optional(),
+        /**
+         * Opt-in content-moderation provider configuration.
+         *
+         * When absent, the AI engine skips all moderation passes entirely — no
+         * provider is called and no fail-closed behaviour is triggered. This is
+         * the safe default for local/Ollama-only setups and any environment that
+         * has not yet provisioned a moderation credential.
+         *
+         * When present, `providerId` is forwarded to `createAiService` as
+         * `moderationProviderId`. The engine then runs input and output
+         * moderation for every AI feature call via that provider. If the
+         * provider's vault credential is missing, the request fails CLOSED
+         * (`AiProviderUnconfiguredError`), signalling a real misconfiguration.
+         *
+         * **Additive field** — absence equals moderation disabled (opt-in
+         * semantics). Safe to add without a migration.
+         */
+        moderation: z
+            .object({
+                /**
+                 * The AI provider to use for content moderation calls.
+                 * Must match a key in `providers` that has a vault credential
+                 * stored in `ai_provider_credentials`.
+                 */
+                providerId: AiProviderIdSchema
+            })
+            .strict()
+            .optional()
     })
     .strict();
 
