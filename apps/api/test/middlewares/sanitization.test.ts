@@ -5,6 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     sanitizeEmail,
+    sanitizeFileName,
     sanitizeHeaders,
     sanitizeObjectStrings,
     sanitizeQueryParams,
@@ -446,6 +447,78 @@ describe('Sanitization Middleware', () => {
             );
             expect((sanitized.tags as string[])[0]).toBe('tag1');
             expect((sanitized.tags as string[])[1]).toBe('tag2');
+        });
+    });
+
+    describe('sanitizeFileName', () => {
+        it('should return a normal filename unchanged', () => {
+            // Arrange / Act / Assert
+            expect(sanitizeFileName('photo.png')).toBe('photo.png');
+        });
+
+        it('should return only the basename for a simple directory-prefixed path', () => {
+            // Arrange / Act / Assert
+            expect(sanitizeFileName('subdir/photo.png')).toBe('photo.png');
+        });
+
+        // Regression: path traversal via '../../' must not reach parent directories.
+        it('should strip path traversal sequences ../../etc/passwd → safe basename', () => {
+            // Arrange
+            const malicious = '../../etc/passwd';
+            // Act
+            const result = sanitizeFileName(malicious);
+            // Assert — result must not contain '..' traversal sequences
+            expect(result).not.toContain('..');
+            // The final file name component is 'passwd'
+            expect(result).toBe('passwd');
+        });
+
+        // Regression: reconstructable traversal '....//etc/passwd' → '../' after single-pass strip.
+        it('should handle reconstructable traversal ....//etc/passwd → safe basename', () => {
+            // Arrange — four dots + double slash: single-pass /\.\.[/\\]/g removal
+            // turns '....//etc/passwd' into '../etc/passwd' (first ..// removed, leaving ../).
+            // posix.basename resolves to 'passwd' regardless.
+            const malicious = '....//etc/passwd';
+            // Act
+            const result = sanitizeFileName(malicious);
+            // Assert
+            expect(result).not.toContain('..');
+            expect(result).toBe('passwd');
+        });
+
+        it('should handle Windows-style backslash traversal ..\\..\\windows\\system32 → safe', () => {
+            // Arrange
+            const malicious = '..\\..\\windows\\system32';
+            // Act
+            const result = sanitizeFileName(malicious);
+            // Assert — no traversal remnants
+            expect(result).not.toContain('..');
+            expect(result).not.toContain('/');
+            expect(result).not.toContain('\\');
+        });
+
+        it('should return unnamed for empty input', () => {
+            expect(sanitizeFileName('')).toBe('unnamed');
+        });
+
+        it('should truncate to maxLength', () => {
+            // Arrange
+            const longName = `${'a'.repeat(300)}.txt`;
+            // Act
+            const result = sanitizeFileName(longName);
+            // Assert
+            expect(result.length).toBeLessThanOrEqual(255);
+        });
+
+        it('should replace disallowed characters with underscores', () => {
+            // Arrange
+            const name = 'my file (1).txt';
+            // Act
+            const result = sanitizeFileName(name);
+            // Assert — spaces and parens replaced
+            expect(result).not.toContain(' ');
+            expect(result).not.toContain('(');
+            expect(result).not.toContain(')');
         });
     });
 

@@ -18,6 +18,11 @@ export function isDefined<T>(value: T | undefined | null): value is T {
  * @returns Whether the email is valid
  */
 export function isValidEmail(email: string): boolean {
+    // Guard against ReDoS: RFC 5321 caps addresses at 254 chars, so longer
+    // inputs are invalid anyway and must not reach the backtracking regex.
+    if (email.length > 254) {
+        return false;
+    }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
 }

@@ -188,8 +188,15 @@ function hasExistingTransform(url: string): boolean {
  * ```
  */
 export function stripCloudinaryTransform(url: string): string {
-    // Non-Cloudinary URLs pass through unchanged.
-    if (!url.includes('res.cloudinary.com')) {
+    // Only genuine Cloudinary delivery URLs are rewritten. Parse the URL and
+    // compare the hostname exactly; relative or invalid URLs pass through.
+    let parsed: URL;
+    try {
+        parsed = new URL(url);
+    } catch {
+        return url;
+    }
+    if (parsed.hostname !== 'res.cloudinary.com') {
         return url;
     }
 
