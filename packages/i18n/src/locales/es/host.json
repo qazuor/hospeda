@@ -144,7 +144,11 @@
                 "location": "Ubicación",
                 "capacity": "Capacidad",
                 "pricing": "Precio",
-                "amenities": "Servicios y comodidades"
+                "amenities": "Servicios y comodidades",
+                "contact": "Contacto",
+                "socialNetworks": "Redes sociales",
+                "photos": "Fotos",
+                "photosDescription": "Subí fotos de tu propiedad para atraer más huéspedes"
             },
             "field": {
                 "name": "Nombre",
@@ -155,13 +159,37 @@
                 "destinationPlaceholder": "Seleccionar destino...",
                 "latitude": "Latitud",
                 "longitude": "Longitud",
+                "locationHint": "Ingresá las coordenadas exactas de tu propiedad.",
                 "maxGuests": "Huéspedes máx.",
                 "bedrooms": "Dormitorios",
                 "bathrooms": "Baños",
                 "price": "Precio por noche",
                 "currency": "Moneda",
                 "amenities": "Comodidades",
-                "features": "Características"
+                "features": "Características",
+                "phone": "Teléfono",
+                "email": "Email",
+                "website": "Sitio web",
+                "facebook": "Facebook",
+                "instagram": "Instagram",
+                "twitter": "Twitter / X",
+                "linkedin": "LinkedIn",
+                "tiktok": "TikTok",
+                "youtube": "YouTube"
+            },
+            "photo": {
+                "featured": "Imagen principal",
+                "featuredAlt": "Imagen principal",
+                "gallery": "Galería de fotos",
+                "galleryAlt": "Foto {{index}}",
+                "dropOrClick": "Arrastrá una imagen o hacé clic para seleccionar",
+                "formats": "JPG, PNG o WebP — máx. 5MB",
+                "remove": "Eliminar",
+                "invalidType": "Solo se permiten archivos JPG, PNG o WebP",
+                "tooLarge": "El archivo no puede superar 5MB",
+                "uploadFailed": "Error al subir la imagen",
+                "galleryCapReached": "Límite de galería alcanzado (máx. {{cap}} fotos)",
+                "galleryCapLabel": "Galería llena"
             },
             "action": {
                 "save": "Guardar",
@@ -183,6 +211,34 @@
             "toast": {
                 "saveSuccess": "Cambios guardados",
                 "saveError": "No pudimos guardar los cambios. Intentá de nuevo."
+            },
+            "entitlement": {
+                "premiumFeature": "Función premium",
+                "richDescriptionNudge": "Actualizá tu plan para usar descripciones enriquecidas con formato.",
+                "videoNudge": "Actualizá tu plan para incrustar videos en tu propiedad.",
+                "genericNudge": "Esta función está disponible en un plan superior.",
+                "upgradeLink": "Mejorar plan"
+            },
+            "richText": {
+                "placeholder": "Describí tu propiedad con detalle...",
+                "toolbarBold": "Negrita",
+                "toolbarItalic": "Cursiva",
+                "toolbarUnderline": "Subrayado",
+                "toolbarH2": "Encabezado 2",
+                "toolbarH3": "Encabezado 3",
+                "toolbarList": "Lista",
+                "toolbarOrderedList": "Lista numerada",
+                "toolbarQuote": "Cita",
+                "toolbarLink": "Enlace"
+            },
+            "location": {
+                "searchAddress": "Buscar dirección",
+                "searchPlaceholder": "Av. Belgrano 123, Concepción del Uruguay",
+                "useMyLocation": "Usar mi ubicación actual",
+                "mapHint": "Arrastrá el pin para ajustar la ubicación exacta.",
+                "geolocationUnavailable": "La geolocalización no está disponible en este navegador.",
+                "geolocationDenied": "Permiso denegado. Podés escribir la dirección manualmente.",
+                "geolocationError": "No se pudo obtener la ubicación. Probá escribir la dirección."
             }
         },
         "empty": {

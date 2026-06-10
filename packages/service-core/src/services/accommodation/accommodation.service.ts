@@ -1259,18 +1259,34 @@ export class AccommodationService extends BaseCrudService<
         // so Zod strips it before the payload reaches here. We carry it forward from
         // the current DB row whenever `data.media` is present.
         //
+        // B-2: preserve server-managed `videos` on any host media edit that omits
+        // the `videos` key. The web editor only sends featuredImage+gallery; clients
+        // that don't manage videos must not wipe the existing videos array. An
+        // explicit `videos` key in the payload (including `[]` to clear) is respected.
+        //
         // Fetch only when needed: if `data.media` is undefined the DB write won't
         // touch the media column at all, so no action is required.
         let normalizedData = data;
         if (data.media !== undefined) {
             const existing = await this.model.findById(id, ctx?.tx);
             const existingArchivedGallery = existing?.media?.archivedGallery;
-            if (existingArchivedGallery !== undefined) {
+            const existingVideos = existing?.media?.videos;
+            // Carry forward archivedGallery when the existing row has it.
+            const shouldCarryArchivedGallery = existingArchivedGallery !== undefined;
+            // Carry forward videos only when the payload does NOT include a `videos` key
+            // (undefined = client omitted it, meaning "no change").
+            const shouldCarryVideos =
+                existingVideos !== undefined &&
+                !('videos' in ((data.media as Record<string, unknown>) ?? {}));
+            if (shouldCarryArchivedGallery || shouldCarryVideos) {
                 normalizedData = {
                     ...data,
                     media: {
                         ...data.media,
-                        archivedGallery: existingArchivedGallery
+                        ...(shouldCarryArchivedGallery
+                            ? { archivedGallery: existingArchivedGallery }
+                            : {}),
+                        ...(shouldCarryVideos ? { videos: existingVideos } : {})
                     }
                 } as AccommodationUpdateInput;
             }

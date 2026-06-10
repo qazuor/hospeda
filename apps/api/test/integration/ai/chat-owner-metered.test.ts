@@ -116,13 +116,34 @@ vi.mock('@repo/ai-core', () => {
         }
     }
 
+    // Mirrors packages/ai-core/src/config/resolver.ts — required so the
+    // `instanceof AiFeatureNotConfiguredError` check in ai-error-mapper.ts does
+    // not evaluate against `undefined` and crash the mapper (every error → 500).
+    // Added when staging's resolveFeatureConfig path merged into the chat handler.
+    class AiFeatureNotConfiguredError extends Error {
+        readonly feature: string;
+        constructor(feature: string) {
+            super(`AI feature '${feature}' is not configured in ai_settings.`);
+            this.name = 'AiFeatureNotConfiguredError';
+            this.feature = feature;
+        }
+    }
+
     return {
         AiEngineError,
+        AiFeatureNotConfiguredError,
         getMonthlyCallCount: mockGetMonthlyCallCount,
         recordAiUsage: mockRecordAiUsage,
         resolveSystemPrompt: vi.fn(async () => ({
             content: 'System prompt',
             source: 'default'
+        })),
+        resolveFeatureConfig: vi.fn(async () => ({
+            enabled: true,
+            primaryProvider: 'openai',
+            fallbackChain: [],
+            model: 'stub-model',
+            params: { maxTokens: 512 }
         }))
     };
 });

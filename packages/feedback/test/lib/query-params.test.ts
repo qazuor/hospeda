@@ -127,15 +127,15 @@ describe('parseFeedbackParams', () => {
         expect(result.title).toBe('safe text');
     });
 
-    it('should sanitize javascript: protocol', () => {
+    it('should sanitize javascript: protocol — url field becomes undefined', () => {
         // Arrange
         const qs = `url=${encodeURIComponent('javascript:alert(1)')}`;
 
         // Act
         const result = parseFeedbackParams(qs);
 
-        // Assert
-        expect(result.url).not.toContain('javascript:');
+        // Assert — sanitizeUrl whitelists only http(s)://; javascript: scheme is rejected entirely.
+        expect(result.url).toBeUndefined();
     });
 
     it('should sanitize inline event handlers', () => {
@@ -159,6 +159,62 @@ describe('parseFeedbackParams', () => {
 
         // Assert
         expect(result.title).toBeUndefined();
+    });
+
+    // Regression: reconstructable sanitize — single-pass 'javascript:' removal
+    // allows 'jajavascript:vascript:' to survive. Multi-pass fix closes this.
+    it('should strip reconstructable javascript: bypass in url → undefined', () => {
+        // Arrange — 'jajavascript:vascript:' collapses to 'javascript:' after one pass
+        const qs = `url=${encodeURIComponent('jajavascript:vascript:alert(1)')}`;
+        // Act
+        const result = parseFeedbackParams(qs);
+        // Assert — sanitizeUrl rejects anything that is not http(s)://
+        expect(result.url).toBeUndefined();
+    });
+
+    it('should strip reconstructable javascript: bypass in title → no javascript:', () => {
+        // Arrange
+        const qs = `title=${encodeURIComponent('jajavascript:vascript:evil')}`;
+        // Act
+        const result = parseFeedbackParams(qs);
+        // Assert — multi-pass sanitize removes both occurrences; final value must not contain it
+        expect(result.title).not.toContain('javascript:');
+    });
+
+    it('should reject data: URL scheme in url field → undefined', () => {
+        // Arrange
+        const qs = `url=${encodeURIComponent('data:text/html,<script>alert(1)</script>')}`;
+        // Act
+        const result = parseFeedbackParams(qs);
+        // Assert
+        expect(result.url).toBeUndefined();
+    });
+
+    it('should reject vbscript: URL scheme in url field → undefined', () => {
+        // Arrange
+        const qs = `url=${encodeURIComponent('vbscript:msgbox(1)')}`;
+        // Act
+        const result = parseFeedbackParams(qs);
+        // Assert
+        expect(result.url).toBeUndefined();
+    });
+
+    it('should pass an absolute https:// URL through sanitizeUrl unchanged', () => {
+        // Arrange
+        const qs = `url=${encodeURIComponent('https://example.com/page?q=1')}`;
+        // Act
+        const result = parseFeedbackParams(qs);
+        // Assert
+        expect(result.url).toBe('https://example.com/page?q=1');
+    });
+
+    it('should pass an absolute http:// URL through sanitizeUrl unchanged', () => {
+        // Arrange
+        const qs = `url=${encodeURIComponent('http://localhost:4321/test')}`;
+        // Act
+        const result = parseFeedbackParams(qs);
+        // Assert
+        expect(result.url).toBe('http://localhost:4321/test');
     });
 });
 

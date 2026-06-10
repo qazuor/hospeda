@@ -1,0 +1,14 @@
+{
+  "_comment": "No secrets here — this file is versioned. Use portEnvWrites for ports; this is for feature flags and non-secret overrides only.",
+  "apps/api/.env.local": {
+    "HOSPEDA_FEATURE_NEW_CHECKOUT": "true",
+    "HOSPEDA_LOG_LEVEL": "debug"
+  },
+  "apps/web/.env.local": {
+    "PUBLIC_FEATURE_NEW_CHECKOUT": "true",
+    "PUBLIC_API_URL": "http://localhost:{api}"
+  },
+  "apps/admin/.env.local": {
+    "VITE_FEATURE_FLAG_EXAMPLE": "true"
+  }
+}

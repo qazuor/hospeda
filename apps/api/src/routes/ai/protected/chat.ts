@@ -47,7 +47,12 @@
  * @module apps/api/routes/ai/protected/chat
  */
 
-import { getMonthlyCallCount, recordAiUsage, resolveSystemPrompt } from '@repo/ai-core';
+import {
+    getMonthlyCallCount,
+    recordAiUsage,
+    resolveFeatureConfig,
+    resolveSystemPrompt
+} from '@repo/ai-core';
 import { EntitlementKey, LimitKey } from '@repo/billing';
 import { accommodations, getDb } from '@repo/db';
 import {
@@ -58,6 +63,7 @@ import {
     type AiFeature,
     type AiMessage,
     type LanguageEnum,
+    PermissionEnum,
     ServiceErrorCode
 } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
@@ -83,6 +89,38 @@ import {
 const FEATURE: AiFeature = 'chat';
 const DEFAULT_LOCALE: LanguageEnum = 'es';
 const PERSISTENCE_TIMEOUT_MS = 1500;
+
+/**
+ * Default per-call output token cap for the chat feature.
+ *
+ * Applied when the admin feature config does NOT carry an explicit
+ * `params.maxTokens` value. Bounds the cost of a single chat answer so an
+ * unlimited-quota tier cannot trigger an unbounded-output cost bomb. The
+ * resolved feature-config value (when present) always wins over this default.
+ */
+const DEFAULT_CHAT_MAX_OUTPUT_TOKENS = 1024;
+
+/**
+ * Resolves the per-call output token cap for the chat feature.
+ *
+ * Prefers the admin-configured `features.chat.params.maxTokens` when present,
+ * falling back to {@link DEFAULT_CHAT_MAX_OUTPUT_TOKENS}. Config-resolution
+ * failures are non-fatal: the call still proceeds with the safe default so a
+ * transient settings read cannot take the chat feature down — the cap is a
+ * cost guard, not a correctness gate.
+ */
+async function resolveChatMaxOutputTokens(): Promise<number> {
+    try {
+        const featureConfig = await resolveFeatureConfig({ feature: FEATURE });
+        return featureConfig.params.maxTokens ?? DEFAULT_CHAT_MAX_OUTPUT_TOKENS;
+    } catch (error) {
+        apiLogger.warn(
+            { feature: FEATURE, error: error instanceof Error ? error.message : String(error) },
+            'ai-chat: failed to resolve feature config for maxTokens cap; using default'
+        );
+        return DEFAULT_CHAT_MAX_OUTPUT_TOKENS;
+    }
+}
 
 interface ChatPostHogProperties {
     readonly accommodationId: string;
@@ -288,6 +326,7 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
 
         const aiService = await createConfiguredAiService();
         const messages = toEngineMessages(systemMessage, body.messages);
+        const maxTokens = await resolveChatMaxOutputTokens();
 
         captureChatEvent(actor.id, 'ai_chat_message_sent', {
             accommodationId: body.accommodationId,
@@ -299,7 +338,8 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
         const { stream: rawStream, meta } = await aiService.streamText({
             feature: FEATURE,
             messages,
-            locale
+            locale,
+            params: { maxTokens }
         });
 
         let accumulatedAssistantText = '';
@@ -408,16 +448,26 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
             };
         });
 
+        // Emit the debug frame only to actors holding AI_SETTINGS_MANAGE so the
+        // admin playground inspection panel can display the system prompt and
+        // accommodation context.  Tourist callers receive no debug field at all
+        // — the streaming factory suppresses the debug SSE event when undefined.
+        const isAiAdmin = actor.permissions.includes(PermissionEnum.AI_SETTINGS_MANAGE);
+
         return {
             stream,
             meta: augmentedMeta,
-            debug: {
-                contextBlock,
-                resolvedPrompt,
-                systemMessage,
-                feature: FEATURE,
-                accommodationId: body.accommodationId
-            }
+            ...(isAiAdmin
+                ? {
+                      debug: {
+                          contextBlock,
+                          resolvedPrompt,
+                          systemMessage,
+                          feature: FEATURE,
+                          accommodationId: body.accommodationId
+                      }
+                  }
+                : {})
         };
     }
 });

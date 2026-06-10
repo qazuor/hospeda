@@ -4,8 +4,8 @@
  * Allows pre-filling the feedback form via URL query string parameters.
  * All parsed values are sanitized to prevent XSS injection.
  */
-import { REPORT_TYPE_IDS } from '../schemas/feedback.schema.js';
-import type { ReportTypeId } from '../schemas/feedback.schema.js';
+import { REPORT_TYPE_IDS } from '@repo/schemas';
+import type { ReportTypeId } from '@repo/schemas';
 
 /**
  * Parameters that can be pre-filled via URL query string.
@@ -85,7 +85,7 @@ export function parseFeedbackParams(search: string): FeedbackQueryParams {
         type: validType,
         title: sanitize(params.get('title')),
         description: sanitize(params.get('description')),
-        url: sanitize(params.get('url')),
+        url: sanitizeUrl(params.get('url')),
         error: sanitize(params.get('error')),
         stack: sanitize(params.get('stack')),
         source: sanitize(params.get('source'))
@@ -104,10 +104,32 @@ export function parseFeedbackParams(search: string): FeedbackQueryParams {
  */
 function sanitize(value: string | null): string | undefined {
     if (!value) return undefined;
-    const cleaned = value
-        .replace(/<[^>]*>/g, '') // Remove HTML tags
-        .replace(/javascript:/gi, '') // Remove javascript: protocol
-        .replace(/on\w+\s*=/gi, '') // Remove event handlers
-        .trim();
-    return cleaned || undefined;
+    // Cap length to bound the loop below against pathological input.
+    let cleaned = value.length > 10000 ? value.slice(0, 10000) : value;
+    let prev: string;
+    // Loop until stable: single-pass replaces are reconstructable
+    // (e.g. 'jajavascript:vascript:' -> 'javascript:').
+    do {
+        prev = cleaned;
+        cleaned = cleaned
+            .replace(/<[^>]*>/g, '') // Remove HTML tags
+            .replace(/javascript:/gi, '') // Remove javascript: protocol
+            .replace(/on\w+\s*=/gi, ''); // Remove event handlers
+    } while (cleaned !== prev);
+    return cleaned.trim() || undefined;
+}
+
+/**
+ * Sanitizes a URL value, allowing only absolute http(s) URLs.
+ *
+ * Applies {@link sanitize} then enforces an `http(s)://` scheme whitelist so
+ * dangerous schemes (`javascript:`, `data:`, `vbscript:`) can never pass.
+ *
+ * @param value - Raw URL string from URL params (or null when absent)
+ * @returns Sanitized absolute http(s) URL, or `undefined`
+ */
+function sanitizeUrl(value: string | null): string | undefined {
+    const cleaned = sanitize(value);
+    if (!cleaned) return undefined;
+    return /^https?:\/\//i.test(cleaned) ? cleaned : undefined;
 }

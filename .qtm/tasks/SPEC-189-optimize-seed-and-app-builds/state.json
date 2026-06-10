@@ -1,0 +1,112 @@
+{
+    "version": "1.0",
+    "title": "Optimize Seed & App Builds — run seed from src (no build) + decouple @repo/schemas from @repo/feedback",
+    "specRef": "SPEC-189-optimize-seed-and-app-builds",
+    "created": "2026-06-09T00:00:00.000Z",
+    "summary": {
+        "total": 12,
+        "pending": 0,
+        "inProgress": 0,
+        "completed": 12,
+        "blocked": 0,
+        "averageComplexity": 1.8
+    },
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Copy feedback schema definitions (client + server) into @repo/schemas",
+            "status": "completed",
+            "phase": "phase-1-front-b",
+            "complexity": 2,
+            "detail": "Move feedbackFormSchema, feedbackEnvironmentSchema, feedbackErrorInfoSchema, feedbackInteractionSchema, all const arrays (REPORT_TYPE_IDS, SEVERITY_IDS, APP_SOURCE_IDS, DEVICE_TYPE_IDS, COLOR_SCHEME_IDS, INTERACTION_EVENT_IDS), and inferred types from packages/feedback/src/schemas/ into packages/schemas/src/feedback.ts (client) and a new server entry for feedbackApiSchema (Buffer). Preserve client/server split."
+        },
+        {
+            "id": "T-002",
+            "title": "Update @repo/schemas exports for relocated feedback symbols",
+            "status": "completed",
+            "phase": "phase-1-front-b",
+            "complexity": 1,
+            "detail": "Wire src/index.ts to export the relocated client feedback symbols. Add a server-scoped export path for feedbackApiSchema. Verify all previously-exported symbol names are preserved (additive-only)."
+        },
+        {
+            "id": "T-003",
+            "title": "Re-wire @repo/feedback/schemas barrels to re-export from @repo/schemas",
+            "status": "completed",
+            "phase": "phase-1-front-b",
+            "complexity": 2,
+            "detail": "Update packages/feedback/src/schemas/index.ts and server.ts to re-export from @repo/schemas instead of local files. Confirm packages/feedback/tsup.config.ts still builds the 4 entry points (index, schemas/index, schemas/server, config/index)."
+        },
+        {
+            "id": "T-004",
+            "title": "Invert dependency: add @repo/schemas to feedback deps, remove @repo/feedback from schemas deps",
+            "status": "completed",
+            "phase": "phase-1-front-b",
+            "complexity": 1,
+            "detail": "In packages/feedback/package.json: add @repo/schemas to dependencies. In packages/schemas/package.json: remove @repo/feedback from dependencies. Verify no circular dependency (feedback → schemas only)."
+        },
+        {
+            "id": "T-005",
+            "title": "Typecheck + run @repo/schemas and @repo/feedback test suites",
+            "status": "completed",
+            "phase": "phase-1-front-b",
+            "complexity": 1,
+            "detail": "Run pnpm typecheck repo-wide. Run @repo/schemas and @repo/feedback test suites. Confirm turbo build graph for @repo/schemas no longer includes @repo/feedback or @repo/icons (FR-7). Move any schema parsing tests from feedback to schemas if they exist."
+        },
+        {
+            "id": "T-006",
+            "title": "Wire tsx path-resolution for the seed (dedicated tsconfig or resolution plugin)",
+            "status": "completed",
+            "phase": "phase-2-front-a",
+            "complexity": 3,
+            "detail": "Opt the seed's tsx run into tsconfig-path resolution so @repo/* imports resolve to src/index.ts instead of dist/index.js. Scope to the seed only (dedicated tsconfig or seed-local plugin). The path map already exists in packages/typescript-config/package-base.json. Verify other tsx invocations in the repo are unaffected."
+        },
+        {
+            "id": "T-007",
+            "title": "Verify all @repo/* deps run from src/ under tsx, document results",
+            "status": "completed",
+            "phase": "phase-2-front-a",
+            "complexity": 2,
+            "detail": "All 8 deps verified: config, logger, utils, schemas, billing, media, db, service-core resolve from src/ under tsx --tsconfig. feedback + icons removed by Front B. No blockers found."
+        },
+        {
+            "id": "T-008",
+            "title": "Update db-seed.ts: build default OFF, --build fallback retained",
+            "status": "completed",
+            "phase": "phase-2-front-a",
+            "complexity": 2,
+            "detail": "In scripts/server-tools/src/commands/db-seed.ts: flip build flag to default OFF. Keep --build escape hatch. Update HELP text, flag summary, and inline comments. Add unit tests for parseArgs/formatFlagSummary with new default."
+        },
+        {
+            "id": "T-009",
+            "title": "Run seed end-to-end from src/ against real database",
+            "status": "completed",
+            "phase": "phase-2-front-a",
+            "complexity": 2,
+            "detail": "With no dependency dist/ present, run pnpm --filter @repo/seed seed --reset --required --example against a real database. Confirm it completes successfully (FR-1/FR-2 integration test). This is the canonical correctness gate."
+        },
+        {
+            "id": "T-010",
+            "title": "Measure seed time before/after and schemas/API build-set delta",
+            "status": "completed",
+            "phase": "phase-3-closeout",
+            "complexity": 1,
+            "detail": "Seed cold startup: ~9s from src/ (vs ~30-60s old build step). Schemas build set: 4 packages (config, logger, typescript-config, utils) — feedback+icons+react subtree eliminated. Seed build set: 10 packages (down from ~16 with feedback transitive deps)."
+        },
+        {
+            "id": "T-011",
+            "title": "Update operational docs for hops db-seed",
+            "status": "completed",
+            "phase": "phase-3-closeout",
+            "complexity": 1,
+            "detail": "Update scripts/server-tools docs and packages/seed/CLAUDE.md if the operator flow changed. Document the no-build default and --build fallback."
+        },
+        {
+            "id": "T-012",
+            "title": "Spec + task index closeout",
+            "status": "completed",
+            "phase": "phase-3-closeout",
+            "complexity": 1,
+            "detail": "Flip spec status to completed in .qtm/specs/index.json. Update .qtm/tasks/index.json with progress 12/12, archived: true. Update Linear BETA-54."
+        }
+    ]
+}

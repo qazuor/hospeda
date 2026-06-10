@@ -396,6 +396,26 @@ describe('Response Middleware', () => {
             expect(data.error.message).toBe('Payment provider did not respond in time');
         });
 
+        it('should map PLAN_DISABLED to HTTP 410 with correct code (SPEC-148 T-003)', async () => {
+            const { ServiceError } = await import('@repo/service-core');
+            const { ServiceErrorCode } = await import('@repo/schemas');
+
+            app.get('/plan-disabled', () => {
+                throw new ServiceError(
+                    ServiceErrorCode.PLAN_DISABLED,
+                    'The selected plan is no longer available'
+                );
+            });
+
+            const res = await app.request('/plan-disabled');
+
+            expect(res.status).toBe(410);
+            const data = await res.json();
+            expect(data.success).toBe(false);
+            expect(data.error.code).toBe('PLAN_DISABLED');
+            expect(data.error.message).toBe('The selected plan is no longer available');
+        });
+
         it('should format generic errors as internal server error', async () => {
             app.get('/generic-error', () => {
                 throw new Error('Something went wrong');

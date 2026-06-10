@@ -8,7 +8,8 @@ export type CommandCategory =
     | 'environment'
     | 'documentation'
     | 'infrastructure'
-    | 'package-tools';
+    | 'package-tools'
+    | 'worktree';
 
 /** How the command behaves when running */
 export type CommandMode =

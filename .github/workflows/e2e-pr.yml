@@ -16,6 +16,11 @@ concurrency:
   group: e2e-pr-${{ github.ref }}
   cancel-in-progress: true
 
+# Least-privilege default token: the job reads the repo and uploads
+# artifacts (artifact upload does not require contents: write).
+permissions:
+  contents: read
+
 jobs:
   e2e-p0:
     name: E2E P0 Suite
@@ -130,7 +135,7 @@ jobs:
         run: pnpm --filter hospeda-e2e exec playwright install chromium --with-deps
 
       - name: Build apps
-        run: pnpm exec turbo run build --filter=hospeda-api --filter=hospeda-admin --filter=hospeda-web
+        run: pnpm exec turbo run build --filter=hospeda-api --filter=admin --filter=hospeda-web
 
       - name: Apply versioned Drizzle migrations to E2E database
         run: pnpm --filter @repo/db db:migrate

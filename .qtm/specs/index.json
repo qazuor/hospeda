@@ -113,7 +113,7 @@
             "title": "Billing cleanup + E2E smoke + ops runbook (Phase F+G)",
             "type": "chore",
             "complexity": "medium",
-            "status": "draft",
+            "status": "completed",
             "path": "SPEC-128-billing-cleanup-and-smoke",
             "created": "2026-05-15T00:00:00Z",
             "parent": "SPEC-193",
@@ -121,20 +121,25 @@
             "phase": "F+G",
             "dependsOn": ["SPEC-126", "SPEC-127"],
             "targetRepo": "/home/qazuor/projects/WEBS/hospeda",
-            "firstAllocatedViaEngramProtocol": true
+            "firstAllocatedViaEngramProtocol": true,
+            "archived": true,
+            "archivedAt": "2026-06-09",
+            "archiveNote": "Realigned to SPEC-193 reality: F1 dead-code + F2 docs + G2 runbook done; G1 10-smokes superseded by SPEC-193 batch; G3 SPEC-122/109 closure superseded (legacy parent)."
         },
         {
             "specId": "SPEC-131",
             "title": "PlanPurchaseButton async-state tests broken post Astro 6 bump",
             "type": "fix",
             "complexity": "medium",
-            "status": "draft",
+            "status": "completed",
             "path": "SPEC-131-plan-purchase-button-async-state-tests",
             "parent": "SPEC-193",
             "created": "2026-05-15T18:30:00Z",
             "discoveredDuring": "SPEC-111 T-111-04 validation (2026-05-15)",
             "firstAllocatedViaEngramProtocol": true,
-            "tags": ["web", "tests", "react-19", "astro-6", "vitest", "follow-up", "spec-111"]
+            "tags": ["web", "tests", "react-19", "astro-6", "vitest", "follow-up", "spec-111"],
+            "archived": true,
+            "archivedAt": "2026-06-09"
         },
         {
             "specId": "SPEC-132",
@@ -270,7 +275,7 @@
             "title": "Billing defensive grace + plan lifecycle (cron-lag grace + plan disable)",
             "type": "feat",
             "complexity": "medium",
-            "status": "draft",
+            "status": "completed",
             "path": "SPEC-148-billing-grace-defensive-and-plan-lifecycle",
             "parent": "SPEC-193",
             "created": "2026-05-20T00:00:00Z",
@@ -285,7 +290,9 @@
                 "cron",
                 "infra-safety",
                 "admin"
-            ]
+            ],
+            "archived": true,
+            "archivedAt": "2026-06-09"
         },
         {
             "specId": "SPEC-149",
@@ -550,14 +557,14 @@
             "specId": "SPEC-189",
             "title": "Optimize Seed & App Builds — run seed from src (no build) + decouple @repo/schemas from @repo/feedback",
             "type": "refactor",
-            "status": "draft",
+            "status": "completed",
             "complexity": "medium",
             "path": "SPEC-189-optimize-seed-and-app-builds",
             "branch": "spec/SPEC-189-optimize-seed-and-app-builds",
             "base": "staging",
             "linearIssues": ["BETA-54"],
             "created": "2026-06-02",
-            "archived": false
+            "archived": true
         },
         {
             "specId": "SPEC-190",
@@ -710,26 +717,26 @@
             "title": "AI Natural-Language Search",
             "type": "feat",
             "complexity": "medium",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-199-ai-nl-search",
             "created": "2026-06-05T00:00:00.000Z",
             "parentSpec": "SPEC-173",
             "archived": false,
             "tags": ["ai", "feature", "spec-173-child"],
-            "note": "Child B of SPEC-173. NL search: extractIntent -> structured query, NO embeddings V1 (feature search). BLOCKING open question: anonymous UX vs login-required AI. DRAFT."
+            "note": "Child B of SPEC-173. NL search: generateObject -> SearchIntentEntities -> AccommodationSearchHttp params, NO embeddings V1. All §3 decisions resolved. spec-realign 2026-06-10: greenfield, foundation stable; slot set expanded (D-5: bedrooms/bathrooms/maxRating/featureSlugs). 21 atomic tasks generated. IN-PROGRESS."
         },
         {
             "specId": "SPEC-200",
             "title": "AI Accommodation Chat (tourist)",
             "type": "feat",
             "complexity": "high",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-200-ai-accommodation-chat",
             "created": "2026-06-05T00:00:00.000Z",
             "parentSpec": "SPEC-173",
             "archived": false,
             "tags": ["ai", "feature", "spec-173-child"],
-            "note": "Child C of SPEC-173. Tourist chat over structured accommodation data, SSE streaming, multi-turn (feature chat). Open questions: persistence, scope, UI. DRAFT."
+            "note": "Implemented and merged to staging via PRs #1492/#1494/#1497/#1507. Prod-readiness fixes on branch fix/SPEC-200-prod-readiness (PR #1520). Chat works (ai_chat is granted to every plan, tourists included), but its monetization is provisional: the quota is charged to the tourist, not the accommodation owner, so a VIP tourist gets unlimited chat the owner never pays for. SPEC-211 reworks this (owner-governed chat + Model C). SPEC-200 can ship to prod after SPEC-211 Phase 0 cost mitigation (finite quotas + USD ceiling)."
         },
         {
             "specId": "SPEC-201",
@@ -833,10 +840,11 @@
             "title": "Web Accommodation Editor — Full Property Management in Web",
             "type": "epic",
             "complexity": "critical",
-            "status": "draft",
+            "status": "completed",
             "path": "SPEC-208-web-accommodation-editor",
             "created": "2026-06-07T00:00:00.000Z",
-            "archived": false,
+            "archived": true,
+            "archivedAt": "2026-06-10",
             "tags": [
                 "web",
                 "host",
@@ -847,7 +855,7 @@
                 "api",
                 "entitlements"
             ],
-            "note": "Final phase of host migration. Full accommodation editor in apps/web including media upload, all section forms, validation, and preview. The most expensive phase."
+            "note": "Final phase of host migration. Full accommodation editor in apps/web including media upload, all section forms, validation, and preview. Shipped ad-hoc via PRs #1509/#1513/#1516 (Phases A/B/C) WITHOUT a formal .qtm/specs/SPEC-208-web-accommodation-editor/ directory (no spec.md). Prod-readiness review (2026-06-09) found blockers, all fixed + merged to staging: protected update dropped nested fields + media (#1528), open geocoding proxy (#1529), no protected media delete + orphan assets (#1533, re-landed via #1540 after stacked-base stranding), index drift (#1534). Local e2e PASSED 6/6 (persistence, no-clobber, geocoding 401/200, media delete own-200/foreign-403). Closed 2026-06-10."
         },
         {
             "id": "SPEC-187",
@@ -855,6 +863,30 @@
             "status": "completed",
             "archived": true,
             "path": "SPEC-187-rich-text-entity-descriptions"
+        },
+        {
+            "specId": "SPEC-209",
+            "title": "Admin SSR memory leak + cheap healthcheck",
+            "type": "bugfix",
+            "status": "completed",
+            "complexity": "medium",
+            "path": "SPEC-209-admin-ssr-memory-leak-healthcheck",
+            "base": "staging",
+            "archived": true,
+            "tags": [
+                "admin",
+                "ssr",
+                "memory-leak",
+                "billing",
+                "qzpay",
+                "healthcheck",
+                "coolify",
+                "nitro",
+                "observability"
+            ],
+            "note": "Worktree spec-209 / branch spec/SPEC-209-admin-ssr-memory-leak-healthcheck. Investigate-first: cheap /healthz + heap-snapshot confirmation before the leak fix in __root.tsx. Number was reassigned from the earlier 'photo archival' reservation.",
+            "archivedAt": "2026-06-10",
+            "archiveNote": "Code complete + merged to staging via PR #1538 (12/13 implemented). T-012 (staging RSS/heap validation) DEFERRED as a post-merge operational check (see .qtm/specs/SPEC-209-.../docs/memory-validation-procedure.md) — not a code gate. Prod build locally showed 0 QZPayBilling-init on SSR; manual Chrome smoke (T-010) passed."
         },
         {
             "specId": "SPEC-210",

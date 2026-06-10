@@ -11,7 +11,7 @@
  * href of same-origin links, but never input values, password fields, or
  * elements marked with `data-feedback-skip` / `data-private`.
  */
-import type { FeedbackInteraction } from '../schemas/feedback.schema.js';
+import type { FeedbackInteraction } from '@repo/schemas';
 
 /** Maximum number of URLs retained in the navigation history ring buffer. */
 const MAX_NAV_HISTORY = 10;

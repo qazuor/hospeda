@@ -51,7 +51,7 @@ export {
     APP_SOURCE_IDS,
     DEVICE_TYPE_IDS,
     COLOR_SCHEME_IDS
-} from './schemas/feedback.schema.js';
+} from '@repo/schemas';
 export type {
     FeedbackFormData,
     FeedbackEnvironment,
@@ -62,7 +62,7 @@ export type {
     AppSourceId,
     DeviceTypeId,
     ColorSchemeId
-} from './schemas/feedback.schema.js';
+} from '@repo/schemas';
 
 // Utilities
 export { collectEnvironmentData, DEFAULT_FEATURE_FLAG_PREFIXES } from './lib/collector.js';

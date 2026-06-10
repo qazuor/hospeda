@@ -156,6 +156,8 @@
     font-size: 12px;
     line-height: 1.4;
     color: var(--brand-accent, #ea580c);
+    /* Fallback for browsers that do not support color-mix() (e.g. Chrome <111) */
+    background-color: #fef3ec;
     background-color: color-mix(in srgb, var(--brand-accent, #ea580c) 10%, transparent);
     border-radius: var(--radius-md, 10px);
     border-left: 3px solid var(--brand-accent, #ea580c);
@@ -234,6 +236,8 @@
 .textarea:focus {
     outline: none;
     border-color: var(--brand-primary, #2563eb);
+    /* Fallback for browsers that do not support color-mix() (e.g. Chrome <111) */
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
     box-shadow: 0 0 0 2px color-mix(in srgb, var(--brand-primary, #2563eb) 20%, transparent);
 }
 
@@ -264,6 +268,8 @@
 }
 
 .sendButton:hover:not(:disabled) {
+    /* Fallback for browsers that do not support color-mix() (e.g. Chrome <111) */
+    background-color: #1d4ed8;
     background-color: color-mix(in srgb, var(--brand-primary, #2563eb) 90%, black);
 }
 

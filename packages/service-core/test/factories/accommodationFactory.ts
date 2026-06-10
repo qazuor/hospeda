@@ -99,6 +99,9 @@ export const createMockAccommodation = (overrides: Partial<Accommodation> = {}):
         mobilePhone: '+1-555-0123'
     },
 
+    // Social networks - undefined by default
+    socialNetworks: undefined,
+
     // Base audit fields
     createdAt: new Date(),
     updatedAt: new Date(),

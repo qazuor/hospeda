@@ -66,7 +66,33 @@ export const WebEvents = {
      * Event detail page was loaded (SPEC-159 T-013).
      * Props: `slug`, `event_id`, `locale`.
      */
-    EventViewed: 'event_viewed'
+    EventViewed: 'event_viewed',
+
+    // ── AI Natural-Language Search (SPEC-199) ─────────────────────────────────
+
+    /**
+     * User submitted the NL search form (SPEC-199 Q10).
+     * Props: `locale`, `queryLength`.
+     */
+    AiSearchSubmitted: 'ai_search_submitted',
+
+    /**
+     * Extracted intent was applied to the search results navigation (SPEC-199 Q10).
+     * Props: `confidence`, `slotsExtracted: number`, `fallback: boolean`.
+     */
+    AiSearchIntentApplied: 'ai_search_intent_applied',
+
+    /**
+     * Search fell back to plain keyword mode (SPEC-199 Q10).
+     * Props: `reason: 'low_confidence' | 'api_error'`, `confidence?: number`.
+     */
+    AiSearchFallbackKeyword: 'ai_search_fallback_keyword',
+
+    /**
+     * Anonymous user was prompted to log in when submitting NL search (SPEC-199 Q10).
+     * Props: `locale`.
+     */
+    AiSearchLoginPrompted: 'ai_search_login_prompted'
 } as const;
 
 /** Union of all explicit web event names — safe to use as a function argument type. */

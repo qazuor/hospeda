@@ -188,6 +188,31 @@ export interface AccommodationEditData {
     readonly isFeatured: boolean;
     readonly amenityIds: readonly string[];
     readonly featureIds: readonly string[];
+    // Phase B: contact info (flat HTTP fields mapped to ContactInfoSchema)
+    readonly phone: string;
+    readonly email: string;
+    readonly website: string;
+    // Phase B: social networks (flat HTTP fields mapped to SocialNetworkSchema)
+    readonly facebookUrl: string;
+    readonly instagramUrl: string;
+    readonly twitterUrl: string;
+    readonly linkedinUrl: string;
+    readonly tiktokUrl: string;
+    readonly youtubeUrl: string;
+}
+
+/**
+ * Image stored in an accommodation's media field.
+ *
+ * Shared between the photo section component and the API transform layer.
+ * Only `url` is required — publicId/width/height come from Cloudinary upload
+ * responses and are preserved for display/dedup purposes.
+ */
+export interface MediaImage {
+    readonly url: string;
+    readonly publicId: string;
+    readonly width: number;
+    readonly height: number;
 }
 
 /**

@@ -12,6 +12,7 @@ import {
     AiCeilingHitError,
     AiEngineError,
     AiFeatureDisabledError,
+    AiFeatureNotConfiguredError,
     AiModerationBlockedError,
     AiNoEnabledProviderError,
     AiProviderUnconfiguredError
@@ -62,6 +63,18 @@ describe('mapAiEngineErrorToHttpStatus', () => {
         expect(mapAiEngineErrorToHttpStatus(error)).toEqual({
             status: 503,
             code: 'PROVIDER_UNCONFIGURED'
+        });
+    });
+
+    it('should map AiFeatureNotConfiguredError to 503 / FEATURE_NOT_CONFIGURED (clean 503, not 500)', () => {
+        const error = new AiFeatureNotConfiguredError('chat');
+        // It is deliberately NOT an AiEngineError (config-level, pre-routing),
+        // yet the mapper must still produce a clean 503 instead of falling
+        // through to the generic 500 path.
+        expect(error).not.toBeInstanceOf(AiEngineError);
+        expect(mapAiEngineErrorToHttpStatus(error)).toEqual({
+            status: 503,
+            code: 'FEATURE_NOT_CONFIGURED'
         });
     });
 

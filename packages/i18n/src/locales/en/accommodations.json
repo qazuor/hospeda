@@ -404,6 +404,8 @@
         "atCapMessage": "You've reached the conversation limit.",
         "newConversation": "New conversation",
         "close": "Close chat",
-        "unavailable": "AI chat is not available for this accommodation"
+        "unavailable": "AI chat is not available for this accommodation",
+        "expand": "Expand panel",
+        "collapse": "Collapse panel"
     }
 }

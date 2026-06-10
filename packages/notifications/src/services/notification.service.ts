@@ -17,6 +17,7 @@ import {
     PaymentFailure,
     PaymentRetryWarning,
     PaymentSuccess,
+    PlanBeingRetired,
     PlanChangeConfirmation,
     PlanDowngradeLimitWarning,
     PurchaseConfirmation,
@@ -42,6 +43,7 @@ import type {
     NotificationPayload,
     PaymentNotificationPayload,
     PaymentRetryWarningPayload,
+    PlanBeingRetiredPayload,
     PlanDowngradeLimitWarningPayload,
     PurchaseConfirmationPayload,
     SendNotificationOptions,
@@ -569,6 +571,17 @@ export class NotificationService {
                 });
             }
 
+            case 'plan_being_retired': {
+                const p = payload as PlanBeingRetiredPayload;
+                return PlanBeingRetired({
+                    recipientName,
+                    planName: p.planName,
+                    accessUntil: p.accessUntil,
+                    migrationHint: p.migrationHint,
+                    baseUrl: this.deps.siteUrl
+                });
+            }
+
             default:
                 throw new Error(`No template found for notification type: ${type}`);
         }
@@ -648,6 +661,13 @@ export class NotificationService {
         // D3 access-ending reminder specific fields (SPEC-147 T-010)
         if (payload.type === 'subscription_access_ending_soon' && 'daysRemaining' in payload) {
             subjectData.daysRemaining = String(payload.daysRemaining);
+        }
+
+        // Plan retirement notification specific fields (SPEC-148)
+        // Format accessUntil from raw ISO string to a locale date string so the
+        // subject does not embed a raw ISO timestamp.
+        if (payload.type === 'plan_being_retired' && 'accessUntil' in payload) {
+            subjectData.accessUntil = formatDate({ dateString: payload.accessUntil });
         }
 
         return getSubject(payload.type, subjectData);

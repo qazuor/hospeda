@@ -1,12 +1,17 @@
 /**
- * Server-side feedback API schema.
+ * Server-side feedback API schema — relocated from @repo/feedback (SPEC-189).
  *
  * This file is separated from the main schema to avoid importing Node.js
- * globals (Buffer) in browser environments. Import from `@repo/feedback/schemas/server`.
+ * globals (Buffer) in browser environments.
+ *
+ * @example
+ * ```ts
+ * import { feedbackApiSchema } from '@repo/schemas/feedback.server';
+ * ```
  */
 import { z } from 'zod';
 
-import { feedbackFormSchema } from './feedback.schema.js';
+import { feedbackFormSchema } from './feedback.js';
 
 /**
  * Server-side API schema variant.

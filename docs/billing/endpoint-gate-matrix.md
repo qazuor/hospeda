@@ -79,6 +79,8 @@
 | `DELETE /api/v1/protected/owner-promotions/{id}` | `owner-promotion/protected/softDelete.ts` | none | - | n/a | Deletion ungated; removing own promotion always allowed |
 | **MEDIA — PROTECTED** | | | | | |
 | `POST /api/v1/protected/media/upload` | `media/protected/upload.ts` | limit | `max_photos_per_accommodation` | wired | Inline photo-limit check already in handler (SPEC-143 Finding #15) |
+| `POST /api/v1/protected/media/upload-entity` | `media/protected/upload-entity.ts` | limit | `max_photos_per_accommodation` | wired | Ownership-checked entity image upload; same limit as avatar upload (SPEC-208 Phase B) |
+| `DELETE /api/v1/protected/media/delete-entity` | `media/protected/delete-entity.ts` | none | - | n/a | Auth + ownership check in handler (entity.ownerId === actor.id); deletion itself is ungated — no entitlement required to clean up your own media (SPEC-208 Fix A) |
 | **CONVERSATIONS — PROTECTED** | | | | | |
 | `POST /api/v1/protected/conversations/initiate` | `conversations/protected/initiate.ts` | none | - | n/a | Core messaging feature; no plan restriction on sending a message |
 | `GET /api/v1/protected/conversations` | `conversations/protected/list.ts` | none | - | n/a | Read own inbox; auth-only sufficient |
@@ -99,9 +101,13 @@
 | `GET /api/v1/protected/views/accommodations/me` | `views/protected/accommodations-me.ts` | gate | `view_basic_stats` | wired | View stats feed HOST Card G alongside ratings/response-rate, all VIEW_BASIC_STATS-gated — views must match (SPEC-159) |
 | `GET /api/v1/protected/views/posts` | `views/protected/posts.ts` | none | - | n/a | Editor staff dashboard read; permission-gated via POST_VIEW_ALL, editors are not billing customers |
 | `GET /api/v1/protected/views/events` | `views/protected/events.ts` | none | - | n/a | Editor staff dashboard read; permission-gated via EVENT_VIEW_ALL, editors are not billing customers |
+| **GEOCODING — PROTECTED (SPEC-208)** | | | | | |
+| `GET /api/v1/protected/geocoding/autocomplete` | `geocoding/protected/index.ts` | none | - | n/a | Protected geocoding proxy; auth-only — any logged-in user can geocode, no billing gate needed |
+| `GET /api/v1/protected/geocoding/reverse` | `geocoding/protected/index.ts` | none | - | n/a | Protected geocoding proxy; auth-only — any logged-in user can reverse-geocode, no billing gate needed |
 | **AI — PROTECTED (SPEC-198)** | | | | | |
 | `POST /api/v1/protected/ai/text-improve` | `ai/protected/text-improve.ts` | gate+limit | `ai_text_improve`, `max_ai_text_improve_per_month` | wired | createAiQuotaMiddleware('text_improve') enforces entitlement + monthly quota + billing-outage guard; mounted at /api/v1/protected/ai via routes/ai/protected/index.ts (SPEC-198 T-004) |
 | `POST /api/v1/protected/ai/chat` | `ai/protected/chat.ts` | gate+limit | `ai_chat`, `max_ai_chat_per_month` | wired | createAiQuotaMiddleware('chat') enforces entitlement + monthly quota + billing-outage guard; mounted at /api/v1/protected/ai via routes/ai/protected/index.ts (SPEC-200 T-005) |
+| `POST /api/v1/protected/ai/search-intent` | `ai/protected/search-intent.ts` | gate+limit | `ai_search`, `max_ai_search_per_month` | wired | createAiQuotaMiddleware('search') enforces entitlement + monthly quota + billing-outage guard; mounted at /api/v1/protected/ai via routes/ai/protected/index.ts (SPEC-199) |
 | **AUTH — PROTECTED / PUBLIC** | | | | | |
 | `GET /api/v1/public/auth/me` | `auth/me.ts` | none | - | n/a | Session identity read; no entitlement needed |
 | `POST /api/v1/protected/auth/change-password` | `auth/change-password.ts` | none | - | n/a | Account management; auth-only sufficient |

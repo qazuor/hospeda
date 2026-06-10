@@ -824,6 +824,13 @@ export function createAiEngine(input: CreateAiEngineInput): AiEngine {
                 prompt: `${objectSystemContent}\n\nUser request: ${req.prompt}`
             };
 
+            // Propagate the feature's configured model (e.g. from ai_settings) so the
+            // provider adapter uses it instead of its hardcoded default. Caller-wins:
+            // an explicit request model is left untouched. Mirrors generateText/stream.
+            if (!injectedObjectReq.model && featureConfig.model) {
+                (injectedObjectReq as Record<string, unknown>).model = featureConfig.model;
+            }
+
             const providersConfig = await getProvidersConfig();
 
             const response = await routeWithFallback(

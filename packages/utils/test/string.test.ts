@@ -94,6 +94,59 @@ describe('String Utilities', () => {
         it('handles nested tags', () => {
             expect(stripHtml('<div><p>Hello</p></div>')).toBe('Hello');
         });
+
+        // Multi-pass stripping — the loop removes tags across multiple passes.
+        // The regex `/<[^<>]*>/g` excludes `<` from the character class so that
+        // each match attempt is O(1) instead of O(n) (CodeQL js/polynomial-redos
+        // fix). As a result `<sc<ript>` is NOT matched as a single unit; instead
+        // the inner `<ript>` is matched first, then the outer `<sc` becomes
+        // bare text (no closing `>`). A bare `<` with no matching `>` is
+        // harmless: browsers treat it as literal text, not as an open tag.
+        it('strips the inner tag of nested/disguised markup like <sc<ript>', () => {
+            // Arrange
+            const input = '<sc<ript>alert(1)</sc<ript>>';
+            // Act
+            const result = stripHtml(input);
+            // Assert — no complete tag (opening-bracket + content + closing-bracket)
+            // survives; bare `<sc` text is inert and acceptable per the O(n) regex.
+            expect(result).not.toMatch(/<[^<>]*>/);
+        });
+
+        it('strips matched tag pairs from <sc<ript>-style input, leaving bare text fragments', () => {
+            // Arrange
+            const input = 'Hello <sc<ript>World</ript>';
+            // Act
+            const result = stripHtml(input);
+            // Assert — both `<ript>` and `</ript>` are removed; the bare `<sc`
+            // prefix is not a complete tag and survives as inert text.
+            expect(result).toContain('Hello');
+            expect(result).not.toMatch(/<[^<>]*>/);
+        });
+
+        it('handles normal HTML unchanged after multi-pass (idempotent for clean HTML)', () => {
+            // Arrange
+            const input = '<b>bold</b> and <em>italic</em>';
+            // Act
+            const result = stripHtml(input);
+            // Assert
+            expect(result).toBe('bold and italic');
+        });
+
+        // ReDoS regression — MAX_STRIP_HTML_LENGTH cap prevents polynomial
+        // backtracking on inputs with many consecutive '<' and no closing '>'.
+        it('returns within 1 s on pathological input of 200 000 "<" chars (ReDoS guard)', () => {
+            // Arrange — worst case for /<[^>]*>/g without the length cap.
+            const input = '<'.repeat(200_000);
+            // Act
+            const start = performance.now();
+            const result = stripHtml(input);
+            const elapsedMs = performance.now() - start;
+            // Assert — cap limits work to ~100 000 chars; must finish quickly.
+            expect(elapsedMs).toBeLessThan(1000);
+            // The capped input is all '<' characters with no '>'; the regex
+            // finds no complete tag, so the entire (capped) string is returned.
+            expect(typeof result).toBe('string');
+        });
     });
 
     describe('isEmpty', () => {

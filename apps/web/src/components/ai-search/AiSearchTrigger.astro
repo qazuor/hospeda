@@ -1,0 +1,74 @@
+---
+/**
+ * @file AiSearchTrigger.astro
+ * @description Fixed-position floating CTA wrapper that mounts the AiSearchPanel
+ * React island with `client:visible`.
+ *
+ * AiSearchPanel renders its own trigger button and panel toggle internally.
+ * This .astro wrapper provides:
+ *   1. The fixed-position CSS container (no JS needed for positioning).
+ *   2. SSR prop derivation from Astro.locals and Astro.url.
+ *   3. The `client:visible` hydration directive — the island loads only when
+ *      this wrapper scrolls into the viewport, reducing initial JS bundle cost.
+ *
+ * Props are derived by the parent .astro page and passed down:
+ *   - `locale`          from `Astro.locals.locale`
+ *   - `isAuthenticated` from `Boolean(Astro.locals.user)`
+ *   - `currentUrl`      from `Astro.url.href`
+ *
+ * @see §5.6  AiSearchTrigger.astro spec
+ * @see §5.7  i18n key `aiSearch.triggerLabel` (consumed by AiSearchPanel internally)
+ * @see §3 Q2 Floating CTA opening a dedicated panel (placement decision)
+ */
+
+import { AiSearchPanel } from '@/components/ai-search/AiSearchPanel.client';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+    /** Active locale for i18n and panel navigation. */
+    readonly locale: SupportedLocale;
+    /** Whether the visitor is signed in. Drives the anonymous vs authenticated panel flow. */
+    readonly isAuthenticated: boolean;
+    /** Full URL of the current page, forwarded as `returnUrl` in the login redirect. */
+    readonly currentUrl: string;
+}
+
+const { locale, isAuthenticated, currentUrl } = Astro.props;
+---
+
+<div class="ai-search-trigger">
+    <!--
+        AiSearchPanel manages its own trigger button, open/closed state, and
+        panel body — this wrapper only positions the island in the viewport.
+        client:visible defers hydration until the element enters the viewport.
+    -->
+    <AiSearchPanel
+        client:visible
+        locale={locale}
+        isAuthenticated={isAuthenticated}
+        currentUrl={currentUrl}
+    />
+</div>
+
+<style>
+    /*
+     * Fixed-position floating container.
+     * The panel itself (AiSearchPanel) handles its open/closed toggle and
+     * panel positioning internally — this wrapper only positions the trigger
+     * in the viewport.
+     */
+    .ai-search-trigger {
+        position: fixed;
+        bottom: var(--space-6, 24px);
+        right: var(--space-6, 24px);
+        z-index: var(--z-modal, 100);
+    }
+
+    /* Nudge the trigger up on mobile to clear the browser chrome / nav bar. */
+    @media (max-width: 767px) {
+        .ai-search-trigger {
+            bottom: var(--space-8, 32px);
+            right: var(--space-4, 16px);
+        }
+    }
+</style>

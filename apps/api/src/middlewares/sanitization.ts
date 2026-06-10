@@ -5,6 +5,7 @@
  * @module api/middlewares/sanitization
  */
 
+import { posix as pathPosix } from 'node:path';
 import sanitizeHtml from 'sanitize-html';
 
 /**
@@ -307,8 +308,9 @@ export const sanitizeFileName = (fileName: string, maxLength = 255): string => {
         return 'unnamed';
     }
 
-    // Remove path traversal sequences and leading separators
-    let sanitized = fileName.replace(/\.\.[/\\]/g, '').replace(/^[/\\]+/, '');
+    // Strip any directory component (both separators) so traversal sequences
+    // like '....//' cannot be reconstructed; keep only the final file name.
+    let sanitized = pathPosix.basename(fileName.replace(/\\/g, '/'));
 
     // Replace anything that is not alphanumeric, dot, hyphen, or underscore
     sanitized = sanitized.replace(/[^a-zA-Z0-9._-]/g, '_');

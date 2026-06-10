@@ -144,7 +144,11 @@
                 "location": "Localização",
                 "capacity": "Capacidade",
                 "pricing": "Preço",
-                "amenities": "Comodidades e recursos"
+                "amenities": "Comodidades e recursos",
+                "contact": "Contato",
+                "socialNetworks": "Redes sociais",
+                "photos": "Fotos",
+                "photosDescription": "Faça upload de fotos do seu imóvel para atrair mais hóspedes"
             },
             "field": {
                 "name": "Nome",
@@ -155,13 +159,37 @@
                 "destinationPlaceholder": "Selecionar destino...",
                 "latitude": "Latitude",
                 "longitude": "Longitude",
+                "locationHint": "Insira as coordenadas exatas da sua propriedade.",
                 "maxGuests": "Máx. hóspedes",
                 "bedrooms": "Quartos",
                 "bathrooms": "Banheiros",
                 "price": "Preço por noite",
                 "currency": "Moeda",
                 "amenities": "Comodidades",
-                "features": "Recursos"
+                "features": "Recursos",
+                "phone": "Telefone",
+                "email": "Email",
+                "website": "Site",
+                "facebook": "Facebook",
+                "instagram": "Instagram",
+                "twitter": "Twitter / X",
+                "linkedin": "LinkedIn",
+                "tiktok": "TikTok",
+                "youtube": "YouTube"
+            },
+            "photo": {
+                "featured": "Imagem principal",
+                "featuredAlt": "Imagem principal",
+                "gallery": "Galeria de fotos",
+                "galleryAlt": "Foto {{index}}",
+                "dropOrClick": "Arraste uma imagem ou clique para selecionar",
+                "formats": "JPG, PNG ou WebP — máx. 5MB",
+                "remove": "Remover",
+                "invalidType": "Apenas arquivos JPG, PNG ou WebP são permitidos",
+                "tooLarge": "O arquivo não pode exceder 5MB",
+                "uploadFailed": "Falha ao fazer upload da imagem",
+                "galleryCapReached": "Limite da galeria atingido (máx. {{cap}} fotos)",
+                "galleryCapLabel": "Galeria cheia"
             },
             "action": {
                 "save": "Salvar",
@@ -183,6 +211,34 @@
             "toast": {
                 "saveSuccess": "Alterações salvas",
                 "saveError": "Não pudemos salvar suas alterações. Tente novamente."
+            },
+            "entitlement": {
+                "premiumFeature": "Recurso premium",
+                "richDescriptionNudge": "Faça upgrade no seu plano para usar descrições enriquecidas com formatação.",
+                "videoNudge": "Faça upgrade no seu plano para incorporar vídeos na sua propriedade.",
+                "genericNudge": "Este recurso está disponível em um plano superior.",
+                "upgradeLink": "Melhorar plano"
+            },
+            "richText": {
+                "placeholder": "Descreva sua propriedade em detalhes...",
+                "toolbarBold": "Negrito",
+                "toolbarItalic": "Itálico",
+                "toolbarUnderline": "Sublinhado",
+                "toolbarH2": "Título 2",
+                "toolbarH3": "Título 3",
+                "toolbarList": "Lista",
+                "toolbarOrderedList": "Lista numerada",
+                "toolbarQuote": "Citação",
+                "toolbarLink": "Link"
+            },
+            "location": {
+                "searchAddress": "Buscar endereço",
+                "searchPlaceholder": "Av. Belgrano 123, Concepción del Uruguay",
+                "useMyLocation": "Usar minha localização atual",
+                "mapHint": "Arraste o pin para ajustar a localização exata.",
+                "geolocationUnavailable": "A geolocalização não está disponível neste navegador.",
+                "geolocationDenied": "Permissão negada. Você pode digitar o endereço manualmente.",
+                "geolocationError": "Não foi possível obter a localização. Tente digitar o endereço."
             }
         },
         "empty": {

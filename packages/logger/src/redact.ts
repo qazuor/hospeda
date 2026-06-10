@@ -100,16 +100,23 @@ const SENSITIVE_KEYS = new Set([
  * @internal
  */
 const SENSITIVE_PATTERNS = [
-    // JWT tokens (xxxxx.xxxxx.xxxxx)
-    /eyJ[a-zA-Z0-9_-]+\.eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+/g,
+    // JWT tokens (header.payload.signature — base64url segments).
+    // Bounded quantifiers {1,8192} prevent polynomial backtracking on inputs
+    // containing many consecutive 'eyJ' prefixes (CodeQL js/polynomial-redos).
+    // 8192 base64url chars per segment exceeds any real JWT segment by orders
+    // of magnitude, so all valid tokens still match.
+    /eyJ[a-zA-Z0-9_-]{1,8192}\.eyJ[a-zA-Z0-9_-]{1,8192}\.[a-zA-Z0-9_-]{1,8192}/g,
     // Bearer tokens
     /Bearer\s+[a-zA-Z0-9_-]+/gi,
     // Credit card numbers (basic pattern - 13-19 digits with optional separators)
     /\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{1,7}\b/g,
     // SSN pattern (US)
     /\b\d{3}[-]?\d{2}[-]?\d{4}\b/g,
-    // Email addresses
-    /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g,
+    // Email addresses. The domain is matched as label(.label)+ where a label
+    // never contains a dot, so there is no overlap between the label class and
+    // the `.` separator. This is linear; the previous `[A-Za-z0-9.-]+\.` form
+    // backtracked polynomially on inputs like `a@a.a.a...` (CodeQL js/polynomial-redos).
+    /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(?:\.[A-Za-z0-9-]+)+\b/g,
     // Phone numbers (various formats)
     /\b(?:\+?1[-.\s]?)?(?:\(?\d{3}\)?[-.\s]?)?\d{3}[-.\s]?\d{4}\b/g,
     // Argentine phone numbers

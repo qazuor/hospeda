@@ -8,6 +8,7 @@
 |-------|-------------|
 | [Adding a New Entity](adding-new-entity.md) | End-to-end tutorial: Schema, Model, Service, API, Frontend |
 | [Local Development Setup](local-development-setup.md) | PostgreSQL, Redis, Docker, environment configuration |
+| [Worktree Dev Environments](worktree-dev-environments.md) | One-command up/down for parallel worktrees: isolated ports + DB, auto-heal, test users (`wt:up` / `wt:down`) |
 | [Error Handling](error-handling.md) | Error patterns and Result type |
 | [Debugging](debugging.md) | Debugging techniques and tools |
 | [CLI Utilities](cli-utilities.md) | Available CLI scripts and commands |

@@ -45,7 +45,11 @@ const SUBJECT_PATTERNS: Record<NotificationType, string> = {
 
     // D3 access-ending reminder (SPEC-147 T-010)
     [NotificationType.SUBSCRIPTION_ACCESS_ENDING_SOON]:
-        'Your {planName} access ends in {daysRemaining} days — act now to keep it'
+        'Your {planName} access ends in {daysRemaining} days — act now to keep it',
+
+    // Plan retirement notification (SPEC-148)
+    [NotificationType.PLAN_BEING_RETIRED]:
+        'Important: {planName} is being retired — your access continues until {accessUntil}'
 };
 
 /**

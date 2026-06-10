@@ -24,3 +24,6 @@ export * from './ai-text-improve.schema.js';
 
 // HTTP request/response schemas for the AI accommodation chat child spec (SPEC-200)
 export * from './ai-chat.schema.js';
+
+// Request body, entity slot, and response schemas for the AI NL search child spec (SPEC-199)
+export * from './ai-search-intent.schema.js';

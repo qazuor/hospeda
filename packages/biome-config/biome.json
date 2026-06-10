@@ -16,6 +16,7 @@
             "**/coverage/**",
             "**/.output/**",
             "**/.vinxi/**",
+            "**/tsup.config.bundled_*.mjs",
             "**/routeTree.gen.ts",
             "**/*.astro",
             "**/docs/examples/**",

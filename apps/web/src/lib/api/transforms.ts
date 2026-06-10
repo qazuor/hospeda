@@ -1310,7 +1310,7 @@ export function toEventDetailProps({
 
 // --- Accommodation Editor Transforms (SPEC-208) ---
 
-import type { AccommodationEditData, AmenityData, DestinationData } from './types';
+import type { AccommodationEditData, AmenityData, DestinationData, MediaImage } from './types';
 
 /**
  * Transforms a raw API accommodation object into AccommodationEditData
@@ -1358,7 +1358,59 @@ export function transformAccommodationEdit({
         isAvailable: item.isAvailable != null ? Boolean(item.isAvailable) : true,
         isFeatured: item.isFeatured != null ? Boolean(item.isFeatured) : false,
         amenityIds: extractIdList(amenitiesArr, 'amenityId', 'amenity'),
-        featureIds: extractIdList(featuresArr, 'featureId', 'feature')
+        featureIds: extractIdList(featuresArr, 'featureId', 'feature'),
+        // Phase B: contact info (flat HTTP fields from the domain contactInfo object)
+        phone: String(
+            (item.phone as string) ??
+                ((item.contactInfo as Record<string, unknown> | undefined)
+                    ?.mobilePhone as string) ??
+                ''
+        ),
+        email: String(
+            (item.email as string) ??
+                ((item.contactInfo as Record<string, unknown> | undefined)
+                    ?.personalEmail as string) ??
+                ''
+        ),
+        website: String(
+            (item.website as string) ??
+                ((item.contactInfo as Record<string, unknown> | undefined)?.website as string) ??
+                ''
+        ),
+        // Phase B: social networks (flat HTTP fields from the domain socialNetworks object)
+        facebookUrl: String(
+            (item.facebook as string) ??
+                ((item.socialNetworks as Record<string, unknown> | undefined)
+                    ?.facebook as string) ??
+                ''
+        ),
+        instagramUrl: String(
+            (item.instagram as string) ??
+                ((item.socialNetworks as Record<string, unknown> | undefined)
+                    ?.instagram as string) ??
+                ''
+        ),
+        twitterUrl: String(
+            (item.twitter as string) ??
+                ((item.socialNetworks as Record<string, unknown> | undefined)?.twitter as string) ??
+                ''
+        ),
+        linkedinUrl: String(
+            (item.linkedin as string) ??
+                ((item.socialNetworks as Record<string, unknown> | undefined)
+                    ?.linkedIn as string) ??
+                ''
+        ),
+        tiktokUrl: String(
+            (item.tiktok as string) ??
+                ((item.socialNetworks as Record<string, unknown> | undefined)?.tiktok as string) ??
+                ''
+        ),
+        youtubeUrl: String(
+            (item.youtube as string) ??
+                ((item.socialNetworks as Record<string, unknown> | undefined)?.youtube as string) ??
+                ''
+        )
     };
 }
 
@@ -1411,4 +1463,67 @@ export function transformDestinationList({
         name: String(item.name ?? ''),
         path: String(item.path ?? '')
     }));
+}
+
+/**
+ * Result of `transformAccommodationMedia`.
+ */
+export interface AccommodationMediaResult {
+    readonly featuredImage: MediaImage | null;
+    readonly gallery: readonly MediaImage[];
+}
+
+/**
+ * Extracts the raw media field from an API accommodation response and converts
+ * it into the `MediaImage` shape used by the editor's PhotoSection component.
+ *
+ * Only `url` is guaranteed; `publicId`, `width`, and `height` are seeded with
+ * empty/zero values when the stored domain image does not carry them. The
+ * display logic in PhotoSection only requires `url`.
+ *
+ * NEVER passes raw API data to components (project rule). Always use this
+ * transform as the bridge from the API response to the editor props.
+ *
+ * @param item - Raw accommodation object from the protected GET endpoint
+ * @returns `{ featuredImage, gallery }` shaped for AccommodationEditor props
+ */
+export function transformAccommodationMedia({
+    item
+}: { readonly item: Record<string, unknown> }): AccommodationMediaResult {
+    const media = item.media as
+        | {
+              featuredImage?: {
+                  url?: string;
+                  publicId?: string;
+                  width?: number;
+                  height?: number;
+              } | null;
+              gallery?: ReadonlyArray<{
+                  url?: string;
+                  publicId?: string;
+                  width?: number;
+                  height?: number;
+              }>;
+          }
+        | null
+        | undefined;
+
+    const toMediaImage = (
+        img: { url?: string; publicId?: string; width?: number; height?: number } | null | undefined
+    ): MediaImage | null => {
+        if (!img?.url) return null;
+        return {
+            url: img.url,
+            publicId: img.publicId ?? '',
+            width: img.width ?? 0,
+            height: img.height ?? 0
+        };
+    };
+
+    const featuredImage = toMediaImage(media?.featuredImage);
+    const gallery: readonly MediaImage[] = (media?.gallery ?? [])
+        .map(toMediaImage)
+        .filter((img): img is MediaImage => img !== null);
+
+    return { featuredImage, gallery };
 }

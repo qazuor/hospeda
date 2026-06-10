@@ -1,0 +1,779 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-199",
+    "title": "AI Natural-Language Search (Intent to Structured Query)",
+    "created": "2026-06-10T03:34:18.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Create AiSearchIntentRequestSchema and SearchIntentEntitiesSchema with barrel export",
+            "description": "Create packages/schemas/src/entities/ai/ai-search-intent.schema.ts with AiSearchIntentRequestSchema (query: min(1).max(500), locale optional, .strict()) and SearchIntentEntitiesSchema (ALL slots: locationType, city, destinationId, lat/lon/radius, accommodationType, minGuests/maxGuests, minBedrooms/maxBedrooms, minBathrooms/maxBathrooms, minPrice/maxPrice, currency, minRating/maxRating, hasPool/hasWifi/allowsPets/hasParking booleans, amenitySlugs: string[], featureSlugs: string[], checkIn/checkOut coerce.date). Also export their TS types. Export from packages/schemas/src/entities/ai/index.ts barrel.\n\nTEST FILE: packages/schemas/src/entities/ai/ai-search-intent.schema.test.ts\nRequired assertions (§8.1, AC-5):\n- AiSearchIntentRequestSchema: empty query rejected, query >500 chars rejected, valid locale accepted, invalid locale rejected, .strict() rejects extra keys\n- SearchIntentEntitiesSchema: empty object valid (all slots optional), invalid accommodationType rejected, latitude out of [-90,90] rejected, extra keys stripped (schema NOT strict)\n- New fields: minBedrooms/maxBedrooms accept integer ≥ 0, maxRating accepts number in [0,5], featureSlugs accepts string array",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-003"],
+            "subtasks": [
+                {
+                    "title": "Create ai-search-intent.schema.ts with AiSearchIntentRequestSchema",
+                    "completed": false
+                },
+                {
+                    "title": "Add SearchIntentEntitiesSchema with all slots incl. bedrooms/bathrooms/featureSlugs",
+                    "completed": false
+                },
+                {
+                    "title": "Export from packages/schemas/src/entities/ai/index.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Write schema unit tests (ai-search-intent.schema.test.ts)",
+                    "completed": false
+                }
+            ],
+            "tags": ["schemas", "zod", "ai", "setup"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-10T03:34:18.000Z",
+                "started": "2026-06-10T03:43:28.000Z",
+                "completed": "2026-06-10T04:00:41.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Create SearchIntentOutputSchema and AiSearchIntentResponseDataSchema",
+            "description": "In packages/schemas/src/entities/ai/ai-search-intent.schema.ts (SAME file as T-001) add: SearchIntentOutputSchema (confidence: number min(0).max(1).default(0), entities: SearchIntentEntitiesSchema — wrapper used as outputSchema arg to generateObject), SearchIntentSchema (AiIntentSchema.extend with kind: literal('search'), entities: SearchIntentEntitiesSchema), and AiSearchIntentResponseDataSchema (intent: AiIntentSchema, mappedParams: z.record(z.string(), z.unknown()), confidence: number min(0).max(1), fallbackToKeyword: boolean). Export all types.\n\nTEST FILE: extends ai-search-intent.schema.test.ts from T-001\nRequired assertions (§8.1):\n- SearchIntentOutputSchema: valid object with entities and confidence accepted, confidence defaults to 0 when absent\n- AiSearchIntentResponseDataSchema: fallbackToKeyword field required (boolean), confidence field in [0,1]\n- SearchIntentSchema: kind must be literal 'search', entities typed correctly",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-010"],
+            "subtasks": [
+                {
+                    "title": "Add SearchIntentOutputSchema to ai-search-intent.schema.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Add SearchIntentSchema extending AiIntentSchema",
+                    "completed": false
+                },
+                {
+                    "title": "Add AiSearchIntentResponseDataSchema",
+                    "completed": false
+                },
+                {
+                    "title": "Add tests for new schemas in existing test file",
+                    "completed": false
+                }
+            ],
+            "tags": ["schemas", "zod", "ai", "setup"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-10T03:34:18.000Z",
+                "started": null,
+                "completed": "2026-06-10T04:39:25.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Create mapper base with location priority and core field mapping",
+            "description": "Create apps/api/src/routes/ai/protected/search-intent.mapper.ts with mapIntentToSearchParams(entities: SearchIntentEntities, resolvedAmenityIds: readonly string[] = [], resolvedFeatureIds: readonly string[] = []): Record<string, string | string[]>.\n\nImplement location priority (destinationId > geo[lat+lon+radius] > city as q), accommodationType→type, minGuests/maxGuests (conflict: minGuests>maxGuests drops maxGuests), minPrice/maxPrice (conflict: both dropped), currency (only if price present), minRating (clamp [0,5]), checkIn/checkOut (.toISOString().split('T')[0], conflict: checkOut<=checkIn drops both).\n\nTEST FILE: apps/api/src/routes/ai/protected/search-intent.mapper.test.ts\nRequired assertions (§8.1, AC-2, AC-13):\n- Each slot maps to correct output key with string serialization\n- Location priority: destinationId wins over city+geo; geo wins over city; city alone sets q\n- Conflicting price range (minPrice > maxPrice) drops both\n- Conflicting guest range (minGuests > maxGuests) drops maxGuests\n- Conflicting date (checkOut <= checkIn) drops both\n- currency only set when price present\n- Radius clamped to 500 km max",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-004", "T-005"],
+            "subtasks": [
+                {
+                    "title": "Create search-intent.mapper.ts file with function signature",
+                    "completed": false
+                },
+                {
+                    "title": "Implement location priority logic (destinationId > geo > city)",
+                    "completed": false
+                },
+                {
+                    "title": "Implement type/guests/price/currency/dates mapping rows",
+                    "completed": false
+                },
+                {
+                    "title": "Write mapper unit tests (location priority, conflicts)",
+                    "completed": false
+                }
+            ],
+            "tags": ["mapper", "api", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-10T03:34:18.000Z",
+                "started": null,
+                "completed": "2026-06-10T04:39:25.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Extend mapper with bedrooms, bathrooms, maxRating conflict/clamp logic",
+            "description": "In apps/api/src/routes/ai/protected/search-intent.mapper.ts (SAME file as T-003) add mapping rows for: minBedrooms/maxBedrooms (clamp [0,50], conflict: minBedrooms>maxBedrooms drops maxBedrooms), minBathrooms/maxBathrooms (clamp [0,50], conflict: minBathrooms>maxBathrooms drops maxBathrooms), maxRating (clamp [0,5], conflict: minRating>maxRating drops maxRating). Boolean fields (hasPool/hasWifi/allowsPets/hasParking) emit as string 'true' (not native boolean).\n\nTEST FILE: apps/api/src/routes/ai/protected/search-intent.mapper.test.ts (extending T-003 tests)\nRequired assertions (§8.1, AC-14, AC-15, AC-16, AC-19):\n- entities {minBedrooms:2, maxBedrooms:4} → mappedParams minBedrooms:'2', maxBedrooms:'4'\n- entities {minBathrooms:1, maxBathrooms:3} → mappedParams minBathrooms:'1', maxBathrooms:'3'\n- entities {minRating:3, maxRating:5} → both emitted as strings\n- entities {minRating:4, maxRating:2} (conflict) → minRating:'4', maxRating omitted\n- entities {minBedrooms:5, maxBedrooms:2} (conflict) → minBedrooms:'5', maxBedrooms omitted\n- Boolean hasPool:true → output {hasPool:'true'}, typeof result.hasPool === 'string'",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-005"],
+            "subtasks": [
+                {
+                    "title": "Add minBedrooms/maxBedrooms mapping with clamp+conflict logic",
+                    "completed": false
+                },
+                {
+                    "title": "Add minBathrooms/maxBathrooms mapping with clamp+conflict logic",
+                    "completed": false
+                },
+                {
+                    "title": "Add maxRating clamp and conflict logic",
+                    "completed": false
+                },
+                {
+                    "title": "Add boolean serialization (hasPool etc. as 'true' string)",
+                    "completed": false
+                },
+                {
+                    "title": "Extend mapper unit tests for new fields and conflicts",
+                    "completed": false
+                }
+            ],
+            "tags": ["mapper", "api", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-10T03:34:18.000Z",
+                "started": null,
+                "completed": "2026-06-10T04:39:25.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Add amenity/feature slug passthrough and whitelist enforcement to mapper",
+            "description": "In apps/api/src/routes/ai/protected/search-intent.mapper.ts (SAME file) add: resolvedAmenityIds → amenities param (only if non-empty, else omit), resolvedFeatureIds → features param (only if non-empty, else omit). Enforce whitelist: NEVER forward locationType, amenitySlugs, featureSlugs, or any key not in AccommodationSearchHttpSchema to output. The mapper is the primary defense against hallucinated dimensions (R-1). This completes 100% coverage on mapper.\n\nTEST FILE: apps/api/src/routes/ai/protected/search-intent.mapper.test.ts (final coverage pass)\nRequired assertions (§8.1, AC-5):\n- resolvedAmenityIds ['uuid-1','uuid-2'] → amenities: ['uuid-1','uuid-2'] in output\n- Empty resolvedAmenityIds → amenities key omitted from output\n- resolvedFeatureIds ['uuid-3'] → features: ['uuid-3'] in output\n- Empty resolvedFeatureIds → features key omitted\n- Unknown slot key (e.g. vibe:'romantic') not in output\n- locationType, amenitySlugs, featureSlugs never in output\n- 100% branch coverage on mapper file",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-004"],
+            "blocks": ["T-010"],
+            "subtasks": [
+                {
+                    "title": "Add resolvedAmenityIds → amenities output (skip if empty)",
+                    "completed": false
+                },
+                {
+                    "title": "Add resolvedFeatureIds → features output (skip if empty)",
+                    "completed": false
+                },
+                {
+                    "title": "Enforce whitelist: drop locationType/amenitySlugs/featureSlugs from output",
+                    "completed": false
+                },
+                {
+                    "title": "Write whitelist enforcement and passthrough tests (100% branch coverage)",
+                    "completed": false
+                }
+            ],
+            "tags": ["mapper", "api", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-10T03:34:18.000Z",
+                "started": null,
+                "completed": "2026-06-10T04:39:25.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Create AMENITY_ALLOWLIST and matchAmenityTerms function",
+            "description": "Create apps/api/src/routes/ai/protected/amenity-allowlist.ts with: AMENITY_ALLOWLIST (per-locale dict: es/en/pt mapping NL terms to slugs pool/wifi/bbq/air-conditioning/parking/pets-allowed/breakfast) and matchAmenityTerms(text, locale) function (lowercase+trim both sides, returns deduped matched slugs, silently ignores unmatched).\n\nTEST FILE: apps/api/src/routes/ai/protected/amenity-allowlist.test.ts (shared with T-007)\nRequired assertions (§8.1):\n- matchAmenityTerms exact match in es: 'pileta' → ['pool']\n- matchAmenityTerms exact match in en: 'swimming pool' → ['pool']\n- matchAmenityTerms exact match in pt: 'piscina' → ['pool']\n- Unknown term → empty array\n- Case-insensitive: 'WIFI' → ['wifi']\n- Duplicate matches de-duplicated\n- Partial-text match (text contains term as substring)",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-009"],
+            "subtasks": [
+                {
+                    "title": "Create amenity-allowlist.ts with AMENITY_ALLOWLIST constant (es/en/pt)",
+                    "completed": false
+                },
+                {
+                    "title": "Implement matchAmenityTerms with lowercase+trim+dedup logic",
+                    "completed": false
+                },
+                {
+                    "title": "Write matchAmenityTerms unit tests in amenity-allowlist.test.ts",
+                    "completed": false
+                }
+            ],
+            "tags": ["allowlist", "api", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-10T03:34:18.000Z",
+                "started": null,
+                "completed": "2026-06-10T04:39:25.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Create FEATURE_ALLOWLIST and matchFeatureTerms with anti-overlap enforcement",
+            "description": "In apps/api/src/routes/ai/protected/amenity-allowlist.ts (SAME file as T-006) add: FEATURE_ALLOWLIST (18 slugs: river_front, natural_environment, silent_environment, quiet_zone, rural_area, central_area, panoramic_view_extended, dock_access, couple_suitable, family_suitable, ideal_for_groups, wedding_suitable, rustic_style, modern_style, yoga_meditation_area, spiritual_retreat_suitable, digital_detox_zone, sustainable_accommodation — es/en/pt) and matchFeatureTerms(text, locale) function. ANTI-OVERLAP RULE: physical services (pets/wifi/parking/pool/breakfast/air-conditioning/BBQ) MUST NOT appear in FEATURE_ALLOWLIST.\n\nTEST FILE: apps/api/src/routes/ai/protected/amenity-allowlist.test.ts (extending T-006 tests)\nRequired assertions (§8.1, AC-18):\n- matchFeatureTerms exact match es: 'frente al río' → ['river_front']\n- matchFeatureTerms exact match en: 'riverfront' → ['river_front']\n- matchFeatureTerms exact match pt: 'beira-rio' → ['river_front']\n- Unknown term → empty array\n- Case-insensitive, dedup\n- ANTI-OVERLAP: matchFeatureTerms('pet friendly', 'en') → [] (NOT in feature allowlist)\n- ANTI-OVERLAP: matchFeatureTerms('wifi', 'en') → [] (NOT in feature allowlist)",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-006"],
+            "blocks": ["T-009"],
+            "subtasks": [
+                {
+                    "title": "Add FEATURE_ALLOWLIST constant with all 18 slugs in es/en/pt",
+                    "completed": false
+                },
+                {
+                    "title": "Implement matchFeatureTerms function with same logic as matchAmenityTerms",
+                    "completed": false
+                },
+                {
+                    "title": "Write matchFeatureTerms tests including anti-overlap negatives",
+                    "completed": false
+                }
+            ],
+            "tags": ["allowlist", "api", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-10T03:34:18.000Z",
+                "started": null,
+                "completed": "2026-06-10T04:39:25.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Update DEFAULT_PROMPTS['search'] with full slot-extraction contract",
+            "description": "Modify packages/ai-core/src/engine/default-prompts.ts (DO NOT create new file). Replace the existing 'search' value in the DEFAULT_PROMPTS record with the full slot-extraction contract from §5.5: complete field list with types, confidence semantics (0=nothing, 1=all clear), 'never invent values' rule, amenitySlugs-from-request rule, featureSlugs-from-request rule, JSON-only output, English field names, refuse redirect attempts. The engine prepends this automatically as `${systemContent}\\n\\nUser request: ${prompt}` for every generateObject({ feature: 'search' }) call.\n\nNo unit tests needed for this file alone — covered by T-012 integration tests (test #1 exercises the full call path with a stub and verifies 200 with expected envelope shape). Confirm the AiFeature type in ai-provider.schema.ts accepts 'search' as a literal.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-010"],
+            "subtasks": [
+                {
+                    "title": "Locate DEFAULT_PROMPTS in packages/ai-core/src/engine/default-prompts.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Replace 'search' value with full §5.5 slot-extraction contract",
+                    "completed": false
+                },
+                {
+                    "title": "Verify AiFeature type includes 'search' literal",
+                    "completed": false
+                }
+            ],
+            "tags": ["ai-core", "prompt", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-10T03:34:18.000Z",
+                "started": null,
+                "completed": "2026-06-10T04:39:25.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Create buildSearchIntentPrompt helper with locale-aware allowlist embedding",
+            "description": "In apps/api/src/routes/ai/protected/search-intent.ts (main route file, same module) define the pure helper buildSearchIntentPrompt({ query, locale }: { readonly query: string; readonly locale: 'es' | 'en' | 'pt' }): string. It imports AMENITY_ALLOWLIST and FEATURE_ALLOWLIST from amenity-allowlist.ts, picks the locale dict (fallback to 'es' for unknown locales), deduplicates allowlist values via Set, and returns a string with: [1] amenity slugs line, [2] feature slugs line, [3] empty line, [4] User query: '''<query>'''.\n\nTEST FILE: apps/api/src/routes/ai/protected/search-intent.prompt-builder.test.ts [NEW]\nRequired assertions (§12 T-004b):\n- Returned string contains correct slugs for each locale (es/en/pt)\n- User query embedded verbatim (including special chars like quotes, newlines)\n- Slug values de-duplicated via Set (no repeats from allowlist)\n- Unknown locale falls back to 'es' slugs\n- No messages array present — function returns a string, not an object",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-006", "T-007"],
+            "blocks": ["T-010"],
+            "subtasks": [
+                {
+                    "title": "Implement buildSearchIntentPrompt in search-intent.ts route module",
+                    "completed": false
+                },
+                {
+                    "title": "Wire AMENITY_ALLOWLIST and FEATURE_ALLOWLIST imports from amenity-allowlist.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Write search-intent.prompt-builder.test.ts unit tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["prompt", "api", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-10T03:34:18.000Z",
+                "started": null,
+                "completed": "2026-06-10T04:39:25.000Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Create search-intent route handler with middleware chain and generateObject call",
+            "description": "Create apps/api/src/routes/ai/protected/search-intent.ts (main route file). Use createProtectedRoute factory with POST '/', request body AiSearchIntentRequestSchema, response AiSearchIntentResponseSchema. middlewares order: [entitlementMiddleware(), ...createAiRateLimitMiddlewares('search'), createAiQuotaMiddleware('search')]. Handler steps: (1) parse/validate body, (2) await createConfiguredAiService(), (3) call aiService.generateObject({feature:'search', prompt:buildSearchIntentPrompt({query,locale??'es'}), locale:locale??'es'}, SearchIntentOutputSchema), (4) entities = result.object.entities, confidence = result.object.confidence, run SearchIntentEntitiesSchema.safeParse() — on fail treat as {} and confidence=0, (5) determine fallbackToKeyword: confidence < 0.5, (6) return response envelope {intent, mappedParams, confidence, fallbackToKeyword}. Add route to barrel apps/api/src/routes/ai/protected/index.ts (create if SPEC-198 did not).\n\nHTTP status codes from §5.1 table must be returned correctly (401/403/429/422/503/502/400).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-002", "T-005", "T-008", "T-009"],
+            "blocks": ["T-011", "T-012"],
+            "subtasks": [
+                {
+                    "title": "Create search-intent.ts with createProtectedRoute and middleware chain",
+                    "completed": false
+                },
+                {
+                    "title": "Implement handler steps 1-4 (parse, aiService, generateObject, safeParse fallback)",
+                    "completed": false
+                },
+                {
+                    "title": "Implement fallbackToKeyword logic and response envelope",
+                    "completed": false
+                },
+                {
+                    "title": "Add to barrel apps/api/src/routes/ai/protected/index.ts",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "route", "integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-10T03:34:18.000Z",
+                "started": null,
+                "completed": "2026-06-10T05:25:20.000Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Wire amenity and feature slug-to-UUID DB resolution in route handler",
+            "description": "In apps/api/src/routes/ai/protected/search-intent.ts add two DB lookup steps after entities validation: (1) amenity resolution — if entities.amenitySlugs non-empty, query `amenities` table (deep import from @repo/db/src/schemas/accommodation/amenity.dbschema.js, NOT re-exported from @repo/db index) using inArray(amenities.slug, slugIds), collect UUIDs; (2) feature resolution — if entities.featureSlugs non-empty, query `features` table (check if re-exported from @repo/db or use deep import feature.dbschema.js) using inArray(features.slug, slugIds), collect UUIDs. Pass both arrays to mapIntentToSearchParams(validatedEntities, resolvedAmenityIds, resolvedFeatureIds).\n\nTEST coverage (§8.2, AC-11, AC-12, AC-17):\n- Test #10 in integration suite: stub returns entities.amenitySlugs:['bbq'] → mappedParams.amenities contains resolved UUID\n- Test #11 in integration suite: stub returns entities.featureSlugs:['river_front'] → mappedParams.features contains resolved UUID\n- Unknown slug not in DB → omitted from output (AC-12 pattern)",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-012"],
+            "subtasks": [
+                {
+                    "title": "Add amenity slug→UUID resolution (DB query with inArray on amenities.slug)",
+                    "completed": false
+                },
+                {
+                    "title": "Add feature slug→UUID resolution (DB query with inArray on features.slug)",
+                    "completed": false
+                },
+                {
+                    "title": "Pass both resolvedId arrays into mapIntentToSearchParams",
+                    "completed": false
+                },
+                {
+                    "title": "Verify deep import path for amenities and features DB schemas",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "db", "integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-10T03:34:18.000Z",
+                "started": null,
+                "completed": "2026-06-10T05:25:20.000Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Write API integration tests for search-intent route (11 test cases)",
+            "description": "Create apps/api/test/integration/ai/search-intent.test.ts [NEW directory + file]. Mount real Hono app via initApp(), use x-mock-actor-* headers (x-mock-actor-id, x-mock-actor-role, x-mock-actor-permissions as JSON-stringified array). Mock AI via vi.mock('@repo/ai-core') for deterministic stubs. touristFreeHeaders: role TOURIST, permissions ['ai.search']. noAiHeaders: role TOURIST, permissions [].\n\nRequired tests (§8.2, AC-1..AC-19):\n1. Auth+entitlement+high-confidence stub → 200, fallbackToKeyword:false, confidence field present\n2. Stub confidence:0.3 → 200, fallbackToKeyword:true\n3. No auth headers → 401\n4. No AI_SEARCH entitlement → 403 ENTITLEMENT_REQUIRED\n5. Query >500 chars → 400 VALIDATION_ERROR\n6. Empty query → 400 VALIDATION_ERROR\n7. Stub throws MODERATION_BLOCKED → 422\n8. billingLoadFailed:true in context → 503 SERVICE_UNAVAILABLE\n9. Stub throws ENGINE_EXHAUSTED → 502\n10. Stub returns entities.amenitySlugs:['bbq'] → mappedParams.amenities has UUID (mock/seed bbq slug)\n11. Stub returns entities.featureSlugs:['river_front'] → mappedParams.features has UUID",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-010", "T-011"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create apps/api/test/integration/ai/ directory and search-intent.test.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Write tests 1-6 (auth, entitlement, validation, fallback)",
+                    "completed": false
+                },
+                {
+                    "title": "Write tests 7-9 (moderation, billing, engine errors)",
+                    "completed": false
+                },
+                {
+                    "title": "Write tests 10-11 (amenity/feature slug resolution)",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "testing", "integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-10T03:34:18.000Z",
+                "started": null,
+                "completed": "2026-06-10T05:25:20.000Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Add 4 PostHog WebEvents constants to analytics events catalog",
+            "description": "In apps/web/src/lib/analytics/events.ts add four new event constants following the existing snake_case past-tense verb naming convention (§3 Q10):\n- AiSearchSubmitted = 'ai_search_submitted' (props: {locale, queryLength})\n- AiSearchIntentApplied = 'ai_search_intent_applied' (props: {confidence, slotsExtracted: number, fallback: boolean})\n- AiSearchFallbackKeyword = 'ai_search_fallback_keyword' (props: {reason: 'low_confidence'|'api_error', confidence?: number})\n- AiSearchLoginPrompted = 'ai_search_login_prompted' (props: {locale})\n\nNo separate test file needed — these are constants. Verify the file follows the existing WebEvents pattern (exported const/enum). Do NOT add chip-removal events (not in V1 scope).",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-017"],
+            "subtasks": [
+                {
+                    "title": "Add 4 WebEvents constants to apps/web/src/lib/analytics/events.ts",
+                    "completed": false
+                }
+            ],
+            "tags": ["frontend", "analytics", "setup"],
+            "phase": "frontend",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-10T03:34:18.000Z",
+                "started": null,
+                "completed": "2026-06-10T04:39:25.000Z"
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Create aiSearch i18n namespace: 3 JSON files and 4-step config.ts registration",
+            "description": "Create packages/i18n/src/locales/es/aiSearch.json, en/aiSearch.json, pt/aiSearch.json with all keys from §5.7 including chip keys: type, minGuests, maxGuests, minPrice, maxPrice, city, destinationId, hasPool, hasWifi, allowsPets, hasParking, amenities, checkIn, checkOut, minRating, maxRating, minBedrooms, maxBedrooms, minBathrooms, maxBathrooms, features.\n\n4-STEP REGISTRATION in packages/i18n/src/config.ts (ALL four required, skipping any = silent empty translations at runtime):\n1. Add 'aiSearch' to the namespaces array\n2. Add static imports: import aiSearchEs from './locales/es/aiSearch.json' (+ en/pt)\n3. Add namespace under rawTranslations.es, .en, .pt\n4. The 3 JSON files above\n\nNo separate test file — verified at runtime; component tests in T-020 will catch missing keys.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-015", "T-016", "T-017"],
+            "subtasks": [
+                {
+                    "title": "Create packages/i18n/src/locales/es/aiSearch.json with all chip keys",
+                    "completed": false
+                },
+                {
+                    "title": "Create packages/i18n/src/locales/en/aiSearch.json with all chip keys",
+                    "completed": false
+                },
+                {
+                    "title": "Create packages/i18n/src/locales/pt/aiSearch.json with all chip keys",
+                    "completed": false
+                },
+                {
+                    "title": "Update packages/i18n/src/config.ts: namespaces array + static imports + rawTranslations (4-step)",
+                    "completed": false
+                }
+            ],
+            "tags": ["i18n", "frontend", "setup"],
+            "phase": "frontend",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-10T03:34:18.000Z",
+                "started": null,
+                "completed": "2026-06-10T07:13:19.000Z"
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Create NlSearchInput.tsx component with character counter and submit",
+            "description": "Create apps/web/src/components/ai-search/NlSearchInput.tsx (pure React component, no API call) and NlSearchInput.module.css. Component receives: value, onChange, onSubmit, isLoading props. Features: textarea with maxLength=500, live character counter (N/500), submit button disabled when value.trim().length===0 or isLoading, Enter key triggers submit (no debounce). CSS Modules for styling (NO Tailwind).\n\nTEST FILE: covered by T-020 AiSearchPanel.test.tsx integration (character count updates, submit-disabled-when-empty). Direct NlSearchInput unit test is optional if panel test covers all behaviors.\nRequired assertions (§8.3):\n- Character count updates as user types (e.g. 'hello' → '5/500')\n- Submit button disabled when query empty\n- Submit button disabled during isLoading state",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-014"],
+            "blocks": ["T-017"],
+            "subtasks": [
+                {
+                    "title": "Create NlSearchInput.tsx with textarea + char counter + submit button",
+                    "completed": false
+                },
+                {
+                    "title": "Create NlSearchInput.module.css with collocated styles",
+                    "completed": false
+                }
+            ],
+            "tags": ["frontend", "component", "react"],
+            "phase": "frontend",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-10T03:34:18.000Z",
+                "started": null,
+                "completed": "2026-06-10T07:13:19.000Z"
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Create IntentChips.tsx with sessionStorage read, chip render, and removal navigation",
+            "description": "Create apps/web/src/components/ai-search/IntentChips.tsx and IntentChips.module.css. On mount: read sessionStorage.ai_search_chips (guarded with typeof sessionStorage==='undefined' SSR check, wrapped in try/catch for private-mode errors). Render one chip per mappedParams key that has a chip label in aiSearch.chips.* i18n namespace. On chip removal: (1) remove key from active params, (2) update sessionStorage.ai_search_chips, (3) window.location.replace('/[lang]/alojamientos/' + updatedParams). Do NOT render chips for 'q' key (raw keyword). CSS Modules, NO Tailwind.\n\nTEST FILE: apps/web/src/components/ai-search/IntentChips.test.tsx [NEW] — covered in T-020\nRequired assertions (§8.3, AC-7, AC-8):\n- Renders one chip per key in sessionStorage.ai_search_chips (per AC-7)\n- Removing hasPool chip removes it from sessionStorage + navigates without hasPool param (AC-8)\n- No chips rendered when sessionStorage empty",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-014"],
+            "blocks": ["T-017", "T-020"],
+            "subtasks": [
+                {
+                    "title": "Create IntentChips.tsx reading sessionStorage with SSR guard",
+                    "completed": false
+                },
+                {
+                    "title": "Implement chip render per mappedParams key (skip 'q')",
+                    "completed": false
+                },
+                {
+                    "title": "Implement chip removal: update sessionStorage + window.location.replace",
+                    "completed": false
+                },
+                {
+                    "title": "Create IntentChips.module.css",
+                    "completed": false
+                }
+            ],
+            "tags": ["frontend", "component", "react"],
+            "phase": "frontend",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-10T03:34:18.000Z",
+                "started": null,
+                "completed": "2026-06-10T07:13:19.000Z"
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Create AiSearchPanel.client.tsx with full state machine (anon + auth flows)",
+            "description": "Create apps/web/src/components/ai-search/AiSearchPanel.client.tsx and AiSearchPanel.module.css. Props: {locale:'es'|'en'|'pt', isAuthenticated:boolean, currentUrl:string}. State: isOpen, query, status:'idle'|'loading'|'success'|'error', errorType:null|'quota'|'network'|'fallback', mappedParams, intentChips.\n\nAnonymous flow: on submit → trackEvent(AiSearchLoginPrompted, {locale}) → navigate to buildLoginRedirect({locale,currentUrl}). No API call.\n\nAuthenticated flow: (1) trackEvent(AiSearchSubmitted), (2) status='loading', (3) apiClient.postProtected('/api/v1/protected/ai/search-intent', {query,locale}), (4a) fallbackToKeyword:false → trackEvent(AiSearchIntentApplied) + serialize mappedParams as URLSearchParams + write sessionStorage.ai_search_chips (SSR guard + try/catch) + navigate; (4b) fallbackToKeyword:true → trackEvent(AiSearchFallbackKeyword, {reason:'low_confidence',confidence}) + navigate with q=rawQuery + show fallback notice; (5) 403 → show upgrade prompt; (6) 429 → show rate-limit message; (7) 502/503/network → trackEvent(AiSearchFallbackKeyword,{reason:'api_error'}) + show service error + keyword fallback CTA. Use apiClient.postProtected (NOT raw fetch). CSS Modules, NO Tailwind.\n\nTEST REQUIREMENTS in T-020.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-013", "T-014", "T-015", "T-016"],
+            "blocks": ["T-018", "T-020"],
+            "subtasks": [
+                {
+                    "title": "Create AiSearchPanel.client.tsx with state declarations and isOpen toggle",
+                    "completed": false
+                },
+                {
+                    "title": "Implement anonymous flow (login redirect, no API call)",
+                    "completed": false
+                },
+                {
+                    "title": "Implement authenticated flow: API call + success navigation + sessionStorage write",
+                    "completed": false
+                },
+                {
+                    "title": "Implement error handling: 403/429/502/503/network cases",
+                    "completed": false
+                },
+                {
+                    "title": "Create AiSearchPanel.module.css with collocated styles",
+                    "completed": false
+                }
+            ],
+            "tags": ["frontend", "component", "react", "integration"],
+            "phase": "frontend",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-10T03:34:18.000Z",
+                "started": null,
+                "completed": "2026-06-10T07:13:19.000Z"
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Create AiSearchTrigger.astro floating CTA component",
+            "description": "Create apps/web/src/components/ai-search/AiSearchTrigger.astro. Fixed-position floating button with i18n text from aiSearch.triggerLabel (per locale). Renders AiSearchPanel.client.tsx island with client:visible directive (loads only when trigger is visible — reduces initial JS bundle). Receives locale, isAuthenticated, currentUrl as props from the parent Astro page and passes them to AiSearchPanel. NO Tailwind — vanilla CSS or inline style for position if needed.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-019"],
+            "subtasks": [
+                {
+                    "title": "Create AiSearchTrigger.astro with floating CTA and client:visible panel mount",
+                    "completed": false
+                }
+            ],
+            "tags": ["frontend", "astro", "component"],
+            "phase": "frontend",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-10T03:34:18.000Z",
+                "started": null,
+                "completed": "2026-06-10T07:13:19.000Z"
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Wire AiSearchTrigger into alojamientos/index.astro listing page",
+            "description": "Edit apps/web/src/pages/[lang]/alojamientos/index.astro to import and render <AiSearchTrigger> component. Pass locale, isAuthenticated (from auth context / Better Auth session), and currentUrl (from Astro.url.href or Astro.request.url) as props. The trigger must NOT modify the existing filter sidebar or main search bar (separate floating UI per §3 Q2). Optionally also wire into the home page if applicable.\n\nNo new test file needed — smoke verification in T-021 covers end-to-end render.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-018"],
+            "blocks": ["T-021"],
+            "subtasks": [
+                {
+                    "title": "Import and render AiSearchTrigger in alojamientos/index.astro with correct props",
+                    "completed": false
+                }
+            ],
+            "tags": ["frontend", "astro", "wiring"],
+            "phase": "frontend",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-10T03:34:18.000Z",
+                "started": null,
+                "completed": "2026-06-10T07:13:19.000Z"
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Write AiSearchPanel and IntentChips component tests (full coverage per §8.3)",
+            "description": "Create apps/web/src/components/ai-search/AiSearchPanel.test.tsx and IntentChips.test.tsx using Vitest + @testing-library/react.\n\nAiSearchPanel.test.tsx required tests (§8.3):\n- Anonymous user submits → buildLoginRedirect called, no fetch fired\n- Authenticated user submits → fetch called with correct body, loading state shown\n- Success fallbackToKeyword:false → window.location.href set with mappedParams, sessionStorage.ai_search_chips set\n- Success fallbackToKeyword:true → navigate with q=rawQuery, fallback notice shown\n- 403 response → upgrade prompt shown, no navigation\n- 429 response → rate-limit message shown\n- Network error → service error shown, keyword fallback CTA shown\n- Char count updates as user types, submit disabled when empty\n\nIntentChips.test.tsx required tests (§8.3, AC-7, AC-8):\n- Renders one chip per key in sessionStorage.ai_search_chips\n- Removing chip updates sessionStorage + navigates with updated params\n- No chips when sessionStorage empty\n\nEnum-resilience rule (§8.4): use Object.values(AccommodationTypeEnum).length, never literal counts.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-016", "T-017"],
+            "blocks": ["T-021"],
+            "subtasks": [
+                {
+                    "title": "Create AiSearchPanel.test.tsx: anonymous flow tests",
+                    "completed": false
+                },
+                {
+                    "title": "Create AiSearchPanel.test.tsx: authenticated flow + error handling tests",
+                    "completed": false
+                },
+                {
+                    "title": "Create IntentChips.test.tsx: chip render, removal, empty state",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "frontend", "component"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-10T03:34:18.000Z",
+                "started": null,
+                "completed": "2026-06-10T08:28:22.000Z"
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Smoke verification: anon gate, chips render/remove, fallback notice, locale",
+            "description": "Manual + automated smoke verification that all major user flows work end-to-end. Covers: (1) anonymous gate — anon user submits → no API call, login redirect fires (AC-10), (2) chips appear and are removable after successful intent extraction (AC-3, AC-7, AC-8), (3) fallback notice shown when confidence<0.5 (AC-3), (4) locale correctness — Portuguese query uses 'pt' locale in API call and pt translations render (AC-9). Review typecheck and lint passes on all new files. Verify 90% coverage threshold met (100% on mapper).\n\nThis task is the final quality gate before PR. Run: pnpm typecheck && pnpm lint && pnpm test --coverage from monorepo root. Confirm no .only() or hard-coded .skip() in committed test files.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-019", "T-020"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Run pnpm typecheck across all affected packages",
+                    "completed": false
+                },
+                {
+                    "title": "Run pnpm lint to confirm no Biome violations",
+                    "completed": false
+                },
+                {
+                    "title": "Run pnpm test --coverage and verify 90%+ (100% mapper)",
+                    "completed": false
+                },
+                {
+                    "title": "Verify anon gate, chips, fallback notice, locale smoke flows",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "smoke", "quality"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-10T03:34:18.000Z",
+                "started": null,
+                "completed": "2026-06-10T08:46:57.000Z"
+            }
+        }
+    ],
+    "summary": {
+        "total": 21,
+        "pending": 0,
+        "inProgress": 0,
+        "completed": 21,
+        "blocked": 0,
+        "averageComplexity": 2.38
+    }
+}

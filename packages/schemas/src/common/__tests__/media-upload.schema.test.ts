@@ -8,6 +8,7 @@ import {
     MAX_GALLERY_CAP_FALLBACK,
     MediaEntityTypeSchema,
     MediaRoleSchema,
+    ProtectedUploadEntityRequestSchema,
     UploadResponseDataSchema,
     UploadResponseSchema,
     getGalleryCap,
@@ -362,6 +363,117 @@ describe('AdminUploadRequestSchema', () => {
                 overwrite: 'true'
             });
             expect(result.success).toBe(false);
+        });
+    });
+});
+
+// ============================================================================
+// ProtectedUploadEntityRequestSchema
+// ============================================================================
+
+describe('ProtectedUploadEntityRequestSchema', () => {
+    const VALID_UUID = '550e8400-e29b-41d4-a716-446655440000';
+
+    describe('featured variant', () => {
+        it('should accept featured upload for accommodation', () => {
+            const result = ProtectedUploadEntityRequestSchema.safeParse({
+                role: 'featured',
+                entityType: 'accommodation',
+                entityId: VALID_UUID
+            });
+            expect(result.success).toBe(true);
+        });
+
+        it('should accept featured upload for all content entity types', () => {
+            for (const entityType of ['accommodation', 'destination', 'event', 'post']) {
+                const result = ProtectedUploadEntityRequestSchema.safeParse({
+                    role: 'featured',
+                    entityType,
+                    entityId: VALID_UUID
+                });
+                expect(result.success).toBe(true);
+            }
+        });
+    });
+
+    describe('gallery variant', () => {
+        it('should accept gallery upload for accommodation', () => {
+            const result = ProtectedUploadEntityRequestSchema.safeParse({
+                role: 'gallery',
+                entityType: 'accommodation',
+                entityId: VALID_UUID
+            });
+            expect(result.success).toBe(true);
+        });
+
+        it('should accept gallery upload with optional galleryId', () => {
+            const result = ProtectedUploadEntityRequestSchema.safeParse({
+                role: 'gallery',
+                entityType: 'accommodation',
+                entityId: VALID_UUID,
+                galleryId: 'abcdefghij'
+            });
+            expect(result.success).toBe(true);
+        });
+    });
+
+    describe('rejected roles', () => {
+        it('should reject avatar role', () => {
+            const result = ProtectedUploadEntityRequestSchema.safeParse({
+                role: 'avatar',
+                entityType: 'user',
+                userId: VALID_UUID
+            });
+            expect(result.success).toBe(false);
+        });
+
+        it('should reject sponsorLogo role', () => {
+            const result = ProtectedUploadEntityRequestSchema.safeParse({
+                role: 'sponsorLogo',
+                entityType: 'postSponsor',
+                entityId: VALID_UUID
+            });
+            expect(result.success).toBe(false);
+        });
+
+        it('should reject organizerLogo role', () => {
+            const result = ProtectedUploadEntityRequestSchema.safeParse({
+                role: 'organizerLogo',
+                entityType: 'eventOrganizer',
+                entityId: VALID_UUID
+            });
+            expect(result.success).toBe(false);
+        });
+    });
+
+    describe('validation', () => {
+        it('should reject invalid entityId', () => {
+            const result = ProtectedUploadEntityRequestSchema.safeParse({
+                role: 'featured',
+                entityType: 'accommodation',
+                entityId: 'not-a-uuid'
+            });
+            expect(result.success).toBe(false);
+        });
+
+        it('should accept optional tags', () => {
+            const result = ProtectedUploadEntityRequestSchema.safeParse({
+                role: 'featured',
+                entityType: 'accommodation',
+                entityId: VALID_UUID,
+                tags: ['tag1', 'tag2']
+            });
+            expect(result.success).toBe(true);
+        });
+
+        it('should accept optional overwrite boolean', () => {
+            const result = ProtectedUploadEntityRequestSchema.safeParse({
+                role: 'gallery',
+                entityType: 'accommodation',
+                entityId: VALID_UUID,
+                overwrite: true
+            });
+            expect(result.success).toBe(true);
         });
     });
 });

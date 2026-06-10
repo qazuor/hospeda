@@ -58,6 +58,16 @@ vi.mock('../../src/utils/logger', () => ({
     }
 }));
 
+// SPEC-148 T-002: mock captureBillingError so tests can assert on cron-lag Sentry alerts
+// without initialising the real Sentry SDK (which requires a DSN).
+vi.mock('../../src/lib/sentry', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('../../src/lib/sentry')>();
+    return {
+        ...actual,
+        captureBillingError: vi.fn()
+    };
+});
+
 // Wrap checkLimit in a spy so individual tests can inject synthetic return values
 // (e.g., allowed=false with upgradeMessage=undefined to cover ?? fallback branches).
 // By default the spy delegates to the real implementation so all existing tests pass.
@@ -2678,5 +2688,234 @@ describe('Tourist Entitlement Gates', () => {
             expect(data.error.message).toContain('recomendaciones personalizadas');
             expect(data.error.message).toContain('todos los planes');
         });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// SPEC-148 T-002 — Cron-lag grace detection in loadEntitlements
+// ---------------------------------------------------------------------------
+// These tests are isolated in their own top-level describe so they can reset
+// per-test state (fresh Hono app, fresh billing mocks, clearEntitlementCache)
+// without interfering with the main suite above.
+//
+// The detection sits inside loadEntitlements() (cache-gated). Because the
+// 5-min entitlementCache skips loadEntitlements on hits, the header/alert is
+// only emitted on a cache miss. This is documented in the middleware code:
+//   "Cache hit: cron-lag check skipped for ≤5 min — acceptable per SPEC-148."
+// We clear the cache before each test to guarantee a cache miss.
+
+describe('SPEC-148 T-002: cron-lag grace detection', () => {
+    // Import the mocked captureBillingError so tests can assert on it.
+    // Dynamic import is required because vi.mock hoisting runs before static imports.
+    let mockCaptureBillingError: ReturnType<typeof vi.fn>;
+
+    let app: Hono<AppBindings>;
+    let mockBilling: {
+        subscriptions: { getByCustomerId: ReturnType<typeof vi.fn> };
+        plans: { get: ReturnType<typeof vi.fn> };
+        entitlements: { getByCustomerId: ReturnType<typeof vi.fn> };
+        limits: { getByCustomerId: ReturnType<typeof vi.fn> };
+    };
+    let mockApiLogger: { warn: ReturnType<typeof vi.fn>; error: ReturnType<typeof vi.fn> };
+
+    const CRON_LAG_CUSTOMER_ID = 'cron-lag-customer-123';
+
+    /** Build a minimal active subscription with the given currentPeriodEnd. */
+    const makeActiveSub = (currentPeriodEnd: Date) => ({
+        id: 'sub-cron-lag-001',
+        customerId: CRON_LAG_CUSTOMER_ID,
+        planId: 'plan-owner-basico',
+        status: 'active' as const,
+        currentPeriodEnd
+    });
+
+    /** Set up a minimal Hono app with the entitlement middleware pre-wired. */
+    const mountMiddleware = () => {
+        app.use((c, next) => {
+            c.set('billingEnabled', true);
+            c.set('billingCustomerId', CRON_LAG_CUSTOMER_ID);
+            return next();
+        });
+        app.use(entitlementMiddleware());
+        app.get('/test', (c) =>
+            c.json({
+                status: 200,
+                cronLagHeader: c.res.headers.get('X-Cron-Lag-Grace-Hours-Remaining')
+            })
+        );
+    };
+
+    beforeEach(async () => {
+        app = new Hono<AppBindings>();
+
+        mockBilling = {
+            subscriptions: { getByCustomerId: vi.fn() },
+            plans: { get: vi.fn() },
+            entitlements: { getByCustomerId: vi.fn() },
+            limits: { getByCustomerId: vi.fn() }
+        };
+
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            mockBilling as unknown as ReturnType<typeof getQZPayBilling>
+        );
+
+        // Default plan response so entitlement loading succeeds past the sub check
+        mockBilling.plans.get.mockResolvedValue({
+            id: 'plan-owner-basico',
+            name: 'Owner Basico',
+            entitlements: [EntitlementKey.PUBLISH_ACCOMMODATIONS],
+            limits: { [LimitKey.MAX_ACCOMMODATIONS]: 1 }
+        });
+        mockBilling.entitlements.getByCustomerId.mockResolvedValue([]);
+        mockBilling.limits.getByCustomerId.mockResolvedValue([]);
+
+        // Grab the mocked captureBillingError reference
+        const sentryModule = await import('../../src/lib/sentry');
+        mockCaptureBillingError = vi.mocked(sentryModule.captureBillingError);
+        mockCaptureBillingError.mockReset();
+
+        // Grab the mocked logger reference
+        const loggerModule = await import('../../src/utils/logger');
+        mockApiLogger = {
+            warn: vi.mocked(loggerModule.apiLogger.warn),
+            error: vi.mocked(loggerModule.apiLogger.error)
+        };
+        mockApiLogger.warn.mockReset();
+        mockApiLogger.error.mockReset();
+
+        // Always clear cache so loadEntitlements() is called (not skipped on cache hit)
+        clearEntitlementCache(CRON_LAG_CUSTOMER_ID);
+    });
+
+    afterEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('RED: within-window active+past-period → response header set + allowed (200) + NO Sentry alert', async () => {
+        // Arrange: currentPeriodEnd was 3 hours ago; BILLING_CRON_LAG_GRACE_HOURS = 6
+        const THREE_HOURS_MS = 3 * 60 * 60 * 1000;
+        const currentPeriodEnd = new Date(Date.now() - THREE_HOURS_MS);
+        mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+            makeActiveSub(currentPeriodEnd)
+        ]);
+        mountMiddleware();
+
+        // Act
+        const res = await app.request('/test');
+
+        // Assert — allowed (not blocked)
+        expect(res.status).toBe(200);
+
+        // Assert — response header present with remaining hours (ceil(6-3)=3)
+        const header = res.headers.get('X-Cron-Lag-Grace-Hours-Remaining');
+        expect(header).not.toBeNull();
+        const remaining = Number(header);
+        expect(remaining).toBeGreaterThan(0);
+        expect(remaining).toBeLessThanOrEqual(6);
+
+        // Assert — NO Sentry alert (within window)
+        expect(mockCaptureBillingError).not.toHaveBeenCalled();
+
+        // Assert — logger.warn called (within-window notice)
+        expect(mockApiLogger.warn).toHaveBeenCalled();
+        // logger.error must NOT be called (that's reserved for past-window)
+        expect(mockApiLogger.error).not.toHaveBeenCalled();
+    });
+
+    it('RED: past-window active+past-period → ALLOWED (200) + captureBillingError with cron_lag_grace_exceeded + hoursOverdue + NO block', async () => {
+        // Arrange: currentPeriodEnd was 10 hours ago (> 6-hour window)
+        const TEN_HOURS_MS = 10 * 60 * 60 * 1000;
+        const currentPeriodEnd = new Date(Date.now() - TEN_HOURS_MS);
+        mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+            makeActiveSub(currentPeriodEnd)
+        ]);
+        mountMiddleware();
+
+        // Act
+        const res = await app.request('/test');
+
+        // Assert — still allowed (never block — owner decision SPEC-148 Part A)
+        expect(res.status).toBe(200);
+
+        // Assert — captureBillingError fired with correct operation
+        expect(mockCaptureBillingError).toHaveBeenCalledTimes(1);
+        const [capturedError, capturedContext, capturedSeverity] = mockCaptureBillingError.mock
+            .calls[0] as [Error, Record<string, unknown>, string];
+        expect(capturedContext.operation).toBe('cron_lag_grace_exceeded');
+        expect(capturedContext.subscriptionId).toBe('sub-cron-lag-001');
+        expect(capturedContext.planId).toBe('plan-owner-basico');
+        // hoursOverdue must be numeric and > 6
+        expect(typeof capturedError.message).toBe('string');
+        expect(capturedError.message).toContain('hoursOverdue');
+        expect(capturedSeverity).toBe('warning');
+
+        // Assert — logger.error called for past-window
+        expect(mockApiLogger.error).toHaveBeenCalled();
+    });
+
+    it('RED: active not-expired → no header, no Sentry alert, no warn/error log', async () => {
+        // Arrange: currentPeriodEnd is 10 days in the future (not overdue)
+        const TEN_DAYS_MS = 10 * 24 * 60 * 60 * 1000;
+        const currentPeriodEnd = new Date(Date.now() + TEN_DAYS_MS);
+        mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+            makeActiveSub(currentPeriodEnd)
+        ]);
+        mountMiddleware();
+
+        // Act
+        const res = await app.request('/test');
+
+        // Assert
+        expect(res.status).toBe(200);
+        expect(res.headers.get('X-Cron-Lag-Grace-Hours-Remaining')).toBeNull();
+        expect(mockCaptureBillingError).not.toHaveBeenCalled();
+        expect(mockApiLogger.warn).not.toHaveBeenCalled();
+        expect(mockApiLogger.error).not.toHaveBeenCalled();
+    });
+
+    it('RED: trialing subscription (not expired) → no cron-lag check, normal path', async () => {
+        // Arrange: trialing sub — should follow existing trialing path, no grace detection
+        const TEN_DAYS_MS = 10 * 24 * 60 * 60 * 1000;
+        const currentPeriodEnd = new Date(Date.now() + TEN_DAYS_MS);
+        mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+            {
+                id: 'sub-trial-001',
+                customerId: CRON_LAG_CUSTOMER_ID,
+                planId: 'plan-owner-basico',
+                status: 'trialing' as const,
+                currentPeriodEnd
+            }
+        ]);
+        mountMiddleware();
+
+        // Act
+        const res = await app.request('/test');
+
+        // Assert — normal trialing path (no header, no alert)
+        expect(res.status).toBe(200);
+        expect(res.headers.get('X-Cron-Lag-Grace-Hours-Remaining')).toBeNull();
+        expect(mockCaptureBillingError).not.toHaveBeenCalled();
+    });
+
+    it('RED: past_due subscription → cron-lag detection does NOT fire (pastDueGrace is a separate mechanism)', async () => {
+        // Arrange: past_due sub — the active/trialing find() returns undefined, falls to default
+        mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+            {
+                id: 'sub-past-due-001',
+                customerId: CRON_LAG_CUSTOMER_ID,
+                planId: 'plan-owner-basico',
+                status: 'past_due' as const,
+                currentPeriodEnd: new Date(Date.now() - 2 * 60 * 60 * 1000)
+            }
+        ]);
+        mountMiddleware();
+
+        // Act
+        const res = await app.request('/test');
+
+        // Assert — cron-lag detection doesn't fire; past_due handled elsewhere
+        expect(res.status).toBe(200);
+        expect(res.headers.get('X-Cron-Lag-Grace-Hours-Remaining')).toBeNull();
+        expect(mockCaptureBillingError).not.toHaveBeenCalled();
     });
 });

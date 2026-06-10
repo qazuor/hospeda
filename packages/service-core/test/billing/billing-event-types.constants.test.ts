@@ -1,12 +1,12 @@
 /**
- * Contract tests for BILLING_EVENT_TYPES constants (SPEC-147 T-002 + T-010).
+ * Contract tests for BILLING_EVENT_TYPES constants (SPEC-147 T-002 + T-010, SPEC-148 T-004).
  *
  * These tests treat the string values as a stable contract: the values are
  * persisted in billing_subscription_events rows, so any rename would corrupt
  * historical data. Pin the literals here so a rename fails CI immediately.
  *
- * All 20 types are asserted (16 pre-existing + 3 added by SPEC-147 T-002/T-009
- * + 1 added by SPEC-147 T-010).
+ * All 22 types are asserted (16 pre-existing + 3 added by SPEC-147 T-002/T-009
+ * + 1 added by SPEC-147 T-010 + 2 added by SPEC-148 T-004).
  */
 
 import { describe, expect, it } from 'vitest';
@@ -118,8 +118,28 @@ describe('BILLING_EVENT_TYPES', () => {
             expect(value).toBe('SUBSCRIPTION_ACCESS_ENDING_NOTIF');
         });
 
-        it('the total number of event types is 20', () => {
-            expect(Object.keys(BILLING_EVENT_TYPES)).toHaveLength(20);
+        it('PLAN_DISABLED_BY_ADMIN is assignable to BillingEventType', () => {
+            const value: BillingEventType = BILLING_EVENT_TYPES.PLAN_DISABLED_BY_ADMIN;
+            expect(value).toBe('PLAN_DISABLED_BY_ADMIN');
+        });
+
+        it('PLAN_DISABLED_MIGRATION is assignable to BillingEventType', () => {
+            const value: BillingEventType = BILLING_EVENT_TYPES.PLAN_DISABLED_MIGRATION;
+            expect(value).toBe('PLAN_DISABLED_MIGRATION');
+        });
+
+        it('the total number of event types is 22', () => {
+            expect(Object.keys(BILLING_EVENT_TYPES)).toHaveLength(22);
+        });
+    });
+
+    describe('SPEC-148 new event types — stable contract values', () => {
+        it('PLAN_DISABLED_BY_ADMIN is exported with the exact string value "PLAN_DISABLED_BY_ADMIN"', () => {
+            expect(BILLING_EVENT_TYPES.PLAN_DISABLED_BY_ADMIN).toBe('PLAN_DISABLED_BY_ADMIN');
+        });
+
+        it('PLAN_DISABLED_MIGRATION is exported with the exact string value "PLAN_DISABLED_MIGRATION"', () => {
+            expect(BILLING_EVENT_TYPES.PLAN_DISABLED_MIGRATION).toBe('PLAN_DISABLED_MIGRATION');
         });
     });
 });

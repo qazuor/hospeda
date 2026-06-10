@@ -17,6 +17,7 @@
  * acting as a kill switch for the entire feedback system.
  */
 import { DebugIcon } from '@repo/icons';
+import type { AppSourceId, ReportTypeId } from '@repo/schemas';
 import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { FEEDBACK_CONFIG, getShortcutLabel } from '../config/feedback.config.js';
@@ -24,7 +25,6 @@ import { FEEDBACK_STRINGS } from '../config/strings.js';
 import { useConsoleCapture } from '../hooks/useConsoleCapture.js';
 import { useKeyboardShortcut } from '../hooks/useKeyboardShortcut.js';
 import { installRuntimeTrackers } from '../lib/runtime-trackers.js';
-import type { AppSourceId, ReportTypeId } from '../schemas/feedback.schema.js';
 import { cn } from '../ui/cn.js';
 import './FeedbackFAB.css';
 import { FeedbackModal } from './FeedbackModal.js';

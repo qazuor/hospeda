@@ -1534,7 +1534,131 @@ export const protectedAccommodationsApi = {
     }
 };
 
+// --- Media (Protected) ---
+
+/**
+ * Protected media API endpoints (require auth session).
+ */
+export const protectedMediaApi = {
+    /**
+     * Delete a Cloudinary media asset for an entity owned by the authenticated user.
+     *
+     * The server verifies that the publicId encodes an entity owned by the actor.
+     * Returns { deleted: true, publicId, wasPresent } on success.
+     * Best-effort: callers should not block UI on failure.
+     *
+     * @param params - The Cloudinary publicId of the asset to delete
+     * @returns Whether the asset was deleted and whether it was present
+     *
+     * @example
+     * ```ts
+     * const result = await protectedMediaApi.deleteMedia({
+     *   publicId: 'hospeda/dev/accommodations/uuid/gallery/abc123'
+     * });
+     * if (result.ok) console.log(result.data.wasPresent);
+     * ```
+     */
+    deleteMedia({
+        publicId
+    }: {
+        readonly publicId: string;
+    }): Promise<
+        ApiResult<{
+            readonly deleted: true;
+            readonly publicId: string;
+            readonly wasPresent?: boolean;
+        }>
+    > {
+        const encoded = encodeURIComponent(publicId);
+        return apiClient.delete({
+            path: `${PROTECTED}/media/delete-entity?publicId=${encoded}`
+        });
+    }
+};
+
 // --- Accommodation Editor (SPEC-208) ---
+
+/**
+ * Protected geocoding API endpoints (SPEC-208, Phase C PR2).
+ * Wraps the protected geocoding proxy for the web accommodation editor.
+ */
+export const geocodingApi = {
+    /**
+     * Search for address suggestions via the geocoding proxy.
+     *
+     * @param params - Query string and optional locale
+     * @returns Array of geocoding suggestions with label, lat, lng, and structured fields
+     *
+     * @example
+     * ```ts
+     * const result = await geocodingApi.search({ q: 'Belgrano 123' });
+     * if (result.ok) console.log(result.data.suggestions);
+     * ```
+     */
+    search({
+        q,
+        locale = 'es'
+    }: {
+        readonly q: string;
+        readonly locale?: 'es' | 'en' | 'pt';
+    }): Promise<
+        ApiResult<{
+            readonly suggestions: ReadonlyArray<{
+                readonly label: string;
+                readonly lat: number;
+                readonly lng: number;
+                readonly street?: string;
+                readonly number?: string;
+                readonly city?: string;
+                readonly state?: string;
+                readonly country?: string;
+            }>;
+        }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/geocoding/autocomplete`,
+            params: { q, locale }
+        });
+    },
+
+    /**
+     * Reverse geocode coordinates to a structured address.
+     *
+     * @param params - Latitude and longitude
+     * @returns A single geocoding suggestion or null
+     *
+     * @example
+     * ```ts
+     * const result = await geocodingApi.reverse({ lat: -32.4825, lng: -58.2372 });
+     * if (result.ok && result.data.suggestion) console.log(result.data.suggestion.label);
+     * ```
+     */
+    reverse({
+        lat,
+        lng
+    }: {
+        readonly lat: number;
+        readonly lng: number;
+    }): Promise<
+        ApiResult<{
+            readonly suggestion: {
+                readonly label: string;
+                readonly lat: number;
+                readonly lng: number;
+                readonly street?: string;
+                readonly number?: string;
+                readonly city?: string;
+                readonly state?: string;
+                readonly country?: string;
+            } | null;
+        }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/geocoding/reverse`,
+            params: { lat, lng }
+        });
+    }
+};
 
 /**
  * Protected accommodation edit API endpoints.

@@ -7,14 +7,36 @@
             "status": "in-progress",
             "progress": "12/17",
             "path": "SPEC-211-ai-monetization-model",
-            "note": "17 tasks generated (all complexity <=3). 10 OQs resolved 2026-06-09. All 5 phases ship together as one rollout (OQ-10); a single idempotent Model C extras migration (T-011) propagates finite limits + ai_chat/ai_search removals + capability sync to prod billing_plans. SPEC-200 waits for the full rollout. Suggested start: T-001/T-002/T-004/T-005/T-006 (parallel, no deps)."
+            "note": "Follow-up to SPEC-200. Owner-governed AI chat + Model C config-driven capability sync. Setup + core + Model C extras migration done (T-001..T-012); merged staging in to include the SPEC-199 ai_search route (T-014). Remaining: ai_search platform refactor, ai_support addon tests, docs. ai_support feature route deferred."
+        },
+        {
+            "specId": "SPEC-200",
+            "title": "AI Accommodation Chat (tourist)",
+            "status": "in-progress",
+            "progress": "11/12",
+            "path": "SPEC-200-ai-accommodation-chat",
+            "archived": false,
+            "note": "Implemented and merged to staging via PRs #1492/#1494/#1497/#1507. Prod-readiness fixes (debug-leak, getById 404/403, ghost-bubble, FAB focus, maxTokens cap, 503 mapping, vault-key prod-required, admin url no-op) on branch fix/SPEC-200-prod-readiness (PR #1520). Chat works (ai_chat granted to every plan, tourists included); monetization is provisional: quota charged to the tourist, not the accommodation owner. SPEC-211 reworks this (owner-governed chat + Model C); SPEC-200 ships to prod after SPEC-211 Phase 0 cost mitigation."
         },
         {
             "specId": "SPEC-131",
             "title": "PlanPurchaseButton async-state tests broken post Astro 6 bump",
-            "status": "draft",
-            "progress": "0/6",
-            "path": "SPEC-131-plan-purchase-button-async-state-tests"
+            "status": "completed",
+            "progress": "6/6",
+            "path": "SPEC-131-plan-purchase-button-async-state-tests",
+            "archived": true,
+            "archivedAt": "2026-06-09",
+            "archiveNote": "Root cause was a latent apiClient try/catch bug (env URL thrown out of contract), not the React 19/Astro 6 timing the spec hypothesized. Single PR. Full web suite 3725 passed."
+        },
+        {
+            "specId": "SPEC-128",
+            "title": "Billing cleanup + E2E smoke + ops runbook (Phase F+G)",
+            "status": "completed",
+            "progress": "3/3 (+2 superseded)",
+            "path": "SPEC-128-billing-cleanup-and-smoke",
+            "archived": true,
+            "archivedAt": "2026-06-09",
+            "archiveNote": "Realigned to SPEC-193: F1 dead-code + F2 docs + G2 runbook done; G1 10-smokes superseded by SPEC-193 batch; G3 SPEC-122/109 closure superseded (legacy parent)."
         },
         {
             "specId": "SPEC-132",
@@ -103,13 +125,16 @@
         {
             "specId": "SPEC-189",
             "title": "Optimize Seed & App Builds — run seed from src (no build) + decouple @repo/schemas from @repo/feedback",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "completed",
+            "progress": "12/12",
             "path": "SPEC-189-optimize-seed-and-app-builds",
             "branch": "spec/SPEC-189-optimize-seed-and-app-builds",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-189-optimize-seed-and-app-builds",
+            "base": "staging",
             "linearIssues": ["BETA-54"],
-            "note": "tasks pending atomization",
-            "archived": false
+            "note": "12/12 completed. Front B (schemas/feedback decouple) + Front A (seed from src no-build). Build set: schemas dropped feedback+icons. Seed cold startup ~9s vs ~30-60s before.",
+            "archived": true,
+            "archivedAt": "2026-06-10"
         },
         {
             "specId": "SPEC-190",
@@ -269,10 +294,13 @@
         {
             "specId": "SPEC-208",
             "title": "Web Accommodation Editor — Full Property Management in Web",
-            "status": "draft",
-            "progress": "0/1",
+            "status": "completed",
+            "progress": "1/1",
             "path": "SPEC-208-web-accommodation-editor",
-            "tags": ["host-migration", "phase-4"]
+            "tags": ["host-migration", "phase-4"],
+            "archived": true,
+            "archivedAt": "2026-06-10",
+            "note": "Mirror of specs/index.json. Feature shipped via PRs #1509/#1513/#1516; prod-readiness remediation merged to staging (#1528/#1529/#1533-via-#1540/#1534) + local e2e 6/6 PASS. No state.json with atomic tasks (progress 1/1 nominal). Closed 2026-06-10."
         },
         {
             "specId": "SPEC-147",
@@ -288,6 +316,20 @@
             "archivedAt": "2026-06-09"
         },
         {
+            "specId": "SPEC-209",
+            "title": "Admin SSR memory leak + cheap healthcheck",
+            "status": "completed",
+            "progress": "12/13",
+            "path": "SPEC-209-admin-ssr-memory-leak-healthcheck",
+            "branch": "spec/SPEC-209-admin-ssr-memory-leak-healthcheck",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-209-admin-ssr-memory-leak-healthcheck",
+            "base": "staging",
+            "archived": true,
+            "note": "13 atomized tasks across setup/core/testing/docs phases (avg complexity 2.1). Investigate-first: T-001/T-004/T-007 start in parallel (no blockers). Critical path: T-004->T-006->T-009->T-010->T-011->T-012->T-013. Healthcheck (T-001..T-003), regression+guard tests (T-005..T-008), leak fix (T-009), staging validation (T-010..T-012), docs (T-013).",
+            "archivedAt": "2026-06-10",
+            "archiveNote": "Code complete + merged to staging via PR #1538 (12/13 implemented). T-012 (staging RSS/heap validation) DEFERRED as a post-merge operational check (see .qtm/specs/SPEC-209-.../docs/memory-validation-procedure.md) — not a code gate. Prod build locally showed 0 QZPayBilling-init on SSR; manual Chrome smoke (T-010) passed."
+        },
+        {
             "specId": "SPEC-210",
             "title": "Public Response Tier Enforcement — make schema-tier serialization mandatory and fail-closed so public endpoints can never leak undeclared DB columns",
             "status": "draft",
@@ -296,11 +338,33 @@
             "archived": false
         },
         {
+            "specId": "SPEC-148",
+            "title": "Billing defensive grace + plan lifecycle (cron-lag grace + plan disable)",
+            "status": "completed",
+            "progress": "12/12",
+            "path": "SPEC-148-billing-grace-defensive-and-plan-lifecycle",
+            "branch": "spec/SPEC-148-billing-grace-defensive-and-plan-lifecycle",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-148-billing-grace-defensive-and-plan-lifecycle",
+            "base": "staging",
+            "archived": true,
+            "archivedAt": "2026-06-09",
+            "note": "Last code item of SPEC-193 batch 4 (merged PR #1515). Part A pass-through grace + Sentry; Part B auto-cancel-at-period-end reusing SPEC-147 finalize cron. T-011 fixed critical empty-recipient bug in PLAN_BEING_RETIRED notif."
+        },
+        {
             "specId": "SPEC-195",
             "title": "Content Auto-Moderation Engine",
             "status": "in-progress",
             "progress": "6/7",
             "path": "SPEC-195-content-auto-moderation"
+        },
+        {
+            "specId": "SPEC-199",
+            "title": "AI Natural-Language Search",
+            "status": "in-progress",
+            "progress": "21/21",
+            "path": "SPEC-199-ai-nl-search",
+            "archived": false,
+            "note": "Child B of SPEC-173. NL search: generateObject -> SearchIntentEntities -> AccommodationSearchHttp params, NO embeddings V1. All §3 decisions resolved. spec-realign 2026-06-10: greenfield, foundation stable; slot set expanded (D-5: bedrooms/bathrooms/maxRating/featureSlugs). 21 atomic tasks generated. IN-PROGRESS."
         }
     ],
     "standalone": {

@@ -25,7 +25,11 @@ describe('WebEvents catalog (SPEC-140 acceptance)', () => {
             ContributionPhotoSubmitted: 'contribution_photo_submitted',
             ContributionEditorSubmitted: 'contribution_editor_submitted',
             PostViewed: 'post_viewed',
-            EventViewed: 'event_viewed'
+            EventViewed: 'event_viewed',
+            AiSearchSubmitted: 'ai_search_submitted',
+            AiSearchIntentApplied: 'ai_search_intent_applied',
+            AiSearchFallbackKeyword: 'ai_search_fallback_keyword',
+            AiSearchLoginPrompted: 'ai_search_login_prompted'
         });
     });
 

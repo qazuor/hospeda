@@ -58,30 +58,30 @@ BEGIN
 
     -- ── SUPER_ADMIN grants ────────────────────────────────────────────────────
     INSERT INTO role_permission (role, permission) VALUES
-        ('super_admin', 'moderation.term.view'),
-        ('super_admin', 'moderation.term.create'),
-        ('super_admin', 'moderation.term.update'),
-        ('super_admin', 'moderation.term.delete'),
-        ('super_admin', 'moderation.term.restore'),
-        ('super_admin', 'moderation.term.hardDelete'),
-        ('super_admin', 'moderation.threshold.view'),
-        ('super_admin', 'moderation.threshold.update'),
-        ('super_admin', 'moderation.threshold.restore'),
-        ('super_admin', 'moderation.threshold.hardDelete')
+        ('SUPER_ADMIN', 'moderation.term.view'),
+        ('SUPER_ADMIN', 'moderation.term.create'),
+        ('SUPER_ADMIN', 'moderation.term.update'),
+        ('SUPER_ADMIN', 'moderation.term.delete'),
+        ('SUPER_ADMIN', 'moderation.term.restore'),
+        ('SUPER_ADMIN', 'moderation.term.hardDelete'),
+        ('SUPER_ADMIN', 'moderation.threshold.view'),
+        ('SUPER_ADMIN', 'moderation.threshold.update'),
+        ('SUPER_ADMIN', 'moderation.threshold.restore'),
+        ('SUPER_ADMIN', 'moderation.threshold.hardDelete')
     ON CONFLICT (role, permission) DO NOTHING;
 
     -- ── ADMIN grants ──────────────────────────────────────────────────────────
     INSERT INTO role_permission (role, permission) VALUES
-        ('admin', 'moderation.term.view'),
-        ('admin', 'moderation.term.create'),
-        ('admin', 'moderation.term.update'),
-        ('admin', 'moderation.term.delete'),
-        ('admin', 'moderation.term.restore'),
-        ('admin', 'moderation.term.hardDelete'),
-        ('admin', 'moderation.threshold.view'),
-        ('admin', 'moderation.threshold.update'),
-        ('admin', 'moderation.threshold.restore'),
-        ('admin', 'moderation.threshold.hardDelete')
+        ('ADMIN', 'moderation.term.view'),
+        ('ADMIN', 'moderation.term.create'),
+        ('ADMIN', 'moderation.term.update'),
+        ('ADMIN', 'moderation.term.delete'),
+        ('ADMIN', 'moderation.term.restore'),
+        ('ADMIN', 'moderation.term.hardDelete'),
+        ('ADMIN', 'moderation.threshold.view'),
+        ('ADMIN', 'moderation.threshold.update'),
+        ('ADMIN', 'moderation.threshold.restore'),
+        ('ADMIN', 'moderation.threshold.hardDelete')
     ON CONFLICT (role, permission) DO NOTHING;
 
     -- ── Default threshold row ─────────────────────────────────────────────────

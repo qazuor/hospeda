@@ -1,3 +1,5 @@
+import type { FeedbackEnvironment, ReportTypeId } from '@repo/schemas';
+import { feedbackFormSchema } from '@repo/schemas';
 /**
  * Tests for the FeedbackForm component.
  *
@@ -13,8 +15,6 @@ import { FeedbackForm, type FeedbackFormProps } from '../../src/components/Feedb
 import type { StepBasicData } from '../../src/components/steps/StepBasic.js';
 import type { StepDetailsData } from '../../src/components/steps/StepDetails.js';
 import { FEEDBACK_STRINGS } from '../../src/config/strings.js';
-import type { FeedbackEnvironment, ReportTypeId } from '../../src/schemas/feedback.schema.js';
-import { feedbackFormSchema } from '../../src/schemas/feedback.schema.js';
 
 // ---------------------------------------------------------------------------
 // Pure helper: replicates the initial-data builder from FeedbackForm

@@ -53,6 +53,9 @@ export const AccommodationPublicSchema = AccommodationSchema.pick({
     // Tags (public)
     tags: true,
 
+    // Social networks (public)
+    socialNetworks: true,
+
     // Extra Info (public)
     extraInfo: true
 }).extend({
@@ -176,6 +179,9 @@ export const AccommodationProtectedSchema = AccommodationSchema.pick({
 
     // Contact info (nested object with email, phone, website)
     contactInfo: true,
+
+    // Social networks
+    socialNetworks: true,
 
     // Lifecycle (for owners)
     lifecycleState: true,

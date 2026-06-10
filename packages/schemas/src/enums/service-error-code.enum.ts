@@ -55,5 +55,12 @@ export enum ServiceErrorCode {
      * Maps to HTTP 504 Gateway Timeout. The `details` field may carry a
      * `retryAfter` hint (seconds) for client-side back-off.
      */
-    PROVIDER_TIMEOUT = 'PROVIDER_TIMEOUT'
+    PROVIDER_TIMEOUT = 'PROVIDER_TIMEOUT',
+    /**
+     * The billing plan targeted by the operation has been disabled (retired).
+     * Maps to HTTP 410 Gone — the resource existed but is no longer available.
+     * Clients should treat this as a permanent condition and not retry without
+     * selecting a different plan.
+     */
+    PLAN_DISABLED = 'PLAN_DISABLED'
 }

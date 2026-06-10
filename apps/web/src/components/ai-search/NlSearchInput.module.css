@@ -1,0 +1,117 @@
+/**
+ * @file NlSearchInput.module.css
+ * @description Styles for the NlSearchInput component (SPEC-199 §5.6).
+ * Vanilla CSS / CSS Modules — no Tailwind utility classes (web app convention).
+ */
+
+/* ─── Root wrapper ───────────────────────────────────────────────────────────── */
+
+.root {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.75rem);
+}
+
+/* ─── Textarea wrapper (textarea + char counter) ─────────────────────────────── */
+
+.textareaWrapper {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.25rem);
+}
+
+/* ─── Textarea ───────────────────────────────────────────────────────────────── */
+
+.textarea {
+    width: 100%;
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+    padding-bottom: var(--space-6, 1.5rem);
+    border: 1px solid var(--border, var(--core-foreground-a15));
+    border-radius: var(--radius-button);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    background-color: var(--core-card);
+    color: var(--core-foreground);
+    resize: vertical;
+    min-height: 5rem;
+    line-height: 1.5;
+    transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+    box-sizing: border-box;
+}
+
+.textarea::placeholder {
+    color: var(--core-muted-foreground);
+    opacity: 0.7;
+}
+
+.textarea:focus {
+    outline: none;
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px var(--brand-primary-a20);
+}
+
+.textarea:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background-color: var(--core-background);
+}
+
+/* ─── Character counter ──────────────────────────────────────────────────────── */
+
+.charCount {
+    align-self: flex-end;
+    font-family: var(--font-sans);
+    font-size: var(--text-body-xs, 0.75rem);
+    color: var(--core-muted-foreground);
+    user-select: none;
+    transition: color var(--duration-fast) ease;
+}
+
+.charCountLimit {
+    color: var(--destructive, oklch(0.6 0.22 25));
+    font-weight: 600;
+}
+
+/* ─── Submit button ──────────────────────────────────────────────────────────── */
+
+.submit {
+    padding: var(--space-3, 0.75rem) var(--space-6, 1.5rem);
+    background-color: var(--brand-accent);
+    color: var(--accent-foreground, oklch(1 0 0));
+    border: none;
+    border-radius: var(--radius-button);
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: var(--text-button);
+    cursor: pointer;
+    transition: background-color var(--duration-fast) ease, transform var(--duration-fast) ease,
+        box-shadow var(--duration-fast) ease, opacity var(--duration-fast) ease;
+    align-self: stretch;
+    box-shadow: 0 4px 12px -4px var(--brand-accent-a50);
+}
+
+@media (min-width: 640px) {
+    .submit {
+        align-self: flex-end;
+        min-width: 10rem;
+    }
+}
+
+.submit:hover:not(:disabled) {
+    background-color: var(--brand-accent-lm04);
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px -4px var(--brand-accent-a55);
+}
+
+.submit:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}

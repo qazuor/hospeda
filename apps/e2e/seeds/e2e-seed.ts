@@ -27,6 +27,8 @@
  *   environment.
  */
 
+import { createRequire } from 'node:module';
+import { dirname, resolve } from 'node:path';
 import { exit } from 'node:process';
 
 const DEFAULT_E2E_DB_URL = 'postgresql://hospeda_user:hospeda_pass@localhost:5433/hospeda_e2e';
@@ -57,6 +59,15 @@ if (
     process.env.HOSPEDA_CLOUDINARY_FOLDER_ROOT =
         process.env.HOSPEDA_CLOUDINARY_FOLDER_ROOT ?? 'hospeda/e2e/seed/';
 }
+
+// @repo/seed resolves its `src/data/**` fixtures with `path.resolve('src/data/...')`,
+// i.e. relative to process.cwd(). It normally runs with cwd = packages/seed, but
+// this runner executes from apps/e2e, so point cwd at the @repo/seed package root
+// before seeding. `exports` does not expose package.json, so resolve via the entry
+// (packages/seed/src/index.ts) and step up one level to the package root.
+const seedRequire = createRequire(import.meta.url);
+const seedPackageRoot = resolve(dirname(seedRequire.resolve('@repo/seed')), '..');
+process.chdir(seedPackageRoot);
 
 const { runSeed } = await import('@repo/seed');
 
