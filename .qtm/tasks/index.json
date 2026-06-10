@@ -286,11 +286,13 @@
         {
             "specId": "SPEC-208",
             "title": "Web Accommodation Editor — Full Property Management in Web",
-            "status": "in-progress",
-            "progress": "0/1",
+            "status": "completed",
+            "progress": "1/1",
             "path": "SPEC-208-web-accommodation-editor",
             "tags": ["host-migration", "phase-4"],
-            "note": "Mirror of specs/index.json. Feature shipped via PRs #1509/#1513/#1516 with no formal spec dir; prod-readiness remediation in flight (PRs #1528/#1529/#1533). Flip to completed when those merge + e2e passes. progress 0/1 is nominal — there is no state.json with atomic tasks for this spec."
+            "archived": true,
+            "archivedAt": "2026-06-10",
+            "note": "Mirror of specs/index.json. Feature shipped via PRs #1509/#1513/#1516; prod-readiness remediation merged to staging (#1528/#1529/#1533-via-#1540/#1534) + local e2e 6/6 PASS. No state.json with atomic tasks (progress 1/1 nominal). Closed 2026-06-10."
         },
         {
             "specId": "SPEC-147",

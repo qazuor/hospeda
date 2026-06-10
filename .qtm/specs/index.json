@@ -827,10 +827,11 @@
             "title": "Web Accommodation Editor — Full Property Management in Web",
             "type": "epic",
             "complexity": "critical",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-208-web-accommodation-editor",
             "created": "2026-06-07T00:00:00.000Z",
-            "archived": false,
+            "archived": true,
+            "archivedAt": "2026-06-10",
             "tags": [
                 "web",
                 "host",
@@ -841,7 +842,7 @@
                 "api",
                 "entitlements"
             ],
-            "note": "Final phase of host migration. Full accommodation editor in apps/web including media upload, all section forms, validation, and preview. Shipped ad-hoc via PRs #1509/#1513/#1516 (Phases A/B/C) WITHOUT a formal .qtm/specs/SPEC-208-web-accommodation-editor/ directory — index entry exists but no spec.md. Prod-readiness review (2026-06-09) found blockers: protected update dropped nested fields + media (fixed PR #1528), open geocoding proxy (fixed PR #1529), no protected media delete + orphan assets (fixed PR #1533). Status in-progress until remediation PRs merge + manual e2e passes; flip to completed/archived then."
+            "note": "Final phase of host migration. Full accommodation editor in apps/web including media upload, all section forms, validation, and preview. Shipped ad-hoc via PRs #1509/#1513/#1516 (Phases A/B/C) WITHOUT a formal .qtm/specs/SPEC-208-web-accommodation-editor/ directory (no spec.md). Prod-readiness review (2026-06-09) found blockers, all fixed + merged to staging: protected update dropped nested fields + media (#1528), open geocoding proxy (#1529), no protected media delete + orphan assets (#1533, re-landed via #1540 after stacked-base stranding), index drift (#1534). Local e2e PASSED 6/6 (persistence, no-clobber, geocoding 401/200, media delete own-200/foreign-403). Closed 2026-06-10."
         },
         {
             "id": "SPEC-187",
