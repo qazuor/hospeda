@@ -7,8 +7,10 @@ import {
     AccommodationIdSchema,
     AccommodationProtectedSchema,
     AccommodationUpdateHttpSchema,
-    PermissionEnum
+    PermissionEnum,
+    httpToDomainAccommodationUpdate
 } from '@repo/schemas';
+import type { AccommodationUpdateHttp, AccommodationUpdateInput } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import {
@@ -57,8 +59,13 @@ export const protectedPatchAccommodationRoute = createProtectedRoute({
         body: Record<string, unknown>
     ) => {
         const actor = getActorFromContext(ctx);
-        // Use update method for patch - service handles partial updates
-        const result = await accommodationService.update(actor, params.id as string, body);
+        // Convert flat HTTP body to domain-shaped input before calling the service.
+        // Without this conversion, nested fields (location.coordinates, price.price,
+        // contactInfo, socialNetworks, extraInfo, media) are never persisted (SPEC-208).
+        const domainInput: AccommodationUpdateInput = httpToDomainAccommodationUpdate(
+            body as AccommodationUpdateHttp
+        );
+        const result = await accommodationService.update(actor, params.id as string, domainInput);
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

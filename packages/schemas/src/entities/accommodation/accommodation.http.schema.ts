@@ -123,11 +123,76 @@ export const AccommodationSearchHttpSchema = BaseHttpSearchSchema.extend({
 export type AccommodationSearchHttp = z.infer<typeof AccommodationSearchHttpSchema>;
 
 /**
+ * HTTP-compatible image shape accepted from web clients.
+ *
+ * Client uploads return `{ url, publicId, width, height, moderationState }` but
+ * only `url` is required. The converter applies `moderationState: 'APPROVED'`
+ * when the client omits it (SPEC-208). Extra fields (publicId, width, height)
+ * are stripped during domain conversion via the media normaliser.
+ */
+const HttpImageSchema = z.object({
+    url: z.string().url({ message: 'zodError.common.media.image.url.invalid' }),
+    caption: z
+        .string()
+        .min(3, { message: 'zodError.common.media.image.caption.min' })
+        .max(100, { message: 'zodError.common.media.image.caption.max' })
+        .optional(),
+    description: z
+        .string()
+        .min(10, { message: 'zodError.common.media.image.description.min' })
+        .max(300, { message: 'zodError.common.media.image.description.max' })
+        .optional(),
+    alt: z
+        .string()
+        .min(1, { message: 'zodError.common.media.image.alt.min' })
+        .max(200, { message: 'zodError.common.media.image.alt.max' })
+        .optional(),
+    /** Optional — converter defaults to APPROVED when absent (SPEC-208). */
+    moderationState: z.string().optional(),
+    /** Cloudinary public_id — stripped during domain conversion. */
+    publicId: z.string().optional(),
+    width: z.number().int().positive().optional(),
+    height: z.number().int().positive().optional()
+});
+
+/**
+ * HTTP-compatible media shape accepted from web clients (SPEC-208).
+ *
+ * Matches the domain `BaseMediaObjectSchema` structurally but accepts images
+ * without `moderationState` — the converter supplies `APPROVED` by default.
+ */
+const HttpMediaSchema = z
+    .object({
+        featuredImage: HttpImageSchema.optional().nullable(),
+        gallery: z.array(HttpImageSchema).optional(),
+        videos: z
+            .array(
+                z.object({
+                    url: z.string().url({ message: 'zodError.common.media.video.url.invalid' }),
+                    caption: z.string().optional(),
+                    description: z.string().optional(),
+                    moderationState: z.string().optional()
+                })
+            )
+            .optional()
+    })
+    .nullable();
+
+/**
  * HTTP-compatible accommodation creation schema
  * Handles form data and JSON input for creating accommodations via HTTP
  */
 export const AccommodationCreateHttpSchema = z.object({
     name: z.string().min(1, { message: 'zodError.accommodation.name.required' }).max(200),
+    /**
+     * Summary — optional short description (SPEC-208 additive).
+     * Aligned with `AccommodationSchema.summary` bounds (10–300 chars).
+     */
+    summary: z
+        .string()
+        .min(10, { message: 'zodError.accommodation.summary.min' })
+        .max(300, { message: 'zodError.accommodation.summary.max' })
+        .optional(),
     /**
      * Description — bilateral validation aligned with `AccommodationCreateDraftHttpSchema`
      * and the base `AccommodationSchema.description.min(30)`. When provided, it must
@@ -162,6 +227,23 @@ export const AccommodationCreateHttpSchema = z.object({
     // Relations
     destinationId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     ownerId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+
+    // Junction sync fields (SPEC-172 / SPEC-208 additive)
+    /** Optional amenity UUIDs to associate on create/update (SPEC-172 write-only). */
+    amenityIds: z
+        .array(z.string().uuid({ message: 'zodError.accommodation.amenityIds.invalidUuid' }))
+        .optional(),
+    /** Optional feature UUIDs to associate on create/update (SPEC-172 write-only). */
+    featureIds: z
+        .array(z.string().uuid({ message: 'zodError.accommodation.featureIds.invalidUuid' }))
+        .optional(),
+
+    /**
+     * Media (SPEC-208 additive).
+     * Client supplies images with optional moderationState; converter defaults
+     * missing moderationState to APPROVED for immediate host publication.
+     */
+    media: HttpMediaSchema.optional(),
 
     // Contact information (flat fields mapped to ContactInfoSchema in converter)
     phone: z.string().optional(),
@@ -301,6 +383,121 @@ import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
 import { ModerationStatusEnum } from '../../enums/moderation-status.enum.js';
 import { VisibilityEnum } from '../../enums/visibility.enum.js';
 
+// ---------------------------------------------------------------------------
+// Media normalisation helper (SPEC-208)
+// ---------------------------------------------------------------------------
+
+type HttpImage = {
+    url: string;
+    caption?: string;
+    description?: string;
+    alt?: string;
+    moderationState?: string;
+    publicId?: string;
+    width?: number;
+    height?: number;
+};
+
+type HttpMedia = {
+    featuredImage?: HttpImage | null;
+    gallery?: HttpImage[];
+    videos?: Array<{
+        url: string;
+        caption?: string;
+        description?: string;
+        moderationState?: string;
+    }>;
+} | null;
+
+/**
+ * Shape returned by `normaliseHttpMedia` for non-null inputs.
+ *
+ * Extends the domain's `BaseMediaObjectSchema` shape with `featuredImage: null`
+ * to carry the explicit clear-signal from the HTTP layer to the service layer.
+ * The service handles the null by setting the JSONB field to null in DB.
+ */
+type NormalisedMediaObject = {
+    /** Normalised featured image. null = host explicitly cleared it. */
+    featuredImage?: {
+        url: string;
+        moderationState: ModerationStatusEnum;
+        caption?: string;
+        description?: string;
+        alt?: string;
+    } | null;
+    gallery?: {
+        url: string;
+        moderationState: ModerationStatusEnum;
+        caption?: string;
+        description?: string;
+        alt?: string;
+    }[];
+    videos?: {
+        url: string;
+        moderationState: ModerationStatusEnum;
+        caption?: string;
+        description?: string;
+    }[];
+};
+
+/**
+ * Normalise an HTTP media payload to the domain shape.
+ *
+ * - Applies `moderationState: APPROVED` to any image that doesn't supply one
+ *   (host uploads are immediately published per SPEC-208 policy).
+ * - Strips client-only fields (publicId, width, height) that have no equivalent
+ *   in the domain `BaseMediaObjectSchema`.
+ * - Passes through null as-is so callers can express "clear media".
+ * - Preserves `featuredImage: null` (explicit clear-signal) distinct from
+ *   `featuredImage: undefined` (no change).
+ */
+function normaliseHttpMedia(httpMedia: HttpMedia): NormalisedMediaObject | null {
+    if (httpMedia === null) return null;
+
+    const normImage = (
+        img: HttpImage
+    ): NormalisedMediaObject['gallery'] extends Array<infer T> ? T : never =>
+        ({
+            url: img.url,
+            ...(img.caption !== undefined ? { caption: img.caption } : {}),
+            ...(img.description !== undefined ? { description: img.description } : {}),
+            ...(img.alt !== undefined ? { alt: img.alt } : {}),
+            // Cast is safe: the schema accepts the string enum value; the domain
+            // type is ModerationStatusEnum which is a string enum with the same values.
+            moderationState: (img.moderationState ??
+                ModerationStatusEnum.APPROVED) as ModerationStatusEnum
+        }) as NormalisedMediaObject['gallery'] extends Array<infer T> ? T : never;
+
+    const normVideo = (v: {
+        url: string;
+        caption?: string;
+        description?: string;
+        moderationState?: string;
+    }): NormalisedMediaObject['videos'] extends Array<infer T> ? T : never =>
+        ({
+            url: v.url,
+            ...(v.caption !== undefined ? { caption: v.caption } : {}),
+            ...(v.description !== undefined ? { description: v.description } : {}),
+            moderationState: (v.moderationState ??
+                ModerationStatusEnum.APPROVED) as ModerationStatusEnum
+        }) as NormalisedMediaObject['videos'] extends Array<infer T> ? T : never;
+
+    const result: NormalisedMediaObject = {};
+    if (httpMedia.featuredImage != null) {
+        result.featuredImage = normImage(httpMedia.featuredImage);
+    } else if (httpMedia.featuredImage === null) {
+        // Explicit null → signal the service to clear the field.
+        result.featuredImage = null;
+    }
+    if (httpMedia.gallery !== undefined) {
+        result.gallery = httpMedia.gallery.map(normImage);
+    }
+    if (httpMedia.videos !== undefined) {
+        result.videos = httpMedia.videos.map(normVideo);
+    }
+    return result;
+}
+
 /**
  * Convert HTTP create data to domain create input
  * Transforms HTTP form/JSON data to domain object with proper nested structures
@@ -310,7 +507,8 @@ export const httpToDomainAccommodationCreate = (
 ): AccommodationCreateInput => ({
     // Basic required fields
     name: httpData.name,
-    summary: httpData.description?.substring(0, 300) || httpData.name, // Generate summary from description or use name
+    // Use explicit summary if supplied; otherwise generate from description or name
+    summary: httpData.summary ?? (httpData.description?.substring(0, 300) || httpData.name),
     description: httpData.description ?? '', // Required field, provide default
     type: httpData.type,
     destinationId: httpData.destinationId,
@@ -381,7 +579,22 @@ export const httpToDomainAccommodationCreate = (
         bathrooms: httpData.bathrooms,
         smokingAllowed: false, // Default no smoking
         extraInfo: [] // Default empty array
-    }
+    },
+
+    // Junction sync (SPEC-172 / SPEC-208 additive): pass through when provided
+    ...(httpData.amenityIds !== undefined ? { amenityIds: httpData.amenityIds } : {}),
+    ...(httpData.featureIds !== undefined ? { featureIds: httpData.featureIds } : {}),
+
+    // Media (SPEC-208 additive): normalise images to domain shape with APPROVED default.
+    // Cast is safe: the domain JSONB column accepts null for featuredImage at runtime;
+    // `null` here is the clear-signal (host removed the image). The Zod type models
+    // featuredImage as `Image | undefined` — the null-as-clear convention is a
+    // service-layer protocol not reflected in the static schema type.
+    ...(httpData.media !== undefined
+        ? {
+              media: normaliseHttpMedia(httpData.media) as AccommodationCreateInput['media']
+          }
+        : {})
 });
 
 /**
@@ -430,6 +643,7 @@ export const httpToDomainAccommodationUpdate = (
 ): AccommodationUpdateInput => ({
     // Only map fields that exist in both schemas
     name: httpData.name,
+    summary: httpData.summary,
     description: httpData.description,
     type: httpData.type,
     isFeatured: httpData.isFeatured,
@@ -504,6 +718,18 @@ export const httpToDomainAccommodationUpdate = (
                   bathrooms: httpData.bathrooms,
                   smokingAllowed: false // Default
               }
+          }
+        : {}),
+
+    // Junction sync (SPEC-172 / SPEC-208 additive): pass through when provided
+    ...(httpData.amenityIds !== undefined ? { amenityIds: httpData.amenityIds } : {}),
+    ...(httpData.featureIds !== undefined ? { featureIds: httpData.featureIds } : {}),
+
+    // Media (SPEC-208 additive): normalise images to domain shape with APPROVED default.
+    // Cast is safe: see create converter comment above for the null-as-clear rationale.
+    ...(httpData.media !== undefined
+        ? {
+              media: normaliseHttpMedia(httpData.media ?? null) as AccommodationUpdateInput['media']
           }
         : {})
 });
