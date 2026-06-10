@@ -3,3 +3,4 @@ export * from './addons.config.js';
 export * from './entitlements.config.js';
 export * from './limits.config.js';
 export * from './promo-codes.config.js';
+export * from './model-c-field-split.js';
