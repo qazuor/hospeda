@@ -33,6 +33,7 @@ import { buildAccommodationListingSummary, DEFAULT_TYPE_GRAMMAR } from '@/lib/ac
 import type { CatalogEntry, SummaryLocale } from '@/lib/accommodation-listing-summary';
 import { resolveI18nText } from '@/lib/resolve-i18n-text';
 import AiSearchTrigger from '@/components/ai-search/AiSearchTrigger.astro';
+import { IntentChips } from '@/components/ai-search/IntentChips';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -798,6 +799,13 @@ const emptyStateSuggestions = [
 			</a>
 		</div>
 	)}
+
+	<!--
+	    AI intent chips (SPEC-199 §5.6) — removable filter chips derived from
+	    the last AI-extracted search intent stored in sessionStorage.
+	    Renders nothing when sessionStorage is empty, so always mounted.
+	-->
+	<IntentChips client:load locale={locale} lang={locale} />
 
 	{hasError && !result.ok && (
 		<ErrorBanner locale={locale} error={result.error} entityName="alojamientos" />
