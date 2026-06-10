@@ -520,8 +520,8 @@ export const ApiEnvBaseSchema = z.object({
     // Content auto-moderation engine (SPEC-195)
     /** Moderation engine provider: 'openai' | 'local' | 'stub' (kill-switch). Default 'stub' preserves v1 binary behavior. */
     HOSPEDA_MODERATION_PROVIDER: z.enum(['openai', 'local', 'stub']).default('stub'),
-    /** OpenAI API key for the Moderation API. Required when HOSPEDA_MODERATION_PROVIDER=openai. */
-    HOSPEDA_OPENAI_API_KEY: z.string().min(1).optional(),
+    /** OpenAI API key for the content-moderation engine. Required when HOSPEDA_MODERATION_PROVIDER=openai. */
+    HOSPEDA_MODERATION_OPENAI_API_KEY: z.string().min(1).optional(),
     /** TTL in seconds for the in-memory LRU moderation cache. */
     HOSPEDA_MODERATION_CACHE_TTL_SECONDS: z.coerce.number().int().positive().default(300),
     /** Timeout in ms for the OpenAI Moderation API call before falling back to local. */
