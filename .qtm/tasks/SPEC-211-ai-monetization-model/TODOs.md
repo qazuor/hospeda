@@ -1,6 +1,6 @@
 # SPEC-211: AI Monetization Model
 
-## Progress: 1/17 tasks (6%)
+## Progress: 5/17 tasks (29%) — setup phase: T-002 in-progress (ceiling wiring pending owner decision)
 
 **Average Complexity:** 2.2/3 (max)
 **Critical Path:** T-001 → T-003 → T-008 → T-010 → T-011 → T-013 → T-016 → T-017 (8 steps)
@@ -20,22 +20,22 @@
   - Blocked by: none
   - Blocks: T-012
 
-- [ ] **T-003** (complexity: 1) - Remove ai_chat and MAX_AI_CHAT_PER_MONTH from tourist plans in config
+- [x] **T-003** (complexity: 1) - Remove ai_chat and MAX_AI_CHAT_PER_MONTH from tourist plans in config
   - Remove AI_CHAT entitlement and limit key from tourist-free, tourist-plus, tourist-vip
   - Blocked by: T-001
   - Blocks: T-008, T-011
 
-- [ ] **T-004** (complexity: 1) - Remove ai_search and MAX_AI_SEARCH_PER_MONTH from all plans in config
+- [x] **T-004** (complexity: 1) - Remove ai_search and MAX_AI_SEARCH_PER_MONTH from all plans in config
   - Remove AI_SEARCH and MAX_AI_SEARCH_PER_MONTH from all 9 plans in plans.config.ts
   - Blocked by: none
   - Blocks: T-008, T-011
 
-- [ ] **T-005** (complexity: 2) - Add ai_support recurring addon definition to addons.config.ts
+- [x] **T-005** (complexity: 2) - Add ai_support recurring addon definition to addons.config.ts
   - Add AI_SUPPORT_ADDON to addons.config.ts with recurring billing, AI_SUPPORT grant, finite quota
   - Blocked by: none
   - Blocks: T-014, T-015
 
-- [ ] **T-006** (complexity: 1) - Add i18n keys for ai_chat unavailable copy in es/en/pt
+- [x] **T-006** (complexity: 1) - Add i18n keys for ai_chat unavailable copy in es/en/pt
   - Add OQ-8 i18n keys ("AI chat is not available for this accommodation") in all three locales
   - Blocked by: none
   - Blocks: T-007

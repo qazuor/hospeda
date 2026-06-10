@@ -13,17 +13,30 @@
             "blockedBy": [],
             "blocks": ["T-003", "T-008", "T-011"],
             "subtasks": [
-                { "title": "Replace -1 on owner-premium (3 AI limit keys)", "completed": true },
-                { "title": "Replace -1 on complex-premium (3 AI limit keys)", "completed": true },
+                {
+                    "title": "Replace -1 on owner-premium (3 AI limit keys)",
+                    "completed": true
+                },
+                {
+                    "title": "Replace -1 on complex-premium (3 AI limit keys)",
+                    "completed": true
+                },
                 {
                     "title": "Replace -1 on tourist-vip (2 AI limit keys — will be removed later)",
                     "completed": true
                 },
-                { "title": "Write no-minus-one config test (AC-0.1)", "completed": true }
+                {
+                    "title": "Write no-minus-one config test (AC-0.1)",
+                    "completed": true
+                }
             ],
             "tags": ["billing", "config", "phase-0", "cost-control"],
             "phase": "setup",
-            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
                 "started": "2026-06-10T01:34:32.000Z",
@@ -34,7 +47,7 @@
             "id": "T-002",
             "title": "Set concrete USD cost ceilings in ai_settings config",
             "description": "In `packages/schemas/src/entities/ai/ai-settings.schema.ts` (or the ai_settings default/config location used by the API), set the concrete ceiling values from §6.3: `globalMonthlyMicroUsd = 100_000_000`; `perFeatureMonthlyMicroUsd = { chat: 45_000_000, search: 30_000_000, text_improve: 15_000_000, support: 10_000_000 }`. Verify the existing `AiCostCeilingsSchema` accepts these exact integer values. Test: unit test in `packages/schemas/test/` asserting exact ceiling values parse without error and the integers are in µUSD units (AC-0.2).",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-012"],
@@ -43,8 +56,14 @@
                     "title": "Locate where ai_settings defaults / initial config live in the codebase",
                     "completed": false
                 },
-                { "title": "Set globalMonthlyMicroUsd = 100_000_000", "completed": false },
-                { "title": "Set all four perFeatureMonthlyMicroUsd entries", "completed": false },
+                {
+                    "title": "Set globalMonthlyMicroUsd = 100_000_000",
+                    "completed": false
+                },
+                {
+                    "title": "Set all four perFeatureMonthlyMicroUsd entries",
+                    "completed": false
+                },
                 {
                     "title": "Write config smoke test asserting exact ceiling values (AC-0.2)",
                     "completed": false
@@ -52,10 +71,14 @@
             ],
             "tags": ["billing", "config", "phase-0", "cost-control", "ai-settings"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
-                "started": null,
+                "started": "2026-06-10T01:50:00.000Z",
                 "completed": null
             }
         },
@@ -63,117 +86,148 @@
             "id": "T-003",
             "title": "Remove ai_chat and MAX_AI_CHAT_PER_MONTH from tourist plans in config",
             "description": "In `packages/billing/src/config/plans.config.ts`, remove `AI_CHAT` from the `entitlements` array and remove `MAX_AI_CHAT_PER_MONTH` from the `limits` map for the three tourist plans: `tourist-free`, `tourist-plus`, and `tourist-vip`. The finite value set in T-001 for tourist-vip is now also removed. Test: extend `packages/billing/test/plans.config.test.ts` asserting no tourist plan entry has `AI_CHAT` in entitlements or `MAX_AI_CHAT_PER_MONTH` in limits (part of AC-1.4 config side).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-001"],
             "blocks": ["T-008", "T-011"],
             "subtasks": [
                 {
                     "title": "Remove AI_CHAT entitlement from tourist-free, tourist-plus, tourist-vip",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Remove MAX_AI_CHAT_PER_MONTH limit key from all three tourist plans",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Assert no tourist plan has AI_CHAT or MAX_AI_CHAT_PER_MONTH in config test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "config", "phase-1", "ai-chat"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-10T01:50:00.000Z",
+                "completed": "2026-06-10T01:58:00.000Z"
             }
         },
         {
             "id": "T-004",
             "title": "Remove ai_search and MAX_AI_SEARCH_PER_MONTH from all plans in config",
             "description": "In `packages/billing/src/config/plans.config.ts`, remove `AI_SEARCH` from the `entitlements` array and remove `MAX_AI_SEARCH_PER_MONTH` from the `limits` map for ALL 9 plans (owner-basico/pro/premium, complex-basico/pro/premium, tourist-free/plus/vip). Do NOT delete the enum keys themselves from `EntitlementKey`/`LimitKey` (additive-only policy). Test: `packages/billing/test/plans.config.test.ts` — assert no plan grants `AI_SEARCH` or carries `MAX_AI_SEARCH_PER_MONTH` in limits (AC-3.1 config side).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-008", "T-011"],
             "subtasks": [
-                { "title": "Remove AI_SEARCH entitlement from all 9 plans", "completed": false },
+                {
+                    "title": "Remove AI_SEARCH entitlement from all 9 plans",
+                    "completed": true
+                },
                 {
                     "title": "Remove MAX_AI_SEARCH_PER_MONTH limit key from all 9 plans",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Assert config test: no plan has AI_SEARCH or MAX_AI_SEARCH_PER_MONTH",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "config", "phase-3", "ai-search"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-10T01:50:00.000Z",
+                "completed": "2026-06-10T01:58:00.000Z"
             }
         },
         {
             "id": "T-005",
             "title": "Add ai_support recurring addon definition to addons.config.ts",
             "description": "In `packages/billing/src/config/addons.config.ts`, add `AI_SUPPORT_ADDON: AddonDefinition` per §7.8: `slug: 'ai-support-monthly'`, `billingType: 'recurring'`, `priceArs: 800_000` (TBD-owner-confirm at implementation), `durationDays: null`, `affectsLimitKey: LimitKey.MAX_AI_SUPPORT_PER_MONTH`, `limitIncrease: 100` (TBD-owner-confirm), `grantsEntitlement: EntitlementKey.AI_SUPPORT`, `targetCategories: ['owner', 'complex']`, `isActive: true`, `sortOrder: 6`. `limitIncrease` must be a finite positive number (no -1). Export from `ALL_ADDONS`. Test: `packages/billing/test/addons.config.test.ts` — assert addon exists in ALL_ADDONS with correct shape and finite limitIncrease (AC-4.1 config side).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-014", "T-015"],
             "subtasks": [
                 {
                     "title": "Add AI_SUPPORT_ADDON constant with all required fields",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Add to ALL_ADDONS export", "completed": false },
+                {
+                    "title": "Add to ALL_ADDONS export",
+                    "completed": true
+                },
                 {
                     "title": "Confirm limitIncrease is a finite positive number (no -1)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write addon shape + finiteness test (AC-4.1 config side)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "addons", "config", "phase-4", "ai-support"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-10T01:50:00.000Z",
+                "completed": "2026-06-10T01:58:00.000Z"
             }
         },
         {
             "id": "T-006",
             "title": "Add i18n keys for ai_chat unavailable copy in es/en/pt",
             "description": "Add the OQ-8 copy to the locale files in `@repo/i18n`: es: 'El chat de IA no está disponible para este alojamiento', en: 'AI chat is not available for this accommodation', pt: 'O chat de IA não está disponível para esta acomodação'. Determine the key path at implementation (e.g. `ai.chat.ownerUnavailable` or `errors.aiChatUnavailable`). Add to all three locale files (`packages/i18n/src/locales/es.json`, `en.json`, `pt.json`). Test: verify i18n key exists in all three locales via the existing i18n test suite or add a key-presence test.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-007"],
             "subtasks": [
                 {
                     "title": "Choose key path (coordinate with chat route error response key)",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Add key to es.json", "completed": false },
-                { "title": "Add key to en.json", "completed": false },
-                { "title": "Add key to pt.json", "completed": false }
+                {
+                    "title": "Add key to es.json",
+                    "completed": true
+                },
+                {
+                    "title": "Add key to en.json",
+                    "completed": true
+                },
+                {
+                    "title": "Add key to pt.json",
+                    "completed": true
+                }
             ],
             "tags": ["i18n", "phase-1", "ai-chat"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-10T01:50:00.000Z",
+                "completed": "2026-06-10T01:58:00.000Z"
             }
         },
         {
@@ -193,7 +247,10 @@
                     "title": "Implement owner-basico fallback when no active subscription",
                     "completed": false
                 },
-                { "title": "Apply customer-level limit overrides", "completed": false },
+                {
+                    "title": "Apply customer-level limit overrides",
+                    "completed": false
+                },
                 {
                     "title": "Write unit tests: active sub, no-sub fallback, override merge (AC-1.1)",
                     "completed": false
@@ -201,7 +258,11 @@
             ],
             "tags": ["api", "middleware", "phase-1", "ai-chat", "billing"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
                 "started": null,
@@ -221,8 +282,14 @@
                     "title": "Create model-c-field-split.ts with typed field-split record",
                     "completed": false
                 },
-                { "title": "Classify all §8.2 columns", "completed": false },
-                { "title": "Export from @repo/billing barrel", "completed": false },
+                {
+                    "title": "Classify all §8.2 columns",
+                    "completed": false
+                },
+                {
+                    "title": "Export from @repo/billing barrel",
+                    "completed": false
+                },
                 {
                     "title": "Write guard test: all classified, no unclassified (AC-2.3)",
                     "completed": false
@@ -230,7 +297,11 @@
             ],
             "tags": ["billing", "config", "phase-2", "model-c"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
                 "started": null,
@@ -250,7 +321,10 @@
                     "title": "Remove createAiQuotaMiddleware('chat') from chat route",
                     "completed": false
                 },
-                { "title": "Add owner entitlement + limit resolution inline", "completed": false },
+                {
+                    "title": "Add owner entitlement + limit resolution inline",
+                    "completed": false
+                },
                 {
                     "title": "Add owner quota check (getMonthlyCallCount keyed by ownerId)",
                     "completed": false
@@ -259,11 +333,18 @@
                     "title": "Wire recordAiUsage keyed by ownerId (not tourist userId)",
                     "completed": false
                 },
-                { "title": "Write integration tests AC-1.2, AC-1.3, AC-1.5", "completed": false }
+                {
+                    "title": "Write integration tests AC-1.2, AC-1.3, AC-1.5",
+                    "completed": false
+                }
             ],
             "tags": ["api", "routes", "phase-1", "ai-chat", "billing"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
                 "started": null,
@@ -279,7 +360,10 @@
             "blockedBy": ["T-008"],
             "blocks": ["T-011"],
             "subtasks": [
-                { "title": "Import field-split table from @repo/billing", "completed": false },
+                {
+                    "title": "Import field-split table from @repo/billing",
+                    "completed": false
+                },
                 {
                     "title": "Capability divergence: overwrite DB column from config",
                     "completed": false
@@ -299,7 +383,11 @@
             ],
             "tags": ["seed", "billing", "phase-2", "model-c"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
                 "started": null,
@@ -319,17 +407,30 @@
                     "title": "Write SQL for finite-limit propagation (4 AI limit keys, -1 rows)",
                     "completed": false
                 },
-                { "title": "Write SQL for AI_CHAT removal from tourist rows", "completed": false },
-                { "title": "Write SQL for AI_SEARCH removal from all rows", "completed": false },
+                {
+                    "title": "Write SQL for AI_CHAT removal from tourist rows",
+                    "completed": false
+                },
+                {
+                    "title": "Write SQL for AI_SEARCH removal from all rows",
+                    "completed": false
+                },
                 {
                     "title": "Write SQL for general capability sync (entitlements array + limit key presence)",
                     "completed": false
                 },
-                { "title": "Add dry-run mode and idempotency guard", "completed": false }
+                {
+                    "title": "Add dry-run mode and idempotency guard",
+                    "completed": false
+                }
             ],
             "tags": ["db", "migration", "phase-2", "model-c", "extras"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
                 "started": null,
@@ -368,7 +469,11 @@
             ],
             "tags": ["testing", "db", "integration", "phase-2", "model-c"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
                 "started": null,
@@ -392,7 +497,10 @@
                     "title": "Write AC-1.2: success + recordAiUsage keyed by ownerId",
                     "completed": false
                 },
-                { "title": "Write AC-1.3: owner-at-quota → 403 LIMIT_REACHED", "completed": false },
+                {
+                    "title": "Write AC-1.3: owner-at-quota → 403 LIMIT_REACHED",
+                    "completed": false
+                },
                 {
                     "title": "Write AC-1.4 DB: post-migration tourist rows lack AI_CHAT",
                     "completed": false
@@ -400,7 +508,11 @@
             ],
             "tags": ["testing", "api", "integration", "phase-1", "ai-chat"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
                 "started": null,
@@ -424,16 +536,26 @@
                     "title": "Add unauthenticated → login-prompt response (not 403 AI gate)",
                     "completed": false
                 },
-                { "title": "Confirm rate-limit and USD ceiling remain active", "completed": false },
+                {
+                    "title": "Confirm rate-limit and USD ceiling remain active",
+                    "completed": false
+                },
                 {
                     "title": "Write AC-3.2 test: authenticated no-entitlement user → 200",
                     "completed": false
                 },
-                { "title": "Write AC-3.3 test: ceiling-hit → 503 CEILING_HIT", "completed": false }
+                {
+                    "title": "Write AC-3.3 test: ceiling-hit → 503 CEILING_HIT",
+                    "completed": false
+                }
             ],
             "tags": ["api", "routes", "phase-3", "ai-search"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
                 "started": null,
@@ -464,7 +586,11 @@
             ],
             "tags": ["testing", "api", "integration", "phase-4", "ai-support", "billing"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
                 "started": null,
@@ -488,13 +614,26 @@
                     "title": "Add tourist chat on healthy owner → success staging smoke entry",
                     "completed": false
                 },
-                { "title": "Add free search → success staging smoke entry", "completed": false },
-                { "title": "Add search ceiling-hit → 503 staging smoke entry", "completed": false },
-                { "title": "Add prod smoke entries for billing core changes", "completed": false }
+                {
+                    "title": "Add free search → success staging smoke entry",
+                    "completed": false
+                },
+                {
+                    "title": "Add search ceiling-hit → 503 staging smoke entry",
+                    "completed": false
+                },
+                {
+                    "title": "Add prod smoke entries for billing core changes",
+                    "completed": false
+                }
             ],
             "tags": ["docs", "testing", "billing-smoke", "phase-2"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
                 "started": null,
@@ -518,11 +657,18 @@
                     "title": "Update docs/billing/adding-an-entitlement.md with Model C workflow",
                     "completed": false
                 },
-                { "title": "Cross-reference field-split table in both docs", "completed": false }
+                {
+                    "title": "Cross-reference field-split table in both docs",
+                    "completed": false
+                }
             ],
             "tags": ["docs", "billing", "model-c", "phase-2"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
                 "started": null,
@@ -532,9 +678,9 @@
     ],
     "summary": {
         "total": 17,
-        "pending": 16,
-        "inProgress": 0,
-        "completed": 1,
+        "pending": 11,
+        "inProgress": 1,
+        "completed": 5,
         "blocked": 0,
         "averageComplexity": 2.2
     }
