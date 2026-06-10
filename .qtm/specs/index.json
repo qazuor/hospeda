@@ -704,13 +704,13 @@
             "title": "AI Natural-Language Search",
             "type": "feat",
             "complexity": "medium",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-199-ai-nl-search",
             "created": "2026-06-05T00:00:00.000Z",
             "parentSpec": "SPEC-173",
             "archived": false,
             "tags": ["ai", "feature", "spec-173-child"],
-            "note": "Child B of SPEC-173. NL search: extractIntent -> structured query, NO embeddings V1 (feature search). BLOCKING open question: anonymous UX vs login-required AI. DRAFT."
+            "note": "Child B of SPEC-173. NL search: generateObject -> SearchIntentEntities -> AccommodationSearchHttp params, NO embeddings V1. All §3 decisions resolved. spec-realign 2026-06-10: greenfield, foundation stable; slot set expanded (D-5: bedrooms/bathrooms/maxRating/featureSlugs). 21 atomic tasks generated. IN-PROGRESS."
         },
         {
             "specId": "SPEC-200",
