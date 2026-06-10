@@ -215,16 +215,24 @@ export const SearchIntentEntitiesSchema = z.object({
      * MUST be a string, NOT `z.coerce.date()`: this schema is serialized to JSON
      * Schema for `generateObject` structured output, and `z.date()` has no JSON
      * Schema representation ("Date cannot be represented in JSON Schema"). The
-     * model emits YYYY-MM-DD strings; the mapper passes them through after a
-     * lexicographic check (ISO date strings sort chronologically).
+     * `.regex` enforces strict `YYYY-MM-DD`: a malformed model date (e.g. "next
+     * weekend", "2026-13-45") fails `safeParse` and drops into the empty-entities
+     * fallback rather than forwarding garbage to the search page. The mapper
+     * compares the two dates lexicographically (ISO date strings sort chronologically).
      */
-    checkIn: z.string().optional(),
+    checkIn: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .optional(),
 
     /**
      * Check-out date as an ISO date string (YYYY-MM-DD).
      * If `checkOut <= checkIn`, the mapper drops both dates.
      */
-    checkOut: z.string().optional()
+    checkOut: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .optional()
 });
 
 /** Inferred TypeScript type for {@link SearchIntentEntitiesSchema}. */
