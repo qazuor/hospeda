@@ -23,9 +23,9 @@
 import { WebEvents } from '@/lib/analytics/events';
 import { trackEvent } from '@/lib/analytics/posthog-client';
 import { apiClient } from '@/lib/api/client';
+import { buildLoginRedirect } from '@/lib/auth-redirect';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import type { AiSearchIntentResponseData } from '@repo/schemas';
 import { useState } from 'react';
 import styles from './AiSearchPanel.module.css';

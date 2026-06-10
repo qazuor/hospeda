@@ -48,7 +48,7 @@ vi.mock('@/lib/analytics/posthog-client', () => ({
     trackEvent: vi.fn()
 }));
 
-vi.mock('@/lib/middleware-helpers', () => ({
+vi.mock('@/lib/auth-redirect', () => ({
     buildLoginRedirect: vi.fn(
         ({ locale, currentUrl }: { locale: string; currentUrl: string }) =>
             `/${locale}/auth/signin/?returnUrl=${encodeURIComponent(currentUrl)}`
@@ -77,7 +77,7 @@ vi.mock('../../../src/components/ai-search/NlSearchInput.module.css', () => ({
 // ─── Import after mocks ────────────────────────────────────────────────────────
 
 import { apiClient } from '@/lib/api/client';
-import { buildLoginRedirect } from '@/lib/middleware-helpers';
+import { buildLoginRedirect } from '@/lib/auth-redirect';
 
 // ─── Test helpers ──────────────────────────────────────────────────────────────
 
