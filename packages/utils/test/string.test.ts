@@ -94,6 +94,38 @@ describe('String Utilities', () => {
         it('handles nested tags', () => {
             expect(stripHtml('<div><p>Hello</p></div>')).toBe('Hello');
         });
+
+        // Regression: multi-pass stripping — a single pass leaves residual tags
+        // when markup is nested (e.g. '<sc<ript>' → first pass yields 'ript>').
+        it('fully strips nested/disguised tags like <sc<ript>', () => {
+            // Arrange
+            const input = '<sc<ript>alert(1)</sc<ript>>';
+            // Act
+            const result = stripHtml(input);
+            // Assert — no opening bracket and no complete tag can survive (a
+            // lone trailing '>' is inert text and acceptable).
+            expect(result).not.toContain('<');
+            expect(result).not.toMatch(/<[^>]*>/);
+        });
+
+        it('strips <sc<ript> to plain text with no residual tag fragments', () => {
+            // Arrange
+            const input = 'Hello <sc<ript>World</ript>';
+            // Act
+            const result = stripHtml(input);
+            // Assert
+            expect(result).not.toMatch(/<|>/);
+            expect(result).toContain('Hello');
+        });
+
+        it('handles normal HTML unchanged after multi-pass (idempotent for clean HTML)', () => {
+            // Arrange
+            const input = '<b>bold</b> and <em>italic</em>';
+            // Act
+            const result = stripHtml(input);
+            // Assert
+            expect(result).toBe('bold and italic');
+        });
     });
 
     describe('isEmpty', () => {

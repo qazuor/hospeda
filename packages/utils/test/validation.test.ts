@@ -42,6 +42,34 @@ describe('Validation Utilities', () => {
             expect(isValidEmail('@nodomain.com')).toBe(false);
             expect(isValidEmail('spaces @example.com')).toBe(false);
         });
+
+        // Regression: ReDoS guard — 100k-char input must return false quickly without hanging.
+        it('returns false quickly for an over-length input (ReDoS guard)', () => {
+            // Arrange
+            const oversizedEmail = 'a'.repeat(100_000);
+            // Act
+            const start = Date.now();
+            const result = isValidEmail(oversizedEmail);
+            const elapsed = Date.now() - start;
+            // Assert
+            expect(result).toBe(false);
+            // Should complete in well under 100 ms (guard fires before the regex).
+            expect(elapsed).toBeLessThan(100);
+        });
+
+        it('returns false for a 255-char email (above RFC 5321 limit)', () => {
+            // Arrange
+            const longEmail = `${'a'.repeat(243)}@example.com`; // 255 chars
+            // Act / Assert
+            expect(isValidEmail(longEmail)).toBe(false);
+        });
+
+        it('returns true for a 254-char email at the RFC 5321 boundary', () => {
+            // Arrange — exactly 254 chars: 242 local + @example.com (12)
+            const boundaryEmail = `${'a'.repeat(242)}@example.com`;
+            // Act / Assert
+            expect(isValidEmail(boundaryEmail)).toBe(true);
+        });
     });
 
     describe('isValidUrl', () => {

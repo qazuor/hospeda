@@ -112,7 +112,15 @@ export async function createUniqueSlug(
  */
 export function stripHtml(html: string): string {
     if (!html) return html;
-    return html.replace(/<[^>]*>/g, '');
+    // Loop until no more tags are removed: a single pass can leave a residual
+    // tag when markup is nested (e.g. '<sc<ript>' -> 'ript>').
+    let result = html;
+    let prev: string;
+    do {
+        prev = result;
+        result = result.replace(/<[^>]*>/g, '');
+    } while (result !== prev);
+    return result;
 }
 
 /**
