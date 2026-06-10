@@ -8,7 +8,7 @@
             "id": "T-001",
             "title": "Verify TanStack Start server-route primitive for admin version",
             "description": "Investigate and document which mechanism the installed TanStack Start version provides for raw (non-SSR) HTTP handlers:\n- File: apps/admin/package.json — read the exact @tanstack/react-start version\n- Check TanStack Start docs / node_modules for 'createAPIRoute', 'serverRoute', or equivalent API-route primitive that returns a raw Response without triggering React SSR\n- Determine if a file at apps/admin/src/routes/healthz.ts (or healthz.tsx) with an export named Route (API route form) would be picked up by the router without rendering the React root\n- If the primitive exists: document the exact import path and signature needed for T-002\n- If no first-class primitive: identify the fallback (Nitro route in apps/admin/src/routes/api/ or middleware early-return for /healthz)\n- Write findings as a one-paragraph comment block at the top of apps/admin/src/routes/healthz.ts (create the file stub even if empty)\n\nFiles affected:\n- apps/admin/package.json (read only)\n- apps/admin/src/routes/healthz.ts (create stub with findings comment)\n\nTest requirements: none — this is an investigation/decision task. Output is the stub file with a findings comment and a note in the PR description indicating which mechanism was chosen.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-002"],
@@ -35,8 +35,8 @@
             },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-10T01:07:02.000Z",
+                "completed": "2026-06-10T01:12:09.000Z"
             }
         },
         {
@@ -48,12 +48,18 @@
             "blockedBy": ["T-001"],
             "blocks": ["T-003", "T-005"],
             "subtasks": [
-                { "title": "Implement route handler with JSON 200 response", "completed": false },
+                {
+                    "title": "Implement route handler with JSON 200 response",
+                    "completed": false
+                },
                 {
                     "title": "Confirm no SSR / no QZPayBilling construction path",
                     "completed": false
                 },
-                { "title": "Add JSDoc + AC references", "completed": false },
+                {
+                    "title": "Add JSDoc + AC references",
+                    "completed": false
+                },
                 {
                     "title": "Write unit test in apps/admin/test/lib/healthz.test.ts",
                     "completed": false
@@ -85,8 +91,14 @@
                     "title": "Add HEALTHCHECK instruction to Dockerfile runner stage",
                     "completed": false
                 },
-                { "title": "Add explanatory comment referencing SPEC-209", "completed": false },
-                { "title": "Note Coolify UI operator step in PR description", "completed": false }
+                {
+                    "title": "Add explanatory comment referencing SPEC-209",
+                    "completed": false
+                },
+                {
+                    "title": "Note Coolify UI operator step in PR description",
+                    "completed": false
+                }
             ],
             "tags": ["admin", "docker", "healthcheck", "coolify", "ops"],
             "phase": "core",
@@ -105,7 +117,7 @@
             "id": "T-004",
             "title": "Define heap-snapshot procedure and RSS-band baseline",
             "description": "Produce a documented, executable procedure for confirming the memory leak root cause before the fix. This is an investigation task — output is a markdown document, not code:\n\n- File: apps/admin/docs/spec-209-heap-snapshot-procedure.md (create if docs/ does not exist)\n- Document the staging trigger mechanism: pick ONE of:\n  a) node --heapsnapshot-signal=SIGUSR2 flag added to CMD in Dockerfile (dev/staging only)\n  b) A staging-only admin route that calls v8.writeHeapSnapshot() behind AUTH_CHECK (preferred for safety)\n- RSS sampling script: document the command to poll RSS every 30 s for N minutes while a probe loop hits /healthz (before and after), e.g.:\n    while true; do docker stats --no-stream --format '{{.MemUsage}}' <container_id>; sleep 30; done\n- Define the RSS acceptance band for AC-2.3: based on the observed ~986 MB / 48 h growth, a 'good' run should hold steady within ±50 MB over a 30-minute probe window. Document this as the concrete pass/fail criterion.\n- Document the QZPayBilling initialized log count check: before fix, count should correlate with probe count; after fix, count should be 0 per probe.\n- This document becomes the reference for the manual staging smoke (AC-2.1, AC-2.3)\n\nFiles affected:\n- apps/admin/docs/spec-209-heap-snapshot-procedure.md (new)\n\nTest requirements: none — documentation task. The procedure is validated during the manual staging smoke in T-012.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-006", "T-012"],
@@ -118,8 +130,14 @@
                     "title": "Write RSS polling script and 30-min window procedure",
                     "completed": false
                 },
-                { "title": "Define RSS acceptance band (±50 MB over 30 min)", "completed": false },
-                { "title": "Document QZPayBilling log count check method", "completed": false }
+                {
+                    "title": "Define RSS acceptance band (±50 MB over 30 min)",
+                    "completed": false
+                },
+                {
+                    "title": "Document QZPayBilling log count check method",
+                    "completed": false
+                }
             ],
             "tags": ["admin", "investigation", "memory-leak", "observability", "docs"],
             "phase": "setup",
@@ -130,8 +148,8 @@
             },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-10T01:07:02.000Z",
+                "completed": "2026-06-10T01:12:09.000Z"
             }
         },
         {
@@ -186,7 +204,10 @@
                     "title": "Create test file with mock setup for createQZPayBilling and useSession",
                     "completed": false
                 },
-                { "title": "Write N-render loop asserting call count ≤ 1", "completed": false },
+                {
+                    "title": "Write N-render loop asserting call count ≤ 1",
+                    "completed": false
+                },
                 {
                     "title": "Assert no 'QZPayBilling initialized' log per-render",
                     "completed": false
@@ -209,17 +230,23 @@
             "id": "T-007",
             "title": "Write static-analysis guard test for admin root SSR-unsafe construction",
             "description": "Write a static-analysis guard test that fails if createQZPayBilling or new QueryClient appears in __root.tsx in a server-executed code path without a client-only guard (AC-3.1, AC-3.2):\n\n- File: apps/admin/test/guard/ssr-root-guard.test.ts (new)\n- Approach: read apps/admin/src/routes/__root.tsx as text (fs.readFileSync), then:\n  1. Assert that any occurrence of 'createQZPayBilling(' is preceded within the same code block by a client-only guard: typeof window !== 'undefined', useEffect, or isomorphicLayoutEffect — or appears inside a function/component whose name indicates client-only (e.g. inside useEffect callback body)\n  2. Assert that any occurrence of 'new QueryClient(' is similarly guarded OR is inside a useState initializer that has a corresponding isServer check\n  3. The simplest reliable check: assert that 'createQZPayBilling(' does NOT appear outside of a useEffect body in the file. A regex-based check is acceptable for this guard.\n- The test SHOULD FAIL on the current (unfixed) __root.tsx before T-009 is applied, and PASS after.\n- Add a descriptive comment explaining WHY this guard exists and which incident it prevents.\n\nFiles affected:\n- apps/admin/test/guard/ssr-root-guard.test.ts (new)\n\nTest requirements: this IS the test. CI must run it on every PR (vitest picks it up via the existing 'test/**/*.test.ts' glob).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-009"],
             "subtasks": [
-                { "title": "Create guard test reading __root.tsx as text", "completed": false },
+                {
+                    "title": "Create guard test reading __root.tsx as text",
+                    "completed": false
+                },
                 {
                     "title": "Assert createQZPayBilling only in client-guarded context",
                     "completed": false
                 },
-                { "title": "Add descriptive comment about the guard purpose", "completed": false }
+                {
+                    "title": "Add descriptive comment about the guard purpose",
+                    "completed": false
+                }
             ],
             "tags": ["testing", "guard", "admin", "ssr", "billing"],
             "phase": "testing",
@@ -230,8 +257,8 @@
             },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-10T01:07:02.000Z",
+                "completed": "2026-06-10T01:12:09.000Z"
             }
         },
         {
@@ -243,7 +270,10 @@
             "blockedBy": ["T-007"],
             "blocks": ["T-009"],
             "subtasks": [
-                { "title": "Identify the web root/layout files to scan", "completed": false },
+                {
+                    "title": "Identify the web root/layout files to scan",
+                    "completed": false
+                },
                 {
                     "title": "Extend or create guard test asserting web root is clean",
                     "completed": false
@@ -287,8 +317,14 @@
                     "title": "Add comment explaining QueryClient intentionally kept as-is (per TanStack SSR pattern)",
                     "completed": false
                 },
-                { "title": "Confirm T-006 regression test goes green", "completed": false },
-                { "title": "Confirm T-007 guard test goes green", "completed": false }
+                {
+                    "title": "Confirm T-006 regression test goes green",
+                    "completed": false
+                },
+                {
+                    "title": "Confirm T-007 guard test goes green",
+                    "completed": false
+                }
             ],
             "tags": ["admin", "bugfix", "memory-leak", "ssr", "billing", "qzpay"],
             "phase": "core",
@@ -316,12 +352,18 @@
                     "title": "Run existing billing-access.test.ts and confirm green",
                     "completed": false
                 },
-                { "title": "Load admin billing pages locally / on staging", "completed": false },
+                {
+                    "title": "Load admin billing pages locally / on staging",
+                    "completed": false
+                },
                 {
                     "title": "Verify QZPayProvider client-side context is non-null",
                     "completed": false
                 },
-                { "title": "Document smoke results in PR description", "completed": false }
+                {
+                    "title": "Document smoke results in PR description",
+                    "completed": false
+                }
             ],
             "tags": ["testing", "admin", "billing", "smoke", "manual"],
             "phase": "testing",
@@ -380,18 +422,30 @@
             "blockedBy": ["T-004", "T-010", "T-011"],
             "blocks": ["T-013"],
             "subtasks": [
-                { "title": "Deploy staging with healthcheck fix only", "completed": false },
+                {
+                    "title": "Deploy staging with healthcheck fix only",
+                    "completed": false
+                },
                 {
                     "title": "Execute pre-fix RSS baseline (30-min probe window)",
                     "completed": false
                 },
-                { "title": "Deploy staging with full SPEC-209 fix", "completed": false },
+                {
+                    "title": "Deploy staging with full SPEC-209 fix",
+                    "completed": false
+                },
                 {
                     "title": "Execute post-fix RSS validation and QZPayBilling log count check",
                     "completed": false
                 },
-                { "title": "Trigger heap snapshot if RSS still grows", "completed": false },
-                { "title": "Record results in procedure document", "completed": false }
+                {
+                    "title": "Trigger heap snapshot if RSS still grows",
+                    "completed": false
+                },
+                {
+                    "title": "Record results in procedure document",
+                    "completed": false
+                }
             ],
             "tags": ["testing", "staging", "memory-leak", "observability", "manual"],
             "phase": "testing",
@@ -415,9 +469,18 @@
             "blockedBy": ["T-012"],
             "blocks": [],
             "subtasks": [
-                { "title": "Add Healthcheck section to CLAUDE.md", "completed": false },
-                { "title": "Add SSR Safety Rules section to CLAUDE.md", "completed": false },
-                { "title": "Link to procedure document", "completed": false }
+                {
+                    "title": "Add Healthcheck section to CLAUDE.md",
+                    "completed": false
+                },
+                {
+                    "title": "Add SSR Safety Rules section to CLAUDE.md",
+                    "completed": false
+                },
+                {
+                    "title": "Link to procedure document",
+                    "completed": false
+                }
             ],
             "tags": ["docs", "admin", "healthcheck", "ssr"],
             "phase": "docs",
@@ -435,9 +498,9 @@
     ],
     "summary": {
         "total": 13,
-        "pending": 13,
+        "pending": 10,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 3,
         "blocked": 0,
         "averageComplexity": 2.1
     }
