@@ -490,6 +490,25 @@ describe('stripCloudinaryTransform', () => {
         it('returns an empty string unchanged', () => {
             expect(stripCloudinaryTransform('')).toBe('');
         });
+
+        // Regression: spoofed hostname — must NOT be treated as Cloudinary.
+        it('returns a spoofed Cloudinary hostname URL unchanged (hostname check, not substring)', () => {
+            // Arrange — the subdomain trick: the URL *contains* 'res.cloudinary.com'
+            // as a substring but the actual hostname is 'res.cloudinary.com.evil.com'.
+            const spoofedUrl =
+                'https://res.cloudinary.com.evil.com/upload/w_800,q_auto/v1/image.jpg';
+            // Act
+            const result = stripCloudinaryTransform(spoofedUrl);
+            // Assert — must be returned unchanged (not rewritten as if it were Cloudinary)
+            expect(result).toBe(spoofedUrl);
+        });
+
+        it('returns a relative URL unchanged (no scheme → URL parse fails → pass-through)', () => {
+            // Arrange
+            const relative = '/images/x.svg';
+            // Act / Assert
+            expect(stripCloudinaryTransform(relative)).toBe(relative);
+        });
     });
 
     describe('integration: buildCellUrl behavior simulation', () => {
