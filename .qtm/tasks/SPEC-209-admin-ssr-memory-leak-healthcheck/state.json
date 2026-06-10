@@ -300,7 +300,7 @@
             "id": "T-009",
             "title": "Implement client-only billing guard in __root.tsx",
             "description": "Fix the memory leak in apps/admin/src/routes/__root.tsx by ensuring createQZPayBilling is never instantiated during a server-side render (AC-2.2):\n\n- Current state: the billing instance is created inside useState(() => createQZPayBilling(...)) in RootDocument. On the server, useState lazy init runs on every request, creating a fresh instance each time.\n- Fix (leading hypothesis, validated by T-006 regression test being red before this task):\n  Move billing creation out of useState and into a useEffect (client-only by definition), using a useRef or useState combination:\n    const billingRef = useRef<QZPayProviderProps['billing'] | null>(null);\n    useEffect(() => {\n      if (!billingRef.current) {\n        const adapter = createHttpBillingAdapter({ apiUrl: env.VITE_API_URL });\n        billingRef.current = createQZPayBilling({ ... }) as unknown as QZPayProviderProps['billing'];\n      }\n    }, []);\n  On the server, billingRef.current will be null; QZPayProvider must accept null billing or a stub on SSR.\n- Check QZPayProvider props: if billing is required and cannot be null on SSR, consider rendering QZPayProvider conditionally (only on client) or wrapping in a ClientOnly component.\n- The QueryClient per-request IS the recommended TanStack SSR pattern — do NOT change it unless the T-006 regression test or the heap snapshot from T-012 proves it is the retained set. Leave a comment explaining this decision.\n- Acceptance: after this change, T-006 (regression test) must pass, T-007 (guard test) must pass.\n\nFiles affected:\n- apps/admin/src/routes/__root.tsx\n\nTest requirements:\n- T-006 regression test must pass (createQZPayBilling not called on each SSR render)\n- T-007 guard test must pass (no createQZPayBilling in server-executed path)\n- Run full admin test suite (pnpm test from apps/admin) — no regressions",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-006", "T-007", "T-008"],
             "blocks": ["T-010", "T-011"],
@@ -335,8 +335,8 @@
             },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-10T03:27:30.000Z",
+                "completed": "2026-06-10T03:42:09.000Z"
             }
         },
         {
@@ -498,9 +498,9 @@
     ],
     "summary": {
         "total": 13,
-        "pending": 5,
+        "pending": 4,
         "inProgress": 0,
-        "completed": 8,
+        "completed": 9,
         "blocked": 0,
         "averageComplexity": 2.1
     }
