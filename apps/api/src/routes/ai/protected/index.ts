@@ -27,6 +27,7 @@
 
 import { createRouter } from '../../../utils/create-app';
 import { protectedAiChatRoute } from './chat';
+import { searchIntentRoute } from './search-intent';
 import { protectedAiTextImproveRoute } from './text-improve';
 
 const app = createRouter();
@@ -37,11 +38,9 @@ const app = createRouter();
 // (SPEC-198). See ./text-improve.ts for the middleware stack + handler details.
 app.route('/text-improve', protectedAiTextImproveRoute);
 
-// ─── Reserved slots (sibling specs, NOT YET WIRED) ──────────────────────────
-//
-// // SPEC-199 — search-intent AI (POST /search-intent)
-// // app.route('/search-intent', protectedAiSearchIntentRoute);
-//
+// SPEC-199 — search-intent AI (POST /search-intent)
+app.route('/search-intent', searchIntentRoute);
+
 // SPEC-200 — chat AI (POST /chat)
 app.route('/chat', protectedAiChatRoute);
 
