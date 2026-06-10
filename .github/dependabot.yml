@@ -1,0 +1,56 @@
+# Dependabot configuration.
+#
+# Version updates open PRs against `staging` (the integration line), NOT the
+# default branch `main`. All work in this repo flows through `staging` first;
+# `main` is the validated baseline promoted from `staging`.
+#
+# NOTE: GitHub disables *automated security-update* PRs when `target-branch` is
+# set to a non-default branch. Dependabot security ALERTS remain active, and
+# security patches still arrive through the grouped version-update PRs below
+# (which also land on `staging`). Critical advisories can additionally be
+# applied by hand on a `staging` branch when an out-of-cycle fix is needed.
+version: 2
+updates:
+  - package-ecosystem: 'npm'
+    directory: '/'
+    target-branch: 'staging'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+    open-pull-requests-limit: 10
+    # Group updates to keep PR noise low in this pnpm monorepo: one PR for all
+    # production minor/patch bumps, one for all dev minor/patch bumps. Majors
+    # still open individual PRs so they get focused review.
+    groups:
+      production-minor-patch:
+        dependency-type: 'production'
+        update-types:
+          - 'minor'
+          - 'patch'
+      development-minor-patch:
+        dependency-type: 'development'
+        update-types:
+          - 'minor'
+          - 'patch'
+    commit-message:
+      prefix: 'chore(deps)'
+      prefix-development: 'chore(deps-dev)'
+    labels:
+      - 'dependencies'
+
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    target-branch: 'staging'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+    open-pull-requests-limit: 5
+    groups:
+      github-actions:
+        patterns:
+          - '*'
+    commit-message:
+      prefix: 'ci'
+    labels:
+      - 'dependencies'
+      - 'github-actions'
