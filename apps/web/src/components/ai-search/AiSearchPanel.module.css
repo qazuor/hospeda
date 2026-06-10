@@ -65,6 +65,12 @@
    ─────────────────────────────────────────────────────────────────────────── */
 
 .panel {
+    /* A non-modal <dialog open> defaults to `position: absolute` (UA style),
+       which yanks it out of the .root flex flow and pins it to the fixed
+       bottom-right corner, overflowing off-screen. Force it back into the flow
+       so it renders as a flex item ABOVE the trigger button. */
+    position: relative;
+    margin: 0;
     width: min(420px, calc(100vw - var(--space-6, 1.5rem) * 2));
     background-color: var(--core-card);
     border: 1px solid var(--border, var(--core-foreground-a15));
