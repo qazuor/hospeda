@@ -47,6 +47,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
+import { z } from 'zod';
 import {
     AiSearchIntentRequestSchema,
     AiSearchIntentResponseDataSchema,
@@ -854,5 +855,72 @@ describe('AiSearchIntentResponseDataSchema', () => {
         if (!result.success) {
             expect(result.error.issues.some((i) => i.path.includes('rawQuery'))).toBe(true);
         }
+    });
+});
+
+// ─── Model-facing schema: no regex pattern constraints (REGRESSION GUARD) ────
+//
+// Purpose: prevent re-introducing `.regex()` on `checkIn`/`checkOut` in
+// `SearchIntentEntitiesSchema` or `SearchIntentOutputSchema`. When `generateObject`
+// converts a Zod schema to JSON Schema, `.regex()` emits a `"pattern"` field.
+// Ollama's llama.cpp grammar compiler CRASHES on `pattern` constraints (produces
+// "model runner has unexpectedly stopped" ~265ms pre-inference). This guard
+// fails CI the moment a regex is re-added to any date field in the model-facing
+// schema, catching the regression before it reaches staging.
+//
+// The check works by constructing the JSON Schema representation (via `z.toJSONSchema`)
+// and asserting that no property in the emitted schema carries a `pattern` key
+// for `checkIn` or `checkOut`. An alternative approach (used as a fallback) is
+// verifying that arbitrary non-date strings are accepted, proving the regex is absent.
+
+describe('Model-facing schema has no regex pattern constraints (Ollama crash regression guard)', () => {
+    it('SearchIntentEntitiesSchema: checkIn accepts an arbitrary non-date string (no regex)', () => {
+        // If `.regex(/^\d{4}-\d{2}-\d{2}$/)` is re-added, these will fail because
+        // "not-a-date" and "2026/12/20" do not match the YYYY-MM-DD pattern.
+        // Failing these tests is the early-warning signal before an Ollama deploy.
+        const arbitrary = SearchIntentEntitiesSchema.safeParse({ checkIn: 'not-a-date' });
+        expect(arbitrary.success).toBe(true);
+
+        const slashed = SearchIntentEntitiesSchema.safeParse({ checkIn: '2026/12/20' });
+        expect(slashed.success).toBe(true);
+
+        const nextWeekend = SearchIntentEntitiesSchema.safeParse({ checkIn: 'next weekend' });
+        expect(nextWeekend.success).toBe(true);
+    });
+
+    it('SearchIntentEntitiesSchema: checkOut accepts an arbitrary non-date string (no regex)', () => {
+        const arbitrary = SearchIntentEntitiesSchema.safeParse({ checkOut: 'tomorrow' });
+        expect(arbitrary.success).toBe(true);
+
+        const malformed = SearchIntentEntitiesSchema.safeParse({ checkOut: '2026-13-45' });
+        expect(malformed.success).toBe(true);
+    });
+
+    it('SearchIntentOutputSchema entities.checkIn accepts an arbitrary non-date string (no regex)', () => {
+        const result = SearchIntentOutputSchema.safeParse({
+            confidence: 0.8,
+            entities: { checkIn: 'next Friday', checkOut: 'next Sunday' }
+        });
+        expect(result.success).toBe(true);
+    });
+
+    it('SearchIntentEntitiesSchema: checkIn and checkOut have no "pattern" in JSON Schema output', () => {
+        // z.toJSONSchema is available from zod@4 (the version used in this package).
+        // If the function is not available in the installed version, fall back to
+        // the "accepts arbitrary string" proof above (which is the primary guard).
+        if (typeof z.toJSONSchema !== 'function') {
+            // Fallback: schema already proven by the "accepts arbitrary string" tests.
+            return;
+        }
+        // biome-ignore lint/suspicious/noExplicitAny: z.toJSONSchema is a runtime API not in all type stubs
+        const jsonSchema = (
+            z as unknown as { toJSONSchema: (schema: unknown) => unknown }
+        ).toJSONSchema(SearchIntentEntitiesSchema) as {
+            properties?: Record<string, { pattern?: string }>;
+        };
+
+        const props = jsonSchema.properties ?? {};
+        expect('pattern' in (props.checkIn ?? {})).toBe(false);
+        expect('pattern' in (props.checkOut ?? {})).toBe(false);
     });
 });

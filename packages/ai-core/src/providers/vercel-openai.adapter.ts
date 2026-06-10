@@ -151,6 +151,16 @@ export class OpenAiAdapter implements AiProvider {
     /** The raw API key, kept for the moderation fetch call. */
     private readonly apiKey: string;
 
+    /**
+     * `true` when the adapter was constructed with a custom `baseURL`.
+     *
+     * When `true`, calls route through `/v1/chat/completions` (local-compatible
+     * providers like Ollama, LM Studio, Groq) via `this.provider.chat(model)`.
+     * When `false`, the default `this.provider(model)` targets the Responses API
+     * (`/v1/responses`), which is what real OpenAI expects.
+     */
+    private readonly hasCustomBaseUrl: boolean;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -166,7 +176,34 @@ export class OpenAiAdapter implements AiProvider {
      */
     constructor({ apiKey, baseURL }: OpenAiAdapterOptions) {
         this.apiKey = apiKey;
+        this.hasCustomBaseUrl = baseURL !== undefined;
         this.provider = createOpenAI({ apiKey, ...(baseURL !== undefined ? { baseURL } : {}) });
+    }
+
+    // -------------------------------------------------------------------------
+    // Private helpers
+    // -------------------------------------------------------------------------
+
+    /**
+     * Resolves the language model instance for a given model ID.
+     *
+     * When a custom `baseURL` was provided at construction time the provider is
+     * a local OpenAI-compatible server (Ollama, LM Studio, etc.) that implements
+     * `/v1/chat/completions` but NOT the Responses API (`/v1/responses`).
+     * In that case we MUST use `this.provider.chat(model)` so requests are routed
+     * to `/v1/chat/completions`. For real OpenAI (no baseURL) the default callable
+     * `this.provider(model)` targets the Responses API, which is correct.
+     *
+     * @param modelId - Resolved model identifier string.
+     * @returns SDK LanguageModel bound to the correct endpoint.
+     */
+    private resolveLanguageModel(modelId: string): ReturnType<ReturnType<typeof createOpenAI>> {
+        // When a custom baseURL is set (local/compatible provider), force chat-completions
+        // endpoint via provider.chat(). Real OpenAI uses provider(model) → Responses API.
+        if (this.hasCustomBaseUrl) {
+            return this.provider.chat(modelId);
+        }
+        return this.provider(modelId);
     }
 
     // -------------------------------------------------------------------------
@@ -186,13 +223,18 @@ export class OpenAiAdapter implements AiProvider {
      */
     async generateText(input: GenerateTextRequest): Promise<GenerateTextResponse> {
         const model = resolveModel(input.model, DEFAULT_MODEL);
-        const languageModel = this.provider(model);
+        const languageModel = this.resolveLanguageModel(model);
 
         const baseParams = {
             model: languageModel,
             temperature: input.params?.temperature,
             maxOutputTokens: input.params?.maxTokens,
-            topP: input.params?.topP
+            topP: input.params?.topP,
+            // Disable SDK-level retries so the engine's withRetry is the sole
+            // retry authority. Without this the SDK defaults to maxRetries:2 (3
+            // attempts) stacked on top of the engine's MAX_ATTEMPTS_PER_PROVIDER=2,
+            // yielding up to 6 provider calls per request.
+            maxRetries: 0 as const
         };
 
         // Branch into two distinct SDK calls to avoid the spread-union type that
@@ -233,13 +275,16 @@ export class OpenAiAdapter implements AiProvider {
      */
     async streamText(input: StreamTextRequest): Promise<StreamTextResult> {
         const model = resolveModel(input.model, DEFAULT_MODEL);
-        const languageModel = this.provider(model);
+        const languageModel = this.resolveLanguageModel(model);
 
         const baseParams = {
             model: languageModel,
             temperature: input.params?.temperature,
             maxOutputTokens: input.params?.maxTokens,
-            topP: input.params?.topP
+            topP: input.params?.topP,
+            // Disable SDK-level retries — engine's withRetry is the sole authority.
+            // See generateText for the full rationale (6-call stacking prevention).
+            maxRetries: 0 as const
         };
 
         // streamText() returns synchronously (not a promise). Branch into two
@@ -293,7 +338,7 @@ export class OpenAiAdapter implements AiProvider {
         outputSchema: ZodType<T>
     ): Promise<{ object: T } & GenerateObjectResponseMeta> {
         const model = resolveModel(input.model, DEFAULT_MODEL);
-        const languageModel = this.provider(model);
+        const languageModel = this.resolveLanguageModel(model);
 
         // Cast outputSchema to `any` before passing to zodSchema() to break
         // the cross-version Zod type-unification chain. The `ai` SDK's zodSchema()
@@ -309,7 +354,12 @@ export class OpenAiAdapter implements AiProvider {
             prompt: input.prompt,
             temperature: input.params?.temperature,
             maxOutputTokens: input.params?.maxTokens,
-            topP: input.params?.topP
+            topP: input.params?.topP,
+            // Disable SDK-level retries — engine's withRetry is the sole authority.
+            // Without maxRetries:0 the SDK defaults to 2 retries (3 total attempts),
+            // which stacks on top of the engine's MAX_ATTEMPTS_PER_PROVIDER=2 and
+            // produces up to 6 provider calls per request.
+            maxRetries: 0
         });
 
         // The SDK's generateObject().object can be undefined (e.g. when the
