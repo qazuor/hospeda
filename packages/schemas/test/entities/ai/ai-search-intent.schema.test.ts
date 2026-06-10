@@ -1,5 +1,5 @@
 /**
- * Unit tests for AI NL search intent Zod schemas (SPEC-199, T-001).
+ * Unit tests for AI NL search intent Zod schemas (SPEC-199, T-001 + T-002).
  *
  * Coverage (§8.1):
  *
@@ -24,13 +24,35 @@
  *   - extra unknown keys are stripped (NOT strict)
  *   - full valid payload with all slots
  *
+ * SearchIntentSchema (T-002):
+ *   - narrows kind to 'search' literal; rejects 'chat'
+ *   - typed entities validated against SearchIntentEntitiesSchema
+ *   - valid full SearchIntent accepted
+ *
+ * SearchIntentOutputSchema (T-002):
+ *   - defaults confidence to 0 when absent
+ *   - rejects confidence > 1
+ *   - rejects confidence < 0
+ *   - accepts confidence at boundary values 0 and 1
+ *   - strips unknown model keys from entities (NOT strict)
+ *
+ * AiSearchIntentResponseDataSchema (T-002):
+ *   - validates full valid envelope
+ *   - rejects missing required fields
+ *   - rejects confidence out of [0, 1] range
+ *   - accepts fallbackToKeyword = true / false
+ *   - mappedParams accepts arbitrary string-keyed values
+ *
  * @module test/entities/ai/ai-search-intent.schema.test
  */
 
 import { describe, expect, it } from 'vitest';
 import {
     AiSearchIntentRequestSchema,
-    SearchIntentEntitiesSchema
+    AiSearchIntentResponseDataSchema,
+    SearchIntentEntitiesSchema,
+    SearchIntentOutputSchema,
+    SearchIntentSchema
 } from '../../../src/entities/ai/ai-search-intent.schema';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -453,5 +475,384 @@ describe('SearchIntentEntitiesSchema', () => {
     it('rejects an invalid checkIn date string', () => {
         const result = SearchIntentEntitiesSchema.safeParse({ checkIn: 'not-a-date' });
         expect(result.success).toBe(false);
+    });
+});
+
+// ─── SearchIntentSchema (T-002) ───────────────────────────────────────────────
+
+describe('SearchIntentSchema', () => {
+    /** Minimal valid AiIntent base shape with kind narrowed to 'search'. */
+    const VALID_SEARCH_INTENT = {
+        kind: 'search',
+        confidence: 0.9,
+        entities: {},
+        rawQuery: 'cabaña con pileta'
+    };
+
+    it('accepts a valid SearchIntent with kind "search"', () => {
+        // Arrange + Act
+        const result = SearchIntentSchema.safeParse(VALID_SEARCH_INTENT);
+        // Assert
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.kind).toBe('search');
+        }
+    });
+
+    it('rejects kind "chat" (wrong literal)', () => {
+        // Arrange
+        const input = { ...VALID_SEARCH_INTENT, kind: 'chat' };
+        // Act
+        const result = SearchIntentSchema.safeParse(input);
+        // Assert
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error.issues.some((i) => i.path.includes('kind'))).toBe(true);
+        }
+    });
+
+    it('rejects an empty kind string (kind must be "search")', () => {
+        // Arrange
+        const input = { ...VALID_SEARCH_INTENT, kind: '' };
+        // Act
+        const result = SearchIntentSchema.safeParse(input);
+        // Assert
+        expect(result.success).toBe(false);
+    });
+
+    it('types entities via SearchIntentEntitiesSchema — rejects invalid accommodationType', () => {
+        // Arrange
+        const input = {
+            ...VALID_SEARCH_INTENT,
+            entities: { accommodationType: 'TREEHOUSE' }
+        };
+        // Act
+        const result = SearchIntentSchema.safeParse(input);
+        // Assert
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error.issues.some((i) => i.path.includes('accommodationType'))).toBe(
+                true
+            );
+        }
+    });
+
+    it('accepts entities with valid typed slots', () => {
+        // Arrange
+        const input = {
+            ...VALID_SEARCH_INTENT,
+            entities: {
+                accommodationType: 'CABIN',
+                minGuests: 2,
+                hasPool: true,
+                amenitySlugs: ['pool']
+            }
+        };
+        // Act
+        const result = SearchIntentSchema.safeParse(input);
+        // Assert
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.entities.accommodationType).toBe('CABIN');
+            expect(result.data.entities.minGuests).toBe(2);
+            expect(result.data.entities.hasPool).toBe(true);
+        }
+    });
+
+    it('strips extra unknown entity keys (NOT strict)', () => {
+        // Arrange: model may return internal fields alongside entities
+        const input = {
+            ...VALID_SEARCH_INTENT,
+            entities: { minGuests: 3, _internalModelDebug: 'value' }
+        };
+        // Act
+        const result = SearchIntentSchema.safeParse(input);
+        // Assert
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect('_internalModelDebug' in result.data.entities).toBe(false);
+            expect(result.data.entities.minGuests).toBe(3);
+        }
+    });
+
+    it('requires rawQuery to be at least 1 character', () => {
+        // Arrange
+        const input = { ...VALID_SEARCH_INTENT, rawQuery: '' };
+        // Act
+        const result = SearchIntentSchema.safeParse(input);
+        // Assert
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error.issues.some((i) => i.path.includes('rawQuery'))).toBe(true);
+        }
+    });
+});
+
+// ─── SearchIntentOutputSchema (T-002) ─────────────────────────────────────────
+
+describe('SearchIntentOutputSchema', () => {
+    it('defaults confidence to 0 when absent', () => {
+        // Arrange: model omits confidence field entirely
+        const input = { entities: {} };
+        // Act
+        const result = SearchIntentOutputSchema.safeParse(input);
+        // Assert
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.confidence).toBe(0);
+        }
+    });
+
+    it('accepts confidence at lower boundary (0)', () => {
+        // Arrange + Act
+        const result = SearchIntentOutputSchema.safeParse({ confidence: 0, entities: {} });
+        // Assert
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.confidence).toBe(0);
+        }
+    });
+
+    it('accepts confidence at upper boundary (1)', () => {
+        // Arrange + Act
+        const result = SearchIntentOutputSchema.safeParse({ confidence: 1, entities: {} });
+        // Assert
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.confidence).toBe(1);
+        }
+    });
+
+    it('rejects confidence > 1', () => {
+        // Arrange
+        const input = { confidence: 1.001, entities: {} };
+        // Act
+        const result = SearchIntentOutputSchema.safeParse(input);
+        // Assert
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error.issues.some((i) => i.path.includes('confidence'))).toBe(true);
+        }
+    });
+
+    it('rejects confidence < 0', () => {
+        // Arrange
+        const input = { confidence: -0.001, entities: {} };
+        // Act
+        const result = SearchIntentOutputSchema.safeParse(input);
+        // Assert
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error.issues.some((i) => i.path.includes('confidence'))).toBe(true);
+        }
+    });
+
+    it('accepts a realistic model output with entities', () => {
+        // Arrange: typical model response
+        const input = {
+            confidence: 0.87,
+            entities: {
+                accommodationType: 'CABIN',
+                minGuests: 2,
+                maxGuests: 4,
+                hasPool: true,
+                maxPrice: 200,
+                currency: 'ARS'
+            }
+        };
+        // Act
+        const result = SearchIntentOutputSchema.safeParse(input);
+        // Assert
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.confidence).toBe(0.87);
+            expect(result.data.entities.accommodationType).toBe('CABIN');
+            expect(result.data.entities.hasPool).toBe(true);
+        }
+    });
+
+    it('strips unknown model keys from entities (NOT strict)', () => {
+        // Arrange: model may return extra internal fields inside entities
+        const input = {
+            confidence: 0.5,
+            entities: { minGuests: 2, _modelDebugInfo: 'internal' }
+        };
+        // Act
+        const result = SearchIntentOutputSchema.safeParse(input);
+        // Assert
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect('_modelDebugInfo' in result.data.entities).toBe(false);
+            expect(result.data.entities.minGuests).toBe(2);
+        }
+    });
+
+    it('rejects invalid entities field (e.g. accommodationType out of enum)', () => {
+        // Arrange
+        const input = {
+            confidence: 0.7,
+            entities: { accommodationType: 'VILLA' }
+        };
+        // Act
+        const result = SearchIntentOutputSchema.safeParse(input);
+        // Assert
+        expect(result.success).toBe(false);
+    });
+});
+
+// ─── AiSearchIntentResponseDataSchema (T-002) ─────────────────────────────────
+
+describe('AiSearchIntentResponseDataSchema', () => {
+    /** Minimal valid AiIntent envelope for use in response data. */
+    const VALID_INTENT = {
+        kind: 'search',
+        confidence: 0.85,
+        entities: { accommodationType: 'CABIN' },
+        rawQuery: 'cabaña con pileta para 4 personas'
+    };
+
+    /** Minimal valid response data envelope. */
+    const VALID_RESPONSE_DATA = {
+        intent: VALID_INTENT,
+        mappedParams: { type: 'CABIN', minGuests: '4', hasPool: 'true' },
+        confidence: 0.85,
+        fallbackToKeyword: false
+    };
+
+    it('accepts a valid response data envelope', () => {
+        // Arrange + Act
+        const result = AiSearchIntentResponseDataSchema.safeParse(VALID_RESPONSE_DATA);
+        // Assert
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.confidence).toBe(0.85);
+            expect(result.data.fallbackToKeyword).toBe(false);
+        }
+    });
+
+    it('accepts fallbackToKeyword = true (low-confidence case)', () => {
+        // Arrange
+        const input = { ...VALID_RESPONSE_DATA, confidence: 0.3, fallbackToKeyword: true };
+        // Act
+        const result = AiSearchIntentResponseDataSchema.safeParse(input);
+        // Assert
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.fallbackToKeyword).toBe(true);
+            expect(result.data.confidence).toBe(0.3);
+        }
+    });
+
+    it('rejects missing intent field', () => {
+        // Arrange
+        const { intent: _unused, ...inputWithoutIntent } = VALID_RESPONSE_DATA;
+        // Act
+        const result = AiSearchIntentResponseDataSchema.safeParse(inputWithoutIntent);
+        // Assert
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error.issues.some((i) => i.path.includes('intent'))).toBe(true);
+        }
+    });
+
+    it('rejects missing fallbackToKeyword field', () => {
+        // Arrange
+        const { fallbackToKeyword: _unused, ...inputWithout } = VALID_RESPONSE_DATA;
+        // Act
+        const result = AiSearchIntentResponseDataSchema.safeParse(inputWithout);
+        // Assert
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error.issues.some((i) => i.path.includes('fallbackToKeyword'))).toBe(
+                true
+            );
+        }
+    });
+
+    it('rejects confidence > 1', () => {
+        // Arrange
+        const input = { ...VALID_RESPONSE_DATA, confidence: 1.1 };
+        // Act
+        const result = AiSearchIntentResponseDataSchema.safeParse(input);
+        // Assert
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error.issues.some((i) => i.path.includes('confidence'))).toBe(true);
+        }
+    });
+
+    it('rejects confidence < 0', () => {
+        // Arrange
+        const input = { ...VALID_RESPONSE_DATA, confidence: -0.1 };
+        // Act
+        const result = AiSearchIntentResponseDataSchema.safeParse(input);
+        // Assert
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error.issues.some((i) => i.path.includes('confidence'))).toBe(true);
+        }
+    });
+
+    it('accepts confidence at exact boundaries (0 and 1)', () => {
+        expect(
+            AiSearchIntentResponseDataSchema.safeParse({ ...VALID_RESPONSE_DATA, confidence: 0 })
+                .success
+        ).toBe(true);
+        expect(
+            AiSearchIntentResponseDataSchema.safeParse({ ...VALID_RESPONSE_DATA, confidence: 1 })
+                .success
+        ).toBe(true);
+    });
+
+    it('accepts mappedParams with arbitrary string-keyed values (open record)', () => {
+        // Arrange: various serialized URL param types
+        const input = {
+            ...VALID_RESPONSE_DATA,
+            mappedParams: {
+                type: 'CABIN',
+                minGuests: '2',
+                hasPool: 'true',
+                amenities: ['uuid-1', 'uuid-2'],
+                checkIn: '2026-12-20',
+                checkOut: '2026-12-27'
+            }
+        };
+        // Act
+        const result = AiSearchIntentResponseDataSchema.safeParse(input);
+        // Assert
+        expect(result.success).toBe(true);
+    });
+
+    it('accepts an empty mappedParams object (no slots extracted)', () => {
+        // Arrange: low-confidence extraction produces empty mapped params
+        const input = {
+            ...VALID_RESPONSE_DATA,
+            mappedParams: {},
+            confidence: 0.1,
+            fallbackToKeyword: true
+        };
+        // Act
+        const result = AiSearchIntentResponseDataSchema.safeParse(input);
+        // Assert
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.mappedParams).toEqual({});
+            expect(result.data.fallbackToKeyword).toBe(true);
+        }
+    });
+
+    it('validates the intent field against AiIntentSchema — rejects empty rawQuery', () => {
+        // Arrange: intent with invalid rawQuery
+        const input = {
+            ...VALID_RESPONSE_DATA,
+            intent: { ...VALID_INTENT, rawQuery: '' }
+        };
+        // Act
+        const result = AiSearchIntentResponseDataSchema.safeParse(input);
+        // Assert
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error.issues.some((i) => i.path.includes('rawQuery'))).toBe(true);
+        }
     });
 });
