@@ -23,21 +23,23 @@ import {
     type ResetPasswordCheckResponse,
     ResetPasswordCheckResponseSchema
 } from '@repo/schemas';
-import { and, eq, like } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { apiLogger } from '../../utils/logger';
 import { createPublicRoute } from '../../utils/route-factory';
 
 /**
  * Better Auth identifier prefix for reset-password tokens.
  *
- * Better Auth v1.4.x stores reset-password verifications with an identifier
- * that begins with `reset-password` (see internal `password.ts` in the
- * Better Auth source). Because Hospeda does not configure a custom
- * `verification.storeIdentifier`, the value remains plain (not hashed) and
- * we can match by a `LIKE 'reset-password%'` filter on the identifier.
+ * Better Auth v1.4.x stores reset-password verifications with:
+ *   identifier = `reset-password:<token>`   (the URL token embedded in the key)
+ *   value      = userId                     (the account the reset is for)
  *
- * If a future Better Auth upgrade changes the prefix, the unit test for this
- * route will fail loud and a one-line constant update fixes the regression.
+ * The token that arrives in the URL query param is the raw suffix after the
+ * colon. To look up the row we must reconstruct the full identifier by
+ * prepending this prefix + colon separator.
+ *
+ * If a future Better Auth upgrade changes the prefix or format, the e2e test
+ * HOST-06b will fail loud and a one-line constant update fixes the regression.
  */
 const RESET_PASSWORD_IDENTIFIER_PREFIX = 'reset-password';
 
@@ -83,12 +85,7 @@ export const checkResetPasswordToken = async ({
                 expiresAt: verifications.expiresAt
             })
             .from(verifications)
-            .where(
-                and(
-                    eq(verifications.value, token),
-                    like(verifications.identifier, `${RESET_PASSWORD_IDENTIFIER_PREFIX}%`)
-                )
-            )
+            .where(eq(verifications.identifier, `${RESET_PASSWORD_IDENTIFIER_PREFIX}:${token}`))
             .limit(1);
 
         const row = rows[0];
