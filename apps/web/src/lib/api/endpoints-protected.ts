@@ -1534,6 +1534,48 @@ export const protectedAccommodationsApi = {
     }
 };
 
+// --- Media (Protected) ---
+
+/**
+ * Protected media API endpoints (require auth session).
+ */
+export const protectedMediaApi = {
+    /**
+     * Delete a Cloudinary media asset for an entity owned by the authenticated user.
+     *
+     * The server verifies that the publicId encodes an entity owned by the actor.
+     * Returns { deleted: true, publicId, wasPresent } on success.
+     * Best-effort: callers should not block UI on failure.
+     *
+     * @param params - The Cloudinary publicId of the asset to delete
+     * @returns Whether the asset was deleted and whether it was present
+     *
+     * @example
+     * ```ts
+     * const result = await protectedMediaApi.deleteMedia({
+     *   publicId: 'hospeda/dev/accommodations/uuid/gallery/abc123'
+     * });
+     * if (result.ok) console.log(result.data.wasPresent);
+     * ```
+     */
+    deleteMedia({
+        publicId
+    }: {
+        readonly publicId: string;
+    }): Promise<
+        ApiResult<{
+            readonly deleted: true;
+            readonly publicId: string;
+            readonly wasPresent?: boolean;
+        }>
+    > {
+        const encoded = encodeURIComponent(publicId);
+        return apiClient.delete({
+            path: `${PROTECTED}/media/delete-entity?publicId=${encoded}`
+        });
+    }
+};
+
 // --- Accommodation Editor (SPEC-208) ---
 
 /**
