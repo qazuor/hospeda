@@ -99,9 +99,12 @@ jobs:
       HOSPEDA_MAILER_PORT: '1025'
 
       # MercadoPago: PR mode uses simulated webhook only (no real sandbox calls).
-      # The webhook secret signs the simulated POST; the access_token is a stub.
-      HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN: TEST-pr-stub-access-token
-      HOSPEDA_MERCADO_PAGO_PUBLIC_KEY: TEST-pr-stub-public-key
+      # The webhook secret signs the simulated POST; the access_token is a stub,
+      # but the QZPay adapter validates the format (must start with 'APP_USR-')
+      # at billing init, so the stub has to match that shape or billing fails to
+      # initialize and every entitlement-gated route errors.
+      HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN: APP_USR-0000000000000000-010125-00000000000000000000000000000000-000000000
+      HOSPEDA_MERCADO_PAGO_PUBLIC_KEY: APP_USR-00000000-0000-0000-0000-000000000000
       HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET: ${{ secrets.HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET }}
       HOSPEDA_MERCADO_PAGO_SANDBOX: 'true'
 
