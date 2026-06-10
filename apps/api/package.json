@@ -56,7 +56,7 @@
         "dotenv": "^16.5.0",
         "drizzle-orm": "^0.44.7",
         "file-type": "^19.6.0",
-        "hono": "^4.12.16",
+        "hono": "^4.12.21",
         "hono-rate-limiter": "^0.4.2",
         "image-size": "^2.0.0",
         "ioredis": "^5.10.0",
