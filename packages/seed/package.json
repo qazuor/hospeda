@@ -41,7 +41,7 @@
         "@repo/utils": "workspace:*",
         "bcryptjs": "^3.0.2",
         "dotenv": "^17.2.1",
-        "drizzle-orm": "^0.44.0",
+        "drizzle-orm": "^0.45.2",
         "pg": "^8.11.1",
         "zod": "^4.0.8"
     },
