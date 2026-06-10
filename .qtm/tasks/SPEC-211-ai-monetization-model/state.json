@@ -566,35 +566,35 @@
             "id": "T-015",
             "title": "Write ai_support addon entitlement and metering integration tests",
             "description": "In `apps/api/test/integration/ai/support-addon.test.ts`, write tests: AC-4.1 — seeded host purchases AI_SUPPORT addon; assert `billing.entitlements.getByCustomerId` returns `AI_SUPPORT` via customer-level overrides; AC-4.2 — `ai_support` metering is keyed by the host's userId (the addon purchaser), NOT an accommodation's ownerId; AC-4.3 — the final grant matrix from §6.2 is asserted as a config snapshot test (all 9 plans × 4 AI entitlements). Test file: `packages/billing/test/grant-matrix.snapshot.test.ts` for AC-4.3.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-005", "T-014"],
             "blocks": ["T-016"],
             "subtasks": [
                 {
                     "title": "Write AC-4.1: addon purchase surfaces AI_SUPPORT via overrides",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write AC-4.2: support metering keyed by host userId not ownerId",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write AC-4.3: §6.2 grant matrix snapshot test across all plans",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "api", "integration", "phase-4", "ai-support", "billing"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-10T02:45:00.000Z",
+                "completed": "2026-06-10T02:55:00.000Z"
             }
         },
         {
@@ -644,43 +644,43 @@
             "id": "T-017",
             "title": "Update packages/billing/CLAUDE.md with Model C two-layer model",
             "description": "In `packages/billing/CLAUDE.md`, add a 'Model C — Two-Layer Config/DB Split' section documenting: (1) the capability layer (config wins, auto-propagated on deploy via db:apply-extras); (2) the commercial layer (DB wins, operator-editable via SPEC-168 admin UI); (3) the §8.2 field-split table; (4) how to add a new entitlement (update plans.config.ts + re-run extras migration). Cross-reference the `adding-an-entitlement.md` doc. Also update `docs/billing/adding-an-entitlement.md` with the same Model C context and a note that config-only changes require running the extras migration to propagate (R-6 mitigation).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-016"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Add Model C section to packages/billing/CLAUDE.md",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update docs/billing/adding-an-entitlement.md with Model C workflow",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Cross-reference field-split table in both docs",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs", "billing", "model-c", "phase-2"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-10T02:45:00.000Z",
+                "completed": "2026-06-10T02:55:00.000Z"
             }
         }
     ],
     "summary": {
         "total": 17,
-        "pending": 3,
+        "pending": 1,
         "inProgress": 0,
-        "completed": 14,
+        "completed": 16,
         "blocked": 0,
         "averageComplexity": 2.2
     }

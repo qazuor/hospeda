@@ -1,6 +1,6 @@
 # SPEC-211: AI Monetization Model
 
-## Progress: 14/17 tasks (82%) — setup + core + Model C migration + ai_search platform refactor DONE (merged staging in for the SPEC-199 route). T-013 covered by T-009/T-012. Remaining: T-015 ai_support addon tests (AC-4.1/4.3; AC-4.2 deferred — no support route), T-016 smoke checklist, T-017 Model C docs
+## Progress: 16/17 tasks (94%) — only T-016 (staging smoke checklist) left. ALSO pending before PR: full monorepo typecheck + suite validation after the 184-commit staging merge. AC-4.2 (ai_support metering) + the ai_support feature route deferred to a future spec
 
 **Average Complexity:** 2.2/3 (max)
 **Critical Path:** T-001 → T-003 → T-008 → T-010 → T-011 → T-013 → T-016 → T-017 (8 steps)
@@ -86,7 +86,7 @@
   - Blocked by: T-009, T-011
   - Blocks: T-016
 
-- [ ] **T-015** (complexity: 3) - Write ai_support addon entitlement and metering integration tests
+- [x] **T-015** (complexity: 3) - Write ai_support addon entitlement and metering integration tests
   - Tests: AC-4.1 (addon surfaces AI_SUPPORT), AC-4.2 (host-metered), AC-4.3 (§6.2 grant matrix snapshot)
   - Blocked by: T-005, T-014
   - Blocks: T-016
@@ -98,7 +98,7 @@
   - Blocked by: T-012, T-013, T-014, T-015
   - Blocks: T-017
 
-- [ ] **T-017** (complexity: 2) - Update packages/billing/CLAUDE.md with Model C two-layer model
+- [x] **T-017** (complexity: 2) - Update packages/billing/CLAUDE.md with Model C two-layer model
   - Document Model C in billing/CLAUDE.md + docs/billing/adding-an-entitlement.md
   - Blocked by: T-016
   - Blocks: none
