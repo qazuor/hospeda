@@ -1,6 +1,6 @@
 # SPEC-211: AI Monetization Model
 
-## Progress: 17/17 tasks (100%) — all tasks complete. Spec stays `in-progress` until merged to staging (closeout flips it to completed/archived post-merge). Full monorepo typecheck passed post-merge. AC-4.2 (ai_support metering) + the ai_support feature route deferred to a future spec
+## Progress: 17/17 tasks (100%) — COMPLETE. PR #1560 merged to staging (2026-06-10); spec flipped to completed/archived in both indexes. Owner ops gates still pending before staging→main: SPEC-143 staging smoke (MP sandbox + OpenAI vault). AC-4.2 (ai_support metering) + the ai_support feature route deferred to a future spec
 
 **Average Complexity:** 2.2/3 (max)
 **Critical Path:** T-001 → T-003 → T-008 → T-010 → T-011 → T-013 → T-016 → T-017 (8 steps)

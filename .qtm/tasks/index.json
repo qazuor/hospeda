@@ -4,10 +4,13 @@
         {
             "specId": "SPEC-211",
             "title": "AI Monetization Model",
-            "status": "in-progress",
+            "status": "completed",
             "progress": "17/17",
             "path": "SPEC-211-ai-monetization-model",
-            "note": "Follow-up to SPEC-200. Owner-governed AI chat + Model C config-driven capability sync. All 17 tasks complete; full monorepo typecheck green. Stays in-progress until merged to staging (closeout flips to completed/archived post-merge). ai_support feature route + AC-4.2 metering deferred to a future spec."
+            "note": "Follow-up to SPEC-200. Owner-governed AI chat + Model C config-driven capability sync. All 17 tasks complete; full monorepo typecheck green. Stays in-progress until merged to staging (closeout flips to completed/archived post-merge). ai_support feature route + AC-4.2 metering deferred to a future spec.",
+            "archived": true,
+            "archivedAt": "2026-06-10T19:28:09.000Z",
+            "archiveNote": "PR #1560 merged to staging. Owner ops gates still pending before staging->main: SPEC-143 staging smoke (MP sandbox + OpenAI vault). ai_support feature route + AC-4.2 metering deferred to a future spec."
         },
         {
             "specId": "SPEC-200",

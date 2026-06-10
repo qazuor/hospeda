@@ -2,7 +2,7 @@
 id: SPEC-211
 slug: ai-monetization-model
 title: AI Monetization Model
-status: in-progress
+status: completed
 owner: qazuor
 created: 2026-06-09
 parentSpec: SPEC-200
@@ -818,7 +818,7 @@ None. No new providers, no new payment integration.
    reused as-is for owner metering.
 5. The cost backstop is `AiCostCeilingsSchema` in
    `packages/schemas/src/entities/ai/ai-settings.schema.ts` (`globalMonthlyMicroUsd`
-   + `perFeatureMonthlyMicroUsd`, integer µUSD), enforced by
+   - `perFeatureMonthlyMicroUsd`, integer µUSD), enforced by
    `packages/ai-core/src/usage/ceiling.ts`. It is the **last resort**, not the
    only guardrail — the owner rule forbids `-1` AI quotas so per-user limits trip
    first.
