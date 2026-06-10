@@ -108,7 +108,7 @@
 .panelTitle {
     margin: 0;
     font-family: var(--font-sans);
-    font-size: var(--text-heading-sm, 1.125rem);
+    font-size: var(--text-h6, 1.125rem);
     font-weight: 700;
     color: var(--core-foreground);
     line-height: 1.3;
@@ -214,7 +214,7 @@
 }
 
 .ctaLink:hover {
-    color: var(--brand-primary-lm04);
+    color: var(--brand-primary-lm05);
     text-decoration: underline;
 }
 
