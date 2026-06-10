@@ -1,6 +1,6 @@
 # SPEC-211: AI Monetization Model
 
-## Progress: 10/17 tasks (59%) — setup + core phases COMPLETE (T-001..T-010); next: T-011 (Model C extras migration linchpin), then testing + docs
+## Progress: 12/17 tasks (71%) — setup + core + the Model C migration (T-011 linchpin, real-DB tested T-012) DONE; remaining: T-013 chat tests, T-014 search route, T-015 addon tests, T-016/T-017 docs
 
 **Average Complexity:** 2.2/3 (max)
 **Critical Path:** T-001 → T-003 → T-008 → T-010 → T-011 → T-013 → T-016 → T-017 (8 steps)
@@ -64,7 +64,7 @@
 
 ### Integration Phase
 
-- [ ] **T-011** (complexity: 3) - Write idempotent Model C extras migration (finite limits + capability removals)
+- [x] **T-011** (complexity: 3) - Write idempotent Model C extras migration (finite limits + capability removals)
   - Create extras migration SQL covering all phases: finite limits + AI_CHAT/AI_SEARCH removals + general capability sync
   - Blocked by: T-001, T-003, T-004, T-008, T-010
   - Blocks: T-012, T-013, T-014
@@ -76,7 +76,7 @@
 
 ### Testing Phase
 
-- [ ] **T-012** (complexity: 3) - Write real-DB integration tests for Model C extras migration
+- [x] **T-012** (complexity: 3) - Write real-DB integration tests for Model C extras migration
   - Real-DB integration tests for migration: idempotency, scoping, capability addition, commercial no-clobber
   - Blocked by: T-002, T-011
   - Blocks: T-016

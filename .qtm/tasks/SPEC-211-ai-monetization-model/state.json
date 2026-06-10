@@ -398,86 +398,86 @@
             "id": "T-011",
             "title": "Write idempotent Model C extras migration (finite limits + capability removals)",
             "description": "Create `packages/db/src/migrations/extras/014-model-c-capability-sync.sql` (or the next available extras number). The migration must: (1) update four AI limit keys on plans that had -1 to config values from §6.1; (2) remove AI_CHAT + MAX_AI_CHAT_PER_MONTH from tourist plan rows; (3) remove AI_SEARCH + MAX_AI_SEARCH_PER_MONTH from all plan rows; (4) run the general capability sync governed by §8.2 field-split; (5) support a dry-run mode (param or env); (6) call clearEntitlementCache for touched customers or document the 5-min window acceptance. Must be idempotent: second run reports zero changes. Test: real-DB integration test in `packages/db/test/extras/014-model-c-sync.test.ts` covering AC-0.3, AC-0.4, AC-1.4, AC-2.1, AC-2.2, AC-3.1.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001", "T-003", "T-004", "T-008", "T-010"],
             "blocks": ["T-012", "T-013", "T-014"],
             "subtasks": [
                 {
                     "title": "Write SQL for finite-limit propagation (4 AI limit keys, -1 rows)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write SQL for AI_CHAT removal from tourist rows",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write SQL for AI_SEARCH removal from all rows",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write SQL for general capability sync (entitlements array + limit key presence)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add dry-run mode and idempotency guard",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["db", "migration", "phase-2", "model-c", "extras"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-10T01:10:00.000Z",
+                "completed": "2026-06-10T01:25:00.000Z"
             }
         },
         {
             "id": "T-012",
             "title": "Write real-DB integration tests for Model C extras migration",
             "description": "Create `packages/db/test/extras/014-model-c-sync.test.ts` using `testDb.setup/clean`. Scenarios (against a db:fresh-dev snapshot): (1) AC-0.3 — seed -1 limits manually, run migration, assert finite values + AI_CHAT removed from tourist rows + AI_SEARCH removed from all rows + commercial fields byte-identical; (2) AC-0.4 — run migration twice, assert second run reports zero changes (idempotent); (3) AC-2.1 — add a new EntitlementKey to a plan in config, run migration, assert DB row gains it; (4) AC-2.2 — operator-edit a limits value, run migration, assert value NOT overwritten. Uses the 13 SPEC-143 test users seeded via db:fresh-dev.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002", "T-011"],
             "blocks": ["T-016"],
             "subtasks": [
                 {
                     "title": "Set up testDb fixture using db:fresh-dev snapshot",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write AC-0.3 test: finite limits + removals + commercial byte-identical",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write AC-0.4 test: idempotency (second run = zero changes)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write AC-2.1 test: new capability addition propagated",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write AC-2.2 test: commercial-layer value not clobbered",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "db", "integration", "phase-2", "model-c"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-09T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-10T01:10:00.000Z",
+                "completed": "2026-06-10T01:25:00.000Z"
             }
         },
         {
@@ -678,9 +678,9 @@
     ],
     "summary": {
         "total": 17,
-        "pending": 7,
+        "pending": 5,
         "inProgress": 0,
-        "completed": 10,
+        "completed": 12,
         "blocked": 0,
         "averageComplexity": 2.2
     }
