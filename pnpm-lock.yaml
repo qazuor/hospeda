@@ -271,13 +271,13 @@ importers:
         version: 1.131.26(@tanstack/react-router@1.131.26(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(vite@8.0.10(@types/node@25.3.3)(esbuild@0.28.0)(jiti@2.6.1)(terser@5.43.1)(tsx@4.22.3)(yaml@2.8.4))
       '@tiptap/extension-image':
         specifier: ^2
-        version: 2.27.2
+        version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))
       '@tiptap/extension-link':
         specifier: ^2
         version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))(@tiptap/pm@2.27.2)
       '@tiptap/extension-text-align':
         specifier: ^2
-        version: 2.27.2
+        version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))
       '@tiptap/extension-underline':
         specifier: ^2
         version: 2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))
@@ -1191,6 +1191,9 @@ importers:
       '@repo/icons':
         specifier: workspace:*
         version: link:../icons
+      '@repo/schemas':
+        specifier: workspace:*
+        version: link:../schemas
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -1464,9 +1467,6 @@ importers:
       '@repo/config':
         specifier: workspace:*
         version: link:../config
-      '@repo/feedback':
-        specifier: workspace:*
-        version: link:../feedback
       '@repo/utils':
         specifier: workspace:*
         version: link:../utils
@@ -15492,7 +15492,9 @@ snapshots:
       '@tiptap/core': 2.27.2(@tiptap/pm@2.27.2)
       '@tiptap/pm': 2.27.2
 
-  '@tiptap/extension-image@2.27.2': {}
+  '@tiptap/extension-image@2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))':
+    dependencies:
+      '@tiptap/core': 2.27.2(@tiptap/pm@2.27.2)
 
   '@tiptap/extension-italic@2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))':
     dependencies:
@@ -15520,7 +15522,9 @@ snapshots:
     dependencies:
       '@tiptap/core': 2.27.2(@tiptap/pm@2.27.2)
 
-  '@tiptap/extension-text-align@2.27.2': {}
+  '@tiptap/extension-text-align@2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))':
+    dependencies:
+      '@tiptap/core': 2.27.2(@tiptap/pm@2.27.2)
 
   '@tiptap/extension-text-style@2.27.2(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))':
     dependencies:

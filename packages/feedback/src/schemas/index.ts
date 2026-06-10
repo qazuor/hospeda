@@ -1,8 +1,8 @@
 /**
  * @repo/feedback/schemas - Barrel export for all Zod validation schemas.
  *
- * Re-exports all schemas, inferred types, and ID constants.
- * Import from this barrel instead of importing individual schema files.
+ * Re-exports all schemas, inferred types, and ID constants from @repo/schemas
+ * (the canonical definitions since SPEC-189).
  *
  * @example
  * ```ts
@@ -23,7 +23,7 @@ export {
     feedbackErrorInfoSchema,
     feedbackFormSchema,
     feedbackInteractionSchema
-} from './feedback.schema.js';
+} from '@repo/schemas';
 export type {
     AppSourceId,
     ColorSchemeId,
@@ -34,4 +34,4 @@ export type {
     FeedbackInteraction,
     ReportTypeId,
     SeverityId
-} from './feedback.schema.js';
+} from '@repo/schemas';

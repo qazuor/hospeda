@@ -10,6 +10,8 @@
             "@repo/config/*": ["../config/src/*"],
             "@repo/db": ["../db/src/index.ts"],
             "@repo/db/*": ["../db/src/*"],
+            "@repo/billing": ["../billing/src/index.ts"],
+            "@repo/billing/*": ["../billing/src/*"],
             "@repo/logger": ["../logger/src/index.ts"],
             "@repo/logger/*": ["../logger/src/*"],
             "@repo/schemas": ["../schemas/src/index.ts"],
