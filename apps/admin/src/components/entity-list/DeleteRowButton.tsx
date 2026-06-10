@@ -14,7 +14,7 @@
  */
 
 import { PermissionGate } from '@/components/auth/PermissionGate';
-import { DeleteConfirmDialog } from '@/components/entity-form/fields/DeleteConfirmDialog';
+import { DeleteConfirmDialog } from '@/components/shared/DeleteConfirmDialog';
 import { useToast } from '@/components/ui/ToastProvider';
 import { useTranslations } from '@/hooks/use-translations';
 import { adminLogger } from '@/utils/logger';

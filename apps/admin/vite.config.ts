@@ -4,6 +4,7 @@ import { sentryVitePlugin } from '@sentry/vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import react from '@vitejs/plugin-react';
+import { visualizer } from 'rollup-plugin-visualizer';
 import { defineConfig, loadEnv } from 'vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import { z } from 'zod';
@@ -160,6 +161,16 @@ export default defineConfig({
                       authToken: process.env.SENTRY_AUTH_TOKEN
                   })
               ]
+            : []),
+        // Bundle analysis — only when ANALYZE=1 (pnpm build:analyze)
+        ...(process.env.ANALYZE
+            ? [
+                  visualizer({
+                      open: false,
+                      filename: 'stats.html',
+                      gzipSize: true
+                  })
+              ]
             : [])
     ],
     resolve: {
@@ -272,11 +283,6 @@ export default defineConfig({
                             return 'vendor-zod';
                         }
 
-                        // Lucide icons
-                        if (id.includes('lucide')) {
-                            return 'vendor-icons';
-                        }
-
                         // Other vendor code
                         return 'vendor';
                     }
@@ -289,9 +295,22 @@ export default defineConfig({
                         }
                     }
 
-                    // Component chunks
-                    if (id.includes('/components/entity-')) {
-                        return 'components-entity';
+                    // Component chunks — split entity trees so lazy-loaded
+                    // fields (entity-form/fields/) land in their own async chunks.
+                    if (id.includes('/components/entity-list/')) {
+                        return 'components-entity-list';
+                    }
+                    if (id.includes('/components/entity-form/fields/')) {
+                        // Heavy fields (tiptap, leaflet, upload) are lazy-loaded
+                        // via React.lazy — let Rollup create async chunks for them
+                        // by returning undefined (no manual chunk assignment).
+                        return undefined;
+                    }
+                    if (id.includes('/components/entity-form/')) {
+                        return 'components-entity-form';
+                    }
+                    if (id.includes('/components/entity-pages/')) {
+                        return 'components-entity-pages';
                     }
                     if (id.includes('/components/table/')) {
                         return 'components-table';

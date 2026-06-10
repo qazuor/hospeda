@@ -1,5 +1,4 @@
 import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
-import { CoordinatesField } from '@/components/entity-form/fields/CoordinatesField';
 import type { CoordinatesValue } from '@/components/entity-form/fields/CoordinatesField';
 import type { CurrencyValue } from '@/components/entity-form/fields/CurrencyField';
 import type { GalleryImage } from '@/components/entity-form/fields/GalleryField';
@@ -39,6 +38,15 @@ import { adminLogger } from '@/utils/logger';
 import { EditIcon, EyeIcon } from '@repo/icons';
 import type { I18nText } from '@repo/schemas';
 import * as React from 'react';
+
+// Lazy-loaded so leaflet stays out of the components-entity-form chunk. The
+// view path reuses the editable CoordinatesField (disabled), so without this it
+// would drag leaflet back into the static bundle that EntityFormSection defers.
+const LazyCoordinatesField = React.lazy(() =>
+    import('@/components/entity-form/fields/CoordinatesField').then((m) => ({
+        default: m.CoordinatesField
+    }))
+);
 
 /**
  * Props for EntityViewSection component
@@ -352,13 +360,18 @@ const EntityViewSectionComponent = React.forwardRef<HTMLDivElement, EntityViewSe
 
                 case FieldTypeEnum.COORDINATES:
                     // View mode reuses the editable component with disabled=true so
-                    // the user still sees the map + pin at the right location.
+                    // the user still sees the map + pin at the right location. Lazy
+                    // so leaflet only loads when a coordinates field is rendered.
                     return wrap(
-                        <CoordinatesField
-                            {...baseFieldProps}
-                            value={fieldValue as CoordinatesValue | undefined}
-                            disabled
-                        />
+                        <React.Suspense
+                            fallback={<div className="h-64 animate-pulse rounded bg-muted" />}
+                        >
+                            <LazyCoordinatesField
+                                {...baseFieldProps}
+                                value={fieldValue as CoordinatesValue | undefined}
+                                disabled
+                            />
+                        </React.Suspense>
                     );
 
                 case FieldTypeEnum.IMAGE:

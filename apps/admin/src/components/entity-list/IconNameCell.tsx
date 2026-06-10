@@ -1,4 +1,16 @@
-import { resolveIcon } from '@repo/icons';
+import { useEffect, useState } from 'react';
+
+/**
+ * Lazily loaded resolver — ICON_MAP (~230 icons) is only fetched when a row
+ * actually has an icon name. Rows without icons skip the chunk entirely.
+ */
+const loadResolver = (() => {
+    let promise: Promise<typeof import('@repo/icons/resolver')> | null = null;
+    return () => {
+        promise ??= import('@repo/icons/resolver');
+        return promise;
+    };
+})();
 
 interface IconNameCellProps {
     /** Icon component name (e.g. `"WifiIcon"`, `"PoolIcon"`). */
@@ -18,7 +30,23 @@ export const IconNameCell = ({ iconName }: IconNameCellProps) => {
         return <span className="text-muted-foreground">—</span>;
     }
 
-    const Icon = resolveIcon({ iconName });
+    return <IconNameCellInner iconName={iconName} />;
+};
+
+const IconNameCellInner = ({ iconName }: { readonly iconName: string }) => {
+    const [Icon, setIcon] = useState<React.ComponentType<Record<string, unknown>> | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        loadResolver().then(({ resolveIcon }) => {
+            if (cancelled) return;
+            const resolved = resolveIcon({ iconName });
+            setIcon(() => resolved ?? null);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [iconName]);
 
     if (!Icon) {
         return <span className="font-mono text-muted-foreground text-xs">{iconName}</span>;

@@ -1,10 +1,10 @@
 import { FieldTypeEnum } from '@/components/entity-form/enums/form-config.enums';
-import { DeleteConfirmDialog } from '@/components/entity-form/fields/DeleteConfirmDialog';
 import { ImageFieldErrorBanner } from '@/components/entity-form/fields/ImageFieldErrorBanner';
 import type {
     FieldConfig,
     ImageFieldConfig
 } from '@/components/entity-form/types/field-config.types';
+import { DeleteConfirmDialog } from '@/components/shared/DeleteConfirmDialog';
 import { Input, Label } from '@/components/ui-wrapped';
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useTranslations } from '@/hooks/use-translations';

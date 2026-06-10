@@ -30,8 +30,8 @@ describe('Badge.astro', () => {
             expect(src).toContain('getBadgeIconSize');
         });
 
-        it('imports resolveIcon from @repo/icons', () => {
-            expect(src).toContain("from '@repo/icons'");
+        it('imports resolveIcon from @repo/icons/resolver', () => {
+            expect(src).toContain("from '@repo/icons/resolver'");
             expect(src).toContain('resolveIcon');
         });
 
