@@ -35,15 +35,18 @@
  */
 import {
     type EntitlementKey,
+    type LimitKey,
     getDefaultEntitlements,
     getUnlimitedEntitlements,
-    isEntitlementKey
+    isEntitlementKey,
+    isLimitKey
 } from '@repo/billing';
 import { accommodations, getDb, users } from '@repo/db';
 import { RoleEnum } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import { type SQL, eq } from 'drizzle-orm';
 import type { MiddlewareHandler } from 'hono';
+import { PlanService } from '../services/plan.service';
 import type { AppBindings } from '../types';
 import { apiLogger } from '../utils/logger';
 import { getQZPayBilling } from './billing';
@@ -349,6 +352,278 @@ export async function resolveOwnerEntitlementsForOwnerId(
 ): Promise<readonly EntitlementKey[]> {
     const ownerRole = await resolveOwnerRole(ownerId);
     return Array.from(await resolveOwnerEntitlementSet(ownerId, ownerRole));
+}
+
+// ---------------------------------------------------------------------------
+// Owner Limits — SPEC-211 Phase 1
+// ---------------------------------------------------------------------------
+
+/**
+ * Module-level PlanService singleton for the owner-basico limits fallback.
+ *
+ * Shared across all owner-limits requests to avoid re-instantiation on every
+ * call. Safe: PlanService carries no mutable per-request state.
+ */
+const ownerLimitsPlanService = new PlanService();
+
+/**
+ * In-memory FIFO cache for owner limits.
+ *
+ * Keyed by QZPay `customerId`. Mirrors the 5-minute TTL philosophy used by
+ * the main `EntitlementCache` in entitlement.ts. A separate cache is used so
+ * the owner-limits hot path (chat route) does not share eviction pressure with
+ * the viewer-entitlement cache.
+ */
+interface OwnerLimitsCacheEntry {
+    /** Resolved limits map — plan values merged with customer-level overrides. */
+    readonly limits: Map<LimitKey, number>;
+    /** Unix timestamp of population (ms). */
+    readonly timestamp: number;
+}
+
+const OWNER_LIMITS_TTL_MS = 5 * 60 * 1000; // 5 minutes — matches entitlement TTL
+const OWNER_LIMITS_MAX_SIZE = 1000;
+const ownerLimitsCache = new Map<string, OwnerLimitsCacheEntry>();
+
+/**
+ * Look up an entry in the owner-limits cache.
+ * Returns `null` on miss or if the entry has expired (evicting it eagerly).
+ */
+function getOwnerLimitsCacheEntry(customerId: string): Map<LimitKey, number> | null {
+    const entry = ownerLimitsCache.get(customerId);
+    if (!entry) {
+        return null;
+    }
+    if (Date.now() - entry.timestamp > OWNER_LIMITS_TTL_MS) {
+        ownerLimitsCache.delete(customerId);
+        return null;
+    }
+    return entry.limits;
+}
+
+/**
+ * Write an entry to the owner-limits cache, evicting the oldest key when the
+ * cache is at capacity (FIFO).
+ */
+function setOwnerLimitsCacheEntry(customerId: string, limits: Map<LimitKey, number>): void {
+    if (ownerLimitsCache.size >= OWNER_LIMITS_MAX_SIZE) {
+        const firstKey = ownerLimitsCache.keys().next().value;
+        if (firstKey) {
+            ownerLimitsCache.delete(firstKey);
+        }
+    }
+    ownerLimitsCache.set(customerId, { limits, timestamp: Date.now() });
+}
+
+/**
+ * Build the owner-basico fallback limits map.
+ *
+ * Mirrors the `buildHostDraftDefaultsResult` logic in entitlement.ts but
+ * returns only the limits half (a `Map<LimitKey, number>`). Called when an
+ * owner has no active subscription — they get the `owner-basico` DB-row limits
+ * so the chat quota check has a concrete finite value rather than an empty map.
+ *
+ * Falls back to an empty map on lookup error or plan-not-found (the chat route
+ * treats an empty-map owner as "no quota defined" and will deny the request).
+ *
+ * @returns A `Map<LimitKey, number>` populated from the `owner-basico` plan.
+ */
+async function buildOwnerBasicoFallbackLimits(): Promise<Map<LimitKey, number>> {
+    const result = await ownerLimitsPlanService.getBySlug('owner-basico');
+    if (!result.success) {
+        apiLogger.warn(
+            { errorCode: result.error.code },
+            'resolveOwnerLimitsForOwnerId: owner-basico plan not found — returning empty limits map for HOST fallback'
+        );
+        return new Map<LimitKey, number>();
+    }
+    const limits = new Map<LimitKey, number>();
+    for (const [key, value] of Object.entries(result.data.limits)) {
+        if (isLimitKey(key)) {
+            limits.set(key, value);
+        }
+    }
+    return limits;
+}
+
+/**
+ * Load the active-subscription plan limits + customer-level overrides for a
+ * given QZPay customer ID.
+ *
+ * Mirrors the plan-limits portion of `loadEntitlements` in entitlement.ts.
+ * Returns `null` when billing is unavailable. Returns the plan-level-only
+ * limits (with `shouldCache: false`) when the customer-override call fails.
+ *
+ * @param customerId - The QZPay customer ID.
+ * @returns The resolved limits map, or `null` if billing is unavailable.
+ */
+async function loadCustomerLimits(
+    customerId: string
+): Promise<{ limits: Map<LimitKey, number>; shouldCache: boolean } | null> {
+    const billing = getQZPayBilling();
+    if (!billing) {
+        return null;
+    }
+
+    try {
+        const subscriptions = await billing.subscriptions.getByCustomerId(customerId);
+        const active = subscriptions?.find(
+            (sub: { status: string }) => sub.status === 'active' || sub.status === 'trialing'
+        );
+
+        if (!active) {
+            // No active subscription — caller falls back to owner-basico.
+            return { limits: new Map<LimitKey, number>(), shouldCache: false };
+        }
+
+        const plan = await billing.plans.get(active.planId);
+        if (!plan) {
+            apiLogger.warn(
+                { customerId, planId: active.planId },
+                'resolveOwnerLimitsForOwnerId: plan not found for active subscription; returning empty limits'
+            );
+            return { limits: new Map<LimitKey, number>(), shouldCache: true };
+        }
+
+        // Build plan-level limits map. QZPay returns Record<string, number>; filter
+        // to known LimitKey values — unknown keys are silently dropped.
+        const limits = new Map<LimitKey, number>();
+        if (plan.limits) {
+            for (const [key, value] of Object.entries(plan.limits)) {
+                if (isLimitKey(key)) {
+                    limits.set(key, value);
+                }
+            }
+        }
+
+        // Merge customer-level limit overrides (customer value wins over plan value).
+        // Gracefully degrade to plan-only + shouldCache=false when the call fails.
+        let shouldCache = true;
+        try {
+            const customerLimits = await billing.limits.getByCustomerId(customerId);
+            for (const cl of customerLimits) {
+                if (isLimitKey(cl.limitKey)) {
+                    limits.set(cl.limitKey, cl.maxValue);
+                }
+            }
+        } catch (overrideError) {
+            const message =
+                overrideError instanceof Error ? overrideError.message : String(overrideError);
+            apiLogger.warn(
+                { customerId, error: message },
+                'resolveOwnerLimitsForOwnerId: failed to load customer-level limit overrides; returning plan-only limits'
+            );
+            Sentry.captureException(overrideError, {
+                tags: { subsystem: 'owner-limits', action: 'load-customer-overrides' },
+                extra: { customerId }
+            });
+            shouldCache = false;
+        }
+
+        return { limits, shouldCache };
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        apiLogger.warn(
+            { customerId, error: message },
+            'resolveOwnerLimitsForOwnerId: failed to load plan limits; returning empty limits'
+        );
+        Sentry.captureException(error, {
+            tags: { subsystem: 'owner-limits', action: 'plan-lookup' },
+            extra: { customerId }
+        });
+        return { limits: new Map<LimitKey, number>(), shouldCache: false };
+    }
+}
+
+/**
+ * Resolves the accommodation owner's usage limits (`Map<LimitKey, number>`) by
+ * `ownerId`. Mirrors {@link resolveOwnerEntitlementsForOwnerId} but returns the
+ * **limits half** of the plan. Used by the chat route to gate and meter
+ * `ai_chat` against the listing owner instead of the requesting tourist
+ * (SPEC-211 Phase 1).
+ *
+ * **Resolution path:**
+ * `ownerId` → billing customer (`customers.getByExternalId`) → active
+ * subscription (`subscriptions.getByCustomerId`) → plan `limits` JSONB
+ * (`plans.get`) → customer-level limit overrides merged on top
+ * (`limits.getByCustomerId`). Falls back to the `owner-basico` DB-row limits
+ * when the owner has no active subscription (matching the HOST fallback in
+ * `loadEntitlements`).
+ *
+ * **Staff bypass (INV-6):** staff owners (SUPER_ADMIN, ADMIN, EDITOR,
+ * CLIENT_MANAGER) receive the unlimited entitlement set's limits (`-1` for
+ * every key) mirroring the behaviour of the entitlement counterpart.
+ *
+ * **Caching:** results are cached for 5 minutes keyed by QZPay `customerId`
+ * (consistent with the entitlement cache TTL). Degraded results (plan-only,
+ * customer-override call failed) are not cached so the next request retries.
+ *
+ * **Fail-open:** when billing is not initialised, returns the default free-tier
+ * limits. An owner with no billing customer row returns the `owner-basico`
+ * fallback limits (mirrors the HOST branch of `loadEntitlements`).
+ *
+ * @param ownerId - The `users.id` of the accommodation's owner.
+ * @returns A `Map<LimitKey, number>` for the owner's active plan + overrides.
+ *
+ * @example
+ * ```ts
+ * const ownerLimits = await resolveOwnerLimitsForOwnerId(accommodation.ownerId);
+ * const chatLimit = ownerLimits.get(LimitKey.MAX_AI_CHAT_PER_MONTH) ?? 0;
+ * ```
+ */
+export async function resolveOwnerLimitsForOwnerId(
+    ownerId: string
+): Promise<Map<LimitKey, number>> {
+    // Staff bypass — unlimited limits for platform staff owners (INV-6).
+    const ownerRole = await resolveOwnerRole(ownerId);
+    if (isStaffBypassRole(ownerRole)) {
+        const unlimited = getUnlimitedEntitlements();
+        return new Map<LimitKey, number>(unlimited.limits.map((l) => [l.key, l.value]));
+    }
+
+    const billing = getQZPayBilling();
+
+    // Billing not initialised — return default free-tier limits.
+    if (!billing) {
+        const defaults = getDefaultEntitlements();
+        return new Map<LimitKey, number>(defaults.limits.map((l) => [l.key, l.value]));
+    }
+
+    // Resolve billing customer for this owner.
+    const customerId = await loadOwnerCustomerId(ownerId);
+
+    if (!customerId) {
+        // No billing customer row yet — fall back to owner-basico limits (HOST
+        // hosts always get the owner-basico baseline, not tourist-free).
+        return await buildOwnerBasicoFallbackLimits();
+    }
+
+    // Cache hit — return cached limits.
+    const cached = getOwnerLimitsCacheEntry(customerId);
+    if (cached) {
+        return cached;
+    }
+
+    // Cache miss — load from QZPay.
+    const result = await loadCustomerLimits(customerId);
+
+    if (!result) {
+        // Billing unavailable at this point (race condition with billing init).
+        const defaults = getDefaultEntitlements();
+        return new Map<LimitKey, number>(defaults.limits.map((l) => [l.key, l.value]));
+    }
+
+    // When the owner has no active subscription (result.limits is empty and
+    // shouldCache is false from loadCustomerLimits), fall back to owner-basico.
+    if (result.limits.size === 0 && !result.shouldCache) {
+        return await buildOwnerBasicoFallbackLimits();
+    }
+
+    if (result.shouldCache) {
+        setOwnerLimitsCacheEntry(customerId, result.limits);
+    }
+
+    return result.limits;
 }
 
 // Re-export the SQL helper for tests / type augmentation downstream.

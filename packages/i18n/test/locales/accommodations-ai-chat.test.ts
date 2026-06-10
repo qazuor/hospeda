@@ -13,7 +13,7 @@ import esAccommodations from '../../src/locales/es/accommodations.json';
 import ptAccommodations from '../../src/locales/pt/accommodations.json';
 
 /**
- * All aiChat.* keys required by SPEC-200 REQ-200-7 AC-7.1.
+ * All aiChat.* keys required by SPEC-200 REQ-200-7 AC-7.1 and SPEC-211 §7.4.
  * The namespace prefix is stripped — these are paths inside the aiChat object.
  * Keys `expand` and `collapse` were added by FIX-4 (a11y/i18n hardcoded labels).
  */
@@ -29,6 +29,7 @@ const AI_CHAT_KEYS = [
     'atCapMessage',
     'newConversation',
     'close',
+    'unavailable',
     'expand',
     'collapse'
 ] as const;
@@ -44,7 +45,7 @@ function resolveKey(obj: Record<string, unknown>, key: string): unknown {
 }
 
 describe('accommodations aiChat keys (SPEC-200 REQ-200-7 AC-7.1)', () => {
-    it('has all 13 aiChat keys in es locale with non-empty values', () => {
+    it('has all 14 aiChat keys in es locale with non-empty values', () => {
         const aiChat = (esAccommodations as Record<string, unknown>).aiChat;
         expect(aiChat).toBeDefined();
         expect(typeof aiChat).toBe('object');
@@ -57,7 +58,7 @@ describe('accommodations aiChat keys (SPEC-200 REQ-200-7 AC-7.1)', () => {
         expect(missing, 'aiChat keys missing or empty in es/accommodations.json').toEqual([]);
     });
 
-    it('has all 13 aiChat keys in en locale with non-empty values', () => {
+    it('has all 14 aiChat keys in en locale with non-empty values', () => {
         const aiChat = (enAccommodations as Record<string, unknown>).aiChat;
         expect(aiChat).toBeDefined();
         expect(typeof aiChat).toBe('object');
@@ -70,7 +71,7 @@ describe('accommodations aiChat keys (SPEC-200 REQ-200-7 AC-7.1)', () => {
         expect(missing, 'aiChat keys missing or empty in en/accommodations.json').toEqual([]);
     });
 
-    it('has all 13 aiChat keys in pt locale with non-empty values', () => {
+    it('has all 14 aiChat keys in pt locale with non-empty values', () => {
         const aiChat = (ptAccommodations as Record<string, unknown>).aiChat;
         expect(aiChat).toBeDefined();
         expect(typeof aiChat).toBe('object');
@@ -83,7 +84,7 @@ describe('accommodations aiChat keys (SPEC-200 REQ-200-7 AC-7.1)', () => {
         expect(missing, 'aiChat keys missing or empty in pt/accommodations.json').toEqual([]);
     });
 
-    it('has exactly 13 keys in the aiChat section (no extra keys)', () => {
+    it('has exactly 14 keys in the aiChat section (no extra keys)', () => {
         const esAiChat = (esAccommodations as Record<string, unknown>).aiChat as Record<
             string,
             unknown

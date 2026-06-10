@@ -1153,6 +1153,104 @@ cover the web rendering + real MP checkout amount path that the stub cannot exer
 
 ---
 
+## SPEC-211: AI Monetization Model (owner-governed chat + ai_search + ceiling)
+
+This section covers the manual smoke for the **owner-governed AI chat gate**, the
+**free `ai_search` platform feature**, and the **USD cost-ceiling backstop**. Under
+Model C the listing **owner** pays for all AI; a tourist's chat consumes the
+*owner's* `MAX_AI_CHAT_PER_MONTH` budget, and the gate/quota are evaluated INLINE in
+the chat route (`apps/api/src/routes/ai/protected/chat.ts`) — NOT via the tourist's
+own entitlements.
+
+**Run where**: Staging (required — real MercadoPago sandbox subs to give an owner a
+plan with/without `AI_CHAT`, plus a real OpenAI credential in the AI vault so the
+engine streams and the ceiling checker runs). The vitest suites cover the gate logic
+with stubs; staging is the gate for the real engine + real billing entitlement
+read-through.
+
+**Pre-conditions**:
+
+- OpenAI credential provisioned in the staging AI vault (`ai_provider_credentials`)
+  and `HOSPEDA_AI_VAULT_MASTER_KEY` set on `hospeda-api-staging`. Without it the chat
+  stream and search both fail `503 PROVIDER_UNCONFIGURED` (SPEC-198), masking the
+  SPEC-211 paths under test.
+- The Model C extras migration (`014-spec211-ai-monetization.data.sql`) has been
+  applied to staging (`hops db-apply-extras --target=staging`) so plan rows carry the
+  `AI_CHAT` / `AI_SUPPORT` capability layer.
+- Two host owners: **owner-A** on a plan that GRANTS `AI_CHAT` (e.g. `owner-pro`),
+  **owner-B** on a plan that does NOT (e.g. `owner-basico` if basic excludes chat, or
+  a free host). Each owns at least one published accommodation.
+- A tourist (or any authenticated non-owner) account to drive the chat as the visitor.
+
+### SPEC-211.1 — chat blocked when owner is at monthly quota → 403 LIMIT_REACHED
+
+1. Pick **owner-A**'s accommodation (`accommodationId = <uuid>`). Owner-A's plan grants
+   `AI_CHAT` with a finite `MAX_AI_CHAT_PER_MONTH` (e.g. 200).
+2. Drive the owner's monthly chat usage to the ceiling: either run real chats until the
+   counter reaches the limit, or fast-path it on staging DB by inserting
+   `ai_usage` rows for `user_id = <owner-A id>`, `feature = 'chat'`, dated in the
+   current month, until `count >= limit`. (Quota is keyed by the OWNER id, not the
+   tourist — SPEC-211 §7.3.)
+3. As the **tourist**, `POST /api/v1/protected/ai/chat` with
+   `{ "accommodationId": "<owner-A uuid>", "messages": [{ "role": "user", "content": "hola" }] }`.
+4. Confirm the response is **HTTP 403** with body code `LIMIT_REACHED`,
+   `limitKey = "max_ai_chat_per_month"`, and `maxAllowed` / `currentCount` reflecting
+   the owner's budget. The error is returned **pre-stream** (no SSE bytes written).
+
+**Expected**: 403 `LIMIT_REACHED`, owner-keyed counts in the envelope, no streamed tokens.
+
+**Run log**: (date / executor / PR / result / notes)
+
+### SPEC-211.2 — tourist chat on a healthy owner streams → success, metered to owner
+
+1. Pick **owner-A**'s accommodation where the owner is UNDER quota (reset/clear the
+   usage rows from SPEC-211.1, or use a second owner-A listing in a fresh month).
+2. As the **tourist**, `POST /api/v1/protected/ai/chat` with a valid
+   `{ accommodationId, messages }` body.
+3. Confirm the response **streams SSE tokens** (HTTP 200, `text/event-stream`) and the
+   assistant reply completes.
+4. After the stream drains, confirm `ai_usage` recorded **one** new row for
+   `user_id = <owner-A id>` (the OWNER), `feature = 'chat'` — NOT for the tourist's id.
+   (`hops psql --target=staging` →
+   `SELECT user_id, feature, created_at FROM ai_usage ORDER BY created_at DESC LIMIT 3;`)
+
+**Expected**: 200 SSE stream completes; usage metered to the owner, tourist id absent.
+
+**Run log**: (date / executor / PR / result / notes)
+
+### SPEC-211.3 — free ai_search returns structured filters → 200 (no plan gate)
+
+1. As **any authenticated user** regardless of plan (use the cheapest/free tier to
+   prove there is no entitlement or quota gate), `POST /api/v1/protected/ai/search-intent`
+   with `{ "query": "cabaña con pileta cerca del río para 4 personas", "locale": "es" }`.
+2. Confirm **HTTP 200** with a structured filter payload (amenity/feature slugs resolved
+   to UUIDs, etc.). There must be NO `403 ENTITLEMENT_REQUIRED` and NO
+   `MAX_AI_SEARCH_PER_MONTH` quota rejection — `ai_search` is a free platform feature
+   (SPEC-211 §7.7); gating is auth + rate-limit + USD ceiling only.
+
+**Expected**: 200 structured intent; no entitlement/quota gate on any plan.
+
+**Run log**: (date / executor / PR / result / notes)
+
+### SPEC-211.4 — search blocked when USD cost ceiling is hit → 503 CEILING_HIT
+
+1. Lower the `ai_search` USD ceiling so it is already breached: in the admin AI
+   settings (or directly in the `ai_settings` blob on staging DB) set
+   `costCeilings.perFeatureMonthlyMicroUsd.search` to a value at-or-below the current
+   month's recorded `search` spend (e.g. `1`). The ceiling is always-on; an absent
+   `costCeilings` object falls back to `DEFAULT_COST_CEILINGS`.
+2. `POST /api/v1/protected/ai/search-intent` with any valid `{ query }`.
+3. Confirm **HTTP 503** with body code `CEILING_HIT` (mapped from the engine's
+   `AiCeilingHitError`, `apps/api/src/utils/ai-error-mapper.ts`). The request is rejected
+   by the engine ceiling checker before the model is called.
+4. Restore the original ceiling value after the test.
+
+**Expected**: 503 `CEILING_HIT`; request rejected by the always-on ceiling backstop.
+
+**Run log**: (date / executor / PR / result / notes)
+
+---
+
 ## Sign-off block
 
 After completing the sections relevant to the PR, file a sign-off entry:

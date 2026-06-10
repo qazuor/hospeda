@@ -1,4 +1,10 @@
-import { ALL_PLANS, type PlanDefinition } from '@repo/billing';
+import {
+    ALL_PLANS,
+    CAPABILITY_FIELDS,
+    MODEL_C_FIELD_SPLIT,
+    type ModelCField,
+    type PlanDefinition
+} from '@repo/billing';
 import { type DrizzleClient, and, billingPlans, billingPrices, eq, getDb } from '@repo/db';
 import { STATUS_ICONS } from '../utils/icons.js';
 import { logger } from '../utils/logger.js';
@@ -6,16 +12,87 @@ import type { SeedContext } from '../utils/seedContext.js';
 import { summaryTracker } from '../utils/summaryTracker.js';
 
 // ---------------------------------------------------------------------------
+// Model C fail-fast guard
+// ---------------------------------------------------------------------------
+
+/**
+ * The exhaustive set of fields (and logical facets) that the seed controls in
+ * `billing_plans`. Every entry here MUST appear in `MODEL_C_FIELD_SPLIT`; if a
+ * new column is added to the seed without a corresponding classification, the
+ * guard throws at startup (AC-2.3).
+ *
+ * Note: `billing_prices.unitAmount` is in `MODEL_C_FIELD_SPLIT` for
+ * documentation purposes only (it lives in a sibling table). It is NOT listed
+ * here because `detectDivergences` does not compare it.
+ */
+const SEED_CONTROLLED_FIELDS: ReadonlySet<string> = new Set<ModelCField>([
+    'description',
+    'active',
+    'entitlements',
+    'limitsKeysPresent',
+    'limitsValues',
+    'metadata.displayName',
+    'metadata.category',
+    'metadata.monthlyPriceArs',
+    'metadata.annualPriceArs',
+    'metadata.isDefault',
+    'metadata.sortOrder',
+    'metadata.hasTrial',
+    'metadata.trialDays'
+]);
+
+/**
+ * Asserts that every field in {@link SEED_CONTROLLED_FIELDS} is present in
+ * {@link MODEL_C_FIELD_SPLIT}. Throws a descriptive error if any field is
+ * missing — this is the AC-2.3 fail-fast guard that prevents a new seed
+ * column from silently bypassing the Model C policy.
+ *
+ * Called once at module load time.
+ */
+function assertAllSeedFieldsClassified(): void {
+    const unclassified: string[] = [];
+    for (const field of SEED_CONTROLLED_FIELDS) {
+        if (!(field in MODEL_C_FIELD_SPLIT)) {
+            unclassified.push(field);
+        }
+    }
+    if (unclassified.length > 0) {
+        throw new Error(
+            `[Model C fail-fast] The following seed-controlled field(s) are not classified in MODEL_C_FIELD_SPLIT: ${unclassified.join(', ')}. Add each field to packages/billing/src/config/model-c-field-split.ts and classify it as "capability" or "commercial" before the seed can run.`
+        );
+    }
+}
+
+// Run at module load — a missing classification is a hard error, not a warning.
+assertAllSeedFieldsClassified();
+
+// ---------------------------------------------------------------------------
 // Divergence detection helpers
 // ---------------------------------------------------------------------------
 
 /**
- * Describes a single diverged field between the seed config and the DB row.
+ * Describes a single diverged field between the seed config and the DB row,
+ * annotated with its Model C layer classification.
  */
 interface DivergenceEntry {
-    readonly field: string;
+    /** Logical field key matching a key in MODEL_C_FIELD_SPLIT */
+    readonly field: ModelCField;
     readonly config: unknown;
     readonly db: unknown;
+    /** Whether this field is capability (config wins) or commercial (DB wins) */
+    readonly layer: 'capability' | 'commercial';
+}
+
+/**
+ * Snapshot of a `billing_plans` DB row as selected by `ensurePlan`.
+ */
+interface DbRowSnapshot {
+    readonly id: string;
+    readonly description: string | null;
+    readonly active: boolean | null;
+    readonly entitlements: unknown;
+    readonly limits: unknown;
+    readonly metadata: unknown;
 }
 
 /**
@@ -23,76 +100,104 @@ interface DivergenceEntry {
  * DB row snapshot. Only compares fields that the seed controls; operator-added
  * fields (e.g. custom metadata keys) are ignored.
  *
+ * The `limits` column is split into two logical facets:
+ * - `limitsKeysPresent` (capability) — which LimitKeys are present
+ * - `limitsValues` (commercial) — the numeric value of each key
+ *
+ * Each returned entry includes its `layer` classification from
+ * {@link MODEL_C_FIELD_SPLIT}, enabling the caller to decide whether to
+ * sync the DB or leave it as-is.
+ *
  * @param plan - Seed config definition
  * @param dbRow - Existing DB row snapshot
  * @returns Array of diverged field descriptors (empty when config matches DB)
  */
 function detectDivergences(
     plan: PlanDefinition,
-    dbRow: {
-        readonly description: string | null;
-        readonly active: boolean | null;
-        readonly entitlements: unknown;
-        readonly limits: unknown;
-        readonly metadata: unknown;
-    }
+    dbRow: Omit<DbRowSnapshot, 'id'>
 ): readonly DivergenceEntry[] {
     const diffs: DivergenceEntry[] = [];
 
     const meta = (dbRow.metadata ?? {}) as Record<string, unknown>;
-    const limitsObj: Record<string, number> = {};
+    const configLimitsObj: Record<string, number> = {};
     for (const l of plan.limits) {
-        limitsObj[l.key] = l.value;
+        configLimitsObj[l.key] = l.value;
     }
+    const dbLimitsObj = (dbRow.limits ?? {}) as Record<string, number>;
 
     /** Compare two values that may be objects/arrays using JSON serialization */
     function differs(a: unknown, b: unknown): boolean {
         return JSON.stringify(a) !== JSON.stringify(b);
     }
 
+    function push(field: ModelCField, config: unknown, db: unknown): void {
+        diffs.push({ field, config, db, layer: MODEL_C_FIELD_SPLIT[field] });
+    }
+
+    // ── Top-level columns ───────────────────────────────────────────────────
     if (dbRow.description !== plan.description) {
-        diffs.push({ field: 'description', config: plan.description, db: dbRow.description });
+        push('description', plan.description, dbRow.description);
     }
     if (dbRow.active !== plan.isActive) {
-        diffs.push({ field: 'active', config: plan.isActive, db: dbRow.active });
+        push('active', plan.isActive, dbRow.active);
     }
     if (differs(dbRow.entitlements, plan.entitlements)) {
-        diffs.push({ field: 'entitlements', config: plan.entitlements, db: dbRow.entitlements });
+        push('entitlements', plan.entitlements, dbRow.entitlements);
     }
-    if (differs(dbRow.limits, limitsObj)) {
-        diffs.push({ field: 'limits', config: limitsObj, db: dbRow.limits });
+
+    // ── limits — two logical facets ─────────────────────────────────────────
+    //
+    // Facet 1 (capability): which keys are present.
+    const configKeys = new Set(Object.keys(configLimitsObj));
+    const dbKeys = new Set(Object.keys(dbLimitsObj));
+    const keySetDiffers =
+        configKeys.size !== dbKeys.size || [...configKeys].some((k) => !dbKeys.has(k));
+    if (keySetDiffers) {
+        push('limitsKeysPresent', [...configKeys].sort(), [...dbKeys].sort());
     }
+
+    // Facet 2 (commercial): the numeric values of keys present in BOTH sets.
+    //
+    // We only compare values for keys that exist in both config and DB.
+    // Keys added/removed are already captured by limitsKeysPresent (capability).
+    // This avoids generating a spurious commercial divergence when a key is
+    // simply absent (the key-set facet handles that case).
+    const sharedKeys = [...configKeys].filter((k) => dbKeys.has(k));
+    const valueDiffKeys = sharedKeys.filter((k) => configLimitsObj[k] !== dbLimitsObj[k]);
+    if (valueDiffKeys.length > 0) {
+        const configValues: Record<string, number> = {};
+        const dbValues: Record<string, number> = {};
+        for (const k of valueDiffKeys) {
+            configValues[k] = configLimitsObj[k] as number;
+            dbValues[k] = dbLimitsObj[k] as number;
+        }
+        push('limitsValues', configValues, dbValues);
+    }
+
+    // ── metadata JSONB ──────────────────────────────────────────────────────
     if (meta.displayName !== plan.name) {
-        diffs.push({ field: 'metadata.displayName', config: plan.name, db: meta.displayName });
+        push('metadata.displayName', plan.name, meta.displayName);
     }
     if (meta.category !== plan.category) {
-        diffs.push({ field: 'metadata.category', config: plan.category, db: meta.category });
+        push('metadata.category', plan.category, meta.category);
     }
     if (meta.monthlyPriceArs !== plan.monthlyPriceArs) {
-        diffs.push({
-            field: 'metadata.monthlyPriceArs',
-            config: plan.monthlyPriceArs,
-            db: meta.monthlyPriceArs
-        });
+        push('metadata.monthlyPriceArs', plan.monthlyPriceArs, meta.monthlyPriceArs);
     }
     if (meta.annualPriceArs !== plan.annualPriceArs) {
-        diffs.push({
-            field: 'metadata.annualPriceArs',
-            config: plan.annualPriceArs,
-            db: meta.annualPriceArs
-        });
+        push('metadata.annualPriceArs', plan.annualPriceArs, meta.annualPriceArs);
     }
     if (meta.isDefault !== plan.isDefault) {
-        diffs.push({ field: 'metadata.isDefault', config: plan.isDefault, db: meta.isDefault });
+        push('metadata.isDefault', plan.isDefault, meta.isDefault);
     }
     if (meta.sortOrder !== plan.sortOrder) {
-        diffs.push({ field: 'metadata.sortOrder', config: plan.sortOrder, db: meta.sortOrder });
+        push('metadata.sortOrder', plan.sortOrder, meta.sortOrder);
     }
     if (meta.hasTrial !== plan.hasTrial) {
-        diffs.push({ field: 'metadata.hasTrial', config: plan.hasTrial, db: meta.hasTrial });
+        push('metadata.hasTrial', plan.hasTrial, meta.hasTrial);
     }
     if (meta.trialDays !== plan.trialDays) {
-        diffs.push({ field: 'metadata.trialDays', config: plan.trialDays, db: meta.trialDays });
+        push('metadata.trialDays', plan.trialDays, meta.trialDays);
     }
 
     return diffs;
@@ -111,13 +216,109 @@ const SEED_CURRENCY = 'ARS';
  * `status`:
  * - `'created'` — the row did not exist and was inserted.
  * - `'skipped'` — the row existed and config matches DB (no divergence).
- * - `'diverged'` — the row existed but config differs from the DB value.
- *   The DB row is NOT overwritten; a warning is logged. Operators must
- *   apply config changes manually or via the admin UI.
+ * - `'synced'` — the row existed, capability-layer fields were synced to
+ *   config; commercial-layer fields were left as-is (DB wins). A summary
+ *   of what was synced and what was skipped is logged.
  */
 interface EnsurePlanResult {
     readonly planId: string;
-    readonly status: 'created' | 'skipped' | 'diverged';
+    readonly status: 'created' | 'skipped' | 'synced';
+}
+
+// ---------------------------------------------------------------------------
+// Capability-sync helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Builds the Drizzle update payload for all capability-layer divergences.
+ *
+ * Capability fields drive the update value directly from config. The `limits`
+ * column is special: only the key-set changes (add missing keys with config
+ * values; remove extra keys). The numeric values of keys present in both
+ * config and DB are left unchanged (commercial layer wins on values).
+ *
+ * @param plan - The seed config definition (source of truth for capability)
+ * @param dbRow - The existing DB row snapshot
+ * @param capabilityDiffs - The subset of divergences where layer === 'capability'
+ * @returns Partial update object suitable for `db.update(...).set(payload)`
+ */
+function buildCapabilitySyncPayload(
+    plan: PlanDefinition,
+    dbRow: Omit<DbRowSnapshot, 'id'>,
+    capabilityDiffs: readonly DivergenceEntry[]
+): Record<string, unknown> {
+    const payload: Record<string, unknown> = {};
+    const capabilityFields = new Set(capabilityDiffs.map((d) => d.field));
+
+    if (capabilityFields.has('entitlements')) {
+        payload.entitlements = plan.entitlements as string[];
+    }
+
+    if (capabilityFields.has('limitsKeysPresent')) {
+        // Merge: start from DB values (preserving commercial values), then
+        // add keys config has that DB lacks, and remove keys DB has that
+        // config dropped.
+        const configLimitsObj: Record<string, number> = {};
+        for (const l of plan.limits) {
+            configLimitsObj[l.key] = l.value;
+        }
+        const dbLimitsObj = (dbRow.limits ?? {}) as Record<string, number>;
+
+        const mergedLimits: Record<string, number> = {};
+
+        // Include all keys from config; preserve DB value if key already exists
+        // (DB value is the operator-edited commercial value), use config value
+        // for new keys the DB doesn't have yet.
+        for (const [key, configValue] of Object.entries(configLimitsObj)) {
+            mergedLimits[key] = key in dbLimitsObj ? (dbLimitsObj[key] as number) : configValue;
+        }
+        // Keys the DB had but config removed are simply not included → dropped.
+
+        payload.limits = mergedLimits;
+    }
+
+    // Metadata: only sync the capability sub-fields, leaving commercial ones
+    // (displayName, monthlyPriceArs, annualPriceArs) as-is.
+    const META_CAPABILITY_FIELDS: ReadonlyArray<ModelCField> = [
+        'metadata.category',
+        'metadata.isDefault',
+        'metadata.sortOrder',
+        'metadata.hasTrial',
+        'metadata.trialDays'
+    ];
+
+    const metaUpdate: Record<string, unknown> = {};
+    for (const field of META_CAPABILITY_FIELDS) {
+        if (capabilityFields.has(field)) {
+            switch (field) {
+                case 'metadata.category':
+                    metaUpdate.category = plan.category;
+                    break;
+                case 'metadata.isDefault':
+                    metaUpdate.isDefault = plan.isDefault;
+                    break;
+                case 'metadata.sortOrder':
+                    metaUpdate.sortOrder = plan.sortOrder;
+                    break;
+                case 'metadata.hasTrial':
+                    metaUpdate.hasTrial = plan.hasTrial;
+                    break;
+                case 'metadata.trialDays':
+                    metaUpdate.trialDays = plan.trialDays;
+                    break;
+                // no default: exhaustive over the capability metadata fields above
+            }
+        }
+    }
+
+    if (Object.keys(metaUpdate).length > 0) {
+        // Merge with the existing metadata to preserve commercial sub-fields
+        // (displayName, monthlyPriceArs, annualPriceArs, slug, monthlyPriceUsdRef).
+        const existingMeta = (dbRow.metadata ?? {}) as Record<string, unknown>;
+        payload.metadata = { ...existingMeta, ...metaUpdate };
+    }
+
+    return payload;
 }
 
 /**
@@ -128,11 +329,16 @@ interface EnsurePlanResult {
  * Idempotent: matches existing rows by `name` (the seed's stable handle
  * — there are no DB-side unique constraints on slug).
  *
- * **Divergence policy (SPEC-168 T-018):** when a row already exists and its
- * persisted values differ from the seed config, a warning is logged listing
- * every diverged field. The DB row is NOT overwritten — the operator must
- * apply config changes manually or via the admin UI. This prevents the seed
- * from clobbering runtime edits performed through the admin plan management UI.
+ * **Divergence policy (SPEC-211 Phase 2 — Model C):** when a row already
+ * exists and its persisted values differ from the seed config, each diverged
+ * field is evaluated against {@link MODEL_C_FIELD_SPLIT}:
+ *
+ * - **Capability** divergences (entitlements, limit-key presence, structural
+ *   metadata) → the DB row is updated to match the config value. Config is
+ *   the source of truth for capabilities.
+ * - **Commercial** divergences (description, active flag, limit numeric values,
+ *   prices, displayName) → the DB value is preserved. Operator edits via the
+ *   SPEC-168 admin UI win; a log entry is emitted for visibility only.
  *
  * `db` is injectable for tests; production callers omit it and the
  * default `getDb()` resolves the runtime client.
@@ -164,20 +370,51 @@ async function ensurePlan(
 
     const existingRow = existing[0];
     if (existingRow) {
-        // Detect divergences between config and DB — never overwrite.
         const diffs = detectDivergences(plan, existingRow);
-        if (diffs.length > 0) {
-            logger.warn(
-                `${STATUS_ICONS.Skip}  Plan "${plan.slug}" diverged from config (${diffs.length} field(s)). DB is NOT updated — apply changes via admin UI.`
+        if (diffs.length === 0) {
+            return { planId: existingRow.id, status: 'skipped' };
+        }
+
+        const capabilityDiffs = diffs.filter((d) => CAPABILITY_FIELDS.has(d.field as ModelCField));
+        const commercialDiffs = diffs.filter((d) => !CAPABILITY_FIELDS.has(d.field as ModelCField));
+
+        // Log commercial divergences (DB wins — operator edit preserved).
+        if (commercialDiffs.length > 0) {
+            logger.info(
+                `${STATUS_ICONS.Skip}  Plan "${plan.slug}": ${commercialDiffs.length} commercial field(s) differ from config — DB value preserved (operator edits win).`
             );
-            for (const diff of diffs) {
-                logger.warn(
-                    `   field "${diff.field}": config=${JSON.stringify(diff.config)}, db=${JSON.stringify(diff.db)}`
+            for (const diff of commercialDiffs) {
+                logger.info(
+                    `   [commercial] "${diff.field}": config=${JSON.stringify(diff.config)}, db=${JSON.stringify(diff.db)}`
                 );
             }
-            return { planId: existingRow.id, status: 'diverged' };
         }
-        return { planId: existingRow.id, status: 'skipped' };
+
+        // Sync capability divergences (config wins — update the DB row).
+        if (capabilityDiffs.length > 0) {
+            const payload = buildCapabilitySyncPayload(plan, existingRow, capabilityDiffs);
+
+            await db
+                .update(billingPlans)
+                .set(payload as Parameters<ReturnType<typeof db.update>['set']>[0])
+                .where(eq(billingPlans.id, existingRow.id));
+
+            logger.info(
+                `${STATUS_ICONS.Success}  Plan "${plan.slug}": synced ${capabilityDiffs.length} capability field(s) to config values.`
+            );
+            for (const diff of capabilityDiffs) {
+                logger.info(
+                    `   [capability→synced] "${diff.field}": ${JSON.stringify(diff.db)} → ${JSON.stringify(diff.config)}`
+                );
+            }
+
+            return { planId: existingRow.id, status: 'synced' };
+        }
+
+        // Only commercial diffs — nothing to update, but still counts as synced
+        // from a caller perspective (the plan row is now in the desired state:
+        // capability layer matches config, commercial layer reflects DB).
+        return { planId: existingRow.id, status: 'synced' };
     }
 
     const limitsObj: Record<string, number> = {};
@@ -320,7 +557,7 @@ export async function seedBillingPlans(_context: SeedContext): Promise<void> {
 
         let plansCreated = 0;
         let plansSkipped = 0;
-        let plansDiverged = 0;
+        let plansSynced = 0;
         let pricesCreated = 0;
         let pricesSkipped = 0;
 
@@ -332,9 +569,9 @@ export async function seedBillingPlans(_context: SeedContext): Promise<void> {
                     logger.success({
                         msg: `${STATUS_ICONS.Success}  Created plan: "${plan.name}" (${plan.slug}) - ${plan.entitlements.length} entitlements, ${plan.limits.length} limits`
                     });
-                } else if (planResult.status === 'diverged') {
-                    plansDiverged++;
-                    // Warning already emitted inside ensurePlan with field-level detail
+                } else if (planResult.status === 'synced') {
+                    plansSynced++;
+                    // Detail already emitted inside ensurePlan with field-level breakdown
                 } else {
                     plansSkipped++;
                     logger.info(
@@ -389,11 +626,11 @@ export async function seedBillingPlans(_context: SeedContext): Promise<void> {
 
         logger.info(`${separator}`);
         logger.info(
-            `${STATUS_ICONS.Info}  Plans: ${plansCreated} created, ${plansSkipped} skipped, ${plansDiverged} diverged (${ALL_PLANS.length} total)`
+            `${STATUS_ICONS.Info}  Plans: ${plansCreated} created, ${plansSkipped} skipped, ${plansSynced} synced (Model C) (${ALL_PLANS.length} total)`
         );
-        if (plansDiverged > 0) {
-            logger.warn(
-                `${STATUS_ICONS.Skip}  ${plansDiverged} plan(s) have config-vs-DB drift. See warnings above. Apply changes via admin UI.`
+        if (plansSynced > 0) {
+            logger.info(
+                `${STATUS_ICONS.Info}  ${plansSynced} plan(s) had capability-layer drift synced from config. Commercial fields preserved. See details above.`
             );
         }
         logger.info(
@@ -412,5 +649,8 @@ export async function seedBillingPlans(_context: SeedContext): Promise<void> {
 export const _internals = {
     ensurePlan,
     ensurePrice,
-    detectDivergences
+    detectDivergences,
+    buildCapabilitySyncPayload,
+    assertAllSeedFieldsClassified,
+    SEED_CONTROLLED_FIELDS
 };

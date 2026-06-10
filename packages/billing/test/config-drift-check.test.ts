@@ -72,7 +72,7 @@ describe('Config Drift Check', () => {
 
             expect(result.hasDrift).toBe(true);
             const addonDrifts = result.items.filter((i) => i.entityType === 'addon');
-            expect(addonDrifts).toHaveLength(5); // 5 addons missing
+            expect(addonDrifts).toHaveLength(6); // 6 addons missing
         });
 
         it('should detect orphaned records in DB', () => {

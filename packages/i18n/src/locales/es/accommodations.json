@@ -404,6 +404,7 @@
         "atCapMessage": "Alcanzaste el límite de esta conversación.",
         "newConversation": "Nueva conversación",
         "close": "Cerrar chat",
+        "unavailable": "El chat de IA no está disponible para este alojamiento",
         "expand": "Expandir panel",
         "collapse": "Reducir panel"
     }

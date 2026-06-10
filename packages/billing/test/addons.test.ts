@@ -1,15 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import {
+    AI_SUPPORT_ADDON,
     ALL_ADDONS,
     EXTRA_PHOTOS_ADDON,
     VISIBILITY_BOOST_ADDON,
     getAddonBySlug
 } from '../src/config/addons.config.js';
+import { EntitlementKey } from '../src/types/entitlement.types.js';
+import { LimitKey } from '../src/types/plan.types.js';
 
 describe('Add-on Configuration', () => {
     describe('ALL_ADDONS', () => {
-        it('should export 5 add-ons', () => {
-            expect(ALL_ADDONS).toHaveLength(5);
+        it('should export 6 add-ons', () => {
+            expect(ALL_ADDONS).toHaveLength(6);
         });
 
         it('should have one-time add-ons', () => {
@@ -78,10 +81,58 @@ describe('Add-on Configuration', () => {
             expect(EXTRA_PHOTOS_ADDON.priceArs).toBe(500000); // ARS $5,000
         });
 
-        it('all add-ons should be active', () => {
+        it('all add-ons except the deferred ai-support addon should be active', () => {
+            // ai-support-monthly ships inactive: its feature route is deferred to a
+            // future spec (SPEC-211 §AC-4.2), so it must not be purchasable yet.
             for (const addon of ALL_ADDONS) {
+                if (addon.slug === 'ai-support-monthly') {
+                    expect(addon.isActive).toBe(false);
+                    continue;
+                }
                 expect(addon.isActive).toBe(true);
             }
+        });
+    });
+
+    describe('AI Support Add-on (AC-4.1)', () => {
+        it('should exist in ALL_ADDONS with slug ai-support-monthly', () => {
+            const addon = ALL_ADDONS.find((a) => a.slug === 'ai-support-monthly');
+            expect(addon).toBeDefined();
+        });
+
+        it('should have recurring billing type', () => {
+            expect(AI_SUPPORT_ADDON.billingType).toBe('recurring');
+        });
+
+        it('should grant AI_SUPPORT entitlement', () => {
+            expect(AI_SUPPORT_ADDON.grantsEntitlement).toBe(EntitlementKey.AI_SUPPORT);
+        });
+
+        it('should affect MAX_AI_SUPPORT_PER_MONTH limit key', () => {
+            expect(AI_SUPPORT_ADDON.affectsLimitKey).toBe(LimitKey.MAX_AI_SUPPORT_PER_MONTH);
+        });
+
+        it('should have a finite positive limitIncrease (not -1)', () => {
+            const { limitIncrease } = AI_SUPPORT_ADDON;
+            expect(limitIncrease).not.toBeNull();
+            expect(Number.isFinite(limitIncrease)).toBe(true);
+            expect(limitIncrease as number).toBeGreaterThan(0);
+            expect(limitIncrease).not.toBe(-1);
+        });
+
+        it('should have null durationDays (recurring)', () => {
+            expect(AI_SUPPORT_ADDON.durationDays).toBeNull();
+        });
+
+        it('should target owner and complex categories', () => {
+            expect(AI_SUPPORT_ADDON.targetCategories).toEqual(['owner', 'complex']);
+        });
+
+        it('should be inactive until the ai_support feature ships (deferred)', () => {
+            // The ai_support feature route + final pricing are deferred to a future
+            // spec (SPEC-211 §AC-4.2). Shipping it active at a placeholder price
+            // would let a host pay for a feature that does not exist yet.
+            expect(AI_SUPPORT_ADDON.isActive).toBe(false);
         });
     });
 });
