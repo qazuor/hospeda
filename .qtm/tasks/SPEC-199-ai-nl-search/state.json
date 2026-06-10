@@ -697,7 +697,7 @@
             "id": "T-020",
             "title": "Write AiSearchPanel and IntentChips component tests (full coverage per §8.3)",
             "description": "Create apps/web/src/components/ai-search/AiSearchPanel.test.tsx and IntentChips.test.tsx using Vitest + @testing-library/react.\n\nAiSearchPanel.test.tsx required tests (§8.3):\n- Anonymous user submits → buildLoginRedirect called, no fetch fired\n- Authenticated user submits → fetch called with correct body, loading state shown\n- Success fallbackToKeyword:false → window.location.href set with mappedParams, sessionStorage.ai_search_chips set\n- Success fallbackToKeyword:true → navigate with q=rawQuery, fallback notice shown\n- 403 response → upgrade prompt shown, no navigation\n- 429 response → rate-limit message shown\n- Network error → service error shown, keyword fallback CTA shown\n- Char count updates as user types, submit disabled when empty\n\nIntentChips.test.tsx required tests (§8.3, AC-7, AC-8):\n- Renders one chip per key in sessionStorage.ai_search_chips\n- Removing chip updates sessionStorage + navigates with updated params\n- No chips when sessionStorage empty\n\nEnum-resilience rule (§8.4): use Object.values(AccommodationTypeEnum).length, never literal counts.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-016", "T-017"],
             "blocks": ["T-021"],
@@ -718,14 +718,14 @@
             "tags": ["testing", "frontend", "component"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-10T03:34:18.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-10T08:28:22.000Z"
             }
         },
         {
@@ -770,9 +770,9 @@
     ],
     "summary": {
         "total": 21,
-        "pending": 2,
+        "pending": 1,
         "inProgress": 0,
-        "completed": 19,
+        "completed": 20,
         "blocked": 0,
         "averageComplexity": 2.38
     }

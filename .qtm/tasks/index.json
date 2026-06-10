@@ -334,7 +334,7 @@
             "specId": "SPEC-199",
             "title": "AI Natural-Language Search",
             "status": "in-progress",
-            "progress": "19/21",
+            "progress": "20/21",
             "path": "SPEC-199-ai-nl-search",
             "archived": false,
             "note": "Child B of SPEC-173. NL search: generateObject -> SearchIntentEntities -> AccommodationSearchHttp params, NO embeddings V1. All §3 decisions resolved. spec-realign 2026-06-10: greenfield, foundation stable; slot set expanded (D-5: bedrooms/bathrooms/maxRating/featureSlugs). 21 atomic tasks generated. IN-PROGRESS."
