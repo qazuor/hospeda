@@ -332,10 +332,18 @@ function AiSettingsPage() {
 
                                 {/* Model */}
                                 <form.Subscribe
-                                    selector={(state) => ({
-                                        provider: state.values.features[featureId].primaryProvider,
-                                        model: state.values.features[featureId].model
-                                    })}
+                                    selector={(state) => {
+                                        // The form is seeded by toFormValues() which fills every
+                                        // feature key from DEFAULT_SETTINGS; fall back defensively
+                                        // so we never assert non-null.
+                                        const fc =
+                                            state.values.features[featureId] ??
+                                            DEFAULT_SETTINGS.features[featureId];
+                                        return {
+                                            provider: fc.primaryProvider,
+                                            model: fc.model
+                                        };
+                                    }}
                                 >
                                     {({ provider }) => {
                                         const models = providerModels[provider] ?? [];
