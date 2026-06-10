@@ -34,9 +34,9 @@
     align-items: center;
     gap: var(--space-1, 4px);
     padding: var(--space-1, 4px) var(--space-2, 8px) var(--space-1, 4px) var(--space-3, 12px);
-    background: oklch(from var(--primary, oklch(0.55 0.17 264)) l c h / 0.1);
+    background: var(--brand-primary-a10);
     color: var(--primary, oklch(0.55 0.17 264));
-    border: 1px solid oklch(from var(--primary, oklch(0.55 0.17 264)) l c h / 0.25);
+    border: 1px solid var(--brand-primary-a25);
     border-radius: var(--radius-pill, 999px);
     font-family: var(--font-sans, sans-serif);
     font-size: 0.8125rem;
@@ -88,7 +88,7 @@
 
 .removeBtn:hover,
 .removeBtn:focus-visible {
-    background: oklch(from var(--primary, oklch(0.55 0.17 264)) l c h / 0.2);
+    background: var(--brand-primary-a20);
     color: var(--primary, oklch(0.55 0.17 264));
     outline: none;
 }
