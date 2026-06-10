@@ -3,13 +3,17 @@ name: E2E (PR)
 # SPEC-092 T-039: PR-time E2E suite. Runs P0 only with mocked external
 # services. Target wall-clock: < 6 minutes.
 #
-# When this workflow fails, the PR cannot merge. Failures are usually
-# regressions in cross-app behavior; check the uploaded HTML report and
-# Playwright trace for first-retry forensics.
+# Runs on PRs targeting both `staging` and `main`. `staging` was added
+# (issue #1547) so the suite exercises on every integration PR instead of
+# only the rare `staging -> main` promotion — that infrequency is what let
+# it bit-rot. This is a standalone check, separate from the product
+# `CI Pass` gate; failures surface regressions in cross-app behavior (see the
+# uploaded HTML report and Playwright trace for first-retry forensics).
 
 on:
   pull_request:
     branches:
+      - staging
       - main
 
 concurrency:
