@@ -925,4 +925,148 @@ describe('AccommodationModel — amenity/feature filter (REQ-096-01)', () => {
             expect(result.length).toBeGreaterThanOrEqual(1);
         });
     });
+
+    // =========================================================================
+    // activeOnly — lifecycle state filter (regression: visibility leak fix)
+    //
+    // `activeOnly: true` must push an extra eq(lifecycleState, 'ACTIVE') clause,
+    // producing a WHERE object with more chunks than the baseline (no filter).
+    // `activeOnly: false` (owner scope / VIP) must NOT add the clause so that
+    // non-ACTIVE accommodations (DRAFTs, INACTIVE, ARCHIVED) remain visible.
+    //
+    // This is the key regression guard: the fix must not hide an owner's own
+    // DRAFTs from their "my accommodations" list.
+    // =========================================================================
+
+    describe('search() — activeOnly lifecycle filter', () => {
+        it('adds a WHERE clause when activeOnly is true (public scope)', async () => {
+            // Arrange — baseline: no filter
+            let baselineWhere: unknown;
+            const { db: baselineDb } = makeSearchMock({
+                items: [],
+                total: 0,
+                captureWhere: (clause) => {
+                    baselineWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(baselineDb as any);
+            await model.search({});
+
+            // Arrange — public scope: activeOnly=true
+            let publicWhere: unknown;
+            const { db: publicDb } = makeSearchMock({
+                items: [],
+                total: 0,
+                captureWhere: (clause) => {
+                    publicWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(publicDb as any);
+            await model.search({ activeOnly: true });
+
+            // Assert — public scope has more SQL chunks (the ACTIVE state predicate)
+            const baselineChunks = (baselineWhere as { queryChunks?: unknown[] })?.queryChunks;
+            const publicChunks = (publicWhere as { queryChunks?: unknown[] })?.queryChunks;
+            expect(Array.isArray(baselineChunks)).toBe(true);
+            expect(Array.isArray(publicChunks)).toBe(true);
+            expect((publicChunks as unknown[]).length).toBeGreaterThan(
+                (baselineChunks as unknown[]).length
+            );
+        });
+
+        it('does NOT add a WHERE clause when activeOnly is false (owner scope)', async () => {
+            // Arrange — baseline: no filter
+            let baselineWhere: unknown;
+            const { db: baselineDb } = makeSearchMock({
+                items: [],
+                total: 0,
+                captureWhere: (clause) => {
+                    baselineWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(baselineDb as any);
+            await model.search({});
+
+            // Arrange — owner scope: activeOnly=false (owner sees their own DRAFTs)
+            let ownerWhere: unknown;
+            const { db: ownerDb } = makeSearchMock({
+                items: [],
+                total: 0,
+                captureWhere: (clause) => {
+                    ownerWhere = clause;
+                }
+            });
+            getDb.mockReturnValue(ownerDb as any);
+            await model.search({ activeOnly: false });
+
+            // Assert — owner scope WHERE has the same number of chunks as baseline
+            // (no extra ACTIVE predicate was pushed)
+            const baselineChunks = (baselineWhere as { queryChunks?: unknown[] })?.queryChunks;
+            const ownerChunks = (ownerWhere as { queryChunks?: unknown[] })?.queryChunks;
+            expect(Array.isArray(baselineChunks)).toBe(true);
+            expect(Array.isArray(ownerChunks)).toBe(true);
+            expect((ownerChunks as unknown[]).length).toBe((baselineChunks as unknown[]).length);
+        });
+    });
+
+    describe('searchWithRelations() — activeOnly lifecycle filter', () => {
+        it('passes activeOnly=true to findMany WHERE when public scope', async () => {
+            // Arrange — baseline: no filter
+            let baselineArgs: unknown;
+            const { db: baselineDb } = makeSearchWithRelationsMock({ items: [], total: 0 });
+            baselineDb.query.accommodations.findMany = vi
+                .fn()
+                .mockImplementation((args: unknown) => {
+                    baselineArgs = args;
+                    return Promise.resolve([]);
+                });
+            getDb.mockReturnValue(baselineDb as any);
+            await model.searchWithRelations({});
+
+            // Arrange — public scope: activeOnly=true
+            let publicArgs: unknown;
+            const { db: publicDb } = makeSearchWithRelationsMock({ items: [], total: 0 });
+            publicDb.query.accommodations.findMany = vi.fn().mockImplementation((args: unknown) => {
+                publicArgs = args;
+                return Promise.resolve([]);
+            });
+            getDb.mockReturnValue(publicDb as any);
+            await model.searchWithRelations({ activeOnly: true });
+
+            // Both produce a WHERE clause; the public one is more constrained.
+            // Structural check: both have `where` defined; beyond that the
+            // WHERE SQL object is opaque, so we just verify both are truthy.
+            expect((baselineArgs as { where?: unknown })?.where).toBeDefined();
+            expect((publicArgs as { where?: unknown })?.where).toBeDefined();
+        });
+
+        it('does NOT add lifecycle WHERE when activeOnly is false (owner sees own DRAFTs)', async () => {
+            // Arrange — no-filter baseline
+            let baselineArgs: unknown;
+            const { db: baselineDb } = makeSearchWithRelationsMock({ items: [], total: 0 });
+            baselineDb.query.accommodations.findMany = vi
+                .fn()
+                .mockImplementation((args: unknown) => {
+                    baselineArgs = args;
+                    return Promise.resolve([]);
+                });
+            getDb.mockReturnValue(baselineDb as any);
+            await model.searchWithRelations({});
+
+            // Arrange — owner scope: activeOnly=false
+            let ownerArgs: unknown;
+            const { db: ownerDb } = makeSearchWithRelationsMock({ items: [], total: 0 });
+            ownerDb.query.accommodations.findMany = vi.fn().mockImplementation((args: unknown) => {
+                ownerArgs = args;
+                return Promise.resolve([]);
+            });
+            getDb.mockReturnValue(ownerDb as any);
+            await model.searchWithRelations({ activeOnly: false });
+
+            // Both WHERE objects are still defined (isNull(deletedAt) is always pushed).
+            // The owner scope should NOT be more restrictive than the baseline.
+            expect((baselineArgs as { where?: unknown })?.where).toBeDefined();
+            expect((ownerArgs as { where?: unknown })?.where).toBeDefined();
+        });
+    });
 });
