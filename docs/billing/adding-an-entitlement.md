@@ -61,11 +61,11 @@ export const OWNER_PRO_PLAN: PlanDefinition = {
 };
 ```
 
-### How plan grants reach the billing DB (seed sync)
+### How plan grants reach the billing DB (seed sync — Model C)
 
 `plans.config.ts` is the **code-level config**. The billing DB (`billing_plans`
 table managed by QZPay) is the **runtime source of truth** after initial seeding
-(SPEC-168 / SPEC-192). The two are kept in sync as follows:
+(SPEC-168 / SPEC-192 / SPEC-211). The two are kept in sync as follows:
 
 1. `packages/seed/src/required/billingEntitlements.seed.ts` reads
    `ENTITLEMENT_DEFINITIONS` and upserts rows in `billing_entitlements`. It is
@@ -73,18 +73,34 @@ table managed by QZPay) is the **runtime source of truth** after initial seeding
 
 2. `packages/seed/src/required/billingPlans.seed.ts` reads `ALL_PLANS` and
    upserts rows in `billing_plans` (matched by `name`). On first run it inserts;
-   on subsequent runs it detects divergences (compares `entitlements`, `limits`,
-   `metadata`, `active`) and logs a warning — it **does NOT overwrite** runtime
-   edits. This means: if a plan was already seeded and you add an entitlement to
-   `plans.config.ts`, **the DB row does not update automatically**. You must
-   either:
+   on subsequent runs it applies the **Model C** per-field policy (SPEC-211):
 
-   - Run `pnpm db:fresh` (dev only — wipes and re-seeds from scratch), OR
-   - Edit the plan from the admin panel (`/admin/billing/plans`), OR
-   - Ask an operator to run the admin API mutation (`PUT /api/v1/admin/billing/plans/{id}`).
+   - **Capability fields** (`entitlements`, limit-key presence, and structural
+     metadata — see `MODEL_C_FIELD_SPLIT` in
+     `packages/billing/src/config/model-c-field-split.ts`) → the DB row is
+     updated to match config. A new entitlement grant added to `plans.config.ts`
+     **reaches existing DB rows automatically** on the next seed run.
 
-   For a brand-new environment the seed covers everything. For an existing
-   environment (staging, prod) the admin UI or API is the correct path.
+   - **Commercial fields** (limit numeric values, `active`, `description`,
+     `metadata.displayName`, prices) → DB wins; a log notice is emitted but
+     the row is never overwritten. These reflect operator decisions made via the
+     SPEC-168 admin UI.
+
+   This means: if a plan was already seeded and you add an entitlement to
+   `plans.config.ts`, running the seed on the target environment propagates the
+   change to the existing row. For new environments, the seed covers everything
+   in one pass. For production environments where you cannot run the seed
+   directly, the extras migration provides the one-pass sync (see below).
+
+   For dev, `pnpm db:fresh` (wipes and re-seeds from scratch) is still the
+   fastest path.
+
+   **If you are adding a new `billing_plans` column** (not just granting an
+   existing key), you must also classify it in `MODEL_C_FIELD_SPLIT`
+   (`packages/billing/src/config/model-c-field-split.ts`) as `'capability'`
+   or `'commercial'`. The seed's fail-fast guard throws at startup if any
+   seed-controlled field is missing from that table, and the guard test
+   (`packages/billing/test/model-c-field-split.test.ts`) will fail CI.
 
 ---
 
@@ -217,7 +233,11 @@ intentional (example: the WRITE_REVIEWS host-lockout documented in that file).
 - [ ] `EntitlementKey` member added in `entitlement.types.ts`
 - [ ] `ENTITLEMENT_DEFINITIONS` entry added in `entitlements.config.ts`
 - [ ] `plans.config.ts` updated for every plan that should receive the grant
-- [ ] DB sync plan executed (fresh seed for dev / admin UI or API for staging/prod)
+- [ ] DB sync executed: `pnpm db:fresh` for dev; seed run on staging/prod propagates
+      the capability-layer change automatically (Model C). Commercial-layer changes
+      still require the admin UI or API.
+- [ ] If adding a new `billing_plans` column: classified in `MODEL_C_FIELD_SPLIT`
+      (`packages/billing/src/config/model-c-field-split.ts`)
 - [ ] `requireEntitlement(...)` wired via `options.middlewares` in the route
 - [ ] BLOCK + ALLOW test pair added in `enforcement-gates.test.ts`
 - [ ] Matrix row added in `endpoint-gate-matrix.md` with correct Status
