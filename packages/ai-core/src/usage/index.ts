@@ -12,7 +12,7 @@
  * @module ai-core/usage
  */
 
-export { MODEL_RATES } from './model-rates.js';
+export { DEFAULT_COST_CEILINGS, MODEL_RATES } from './model-rates.js';
 
 export {
     calculateCostMicroUsd,
