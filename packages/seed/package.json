@@ -31,6 +31,7 @@
         "lint:image-pool": "tsx ./scripts/check-image-pool-coverage.ts"
     },
     "dependencies": {
+        "@repo/ai-core": "workspace:*",
         "@repo/billing": "workspace:*",
         "@repo/config": "workspace:*",
         "@repo/db": "workspace:*",
