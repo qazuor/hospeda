@@ -81,8 +81,14 @@ describe('Add-on Configuration', () => {
             expect(EXTRA_PHOTOS_ADDON.priceArs).toBe(500000); // ARS $5,000
         });
 
-        it('all add-ons should be active', () => {
+        it('all add-ons except the deferred ai-support addon should be active', () => {
+            // ai-support-monthly ships inactive: its feature route is deferred to a
+            // future spec (SPEC-211 §AC-4.2), so it must not be purchasable yet.
             for (const addon of ALL_ADDONS) {
+                if (addon.slug === 'ai-support-monthly') {
+                    expect(addon.isActive).toBe(false);
+                    continue;
+                }
                 expect(addon.isActive).toBe(true);
             }
         });
@@ -122,8 +128,11 @@ describe('Add-on Configuration', () => {
             expect(AI_SUPPORT_ADDON.targetCategories).toEqual(['owner', 'complex']);
         });
 
-        it('should be active', () => {
-            expect(AI_SUPPORT_ADDON.isActive).toBe(true);
+        it('should be inactive until the ai_support feature ships (deferred)', () => {
+            // The ai_support feature route + final pricing are deferred to a future
+            // spec (SPEC-211 §AC-4.2). Shipping it active at a placeholder price
+            // would let a host pay for a feature that does not exist yet.
+            expect(AI_SUPPORT_ADDON.isActive).toBe(false);
         });
     });
 });

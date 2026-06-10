@@ -92,6 +92,12 @@ export const AI_SUPPORT_ADDON: AddonDefinition = {
     description:
         'Unlocks AI-powered support tools for hosts, including smart reply suggestions and automated guest FAQ handling. Renews monthly.',
     billingType: 'recurring',
+    // Placeholder pricing/quota — the ai_support FEATURE route is deferred to a
+    // future spec (SPEC-211 §AC-4.2). Until that spec lands with final pricing,
+    // the addon ships INACTIVE so it never surfaces in the purchasable catalog:
+    // an active addon at a TBD price would grant AI_SUPPORT for a feature that
+    // does not exist yet (host pays, receives nothing). Flip isActive to true in
+    // the ai_support feature spec once price/quota are confirmed by the owner.
     priceArs: 800000, // ARS $8,000/month — TBD: owner to confirm final price at implementation
     annualPriceArs: 7680000, // ARS $76,800/year (20% annual discount) — TBD: owner to confirm at implementation
     durationDays: null,
@@ -99,7 +105,7 @@ export const AI_SUPPORT_ADDON: AddonDefinition = {
     limitIncrease: 100, // TBD: owner to confirm the monthly AI interaction quota at implementation
     grantsEntitlement: EntitlementKey.AI_SUPPORT,
     targetCategories: ['owner', 'complex'],
-    isActive: true,
+    isActive: false,
     sortOrder: 6
 };
 
