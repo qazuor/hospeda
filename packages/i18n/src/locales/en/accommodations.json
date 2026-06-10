@@ -403,6 +403,7 @@
         "errorDefault": "Could not display the response. Please try again.",
         "atCapMessage": "You've reached the conversation limit.",
         "newConversation": "New conversation",
-        "close": "Close chat"
+        "close": "Close chat",
+        "unavailable": "AI chat is not available for this accommodation"
     }
 }
