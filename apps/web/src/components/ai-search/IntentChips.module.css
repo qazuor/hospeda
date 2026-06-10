@@ -1,0 +1,106 @@
+/**
+ * IntentChips.module.css
+ * Styles for the IntentChips component.
+ *
+ * Web app convention: vanilla CSS / CSS Modules — NO Tailwind utility classes.
+ * Uses CSS custom properties from global.css (no hardcoded colour values).
+ */
+
+/* ── Root wrapper ────────────────────────────────────────────────────────── */
+
+.root {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2, 8px);
+}
+
+/* ── Chip list ───────────────────────────────────────────────────────────── */
+
+.list {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2, 8px);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* ── Individual chip ─────────────────────────────────────────────────────── */
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1, 4px);
+    padding: var(--space-1, 4px) var(--space-2, 8px) var(--space-1, 4px) var(--space-3, 12px);
+    background: oklch(from var(--primary, oklch(0.55 0.17 264)) l c h / 0.1);
+    color: var(--primary, oklch(0.55 0.17 264));
+    border: 1px solid oklch(from var(--primary, oklch(0.55 0.17 264)) l c h / 0.25);
+    border-radius: var(--radius-pill, 999px);
+    font-family: var(--font-sans, sans-serif);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    line-height: 1.4;
+    white-space: nowrap;
+    /* Subtle entry animation */
+    animation: chipIn 0.15s ease-out;
+}
+
+@keyframes chipIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+/* ── Chip label ──────────────────────────────────────────────────────────── */
+
+.chipLabel {
+    /* Truncate very long labels gracefully */
+    max-width: 24ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ── Remove button ───────────────────────────────────────────────────────── */
+
+.removeBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 50%;
+    color: inherit;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background var(--duration-fast, 0.15s) ease, color var(--duration-fast, 0.15s) ease;
+}
+
+.removeBtn:hover,
+.removeBtn:focus-visible {
+    background: oklch(from var(--primary, oklch(0.55 0.17 264)) l c h / 0.2);
+    color: var(--primary, oklch(0.55 0.17 264));
+    outline: none;
+}
+
+.removeBtn:focus-visible {
+    box-shadow: 0 0 0 2px var(--primary, oklch(0.55 0.17 264));
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────── */
+
+@media (max-width: 480px) {
+    .chipLabel {
+        max-width: 18ch;
+    }
+}
