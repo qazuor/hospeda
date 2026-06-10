@@ -544,14 +544,14 @@
             "specId": "SPEC-189",
             "title": "Optimize Seed & App Builds — run seed from src (no build) + decouple @repo/schemas from @repo/feedback",
             "type": "refactor",
-            "status": "draft",
+            "status": "completed",
             "complexity": "medium",
             "path": "SPEC-189-optimize-seed-and-app-builds",
             "branch": "spec/SPEC-189-optimize-seed-and-app-builds",
             "base": "staging",
             "linearIssues": ["BETA-54"],
             "created": "2026-06-02",
-            "archived": false
+            "archived": true
         },
         {
             "specId": "SPEC-190",

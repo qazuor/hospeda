@@ -53,7 +53,7 @@ hops db-seed [--target=prod|staging]
              [--pull | --no-pull]
              [--no-reset] [--no-required] [--no-example]
              [--clean-images]
-             [--no-build]
+             [--build]
              [--migrate] [--no-apply-extras]
              [--yes]
 
@@ -61,16 +61,15 @@ Run \`pnpm --filter @repo/seed seed\` against the target environment.
 
 Default behaviour (schema-sync is NOT included by default — run \`hops
 db-migrate\` separately first, or pass \`--migrate\` to include it):
-  --reset, --required, --example, --build are ON. --clean-images,
+  --reset, --required, --example are ON. --build, --clean-images,
   --migrate are OFF. The default invocation:
     1. (optional) git pull \$HOPS_REPO_ROOT
-    2. pnpm turbo run build --filter=@repo/seed^...   (turbo-cached)
-    3. pnpm --filter @repo/seed seed --reset --required --example
+    2. pnpm --filter @repo/seed seed --reset --required --example
 
-  Step 2 is required because the seed's workspace deps (@repo/db,
-  @repo/billing, etc.) export from \`./dist/index.js\`. Without it,
-  the seed crashes with ERR_MODULE_NOT_FOUND on the first import.
-  Turbo caches outputs, so subsequent runs are ~1-2s.
+  The seed runs via tsx with tsconfig path resolution, so workspace
+  deps resolve from their src/ directories without a build step.
+  Pass --build to force a turbo build first (escape hatch for deps
+  that need dist/ artifacts, or for CI parity).
 
   NODE_ENV is set to 'production' for --target=prod (billing seeds
   use livemode: true) and 'development' for --target=staging.
@@ -103,10 +102,10 @@ Flags:
                       before reseeding. Slow but produces a fully
                       consistent state (no orphan assets pointing at
                       rows that no longer exist).
-  --no-build          Skip the turbo build step. Only use when the
-                      workspace deps' dist/ outputs are already up to
-                      date (e.g. CI just built them). Without it, the
-                      seed will likely crash with ERR_MODULE_NOT_FOUND.
+  --build             Force a turbo build of workspace deps before seeding.
+                      Off by default — the seed resolves deps from src/ via
+                      tsconfig paths. Use this escape hatch when a dep needs
+                      a dist/ artifact, or for CI parity.
   --pull              Always git pull \$HOPS_REPO_ROOT before seeding.
                       Mutually exclusive with --no-pull.
   --no-pull           Never git pull. Mutually exclusive with --pull.
@@ -186,7 +185,7 @@ export function parseArgs(argv: ReadonlyArray<string>): ParsedArgs {
         required: !args.includes('--no-required'),
         example: !args.includes('--no-example'),
         cleanImages: args.includes('--clean-images'),
-        build: !args.includes('--no-build'),
+        build: args.includes('--build'),
         migrate: args.includes('--migrate'),
         applyExtras: !args.includes('--no-apply-extras'),
         pull: wantsPull ? 'on' : skipsPull ? 'off' : 'ask',
@@ -268,20 +267,11 @@ async function gitPullRepo(repoRoot: string): Promise<void> {
 }
 
 /**
- * Build the workspace dependencies of `@repo/seed` via turbo so the
- * tsx-driven seed can resolve them at runtime.
+ * Build the workspace dependencies of `@repo/seed` via turbo (opt-in via --build).
  *
- * Why this is needed: every `@repo/*` workspace dep of the seed
- * (billing, config, db, logger, media, schemas, service-core, utils)
- * declares its `exports."."` as `./dist/index.js`. The seed itself
- * runs from `./src/index.ts` via `tsx`, but Node still resolves the
- * deps through their declared exports — pointing at `dist/`. Without
- * a build those files don't exist and the seed crashes with
- * `ERR_MODULE_NOT_FOUND`.
- *
- * Turbo handles the dependency order (`^build`) and caches outputs,
- * so subsequent runs are ~1-2s (just hash checks). The first run on
- * a fresh VPS host takes ~30-60s.
+ * By default the seed resolves deps from their src/ directories via tsconfig
+ * paths, so no build is needed. This function is an escape hatch for when a
+ * dep needs a real dist/ artifact, or for CI parity.
  *
  * Filter syntax: `@repo/seed^...` builds every dependency of `@repo/seed`
  * but NOT `@repo/seed` itself (the seed has no build script — its
@@ -384,15 +374,15 @@ export async function dbSeed(argv: ReadonlyArray<string>): Promise<void> {
         log.hint('Skipping git pull.');
     }
 
-    // ── Build workspace deps ─────────────────────────────────────────
-    // The seed runs from `./src/index.ts` via tsx, but its workspace
-    // deps (`@repo/billing`, `@repo/db`, …) declare their exports as
-    // `./dist/index.js` — they must be built first. Turbo caches the
-    // output, so subsequent runs are essentially free.
+    // ── Build workspace deps (opt-in, not default) ──────────────────
+    // The seed runs from `./src/index.ts` via tsx with tsconfig path
+    // resolution, so workspace deps resolve from their src/ directories
+    // without a build step. Pass --build to force a turbo build first
+    // (escape hatch for deps that need dist/ artifacts, or CI parity).
     if (parsed.build) {
         await buildSeedDependencies(repoRoot);
     } else {
-        log.hint('Skipping build (--no-build).');
+        log.hint('Skipping build (default). Seed resolves deps from src/ via tsconfig paths.');
     }
 
     // ── Destructive confirmation (prod only by default) ──────────────

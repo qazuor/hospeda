@@ -1195,6 +1195,9 @@ importers:
       '@repo/icons':
         specifier: workspace:*
         version: link:../icons
+      '@repo/schemas':
+        specifier: workspace:*
+        version: link:../schemas
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -1474,9 +1477,6 @@ importers:
       '@repo/config':
         specifier: workspace:*
         version: link:../config
-      '@repo/feedback':
-        specifier: workspace:*
-        version: link:../feedback
       '@repo/utils':
         specifier: workspace:*
         version: link:../utils
