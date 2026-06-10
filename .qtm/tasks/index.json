@@ -302,6 +302,18 @@
             "archivedAt": "2026-06-09"
         },
         {
+            "specId": "SPEC-209",
+            "title": "Admin SSR memory leak + cheap healthcheck",
+            "status": "in-progress",
+            "progress": "0/13",
+            "path": "SPEC-209-admin-ssr-memory-leak-healthcheck",
+            "branch": "spec/SPEC-209-admin-ssr-memory-leak-healthcheck",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-209-admin-ssr-memory-leak-healthcheck",
+            "base": "staging",
+            "archived": false,
+            "note": "13 atomized tasks across setup/core/testing/docs phases (avg complexity 2.1). Investigate-first: T-001/T-004/T-007 start in parallel (no blockers). Critical path: T-004->T-006->T-009->T-010->T-011->T-012->T-013. Healthcheck (T-001..T-003), regression+guard tests (T-005..T-008), leak fix (T-009), staging validation (T-010..T-012), docs (T-013)."
+        },
+        {
             "specId": "SPEC-210",
             "title": "Public Response Tier Enforcement — make schema-tier serialization mandatory and fail-closed so public endpoints can never leak undeclared DB columns",
             "status": "draft",

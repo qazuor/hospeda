@@ -851,6 +851,28 @@
             "path": "SPEC-187-rich-text-entity-descriptions"
         },
         {
+            "specId": "SPEC-209",
+            "title": "Admin SSR memory leak + cheap healthcheck",
+            "type": "bugfix",
+            "status": "in-progress",
+            "complexity": "medium",
+            "path": "SPEC-209-admin-ssr-memory-leak-healthcheck",
+            "base": "staging",
+            "archived": false,
+            "tags": [
+                "admin",
+                "ssr",
+                "memory-leak",
+                "billing",
+                "qzpay",
+                "healthcheck",
+                "coolify",
+                "nitro",
+                "observability"
+            ],
+            "note": "Worktree spec-209 / branch spec/SPEC-209-admin-ssr-memory-leak-healthcheck. Investigate-first: cheap /healthz + heap-snapshot confirmation before the leak fix in __root.tsx. Number was reassigned from the earlier 'photo archival' reservation."
+        },
+        {
             "specId": "SPEC-210",
             "title": "Public Response Tier Enforcement — make schema-tier serialization mandatory and fail-closed so public endpoints can never leak undeclared DB columns",
             "type": "refactor",
