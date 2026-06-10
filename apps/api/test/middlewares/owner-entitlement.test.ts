@@ -1,5 +1,6 @@
 /**
  * SPEC-187 P2-T4 — `ownerEntitlementMiddleware` unit tests.
+ * SPEC-211 Phase 1 (T-007) — `resolveOwnerLimitsForOwnerId` unit tests (AC-1.1).
  *
  * The middleware resolves the OWNING HOST of an accommodation and attaches
  * their `EntitlementKey[]` to the Hono context as `c.get('ownerEntitlements')`.
@@ -14,13 +15,26 @@
  * covered by integration tests on the underlying services. The middleware
  * unit test asserts the orchestration: contract of context keys, error
  * short-circuits, and fail-open behavior.
+ *
+ * The SPEC-211 additions test `resolveOwnerLimitsForOwnerId` independently
+ * (it is exported and called directly by the chat route handler, not as a
+ * Hono middleware). The DB mock is extended with a `mockUserRoleLookup` helper
+ * for the `resolveOwnerRole` branch (no `innerJoin`, users-only query).
  */
-import { EntitlementKey, getDefaultEntitlements, getUnlimitedEntitlements } from '@repo/billing';
+import {
+    EntitlementKey,
+    LimitKey,
+    getDefaultEntitlements,
+    getUnlimitedEntitlements
+} from '@repo/billing';
 import { RoleEnum } from '@repo/service-core';
 import { Hono } from 'hono';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getQZPayBilling } from '../../src/middlewares/billing';
-import { ownerEntitlementMiddleware } from '../../src/middlewares/owner-entitlement';
+import {
+    ownerEntitlementMiddleware,
+    resolveOwnerLimitsForOwnerId
+} from '../../src/middlewares/owner-entitlement';
 import { createErrorHandler } from '../../src/middlewares/response';
 import type { AppBindings } from '../../src/types';
 
@@ -31,7 +45,8 @@ vi.mock('../../src/middlewares/billing', () => ({
 }));
 
 // Mock the DB module — ownerEntitlementMiddleware uses getDb() to resolve
-// accommodation → ownerId.
+// accommodation → ownerId (with innerJoin), and resolveOwnerRole uses getDb()
+// to resolve ownerId → role (without innerJoin).
 const mockAccommodationSelect = vi.fn();
 vi.mock('@repo/db', () => ({
     getDb: vi.fn(() => ({
@@ -45,6 +60,19 @@ vi.mock('@repo/db', () => ({
         id: 'users.id',
         role: 'users.role'
     }
+}));
+
+// Mock PlanService — resolveOwnerLimitsForOwnerId uses it for the owner-basico
+// fallback limits when the owner has no active subscription.
+// Use vi.hoisted so the mock factory runs BEFORE the module-level import,
+// which means mockGetBySlug is accessible at mock-factory evaluation time.
+const { mockGetBySlug } = vi.hoisted(() => {
+    return { mockGetBySlug: vi.fn() };
+});
+vi.mock('../../src/services/plan.service', () => ({
+    PlanService: vi.fn().mockImplementation(() => ({
+        getBySlug: mockGetBySlug
+    }))
 }));
 
 // Mock logger
@@ -75,6 +103,28 @@ function mockAccommodationLookup(row: { ownerId: string; ownerRole?: RoleEnum | 
         from: vi.fn().mockReturnValue({
             innerJoin: vi.fn().mockReturnValue(whereChain)
         })
+    };
+    mockAccommodationSelect.mockReturnValue(fromChain);
+    return { fromChain, whereChain };
+}
+
+/**
+ * Helper: stub the DB for the `resolveOwnerRole` query shape used by
+ * `resolveOwnerLimitsForOwnerId`.
+ *
+ * The query in resolveOwnerRole is:
+ *   db.select({ role: users.role }).from(users).where(...).limit(1)
+ *
+ * Unlike the accommodation lookup there is NO innerJoin, so the chain is:
+ *   select → from → where → limit
+ */
+function mockUserRoleLookup(role: RoleEnum | null) {
+    const whereChain = {
+        where: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockResolvedValue(role !== null ? [{ role }] : [])
+    };
+    const fromChain = {
+        from: vi.fn().mockReturnValue(whereChain)
     };
     mockAccommodationSelect.mockReturnValue(fromChain);
     return { fromChain, whereChain };
@@ -317,6 +367,170 @@ describe('ownerEntitlementMiddleware', () => {
             // is a regression pin on @repo/billing's getDefaultEntitlements.
             const defaults = getDefaultEntitlements();
             expect(defaults.entitlements).not.toContain(EntitlementKey.CAN_USE_RICH_DESCRIPTION);
+        });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// SPEC-211 Phase 1 (T-007, AC-1.1) — resolveOwnerLimitsForOwnerId
+// ---------------------------------------------------------------------------
+
+/**
+ * Unit tests for `resolveOwnerLimitsForOwnerId`.
+ *
+ * Tests cover the three acceptance criteria from AC-1.1:
+ * 1. Owner WITH an active subscription → returns correct limits map from plan
+ *    (+ customer-level overrides applied).
+ * 2. Owner with NO active subscription → returns owner-basico fallback limits.
+ * 3. Customer-level limit override merges correctly (override wins over plan).
+ *
+ * The function is called directly (not via a Hono route) since it is a plain
+ * async export consumed inline by the chat route handler. The billing client
+ * and PlanService are stubbed to avoid real-network/DB calls. The DB mock
+ * is set up via `mockUserRoleLookup` to handle the `resolveOwnerRole` users
+ * query shape (no innerJoin).
+ */
+describe('resolveOwnerLimitsForOwnerId (SPEC-211 T-007 AC-1.1)', () => {
+    let mockBilling: {
+        customers: { getByExternalId: ReturnType<typeof vi.fn> };
+        subscriptions: { getByCustomerId: ReturnType<typeof vi.fn> };
+        plans: { get: ReturnType<typeof vi.fn> };
+        entitlements: { getByCustomerId: ReturnType<typeof vi.fn> };
+        limits: { getByCustomerId: ReturnType<typeof vi.fn> };
+    };
+
+    beforeEach(() => {
+        mockBilling = {
+            customers: { getByExternalId: vi.fn() },
+            subscriptions: { getByCustomerId: vi.fn() },
+            plans: { get: vi.fn() },
+            entitlements: { getByCustomerId: vi.fn() },
+            limits: { getByCustomerId: vi.fn() }
+        };
+        vi.mocked(getQZPayBilling).mockReturnValue(
+            mockBilling as unknown as ReturnType<typeof getQZPayBilling>
+        );
+        // Default: owner-basico fallback returns a plan with a finite chat limit.
+        mockGetBySlug.mockResolvedValue({
+            success: true,
+            data: {
+                slug: 'owner-basico',
+                limits: {
+                    [LimitKey.MAX_AI_CHAT_PER_MONTH]: 20,
+                    [LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH]: 20
+                },
+                entitlements: []
+            }
+        });
+    });
+
+    afterEach(() => {
+        vi.clearAllMocks();
+    });
+
+    describe('AC-1.1.1 — owner with active subscription returns plan limits (+ overrides)', () => {
+        it('resolves the limits map from the plan when the owner has an active subscription', async () => {
+            // Arrange — owner-001 is a HOST with an active subscription to a plan
+            // that grants MAX_AI_CHAT_PER_MONTH=100 and MAX_AI_TEXT_IMPROVE_PER_MONTH=100.
+            // No customer-level overrides in this case.
+            mockUserRoleLookup(RoleEnum.HOST);
+            mockBilling.customers.getByExternalId.mockResolvedValue({ id: 'cust-001' });
+            mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+                { id: 'sub-001', status: 'active', planId: 'plan-owner-pro' }
+            ]);
+            mockBilling.plans.get.mockResolvedValue({
+                id: 'plan-owner-pro',
+                slug: 'owner-pro',
+                entitlements: [],
+                limits: {
+                    [LimitKey.MAX_AI_CHAT_PER_MONTH]: 100,
+                    [LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH]: 100
+                }
+            });
+            mockBilling.limits.getByCustomerId.mockResolvedValue([]);
+
+            // Act
+            const result = await resolveOwnerLimitsForOwnerId('owner-001');
+
+            // Assert — the limits map matches exactly what the plan declared.
+            expect(result).toBeInstanceOf(Map);
+            expect(result.get(LimitKey.MAX_AI_CHAT_PER_MONTH)).toBe(100);
+            expect(result.get(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH)).toBe(100);
+            // billing.limits.getByCustomerId was called for customer-level overrides.
+            expect(mockBilling.limits.getByCustomerId).toHaveBeenCalledWith('cust-001');
+        });
+    });
+
+    describe('AC-1.1.2 — owner with NO active subscription returns owner-basico fallback', () => {
+        it('returns the owner-basico plan limits when the owner has no active subscription', async () => {
+            // Arrange — owner has a customer row but all subscriptions are cancelled.
+            // The fallback must be owner-basico (matching the HOST branch of loadEntitlements).
+            mockUserRoleLookup(RoleEnum.HOST);
+            mockBilling.customers.getByExternalId.mockResolvedValue({ id: 'cust-no-sub' });
+            mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+                { id: 'sub-expired', status: 'cancelled', planId: 'plan-owner-basico' }
+            ]);
+            // PlanService.getBySlug('owner-basico') returns a plan with a concrete limit.
+            mockGetBySlug.mockResolvedValue({
+                success: true,
+                data: {
+                    slug: 'owner-basico',
+                    limits: {
+                        [LimitKey.MAX_AI_CHAT_PER_MONTH]: 20,
+                        [LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH]: 20
+                    },
+                    entitlements: []
+                }
+            });
+
+            // Act
+            const result = await resolveOwnerLimitsForOwnerId('owner-no-sub');
+
+            // Assert — the limits map reflects owner-basico defaults (not tourist-free).
+            expect(result).toBeInstanceOf(Map);
+            expect(result.get(LimitKey.MAX_AI_CHAT_PER_MONTH)).toBe(20);
+            expect(result.get(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH)).toBe(20);
+            // PlanService was consulted for the fallback.
+            expect(mockGetBySlug).toHaveBeenCalledWith('owner-basico');
+            // billing.plans.get was NOT called (no active subscription to look up).
+            expect(mockBilling.plans.get).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('AC-1.1.3 — customer-level limit override wins over plan value', () => {
+        it('merges customer-level limit overrides on top of plan limits (customer wins)', async () => {
+            // Arrange — owner has an active subscription to owner-pro (chat=100)
+            // but the operator has granted a customer-level override bumping chat to 500.
+            mockUserRoleLookup(RoleEnum.HOST);
+            mockBilling.customers.getByExternalId.mockResolvedValue({ id: 'cust-vip' });
+            mockBilling.subscriptions.getByCustomerId.mockResolvedValue([
+                { id: 'sub-vip', status: 'active', planId: 'plan-owner-pro' }
+            ]);
+            mockBilling.plans.get.mockResolvedValue({
+                id: 'plan-owner-pro',
+                slug: 'owner-pro',
+                entitlements: [],
+                limits: {
+                    [LimitKey.MAX_AI_CHAT_PER_MONTH]: 100,
+                    [LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH]: 100
+                }
+            });
+            // Customer-level override: chat bumped to 500, text-improve stays at plan value.
+            mockBilling.limits.getByCustomerId.mockResolvedValue([
+                { limitKey: LimitKey.MAX_AI_CHAT_PER_MONTH, maxValue: 500 }
+            ]);
+
+            // Act
+            const result = await resolveOwnerLimitsForOwnerId('owner-vip');
+
+            // Assert — customer override (500) wins over the plan value (100).
+            expect(result).toBeInstanceOf(Map);
+            expect(result.get(LimitKey.MAX_AI_CHAT_PER_MONTH)).toBe(500);
+            // Plan-level value preserved for keys without a customer override.
+            expect(result.get(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH)).toBe(100);
+            // Verify that both plan and customer lookups were performed.
+            expect(mockBilling.plans.get).toHaveBeenCalledWith('plan-owner-pro');
+            expect(mockBilling.limits.getByCustomerId).toHaveBeenCalledWith('cust-vip');
         });
     });
 });
