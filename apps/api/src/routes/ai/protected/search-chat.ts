@@ -286,6 +286,11 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
             resolvedAmenityIds,
             resolvedFeatureIds
         );
+        // TYPE-WORKAROUND: mapIntentToSearchParams returns MappedParams
+        // (Record<string, string | string[]>) which omits page/pageSize; the
+        // AccommodationSearchHttp output type marks those required via .default().
+        // The emitted params are the URL-ready query form the frontend forwards
+        // verbatim, so the shape is compatible at runtime.
         const params = mappedParams as unknown as AiSearchChatFiltersEvent['params'];
 
         // -----------------------------------------------------------------------
