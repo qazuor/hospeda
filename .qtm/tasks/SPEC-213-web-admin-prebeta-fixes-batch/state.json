@@ -1,0 +1,380 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-213",
+    "title": "Web + Admin pre-beta polish & bugfix batch",
+    "created": "2026-06-11T00:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "W3a: Add APART_HOTEL/ESTANCIA/BED_AND_BREAKFAST to enum + schema + DB migration",
+            "description": "Add the 3 new accommodation types to AccommodationTypeEnum (packages/schemas/src/enums/accommodation-type.enum.ts). DB enum auto-derives via enumToTuple; generate + apply the ALTER TYPE migration (pnpm db:generate + db:migrate). Tests: enum unit test asserting the 3 values exist; migration applies on clean DB.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-002"],
+            "subtasks": [
+                { "title": "Add 3 values to AccommodationTypeEnum", "completed": false },
+                { "title": "Generate + apply enum migration", "completed": false },
+                { "title": "Enum unit test", "completed": false }
+            ],
+            "tags": ["schema", "db", "migration"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "W3b: i18n labels + filter sidebars + seed for new accommodation types",
+            "description": "Add es/en/pt labels under enums.accommodationType (common.json) and the accommodations.json types block for apart_hotel/estancia/bed_and_breakfast. Add the 3 options to the hardcoded types filter arrays in alojamientos/index.astro AND mapa.astro. Extend PooledAccommodationType in seed if seeding examples. Tests: i18n key-presence test (es/en/pt) for the 3 new label keys.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "i18n labels es/en/pt (common + accommodations)", "completed": false },
+                { "title": "Add options to both filter sidebars", "completed": false },
+                { "title": "i18n key-presence test", "completed": false }
+            ],
+            "tags": ["i18n", "web", "seed"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "W6: Fix destination accommodations page pagination.total",
+            "description": "In apps/web/src/pages/[lang]/destinos/[slug]/alojamientos/index.astro:36 read result.data.pagination.total (and pagination.totalPages) instead of result.data.total. Mirror alojamientos/index.astro:203. Tests: component/integration test asserting it reads pagination.total; regression test for the undefined read.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["web", "bugfix"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "W4: Diagnose + fix map view 500 on pan/zoom (bbox params)",
+            "description": "Diagnose the real API error when useViewportSearch.ts calls accommodationsApi.list with bbox params; fix the param handling/validation in the accommodation list route so viewport search returns 200. Tests: API integration test with valid + invalid bbox bounds (invalid -> typed 4xx, never 500); regression for the failing case.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Reproduce + capture the real API error", "completed": false },
+                { "title": "Fix bbox handling/validation", "completed": false },
+                { "title": "Integration + regression tests", "completed": false }
+            ],
+            "tags": ["api", "web", "bugfix"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "W11: Fix post category chip 404 (casing) + add missing sidebar categories",
+            "description": "Normalize casing between post category chip hrefs (publicaciones/index.astro L285-293, uppercase) and the [category]/index.astro lookup map (lowercase keys) so chips resolve (no 404). Add the 7 missing enum categories (NIGHTLIFE, TRADITIONS, ART, BEACH, RURAL, FESTIVALS, GENERAL) to the sidebar filter. Tests: slug<->enum normalization unit test covering all 18 values; chip href resolves.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Fix casing in chips/lookup", "completed": false },
+                { "title": "Add 7 missing categories to sidebar", "completed": false },
+                { "title": "Normalization + resolution tests", "completed": false }
+            ],
+            "tags": ["web", "bugfix"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "W8: Resolve I18nText for services filter on map view",
+            "description": "In apps/web/src/pages/[lang]/alojamientos/mapa.astro (~L204/L211) wrap amenity/feature names with resolveI18nText(name, locale) for the filter options, matching index.astro (L401/L418). Fixes [object Object] chip labels. Tests: snapshot/unit test of the filter-options builder asserting string labels.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["web", "i18n", "bugfix"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "W2: Translate Better Auth signin credential errors",
+            "description": "Map the relevant Better Auth error codes/messages to common.apiError.* i18n keys (es/en/pt) so credential errors (e.g. 'Invalid email or password') render localized in SignIn.client.tsx via translateApiError. Tests: unit test for translateApiError with Better Auth credential-error inputs across es/en/pt.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["i18n", "auth", "web"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "W9: Add AI entitlement i18n labels + fix Embedeer typo",
+            "description": "Add ai_text_improve / ai_chat / ai_search keys to billing.json entitlement block (es/en/pt) and fix the can_embed_video 'Embedeer' typo. ES: 'Mejora de textos con IA', 'Consultas sobre el alojamiento con IA', 'Busqueda inteligente', 'Videos en tu publicacion'. Tests: i18n key-presence test for the 4 keys in all 3 locales.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["i18n", "billing"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "W10: Translate price breakdown fee/discount labels",
+            "description": "Add public fee/discount label i18n keys (es/en/pt accommodations.json) for all fee keys (cleaning, tax, lateCheckout, pets, bedlinen, towels, babyCrib, babyHighChair, extraBed, securityDeposit, extraGuest, parking, earlyCheckin, lateCheckin, luggageStorage, others) and discounts (weekly, monthly, lastMinute, others); use t() in PricingSidebar.astro instead of the raw key. Tests: fee/discount label resolver unit test + key-presence test.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["i18n", "web"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "W1: Proactive login CTA on AI search open for guests",
+            "description": "For unauthenticated users, on AiSearchPanel.client.tsx open show the login message + sign-in/register CTA up front (reuse AuthRequiredPopover.client.tsx) and block the input/send (don't let them type+submit then redirect). Keep the AiSearchLoginPrompted PostHog event. Tests: component test - guest open shows CTA, input blocked, no API call.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["web", "auth", "ux"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "W13: Remove keyword-search degradation fallback",
+            "description": "Remove the 'Buscar por palabras clave' fallback button and the low-confidence 'mostrando resultados por palabras clave' notice from AiSearchPanel.client.tsx (~L351/L399/L407). On AI failure show only the error state. Tests: component test for error + low-confidence states asserting the fallback is gone.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["web", "ux"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "W14: Autofocus chat/search input on open",
+            "description": "Focus the textarea when the panel opens: AiSearchPanel/NlSearchInput (no autofocus today) and AiChatWidget.tsx (currently focuses the expand button first - focus the composer textarea instead). Tests: component test asserting document.activeElement is the textarea after open (both components).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "AI search panel autofocus", "completed": false },
+                {
+                    "title": "Accommodation chat focus textarea not expand button",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "ux"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "W15b: Redirect already_host submit to own list",
+            "description": "In CreatePropertyMiniForm.client.tsx the already_host branch (L354-358) currently sends admin users to the global /accommodations list; redirect to /me/accommodations (host's own list) instead. created/resumed already redirect correctly to the edit URL. Tests: component test for the already_host branch asserting the redirect target.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["web", "ux"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "W5: Fix footer subscribe button stretch when authenticated",
+            "description": "In NewsletterForm.module.css constrain .submitButton (align-self: flex-start or fixed height) so it doesn't stretch to the taller two-line .authedEmail sibling under .inputRow align-items: stretch. CSS-only; verify via design review across the authed/guest states.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["web", "css"],
+            "phase": "cleanup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "W7: Fix hero wave flicker on resize",
+            "description": "In HeroSection.astro replace .hero__bg-wave fixed height:160px with a fluid (clamp/percentage) height tracking the hero rhythm and add will-change: transform on the wave wrapper to avoid mid-reflow repaint flicker. CSS-only; verify by resizing.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["web", "css"],
+            "phase": "cleanup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "W12: Fix sticky sidebar unreachable when taller than viewport",
+            "description": "In DetailLayout.astro .detail-page__sidebar add max-height: calc(100vh - top-offset) and overflow-y: auto so the sticky sidebar scrolls independently when taller than the viewport. Shared layout (all entity detail pages). CSS-only; verify on a tall-sidebar detail page.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["web", "css"],
+            "phase": "cleanup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "W15a: Fix publish form bottom spacing",
+            "description": "In publicar/nueva.astro restore adequate bottom spacing on the form section (.nueva-form--compact overrides padding-block too small vs --space-section). CSS-only; verify the gap to the footer.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["web", "css"],
+            "phase": "cleanup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "A1: Fix admin dialog close button size",
+            "description": "In apps/admin/src/components/ui/dialog.tsx (L89) pass size=\"xs\" (16px) or className=\"size-4\" to <CloseIcon /> so the default close button renders at 16px (it defaults to 24px and the Tailwind selector doesn't match @repo/icons SVGs). Tests: component test asserting the close icon size class/prop.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["admin", "css"],
+            "phase": "cleanup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "A2: Register Playground IA sidebar icon",
+            "description": "Register an appropriate icon (SparkleIcon or AskToAiIcon) in apps/admin/src/lib/nav-icon-map.ts (import + map entry) and point the ai-playground sidebar entry (config/ia/sidebars.ts) at it, so 'Playground IA' shows an icon. Tests: unit test asserting the nav icon resolves for the Playground entry.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["admin"],
+            "phase": "cleanup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 19,
+        "pending": 19,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 1.6
+    }
+}
