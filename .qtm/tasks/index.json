@@ -375,10 +375,10 @@
             "specId": "SPEC-212",
             "title": "Conversational AI Accommodation Search",
             "status": "in-progress",
-            "progress": "11/18",
+            "progress": "12/18",
             "path": "SPEC-212-conversational-ai-search",
             "archived": false,
-            "note": "T-011 ActiveFilterChips done (29 tests). One removable chip per active intent key (location keys deduped to one, currency suppressed, arrays as one chip); reuses accommodations.types.* labels; mounted in panel slot. Next: T-012 mount panel on /alojamientos + retire SPEC-199 UI, then T-013/testing/docs."
+            "note": "WEB TRACK COMPLETE. T-012 mounted SearchChatPanel on /alojamientos (client:load, getApiUrl) and DELETED the SPEC-199 single-input UI (AiSearchTrigger/AiSearchPanel/NlSearchInput/IntentChips + 2 tests, only the listing used them). One AI search surface. Next: T-013 retire search-intent API route (needs owner: confirm no external consumer in apps/api+admin), then T-014..T-017 testing, T-018 docs."
         }
     ],
     "standalone": {

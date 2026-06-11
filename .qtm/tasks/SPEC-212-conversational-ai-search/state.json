@@ -421,35 +421,35 @@
             "id": "T-012",
             "title": "Mount SearchChatPanel on the listing; retire SPEC-199 single-input UI",
             "description": "Mount SearchChatPanel in apps/web/src/pages/[lang]/alojamientos/index.astro as THE 'search with AI' surface, and stop mounting / remove SPEC-199's single-input components (NlSearchInput, AiSearchPanel, AiSearchTrigger, old IntentChips). One AI search surface only. Tests: listing renders the chat panel and no longer renders the old input.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-010", "T-011"],
             "blocks": ["T-013", "T-016", "T-018"],
             "subtasks": [
                 {
                     "title": "Mount SearchChatPanel on the listing page",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unmount/remove SPEC-199 single-input components",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test: chat panel present, old input absent",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "ai", "integration"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-11T00:00:00.000Z",
+                "completed": "2026-06-11T00:00:00.000Z"
             }
         },
         {
@@ -657,9 +657,9 @@
     ],
     "summary": {
         "total": 18,
-        "pending": 7,
+        "pending": 6,
         "inProgress": 0,
-        "completed": 11,
+        "completed": 12,
         "blocked": 0,
         "averageComplexity": 2.4
     }
