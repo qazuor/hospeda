@@ -19,6 +19,7 @@
  * the request open for the duration of the platform default timeout.
  */
 import type { QZPayBilling } from '@qazuor/qzpay-core';
+import { isSubscriptionLive } from '@repo/billing';
 import { UserModel, billingCustomers, billingSubscriptions, desc, eq, getDb } from '@repo/db';
 import type { AccommodationPublishDeps, PublishEligibility } from '@repo/service-core';
 import { clearEntitlementCache } from '../middlewares/entitlement';
@@ -87,8 +88,12 @@ export function buildAccommodationPublishDeps(
             if (subscriptions.length === 0) {
                 return 'first_publish';
             }
-            const hasActive = subscriptions.some(
-                (s) => s.status === 'active' || s.status === 'trialing'
+            const hasActive = subscriptions.some((s) =>
+                isSubscriptionLive({
+                    status: s.status,
+                    trialEnd: s.trialEnd,
+                    currentPeriodEnd: s.currentPeriodEnd
+                })
             );
             return hasActive ? 'has_active_sub' : 'subscription_required';
         },
