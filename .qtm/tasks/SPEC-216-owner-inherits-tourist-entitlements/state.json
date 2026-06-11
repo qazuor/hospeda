@@ -229,163 +229,163 @@
             "id": "T-008",
             "title": "Define TOURIST_VIP_ENTITLEMENTS + TOURIST_VIP_LIMITS; refactor tourist-vip to reuse",
             "description": "In plans.config.ts define the shared constants from the PRUNED tourist-vip set (kept entitlements only) + tourist-vip limits (max_favorites/max_active_alerts/max_compare_items -1). Refactor TOURIST_VIP_PLAN to build its entitlements/limits from the constants (single source of truth). Add dedupe()/mergeLimits() helpers if not present.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-007"],
             "blocks": ["T-009"],
             "subtasks": [
                 {
                     "title": "Define constants from pruned tourist-vip",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Refactor tourist-vip to use them",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add dedupe/mergeLimits helpers",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-11T18:37:08.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-11T19:08:11.000Z",
+                "completed": "2026-06-11T19:08:11.000Z"
             }
         },
         {
             "id": "T-009",
             "title": "Spread tourist-VIP set into all owner + complex plans",
             "description": "entitlements: dedupe([...TOURIST_VIP_ENTITLEMENTS, ...ownerSpecific]); limits: mergeLimits(TOURIST_VIP_LIMITS, ownerSpecific) for all 3 owner + 3 complex plans. Owner-specific wins on limit-key clash. No runtime resolver change.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-008"],
             "blocks": ["T-010"],
             "subtasks": [
                 {
                     "title": "Spread into 3 owner plans",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Spread into 3 complex plans",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-11T18:37:08.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-11T19:08:11.000Z",
+                "completed": "2026-06-11T19:08:11.000Z"
             }
         },
         {
             "id": "T-010",
             "title": "Superset/no-dup/owner-preserved unit tests",
             "description": "For each owner/complex plan: Set(plan.entitlements) superset of Set(TOURIST_VIP_ENTITLEMENTS); every TOURIST_VIP_LIMITS key present; no duplicate entitlements; owner-specific entitlements/limits still present.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-009"],
             "blocks": ["T-012"],
             "subtasks": [
                 {
                     "title": "Superset + limits-present tests",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "No-duplicates + owner-preserved tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "test"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-11T18:37:08.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-11T19:08:11.000Z",
+                "completed": "2026-06-11T19:08:11.000Z"
             }
         },
         {
             "id": "T-011",
             "title": "Integration test: owner actor passes a previously-403 tourist gate",
             "description": "An owner-plan actor passes a tourist entitlement gate (e.g. save_favorites / write_reviews) that previously returned 403. Place alongside existing api entitlement integration tests.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-009"],
             "blocks": ["T-012"],
             "subtasks": [
                 {
                     "title": "Owner passes save_favorites gate test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "test", "integration"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-11T18:37:08.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-11T19:08:11.000Z",
+                "completed": "2026-06-11T19:08:11.000Z"
             }
         },
         {
             "id": "T-012",
             "title": "Re-seed billing_plans + DB cleanup + docs",
             "description": "Document/run the plan re-seed so billing_plans rows carry the new entitlement/limit lists; delete already-seeded billing_entitlements rows for the 8 removed keys (dev: re-seed; staging/prod: documented cleanup). Add the owner-superset rule + the catalog-prune note to billing plan docs.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-010", "T-011"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Re-seed + DB cleanup of removed keys",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Docs: owner-superset + pruned catalog",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["seed", "docs"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-11T18:37:08.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-11T19:08:11.000Z",
+                "completed": "2026-06-11T19:08:11.000Z"
             }
         }
     ],
     "summary": {
         "total": 12,
-        "pending": 5,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 7,
+        "completed": 12,
         "blocked": 0,
         "averageComplexity": 2.3
     }

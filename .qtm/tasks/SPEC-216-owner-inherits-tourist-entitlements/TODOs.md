@@ -1,6 +1,6 @@
 # SPEC-216: Owner = superset of tourist
 
-## Progress: 7/12 tasks (58%)
+## Progress: 12/12 tasks (100%) — DONE (PR pending)
 
 **Phase A (catalog prune) — DONE & verified.** Phase B (inheritance) + C (seed/docs) pending.
 
@@ -18,14 +18,14 @@
 
 ### Phase B — Owner inherits tourist-VIP
 
-- [ ] **T-008** Define TOURIST_VIP_ENTITLEMENTS + TOURIST_VIP_LIMITS; refactor tourist-vip to reuse
-- [ ] **T-009** Spread the constants into all 3 owner + 3 complex plans
-- [ ] **T-010** Superset / no-dup / owner-preserved unit tests
-- [ ] **T-011** Integration test: owner passes a previously-403 tourist gate
+- [x] **T-008** Define TOURIST_VIP_ENTITLEMENTS + TOURIST_VIP_LIMITS; refactor tourist-vip to reuse
+- [x] **T-009** Spread the constants into all 3 owner + 3 complex plans
+- [x] **T-010** Superset / no-dup / owner-preserved unit tests
+- [x] **T-011** Integration test: owner passes a previously-403 tourist gate
 
 ### Phase C — Seed + docs
 
-- [ ] **T-012** Re-seed billing_plans + DB cleanup of removed keys + docs (owner-superset rule)
+- [x] **T-012** Re-seed billing_plans + DB cleanup of removed keys + docs (owner-superset rule)
 
 ---
 

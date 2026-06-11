@@ -396,7 +396,7 @@
             "specId": "SPEC-216",
             "title": "Owner plans inherit tourist entitlements & limits (owner = superset of tourist)",
             "status": "in-progress",
-            "progress": "7/12",
+            "progress": "12/12",
             "path": "SPEC-216-owner-inherits-tourist-entitlements"
         },
         {
