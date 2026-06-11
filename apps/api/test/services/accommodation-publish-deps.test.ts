@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { failNext, getRecordedCalls, resetTestControl } from '@repo/billing';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
     ensureCustomerExists: vi.fn(),
@@ -121,6 +122,15 @@ describe('buildAccommodationPublishDeps.startTrial', () => {
 describe('buildAccommodationPublishDeps.checkEligibility', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        // checkEligibility -> isSubscriptionLive uses Date.now() internally (no nowMs
+        // param). Freeze time at NOW_MS so the date-relative grace cases are
+        // deterministic regardless of wall-clock time of day.
+        vi.useFakeTimers();
+        vi.setSystemTime(NOW_MS);
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
     });
 
     it('returns first_publish when no billing customer row exists', async () => {
@@ -242,8 +252,19 @@ describe('buildAccommodationPublishDeps.checkEligibility', () => {
     });
 
     it('returns subscription_required when only a cancelled subscription exists', async () => {
-        // Arrange: cancelled sub — isSubscriptionLive returns false for any non-active/trialing
-        setupDbMock([CUSTOMER], [{ status: 'cancelled', trialEnd: null, currentPeriodEnd: null }]);
+        // Arrange: cancelled sub whose paid period already ended (1h past). Soft-cancel
+        // grace grants access only until current_period_end, so a lapsed cancelled sub
+        // is blocked.
+        setupDbMock(
+            [CUSTOMER],
+            [
+                {
+                    status: 'cancelled',
+                    trialEnd: null,
+                    currentPeriodEnd: new Date(NOW_MS - hoursMs(1))
+                }
+            ]
+        );
         const deps = buildAccommodationPublishDeps(() => null);
 
         // Act
@@ -251,5 +272,130 @@ describe('buildAccommodationPublishDeps.checkEligibility', () => {
 
         // Assert
         expect(result).toBe('subscription_required');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Test-control wrapping (SPEC-217 T-006 Option B)
+// ---------------------------------------------------------------------------
+
+describe('buildAccommodationPublishDeps — test-control wrapping', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        resetTestControl();
+        mocks.findUserById.mockResolvedValue({
+            id: 'owner-1',
+            email: 'owner@example.com',
+            displayName: 'Owner One'
+        });
+        mocks.ensureCustomerExists.mockResolvedValue('cust_123');
+        mocks.startTrial.mockResolvedValue('sub_123');
+    });
+
+    afterEach(() => {
+        process.env.HOSPEDA_QZPAY_TEST_CONTROL_ENABLED = undefined;
+        resetTestControl();
+    });
+
+    describe('startTrial', () => {
+        it('should reject with queued fault and NOT invoke inner work when flag ON + failNext', async () => {
+            // Arrange
+            process.env.HOSPEDA_QZPAY_TEST_CONTROL_ENABLED = 'true';
+            failNext({
+                operation: 'startTrial',
+                errorCode: 'TIMEOUT',
+                errorMessage: 'simulated start-trial timeout'
+            });
+            const deps = buildAccommodationPublishDeps(() => ({}) as never);
+
+            // Act & Assert
+            await expect(deps.startTrial({ ownerId: 'owner-1' })).rejects.toThrow(
+                'simulated start-trial timeout'
+            );
+
+            // Inner work must NOT have been invoked — fault short-circuits before the body.
+            expect(mocks.findUserById).not.toHaveBeenCalled();
+            expect(mocks.ensureCustomerExists).not.toHaveBeenCalled();
+            expect(mocks.startTrial).not.toHaveBeenCalled();
+        });
+
+        it('should run body normally and record ok when flag ON + no fault', async () => {
+            // Arrange
+            process.env.HOSPEDA_QZPAY_TEST_CONTROL_ENABLED = 'true';
+            const deps = buildAccommodationPublishDeps(() => ({}) as never);
+
+            // Act
+            const result = await deps.startTrial({ ownerId: 'owner-1' });
+
+            // Assert — body executed normally
+            expect(result).toEqual({ subscriptionId: 'sub_123' });
+            expect(mocks.ensureCustomerExists).toHaveBeenCalledTimes(1);
+            expect(mocks.startTrial).toHaveBeenCalledTimes(1);
+
+            // Call recorded with outcome ok
+            const calls = getRecordedCalls('startTrial');
+            expect(calls).toHaveLength(1);
+            expect(calls[0]?.outcome).toBe('ok');
+        });
+
+        it('should run body normally and NOT record calls when flag OFF', async () => {
+            // Arrange — gate disabled (env var absent)
+            process.env.HOSPEDA_QZPAY_TEST_CONTROL_ENABLED = undefined;
+            const deps = buildAccommodationPublishDeps(() => ({}) as never);
+
+            // Act
+            const result = await deps.startTrial({ ownerId: 'owner-1' });
+
+            // Assert — no interception, body ran
+            expect(result).toEqual({ subscriptionId: 'sub_123' });
+            expect(mocks.ensureCustomerExists).toHaveBeenCalledTimes(1);
+
+            // getRecordedCalls returns [] when gate is off
+            expect(getRecordedCalls('startTrial')).toHaveLength(0);
+        });
+    });
+
+    describe('cancelTrial', () => {
+        it('should reject with queued fault when flag ON + failNext(cancelTrial)', async () => {
+            // Arrange
+            process.env.HOSPEDA_QZPAY_TEST_CONTROL_ENABLED = 'true';
+            failNext({
+                operation: 'cancelTrial',
+                errorCode: 'MP_CANCEL_FAIL',
+                errorMessage: 'simulated cancel failure'
+            });
+            const mockCancel = vi.fn();
+            const billingStub = { subscriptions: { cancel: mockCancel } };
+            const deps = buildAccommodationPublishDeps(() => billingStub as never);
+
+            // Act & Assert
+            await expect(deps.cancelTrial('sub_999')).rejects.toThrow('simulated cancel failure');
+
+            // Real billing.subscriptions.cancel must NOT have been called.
+            expect(mockCancel).not.toHaveBeenCalled();
+
+            // Recorded as failed
+            const calls = getRecordedCalls('cancelTrial');
+            expect(calls).toHaveLength(1);
+            expect(calls[0]?.outcome).toBe('failed');
+        });
+
+        it('should invoke billing.subscriptions.cancel and record ok when flag ON + no fault', async () => {
+            // Arrange
+            process.env.HOSPEDA_QZPAY_TEST_CONTROL_ENABLED = 'true';
+            const mockCancel = vi.fn().mockResolvedValue(undefined);
+            const billingStub = { subscriptions: { cancel: mockCancel } };
+            const deps = buildAccommodationPublishDeps(() => billingStub as never);
+
+            // Act
+            await deps.cancelTrial('sub_456');
+
+            // Assert — billing.cancel called with the subscription id
+            expect(mockCancel).toHaveBeenCalledWith('sub_456');
+
+            const calls = getRecordedCalls('cancelTrial');
+            expect(calls).toHaveLength(1);
+            expect(calls[0]?.outcome).toBe('ok');
+        });
     });
 });
