@@ -1,6 +1,6 @@
 # SPEC-213: Web + Admin pre-beta polish & bugfix batch
 
-## Progress: 5/19 tasks (26%)
+## Progress: 8/19 tasks (42%)
 
 **Average Complexity:** 1.6/3
 **Phases:** setup → core → integration → cleanup
@@ -18,11 +18,11 @@
   - Blocked by: T-001 · Blocks: none
 - [x] **T-003** (complexity: 1) - W6: Fix destination accommodations page pagination.total
 - [ ] **T-004** (complexity: 3) - W4: Diagnose + fix map view 500 on pan/zoom (bbox params)
-- [ ] **T-005** (complexity: 2) - W11: Fix post category chip 404 (casing) + add missing sidebar categories
+- [x] **T-005** (complexity: 2) - W11: Fix post category chip 404 (casing) + add missing sidebar categories
 - [x] **T-006** (complexity: 1) - W8: Resolve I18nText for services filter on map view
-- [ ] **T-007** (complexity: 2) - W2: Translate Better Auth signin credential errors
+- [x] **T-007** (complexity: 2) - W2: Translate Better Auth signin credential errors
 - [x] **T-008** (complexity: 1) - W9: Add AI entitlement i18n labels + fix Embedeer typo
-- [ ] **T-009** (complexity: 2) - W10: Translate price breakdown fee/discount labels
+- [x] **T-009** (complexity: 2) - W10: Translate price breakdown fee/discount labels
 
 ### Integration Phase
 

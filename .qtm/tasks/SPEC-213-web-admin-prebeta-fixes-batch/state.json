@@ -135,7 +135,7 @@
             "id": "T-005",
             "title": "W11: Fix post category chip 404 (casing) + add missing sidebar categories",
             "description": "Normalize casing between post category chip hrefs (publicaciones/index.astro L285-293, uppercase) and the [category]/index.astro lookup map (lowercase keys) so chips resolve (no 404). Add the 7 missing enum categories (NIGHTLIFE, TRADITIONS, ART, BEACH, RURAL, FESTIVALS, GENERAL) to the sidebar filter. Tests: slug<->enum normalization unit test covering all 18 values; chip href resolves.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
@@ -156,14 +156,14 @@
             "tags": ["web", "bugfix"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-11T12:51:03.000Z"
             }
         },
         {
@@ -192,7 +192,7 @@
             "id": "T-007",
             "title": "W2: Translate Better Auth signin credential errors",
             "description": "Map the relevant Better Auth error codes/messages to common.apiError.* i18n keys (es/en/pt) so credential errors (e.g. 'Invalid email or password') render localized in SignIn.client.tsx via translateApiError. Tests: unit test for translateApiError with Better Auth credential-error inputs across es/en/pt.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
@@ -200,14 +200,14 @@
             "tags": ["i18n", "auth", "web"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-11T12:51:03.000Z"
             }
         },
         {
@@ -236,7 +236,7 @@
             "id": "T-009",
             "title": "W10: Translate price breakdown fee/discount labels",
             "description": "Add public fee/discount label i18n keys (es/en/pt accommodations.json) for all fee keys (cleaning, tax, lateCheckout, pets, bedlinen, towels, babyCrib, babyHighChair, extraBed, securityDeposit, extraGuest, parking, earlyCheckin, lateCheckin, luggageStorage, others) and discounts (weekly, monthly, lastMinute, others); use t() in PricingSidebar.astro instead of the raw key. Tests: fee/discount label resolver unit test + key-presence test.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
@@ -244,14 +244,14 @@
             "tags": ["i18n", "web"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-11T12:51:03.000Z"
             }
         },
         {
@@ -486,9 +486,9 @@
     ],
     "summary": {
         "total": 19,
-        "pending": 14,
+        "pending": 11,
         "inProgress": 0,
-        "completed": 5,
+        "completed": 8,
         "blocked": 0,
         "averageComplexity": 1.6
     }
