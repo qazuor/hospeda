@@ -41,8 +41,25 @@ export function LocationPickerMap({
     useEffect(() => {
         if (!mapRef.current) return;
         // Dynamic import of Leaflet (client-only)
-        import('leaflet').then((L) => {
+        import('leaflet').then(async (L) => {
             if (!mapRef.current) return;
+
+            // Leaflet resolves its default marker icon URLs relative to the page,
+            // which 404s under a bundler. Point them at the bundled asset URLs.
+            // Astro resolves an image import to an ImageMetadata object
+            // ({ src, ... }), not a bare string — read `.src` when present.
+            const toAssetUrl = (mod: { default: string | { src: string } }): string =>
+                typeof mod.default === 'string' ? mod.default : mod.default.src;
+            const [iconMod, iconRetinaMod, shadowMod] = await Promise.all([
+                import('leaflet/dist/images/marker-icon.png'),
+                import('leaflet/dist/images/marker-icon-2x.png'),
+                import('leaflet/dist/images/marker-shadow.png')
+            ]);
+            L.Icon.Default.mergeOptions({
+                iconUrl: toAssetUrl(iconMod),
+                iconRetinaUrl: toAssetUrl(iconRetinaMod),
+                shadowUrl: toAssetUrl(shadowMod)
+            });
 
             const map = L.map(mapRef.current, {
                 center: [center.lat, center.lng],
