@@ -71,8 +71,12 @@ const mockGetProviderOrder = configResolver.getProviderOrder as ReturnType<typeo
 // Imports after mocks
 // ---------------------------------------------------------------------------
 
-import { invalidatePromptCache, resolveSystemPrompt } from '../src/config/prompt-resolver.js';
-import { DEFAULT_PROMPTS } from '../src/engine/default-prompts.js';
+import {
+    composeSystemPrompt,
+    invalidatePromptCache,
+    resolveSystemPrompt
+} from '../src/config/prompt-resolver.js';
+import { DEFAULT_PROMPTS, DEFAULT_RULES } from '../src/engine/default-prompts.js';
 import { createAiEngine } from '../src/engine/engine.js';
 import type { AiProvider } from '../src/providers/ai-provider.interface.js';
 import { StubProvider } from '../src/providers/index.js';
@@ -376,9 +380,12 @@ describe('DEFAULT_PROMPTS', () => {
     it('should instruct the model to respond in the user locale (R-3 check)', () => {
         const allFeatures = AiFeatureSchema.options;
         for (const feature of allFeatures) {
-            const prompt = DEFAULT_PROMPTS[feature];
+            const composed = composeSystemPrompt({
+                content: DEFAULT_PROMPTS[feature],
+                rules: DEFAULT_RULES[feature]
+            });
             expect(
-                prompt.toLowerCase(),
+                composed.toLowerCase(),
                 `DEFAULT_PROMPTS['${feature}'] missing locale instruction`
             ).toMatch(/language|locale/i);
         }
@@ -387,9 +394,12 @@ describe('DEFAULT_PROMPTS', () => {
     it('should contain a refusal / off-topic instruction (R-3 check)', () => {
         const allFeatures = AiFeatureSchema.options;
         for (const feature of allFeatures) {
-            const prompt = DEFAULT_PROMPTS[feature];
+            const composed = composeSystemPrompt({
+                content: DEFAULT_PROMPTS[feature],
+                rules: DEFAULT_RULES[feature]
+            });
             expect(
-                prompt.toLowerCase(),
+                composed.toLowerCase(),
                 `DEFAULT_PROMPTS['${feature}'] missing refusal instruction`
             ).toMatch(
                 /refus|declin|off-topic|outside your role|outside your|outside the scope|must not/i
@@ -441,12 +451,19 @@ describe('engine integration — generateText', () => {
             prompt: 'Improve this text'
         });
 
-        // Assert — provider received messages, not prompt
+        // Assert — provider received messages, not prompt.
+        // The engine composes content + "\n\n" + rules; since the mock row has no
+        // `rules` field (null), the resolver falls back to DEFAULT_RULES.text_improve.
         expect(capturedMessages).toHaveLength(1);
         const messages = capturedMessages[0];
         expect(messages).toBeDefined();
         expect(messages?.[0]?.role).toBe('system');
-        expect(messages?.[0]?.content).toBe('System: you are a helpful assistant.');
+        expect(messages?.[0]?.content).toBe(
+            composeSystemPrompt({
+                content: 'System: you are a helpful assistant.',
+                rules: DEFAULT_RULES.text_improve
+            })
+        );
         expect(messages?.[1]?.role).toBe('user');
         expect(messages?.[1]?.content).toBe('Improve this text');
     });
@@ -544,12 +561,17 @@ describe('engine integration — streamText', () => {
             prompt: 'Tell me about Concepción'
         });
 
-        // Assert — provider received messages array with system first
+        // Assert — provider received messages array with system first.
+        // Source is 'default' (content was null) → composed DEFAULT_PROMPTS.chat + DEFAULT_RULES.chat.
         expect(capturedMessages).toHaveLength(1);
         const messages = capturedMessages[0];
         expect(messages?.[0]?.role).toBe('system');
-        // Source is 'default' (content was null) → DEFAULT_PROMPTS.chat
-        expect(messages?.[0]?.content).toBe(DEFAULT_PROMPTS.chat);
+        expect(messages?.[0]?.content).toBe(
+            composeSystemPrompt({
+                content: DEFAULT_PROMPTS.chat,
+                rules: DEFAULT_RULES.chat
+            })
+        );
         expect(messages?.[1]?.role).toBe('user');
     });
 });

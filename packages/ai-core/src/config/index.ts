@@ -43,6 +43,7 @@ export {
 // ---------------------------------------------------------------------------
 
 export {
+    composeSystemPrompt,
     invalidatePromptCache,
     resolveSystemPrompt,
     type ResolveSystemPromptInput,
