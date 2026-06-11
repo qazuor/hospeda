@@ -31,20 +31,30 @@ const locData = locResult.data as Record<string, unknown>;
 const locationId = String(locData.id || '');
 const locationName = String(locData.name || slug);
 
+// NOTE: eventsApi has no getByLocation method. The closest available filter is
+// destinationId (resolves via event_locations.destination_id server-side). When
+// the location has a destinationId we scope events to that destination; without
+// one we cannot scope to this location, so we render an empty result rather than
+// the unfiltered platform-wide list (which would be misleading on an
+// "Eventos en <location>" page). FLAG: a true "by-location" filter would require
+// a new API endpoint (e.g. GET /events?locationId=...).
+const locationDestinationId = locData.destinationId ? String(locData.destinationId) : undefined;
 const page = Math.max(1, Number(Astro.url.searchParams.get('page')) || 1);
-const result = await eventsApi.getByLocation({ locationId, page, pageSize: 9 });
-const hasError = !result.ok;
-const items = result.ok ? result.data.items : [];
-const total = result.ok ? result.data.total : 0;
-const totalPages = result.ok ? Math.ceil(total / 9) : 0;
-const cards = items.map((item) => toEventCardProps({ item: item as unknown as Record<string, unknown> }));
+const result = locationDestinationId
+	? await eventsApi.list({ destinationId: locationDestinationId, page, pageSize: 9 })
+	: null;
+const hasError = result !== null && !result.ok;
+const items = result?.ok ? result.data.items : [];
+const total = result?.ok ? result.data.pagination.total : 0;
+const totalPages = result?.ok ? result.data.pagination.totalPages : 0;
+const cards = items.map((item: (typeof items)[number]) => toEventCardProps({ item: item as unknown as Record<string, unknown> }));
 const baseUrl = buildUrl({ locale, path: `eventos/en/${slug}` });
 ---
 
 <ListingLayout locale={locale} title={`${locationName} - ${t('events.title', 'Eventos')}`} showFilters={false}>
 	<Breadcrumbs slot="breadcrumbs" locale={locale} items={[{ label: t('events.title', 'Eventos'), path: 'eventos' }, { label: locationName }]} />
 	<ListingPageHeader slot="page-header" locale={locale} tagline={t('events.byLocation.tagline', 'Lugar')} title={locationName} totalCount={total} />
-	{hasError && !result.ok && <ErrorBanner locale={locale} error={result.error} entityName="eventos" />}
+	{hasError && result && !result.ok && <ErrorBanner locale={locale} error={result.error} entityName="eventos" />}
 	{!hasError && cards.length === 0 && <EmptyState locale={locale} variant="no-results" actionUrl={buildUrl({ locale, path: 'eventos' })} />}
 	{!hasError && cards.length > 0 && (
 		<div class="grid">{cards.map((card, i) => (<div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100"><EventCardHorizontal data={card} locale={locale} isAuthenticated={isAuthenticated} /></div>))}</div>

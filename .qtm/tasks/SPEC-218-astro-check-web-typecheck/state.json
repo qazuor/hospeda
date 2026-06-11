@@ -1,0 +1,338 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-218",
+    "title": "astro check in web CI — load the App.Locals augmentation, clean .astro type errors, gate typecheck",
+    "created": "2026-06-11T15:33:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add env.d.ts to tsconfig.files so the App.Locals augmentation loads",
+            "description": "Add \"files\": [\"src/env.d.ts\"] to apps/web/tsconfig.json (additive to include). Verify: `tsc --noEmit --listFilesOnly` lists apps/web/src/env.d.ts AND `astro check` drops from 185 to ~68 errors with 0 'does not exist on type Locals' errors. Record before/after in progress.md. No source changes. Test: the verification IS the test (astro check count); the durable guard is T-002.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-003", "T-004", "T-005", "T-006", "T-007"],
+            "subtasks": [
+                {
+                    "title": "Add files:[\"src/env.d.ts\"] to apps/web/tsconfig.json",
+                    "completed": true
+                },
+                {
+                    "title": "Verify env.d.ts in program via tsc --listFilesOnly",
+                    "completed": true
+                },
+                {
+                    "title": "Verify astro check 185->~68, 0 Locals errors",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "tsconfig", "foundation"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "n/a"
+            },
+            "timestamps": {
+                "created": "2026-06-11T15:33:00.000Z",
+                "started": "2026-06-11T15:36:34.000Z",
+                "completed": "2026-06-11T15:36:34.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Add compile-time App.Locals regression guard",
+            "description": "Add a typecheck-time assertion in apps/web that fails to compile if the App.Locals augmentation is not loaded (e.g. a .ts file with `const _guard: App.Locals = { locale: 'es', user: null, cspNonce: '' } satisfies App.Locals` plus reads of locale/user/cspNonce, or an expectTypeOf assertion). Must run under the existing typecheck. Prevents a dropped tsconfig.files entry from silently re-breaking the 117. Test: removing files[] makes this file fail typecheck (verify once, manually).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-008"],
+            "subtasks": [
+                {
+                    "title": "Write App.Locals type guard file/test",
+                    "completed": true
+                },
+                {
+                    "title": "Confirm it fails when augmentation not loaded",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "test", "guard"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-11T15:33:00.000Z",
+                "started": "2026-06-11T16:16:23.000Z",
+                "completed": "2026-06-11T16:16:23.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Fix ts(7006) implicit-any parameters in .astro (6)",
+            "description": "Add explicit parameter types to the 6 implicit-any params astro check reports (ts7006). Mechanical: derive the type from usage / the array element type; no `any`. Re-run astro check and confirm the ts7006 bucket is 0. Files per baseline bucketing.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-008"],
+            "subtasks": [
+                {
+                    "title": "Type each of the 6 implicit-any params",
+                    "completed": true
+                },
+                {
+                    "title": "Confirm ts7006 bucket -> 0",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "astro", "types"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-11T15:33:00.000Z",
+                "started": "2026-06-11T16:16:23.000Z",
+                "completed": "2026-06-11T16:16:23.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Fix ts(2724) wrong imports + ts(2353) interface gaps (incl BreadcrumbItem.href)",
+            "description": "Fix the 2 ts2724 'no exported member' (correct the import name) and 2 ts2353 object-literal/interface gaps. For BreadcrumbItem.href, extend the canonical type definition (component type / @repo/schemas), NOT the call site. Re-run astro check; confirm both buckets -> 0.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-008"],
+            "subtasks": [
+                {
+                    "title": "Fix 2 ts2724 import-name errors",
+                    "completed": true
+                },
+                {
+                    "title": "Extend BreadcrumbItem/interface for ts2353",
+                    "completed": true
+                },
+                {
+                    "title": "Confirm ts2724 + ts2353 buckets -> 0",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "astro", "types", "schemas"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-11T15:33:00.000Z",
+                "started": "2026-06-11T16:16:23.000Z",
+                "completed": "2026-06-11T16:16:23.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Fix ts(2322) type-assignment mismatches in .astro (22)",
+            "description": "Fix the 22 ts2322 type-assignment errors. For each, determine whether the assigned value is genuinely the wrong shape (real bug -> fix logic + add/adjust test) or a missing/incorrect annotation (fix the type). No `any`, no suppression. Re-run astro check; confirm ts2322 bucket -> 0. Group by file/directory; AccountLayout/Footer/BaseLayout are dense.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-008"],
+            "subtasks": [
+                {
+                    "title": "Triage each ts2322: real bug vs annotation",
+                    "completed": true
+                },
+                {
+                    "title": "Fix types / logic (+ tests for real bugs)",
+                    "completed": true
+                },
+                {
+                    "title": "Confirm ts2322 bucket -> 0",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "astro", "types"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-11T15:33:00.000Z",
+                "started": "2026-06-11T16:16:23.000Z",
+                "completed": "2026-06-11T16:16:23.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Fix ts(2339) non-Locals property-not-exist (21) + ts(2345) argument-type (9)",
+            "description": "The dangerous bucket — these are the W6/W8 class (wrong response shape consumed in .astro frontmatter). For each: verify the runtime shape; if the read is genuinely wrong, FIX THE LOGIC and add a regression test; if the type just needs the right interface, apply it. No `any`/suppression. Re-run astro check; confirm ts2339 + ts2345 buckets -> 0.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-008"],
+            "subtasks": [
+                {
+                    "title": "Triage each ts2339/ts2345: real bug vs type",
+                    "completed": true
+                },
+                {
+                    "title": "Fix logic + add regression tests for real bugs",
+                    "completed": true
+                },
+                {
+                    "title": "Confirm ts2339 + ts2345 buckets -> 0",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "astro", "types", "bug"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-11T15:33:00.000Z",
+                "started": "2026-06-11T16:16:23.000Z",
+                "completed": "2026-06-11T16:16:23.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Fix ts(2352) conversions (5) + ts(2358) instanceof LHS (1)",
+            "description": "Fix the tail: 5 ts2352 unsafe conversions (correct the source/target type rather than double-casting through unknown unless genuinely warranted with a comment) and 1 ts2358 instanceof LHS. Re-run astro check; confirm both buckets -> 0.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-008"],
+            "subtasks": [
+                {
+                    "title": "Fix 5 ts2352 conversions",
+                    "completed": true
+                },
+                {
+                    "title": "Fix 1 ts2358 instanceof",
+                    "completed": true
+                },
+                {
+                    "title": "Confirm ts2352 + ts2358 buckets -> 0",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "astro", "types"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-11T15:33:00.000Z",
+                "started": "2026-06-11T16:16:23.000Z",
+                "completed": "2026-06-11T16:16:23.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Verify astro check exits 0 errors on the full tree",
+            "description": "Run `pnpm --dir apps/web exec astro check`. Confirm 0 errors (63 hints allowed). If any new errors appeared from a rebase, fix before proceeding. This gates Phase 3 wiring.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-002", "T-003", "T-004", "T-005", "T-006", "T-007"],
+            "blocks": ["T-009"],
+            "subtasks": [
+                {
+                    "title": "Run astro check, confirm 0 errors",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "astro", "verify"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-11T15:33:00.000Z",
+                "started": "2026-06-11T16:16:23.000Z",
+                "completed": "2026-06-11T16:16:23.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Wire astro check into the web typecheck script + confirm CI",
+            "description": "Update apps/web/package.json `typecheck` to `astro sync && astro check && tsc --noEmit --project ./tsconfig.json`. Confirm the monorepo turbo `typecheck` pipeline runs the web typecheck script unchanged (it calls the package script by name). Document that astro check fails on errors only (hints don't). Only after T-008 is green.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-010"],
+            "subtasks": [
+                {
+                    "title": "Update typecheck script in apps/web/package.json",
+                    "completed": true
+                },
+                {
+                    "title": "Confirm CI typecheck job picks it up",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "ci"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-11T15:33:00.000Z",
+                "started": "2026-06-11T16:16:23.000Z",
+                "completed": "2026-06-11T16:16:23.000Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Document .astro typechecking + env.d.ts files invariant",
+            "description": "Short note in apps/web/CLAUDE.md (or web docs): .astro is now typechecked in CI via astro check (catches the W6/W8 wrong-shape class), and apps/web/src/env.d.ts MUST stay in tsconfig.json `files` or the App.Locals augmentation silently stops loading. Reference the regression guard.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-009"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add CLAUDE.md / docs note",
+                    "completed": true
+                }
+            ],
+            "tags": ["docs"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-11T15:33:00.000Z",
+                "started": "2026-06-11T16:16:23.000Z",
+                "completed": "2026-06-11T16:16:23.000Z"
+            }
+        }
+    ],
+    "summary": {
+        "total": 10,
+        "pending": 0,
+        "inProgress": 0,
+        "completed": 10,
+        "blocked": 0,
+        "averageComplexity": 1.9
+    }
+}

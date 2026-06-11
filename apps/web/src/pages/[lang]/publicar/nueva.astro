@@ -79,7 +79,7 @@ try {
         }
     }
 } catch (error) {
-    logger.warn({ error }, 'publicar/nueva: failed to resolve admin panel access');
+    logger.warn('publicar/nueva: failed to resolve admin panel access', { error });
 }
 
 // F4: Check if the user has hit their max_accommodations limit.
@@ -122,8 +122,8 @@ try {
             }
         } else {
             logger.warn(
-                { status: entitlementsResponse.status },
-                'publicar/nueva: entitlements fetch returned non-ok'
+                'publicar/nueva: entitlements fetch returned non-ok',
+                { status: entitlementsResponse.status }
             );
         }
 
@@ -139,8 +139,8 @@ try {
             }
         } else {
             logger.warn(
-                { status: ownedResponse.status },
-                'publicar/nueva: owned-accommodations fetch returned non-ok'
+                'publicar/nueva: owned-accommodations fetch returned non-ok',
+                { status: ownedResponse.status }
             );
         }
 
@@ -157,7 +157,7 @@ try {
         }
     }
 } catch (error) {
-    logger.warn({ error }, 'publicar/nueva: failed to fetch entitlements or owned count for limit check');
+    logger.warn('publicar/nueva: failed to fetch entitlements or owned count for limit check', { error });
     // Non-fatal: render the form normally on error (let the API reject on submit if needed).
 }
 

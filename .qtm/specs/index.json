@@ -945,6 +945,17 @@
             "created": "2026-06-10T22:15:00Z",
             "tags": ["billing", "entitlements", "plans", "owner", "tourist"],
             "archived": false
+        },
+        {
+            "specId": "SPEC-218",
+            "title": "astro check in web CI — load the App.Locals augmentation, clean .astro type errors, gate typecheck",
+            "type": "improvement",
+            "status": "in-progress",
+            "complexity": "medium",
+            "path": "SPEC-218-astro-check-web-typecheck",
+            "base": "staging",
+            "priority": "P2",
+            "archived": false
         }
     ]
 }

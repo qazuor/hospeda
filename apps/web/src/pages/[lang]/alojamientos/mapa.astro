@@ -134,7 +134,7 @@ const mapHasItems = cards.some((c) => c.approximateLocation);
 
 // Filter summary
 const summaryLocale = (locale === 'en' ? 'en' : 'es') as SummaryLocale;
-const destinationCatalog: readonly CatalogEntry[] = destinations.map((d) => ({ key: d.id, label: { es: d.name, en: d.name } }));
+const destinationCatalog: readonly CatalogEntry[] = destinations.map((d) => ({ key: d.id, label: { es: resolveI18nText(d.name, 'es'), en: resolveI18nText(d.name, 'en') } }));
 const amenityCatalog: readonly CatalogEntry[] = amenities.map((a) => ({ key: a.id, label: { es: resolveI18nText(a.name, 'es'), en: resolveI18nText(a.name, 'en') } }));
 const featureCatalog: readonly CatalogEntry[] = features.map((f) => ({ key: f.id, label: { es: resolveI18nText(f.name, 'es'), en: resolveI18nText(f.name, 'en') } }));
 
@@ -350,7 +350,7 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 		slot="breadcrumbs"
 		locale={locale}
 		items={[
-			{ label: t('accommodations.title', 'Alojamientos'), href: buildUrl({ locale, path: 'alojamientos' }) },
+			{ label: t('accommodations.title', 'Alojamientos'), path: 'alojamientos' },
 			{ label: t('accommodations.viewToggle.map', 'Mapa') },
 		]}
 	/>
