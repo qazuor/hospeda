@@ -35,6 +35,11 @@ export function AiChatWidget({ accommodationId, locale, apiUrl }: AiChatWidgetPr
 
     const panelRef = useRef<HTMLDivElement>(null);
     const fabRef = useRef<HTMLButtonElement>(null);
+    /**
+     * Ref to the composer textarea. Used to focus it directly when the panel
+     * opens (W14 — target the textarea, not the first focusable button).
+     */
+    const composerTextareaRef = useRef<HTMLTextAreaElement>(null);
     /** Tracks whether the chat panel has been opened at least once. Prevents
      *  the focus-return effect from stealing focus on the initial render when
      *  `isOpen` is already `false` (WCAG dialog focus-return guard). */
@@ -49,11 +54,12 @@ export function AiChatWidget({ accommodationId, locale, apiUrl }: AiChatWidgetPr
         const panel = panelRef.current;
         if (!panel) return;
 
-        // Focus first focusable element
-        const focusables = panel.querySelectorAll<HTMLElement>(
-            'button, textarea, [tabindex]:not([tabindex="-1"])'
-        );
-        focusables[0]?.focus();
+        // W14: Focus the composer textarea directly instead of the first focusable
+        // element (which was the expand button). This gives users an immediately
+        // useful focus target matching their intent (typing a question).
+        // Synchronous call is safe here because this effect only runs when
+        // isOpen=true, meaning the panel (and its textarea) are already in the DOM.
+        composerTextareaRef.current?.focus();
 
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
@@ -202,6 +208,7 @@ export function AiChatWidget({ accommodationId, locale, apiUrl }: AiChatWidgetPr
                         }}
                     >
                         <textarea
+                            ref={composerTextareaRef}
                             className={styles.textarea}
                             placeholder={t('accommodations.aiChat.placeholder')}
                             value={draft}
