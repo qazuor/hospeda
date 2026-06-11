@@ -162,50 +162,52 @@
             "id": "T-008",
             "title": "Un-gate host-04 and host-07b and verify they pass vs the date-aware gate",
             "description": "Remove the env-flag test.fixme guard from host-04-cancellation-grace and host-07b-subscription-required. They already set status='cancelled' directly, so the date-aware checkEligibility (T-004) blocks them deterministically. Verify both specs pass un-gated locally (PATCH ACTIVE -> 403, accommodation stays DRAFT). E2E specs ARE the tests (AC-1.2, AC-1.3). If either does not pass, diagnose before forcing.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-004"],
             "blocks": ["T-014"],
             "subtasks": [
-                { "title": "Remove env guard from host-04 + host-07b", "completed": false },
-                { "title": "Run both specs un-gated, confirm 403 + DRAFT", "completed": false }
+                { "title": "Remove env guard from host-04 + host-07b", "completed": true },
+                { "title": "Run both specs un-gated, confirm 403 + DRAFT", "completed": true }
             ],
             "tags": ["e2e", "billing", "testing"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-06-11T00:00:00.000Z",
+                "completed": "2026-06-11T00:00:00.000Z"
+            },
+            "resultRef": "host-04/07b un-gated + green vs date-aware gate; write-gate hardened in accommodation.service.ts (7 unit tests)"
         },
         {
             "id": "T-009",
             "title": "Fix forceTrialExpired and un-gate host-03 (trial-expired blocks writes)",
             "description": "Ensure forceTrialExpired (apps/e2e/fixtures/db-helpers.ts:122) backdates trial_end and current_period_end beyond the 6h grace while keeping status='trialing' (the cron-lag-window state). Remove host-03's env-flag test.fixme guard. With the date-aware gate (T-004), the publish PATCH must now return 403 and the accommodation stays DRAFT, while reads still work. E2E spec IS the test (AC-1.1). Verify locally.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-004"],
             "blocks": ["T-010", "T-014"],
             "subtasks": [
                 {
                     "title": "Confirm/adjust forceTrialExpired backdates beyond grace, keeps trialing",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Remove env guard from host-03", "completed": false },
+                { "title": "Remove env guard from host-03", "completed": true },
                 {
                     "title": "Run host-03 un-gated, confirm 403 + DRAFT + reads OK",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["e2e", "billing", "testing"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-06-11T00:00:00.000Z",
+                "completed": "2026-06-11T00:00:00.000Z"
+            },
+            "resultRef": "host-03 un-gated + green; required the broad write-gate (gate edits to ACTIVE accommodations), see spec §5.2.2"
         },
         {
             "id": "T-010",
@@ -360,9 +362,9 @@
     ],
     "summary": {
         "total": 16,
-        "pending": 12,
+        "pending": 10,
         "inProgress": 0,
-        "completed": 4,
+        "completed": 6,
         "blocked": 0,
         "averageComplexity": 2.1
     }

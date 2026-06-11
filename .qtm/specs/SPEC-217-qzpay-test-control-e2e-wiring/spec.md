@@ -108,9 +108,11 @@ skips introduced elsewhere.
 ## 3. User stories & acceptance criteria
 
 ### US-1 — Lapsed host cannot publish (Group A)
+
 **As** the platform, **when** a host's trial has expired or their subscription is
 cancelled and lapsed, **then** a publish attempt returns 403 and the accommodation
 stays DRAFT.
+
 - **AC-1.1** host-03 (trial expired) runs un-skipped and asserts 403 + DRAFT + reads
   still work.
 - **AC-1.2** host-04 (cancellation grace → lapse) runs un-skipped: write OK during
@@ -121,8 +123,10 @@ stays DRAFT.
   production billing cron produces for the same lifecycle event (no fictional status).
 
 ### US-2 — Safe failure under adapter faults (Group B)
+
 **As** the platform, **when** a QZPay operation fails or times out during publish,
 **then** no partial state is persisted and compensation runs.
+
 - **AC-2.1** host-07c: `failNext(startTrial, TIMEOUT)` → PATCH returns 5xx, accommodation
   stays DRAFT, no `billing_subscriptions` row.
 - **AC-2.2** host-07d: `failNext(updateSubscription)` → `cancelTrial` recorded as
@@ -132,7 +136,9 @@ stays DRAFT.
   adapter path; a queued fault deterministically changes the operation's outcome.
 
 ### US-3 — Honest gating
+
 **As** a maintainer, **then** the skip guards and comments describe the real dependency.
+
 - **AC-3.1** No test comment attributes Group A blocking to the entitlement
   draft-defaults fallback.
 - **AC-3.2** Any remaining skip states the real precondition (e.g. "fault injection
@@ -177,6 +183,7 @@ should pass as-is. If so, host-04/07b need only un-gating + an honest comment.
 **host-03 is the only genuinely OQ-1-dependent spec.** `forceTrialExpired` leaves
 `status='trialing'` (mirroring the cron-lag window), so `checkEligibility` does NOT block
 and the publish succeeds → host-03 fails. Its design forks on OQ-1:
+
 - If OQ-1 → **fix `checkEligibility` to be date-aware**, then host-03 (backdated
   `trial_end` + `status='trialing'`) blocks correctly and validates the gap is closed.
   This is the faithful test of "trial expired blocks writes".
@@ -233,6 +240,35 @@ to "is this sub live?". Net effect: an expired-trial host can publish for at mos
 date + grace)" predicate into one shared helper used by BOTH the entitlement middleware
 and `checkEligibility`, rather than duplicating the date/grace logic. Phase 1 to locate
 the existing middleware grace check and decide the extraction shape.
+
+#### 5.2.2 Scope expansion discovered during T-008/T-009 (write-gate)
+
+Running host-03/04 un-gated revealed that `checkEligibility` was only consulted on the
+DRAFT→ACTIVE **publish** transition (`AccommodationService.publish()`), NOT on plain
+updates to an already-ACTIVE accommodation. host-03/04's titles ("blocks writes via UI +
+API") specify that a lapsed host cannot **edit** existing listings, not just publish new
+ones — so satisfying those approved P0 specs required a broader gate.
+
+Implemented (decided with the user, "accept + harden"): a billing write-gate at the top of
+`AccommodationService.update()` that rejects ALL updates with `FORBIDDEN /
+subscription_required` for a HOST owner whose `checkEligibility` is `subscription_required`.
+Excluded: admins (actor with `ACCOMMODATION_UPDATE_ANY`) and billing-exempt owner roles
+(`BILLING_EXEMPT_ROLES`). The gate only fires when `publishDeps` are wired.
+
+Two supporting changes:
+
+- **Predicate `cancelled` case (soft-cancel grace)**: `isSubscriptionLive` now treats
+  `cancelled` as live until `currentPeriodEnd` (0h extra grace, unlike active's 6h),
+  matching the documented soft-cancel grace. Needed so host-04's "write OK during grace"
+  step passes.
+- **Perf**: the gate reuses `actor.role` when the actor is the owner (the common case),
+  avoiding a redundant user lookup; only non-owner actors trigger `userModel.findById`.
+  The remaining cost is one `checkEligibility` query per non-admin accommodation update —
+  acceptable (updates are not a hot path).
+
+Tested: 7 gate unit tests (`update-publish-routing.test.ts`), 6 added predicate tests for
+the `cancelled` case, plus the three e2e specs. This expands SPEC-217 beyond the publish
+path into the general accommodation write path — recorded here so the scope is explicit.
 
 ### 5.3 Group B — wire `applyTestControl` into the MP adapter
 
