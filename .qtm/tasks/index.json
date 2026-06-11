@@ -421,6 +421,13 @@
       "status": "pending",
       "progress": "0/0",
       "path": "SPEC-215-destination-climate-weather"
+    },
+    {
+      "specId": "SPEC-216",
+      "title": "Owner plans inherit tourist entitlements & limits (owner = superset of tourist)",
+      "status": "pending",
+      "progress": "0/0",
+      "path": "SPEC-216-owner-inherits-tourist-entitlements"
     }
   ],
   "standalone": {
