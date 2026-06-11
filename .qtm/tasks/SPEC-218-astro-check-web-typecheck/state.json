@@ -8,28 +8,35 @@
             "id": "T-001",
             "title": "Add env.d.ts to tsconfig.files so the App.Locals augmentation loads",
             "description": "Add \"files\": [\"src/env.d.ts\"] to apps/web/tsconfig.json (additive to include). Verify: `tsc --noEmit --listFilesOnly` lists apps/web/src/env.d.ts AND `astro check` drops from 185 to ~68 errors with 0 'does not exist on type Locals' errors. Record before/after in progress.md. No source changes. Test: the verification IS the test (astro check count); the durable guard is T-002.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-002", "T-003", "T-004", "T-005", "T-006", "T-007"],
             "subtasks": [
                 {
                     "title": "Add files:[\"src/env.d.ts\"] to apps/web/tsconfig.json",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify env.d.ts in program via tsc --listFilesOnly",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Verify astro check 185->~68, 0 Locals errors", "completed": false }
+                {
+                    "title": "Verify astro check 185->~68, 0 Locals errors",
+                    "completed": true
+                }
             ],
             "tags": ["web", "tsconfig", "foundation"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "n/a"
+            },
             "timestamps": {
                 "created": "2026-06-11T15:33:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-11T15:36:34.000Z",
+                "completed": "2026-06-11T15:36:34.000Z"
             }
         },
         {
@@ -41,12 +48,22 @@
             "blockedBy": ["T-001"],
             "blocks": ["T-008"],
             "subtasks": [
-                { "title": "Write App.Locals type guard file/test", "completed": false },
-                { "title": "Confirm it fails when augmentation not loaded", "completed": false }
+                {
+                    "title": "Write App.Locals type guard file/test",
+                    "completed": false
+                },
+                {
+                    "title": "Confirm it fails when augmentation not loaded",
+                    "completed": false
+                }
             ],
             "tags": ["web", "test", "guard"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-11T15:33:00.000Z",
                 "started": null,
@@ -62,12 +79,22 @@
             "blockedBy": ["T-001"],
             "blocks": ["T-008"],
             "subtasks": [
-                { "title": "Type each of the 6 implicit-any params", "completed": false },
-                { "title": "Confirm ts7006 bucket -> 0", "completed": false }
+                {
+                    "title": "Type each of the 6 implicit-any params",
+                    "completed": false
+                },
+                {
+                    "title": "Confirm ts7006 bucket -> 0",
+                    "completed": false
+                }
             ],
             "tags": ["web", "astro", "types"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-11T15:33:00.000Z",
                 "started": null,
@@ -83,13 +110,26 @@
             "blockedBy": ["T-001"],
             "blocks": ["T-008"],
             "subtasks": [
-                { "title": "Fix 2 ts2724 import-name errors", "completed": false },
-                { "title": "Extend BreadcrumbItem/interface for ts2353", "completed": false },
-                { "title": "Confirm ts2724 + ts2353 buckets -> 0", "completed": false }
+                {
+                    "title": "Fix 2 ts2724 import-name errors",
+                    "completed": false
+                },
+                {
+                    "title": "Extend BreadcrumbItem/interface for ts2353",
+                    "completed": false
+                },
+                {
+                    "title": "Confirm ts2724 + ts2353 buckets -> 0",
+                    "completed": false
+                }
             ],
             "tags": ["web", "astro", "types", "schemas"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-11T15:33:00.000Z",
                 "started": null,
@@ -105,13 +145,26 @@
             "blockedBy": ["T-001"],
             "blocks": ["T-008"],
             "subtasks": [
-                { "title": "Triage each ts2322: real bug vs annotation", "completed": false },
-                { "title": "Fix types / logic (+ tests for real bugs)", "completed": false },
-                { "title": "Confirm ts2322 bucket -> 0", "completed": false }
+                {
+                    "title": "Triage each ts2322: real bug vs annotation",
+                    "completed": false
+                },
+                {
+                    "title": "Fix types / logic (+ tests for real bugs)",
+                    "completed": false
+                },
+                {
+                    "title": "Confirm ts2322 bucket -> 0",
+                    "completed": false
+                }
             ],
             "tags": ["web", "astro", "types"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-11T15:33:00.000Z",
                 "started": null,
@@ -127,13 +180,26 @@
             "blockedBy": ["T-001"],
             "blocks": ["T-008"],
             "subtasks": [
-                { "title": "Triage each ts2339/ts2345: real bug vs type", "completed": false },
-                { "title": "Fix logic + add regression tests for real bugs", "completed": false },
-                { "title": "Confirm ts2339 + ts2345 buckets -> 0", "completed": false }
+                {
+                    "title": "Triage each ts2339/ts2345: real bug vs type",
+                    "completed": false
+                },
+                {
+                    "title": "Fix logic + add regression tests for real bugs",
+                    "completed": false
+                },
+                {
+                    "title": "Confirm ts2339 + ts2345 buckets -> 0",
+                    "completed": false
+                }
             ],
             "tags": ["web", "astro", "types", "bug"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-11T15:33:00.000Z",
                 "started": null,
@@ -149,13 +215,26 @@
             "blockedBy": ["T-001"],
             "blocks": ["T-008"],
             "subtasks": [
-                { "title": "Fix 5 ts2352 conversions", "completed": false },
-                { "title": "Fix 1 ts2358 instanceof", "completed": false },
-                { "title": "Confirm ts2352 + ts2358 buckets -> 0", "completed": false }
+                {
+                    "title": "Fix 5 ts2352 conversions",
+                    "completed": false
+                },
+                {
+                    "title": "Fix 1 ts2358 instanceof",
+                    "completed": false
+                },
+                {
+                    "title": "Confirm ts2352 + ts2358 buckets -> 0",
+                    "completed": false
+                }
             ],
             "tags": ["web", "astro", "types"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-11T15:33:00.000Z",
                 "started": null,
@@ -170,10 +249,19 @@
             "complexity": 1,
             "blockedBy": ["T-002", "T-003", "T-004", "T-005", "T-006", "T-007"],
             "blocks": ["T-009"],
-            "subtasks": [{ "title": "Run astro check, confirm 0 errors", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Run astro check, confirm 0 errors",
+                    "completed": false
+                }
+            ],
             "tags": ["web", "astro", "verify"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-11T15:33:00.000Z",
                 "started": null,
@@ -189,12 +277,22 @@
             "blockedBy": ["T-008"],
             "blocks": ["T-010"],
             "subtasks": [
-                { "title": "Update typecheck script in apps/web/package.json", "completed": false },
-                { "title": "Confirm CI typecheck job picks it up", "completed": false }
+                {
+                    "title": "Update typecheck script in apps/web/package.json",
+                    "completed": false
+                },
+                {
+                    "title": "Confirm CI typecheck job picks it up",
+                    "completed": false
+                }
             ],
             "tags": ["web", "ci"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-11T15:33:00.000Z",
                 "started": null,
@@ -209,10 +307,19 @@
             "complexity": 1,
             "blockedBy": ["T-009"],
             "blocks": [],
-            "subtasks": [{ "title": "Add CLAUDE.md / docs note", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Add CLAUDE.md / docs note",
+                    "completed": false
+                }
+            ],
             "tags": ["docs"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-11T15:33:00.000Z",
                 "started": null,
@@ -222,9 +329,9 @@
     ],
     "summary": {
         "total": 10,
-        "pending": 10,
+        "pending": 9,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 1,
         "blocked": 0,
         "averageComplexity": 1.9
     }

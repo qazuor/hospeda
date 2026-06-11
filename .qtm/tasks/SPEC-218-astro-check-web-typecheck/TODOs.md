@@ -1,6 +1,6 @@
 # SPEC-218: astro check in web CI
 
-## Progress: 0/10 tasks (0%)
+## Progress: 1/10 tasks (10%)
 
 **Average Complexity:** 1.9/3 (max)
 **Critical Path:** T-001 -> T-005/T-006 -> T-008 -> T-009 -> T-010 (5 steps)
@@ -10,8 +10,8 @@
 
 ### Setup Phase
 
-- [ ] **T-001** (complexity: 1) - Add env.d.ts to tsconfig.files so the App.Locals augmentation loads
-  - The 117-error fix. `files: ["src/env.d.ts"]`. 185 -> ~68 errors.
+- [x] **T-001** (complexity: 1) - Add env.d.ts to tsconfig.files so the App.Locals augmentation loads
+  - DONE: `files: ["src/env.d.ts"]`. Verified 185 -> 68 errors, 117 Locals -> 0, tsc green.
   - Blocked by: none
   - Blocks: T-002, T-003, T-004, T-005, T-006, T-007
 

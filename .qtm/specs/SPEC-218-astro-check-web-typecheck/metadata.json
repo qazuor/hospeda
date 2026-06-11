@@ -3,7 +3,7 @@
     "title": "astro check in web CI — load the App.Locals augmentation, clean .astro type errors, gate typecheck",
     "type": "improvement",
     "complexity": "medium",
-    "status": "draft",
+    "status": "in-progress",
     "created": "2026-06-11T00:00:00Z",
     "approved": null,
     "completed": null,
