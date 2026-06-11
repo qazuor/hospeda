@@ -158,6 +158,13 @@
 
 .submitButton {
     flex: 0 0 auto;
+    /* Prevent the button from stretching to match the taller two-line
+       .authedEmail block when .inputRow uses align-items: stretch.
+       align-self: flex-start pins the button to the top of the row and
+       preserves the natural padding-based height in both guest and authed
+       states — the guest input stays visually aligned because its height
+       also derives from padding rather than stretching. */
+    align-self: flex-start;
     display: inline-flex;
     align-items: center;
     justify-content: center;
