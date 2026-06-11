@@ -971,6 +971,24 @@
             "completionRef": "PR #1577 merged to staging (f8df2b971)",
             "tags": ["ai", "feature", "search", "conversational", "spec-173-child"],
             "note": "Option A conversational search; NL->filters under the hood (NO embeddings). Reuses SPEC-199 mapper/schema/prompt + SPEC-200 chat/SSE/persistence. New SSE route POST /api/v1/protected/ai/search-chat. Supersedes SPEC-199 single-input UI. From owner-approved plan 2026-06-11. 18/18 tasks complete."
+        },
+        {
+            "specId": "SPEC-219",
+            "title": "Dependabot CI Hardening & Dependency Bump Merge Strategy",
+            "type": "infrastructure",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-219-dependabot-ci-hardening",
+            "created": "2026-06-11T00:00:00.000Z",
+            "tags": [
+                "ci",
+                "dependabot",
+                "dependencies",
+                "github-actions",
+                "infrastructure",
+                "build"
+            ],
+            "note": "Infra-only: CI build resilient to absent secrets in dependabot context + dependabot grouping/merge strategy + policy doc. Defers Zod 4.4 (.merge->.safeExtend) and TanStack Router 1.170 migrations to SPEC-132/SPEC-045 or follow-ups. Triggered by failing PRs #1548 (github-actions group, build secrets) and #1570 (66-update npm group, zod+router breaking). Planning for later, no worktree."
         }
     ]
 }
