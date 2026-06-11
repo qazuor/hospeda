@@ -810,6 +810,9 @@ importers:
         specifier: ^0.9.0
         version: 0.9.0(@tiptap/core@2.27.2(@tiptap/pm@2.27.2))
     devDependencies:
+      '@astrojs/check':
+        specifier: ^0.9.4
+        version: 0.9.9(prettier@3.8.3)(typescript@5.9.3)
       '@playwright/test':
         specifier: ^1.58.2
         version: 1.58.2
