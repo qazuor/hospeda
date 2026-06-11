@@ -11,6 +11,7 @@
  * @module test/default-prompts-search
  */
 
+import { AccommodationTypeEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_PROMPTS } from '../src/engine/default-prompts.js';
 
@@ -46,6 +47,19 @@ describe("DEFAULT_PROMPTS['search'] — SPEC-199 slot-extraction contract (uncha
 
     it('keeps the single-shot "omit fields you cannot infer" rule', () => {
         expect(prompt).toContain('Populate only fields you can confidently infer');
+    });
+
+    it('lists every accommodation type from the enum (derived, never hardcoded)', () => {
+        // Regression guard: the accommodationType list is built from
+        // AccommodationTypeEnum so it can never drift from the schema. This caught
+        // the SPEC-213 additions (APART_HOTEL / ESTANCIA / BED_AND_BREAKFAST) that
+        // a hardcoded list would have silently omitted.
+        for (const type of Object.values(AccommodationTypeEnum)) {
+            expect(prompt).toContain(type);
+        }
+        expect(prompt).toContain('APART_HOTEL');
+        expect(prompt).toContain('ESTANCIA');
+        expect(prompt).toContain('BED_AND_BREAKFAST');
     });
 });
 

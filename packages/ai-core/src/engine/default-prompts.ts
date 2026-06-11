@@ -27,7 +27,15 @@
  * @module ai-core/engine/default-prompts
  */
 
-import type { AiFeature } from '@repo/schemas';
+import { AccommodationTypeEnum, type AiFeature } from '@repo/schemas';
+
+/**
+ * Pipe-separated list of every accommodation type the model may extract,
+ * derived from {@link AccommodationTypeEnum} so the `search` prompt stays in
+ * sync with the schema automatically — no hardcoded list to drift out of date
+ * (e.g. SPEC-213 added APART_HOTEL / ESTANCIA / BED_AND_BREAKFAST).
+ */
+const ACCOMMODATION_TYPE_LIST = Object.values(AccommodationTypeEnum).join(' | ');
 
 /**
  * In-code default system prompts keyed by {@link AiFeature}.
@@ -124,8 +132,7 @@ Extract a JSON object with these top-level fields:
     latitude: number (-90 to 90)
     longitude: number (-180 to 180)
     radius: number (km, max 500)
-    accommodationType: one of APARTMENT | HOUSE | COUNTRY_HOUSE | CABIN | HOTEL |
-                       HOSTEL | CAMPING | ROOM | MOTEL | RESORT
+    accommodationType: one of ${ACCOMMODATION_TYPE_LIST}
     minGuests: integer >= 1
     maxGuests: integer >= 1
     minBedrooms: integer >= 0
