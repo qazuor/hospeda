@@ -414,6 +414,13 @@
       "status": "pending",
       "progress": "0/0",
       "path": "SPEC-214-ai-prompt-rules-editable"
+    },
+    {
+      "specId": "SPEC-215",
+      "title": "Destination climate & live weather",
+      "status": "pending",
+      "progress": "0/0",
+      "path": "SPEC-215-destination-climate-weather"
     }
   ],
   "standalone": {
