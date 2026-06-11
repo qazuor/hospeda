@@ -375,10 +375,10 @@
             "specId": "SPEC-212",
             "title": "Conversational AI Accommodation Search",
             "status": "in-progress",
-            "progress": "2/18",
+            "progress": "3/18",
             "path": "SPEC-212-conversational-ai-search",
             "archived": false,
-            "note": "18 tasks. T-001 (schemas) + T-004 (SSE route scaffold) done. D-7 corrected: ai_search is free platform feature (no quota/entitlement gate). Next: T-002/T-003/T-008."
+            "note": "T-001 schemas + T-002 conversational prompt framing + T-004 SSE route scaffold done. Next: T-003 (buildConversationalSearchPrompt) then T-005."
         }
     ],
     "standalone": {
