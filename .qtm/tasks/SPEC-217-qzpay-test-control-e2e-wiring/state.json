@@ -146,19 +146,20 @@
             "id": "T-007",
             "title": "Enable HOSPEDA_QZPAY_TEST_CONTROL_ENABLED in e2e-pr.yml",
             "description": "Add HOSPEDA_QZPAY_TEST_CONTROL_ENABLED: 'true' to the env block of .github/workflows/e2e-pr.yml so the qzpay-control route mounts and Group B fault-injection specs run in the PR P0 suite (OQ-3 decision). One-line change. Verification: the value appears in the workflow env; Group B specs no longer self-skip on 404 once T-006 lands.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-011", "T-012", "T-013"],
-            "subtasks": [{ "title": "Add env var to e2e-pr.yml", "completed": false }],
+            "subtasks": [{ "title": "Add env var to e2e-pr.yml", "completed": true }],
             "tags": ["ci", "test-control", "integration"],
             "phase": "integration",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-06-11T00:00:00.000Z",
+                "completed": "2026-06-11T00:00:00.000Z"
+            },
+            "resultRef": ".github/workflows/e2e-pr.yml env: HOSPEDA_QZPAY_TEST_CONTROL_ENABLED='true'"
         },
         {
             "id": "T-008",
@@ -365,9 +366,9 @@
     ],
     "summary": {
         "total": 16,
-        "pending": 7,
+        "pending": 6,
         "inProgress": 0,
-        "completed": 9,
+        "completed": 10,
         "blocked": 0,
         "averageComplexity": 2.1
     }
