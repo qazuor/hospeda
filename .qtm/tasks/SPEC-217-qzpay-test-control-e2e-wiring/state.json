@@ -119,27 +119,28 @@
         {
             "id": "T-006",
             "title": "Wire applyTestControl into the MercadoPago adapter",
-            "description": "In packages/billing/src/adapters/mercadopago.ts, wrap the adapter returned by createMercadoPagoAdapter() so each ControllableOperation method (per T-002 map) routes through applyTestControl(operation, args, () => realAdapter.method(args)). MUST be a no-op (zero overhead, original adapter returned unwrapped) when isTestControlEnabled() is false. UNIT TESTS REQUIRED: for each ControllableOperation, queue a failNext and assert the wrapped method throws/intercepts; assert the no-op path is bypassed when the flag is off. Test file in packages/billing/src/adapters/__tests__/.",
-            "status": "pending",
+            "description": "In packages/billing/src/adapters/mercadopago.ts, wrap the adapter returned by createMercadoPagoAdapter() (Option A, FINDING 1). Construction-time gate: if !isTestControlEnabled() return the real adapter unwrapped (zero prod overhead); else return a wrapper that routes subscriptions.create->startTrial, subscriptions.update->updateSubscription, subscriptions.cancel->cancelTrial through applyTestControl. Only those 3 (the ops the specs exercise); other ControllableOperations intentionally not wired (uncertain mappings, no spec needs them; cancelTrial/cancelSubscription collision documented). UNIT TESTS REQUIRED: per wired op, queue failNext and assert the wrapped method throws + records; assert pass-through records 'ok'; assert no-op (real adapter returned) when flag off.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002"],
             "blocks": ["T-011", "T-012", "T-013"],
             "subtasks": [
-                { "title": "Wrap adapter methods through applyTestControl", "completed": false },
+                { "title": "Wrap adapter methods through applyTestControl", "completed": true },
                 {
                     "title": "Guard wrap behind isTestControlEnabled() (no-op when off)",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Unit tests per operation + no-op path", "completed": false }
+                { "title": "Unit tests per operation + no-op path", "completed": true }
             ],
             "tags": ["billing", "qzpay", "test-control", "core"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-06-11T00:00:00.000Z",
+                "completed": "2026-06-11T00:00:00.000Z"
+            },
+            "resultRef": "mercadopago.ts wraps subscriptions.create/update/cancel through applyTestControl (Option A) when test-control enabled; construction-time gate = zero prod overhead. 14 unit tests."
         },
         {
             "id": "T-007",
@@ -364,9 +365,9 @@
     ],
     "summary": {
         "total": 16,
-        "pending": 8,
+        "pending": 7,
         "inProgress": 0,
-        "completed": 8,
+        "completed": 9,
         "blocked": 0,
         "averageComplexity": 2.1
     }
