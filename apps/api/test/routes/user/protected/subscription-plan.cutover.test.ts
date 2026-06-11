@@ -19,7 +19,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ─── Hoisted mocks ────────────────────────────────────────────────────────────
 
-const { mockGetBySlug, mockCreateProtectedRoute } = vi.hoisted(() => ({
+const { mockGetById, mockGetBySlug, mockCreateProtectedRoute } = vi.hoisted(() => ({
+    mockGetById: vi.fn(),
     mockGetBySlug: vi.fn(),
     mockCreateProtectedRoute: vi.fn()
 }));
@@ -29,6 +30,7 @@ const { mockGetBySlug, mockCreateProtectedRoute } = vi.hoisted(() => ({
 vi.mock('../../../../src/services/plan.service', () => ({
     PlanService: vi.fn().mockImplementation(() => ({
         list: vi.fn(),
+        getById: mockGetById,
         getBySlug: mockGetBySlug
     }))
 }));
@@ -282,6 +284,9 @@ describe('subscription-plan cutover (SPEC-192 T-023)', () => {
                 { id: 'cust-456', externalId: 'test-user-id' },
                 { planId: 'owner-basico', status: 'active' }
             );
+            // resolvePlanName tries getById first; for slug-format planIds it returns
+            // NOT_FOUND so the dual-resolve falls through to getBySlug.
+            mockGetById.mockResolvedValue(PLAN_NOT_FOUND);
             mockGetBySlug.mockResolvedValue(PLAN_FOUND);
 
             // Act
@@ -298,6 +303,7 @@ describe('subscription-plan cutover (SPEC-192 T-023)', () => {
                 { id: 'cust-456', externalId: 'test-user-id' },
                 { planId: 'owner-basico', status: 'active' }
             );
+            mockGetById.mockResolvedValue(PLAN_NOT_FOUND);
             mockGetBySlug.mockResolvedValue(PLAN_FOUND);
 
             // Act
@@ -316,6 +322,8 @@ describe('subscription-plan cutover (SPEC-192 T-023)', () => {
                 { id: 'cust-456', externalId: 'test-user-id' },
                 { planId: 'owner-basico', status: 'active' }
             );
+            // Both getById and getBySlug return NOT_FOUND → falls back to raw planId
+            mockGetById.mockResolvedValue(PLAN_NOT_FOUND);
             mockGetBySlug.mockResolvedValue(PLAN_NOT_FOUND);
 
             // Act
