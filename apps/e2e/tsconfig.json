@@ -6,6 +6,7 @@
         "moduleResolution": "bundler"
     },
     "include": [
+        "test/**/*",
         "tests/**/*",
         "fixtures/**/*",
         "seeds/**/*",
