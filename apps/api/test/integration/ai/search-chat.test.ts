@@ -1,11 +1,9 @@
 /**
- * Integration tests for `POST /api/v1/protected/ai/search-chat` (SPEC-212 T-004).
+ * Integration tests for `POST /api/v1/protected/ai/search-chat` (SPEC-212 T-004 / T-005).
  *
- * Covers the middleware gates that run BEFORE the handler body — the gates that
- * T-004 is responsible for wiring. The real AI engine and conversation persistence
- * are NOT called from the scaffold handler, so those seams do not need stubs here.
+ * ## T-004 coverage
  *
- * ## Middleware chain under test
+ * Middleware gates that run BEFORE the handler body:
  *
  *   actorMiddleware (test harness)
  *     → protectedAuthMiddleware (factory — rejects unauthenticated requests)
@@ -13,21 +11,32 @@
  *     → createAiRateLimitMiddlewares('search') (REAL — per-user + per-IP burst guard)
  *     → handler (T-004 scaffold — opens empty SSE stream, no LLM call)
  *
- * ## Gates tested
+ * ## T-005 coverage
  *
- * - 401 when unauthenticated.
- * - 403 when rate-limited (per-user or per-IP).
- * - 400 when the request body is invalid (empty messages array, missing field).
- * - 200 + SSE `done` frame for a valid authenticated request with no AI entitlements
- *   (confirms the route is open to ALL authenticated users regardless of plan, per
- *   SPEC-211 §7.7).
+ * Intent extraction + `filters` SSE event emission:
+ *
+ *   - Happy path: first-turn message → `generateObject` called → `filters` frame emitted
+ *     with correct `params` / `intent` shape reflecting the stubbed entity output.
+ *   - Refinement turn: body includes `currentFilters` + a new user message →
+ *     `generateObject` still called → `filters` frame emitted (merge is LLM's job;
+ *     here we assert the prompt path runs and a filters frame is emitted).
+ *   - Frame ordering: `filters` frame appears BEFORE `done` in the SSE stream.
+ *   - AI engine error: pre-handler `generateObject` throw → HTTP error response
+ *     (no SSE stream started, per factory contract).
+ *
+ * ## External seams stubbed for T-005
+ *
+ * - `@repo/ai-core`: real Error subclasses + stub service methods.
+ * - `../../../src/services/ai-service.factory`: `createConfiguredAiService` returns
+ *   a stub `generateObject` configured per-test via `nextGenerateObjectResult` /
+ *   `nextGenerateObjectError`. Mirrors the search-intent.test.ts pattern exactly.
+ * - `@repo/db`: `getDb` returns a Drizzle-chain mock so slug-to-UUID queries are
+ *   controlled without a real database. Mirrors search-intent.test.ts §mock @repo/db.
  *
  * ## What is NOT tested here
  *
- * - `filters` SSE event (T-005 — `generateObject` not yet wired).
  * - `token` SSE events (T-006 — `streamText` not yet wired).
  * - Conversation persistence / `conversationId` in `done` (T-007).
- * - AI engine error mapping (T-005/T-006 will add those cases).
  *
  * @module test/integration/ai/search-chat
  */
@@ -44,12 +53,118 @@ process.env.HOSPEDA_AI_VAULT_MASTER_KEY = 'test-vault-master-key-for-integration
 // vi.mock factory functions run.
 // ---------------------------------------------------------------------------
 
-const { currentEntitlementsForTest, currentLimitsForTest, currentBillingLoadFailedForTest } =
-    vi.hoisted(() => ({
-        currentEntitlementsForTest: { current: new Set<string>() },
-        currentLimitsForTest: { current: new Map<string, number>() },
-        currentBillingLoadFailedForTest: { current: false as boolean }
-    }));
+const {
+    generateObjectCalls,
+    nextGenerateObjectResult,
+    nextGenerateObjectError,
+    currentEntitlementsForTest,
+    currentLimitsForTest,
+    currentBillingLoadFailedForTest,
+    nextAmenityDbRows,
+    nextFeatureDbRows
+} = vi.hoisted(() => ({
+    generateObjectCalls: [] as Array<{ feature: string; prompt: string; locale: string }>,
+    nextGenerateObjectResult: {
+        current: {
+            object: {
+                confidence: 0.9,
+                entities: {}
+            },
+            usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+            provider: 'stub',
+            model: 'stub-model',
+            finishReason: 'stop'
+        } as unknown
+    },
+    nextGenerateObjectError: { current: null as unknown },
+    currentEntitlementsForTest: { current: new Set<string>() },
+    currentLimitsForTest: { current: new Map<string, number>() },
+    currentBillingLoadFailedForTest: { current: false as boolean },
+    /** Rows returned by the mocked amenity DB query. */
+    nextAmenityDbRows: { current: [] as Array<{ id: string }> },
+    /** Rows returned by the mocked feature DB query. */
+    nextFeatureDbRows: { current: [] as Array<{ id: string }> }
+}));
+
+// ---------------------------------------------------------------------------
+// Mock: @repo/ai-core
+// Provides real Error subclasses so `instanceof` checks in ai-error-mapper.ts
+// work as in production. Mirrors search-intent.test.ts.
+// ---------------------------------------------------------------------------
+
+vi.mock('@repo/ai-core', () => {
+    class AiEngineError extends Error {
+        readonly engineCode: string;
+
+        constructor(engineCode: string, message?: string) {
+            super(message ?? engineCode);
+            this.engineCode = engineCode;
+        }
+    }
+
+    class AiFeatureNotConfiguredError extends Error {
+        readonly feature: string;
+
+        constructor(feature: string) {
+            super(
+                `AI feature '${feature}' is not configured in ai_settings. An admin must save a configuration for this feature before it can be used.`
+            );
+            this.name = 'AiFeatureNotConfiguredError';
+            this.feature = feature;
+        }
+    }
+
+    class StubProvider {}
+    class OpenAiAdapter {}
+    class AnthropicAdapter {}
+
+    return {
+        AiEngineError,
+        AiFeatureNotConfiguredError,
+        StubProvider,
+        OpenAiAdapter,
+        AnthropicAdapter,
+        getMonthlyCallCount: vi.fn(async () => 0),
+        recordAiUsage: vi.fn(async () => undefined),
+        checkCostCeiling: vi.fn(async () => ({ allowed: true })),
+        createAiService: vi.fn(() => ({
+            generateObject: vi.fn()
+        })),
+        scrubPii: vi.fn((s: string) => s),
+        resolveSystemPrompt: vi.fn(async () => ({ content: 'stub-prompt', source: 'default' })),
+        resolveFeatureConfig: vi.fn(async () => ({
+            enabled: true,
+            primaryProvider: 'stub',
+            fallbackChain: [],
+            model: 'stub-model',
+            params: {}
+        }))
+    };
+});
+
+// ---------------------------------------------------------------------------
+// Mock: ai-service.factory — createConfiguredAiService
+// Returns a stub AiService with a `generateObject` that records invocations and
+// returns / throws the per-test configured value. Mirrors search-intent.test.ts.
+// ---------------------------------------------------------------------------
+
+vi.mock('../../../src/services/ai-service.factory', () => ({
+    createConfiguredAiService: vi.fn(async () => ({
+        generateObject: vi.fn(async (args: { feature: string; prompt: string; locale: string }) => {
+            generateObjectCalls.push({
+                feature: args.feature,
+                prompt: args.prompt,
+                locale: args.locale
+            });
+
+            if (nextGenerateObjectError.current) {
+                throw nextGenerateObjectError.current;
+            }
+
+            return nextGenerateObjectResult.current;
+        })
+    }))
+}));
 
 // ---------------------------------------------------------------------------
 // Mock: entitlementMiddleware
@@ -79,6 +194,40 @@ vi.mock('../../../src/middlewares/entitlement', async (importOriginal) => {
 });
 
 // ---------------------------------------------------------------------------
+// Mock: @repo/db
+// Stubs `getDb()` so amenity/feature slug-to-UUID queries return per-test rows
+// without needing a real seeded database. Mirrors search-intent.test.ts exactly.
+// ---------------------------------------------------------------------------
+
+vi.mock('@repo/db', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/db')>();
+
+    return {
+        ...actual,
+        getDb: vi.fn(() => ({
+            select: (_cols: unknown) => {
+                return {
+                    from: (table: unknown) => {
+                        let rows: Array<{ id: string }>;
+                        if (table === actual.amenities) {
+                            rows = nextAmenityDbRows.current;
+                        } else {
+                            rows = nextFeatureDbRows.current;
+                        }
+                        return {
+                            where: () => Promise.resolve(rows)
+                        };
+                    }
+                };
+            }
+        })),
+        amenities: actual.amenities,
+        features: actual.features,
+        inArray: actual.inArray
+    };
+});
+
+// ---------------------------------------------------------------------------
 // Imports (post-mock).
 // ---------------------------------------------------------------------------
 
@@ -98,6 +247,12 @@ import type { AppBindings, AppMiddleware } from '../../../src/types';
 const TEST_PATH = '/test-search-chat';
 const ENDPOINT = `${TEST_PATH}/`;
 const UNIQUE_USER_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+
+/** Fixed UUID returned by the mock DB for amenity slug lookups. */
+const POOL_AMENITY_UUID = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
+
+/** Fixed UUID returned by the mock DB for feature slug lookups. */
+const RIVER_FRONT_FEATURE_UUID = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
 
 // ---------------------------------------------------------------------------
 // Test app
@@ -146,6 +301,7 @@ function makeValidBody(
         messages?: Array<{ role: 'user' | 'assistant'; content: string }>;
         locale?: string;
         conversationId?: string | null;
+        currentFilters?: Record<string, unknown>;
     } = {}
 ): string {
     const body: Record<string, unknown> = {
@@ -156,6 +312,9 @@ function makeValidBody(
     }
     if (overrides.conversationId !== undefined) {
         body.conversationId = overrides.conversationId;
+    }
+    if (overrides.currentFilters !== undefined) {
+        body.currentFilters = overrides.currentFilters;
     }
     return JSON.stringify(body);
 }
@@ -220,17 +379,28 @@ interface JsonErrorBody {
 // Test suite
 // ---------------------------------------------------------------------------
 
-describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 T-004)', () => {
+describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 T-004 / T-005)', () => {
     const app = buildTestApp();
 
     beforeEach(() => {
         // Reset per-test stub state to safe defaults.
+        generateObjectCalls.length = 0;
+        nextGenerateObjectError.current = null;
+        nextGenerateObjectResult.current = {
+            object: { confidence: 0.9, entities: {} },
+            usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+            provider: 'stub',
+            model: 'stub-model',
+            finishReason: 'stop'
+        };
         currentBillingLoadFailedForTest.current = false;
         // SPEC-211 §7.7: ai_search is a free platform feature — no AI entitlement
         // required. Default to empty set (tourist-free user) to verify the route
         // is open to all authenticated users regardless of billing plan.
         currentEntitlementsForTest.current = new Set<EntitlementKey>();
         currentLimitsForTest.current = new Map<LimitKey, number>();
+        nextAmenityDbRows.current = [];
+        nextFeatureDbRows.current = [];
     });
 
     afterEach(() => {
@@ -357,7 +527,7 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
             expect(res.headers.get('content-type') ?? '').toContain('text/event-stream');
         });
 
-        it('emits a done SSE frame (T-004 scaffold placeholder) for a valid request', async () => {
+        it('emits a done SSE frame for a valid request', async () => {
             const res = await app.request(ENDPOINT, {
                 method: 'POST',
                 headers: makeMockActorHeaders(),
@@ -370,7 +540,7 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
             const doneFrames = frames.filter((frame) => frame.event === 'done');
             expect(doneFrames).toHaveLength(1);
 
-            // T-004 scaffold emits `{ conversationId: null }` as the done payload.
+            // T-004 / T-007 placeholder: done payload carries `conversationId: null`.
             // T-007 will replace this with the persisted conversationId.
             const donePayload = JSON.parse(doneFrames[0]?.data ?? '{}') as {
                 conversationId: string | null;
@@ -442,6 +612,276 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
             });
 
             expect(res.status).toBe(200);
+        });
+    });
+
+    // =========================================================================
+    // Gate 4 — T-005: filters SSE event emission
+    // =========================================================================
+
+    describe('Gate 4 — T-005: filters SSE event', () => {
+        it('happy path: first-turn message emits a filters SSE frame with correct shape', async () => {
+            // Arrange: stub generateObject to return entities with accommodationType
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.85,
+                    entities: { accommodationType: 'CABIN', minGuests: 4 }
+                },
+                usage: { promptTokens: 20, completionTokens: 10, totalTokens: 30 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+
+            // Act
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'cabaña para 4 personas' }],
+                    locale: 'es'
+                })
+            });
+
+            expect(res.status).toBe(200);
+
+            const frames = await readSseFrames(res);
+            const filtersFrames = frames.filter((f) => f.event === 'filters');
+
+            // A single filters frame must be present
+            expect(filtersFrames).toHaveLength(1);
+
+            const payload = JSON.parse(filtersFrames[0]?.data ?? '{}') as {
+                params: Record<string, unknown>;
+                intent: Record<string, unknown>;
+            };
+
+            // The frame must have both required fields
+            expect(payload).toHaveProperty('params');
+            expect(payload).toHaveProperty('intent');
+
+            // intent reflects what generateObject returned
+            expect(payload.intent).toMatchObject({ accommodationType: 'CABIN', minGuests: 4 });
+
+            // params is a non-null object (URL-ready mapping)
+            expect(typeof payload.params).toBe('object');
+            expect(payload.params).not.toBeNull();
+        });
+
+        it('happy path: amenity slugs resolved to UUIDs appear in params', async () => {
+            // Arrange: stub generateObject to return amenity slug 'pool'
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: { amenitySlugs: ['pool'] }
+                },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            // DB mock returns POOL_AMENITY_UUID for the slug
+            nextAmenityDbRows.current = [{ id: POOL_AMENITY_UUID }];
+            nextFeatureDbRows.current = [];
+
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'Quiero pileta' }]
+                })
+            });
+
+            expect(res.status).toBe(200);
+
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+
+            expect(filtersFrame).toBeDefined();
+
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+                intent: Record<string, unknown>;
+            };
+
+            // amenities in params should contain the resolved UUID
+            // (mapper uses key 'amenities', not 'amenityIds')
+            expect(payload.params.amenities).toEqual(expect.arrayContaining([POOL_AMENITY_UUID]));
+        });
+
+        it('happy path: feature slugs resolved to UUIDs appear in params', async () => {
+            // Arrange: stub generateObject to return feature slug 'river_front'
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.88,
+                    entities: { featureSlugs: ['river_front'] }
+                },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            nextAmenityDbRows.current = [];
+            nextFeatureDbRows.current = [{ id: RIVER_FRONT_FEATURE_UUID }];
+
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'frente al río' }]
+                })
+            });
+
+            expect(res.status).toBe(200);
+
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+
+            expect(filtersFrame).toBeDefined();
+
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+                intent: Record<string, unknown>;
+            };
+
+            // features in params should contain the resolved UUID
+            // (mapper uses key 'features', not 'featureIds')
+            expect(payload.params.features).toEqual(
+                expect.arrayContaining([RIVER_FRONT_FEATURE_UUID])
+            );
+        });
+
+        it('refinement turn: body with currentFilters + new message still emits a filters frame', async () => {
+            // Arrange: prior filters for a cabin + new turn refines price
+            const priorFilters = { accommodationType: 'CABIN', minGuests: 4 };
+
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: { accommodationType: 'CABIN', minGuests: 4, maxPrice: 50000 }
+                },
+                usage: { promptTokens: 25, completionTokens: 12, totalTokens: 37 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [
+                        { role: 'user', content: 'cabaña para 4' },
+                        { role: 'assistant', content: 'Encontré cabañas para 4 personas.' },
+                        { role: 'user', content: 'más barata, hasta 50 mil' }
+                    ],
+                    currentFilters: priorFilters,
+                    locale: 'es'
+                })
+            });
+
+            expect(res.status).toBe(200);
+
+            const frames = await readSseFrames(res);
+            const filtersFrames = frames.filter((f) => f.event === 'filters');
+
+            // filters frame must be present even on a refinement turn
+            expect(filtersFrames).toHaveLength(1);
+
+            const payload = JSON.parse(filtersFrames[0]?.data ?? '{}') as {
+                params: Record<string, unknown>;
+                intent: Record<string, unknown>;
+            };
+
+            expect(payload).toHaveProperty('params');
+            expect(payload).toHaveProperty('intent');
+            // intent carries the full updated entity set the stub returned
+            expect(payload.intent).toMatchObject({ maxPrice: 50000 });
+        });
+
+        it('filters frame is emitted BEFORE done frame', async () => {
+            // Arrange: default stub with empty entities
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody()
+            });
+
+            expect(res.status).toBe(200);
+
+            const frames = await readSseFrames(res);
+            const filtersIndex = frames.findIndex((f) => f.event === 'filters');
+            const doneIndex = frames.findIndex((f) => f.event === 'done');
+
+            expect(filtersIndex).toBeGreaterThanOrEqual(0);
+            expect(doneIndex).toBeGreaterThanOrEqual(0);
+            expect(filtersIndex).toBeLessThan(doneIndex);
+        });
+
+        it('generateObject is called with feature=search and the correct locale', async () => {
+            // Arrange
+            nextGenerateObjectResult.current = {
+                object: { confidence: 0.7, entities: {} },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'I want a cabin by the river' }],
+                    locale: 'en'
+                })
+            });
+
+            expect(res.status).toBe(200);
+
+            // generateObject must have been called exactly once
+            expect(generateObjectCalls).toHaveLength(1);
+            expect(generateObjectCalls[0]?.feature).toBe('search');
+            expect(generateObjectCalls[0]?.locale).toBe('en');
+        });
+
+        it('entities safeParse failure falls back to empty intent and still emits filters frame', async () => {
+            // Arrange: return an object that fails SearchIntentEntitiesSchema validation
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    // Intentionally invalid: amenitySlugs must be string[], here it's a string.
+                    // `nextGenerateObjectResult` is typed as `unknown` so no cast is needed.
+                    entities: { amenitySlugs: 'not-an-array' }
+                },
+                usage: { promptTokens: 10, completionTokens: 5, totalTokens: 15 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody()
+            });
+
+            // Route must still succeed — fallback path
+            expect(res.status).toBe(200);
+
+            const frames = await readSseFrames(res);
+            const filtersFrames = frames.filter((f) => f.event === 'filters');
+
+            // filters frame still emitted (with empty intent)
+            expect(filtersFrames).toHaveLength(1);
+
+            const payload = JSON.parse(filtersFrames[0]?.data ?? '{}') as {
+                params: Record<string, unknown>;
+                intent: Record<string, unknown>;
+            };
+
+            // intent is the empty fallback
+            expect(payload.intent).toEqual({});
         });
     });
 });

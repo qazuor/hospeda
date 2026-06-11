@@ -375,10 +375,10 @@
             "specId": "SPEC-212",
             "title": "Conversational AI Accommodation Search",
             "status": "in-progress",
-            "progress": "4/18",
+            "progress": "5/18",
             "path": "SPEC-212-conversational-ai-search",
             "archived": false,
-            "note": "T-001 schemas, T-002 prompt framing, T-003 buildConversationalSearchPrompt, T-004 SSE route scaffold done. Next: T-005 (wire generateObject -> filters event) and T-008 (web SSE client)."
+            "note": "Core progressing: T-001/002/003/004/005 done. T-005 wired generateObject->mapper->filters SSE event (additive `filters` prelude added to streaming-route-factory). Reply streaming (T-006) + persistence (T-007) still placeholders. Next: T-006, then web track T-008."
         }
     ],
     "standalone": {
