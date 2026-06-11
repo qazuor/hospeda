@@ -412,8 +412,10 @@
             "status": "completed",
             "progress": "18/18",
             "path": "SPEC-212-conversational-ai-search",
-            "archived": false,
-            "note": "ALL 18 TASKS DONE (implementation complete, all green, committed on spec/SPEC-212 branch). Conversational AI search live: NL->filters extraction (generateObject) -> filters SSE event -> frontend GET /public/accommodations -> streamed NL reply -> best-effort persistence. SPEC-199 UI+route retired. PENDING: PR spec/SPEC-212-conversational-ai-search -> staging (owner triggers). E2E (T-016) is write-only, runs in CI/staging with @ai tag."
+            "archived": true,
+            "archivedAt": "2026-06-11",
+            "archiveNote": "PR #1577 merged to staging (f8df2b971); 18/18 tasks complete. Post-merge pending (owner-gated): @ai e2e + manual conversational-search smoke on staging once AI is configured, then staging->main promotion after soak.",
+            "note": "ALL 18 TASKS DONE (implementation complete, all green). Conversational AI search live: NL->filters extraction (generateObject) -> filters SSE event -> frontend GET /public/accommodations -> streamed NL reply -> best-effort persistence. SPEC-199 UI+route retired. E2E (T-016) is write-only, runs in CI/staging with @ai tag."
         }
     ],
     "standalone": {
