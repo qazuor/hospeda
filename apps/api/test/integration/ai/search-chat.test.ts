@@ -1,5 +1,5 @@
 /**
- * Integration tests for `POST /api/v1/protected/ai/search-chat` (SPEC-212 T-004 / T-005 / T-006).
+ * Integration tests for `POST /api/v1/protected/ai/search-chat` (SPEC-212 T-004 / T-005 / T-006 / T-007).
  *
  * ## T-004 coverage
  *
@@ -30,13 +30,24 @@
  *
  *   - Reply streams: after the `filters` frame, `token` frames carry the stubbed
  *     reply text, then a terminal `done` frame is emitted.
- *   - `done` payload: carries `conversationId` echoing the request value when
- *     provided; `null` when absent.
+ *   - `done` payload: carries the persisted conversationId (T-007) or null on failure.
  *   - Frame ordering: `filters` → `token`(s) → `done`.
  *   - Provider failure mid-reply (streamText throws): emits an `error` frame,
  *     no `done` follows.
  *
- * ## External seams stubbed for T-005 / T-006
+ * ## T-007 coverage
+ *
+ * Best-effort conversation persistence:
+ *
+ *   - `persistSearchChatTurn` is called with `feature='search'`, the authenticated
+ *     user id, the last user message, and the accumulated assistant text.
+ *   - `done.conversationId` = persisted id on success.
+ *   - Non-fatal reject: persistence throws → stream still emits filters + tokens +
+ *     done with `conversationId: null`; `apiLogger.error` is called.
+ *   - Non-fatal timeout: persistence never resolves within 1500 ms → done carries
+ *     `conversationId: null`; `apiLogger.warn` is called.
+ *
+ * ## External seams stubbed
  *
  * - `@repo/ai-core`: real Error subclasses + stub service methods.
  * - `../../../src/services/ai-service.factory`: `createConfiguredAiService` returns
@@ -46,10 +57,11 @@
  *   `nextStreamError`. Mirrors the chat-route.test.ts pattern for `streamText`.
  * - `@repo/db`: `getDb` returns a Drizzle-chain mock so slug-to-UUID queries are
  *   controlled without a real database. Mirrors search-intent.test.ts §mock @repo/db.
- *
- * ## What is NOT tested here
- *
- * - Conversation persistence / `conversationId` becoming the real persisted id (T-007).
+ * - `../../../src/routes/ai/protected/search-chat.persistence`: `persistSearchChatTurn`
+ *   is a vi.fn() controlled per-test via `nextPersistPromise`. Mirrors the
+ *   chat-route.test.ts pattern for `persistChatTurn`.
+ * - `../../../src/utils/logger`: `apiLogger` is a spy object so T-007 failure/timeout
+ *   assertions can verify the non-fatal log calls.
  *
  * @module test/integration/ai/search-chat
  */
@@ -77,7 +89,9 @@ const {
     currentLimitsForTest,
     currentBillingLoadFailedForTest,
     nextAmenityDbRows,
-    nextFeatureDbRows
+    nextFeatureDbRows,
+    nextPersistPromise,
+    mockApiLogger
 } = vi.hoisted(() => ({
     generateObjectCalls: [] as Array<{ feature: string; prompt: string; locale: string }>,
     nextGenerateObjectResult: {
@@ -109,7 +123,23 @@ const {
     /** Rows returned by the mocked amenity DB query. */
     nextAmenityDbRows: { current: [] as Array<{ id: string }> },
     /** Rows returned by the mocked feature DB query. */
-    nextFeatureDbRows: { current: [] as Array<{ id: string }> }
+    nextFeatureDbRows: { current: [] as Array<{ id: string }> },
+    /**
+     * T-007: controls what `persistSearchChatTurn` returns per-test.
+     * Default: resolves with a fixed conversation id (happy path).
+     */
+    nextPersistPromise: {
+        current: Promise.resolve({
+            conversationId: 'ffffffff-ffff-4fff-8fff-ffffffffffff'
+        }) as Promise<{ conversationId: string }>
+    },
+    /** T-007: spy on logger calls to assert non-fatal failure / timeout handling. */
+    mockApiLogger: {
+        info: vi.fn(),
+        warn: vi.fn(),
+        debug: vi.fn(),
+        error: vi.fn()
+    }
 }));
 
 // ---------------------------------------------------------------------------
@@ -300,6 +330,25 @@ vi.mock('@repo/db', async (importOriginal) => {
 });
 
 // ---------------------------------------------------------------------------
+// Mock: search-chat.persistence — persistSearchChatTurn (T-007)
+// Mirrors the chat-route.test.ts pattern for persistChatTurn: vi.fn() returning
+// the per-test configured promise so each test can control success / failure / timeout.
+// ---------------------------------------------------------------------------
+
+vi.mock('../../../src/routes/ai/protected/search-chat.persistence', () => ({
+    persistSearchChatTurn: vi.fn(() => nextPersistPromise.current)
+}));
+
+// ---------------------------------------------------------------------------
+// Mock: logger — apiLogger (T-007)
+// Spy on warn/error to assert non-fatal failure / timeout log calls.
+// ---------------------------------------------------------------------------
+
+vi.mock('../../../src/utils/logger', () => ({
+    apiLogger: mockApiLogger
+}));
+
+// ---------------------------------------------------------------------------
 // Imports (post-mock).
 // ---------------------------------------------------------------------------
 
@@ -476,6 +525,14 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
         currentLimitsForTest.current = new Map<LimitKey, number>();
         nextAmenityDbRows.current = [];
         nextFeatureDbRows.current = [];
+        // T-007: default happy-path persistence — resolves with a fixed conversation id.
+        nextPersistPromise.current = Promise.resolve({
+            conversationId: 'ffffffff-ffff-4fff-8fff-ffffffffffff'
+        });
+        mockApiLogger.info.mockReset();
+        mockApiLogger.warn.mockReset();
+        mockApiLogger.debug.mockReset();
+        mockApiLogger.error.mockReset();
     });
 
     afterEach(() => {
@@ -615,8 +672,7 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
             const doneFrames = frames.filter((frame) => frame.event === 'done');
             expect(doneFrames).toHaveLength(1);
 
-            // T-004 / T-007 placeholder: done payload carries `conversationId: null`.
-            // T-007 will replace this with the persisted conversationId.
+            // T-007: done payload carries the persisted conversationId (or null on failure).
             const donePayload = JSON.parse(doneFrames[0]?.data ?? '{}') as {
                 conversationId: string | null;
             };
@@ -1022,29 +1078,10 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
             expect(firstTokenIdx).toBeLessThan(doneIdx);
         });
 
-        it('done frame carries conversationId echoing the request value when provided', async () => {
-            const CONV_ID = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
+        it('done frame carries the persisted conversationId on success (T-007)', async () => {
+            const PERSISTED_ID = 'ffffffff-ffff-4fff-8fff-ffffffffffff';
+            nextPersistPromise.current = Promise.resolve({ conversationId: PERSISTED_ID });
 
-            const res = await app.request(ENDPOINT, {
-                method: 'POST',
-                headers: makeMockActorHeaders(),
-                body: makeValidBody({ conversationId: CONV_ID })
-            });
-
-            expect(res.status).toBe(200);
-
-            const frames = await readSseFrames(res);
-            const doneFrames = frames.filter((f) => f.event === 'done');
-            expect(doneFrames).toHaveLength(1);
-
-            const donePayload = JSON.parse(doneFrames[0]?.data ?? '{}') as {
-                conversationId: string | null;
-            };
-            // T-006: echo-back — the request's conversationId is returned as-is.
-            expect(donePayload.conversationId).toBe(CONV_ID);
-        });
-
-        it('done frame carries conversationId: null when not provided in the request', async () => {
             const res = await app.request(ENDPOINT, {
                 method: 'POST',
                 headers: makeMockActorHeaders(),
@@ -1060,7 +1097,8 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
             const donePayload = JSON.parse(doneFrames[0]?.data ?? '{}') as {
                 conversationId: string | null;
             };
-            expect(donePayload.conversationId).toBeNull();
+            // T-007: the real persisted id is returned, not an echo-back.
+            expect(donePayload.conversationId).toBe(PERSISTED_ID);
         });
 
         it('streamText is called with feature=search and correct locale', async () => {
@@ -1126,5 +1164,147 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
             // No done frame after an error (factory contract)
             expect(doneFrames).toHaveLength(0);
         });
+    });
+
+    // =========================================================================
+    // Gate 6 — T-007: conversation persistence (best-effort)
+    // =========================================================================
+
+    describe('Gate 6 — T-007: conversation persistence', () => {
+        it('persistSearchChatTurn is called with feature=search, userId, and the user + assistant text', async () => {
+            const PERSISTED_ID = 'ffffffff-ffff-4fff-8fff-ffffffffffff';
+            nextPersistPromise.current = Promise.resolve({ conversationId: PERSISTED_ID });
+            nextStreamDeltas.current = ['Great', ' choice!'];
+
+            const { persistSearchChatTurn } = await import(
+                '../../../src/routes/ai/protected/search-chat.persistence'
+            );
+
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders({ actorId: UNIQUE_USER_ID }),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'Quiero una cabaña con pileta' }],
+                    locale: 'es'
+                })
+            });
+
+            expect(res.status).toBe(200);
+            await readSseFrames(res);
+
+            // persistSearchChatTurn must have been called exactly once
+            expect(vi.mocked(persistSearchChatTurn)).toHaveBeenCalledTimes(1);
+            expect(vi.mocked(persistSearchChatTurn)).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    userId: UNIQUE_USER_ID,
+                    userMessage: 'Quiero una cabaña con pileta',
+                    // Accumulated reply from the two stub deltas
+                    assistantMessage: 'Great choice!',
+                    conversationId: null
+                })
+            );
+        });
+
+        it('persistSearchChatTurn receives the request conversationId when provided (subsequent turn)', async () => {
+            const EXISTING_CONV_ID = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+            nextPersistPromise.current = Promise.resolve({ conversationId: EXISTING_CONV_ID });
+
+            const { persistSearchChatTurn } = await import(
+                '../../../src/routes/ai/protected/search-chat.persistence'
+            );
+
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({ conversationId: EXISTING_CONV_ID })
+            });
+
+            expect(res.status).toBe(200);
+            await readSseFrames(res);
+
+            expect(vi.mocked(persistSearchChatTurn)).toHaveBeenCalledWith(
+                expect.objectContaining({ conversationId: EXISTING_CONV_ID })
+            );
+        });
+
+        it('done frame carries the persisted conversationId when persistence succeeds', async () => {
+            const PERSISTED_ID = 'ffffffff-ffff-4fff-8fff-ffffffffffff';
+            nextPersistPromise.current = Promise.resolve({ conversationId: PERSISTED_ID });
+
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody()
+            });
+
+            expect(res.status).toBe(200);
+
+            const frames = await readSseFrames(res);
+            const donePayload = JSON.parse(
+                frames.find((f) => f.event === 'done')?.data ?? '{}'
+            ) as { conversationId: string | null };
+
+            expect(donePayload.conversationId).toBe(PERSISTED_ID);
+        });
+
+        it('non-fatal: stream still emits filters + tokens + done(conversationId:null) when persistence rejects', async () => {
+            nextPersistPromise.current = Promise.reject(new Error('db connection lost'));
+            nextStreamDeltas.current = ['Encontré', ' opciones.'];
+
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody()
+            });
+
+            // The HTTP response must still be 200 (stream started before persistence)
+            expect(res.status).toBe(200);
+
+            const frames = await readSseFrames(res);
+
+            // filters + token frames must be present (stream was not broken)
+            expect(frames.filter((f) => f.event === 'filters')).toHaveLength(1);
+            expect(frames.filter((f) => f.event === 'token').length).toBeGreaterThanOrEqual(1);
+
+            // done frame must be present with conversationId: null
+            const doneFrames = frames.filter((f) => f.event === 'done');
+            expect(doneFrames).toHaveLength(1);
+            const donePayload = JSON.parse(doneFrames[0]?.data ?? '{}') as {
+                conversationId: string | null;
+            };
+            expect(donePayload.conversationId).toBeNull();
+
+            // The failure must have been logged via apiLogger.error (non-fatal signal)
+            expect(mockApiLogger.error).toHaveBeenCalledTimes(1);
+        });
+
+        it('non-fatal: stream still emits done(conversationId:null) when persistence times out (never resolves)', async () => {
+            // A promise that never resolves simulates a persistence call that exceeds
+            // the 1500 ms race timeout. The real setTimeout fires after 1500 ms and
+            // the race resolves to null. This test waits for the full timeout.
+            nextPersistPromise.current = new Promise<{ conversationId: string }>(() => {
+                // intentionally never resolves
+            });
+
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody()
+            });
+
+            expect(res.status).toBe(200);
+
+            const frames = await readSseFrames(res);
+            const doneFrames = frames.filter((f) => f.event === 'done');
+            expect(doneFrames).toHaveLength(1);
+
+            const donePayload = JSON.parse(doneFrames[0]?.data ?? '{}') as {
+                conversationId: string | null;
+            };
+            expect(donePayload.conversationId).toBeNull();
+
+            // Timeout must be logged via apiLogger.warn
+            expect(mockApiLogger.warn).toHaveBeenCalledTimes(1);
+        }, 10_000 /* allow up to 10 s for the 1500 ms timeout to fire */);
     });
 });

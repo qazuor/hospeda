@@ -1,5 +1,5 @@
 /**
- * AI conversational-search streaming route (SPEC-212 T-004 / T-005 / T-006).
+ * AI conversational-search streaming route (SPEC-212 T-004 / T-005 / T-006 / T-007).
  *
  * Mounted at `POST /api/v1/protected/ai/search-chat` by the protected-AI barrel.
  * Serves the multi-turn conversational accommodation search experience.
@@ -19,18 +19,15 @@
  * solely by auth + rate-limit. The USD cost ceiling and metering are enforced
  * inside the AI engine via `createConfiguredAiService()`.
  *
- * ## Handler status (T-006 implemented)
+ * ## Handler status (T-007 implemented)
  *
- * T-006 is now wired: after `generateObject` extracts filters (T-005 prelude),
- * `streamText` streams the natural-language reply as `token` SSE events.
- * The `done` frame carries `{ conversationId }` — currently echoes the
- * request's `conversationId` when provided; T-007 will replace this with the
- * persisted conversation id.
- *
- * Subsequent tasks that remain:
- *
- *   - T-007: conversation persistence (`conversationId` in `done` event becomes
- *     the real persisted id, replacing the echo-back placeholder).
+ * T-007 is now wired: after the `streamText` stream drains, the accumulated
+ * assistant reply is persisted to `aiConversations` / `aiMessages` with
+ * `feature='search'` via `persistSearchChatTurn`. The persistence is
+ * best-effort: it races a 1500 ms timeout. On success the `done` frame carries
+ * the real persisted `conversationId`; on failure or timeout it carries `null`.
+ * Persistence failures are logged via `apiLogger` and swallowed — they MUST
+ * NEVER break the SSE stream or throw out of the handler.
  *
  * @module apps/api/routes/ai/protected/search-chat
  */
@@ -49,17 +46,22 @@ import {
 import { createAiRateLimitMiddlewares } from '../../../middlewares/ai-rate-limit.js';
 import { entitlementMiddleware } from '../../../middlewares/entitlement.js';
 import { createConfiguredAiService } from '../../../services/ai-service.factory.js';
+import { getActorFromContext } from '../../../utils/actor.js';
 import { apiLogger } from '../../../utils/logger.js';
 import {
     type StreamTextChunk,
     createProtectedStreamingRoute
 } from '../../../utils/streaming-route-factory.js';
+import { persistSearchChatTurn } from './search-chat.persistence.js';
 import {
     buildConversationalSearchPrompt,
     buildSearchReplyMessages,
     buildSearchReplySystemPrompt
 } from './search-chat.prompt.js';
 import { mapIntentToSearchParams } from './search-intent.mapper.js';
+
+/** Best-effort persistence timeout (mirrors the chat route — SPEC-200 T-003). */
+const PERSISTENCE_TIMEOUT_MS = 1500;
 
 // ─── Slug → UUID resolution helpers ──────────────────────────────────────────
 
@@ -143,7 +145,7 @@ async function resolveFeatureIds(slugs: readonly string[]): Promise<string[]> {
  *
  * On error: a single `error` frame is emitted and the stream closes (no `done`).
  *
- * ## Handler flow (T-006)
+ * ## Handler flow (T-007)
  *
  * 1. Parse the validated body: messages, optional currentFilters, locale, conversationId.
  * 2. Derive `message` (last user turn) and `history` (all prior messages).
@@ -157,11 +159,15 @@ async function resolveFeatureIds(slugs: readonly string[]): Promise<string[]> {
  *    policy — this OVERRIDES `DEFAULT_PROMPTS['search']` so the model outputs text,
  *    not JSON). Assemble `streamText` messages via `buildSearchReplyMessages`.
  * 9. Call `aiService.streamText` with `feature: 'search'`, the reply messages, and
- *    the locale. Adapt the raw `{ delta }` chunks via an async generator.
- * 10. Return `{ filters, stream, meta }`. The factory emits:
+ *    the locale. Adapt the raw `{ delta }` chunks via an async generator;
+ *    accumulate the full reply text as chunks arrive.
+ * 10. After stream drains, race `persistSearchChatTurn` against 1500 ms.
+ *     On success: `done.conversationId` = persisted id.
+ *     On timeout/failure: `done.conversationId` = null (non-fatal, logged).
+ * 11. Return `{ filters, stream, meta }`. The factory emits:
  *     - `filters` frame (from step 7),
  *     - `token` frames (from the generator in step 9),
- *     - `done` frame with `{ conversationId }` (echoed from request; T-007 persists).
+ *     - `done` frame with `{ conversationId }` (real persisted id, or null).
  */
 export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
     path: '/',
@@ -193,6 +199,7 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
 
         // Step 1: Parse validated body fields.
         const { messages, currentFilters, locale, conversationId } = rawBody;
+        const actor = getActorFromContext(c);
 
         apiLogger.debug(
             {
@@ -303,25 +310,71 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
             locale
         });
 
-        // Adapt the raw engine stream into the `StreamTextChunk` shape the factory
-        // expects. Mirrors the generator in chat.ts — yields each `{ delta }` chunk
-        // unchanged and lets errors propagate so the factory emits an `error` frame.
+        // -----------------------------------------------------------------------
+        // Step 9 (T-006): Adapt the raw engine stream into `StreamTextChunk`
+        // shape. Accumulate the full reply text as chunks arrive so T-007 can
+        // persist the complete assistant message after drain.
+        // Mirrors the generator in chat.ts (accumulatedAssistantText pattern).
+        // -----------------------------------------------------------------------
+        let accumulatedReplyText = '';
+
         const stream: AsyncIterable<StreamTextChunk> = (async function* () {
             for await (const chunk of rawStream) {
+                accumulatedReplyText += chunk.delta;
                 yield chunk;
             }
         })();
 
         // -----------------------------------------------------------------------
-        // Step 9 (T-006/T-007 seam): Resolve `meta` for the `done` frame.
+        // Step 10 (T-007): Persist the turn after the stream drains and resolve
+        // `meta` for the `done` frame.
         //
-        // T-006: echo the request's `conversationId` when present, `null` otherwise.
-        // T-007 will replace this with the real persisted id by awaiting
-        // `persistSearchChatTurn(...)` after the stream drains.
+        // Best-effort contract:
+        //   - Race `persistSearchChatTurn` against a 1500 ms timeout.
+        //   - On success: `done.conversationId` = the persisted id.
+        //   - On timeout: `done.conversationId` = null, warn logged.
+        //   - On rejection: `done.conversationId` = null, error logged.
+        //   - NEVER throws out of this callback — the SSE stream is already
+        //     complete and the `done` frame must always be emitted.
         // -----------------------------------------------------------------------
-        const meta: Promise<{ readonly conversationId: string | null }> = rawMeta.then(() => ({
-            conversationId: conversationId ?? null
-        }));
+        const meta: Promise<{ readonly conversationId: string | null }> = rawMeta.then(
+            async (resolvedMeta) => {
+                let resolvedConversationId: string | null = null;
+
+                try {
+                    const persistPromise = persistSearchChatTurn({
+                        userId: actor.id,
+                        conversationId: conversationId ?? null,
+                        // biome-ignore lint/style/noNonNullAssertion: schema enforces min(1)
+                        userMessage: messages[messages.length - 1]!.content,
+                        assistantMessage: accumulatedReplyText,
+                        meta: resolvedMeta
+                    }).then((result) => result.conversationId);
+
+                    const timeoutPromise = new Promise<null>((resolve) => {
+                        setTimeout(() => resolve(null), PERSISTENCE_TIMEOUT_MS);
+                    });
+
+                    resolvedConversationId = await Promise.race([persistPromise, timeoutPromise]);
+
+                    if (resolvedConversationId === null) {
+                        apiLogger.warn(
+                            { timeoutMs: PERSISTENCE_TIMEOUT_MS },
+                            'search-chat: persistence timed out after 1500 ms (non-fatal)'
+                        );
+                    }
+                } catch (error) {
+                    apiLogger.error(
+                        {
+                            error: error instanceof Error ? error.message : String(error)
+                        },
+                        'search-chat: persistence failed (non-fatal)'
+                    );
+                }
+
+                return { conversationId: resolvedConversationId };
+            }
+        );
 
         return {
             filters: { params, intent: validatedEntities },

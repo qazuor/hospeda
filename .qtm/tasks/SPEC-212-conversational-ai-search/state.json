@@ -238,35 +238,35 @@
             "id": "T-007",
             "title": "Best-effort turn persistence to ai_conversations/ai_messages (feature='search')",
             "description": "Persist the turn best-effort reusing SPEC-200's persistChatTurn pattern with feature='search'. Failure is logged and non-fatal: the turn still emits filters, streams the reply, and returns done. Tests (stub): persistence called with feature='search'; a forced write failure does NOT break the SSE response.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-004", "T-006"],
             "blocks": ["T-014"],
             "subtasks": [
                 {
                     "title": "Reuse persistChatTurn with feature='search'",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Make failure non-fatal (log + continue)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Integration test: write failure is non-fatal",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "ai", "persistence", "core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-11T00:00:00.000Z",
+                "completed": "2026-06-11T00:00:00.000Z"
             }
         },
         {
@@ -657,9 +657,9 @@
     ],
     "summary": {
         "total": 18,
-        "pending": 12,
+        "pending": 11,
         "inProgress": 0,
-        "completed": 6,
+        "completed": 7,
         "blocked": 0,
         "averageComplexity": 2.4
     }

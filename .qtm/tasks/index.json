@@ -375,10 +375,10 @@
             "specId": "SPEC-212",
             "title": "Conversational AI Accommodation Search",
             "status": "in-progress",
-            "progress": "6/18",
+            "progress": "7/18",
             "path": "SPEC-212-conversational-ai-search",
             "archived": false,
-            "note": "API core nearly done: T-001..T-006. T-006 wired streamText reply (own caller-wins system prompt, no JSON leak) -> token frames -> done{conversationId echoed}. Only T-007 (persistence) left in core. Next: T-007, then web track T-008."
+            "note": "API CORE COMPLETE (T-001..T-007). T-007 added best-effort persistence (feature=search) by SHARING SPEC-200 persistence: refactored ai-chat-persistence.ts into generic persistConversationTurn + persistChatTurn wrapper; new search-chat.persistence.ts. done.conversationId now real (or null on failure/timeout, non-fatal). Next: WEB track T-008 (SSE client)."
         }
     ],
     "standalone": {
