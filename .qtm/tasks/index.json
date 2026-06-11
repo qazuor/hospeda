@@ -381,8 +381,8 @@
         {
             "specId": "SPEC-214",
             "title": "Editable AI prompt rules (DB-backed, per feature)",
-            "status": "pending",
-            "progress": "0/0",
+            "status": "in-progress",
+            "progress": "6/12",
             "path": "SPEC-214-ai-prompt-rules-editable"
         },
         {
