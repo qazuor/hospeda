@@ -53,10 +53,10 @@ export const protectedCreateAccommodationReviewRoute = createProtectedRoute({
         return result.data;
     },
     options: {
-        // SPEC-145 T-005: WRITE_REVIEWS gate — granted on all tourist plans
-        // (tourist-free, tourist-plus, tourist-vip) and NOT on owner/complex plans.
-        // Free tourists can write reviews; unauthenticated access is blocked by
-        // the existing auth middleware upstream.
+        // SPEC-145 T-005 / SPEC-216: WRITE_REVIEWS gate — granted on all tourist
+        // plans (tourist-free, tourist-plus, tourist-vip) and on all owner/complex
+        // plans (via tourist-VIP entitlement inheritance, SPEC-216). Free tourists
+        // and owners can write reviews; unauthenticated access is blocked upstream.
         middlewares: [requireEntitlement(EntitlementKey.WRITE_REVIEWS)]
     }
 });

@@ -42,8 +42,9 @@ import { hasEntitlement } from './entitlement';
  *
  * Plans that include `SAVE_FAVORITES` (per `plans.config.ts`):
  *   - tourist-free, tourist-plus, tourist-vip
- *   - (HOST / CLIENT_MANAGER roles do NOT include this entitlement,
- *     so bookmarking from those roles will 403 here — by design)
+ *   - all owner/complex plans (inherit the tourist-VIP entitlement set, SPEC-216)
+ *   - (Pure HOST / CLIENT_MANAGER roles with no active billing plan still 403 here
+ *     because staff-bypass is handled separately via the unlimited set — see below)
  *
  * Refactored as part of SPEC-143 #25, mirroring the pattern shipped on
  * gateRichDescription (PR #1250) and gateVideoEmbed: throw
