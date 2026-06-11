@@ -901,6 +901,17 @@
             "base": "staging",
             "priority": "P1",
             "archived": false
+        },
+        {
+            "specId": "SPEC-217",
+            "title": "Deterministic Billing for E2E — wire the QZPay test-control adapter for fault injection and produce real terminal subscription states so the gated paywall specs run in CI",
+            "type": "test",
+            "status": "draft",
+            "complexity": "high",
+            "path": "SPEC-217-qzpay-test-control-e2e-wiring",
+            "base": "staging",
+            "priority": "P1",
+            "archived": false
         }
     ]
 }

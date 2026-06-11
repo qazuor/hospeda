@@ -1,0 +1,291 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-217",
+    "title": "Deterministic Billing for E2E — QZPay test-control wiring + date-aware publish gate",
+    "created": "2026-06-11T00:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Document the entitlement middleware 6h cron-lag grace and decide the shared is-sub-live predicate shape",
+            "description": "Investigation only, no production code. Locate the entitlement middleware's existing cron-lag grace check and the BILLING_CRON_LAG_GRACE_HOURS=6 constant (apps/api/src/middlewares/entitlement.ts + docs/billing/grace-period-source-of-truth.md). Decide the signature/location of a shared isSubscriptionLive(status, trialEnd, currentPeriodEnd, graceHours) predicate to be reused by both the middleware and checkEligibility (single source of truth). Output: a short design note in the spec docs dir. No tests (no code).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-003"],
+            "subtasks": [
+                { "title": "Locate middleware grace check + grace constant", "completed": false },
+                { "title": "Decide shared predicate signature + home package", "completed": false },
+                { "title": "Write design note", "completed": false }
+            ],
+            "tags": ["billing", "entitlements", "investigation"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-11T00:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-002",
+            "title": "Map ControllableOperation enum to QZPay adapter methods",
+            "description": "Investigation only, no production code. Read @qazuor/qzpay-core and packages/billing/src/adapters/qzpay-test-control.ts to build the exact mapping from each ControllableOperation enum value (startTrial, cancelTrial, updateSubscription, etc.) to the real adapter method that createMercadoPagoAdapter() exposes. Document the map (table) for T-006 to consume. No tests (no code).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-006"],
+            "subtasks": [
+                { "title": "List ControllableOperation enum values", "completed": false },
+                { "title": "Trace each to the qzpay-core adapter method", "completed": false },
+                { "title": "Record the mapping table", "completed": false }
+            ],
+            "tags": ["billing", "qzpay", "test-control", "investigation"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-11T00:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-003",
+            "title": "Extract shared isSubscriptionLive(status, dates, grace) predicate",
+            "description": "Create a single helper that decides whether a subscription counts as live: status IN (active,trialing) AND the relevant expiry date (trial_end for trialing, current_period_end for active) is not past beyond the reused BILLING_CRON_LAG_GRACE_HOURS=6 grace. Place it where both the entitlement middleware and service-core can import it (per T-001 decision). UNIT TESTS REQUIRED: cover active/trialing/cancelled/past_due × within-grace / past-grace / null-date / no-date. Test file colocated with the helper (e.g. packages/.../__tests__/is-subscription-live.test.ts).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-004", "T-005"],
+            "subtasks": [
+                { "title": "Implement predicate reusing the 6h grace constant", "completed": false },
+                { "title": "Unit tests for status × date × grace matrix", "completed": false }
+            ],
+            "tags": ["billing", "entitlements", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-11T00:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-004",
+            "title": "Make checkEligibility date-aware via the shared predicate",
+            "description": "Change checkEligibility (packages/service-core/src/services/accommodation/accommodation-publish-deps.ts:90-93) to use isSubscriptionLive instead of the status-only check, so an expired-trial / lapsed host (date past 6h grace) returns subscription_required. UNIT TESTS REQUIRED: trialing within grace -> has_active_sub; trialing past trial_end+6h -> subscription_required; active past current_period_end+6h -> subscription_required; active within grace -> has_active_sub. Closes the production gap (G4).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-008", "T-009"],
+            "subtasks": [
+                { "title": "Swap status-only check for shared predicate", "completed": false },
+                { "title": "Unit tests for the date-aware gate", "completed": false }
+            ],
+            "tags": ["billing", "service-core", "core", "security"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-11T00:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-005",
+            "title": "Refactor entitlement middleware grace to use the shared predicate",
+            "description": "Replace the entitlement middleware's inline cron-lag grace logic with the shared isSubscriptionLive predicate, so there is exactly one definition of subscription liveness. Behavior MUST be unchanged for active subs. UNIT TESTS REQUIRED: regression that the middleware's active-sub grace behavior is identical before/after (active within 6h grace still live, past grace not). No new behavior.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Swap inline grace for shared predicate", "completed": false },
+                { "title": "Regression test: middleware grace unchanged", "completed": false }
+            ],
+            "tags": ["billing", "entitlements", "core", "refactor"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-11T00:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-006",
+            "title": "Wire applyTestControl into the MercadoPago adapter",
+            "description": "In packages/billing/src/adapters/mercadopago.ts, wrap the adapter returned by createMercadoPagoAdapter() so each ControllableOperation method (per T-002 map) routes through applyTestControl(operation, args, () => realAdapter.method(args)). MUST be a no-op (zero overhead, original adapter returned unwrapped) when isTestControlEnabled() is false. UNIT TESTS REQUIRED: for each ControllableOperation, queue a failNext and assert the wrapped method throws/intercepts; assert the no-op path is bypassed when the flag is off. Test file in packages/billing/src/adapters/__tests__/.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-011", "T-012", "T-013"],
+            "subtasks": [
+                { "title": "Wrap adapter methods through applyTestControl", "completed": false },
+                { "title": "Guard wrap behind isTestControlEnabled() (no-op when off)", "completed": false },
+                { "title": "Unit tests per operation + no-op path", "completed": false }
+            ],
+            "tags": ["billing", "qzpay", "test-control", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-11T00:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-007",
+            "title": "Enable HOSPEDA_QZPAY_TEST_CONTROL_ENABLED in e2e-pr.yml",
+            "description": "Add HOSPEDA_QZPAY_TEST_CONTROL_ENABLED: 'true' to the env block of .github/workflows/e2e-pr.yml so the qzpay-control route mounts and Group B fault-injection specs run in the PR P0 suite (OQ-3 decision). One-line change. Verification: the value appears in the workflow env; Group B specs no longer self-skip on 404 once T-006 lands.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-011", "T-012", "T-013"],
+            "subtasks": [
+                { "title": "Add env var to e2e-pr.yml", "completed": false }
+            ],
+            "tags": ["ci", "test-control", "integration"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-11T00:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-008",
+            "title": "Un-gate host-04 and host-07b and verify they pass vs the date-aware gate",
+            "description": "Remove the env-flag test.fixme guard from host-04-cancellation-grace and host-07b-subscription-required. They already set status='cancelled' directly, so the date-aware checkEligibility (T-004) blocks them deterministically. Verify both specs pass un-gated locally (PATCH ACTIVE -> 403, accommodation stays DRAFT). E2E specs ARE the tests (AC-1.2, AC-1.3). If either does not pass, diagnose before forcing.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                { "title": "Remove env guard from host-04 + host-07b", "completed": false },
+                { "title": "Run both specs un-gated, confirm 403 + DRAFT", "completed": false }
+            ],
+            "tags": ["e2e", "billing", "testing"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-11T00:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-009",
+            "title": "Fix forceTrialExpired and un-gate host-03 (trial-expired blocks writes)",
+            "description": "Ensure forceTrialExpired (apps/e2e/fixtures/db-helpers.ts:122) backdates trial_end and current_period_end beyond the 6h grace while keeping status='trialing' (the cron-lag-window state). Remove host-03's env-flag test.fixme guard. With the date-aware gate (T-004), the publish PATCH must now return 403 and the accommodation stays DRAFT, while reads still work. E2E spec IS the test (AC-1.1). Verify locally.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-010", "T-014"],
+            "subtasks": [
+                { "title": "Confirm/adjust forceTrialExpired backdates beyond grace, keeps trialing", "completed": false },
+                { "title": "Remove env guard from host-03", "completed": false },
+                { "title": "Run host-03 un-gated, confirm 403 + DRAFT + reads OK", "completed": false }
+            ],
+            "tags": ["e2e", "billing", "testing"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-11T00:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-010",
+            "title": "Assert e2e helper terminal statuses match cron output",
+            "description": "Add a guard (unit or e2e assertion, AC-1.4) that the terminal subscription statuses produced by the Group A helpers match what production crons write: trial-expiry -> 'cancelled' (via cancel()), finalize-cancelled-subs -> 'cancelled'. Prevents the helpers from validating a fictional status the system never produces. TEST REQUIRED: assert helper target status is in the cron's documented output set.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-009"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Enumerate cron terminal statuses", "completed": false },
+                { "title": "Assertion that helper statuses match", "completed": false }
+            ],
+            "tags": ["e2e", "billing", "testing"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-11T00:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-011",
+            "title": "Un-skip host-07c (startTrial timeout safety)",
+            "description": "Relax the test.fixme/404 self-skip in host-07c-qzpay-timeout now that T-006 wires fault injection and T-007 enables the flag. Verify: failNext(startTrial, TIMEOUT) -> publish PATCH returns 5xx, accommodation stays DRAFT, no billing_subscriptions row created (AC-2.1). E2E spec IS the test.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-006", "T-007"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                { "title": "Relax skip guard", "completed": false },
+                { "title": "Verify 5xx + DRAFT + no sub row", "completed": false }
+            ],
+            "tags": ["e2e", "billing", "resilience", "testing"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-11T00:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-012",
+            "title": "Un-skip host-07d (tx compensation)",
+            "description": "Relax the self-skip in host-07d-tx-compensation. Verify: failNext(updateSubscription) -> cancelTrial recorded as compensation (AC-2.2). E2E spec IS the test.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-006", "T-007"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                { "title": "Relax skip guard", "completed": false },
+                { "title": "Verify cancelTrial compensation recorded", "completed": false }
+            ],
+            "tags": ["e2e", "billing", "resilience", "testing"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-11T00:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-013",
+            "title": "Un-skip res-01 (api-down checkout retry)",
+            "description": "Relax the self-skip in res-01-api-down-checkout. Verify: first publish 5xx with no sub row, then retry with no fault queued succeeds and the sub is created (AC-2.3). E2E spec IS the test.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-006", "T-007"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                { "title": "Relax skip guard", "completed": false },
+                { "title": "Verify 5xx-no-sub then retry-succeeds", "completed": false }
+            ],
+            "tags": ["e2e", "billing", "resilience", "testing"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-11T00:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-014",
+            "title": "Rewrite skip comments and messages to reflect the real mechanism",
+            "description": "US-3 honest gating. Across all six specs, remove the incorrect 'entitlement middleware draft-defaults grants writes' mental model from comments/messages. State the real precondition where a guard remains (Group A: gated on the date-aware publish gate, no flag; Group B: fault injection requires test-control adapter wired + flag). AC-3.1, AC-3.2. Docs-only change to test files.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-008", "T-009", "T-011", "T-012", "T-013"],
+            "blocks": ["T-015"],
+            "subtasks": [
+                { "title": "Rewrite Group A comments (host-03/04/07b)", "completed": false },
+                { "title": "Rewrite Group B comments (host-07c/07d/res-01)", "completed": false }
+            ],
+            "tags": ["e2e", "docs", "cleanup"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-11T00:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-015",
+            "title": "Add a no-silent-skip regression guard",
+            "description": "Add a CI/lint check or meta-test that fails if any of the six target specs (host-03/04/07b/07c/07d, res-01) is reintroduced as test.fixme/test.skip without an explicit documented precondition annotation. Prevents silent regression back to skipped. TEST REQUIRED: the guard itself fails on a planted skip and passes on the current state.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-014"],
+            "blocks": ["T-016"],
+            "subtasks": [
+                { "title": "Implement the guard (lint rule or meta-test)", "completed": false },
+                { "title": "Self-test: fails on planted skip, passes otherwise", "completed": false }
+            ],
+            "tags": ["e2e", "ci", "cleanup"],
+            "phase": "cleanup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-11T00:00:00.000Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-016",
+            "title": "Soak: 3 consecutive green PR P0 runs",
+            "description": "Run the PR P0 suite three times and confirm the six newly un-skipped specs pass with zero flakiness (especially the Group B fault-injection specs). Record the run IDs/results in the spec docs. If any flake, diagnose; if Group B proves flaky, fall back to moving it to nightly (documented fallback). Final verification gate for the spec.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-015"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "3 green PR P0 runs", "completed": false },
+                { "title": "Record results / handle flakes", "completed": false }
+            ],
+            "tags": ["e2e", "ci", "testing"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-11T00:00:00.000Z", "started": null, "completed": null }
+        }
+    ],
+    "summary": {
+        "total": 16,
+        "pending": 16,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 2.1
+    }
+}
