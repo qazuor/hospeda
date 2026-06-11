@@ -1153,6 +1153,23 @@
         "polish"
       ],
       "archived": false
+    },
+    {
+      "specId": "SPEC-214",
+      "title": "Editable AI prompt rules (DB-backed, per feature)",
+      "type": "feature",
+      "complexity": "medium",
+      "status": "approved",
+      "path": "SPEC-214-ai-prompt-rules-editable",
+      "created": "2026-06-10T21:35:00Z",
+      "tags": [
+        "ai",
+        "ai-core",
+        "admin",
+        "prompts",
+        "db-migration"
+      ],
+      "archived": false
     }
   ]
 }
