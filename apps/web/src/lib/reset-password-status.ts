@@ -38,7 +38,7 @@ export type ResetPasswordChecker = (params: {
  * spy or omit it entirely.
  */
 export type ResetPasswordStatusLogger = {
-    readonly warn: (...args: ReadonlyArray<unknown>) => void;
+    readonly warn: (message: string, data?: unknown) => void;
 };
 
 /**

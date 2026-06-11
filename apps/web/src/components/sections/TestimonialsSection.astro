@@ -32,7 +32,7 @@ let reviews: ReviewCardData[] = [];
 try {
     const result = await testimonialsApi.list({ pageSize: 20 });
     if (result.ok) {
-        reviews = result.data.items.map((raw) => toTestimonialCardProps({ item: raw as Record<string, unknown> }));
+        reviews = result.data.items.map((raw) => toTestimonialCardProps({ item: raw as unknown as Record<string, unknown> }));
     }
 } catch (err) {
     webLogger.error('API fetch failed', { endpoint: 'testimonials', error: err instanceof Error ? err.message : err });

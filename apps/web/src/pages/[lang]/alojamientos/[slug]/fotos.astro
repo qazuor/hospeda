@@ -83,15 +83,17 @@ const galleryEntries = accommodation.media.galleryItems.length > 0
     : accommodation.media.images.map((url) => ({ url }));
 for (const entry of galleryEntries) {
     if (entry.url !== accommodation.featuredImage) {
+        const caption = 'caption' in entry ? entry.caption : undefined;
+        const description = 'description' in entry ? entry.description : undefined;
         galleryItems.push({
             type: 'image',
             src: entry.url,
             thumb: entry.url,
             // Grid thumbnail: c_fill 4:3 crop via galleryHalf preset.
             thumbGrid: getMediaUrl(entry.url, { preset: 'galleryHalf' }),
-            alt: entry.caption ?? accommodation.name,
-            caption: entry.caption,
-            description: entry.description
+            alt: caption ?? accommodation.name,
+            caption,
+            description
         });
     }
 }
@@ -169,7 +171,7 @@ const jsonLd = {
                         data-gallery="accommodation-gallery"
                         data-title={item.caption ?? undefined}
                         data-description={item.description ?? undefined}
-                        aria-label={t('accommodations.detail.gallery.viewFullscreen', { n: i + 1 })}
+                        aria-label={t('accommodations.detail.gallery.viewFullscreen', undefined, { n: i + 1 })}
                         class="fotos__link"
                     >
                         <img
