@@ -8,37 +8,39 @@
             "id": "T-001",
             "title": "Document the entitlement middleware 6h cron-lag grace and decide the shared is-sub-live predicate shape",
             "description": "Investigation only, no production code. Locate the entitlement middleware's existing cron-lag grace check and the BILLING_CRON_LAG_GRACE_HOURS=6 constant (apps/api/src/middlewares/entitlement.ts + docs/billing/grace-period-source-of-truth.md). Decide the signature/location of a shared isSubscriptionLive(status, trialEnd, currentPeriodEnd, graceHours) predicate to be reused by both the middleware and checkEligibility (single source of truth). Output: a short design note in the spec docs dir. No tests (no code).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-003"],
             "subtasks": [
-                { "title": "Locate middleware grace check + grace constant", "completed": false },
-                { "title": "Decide shared predicate signature + home package", "completed": false },
-                { "title": "Write design note", "completed": false }
+                { "title": "Locate middleware grace check + grace constant", "completed": true },
+                { "title": "Decide shared predicate signature + home package", "completed": true },
+                { "title": "Write design note", "completed": true }
             ],
             "tags": ["billing", "entitlements", "investigation"],
             "phase": "setup",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-11T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": { "created": "2026-06-11T00:00:00.000Z", "started": "2026-06-11T00:00:00.000Z", "completed": "2026-06-11T00:00:00.000Z" },
+            "resultRef": "docs/T-001-shared-predicate-design.md"
         },
         {
             "id": "T-002",
             "title": "Map ControllableOperation enum to QZPay adapter methods",
             "description": "Investigation only, no production code. Read @qazuor/qzpay-core and packages/billing/src/adapters/qzpay-test-control.ts to build the exact mapping from each ControllableOperation enum value (startTrial, cancelTrial, updateSubscription, etc.) to the real adapter method that createMercadoPagoAdapter() exposes. Document the map (table) for T-006 to consume. No tests (no code).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-006"],
             "subtasks": [
-                { "title": "List ControllableOperation enum values", "completed": false },
-                { "title": "Trace each to the qzpay-core adapter method", "completed": false },
-                { "title": "Record the mapping table", "completed": false }
+                { "title": "List ControllableOperation enum values", "completed": true },
+                { "title": "Trace each to the qzpay-core adapter method", "completed": true },
+                { "title": "Record the mapping table", "completed": true }
             ],
             "tags": ["billing", "qzpay", "test-control", "investigation"],
             "phase": "setup",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-11T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": { "created": "2026-06-11T00:00:00.000Z", "started": "2026-06-11T00:00:00.000Z", "completed": "2026-06-11T00:00:00.000Z" },
+            "resultRef": "docs/T-002-operation-method-map.md"
         },
         {
             "id": "T-003",
@@ -60,7 +62,7 @@
         {
             "id": "T-004",
             "title": "Make checkEligibility date-aware via the shared predicate",
-            "description": "Change checkEligibility (packages/service-core/src/services/accommodation/accommodation-publish-deps.ts:90-93) to use isSubscriptionLive instead of the status-only check, so an expired-trial / lapsed host (date past 6h grace) returns subscription_required. UNIT TESTS REQUIRED: trialing within grace -> has_active_sub; trialing past trial_end+6h -> subscription_required; active past current_period_end+6h -> subscription_required; active within grace -> has_active_sub. Closes the production gap (G4).",
+            "description": "Change checkEligibility (apps/api/src/services/accommodation-publish-deps.ts:71-94 — NOT service-core, see T-001 note) to use isSubscriptionLive instead of the status-only check, so an expired-trial / lapsed host (date past 6h grace) returns subscription_required. UNIT TESTS REQUIRED: trialing within grace -> has_active_sub; trialing past trial_end+6h -> subscription_required; active past current_period_end+6h -> subscription_required; active within grace -> has_active_sub. Closes the production gap (G4).",
             "status": "pending",
             "complexity": 2,
             "blockedBy": ["T-003"],
@@ -282,9 +284,9 @@
     ],
     "summary": {
         "total": 16,
-        "pending": 16,
+        "pending": 14,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 2,
         "blocked": 0,
         "averageComplexity": 2.1
     }
