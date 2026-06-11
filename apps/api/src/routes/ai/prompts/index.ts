@@ -115,6 +115,7 @@ const createPromptRoute = createAdminRoute({
             feature: parsed.feature as AiFeature,
             content: parsed.content,
             isActive: parsed.isActive,
+            rules: parsed.rules,
             actorId: actor.id
         });
 

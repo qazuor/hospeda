@@ -48,6 +48,7 @@
  */
 
 import {
+    composeSystemPrompt,
     getMonthlyCallCount,
     recordAiUsage,
     resolveFeatureConfig,
@@ -316,7 +317,8 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
             });
         }
 
-        const { content: resolvedPrompt } = await resolveSystemPrompt({ feature: FEATURE });
+        const { content, rules } = await resolveSystemPrompt({ feature: FEATURE });
+        const resolvedPrompt = composeSystemPrompt({ content, rules });
         const { contextBlock, systemMessage } = await assembleAccommodationContext({
             actor,
             accommodationId: body.accommodationId,
