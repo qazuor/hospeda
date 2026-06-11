@@ -451,6 +451,9 @@
         "can_compare_accommodations": "Compare accommodations",
         "can_attach_review_photos": "Upload photos in reviews",
         "can_view_search_history": "View search history",
-        "can_view_recommendations": "Personalized recommendations"
+        "can_view_recommendations": "Personalized recommendations",
+        "ai_text_improve": "AI writing assistant",
+        "ai_chat": "Ask about the accommodation (AI)",
+        "ai_search": "Smart search"
     }
 }
