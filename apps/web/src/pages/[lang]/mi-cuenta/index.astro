@@ -17,6 +17,7 @@
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { isHostRole } from '@/lib/account-roles';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountStatsGrid from '@/components/account/AccountStatsGrid.astro';
 import AccountSectionCards from '@/components/account/AccountSectionCards.astro';
@@ -24,7 +25,9 @@ import {
     UserIcon,
     SettingsIcon,
     ChatIcon,
-    NewsletterIcon
+    NewsletterIcon,
+    BuildingIcon,
+    DashboardIcon,
 } from '@repo/icons';
 
 // Locale is injected by middleware — always a valid SupportedLocale.
@@ -46,6 +49,9 @@ const description = t(
 const greeting = t('account.pages.dashboard.greeting', 'Hola');
 const dashboardLabel = t('account.pages.dashboard.dashboardLabel', 'Panel de control');
 
+// Determine host role for conditional sections.
+const isHost = isHostRole(user.role ?? null);
+
 // Generate user initials (up to 2 characters) for the avatar placeholder.
 const initials = user.name
     .split(' ')
@@ -59,7 +65,30 @@ const initials = user.name
 // cards directly above with the same link. Listing them in both
 // places duplicated the navigation entry and made the dashboard feel
 // cluttered. Keep this grid for items the stats row does NOT cover.
+// Host roles get two extra cards prepended (properties + host dashboard).
 const navItems = [
+    ...(isHost
+        ? [
+              {
+                  label: t('account.pages.dashboard.nav.myProperties', 'Mis propiedades'),
+                  href: buildUrl({ locale, path: 'mi-cuenta/propiedades' }),
+                  description: t(
+                      'account.pages.dashboard.nav.myPropertiesDesc',
+                      'Gestioná tus alojamientos publicados'
+                  ),
+                  Icon: BuildingIcon,
+              },
+              {
+                  label: t('account.pages.dashboard.nav.hostDashboard', 'Panel del anfitrión'),
+                  href: buildUrl({ locale, path: 'mi-cuenta/host-dashboard' }),
+                  description: t(
+                      'account.pages.dashboard.nav.hostDashboardDesc',
+                      'Resumen de tu actividad como anfitrión'
+                  ),
+                  Icon: DashboardIcon,
+              },
+          ]
+        : []),
     {
         label: t('account.pages.dashboard.nav.editProfile', 'Editar perfil'),
         href: buildUrl({ locale, path: 'mi-cuenta/editar' }),
@@ -67,7 +96,7 @@ const navItems = [
             'account.pages.dashboard.nav.editProfileDesc',
             'Actualizá tu información personal y foto de perfil'
         ),
-        Icon: UserIcon
+        Icon: UserIcon,
     },
     {
         label: t('account.pages.dashboard.nav.myMessages', 'Mis consultas'),
@@ -76,7 +105,7 @@ const navItems = [
             'account.pages.dashboard.nav.myMessagesDesc',
             'Conversaciones con anfitriones'
         ),
-        Icon: ChatIcon
+        Icon: ChatIcon,
     },
     {
         label: t('account.pages.dashboard.nav.preferences', 'Preferencias'),
@@ -85,7 +114,7 @@ const navItems = [
             'account.pages.dashboard.nav.preferencesDesc',
             'Configurá notificaciones, idioma y privacidad'
         ),
-        Icon: SettingsIcon
+        Icon: SettingsIcon,
     },
     {
         label: t('account.pages.dashboard.nav.newsletter', 'Boletín de novedades'),
@@ -94,9 +123,9 @@ const navItems = [
             'account.pages.dashboard.nav.newsletterDesc',
             'Gestioná tu suscripción al boletín'
         ),
-        Icon: NewsletterIcon
-    }
-] as const;
+        Icon: NewsletterIcon,
+    },
+];
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 ---
@@ -144,7 +173,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
         <h2 class="account__section-title">{dashboardLabel}</h2>
 
         <!-- Stat cards row -->
-        <AccountStatsGrid locale={locale} />
+        <AccountStatsGrid locale={locale} isHost={isHost} />
 
         <!-- Navigation cards grid (secondary) -->
         <AccountSectionCards locale={locale} navItems={navItems} />
@@ -446,15 +475,39 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
      * Runs client-side to avoid SSR cookie-forwarding complexity.
      * Falls back gracefully — default zeros are already rendered server-side.
      */
+    /**
+     * Clears the `stat-value--loading` shimmer from a list of element IDs.
+     * Mirrors the defensive cleanup used throughout this script.
+     */
+    function clearLoadingState(ids: readonly string[]): void {
+        for (const id of ids) {
+            document.getElementById(id)?.classList.remove('stat-value--loading');
+        }
+    }
+
     async function loadStats(): Promise<void> {
         const base = `${getApiUrl()}/api/v1/protected`;
 
-        try {
-            const [statsRes, reviewsRes] = await Promise.all([
-                fetch(`${base}/users/me/stats`, { credentials: 'include' }),
-                fetch(`${base}/users/me/reviews?pageSize=1`, { credentials: 'include' })
-            ]);
+        // Detect view mode from the DOM: host view renders stat-properties;
+        // tourist view renders stat-favorites/stat-reviews.
+        const isHostView = document.getElementById('stat-properties') !== null;
 
+        try {
+            // /users/me/stats feeds the subscription widget for BOTH roles.
+            // Reviews are only fetched when the tourist view is active (the
+            // stat-reviews element exists), avoiding a needless request for hosts.
+            const fetchPromises: Array<Promise<Response>> = [
+                fetch(`${base}/users/me/stats`, { credentials: 'include' }),
+            ];
+            if (!isHostView) {
+                fetchPromises.push(
+                    fetch(`${base}/users/me/reviews?pageSize=1`, { credentials: 'include' })
+                );
+            }
+
+            const [statsRes, reviewsRes] = await Promise.all(fetchPromises);
+
+            // ── Subscription widget (common to both views) ──────────────────
             if (statsRes.ok) {
                 const statsData = (await statsRes.json()) as {
                     data?: {
@@ -463,6 +516,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
                     };
                 };
 
+                // Tourist-only: favorites counter.
                 const favEl = document.getElementById('stat-favorites');
                 if (favEl && statsData.data?.bookmarkCount !== undefined) {
                     favEl.textContent = String(statsData.data.bookmarkCount);
@@ -470,37 +524,39 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
                 }
 
                 const subEl = document.getElementById('stat-subscription');
+                const statusEl = document.getElementById('stat-subscription-status');
+                const planName = statsData.data?.plan?.name;
+                const planStatus = statsData.data?.plan?.status;
+
                 if (subEl) {
                     // BETA-32: free-tier users have `plan: null`. The old guard
                     // (`if plan?.name`) never cleared the shimmer for them, so the
                     // widget span loaded forever. Always clear on a successful
                     // fetch — show the plan name, or the "free" label otherwise.
-                    const planName = statsData.data?.plan?.name;
                     if (planName) {
                         subEl.textContent = planName;
                     } else {
-                        const freeLabel = document
-                            .getElementById('stat-subscription-status')
-                            ?.getAttribute('data-label-free');
-                        subEl.textContent = freeLabel ?? 'Gratuito';
+                        subEl.textContent = subEl.getAttribute('data-label-free') ?? 'Gratuito';
                     }
                     subEl.classList.remove('stat-value--loading');
                 }
 
-                const statusEl = document.getElementById('stat-subscription-status');
                 if (statusEl) {
-                    const plan = statsData.data?.plan;
-                    if (plan?.status) {
-                        const label = statusEl.getAttribute(`data-label-${plan.status}`);
+                    if (planStatus) {
+                        const label = statusEl.getAttribute(`data-label-${planStatus}`);
                         if (label) statusEl.textContent = label;
                     } else {
-                        const freeLabel = statusEl.getAttribute('data-label-free');
-                        if (freeLabel) statusEl.textContent = freeLabel;
+                        // Free tier: the value line already reads "Plan Gratuito".
+                        // Hide the status line instead of repeating the same label
+                        // on both rows (was duplicated as "Plan Gratuito" twice).
+                        statusEl.textContent = '';
+                        statusEl.hidden = true;
                     }
                 }
             }
 
-            if (reviewsRes.ok) {
+            // ── Tourist view: reviews counter ────────────────────────────────
+            if (!isHostView && reviewsRes?.ok) {
                 const reviewsData = (await reviewsRes.json()) as {
                     data?: { totals?: { total?: number } };
                 };
@@ -515,15 +571,50 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
             // ok-branches above nor the catch below, which used to leave the
             // widgets shimmering forever. Clear any remaining loading state so
             // no stat stays stuck (BETA-32).
-            for (const id of ['stat-favorites', 'stat-reviews', 'stat-subscription']) {
-                document.getElementById(id)?.classList.remove('stat-value--loading');
-            }
+            clearLoadingState(['stat-favorites', 'stat-reviews', 'stat-subscription']);
         } catch (error) {
             console.error('[account] Failed to load stats:', error);
-            // Remove shimmer on error so stats don't stay in loading state forever
-            for (const id of ['stat-favorites', 'stat-reviews', 'stat-subscription']) {
-                document.getElementById(id)?.classList.remove('stat-value--loading');
+            clearLoadingState(['stat-favorites', 'stat-reviews', 'stat-subscription']);
+        }
+
+        // ── Host view: properties + messages counters ────────────────────────
+        // Runs independently of the tourist stats so a failure in one does not
+        // affect the other. Only executes when the host DOM elements exist.
+        if (!isHostView) {
+            return;
+        }
+
+        try {
+            const hostRes = await fetch(`${getApiUrl()}/api/v1/protected/host/dashboard`, {
+                credentials: 'include',
+            });
+
+            if (hostRes.ok) {
+                const hostData = (await hostRes.json()) as {
+                    data?: {
+                        properties?: { total?: number };
+                        unreadConversations?: number;
+                    };
+                };
+
+                const propEl = document.getElementById('stat-properties');
+                if (propEl) {
+                    propEl.textContent = String(hostData.data?.properties?.total ?? 0);
+                    propEl.classList.remove('stat-value--loading');
+                }
+
+                const msgEl = document.getElementById('stat-messages');
+                if (msgEl) {
+                    msgEl.textContent = String(hostData.data?.unreadConversations ?? 0);
+                    msgEl.classList.remove('stat-value--loading');
+                }
+            } else {
+                // Non-2xx: clear shimmer so widgets don't stay stuck.
+                clearLoadingState(['stat-properties', 'stat-messages']);
             }
+        } catch (error) {
+            console.error('[account] Failed to load host dashboard stats:', error);
+            clearLoadingState(['stat-properties', 'stat-messages']);
         }
     }
 

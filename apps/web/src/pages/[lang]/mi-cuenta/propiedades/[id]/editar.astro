@@ -73,8 +73,8 @@ try {
         // Parallel fetch: accommodation detail + amenities + destinations
         const [accomResponse, amenitiesResponse, destinationsResponse] = await Promise.all([
             fetch(`${apiUrl}/api/v1/protected/accommodations/${accommodationId}`, { headers }),
-            fetch(`${apiUrl}/api/v1/public/amenities?pageSize=200`, { headers }),
-            fetch(`${apiUrl}/api/v1/public/destinations?pageSize=200`, { headers })
+            fetch(`${apiUrl}/api/v1/public/amenities?pageSize=100`, { headers }),
+            fetch(`${apiUrl}/api/v1/public/destinations?pageSize=100`, { headers })
         ]);
 
         if (accomResponse.ok) {
@@ -92,12 +92,14 @@ try {
 
             if (Array.isArray(allAmenities)) {
                 amenities = transformAmenityList({
-                    items: allAmenities.map((a) => (a.amenity ?? a) as Record<string, unknown>)
+                    items: allAmenities.map((a) => (a.amenity ?? a) as Record<string, unknown>),
+                    locale
                 });
             }
             if (Array.isArray(allFeatures)) {
                 features = transformAmenityList({
-                    items: allFeatures.map((f) => (f.feature ?? f) as Record<string, unknown>)
+                    items: allFeatures.map((f) => (f.feature ?? f) as Record<string, unknown>),
+                    locale
                 });
             }
         } else if (accomResponse.status === 404 || accomResponse.status === 403) {
@@ -118,6 +120,14 @@ try {
             destinations = transformDestinationList({
                 items: destBody.data?.items ?? []
             });
+            // The public endpoint caps pageSize at 100. If the catalog ever
+            // hits that ceiling the select silently truncates — surface it so
+            // we add cursor pagination before it bites.
+            if (destinations.length >= 100) {
+                logger.warn('editar.astro: destinations list hit the 100-item page cap', {
+                    count: destinations.length
+                });
+            }
         }
 
         // Amenities catalog for the checkbox group (merge with accommodation's selected amenities)
@@ -126,8 +136,15 @@ try {
                 data?: { items?: Record<string, unknown>[] };
             };
             const catalogAmenities = transformAmenityList({
-                items: amenBody.data?.items ?? []
+                items: amenBody.data?.items ?? [],
+                locale
             });
+            // Same 100-item page cap as destinations (see note above).
+            if (catalogAmenities.length >= 100) {
+                logger.warn('editar.astro: amenities catalog hit the 100-item page cap', {
+                    count: catalogAmenities.length
+                });
+            }
             // Merge: prefer catalog items, fall back to accommodation's selected items
             if (amenities.length === 0) {
                 amenities = catalogAmenities;

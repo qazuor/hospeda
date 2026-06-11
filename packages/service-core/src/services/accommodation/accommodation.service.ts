@@ -1507,6 +1507,97 @@ export class AccommodationService extends BaseCrudService<
     }
 
     /**
+     * Transitions an accommodation from `ACTIVE` to `INACTIVE` (paused).
+     *
+     * The accommodation stops appearing on the public site immediately after
+     * unpublishing. It can be reactivated at any time by the owner. This is a
+     * soft pause — the accommodation retains all data, FAQs, media, and settings.
+     *
+     * Permission model mirrors `publish()`:
+     * - The actor must be the owner (`ACCOMMODATION_UPDATE_OWN`) or hold
+     *   `ACCOMMODATION_UPDATE_ANY`.
+     * - Owner-suspended accommodations are also blocked by `checkCanUpdate`.
+     *
+     * @param actor - The actor performing the unpublish action.
+     * @param id    - The accommodation ID to unpublish.
+     * @param ctx   - Optional service context (transaction / hookState).
+     * @returns A `ServiceOutput` containing the updated accommodation, or a
+     *   `ServiceError` on permission / state / update failure.
+     *
+     * @throws {ServiceError} NOT_FOUND    — accommodation does not exist.
+     * @throws {ServiceError} FORBIDDEN    — actor lacks update permission or owner is suspended.
+     * @throws {ServiceError} VALIDATION_ERROR — accommodation is not currently ACTIVE.
+     * @throws {ServiceError} INTERNAL_ERROR — DB update returned nothing.
+     */
+    public async unpublish(
+        actor: Actor,
+        id: string,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<Accommodation>> {
+        return this.runWithLoggingAndValidation({
+            methodName: `unpublish(id=${id})`,
+            input: { actor },
+            schema: z.object({}),
+            ctx,
+            execute: async (_, validatedActor, execCtx) => {
+                const accommodation = await this.model.findById(id, execCtx?.tx);
+                if (!accommodation) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `Accommodation ${id} not found`
+                    );
+                }
+
+                // Reuse checkCanUpdate: verifies ownership OR ACCOMMODATION_UPDATE_ANY,
+                // and blocks edits when ownerSuspended (billing pause).
+                checkCanUpdate(validatedActor, accommodation);
+
+                if (accommodation.lifecycleState !== LifecycleStatusEnum.ACTIVE) {
+                    throw new ServiceError(
+                        ServiceErrorCode.VALIDATION_ERROR,
+                        'Only an active accommodation can be unpublished'
+                    );
+                }
+
+                const updated = await this.model.update(
+                    { id },
+                    {
+                        lifecycleState: LifecycleStatusEnum.INACTIVE,
+                        updatedById: validatedActor.id
+                    },
+                    execCtx?.tx
+                );
+
+                if (!updated) {
+                    throw new ServiceError(
+                        ServiceErrorCode.INTERNAL_ERROR,
+                        'Failed to flip accommodation lifecycleState to INACTIVE'
+                    );
+                }
+
+                const destinationSlug = updated.destinationId
+                    ? await this._resolveDestinationSlug(updated.destinationId)
+                    : undefined;
+                try {
+                    getRevalidationService()?.scheduleRevalidation({
+                        entityType: 'accommodation',
+                        slug: updated.slug,
+                        destinationSlug,
+                        accommodationType: updated.type?.toLowerCase()
+                    });
+                } catch (error) {
+                    this.logger.warn(
+                        { error, entityType: 'accommodation' },
+                        '[accommodation.unpublish] Revalidation scheduling failed (non-blocking)'
+                    );
+                }
+
+                return updated;
+            }
+        });
+    }
+
+    /**
      * Assigns the `HOST` role to a user if they do not already hold a privileged role.
      *
      * Privileged roles that already imply host capabilities (no re-assignment needed):

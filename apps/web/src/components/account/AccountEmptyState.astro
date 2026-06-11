@@ -1,0 +1,112 @@
+---
+/**
+ * @file AccountEmptyState.astro
+ * @description Shared rich empty-state block for account sub-pages (inbox,
+ * messages, etc.). Renders a circular icon, a title, a description and an
+ * optional call-to-action link, matching the empty state used by the reviews
+ * list so every account section degrades to a consistent, friendly empty view
+ * instead of a bare line of text.
+ *
+ * The icon is provided via the named `icon` slot so callers can pass any
+ * `@repo/icons` component, e.g. `<ChatIcon slot="icon" size={28} />`.
+ */
+
+interface Props {
+    /** Bold heading shown under the icon. */
+    readonly title: string;
+    /** Supporting sentence explaining the empty state. */
+    readonly description: string;
+    /** Optional CTA link target. When omitted, no button is rendered. */
+    readonly ctaHref?: string;
+    /** Optional CTA link label. Required for the CTA to render. */
+    readonly ctaLabel?: string;
+}
+
+const { title, description, ctaHref, ctaLabel } = Astro.props;
+const hasCta = Boolean(ctaHref && ctaLabel);
+---
+
+<div class="account-empty">
+    <span class="account-empty__icon" aria-hidden="true">
+        <slot name="icon" />
+    </span>
+    <h3 class="account-empty__title">{title}</h3>
+    <p class="account-empty__text">{description}</p>
+    {
+        hasCta && (
+            <a href={ctaHref} class="account-empty__cta">
+                {ctaLabel}
+            </a>
+        )
+    }
+</div>
+
+<style>
+    .account-empty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: var(--space-3, 0.75rem);
+        padding: var(--space-8, 2.5rem) var(--space-4, 1rem);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-card, 24px);
+        background-color: var(--core-card);
+    }
+
+    .account-empty__icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 3.5rem;
+        height: 3.5rem;
+        border-radius: var(--radius-pill, 9999px);
+        background-color: var(--brand-primary-a08, var(--surface-warm));
+        color: var(--brand-primary);
+        margin-bottom: var(--space-1, 0.25rem);
+    }
+
+    .account-empty__title {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: 1.125rem;
+        color: var(--core-foreground);
+        margin: 0;
+    }
+
+    .account-empty__text {
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        color: var(--core-muted-foreground);
+        margin: 0;
+        max-width: 32rem;
+    }
+
+    .account-empty__cta {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-2, 0.5rem);
+        margin-top: var(--space-2, 0.5rem);
+        padding: var(--space-3, 0.75rem) var(--space-5, 1.25rem);
+        font-family: var(--font-sans);
+        font-weight: 600;
+        font-size: var(--text-body-sm, 0.875rem);
+        color: var(--core-card);
+        background-color: var(--brand-primary);
+        border-radius: var(--radius-button, 8px);
+        text-decoration: none;
+        transition:
+            background-color var(--duration-fast, 0.15s) ease,
+            transform var(--duration-fast, 0.15s) ease;
+    }
+
+    .account-empty__cta:hover {
+        background-color: var(--brand-primary-lm12, var(--brand-primary));
+        transform: translateY(-1px);
+    }
+
+    .account-empty__cta:focus-visible {
+        outline: 2px solid var(--brand-primary);
+        outline-offset: 2px;
+    }
+</style>

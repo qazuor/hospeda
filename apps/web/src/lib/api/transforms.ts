@@ -1335,6 +1335,27 @@ export function transformAccommodationEdit({
         | undefined;
     const featuresArr = item.features as readonly (Record<string, unknown> | string)[] | undefined;
 
+    // Coordinates live under location.coordinates.lat / location.coordinates.long (strings in DB)
+    const locationObj = item.location as
+        | { coordinates?: { lat?: string | number; long?: string | number } }
+        | null
+        | undefined;
+    const coordLat = locationObj?.coordinates?.lat;
+    const coordLong = locationObj?.coordinates?.long;
+    const latitude = coordLat != null && String(coordLat).length > 0 ? Number(coordLat) : null;
+    const longitude = coordLong != null && String(coordLong).length > 0 ? Number(coordLong) : null;
+
+    // Capacity lives under extraInfo (capacity → maxGuests, bedrooms, bathrooms, beds)
+    const extraInfo = item.extraInfo as
+        | {
+              capacity?: number | null;
+              bedrooms?: number | null;
+              bathrooms?: number | null;
+              beds?: number | null;
+          }
+        | null
+        | undefined;
+
     return {
         id: String(item.id ?? ''),
         name: String(item.name ?? ''),
@@ -1342,12 +1363,12 @@ export function transformAccommodationEdit({
         description: String(item.description ?? ''),
         type: String(item.type ?? ''),
         destinationId: String(item.destinationId ?? ''),
-        latitude: item.latitude != null ? Number(item.latitude) : null,
-        longitude: item.longitude != null ? Number(item.longitude) : null,
-        maxGuests: item.maxGuests != null ? Number(item.maxGuests) : null,
-        bedrooms: item.bedrooms != null ? Number(item.bedrooms) : null,
-        bathrooms: item.bathrooms != null ? Number(item.bathrooms) : null,
-        beds: item.beds != null ? Number(item.beds) : null,
+        latitude: Number.isFinite(latitude) ? latitude : null,
+        longitude: Number.isFinite(longitude) ? longitude : null,
+        maxGuests: extraInfo?.capacity != null ? Number(extraInfo.capacity) : null,
+        bedrooms: extraInfo?.bedrooms != null ? Number(extraInfo.bedrooms) : null,
+        bathrooms: extraInfo?.bathrooms != null ? Number(extraInfo.bathrooms) : null,
+        beds: extraInfo?.beds != null ? Number(extraInfo.beds) : null,
         basePrice:
             priceObj?.price != null
                 ? Number(priceObj.price)
@@ -1434,17 +1455,42 @@ function extractIdList(
 }
 
 /**
+ * Resolves a possibly-localized name into a plain string.
+ *
+ * The public amenities endpoint returns `name` as an i18n object
+ * (`{ es, en, pt }`), while other endpoints return a plain string. Calling
+ * `String()` on the object yields "[object Object]", so resolve the locale
+ * (falling back to es → en → first available) before stringifying.
+ */
+function resolveLocalizedName(raw: unknown, locale: string): string {
+    if (typeof raw === 'string') {
+        return raw;
+    }
+    if (raw && typeof raw === 'object') {
+        const map = raw as Record<string, unknown>;
+        const value = map[locale] ?? map.es ?? map.en ?? Object.values(map)[0];
+        return typeof value === 'string' ? value : '';
+    }
+    return '';
+}
+
+/**
  * Transforms a list of raw amenity objects into AmenityData[].
  *
  * @param items - Raw amenity objects from the public amenities endpoint
+ * @param locale - Locale used to resolve the i18n `name` field (default `es`)
  * @returns Typed AmenityData array for the editor's checkbox group
  */
 export function transformAmenityList({
-    items
-}: { readonly items: readonly Record<string, unknown>[] }): readonly AmenityData[] {
+    items,
+    locale = 'es'
+}: {
+    readonly items: readonly Record<string, unknown>[];
+    readonly locale?: string;
+}): readonly AmenityData[] {
     return items.map((item) => ({
         id: String(item.id ?? ''),
-        name: String(item.name ?? ''),
+        name: resolveLocalizedName(item.name, locale),
         category: item.category != null ? String(item.category) : null
     }));
 }

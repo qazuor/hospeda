@@ -76,6 +76,12 @@ export function CreateCollectionCTA({
     function handleSaved(collection: { id: string; name: string }): void {
         setIsModalOpen(false);
         onCreated?.(collection);
+        // The collection list (UserFavoritesList) and the "X / max" usage
+        // counter live in separate islands / SSR markup outside this island,
+        // so they don't observe the create. A full reload is the simplest,
+        // robust way to reflect the new collection in both at once (same
+        // reload-after-mutation pattern used by other account mutations).
+        window.location.reload();
     }
 
     return (

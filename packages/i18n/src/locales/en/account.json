@@ -312,15 +312,23 @@
             "viewLabel": "View",
             "nav": {
                 "editProfile": "Edit Profile",
-                "editProfileDesc": "Update your personal information",
+                "editProfileDesc": "Update your personal information and profile photo",
                 "myFavorites": "My Favorites",
                 "myFavoritesDesc": "Accommodations you have saved",
                 "myReviews": "My Reviews",
                 "myReviewsDesc": "Reviews you have written",
                 "preferences": "Preferences",
-                "preferencesDesc": "Notification and privacy settings",
+                "preferencesDesc": "Configure notifications, language and privacy",
                 "mySubscription": "My Subscription",
-                "mySubscriptionDesc": "Current plan and billing"
+                "mySubscriptionDesc": "Current plan and billing",
+                "myMessages": "My inquiries",
+                "myMessagesDesc": "Conversations with hosts",
+                "newsletter": "Newsletter",
+                "newsletterDesc": "Manage your newsletter subscription",
+                "myProperties": "My properties",
+                "myPropertiesDesc": "Manage your published accommodations",
+                "hostDashboard": "Host dashboard",
+                "hostDashboardDesc": "Summary of your activity as a host"
             },
             "stats": {
                 "favorites": "My Favorites",
@@ -332,7 +340,11 @@
                 "subscriptionStatus": "Free Plan",
                 "activeStatus": "Active",
                 "trialStatus": "Trial period",
-                "freeStatus": "Free Plan"
+                "freeStatus": "Free Plan",
+                "properties": "My properties",
+                "propertiesDesc": "Published accommodations",
+                "messages": "Unread messages",
+                "messagesDesc": "Guest inquiries"
             }
         },
         "editProfile": {

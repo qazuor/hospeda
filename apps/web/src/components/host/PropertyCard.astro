@@ -20,6 +20,7 @@ import { buildUrl } from '@/lib/urls';
 import type { SupportedLocale } from '@/lib/i18n';
 import type { Accommodation } from '@repo/schemas';
 import { LifecycleStatusEnum } from '@repo/schemas';
+import { UnpublishButton } from './UnpublishButton.client';
 
 /**
  * Props for the PropertyCard component.
@@ -48,7 +49,7 @@ const thumbnailAlt: string =
 /** Status badge label and CSS modifier class. */
 const lifecycleState = property.lifecycleState;
 
-type BadgeVariant = 'amber' | 'green' | 'red';
+type BadgeVariant = 'amber' | 'green' | 'red' | 'inactive';
 
 const STATUS_MAP: Record<string, { label: string; variant: BadgeVariant }> = {
     [LifecycleStatusEnum.DRAFT]: {
@@ -58,6 +59,10 @@ const STATUS_MAP: Record<string, { label: string; variant: BadgeVariant }> = {
     [LifecycleStatusEnum.ACTIVE]: {
         label: t('host.properties.card.status.PUBLISHED', 'Publicada'),
         variant: 'green'
+    },
+    [LifecycleStatusEnum.INACTIVE]: {
+        label: t('host.properties.card.status.INACTIVE', 'Pausada'),
+        variant: 'inactive'
     },
     [LifecycleStatusEnum.ARCHIVED]: {
         label: t('host.properties.card.status.SUSPENDED', 'Suspendida'),
@@ -79,12 +84,13 @@ const statusInfo = STATUS_MAP[lifecycleState] ?? {
 const cityDestination = (property as { cityDestination?: { name?: string } }).cityDestination;
 const locationText = cityDestination?.name ?? '';
 
-/** Price display: show only if both price and currency are available. */
+/** Price display: show the amount when available, otherwise a "price on request" label. */
 const hasPrice = property.price?.price != null && property.price?.currency != null;
 const priceText = hasPrice
     ? `${property.price?.currency} ${property.price?.price}`
     : null;
 const pricePerNightLabel = t('host.properties.card.pricePerNight', 'por noche');
+const priceOnRequestLabel = t('host.properties.card.priceOnRequest', 'Precio a consultar');
 
 /** Action URLs.
  *
@@ -97,10 +103,6 @@ const adminBase = getAdminUrlOrThrow().replace(/\/$/, '');
 const publishUrl = `${adminBase}/accommodations/${property.id}/edit?action=publish`;
 const editUrl = buildUrl({ locale, path: `mi-cuenta/propiedades/${property.id}/editar` });
 const viewOnSiteUrl = buildUrl({ locale, path: `alojamientos/${property.slug}` });
-const unpublishUrl = buildUrl({
-    locale,
-    path: `mi-cuenta/propiedades/${property.id}?action=unpublish`
-});
 
 const isActive = lifecycleState === LifecycleStatusEnum.ACTIVE;
 const isDraft = lifecycleState === LifecycleStatusEnum.DRAFT;
@@ -139,10 +141,14 @@ const isDraft = lifecycleState === LifecycleStatusEnum.DRAFT;
             </p>
         )}
 
-        {priceText && (
+        {priceText ? (
             <p class="prop-card__price">
                 <span class="prop-card__price-value">{priceText}</span>
                 <span class="prop-card__price-label">{pricePerNightLabel}</span>
+            </p>
+        ) : (
+            <p class="prop-card__price">
+                <span class="prop-card__price-value">{priceOnRequestLabel}</span>
             </p>
         )}
 
@@ -165,11 +171,18 @@ const isDraft = lifecycleState === LifecycleStatusEnum.DRAFT;
                 </a>
             )}
 
-            <!-- Unpublish: only when ACTIVE -->
+            <!-- Unpublish: only when ACTIVE (React island with inline confirmation) -->
             {isActive && (
-                <a href={unpublishUrl} class="prop-card__action prop-card__action--danger">
-                    {t('host.properties.card.actions.unpublish', 'Despublicar')}
-                </a>
+                <UnpublishButton
+                    client:load
+                    accommodationId={property.id}
+                    locale={locale}
+                    label={t('host.properties.card.actions.unpublish', 'Despublicar')}
+                    confirmText={t('host.properties.card.actions.unpublishConfirm', '¿Despublicar esta propiedad? Dejará de aparecer en el sitio.')}
+                    confirmYes={t('host.properties.card.actions.confirmYes', 'Sí, despublicar')}
+                    confirmNo={t('host.properties.card.actions.confirmNo', 'Cancelar')}
+                    errorText={t('host.properties.card.unpublishError', 'No se pudo despublicar. Intentá de nuevo.')}
+                />
             )}
 
             <!-- Publish: only when DRAFT (routes to admin for publish flow) -->
@@ -267,6 +280,11 @@ const isDraft = lifecycleState === LifecycleStatusEnum.DRAFT;
     .prop-card__status-badge--red {
         background-color: oklch(0.55 0.22 25);
         color: #ffffff;
+    }
+
+    .prop-card__status-badge--inactive {
+        background-color: oklch(0.75 0.04 250);
+        color: oklch(0.30 0.06 250);
     }
 
     /* CONTENT AREA */

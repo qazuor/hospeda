@@ -110,10 +110,47 @@ export function BasicInfoSection({
                 >
                     {t('host.properties.editor.field.description', 'Descripción')}
                 </label>
+                {/*
+                 * The entitlement gates RICH text (formatting), NOT the ability
+                 * to write a description. Without `can_use_rich_description` the
+                 * host still edits a plain-text description; the entitlement only
+                 * unlocks the formatted editor. The fallback keeps the field fully
+                 * editable plus a non-blocking nudge to upgrade for rich text.
+                 */}
                 <PlanEntitlementGate
                     entitlementKey="can_use_rich_description"
-                    upgradeUrl="/suscriptores/precios/"
                     locale={locale}
+                    fallback={
+                        <>
+                            <textarea
+                                id="acc-description"
+                                className={styles.fieldInput}
+                                value={data.description}
+                                onChange={(e) => onFieldChange('description', e.target.value)}
+                                rows={6}
+                                placeholder={t(
+                                    'host.properties.editor.richText.placeholder',
+                                    'Describí tu propiedad con detalle...'
+                                )}
+                                aria-invalid={Boolean(errors.description)}
+                                aria-describedby={
+                                    errors.description ? 'acc-description-error' : undefined
+                                }
+                            />
+                            <p className={styles.fieldHint}>
+                                {t(
+                                    'host.properties.editor.entitlement.richDescriptionHint',
+                                    'Mejorá tu plan para dar formato a tu descripción (negritas, listas y más).'
+                                )}{' '}
+                                <a href="/suscriptores/precios/">
+                                    {t(
+                                        'host.properties.editor.entitlement.upgradeLink',
+                                        'Mejorar plan'
+                                    )}
+                                </a>
+                            </p>
+                        </>
+                    }
                 >
                     <RichTextEditor
                         value={data.description}
@@ -157,10 +194,11 @@ export function BasicInfoSection({
                     <option value="HOSTEL">Hostel</option>
                     <option value="HOUSE">Casa</option>
                     <option value="CABIN">Cabaña</option>
-                    <option value="LOFT">Loft</option>
-                    <option value="CONDO">Condado</option>
-                    <option value="VILLA">Villa</option>
-                    <option value="OTHER">Otro</option>
+                    <option value="COUNTRY_HOUSE">Casa de campo</option>
+                    <option value="CAMPING">Camping</option>
+                    <option value="ROOM">Habitación</option>
+                    <option value="MOTEL">Motel</option>
+                    <option value="RESORT">Resort</option>
                 </select>
                 {errors.type && (
                     <span

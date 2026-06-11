@@ -45,6 +45,7 @@
 | `PUT /api/v1/protected/accommodations/{id}` | `accommodation/protected/update.ts` | gate | `edit_accommodation_info` | wired | requireEntitlement(EDIT_ACCOMMODATION_INFO) middleware wired (SPEC-145 T-004) |
 | `PATCH /api/v1/protected/accommodations/{id}` | `accommodation/protected/patch.ts` | gate+limit | `edit_accommodation_info`, `can_use_rich_description`, `can_embed_video` | wired | requireEntitlement(EDIT_ACCOMMODATION_INFO) + gateRichDescription + gateVideoEmbed (SPEC-145 T-004) |
 | `DELETE /api/v1/protected/accommodations/{id}` | `accommodation/protected/softDelete.ts` | none | - | n/a | Deletion is ungated; soft-delete own resource |
+| `POST /api/v1/protected/accommodations/{id}/unpublish` | `accommodation/protected/unpublish.ts` | none | - | n/a | Unpublish (ACTIVE → INACTIVE) is a basic lifecycle action ungated across all plan tiers; ownership enforced via route factory (SPEC-208 PR2) |
 | `GET /api/v1/protected/accommodations/{id}/contact` | `accommodation/protected/contact.ts` | none | - | n/a | Read-only resolved contact info; auth-only sufficient |
 | `GET /api/v1/protected/accommodations/{id}/faqs` | `accommodation/protected/getFaqs.ts` | none | - | n/a | Read own data; auth-only sufficient |
 | `POST /api/v1/protected/accommodations/{id}/faqs` | `accommodation/protected/addFaq.ts` | gate | `edit_accommodation_info` | wired | requireEntitlement(EDIT_ACCOMMODATION_INFO) middleware wired (SPEC-145 T-004) |

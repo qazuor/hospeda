@@ -6,16 +6,19 @@
  * Values are updated client-side via DOM id references from the parent page script.
  */
 
-import { FavoriteIcon, StarIcon, CreditCardIcon } from '@repo/icons';
+import { FavoriteIcon, StarIcon, CreditCardIcon, BuildingIcon, ChatIcon } from '@repo/icons';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 
 interface Props {
     readonly locale: SupportedLocale;
+    /** When true, renders host-specific stat cards (properties + messages) instead of
+     *  the default tourist cards (favorites + reviews). The subscription card is always shown. */
+    readonly isHost?: boolean;
 }
 
-const { locale } = Astro.props;
+const { locale, isHost = false } = Astro.props;
 const { t } = createTranslations(locale);
 
 const viewLabel = t('account.pages.dashboard.viewLabel', 'Ver');
@@ -29,40 +32,80 @@ const statSubscriptionStatus = t('account.pages.dashboard.stats.subscriptionStat
 const statActiveStatus = t('account.pages.dashboard.stats.activeStatus', 'Activa');
 const statTrialStatus = t('account.pages.dashboard.stats.trialStatus', 'En prueba');
 const statFreeStatus = t('account.pages.dashboard.stats.freeStatus', 'Gratuito');
+const statPropertiesLabel = t('account.pages.dashboard.stats.properties', 'Mis propiedades');
+const statPropertiesDesc = t('account.pages.dashboard.stats.propertiesDesc', 'Alojamientos publicados');
+const statMessagesLabel = t('account.pages.dashboard.stats.messages', 'Mensajes sin leer');
+const statMessagesDesc = t('account.pages.dashboard.stats.messagesDesc', 'Consultas de huéspedes');
 ---
 
 <div class="account__stats-grid">
-    <!-- Favorites stat -->
-    <article class="account__stat-card">
-        <div class="account__stat-card-header">
-            <h3 class="account__stat-card-title">{statFavoritesLabel}</h3>
-            <span class="account__stat-icon" aria-hidden="true">
-                <FavoriteIcon size={20} weight="fill" aria-hidden="true" />
-            </span>
-        </div>
-        <p id="stat-favorites" class="account__stat-value stat-value--loading" aria-live="polite">0</p>
-        <p class="account__stat-desc">{statFavoritesDesc}</p>
-        <a href={buildUrl({ locale, path: 'mi-cuenta/favoritos' })} class="account__stat-link">
-            {viewLabel} {statFavoritesLabel.toLowerCase()}
-        </a>
-    </article>
+    {isHost ? (
+        <>
+            <!-- Host: Properties stat -->
+            <article class="account__stat-card">
+                <div class="account__stat-card-header">
+                    <h3 class="account__stat-card-title">{statPropertiesLabel}</h3>
+                    <span class="account__stat-icon" aria-hidden="true">
+                        <BuildingIcon size={20} weight="fill" aria-hidden="true" />
+                    </span>
+                </div>
+                <p id="stat-properties" class="account__stat-value stat-value--loading" aria-live="polite">0</p>
+                <p class="account__stat-desc">{statPropertiesDesc}</p>
+                <a href={buildUrl({ locale, path: 'mi-cuenta/propiedades' })} class="account__stat-link">
+                    {viewLabel} {statPropertiesLabel.toLowerCase()}
+                </a>
+            </article>
 
-    <!-- Reviews stat -->
-    <article class="account__stat-card">
-        <div class="account__stat-card-header">
-            <h3 class="account__stat-card-title">{statReviewsLabel}</h3>
-            <span class="account__stat-icon" aria-hidden="true">
-                <StarIcon size={20} weight="fill" aria-hidden="true" />
-            </span>
-        </div>
-        <p id="stat-reviews" class="account__stat-value stat-value--loading" aria-live="polite">0</p>
-        <p class="account__stat-desc">{statReviewsDesc}</p>
-        <a href={buildUrl({ locale, path: 'mi-cuenta/resenas' })} class="account__stat-link">
-            {viewLabel} {statReviewsLabel.toLowerCase()}
-        </a>
-    </article>
+            <!-- Host: Unread messages stat -->
+            <article class="account__stat-card">
+                <div class="account__stat-card-header">
+                    <h3 class="account__stat-card-title">{statMessagesLabel}</h3>
+                    <span class="account__stat-icon" aria-hidden="true">
+                        <ChatIcon size={20} weight="fill" aria-hidden="true" />
+                    </span>
+                </div>
+                <p id="stat-messages" class="account__stat-value stat-value--loading" aria-live="polite">0</p>
+                <p class="account__stat-desc">{statMessagesDesc}</p>
+                <a href={buildUrl({ locale, path: 'mi-cuenta/consultas-propietario' })} class="account__stat-link">
+                    {viewLabel} {statMessagesLabel.toLowerCase()}
+                </a>
+            </article>
+        </>
+    ) : (
+        <>
+            <!-- Tourist: Favorites stat -->
+            <article class="account__stat-card">
+                <div class="account__stat-card-header">
+                    <h3 class="account__stat-card-title">{statFavoritesLabel}</h3>
+                    <span class="account__stat-icon" aria-hidden="true">
+                        <FavoriteIcon size={20} weight="fill" aria-hidden="true" />
+                    </span>
+                </div>
+                <p id="stat-favorites" class="account__stat-value stat-value--loading" aria-live="polite">0</p>
+                <p class="account__stat-desc">{statFavoritesDesc}</p>
+                <a href={buildUrl({ locale, path: 'mi-cuenta/favoritos' })} class="account__stat-link">
+                    {viewLabel} {statFavoritesLabel.toLowerCase()}
+                </a>
+            </article>
 
-    <!-- Subscription stat -->
+            <!-- Tourist: Reviews stat -->
+            <article class="account__stat-card">
+                <div class="account__stat-card-header">
+                    <h3 class="account__stat-card-title">{statReviewsLabel}</h3>
+                    <span class="account__stat-icon" aria-hidden="true">
+                        <StarIcon size={20} weight="fill" aria-hidden="true" />
+                    </span>
+                </div>
+                <p id="stat-reviews" class="account__stat-value stat-value--loading" aria-live="polite">0</p>
+                <p class="account__stat-desc">{statReviewsDesc}</p>
+                <a href={buildUrl({ locale, path: 'mi-cuenta/resenas' })} class="account__stat-link">
+                    {viewLabel} {statReviewsLabel.toLowerCase()}
+                </a>
+            </article>
+        </>
+    )}
+
+    <!-- Subscription stat — always rendered for both roles -->
     <article class="account__stat-card">
         <div class="account__stat-card-header">
             <h3 class="account__stat-card-title">{statSubscriptionLabel}</h3>
@@ -70,7 +113,12 @@ const statFreeStatus = t('account.pages.dashboard.stats.freeStatus', 'Gratuito')
                 <CreditCardIcon size={20} weight="regular" aria-hidden="true" />
             </span>
         </div>
-        <p id="stat-subscription" class="account__stat-value stat-value--loading" aria-live="polite">
+        <p
+            id="stat-subscription"
+            class="account__stat-value stat-value--loading"
+            data-label-free={statFreeStatus}
+            aria-live="polite"
+        >
             {statSubscriptionDesc}
         </p>
         <p

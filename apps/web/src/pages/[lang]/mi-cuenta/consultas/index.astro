@@ -7,10 +7,12 @@
  */
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
+import AccountEmptyState from '@/components/account/AccountEmptyState.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { protectedConversationsApi } from '@/lib/api/endpoints-protected';
+import { ChatIcon } from '@repo/icons';
 
 export const prerender = false;
 
@@ -55,7 +57,14 @@ function formatDate(dateStr: string): string {
         <h1 class="messages-inbox__title">{t('conversations.inbox.guestInboxTitle')}</h1>
 
         {conversations.length === 0 ? (
-            <p class="messages-inbox__empty">{t('conversations.empty.guestInbox')}</p>
+            <AccountEmptyState
+                title={t('conversations.empty.guestInboxTitle', 'Todavía no tenés consultas')}
+                description={t('conversations.empty.guestInbox')}
+                ctaHref={buildUrl({ locale, path: 'alojamientos' })}
+                ctaLabel={t('conversations.empty.guestInboxCta', 'Explorar alojamientos')}
+            >
+                <ChatIcon slot="icon" size={28} aria-hidden={true} />
+            </AccountEmptyState>
         ) : (
             <ul class="messages-inbox__list" role="list">
                 {conversations.map((conv) => {

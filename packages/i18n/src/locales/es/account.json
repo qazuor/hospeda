@@ -312,15 +312,23 @@
             "viewLabel": "Ver",
             "nav": {
                 "editProfile": "Editar perfil",
-                "editProfileDesc": "Actualizá tu información personal",
+                "editProfileDesc": "Actualizá tu información personal y foto de perfil",
                 "myFavorites": "Mis favoritos",
                 "myFavoritesDesc": "Alojamientos que guardaste",
                 "myReviews": "Mis reseñas",
                 "myReviewsDesc": "Reseñas que escribiste",
                 "preferences": "Preferencias",
-                "preferencesDesc": "Configuración de notificaciones y privacidad",
+                "preferencesDesc": "Configurá notificaciones, idioma y privacidad",
                 "mySubscription": "Mi suscripción",
-                "mySubscriptionDesc": "Plan actual y facturación"
+                "mySubscriptionDesc": "Plan actual y facturación",
+                "myMessages": "Mis consultas",
+                "myMessagesDesc": "Conversaciones con anfitriones",
+                "newsletter": "Boletín de novedades",
+                "newsletterDesc": "Gestioná tu suscripción al boletín",
+                "myProperties": "Mis propiedades",
+                "myPropertiesDesc": "Gestioná tus alojamientos publicados",
+                "hostDashboard": "Panel del anfitrión",
+                "hostDashboardDesc": "Resumen de tu actividad como anfitrión"
             },
             "stats": {
                 "favorites": "Mis favoritos",
@@ -332,7 +340,11 @@
                 "subscriptionStatus": "Plan Gratuito",
                 "activeStatus": "Activo",
                 "trialStatus": "Período de prueba",
-                "freeStatus": "Plan Gratuito"
+                "freeStatus": "Plan Gratuito",
+                "properties": "Mis propiedades",
+                "propertiesDesc": "Alojamientos publicados",
+                "messages": "Mensajes sin leer",
+                "messagesDesc": "Consultas de huéspedes"
             }
         },
         "editProfile": {

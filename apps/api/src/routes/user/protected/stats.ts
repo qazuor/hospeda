@@ -38,6 +38,34 @@ const UserStatsResponseSchema = z.object({
         .optional()
 });
 
+/**
+ * Resolves a billing plan's display name from a subscription's `planId`.
+ *
+ * `billing_subscriptions.plan_id` stores the plan UUID, but legacy rows may
+ * carry the slug instead. This dual-resolve mirrors `resolvePlanByIdOrSlug`
+ * in addon.checkout.ts: try `getById` first (the documented UUID format),
+ * fall back to `getBySlug`. Returns `null` when neither lookup succeeds, so
+ * the caller can decide on a sensible fallback (never leak the raw UUID).
+ *
+ * @param service - PlanService instance (or any object exposing getById/getBySlug)
+ * @param planId - The subscription's planId (UUID or, for legacy rows, slug)
+ * @returns The resolved plan name, or `null` when the plan cannot be found
+ */
+export async function resolvePlanName(
+    service: Pick<PlanService, 'getById' | 'getBySlug'>,
+    planId: string
+): Promise<string | null> {
+    const byId = await service.getById(planId);
+    if (byId.success) {
+        return byId.data.name;
+    }
+    const bySlug = await service.getBySlug(planId);
+    if (bySlug.success) {
+        return bySlug.data.name;
+    }
+    return null;
+}
+
 export const userStatsRoute = createProtectedRoute({
     method: 'get',
     path: '/me/stats',
@@ -121,14 +149,17 @@ export const userStatsRoute = createProtectedRoute({
                     .limit(1);
 
                 if (subscription) {
-                    /** Resolve plan name from DB via PlanService (SPEC-192 FR-4).
-                     *  Falls back to planId when NOT_FOUND — same behavior as before. */
-                    const planResult = await planService.getBySlug(subscription.planId);
-                    const planName = planResult.success
-                        ? planResult.data.name
-                        : subscription.planId;
+                    /**
+                     * `subscription.planId` stores the plan UUID; resolvePlanName
+                     * dual-resolves (id then slug). Fall back to the raw planId
+                     * only when the plan cannot be found at all.
+                     */
+                    const resolvedName = await resolvePlanName(planService, subscription.planId);
 
-                    plan = { name: planName, status: subscription.status };
+                    plan = {
+                        name: resolvedName ?? subscription.planId,
+                        status: subscription.status
+                    };
                 }
             }
         } catch (error) {

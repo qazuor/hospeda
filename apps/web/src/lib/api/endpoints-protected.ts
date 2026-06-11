@@ -1707,6 +1707,26 @@ export const accommodationEditApi = {
     },
 
     /**
+     * Unpublish an accommodation (ACTIVE → INACTIVE).
+     * The accommodation will stop appearing on the public site immediately.
+     * Only the owner or a user with ACCOMMODATION_UPDATE_ANY can call this.
+     *
+     * @param params - Accommodation ID to unpublish
+     * @returns The updated accommodation record
+     *
+     * @example
+     * ```ts
+     * const result = await accommodationEditApi.unpublish({ id: 'acc-uuid' });
+     * if (result.ok) console.log('Accommodation is now paused');
+     * ```
+     */
+    unpublish({ id }: { readonly id: string }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/accommodations/${id}/unpublish`
+        });
+    },
+
+    /**
      * Fetch all active amenities for the editor's checkbox group.
      * Uses the public amenities endpoint (no auth required).
      *
