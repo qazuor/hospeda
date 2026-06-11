@@ -82,6 +82,7 @@ import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
+import { getTranslationService } from '../../translation/translation-init';
 import type {
     Actor,
     AdminSearchExecuteParams,
@@ -824,6 +825,24 @@ export class AccommodationService extends BaseCrudService<
                 'Revalidation scheduling failed (non-blocking)'
             );
         }
+
+        // SPEC-212: fire-and-forget auto-translation
+        const translationService = getTranslationService();
+        if (translationService) {
+            const fields: Record<string, string> = {};
+            if (entity.name) fields.name = entity.name;
+            if (entity.summary) fields.summary = entity.summary;
+            if (entity.description) fields.description = entity.description;
+            if (entity.richDescription) fields.richDescription = entity.richDescription;
+            if (Object.keys(fields).length > 0) {
+                void translationService.translate({
+                    entityType: 'accommodation',
+                    entityId: entity.id,
+                    fields
+                }).catch(() => {});
+            }
+        }
+
         return entity;
     }
 
@@ -1003,6 +1022,23 @@ export class AccommodationService extends BaseCrudService<
                     { error, accommodationId: entity.id, aiAssistedFields: pendingAi },
                     '[accommodation] Failed to persist AI-assisted fields to extraInfo (non-blocking)'
                 );
+            }
+        }
+
+        // SPEC-212: fire-and-forget auto-translation on field changes
+        const translationService = getTranslationService();
+        if (translationService) {
+            const fields: Record<string, string> = {};
+            if (entity.name) fields.name = entity.name;
+            if (entity.summary) fields.summary = entity.summary;
+            if (entity.description) fields.description = entity.description;
+            if (entity.richDescription) fields.richDescription = entity.richDescription;
+            if (Object.keys(fields).length > 0) {
+                void translationService.translate({
+                    entityType: 'accommodation',
+                    entityId: entity.id,
+                    fields
+                }).catch(() => {});
             }
         }
 

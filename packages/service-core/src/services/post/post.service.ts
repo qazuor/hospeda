@@ -2,6 +2,7 @@ import { PostModel, buildSearchCondition } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import type { ImageProvider } from '@repo/media/server';
 import { resolveEnvironment } from '@repo/media/server';
+import { getTranslationService } from '../../translation/translation-init';
 import type {
     GetPostByCategoryInput,
     GetPostByRelatedAccommodationInput,
@@ -522,6 +523,23 @@ export class PostService extends BaseCrudService<
                 'Revalidation scheduling failed (non-blocking)'
             );
         }
+
+        // SPEC-212: fire-and-forget auto-translation
+        const translationService = getTranslationService();
+        if (translationService) {
+            const fields: Record<string, string> = {};
+            if (entity.title) fields.title = entity.title;
+            if (entity.summary) fields.summary = entity.summary;
+            if (entity.content) fields.content = entity.content;
+            if (Object.keys(fields).length > 0) {
+                void translationService.translate({
+                    entityType: 'post',
+                    entityId: entity.id,
+                    fields
+                }).catch(() => {});
+            }
+        }
+
         return entity;
     }
 
@@ -540,6 +558,23 @@ export class PostService extends BaseCrudService<
                 'Revalidation scheduling failed (non-blocking)'
             );
         }
+
+        // SPEC-212: fire-and-forget auto-translation on field changes
+        const translationService = getTranslationService();
+        if (translationService) {
+            const fields: Record<string, string> = {};
+            if (entity.title) fields.title = entity.title;
+            if (entity.summary) fields.summary = entity.summary;
+            if (entity.content) fields.content = entity.content;
+            if (Object.keys(fields).length > 0) {
+                void translationService.translate({
+                    entityType: 'post',
+                    entityId: entity.id,
+                    fields
+                }).catch(() => {});
+            }
+        }
+
         return entity;
     }
 

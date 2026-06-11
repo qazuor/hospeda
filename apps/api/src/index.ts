@@ -15,6 +15,7 @@ import { LogFormat, configureLogger } from '@repo/logger';
 import {
     ensureDefaultPromoCodes,
     initializeRevalidationService,
+    initializeTranslationService,
     setPermissionChangeAuditEmitter,
     setUserPermissionsCacheInvalidator
 } from '@repo/service-core';
@@ -28,6 +29,7 @@ import { createEntityResolver } from './lib/entity-resolver';
 import { shutdownPostHog } from './lib/posthog';
 import { closeSentry, initializeSentry } from './lib/sentry';
 import { getDecryptedAiProviderCredential } from './services/ai-credential-vault.service';
+import { createTranslationServiceAdapter } from './services/translation-service.adapter';
 import { initializeMediaProvider } from './services/media';
 import {
     closeNewsletterDispatchResources,
@@ -208,6 +210,10 @@ const startServer = async (): Promise<void> => {
             });
             apiLogger.info('ISR revalidation service initialized');
         }
+
+        // Initialize AI content translation service (SPEC-212)
+        initializeTranslationService(createTranslationServiceAdapter());
+        apiLogger.info('AI translation service initialized');
 
         // SPEC-170: wire per-user permission-override side-effects into
         // @repo/service-core. The service cannot import the API's in-memory

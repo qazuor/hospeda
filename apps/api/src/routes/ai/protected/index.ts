@@ -29,6 +29,7 @@ import { createRouter } from '../../../utils/create-app';
 import { protectedAiChatRoute } from './chat';
 import { protectedAiSearchChatRoute } from './search-chat';
 import { protectedAiTextImproveRoute } from './text-improve';
+import { protectedAiTranslateRoute } from './translate';
 
 const app = createRouter();
 
@@ -43,5 +44,8 @@ app.route('/chat', protectedAiChatRoute);
 
 // SPEC-212 — conversational search AI (POST /search-chat)
 app.route('/search-chat', protectedAiSearchChatRoute);
+
+// SPEC-212 — AI content translation (POST /translate)
+app.route('/translate', protectedAiTranslateRoute);
 
 export { app as protectedAiRoutes };

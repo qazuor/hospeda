@@ -65,7 +65,13 @@ export enum EntitlementKey {
      * Allows the user to access the AI-powered support assistant
      * for platform help and troubleshooting.
      */
-    AI_SUPPORT = 'ai_support'
+    AI_SUPPORT = 'ai_support',
+    /**
+     * Allows the user to use the AI-powered content translation feature
+     * to auto-translate accommodation, destination, event, and post content
+     * to English and Portuguese.
+     */
+    AI_TRANSLATE = 'ai_translate'
 }
 
 /**

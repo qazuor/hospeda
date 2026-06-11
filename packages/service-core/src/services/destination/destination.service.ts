@@ -64,6 +64,7 @@ import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
+import { getTranslationService } from '../../translation/translation-init';
 import type {
     Actor,
     ServiceConfig,
@@ -965,6 +966,23 @@ export class DestinationService extends BaseCrudService<
                 'Revalidation scheduling failed (non-blocking)'
             );
         }
+
+        // SPEC-212: fire-and-forget auto-translation
+        const translationService = getTranslationService();
+        if (translationService) {
+            const fields: Record<string, string> = {};
+            if (entity.name) fields.name = entity.name;
+            if (entity.summary) fields.summary = entity.summary;
+            if (entity.description) fields.description = entity.description;
+            if (Object.keys(fields).length > 0) {
+                void translationService.translate({
+                    entityType: 'destination',
+                    entityId: entity.id,
+                    fields
+                }).catch(() => {});
+            }
+        }
+
         return entity;
     }
 
@@ -986,10 +1004,6 @@ export class DestinationService extends BaseCrudService<
         }
 
         // SPEC-092 T-020: hierarchy revalidation on reparenting/slug change.
-        // When the destination's path changes (set in _beforeUpdate via
-        // ctx.hookState.pendingPathUpdate), every descendant's URL changes
-        // too — schedule revalidation for each descendant so its detail
-        // page and sub-routes are rebuilt against the new path.
         const pendingPathUpdate = ctx.hookState?.pendingPathUpdate;
         if (pendingPathUpdate) {
             try {
@@ -1007,6 +1021,23 @@ export class DestinationService extends BaseCrudService<
                 );
             }
         }
+
+        // SPEC-212: fire-and-forget auto-translation on field changes
+        const translationService = getTranslationService();
+        if (translationService) {
+            const fields: Record<string, string> = {};
+            if (entity.name) fields.name = entity.name;
+            if (entity.summary) fields.summary = entity.summary;
+            if (entity.description) fields.description = entity.description;
+            if (Object.keys(fields).length > 0) {
+                void translationService.translate({
+                    entityType: 'destination',
+                    entityId: entity.id,
+                    fields
+                }).catch(() => {});
+            }
+        }
+
         return entity;
     }
 

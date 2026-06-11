@@ -12,3 +12,4 @@ export { adminAiCredentialsRoutes } from './credentials/index.js';
 export { adminAiSettingsRoutes } from './settings/index.js';
 export { adminAiPromptsRoutes } from './prompts/index.js';
 export { adminAiUsageRoutes } from './usage/index.js';
+export { adminAiTranslateRoute } from './admin/translate.js';

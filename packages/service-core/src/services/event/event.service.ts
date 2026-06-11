@@ -8,6 +8,7 @@ import {
 import { createLogger } from '@repo/logger';
 import type { ImageProvider } from '@repo/media/server';
 import { resolveEnvironment } from '@repo/media/server';
+import { getTranslationService } from '../../translation/translation-init';
 import type {
     EntityOptionsItem,
     Event,
@@ -346,6 +347,23 @@ export class EventService extends BaseCrudService<
                 'Revalidation scheduling failed (non-blocking)'
             );
         }
+
+        // SPEC-212: fire-and-forget auto-translation
+        const translationService = getTranslationService();
+        if (translationService) {
+            const fields: Record<string, string> = {};
+            if (entity.name) fields.name = entity.name;
+            if (entity.summary) fields.summary = entity.summary;
+            if (entity.description) fields.description = entity.description;
+            if (Object.keys(fields).length > 0) {
+                void translationService.translate({
+                    entityType: 'event',
+                    entityId: entity.id,
+                    fields
+                }).catch(() => {});
+            }
+        }
+
         return entity;
     }
 
@@ -366,6 +384,23 @@ export class EventService extends BaseCrudService<
                 'Revalidation scheduling failed (non-blocking)'
             );
         }
+
+        // SPEC-212: fire-and-forget auto-translation on field changes
+        const translationService = getTranslationService();
+        if (translationService) {
+            const fields: Record<string, string> = {};
+            if (entity.name) fields.name = entity.name;
+            if (entity.summary) fields.summary = entity.summary;
+            if (entity.description) fields.description = entity.description;
+            if (Object.keys(fields).length > 0) {
+                void translationService.translate({
+                    entityType: 'event',
+                    entityId: entity.id,
+                    fields
+                }).catch(() => {});
+            }
+        }
+
         return entity;
     }
 
