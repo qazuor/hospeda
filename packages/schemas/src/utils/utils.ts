@@ -60,3 +60,76 @@ export const numericField = (validation?: z.ZodNumber) => {
 
     return validation ? baseTransform.pipe(validation) : baseTransform.pipe(z.number());
 };
+
+/**
+ * Returns a shallow copy of a Zod object shape with every top-level `.default()`
+ * wrapper removed.
+ *
+ * ### Why this exists
+ *
+ * In **Zod 4**, `ZodObject.partial()` does NOT strip `.default()` from its fields
+ * (this is a behaviour change from Zod 3). A partial schema built over fields that
+ * carry defaults therefore still *injects* those defaults on every parse — even for
+ * an empty input object:
+ *
+ * ```ts
+ * const base = z.object({ a: z.string().default('X'), b: z.number() });
+ * base.partial().parse({}); // → { a: 'X' }  (NOT {})
+ * ```
+ *
+ * For a PATCH / partial-update schema this is a correctness bug: a field the client
+ * never sent gets a value, violating the "absent key = no change" contract and
+ * silently overwriting server state. Wrapping the shape with `stripShapeDefaults`
+ * before `.partial()` restores the intended semantics:
+ *
+ * ```ts
+ * z.object(stripShapeDefaults(base.shape)).partial().parse({}); // → {}
+ * ```
+ *
+ * Only TOP-LEVEL defaults are removed. Nested object/array defaults are left intact,
+ * because they only ever fire when the client explicitly sends the parent key (i.e.
+ * an intentional update of that sub-object), which is the desired behaviour.
+ *
+ * Defaults nested inside `.optional()` / `.nullable()` wrappers are also removed —
+ * e.g. `z.number().default(0).optional()` becomes `z.number().optional()` — because
+ * in Zod 4 a `ZodDefault` still fires through an enclosing `ZodOptional`. The
+ * optional / nullable modifiers themselves are preserved.
+ *
+ * ### Known boundary
+ *
+ * Only `ZodDefault`, `ZodOptional` and `ZodNullable` are traversed. A `ZodDefault`
+ * hidden behind an OUTER `ZodCatch`, `ZodPipe` or `ZodEffects`/transform wrapper
+ * (e.g. `z.string().default('X').catch('Y')` or `.default('X').transform(fn)`) is
+ * NOT stripped — re-wrapping a transform/catch while removing the default is not
+ * safely reversible. None of the fields on `AccommodationSchema` use that outer
+ * pattern (a `ZodPipe` nested INSIDE a `ZodDefault`, as in `averageRating`, IS
+ * handled — the default is the outer wrapper there). Revisit this if a future
+ * defaulted field places `.catch()` / `.transform()` outside `.default()`.
+ *
+ * @param shape - The raw Zod object shape (e.g. `SomeSchema.shape`).
+ * @returns A new shape object with `ZodDefault` wrappers unwrapped to their inner type.
+ */
+const removeFieldDefault = (field: z.ZodTypeAny): z.ZodTypeAny => {
+    // Zod 4's `.unwrap()` / `.removeDefault()` return the core `$ZodType`, which is
+    // structurally narrower than `ZodTypeAny`; cast at the boundary (runtime is fine).
+    if (field instanceof z.ZodDefault) {
+        return removeFieldDefault(field.removeDefault() as unknown as z.ZodTypeAny);
+    }
+    if (field instanceof z.ZodOptional) {
+        return removeFieldDefault(field.unwrap() as unknown as z.ZodTypeAny).optional();
+    }
+    if (field instanceof z.ZodNullable) {
+        return removeFieldDefault(field.unwrap() as unknown as z.ZodTypeAny).nullable();
+    }
+    // Any other wrapper (ZodCatch / ZodPipe / ZodEffects / etc.) is returned as-is —
+    // see "Known boundary" above.
+    return field;
+};
+
+export const stripShapeDefaults = <Shape extends z.ZodRawShape>(shape: Shape): Shape =>
+    Object.fromEntries(
+        Object.entries(shape).map(([key, field]) => [
+            key,
+            removeFieldDefault(field as unknown as z.ZodTypeAny)
+        ])
+    ) as unknown as Shape;
