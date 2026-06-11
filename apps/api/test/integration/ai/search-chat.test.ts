@@ -47,6 +47,28 @@
  *   - Non-fatal timeout: persistence never resolves within 1500 ms → done carries
  *     `conversationId: null`; `apiLogger.warn` is called.
  *
+ * ## T-014: consolidated integration suite
+ *
+ * This file IS the SPEC-212 consolidated API integration suite. Acceptance-criteria
+ * mapping:
+ *   - Happy path (filters → token(s) → done + conversationId): T-005 + T-006 gates.
+ *   - Auth required (401): Gate 1.
+ *   - Invalid body (400, before the stream opens): Gate 2 (empty/missing/over-cap
+ *     messages, bad role, bad conversationId UUID).
+ *   - Platform-free access (NO 403 / no entitlement or quota gate, per D-7): Gate 3
+ *     (USER with no entitlements, HOST without AI_SEARCH, billingLoadFailed).
+ *   - Empty / garbage message handling: Gate 2 (empty → 400) + Gate 4 (a message that
+ *     yields an unparseable entity object → safeParse falls back to empty intent and
+ *     the turn still completes).
+ *   - Persistence best-effort (non-fatal on reject + timeout): Gate 6.
+ *   - Rate limit (429): NOT re-tested here. `createAiRateLimitMiddlewares('search')`
+ *     is the SAME factory exercised directly (per-user + per-IP 429 + Retry-After +
+ *     actor restoration) by `test/middlewares/ai-rate-limit.test.ts`, with the
+ *     in-memory backend enabled. In this integration harness the limiter fails open
+ *     without Redis, so a live 429 is not reproducible (the sibling chat / text-improve
+ *     integration suites omit it for the same reason). The route wires the middleware
+ *     identically to its siblings.
+ *
  * ## External seams stubbed
  *
  * - `@repo/ai-core`: real Error subclasses + stub service methods.

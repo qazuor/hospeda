@@ -487,39 +487,39 @@
             "id": "T-014",
             "title": "API integration suite for /ai/search-chat (stub provider)",
             "description": "Consolidated integration suite using StubProvider: happy path (filters -> stream -> done+conversationId), auth (401), invalid body (400), rate limit (429), platform-free access (a user lacking ai_search entitlement is NOT rejected - no 403/quota gate per D-7), empty/garbage message handling, persistence best-effort (write failure non-fatal). Covers the 7 acceptance criteria at the API layer. NOTE: no quota/entitlement-gate tests - there is no such gate.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-006", "T-007"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Happy path (filters -> tokens -> done)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Auth / entitlement / quota / rate-limit gates",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Empty/garbage message",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Persistence non-fatal",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "ai", "testing"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-11T00:00:00.000Z"
             }
         },
         {
@@ -657,9 +657,9 @@
     ],
     "summary": {
         "total": 18,
-        "pending": 5,
+        "pending": 4,
         "inProgress": 0,
-        "completed": 13,
+        "completed": 14,
         "blocked": 0,
         "averageComplexity": 2.4
     }
