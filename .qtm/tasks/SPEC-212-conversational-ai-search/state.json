@@ -116,40 +116,44 @@
         {
             "id": "T-004",
             "title": "Scaffold POST /api/v1/protected/ai/search-chat SSE route + middleware chain",
-            "description": "New apps/api/src/routes/ai/protected/search-chat.ts: SSE route skeleton with the SPEC-173/199 middleware chain (auth, ai_search entitlement gate, createAiRateLimitMiddlewares('search'), createAiQuotaMiddleware('search')). Validate body with AiSearchChatRequestSchema. Tests (write alongside): 401 unauthenticated, 403 missing entitlement, 403/LIMIT_REACHED quota exhausted (no LLM call), 429 rate limit.",
-            "status": "pending",
+            "description": "New apps/api/src/routes/ai/protected/search-chat.ts via createProtectedStreamingRoute: middleware chain auth (factory-injected) + entitlementMiddleware() (context only, no gate) + createAiRateLimitMiddlewares('search'). NO createAiQuotaMiddleware and NO entitlement gate: ai_search is a free platform feature (SPEC-211 7.7, D-7). Body validated by AiSearchChatRequestSchema (400 before stream opens). Handler is a T-004 scaffold (empty SSE + placeholder done); LLM logic is T-005/T-006/T-007. Registered in ai/protected barrel. Tests: 401 unauth, 400 invalid body, 429 rate-limit, 200 platform-free (user without entitlement is NOT rejected). 12 integration tests green (vitest e2e config).",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001"],
             "blocks": ["T-005", "T-006", "T-007"],
             "subtasks": [
                 {
-                    "title": "Route + SSE response scaffolding",
-                    "completed": false
+                    "title": "Route via createProtectedStreamingRoute + SSE scaffold",
+                    "completed": true
                 },
                 {
-                    "title": "Wire auth + entitlement + rate-limit + quota middleware",
-                    "completed": false
+                    "title": "Wire auth + entitlementMiddleware (context) + rate-limit (no quota gate)",
+                    "completed": true
                 },
                 {
-                    "title": "Body validation via AiSearchChatRequestSchema",
-                    "completed": false
+                    "title": "Body validation via AiSearchChatRequestSchema (400)",
+                    "completed": true
                 },
                 {
-                    "title": "Integration tests for the 4 gates",
-                    "completed": false
+                    "title": "Register in ai/protected barrel",
+                    "completed": true
+                },
+                {
+                    "title": "Integration tests: 401 / 400 / 429 / 200 platform-free",
+                    "completed": true
                 }
             ],
             "tags": ["api", "ai", "route", "core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-11T00:00:00.000Z",
+                "completed": "2026-06-11T00:00:00.000Z"
             }
         },
         {
@@ -482,7 +486,7 @@
         {
             "id": "T-014",
             "title": "API integration suite for /ai/search-chat (stub provider)",
-            "description": "Consolidated integration suite using StubProvider: happy path (filters -> stream -> done+conversationId), auth (401), entitlement (403), quota exhausted (403/LIMIT_REACHED), rate limit (429), empty/garbage message handling, persistence best-effort (write failure non-fatal). Covers the §7 acceptance criteria at the API layer.",
+            "description": "Consolidated integration suite using StubProvider: happy path (filters -> stream -> done+conversationId), auth (401), invalid body (400), rate limit (429), platform-free access (a user lacking ai_search entitlement is NOT rejected - no 403/quota gate per D-7), empty/garbage message handling, persistence best-effort (write failure non-fatal). Covers the 7 acceptance criteria at the API layer. NOTE: no quota/entitlement-gate tests - there is no such gate.",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-006", "T-007"],
@@ -653,9 +657,9 @@
     ],
     "summary": {
         "total": 18,
-        "pending": 17,
+        "pending": 16,
         "inProgress": 0,
-        "completed": 1,
+        "completed": 2,
         "blocked": 0,
         "averageComplexity": 2.4
     }
