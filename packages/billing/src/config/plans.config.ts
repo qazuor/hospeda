@@ -14,6 +14,69 @@ function limit(
     return { key, value, name: meta.name, description: meta.description };
 }
 
+type LimitDefinition = ReturnType<typeof limit>;
+
+/**
+ * Deduplicate a list of entitlement keys, preserving first-occurrence order.
+ * Used when spreading the inherited tourist-VIP set into owner/complex plans,
+ * since a few keys (e.g. WhatsApp display/direct) coincide between tiers.
+ */
+function dedupe(keys: readonly EntitlementKey[]): EntitlementKey[] {
+    return [...new Set(keys)];
+}
+
+/**
+ * Merge two limit lists by key. The `override` list wins on key clash, so a
+ * plan's own limit value is always authoritative over the inherited tourist-VIP
+ * value. Today no limit key overlaps between the tourist and owner/complex tiers,
+ * but this keeps the inheritance safe if one ever does.
+ */
+function mergeLimits(
+    base: readonly LimitDefinition[],
+    override: readonly LimitDefinition[]
+): LimitDefinition[] {
+    const byKey = new Map<LimitKey, LimitDefinition>();
+    for (const l of base) byKey.set(l.key, l);
+    for (const l of override) byKey.set(l.key, l);
+    return [...byKey.values()];
+}
+
+/**
+ * The full cumulative **tourist-VIP entitlement tier** — the top tourist plan's
+ * entitlements. Every owner and complex plan inherits this set (SPEC-216): an
+ * owner is also a full tourist, so owner plans grant the tourist-VIP features in
+ * addition to their owner-specific ones. This constant is the single source of
+ * truth — `TOURIST_VIP_PLAN` and the owner/complex inheritance both build from it,
+ * so the tourist tier and the owner inheritance can never drift.
+ */
+const TOURIST_VIP_ENTITLEMENTS: readonly EntitlementKey[] = [
+    EntitlementKey.SAVE_FAVORITES,
+    EntitlementKey.WRITE_REVIEWS,
+    EntitlementKey.READ_REVIEWS,
+    EntitlementKey.AD_FREE,
+    EntitlementKey.PRICE_ALERTS,
+    EntitlementKey.EXCLUSIVE_DEALS,
+    EntitlementKey.VIP_SUPPORT,
+    EntitlementKey.VIP_PROMOTIONS_ACCESS,
+    EntitlementKey.CAN_COMPARE_ACCOMMODATIONS,
+    EntitlementKey.CAN_ATTACH_REVIEW_PHOTOS,
+    EntitlementKey.CAN_VIEW_SEARCH_HISTORY,
+    EntitlementKey.CAN_VIEW_RECOMMENDATIONS,
+    EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
+    EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT
+];
+
+/**
+ * The cumulative **tourist-VIP limit tier** (all unlimited). Inherited by every
+ * owner/complex plan alongside {@link TOURIST_VIP_ENTITLEMENTS}, via
+ * {@link mergeLimits} (plan-specific limits stay authoritative).
+ */
+const TOURIST_VIP_LIMITS: readonly LimitDefinition[] = [
+    limit(LimitKey.MAX_FAVORITES, -1),
+    limit(LimitKey.MAX_ACTIVE_ALERTS, -1),
+    limit(LimitKey.MAX_COMPARE_ITEMS, -1)
+];
+
 // ─── OWNER PLANS ───────────────────────────────────────────────
 
 export const OWNER_BASICO_PLAN: PlanDefinition = {
@@ -29,7 +92,9 @@ export const OWNER_BASICO_PLAN: PlanDefinition = {
     isDefault: true,
     sortOrder: 1,
     isActive: true,
-    entitlements: [
+    entitlements: dedupe([
+        ...TOURIST_VIP_ENTITLEMENTS,
+        // owner-specific
         EntitlementKey.PUBLISH_ACCOMMODATIONS,
         EntitlementKey.EDIT_ACCOMMODATION_INFO,
         EntitlementKey.VIEW_BASIC_STATS,
@@ -40,15 +105,15 @@ export const OWNER_BASICO_PLAN: PlanDefinition = {
         EntitlementKey.AI_CHAT
         // ai_search removed from all plans (SPEC-211 T-004)
         // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
-    ],
-    limits: [
+    ]),
+    limits: mergeLimits(TOURIST_VIP_LIMITS, [
         limit(LimitKey.MAX_ACCOMMODATIONS, 1),
         limit(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 5),
         limit(LimitKey.MAX_ACTIVE_PROMOTIONS, 0),
         limit(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20),
         limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 20)
         // MAX_AI_SEARCH_PER_MONTH removed from all plans (SPEC-211 T-004)
-    ]
+    ])
 };
 
 export const OWNER_PRO_PLAN: PlanDefinition = {
@@ -64,7 +129,9 @@ export const OWNER_PRO_PLAN: PlanDefinition = {
     isDefault: false,
     sortOrder: 2,
     isActive: true,
-    entitlements: [
+    entitlements: dedupe([
+        ...TOURIST_VIP_ENTITLEMENTS,
+        // owner-specific
         EntitlementKey.PUBLISH_ACCOMMODATIONS,
         EntitlementKey.EDIT_ACCOMMODATION_INFO,
         EntitlementKey.VIEW_BASIC_STATS,
@@ -83,15 +150,15 @@ export const OWNER_PRO_PLAN: PlanDefinition = {
         EntitlementKey.AI_CHAT
         // ai_search removed from all plans (SPEC-211 T-004)
         // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
-    ],
-    limits: [
+    ]),
+    limits: mergeLimits(TOURIST_VIP_LIMITS, [
         limit(LimitKey.MAX_ACCOMMODATIONS, 3),
         limit(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 15),
         limit(LimitKey.MAX_ACTIVE_PROMOTIONS, 3),
         limit(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 100),
         limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 100)
         // MAX_AI_SEARCH_PER_MONTH removed from all plans (SPEC-211 T-004)
-    ]
+    ])
 };
 
 export const OWNER_PREMIUM_PLAN: PlanDefinition = {
@@ -107,7 +174,9 @@ export const OWNER_PREMIUM_PLAN: PlanDefinition = {
     isDefault: false,
     sortOrder: 3,
     isActive: true,
-    entitlements: [
+    entitlements: dedupe([
+        ...TOURIST_VIP_ENTITLEMENTS,
+        // owner-specific
         EntitlementKey.PUBLISH_ACCOMMODATIONS,
         EntitlementKey.EDIT_ACCOMMODATION_INFO,
         EntitlementKey.VIEW_BASIC_STATS,
@@ -128,8 +197,8 @@ export const OWNER_PREMIUM_PLAN: PlanDefinition = {
         EntitlementKey.AI_CHAT
         // ai_search removed from all plans (SPEC-211 T-004)
         // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
-    ],
-    limits: [
+    ]),
+    limits: mergeLimits(TOURIST_VIP_LIMITS, [
         limit(LimitKey.MAX_ACCOMMODATIONS, 10),
         limit(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 30),
         limit(LimitKey.MAX_ACTIVE_PROMOTIONS, -1), // unlimited
@@ -137,7 +206,7 @@ export const OWNER_PREMIUM_PLAN: PlanDefinition = {
         limit(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 1000),
         limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 2000)
         // MAX_AI_SEARCH_PER_MONTH removed from all plans (SPEC-211 T-004)
-    ]
+    ])
 };
 
 // ─── COMPLEX PLANS ─────────────────────────────────────────────
@@ -155,7 +224,9 @@ export const COMPLEX_BASICO_PLAN: PlanDefinition = {
     isDefault: true,
     sortOrder: 1,
     isActive: true,
-    entitlements: [
+    entitlements: dedupe([
+        ...TOURIST_VIP_ENTITLEMENTS,
+        // complex-specific
         EntitlementKey.PUBLISH_ACCOMMODATIONS,
         EntitlementKey.EDIT_ACCOMMODATION_INFO,
         EntitlementKey.VIEW_BASIC_STATS,
@@ -167,8 +238,8 @@ export const COMPLEX_BASICO_PLAN: PlanDefinition = {
         EntitlementKey.AI_CHAT
         // ai_search removed from all plans (SPEC-211 T-004)
         // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
-    ],
-    limits: [
+    ]),
+    limits: mergeLimits(TOURIST_VIP_LIMITS, [
         limit(LimitKey.MAX_PROPERTIES, 3),
         limit(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 10),
         limit(LimitKey.MAX_STAFF_ACCOUNTS, 2),
@@ -176,7 +247,7 @@ export const COMPLEX_BASICO_PLAN: PlanDefinition = {
         limit(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 30),
         limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 30)
         // MAX_AI_SEARCH_PER_MONTH removed from all plans (SPEC-211 T-004)
-    ]
+    ])
 };
 
 export const COMPLEX_PRO_PLAN: PlanDefinition = {
@@ -192,7 +263,9 @@ export const COMPLEX_PRO_PLAN: PlanDefinition = {
     isDefault: false,
     sortOrder: 2,
     isActive: true,
-    entitlements: [
+    entitlements: dedupe([
+        ...TOURIST_VIP_ENTITLEMENTS,
+        // complex-specific
         EntitlementKey.PUBLISH_ACCOMMODATIONS,
         EntitlementKey.EDIT_ACCOMMODATION_INFO,
         EntitlementKey.VIEW_BASIC_STATS,
@@ -215,8 +288,8 @@ export const COMPLEX_PRO_PLAN: PlanDefinition = {
         EntitlementKey.AI_CHAT
         // ai_search removed from all plans (SPEC-211 T-004)
         // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
-    ],
-    limits: [
+    ]),
+    limits: mergeLimits(TOURIST_VIP_LIMITS, [
         limit(LimitKey.MAX_PROPERTIES, 10),
         limit(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 20),
         limit(LimitKey.MAX_STAFF_ACCOUNTS, 5),
@@ -224,7 +297,7 @@ export const COMPLEX_PRO_PLAN: PlanDefinition = {
         limit(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 150),
         limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 150)
         // MAX_AI_SEARCH_PER_MONTH removed from all plans (SPEC-211 T-004)
-    ]
+    ])
 };
 
 export const COMPLEX_PREMIUM_PLAN: PlanDefinition = {
@@ -240,7 +313,9 @@ export const COMPLEX_PREMIUM_PLAN: PlanDefinition = {
     isDefault: false,
     sortOrder: 3,
     isActive: true,
-    entitlements: [
+    entitlements: dedupe([
+        ...TOURIST_VIP_ENTITLEMENTS,
+        // complex-specific
         EntitlementKey.PUBLISH_ACCOMMODATIONS,
         EntitlementKey.EDIT_ACCOMMODATION_INFO,
         EntitlementKey.VIEW_BASIC_STATS,
@@ -265,8 +340,8 @@ export const COMPLEX_PREMIUM_PLAN: PlanDefinition = {
         EntitlementKey.AI_CHAT
         // ai_search removed from all plans (SPEC-211 T-004)
         // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
-    ],
-    limits: [
+    ]),
+    limits: mergeLimits(TOURIST_VIP_LIMITS, [
         limit(LimitKey.MAX_PROPERTIES, -1), // unlimited
         limit(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 50),
         limit(LimitKey.MAX_STAFF_ACCOUNTS, -1), // unlimited
@@ -275,7 +350,7 @@ export const COMPLEX_PREMIUM_PLAN: PlanDefinition = {
         limit(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 2000),
         limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 5000)
         // MAX_AI_SEARCH_PER_MONTH removed from all plans (SPEC-211 T-004)
-    ]
+    ])
 };
 
 // ─── TOURIST PLANS ─────────────────────────────────────────────
@@ -360,32 +435,12 @@ export const TOURIST_VIP_PLAN: PlanDefinition = {
     isDefault: false,
     sortOrder: 3,
     isActive: true,
-    entitlements: [
-        EntitlementKey.SAVE_FAVORITES,
-        EntitlementKey.WRITE_REVIEWS,
-        EntitlementKey.READ_REVIEWS,
-        EntitlementKey.AD_FREE,
-        EntitlementKey.PRICE_ALERTS,
-        EntitlementKey.EXCLUSIVE_DEALS,
-        EntitlementKey.VIP_SUPPORT,
-        EntitlementKey.VIP_PROMOTIONS_ACCESS,
-        EntitlementKey.CAN_COMPARE_ACCOMMODATIONS,
-        EntitlementKey.CAN_ATTACH_REVIEW_PHOTOS,
-        EntitlementKey.CAN_VIEW_SEARCH_HISTORY,
-        EntitlementKey.CAN_VIEW_RECOMMENDATIONS,
-        EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
-        EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT
-        // ai_chat removed from tourist plans (SPEC-211 T-003)
-        // ai_search removed from all plans (SPEC-211 T-004)
-        // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
-    ],
-    limits: [
-        limit(LimitKey.MAX_FAVORITES, -1), // unlimited
-        limit(LimitKey.MAX_ACTIVE_ALERTS, -1), // unlimited
-        limit(LimitKey.MAX_COMPARE_ITEMS, -1) // unlimited
-        // MAX_AI_CHAT_PER_MONTH removed from tourist plans (SPEC-211 T-003)
-        // MAX_AI_SEARCH_PER_MONTH removed from all plans (SPEC-211 T-004)
-    ]
+    // Single source of truth for the tourist-VIP tier. Owner/complex plans inherit
+    // the SAME constants (SPEC-216), so the tourist tier and owner inheritance can
+    // never drift. ai_chat/ai_search/ai_support stay ungranted on tourist plans
+    // (SPEC-211 T-003/T-004, SPEC-200).
+    entitlements: [...TOURIST_VIP_ENTITLEMENTS],
+    limits: [...TOURIST_VIP_LIMITS]
 };
 
 // ─── ALL PLANS ─────────────────────────────────────────────────
