@@ -10,10 +10,10 @@ const GRACE_MS = BILLING_CRON_LAG_GRACE_HOURS * HOURS_MS; // 6 h in ms
 
 describe('isSubscriptionLive', () => {
     // -------------------------------------------------------------------------
-    // Non-live statuses
+    // Non-live statuses (no soft-cancel grace)
     // -------------------------------------------------------------------------
-    describe('non-active/trialing statuses', () => {
-        const nonLiveStatuses = ['cancelled', 'past_due', 'paused', 'expired', 'unpaid', ''];
+    describe('non-live statuses (past_due, paused, expired, unpaid)', () => {
+        const nonLiveStatuses = ['past_due', 'paused', 'expired', 'unpaid', ''];
 
         for (const status of nonLiveStatuses) {
             it(`should return false for status '${status}'`, () => {
@@ -25,6 +25,70 @@ describe('isSubscriptionLive', () => {
                 expect(result).toBe(false);
             });
         }
+    });
+
+    // -------------------------------------------------------------------------
+    // 'cancelled' status — soft-cancel grace (live until currentPeriodEnd, no grace window)
+    // -------------------------------------------------------------------------
+    describe("status 'cancelled' (soft-cancel grace)", () => {
+        it('should return false when no currentPeriodEnd is provided (absent = fail-open → true)', () => {
+            // Absent currentPeriodEnd → fail-open → true
+            const input = { status: 'cancelled', nowMs: NOW_MS };
+            expect(isSubscriptionLive(input)).toBe(true);
+        });
+
+        it('should return true when currentPeriodEnd is in the future (host paid through)', () => {
+            // Arrange — period_end is 5 days in the future
+            const futureEnd = new Date(NOW_MS + 5 * 24 * HOURS_MS);
+            const input = { status: 'cancelled', currentPeriodEnd: futureEnd, nowMs: NOW_MS };
+            expect(isSubscriptionLive(input)).toBe(true);
+        });
+
+        it('should return false when currentPeriodEnd is 1 hour in the past (no grace window)', () => {
+            // Arrange — period_end passed 1 h ago; no cron-lag grace for cancelled
+            const pastEnd = new Date(NOW_MS - 1 * HOURS_MS);
+            const input = { status: 'cancelled', currentPeriodEnd: pastEnd, nowMs: NOW_MS };
+            expect(isSubscriptionLive(input)).toBe(false);
+        });
+
+        it('should return false when currentPeriodEnd is 1 ms in the past', () => {
+            // Arrange — just expired
+            const justPast = new Date(NOW_MS - 1);
+            const input = { status: 'cancelled', currentPeriodEnd: justPast, nowMs: NOW_MS };
+            expect(isSubscriptionLive(input)).toBe(false);
+        });
+
+        it('should return true when currentPeriodEnd is exactly now (boundary — overdueMs = 0 ≤ 0)', () => {
+            // Arrange — exactly at now: overdueMs = 0, graceLimitMs = 0 → 0 ≤ 0 = true
+            const exactlyNow = new Date(NOW_MS);
+            const input = { status: 'cancelled', currentPeriodEnd: exactlyNow, nowMs: NOW_MS };
+            expect(isSubscriptionLive(input)).toBe(true);
+        });
+
+        it('should return true when currentPeriodEnd is null (fail-open)', () => {
+            const input = { status: 'cancelled', currentPeriodEnd: null, nowMs: NOW_MS };
+            expect(isSubscriptionLive(input)).toBe(true);
+        });
+
+        it('should NOT apply cron-lag grace: 1 h past end is dead (unlike active where 1 h past is live)', () => {
+            // Arrange — 1 h past currentPeriodEnd
+            const oneHourPast = new Date(NOW_MS - 1 * HOURS_MS);
+            // Active would be live (within 6 h grace), cancelled must be dead
+            expect(
+                isSubscriptionLive({
+                    status: 'active',
+                    currentPeriodEnd: oneHourPast,
+                    nowMs: NOW_MS
+                })
+            ).toBe(true);
+            expect(
+                isSubscriptionLive({
+                    status: 'cancelled',
+                    currentPeriodEnd: oneHourPast,
+                    nowMs: NOW_MS
+                })
+            ).toBe(false);
+        });
     });
 
     // -------------------------------------------------------------------------

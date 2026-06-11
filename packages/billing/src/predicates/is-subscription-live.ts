@@ -18,7 +18,8 @@ export interface IsSubscriptionLiveInput {
     readonly trialEnd?: Date | null;
     /**
      * Timestamp at which the current billing period ends.
-     * Only meaningful when `status === 'active'`.
+     * Meaningful when `status === 'active'` (cron-lag grace applies) or
+     * `status === 'cancelled'` (soft-cancel grace: live until period end, no extra grace).
      * `null` or `undefined` → treated as live (fail-open).
      */
     readonly currentPeriodEnd?: Date | null;
@@ -31,6 +32,8 @@ export interface IsSubscriptionLiveInput {
     /**
      * Cron-lag grace window in hours.
      * Defaults to `BILLING_CRON_LAG_GRACE_HOURS` (6 h) when omitted.
+     * Applies only to `'active'` subscriptions; `'cancelled'` always uses 0 h grace
+     * (access is valid exactly until `currentPeriodEnd`, not beyond).
      * The subscription is considered live while `(now - periodEnd) <= graceHours`.
      */
     readonly graceHours?: number;
@@ -41,17 +44,18 @@ export interface IsSubscriptionLiveInput {
  * grant access to entitlements).
  *
  * Logic:
- * - Only `'active'` and `'trialing'` statuses can be live; all others return
- *   `false` immediately.
- * - For `'trialing'`: live iff `trialEnd` is absent/null **or** the trial has
- *   not exceeded the grace window yet.
- * - For `'active'`: live iff `currentPeriodEnd` is absent/null **or** the
- *   period has not exceeded the grace window yet.
+ * - `'active'`: live iff `currentPeriodEnd` is absent/null **or** the period
+ *   has not exceeded the cron-lag grace window (default 6 h).
+ * - `'trialing'`: live iff `trialEnd` is absent/null **or** the trial has not
+ *   exceeded the cron-lag grace window.
+ * - `'cancelled'` (soft-cancel grace): live iff `currentPeriodEnd` is
+ *   absent/null **or** `currentPeriodEnd > now`. No extra grace window applies;
+ *   access is valid exactly until the period the host already paid for ends.
+ * - All other statuses (`past_due`, `paused`, `expired`, etc.) → `false`.
  * - A date that cannot be parsed (i.e. `isNaN(date.getTime())`) is treated as
- *   absent, preserving the fail-open policy (mirrors the `entitlement.ts:465`
- *   invalid-Date guard).
+ *   absent, preserving the fail-open policy.
  * - The grace window uses `<=` at the boundary: a subscription overdue by
- *   exactly `graceHours` is still considered live.
+ *   exactly `graceHours` is still considered live (cron-lag semantics).
  *
  * @param input - Subscription fields required for the liveness check.
  * @returns `true` when the subscription grants access; `false` otherwise.
@@ -72,8 +76,19 @@ export interface IsSubscriptionLiveInput {
  *   currentPeriodEnd: new Date(sevenHoursAgo),
  * }); // false
  *
- * // Cancelled subscription → always false
- * isSubscriptionLive({ status: 'cancelled' }); // false
+ * // Cancelled subscription within soft-cancel grace (period_end still in future)
+ * const futurePeriodEnd = new Date(Date.now() + 5 * 24 * 3_600_000);
+ * isSubscriptionLive({
+ *   status: 'cancelled',
+ *   currentPeriodEnd: futurePeriodEnd,
+ * }); // true
+ *
+ * // Cancelled subscription with period_end in the past → no access
+ * const pastPeriodEnd = new Date(Date.now() - 1 * 3_600_000);
+ * isSubscriptionLive({
+ *   status: 'cancelled',
+ *   currentPeriodEnd: pastPeriodEnd,
+ * }); // false
  * ```
  */
 export function isSubscriptionLive(input: IsSubscriptionLiveInput): boolean {
@@ -85,18 +100,24 @@ export function isSubscriptionLive(input: IsSubscriptionLiveInput): boolean {
         graceHours = BILLING_CRON_LAG_GRACE_HOURS
     } = input;
 
-    if (status !== 'active' && status !== 'trialing') {
-        return false;
-    }
-
-    const graceLimitMs = graceHours * 3_600_000;
-
     if (status === 'trialing') {
+        const graceLimitMs = graceHours * 3_600_000;
         return isWithinGrace({ date: trialEnd, nowMs, graceLimitMs });
     }
 
-    // status === 'active'
-    return isWithinGrace({ date: currentPeriodEnd, nowMs, graceLimitMs });
+    if (status === 'active') {
+        const graceLimitMs = graceHours * 3_600_000;
+        return isWithinGrace({ date: currentPeriodEnd, nowMs, graceLimitMs });
+    }
+
+    if (status === 'cancelled') {
+        // Soft-cancel grace: the host paid through currentPeriodEnd — grant access
+        // until that moment, but no extra cron-lag window beyond it.
+        return isWithinGrace({ date: currentPeriodEnd, nowMs, graceLimitMs: 0 });
+    }
+
+    // All other statuses (past_due, paused, expired, unpaid, etc.) are not live.
+    return false;
 }
 
 /**
