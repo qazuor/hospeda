@@ -375,10 +375,10 @@
             "specId": "SPEC-212",
             "title": "Conversational AI Accommodation Search",
             "status": "in-progress",
-            "progress": "12/18",
+            "progress": "13/18",
             "path": "SPEC-212-conversational-ai-search",
             "archived": false,
-            "note": "WEB TRACK COMPLETE. T-012 mounted SearchChatPanel on /alojamientos (client:load, getApiUrl) and DELETED the SPEC-199 single-input UI (AiSearchTrigger/AiSearchPanel/NlSearchInput/IntentChips + 2 tests, only the listing used them). One AI search surface. Next: T-013 retire search-intent API route (needs owner: confirm no external consumer in apps/api+admin), then T-014..T-017 testing, T-018 docs."
+            "note": "T-013 done (owner-approved deletion): removed search-intent route + its 2 route tests + barrel registration. KEPT search-intent.mapper.ts (+test) and amenity-allowlist (used by search-chat). No dangling refs; search-chat 30/30, mapper 74/74 green. Only testing (T-014..T-017) + docs (T-018) remain."
         }
     ],
     "standalone": {

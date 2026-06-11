@@ -456,31 +456,31 @@
             "id": "T-013",
             "title": "Retire the SPEC-199 search-intent route (consult owner before delete)",
             "description": "apps/api/src/routes/ai/protected/search-intent.ts is superseded by search-chat. Confirm no external consumer depends on it (consult owner per the spec's decision protocol), then delete the route and its registration; remove now-dead tests. If a consumer exists, keep it for back-compat and document why.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-012"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Confirm no external consumer (consult owner)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Delete route + registration or document back-compat",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "ai", "cleanup", "integration"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-11T00:00:00.000Z",
+                "completed": "2026-06-11T00:00:00.000Z"
             }
         },
         {
@@ -657,9 +657,9 @@
     ],
     "summary": {
         "total": 18,
-        "pending": 6,
+        "pending": 5,
         "inProgress": 0,
-        "completed": 12,
+        "completed": 13,
         "blocked": 0,
         "averageComplexity": 2.4
     }

@@ -3,7 +3,8 @@
  *
  * ## T-003: slot-extraction prompt
  *
- * Mirrors {@link buildSearchIntentPrompt} (SPEC-199) — it produces the dynamic
+ * Follows the same approach SPEC-199's single-shot search-intent prompt builder
+ * used (now retired in T-013) — it produces the dynamic
  * `prompt` string passed to `aiService.generateObject({ feature: 'search' })`,
  * embedding the locale-specific amenity/feature allowlists. On top of that it
  * injects the **conversational state** so the model can refine an accumulated
