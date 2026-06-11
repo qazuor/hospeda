@@ -275,6 +275,7 @@ export function SearchChatPanel({ locale, apiUrl }: SearchChatPanelProps) {
                             className={`${styles.bubble} ${
                                 msg.role === 'user' ? styles.userBubble : styles.assistantBubble
                             }`}
+                            data-testid={msg.role === 'assistant' ? 'ai-search-reply' : undefined}
                         >
                             {msg.content}
                         </div>
@@ -340,7 +341,10 @@ export function SearchChatPanel({ locale, apiUrl }: SearchChatPanelProps) {
 
                 {/* Results section */}
                 {showResults && (
-                    <div className={styles.results}>
+                    <div
+                        className={styles.results}
+                        data-testid="ai-search-results"
+                    >
                         <div className={styles.resultsHeader}>
                             <span className={styles.resultsLabel}>
                                 {t('aiSearch.chat.resultsLabel', 'Resultados')}

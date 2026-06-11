@@ -561,31 +561,31 @@
             "id": "T-016",
             "title": "E2E: type -> filters -> results -> refine -> results update",
             "description": "End-to-end happy flow on the listing: type a query, a filters event arrives, results render in-panel, the NL reply streams, a second refinement message updates filters and re-renders results. Covers the §7 first-turn + refinement scenarios end to end.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-012"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "First turn: type -> filters -> results -> reply",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Refinement turn updates filters + results",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "ai", "e2e", "testing"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-11T00:00:00.000Z",
+                "completed": "2026-06-11T00:00:00.000Z"
             }
         },
         {
@@ -657,9 +657,9 @@
     ],
     "summary": {
         "total": 18,
-        "pending": 1,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 17,
+        "completed": 18,
         "blocked": 0,
         "averageComplexity": 2.4
     }
