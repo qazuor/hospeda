@@ -21,11 +21,11 @@ import { toAccommodationCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { resolveI18nText } from '@/lib/resolve-i18n-text';
 import { getAccommodationTypeLabel, getBadgeStatusColor } from '@/lib/colors';
 import { formatPrice } from '@/lib/format-utils';
 import { buildAccommodationListingSummary, DEFAULT_TYPE_GRAMMAR } from '@/lib/accommodation-listing-summary';
 import type { CatalogEntry, SummaryLocale } from '@/lib/accommodation-listing-summary';
-import { resolveI18nText } from '@/lib/resolve-i18n-text';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t, tPlural } = createTranslations(locale);
@@ -189,6 +189,9 @@ const filterGroups: FilterGroup[] = [
 			{ value: 'CAMPING', label: getAccommodationTypeLabel({ type: 'CAMPING', t }) },
 			{ value: 'ROOM', label: getAccommodationTypeLabel({ type: 'ROOM', t }) },
 			{ value: 'RESORT', label: getAccommodationTypeLabel({ type: 'RESORT', t }) },
+			{ value: 'APART_HOTEL', label: getAccommodationTypeLabel({ type: 'APART_HOTEL', t }) },
+			{ value: 'ESTANCIA', label: getAccommodationTypeLabel({ type: 'ESTANCIA', t }) },
+			{ value: 'BED_AND_BREAKFAST', label: getAccommodationTypeLabel({ type: 'BED_AND_BREAKFAST', t }) },
 		],
 	},
 	{

@@ -85,6 +85,13 @@
             "when": 1781100000000,
             "tag": "0011_restrip_accommodation_description_markdown",
             "breakpoints": true
+        },
+        {
+            "idx": 12,
+            "version": "7",
+            "when": 1781187082577,
+            "tag": "0012_conscious_wendell_rand",
+            "breakpoints": true
         }
     ]
 }

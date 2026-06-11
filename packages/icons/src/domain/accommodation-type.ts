@@ -22,13 +22,16 @@
 
 import type { ComponentType } from 'react';
 import { BedroomsIcon } from '../icons/accommodation/BedroomsIcon';
+import { BreakfastIcon } from '../icons/amenities/BreakfastIcon';
 import { CarIcon } from '../icons/amenities/CarIcon';
 import { PoolIcon } from '../icons/amenities/PoolIcon';
+import { CreoleInnIcon } from '../icons/attractions/CreoleInnIcon';
 import { TouristRanchIcon } from '../icons/attractions/TouristRanchIcon';
 import { AccommodationIcon } from '../icons/entities/AccommodationIcon';
 import { TentIcon } from '../icons/features/TentIcon';
 import { TreeIcon } from '../icons/features/TreeIcon';
 import { BellIcon } from '../icons/system/BellIcon';
+import { BuildingIcon } from '../icons/system/BuildingIcon';
 import { BuildingsIcon } from '../icons/system/BuildingsIcon';
 import { HomeIcon } from '../icons/system/HomeIcon';
 import { UsersIcon } from '../icons/system/UsersIcon';
@@ -84,7 +87,14 @@ export const ACCOMMODATION_TYPE_VISUALS: Readonly<Record<string, AccommodationTy
     camping: { icon: TentIcon, colorToken: 'accommodation-type-camping' },
     room: { icon: BedroomsIcon, colorToken: 'accommodation-type-room' },
     motel: { icon: CarIcon, colorToken: 'accommodation-type-motel' },
-    resort: { icon: PoolIcon, colorToken: 'accommodation-type-resort' }
+    resort: { icon: PoolIcon, colorToken: 'accommodation-type-resort' },
+    // Added to AccommodationTypeEnum in SPEC-213. Each gets its own distinct icon
+    // (preserving the one-icon-per-type invariant). Dedicated per-type color tokens
+    // are a product-owner follow-up; until then they reuse a semantically-adjacent
+    // approved hue (apart_hotel ~ apartment, estancia ~ country_house, b&b ~ house).
+    apart_hotel: { icon: BuildingIcon, colorToken: 'accommodation-type-apartment' },
+    estancia: { icon: CreoleInnIcon, colorToken: 'accommodation-type-country-house' },
+    bed_and_breakfast: { icon: BreakfastIcon, colorToken: 'accommodation-type-house' }
 };
 
 /**

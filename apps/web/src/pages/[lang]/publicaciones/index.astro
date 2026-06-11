@@ -208,17 +208,24 @@ const filterGroups = [
         label: t('blog.filters.category', 'Categoría'),
         type: 'checkbox' as const,
         options: [
-            { value: 'CULTURE',    label: t('blog.categories.culture',    'Cultura') },
-            { value: 'GASTRONOMY', label: t('blog.categories.gastronomy', 'Gastronomía') },
-            { value: 'NATURE',     label: t('blog.categories.nature',     'Naturaleza') },
-            { value: 'TOURISM',    label: t('blog.categories.tourism',    'Turismo') },
-            { value: 'SPORT',      label: t('blog.categories.sport',      'Deporte') },
-            { value: 'HISTORY',    label: t('blog.categories.history',    'Historia') },
-            { value: 'EVENTS',     label: t('blog.categories.events',     'Eventos') },
-            { value: 'CARNIVAL',   label: t('blog.categories.carnival',   'Carnaval') },
-            { value: 'WELLNESS',   label: t('blog.categories.wellness',   'Bienestar') },
-            { value: 'FAMILY',     label: t('blog.categories.family',     'Familia') },
-            { value: 'TIPS',       label: t('blog.categories.tips',       'Consejos') }
+            { value: 'CULTURE',      label: t('blog.categories.culture',      'Cultura') },
+            { value: 'GASTRONOMY',   label: t('blog.categories.gastronomy',   'Gastronomía') },
+            { value: 'NATURE',       label: t('blog.categories.nature',       'Naturaleza') },
+            { value: 'TOURISM',      label: t('blog.categories.tourism',      'Turismo') },
+            { value: 'SPORT',        label: t('blog.categories.sport',        'Deporte') },
+            { value: 'HISTORY',      label: t('blog.categories.history',      'Historia') },
+            { value: 'EVENTS',       label: t('blog.categories.events',       'Eventos') },
+            { value: 'CARNIVAL',     label: t('blog.categories.carnival',     'Carnaval') },
+            { value: 'WELLNESS',     label: t('blog.categories.wellness',     'Bienestar') },
+            { value: 'FAMILY',       label: t('blog.categories.family',       'Familia') },
+            { value: 'TIPS',         label: t('blog.categories.tips',         'Consejos') },
+            { value: 'NIGHTLIFE',    label: t('blog.categories.nightlife',    'Noche') },
+            { value: 'TRADITIONS',   label: t('blog.categories.traditions',   'Tradiciones') },
+            { value: 'ART',          label: t('blog.categories.art',          'Arte') },
+            { value: 'BEACH',        label: t('blog.categories.beach',        'Playa') },
+            { value: 'RURAL',        label: t('blog.categories.rural',        'Rural') },
+            { value: 'FESTIVALS',    label: t('blog.categories.festivals',    'Festivales') },
+            { value: 'GENERAL',      label: t('blog.categories.general',      'General') }
         ]
     },
     {
@@ -280,16 +287,17 @@ const itemListEntries = cards.map((card) => ({
     name: card.title,
 }));
 
-/** Quick-filter chips: top post categories */
+/** Quick-filter chips: top post categories. Hrefs use lowercase slugs consistent
+ * with the [category] route which normalises incoming slugs via resolvePostCategorySlug. */
 const postCategoryChips = [
-    { label: t('blog.categories.culture', 'Cultura'), href: buildUrl({ locale, path: '/publicaciones/categoria/CULTURE/' }) },
-    { label: t('blog.categories.gastronomy', 'Gastronomía'), href: buildUrl({ locale, path: '/publicaciones/categoria/GASTRONOMY/' }) },
-    { label: t('blog.categories.nature', 'Naturaleza'), href: buildUrl({ locale, path: '/publicaciones/categoria/NATURE/' }) },
-    { label: t('blog.categories.tourism', 'Turismo'), href: buildUrl({ locale, path: '/publicaciones/categoria/TOURISM/' }) },
-    { label: t('blog.categories.history', 'Historia'), href: buildUrl({ locale, path: '/publicaciones/categoria/HISTORY/' }) },
-    { label: t('blog.categories.events', 'Eventos'), href: buildUrl({ locale, path: '/publicaciones/categoria/EVENTS/' }) },
-    { label: t('blog.categories.carnival', 'Carnaval'), href: buildUrl({ locale, path: '/publicaciones/categoria/CARNIVAL/' }) },
-    { label: t('blog.categories.tips', 'Consejos'), href: buildUrl({ locale, path: '/publicaciones/categoria/TIPS/' }) }
+    { label: t('blog.categories.culture',    'Cultura'),     href: buildUrl({ locale, path: '/publicaciones/categoria/culture/' }) },
+    { label: t('blog.categories.gastronomy', 'Gastronomía'), href: buildUrl({ locale, path: '/publicaciones/categoria/gastronomy/' }) },
+    { label: t('blog.categories.nature',     'Naturaleza'),  href: buildUrl({ locale, path: '/publicaciones/categoria/nature/' }) },
+    { label: t('blog.categories.tourism',    'Turismo'),     href: buildUrl({ locale, path: '/publicaciones/categoria/tourism/' }) },
+    { label: t('blog.categories.history',    'Historia'),    href: buildUrl({ locale, path: '/publicaciones/categoria/history/' }) },
+    { label: t('blog.categories.events',     'Eventos'),     href: buildUrl({ locale, path: '/publicaciones/categoria/events/' }) },
+    { label: t('blog.categories.carnival',   'Carnaval'),    href: buildUrl({ locale, path: '/publicaciones/categoria/carnival/' }) },
+    { label: t('blog.categories.tips',       'Consejos'),    href: buildUrl({ locale, path: '/publicaciones/categoria/tips/' }) }
 ] as const;
 ---
 

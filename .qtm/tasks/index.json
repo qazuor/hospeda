@@ -374,8 +374,8 @@
         {
             "specId": "SPEC-213",
             "title": "Web + Admin pre-beta polish & bugfix batch",
-            "status": "pending",
-            "progress": "0/0",
+            "status": "in-progress",
+            "progress": "19/19",
             "path": "SPEC-213-web-admin-prebeta-fixes-batch"
         },
         {

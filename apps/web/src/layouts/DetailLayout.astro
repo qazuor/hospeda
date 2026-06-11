@@ -139,11 +139,18 @@ const resolvedDescription = description ?? 'Descubrí alojamientos en el Litoral
 	}
 
 	/* Sidebar offset = real navbar height (--navbar-height, published by Header.astro)
-	   + the compact wave header band (~105px: content padding + title + wave overhang). */
+	   + the compact wave header band (~105px: content padding + title + wave overhang).
+	   max-height + overflow-y: auto make the sidebar independently scrollable when
+	   its content is taller than the visible viewport area below the sticky top
+	   offset. Without this, the bottom portion of a tall sidebar was unreachable
+	   because position:sticky + align-self:start sizes the sticky container to
+	   exactly the sidebar's intrinsic height, leaving no scroll anchor. */
 	.detail-page__sidebar {
 		position: sticky;
 		top: calc(var(--navbar-height, 80px) + 105px);
 		align-self: start;
+		max-height: calc(100vh - var(--navbar-height, 80px) - 105px);
+		overflow-y: auto;
 	}
 
 	@media (max-width: 1024px) {

@@ -4,7 +4,8 @@
  *
  * Tests FAB rendering, panel open/close, a11y attributes, ESC close,
  * focus-return-to-FAB (FIX-2), expand/collapse aria-labels (FIX-4),
- * and conditional send-button aria-label during streaming (FIX-4).
+ * conditional send-button aria-label during streaming (FIX-4),
+ * and composer textarea autofocus on open (W14).
  */
 
 import { render, screen } from '@testing-library/react';
@@ -265,5 +266,46 @@ describe('AiChatWidget', () => {
         const sendBtn = screen.getByRole('button', { name: 'Sending…' });
         expect(sendBtn).toBeInTheDocument();
         expect(screen.queryByRole('button', { name: 'Send' })).not.toBeInTheDocument();
+    });
+
+    // ─── W14: Autofocus composer textarea on open ────────────────────────────
+
+    it('W14: composer textarea receives focus (not the expand button) when panel opens', async () => {
+        // This is the core W14 fix: previously focusables[0] (the expand button)
+        // received focus. Now the composerTextareaRef targets the textarea directly
+        // with a synchronous focus call inside the useEffect.
+        const user = userEvent.setup();
+        render(<AiChatWidget {...defaultProps} />);
+
+        const fab = screen.getByRole('button', {
+            name: 'Ask AI about this accommodation'
+        });
+
+        await user.click(fab);
+
+        const textarea = screen.getByPlaceholderText('Type your question here…');
+        expect(document.activeElement).toBe(textarea);
+    });
+
+    it('W14: focus-return-to-FAB still works after textarea-focused open→close', async () => {
+        // Verify that fixing the initial focus (textarea, not expand button)
+        // does not break the existing WCAG focus-return-to-FAB behavior.
+        const user = userEvent.setup();
+        render(<AiChatWidget {...defaultProps} />);
+
+        const fab = screen.getByRole('button', {
+            name: 'Ask AI about this accommodation'
+        });
+
+        await user.click(fab);
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+        await user.keyboard('{Escape}');
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+        const fabAfterClose = screen.getByRole('button', {
+            name: 'Ask AI about this accommodation'
+        });
+        expect(document.activeElement).toBe(fabAfterClose);
     });
 });

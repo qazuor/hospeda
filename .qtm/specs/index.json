@@ -907,7 +907,7 @@
             "title": "Web + Admin pre-beta polish & bugfix batch",
             "type": "bugfix",
             "complexity": "medium",
-            "status": "approved",
+            "status": "in-progress",
             "path": "SPEC-213-web-admin-prebeta-fixes-batch",
             "created": "2026-06-10T21:29:49Z",
             "tags": ["web", "admin", "i18n", "bugfix", "polish"],
