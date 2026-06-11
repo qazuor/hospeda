@@ -372,6 +372,34 @@
             "note": "Child B of SPEC-173. NL search: generateObject -> SearchIntentEntities -> AccommodationSearchHttp params, NO embeddings V1. All §3 decisions resolved. spec-realign 2026-06-10: greenfield, foundation stable; slot set expanded (D-5: bedrooms/bathrooms/maxRating/featureSlugs). 21 atomic tasks generated. IN-PROGRESS."
         },
         {
+            "specId": "SPEC-213",
+            "title": "Web + Admin pre-beta polish & bugfix batch",
+            "status": "pending",
+            "progress": "0/0",
+            "path": "SPEC-213-web-admin-prebeta-fixes-batch"
+        },
+        {
+            "specId": "SPEC-214",
+            "title": "Editable AI prompt rules (DB-backed, per feature)",
+            "status": "pending",
+            "progress": "0/0",
+            "path": "SPEC-214-ai-prompt-rules-editable"
+        },
+        {
+            "specId": "SPEC-215",
+            "title": "Destination climate & live weather",
+            "status": "pending",
+            "progress": "0/0",
+            "path": "SPEC-215-destination-climate-weather"
+        },
+        {
+            "specId": "SPEC-216",
+            "title": "Owner plans inherit tourist entitlements & limits (owner = superset of tourist)",
+            "status": "pending",
+            "progress": "0/0",
+            "path": "SPEC-216-owner-inherits-tourist-entitlements"
+        },
+        {
             "specId": "SPEC-212",
             "title": "Conversational AI Accommodation Search",
             "status": "completed",

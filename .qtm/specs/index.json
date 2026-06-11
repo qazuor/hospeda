@@ -903,6 +903,50 @@
             "archived": false
         },
         {
+            "specId": "SPEC-213",
+            "title": "Web + Admin pre-beta polish & bugfix batch",
+            "type": "bugfix",
+            "complexity": "medium",
+            "status": "approved",
+            "path": "SPEC-213-web-admin-prebeta-fixes-batch",
+            "created": "2026-06-10T21:29:49Z",
+            "tags": ["web", "admin", "i18n", "bugfix", "polish"],
+            "archived": false
+        },
+        {
+            "specId": "SPEC-214",
+            "title": "Editable AI prompt rules (DB-backed, per feature)",
+            "type": "feature",
+            "complexity": "medium",
+            "status": "approved",
+            "path": "SPEC-214-ai-prompt-rules-editable",
+            "created": "2026-06-10T21:35:00Z",
+            "tags": ["ai", "ai-core", "admin", "prompts", "db-migration"],
+            "archived": false
+        },
+        {
+            "specId": "SPEC-215",
+            "title": "Destination climate & live weather",
+            "type": "feature",
+            "complexity": "high",
+            "status": "approved",
+            "path": "SPEC-215-destination-climate-weather",
+            "created": "2026-06-10T22:05:00Z",
+            "tags": ["destinations", "weather", "climate", "web", "admin", "cron"],
+            "archived": false
+        },
+        {
+            "specId": "SPEC-216",
+            "title": "Owner plans inherit tourist entitlements & limits (owner = superset of tourist)",
+            "type": "improvement",
+            "complexity": "medium",
+            "status": "approved",
+            "path": "SPEC-216-owner-inherits-tourist-entitlements",
+            "created": "2026-06-10T22:15:00Z",
+            "tags": ["billing", "entitlements", "plans", "owner", "tourist"],
+            "archived": false
+        },
+        {
             "specId": "SPEC-212",
             "title": "Conversational AI Accommodation Search",
             "type": "feat",
