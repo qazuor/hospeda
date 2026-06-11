@@ -99,9 +99,16 @@ be relitigated during implementation.
 - **D-6 — One new SSE endpoint** `POST /api/v1/protected/ai/search-chat`, distinct
   from `/ai/chat` (SPEC-200 accommodation chat) and `/ai/search-intent` (SPEC-199,
   retired). It is NOT a modification of either.
-- **D-7 — Quota = 1 unit of `ai_search` per turn (per HTTP call)**, even though a
-  turn makes 2 LLM calls (`generateObject` + `streamText`). Reuse
-  `createAiQuotaMiddleware('search')` + `createAiRateLimitMiddlewares('search')`.
+- **D-7 — No quota/entitlement gate; `ai_search` stays a free platform feature.**
+  Corrected after implementation (the original plan assumed a quota unit, but the
+  `search` feature has no quota mechanism by design). Per SPEC-211 §7.7 — and matching
+  the sibling SPEC-199 search-intent route exactly — `ai_search` is platform-governed,
+  not a per-plan entitlement or monthly quota. The route uses
+  `createAiRateLimitMiddlewares('search')` (per-user + per-IP burst guard) and the
+  per-feature USD ceiling inside the AI engine; `createAiQuotaMiddleware('search')` is
+  intentionally absent. `entitlementMiddleware()` runs only to populate billing
+  context, never to gate. Owner decision (2026-06-11): keep conversational search free
+  like the single-shot route, despite it making 2 LLM calls per turn.
 - **D-8 — Reply has no exact result count.** The AI route does not query
   accommodations, so the reply is conversational but does NOT cite "encontré 12". The
   UI shows the count after it searches. A count-aware reply is a documented future
@@ -137,9 +144,13 @@ be relitigated during implementation.
 ### 5.1 Per-turn flow (the new endpoint)
 
 `POST /api/v1/protected/ai/search-chat` — SSE response. Middleware chain reuses the
-SPEC-173/199 stack: auth → `ai_search` entitlement gate →
-`createAiRateLimitMiddlewares('search')` → `createAiQuotaMiddleware('search')` →
-handler.
+SPEC-199 search-intent stack verbatim (same `search` feature key): auth (injected by
+the streaming-route factory) → `entitlementMiddleware()` (loads billing context only,
+does NOT gate) → `createAiRateLimitMiddlewares('search')` (per-user + per-IP) →
+handler. `createAiQuotaMiddleware('search')` is **intentionally absent**: `ai_search`
+is a free platform feature (SPEC-211 §7.7), not a per-plan entitlement or quota. Cost
+is backstopped by the rate limit plus the per-feature USD ceiling enforced inside the
+AI engine (`createConfiguredAiService()`), not by a middleware. See §3 D-7.
 
 Per turn the handler:
 
@@ -242,7 +253,7 @@ new table, no new column.
 Feature: Conversational AI accommodation search
 
   Background:
-    Given an authenticated user with an active ai_search entitlement and remaining quota
+    Given an authenticated user (ai_search is a free platform feature — no entitlement or quota gate)
 
   Scenario: First turn extracts filters and streams a reply
     When the user sends "cabaña para 4 con pileta cerca del río"
@@ -268,14 +279,16 @@ Feature: Conversational AI accommodation search
     When a request hits POST /api/v1/protected/ai/search-chat
     Then the response is 401
 
-  Scenario: Entitlement gate blocks users without ai_search
-    Given a user whose plan lacks ai_search
-    Then the response is 403
+  Scenario: No entitlement or quota gate (ai_search is platform-free)
+    Given an authenticated user whose plan lacks any ai_search entitlement
+    When the user sends a search message
+    Then the request is NOT rejected for entitlement or quota reasons
+    And the turn proceeds (subject only to auth + rate limit)
 
-  Scenario: Quota exhaustion is enforced per turn
-    Given the user has 0 remaining ai_search quota
-    Then the response is 403 with a LIMIT_REACHED code
-    And no LLM call is made
+  Scenario: Invalid request body is rejected
+    Given an authenticated user
+    When the body fails AiSearchChatRequestSchema (e.g. empty messages)
+    Then the response is a 400 validation error before the stream opens
 
   Scenario: Rate limit is enforced
     When the user exceeds the search rate limit
@@ -300,9 +313,11 @@ in #1569).
   history + new message correctly; the full-updated-set contract is asserted via the
   prompt shape + `mapIntentToSearchParams` output.
 - **API integration (stub provider)** — happy path (emits `filters`, then streams
-  reply, then `done` + conversationId); auth required (401); `ai_search` entitlement
-  gate (403); quota exhausted (403 / LIMIT_REACHED, no LLM call); rate limit (429);
-  empty/garbage message; persistence best-effort (write failure is non-fatal).
+  reply, then `done` + conversationId); auth required (401); invalid body → 400
+  (validation before the stream opens); platform-free access (a user lacking any
+  ai_search entitlement is NOT rejected — no 403); rate limit (429); empty/garbage
+  message; persistence best-effort (write failure is non-fatal). No quota/entitlement
+  gate tests — there is no such gate (D-7).
 - **Component (web)** — `SearchChatPanel` renders streamed tokens, fires the
   accommodation search on the `filters` event, renders the results grid, shows
   removable active-filter chips, supports a multi-turn refine.
@@ -319,8 +334,10 @@ in #1569).
   full set. Mitigation: the prompt explicitly instructs "return the complete updated
   set, preserving prior filters unless the user changed them"; covered by refinement
   tests.
-- **Quota perception.** One turn = 2 LLM calls but 1 quota unit (D-7). Documented;
-  acceptable trade-off.
+- **Cost of 2 LLM calls per turn with no quota gate.** `ai_search` is platform-free
+  (D-7), so cost is bounded only by the per-user/IP rate limit plus the per-feature USD
+  ceiling in the engine. Accepted by the owner (2026-06-11). If conversational volume
+  proves costly, adding a quota gate is a follow-up decision, not in this spec.
 - **Provider-grammar fragility.** Local providers crash on certain schema constructs
   (date regex). Guarded by the regression test and the #1569 fix.
 - **Persistence drift.** Best-effort writes can silently fail; logged and non-fatal by
@@ -333,7 +350,8 @@ in #1569).
 - SPEC-199 (mapper/schema/prompt) — its technical base is reused; its UI is
   superseded by this spec.
 - SPEC-200 (chat widget, SSE, persistence) — shipped; patterns reused.
-- SPEC-145 / SPEC-168 (entitlements + plan limits for `ai_search`).
+- SPEC-211 §7.7 (defines `ai_search` as a free platform feature — no entitlement/quota
+  gate; this spec follows that governance model, see D-7).
 - The three open AI-fix PRs (#1567 rename, #1568 moderation opt-in, #1569 Ollama
   compat) should land first so the local-provider regression baseline is stable.
 
@@ -354,7 +372,8 @@ Suggested phases for `task-from-spec`:
   shapes); extend `DEFAULT_PROMPTS['search']` framing.
 - **Core (API)** — `search-chat.prompt.ts` (`buildConversationalSearchPrompt`);
   `search-chat.ts` SSE route (generateObject → `filters` → streamText → `done`);
-  best-effort persistence; wire middleware (entitlement + quota + rate limit).
+  best-effort persistence; wire middleware (entitlement-context + rate limit only — no
+  quota gate, D-7).
 - **Integration (web)** — `search-chat-stream.ts` SSE client; `useSearchChat.ts`
   hook; `SearchChatPanel.client.tsx` + module CSS; mount on the listing; retire
   SPEC-199 UI components.
@@ -368,3 +387,4 @@ Suggested phases for `task-from-spec`:
 | Date | Author | Change |
 | --- | --- | --- |
 | 2026-06-11 | qazuor | Initial spec from owner-approved plan (option A, conversational filter refinement). |
+| 2026-06-11 | qazuor | T-004 implementation surfaced that the plan's quota/entitlement assumption was wrong. Corrected D-7, §5.1, §7, §8, §9, §10: `ai_search` is a free platform feature (SPEC-211 §7.7) — no `createAiQuotaMiddleware('search')`, no entitlement gate; only auth + rate limit + engine USD ceiling. Owner-confirmed. |
