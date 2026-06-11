@@ -17,8 +17,8 @@ import { execSQL } from './db-helpers.ts';
  * cleanupTestUsers from support/test-cleanup.ts in afterEach.
  */
 
-const DEFAULT_API_BASE_URL = 'http://localhost:3001';
-const DEFAULT_WEB_BASE_URL = 'http://localhost:4321';
+const DEFAULT_API_BASE_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
+const DEFAULT_WEB_BASE_URL = process.env.HOSPEDA_E2E_WEB_URL ?? 'http://localhost:4321';
 
 export type UserRole = 'USER' | 'HOST' | 'ADMIN' | 'SUPER_ADMIN';
 
