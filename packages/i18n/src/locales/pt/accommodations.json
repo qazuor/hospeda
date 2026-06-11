@@ -99,7 +99,10 @@
         "motel": "Motel",
         "resort": "Resort",
         "rural": "Rural",
-        "boutique": "Boutique"
+        "boutique": "Boutique",
+        "apart_hotel": "Apart Hotel",
+        "estancia": "Estância",
+        "bed_and_breakfast": "Bed & Breakfast"
     },
     "sidebar": {
         "filters": "Filtros",

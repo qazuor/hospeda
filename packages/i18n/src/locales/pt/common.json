@@ -21,7 +21,10 @@
             "house": "Casa",
             "motel": "Motel",
             "resort": "Resort",
-            "room": "Quarto"
+            "room": "Quarto",
+            "apart_hotel": "Apart Hotel",
+            "estancia": "Estância",
+            "bed_and_breakfast": "Bed & Breakfast"
         },
         "lifecycleStatus": {
             "active": "Ativo",
