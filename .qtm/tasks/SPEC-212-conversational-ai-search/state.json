@@ -347,39 +347,39 @@
             "id": "T-010",
             "title": "Implement SearchChatPanel.client.tsx + module CSS",
             "description": "New apps/web/src/components/ai-search/SearchChatPanel.client.tsx (+ colocated *.module.css, vanilla CSS per web styling policy) adapted from AiChatWidget: renders the thread, the streamed reply, a 'pensando...' per-turn state, and the results grid INSIDE the panel. Tests: renders streamed tokens; renders results grid on filters event.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-009"],
             "blocks": ["T-011", "T-012", "T-015"],
             "subtasks": [
                 {
                     "title": "Panel layout (thread + reply + results grid)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "'pensando...' per-turn state",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Module CSS (vanilla, no Tailwind)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Component render tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "ai", "component", "integration"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-11T00:00:00.000Z",
+                "completed": "2026-06-11T00:00:00.000Z"
             }
         },
         {
@@ -657,9 +657,9 @@
     ],
     "summary": {
         "total": 18,
-        "pending": 9,
+        "pending": 8,
         "inProgress": 0,
-        "completed": 9,
+        "completed": 10,
         "blocked": 0,
         "averageComplexity": 2.4
     }
