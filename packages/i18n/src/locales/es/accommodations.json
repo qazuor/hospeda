@@ -142,7 +142,10 @@
         "motel": "Motel",
         "resort": "Complejo turístico",
         "rural": "Rural",
-        "boutique": "Boutique"
+        "boutique": "Boutique",
+        "apart_hotel": "Apart Hotel",
+        "estancia": "Estancia",
+        "bed_and_breakfast": "Bed & Breakfast"
     },
     "sidebar": {
         "filters": "Filtros",
@@ -304,7 +307,31 @@
             "perGuestFlag": "por huésped",
             "capacityFact": "Hasta {n} huéspedes",
             "minNightsFact": "Estadía mínima {n} noches",
-            "maxNightsFact": "Estadía máxima {n} noches"
+            "maxNightsFact": "Estadía máxima {n} noches",
+            "fees": {
+                "cleaning": "Limpieza",
+                "tax": "Impuestos",
+                "lateCheckout": "Late check-out",
+                "pets": "Mascotas",
+                "bedlinen": "Ropa de cama",
+                "towels": "Toallas",
+                "babyCrib": "Cuna para bebé",
+                "babyHighChair": "Silla alta para bebé",
+                "extraBed": "Cama extra",
+                "securityDeposit": "Depósito de seguridad",
+                "extraGuest": "Huésped adicional",
+                "parking": "Estacionamiento",
+                "earlyCheckin": "Early check-in",
+                "lateCheckin": "Late check-in",
+                "luggageStorage": "Guardado de equipaje",
+                "others": "Otros cargos"
+            },
+            "discounts": {
+                "weekly": "Descuento semanal",
+                "monthly": "Descuento mensual",
+                "lastMinute": "Última hora",
+                "others": "Otros descuentos"
+            }
         },
         "reviewsDetail": {
             "noReviews": "No hay opiniones todavía",

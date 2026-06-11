@@ -919,7 +919,7 @@ const plataformaSidebar: SidebarInput = {
                 en: 'AI Playground',
                 pt: 'Playground IA'
             },
-            icon: 'PlayIcon',
+            icon: 'SparkleIcon',
             route: '/ai/playground',
             permissions: ['AI_SETTINGS_MANAGE'],
             onMissing: 'hide'

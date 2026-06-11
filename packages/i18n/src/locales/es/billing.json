@@ -431,7 +431,7 @@
         "create_promotions": "Crear promociones",
         "social_media_integration": "Integración con redes sociales",
         "can_use_rich_description": "Descripciones enriquecidas",
-        "can_embed_video": "Embedeer videos en el alojamiento",
+        "can_embed_video": "Videos en tu publicación",
         "can_use_calendar": "Calendario de disponibilidad",
         "can_sync_external_calendar": "Sincronizar calendarios externos",
         "can_contact_whatsapp_display": "Mostrar contacto por WhatsApp",
@@ -451,6 +451,9 @@
         "can_compare_accommodations": "Comparar alojamientos",
         "can_attach_review_photos": "Subir fotos en reseñas",
         "can_view_search_history": "Ver historial de búsquedas",
-        "can_view_recommendations": "Recomendaciones personalizadas"
+        "can_view_recommendations": "Recomendaciones personalizadas",
+        "ai_text_improve": "Mejora de textos con IA",
+        "ai_chat": "Consultas sobre el alojamiento con IA",
+        "ai_search": "Búsqueda inteligente"
     }
 }

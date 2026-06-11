@@ -14,7 +14,7 @@
 
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import type { KeyboardEvent } from 'react';
+import type { KeyboardEvent, RefObject } from 'react';
 import styles from './NlSearchInput.module.css';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -49,6 +49,11 @@ export interface NlSearchInputProps {
      * Only fires when the query is non-empty/non-whitespace and status !== 'loading'.
      */
     readonly onSubmit: () => void;
+    /**
+     * Optional ref forwarded to the underlying `<textarea>` element.
+     * The parent uses this to programmatically focus the input when the panel opens (W14).
+     */
+    readonly textareaRef?: RefObject<HTMLTextAreaElement | null>;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -67,7 +72,14 @@ export interface NlSearchInputProps {
  * Keyboard: pressing Enter (without Shift) triggers `onSubmit` if enabled.
  * Shift+Enter inserts a newline as normal.
  */
-export function NlSearchInput({ locale, query, status, onChange, onSubmit }: NlSearchInputProps) {
+export function NlSearchInput({
+    locale,
+    query,
+    status,
+    onChange,
+    onSubmit,
+    textareaRef
+}: NlSearchInputProps) {
     const { t } = createTranslations(locale);
 
     const isLoading = status === 'loading';
@@ -88,6 +100,7 @@ export function NlSearchInput({ locale, query, status, onChange, onSubmit }: NlS
         <div className={styles.root}>
             <div className={styles.textareaWrapper}>
                 <textarea
+                    ref={textareaRef}
                     id="nl-search-input"
                     className={styles.textarea}
                     value={query}

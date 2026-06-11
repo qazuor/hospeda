@@ -6,8 +6,8 @@
  * messages to the user.
  *
  * Two distinct flows:
- *  - **Anonymous**: on submit, tracks `AiSearchLoginPrompted` and navigates to
- *    the login page. No API call is made.
+ *  - **Anonymous**: on OPEN, immediately shows a login/register CTA and hides
+ *    the input. Tracks `AiSearchLoginPrompted` on open. No API call is made.
  *  - **Authenticated**: on submit, POSTs to `/api/v1/protected/ai/search-intent`
  *    via `apiClient.postProtected`, tracks the result, persists `mappedParams`
  *    in sessionStorage, and navigates to the accommodations page.
@@ -15,7 +15,7 @@
  * Error states handled:
  *  - 403 (ENTITLEMENT_REQUIRED or LIMIT_REACHED) → inline upgrade prompt.
  *  - 429 → inline rate-limit message.
- *  - 502/503 / network error → inline service-error message + keyword fallback CTA.
+ *  - 502/503 / network error → inline service-error message (no keyword fallback).
  *
  * Directive: `client:visible` (see `AiSearchTrigger.astro`).
  */
@@ -27,7 +27,7 @@ import { buildLoginRedirect } from '@/lib/auth-redirect';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import type { AiSearchIntentResponseData } from '@repo/schemas';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import styles from './AiSearchPanel.module.css';
 import { NlSearchInput } from './NlSearchInput';
 
@@ -57,7 +57,7 @@ export interface AiSearchPanelProps {
 type SearchStatus = 'idle' | 'loading' | 'success' | 'error';
 
 /** Reason for the error state, used to select the right inline message. */
-type ErrorType = null | 'quota' | 'ratelimit' | 'network';
+type ErrorType = null | 'quota' | 'ratelimit' | 'network' | 'lowConfidence';
 
 // ─── sessionStorage helpers ───────────────────────────────────────────────────
 
@@ -108,8 +108,10 @@ function serializeMappedParams(params: Record<string, unknown>): string {
  * AiSearchPanel — floating panel that orchestrates AI natural-language search.
  *
  * Renders a collapsible panel with `NlSearchInput` as the controlled input
- * surface. On submit, runs either the anonymous flow (redirect to login) or
- * the authenticated flow (POST to the AI route, navigate to results).
+ * surface (authenticated users only). For guests, the panel body shows an
+ * inline login/register CTA immediately on open, preventing wasted effort.
+ *
+ * On submit (authenticated flow), POSTs to the AI route, navigates to results.
  *
  * All sessionStorage access is guarded with a `typeof` check and try/catch
  * (follows the pattern in `toast-store.ts` and `IntentChips.tsx`).
@@ -131,19 +133,22 @@ export function AiSearchPanel({ locale, isAuthenticated, currentUrl }: AiSearchP
     const [query, setQuery] = useState('');
     const [status, setStatus] = useState<SearchStatus>('idle');
     const [errorType, setErrorType] = useState<ErrorType>(null);
-    const [mappedParams, setMappedParams] = useState<Record<string, unknown> | null>(null);
-
-    // ── Anonymous flow ──────────────────────────────────────────────────────
 
     /**
-     * Handle submit for anonymous users: track the event and navigate to login.
-     * No API call is made.
+     * Ref to the NlSearchInput textarea, forwarded via prop so we can focus it
+     * when the panel opens (W14 — autofocus on open for authenticated users).
      */
-    function handleAnonymousSubmit(): void {
-        trackEvent(WebEvents.AiSearchLoginPrompted, { locale });
-        const redirectUrl = buildLoginRedirect({ locale: locale as SupportedLocale, currentUrl });
-        window.location.href = redirectUrl;
-    }
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    // W14: Focus the textarea when the panel opens (authenticated users only).
+    // Guest users see the CTA block — no textarea is rendered for them.
+    // Synchronous focus is safe here because the effect only runs when isOpen=true
+    // (the panel and textarea are already in the DOM at this point).
+    useEffect(() => {
+        if (isOpen && isAuthenticated) {
+            textareaRef.current?.focus();
+        }
+    }, [isOpen, isAuthenticated]);
 
     // ── Authenticated flow ──────────────────────────────────────────────────
 
@@ -164,7 +169,6 @@ export function AiSearchPanel({ locale, isAuthenticated, currentUrl }: AiSearchP
 
         setStatus('loading');
         setErrorType(null);
-        setMappedParams(null);
 
         const result = await apiClient.postProtected<AiSearchIntentResponseData>({
             path: SEARCH_INTENT_PATH,
@@ -181,21 +185,21 @@ export function AiSearchPanel({ locale, isAuthenticated, currentUrl }: AiSearchP
 
     /**
      * Process a successful API response.
-     * Routes to fallback-keyword navigation or intent-applied navigation.
+     * Navigates to intent-applied results page.
      *
      * @param data - Validated response data from the AI search-intent endpoint.
-     * @param rawQuery - The original user query (used for fallback navigation).
+     * @param rawQuery - The original user query (unused; kept for future use).
      */
     function handleApiSuccess(data: AiSearchIntentResponseData, _rawQuery: string): void {
         if (data.fallbackToKeyword) {
+            // Low-confidence: the AI could not interpret the query. Surface a
+            // rephrase prompt instead of silently falling back to keyword search.
             trackEvent(WebEvents.AiSearchFallbackKeyword, {
                 reason: 'low_confidence',
                 confidence: data.confidence
             });
-            const target = `/${locale}/alojamientos/?q=${encodeURIComponent(data.intent.rawQuery)}`;
-            setStatus('success');
-            setMappedParams(null);
-            window.location.href = target;
+            setStatus('error');
+            setErrorType('lowConfidence');
             return;
         }
 
@@ -214,7 +218,6 @@ export function AiSearchPanel({ locale, isAuthenticated, currentUrl }: AiSearchP
         writeSession(SESSION_KEY, JSON.stringify(data.mappedParams));
 
         setStatus('success');
-        setMappedParams(data.mappedParams);
 
         const searchStr = serializeMappedParams(data.mappedParams);
         const target = searchStr
@@ -229,7 +232,7 @@ export function AiSearchPanel({ locale, isAuthenticated, currentUrl }: AiSearchP
      * tracking a fallback event when applicable.
      *
      * @param httpStatus - HTTP status code from the failed request (0 = network error).
-     * @param rawQuery - The original user query (used for fallback CTA navigation).
+     * @param rawQuery - The original user query (unused after keyword fallback removal).
      */
     function handleApiError(httpStatus: number, _rawQuery: string): void {
         if (httpStatus === 403) {
@@ -253,39 +256,40 @@ export function AiSearchPanel({ locale, isAuthenticated, currentUrl }: AiSearchP
     // ── Submit dispatcher ───────────────────────────────────────────────────
 
     /**
-     * Dispatches to the appropriate submit handler based on auth state.
+     * Dispatches to the authenticated submit handler.
+     * Guests never reach this — the input is hidden for them.
      */
     function handleSubmit(): void {
-        if (!isAuthenticated) {
-            handleAnonymousSubmit();
-            return;
-        }
         void handleAuthenticatedSubmit();
     }
 
     // ── Panel toggle ────────────────────────────────────────────────────────
 
+    /**
+     * Toggle panel open/closed.
+     * On open for anonymous users, tracks `AiSearchLoginPrompted`.
+     */
     function handleToggle(): void {
-        setIsOpen((prev) => !prev);
-        if (isOpen) {
+        const opening = !isOpen;
+        setIsOpen(opening);
+
+        if (opening) {
+            if (!isAuthenticated) {
+                // W1: track login prompt on open (not on submit) for anonymous users.
+                trackEvent(WebEvents.AiSearchLoginPrompted, { locale });
+            }
+        } else {
             // Reset state on close so the panel is clean on re-open.
             setQuery('');
             setStatus('idle');
             setErrorType(null);
-            setMappedParams(null);
         }
     }
 
-    // ── Keyword fallback navigation (error CTA) ─────────────────────────────
+    // ── Login redirect URLs (W1) ────────────────────────────────────────────
 
-    function handleKeywordFallback(): void {
-        const trimmed = query.trim();
-        if (!trimmed) {
-            return;
-        }
-        const target = `/${locale}/alojamientos/?q=${encodeURIComponent(trimmed)}`;
-        window.location.href = target;
-    }
+    const loginHref = buildLoginRedirect({ locale: locale as SupportedLocale, currentUrl });
+    const registerHref = `/${locale}/auth/signup/`;
 
     // ── Render ──────────────────────────────────────────────────────────────
 
@@ -324,88 +328,106 @@ export function AiSearchPanel({ locale, isAuthenticated, currentUrl }: AiSearchP
                         </button>
                     </div>
 
-                    {/* Input surface (pure / controlled by this parent) */}
-                    <NlSearchInput
-                        locale={locale as SupportedLocale}
-                        query={query}
-                        status={status}
-                        onChange={setQuery}
-                        onSubmit={handleSubmit}
-                    />
+                    {/* W1: Anonymous users see the login CTA block immediately — no input rendered */}
+                    {isAuthenticated ? (
+                        <>
+                            {/* W14: Input surface — textareaRef wired for autofocus on open */}
+                            <NlSearchInput
+                                locale={locale as SupportedLocale}
+                                query={query}
+                                status={status}
+                                onChange={setQuery}
+                                onSubmit={handleSubmit}
+                                textareaRef={textareaRef}
+                            />
 
-                    {/* Anonymous login prompt (shown after submit, before navigation) */}
-                    {!isAuthenticated && status === 'idle' && (
-                        <p className={styles.loginHint}>
-                            {t(
-                                'aiSearch.loginPromptMessage',
-                                'La búsqueda inteligente está disponible para usuarios registrados.'
+                            {/* Error: quota / entitlement */}
+                            {status === 'error' && errorType === 'quota' && (
+                                <div
+                                    className={styles.errorBlock}
+                                    role="alert"
+                                >
+                                    <p className={styles.errorMessage}>
+                                        {t(
+                                            'aiSearch.quotaExhausted',
+                                            'Alcanzaste el límite mensual de búsquedas con IA.'
+                                        )}
+                                    </p>
+                                    <a
+                                        href={`/${locale}/planes/`}
+                                        className={styles.ctaLink}
+                                    >
+                                        {t('aiSearch.quotaUpgradeCta', 'Ver planes →')}
+                                    </a>
+                                </div>
                             )}
-                        </p>
-                    )}
 
-                    {/* Success fallback notice (low confidence path) */}
-                    {status === 'success' && mappedParams === null && (
-                        <output className={styles.notice}>
-                            {t(
-                                'aiSearch.fallbackNotice',
-                                'No pudimos interpretar tu búsqueda — mostrando resultados por palabras clave.'
+                            {/* Error: rate limit */}
+                            {status === 'error' && errorType === 'ratelimit' && (
+                                <p
+                                    className={styles.errorMessage}
+                                    role="alert"
+                                >
+                                    {t(
+                                        'aiSearch.rateLimitError',
+                                        'Demasiadas búsquedas. Esperá un momento.'
+                                    )}
+                                </p>
                             )}
-                        </output>
-                    )}
 
-                    {/* Error: quota / entitlement */}
-                    {status === 'error' && errorType === 'quota' && (
-                        <div
-                            className={styles.errorBlock}
-                            role="alert"
-                        >
-                            <p className={styles.errorMessage}>
+                            {/* W13: network error — keyword fallback button removed, plain error message only */}
+                            {status === 'error' && errorType === 'network' && (
+                                <div
+                                    className={styles.errorBlock}
+                                    role="alert"
+                                >
+                                    <p className={styles.errorMessage}>
+                                        {t(
+                                            'aiSearch.serviceError',
+                                            'El servicio no está disponible en este momento. Intentá de nuevo más tarde.'
+                                        )}
+                                    </p>
+                                </div>
+                            )}
+                            {status === 'error' && errorType === 'lowConfidence' && (
+                                <div
+                                    className={styles.errorBlock}
+                                    role="alert"
+                                >
+                                    <p className={styles.errorMessage}>
+                                        {t(
+                                            'aiSearch.lowConfidenceMessage',
+                                            'No pudimos interpretar tu búsqueda. Probá reformularla con otras palabras.'
+                                        )}
+                                    </p>
+                                </div>
+                            )}
+                        </>
+                    ) : (
+                        <div className={styles.loginCtaBlock}>
+                            <h3 className={styles.loginCtaTitle}>
+                                {t('aiSearch.loginPromptTitle', 'Iniciá sesión para buscar con IA')}
+                            </h3>
+                            <p className={styles.loginCtaMessage}>
                                 {t(
-                                    'aiSearch.quotaExhausted',
-                                    'Alcanzaste el límite mensual de búsquedas con IA.'
+                                    'aiSearch.loginPromptMessage',
+                                    'La búsqueda inteligente está disponible para usuarios registrados.'
                                 )}
                             </p>
-                            <a
-                                href={`/${locale}/planes/`}
-                                className={styles.ctaLink}
-                            >
-                                {t('aiSearch.quotaUpgradeCta', 'Ver planes →')}
-                            </a>
-                        </div>
-                    )}
-
-                    {/* Error: rate limit */}
-                    {status === 'error' && errorType === 'ratelimit' && (
-                        <p
-                            className={styles.errorMessage}
-                            role="alert"
-                        >
-                            {t(
-                                'aiSearch.rateLimitError',
-                                'Demasiadas búsquedas. Esperá un momento.'
-                            )}
-                        </p>
-                    )}
-
-                    {/* Error: network / service unavailable */}
-                    {status === 'error' && errorType === 'network' && (
-                        <div
-                            className={styles.errorBlock}
-                            role="alert"
-                        >
-                            <p className={styles.errorMessage}>
-                                {t(
-                                    'aiSearch.serviceError',
-                                    'El servicio no está disponible. Podés buscar por palabras clave.'
-                                )}
-                            </p>
-                            <button
-                                type="button"
-                                className={styles.ctaLink}
-                                onClick={handleKeywordFallback}
-                            >
-                                {t('aiSearch.keywordFallbackCta', 'Buscar por palabras clave')}
-                            </button>
+                            <div className={styles.loginCtaActions}>
+                                <a
+                                    href={loginHref}
+                                    className={styles.loginCtaSignIn}
+                                >
+                                    {t('aiSearch.loginPromptCta', 'Iniciar sesión')}
+                                </a>
+                                <a
+                                    href={registerHref}
+                                    className={styles.loginCtaRegister}
+                                >
+                                    {t('aiSearch.loginPromptRegisterCta', 'Crear cuenta')}
+                                </a>
+                            </div>
                         </div>
                     )}
                 </dialog>
