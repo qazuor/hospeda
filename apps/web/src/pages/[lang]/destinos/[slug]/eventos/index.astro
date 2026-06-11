@@ -36,8 +36,8 @@ const pageSize = 9;
 const result = await eventsApi.list({ destinationId: destId, page, pageSize });
 const hasError = !result.ok;
 const items = result.ok ? result.data.items : [];
-const total = result.ok ? result.data.total : 0;
-const totalPages = result.ok ? Math.ceil(total / pageSize) : 0;
+const total = result.ok ? result.data.pagination.total : 0;
+const totalPages = result.ok ? result.data.pagination.totalPages : 0;
 const cards = items.map((item) => toEventCardProps({ item: item as unknown as Record<string, unknown> }));
 const baseUrl = buildUrl({ locale, path: `destinos/${slug}/eventos` });
 ---

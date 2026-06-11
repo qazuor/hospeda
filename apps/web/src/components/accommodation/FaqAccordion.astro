@@ -4,12 +4,12 @@
  * @description Native details/summary FAQ accordion. Grouped by category.
  * Hidden if no FAQs. Zero JavaScript.
  */
-import type { AccommodationFaqItem } from '@/data/types';
+import type { DetailFaq } from '@/data/types';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 
 interface Props {
-  readonly faqs: readonly AccommodationFaqItem[];
+  readonly faqs: readonly DetailFaq[];
   readonly lang: string;
 }
 
@@ -20,7 +20,7 @@ if (faqs.length === 0) return;
 
 // Group by category. Null category → "General", placed last.
 const generalLabel = t('accommodations.detail.faqsDetail.generalCategory');
-const groups = new Map<string, AccommodationFaqItem[]>();
+const groups = new Map<string, DetailFaq[]>();
 
 for (const faq of faqs) {
   const cat = faq.category ?? generalLabel;

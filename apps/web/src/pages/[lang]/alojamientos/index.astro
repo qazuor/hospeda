@@ -229,14 +229,14 @@ if (isAuthenticated && baseCards.length > 0) {
             favoriteChecks = bulkResult.data.checks;
         } else {
             webLogger.warn(
-                { error: bulkResult.error },
-                'Bulk bookmark check failed; falling back to per-card hydration'
+                'Bulk bookmark check failed; falling back to per-card hydration',
+                { error: bulkResult.error }
             );
         }
     } catch (error) {
         webLogger.warn(
-            { error: error instanceof Error ? error.message : String(error) },
-            'Bulk bookmark check threw; falling back to per-card hydration'
+            'Bulk bookmark check threw; falling back to per-card hydration',
+            { error: error instanceof Error ? error.message : String(error) }
         );
     }
 }

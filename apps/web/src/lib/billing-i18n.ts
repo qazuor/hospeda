@@ -10,7 +10,7 @@
 
 import { ENTITLEMENT_DEFINITIONS as DEFINITIONS } from '@repo/billing';
 
-type EntitlementKey = (typeof DEFINITIONS)[number]['key'];
+export type EntitlementKey = (typeof DEFINITIONS)[number]['key'];
 type Translator = (key: string, fallback?: string) => string;
 
 /**

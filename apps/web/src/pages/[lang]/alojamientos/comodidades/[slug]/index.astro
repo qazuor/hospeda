@@ -26,7 +26,7 @@ if (!slug) return new Response(null, { status: 404 });
 // Resolve amenity slug: fetch full list, find by slug
 const amenitiesResult = await amenitiesApi.list({ pageSize: 100 });
 if (!amenitiesResult.ok) return new Response(null, { status: 404 });
-const amenityItems = amenitiesResult.data.items as Array<Record<string, unknown>>;
+const amenityItems = amenitiesResult.data.items as unknown as Array<Record<string, unknown>>;
 const amenity = amenityItems.find((a) => String(a.slug) === slug);
 if (!amenity) return new Response(null, { status: 404 });
 const amenityId = String(amenity.id);
@@ -37,8 +37,8 @@ const result = await accommodationsApi.list({ page, pageSize: 9 });
 // TODO: Pass amenities=[amenityId] once the model JOIN is verified end-to-end
 const hasError = !result.ok;
 const items = result.ok ? result.data.items : [];
-const total = result.ok ? result.data.total : 0;
-const totalPages = result.ok ? Math.ceil(total / 9) : 0;
+const total = result.ok ? result.data.pagination.total : 0;
+const totalPages = result.ok ? result.data.pagination.totalPages : 0;
 const cards = items.map((item) => toAccommodationCardProps({ item: item as unknown as Record<string, unknown> }));
 const baseUrl = buildUrl({ locale, path: `alojamientos/comodidades/${slug}` });
 ---
