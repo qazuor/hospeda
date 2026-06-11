@@ -107,6 +107,10 @@ jobs:
       HOSPEDA_MERCADO_PAGO_PUBLIC_KEY: APP_USR-00000000-0000-0000-0000-000000000000
       HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET: ${{ secrets.HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET }}
       HOSPEDA_MERCADO_PAGO_SANDBOX: 'true'
+      # SPEC-217: enable the QZPay test-control adapter so the fault-injection specs
+      # (host-07c/res-01) mount the control endpoint and applyTestControl intercepts
+      # the wrapped subscription ops. Gated to non-production by routes/index.ts.
+      HOSPEDA_QZPAY_TEST_CONTROL_ENABLED: 'true'
 
       # Cloudinary: optional in PR (tests tagged @cloudinary skip when absent)
       HOSPEDA_CLOUDINARY_CLOUD_NAME: ${{ secrets.HOSPEDA_CLOUDINARY_CLOUD_NAME }}
