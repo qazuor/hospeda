@@ -15,7 +15,7 @@
         "test:visual": "playwright test --config=playwright-visual.config.ts",
         "lint": "biome check . && pnpm check-tokens && pnpm check:relative-colors",
         "format": "biome format --write .",
-        "typecheck": "astro sync && tsc --noEmit --project ./tsconfig.json",
+        "typecheck": "astro sync && astro check && tsc --noEmit --project ./tsconfig.json",
         "check-tokens": "node scripts/check-css-tokens.cjs",
         "check:relative-colors": "node scripts/check-css-relative-colors.cjs",
         "lighthouse": "lhci autorun --config=./lighthouserc.json",
@@ -62,6 +62,7 @@
         "tiptap-markdown": "^0.9.0"
     },
     "devDependencies": {
+        "@astrojs/check": "^0.9.4",
         "@playwright/test": "^1.58.2",
         "@repo/typescript-config": "workspace:*",
         "@testing-library/jest-dom": "^6.9.1",

@@ -26,6 +26,7 @@ import {
 	DashboardIcon,
 } from '@repo/icons';
 import type { ComponentType } from 'react';
+import type { IconProps } from '@repo/icons';
 
 interface Props {
 	readonly locale: SupportedLocale;
@@ -52,7 +53,7 @@ interface NavLink {
 	readonly section: string;
 	readonly label: string;
 	readonly path: string;
-	readonly Icon: ComponentType<{ size?: number; weight?: string; 'aria-hidden'?: string }>;
+	readonly Icon: ComponentType<IconProps>;
 }
 
 interface NavGroup {

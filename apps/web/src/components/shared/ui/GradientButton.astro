@@ -75,7 +75,7 @@ const classes = [
 
 const dataAttrs: Record<string, string | number> = {};
 if (data) {
-  for (const [key, value] of Object.entries(data)) {
+  for (const [key, value] of Object.entries<string | number>(data)) {
     dataAttrs[`data-${key}`] = value;
   }
 }
