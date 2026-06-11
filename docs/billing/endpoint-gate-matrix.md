@@ -108,7 +108,7 @@
 | **AI — PROTECTED (SPEC-198)** | | | | | |
 | `POST /api/v1/protected/ai/text-improve` | `ai/protected/text-improve.ts` | gate+limit | `ai_text_improve`, `max_ai_text_improve_per_month` | wired | createAiQuotaMiddleware('text_improve') enforces entitlement + monthly quota + billing-outage guard; mounted at /api/v1/protected/ai via routes/ai/protected/index.ts (SPEC-198 T-004) |
 | `POST /api/v1/protected/ai/chat` | `ai/protected/chat.ts` | gate+limit | `ai_chat`, `max_ai_chat_per_month` | wired | createAiQuotaMiddleware('chat') enforces entitlement + monthly quota + billing-outage guard; mounted at /api/v1/protected/ai via routes/ai/protected/index.ts (SPEC-200 T-005) |
-| `POST /api/v1/protected/ai/search-intent` | `ai/protected/search-intent.ts` | gate+limit | `ai_search`, `max_ai_search_per_month` | wired | createAiQuotaMiddleware('search') enforces entitlement + monthly quota + billing-outage guard; mounted at /api/v1/protected/ai via routes/ai/protected/index.ts (SPEC-199) |
+| `POST /api/v1/protected/ai/search-chat` | `ai/protected/search-chat.ts` | none | - | n/a | Platform feature (SPEC-211 §7.7 / SPEC-212): auth + per-user/IP rate-limit only, NO billing entitlement or quota gate. The USD cost ceiling is enforced inside the AI engine. Mounted at /api/v1/protected/ai via routes/ai/protected/index.ts. Supersedes the retired /ai/search-intent route (SPEC-199, removed in SPEC-212 T-013). |
 | **AUTH — PROTECTED / PUBLIC** | | | | | |
 | `GET /api/v1/public/auth/me` | `auth/me.ts` | none | - | n/a | Session identity read; no entitlement needed |
 | `POST /api/v1/protected/auth/change-password` | `auth/change-password.ts` | none | - | n/a | Account management; auth-only sufficient |

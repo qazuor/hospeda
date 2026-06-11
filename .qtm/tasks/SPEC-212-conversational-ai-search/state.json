@@ -1,0 +1,666 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-212",
+    "title": "Conversational AI Accommodation Search",
+    "created": "2026-06-11T00:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add AiSearchChatRequestSchema + SSE event schemas to @repo/schemas",
+            "description": "Define Zod schemas in packages/schemas: AiSearchChatRequestSchema (messages[], currentFilters, locale, conversationId?) and the SSE event shapes (filters {params,intent}, token {delta}, done {conversationId}, error {code,message}). Single source of truth consumed by the route and the web SSE client. Tests: schema unit tests (valid/invalid payloads, optional conversationId, event discriminants) in the schemas test dir.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-003", "T-004", "T-008"],
+            "subtasks": [
+                {
+                    "title": "AiSearchChatRequestSchema (messages, currentFilters, locale, conversationId?)",
+                    "completed": true
+                },
+                {
+                    "title": "SSE event schemas: filters / token / done / error",
+                    "completed": true
+                },
+                {
+                    "title": "Export from @repo/schemas barrel",
+                    "completed": true
+                },
+                {
+                    "title": "Unit tests for all schemas",
+                    "completed": true
+                }
+            ],
+            "tags": ["schemas", "ai", "setup"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": "2026-06-11T00:00:00.000Z",
+                "completed": "2026-06-11T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Extend DEFAULT_PROMPTS['search'] for conversational + injected-state framing",
+            "description": "Extend the static slot-extraction contract in packages/ai-core/src/engine/default-prompts.ts so it supports the conversational framing: instruct the model to return the COMPLETE updated entity set, preserving prior filters unless the user changed them. Keep SPEC-199 single-shot extraction working. Tests: assert the new framing text is present and the existing search prompt contract is unchanged.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-003"],
+            "subtasks": [
+                {
+                    "title": "Add conversational + full-updated-set framing to DEFAULT_PROMPTS['search']",
+                    "completed": true
+                },
+                {
+                    "title": "Preserve SPEC-199 single-shot behavior",
+                    "completed": true
+                },
+                {
+                    "title": "Unit test prompt framing",
+                    "completed": true
+                }
+            ],
+            "tags": ["ai-core", "prompt", "setup"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": "2026-06-11T00:00:00.000Z",
+                "completed": "2026-06-11T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Implement buildConversationalSearchPrompt in search-chat.prompt.ts",
+            "description": "New apps/api/src/routes/ai/protected/search-chat.prompt.ts exporting buildConversationalSearchPrompt({currentFilters, history, message, locale}). Injects serialized current filter set + bounded recent history + new message + locale-aware amenity allowlist (reuse SPEC-199's buildSearchIntentPrompt approach). Tests (write first): injects current filters correctly, bounds history to last N turns, includes the new message, asserts the full-updated-set contract via prompt shape.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-005", "T-017"],
+            "subtasks": [
+                {
+                    "title": "buildConversationalSearchPrompt signature (RO-RO)",
+                    "completed": true
+                },
+                {
+                    "title": "Inject current filters + bounded history + message + amenity allowlist",
+                    "completed": true
+                },
+                {
+                    "title": "Unit tests (prompt shape, history bound, full-set contract)",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "ai", "prompt", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": "2026-06-11T00:00:00.000Z",
+                "completed": "2026-06-11T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Scaffold POST /api/v1/protected/ai/search-chat SSE route + middleware chain",
+            "description": "New apps/api/src/routes/ai/protected/search-chat.ts via createProtectedStreamingRoute: middleware chain auth (factory-injected) + entitlementMiddleware() (context only, no gate) + createAiRateLimitMiddlewares('search'). NO createAiQuotaMiddleware and NO entitlement gate: ai_search is a free platform feature (SPEC-211 7.7, D-7). Body validated by AiSearchChatRequestSchema (400 before stream opens). Handler is a T-004 scaffold (empty SSE + placeholder done); LLM logic is T-005/T-006/T-007. Registered in ai/protected barrel. Tests: 401 unauth, 400 invalid body, 429 rate-limit, 200 platform-free (user without entitlement is NOT rejected). 12 integration tests green (vitest e2e config).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-005", "T-006", "T-007"],
+            "subtasks": [
+                {
+                    "title": "Route via createProtectedStreamingRoute + SSE scaffold",
+                    "completed": true
+                },
+                {
+                    "title": "Wire auth + entitlementMiddleware (context) + rate-limit (no quota gate)",
+                    "completed": true
+                },
+                {
+                    "title": "Body validation via AiSearchChatRequestSchema (400)",
+                    "completed": true
+                },
+                {
+                    "title": "Register in ai/protected barrel",
+                    "completed": true
+                },
+                {
+                    "title": "Integration tests: 401 / 400 / 429 / 200 platform-free",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "ai", "route", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": "2026-06-11T00:00:00.000Z",
+                "completed": "2026-06-11T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Wire generateObject -> mapIntentToSearchParams -> emit 'filters' SSE event",
+            "description": "In the handler, call generateObject({feature:'search', prompt: buildConversationalSearchPrompt(...)}, SearchIntentOutputSchema), then mapIntentToSearchParams (+ slug->UUID resolution as SPEC-199 does), then emit the 'filters' SSE event with URL-ready params + extracted intent. Emit BEFORE the reply (D-9). Tests (stub provider): filters event emitted with correct shape; full-updated-set merge across a refinement.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-004"],
+            "blocks": ["T-006", "T-009", "T-017"],
+            "subtasks": [
+                {
+                    "title": "generateObject with SearchIntentOutputSchema",
+                    "completed": true
+                },
+                {
+                    "title": "mapIntentToSearchParams + slug->UUID resolution",
+                    "completed": true
+                },
+                {
+                    "title": "Emit 'filters' SSE event",
+                    "completed": true
+                },
+                {
+                    "title": "Integration tests (filters shape, refinement merge)",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "ai", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": "2026-06-11T00:00:00.000Z",
+                "completed": "2026-06-11T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Wire streamText reply -> 'token' events -> terminal 'done' with conversationId",
+            "description": "After emitting filters, call streamText({feature:'search', messages:[...history, assistantContextWithFilters]}) and stream 'token' SSE events for the NL reply, ending with a terminal 'done' event carrying conversationId. Reply must NOT cite an exact result count (D-8). Tests (stub): tokens stream then done+conversationId; error event on provider failure.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-004", "T-005"],
+            "blocks": ["T-007", "T-014"],
+            "subtasks": [
+                {
+                    "title": "streamText with history + filter context",
+                    "completed": true
+                },
+                {
+                    "title": "Stream 'token' events",
+                    "completed": true
+                },
+                {
+                    "title": "Terminal 'done' event with conversationId",
+                    "completed": true
+                },
+                {
+                    "title": "Integration tests (stream + done + error)",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "ai", "sse", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": "2026-06-11T00:00:00.000Z",
+                "completed": "2026-06-11T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Best-effort turn persistence to ai_conversations/ai_messages (feature='search')",
+            "description": "Persist the turn best-effort reusing SPEC-200's persistChatTurn pattern with feature='search'. Failure is logged and non-fatal: the turn still emits filters, streams the reply, and returns done. Tests (stub): persistence called with feature='search'; a forced write failure does NOT break the SSE response.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-004", "T-006"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                {
+                    "title": "Reuse persistChatTurn with feature='search'",
+                    "completed": true
+                },
+                {
+                    "title": "Make failure non-fatal (log + continue)",
+                    "completed": true
+                },
+                {
+                    "title": "Integration test: write failure is non-fatal",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "ai", "persistence", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": "2026-06-11T00:00:00.000Z",
+                "completed": "2026-06-11T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Implement search-chat-stream.ts SSE client (web)",
+            "description": "New apps/web/src/lib/api/search-chat-stream.ts adapted from ai-chat-stream.ts: opens the SSE connection to /ai/search-chat and emits parsed filters / token / done / error events to the caller. Tests: parser unit test for each event type and malformed-line handling.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-009"],
+            "subtasks": [
+                {
+                    "title": "Adapt SSE client from ai-chat-stream.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Emit filters / token / done / error",
+                    "completed": true
+                },
+                {
+                    "title": "Unit tests for event parsing",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "ai", "sse", "integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": "2026-06-11T00:00:00.000Z",
+                "completed": "2026-06-11T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Implement useSearchChat.ts hook (client-echo history + accumulated filters + per-turn lifecycle)",
+            "description": "New apps/web/src/components/ai-search/useSearchChat.ts owning the message history (client echo), the accumulated filter set, and the per-turn lifecycle: send -> on 'filters' event call GET /api/v1/public/accommodations -> render -> stream reply. The AI route never executes the search. Tests: hook fires the accommodation search on the filters event; accumulates filters across turns.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-005", "T-008"],
+            "blocks": ["T-010"],
+            "subtasks": [
+                {
+                    "title": "History client-echo state",
+                    "completed": true
+                },
+                {
+                    "title": "Accumulated filters state",
+                    "completed": true
+                },
+                {
+                    "title": "On filters event -> GET public/accommodations",
+                    "completed": true
+                },
+                {
+                    "title": "Hook tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "ai", "hook", "integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": "2026-06-11T00:00:00.000Z",
+                "completed": "2026-06-11T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Implement SearchChatPanel.client.tsx + module CSS",
+            "description": "New apps/web/src/components/ai-search/SearchChatPanel.client.tsx (+ colocated *.module.css, vanilla CSS per web styling policy) adapted from AiChatWidget: renders the thread, the streamed reply, a 'pensando...' per-turn state, and the results grid INSIDE the panel. Tests: renders streamed tokens; renders results grid on filters event.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-009"],
+            "blocks": ["T-011", "T-012", "T-015"],
+            "subtasks": [
+                {
+                    "title": "Panel layout (thread + reply + results grid)",
+                    "completed": true
+                },
+                {
+                    "title": "'pensando...' per-turn state",
+                    "completed": true
+                },
+                {
+                    "title": "Module CSS (vanilla, no Tailwind)",
+                    "completed": true
+                },
+                {
+                    "title": "Component render tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "ai", "component", "integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": "2026-06-11T00:00:00.000Z",
+                "completed": "2026-06-11T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Active-filter chips (removable) reflecting the accumulated set",
+            "description": "Render the accumulated filters as removable chips inside the panel (keep SPEC-199's IntentChips concept). Removing a chip re-runs the search without that filter. Tests: chips reflect the current set; removing a chip re-fires the search without that filter.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-012", "T-015"],
+            "subtasks": [
+                {
+                    "title": "Render chips from accumulated filters",
+                    "completed": true
+                },
+                {
+                    "title": "Remove-chip re-runs search",
+                    "completed": true
+                },
+                {
+                    "title": "Component tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "ai", "component", "integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": "2026-06-11T00:00:00.000Z",
+                "completed": "2026-06-11T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Mount SearchChatPanel on the listing; retire SPEC-199 single-input UI",
+            "description": "Mount SearchChatPanel in apps/web/src/pages/[lang]/alojamientos/index.astro as THE 'search with AI' surface, and stop mounting / remove SPEC-199's single-input components (NlSearchInput, AiSearchPanel, AiSearchTrigger, old IntentChips). One AI search surface only. Tests: listing renders the chat panel and no longer renders the old input.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-010", "T-011"],
+            "blocks": ["T-013", "T-016", "T-018"],
+            "subtasks": [
+                {
+                    "title": "Mount SearchChatPanel on the listing page",
+                    "completed": true
+                },
+                {
+                    "title": "Unmount/remove SPEC-199 single-input components",
+                    "completed": true
+                },
+                {
+                    "title": "Test: chat panel present, old input absent",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "ai", "integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": "2026-06-11T00:00:00.000Z",
+                "completed": "2026-06-11T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Retire the SPEC-199 search-intent route (consult owner before delete)",
+            "description": "apps/api/src/routes/ai/protected/search-intent.ts is superseded by search-chat. Confirm no external consumer depends on it (consult owner per the spec's decision protocol), then delete the route and its registration; remove now-dead tests. If a consumer exists, keep it for back-compat and document why.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-012"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Confirm no external consumer (consult owner)",
+                    "completed": true
+                },
+                {
+                    "title": "Delete route + registration or document back-compat",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "ai", "cleanup", "integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": "2026-06-11T00:00:00.000Z",
+                "completed": "2026-06-11T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "API integration suite for /ai/search-chat (stub provider)",
+            "description": "Consolidated integration suite using StubProvider: happy path (filters -> stream -> done+conversationId), auth (401), invalid body (400), rate limit (429), platform-free access (a user lacking ai_search entitlement is NOT rejected - no 403/quota gate per D-7), empty/garbage message handling, persistence best-effort (write failure non-fatal). Covers the 7 acceptance criteria at the API layer. NOTE: no quota/entitlement-gate tests - there is no such gate.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-006", "T-007"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Happy path (filters -> tokens -> done)",
+                    "completed": true
+                },
+                {
+                    "title": "Auth / entitlement / quota / rate-limit gates",
+                    "completed": true
+                },
+                {
+                    "title": "Empty/garbage message",
+                    "completed": true
+                },
+                {
+                    "title": "Persistence non-fatal",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "ai", "testing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-06-11T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Web component + multi-turn refine test",
+            "description": "Component test of SearchChatPanel + useSearchChat: renders streamed tokens, fires the accommodation search on the filters event, renders the results grid, shows removable active-filter chips, and a multi-turn refinement updates filters + results. Covers §7 at the web layer.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-010", "T-011"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Renders streamed tokens",
+                    "completed": true
+                },
+                {
+                    "title": "Fires search on filters event + renders grid",
+                    "completed": true
+                },
+                {
+                    "title": "Multi-turn refine updates filters + results",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "ai", "testing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": null,
+                "completed": "2026-06-11T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "E2E: type -> filters -> results -> refine -> results update",
+            "description": "End-to-end happy flow on the listing: type a query, a filters event arrives, results render in-panel, the NL reply streams, a second refinement message updates filters and re-renders results. Covers the §7 first-turn + refinement scenarios end to end.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-012"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "First turn: type -> filters -> results -> reply",
+                    "completed": true
+                },
+                {
+                    "title": "Refinement turn updates filters + results",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "ai", "e2e", "testing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": "2026-06-11T00:00:00.000Z",
+                "completed": "2026-06-11T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Local OpenAI-compatible provider regression guard",
+            "description": "Regression test ensuring /ai/search-chat works against a local OpenAI-compatible provider: the output schema must not contain a date-regex that crashes the llama.cpp grammar compiler (cf. #1569). Guards the Ollama/local-provider path for generateObject.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003", "T-005"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Assert schema has no grammar-breaking date-regex",
+                    "completed": true
+                },
+                {
+                    "title": "generateObject works with local OpenAI-compatible provider",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "ai", "testing", "regression"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": "2026-06-11T00:00:00.000Z",
+                "completed": "2026-06-11T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Docs: AI feature docs + SPEC-199 cross-reference + count trade-off",
+            "description": "Update the AI feature docs to describe conversational search; cross-reference SPEC-199 (its single-input UI is superseded, mapper/schema/prompt live on); document the count-aware-reply trade-off (D-8) as a known future enhancement. No code.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-012"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Document conversational search in AI docs",
+                    "completed": true
+                },
+                {
+                    "title": "Cross-reference SPEC-199 (UI superseded)",
+                    "completed": true
+                },
+                {
+                    "title": "Note count-aware-reply trade-off",
+                    "completed": true
+                }
+            ],
+            "tags": ["docs"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": "2026-06-11T00:00:00.000Z",
+                "completed": "2026-06-11T00:00:00.000Z"
+            }
+        }
+    ],
+    "summary": {
+        "total": 18,
+        "pending": 0,
+        "inProgress": 0,
+        "completed": 18,
+        "blocked": 0,
+        "averageComplexity": 2.4
+    }
+}
