@@ -403,7 +403,7 @@
             "specId": "SPEC-218",
             "title": "astro check in web CI — load the App.Locals augmentation, clean .astro type errors, gate typecheck",
             "status": "in-progress",
-            "progress": "1/10",
+            "progress": "10/10",
             "path": "SPEC-218-astro-check-web-typecheck"
         }
     ],
