@@ -9,8 +9,11 @@ import {
     AccommodationIcon,
     BedroomsIcon,
     BellIcon,
+    BreakfastIcon,
+    BuildingIcon,
     BuildingsIcon,
     CarIcon,
+    CreoleInnIcon,
     HomeIcon,
     PoolIcon,
     TentIcon,
@@ -61,6 +64,18 @@ describe('getAccommodationTypeIcon', () => {
 
     it('returns PoolIcon for RESORT', () => {
         expect(getAccommodationTypeIcon({ type: 'resort' })).toBe(PoolIcon);
+    });
+
+    it('returns BuildingIcon for APART_HOTEL', () => {
+        expect(getAccommodationTypeIcon({ type: 'apart_hotel' })).toBe(BuildingIcon);
+    });
+
+    it('returns CreoleInnIcon for ESTANCIA', () => {
+        expect(getAccommodationTypeIcon({ type: 'estancia' })).toBe(CreoleInnIcon);
+    });
+
+    it('returns BreakfastIcon for BED_AND_BREAKFAST', () => {
+        expect(getAccommodationTypeIcon({ type: 'bed_and_breakfast' })).toBe(BreakfastIcon);
     });
 
     it('uses each icon at most once across the canonical mapping (no duplicates)', () => {
