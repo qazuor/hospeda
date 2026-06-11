@@ -76,22 +76,23 @@
             "id": "T-004",
             "title": "Make checkEligibility date-aware via the shared predicate",
             "description": "Change checkEligibility (apps/api/src/services/accommodation-publish-deps.ts:71-94 — NOT service-core, see T-001 note) to use isSubscriptionLive instead of the status-only check, so an expired-trial / lapsed host (date past 6h grace) returns subscription_required. UNIT TESTS REQUIRED: trialing within grace -> has_active_sub; trialing past trial_end+6h -> subscription_required; active past current_period_end+6h -> subscription_required; active within grace -> has_active_sub. Closes the production gap (G4).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-003"],
             "blocks": ["T-008", "T-009"],
             "subtasks": [
-                { "title": "Swap status-only check for shared predicate", "completed": false },
-                { "title": "Unit tests for the date-aware gate", "completed": false }
+                { "title": "Swap status-only check for shared predicate", "completed": true },
+                { "title": "Unit tests for the date-aware gate", "completed": true }
             ],
             "tags": ["billing", "service-core", "core", "security"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-06-11T00:00:00.000Z",
+                "completed": "2026-06-11T00:00:00.000Z"
+            },
+            "resultRef": "apps/api/src/services/accommodation-publish-deps.ts (checkEligibility date-aware; 8 unit tests). Closes prod gap G4."
         },
         {
             "id": "T-005",
@@ -359,9 +360,9 @@
     ],
     "summary": {
         "total": 16,
-        "pending": 13,
+        "pending": 12,
         "inProgress": 0,
-        "completed": 3,
+        "completed": 4,
         "blocked": 0,
         "averageComplexity": 2.1
     }
