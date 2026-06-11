@@ -276,6 +276,50 @@ describe('useSearchChat', () => {
         expect(secondCall.currentFilters).toMatchObject(firstIntent);
     });
 
+    // ── multi-turn refinement (T-015) ────────────────────────────────────────
+
+    it('refinement turn updates currentFilters and re-fetches results (multi-turn)', async () => {
+        const respWith = (id: string, slug: string) => ({
+            ok: true as const,
+            data: {
+                items: [{ id, name: id, slug }],
+                pagination: { page: 1, pageSize: 20, total: 1, totalPages: 1 }
+            }
+        });
+        mockAccommodationsList.mockReset();
+        mockAccommodationsList
+            .mockResolvedValueOnce(respWith('acc-A', 'a'))
+            .mockResolvedValueOnce(respWith('acc-B', 'b'));
+
+        mockStreamSearchChat
+            .mockImplementationOnce(async (p: { onEvent: (e: SearchChatSseEvent) => void }) => {
+                p.onEvent(makeFiltersEvent({ minGuests: 2, hasPool: false }));
+                p.onEvent({ type: 'done', conversationId: CONV_ID });
+            })
+            .mockImplementationOnce(async (p: { onEvent: (e: SearchChatSseEvent) => void }) => {
+                p.onEvent(makeFiltersEvent({ minGuests: 4, maxPrice: 50000 }));
+                p.onEvent({ type: 'done', conversationId: CONV_ID });
+            });
+
+        const { result } = renderHook(() => useSearchChat(baseParams));
+
+        // Turn 1 — initial search.
+        await act(async () => {
+            result.current.send('cabaña para 2');
+        });
+        expect(result.current.currentFilters).toMatchObject({ minGuests: 2, hasPool: false });
+        expect((result.current.results[0] as { id: string }).id).toBe('acc-A');
+
+        // Turn 2 — refinement updates BOTH the accumulated filters and the results.
+        await act(async () => {
+            result.current.send('para 4, más barata');
+        });
+        expect(result.current.currentFilters).toMatchObject({ minGuests: 4, maxPrice: 50000 });
+        expect(result.current.results).toHaveLength(1);
+        expect((result.current.results[0] as { id: string }).id).toBe('acc-B');
+        expect(mockAccommodationsList).toHaveBeenCalledTimes(2);
+    });
+
     // ── error event ──────────────────────────────────────────────────────────
 
     it('error event sets error state and stops streaming without throwing', async () => {

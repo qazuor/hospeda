@@ -526,35 +526,35 @@
             "id": "T-015",
             "title": "Web component + multi-turn refine test",
             "description": "Component test of SearchChatPanel + useSearchChat: renders streamed tokens, fires the accommodation search on the filters event, renders the results grid, shows removable active-filter chips, and a multi-turn refinement updates filters + results. Covers §7 at the web layer.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-010", "T-011"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Renders streamed tokens",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Fires search on filters event + renders grid",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Multi-turn refine updates filters + results",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "ai", "testing"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-11T00:00:00.000Z"
             }
         },
         {
@@ -657,9 +657,9 @@
     ],
     "summary": {
         "total": 18,
-        "pending": 4,
+        "pending": 3,
         "inProgress": 0,
-        "completed": 14,
+        "completed": 15,
         "blocked": 0,
         "averageComplexity": 2.4
     }

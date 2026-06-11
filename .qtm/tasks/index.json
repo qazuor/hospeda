@@ -375,10 +375,10 @@
             "specId": "SPEC-212",
             "title": "Conversational AI Accommodation Search",
             "status": "in-progress",
-            "progress": "14/18",
+            "progress": "15/18",
             "path": "SPEC-212-conversational-ai-search",
             "archived": false,
-            "note": "T-014: consolidated API integration suite (search-chat.test.ts, 30 tests) already covers happy path/auth/400/platform-free/filters/reply/persistence-non-fatal/garbage. 429 covered by shared ai-rate-limit.test.ts (16 tests, same factory) - documented; not reproducible in this harness (fail-open without Redis), siblings omit it too. Next: T-015 web component refine, T-016 e2e, T-017 local-provider regression, T-018 docs."
+            "note": "T-015: web component coverage complete (93 tests: panel 35, hook 13, chips 29, stream client 16). Added the multi-turn REFINE test (turn1 filters+results A, turn2 refine -> filters+results update to B, 2 GETs). Next: T-016 e2e Playwright, T-017 local-provider regression, T-018 docs."
         }
     ],
     "standalone": {
