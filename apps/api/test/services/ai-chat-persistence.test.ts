@@ -236,13 +236,17 @@ describe('persistChatTurn', () => {
 
         await expect(persistChatTurn(makeInput())).rejects.toThrow('connection refused');
 
-        // apiLogger.error fired exactly once with structured context
+        // apiLogger.error fired exactly once with structured context.
+        // Since SPEC-212 T-007, persistChatTurn delegates to persistConversationTurn
+        // which logs `feature` plus the opaque `contextNote` (carrying the
+        // accommodationId for chat) for the conversation row error.
         expect(mockApiLogger.error).toHaveBeenCalledTimes(1);
         const [logPayload, logMessage] = mockApiLogger.error.mock.calls[0] ?? [];
         expect(logMessage).toContain('ai-chat-persistence');
         expect(logPayload).toMatchObject({
             userId: USER_ID,
-            accommodationId: ACCOMMODATION_ID
+            feature: 'chat',
+            contextNote: JSON.stringify({ accommodationId: ACCOMMODATION_ID })
         });
         expect((logPayload as { error: string }).error).toContain('connection refused');
 

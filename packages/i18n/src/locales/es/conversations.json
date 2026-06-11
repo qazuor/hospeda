@@ -29,7 +29,10 @@
     },
     "empty": {
         "guestInbox": "No tenés conversaciones activas. Escribile a un anfitrión para empezar.",
-        "ownerInbox": "No tenés mensajes de huéspedes todavía."
+        "guestInboxTitle": "Todavía no tenés consultas",
+        "guestInboxCta": "Explorar alojamientos",
+        "ownerInbox": "No tenés mensajes de huéspedes todavía.",
+        "ownerInboxTitle": "Todavía no tenés mensajes"
     },
     "dialogs": {
         "blockDescription": "Bloquear esta conversación impedirá que el huésped envíe nuevos mensajes.",

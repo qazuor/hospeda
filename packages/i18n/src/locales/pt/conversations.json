@@ -34,7 +34,10 @@
     },
     "empty": {
         "guestInbox": "Voce nao tem conversas ativas. Envie uma mensagem para um anfitriao para comecar.",
-        "ownerInbox": "Voce ainda nao tem mensagens de hospedes."
+        "guestInboxTitle": "Você ainda não tem consultas",
+        "guestInboxCta": "Explorar acomodações",
+        "ownerInbox": "Voce ainda nao tem mensagens de hospedes.",
+        "ownerInboxTitle": "Você ainda não tem mensagens"
     },
     "errors": {
         "accommodationDeleted": "Esta acomodacao nao esta mais disponivel.",

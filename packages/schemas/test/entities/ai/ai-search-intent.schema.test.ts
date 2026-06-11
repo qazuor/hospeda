@@ -477,6 +477,25 @@ describe('SearchIntentEntitiesSchema', () => {
         const result = SearchIntentEntitiesSchema.safeParse({ checkIn: 20261220 });
         expect(result.success).toBe(false);
     });
+
+    it('accepts arbitrary non-ISO strings for checkIn/checkOut (SPEC-212 T-017 / #1569 grammar regression)', () => {
+        // REGRESSION GUARD: checkIn/checkOut MUST stay plain `z.string()` with NO
+        // `.regex()` / `.datetime()` / `z.coerce.date()`. Any format constraint makes
+        // `generateObject` emit a JSON-Schema `pattern`, which crashes the grammar
+        // compiler of local OpenAI-compatible providers (llama.cpp / Ollama) — see
+        // #1569. The conversational search route (SPEC-212) extracts intent with this
+        // exact schema, so arbitrary strings MUST parse. If this fails, a date-format
+        // constraint was re-introduced and will break the local-provider path.
+        const result = SearchIntentEntitiesSchema.safeParse({
+            checkIn: 'cualquier-cosa',
+            checkOut: '9999-99-99'
+        });
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.checkIn).toBe('cualquier-cosa');
+            expect(result.data.checkOut).toBe('9999-99-99');
+        }
+    });
 });
 
 // ─── SearchIntentSchema (T-002) ───────────────────────────────────────────────

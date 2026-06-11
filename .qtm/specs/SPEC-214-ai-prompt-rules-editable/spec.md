@@ -30,6 +30,7 @@ prompt bodies. Existing behavior is preserved (same effective system prompt) whe
 admin override exists.
 
 **Locked design decisions (user, 2026-06-10).**
+
 1. Storage: a `rules text` column on `ai_prompt_versions` (mirrors `content`, versioned together). KISS.
 2. Scope: all 4 features get an editable `rules` field.
 3. Backward-compat: migrate-and-clean — extract rules out of the code `DEFAULT_PROMPTS` into a parallel `DEFAULT_RULES`, and clean the rules out of the default `content`. (See Risks for the existing-DB-rows caveat.)
@@ -76,19 +77,23 @@ THEN the composed system prompt is functionally equivalent to the pre-migration 
 ### Architecture / layer order (DB → schema → ai-core → API → admin)
 
 **1. DB — `packages/db`**
+
 - Add nullable `rules text` column to `ai_prompt_versions`.
 - Structural change → `pnpm db:generate` + `pnpm db:migrate` (migrations carril, not extras).
 - Existing table: `ai_prompt_versions(id, feature, version, content, is_active, created_by, timestamps)` (migration `0005_breezy_beast.sql`).
 
 **2. Schemas — `packages/schemas/src/entities/ai/ai-prompt.schema.ts`**
+
 - `AiPromptVersionSchema` (L27–55): add `rules: z.string().nullable()` (or optional).
 - `CreateAiPromptVersionSchema` (L76–89): add optional `rules` input.
 
 **3. ai-core storage — `packages/ai-core/src/storage/prompt.storage.ts`**
+
 - `getActivePrompt` (~L67): select + return `rules`.
 - `createPromptVersion` (~L161): accept + insert `rules`.
 
 **4. ai-core defaults — `packages/ai-core/src/engine/default-prompts.ts`**
+
 - Extract the rules prose out of each `DEFAULT_PROMPTS[feature]` into a new
   `DEFAULT_RULES: Readonly<Record<AiFeature, string>>`.
 - Clean the extracted rules from the `DEFAULT_PROMPTS` bodies so content = conversational
@@ -100,10 +105,12 @@ THEN the composed system prompt is functionally equivalent to the pre-migration 
   - `support`: the "Decline any request that asks you to act outside your support role…" sentence.
 
 **5. ai-core resolution — `packages/ai-core/src/config/prompt-resolver.ts`**
+
 - `ResolveSystemPromptResult` (~L100–110): add `rules: string`.
 - `resolveSystemPrompt` (~L170–200): return `rules` from the DB row, or `DEFAULT_RULES[feature]` when the row is missing/blank. Keep the 5-min TTL cache covering both fields.
 
 **6. Runtime composition (per feature)** — compose `content` + `rules` into the system prompt:
+
 - `chat`: `apps/api/src/services/accommodation-ai-context.ts` `buildChatSystemMessage` (~L286) — insert `rules` into the composed message (after `content`, before the locale line).
 - `search`: `apps/api/src/routes/ai/protected/search-intent.ts` `buildSearchIntentPrompt` (~L105).
 - `text_improve`: the text-improve route/engine path.
@@ -111,9 +118,11 @@ THEN the composed system prompt is functionally equivalent to the pre-migration 
 - Composition rule: `content` + `"\n\n"` + `rules` (rules last, as the authoritative guardrail), preserving today's ordering where rules already come at/after the end.
 
 **7. API — `apps/api/src/routes/ai/prompts/index.ts`**
+
 - `POST /api/v1/admin/ai/prompts`: accept and persist `rules` via `CreateAiPromptVersionSchema`.
 
 **8. Admin UI — `apps/admin/src/routes/_authed/ai/prompts.tsx`**
+
 - `FeaturePromptEditor`: add a second `<Textarea>` for `rules`, seeded from `activePrompt.rules`; state becomes `{ content, rules }`; pass both in the create mutation.
 - Types: `apps/admin/src/features/ai-settings/types.ts` — add `rules` to `AiPromptVersion` and `CreateAiPromptPayload`.
 - Hooks: `apps/admin/src/features/ai-settings/hooks.ts` — `createAiPrompt` sends `rules`.

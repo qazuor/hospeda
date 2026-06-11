@@ -195,7 +195,7 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
             const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
 
             // Act
-            const res = await app.request('/');
+            const res = await app.request('/dashboard');
 
             // Assert
             expect(res.status).toBe(200);
@@ -210,7 +210,7 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
             const app = buildApp([EntitlementKey.PUBLISH_ACCOMMODATIONS]);
 
             // Act
-            const res = await app.request('/');
+            const res = await app.request('/dashboard');
 
             // Assert
             expect(res.status).toBe(403);
@@ -223,7 +223,7 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
             const app = buildApp([]);
 
             // Act
-            const res = await app.request('/');
+            const res = await app.request('/dashboard');
 
             // Assert
             expect(res.status).toBe(403);
@@ -236,7 +236,7 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
             const app = buildBillingFailureApp();
 
             // Act
-            const res = await app.request('/');
+            const res = await app.request('/dashboard');
 
             // Assert
             expect(res.status).toBe(503);
@@ -253,7 +253,7 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
             const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
 
             // Act
-            const res = await app.request('/');
+            const res = await app.request('/dashboard');
 
             // Assert
             expect(res.status).toBe(200);
@@ -274,7 +274,7 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
             const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
 
             // Act
-            const res = await app.request('/');
+            const res = await app.request('/dashboard');
             const body = await res.json();
 
             // Assert
@@ -298,7 +298,7 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
             const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
 
             // Act
-            const res = await app.request('/');
+            const res = await app.request('/dashboard');
             const body = await res.json();
 
             // Assert
@@ -315,7 +315,7 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
             const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
 
             // Act
-            await app.request('/');
+            await app.request('/dashboard');
 
             // Assert
             expect(getByOwnerMock).toHaveBeenCalledWith(
@@ -331,7 +331,7 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
             const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
 
             // Act
-            const res = await app.request('/');
+            const res = await app.request('/dashboard');
             const body = await res.json();
 
             // Assert
@@ -350,7 +350,7 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
             const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
 
             // Act
-            const res = await app.request('/');
+            const res = await app.request('/dashboard');
             const body = await res.json();
 
             // Assert
@@ -371,7 +371,7 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
             const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
 
             // Act
-            const res = await app.request('/');
+            const res = await app.request('/dashboard');
             const body = await res.json();
 
             // Assert
@@ -397,7 +397,7 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
             const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
 
             // Act
-            const res = await app.request('/');
+            const res = await app.request('/dashboard');
             const body = await res.json();
 
             // Assert
@@ -421,7 +421,7 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
             const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
 
             // Act
-            const res = await app.request('/');
+            const res = await app.request('/dashboard');
             const body = await res.json();
 
             // Assert
@@ -440,7 +440,7 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
             const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
 
             // Act
-            const res = await app.request('/');
+            const res = await app.request('/dashboard');
             const body = await res.json();
 
             // Assert
@@ -456,7 +456,7 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
             const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
 
             // Act
-            const res = await app.request('/');
+            const res = await app.request('/dashboard');
             const body = await res.json();
 
             // Assert
@@ -473,7 +473,7 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
             const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
 
             // Act
-            const res = await app.request('/');
+            const res = await app.request('/dashboard');
             const body = await res.json();
 
             // Assert
@@ -489,7 +489,7 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
             const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
 
             // Act
-            const res = await app.request('/');
+            const res = await app.request('/dashboard');
             const body = await res.json();
 
             // Assert — endpoint degrades, does NOT 500.
@@ -512,7 +512,7 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
             const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
 
             // Act
-            const res = await app.request('/');
+            const res = await app.request('/dashboard');
             const body = await res.json();
 
             // Assert
@@ -532,7 +532,7 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
             const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
 
             // Act
-            const res = await app.request('/');
+            const res = await app.request('/dashboard');
             const body = await res.json();
 
             // Assert
@@ -565,7 +565,7 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
             const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
 
             // Act
-            const res = await app.request('/');
+            const res = await app.request('/dashboard');
             const body = await res.json();
 
             // Assert
@@ -583,7 +583,7 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
             const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
 
             // Act
-            const res = await app.request('/');
+            const res = await app.request('/dashboard');
 
             // Assert
             expect(res.status).toBe(200);

@@ -26,12 +26,21 @@ describe('transformAccommodationEdit', () => {
             description: 'Full description of the hotel with amenities and services.',
             type: 'HOTEL',
             destinationId: 'dest-456',
-            latitude: -32.47,
-            longitude: -58.23,
-            maxGuests: 4,
-            bedrooms: 2,
-            bathrooms: 1,
-            beds: 3,
+            // Coordinates live nested under location.coordinates per the domain API response shape.
+            // The HTTP intake schema accepts flat latitude/longitude and maps them here server-side.
+            location: {
+                coordinates: {
+                    lat: '-32.47',
+                    long: '-58.23'
+                }
+            },
+            // Capacity fields live under extraInfo per the domain schema.
+            extraInfo: {
+                capacity: 4,
+                bedrooms: 2,
+                bathrooms: 1,
+                beds: 3
+            },
             price: { price: 15000, currency: 'ARS' },
             isAvailable: true,
             isFeatured: false,

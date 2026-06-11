@@ -1,6 +1,20 @@
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { initApp } from '../../../src/app.js';
+import { resolvePlanName } from '../../../src/routes/user/protected/stats.js';
 import type { AppOpenAPI } from '../../../src/types.js';
+
+/** Minimal PlanService shape accepted by resolvePlanName. */
+type PlanLookup = Parameters<typeof resolvePlanName>[0];
+
+/** Build a successful plan lookup result with the given name. */
+const planFound = (name: string) =>
+    ({ success: true, data: { name } }) as unknown as Awaited<ReturnType<PlanLookup['getById']>>;
+
+/** Build a NOT_FOUND lookup result. */
+const planNotFound = () =>
+    ({ success: false, error: { code: 'NOT_FOUND', message: 'not found' } }) as unknown as Awaited<
+        ReturnType<PlanLookup['getById']>
+    >;
 
 describe('GET /api/v1/protected/users/me/stats (get user statistics)', () => {
     let app: AppOpenAPI;
@@ -151,5 +165,44 @@ describe('GET /api/v1/protected/users/me/stats (get user statistics)', () => {
                 throw error;
             }
         }
+    });
+});
+
+describe('resolvePlanName (plan UUID/slug dual-resolve)', () => {
+    const PLAN_UUID = '03f97293-dbe4-4780-8a06-12d5505df749';
+
+    // Regression: subscription.planId stores the plan UUID, so resolving it by
+    // slug only (the old behavior) returned NOT_FOUND and the caller fell back
+    // to displaying the raw UUID. resolvePlanName must try getById first.
+    it('resolves a UUID planId to the plan name via getById (no slug lookup)', async () => {
+        const getById = vi.fn().mockResolvedValue(planFound('Anfitrión Pro'));
+        const getBySlug = vi.fn().mockResolvedValue(planNotFound());
+
+        const name = await resolvePlanName({ getById, getBySlug } as PlanLookup, PLAN_UUID);
+
+        expect(name).toBe('Anfitrión Pro');
+        expect(getById).toHaveBeenCalledWith(PLAN_UUID);
+        // getById already succeeded → no slug fallback needed.
+        expect(getBySlug).not.toHaveBeenCalled();
+    });
+
+    it('falls back to getBySlug when getById returns NOT_FOUND (legacy slug rows)', async () => {
+        const getById = vi.fn().mockResolvedValue(planNotFound());
+        const getBySlug = vi.fn().mockResolvedValue(planFound('Anfitrión Básico'));
+
+        const name = await resolvePlanName({ getById, getBySlug } as PlanLookup, 'owner-basico');
+
+        expect(name).toBe('Anfitrión Básico');
+        expect(getById).toHaveBeenCalledWith('owner-basico');
+        expect(getBySlug).toHaveBeenCalledWith('owner-basico');
+    });
+
+    it('returns null when neither lookup finds the plan', async () => {
+        const getById = vi.fn().mockResolvedValue(planNotFound());
+        const getBySlug = vi.fn().mockResolvedValue(planNotFound());
+
+        const name = await resolvePlanName({ getById, getBySlug } as PlanLookup, PLAN_UUID);
+
+        expect(name).toBeNull();
     });
 });

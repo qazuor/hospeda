@@ -10,10 +10,28 @@ relatedSpecs:
   - SPEC-173  # AI foundation — this spec consumes extractIntent + quota enforcement
   - SPEC-145  # billing entitlements enforcement — quota middleware plugs here
   - SPEC-168  # admin-editable plans — determines plan limits for ai_search
+  - SPEC-212  # Conversational AI search — supersedes this spec's UI + route; reuses its mapper/schema/prompt
 tags: [ai, feature, search, intent-extraction, tourist, host, web]
 ---
 
 # SPEC-199 — AI Natural-Language Search (Intent to Structured Query)
+
+> **⚠️ UI + ROUTE SUPERSEDED BY [SPEC-212](../SPEC-212-conversational-ai-search/spec.md)
+> (Conversational AI Accommodation Search), 2026-06-11.** The single-shot search
+> experience this spec shipped is retired:
+>
+> - The web single-input UI (`NlSearchInput`, `AiSearchPanel`, `AiSearchTrigger`,
+>   `IntentChips`) was removed from the listing (SPEC-212 T-012).
+> - The route `POST /api/v1/protected/ai/search-intent` was deleted (SPEC-212 T-013),
+>   superseded by `POST /api/v1/protected/ai/search-chat`.
+>
+> What **lives on** as the technical base of SPEC-212's conversational search:
+> `mapIntentToSearchParams` (`search-intent.mapper.ts`), `SearchIntentEntitiesSchema`
+> / `SearchIntentOutputSchema` (`@repo/schemas`), the `DEFAULT_PROMPTS['search']`
+> slot-extraction contract, and the locale amenity/feature allowlists. Read this spec
+> for the slot/mapping design; read SPEC-212 for the live conversational feature.
+
+---
 
 > **DECISION PROTOCOL:** In every single case — without exception — if a change
 > or decision is not *extremely* clear-cut, if there is even the slightest

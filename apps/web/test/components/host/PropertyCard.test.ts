@@ -45,7 +45,10 @@ describe('PropertyCard.astro — SPEC-205 Phase 4 + SPEC-208 PR2', () => {
     });
 
     it('should still contain the unpublish link for ACTIVE properties', () => {
-        expect(propertyCardSource).toContain('unpublishUrl');
+        // SPEC-208 PR2: unpublish uses a React island (UnpublishButton) rather than a plain anchor.
+        // The component conditionally renders UnpublishButton only for ACTIVE properties and
+        // passes the unpublish i18n label + the accommodationId prop.
+        expect(propertyCardSource).toContain('UnpublishButton');
         expect(propertyCardSource).toContain('host.properties.card.actions.unpublish');
     });
 });

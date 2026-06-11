@@ -27,3 +27,6 @@ export * from './ai-chat.schema.js';
 
 // Request body, entity slot, and response schemas for the AI NL search child spec (SPEC-199)
 export * from './ai-search-intent.schema.js';
+
+// Request body + SSE event schemas for the conversational AI search child spec (SPEC-212)
+export * from './ai-search-chat.schema.js';
