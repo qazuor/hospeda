@@ -39,6 +39,7 @@ M1 (owner-superset entitlements).
 HOTEL, HOSTEL, CAMPING, ROOM, MOTEL, RESORT`. Add three new values.
 
 **Fix / touched files:**
+
 - `packages/schemas/src/enums/accommodation-type.enum.ts` — add `APART_HOTEL`, `ESTANCIA`, `BED_AND_BREAKFAST`.
 - `packages/db/src/schemas/enums.dbschema.ts` — `AccommodationTypePgEnum` auto-derives via `enumToTuple`; no manual edit, but a migration is required.
 - DB migration — `ALTER TYPE accommodation_type_enum ADD VALUE ...` per new value (use `packages/db/scripts/generate-enum-migrations.ts`). Two carriles aware: this is a structural change → `pnpm db:generate` + `pnpm db:migrate`.
@@ -48,6 +49,7 @@ HOTEL, HOSTEL, CAMPING, ROOM, MOTEL, RESORT`. Add three new values.
 - Seed — extend `PooledAccommodationType` in `packages/seed/src/data/accommodation/_image-pool.ts` if seed examples are added (optional; can be excluded like MOTEL/RESORT).
 
 **Acceptance criteria.**
+
 - GIVEN the accommodation type enum, WHEN inspected, THEN `APART_HOTEL`, `ESTANCIA`, `BED_AND_BREAKFAST` are present.
 - GIVEN the listing filter (list and map views) in es/en/pt, WHEN the type filter is opened, THEN the three new types appear with translated labels (no raw keys).
 - GIVEN a migration run on a clean DB, WHEN `pnpm db:migrate` runs, THEN the enum accepts the three new values.
@@ -103,6 +105,7 @@ lookup). Additionally, add the 7 enum categories missing from the sidebar filter
 (`NIGHTLIFE, TRADITIONS, ART, BEACH, RURAL, FESTIVALS, GENERAL`).
 
 **Acceptance criteria.**
+
 - GIVEN any post category chip, WHEN clicked, THEN the category page loads (no 404).
 - GIVEN the posts filter sidebar, WHEN opened, THEN all enum categories are offered.
 
@@ -151,6 +154,7 @@ absent from `billing.json` (es/en/pt) → they fall back to English config names
 
 **Fix.** Add the three keys to `packages/i18n/src/locales/{es,en,pt}/billing.json` under
 `entitlement`, and fix the `can_embed_video` typo. Proposed ES (confirmed with user):
+
 - `ai_text_improve` → "Mejora de textos con IA"
 - `ai_chat` → "Consultas sobre el alojamiento con IA"
 - `ai_search` → "Búsqueda inteligente"

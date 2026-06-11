@@ -1,6 +1,31 @@
 {
     "triggerLabel": "Buscá con IA",
     "panelTitle": "Búsqueda inteligente",
+    "chat": {
+        "panelLabel": "Panel de búsqueda conversacional con IA",
+        "title": "Búsqueda conversacional",
+        "close": "Cerrar panel",
+        "inputLabel": "Mensaje",
+        "placeholder": "Contame qué buscás, por ejemplo: cabaña para 4 con pileta cerca del río",
+        "send": "Enviar mensaje",
+        "sending": "Enviando…",
+        "thinking": "Pensando…",
+        "newConversation": "Nueva conversación",
+        "errorDefault": "Ocurrió un error. Intentalo de nuevo.",
+        "emptyState": "Hacé tu primera pregunta y te ayudo a encontrar el alojamiento ideal.",
+        "resultsLabel": "Resultados encontrados",
+        "resultsEmpty": "No encontramos alojamientos con esos filtros.",
+        "resultsCount": "{{count}} resultado",
+        "resultsCount_other": "{{count}} resultados",
+        "resultsLoading": "Buscando alojamientos…",
+        "priceFrom": "Desde",
+        "pricePerNight": "/ noche",
+        "priceConsult": "Consultar precio",
+        "viewDetail": "Ver más",
+        "featuredLabel": "Destacado",
+        "newLabel": "Nuevo",
+        "noImage": "Sin imagen"
+    },
     "placeholder": "Describí lo que buscás, ej: cabaña para 4 con pileta cerca del río",
     "submit": "Buscar",
     "submitting": "Analizando...",
@@ -35,6 +60,9 @@
         "maxBedrooms": "Hasta {{value}} dormitorios",
         "minBathrooms": "Mínimo {{value}} baños",
         "maxBathrooms": "Hasta {{value}} baños",
-        "features": "Características adicionales"
+        "features": "Características adicionales",
+        "location": "Ubicación",
+        "remove": "Quitar filtro",
+        "activeFiltersLabel": "Filtros activos"
     }
 }

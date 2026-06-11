@@ -26,6 +26,7 @@ entitlement + limit set, on top of its own. No change to the runtime entitlement
 Existing subscribers get the new entitlements as soon as `billing_plans` is re-seeded.
 
 **Locked design decisions (user, 2026-06-10).**
+
 1. Mechanism: **shared constant** — `TOURIST_VIP_ENTITLEMENTS` / `TOURIST_VIP_LIMITS` in
    `plans.config.ts`, spread into all owner/complex plan definitions (Option B). No runtime
    resolver change.
@@ -88,6 +89,7 @@ Hospeda product. This is a prerequisite: a pruned catalog is what the `TOURIST_V
 constant is built from.
 
 **Process.**
+
 1. Enumerate every key in `EntitlementKey` (`packages/billing/src/types/entitlement.types.ts`)
    with its metadata from `ENTITLEMENT_DEFINITIONS` (`packages/billing/src/config/entitlements.config.ts`)
    and which plans grant it (`plans.config.ts`).
@@ -100,6 +102,7 @@ constant is built from.
    `API_ACCESS`, `SOCIAL_MEDIA_INTEGRATION`. (Candidates only — final verdict from the audit.)
 
 **Removal mechanics (per removed key).** Deleting an entitlement is cross-cutting:
+
 - Remove from `EntitlementKey` enum + `ENTITLEMENT_DEFINITIONS`.
 - Remove from every plan in `plans.config.ts`.
 - Remove any gate/usage: `git grep` the key across `apps/api` (entitlement gates in
@@ -116,6 +119,7 @@ the **kept** tourist entitlements only.
 **File:** `packages/billing/src/config/plans.config.ts`
 
 1. Define two shared constants representing the **full cumulative tourist-VIP tier**:
+
    ```ts
    const TOURIST_VIP_ENTITLEMENTS: EntitlementKey[] = [
      // tourist-free
@@ -138,14 +142,17 @@ the **kept** tourist entitlements only.
      { key: LimitKey.MAX_COMPARE_ITEMS, value: -1 },
    ];
    ```
+
    (Reuse these same constants to define the `tourist-vip` plan itself, so there is a single
    source of truth and the tourist tier and owner inheritance can never drift.)
 
 2. Spread into every owner + complex plan definition, de-duplicated:
+
    ```ts
    entitlements: dedupe([...TOURIST_VIP_ENTITLEMENTS, ...ownerSpecificEntitlements]),
    limits: mergeLimits(TOURIST_VIP_LIMITS, ownerSpecificLimits), // owner-specific wins on key clash
    ```
+
    Dedup matters because a few keys already coincide (`CAN_CONTACT_WHATSAPP_DISPLAY`,
    `CAN_CONTACT_WHATSAPP_DIRECT`). Limit keys do not overlap between tourist and owner today,
    but `mergeLimits` keeps owner-specific values authoritative if they ever do.
@@ -173,6 +180,7 @@ the **kept** tourist entitlements only.
   (e.g. `SAVE_FAVORITES`) that previously 403'd.
 
 ### Patterns / constraints
+
 - Config-driven (ADR-030 / SPEC-192) — the plan config stays the sole source of truth; do
   not push category logic into the runtime resolver.
 - No `any`; named exports; `as const` where applicable.

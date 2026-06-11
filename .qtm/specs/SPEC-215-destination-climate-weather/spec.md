@@ -27,10 +27,11 @@ season to visit, editable in admin and seeded for existing destinations. The det
 renders that data plus a live current-conditions badge. No external API key required.
 
 **Locked design decisions (user, 2026-06-10).**
+
 1. Approach: **seasonal structured climate + live current conditions** (combined).
 2. Sourcing (seasonal): **seed + admin-editable**.
 3. Live provider: **Open-Meteo** — free, **no API key** for non-commercial use.
-   Verified against https://open-meteo.com/en/docs on 2026-06-10: current conditions at
+   Verified against <https://open-meteo.com/en/docs> on 2026-06-10: current conditions at
    `GET https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lng}&current=temperature_2m,weather_code,wind_speed_10m,relative_humidity_2m,apparent_temperature,is_day`.
 
 **Baseline.** File refs verified against `origin/staging` @ 446aa9152 on 2026-06-10.
@@ -82,6 +83,7 @@ THEN featured destinations (at minimum) carry seasonal climate data.
 project pattern of JSONB subtypes: `location`, `media`, `seo`, `rating`).
 
 Proposed shape (`DestinationClimateSchema` in `packages/schemas`):
+
 ```ts
 climate: {
   bestSeason: ClimateSeasonEnum,            // 'spring' | 'summer' | 'autumn' | 'winter'
@@ -97,6 +99,7 @@ climate: {
 ```
 
 **Touched files:**
+
 - `packages/schemas/src/entities/destination/subtypes/destination.climate.schema.ts` — new `DestinationClimateSchema` + `ClimateSeasonEnum`.
 - `packages/schemas/src/entities/destination/destination.schema.ts` — add `climate` to `DestinationSchema`.
 - Clean up the orphaned stubs: remove the dead `climate`/`bestSeason` filter fields from
@@ -116,6 +119,7 @@ climate: {
 `weather_code` (WMO codes) → internal condition enum + icon key.
 
 **Caching — cron → DB (follows the exchange-rate-fetch pattern).**
+
 - `apps/api/src/cron/jobs/destination-weather-fetch.job.ts` — fetches current conditions for
   all published destinations with coordinates, writes to a `weather_current jsonb` cache
   column on `destinations` (or a small `destination_weather` table). Advisory lock (new key),
@@ -128,6 +132,7 @@ climate: {
 current conditions (typed shape) for one destination. Thin route over the service.
 
 **Web rendering.**
+
 - Replace `apps/web/src/components/destination/DestinationClimatePlaceholder.astro` with a
   real `DestinationClimateCard.astro` that SSR-renders the seasonal climate from
   `destination.climate`, and embeds a small React island (`DestinationWeatherLive.client.tsx`,
@@ -138,6 +143,7 @@ current conditions (typed shape) for one destination. Thin route over the servic
 is a config constant (overridable). One new cron added to the manifest.
 
 ### Patterns / constraints
+
 - No `any`; `import type`; named exports; RO-RO; Zod source of truth; integer-safe values.
 - Migrations two-carriles: structural columns → `db:generate`/`db:migrate`; `db:apply-extras` after.
 - Web styling = CSS Modules (not Tailwind). Admin = Tailwind + TanStack Form.
@@ -186,7 +192,7 @@ is a config constant (overridable). One new cron added to the manifest.
   `DestinationClimatePlaceholder.astro` is the insertion point (sidebar 3rd card); all seed
   destinations have `location.coordinates`; exchange-rate-fetch cron is the reference pattern.
 - **Verified external API:** Open-Meteo current-conditions endpoint + no-key non-commercial
-  use (https://open-meteo.com/en/docs, 2026-06-10).
+  use (<https://open-meteo.com/en/docs>, 2026-06-10).
 - **Open questions for impl:** (1) cache as a `weather_current` column vs a separate
   `destination_weather` table — recommend column for KISS; (2) exact seasonal seed values
   source (hand-authored vs Open-Meteo Climate API offline); (3) confirm 3h cron interval.
