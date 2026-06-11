@@ -308,39 +308,39 @@
             "id": "T-009",
             "title": "Implement useSearchChat.ts hook (client-echo history + accumulated filters + per-turn lifecycle)",
             "description": "New apps/web/src/components/ai-search/useSearchChat.ts owning the message history (client echo), the accumulated filter set, and the per-turn lifecycle: send -> on 'filters' event call GET /api/v1/public/accommodations -> render -> stream reply. The AI route never executes the search. Tests: hook fires the accommodation search on the filters event; accumulates filters across turns.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-005", "T-008"],
             "blocks": ["T-010"],
             "subtasks": [
                 {
                     "title": "History client-echo state",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Accumulated filters state",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "On filters event -> GET public/accommodations",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Hook tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "ai", "hook", "integration"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-11T00:00:00.000Z",
+                "completed": "2026-06-11T00:00:00.000Z"
             }
         },
         {
@@ -657,9 +657,9 @@
     ],
     "summary": {
         "total": 18,
-        "pending": 10,
+        "pending": 9,
         "inProgress": 0,
-        "completed": 8,
+        "completed": 9,
         "blocked": 0,
         "averageComplexity": 2.4
     }

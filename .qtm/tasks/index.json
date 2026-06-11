@@ -375,10 +375,10 @@
             "specId": "SPEC-212",
             "title": "Conversational AI Accommodation Search",
             "status": "in-progress",
-            "progress": "8/18",
+            "progress": "9/18",
             "path": "SPEC-212-conversational-ai-search",
             "archived": false,
-            "note": "Web track started. T-008: search-chat-stream.ts SSE client (mirrors ai-chat-stream, adds filters event), 16 tests. Next: T-009 useSearchChat hook (on filters -> GET public/accommodations; thread done.conversationId)."
+            "note": "T-009 useSearchChat hook done (12 tests). On filters event -> GET public/accommodations with params; accumulates intent (chips) + stores resolved params; conversationId threaded nullable. Fixed removeFilter to drop from resolved params via intent->param key map (renamed keys type/amenities/features were being lost). Next: T-010 panel, T-011 chips."
         }
     ],
     "standalone": {
