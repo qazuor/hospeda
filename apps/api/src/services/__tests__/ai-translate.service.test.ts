@@ -186,7 +186,7 @@ describe('translateEntity', () => {
 
             // Assert
             expect(result.translations).toHaveLength(1); // 1 field × 1 locale
-            expect(result.translations[0].locale).toBe('en');
+            expect(result.translations[0]?.locale).toBe('en');
         });
     });
 
@@ -345,7 +345,7 @@ describe('persistTranslations', () => {
             string,
             Record<string, { autoTranslated: boolean }>
         >;
-        expect(meta.name.en.autoTranslated).toBe(true);
+        expect(meta.name?.en?.autoTranslated).toBe(true);
     });
 
     it('should mark failed translations properly', async () => {
@@ -376,6 +376,6 @@ describe('persistTranslations', () => {
             string,
             Record<string, { autoTranslated: boolean }>
         >;
-        expect(meta.name.en.autoTranslated).toBe(false);
+        expect(meta.name?.en?.autoTranslated).toBe(false);
     });
 });
