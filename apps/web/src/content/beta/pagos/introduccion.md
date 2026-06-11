@@ -18,7 +18,7 @@ Hospeda tiene suscripciones tanto para **propietarios o anfitriones** (publicar 
 | --- | --- | --- |
 | **Propietario individual** | Publicar tu propiedad (1, 3 o 10 según el plan) y acceder a herramientas de gestión | Owner Basic / Pro / Premium |
 | **Complejo / hotel / hostal** | Gestionar varias unidades, equipo de staff, métricas consolidadas | Complex Basic / Pro / Premium |
-| **Turista** | Beneficios extra (más favoritos, sin ads, alertas, concierge) | Free / Plus / VIP |
+| **Turista** | Beneficios extra (más favoritos, sin ads, alertas de precio, soporte VIP) | Free / Plus / VIP |
 
 ## Planes para propietarios individuales
 
@@ -45,8 +45,8 @@ Pensados para hostales, hoteles y propietarios con varias unidades bajo una mism
 | Plan | Precio mensual | Favoritos | Highlights |
 | --- | --- | --- | --- |
 | **Free** | gratis | 3 | Reseñas, recomendaciones básicas |
-| **Plus** | ARS $5.000 | 20 | Sin publicidad, alertas de precio, acceso anticipado a eventos, ofertas exclusivas, comparador, fotos en reseñas, historial de búsquedas |
-| **VIP** | ARS $15.000 | sin límite | Todo Plus + servicio de concierge, transfers al aeropuerto, soporte VIP, promociones VIP exclusivas, contacto directo por WhatsApp |
+| **Plus** | ARS $5.000 | 20 | Sin publicidad, alertas de precio, ofertas exclusivas, comparador, fotos en reseñas, historial de búsquedas |
+| **VIP** | ARS $15.000 | sin límite | Todo Plus + soporte VIP prioritario, promociones VIP exclusivas, contacto directo por WhatsApp |
 
 > Los planes Plus y VIP de turista **no tienen trial** — empezás a pagar desde el día 1. El plan Free es gratuito siempre.
 
