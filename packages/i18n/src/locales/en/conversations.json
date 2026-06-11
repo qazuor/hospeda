@@ -34,7 +34,10 @@
     },
     "empty": {
         "guestInbox": "You have no active conversations. Message a host to get started.",
-        "ownerInbox": "You have no guest messages yet."
+        "guestInboxTitle": "You don't have any inquiries yet",
+        "guestInboxCta": "Explore accommodations",
+        "ownerInbox": "You have no guest messages yet.",
+        "ownerInboxTitle": "You don't have any messages yet"
     },
     "errors": {
         "accommodationDeleted": "This accommodation is no longer available.",

@@ -128,15 +128,22 @@
             "status": {
                 "DRAFT": "Borrador",
                 "PUBLISHED": "Publicada",
-                "SUSPENDED": "Suspendida"
+                "SUSPENDED": "Suspendida",
+                "INACTIVE": "Pausada"
             },
             "actions": {
                 "edit": "Editar",
                 "publish": "Publicar",
                 "unpublish": "Despublicar",
-                "viewOnSite": "Ver en el sitio"
+                "viewOnSite": "Ver en el sitio",
+                "unpublishConfirm": "¿Despublicar esta propiedad? Dejará de aparecer en el sitio.",
+                "confirmYes": "Sí, despublicar",
+                "confirmNo": "Cancelar"
             },
-            "pricePerNight": "por noche"
+            "pricePerNight": "por noche",
+            "unpublishSuccess": "Propiedad despublicada",
+            "unpublishError": "No se pudo despublicar. Intentá de nuevo.",
+            "priceOnRequest": "Precio a consultar"
         },
         "editor": {
             "section": {
@@ -215,6 +222,7 @@
             "entitlement": {
                 "premiumFeature": "Función premium",
                 "richDescriptionNudge": "Actualizá tu plan para usar descripciones enriquecidas con formato.",
+                "richDescriptionHint": "Mejorá tu plan para dar formato a tu descripción (negritas, listas y más).",
                 "videoNudge": "Actualizá tu plan para incrustar videos en tu propiedad.",
                 "genericNudge": "Esta función está disponible en un plan superior.",
                 "upgradeLink": "Mejorar plan"
