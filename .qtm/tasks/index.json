@@ -375,10 +375,10 @@
             "specId": "SPEC-212",
             "title": "Conversational AI Accommodation Search",
             "status": "in-progress",
-            "progress": "16/18",
+            "progress": "17/18",
             "path": "SPEC-212-conversational-ai-search",
             "archived": false,
-            "note": "T-017: local-provider regression guard added to ai-search-intent.schema.test.ts (73 tests) - asserts checkIn/checkOut accept arbitrary non-ISO strings, so no date regex/pattern can be reintroduced that would crash llama.cpp/Ollama grammar (#1569). search-chat generateObject uses this exact schema. Remaining: T-018 docs, then T-016 e2e (write only, runs in CI/staging per owner)."
+            "note": "T-018 docs done: SPEC-199 spec.md now has a supersession banner -> SPEC-212 (UI T-012 + route T-013 retired; mapper/schema/prompt live on) + SPEC-212 in relatedSpecs. SPEC-212 spec.md is the feature doc (D-8 count trade-off documented). Only T-016 (e2e, write-only, runs in CI/staging per owner) remains."
         }
     ],
     "standalone": {

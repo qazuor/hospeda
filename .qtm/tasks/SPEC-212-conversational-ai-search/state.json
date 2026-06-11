@@ -623,43 +623,43 @@
             "id": "T-018",
             "title": "Docs: AI feature docs + SPEC-199 cross-reference + count trade-off",
             "description": "Update the AI feature docs to describe conversational search; cross-reference SPEC-199 (its single-input UI is superseded, mapper/schema/prompt live on); document the count-aware-reply trade-off (D-8) as a known future enhancement. No code.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-012"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Document conversational search in AI docs",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Cross-reference SPEC-199 (UI superseded)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Note count-aware-reply trade-off",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-11T00:00:00.000Z",
+                "completed": "2026-06-11T00:00:00.000Z"
             }
         }
     ],
     "summary": {
         "total": 18,
-        "pending": 2,
+        "pending": 1,
         "inProgress": 0,
-        "completed": 16,
+        "completed": 17,
         "blocked": 0,
         "averageComplexity": 2.4
     }
