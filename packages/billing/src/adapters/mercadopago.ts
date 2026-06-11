@@ -13,6 +13,7 @@ import {
 } from '@qazuor/qzpay-mercadopago';
 import { getEnv, getEnvBoolean, getEnvNumber } from '@repo/config';
 import { createLogger } from '@repo/logger';
+import { applyTestControl, isTestControlEnabled } from './qzpay-test-control.js';
 
 const logger = createLogger('billing:mercadopago');
 import { MERCADO_PAGO_DEFAULT_TIMEOUT_MS } from '../constants/billing.constants.js';
@@ -213,8 +214,42 @@ export function createMercadoPagoAdapter(
         adapterConfig.logger = config.logger;
     }
 
-    // Create and return adapter
-    return createQZPayMercadoPagoAdapter(adapterConfig);
+    // Create the real adapter from the underlying qzpay package.
+    const realAdapter = createQZPayMercadoPagoAdapter(adapterConfig);
+
+    // SPEC-217 T-006: construction-time gate — zero overhead in production.
+    if (!isTestControlEnabled()) {
+        return realAdapter;
+    }
+
+    // Test-control enabled (e2e only): wrap the subscription methods the gated
+    // specs exercise so applyTestControl can inject deterministic faults + record calls.
+    // Option A canonical mapping (FINDING 1): create->startTrial, update->updateSubscription,
+    // cancel->cancelTrial. Other ControllableOperations are intentionally NOT wired
+    // (no spec needs them; the cancelTrial/cancelSubscription collision on subscriptions.cancel
+    // is documented and acceptable for the current specs).
+    // Wrap the three subscription methods the gated specs exercise.
+    // The cast to QZPayMercadoPagoAdapter is safe: the object spread preserves all
+    // other members at runtime; TypeScript cannot structurally verify the spread
+    // of a branded/extended interface so we assert the shape explicitly.
+    return {
+        ...realAdapter,
+        subscriptions: {
+            ...realAdapter.subscriptions,
+            create: ((...args: Parameters<typeof realAdapter.subscriptions.create>) =>
+                applyTestControl('startTrial', args[0], () =>
+                    realAdapter.subscriptions.create(...args)
+                )) as typeof realAdapter.subscriptions.create,
+            update: ((...args: Parameters<typeof realAdapter.subscriptions.update>) =>
+                applyTestControl('updateSubscription', args[0], () =>
+                    realAdapter.subscriptions.update(...args)
+                )) as typeof realAdapter.subscriptions.update,
+            cancel: ((...args: Parameters<typeof realAdapter.subscriptions.cancel>) =>
+                applyTestControl('cancelTrial', args[0], () =>
+                    realAdapter.subscriptions.cancel(...args)
+                )) as typeof realAdapter.subscriptions.cancel
+        }
+    } as QZPayMercadoPagoAdapter;
 }
 
 /**
