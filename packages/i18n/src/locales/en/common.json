@@ -64,7 +64,9 @@
         "BAD_REQUEST": "That request isn't valid.",
         "CONFLICT": "The resource conflicts with the current state.",
         "SERVICE_UNAVAILABLE": "This service is temporarily unavailable. Please try again in a few minutes.",
-        "NEWSLETTER_NOT_CONFIGURED": "The newsletter isn't available right now. We're working on bringing it back."
+        "NEWSLETTER_NOT_CONFIGURED": "The newsletter isn't available right now. We're working on bringing it back.",
+        "INVALID_EMAIL_OR_PASSWORD": "The email address or password is incorrect.",
+        "ACCOUNT_LOCKED": "Your account is temporarily locked due to too many failed login attempts. Please try again in a few minutes or use the password recovery option."
     },
     "filters": "Filters",
     "goHome": "Back to home",

@@ -68,4 +68,88 @@ describe('translateApiError', () => {
         });
         expect(message).toBe('Raw API msg');
     });
+
+    // Better Auth credential error (INVALID_EMAIL_OR_PASSWORD)
+    describe('Better Auth credential errors', () => {
+        it('translates INVALID_EMAIL_OR_PASSWORD to Spanish', () => {
+            const message = translateApiError({
+                error: {
+                    code: 'INVALID_EMAIL_OR_PASSWORD',
+                    message: 'Invalid email or password'
+                },
+                locale: 'es'
+            });
+            expect(message).toBe('El correo electrónico o la contraseña son incorrectos.');
+        });
+
+        it('translates INVALID_EMAIL_OR_PASSWORD to English', () => {
+            const message = translateApiError({
+                error: {
+                    code: 'INVALID_EMAIL_OR_PASSWORD',
+                    message: 'Invalid email or password'
+                },
+                locale: 'en'
+            });
+            expect(message).toBe('The email address or password is incorrect.');
+        });
+
+        it('translates INVALID_EMAIL_OR_PASSWORD to Portuguese', () => {
+            const message = translateApiError({
+                error: {
+                    code: 'INVALID_EMAIL_OR_PASSWORD',
+                    message: 'Invalid email or password'
+                },
+                locale: 'pt'
+            });
+            expect(message).toBe('O endereço de e-mail ou a senha estão incorretos.');
+        });
+
+        it('translates ACCOUNT_LOCKED (brute-force lockout) to Spanish', () => {
+            const message = translateApiError({
+                error: {
+                    code: 'ACCOUNT_LOCKED',
+                    message:
+                        'Too many failed login attempts. Please try again in 5 minutes or use password reset.'
+                },
+                locale: 'es'
+            });
+            expect(message).toMatch(/bloqueada temporalmente/i);
+        });
+
+        it('translates ACCOUNT_LOCKED to English', () => {
+            const message = translateApiError({
+                error: {
+                    code: 'ACCOUNT_LOCKED',
+                    message:
+                        'Too many failed login attempts. Please try again in 5 minutes or use password reset.'
+                },
+                locale: 'en'
+            });
+            expect(message).toMatch(/temporarily locked/i);
+        });
+
+        it('translates ACCOUNT_LOCKED to Portuguese', () => {
+            const message = translateApiError({
+                error: {
+                    code: 'ACCOUNT_LOCKED',
+                    message:
+                        'Too many failed login attempts. Please try again in 5 minutes or use password reset.'
+                },
+                locale: 'pt'
+            });
+            expect(message).toMatch(/temporariamente bloqueada/i);
+        });
+
+        it('does not leak the raw English "Invalid email or password" message in es locale', () => {
+            const message = translateApiError({
+                error: {
+                    code: 'INVALID_EMAIL_OR_PASSWORD',
+                    message: 'Invalid email or password'
+                },
+                locale: 'es'
+            });
+            // Must not fall back to the raw English string.
+            expect(message).not.toBe('Invalid email or password');
+        });
+    });
 });
