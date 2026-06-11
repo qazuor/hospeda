@@ -1,6 +1,6 @@
 # SPEC-213: Web + Admin pre-beta polish & bugfix batch
 
-## Progress: 8/19 tasks (42%)
+## Progress: 11/19 tasks (58%)
 
 **Average Complexity:** 1.6/3
 **Phases:** setup → core → integration → cleanup
@@ -26,9 +26,9 @@
 
 ### Integration Phase
 
-- [ ] **T-010** (complexity: 2) - W1: Proactive login CTA on AI search open for guests
-- [ ] **T-011** (complexity: 1) - W13: Remove keyword-search degradation fallback
-- [ ] **T-012** (complexity: 2) - W14: Autofocus chat/search input on open
+- [x] **T-010** (complexity: 2) - W1: Proactive login CTA on AI search open for guests
+- [x] **T-011** (complexity: 1) - W13: Remove keyword-search degradation fallback
+- [x] **T-012** (complexity: 2) - W14: Autofocus chat/search input on open
 - [ ] **T-013** (complexity: 1) - W15b: Redirect already_host submit to own list
 
 ### Cleanup Phase (visual polish)

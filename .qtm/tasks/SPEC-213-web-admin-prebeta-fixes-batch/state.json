@@ -258,7 +258,7 @@
             "id": "T-010",
             "title": "W1: Proactive login CTA on AI search open for guests",
             "description": "For unauthenticated users, on AiSearchPanel.client.tsx open show the login message + sign-in/register CTA up front (reuse AuthRequiredPopover.client.tsx) and block the input/send (don't let them type+submit then redirect). Keep the AiSearchLoginPrompted PostHog event. Tests: component test - guest open shows CTA, input blocked, no API call.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
@@ -266,21 +266,21 @@
             "tags": ["web", "auth", "ux"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-11T13:23:44.000Z"
             }
         },
         {
             "id": "T-011",
             "title": "W13: Remove keyword-search degradation fallback",
             "description": "Remove the 'Buscar por palabras clave' fallback button and the low-confidence 'mostrando resultados por palabras clave' notice from AiSearchPanel.client.tsx (~L351/L399/L407). On AI failure show only the error state. Tests: component test for error + low-confidence states asserting the fallback is gone.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": [],
@@ -288,21 +288,21 @@
             "tags": ["web", "ux"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-11T13:23:44.000Z"
             }
         },
         {
             "id": "T-012",
             "title": "W14: Autofocus chat/search input on open",
             "description": "Focus the textarea when the panel opens: AiSearchPanel/NlSearchInput (no autofocus today) and AiChatWidget.tsx (currently focuses the expand button first - focus the composer textarea instead). Tests: component test asserting document.activeElement is the textarea after open (both components).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
@@ -319,14 +319,14 @@
             "tags": ["web", "ux"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-11T13:23:44.000Z"
             }
         },
         {
@@ -486,9 +486,9 @@
     ],
     "summary": {
         "total": 19,
-        "pending": 11,
+        "pending": 8,
         "inProgress": 0,
-        "completed": 8,
+        "completed": 11,
         "blocked": 0,
         "averageComplexity": 1.6
     }
