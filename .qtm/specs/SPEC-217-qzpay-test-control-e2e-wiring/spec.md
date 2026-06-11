@@ -4,7 +4,7 @@ title: Deterministic Billing for E2E — wire the QZPay test-control adapter for
 slug: qzpay-test-control-e2e-wiring
 type: test
 complexity: high
-status: draft
+status: in-progress
 owner: qazuor
 created: 2026-06-11
 base: staging

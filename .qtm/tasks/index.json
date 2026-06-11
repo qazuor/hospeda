@@ -375,7 +375,7 @@
             "specId": "SPEC-217",
             "title": "Deterministic Billing for E2E — QZPay test-control wiring + date-aware publish gate",
             "status": "in-progress",
-            "progress": "6/16",
+            "progress": "8/16",
             "path": "SPEC-217-qzpay-test-control-e2e-wiring",
             "note": "Un-skip 6 gated billing P0 e2e specs (host-03/04/07b write-blocking + host-07c/07d/res-01 fault-injection). Folds in a date-aware checkEligibility gate fix (OQ-1: closes ~24h expired-trial publish gap, reuses 6h cron-lag grace). 16 atomic tasks, all complexity <=3. Worktree spec-217."
         }

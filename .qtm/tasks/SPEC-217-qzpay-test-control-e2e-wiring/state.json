@@ -98,22 +98,23 @@
             "id": "T-005",
             "title": "Refactor entitlement middleware grace to use the shared predicate",
             "description": "Replace the entitlement middleware's inline cron-lag grace logic with the shared isSubscriptionLive predicate, so there is exactly one definition of subscription liveness. Behavior MUST be unchanged for active subs. UNIT TESTS REQUIRED: regression that the middleware's active-sub grace behavior is identical before/after (active within 6h grace still live, past grace not). No new behavior.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-003"],
             "blocks": [],
             "subtasks": [
-                { "title": "Swap inline grace for shared predicate", "completed": false },
-                { "title": "Regression test: middleware grace unchanged", "completed": false }
+                { "title": "Swap inline grace for shared predicate", "completed": true },
+                { "title": "Regression test: middleware grace unchanged", "completed": true }
             ],
             "tags": ["billing", "entitlements", "core", "refactor"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-06-11T00:00:00.000Z",
+                "completed": "2026-06-11T00:00:00.000Z"
+            },
+            "resultRef": "entitlement.ts withinWindow now calls isSubscriptionLive (shared threshold). Behavior-preserving: SPEC-148 grace tests (278) unchanged green. Middleware keeps its own detail math (hoursOverdue/hoursRemaining) since it needs observability, not just a boolean."
         },
         {
             "id": "T-006",
@@ -213,22 +214,23 @@
             "id": "T-010",
             "title": "Assert e2e helper terminal statuses match cron output",
             "description": "Add a guard (unit or e2e assertion, AC-1.4) that the terminal subscription statuses produced by the Group A helpers match what production crons write: trial-expiry -> 'cancelled' (via cancel()), finalize-cancelled-subs -> 'cancelled'. Prevents the helpers from validating a fictional status the system never produces. TEST REQUIRED: assert helper target status is in the cron's documented output set.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-009"],
             "blocks": [],
             "subtasks": [
-                { "title": "Enumerate cron terminal statuses", "completed": false },
-                { "title": "Assertion that helper statuses match", "completed": false }
+                { "title": "Enumerate cron terminal statuses", "completed": true },
+                { "title": "Assertion that helper statuses match", "completed": true }
             ],
             "tags": ["e2e", "billing", "testing"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-06-11T00:00:00.000Z",
+                "completed": "2026-06-11T00:00:00.000Z"
+            },
+            "resultRef": "apps/e2e/test/unit/e2e-helper-subscription-statuses.test.ts (4 tests): helper statuses 'cancelled'/'trialing' are valid enum members and match cron output (finalize-cancelled-subs -> cancelled)"
         },
         {
             "id": "T-011",
@@ -362,9 +364,9 @@
     ],
     "summary": {
         "total": 16,
-        "pending": 10,
+        "pending": 8,
         "inProgress": 0,
-        "completed": 6,
+        "completed": 8,
         "blocked": 0,
         "averageComplexity": 2.1
     }
