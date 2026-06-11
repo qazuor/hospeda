@@ -483,7 +483,14 @@ const subscriptionUrl = buildUrl({ locale, path: 'mi-cuenta/suscripcion' });
 
     /* ── Form section ──────────────────────────────────────────────────── */
     .nueva-form--compact {
-        padding-block: clamp(var(--space-6), 5vw, var(--space-10));
+        /* Keep the standard vertical rhythm for the top but give the bottom
+           a generous fixed padding so the form never sits flush against the
+           footer. The previous clamp() compressed both sides equally,
+           leaving too little clearance at the bottom on mid-sized viewports.
+           4rem (64px) matches the section-scale spacing used elsewhere in
+           the web app for comfortable footer separation. */
+        padding-top: clamp(var(--space-6), 5vw, var(--space-10));
+        padding-bottom: 4rem;
     }
 
     .nueva-form__container {
