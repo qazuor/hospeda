@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AiFeatureSchema, type AiFeature } from '../ai-provider.schema.js';
+import { type AiFeature, AiFeatureSchema } from '../ai-provider.schema.js';
 
 describe('AiFeatureSchema', () => {
     it('should include all five V1 AI features', () => {
@@ -12,7 +12,13 @@ describe('AiFeatureSchema', () => {
     });
 
     it('should validate known feature values', () => {
-        const validFeatures: AiFeature[] = ['text_improve', 'chat', 'search', 'support', 'translate'];
+        const validFeatures: AiFeature[] = [
+            'text_improve',
+            'chat',
+            'search',
+            'support',
+            'translate'
+        ];
         for (const feature of validFeatures) {
             const result = AiFeatureSchema.safeParse(feature);
             expect(result.success).toBe(true);
