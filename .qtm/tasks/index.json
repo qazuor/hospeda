@@ -375,10 +375,10 @@
             "specId": "SPEC-212",
             "title": "Conversational AI Accommodation Search",
             "status": "in-progress",
-            "progress": "3/18",
+            "progress": "4/18",
             "path": "SPEC-212-conversational-ai-search",
             "archived": false,
-            "note": "T-001 schemas + T-002 conversational prompt framing + T-004 SSE route scaffold done. Next: T-003 (buildConversationalSearchPrompt) then T-005."
+            "note": "T-001 schemas, T-002 prompt framing, T-003 buildConversationalSearchPrompt, T-004 SSE route scaffold done. Next: T-005 (wire generateObject -> filters event) and T-008 (web SSE client)."
         }
     ],
     "standalone": {

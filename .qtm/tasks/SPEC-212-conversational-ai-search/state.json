@@ -82,35 +82,35 @@
             "id": "T-003",
             "title": "Implement buildConversationalSearchPrompt in search-chat.prompt.ts",
             "description": "New apps/api/src/routes/ai/protected/search-chat.prompt.ts exporting buildConversationalSearchPrompt({currentFilters, history, message, locale}). Injects serialized current filter set + bounded recent history + new message + locale-aware amenity allowlist (reuse SPEC-199's buildSearchIntentPrompt approach). Tests (write first): injects current filters correctly, bounds history to last N turns, includes the new message, asserts the full-updated-set contract via prompt shape.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001", "T-002"],
             "blocks": ["T-005", "T-017"],
             "subtasks": [
                 {
                     "title": "buildConversationalSearchPrompt signature (RO-RO)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Inject current filters + bounded history + message + amenity allowlist",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests (prompt shape, history bound, full-set contract)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "ai", "prompt", "core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-11T00:00:00.000Z",
+                "completed": "2026-06-11T00:00:00.000Z"
             }
         },
         {
@@ -657,9 +657,9 @@
     ],
     "summary": {
         "total": 18,
-        "pending": 15,
+        "pending": 14,
         "inProgress": 0,
-        "completed": 3,
+        "completed": 4,
         "blocked": 0,
         "averageComplexity": 2.4
     }
