@@ -21,6 +21,7 @@ import { toAccommodationCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { resolveI18nText } from '@/lib/resolve-i18n-text';
 import { getAccommodationTypeLabel, getBadgeStatusColor } from '@/lib/colors';
 import { formatPrice } from '@/lib/format-utils';
 import { buildAccommodationListingSummary, DEFAULT_TYPE_GRAMMAR } from '@/lib/accommodation-listing-summary';
@@ -134,8 +135,8 @@ const mapHasItems = cards.some((c) => c.approximateLocation);
 // Filter summary
 const summaryLocale = (locale === 'en' ? 'en' : 'es') as SummaryLocale;
 const destinationCatalog: readonly CatalogEntry[] = destinations.map((d) => ({ key: d.id, label: { es: d.name, en: d.name } }));
-const amenityCatalog: readonly CatalogEntry[] = amenities.map((a) => ({ key: a.id, label: { es: a.name, en: a.name } }));
-const featureCatalog: readonly CatalogEntry[] = features.map((f) => ({ key: f.id, label: { es: f.name, en: f.name } }));
+const amenityCatalog: readonly CatalogEntry[] = amenities.map((a) => ({ key: a.id, label: { es: resolveI18nText(a.name, 'es'), en: resolveI18nText(a.name, 'en') } }));
+const featureCatalog: readonly CatalogEntry[] = features.map((f) => ({ key: f.id, label: { es: resolveI18nText(f.name, 'es'), en: resolveI18nText(f.name, 'en') } }));
 
 const typesArray = types?.split(',').filter(Boolean) ?? [];
 const filterSummary = buildAccommodationListingSummary({
@@ -201,14 +202,14 @@ const filterGroups: FilterGroup[] = [
 		id: 'amenities',
 		label: t('accommodations.sidebar.amenities', 'Comodidades'),
 		type: 'icon-chips',
-		options: amenities.map((a) => ({ value: a.id, label: a.name, icon: a.icon ?? undefined })),
+		options: amenities.map((a) => ({ value: a.id, label: resolveI18nText(a.name, locale), icon: a.icon ?? undefined })),
 		maxVisible: 10,
 	},
 	{
 		id: 'features',
 		label: t('accommodations.sidebar.features', 'Características'),
 		type: 'icon-chips',
-		options: features.map((f) => ({ value: f.id, label: f.name, icon: f.icon ?? undefined })),
+		options: features.map((f) => ({ value: f.id, label: resolveI18nText(f.name, locale), icon: f.icon ?? undefined })),
 		maxVisible: 10,
 	},
 	{
