@@ -1,6 +1,6 @@
 # SPEC-213: Web + Admin pre-beta polish & bugfix batch
 
-## Progress: 0/19 tasks (0%)
+## Progress: 5/19 tasks (26%)
 
 **Average Complexity:** 1.6/3
 **Phases:** setup → core → integration → cleanup

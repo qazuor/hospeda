@@ -13,13 +13,26 @@
             "blockedBy": [],
             "blocks": ["T-002"],
             "subtasks": [
-                { "title": "Add 3 values to AccommodationTypeEnum", "completed": false },
-                { "title": "Generate + apply enum migration", "completed": false },
-                { "title": "Enum unit test", "completed": false }
+                {
+                    "title": "Add 3 values to AccommodationTypeEnum",
+                    "completed": false
+                },
+                {
+                    "title": "Generate + apply enum migration",
+                    "completed": false
+                },
+                {
+                    "title": "Enum unit test",
+                    "completed": false
+                }
             ],
             "tags": ["schema", "db", "migration"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
                 "started": null,
@@ -35,13 +48,26 @@
             "blockedBy": ["T-001"],
             "blocks": [],
             "subtasks": [
-                { "title": "i18n labels es/en/pt (common + accommodations)", "completed": false },
-                { "title": "Add options to both filter sidebars", "completed": false },
-                { "title": "i18n key-presence test", "completed": false }
+                {
+                    "title": "i18n labels es/en/pt (common + accommodations)",
+                    "completed": false
+                },
+                {
+                    "title": "Add options to both filter sidebars",
+                    "completed": false
+                },
+                {
+                    "title": "i18n key-presence test",
+                    "completed": false
+                }
             ],
             "tags": ["i18n", "web", "seed"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
                 "started": null,
@@ -52,18 +78,22 @@
             "id": "T-003",
             "title": "W6: Fix destination accommodations page pagination.total",
             "description": "In apps/web/src/pages/[lang]/destinos/[slug]/alojamientos/index.astro:36 read result.data.pagination.total (and pagination.totalPages) instead of result.data.total. Mirror alojamientos/index.astro:203. Tests: component/integration test asserting it reads pagination.total; regression test for the undefined read.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [],
             "tags": ["web", "bugfix"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-11T12:23:13.000Z"
             }
         },
         {
@@ -75,13 +105,26 @@
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
-                { "title": "Reproduce + capture the real API error", "completed": false },
-                { "title": "Fix bbox handling/validation", "completed": false },
-                { "title": "Integration + regression tests", "completed": false }
+                {
+                    "title": "Reproduce + capture the real API error",
+                    "completed": false
+                },
+                {
+                    "title": "Fix bbox handling/validation",
+                    "completed": false
+                },
+                {
+                    "title": "Integration + regression tests",
+                    "completed": false
+                }
             ],
             "tags": ["api", "web", "bugfix"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
                 "started": null,
@@ -97,13 +140,26 @@
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
-                { "title": "Fix casing in chips/lookup", "completed": false },
-                { "title": "Add 7 missing categories to sidebar", "completed": false },
-                { "title": "Normalization + resolution tests", "completed": false }
+                {
+                    "title": "Fix casing in chips/lookup",
+                    "completed": false
+                },
+                {
+                    "title": "Add 7 missing categories to sidebar",
+                    "completed": false
+                },
+                {
+                    "title": "Normalization + resolution tests",
+                    "completed": false
+                }
             ],
             "tags": ["web", "bugfix"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
                 "started": null,
@@ -114,18 +170,22 @@
             "id": "T-006",
             "title": "W8: Resolve I18nText for services filter on map view",
             "description": "In apps/web/src/pages/[lang]/alojamientos/mapa.astro (~L204/L211) wrap amenity/feature names with resolveI18nText(name, locale) for the filter options, matching index.astro (L401/L418). Fixes [object Object] chip labels. Tests: snapshot/unit test of the filter-options builder asserting string labels.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [],
             "tags": ["web", "i18n", "bugfix"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-11T12:23:13.000Z"
             }
         },
         {
@@ -139,7 +199,11 @@
             "subtasks": [],
             "tags": ["i18n", "auth", "web"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
                 "started": null,
@@ -150,18 +214,22 @@
             "id": "T-008",
             "title": "W9: Add AI entitlement i18n labels + fix Embedeer typo",
             "description": "Add ai_text_improve / ai_chat / ai_search keys to billing.json entitlement block (es/en/pt) and fix the can_embed_video 'Embedeer' typo. ES: 'Mejora de textos con IA', 'Consultas sobre el alojamiento con IA', 'Busqueda inteligente', 'Videos en tu publicacion'. Tests: i18n key-presence test for the 4 keys in all 3 locales.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [],
             "tags": ["i18n", "billing"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-11T12:23:13.000Z"
             }
         },
         {
@@ -175,7 +243,11 @@
             "subtasks": [],
             "tags": ["i18n", "web"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
                 "started": null,
@@ -193,7 +265,11 @@
             "subtasks": [],
             "tags": ["web", "auth", "ux"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
                 "started": null,
@@ -211,7 +287,11 @@
             "subtasks": [],
             "tags": ["web", "ux"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
                 "started": null,
@@ -227,7 +307,10 @@
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
-                { "title": "AI search panel autofocus", "completed": false },
+                {
+                    "title": "AI search panel autofocus",
+                    "completed": false
+                },
                 {
                     "title": "Accommodation chat focus textarea not expand button",
                     "completed": false
@@ -235,7 +318,11 @@
             ],
             "tags": ["web", "ux"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
                 "started": null,
@@ -253,7 +340,11 @@
             "subtasks": [],
             "tags": ["web", "ux"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
                 "started": null,
@@ -271,7 +362,11 @@
             "subtasks": [],
             "tags": ["web", "css"],
             "phase": "cleanup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
                 "started": null,
@@ -289,7 +384,11 @@
             "subtasks": [],
             "tags": ["web", "css"],
             "phase": "cleanup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
                 "started": null,
@@ -307,7 +406,11 @@
             "subtasks": [],
             "tags": ["web", "css"],
             "phase": "cleanup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
                 "started": null,
@@ -325,7 +428,11 @@
             "subtasks": [],
             "tags": ["web", "css"],
             "phase": "cleanup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
                 "started": null,
@@ -336,44 +443,52 @@
             "id": "T-018",
             "title": "A1: Fix admin dialog close button size",
             "description": "In apps/admin/src/components/ui/dialog.tsx (L89) pass size=\"xs\" (16px) or className=\"size-4\" to <CloseIcon /> so the default close button renders at 16px (it defaults to 24px and the Tailwind selector doesn't match @repo/icons SVGs). Tests: component test asserting the close icon size class/prop.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [],
             "tags": ["admin", "css"],
             "phase": "cleanup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-11T12:23:13.000Z"
             }
         },
         {
             "id": "T-019",
             "title": "A2: Register Playground IA sidebar icon",
             "description": "Register an appropriate icon (SparkleIcon or AskToAiIcon) in apps/admin/src/lib/nav-icon-map.ts (import + map entry) and point the ai-playground sidebar entry (config/ia/sidebars.ts) at it, so 'Playground IA' shows an icon. Tests: unit test asserting the nav icon resolves for the Playground entry.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [],
             "tags": ["admin"],
             "phase": "cleanup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-11T12:23:13.000Z"
             }
         }
     ],
     "summary": {
         "total": 19,
-        "pending": 19,
+        "pending": 14,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 5,
         "blocked": 0,
         "averageComplexity": 1.6
     }
