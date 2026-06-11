@@ -1,5 +1,5 @@
 /**
- * Integration tests for `POST /api/v1/protected/ai/search-chat` (SPEC-212 T-004 / T-005).
+ * Integration tests for `POST /api/v1/protected/ai/search-chat` (SPEC-212 T-004 / T-005 / T-006).
  *
  * ## T-004 coverage
  *
@@ -24,19 +24,32 @@
  *   - AI engine error: pre-handler `generateObject` throw → HTTP error response
  *     (no SSE stream started, per factory contract).
  *
- * ## External seams stubbed for T-005
+ * ## T-006 coverage
+ *
+ * Natural-language reply streaming via `streamText`:
+ *
+ *   - Reply streams: after the `filters` frame, `token` frames carry the stubbed
+ *     reply text, then a terminal `done` frame is emitted.
+ *   - `done` payload: carries `conversationId` echoing the request value when
+ *     provided; `null` when absent.
+ *   - Frame ordering: `filters` → `token`(s) → `done`.
+ *   - Provider failure mid-reply (streamText throws): emits an `error` frame,
+ *     no `done` follows.
+ *
+ * ## External seams stubbed for T-005 / T-006
  *
  * - `@repo/ai-core`: real Error subclasses + stub service methods.
  * - `../../../src/services/ai-service.factory`: `createConfiguredAiService` returns
- *   a stub `generateObject` configured per-test via `nextGenerateObjectResult` /
- *   `nextGenerateObjectError`. Mirrors the search-intent.test.ts pattern exactly.
+ *   a stub with both `generateObject` (T-005) and `streamText` (T-006).
+ *   `generateObject` is configured per-test via `nextGenerateObjectResult` /
+ *   `nextGenerateObjectError`. `streamText` is configured via `nextStreamDeltas` /
+ *   `nextStreamError`. Mirrors the chat-route.test.ts pattern for `streamText`.
  * - `@repo/db`: `getDb` returns a Drizzle-chain mock so slug-to-UUID queries are
  *   controlled without a real database. Mirrors search-intent.test.ts §mock @repo/db.
  *
  * ## What is NOT tested here
  *
- * - `token` SSE events (T-006 — `streamText` not yet wired).
- * - Conversation persistence / `conversationId` in `done` (T-007).
+ * - Conversation persistence / `conversationId` becoming the real persisted id (T-007).
  *
  * @module test/integration/ai/search-chat
  */
@@ -57,6 +70,9 @@ const {
     generateObjectCalls,
     nextGenerateObjectResult,
     nextGenerateObjectError,
+    streamTextCalls,
+    nextStreamDeltas,
+    nextStreamError,
     currentEntitlementsForTest,
     currentLimitsForTest,
     currentBillingLoadFailedForTest,
@@ -77,6 +93,16 @@ const {
         } as unknown
     },
     nextGenerateObjectError: { current: null as unknown },
+    /** Calls recorded by the mocked streamText. */
+    streamTextCalls: [] as Array<{
+        feature: string;
+        messages: Array<{ role: string; content: string }>;
+        locale: string;
+    }>,
+    /** Token deltas yielded by the mocked streamText stream. Defaults to a short reply. */
+    nextStreamDeltas: { current: ['Entendido, '] as string[] },
+    /** When set, the mock streamText generator throws this after yielding deltas. */
+    nextStreamError: { current: null as unknown },
     currentEntitlementsForTest: { current: new Set<string>() },
     currentLimitsForTest: { current: new Map<string, number>() },
     currentBillingLoadFailedForTest: { current: false as boolean },
@@ -144,8 +170,10 @@ vi.mock('@repo/ai-core', () => {
 
 // ---------------------------------------------------------------------------
 // Mock: ai-service.factory — createConfiguredAiService
-// Returns a stub AiService with a `generateObject` that records invocations and
-// returns / throws the per-test configured value. Mirrors search-intent.test.ts.
+// Returns a stub AiService with both `generateObject` (T-005) and `streamText`
+// (T-006). `generateObject` records invocations and returns/throws the per-test
+// configured value. `streamText` yields delta strings and resolves meta after
+// drain. Mirrors the pattern from chat-route.test.ts.
 // ---------------------------------------------------------------------------
 
 vi.mock('../../../src/services/ai-service.factory', () => ({
@@ -162,7 +190,51 @@ vi.mock('../../../src/services/ai-service.factory', () => ({
             }
 
             return nextGenerateObjectResult.current;
-        })
+        }),
+        streamText: vi.fn(
+            async (args: {
+                feature: string;
+                messages: Array<{ role: string; content: string }>;
+                locale: string;
+            }) => {
+                streamTextCalls.push({
+                    feature: args.feature,
+                    messages: args.messages,
+                    locale: args.locale
+                });
+
+                const deltas = nextStreamDeltas.current;
+                const streamError = nextStreamError.current;
+                let markDrained = (): void => {};
+                const drained = new Promise<void>((resolve) => {
+                    markDrained = resolve;
+                });
+
+                return {
+                    stream: (async function* () {
+                        try {
+                            for (const delta of deltas) {
+                                yield { delta };
+                            }
+                            if (streamError) {
+                                throw streamError;
+                            }
+                        } finally {
+                            markDrained();
+                        }
+                    })(),
+                    meta: (async () => {
+                        await drained;
+                        return {
+                            usage: { promptTokens: 8, completionTokens: 4, totalTokens: 12 },
+                            provider: 'stub',
+                            model: 'stub-model',
+                            finishReason: 'stop'
+                        };
+                    })()
+                };
+            }
+        )
     }))
 }));
 
@@ -393,6 +465,9 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
             model: 'stub-model',
             finishReason: 'stop'
         };
+        streamTextCalls.length = 0;
+        nextStreamDeltas.current = ['Entendido, '];
+        nextStreamError.current = null;
         currentBillingLoadFailedForTest.current = false;
         // SPEC-211 §7.7: ai_search is a free platform feature — no AI entitlement
         // required. Default to empty set (tourist-free user) to verify the route
@@ -882,6 +957,174 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
 
             // intent is the empty fallback
             expect(payload.intent).toEqual({});
+        });
+    });
+
+    // =========================================================================
+    // Gate 5 — T-006: streamText reply frames
+    // =========================================================================
+
+    describe('Gate 5 — T-006: streamText reply streaming', () => {
+        it('emits one or more token frames carrying the stubbed reply text', async () => {
+            // Arrange: stub yields two delta strings
+            nextStreamDeltas.current = ['Entendido,', ' búsqueda registrada.'];
+
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody()
+            });
+
+            expect(res.status).toBe(200);
+
+            const frames = await readSseFrames(res);
+            const tokenFrames = frames.filter((f) => f.event === 'token');
+
+            // At least one token frame must be emitted
+            expect(tokenFrames.length).toBeGreaterThanOrEqual(1);
+
+            // Each token frame must carry a `delta` string
+            for (const tf of tokenFrames) {
+                const payload = JSON.parse(tf.data) as { delta: string };
+                expect(typeof payload.delta).toBe('string');
+            }
+
+            // The full concatenated text matches the stub deltas
+            const fullText = tokenFrames
+                .map((tf) => (JSON.parse(tf.data) as { delta: string }).delta)
+                .join('');
+            expect(fullText).toBe('Entendido, búsqueda registrada.');
+        });
+
+        it('frame ordering: filters → token(s) → done', async () => {
+            nextStreamDeltas.current = ['¡Perfecto!'];
+
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody()
+            });
+
+            expect(res.status).toBe(200);
+
+            const frames = await readSseFrames(res);
+            const filtersIdx = frames.findIndex((f) => f.event === 'filters');
+            const firstTokenIdx = frames.findIndex((f) => f.event === 'token');
+            const doneIdx = frames.findIndex((f) => f.event === 'done');
+
+            // All three event types must be present
+            expect(filtersIdx).toBeGreaterThanOrEqual(0);
+            expect(firstTokenIdx).toBeGreaterThanOrEqual(0);
+            expect(doneIdx).toBeGreaterThanOrEqual(0);
+
+            // Ordering: filters < first-token < done
+            expect(filtersIdx).toBeLessThan(firstTokenIdx);
+            expect(firstTokenIdx).toBeLessThan(doneIdx);
+        });
+
+        it('done frame carries conversationId echoing the request value when provided', async () => {
+            const CONV_ID = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
+
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({ conversationId: CONV_ID })
+            });
+
+            expect(res.status).toBe(200);
+
+            const frames = await readSseFrames(res);
+            const doneFrames = frames.filter((f) => f.event === 'done');
+            expect(doneFrames).toHaveLength(1);
+
+            const donePayload = JSON.parse(doneFrames[0]?.data ?? '{}') as {
+                conversationId: string | null;
+            };
+            // T-006: echo-back — the request's conversationId is returned as-is.
+            expect(donePayload.conversationId).toBe(CONV_ID);
+        });
+
+        it('done frame carries conversationId: null when not provided in the request', async () => {
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody()
+            });
+
+            expect(res.status).toBe(200);
+
+            const frames = await readSseFrames(res);
+            const doneFrames = frames.filter((f) => f.event === 'done');
+            expect(doneFrames).toHaveLength(1);
+
+            const donePayload = JSON.parse(doneFrames[0]?.data ?? '{}') as {
+                conversationId: string | null;
+            };
+            expect(donePayload.conversationId).toBeNull();
+        });
+
+        it('streamText is called with feature=search and correct locale', async () => {
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [{ role: 'user', content: 'I want a cabin by the river' }],
+                    locale: 'en'
+                })
+            });
+
+            expect(res.status).toBe(200);
+            // Drain the stream so streamText is fully called
+            await readSseFrames(res);
+
+            expect(streamTextCalls).toHaveLength(1);
+            expect(streamTextCalls[0]?.feature).toBe('search');
+            expect(streamTextCalls[0]?.locale).toBe('en');
+        });
+
+        it('streamText messages include a system message (reply prompt) as first element', async () => {
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({ locale: 'es' })
+            });
+
+            expect(res.status).toBe(200);
+            await readSseFrames(res);
+
+            expect(streamTextCalls).toHaveLength(1);
+            const messages = streamTextCalls[0]?.messages ?? [];
+            expect(messages.length).toBeGreaterThanOrEqual(1);
+
+            // First message must be the system prompt (caller-wins override)
+            const first = messages[0];
+            expect(first?.role).toBe('system');
+            expect(typeof first?.content).toBe('string');
+            expect((first?.content ?? '').length).toBeGreaterThan(0);
+        });
+
+        it('provider failure mid-reply emits error frame and no done frame', async () => {
+            // Arrange: streamText generator throws after yielding some tokens
+            nextStreamDeltas.current = ['partial'];
+            nextStreamError.current = new Error('MODERATION_BLOCKED');
+
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody()
+            });
+
+            expect(res.status).toBe(200);
+
+            const frames = await readSseFrames(res);
+            const errorFrames = frames.filter((f) => f.event === 'error');
+            const doneFrames = frames.filter((f) => f.event === 'done');
+
+            // An error frame must be present
+            expect(errorFrames).toHaveLength(1);
+
+            // No done frame after an error (factory contract)
+            expect(doneFrames).toHaveLength(0);
         });
     });
 });

@@ -375,10 +375,10 @@
             "specId": "SPEC-212",
             "title": "Conversational AI Accommodation Search",
             "status": "in-progress",
-            "progress": "5/18",
+            "progress": "6/18",
             "path": "SPEC-212-conversational-ai-search",
             "archived": false,
-            "note": "Core progressing: T-001/002/003/004/005 done. T-005 wired generateObject->mapper->filters SSE event (additive `filters` prelude added to streaming-route-factory). Reply streaming (T-006) + persistence (T-007) still placeholders. Next: T-006, then web track T-008."
+            "note": "API core nearly done: T-001..T-006. T-006 wired streamText reply (own caller-wins system prompt, no JSON leak) -> token frames -> done{conversationId echoed}. Only T-007 (persistence) left in core. Next: T-007, then web track T-008."
         }
     ],
     "standalone": {

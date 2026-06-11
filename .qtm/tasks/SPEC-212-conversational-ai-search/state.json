@@ -199,39 +199,39 @@
             "id": "T-006",
             "title": "Wire streamText reply -> 'token' events -> terminal 'done' with conversationId",
             "description": "After emitting filters, call streamText({feature:'search', messages:[...history, assistantContextWithFilters]}) and stream 'token' SSE events for the NL reply, ending with a terminal 'done' event carrying conversationId. Reply must NOT cite an exact result count (D-8). Tests (stub): tokens stream then done+conversationId; error event on provider failure.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-004", "T-005"],
             "blocks": ["T-007", "T-014"],
             "subtasks": [
                 {
                     "title": "streamText with history + filter context",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Stream 'token' events",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Terminal 'done' event with conversationId",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Integration tests (stream + done + error)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "ai", "sse", "core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-11T00:00:00.000Z",
+                "completed": "2026-06-11T00:00:00.000Z"
             }
         },
         {
@@ -657,9 +657,9 @@
     ],
     "summary": {
         "total": 18,
-        "pending": 13,
+        "pending": 12,
         "inProgress": 0,
-        "completed": 5,
+        "completed": 6,
         "blocked": 0,
         "averageComplexity": 2.4
     }

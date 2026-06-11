@@ -1,5 +1,5 @@
 /**
- * AI conversational-search streaming route (SPEC-212 T-004 / T-005).
+ * AI conversational-search streaming route (SPEC-212 T-004 / T-005 / T-006).
  *
  * Mounted at `POST /api/v1/protected/ai/search-chat` by the protected-AI barrel.
  * Serves the multi-turn conversational accommodation search experience.
@@ -19,15 +19,18 @@
  * solely by auth + rate-limit. The USD cost ceiling and metering are enforced
  * inside the AI engine via `createConfiguredAiService()`.
  *
- * ## Handler status (T-005 implemented)
+ * ## Handler status (T-006 implemented)
  *
- * T-005 is now wired: the handler extracts the full updated filter set via
- * `generateObject` and emits a `filters` SSE event before the reply stream.
+ * T-006 is now wired: after `generateObject` extracts filters (T-005 prelude),
+ * `streamText` streams the natural-language reply as `token` SSE events.
+ * The `done` frame carries `{ conversationId }` — currently echoes the
+ * request's `conversationId` when provided; T-007 will replace this with the
+ * persisted conversation id.
  *
  * Subsequent tasks that remain:
  *
- *   - T-006: `streamText` natural-language reply + `token` / `done` SSE events.
- *   - T-007: conversation persistence (`conversationId` in `done` event).
+ *   - T-007: conversation persistence (`conversationId` in `done` event becomes
+ *     the real persisted id, replacing the echo-back placeholder).
  *
  * @module apps/api/routes/ai/protected/search-chat
  */
@@ -47,8 +50,15 @@ import { createAiRateLimitMiddlewares } from '../../../middlewares/ai-rate-limit
 import { entitlementMiddleware } from '../../../middlewares/entitlement.js';
 import { createConfiguredAiService } from '../../../services/ai-service.factory.js';
 import { apiLogger } from '../../../utils/logger.js';
-import { createProtectedStreamingRoute } from '../../../utils/streaming-route-factory.js';
-import { buildConversationalSearchPrompt } from './search-chat.prompt.js';
+import {
+    type StreamTextChunk,
+    createProtectedStreamingRoute
+} from '../../../utils/streaming-route-factory.js';
+import {
+    buildConversationalSearchPrompt,
+    buildSearchReplyMessages,
+    buildSearchReplySystemPrompt
+} from './search-chat.prompt.js';
 import { mapIntentToSearchParams } from './search-intent.mapper.js';
 
 // ─── Slug → UUID resolution helpers ──────────────────────────────────────────
@@ -133,18 +143,25 @@ async function resolveFeatureIds(slugs: readonly string[]): Promise<string[]> {
  *
  * On error: a single `error` frame is emitted and the stream closes (no `done`).
  *
- * ## Handler flow (T-005)
+ * ## Handler flow (T-006)
  *
  * 1. Parse the validated body: messages, optional currentFilters, locale, conversationId.
  * 2. Derive `message` (last user turn) and `history` (all prior messages).
- * 3. Build the per-request prompt via `buildConversationalSearchPrompt`.
+ * 3. Build the per-request slot-extraction prompt via `buildConversationalSearchPrompt`.
  * 4. Call `aiService.generateObject` with `SearchIntentOutputSchema` to extract
  *    the full updated entity set. Mirrors search-intent.ts (same Zod-cast pattern).
  * 5. Safe-parse returned entities; fall back to `{}` on failure.
  * 6. Resolve amenity and feature slugs to UUIDs in parallel (single DB queries).
  * 7. Map entities to URL-ready params via `mapIntentToSearchParams`.
- * 8. Return `{ filters: { params, intent }, stream: <empty placeholder>, meta: <placeholder> }`.
- *    The factory emits the `filters` SSE frame from the `filters` field.
+ * 8. Build the reply system prompt via `buildSearchReplySystemPrompt` (caller-wins
+ *    policy — this OVERRIDES `DEFAULT_PROMPTS['search']` so the model outputs text,
+ *    not JSON). Assemble `streamText` messages via `buildSearchReplyMessages`.
+ * 9. Call `aiService.streamText` with `feature: 'search'`, the reply messages, and
+ *    the locale. Adapt the raw `{ delta }` chunks via an async generator.
+ * 10. Return `{ filters, stream, meta }`. The factory emits:
+ *     - `filters` frame (from step 7),
+ *     - `token` frames (from the generator in step 9),
+ *     - `done` frame with `{ conversationId }` (echoed from request; T-007 persists).
  */
 export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
     path: '/',
@@ -265,45 +282,51 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
         const params = mappedParams as unknown as AiSearchChatFiltersEvent['params'];
 
         // -----------------------------------------------------------------------
-        // TODO (T-006): Stream the natural-language reply via `streamText`.
+        // Step 8 (T-006): Build the reply system prompt + messages, then call
+        // streamText to stream the natural-language acknowledgment.
         //
-        // Steps:
-        //   1. Resolve system prompt via `resolveSystemPrompt({ feature: 'search' })`.
-        //   2. Build the engine messages list (system + conversation history).
-        //   3. Call `aiService.streamText({ feature: 'search', messages, locale })`.
-        //   4. Yield delta chunks as `token` events from the async generator below.
-        //   5. After the stream drains, return `meta` so the factory emits `done`.
-        //
-        // The `done` frame payload is populated by T-007 with `conversationId`.
+        // The reply system prompt is supplied as a caller-wins system message —
+        // this OVERRIDES `DEFAULT_PROMPTS['search']` (the JSON extractor) so the
+        // model outputs a friendly conversational text, not structured JSON.
         // -----------------------------------------------------------------------
-
-        // -----------------------------------------------------------------------
-        // TODO (T-007): Persist the conversation turn and include `conversationId`
-        // in the `done` event meta.
-        //
-        // Steps:
-        //   1. After the stream drains, call `persistSearchChatTurn(...)`.
-        //   2. Race persistence vs. 1500 ms timeout (non-fatal on timeout).
-        //   3. Return `{ conversationId }` (or `{ conversationId: null }` on timeout)
-        //      as part of the `meta` Promise so the factory serialises it in `done`.
-        // -----------------------------------------------------------------------
-
-        // Step 8: Return the filters prelude + empty reply stream + placeholder meta.
-        // The factory emits `filters` before the `token` loop (T-005 prelude pattern).
-        // The reply stream and done payload are T-006/T-007 placeholders.
-        const emptyStream: AsyncIterable<{ readonly delta: string }> =
-            (async function* (): AsyncGenerator<{ readonly delta: string }> {
-                // Placeholder — T-006 replaces this with the streamText generator.
-            })();
-
-        const placeholderMeta: Promise<{ readonly conversationId: null }> = Promise.resolve({
-            conversationId: null
+        const replySystemPrompt = buildSearchReplySystemPrompt({ locale });
+        const replyMessages = buildSearchReplyMessages({
+            systemPrompt: replySystemPrompt,
+            history,
+            message,
+            extractedFilters: validatedEntities
         });
+
+        const { stream: rawStream, meta: rawMeta } = await aiService.streamText({
+            feature: 'search',
+            messages: replyMessages,
+            locale
+        });
+
+        // Adapt the raw engine stream into the `StreamTextChunk` shape the factory
+        // expects. Mirrors the generator in chat.ts — yields each `{ delta }` chunk
+        // unchanged and lets errors propagate so the factory emits an `error` frame.
+        const stream: AsyncIterable<StreamTextChunk> = (async function* () {
+            for await (const chunk of rawStream) {
+                yield chunk;
+            }
+        })();
+
+        // -----------------------------------------------------------------------
+        // Step 9 (T-006/T-007 seam): Resolve `meta` for the `done` frame.
+        //
+        // T-006: echo the request's `conversationId` when present, `null` otherwise.
+        // T-007 will replace this with the real persisted id by awaiting
+        // `persistSearchChatTurn(...)` after the stream drains.
+        // -----------------------------------------------------------------------
+        const meta: Promise<{ readonly conversationId: string | null }> = rawMeta.then(() => ({
+            conversationId: conversationId ?? null
+        }));
 
         return {
             filters: { params, intent: validatedEntities },
-            stream: emptyStream,
-            meta: placeholderMeta
+            stream,
+            meta
         };
     }
 });
