@@ -375,10 +375,10 @@
             "specId": "SPEC-212",
             "title": "Conversational AI Accommodation Search",
             "status": "in-progress",
-            "progress": "15/18",
+            "progress": "16/18",
             "path": "SPEC-212-conversational-ai-search",
             "archived": false,
-            "note": "T-015: web component coverage complete (93 tests: panel 35, hook 13, chips 29, stream client 16). Added the multi-turn REFINE test (turn1 filters+results A, turn2 refine -> filters+results update to B, 2 GETs). Next: T-016 e2e Playwright, T-017 local-provider regression, T-018 docs."
+            "note": "T-017: local-provider regression guard added to ai-search-intent.schema.test.ts (73 tests) - asserts checkIn/checkOut accept arbitrary non-ISO strings, so no date regex/pattern can be reintroduced that would crash llama.cpp/Ollama grammar (#1569). search-chat generateObject uses this exact schema. Remaining: T-018 docs, then T-016 e2e (write only, runs in CI/staging per owner)."
         }
     ],
     "standalone": {
