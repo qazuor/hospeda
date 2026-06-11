@@ -79,7 +79,7 @@ try {
 
         if (accomResponse.ok) {
             const body = (await accomResponse.json()) as { data?: Record<string, unknown> };
-            const rawAccom = body.data ?? body;
+            const rawAccom: Record<string, unknown> = body.data ?? (body as Record<string, unknown>);
             accommodationData = transformAccommodationEdit({ item: rawAccom as Record<string, unknown> });
             // SPEC-208: extract media for the photo section (never pass raw API data)
             const mediaResult = transformAccommodationMedia({ item: rawAccom as Record<string, unknown> });

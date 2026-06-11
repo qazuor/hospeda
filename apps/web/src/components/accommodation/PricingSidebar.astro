@@ -155,15 +155,19 @@ const hasDiscounts = discountEntries.length > 0;
         {t('accommodations.detail.pricing.viewBreakdown')}
       </summary>
       <div class="pricing-sidebar__breakdown-content">
-        {feeEntries.map(({ key, amount, isPercent }) => (
+        {feeEntries.map(({ key, amount, isPercent, customName }) => (
           <div class="pricing-sidebar__fee-row">
-            <span class="pricing-sidebar__fee-name">{key}</span>
+            <span class="pricing-sidebar__fee-name">
+              {customName ?? t(`accommodations.detail.pricing.fees.${key}`, key)}
+            </span>
             <span class="pricing-sidebar__fee-amount">{isPercent ? `${amount}%` : formatPrice(amount)}</span>
           </div>
         ))}
-        {discountEntries.map(({ key, pct }) => (
+        {discountEntries.map(({ key, pct, customName }) => (
           <div class="pricing-sidebar__discount-row">
-            <span class="pricing-sidebar__discount-name">{key}</span>
+            <span class="pricing-sidebar__discount-name">
+              {customName ?? t(`accommodations.detail.pricing.discounts.${key}`, key)}
+            </span>
             <span class="pricing-sidebar__discount-value">-{pct}%</span>
           </div>
         ))}

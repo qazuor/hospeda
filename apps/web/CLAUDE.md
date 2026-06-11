@@ -21,7 +21,7 @@ pnpm preview          # Preview production build locally
 pnpm test             # Run all tests
 pnpm test:watch       # Watch mode
 pnpm test:coverage    # Coverage report
-pnpm typecheck        # TypeScript validation
+pnpm typecheck        # astro sync && astro check && tsc --noEmit (typechecks .astro too)
 pnpm lint             # Biome linting
 pnpm format           # Biome formatting
 ```
@@ -389,6 +389,24 @@ export const PROTECTED_SEGMENTS = ['mi-cuenta'] as const;
 export const AUTH_SEGMENTS = ['auth'] as const;
 export const STATIC_PREFIXES = ['/_astro/', '/_server-islands/', '/favicon'] as const;
 ```
+
+### Typed locals (`App.Locals`) — SPEC-218
+
+`Astro.locals.locale` / `.user` / `.cspNonce` are typed by the `App.Locals`
+augmentation in `src/env.d.ts`. That file MUST stay listed under `"files"` in
+`apps/web/tsconfig.json` — TypeScript's `include` globs do NOT pull an
+unreferenced ambient `.d.ts` into the program, so without the `files` entry the
+augmentation silently stops loading and ~117 `Property '…' does not exist on
+type 'Locals'` errors reappear. `src/types/app-locals.guard.ts` is a compile-time
+guard that fails the typecheck if this regresses.
+
+### `.astro` is typechecked in CI
+
+`pnpm typecheck` runs `astro check`, which (unlike `tsc`) typechecks `.astro`
+frontmatter. Wrong response shapes read in page logic (e.g. `result.data.total`
+when the count lives at `result.data.pagination.total`) now fail the build
+instead of shipping. Keep frontmatter type-clean; do not silence `astro check`
+errors with `any` or `@ts-ignore`.
 
 ## Component Conventions
 

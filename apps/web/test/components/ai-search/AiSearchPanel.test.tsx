@@ -3,18 +3,20 @@
  * @description Comprehensive RTL tests for the AiSearchPanel React island (SPEC-199 T-020).
  *
  * Coverage:
- * - Anonymous user: redirects to login, no API call made
+ * - Anonymous user: CTA shown immediately on open, input absent, no API call reachable
+ * - Anonymous user: tracks AiSearchLoginPrompted on open (not submit)
+ * - Anonymous user: sign-in and register links rendered with correct hrefs
  * - Authenticated user: POSTs to correct path with { query, locale }
  * - Loading state: spinner / Analizando text visible while request in flight
  * - Success (fallbackToKeyword: false): navigates with serialized mappedParams, sets sessionStorage
- * - Success (fallbackToKeyword: true): navigates with q=<rawQuery>, no sessionStorage set
+ * - Success (fallbackToKeyword: true / low confidence): shows rephrase message, no navigation, no sessionStorage
  * - Error 403 (quota/entitlement): upgrade prompt alert + CTA link, no navigation
  * - Error 429 (rate limit): rate-limit message alert
- * - Error 0 (network): service error alert + keyword fallback CTA button
- * - Keyword fallback CTA: navigates with q=<query>
+ * - Error 0 (network): service error alert only — NO keyword fallback button (W13)
  * - Panel toggle: open/close resets state
  * - Input: submit disabled when empty, enabled with text, char count updates
  * - Locale propagation: locale forwarded correctly in API body and navigation URLs
+ * - W14: textarea receives focus when panel opens for authenticated users
  */
 
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
@@ -76,8 +78,8 @@ vi.mock('../../../src/components/ai-search/NlSearchInput.module.css', () => ({
 
 // ─── Import after mocks ────────────────────────────────────────────────────────
 
+import { trackEvent } from '@/lib/analytics/posthog-client';
 import { apiClient } from '@/lib/api/client';
-import { buildLoginRedirect } from '@/lib/auth-redirect';
 
 // ─── Test helpers ──────────────────────────────────────────────────────────────
 
@@ -93,13 +95,13 @@ function openPanel(): void {
     fireEvent.click(trigger);
 }
 
-/** Change the NL search textarea value. */
+/** Change the NL search textarea value (only usable for authenticated panels). */
 function typeQuery(query: string): void {
     const textarea = screen.getByRole('textbox');
     fireEvent.change(textarea, { target: { value: query } });
 }
 
-/** Click the submit button. */
+/** Click the submit button (only usable for authenticated panels). */
 function clickSubmit(): void {
     const submitBtn = screen.getByRole('button', { name: /buscar/i });
     fireEvent.click(submitBtn);
@@ -220,8 +222,14 @@ describe('AiSearchPanel', () => {
             fireEvent.click(screen.getByRole('button', { name: /cerrar/i }));
             expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
         });
+    });
 
-        it('shows login hint for anonymous users when panel is open', () => {
+    // ─────────────────────────────────────────────────────────────────────────
+    // 2. W1 — Proactive login CTA for guests
+    // ─────────────────────────────────────────────────────────────────────────
+
+    describe('W1: proactive login CTA for guests', () => {
+        it('shows the login prompt message immediately on open (no submit needed)', () => {
             render(
                 <AiSearchPanel
                     {...DEFAULT_PROPS}
@@ -232,7 +240,98 @@ describe('AiSearchPanel', () => {
             expect(screen.getByText(/búsqueda inteligente está disponible/i)).toBeInTheDocument();
         });
 
-        it('does NOT show login hint for authenticated users', () => {
+        it('shows the login prompt title on open for guests', () => {
+            render(
+                <AiSearchPanel
+                    {...DEFAULT_PROPS}
+                    isAuthenticated={false}
+                />
+            );
+            openPanel();
+            expect(screen.getByText(/iniciá sesión para buscar con ia/i)).toBeInTheDocument();
+        });
+
+        it('renders sign-in link with correct href for guests', () => {
+            render(
+                <AiSearchPanel
+                    {...DEFAULT_PROPS}
+                    locale="es"
+                    currentUrl="/es/alojamientos/"
+                    isAuthenticated={false}
+                />
+            );
+            openPanel();
+            const signInLink = screen.getByRole('link', { name: /iniciar sesión/i });
+            expect(signInLink).toBeInTheDocument();
+            expect(signInLink).toHaveAttribute('href', expect.stringContaining('/es/auth/signin/'));
+        });
+
+        it('renders register link with correct href for guests', () => {
+            render(
+                <AiSearchPanel
+                    {...DEFAULT_PROPS}
+                    locale="es"
+                    isAuthenticated={false}
+                />
+            );
+            openPanel();
+            const registerLink = screen.getByRole('link', { name: /crear cuenta/i });
+            expect(registerLink).toBeInTheDocument();
+            expect(registerLink).toHaveAttribute('href', '/es/auth/signup/');
+        });
+
+        it('does NOT render the NlSearchInput textarea for guests', () => {
+            render(
+                <AiSearchPanel
+                    {...DEFAULT_PROPS}
+                    isAuthenticated={false}
+                />
+            );
+            openPanel();
+            expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+        });
+
+        it('does NOT render the submit button for guests', () => {
+            render(
+                <AiSearchPanel
+                    {...DEFAULT_PROPS}
+                    isAuthenticated={false}
+                />
+            );
+            openPanel();
+            // Only button in the panel should be the close button
+            const buttons = screen.getAllByRole('button');
+            // Trigger button + close button — no "Buscar" submit button
+            expect(buttons.some((btn) => /buscar/i.test(btn.textContent ?? ''))).toBe(false);
+        });
+
+        it('tracks AiSearchLoginPrompted on open (not on submit) for guests', () => {
+            render(
+                <AiSearchPanel
+                    {...DEFAULT_PROPS}
+                    isAuthenticated={false}
+                />
+            );
+            openPanel();
+            expect(trackEvent).toHaveBeenCalledWith(
+                'ai_search_login_prompted',
+                expect.objectContaining({ locale: 'es' })
+            );
+        });
+
+        it('apiClient.postProtected is NEVER callable when panel is open for guests (no input to reach submit)', () => {
+            render(
+                <AiSearchPanel
+                    {...DEFAULT_PROPS}
+                    isAuthenticated={false}
+                />
+            );
+            openPanel();
+            // No textbox means no way to reach the submit flow — API must not be called
+            expect(apiClient.postProtected).not.toHaveBeenCalled();
+        });
+
+        it('does NOT show login CTA for authenticated users — shows input instead', () => {
             render(
                 <AiSearchPanel
                     {...DEFAULT_PROPS}
@@ -243,82 +342,7 @@ describe('AiSearchPanel', () => {
             expect(
                 screen.queryByText(/búsqueda inteligente está disponible/i)
             ).not.toBeInTheDocument();
-        });
-    });
-
-    // ─────────────────────────────────────────────────────────────────────────
-    // 2. Anonymous user flow
-    // ─────────────────────────────────────────────────────────────────────────
-
-    describe('anonymous user flow', () => {
-        it('calls buildLoginRedirect with locale and currentUrl on submit', async () => {
-            render(
-                <AiSearchPanel
-                    {...DEFAULT_PROPS}
-                    isAuthenticated={false}
-                />
-            );
-            openPanel();
-            typeQuery('cabaña para 4 personas');
-            clickSubmit();
-
-            await waitFor(() => {
-                expect(buildLoginRedirect).toHaveBeenCalledWith(
-                    expect.objectContaining({ locale: 'es', currentUrl: '/es/alojamientos/' })
-                );
-            });
-        });
-
-        it('does NOT call apiClient.postProtected for anonymous users', async () => {
-            render(
-                <AiSearchPanel
-                    {...DEFAULT_PROPS}
-                    isAuthenticated={false}
-                />
-            );
-            openPanel();
-            typeQuery('cabaña para 4 personas');
-            clickSubmit();
-
-            await waitFor(() => {
-                expect(buildLoginRedirect).toHaveBeenCalled();
-            });
-            expect(apiClient.postProtected).not.toHaveBeenCalled();
-        });
-
-        it('sets window.location.href to the login URL', async () => {
-            render(
-                <AiSearchPanel
-                    {...DEFAULT_PROPS}
-                    isAuthenticated={false}
-                />
-            );
-            openPanel();
-            typeQuery('cabaña para 4 personas');
-            clickSubmit();
-
-            await waitFor(() => {
-                expect(window.location.href).toContain('/es/auth/signin/');
-            });
-        });
-
-        it('returnUrl is encoded in the signin redirect URL', async () => {
-            render(
-                <AiSearchPanel
-                    {...DEFAULT_PROPS}
-                    isAuthenticated={false}
-                    currentUrl="/es/alojamientos/"
-                />
-            );
-            openPanel();
-            typeQuery('algo');
-            clickSubmit();
-
-            await waitFor(() => {
-                expect(window.location.href).toContain(
-                    `returnUrl=${encodeURIComponent('/es/alojamientos/')}`
-                );
-            });
+            expect(screen.getByRole('textbox')).toBeInTheDocument();
         });
     });
 
@@ -562,8 +586,10 @@ describe('AiSearchPanel', () => {
     // 6. Success — fallbackToKeyword: true
     // ─────────────────────────────────────────────────────────────────────────
 
-    describe('success with fallbackToKeyword: true', () => {
-        it('navigates with q=<rawQuery> when fallbackToKeyword is true', async () => {
+    describe('success with fallbackToKeyword: true (low confidence)', () => {
+        it('W13: shows the low-confidence rephrase message and does NOT navigate to keyword search', async () => {
+            // W13 (full removal): a low-confidence response no longer redirects to the
+            // keyword `?q=` search. It surfaces a rephrase prompt and stays in the panel.
             vi.mocked(apiClient.postProtected).mockResolvedValue(
                 buildSuccessResult({
                     fallbackToKeyword: true,
@@ -582,15 +608,18 @@ describe('AiSearchPanel', () => {
             clickSubmit();
 
             await waitFor(() => {
-                expect(window.location.href).toContain(
-                    `q=${encodeURIComponent('algún lugar lindo')}`
-                );
+                expect(screen.getByText(/no pudimos interpretar/i)).toBeInTheDocument();
             });
+            expect(window.location.href).not.toContain('q=');
         });
 
-        it('does NOT write to sessionStorage.ai_search_chips on keyword fallback', async () => {
+        it('does NOT write to sessionStorage.ai_search_chips on low confidence', async () => {
             vi.mocked(apiClient.postProtected).mockResolvedValue(
-                buildSuccessResult({ fallbackToKeyword: true, rawQuery: 'anything' })
+                buildSuccessResult({
+                    fallbackToKeyword: true,
+                    rawQuery: 'anything',
+                    confidence: 0.1
+                })
             );
             render(
                 <AiSearchPanel
@@ -603,32 +632,10 @@ describe('AiSearchPanel', () => {
             clickSubmit();
 
             await waitFor(() => {
-                expect(window.location.href).toContain('q=');
-            });
-            expect(sessionStorage.getItem('ai_search_chips')).toBeNull();
-        });
-
-        it('shows the fallback notice in the panel after low-confidence response', async () => {
-            vi.mocked(apiClient.postProtected).mockResolvedValue(
-                buildSuccessResult({
-                    fallbackToKeyword: true,
-                    rawQuery: 'no idea',
-                    confidence: 0.1
-                })
-            );
-            render(
-                <AiSearchPanel
-                    {...DEFAULT_PROPS}
-                    isAuthenticated={true}
-                />
-            );
-            openPanel();
-            typeQuery('no idea');
-            clickSubmit();
-
-            await waitFor(() => {
                 expect(screen.getByText(/no pudimos interpretar/i)).toBeInTheDocument();
             });
+            expect(sessionStorage.getItem('ai_search_chips')).toBeNull();
+            expect(window.location.href).not.toContain('q=');
         });
     });
 
@@ -737,10 +744,10 @@ describe('AiSearchPanel', () => {
     });
 
     // ─────────────────────────────────────────────────────────────────────────
-    // 9. Error — network / service unavailable (status 0)
+    // 9. W13 — network / service error (keyword fallback REMOVED)
     // ─────────────────────────────────────────────────────────────────────────
 
-    describe('network error (status 0)', () => {
+    describe('W13: network error (status 0) — no keyword fallback button', () => {
         it('shows service-error message in an alert', async () => {
             vi.mocked(apiClient.postProtected).mockResolvedValue(buildErrorResult(0));
             render(
@@ -759,7 +766,7 @@ describe('AiSearchPanel', () => {
             expect(screen.getByRole('alert').textContent).toMatch(/no está disponible/i);
         });
 
-        it('shows keyword fallback CTA button inside the alert', async () => {
+        it('does NOT render the keyword fallback CTA button (W13 removal)', async () => {
             vi.mocked(apiClient.postProtected).mockResolvedValue(buildErrorResult(0));
             render(
                 <AiSearchPanel
@@ -772,13 +779,14 @@ describe('AiSearchPanel', () => {
             clickSubmit();
 
             await waitFor(() => {
-                expect(
-                    screen.getByRole('button', { name: /buscar por palabras clave/i })
-                ).toBeInTheDocument();
+                expect(screen.getByRole('alert')).toBeInTheDocument();
             });
+            expect(
+                screen.queryByRole('button', { name: /buscar por palabras clave/i })
+            ).not.toBeInTheDocument();
         });
 
-        it('clicking keyword fallback CTA navigates with q=<query>', async () => {
+        it('does NOT navigate after network error (no keyword redirect)', async () => {
             vi.mocked(apiClient.postProtected).mockResolvedValue(buildErrorResult(0));
             render(
                 <AiSearchPanel
@@ -791,17 +799,12 @@ describe('AiSearchPanel', () => {
             clickSubmit();
 
             await waitFor(() => {
-                expect(
-                    screen.getByRole('button', { name: /buscar por palabras clave/i })
-                ).toBeInTheDocument();
+                expect(screen.getByRole('alert')).toBeInTheDocument();
             });
-
-            fireEvent.click(screen.getByRole('button', { name: /buscar por palabras clave/i }));
-
-            expect(window.location.href).toContain(`q=${encodeURIComponent('cabaña con pileta')}`);
+            expect(window.location.href).toBe('');
         });
 
-        it('502 response also triggers network error path', async () => {
+        it('502 response also triggers network error path without keyword fallback', async () => {
             vi.mocked(apiClient.postProtected).mockResolvedValue(buildErrorResult(502));
             render(
                 <AiSearchPanel
@@ -816,6 +819,9 @@ describe('AiSearchPanel', () => {
             await waitFor(() => {
                 expect(screen.getByRole('alert').textContent).toMatch(/no está disponible/i);
             });
+            expect(
+                screen.queryByRole('button', { name: /buscar por palabras clave/i })
+            ).not.toBeInTheDocument();
         });
     });
 
@@ -930,6 +936,39 @@ describe('AiSearchPanel', () => {
             );
             openPanel();
             expect(screen.getByText('0/500')).toBeInTheDocument();
+        });
+    });
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // 12. W14 — autofocus textarea on open
+    // ─────────────────────────────────────────────────────────────────────────
+
+    describe('W14: autofocus textarea on open', () => {
+        it('textarea receives focus after panel opens for authenticated users', async () => {
+            render(
+                <AiSearchPanel
+                    {...DEFAULT_PROPS}
+                    isAuthenticated={true}
+                />
+            );
+            openPanel();
+
+            // rAF-based focus is deferred; use waitFor to let it settle
+            await waitFor(() => {
+                const textarea = screen.getByRole('textbox');
+                expect(document.activeElement).toBe(textarea);
+            });
+        });
+
+        it('no textarea to focus for guest users (CTA shown instead)', () => {
+            render(
+                <AiSearchPanel
+                    {...DEFAULT_PROPS}
+                    isAuthenticated={false}
+                />
+            );
+            openPanel();
+            expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
         });
     });
 });

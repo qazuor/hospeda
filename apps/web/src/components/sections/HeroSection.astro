@@ -257,7 +257,15 @@ const [heroPlaya, heroAtardecer, heroIsla] = await Promise.all([
 		bottom: 0;
 		left: 0;
 		width: 100%;
-		height: 160px;
+		/* Fluid height eliminates the one-frame gap that appeared between the
+		   wave bottom edge and the section boundary on viewport resize. The
+		   fixed 160px value forced a full repaint each time the browser
+		   recalculated overflow:clip. clamp() keeps the wave in the same
+		   visible range (120px–180px) while tracking the viewport width
+		   smoothly. will-change promotes the element to its own compositing
+		   layer so resize repaints don't flash through the stacking context. */
+		height: clamp(120px, 11vw, 180px);
+		will-change: transform;
 		z-index: 1;
 	}
 

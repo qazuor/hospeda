@@ -65,14 +65,24 @@ const PRICE_SORT_FIELD = 'price';
  * Build the correlated subquery used as the ORDER BY expression for the
  * `mostSaved` synthetic sort. NULL counts (i.e. no active bookmarks) are folded
  * to zero by `COUNT(*)`, so no `NULLS LAST` clause is required.
+ *
+ * Implementation note (`sql.raw` identifiers): when this expression is composed
+ * into `searchWithRelations` (Drizzle's relational API with lateral joins),
+ * template-literal column refs like `${userBookmarks.entityId}` get re-aliased
+ * to the OUTER table (`accommodations`), producing
+ * `WHERE "accommodations"."entity_id" = ...` — nonsense that fails at runtime
+ * with a 500. Emitting the `user_bookmarks` column names as raw identifiers
+ * avoids the aliasing. The table reference (`${userBookmarks}`) and the outer
+ * correlation (`${accommodations.id}`) resolve correctly and stay template args.
+ * Same workaround as {@link buildAmenityIntersectionClause}.
  */
 function buildMostSavedOrderExpr(order: 'asc' | 'desc'): SQL {
     const direction = order === 'desc' ? sql`DESC` : sql`ASC`;
     return sql`(
         SELECT COUNT(*) FROM ${userBookmarks}
-        WHERE ${userBookmarks.entityId} = ${accommodations.id}
-          AND ${userBookmarks.entityType} = 'ACCOMMODATION'
-          AND ${userBookmarks.deletedAt} IS NULL
+        WHERE "user_bookmarks"."entity_id" = ${accommodations.id}
+          AND "user_bookmarks"."entity_type" = 'ACCOMMODATION'
+          AND "user_bookmarks"."deleted_at" IS NULL
     ) ${direction}`;
 }
 

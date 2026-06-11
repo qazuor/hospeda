@@ -17,6 +17,7 @@
             "@repo/billing": ["../../packages/billing/src"]
         }
     },
+    "files": ["src/env.d.ts"],
     "include": [
         ".astro/types.d.ts",
         "src/**/*.ts",

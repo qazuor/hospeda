@@ -451,6 +451,9 @@
         "can_compare_accommodations": "Comparar hospedagens",
         "can_attach_review_photos": "Enviar fotos nas avaliações",
         "can_view_search_history": "Ver histórico de buscas",
-        "can_view_recommendations": "Recomendações personalizadas"
+        "can_view_recommendations": "Recomendações personalizadas",
+        "ai_text_improve": "Melhoria de textos com IA",
+        "ai_chat": "Consultas sobre a acomodação com IA",
+        "ai_search": "Busca inteligente"
     }
 }

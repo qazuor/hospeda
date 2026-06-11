@@ -8,5 +8,8 @@ export enum AccommodationTypeEnum {
     CAMPING = 'CAMPING',
     ROOM = 'ROOM',
     MOTEL = 'MOTEL',
-    RESORT = 'RESORT'
+    RESORT = 'RESORT',
+    APART_HOTEL = 'APART_HOTEL',
+    ESTANCIA = 'ESTANCIA',
+    BED_AND_BREAKFAST = 'BED_AND_BREAKFAST'
 }
