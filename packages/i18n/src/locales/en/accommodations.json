@@ -261,7 +261,31 @@
             "perGuestFlag": "per guest",
             "capacityFact": "Up to {n} guests",
             "minNightsFact": "Minimum stay {n} nights",
-            "maxNightsFact": "Maximum stay {n} nights"
+            "maxNightsFact": "Maximum stay {n} nights",
+            "fees": {
+                "cleaning": "Cleaning",
+                "tax": "Taxes",
+                "lateCheckout": "Late check-out",
+                "pets": "Pets",
+                "bedlinen": "Bed linen",
+                "towels": "Towels",
+                "babyCrib": "Baby crib",
+                "babyHighChair": "Baby high chair",
+                "extraBed": "Extra bed",
+                "securityDeposit": "Security deposit",
+                "extraGuest": "Extra guest",
+                "parking": "Parking",
+                "earlyCheckin": "Early check-in",
+                "lateCheckin": "Late check-in",
+                "luggageStorage": "Luggage storage",
+                "others": "Other charges"
+            },
+            "discounts": {
+                "weekly": "Weekly discount",
+                "monthly": "Monthly discount",
+                "lastMinute": "Last minute",
+                "others": "Other discounts"
+            }
         },
         "reviewsDetail": {
             "noReviews": "No reviews yet",
