@@ -1,6 +1,6 @@
 # SPEC-213: Web + Admin pre-beta polish & bugfix batch
 
-## Progress: 11/19 tasks (58%)
+## Progress: 16/19 tasks (84%)
 
 **Average Complexity:** 1.6/3
 **Phases:** setup → core → integration → cleanup
@@ -29,14 +29,14 @@
 - [x] **T-010** (complexity: 2) - W1: Proactive login CTA on AI search open for guests
 - [x] **T-011** (complexity: 1) - W13: Remove keyword-search degradation fallback
 - [x] **T-012** (complexity: 2) - W14: Autofocus chat/search input on open
-- [ ] **T-013** (complexity: 1) - W15b: Redirect already_host submit to own list
+- [x] **T-013** (complexity: 1) - W15b: Redirect already_host submit to own list
 
 ### Cleanup Phase (visual polish)
 
-- [ ] **T-014** (complexity: 1) - W5: Fix footer subscribe button stretch when authenticated
-- [ ] **T-015** (complexity: 2) - W7: Fix hero wave flicker on resize
-- [ ] **T-016** (complexity: 1) - W12: Fix sticky sidebar unreachable when taller than viewport
-- [ ] **T-017** (complexity: 1) - W15a: Fix publish form bottom spacing
+- [x] **T-014** (complexity: 1) - W5: Fix footer subscribe button stretch when authenticated
+- [x] **T-015** (complexity: 2) - W7: Fix hero wave flicker on resize
+- [x] **T-016** (complexity: 1) - W12: Fix sticky sidebar unreachable when taller than viewport
+- [x] **T-017** (complexity: 1) - W15a: Fix publish form bottom spacing
 - [x] **T-018** (complexity: 1) - A1: Fix admin dialog close button size
 - [x] **T-019** (complexity: 1) - A2: Register Playground IA sidebar icon
 

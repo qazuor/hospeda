@@ -333,7 +333,7 @@
             "id": "T-013",
             "title": "W15b: Redirect already_host submit to own list",
             "description": "In CreatePropertyMiniForm.client.tsx the already_host branch (L354-358) currently sends admin users to the global /accommodations list; redirect to /me/accommodations (host's own list) instead. created/resumed already redirect correctly to the edit URL. Tests: component test for the already_host branch asserting the redirect target.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": [],
@@ -341,21 +341,21 @@
             "tags": ["web", "ux"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-11T13:48:58.000Z"
             }
         },
         {
             "id": "T-014",
             "title": "W5: Fix footer subscribe button stretch when authenticated",
             "description": "In NewsletterForm.module.css constrain .submitButton (align-self: flex-start or fixed height) so it doesn't stretch to the taller two-line .authedEmail sibling under .inputRow align-items: stretch. CSS-only; verify via design review across the authed/guest states.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": [],
@@ -363,21 +363,21 @@
             "tags": ["web", "css"],
             "phase": "cleanup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-11T13:48:58.000Z"
             }
         },
         {
             "id": "T-015",
             "title": "W7: Fix hero wave flicker on resize",
             "description": "In HeroSection.astro replace .hero__bg-wave fixed height:160px with a fluid (clamp/percentage) height tracking the hero rhythm and add will-change: transform on the wave wrapper to avoid mid-reflow repaint flicker. CSS-only; verify by resizing.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
@@ -385,21 +385,21 @@
             "tags": ["web", "css"],
             "phase": "cleanup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-11T13:48:58.000Z"
             }
         },
         {
             "id": "T-016",
             "title": "W12: Fix sticky sidebar unreachable when taller than viewport",
             "description": "In DetailLayout.astro .detail-page__sidebar add max-height: calc(100vh - top-offset) and overflow-y: auto so the sticky sidebar scrolls independently when taller than the viewport. Shared layout (all entity detail pages). CSS-only; verify on a tall-sidebar detail page.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": [],
@@ -407,21 +407,21 @@
             "tags": ["web", "css"],
             "phase": "cleanup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-11T13:48:58.000Z"
             }
         },
         {
             "id": "T-017",
             "title": "W15a: Fix publish form bottom spacing",
             "description": "In publicar/nueva.astro restore adequate bottom spacing on the form section (.nueva-form--compact overrides padding-block too small vs --space-section). CSS-only; verify the gap to the footer.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": [],
@@ -429,14 +429,14 @@
             "tags": ["web", "css"],
             "phase": "cleanup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-11T13:48:58.000Z"
             }
         },
         {
@@ -486,9 +486,9 @@
     ],
     "summary": {
         "total": 19,
-        "pending": 8,
+        "pending": 3,
         "inProgress": 0,
-        "completed": 11,
+        "completed": 16,
         "blocked": 0,
         "averageComplexity": 1.6
     }
