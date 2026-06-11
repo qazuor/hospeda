@@ -140,7 +140,7 @@
                 "started": "2026-06-11T00:00:00.000Z",
                 "completed": "2026-06-11T00:00:00.000Z"
             },
-            "resultRef": "mercadopago.ts wraps subscriptions.create/update/cancel through applyTestControl (Option A) when test-control enabled; construction-time gate = zero prod overhead. 14 unit tests."
+            "resultRef": "Option B (re-wired): applyTestControl wraps startTrial/cancelTrial in accommodation-publish-deps.ts (call site). Option-A adapter wrap reverted (trials bypass payment adapter). Plus singleton fix in routes/index.ts (require->import). Unit-verified; e2e (T-011/013) still blocked — see epic note + Option 2."
         },
         {
             "id": "T-007",
