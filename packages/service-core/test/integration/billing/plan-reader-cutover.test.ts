@@ -317,8 +317,7 @@ const OLD_PLANS: OldConfigPlan[] = [
         entitlements: [
             'PUBLISH_ACCOMMODATIONS',
             'MULTI_PROPERTY_MANAGEMENT',
-            'CONSOLIDATED_ANALYTICS',
-            'WHITE_LABEL'
+            'CONSOLIDATED_ANALYTICS'
         ],
         limits: { max_properties: -1, max_staff_accounts: -1 }
     }

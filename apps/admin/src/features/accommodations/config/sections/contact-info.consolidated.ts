@@ -1,5 +1,4 @@
 import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
-import { EntitlementKey } from '@repo/billing';
 import type { useTranslations } from '@repo/i18n';
 import { PermissionEnum } from '@repo/schemas';
 import type { ConsolidatedSectionConfig } from '../../types/consolidated-config.types';
@@ -79,7 +78,6 @@ export const createContactInfoConsolidatedSection = (
             },
             typeConfig: {}
         },
-        // T-G-010: Social media integration (premium feature)
         {
             id: 'facebookUrl',
             type: FieldTypeEnum.TEXT,
@@ -92,7 +90,6 @@ export const createContactInfoConsolidatedSection = (
                 view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                 edit: [PermissionEnum.ACCOMMODATION_CONTACT_INFO_EDIT]
             },
-            entitlementKey: EntitlementKey.SOCIAL_MEDIA_INTEGRATION, // T-G-010: Gate social media
             typeConfig: {}
         },
         {
@@ -107,7 +104,6 @@ export const createContactInfoConsolidatedSection = (
                 view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                 edit: [PermissionEnum.ACCOMMODATION_CONTACT_INFO_EDIT]
             },
-            entitlementKey: EntitlementKey.SOCIAL_MEDIA_INTEGRATION, // T-G-010: Gate social media
             typeConfig: {}
         },
         {
@@ -122,7 +118,6 @@ export const createContactInfoConsolidatedSection = (
                 view: [PermissionEnum.ACCOMMODATION_VIEW_ALL],
                 edit: [PermissionEnum.ACCOMMODATION_CONTACT_INFO_EDIT]
             },
-            entitlementKey: EntitlementKey.SOCIAL_MEDIA_INTEGRATION, // T-G-010: Gate social media
             typeConfig: {}
         }
     ]

@@ -13,7 +13,6 @@
  * - Search history
  * - Personalized recommendations
  * - Exclusive deals
- * - Early event access (24h window)
  * - Ad-free experience
  *
  * Must be used AFTER entitlement middleware which loads user entitlements.
@@ -466,100 +465,5 @@ export function gateExclusiveDeals(): AppMiddleware {
                 upgradeUrl: '/billing/plans'
             }
         );
-    };
-}
-
-/**
- * Gate early event access feature
- *
- * Checks if user has the entitlement for early event access and
- * validates if the event is within the 24-hour early access window.
- *
- * Note: This middleware expects event start date to be passed
- * via context at 'eventStartDate' key (set by route handler).
- *
- * **Staff bypass (INV-6):** SUPER_ADMIN, ADMIN, EDITOR, and CLIENT_MANAGER
- * pass the entitlement check unconditionally. {@link entitlementMiddleware}
- * loads the unlimited entitlement set for these roles before this function
- * runs, so `hasEntitlement(c, EARLY_ACCESS_EVENTS)` always returns `true`
- * for staff. The timing window check (24h early-access window) still runs if
- * an `eventStartDate` is present in context, but the entitlement 403 is never
- * thrown for staff.
- *
- * @returns Middleware handler
- *
- * @example
- * ```typescript
- * import { gateEarlyEventAccess } from '../middlewares/tourist-entitlements';
- *
- * app.post(
- *   '/events/:id/tickets',
- *   entitlementMiddleware(),
- *   gateEarlyEventAccess(),
- *   async (c) => {
- *     // User can access event early - proceed
- *   }
- * );
- * ```
- */
-// PHANTOM-GATE (SPEC-145): route not built yet — see docs/billing/endpoint-gate-matrix.md
-// (Reserved — Phantom Gates section). Intended for POST /events/:id/tickets (early
-// window) once that route ships. Do NOT delete and do NOT build the route without a spec.
-export function gateEarlyEventAccess(): AppMiddleware {
-    return async (c, next) => {
-        // Check entitlement first — users without the feature get ENTITLEMENT_REQUIRED.
-        if (!hasEntitlement(c, EntitlementKey.EARLY_ACCESS_EVENTS)) {
-            apiLogger.warn(
-                `gateEarlyEventAccess: blocked — user lacks ${EntitlementKey.EARLY_ACCESS_EVENTS}`
-            );
-
-            throw new ServiceError(
-                ServiceErrorCode.ENTITLEMENT_REQUIRED,
-                'El acceso anticipado a eventos es exclusivo de los planes Plus y VIP. Actualiza para acceder.',
-                {
-                    requiredEntitlement: EntitlementKey.EARLY_ACCESS_EVENTS,
-                    upgradeUrl: '/billing/plans'
-                }
-            );
-        }
-
-        // Get event start date from context (set by route handler)
-        const eventStartDateValue = c.get('eventStartDate' as never) as unknown;
-        const eventStartDate =
-            eventStartDateValue instanceof Date ? eventStartDateValue : undefined;
-
-        if (eventStartDate) {
-            // Check if event is within 24-hour early access window
-            const now = new Date();
-            const publicSaleStart = new Date(eventStartDate);
-            const earlyAccessStart = new Date(publicSaleStart.getTime() - 24 * 60 * 60 * 1000);
-
-            // If current time is before early access window, deny with FORBIDDEN + timing details.
-            if (now < earlyAccessStart) {
-                apiLogger.warn(
-                    `gateEarlyEventAccess: early access window not yet open (starts ${earlyAccessStart.toISOString()})`
-                );
-
-                throw new ServiceError(
-                    ServiceErrorCode.FORBIDDEN,
-                    'El acceso anticipado para este evento aún no ha comenzado.',
-                    {
-                        earlyAccessStart: earlyAccessStart.toISOString(),
-                        publicSaleStart: publicSaleStart.toISOString()
-                    }
-                );
-            }
-
-            // If current time is after public sale start, no need for early access
-            // (anyone can access now)
-            if (now >= publicSaleStart) {
-                apiLogger.debug(
-                    'Event is now in public sale period, early access no longer needed'
-                );
-            }
-        }
-
-        // Entitlement and timing OK - proceed
-        await next();
     };
 }
