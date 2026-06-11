@@ -26,6 +26,7 @@
  * @module SearchChatPanel
  */
 
+import { formatPrice } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -80,18 +81,14 @@ function ResultCard({ item, locale, t }: ResultCardProps) {
     const thumbnail = item.media?.featuredImage?.url ?? null;
     const cityName = item.cityDestination?.name ?? null;
 
-    const priceAmount = item.price?.amount;
-    const priceCurrency = item.price?.currency ?? 'ARS';
+    const priceValue = item.price?.price;
     const formattedPrice =
-        priceAmount != null
-            ? new Intl.NumberFormat(
-                  locale === 'en' ? 'en-US' : locale === 'pt' ? 'pt-BR' : 'es-AR',
-                  {
-                      style: 'currency',
-                      currency: priceCurrency,
-                      maximumFractionDigits: 0
-                  }
-              ).format(priceAmount / 100)
+        priceValue != null
+            ? formatPrice({
+                  amount: priceValue,
+                  currency: item.price?.currency ?? 'ARS',
+                  locale
+              })
             : null;
 
     const rating = item.averageRating;

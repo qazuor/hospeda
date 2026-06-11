@@ -255,7 +255,7 @@ describe('SearchChatPanel', () => {
                 name: 'Cabaña Río Verde',
                 type: 'CABIN',
                 media: null,
-                price: { amount: 500000, currency: 'ARS' },
+                price: { price: 500000, currency: 'ARS' },
                 averageRating: 4.5,
                 reviewsCount: 12,
                 cityDestination: { id: 'd1', name: 'Concepción del Uruguay' }
