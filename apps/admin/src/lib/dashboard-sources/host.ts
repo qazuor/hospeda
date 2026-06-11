@@ -172,13 +172,9 @@ const HOST_ENTITLEMENT_LABELS: ReadonlyArray<readonly [string, string]> = [
     ['has_verification_badge', 'Badge verificación'],
     ['respond_reviews', 'Responder reseñas'],
     ['priority_support', 'Soporte prioritario'],
-    ['dedicated_manager', 'Account manager'],
     ['custom_branding', 'Branding propio'],
-    ['white_label', 'Marca blanca'],
-    ['social_media_integration', 'Integración redes'],
     ['multi_property_management', 'Multi-propiedad'],
-    ['consolidated_analytics', 'Analítica consolidada'],
-    ['api_access', 'Acceso API']
+    ['consolidated_analytics', 'Analítica consolidada']
 ];
 
 /** Shape of GET /api/v1/admin/conversations list response. */

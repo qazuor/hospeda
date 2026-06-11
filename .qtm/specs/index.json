@@ -940,7 +940,7 @@
             "title": "Owner plans inherit tourist entitlements & limits (owner = superset of tourist)",
             "type": "improvement",
             "complexity": "medium",
-            "status": "approved",
+            "status": "in-progress",
             "path": "SPEC-216-owner-inherits-tourist-entitlements",
             "created": "2026-06-10T22:15:00Z",
             "tags": ["billing", "entitlements", "plans", "owner", "tourist"],

@@ -24,10 +24,7 @@ export const ENTITLEMENT_GROUP_KEYS: {
             EntitlementKey.PRIORITY_SUPPORT,
             EntitlementKey.FEATURED_LISTING,
             EntitlementKey.CUSTOM_BRANDING,
-            EntitlementKey.API_ACCESS,
-            EntitlementKey.DEDICATED_MANAGER,
-            EntitlementKey.CREATE_PROMOTIONS,
-            EntitlementKey.SOCIAL_MEDIA_INTEGRATION
+            EntitlementKey.CREATE_PROMOTIONS
         ]
     },
     {
@@ -48,9 +45,7 @@ export const ENTITLEMENT_GROUP_KEYS: {
             EntitlementKey.MULTI_PROPERTY_MANAGEMENT,
             EntitlementKey.CONSOLIDATED_ANALYTICS,
             EntitlementKey.CENTRALIZED_BOOKING,
-            EntitlementKey.STAFF_MANAGEMENT,
-            EntitlementKey.WHITE_LABEL,
-            EntitlementKey.MULTI_CHANNEL_INTEGRATION
+            EntitlementKey.STAFF_MANAGEMENT
         ]
     },
     {
@@ -61,11 +56,8 @@ export const ENTITLEMENT_GROUP_KEYS: {
             EntitlementKey.READ_REVIEWS,
             EntitlementKey.AD_FREE,
             EntitlementKey.PRICE_ALERTS,
-            EntitlementKey.EARLY_ACCESS_EVENTS,
             EntitlementKey.EXCLUSIVE_DEALS,
             EntitlementKey.VIP_SUPPORT,
-            EntitlementKey.CONCIERGE_SERVICE,
-            EntitlementKey.AIRPORT_TRANSFERS,
             EntitlementKey.VIP_PROMOTIONS_ACCESS
         ]
     }

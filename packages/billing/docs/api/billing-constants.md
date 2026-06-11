@@ -54,7 +54,10 @@
 
 ## EntitlementKey Enum
 
-All 40 entitlement keys organized by category.
+All 36 entitlement keys organized by category. Keys pruned in SPEC-216
+(`API_ACCESS`, `DEDICATED_MANAGER`, `SOCIAL_MEDIA_INTEGRATION`, `WHITE_LABEL`,
+`MULTI_CHANNEL_INTEGRATION`, `EARLY_ACCESS_EVENTS`, `CONCIERGE_SERVICE`,
+`AIRPORT_TRANSFERS`) are no longer valid enum values and must not be referenced.
 
 ### Owner Entitlements
 
@@ -68,10 +71,7 @@ All 40 entitlement keys organized by category.
 | `PRIORITY_SUPPORT` | `'priority_support'` |
 | `FEATURED_LISTING` | `'featured_listing'` |
 | `CUSTOM_BRANDING` | `'custom_branding'` |
-| `API_ACCESS` | `'api_access'` |
-| `DEDICATED_MANAGER` | `'dedicated_manager'` |
 | `CREATE_PROMOTIONS` | `'create_promotions'` |
-| `SOCIAL_MEDIA_INTEGRATION` | `'social_media_integration'` |
 
 ### Accommodation Feature Entitlements
 
@@ -93,10 +93,10 @@ All 40 entitlement keys organized by category.
 | `CONSOLIDATED_ANALYTICS` | `'consolidated_analytics'` |
 | `CENTRALIZED_BOOKING` | `'centralized_booking'` |
 | `STAFF_MANAGEMENT` | `'staff_management'` |
-| `WHITE_LABEL` | `'white_label'` |
-| `MULTI_CHANNEL_INTEGRATION` | `'multi_channel_integration'` |
 
 ### Tourist Entitlements
+
+Owner and complex plans inherit all tourist-VIP entitlements (SPEC-216).
 
 | Key | Value |
 |-----|-------|
@@ -105,16 +105,22 @@ All 40 entitlement keys organized by category.
 | `READ_REVIEWS` | `'read_reviews'` |
 | `AD_FREE` | `'ad_free'` |
 | `PRICE_ALERTS` | `'price_alerts'` |
-| `EARLY_ACCESS_EVENTS` | `'early_access_events'` |
 | `EXCLUSIVE_DEALS` | `'exclusive_deals'` |
 | `VIP_SUPPORT` | `'vip_support'` |
-| `CONCIERGE_SERVICE` | `'concierge_service'` |
-| `AIRPORT_TRANSFERS` | `'airport_transfers'` |
 | `VIP_PROMOTIONS_ACCESS` | `'vip_promotions_access'` |
 | `CAN_COMPARE_ACCOMMODATIONS` | `'can_compare_accommodations'` |
 | `CAN_ATTACH_REVIEW_PHOTOS` | `'can_attach_review_photos'` |
 | `CAN_VIEW_SEARCH_HISTORY` | `'can_view_search_history'` |
 | `CAN_VIEW_RECOMMENDATIONS` | `'can_view_recommendations'` |
+
+### AI Feature Entitlements (SPEC-173)
+
+| Key | Value |
+|-----|-------|
+| `AI_TEXT_IMPROVE` | `'ai_text_improve'` |
+| `AI_CHAT` | `'ai_chat'` |
+| `AI_SEARCH` | `'ai_search'` |
+| `AI_SUPPORT` | `'ai_support'` |
 
 ## LimitKey Enum
 
