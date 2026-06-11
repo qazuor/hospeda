@@ -606,7 +606,6 @@ eventually built, move its entry from this section to the main table.
 | `gateSearchHistory` | `can_view_search_history` | `middlewares/tourist-entitlements.ts` | SPEC-145 T-145-06 |
 | `gateRecommendations` | `can_view_recommendations` | `middlewares/tourist-entitlements.ts` | SPEC-145 T-145-06 |
 | `gateExclusiveDeals` | `exclusive_deals` | `middlewares/tourist-entitlements.ts` | SPEC-145 T-145-06 |
-| `gateEarlyEventAccess` | `early_access_events` | `middlewares/tourist-entitlements.ts` | SPEC-145 T-145-06 |
 | `gateCalendarAccess` | `can_use_calendar` | `middlewares/accommodation-entitlements.ts` | SPEC-145 T-145-06 |
 | `gateExternalCalendarSync` | `can_sync_external_calendar` | `middlewares/accommodation-entitlements.ts` | SPEC-145 T-145-06 |
 | `gateWhatsAppDisplay` | `can_contact_whatsapp_display` | `middlewares/accommodation-entitlements.ts` | SPEC-145 T-145-06 |

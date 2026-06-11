@@ -1,0 +1,392 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-216",
+    "title": "Owner plans inherit tourist entitlements & limits (owner = superset of tourist)",
+    "created": "2026-06-11T18:37:08.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Prune 8 entitlements from billing core (enum + definitions + plan grants)",
+            "description": "Remove airport_transfers, concierge_service, white_label, multi_channel_integration, social_media_integration, early_access_events, dedicated_manager, api_access from EntitlementKey (entitlement.types.ts), ENTITLEMENT_DEFINITIONS (entitlements.config.ts), and all plan grants (plans.config.ts owner-premium/complex-premium/tourist-plus/tourist-vip). Update count comments + OWNER_PREMIUM description string.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-005", "T-006", "T-007"],
+            "subtasks": [
+                {
+                    "title": "Remove 8 enum members",
+                    "completed": true
+                },
+                {
+                    "title": "Remove 8 ENTITLEMENT_DEFINITIONS entries",
+                    "completed": true
+                },
+                {
+                    "title": "Remove grants from 4 plans + fix descriptions/comments",
+                    "completed": true
+                }
+            ],
+            "tags": ["billing", "prune"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-11T18:37:08.000Z",
+                "started": "2026-06-11T18:54:14.000Z",
+                "completed": "2026-06-11T18:54:14.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Prune entitlement labels from i18n (es/en/pt) + regenerate types",
+            "description": "Remove the 6 present billing.entitlement keys (api_access, dedicated_manager, social_media_integration, early_access_events, concierge_service, airport_transfers) from packages/i18n/src/locales/{es,en,pt}/billing.json. white_label + multi_channel_integration are absent (no change). Regenerate packages/i18n/src/types.ts via the i18n type-gen script (do not hand-edit).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-007"],
+            "subtasks": [
+                {
+                    "title": "Remove 6 keys from 3 locale files",
+                    "completed": true
+                },
+                {
+                    "title": "Regenerate i18n types",
+                    "completed": true
+                }
+            ],
+            "tags": ["i18n", "prune"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-11T18:37:08.000Z",
+                "started": "2026-06-11T18:54:14.000Z",
+                "completed": "2026-06-11T18:54:14.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Prune entitlements from admin UI + ungate social-link fields",
+            "description": "Remove the 8 keys from plan-entitlement-groups.ts (owner/complex/tourist groups) and host.ts HOST_ENTITLEMENT_LABELS. In contact-info.consolidated.ts remove the SOCIAL_MEDIA_INTEGRATION entitlementKey gate on facebookUrl/instagramUrl/twitterUrl (fields become ungated — social links are basic contact info). Update admin test mocks (plan-dialog.test.tsx, billing.smoke.test.tsx).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-007"],
+            "subtasks": [
+                {
+                    "title": "Remove keys from plan-entitlement-groups + host labels",
+                    "completed": true
+                },
+                {
+                    "title": "Ungate social-link fields in contact-info",
+                    "completed": true
+                },
+                {
+                    "title": "Fix admin test mocks",
+                    "completed": true
+                }
+            ],
+            "tags": ["admin", "prune", "gate"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-11T18:37:08.000Z",
+                "started": "2026-06-11T18:54:14.000Z",
+                "completed": "2026-06-11T18:54:14.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Prune entitlements from api gates + cross-package tests",
+            "description": "Remove gateEarlyEventAccess (phantom gate) from apps/api/src/middlewares/tourist-entitlements.ts + its export. Update tests: entitlement.test.ts (drop gate block + WHITE_LABEL assert), entitlement-plan.cutover.test.ts (_ENTITLEMENT_VALUES), subscription-lifecycle.test.ts (premium asserts + premiumOnlyEntitlements), plan-change.test.ts fixture, service-core plan-reader-cutover.test.ts fixture. Update docs/billing/endpoint-gate-matrix.md (drop gateEarlyEventAccess row).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-007"],
+            "subtasks": [
+                {
+                    "title": "Remove gateEarlyEventAccess from middleware",
+                    "completed": true
+                },
+                {
+                    "title": "Update api + service-core tests",
+                    "completed": true
+                },
+                {
+                    "title": "Update endpoint-gate-matrix doc",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "prune", "gate", "test"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-11T18:37:08.000Z",
+                "started": "2026-06-11T18:54:14.000Z",
+                "completed": "2026-06-11T18:54:14.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Update billing package count tests for pruned catalog",
+            "description": "In packages/billing/test/entitlements.test.ts update ownerKeys (12->8 after removing api_access/dedicated_manager/social_media_integration... actually owner loses 3), complexKeys (6->4), touristKeys (15->12), and the aggregate count assertion. plans.test.ts: drop the WHITE_LABEL has() assertion. Make counts match the pruned config.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-007"],
+            "subtasks": [
+                {
+                    "title": "Fix per-group key arrays + counts",
+                    "completed": true
+                },
+                {
+                    "title": "Fix aggregate count + plans.test WHITE_LABEL",
+                    "completed": true
+                }
+            ],
+            "tags": ["billing", "test"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-11T18:37:08.000Z",
+                "started": "2026-06-11T18:54:14.000Z",
+                "completed": "2026-06-11T18:54:14.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Add absence test for the 8 removed entitlements",
+            "description": "Test asserting each of the 8 removed keys is NOT in EntitlementKey, NOT in ENTITLEMENT_DEFINITIONS, and NOT granted by any plan. Lives in packages/billing/test.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-007"],
+            "subtasks": [
+                {
+                    "title": "Write absence test",
+                    "completed": true
+                }
+            ],
+            "tags": ["billing", "test"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-11T18:37:08.000Z",
+                "started": "2026-06-11T18:54:14.000Z",
+                "completed": "2026-06-11T18:54:14.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Verify the prune: build + lint + full billing/api/admin/i18n tests green",
+            "description": "After T-001..T-006: build @repo/billing + @repo/i18n, run billing/service-core/api/admin tests + typecheck. Confirm 0 errors and removed keys gone everywhere. Gates Phase B.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-002", "T-003", "T-004", "T-005", "T-006"],
+            "blocks": ["T-008"],
+            "subtasks": [
+                {
+                    "title": "Build + typecheck + targeted test suites green",
+                    "completed": true
+                }
+            ],
+            "tags": ["verify"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-11T18:37:08.000Z",
+                "started": "2026-06-11T18:54:14.000Z",
+                "completed": "2026-06-11T18:54:14.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Define TOURIST_VIP_ENTITLEMENTS + TOURIST_VIP_LIMITS; refactor tourist-vip to reuse",
+            "description": "In plans.config.ts define the shared constants from the PRUNED tourist-vip set (kept entitlements only) + tourist-vip limits (max_favorites/max_active_alerts/max_compare_items -1). Refactor TOURIST_VIP_PLAN to build its entitlements/limits from the constants (single source of truth). Add dedupe()/mergeLimits() helpers if not present.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-009"],
+            "subtasks": [
+                {
+                    "title": "Define constants from pruned tourist-vip",
+                    "completed": false
+                },
+                {
+                    "title": "Refactor tourist-vip to use them",
+                    "completed": false
+                },
+                {
+                    "title": "Add dedupe/mergeLimits helpers",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-11T18:37:08.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Spread tourist-VIP set into all owner + complex plans",
+            "description": "entitlements: dedupe([...TOURIST_VIP_ENTITLEMENTS, ...ownerSpecific]); limits: mergeLimits(TOURIST_VIP_LIMITS, ownerSpecific) for all 3 owner + 3 complex plans. Owner-specific wins on limit-key clash. No runtime resolver change.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-010"],
+            "subtasks": [
+                {
+                    "title": "Spread into 3 owner plans",
+                    "completed": false
+                },
+                {
+                    "title": "Spread into 3 complex plans",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-11T18:37:08.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Superset/no-dup/owner-preserved unit tests",
+            "description": "For each owner/complex plan: Set(plan.entitlements) superset of Set(TOURIST_VIP_ENTITLEMENTS); every TOURIST_VIP_LIMITS key present; no duplicate entitlements; owner-specific entitlements/limits still present.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-009"],
+            "blocks": ["T-012"],
+            "subtasks": [
+                {
+                    "title": "Superset + limits-present tests",
+                    "completed": false
+                },
+                {
+                    "title": "No-duplicates + owner-preserved tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "test"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-11T18:37:08.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Integration test: owner actor passes a previously-403 tourist gate",
+            "description": "An owner-plan actor passes a tourist entitlement gate (e.g. save_favorites / write_reviews) that previously returned 403. Place alongside existing api entitlement integration tests.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-009"],
+            "blocks": ["T-012"],
+            "subtasks": [
+                {
+                    "title": "Owner passes save_favorites gate test",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "test", "integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-11T18:37:08.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Re-seed billing_plans + DB cleanup + docs",
+            "description": "Document/run the plan re-seed so billing_plans rows carry the new entitlement/limit lists; delete already-seeded billing_entitlements rows for the 8 removed keys (dev: re-seed; staging/prod: documented cleanup). Add the owner-superset rule + the catalog-prune note to billing plan docs.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-010", "T-011"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Re-seed + DB cleanup of removed keys",
+                    "completed": false
+                },
+                {
+                    "title": "Docs: owner-superset + pruned catalog",
+                    "completed": false
+                }
+            ],
+            "tags": ["seed", "docs"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-11T18:37:08.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 12,
+        "pending": 5,
+        "inProgress": 0,
+        "completed": 7,
+        "blocked": 0,
+        "averageComplexity": 2.3
+    }
+}
