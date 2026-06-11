@@ -31,6 +31,7 @@ import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import type { AccommodationPublic } from '@repo/schemas';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { ActiveFilterChips } from './ActiveFilterChips';
 import styles from './SearchChatPanel.module.css';
 import { useSearchChat } from './useSearchChat';
 
@@ -325,17 +326,16 @@ export function SearchChatPanel({ locale, apiUrl }: SearchChatPanelProps) {
                     </div>
                 )}
 
-                {/* T-011: active-filter chips mount here.
-                    T-011 will render an <IntentChipsList> or equivalent component
-                    inside this region. It receives `currentFilters` and `removeFilter`
-                    from the hook to render dismissible chips for each active slot.
-                    The parent (T-012) is responsible for passing those props down or
-                    co-locating the chips component here. */}
+                {/* T-011: active-filter chips */}
                 <div
                     className={styles.chipsMount}
                     data-slot="filter-chips"
                 >
-                    {/* {/* T-011: active-filter chips mount here */}
+                    <ActiveFilterChips
+                        filters={chat.currentFilters}
+                        onRemove={chat.removeFilter}
+                        locale={locale}
+                    />
                 </div>
 
                 {/* Results section */}

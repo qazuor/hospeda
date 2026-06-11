@@ -375,10 +375,10 @@
             "specId": "SPEC-212",
             "title": "Conversational AI Accommodation Search",
             "status": "in-progress",
-            "progress": "10/18",
+            "progress": "11/18",
             "path": "SPEC-212-conversational-ai-search",
             "archived": false,
-            "note": "T-010 SearchChatPanel.client.tsx + module CSS done (35 tests). Renders thread + live reply + results grid (in-panel ResultCard) + thinking + error; i18n aiSearch.chat.* es/en/pt; chips mount slot left for T-011. Next: T-011 chips, T-012 mount on listing + retire SPEC-199 UI."
+            "note": "T-011 ActiveFilterChips done (29 tests). One removable chip per active intent key (location keys deduped to one, currency suppressed, arrays as one chip); reuses accommodations.types.* labels; mounted in panel slot. Next: T-012 mount panel on /alojamientos + retire SPEC-199 UI, then T-013/testing/docs."
         }
     ],
     "standalone": {

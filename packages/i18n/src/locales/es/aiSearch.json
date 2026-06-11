@@ -60,6 +60,9 @@
         "maxBedrooms": "Hasta {{value}} dormitorios",
         "minBathrooms": "Mínimo {{value}} baños",
         "maxBathrooms": "Hasta {{value}} baños",
-        "features": "Características adicionales"
+        "features": "Características adicionales",
+        "location": "Ubicación",
+        "remove": "Quitar filtro",
+        "activeFiltersLabel": "Filtros activos"
     }
 }

@@ -386,35 +386,35 @@
             "id": "T-011",
             "title": "Active-filter chips (removable) reflecting the accumulated set",
             "description": "Render the accumulated filters as removable chips inside the panel (keep SPEC-199's IntentChips concept). Removing a chip re-runs the search without that filter. Tests: chips reflect the current set; removing a chip re-fires the search without that filter.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-010"],
             "blocks": ["T-012", "T-015"],
             "subtasks": [
                 {
                     "title": "Render chips from accumulated filters",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Remove-chip re-runs search",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Component tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "ai", "component", "integration"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-11T00:00:00.000Z",
+                "completed": "2026-06-11T00:00:00.000Z"
             }
         },
         {
@@ -657,9 +657,9 @@
     ],
     "summary": {
         "total": 18,
-        "pending": 8,
+        "pending": 7,
         "inProgress": 0,
-        "completed": 10,
+        "completed": 11,
         "blocked": 0,
         "averageComplexity": 2.4
     }
