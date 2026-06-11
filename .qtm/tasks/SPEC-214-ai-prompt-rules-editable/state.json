@@ -202,128 +202,128 @@
             "id": "T-007",
             "title": "Runtime: chat composes content+rules in buildChatSystemMessage",
             "description": "chat.ts resolves rules too; thread rules through assembleAccommodationContext -> buildChatSystemMessage (apps/api/src/services/accommodation-ai-context.ts) so rules sit after content, before the locale line. Update accommodation-ai-context test.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-005"],
             "blocks": ["T-011"],
             "subtasks": [
                 {
                     "title": "Thread rules through chat composition",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update chat context test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "chat"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-11T22:53:10.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-11T23:22:25.000Z",
+                "completed": "2026-06-11T23:22:25.000Z"
             }
         },
         {
             "id": "T-008",
             "title": "API: persist rules in POST /admin/ai/prompts",
             "description": "apps/api/src/routes/ai/prompts/index.ts createPromptRoute: pass `rules: parsed.rules` to createPromptVersion (schema now has rules). Update prompts route test.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-002", "T-004"],
             "blocks": ["T-011"],
             "subtasks": [
                 {
                     "title": "Persist rules in create handler",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update route test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-11T22:53:10.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-11T23:22:25.000Z",
+                "completed": "2026-06-11T23:22:25.000Z"
             }
         },
         {
             "id": "T-009",
             "title": "Admin UI: rules textarea in FeaturePromptEditor + types + hooks",
             "description": "apps/admin: prompts.tsx FeaturePromptEditor add draftRules state + second Textarea seeded from activePrompt.rules; pass rules in create mutation. types.ts: add rules to AiPromptVersion + CreateAiPromptPayload. hooks.ts flows rules through. Component test.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002"],
             "blocks": ["T-011"],
             "subtasks": [
                 {
                     "title": "Rules textarea + state",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "types + hooks",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "component test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "ui"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-11T22:53:10.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-11T23:22:25.000Z",
+                "completed": "2026-06-11T23:22:25.000Z"
             }
         },
         {
             "id": "T-010",
             "title": "Seed + backfill: seed rules=DEFAULT_RULES for v1 rows; migration backfill existing null rules",
             "description": "aiPrompts.seed.ts: insert rules=DEFAULT_RULES[feature] for the v1 rows (so admin editor shows rules pre-filled; content already cleaned). Backfill existing DB rows: an extras data migration setting rules=DEFAULT_RULES[feature] where rules is null (best-effort; do not parse arbitrary content). Effective prompt unchanged (null also falls back to DEFAULT_RULES).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-003"],
             "blocks": ["T-011"],
             "subtasks": [
                 {
                     "title": "Seed rules=DEFAULT_RULES for v1",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Backfill data migration (extras)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["seed", "db"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-11T22:53:10.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-11T23:22:25.000Z",
+                "completed": "2026-06-11T23:22:25.000Z"
             }
         },
         {
@@ -383,9 +383,9 @@
     ],
     "summary": {
         "total": 12,
-        "pending": 6,
+        "pending": 2,
         "inProgress": 0,
-        "completed": 6,
+        "completed": 10,
         "blocked": 0,
         "averageComplexity": 1.8
     }
