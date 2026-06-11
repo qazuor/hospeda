@@ -20,7 +20,11 @@
             "tags": ["billing", "entitlements", "investigation"],
             "phase": "setup",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-11T00:00:00.000Z", "started": "2026-06-11T00:00:00.000Z", "completed": "2026-06-11T00:00:00.000Z" },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": "2026-06-11T00:00:00.000Z",
+                "completed": "2026-06-11T00:00:00.000Z"
+            },
             "resultRef": "docs/T-001-shared-predicate-design.md"
         },
         {
@@ -39,25 +43,34 @@
             "tags": ["billing", "qzpay", "test-control", "investigation"],
             "phase": "setup",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-11T00:00:00.000Z", "started": "2026-06-11T00:00:00.000Z", "completed": "2026-06-11T00:00:00.000Z" },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": "2026-06-11T00:00:00.000Z",
+                "completed": "2026-06-11T00:00:00.000Z"
+            },
             "resultRef": "docs/T-002-operation-method-map.md"
         },
         {
             "id": "T-003",
             "title": "Extract shared isSubscriptionLive(status, dates, grace) predicate",
             "description": "Create a single helper that decides whether a subscription counts as live: status IN (active,trialing) AND the relevant expiry date (trial_end for trialing, current_period_end for active) is not past beyond the reused BILLING_CRON_LAG_GRACE_HOURS=6 grace. Place it where both the entitlement middleware and service-core can import it (per T-001 decision). UNIT TESTS REQUIRED: cover active/trialing/cancelled/past_due × within-grace / past-grace / null-date / no-date. Test file colocated with the helper (e.g. packages/.../__tests__/is-subscription-live.test.ts).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001"],
             "blocks": ["T-004", "T-005"],
             "subtasks": [
-                { "title": "Implement predicate reusing the 6h grace constant", "completed": false },
-                { "title": "Unit tests for status × date × grace matrix", "completed": false }
+                { "title": "Implement predicate reusing the 6h grace constant", "completed": true },
+                { "title": "Unit tests for status × date × grace matrix", "completed": true }
             ],
             "tags": ["billing", "entitlements", "core"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-11T00:00:00.000Z", "started": null, "completed": null }
+            "qualityGate": { "lint": true, "typecheck": true, "tests": true },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": "2026-06-11T00:00:00.000Z",
+                "completed": "2026-06-11T00:00:00.000Z"
+            },
+            "resultRef": "packages/billing/src/predicates/is-subscription-live.ts (27 unit tests)"
         },
         {
             "id": "T-004",
@@ -74,7 +87,11 @@
             "tags": ["billing", "service-core", "core", "security"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-11T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-005",
@@ -91,7 +108,11 @@
             "tags": ["billing", "entitlements", "core", "refactor"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-11T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-006",
@@ -103,13 +124,20 @@
             "blocks": ["T-011", "T-012", "T-013"],
             "subtasks": [
                 { "title": "Wrap adapter methods through applyTestControl", "completed": false },
-                { "title": "Guard wrap behind isTestControlEnabled() (no-op when off)", "completed": false },
+                {
+                    "title": "Guard wrap behind isTestControlEnabled() (no-op when off)",
+                    "completed": false
+                },
                 { "title": "Unit tests per operation + no-op path", "completed": false }
             ],
             "tags": ["billing", "qzpay", "test-control", "core"],
             "phase": "core",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-11T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-007",
@@ -119,13 +147,15 @@
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-011", "T-012", "T-013"],
-            "subtasks": [
-                { "title": "Add env var to e2e-pr.yml", "completed": false }
-            ],
+            "subtasks": [{ "title": "Add env var to e2e-pr.yml", "completed": false }],
             "tags": ["ci", "test-control", "integration"],
             "phase": "integration",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-11T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-008",
@@ -142,7 +172,11 @@
             "tags": ["e2e", "billing", "testing"],
             "phase": "testing",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-11T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-009",
@@ -153,14 +187,24 @@
             "blockedBy": ["T-004"],
             "blocks": ["T-010", "T-014"],
             "subtasks": [
-                { "title": "Confirm/adjust forceTrialExpired backdates beyond grace, keeps trialing", "completed": false },
+                {
+                    "title": "Confirm/adjust forceTrialExpired backdates beyond grace, keeps trialing",
+                    "completed": false
+                },
                 { "title": "Remove env guard from host-03", "completed": false },
-                { "title": "Run host-03 un-gated, confirm 403 + DRAFT + reads OK", "completed": false }
+                {
+                    "title": "Run host-03 un-gated, confirm 403 + DRAFT + reads OK",
+                    "completed": false
+                }
             ],
             "tags": ["e2e", "billing", "testing"],
             "phase": "testing",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-11T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-010",
@@ -177,7 +221,11 @@
             "tags": ["e2e", "billing", "testing"],
             "phase": "testing",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-11T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-011",
@@ -194,7 +242,11 @@
             "tags": ["e2e", "billing", "resilience", "testing"],
             "phase": "testing",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-11T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-012",
@@ -211,7 +263,11 @@
             "tags": ["e2e", "billing", "resilience", "testing"],
             "phase": "testing",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-11T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-013",
@@ -228,7 +284,11 @@
             "tags": ["e2e", "billing", "resilience", "testing"],
             "phase": "testing",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-11T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-014",
@@ -245,7 +305,11 @@
             "tags": ["e2e", "docs", "cleanup"],
             "phase": "docs",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-11T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-015",
@@ -257,12 +321,19 @@
             "blocks": ["T-016"],
             "subtasks": [
                 { "title": "Implement the guard (lint rule or meta-test)", "completed": false },
-                { "title": "Self-test: fails on planted skip, passes otherwise", "completed": false }
+                {
+                    "title": "Self-test: fails on planted skip, passes otherwise",
+                    "completed": false
+                }
             ],
             "tags": ["e2e", "ci", "cleanup"],
             "phase": "cleanup",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-11T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-016",
@@ -279,14 +350,18 @@
             "tags": ["e2e", "ci", "testing"],
             "phase": "testing",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-11T00:00:00.000Z", "started": null, "completed": null }
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
         }
     ],
     "summary": {
         "total": 16,
-        "pending": 14,
+        "pending": 13,
         "inProgress": 0,
-        "completed": 2,
+        "completed": 3,
         "blocked": 0,
         "averageComplexity": 2.1
     }
