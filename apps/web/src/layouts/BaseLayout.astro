@@ -211,12 +211,21 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 		  trust to the loaded beacon.min.js. The beacon POSTs Core Web Vitals
 		  telemetry to https://cloudflareinsights.com — that host must be
 		  present in `connect-src` (added in buildCspHeader, SPEC-046 follow-up).
+
+		  Only emitted in production builds: in local dev the beacon's POST to
+		  cloudflareinsights.com is rejected by CORS (origin localhost), spamming
+		  the console with errors on every page. Staging/prod are real builds
+		  (import.meta.env.PROD === true) and still load it.
 		-->
-		<script
-			defer
-			src="https://static.cloudflareinsights.com/beacon.min.js"
-			data-cf-beacon='{"token": "2dbd11c61c6a461f9b75acf4a0877a83"}'
-		></script>
+		{
+			import.meta.env.PROD && (
+				<script
+					defer
+					src="https://static.cloudflareinsights.com/beacon.min.js"
+					data-cf-beacon='{"token": "2dbd11c61c6a461f9b75acf4a0877a83"}'
+				/>
+			)
+		}
 	</head>
 	<body>
 		<NavigationProgress />
