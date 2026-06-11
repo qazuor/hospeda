@@ -16,12 +16,12 @@
 
 - [ ] **T-002** (complexity: 2) - W3b: i18n labels + filter sidebars + seed for new accommodation types
   - Blocked by: T-001 · Blocks: none
-- [ ] **T-003** (complexity: 1) - W6: Fix destination accommodations page pagination.total
+- [x] **T-003** (complexity: 1) - W6: Fix destination accommodations page pagination.total
 - [ ] **T-004** (complexity: 3) - W4: Diagnose + fix map view 500 on pan/zoom (bbox params)
 - [ ] **T-005** (complexity: 2) - W11: Fix post category chip 404 (casing) + add missing sidebar categories
-- [ ] **T-006** (complexity: 1) - W8: Resolve I18nText for services filter on map view
+- [x] **T-006** (complexity: 1) - W8: Resolve I18nText for services filter on map view
 - [ ] **T-007** (complexity: 2) - W2: Translate Better Auth signin credential errors
-- [ ] **T-008** (complexity: 1) - W9: Add AI entitlement i18n labels + fix Embedeer typo
+- [x] **T-008** (complexity: 1) - W9: Add AI entitlement i18n labels + fix Embedeer typo
 - [ ] **T-009** (complexity: 2) - W10: Translate price breakdown fee/discount labels
 
 ### Integration Phase
@@ -37,8 +37,8 @@
 - [ ] **T-015** (complexity: 2) - W7: Fix hero wave flicker on resize
 - [ ] **T-016** (complexity: 1) - W12: Fix sticky sidebar unreachable when taller than viewport
 - [ ] **T-017** (complexity: 1) - W15a: Fix publish form bottom spacing
-- [ ] **T-018** (complexity: 1) - A1: Fix admin dialog close button size
-- [ ] **T-019** (complexity: 1) - A2: Register Playground IA sidebar icon
+- [x] **T-018** (complexity: 1) - A1: Fix admin dialog close button size
+- [x] **T-019** (complexity: 1) - A2: Register Playground IA sidebar icon
 
 ---
 
