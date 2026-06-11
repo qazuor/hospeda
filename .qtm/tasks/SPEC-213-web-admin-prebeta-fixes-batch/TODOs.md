@@ -1,6 +1,6 @@
 # SPEC-213: Web + Admin pre-beta polish & bugfix batch
 
-## Progress: 16/19 tasks (84%)
+## Progress: 19/19 tasks (100%)
 
 **Average Complexity:** 1.6/3
 **Phases:** setup → core → integration → cleanup
@@ -9,15 +9,15 @@
 
 ### Setup Phase
 
-- [ ] **T-001** (complexity: 3) - W3a: Add APART_HOTEL/ESTANCIA/BED_AND_BREAKFAST to enum + schema + DB migration
+- [x] **T-001** (complexity: 3) - W3a: Add APART_HOTEL/ESTANCIA/BED_AND_BREAKFAST to enum + schema + DB migration
   - Blocked by: none · Blocks: T-002
 
 ### Core Phase
 
-- [ ] **T-002** (complexity: 2) - W3b: i18n labels + filter sidebars + seed for new accommodation types
+- [x] **T-002** (complexity: 2) - W3b: i18n labels + filter sidebars + seed for new accommodation types
   - Blocked by: T-001 · Blocks: none
 - [x] **T-003** (complexity: 1) - W6: Fix destination accommodations page pagination.total
-- [ ] **T-004** (complexity: 3) - W4: Diagnose + fix map view 500 on pan/zoom (bbox params)
+- [x] **T-004** (complexity: 3) - W4: Diagnose + fix map view 500 on pan/zoom (bbox params)
 - [x] **T-005** (complexity: 2) - W11: Fix post category chip 404 (casing) + add missing sidebar categories
 - [x] **T-006** (complexity: 1) - W8: Resolve I18nText for services filter on map view
 - [x] **T-007** (complexity: 2) - W2: Translate Better Auth signin credential errors

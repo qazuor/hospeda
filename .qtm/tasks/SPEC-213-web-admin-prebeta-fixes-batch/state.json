@@ -8,7 +8,7 @@
             "id": "T-001",
             "title": "W3a: Add APART_HOTEL/ESTANCIA/BED_AND_BREAKFAST to enum + schema + DB migration",
             "description": "Add the 3 new accommodation types to AccommodationTypeEnum (packages/schemas/src/enums/accommodation-type.enum.ts). DB enum auto-derives via enumToTuple; generate + apply the ALTER TYPE migration (pnpm db:generate + db:migrate). Tests: enum unit test asserting the 3 values exist; migration applies on clean DB.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-002"],
@@ -29,21 +29,21 @@
             "tags": ["schema", "db", "migration"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-11T14:19:41.000Z"
             }
         },
         {
             "id": "T-002",
             "title": "W3b: i18n labels + filter sidebars + seed for new accommodation types",
             "description": "Add es/en/pt labels under enums.accommodationType (common.json) and the accommodations.json types block for apart_hotel/estancia/bed_and_breakfast. Add the 3 options to the hardcoded types filter arrays in alojamientos/index.astro AND mapa.astro. Extend PooledAccommodationType in seed if seeding examples. Tests: i18n key-presence test (es/en/pt) for the 3 new label keys.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": [],
@@ -64,14 +64,14 @@
             "tags": ["i18n", "web", "seed"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-11T14:19:41.000Z"
             }
         },
         {
@@ -100,7 +100,7 @@
             "id": "T-004",
             "title": "W4: Diagnose + fix map view 500 on pan/zoom (bbox params)",
             "description": "Diagnose the real API error when useViewportSearch.ts calls accommodationsApi.list with bbox params; fix the param handling/validation in the accommodation list route so viewport search returns 200. Tests: API integration test with valid + invalid bbox bounds (invalid -> typed 4xx, never 500); regression for the failing case.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": [],
@@ -121,14 +121,14 @@
             "tags": ["api", "web", "bugfix"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-11T14:19:41.000Z"
             }
         },
         {
@@ -486,9 +486,9 @@
     ],
     "summary": {
         "total": 19,
-        "pending": 3,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 16,
+        "completed": 19,
         "blocked": 0,
         "averageComplexity": 1.6
     }
