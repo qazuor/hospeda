@@ -901,6 +901,19 @@
             "base": "staging",
             "priority": "P1",
             "archived": false
+        },
+        {
+            "specId": "SPEC-212",
+            "title": "Conversational AI Accommodation Search",
+            "type": "feat",
+            "complexity": "high",
+            "status": "in-progress",
+            "path": "SPEC-212-conversational-ai-search",
+            "created": "2026-06-11T00:00:00.000Z",
+            "parentSpec": "SPEC-173",
+            "archived": false,
+            "tags": ["ai", "feature", "search", "conversational", "spec-173-child"],
+            "note": "Option A conversational search; NL->filters under the hood (NO embeddings). Reuses SPEC-199 mapper/schema/prompt + SPEC-200 chat/SSE/persistence. New SSE route POST /api/v1/protected/ai/search-chat. Supersedes SPEC-199 single-input UI. From owner-approved plan 2026-06-11."
         }
     ]
 }

@@ -370,6 +370,15 @@
             "archivedAt": "2026-06-10",
             "archiveNote": "Shipped via PR #1557 (merged to staging 2026-06-10); 21/21 tasks complete.",
             "note": "Child B of SPEC-173. NL search: generateObject -> SearchIntentEntities -> AccommodationSearchHttp params, NO embeddings V1. All §3 decisions resolved. spec-realign 2026-06-10: greenfield, foundation stable; slot set expanded (D-5: bedrooms/bathrooms/maxRating/featureSlugs). 21 atomic tasks generated. IN-PROGRESS."
+        },
+        {
+            "specId": "SPEC-212",
+            "title": "Conversational AI Accommodation Search",
+            "status": "in-progress",
+            "progress": "1/18",
+            "path": "SPEC-212-conversational-ai-search",
+            "archived": false,
+            "note": "18 atomic tasks, all complexity <=3. T-001 (schemas) done: AiSearchChatRequestSchema + SSE event schemas + discriminated union, 23 tests green. Next: T-002/T-003/T-004."
         }
     ],
     "standalone": {
