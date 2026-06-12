@@ -15,6 +15,7 @@ import { DestinationReviewUpdateHttpSchema } from '../../src/entities/destinatio
 import { EventUpdateInputSchema } from '../../src/entities/event/event.crud.schema.js';
 import { EventUpdateHttpSchema } from '../../src/entities/event/event.http.schema.js';
 import { EventLocationUpdateInputSchema } from '../../src/entities/eventLocation/eventLocation.crud.schema.js';
+import { EventLocationUpdateHttpSchema } from '../../src/entities/eventLocation/eventLocation.http.schema.js';
 import { EventOrganizerUpdateInputSchema } from '../../src/entities/eventOrganizer/eventOrganizer.crud.schema.js';
 import { ExchangeRateConfigUpdateInputSchema } from '../../src/entities/exchangeRate/exchange-rate-config.crud.schema.js';
 import { FeatureUpdateInputSchema } from '../../src/entities/feature/feature.crud.schema.js';
@@ -40,7 +41,7 @@ import { UserUpdateHttpSchema } from '../../src/entities/user/user.http.schema.j
  * every parse — silently overwriting server state on PATCH ("absent key = no change"
  * violated) and, for accommodation, bypassing the publish trial flow. The fix wraps
  * each base shape with `stripShapeDefaults` before `.partial()`. These cases lock the
- * contract for all 31 affected schemas: an empty patch must inject NONE of the
+ * contract for all 32 affected schemas: an empty patch must inject NONE of the
  * previously-defaulted fields. Accommodation has its own dedicated test.
  */
 type UpdateSchemaCase = {
@@ -254,12 +255,25 @@ const CASES: readonly UpdateSchemaCase[] = [
         name: 'SponsorshipUpdateHttpSchema',
         schema: SponsorshipUpdateHttpSchema,
         defaulted: ['lifecycleState']
+    },
+    // HTTP update schemas (continued)
+    {
+        name: 'EventLocationUpdateHttpSchema',
+        schema: EventLocationUpdateHttpSchema,
+        defaulted: [
+            'hasWifi',
+            'hasParking',
+            'hasAirConditioning',
+            'isAccessible',
+            'hasAudioVisual',
+            'hasCatering'
+        ]
     }
 ];
 
 describe('Update/Patch schemas — no default injection (SPEC-217 repo-wide)', () => {
-    it('covers all 31 schemas the rollout touched', () => {
-        expect(CASES).toHaveLength(31);
+    it('covers all 32 schemas the rollout touched', () => {
+        expect(CASES).toHaveLength(32);
     });
 
     it.each(CASES)(
