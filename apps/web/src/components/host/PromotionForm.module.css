@@ -1,0 +1,47 @@
+/**
+ * PromotionForm.module.css
+ * Layout-specific styles for the PromotionForm island.
+ *
+ * Global form utility classes (form-input, form-label, form-required,
+ * form-error, form-error-banner, form-actions) come from the global
+ * stylesheet and are applied directly on elements without CSS Modules
+ * — consistent with the rest of the web app's form pattern.
+ *
+ * This file handles layout-only concerns: row grid, banner variants.
+ */
+
+/** Two-column row for paired fields (type/value, dates, min/max). */
+.row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--spacing-4, 1rem);
+}
+
+@media (max-width: 480px) {
+    .row {
+        grid-template-columns: 1fr;
+    }
+}
+
+/** Wrapper class applied to the <form> element itself. */
+.promotionForm {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-5, 1.25rem);
+}
+
+/**
+ * LIMIT_REACHED banner variant — slightly stronger visual treatment to
+ * distinguish it from a generic error (e.g. a yellow-tinted background).
+ * Falls back gracefully if the CSS variable is absent.
+ */
+.limitReachedBanner {
+    background-color: var(--color-warning-bg, #fef9c3);
+    border-color: var(--color-warning-border, #fbbf24);
+}
+
+.limitReachedHint {
+    margin-top: var(--spacing-1, 0.25rem);
+    font-size: var(--font-size-sm, 0.875rem);
+    color: var(--color-warning-text, #92400e);
+}
