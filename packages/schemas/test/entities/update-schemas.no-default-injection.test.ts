@@ -179,6 +179,9 @@ const CASES: readonly UpdateSchemaCase[] = [
     {
         name: 'SponsorshipUpdateInputSchema',
         schema: SponsorshipUpdateInputSchema,
+        // `sponsorshipStatus` carried a default in the base but the schema's own
+        // `.extend({ sponsorshipStatus: ...optional() })` already removed it before
+        // stripShapeDefaults runs, so only `lifecycleState` is stripped here.
         defaulted: ['lifecycleState']
     },
     {
