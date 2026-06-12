@@ -947,10 +947,10 @@ export function transformHostDashboard({
             : null,
         unreadCount: Number(item.unreadConversations ?? 0),
         quickActions: [
-            { label: 'Mis propiedades', href: '/mis-propiedades', icon: 'building' },
-            { label: 'Promociones', href: '/promociones', icon: 'megaphone' },
-            { label: 'Mensajes', href: '/mensajes', icon: 'chat-dots' },
-            { label: 'Suscripción', href: '/suscripcion', icon: 'credit-card' }
+            { label: 'Mis propiedades', href: 'mi-cuenta/propiedades', icon: 'building' },
+            { label: 'Promociones', href: 'mi-cuenta/promociones', icon: 'megaphone' },
+            { label: 'Mensajes', href: 'mi-cuenta/consultas', icon: 'chat-dots' },
+            { label: 'Suscripción', href: 'mi-cuenta/suscripcion', icon: 'credit-card' }
         ]
     };
 }
