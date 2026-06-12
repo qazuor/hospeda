@@ -231,4 +231,3 @@ Translate the provided Spanish text into the target language while: \
 6. NOT translating proper nouns, brand names, or place names that are commonly kept in Spanish. \
 Output ONLY the translated text with no explanations, prefixes, or metadata.`
 } as const;
-} as const;
