@@ -281,6 +281,45 @@
             "RESORT": "Resort"
         }
     },
+    "promotions": {
+        "pageTitle": "My Promotions",
+        "pageDescription": "Create and manage discounts and special offers for your properties",
+        "empty": "You don't have any promotions yet. Create your first offer!",
+        "createButton": "New promotion",
+        "fields": {
+            "title": "Title",
+            "description": "Description",
+            "discountType": "Discount type",
+            "discountValue": "Discount value",
+            "minNights": "Minimum nights",
+            "validFrom": "Valid from",
+            "validUntil": "Valid until",
+            "maxRedemptions": "Maximum uses",
+            "accommodationId": "Property"
+        },
+        "discountTypes": {
+            "percentage": "Percentage",
+            "fixed": "Fixed amount",
+            "free_night": "Free night"
+        },
+        "lifecycleStates": {
+            "active": "Active",
+            "draft": "Draft",
+            "archived": "Archived"
+        },
+        "errors": {
+            "loadFailed": "Could not load promotions. Please try again.",
+            "saveFailed": "Could not save the promotion. Please try again.",
+            "deleteFailed": "Could not delete the promotion. Please try again."
+        },
+        "actions": {
+            "edit": "Edit",
+            "delete": "Delete",
+            "save": "Save",
+            "cancel": "Cancel",
+            "confirmDelete": "Delete this promotion? This action cannot be undone."
+        }
+    },
     "dashboard": {
         "analytics": {
             "views": {
