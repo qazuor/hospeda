@@ -15,7 +15,11 @@
  */
 
 import { type QZPayBilling, createQZPayBilling } from '@qazuor/qzpay-core';
-import { createMercadoPagoAdapter } from '@repo/billing';
+import {
+    createMercadoPagoAdapter,
+    createStubMercadoPagoAdapter,
+    isTestControlEnabled
+} from '@repo/billing';
 import { createBillingAdapter, getDb } from '@repo/db';
 import type { MiddlewareHandler } from 'hono';
 import { qzpayLogger } from '../lib/qzpay-logger';
@@ -30,7 +34,11 @@ import { apiLogger } from '../utils/logger';
 function isBillingConfigured(): boolean {
     const missing: string[] = [];
 
-    if (!env.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN) {
+    // Under the test-control gate (SPEC-217) the payment adapter is the
+    // in-memory stub, which needs no MercadoPago access token. Only the DB is
+    // required so the storage adapter can write real billing rows. Outside the
+    // gate, the real MercadoPago token is mandatory as before.
+    if (!isTestControlEnabled() && !env.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN) {
         missing.push('HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN');
     }
     if (!env.HOSPEDA_DATABASE_URL) {
@@ -84,12 +92,26 @@ function getBillingInstance(): QZPayBilling | null {
         // Create storage adapter
         const storageAdapter = createBillingAdapter(db, { livemode });
 
-        // Create payment adapter — factory reads HOSPEDA_MERCADO_PAGO_SANDBOX
-        // directly from the environment when no explicit override is passed.
-        // The qzpayLogger routes all MercadoPago-side logs (webhook
-        // signature verification, HMAC mismatch diagnostics, IPN dispatch,
-        // event mapping) through hospeda's structured apiLogger.
-        const paymentAdapter = createMercadoPagoAdapter({ logger: qzpayLogger });
+        // Create payment adapter.
+        //
+        // SPEC-217: when the test-control gate is enabled
+        // (HOSPEDA_QZPAY_TEST_CONTROL_ENABLED=true, set only in CI/E2E), use a
+        // deterministic in-memory stub instead of the real MercadoPago adapter.
+        // The real adapter would reach the network on customers.create (the
+        // accommodation-publish trial flow) and 503 against CI's dummy access
+        // token. The stub returns synthetic provider ids with no network, so
+        // the publish flow's startTrial succeeds and the storage adapter writes
+        // a real `trialing` billing_subscriptions row. Fault injection is
+        // unaffected: applyTestControl throws BEFORE the adapter is reached.
+        //
+        // Outside the gate the behavior is byte-for-byte unchanged: the real
+        // MercadoPago adapter is built, with qzpayLogger routing all
+        // provider-side logs (webhook signature verification, HMAC mismatch
+        // diagnostics, IPN dispatch, event mapping) through the structured
+        // apiLogger.
+        const paymentAdapter = isTestControlEnabled()
+            ? createStubMercadoPagoAdapter()
+            : createMercadoPagoAdapter({ logger: qzpayLogger });
 
         // Create billing instance.
         // `providerSyncErrorStrategy: 'throw'` is set explicitly so that
