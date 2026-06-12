@@ -37,8 +37,19 @@ export interface AiFeatureConfig {
     readonly params: AiModelParams;
 }
 
-/** Map of features to their configuration. */
-export type AiFeaturesMap = Record<AiFeatureId, AiFeatureConfig>;
+/**
+ * Map of features to their configuration in API responses.
+ *
+ * This is intentionally a PARTIAL record: when the `ai_settings` table is
+ * empty (no admin has ever saved a config), the GET endpoint returns
+ * `features: {}`. The admin page's `toFormValues()` fills in any missing keys
+ * from `DEFAULT_SETTINGS` before seeding the form, so the UI renders correctly
+ * for first-time setup.
+ *
+ * Note: the PUT request body requires ALL four feature keys (full record).
+ * Only the response shape is partial.
+ */
+export type AiFeaturesMap = Partial<Record<AiFeatureId, AiFeatureConfig>>;
 
 /** Admin-set monthly cost ceilings in micro-USD (µUSD). */
 export interface AiCostCeilings {
