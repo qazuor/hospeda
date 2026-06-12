@@ -429,8 +429,8 @@
         {
             "specId": "SPEC-219",
             "title": "Dependabot CI Hardening & Dependency Bump Merge Strategy",
-            "status": "draft",
-            "progress": "0/8",
+            "status": "in-progress",
+            "progress": "6/8",
             "path": "SPEC-219-dependabot-ci-hardening"
         }
     ],

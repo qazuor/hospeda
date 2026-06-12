@@ -3,7 +3,7 @@ spec-id: SPEC-219
 title: Dependabot CI Hardening & Dependency Bump Merge Strategy
 type: infrastructure
 complexity: medium
-status: draft
+status: in-progress
 created: 2026-06-11
 ---
 

@@ -983,7 +983,7 @@
             "title": "Dependabot CI Hardening & Dependency Bump Merge Strategy",
             "type": "infrastructure",
             "complexity": "medium",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-219-dependabot-ci-hardening",
             "created": "2026-06-11T00:00:00.000Z",
             "tags": [
