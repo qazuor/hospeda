@@ -93,7 +93,15 @@ export function createQZPayTestControl(baseUrl: string = DEFAULT_API_BASE_URL): 
                 `qzpay-test-control ${method} ${path} failed: ${response.status} ${response.statusText}`
             );
         }
-        return (await response.json()) as T;
+        // The API wraps every 2xx body in a ResponseFactory envelope
+        // ({ success, data, metadata }). The route handlers return raw
+        // `c.json({ calls })` / `c.json({ ok })`, but the global response
+        // middleware re-wraps them, so callers must read the inner `data`.
+        const json = (await response.json()) as { success?: boolean; data?: unknown };
+        if (json !== null && typeof json === 'object' && 'success' in json && 'data' in json) {
+            return json.data as T;
+        }
+        return json as T;
     }
 
     return {
