@@ -63,6 +63,17 @@ env:
   VITE_BETTER_AUTH_URL: ${{ secrets.HOSPEDA_API_URL || 'https://example.invalid' }}/api/auth
   PUBLIC_API_URL: ${{ secrets.HOSPEDA_API_URL || 'https://example.invalid' }}
   PUBLIC_SITE_URL: ${{ secrets.HOSPEDA_SITE_URL || 'https://example.invalid' }}
+  # Tells the admin env guard (vite.config.ts + src/env.ts) to ACCEPT the
+  # placeholder `.invalid` URLs above. It MUST be workflow-level (not just the
+  # Build step): admin#build also runs in any job whose Turbo graph reaches it
+  # (typecheck, test-unit via `dependsOn: build`), and since this flag is in
+  # turbo `globalEnv` it is part of the admin#build cache key — so a job without
+  # it gets a different hash, re-executes `vite build`, and (in a secret-less
+  # Dependabot run) the guard rejects the placeholder and fails. Deploy builds
+  # (Coolify) never set this flag, so a real build misconfigured with a
+  # placeholder still fails loudly. The guard's own tests do not rely on its
+  # absence — they toggle process.env explicitly. (SPEC-219 T-006)
+  ALLOW_PLACEHOLDER_ENV_URLS: 'true'
   HOSPEDA_CLOUDINARY_CLOUD_NAME: ${{ secrets.HOSPEDA_CLOUDINARY_CLOUD_NAME }}
   HOSPEDA_CLOUDINARY_API_KEY: ${{ secrets.HOSPEDA_CLOUDINARY_API_KEY }}
   HOSPEDA_CLOUDINARY_API_SECRET: ${{ secrets.HOSPEDA_CLOUDINARY_API_SECRET }}
@@ -221,16 +232,6 @@ jobs:
       - uses: ./.github/actions/setup
       - name: Build all packages and apps
         run: pnpm build
-        env:
-          # Dependabot (and any secret-less) CI runs fall back to placeholder
-          # `.invalid` URLs (see the workflow-level env above) so the admin
-          # build's Zod URL validation passes. This flag tells the admin env
-          # guard to ACCEPT that placeholder — and it is set ONLY here, in the CI
-          # Build step. Deploy builds (Coolify) never set it, so a real build
-          # misconfigured with a placeholder URL fails loudly. It is deliberately
-          # NOT in the workflow-level env, so the test job keeps the guard active
-          # and exercises the rejection path. (SPEC-219 T-006)
-          ALLOW_PLACEHOLDER_ENV_URLS: 'true'
       - name: Upload build outputs
         uses: actions/upload-artifact@v4
         with:
