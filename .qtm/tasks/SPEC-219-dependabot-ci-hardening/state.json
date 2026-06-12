@@ -1,0 +1,160 @@
+{
+    "version": "1.0",
+    "title": "Dependabot CI Hardening & Dependency Bump Merge Strategy",
+    "specRef": "SPEC-219-dependabot-ci-hardening",
+    "created": "2026-06-11T00:00:00.000Z",
+    "summary": {
+        "total": 8,
+        "pending": 8,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 3.4
+    },
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Document the Dependabot CI Build failure baseline (absent secrets)",
+            "description": "Capture the exact failing step and log references for PRs #1548 and #1570: the admin Build fails because secrets.HOSPEDA_API_URL / VITE_API_URL / VITE_SITE_URL are empty in the Dependabot run context, failing URL validation. Record before-state in progress.md so the fix can be verified against it. No code changes.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-003"],
+            "subtasks": [],
+            "tags": ["ci", "investigation", "dependabot"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Make CI Build resilient to absent secrets (Dependabot context)",
+            "description": "Implement the chosen option from spec §3.1 (Option A — build-time placeholder URLs recommended) in the CI workflow Build step, so the admin build succeeds when secrets.* are empty. Add a guard ensuring production/deploy builds NEVER accept placeholder values (keep deploy validation strict). Do not weaken validation for push/branch-PR runs.",
+            "status": "pending",
+            "complexity": 5,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-004", "T-006"],
+            "subtasks": [],
+            "tags": ["ci", "github-actions", "env", "build"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Update .github/dependabot.yml grouping & major isolation",
+            "description": "Adjust grouping so patch/minor updates batch per ecosystem while MAJOR updates get isolated PRs (never folded into a minor/patch group). Pin/ignore or label migration-gated packages (zod, @tanstack/react-router) so a breaking major never rides in on an otherwise-green PR. Set sane open-pull-requests-limit and cadence to avoid 60+ update floods.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-005"],
+            "subtasks": [],
+            "tags": ["dependabot", "config", "github-actions"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Re-validate PR #1548 passes CI after the build fix",
+            "description": "Re-run CI on PR #1548 (github-actions group bump) and confirm Build + CI Pass go green with the absent-secrets fix from T-002. If green, the PR becomes mergeable per policy.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["ci", "validation", "dependabot"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Triage PR #1570 per the new strategy (peel off breaking majors)",
+            "description": "Split the 66-update group: peel off the breaking bumps (zod 4.4.3, @tanstack/react-router 1.170) into their migration specs (SPEC-132 / SPEC-045 or dedicated follow-ups), and confirm the safe remainder passes CI with the build fix. Do NOT implement the migrations here (out of scope).",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-003"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["dependabot", "triage", "validation"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Guard: production build must reject placeholder URLs",
+            "description": "Add a CI guard or test asserting that a production/deploy-context build fails loudly when env URLs are placeholder/invalid, so the Option A placeholder approach cannot silently mask a real misconfiguration. Pairs with T-002.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-002"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["ci", "guard", "test", "env"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Write docs/guides/dependabot-policy.md",
+            "description": "Document the triage + merge flow for Dependabot PRs: the secrets/build caveat (why Dependabot runs lack secrets), how safe patch/minor groups are reviewed/merged (auto-merge candidacy), and how majors are routed to migration specs and never merged until migrated+validated. Cross-link from CI docs and apps/admin/CLAUDE.md.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-002", "T-003"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["docs", "dependabot", "policy"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Link SPEC-219 to the major-migration specs (owner handoff)",
+            "description": "Cross-link SPEC-219 from SPEC-132 (Zod 4) and SPEC-045 (Vite/TanStack), or create dedicated follow-up migration specs if those are not the right home, so the Zod 4.4 and TanStack Router migrations have a clear owner and are not orphaned.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["cleanup", "specs", "cross-reference"],
+            "phase": "cleanup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-11T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ]
+}

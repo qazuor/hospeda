@@ -1,0 +1,12 @@
+{
+    "specId": "SPEC-219",
+    "title": "Dependabot CI Hardening & Dependency Bump Merge Strategy",
+    "type": "infrastructure",
+    "complexity": "medium",
+    "status": "draft",
+    "created": "2026-06-11T00:00:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["ci", "dependabot", "dependencies", "github-actions", "infrastructure", "build"]
+}
