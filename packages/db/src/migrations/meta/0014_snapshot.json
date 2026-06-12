@@ -1,5 +1,5 @@
 {
-    "id": "7a69d770-4ea3-4ba8-9d94-4cdcef6b0473",
+    "id": "6d8cd938-a0b7-41cd-a75e-bb1809b8b2a5",
     "prevId": "f6edf942-87b7-4b49-8539-c7d505d20228",
     "version": "7",
     "dialect": "postgresql",
@@ -51,6 +51,37 @@
                     "type": "text",
                     "primaryKey": false,
                     "notNull": false
+                },
+                "name_i18n": {
+                    "name": "name_i18n",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "summary_i18n": {
+                    "name": "summary_i18n",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "description_i18n": {
+                    "name": "description_i18n",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "rich_description_i18n": {
+                    "name": "rich_description_i18n",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "translation_meta": {
+                    "name": "translation_meta",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "default": "'{}'::jsonb"
                 },
                 "contact_info": {
                     "name": "contact_info",
@@ -5246,6 +5277,31 @@
                     "primaryKey": false,
                     "notNull": true
                 },
+                "name_i18n": {
+                    "name": "name_i18n",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "summary_i18n": {
+                    "name": "summary_i18n",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "description_i18n": {
+                    "name": "description_i18n",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "translation_meta": {
+                    "name": "translation_meta",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "default": "'{}'::jsonb"
+                },
                 "location": {
                     "name": "location",
                     "type": "jsonb",
@@ -6439,6 +6495,31 @@
                     "type": "text",
                     "primaryKey": false,
                     "notNull": false
+                },
+                "name_i18n": {
+                    "name": "name_i18n",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "summary_i18n": {
+                    "name": "summary_i18n",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "description_i18n": {
+                    "name": "description_i18n",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "translation_meta": {
+                    "name": "translation_meta",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "default": "'{}'::jsonb"
                 },
                 "media": {
                     "name": "media",
@@ -8410,6 +8491,31 @@
                     "type": "text",
                     "primaryKey": false,
                     "notNull": true
+                },
+                "title_i18n": {
+                    "name": "title_i18n",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "summary_i18n": {
+                    "name": "summary_i18n",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "content_i18n": {
+                    "name": "content_i18n",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "translation_meta": {
+                    "name": "translation_meta",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "default": "'{}'::jsonb"
                 },
                 "media": {
                     "name": "media",
