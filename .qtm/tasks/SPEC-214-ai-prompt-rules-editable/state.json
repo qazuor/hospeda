@@ -69,7 +69,7 @@
         {
             "id": "T-003",
             "title": "ai-core defaults: extract DEFAULT_RULES, clean DEFAULT_PROMPTS + equivalence test (GATE)",
-            "description": "In default-prompts.ts add DEFAULT_RULES: Readonly<Record<AiFeature,string>> with each feature's rules block extracted; clean the rules out of DEFAULT_PROMPTS bodies (content = conversational only). THE HARD GATE: equivalence test asserting the original prompt's instruction set == compose(cleaned content, DEFAULT_RULES) functionally (normalized sentence-set equality, since rules move to the end). chat/search/text_improve rules are mid-prompt so composition reorders — test on set-equality, not byte-equality.",
+            "description": "In default-prompts.ts add DEFAULT_RULES: Readonly<Record<AiFeature,string>> with each feature's rules block extracted; clean the rules out of DEFAULT_PROMPTS bodies (content = conversational only). THE HARD GATE: equivalence test asserting the original prompt's instruction set == compose(cleaned content, DEFAULT_RULES) functionally (normalized sentence-set equality, since rules move to the end). chat/search/text_improve rules are mid-prompt so composition reorders \u2014 test on set-equality, not byte-equality.",
             "status": "completed",
             "complexity": 3,
             "blockedBy": [],
@@ -330,62 +330,62 @@
             "id": "T-011",
             "title": "Verify: build + typecheck + ai-core/api/admin/schemas/db tests green; equivalence gate",
             "description": "Build affected packages; typecheck db/schemas/ai-core/api/admin; run ai-core + schemas + db + api prompts/chat + admin ai-settings tests. Confirm equivalence test green (the US-4 gate). 0 errors.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-006", "T-007", "T-008", "T-009", "T-010"],
             "blocks": ["T-012"],
             "subtasks": [
                 {
                     "title": "build+typecheck+targeted tests green",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["verify"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-11T22:53:10.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-12T00:00:00.000Z",
+                "completed": "2026-06-12T00:00:00.000Z"
             }
         },
         {
             "id": "T-012",
             "title": "Docs: update AI prompts admin guide with the rules field",
             "description": "Update the AI prompts admin doc to describe the new editable rules field, composition (content + rules), and the DEFAULT_RULES fallback. Note support has no runtime route yet (field exists for admin/seed).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-011"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Doc the rules field + composition + fallback",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-11T22:53:10.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-12T00:00:00.000Z",
+                "completed": "2026-06-12T00:00:00.000Z"
             }
         }
     ],
     "summary": {
         "total": 12,
-        "pending": 2,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 10,
+        "completed": 12,
         "blocked": 0,
         "averageComplexity": 1.8
     }
