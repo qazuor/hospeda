@@ -11,6 +11,7 @@
         "HOSPEDA_ADMIN_URL",
         "VITE_API_URL",
         "VITE_SITE_URL",
+        "VITE_ADMIN_URL",
         "VITE_BETTER_AUTH_URL",
         "VITE_APP_NAME",
         "VITE_APP_VERSION",
@@ -29,7 +30,8 @@
         "HOSPEDA_CLOUDINARY_CLOUD_NAME",
         "HOSPEDA_CLOUDINARY_API_KEY",
         "HOSPEDA_CLOUDINARY_API_SECRET",
-        "HOSPEDA_MEDIA_MAX_FILE_SIZE_MB"
+        "HOSPEDA_MEDIA_MAX_FILE_SIZE_MB",
+        "ALLOW_PLACEHOLDER_ENV_URLS"
     ],
     "tasks": {
         "build": {

@@ -22,6 +22,8 @@ extracted_from: SPEC-111 Astro 6 impact analysis
 
 **Why a separate spec:** Touching `@repo/schemas` and `@repo/service-core` is cross-cutting (consumed by `apps/api`, `apps/admin`, `apps/web`, `packages/seed`, `packages/billing`). Bundling it into SPEC-111's PR would balloon scope and risk surface. Independent PR with its own focused review is safer.
 
+> **Dependabot gating (SPEC-219):** `zod` is pinned via `ignore` in `.github/dependabot.yml` because its breaking changes land in MINOR bumps (e.g. 4.4 made `.merge()` throw on schemas with refinements — use `.safeExtend()`), which Dependabot's update-type grouping cannot isolate. **Lifting that `ignore` entry is part of THIS spec's completion:** once the migration lands and CI is green, remove the `zod` entry so Dependabot resumes bumping it. See [Dependabot Policy](../../../docs/guides/dependabot-policy.md).
+
 ### 2. Out of Scope
 
 - Astro 6 bump or any `apps/web` changes (handled in SPEC-111).
@@ -66,6 +68,7 @@ Same pattern. Service-core has fewer schemas (mostly DTOs), but its tests are in
 #### Phase 3 — Consumer apps spot-check
 
 For each app that consumes schemas (`apps/api`, `apps/admin`, `apps/web`, `packages/seed`, `packages/billing`):
+
 - Run typecheck + tests.
 - If any custom Zod schema in the app's own source uses legacy validators, migrate.
 

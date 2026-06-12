@@ -37,11 +37,37 @@ process.env.VITE_BETTER_AUTH_URL ??=
     process.env.HOSPEDA_BETTER_AUTH_URL ??
     (process.env.HOSPEDA_API_URL ? `${process.env.HOSPEDA_API_URL}/api/auth` : undefined);
 
+// SPEC-219: CI runs without repository secrets (most visibly Dependabot PRs)
+// fall back to placeholder `.invalid` URLs so this build-time validation — which
+// only needs syntactically-valid URLs — passes. A placeholder must NEVER reach a
+// real/deploy build, so it is rejected here unless `ALLOW_PLACEHOLDER_ENV_URLS`
+// is explicitly set, which ONLY the CI Build step does. This is the BUILD-TIME
+// half of the placeholder guard (it runs as `vite build` loads this config and
+// `process.exit(1)`s on failure). The RUNTIME half lives in `src/env.ts`
+// (`validateAdminEnv`), which additionally covers `VITE_ADMIN_URL` — validated
+// only at runtime, not here. Keep the two halves in sync.
+const allowPlaceholderUrls = process.env.ALLOW_PLACEHOLDER_ENV_URLS === 'true';
+const isPlaceholderUrl = (value: string): boolean => {
+    try {
+        const { hostname } = new URL(value);
+        return hostname === 'invalid' || hostname.endsWith('.invalid');
+    } catch {
+        return false;
+    }
+};
+const requiredUrl = (message: string) =>
+    z
+        .string()
+        .url(message)
+        .refine((value) => allowPlaceholderUrls || !isPlaceholderUrl(value), {
+            message: `${message} (placeholder .invalid URL is rejected outside CI builds)`
+        });
+
 // Validate required environment variables for the Admin App.
 const AdminViteEnvSchema = z.object({
-    VITE_API_URL: z.string().url('Must be a valid API URL'),
-    VITE_SITE_URL: z.string().url('Must be a valid site URL'),
-    HOSPEDA_API_URL: z.string().url('Must be a valid API URL for server-side requests'),
+    VITE_API_URL: requiredUrl('Must be a valid API URL'),
+    VITE_SITE_URL: requiredUrl('Must be a valid site URL'),
+    HOSPEDA_API_URL: requiredUrl('Must be a valid API URL for server-side requests'),
     VITE_BETTER_AUTH_URL: z.string().min(1, 'Must be a non-empty Better Auth URL')
 });
 

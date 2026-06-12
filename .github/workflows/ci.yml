@@ -41,13 +41,28 @@ permissions:
 env:
   HOSPEDA_DATABASE_URL: ${{ secrets.HOSPEDA_DATABASE_URL }}
   HOSPEDA_BETTER_AUTH_SECRET: ${{ secrets.HOSPEDA_BETTER_AUTH_SECRET }}
-  HOSPEDA_API_URL: ${{ secrets.HOSPEDA_API_URL }}
-  HOSPEDA_SITE_URL: ${{ secrets.HOSPEDA_SITE_URL }}
-  VITE_API_URL: ${{ secrets.HOSPEDA_API_URL }}
-  VITE_SITE_URL: ${{ secrets.HOSPEDA_SITE_URL }}
-  VITE_BETTER_AUTH_URL: ${{ secrets.HOSPEDA_API_URL }}/api/auth
-  PUBLIC_API_URL: ${{ secrets.HOSPEDA_API_URL }}
-  PUBLIC_SITE_URL: ${{ secrets.HOSPEDA_SITE_URL }}
+  # URL vars below feed build-time env validation (apps/admin runs Zod
+  # z.string().url() during `vite build`; apps/web validates PUBLIC_* in its
+  # Astro build). Dependabot-triggered workflow runs execute WITHOUT access to
+  # repository secrets, so secrets.* arrive as empty strings, fail URL
+  # validation, and abort admin#build. We fall back to a syntactically-valid but
+  # deliberately non-functional placeholder (RFC 2606 reserved `.invalid` TLD) so
+  # the build passes; the build never dereferences these URLs. Real push/branch
+  # runs still receive the real secret values; deploy builds (Coolify) never see
+  # the placeholder, and a guard rejects it outside CI (SPEC-219 T-002 / T-006).
+  HOSPEDA_API_URL: ${{ secrets.HOSPEDA_API_URL || 'https://example.invalid' }}
+  HOSPEDA_SITE_URL: ${{ secrets.HOSPEDA_SITE_URL || 'https://example.invalid' }}
+  VITE_API_URL: ${{ secrets.HOSPEDA_API_URL || 'https://example.invalid' }}
+  VITE_SITE_URL: ${{ secrets.HOSPEDA_SITE_URL || 'https://example.invalid' }}
+  # VITE_ADMIN_URL (SPEC-182) is a required URL for the admin build. There is no
+  # HOSPEDA_ADMIN_URL secret today, so this resolves to the placeholder; if that
+  # secret is ever added it is used instead. Without this line, any admin#build
+  # cache MISS (incl. an admin code change on push) fails validation, since the
+  # var was previously absent from the Build job env entirely.
+  VITE_ADMIN_URL: ${{ secrets.HOSPEDA_ADMIN_URL || 'https://example.invalid' }}
+  VITE_BETTER_AUTH_URL: ${{ secrets.HOSPEDA_API_URL || 'https://example.invalid' }}/api/auth
+  PUBLIC_API_URL: ${{ secrets.HOSPEDA_API_URL || 'https://example.invalid' }}
+  PUBLIC_SITE_URL: ${{ secrets.HOSPEDA_SITE_URL || 'https://example.invalid' }}
   HOSPEDA_CLOUDINARY_CLOUD_NAME: ${{ secrets.HOSPEDA_CLOUDINARY_CLOUD_NAME }}
   HOSPEDA_CLOUDINARY_API_KEY: ${{ secrets.HOSPEDA_CLOUDINARY_API_KEY }}
   HOSPEDA_CLOUDINARY_API_SECRET: ${{ secrets.HOSPEDA_CLOUDINARY_API_SECRET }}
@@ -206,6 +221,16 @@ jobs:
       - uses: ./.github/actions/setup
       - name: Build all packages and apps
         run: pnpm build
+        env:
+          # Dependabot (and any secret-less) CI runs fall back to placeholder
+          # `.invalid` URLs (see the workflow-level env above) so the admin
+          # build's Zod URL validation passes. This flag tells the admin env
+          # guard to ACCEPT that placeholder — and it is set ONLY here, in the CI
+          # Build step. Deploy builds (Coolify) never set it, so a real build
+          # misconfigured with a placeholder URL fails loudly. It is deliberately
+          # NOT in the workflow-level env, so the test job keeps the guard active
+          # and exercises the rejection path. (SPEC-219 T-006)
+          ALLOW_PLACEHOLDER_ENV_URLS: 'true'
       - name: Upload build outputs
         uses: actions/upload-artifact@v4
         with:

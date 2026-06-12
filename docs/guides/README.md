@@ -24,6 +24,7 @@
 | Document | Description |
 |----------|-------------|
 | [Dependency Policy](dependency-policy.md) | Which libraries to use (and never use) for each concern |
+| [Dependabot Policy](dependabot-policy.md) | Triage & merge strategy for dependency-update PRs: the secrets/build caveat, the placeholder guard, and migration-gated packages (SPEC-219) |
 
 ## App-Specific Guides
 
