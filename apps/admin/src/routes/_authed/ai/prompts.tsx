@@ -97,6 +97,7 @@ function FeaturePromptEditor({ feature }: { readonly feature: AiFeatureId }) {
             await createMutation.mutateAsync({
                 feature,
                 content: prompt.content,
+                rules: prompt.rules || undefined,
                 activate: true
             });
             addToast({
