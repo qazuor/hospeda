@@ -374,9 +374,12 @@
         {
             "specId": "SPEC-213",
             "title": "Web + Admin pre-beta polish & bugfix batch",
-            "status": "in-progress",
+            "status": "completed",
             "progress": "19/19",
-            "path": "SPEC-213-web-admin-prebeta-fixes-batch"
+            "path": "SPEC-213-web-admin-prebeta-fixes-batch",
+            "archived": true,
+            "archivedAt": "2026-06-12T00:00:00Z",
+            "archiveNote": "PRs #1571 + #1575 merged to staging"
         },
         {
             "specId": "SPEC-214",
