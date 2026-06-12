@@ -539,6 +539,17 @@ export interface DetailFaq {
 }
 
 /**
+ * Type alias used by OwnerCard.astro.
+ * Mirrors the `owner` field of {@link AccommodationDetailData}.
+ */
+export interface AccommodationOwnerData {
+    readonly id: string;
+    readonly name: string;
+    readonly image: string | null;
+    readonly createdAt: string;
+}
+
+/**
  * Type alias used by AmenitiesGrid.astro.
  * Mirrors {@link DetailAmenity} — name has been pre-resolved to a plain string
  * by the transform layer (SPEC-172 PR4: amenity.name is an i18n object in the API).

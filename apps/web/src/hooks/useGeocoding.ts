@@ -1,3 +1,4 @@
+import { getApiUrl } from '@/lib/env';
 /**
  * @file useGeocoding.ts
  * @description Fetch-based hooks for the protected geocoding proxy (SPEC-208, Phase C PR2).
@@ -80,7 +81,7 @@ export function useGeocodingSearch({
             try {
                 const params = new URLSearchParams({ q: trimmed, locale });
                 const res = await fetch(
-                    `/api/v1/protected/geocoding/autocomplete?${params.toString()}`,
+                    `${getApiUrl()}/api/v1/protected/geocoding/autocomplete?${params.toString()}`,
                     {
                         credentials: 'include',
                         signal: controller.signal
@@ -179,7 +180,7 @@ export function useGeocodingReverse({
             try {
                 const params = new URLSearchParams({ lat: String(lat), lng: String(lng) });
                 const res = await fetch(
-                    `/api/v1/protected/geocoding/reverse?${params.toString()}`,
+                    `${getApiUrl()}/api/v1/protected/geocoding/reverse?${params.toString()}`,
                     {
                         credentials: 'include',
                         signal: controller.signal

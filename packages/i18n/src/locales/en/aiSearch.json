@@ -1,6 +1,31 @@
 {
     "triggerLabel": "AI Search",
     "panelTitle": "Smart search",
+    "chat": {
+        "panelLabel": "Conversational AI search panel",
+        "title": "Conversational search",
+        "close": "Close panel",
+        "inputLabel": "Message",
+        "placeholder": "Tell me what you're looking for, e.g. cabin for 4 with a pool near the river",
+        "send": "Send message",
+        "sending": "Sending…",
+        "thinking": "Thinking…",
+        "newConversation": "New conversation",
+        "errorDefault": "An error occurred. Please try again.",
+        "emptyState": "Ask your first question and I'll help you find the perfect accommodation.",
+        "resultsLabel": "Results found",
+        "resultsEmpty": "No accommodations found with those filters.",
+        "resultsCount": "{{count}} result",
+        "resultsCount_other": "{{count}} results",
+        "resultsLoading": "Searching accommodations…",
+        "priceFrom": "From",
+        "pricePerNight": "/ night",
+        "priceConsult": "Inquire about price",
+        "viewDetail": "View more",
+        "featuredLabel": "Featured",
+        "newLabel": "New",
+        "noImage": "No image"
+    },
     "placeholder": "Describe what you're looking for, e.g. cabin for 4 with a pool near the river",
     "submit": "Search",
     "submitting": "Analysing...",
@@ -8,12 +33,12 @@
     "loginPromptTitle": "Sign in to use AI search",
     "loginPromptMessage": "Smart search is available for registered users.",
     "loginPromptCta": "Sign in",
-    "fallbackNotice": "Could not fully interpret your query — showing keyword results.",
+    "loginPromptRegisterCta": "Create account",
     "quotaExhausted": "You've reached your monthly AI search limit.",
     "quotaUpgradeCta": "View plans →",
     "rateLimitError": "Too many searches. Please wait a moment.",
-    "serviceError": "Service unavailable. You can search by keyword instead.",
-    "keywordFallbackCta": "Search by keyword",
+    "serviceError": "Service is currently unavailable. Please try again later.",
+    "lowConfidenceMessage": "We couldn't understand your search. Try rephrasing it with different words.",
     "chips": {
         "type": "Type: {{value}}",
         "minGuests": "Min. {{value}} guests",
@@ -35,6 +60,9 @@
         "maxBedrooms": "Up to {{value}} bedrooms",
         "minBathrooms": "Min. {{value}} bathrooms",
         "maxBathrooms": "Up to {{value}} bathrooms",
-        "features": "Additional features"
+        "features": "Additional features",
+        "location": "Location",
+        "remove": "Remove filter",
+        "activeFiltersLabel": "Active filters"
     }
 }

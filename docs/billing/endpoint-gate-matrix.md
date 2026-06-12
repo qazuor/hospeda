@@ -45,6 +45,7 @@
 | `PUT /api/v1/protected/accommodations/{id}` | `accommodation/protected/update.ts` | gate | `edit_accommodation_info` | wired | requireEntitlement(EDIT_ACCOMMODATION_INFO) middleware wired (SPEC-145 T-004) |
 | `PATCH /api/v1/protected/accommodations/{id}` | `accommodation/protected/patch.ts` | gate+limit | `edit_accommodation_info`, `can_use_rich_description`, `can_embed_video` | wired | requireEntitlement(EDIT_ACCOMMODATION_INFO) + gateRichDescription + gateVideoEmbed (SPEC-145 T-004) |
 | `DELETE /api/v1/protected/accommodations/{id}` | `accommodation/protected/softDelete.ts` | none | - | n/a | Deletion is ungated; soft-delete own resource |
+| `POST /api/v1/protected/accommodations/{id}/unpublish` | `accommodation/protected/unpublish.ts` | none | - | n/a | Unpublish (ACTIVE → INACTIVE) is a basic lifecycle action ungated across all plan tiers; ownership enforced via route factory (SPEC-208 PR2) |
 | `GET /api/v1/protected/accommodations/{id}/contact` | `accommodation/protected/contact.ts` | none | - | n/a | Read-only resolved contact info; auth-only sufficient |
 | `GET /api/v1/protected/accommodations/{id}/faqs` | `accommodation/protected/getFaqs.ts` | none | - | n/a | Read own data; auth-only sufficient |
 | `POST /api/v1/protected/accommodations/{id}/faqs` | `accommodation/protected/addFaq.ts` | gate | `edit_accommodation_info` | wired | requireEntitlement(EDIT_ACCOMMODATION_INFO) middleware wired (SPEC-145 T-004) |
@@ -107,7 +108,7 @@
 | **AI — PROTECTED (SPEC-198)** | | | | | |
 | `POST /api/v1/protected/ai/text-improve` | `ai/protected/text-improve.ts` | gate+limit | `ai_text_improve`, `max_ai_text_improve_per_month` | wired | createAiQuotaMiddleware('text_improve') enforces entitlement + monthly quota + billing-outage guard; mounted at /api/v1/protected/ai via routes/ai/protected/index.ts (SPEC-198 T-004) |
 | `POST /api/v1/protected/ai/chat` | `ai/protected/chat.ts` | gate+limit | `ai_chat`, `max_ai_chat_per_month` | wired | createAiQuotaMiddleware('chat') enforces entitlement + monthly quota + billing-outage guard; mounted at /api/v1/protected/ai via routes/ai/protected/index.ts (SPEC-200 T-005) |
-| `POST /api/v1/protected/ai/search-intent` | `ai/protected/search-intent.ts` | gate+limit | `ai_search`, `max_ai_search_per_month` | wired | createAiQuotaMiddleware('search') enforces entitlement + monthly quota + billing-outage guard; mounted at /api/v1/protected/ai via routes/ai/protected/index.ts (SPEC-199) |
+| `POST /api/v1/protected/ai/search-chat` | `ai/protected/search-chat.ts` | none | - | n/a | Platform feature (SPEC-211 §7.7 / SPEC-212): auth + per-user/IP rate-limit only, NO billing entitlement or quota gate. The USD cost ceiling is enforced inside the AI engine. Mounted at /api/v1/protected/ai via routes/ai/protected/index.ts. Supersedes the retired /ai/search-intent route (SPEC-199, removed in SPEC-212 T-013). |
 | **AUTH — PROTECTED / PUBLIC** | | | | | |
 | `GET /api/v1/public/auth/me` | `auth/me.ts` | none | - | n/a | Session identity read; no entitlement needed |
 | `POST /api/v1/protected/auth/change-password` | `auth/change-password.ts` | none | - | n/a | Account management; auth-only sufficient |
@@ -606,7 +607,6 @@ eventually built, move its entry from this section to the main table.
 | `gateSearchHistory` | `can_view_search_history` | `middlewares/tourist-entitlements.ts` | SPEC-145 T-145-06 |
 | `gateRecommendations` | `can_view_recommendations` | `middlewares/tourist-entitlements.ts` | SPEC-145 T-145-06 |
 | `gateExclusiveDeals` | `exclusive_deals` | `middlewares/tourist-entitlements.ts` | SPEC-145 T-145-06 |
-| `gateEarlyEventAccess` | `early_access_events` | `middlewares/tourist-entitlements.ts` | SPEC-145 T-145-06 |
 | `gateCalendarAccess` | `can_use_calendar` | `middlewares/accommodation-entitlements.ts` | SPEC-145 T-145-06 |
 | `gateExternalCalendarSync` | `can_sync_external_calendar` | `middlewares/accommodation-entitlements.ts` | SPEC-145 T-145-06 |
 | `gateWhatsAppDisplay` | `can_contact_whatsapp_display` | `middlewares/accommodation-entitlements.ts` | SPEC-145 T-145-06 |

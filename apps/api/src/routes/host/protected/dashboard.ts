@@ -282,7 +282,7 @@ async function resolveUnreadConversations(input: {
  */
 export const hostDashboardRoute = createProtectedRoute({
     method: 'get',
-    path: '/',
+    path: '/dashboard',
     summary: 'Host Dashboard',
     description:
         'Returns aggregated host dashboard data: property counts, plan info, and unread conversation count. ' +

@@ -1,0 +1,12 @@
+{
+    "specId": "SPEC-214",
+    "title": "Editable AI prompt rules (DB-backed, per feature)",
+    "type": "feature",
+    "complexity": "medium",
+    "status": "in-progress",
+    "created": "2026-06-10T21:35:00Z",
+    "approved": "2026-06-10T21:35:00Z",
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["ai", "ai-core", "admin", "prompts", "db-migration", "feature"]
+}

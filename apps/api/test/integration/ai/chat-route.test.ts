@@ -138,8 +138,15 @@ vi.mock('@repo/ai-core', () => {
         recordAiUsage: vi.fn(async () => undefined),
         resolveSystemPrompt: vi.fn(async () => ({
             content: resolvedPromptForTest.current,
+            rules: '',
             source: 'default'
         })),
+        composeSystemPrompt: vi.fn(
+            (input: { readonly content: string; readonly rules: string | null }) => {
+                const { content: c, rules: r } = input;
+                return r !== null && r.trim() !== '' ? `${c}\n\n${r}` : c;
+            }
+        ),
         resolveFeatureConfig: vi.fn(async () => ({
             enabled: true,
             primaryProvider: 'openai',

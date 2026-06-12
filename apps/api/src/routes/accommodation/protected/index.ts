@@ -20,6 +20,7 @@ import { protectedListOwnAccommodationsRoute } from './list';
 import { protectedPatchAccommodationRoute } from './patch';
 import { removeFaqRoute } from './removeFaq';
 import { protectedSoftDeleteAccommodationRoute } from './softDelete';
+import { protectedUnpublishAccommodationRoute } from './unpublish';
 import { protectedUpdateAccommodationRoute } from './update';
 import { updateFaqRoute } from './updateFaq';
 
@@ -31,6 +32,8 @@ const ownershipRoutes = createRouter();
 ownershipRoutes.route('/', protectedUpdateAccommodationRoute);
 ownershipRoutes.route('/', protectedPatchAccommodationRoute);
 ownershipRoutes.route('/', protectedSoftDeleteAccommodationRoute);
+// POST /:id/unpublish - Transition ACTIVE → INACTIVE
+ownershipRoutes.route('/', protectedUnpublishAccommodationRoute);
 
 const app = createRouter();
 

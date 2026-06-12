@@ -53,8 +53,10 @@ export const protectedCreateDestinationReviewRoute = createProtectedRoute({
         return result.data;
     },
     options: {
-        // SPEC-145 T-005: WRITE_REVIEWS gate — granted on all tourist plans
-        // (tourist-free, tourist-plus, tourist-vip). Same gate as accommodation reviews.
+        // SPEC-145 T-005 / SPEC-216: WRITE_REVIEWS gate — granted on all tourist
+        // plans (tourist-free, tourist-plus, tourist-vip) and on all owner/complex
+        // plans via tourist-VIP entitlement inheritance (SPEC-216). Same gate as
+        // accommodation reviews.
         middlewares: [requireEntitlement(EntitlementKey.WRITE_REVIEWS)]
     }
 });

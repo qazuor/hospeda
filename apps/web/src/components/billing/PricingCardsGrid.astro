@@ -15,6 +15,7 @@
 import { PlanPurchaseButton } from '@/components/billing/PlanPurchaseButton.client';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import { getEntitlementName, getPlanDescription, getPlanName } from '@/lib/billing-i18n';
+import type { EntitlementKey } from '@/lib/billing-i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 
@@ -302,7 +303,7 @@ function formatPriceArs(cents: number): string {
 												stroke-linejoin="round"
 											/>
 										</svg>
-										<span>{getEntitlementName({ key: entitlementKey, t })}</span>
+										<span>{getEntitlementName({ key: entitlementKey as EntitlementKey, t })}</span>
 									</li>
 								))}
 							</ul>

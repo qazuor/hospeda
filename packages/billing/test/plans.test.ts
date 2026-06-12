@@ -309,7 +309,7 @@ describe('Plan Configuration', () => {
             const entitlementSet = new Set(entitlements);
             const limitMap = new Map(limits.map((l) => [l.key, l.value]));
 
-            expect(entitlementSet.has(EntitlementKey.WHITE_LABEL)).toBe(true);
+            expect(entitlementSet.has(EntitlementKey.PUBLISH_ACCOMMODATIONS)).toBe(true);
             expect(limitMap.get(LimitKey.MAX_ACCOMMODATIONS)).toBe(-1);
         });
     });

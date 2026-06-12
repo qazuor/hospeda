@@ -59,10 +59,8 @@ try {
             id: c.id,
             authorName: c.authorName,
             content: c.content,
-            // createdAt: Date objects do NOT survive island serialization — convert to ISO string here.
-            createdAt: c.createdAt instanceof Date
-                ? c.createdAt.toISOString()
-                : String(c.createdAt),
+            // createdAt: already a string (ISO 8601) from the API — pass through directly.
+            createdAt: String(c.createdAt),
         }));
     }
 } catch {

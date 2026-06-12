@@ -33,8 +33,8 @@ const page = Math.max(1, Number(Astro.url.searchParams.get('page')) || 1);
 const result = await accommodationsApi.getByDestination({ destinationId: destId, page, pageSize: 9 });
 const hasError = !result.ok;
 const items = result.ok ? result.data.items : [];
-const total = result.ok ? result.data.total : 0;
-const totalPages = result.ok ? Math.ceil(total / 9) : 0;
+const total = result.ok ? result.data.pagination.total : 0;
+const totalPages = result.ok ? result.data.pagination.totalPages : 0;
 const cards = items.map((item) => toAccommodationCardProps({ item: item as unknown as Record<string, unknown> }));
 const baseUrl = buildUrl({ locale, path: `destinos/${slug}/alojamientos` });
 ---

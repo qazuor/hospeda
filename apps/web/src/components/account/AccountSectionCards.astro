@@ -8,12 +8,13 @@
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import type { ComponentType } from 'react';
+import type { IconProps } from '@repo/icons';
 
 interface NavItem {
     readonly label: string;
     readonly href: string;
     readonly description: string;
-    readonly Icon: ComponentType<{ size?: number; weight?: string; 'aria-hidden'?: string }>;
+    readonly Icon: ComponentType<IconProps>;
 }
 
 interface Props {

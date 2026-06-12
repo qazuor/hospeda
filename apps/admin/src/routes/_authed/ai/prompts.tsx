@@ -48,11 +48,13 @@ function FeaturePromptEditor({ feature }: { readonly feature: AiFeatureId }) {
 
     const activePrompt = prompts?.find((p) => p.isActive);
     const [draftContent, setDraftContent] = useState('');
+    const [draftRules, setDraftRules] = useState('');
 
-    // Seed textarea when prompts load
+    // Seed textareas when prompts load
     useEffect(() => {
         if (activePrompt) {
             setDraftContent(activePrompt.content);
+            setDraftRules(activePrompt.rules ?? '');
         }
     }, [activePrompt]);
 
@@ -73,6 +75,7 @@ function FeaturePromptEditor({ feature }: { readonly feature: AiFeatureId }) {
             await createMutation.mutateAsync({
                 feature,
                 content: draftContent.trim(),
+                rules: draftRules.trim() || undefined,
                 activate: true
             });
             addToast({
@@ -94,6 +97,7 @@ function FeaturePromptEditor({ feature }: { readonly feature: AiFeatureId }) {
             await createMutation.mutateAsync({
                 feature,
                 content: prompt.content,
+                rules: prompt.rules || undefined,
                 activate: true
             });
             addToast({
@@ -162,13 +166,31 @@ function FeaturePromptEditor({ feature }: { readonly feature: AiFeatureId }) {
                     />
                 </div>
 
+                {/* Rules / guardrails editor */}
+                <div>
+                    <Label htmlFor={`rules-${feature}`}>
+                        Reglas / guardrails (se aplican después del prompt)
+                    </Label>
+                    <Textarea
+                        id={`rules-${feature}`}
+                        value={draftRules}
+                        onChange={(e) => setDraftRules(e.target.value)}
+                        placeholder="Restricciones o instrucciones adicionales que se aplican sobre el prompt principal. Si se deja vacío se usan los valores por defecto del sistema."
+                        className="mt-2 min-h-[120px] font-mono text-sm"
+                    />
+                    <p className="mt-1 text-muted-foreground text-xs">
+                        Opcional. Si está vacío se aplican las reglas incorporadas por defecto.
+                    </p>
+                </div>
+
                 <div className="flex justify-end">
                     <Button
                         onClick={handleSaveAsNewVersion}
                         disabled={
                             !draftContent.trim() ||
                             createMutation.isPending ||
-                            draftContent.trim() === (activePrompt?.content ?? '')
+                            (draftContent.trim() === (activePrompt?.content ?? '') &&
+                                draftRules.trim() === (activePrompt?.rules ?? ''))
                         }
                     >
                         {createMutation.isPending && (

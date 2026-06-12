@@ -128,15 +128,22 @@
             "status": {
                 "DRAFT": "[TODO]",
                 "PUBLISHED": "[TODO]",
-                "SUSPENDED": "[TODO]"
+                "SUSPENDED": "[TODO]",
+                "INACTIVE": "Paused"
             },
             "actions": {
                 "edit": "Edit",
                 "publish": "[TODO]",
                 "unpublish": "[TODO]",
-                "viewOnSite": "[TODO]"
+                "viewOnSite": "[TODO]",
+                "unpublishConfirm": "Unpublish this property? It will no longer appear on the site.",
+                "confirmYes": "Yes, unpublish",
+                "confirmNo": "Cancel"
             },
-            "pricePerNight": "[TODO]"
+            "pricePerNight": "[TODO]",
+            "unpublishSuccess": "Property unpublished",
+            "unpublishError": "Could not unpublish. Please try again.",
+            "priceOnRequest": "Price on request"
         },
         "editor": {
             "section": {
@@ -215,6 +222,7 @@
             "entitlement": {
                 "premiumFeature": "Premium feature",
                 "richDescriptionNudge": "Upgrade your plan to use rich formatted descriptions.",
+                "richDescriptionHint": "Upgrade your plan to format your description (bold, lists and more).",
                 "videoNudge": "Upgrade your plan to embed videos in your property.",
                 "genericNudge": "This feature is available on a higher plan.",
                 "upgradeLink": "Upgrade plan"

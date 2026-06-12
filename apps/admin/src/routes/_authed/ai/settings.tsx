@@ -332,10 +332,21 @@ function AiSettingsPage() {
 
                                 {/* Model */}
                                 <form.Subscribe
-                                    selector={(state) => ({
-                                        provider: state.values.features[featureId].primaryProvider,
-                                        model: state.values.features[featureId].model
-                                    })}
+                                    selector={(state) => {
+                                        // `features` is a Partial map, so both lookups are
+                                        // optional at the type level. The form is seeded by
+                                        // toFormValues() which fills every feature key from
+                                        // DEFAULT_SETTINGS, so a value is always present at
+                                        // runtime; fall back defensively so we never assert
+                                        // non-null (defaults mirror DEFAULT_SETTINGS).
+                                        const fc =
+                                            state.values.features[featureId] ??
+                                            DEFAULT_SETTINGS.features[featureId];
+                                        return {
+                                            provider: fc?.primaryProvider ?? 'stub',
+                                            model: fc?.model ?? ''
+                                        };
+                                    }}
                                 >
                                     {({ provider }) => {
                                         const models = providerModels[provider] ?? [];

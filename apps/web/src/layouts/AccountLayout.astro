@@ -11,6 +11,7 @@ import { getSiteUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { isHostRole } from '@/lib/account-roles';
 import BaseLayout from './BaseLayout.astro';
 import SEOHead from '@/components/seo/SEOHead.astro';
 import {
@@ -26,6 +27,7 @@ import {
 	DashboardIcon,
 } from '@repo/icons';
 import type { ComponentType } from 'react';
+import type { IconProps } from '@repo/icons';
 
 interface Props {
 	readonly locale: SupportedLocale;
@@ -52,7 +54,7 @@ interface NavLink {
 	readonly section: string;
 	readonly label: string;
 	readonly path: string;
-	readonly Icon: ComponentType<{ size?: number; weight?: string; 'aria-hidden'?: string }>;
+	readonly Icon: ComponentType<IconProps>;
 }
 
 interface NavGroup {
@@ -61,30 +63,8 @@ interface NavGroup {
 	readonly items: ReadonlyArray<NavLink>;
 }
 
-/**
- * Role-based predicate for the "Mis propiedades" sidebar entry. Mirrors the
- * UserMenu (top-right dropdown) predicate `permissions.includes('accommodation.create')`
- * by approximating it as "role has admin-panel access". Five roles get this
- * permission today via the role-permission seed in `apps/api/src/lib/...`:
- *
- *   - HOST: regular property owner managing their own listings.
- *   - ADMIN / SUPER_ADMIN: platform staff.
- *   - CLIENT_MANAGER: agency/business account.
- *   - EDITOR: content moderator with editorial rights.
- *
- * A plain USER (e.g., a tourist who only browses + saves favorites) does NOT
- * see this link, matching the UserMenu behavior. See SPEC-143 Finding #12.
- */
-const ROLES_WITH_ACCOMMODATIONS_NAV = new Set([
-	'HOST',
-	'ADMIN',
-	'SUPER_ADMIN',
-	'CLIENT_MANAGER',
-	'EDITOR',
-]);
-
 const userRole = Astro.locals.user?.role ?? null;
-const showPropertiesNav = userRole !== null && ROLES_WITH_ACCOMMODATIONS_NAV.has(userRole);
+const showPropertiesNav = isHostRole(userRole);
 
 /**
  * Sidebar nav is grouped so users can scan it as two short lists instead

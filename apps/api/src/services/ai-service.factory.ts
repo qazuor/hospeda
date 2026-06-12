@@ -40,7 +40,8 @@ import {
     OpenAiAdapter,
     StubProvider,
     checkCostCeiling,
-    createAiService
+    createAiService,
+    resolveConfig
 } from '@repo/ai-core';
 import type { AiService } from '@repo/ai-core';
 import { aiProviderCredentials, getDb } from '@repo/db';
@@ -193,7 +194,16 @@ export async function createConfiguredAiService(): Promise<AiService> {
     const alertHook = createAiCostThresholdAlertHook();
 
     // -----------------------------------------------------------------------
-    // 3. Assemble and return the configured service.
+    // 3. Resolve the moderation provider from ai_settings (opt-in).
+    //    When no admin has configured moderation (moderation field absent),
+    //    moderationProviderId stays undefined and the engine skips all
+    //    moderation passes. No default 'openai' — requires explicit config.
+    // -----------------------------------------------------------------------
+    const aiConfig = await resolveConfig();
+    const moderationProviderId = aiConfig.moderation?.providerId;
+
+    // -----------------------------------------------------------------------
+    // 4. Assemble and return the configured service.
     // -----------------------------------------------------------------------
     return createAiService({
         getProvider: buildGetProvider(keyMap, metadataMap),
@@ -208,6 +218,10 @@ export async function createConfiguredAiService(): Promise<AiService> {
 
         getNow: () => new Date(),
 
-        defaultLocale: 'es'
+        defaultLocale: 'es',
+
+        // Opt-in: undefined when no moderation provider is configured; the
+        // engine skips moderation passes entirely in that case.
+        moderationProviderId
     });
 }

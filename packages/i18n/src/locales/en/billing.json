@@ -426,10 +426,7 @@
         "priority_support": "Priority support",
         "featured_listing": "Featured in search results",
         "custom_branding": "Custom branding",
-        "api_access": "API access",
-        "dedicated_manager": "Dedicated account manager",
         "create_promotions": "Create promotions",
-        "social_media_integration": "Social media integration",
         "can_use_rich_description": "Rich descriptions",
         "can_embed_video": "Embed videos in your listing",
         "can_use_calendar": "Availability calendar",
@@ -442,15 +439,15 @@
         "read_reviews": "Read full reviews",
         "ad_free": "Ad-free browsing",
         "price_alerts": "Price alerts",
-        "early_access_events": "Early access to events",
         "exclusive_deals": "Exclusive deals",
         "vip_support": "VIP support",
-        "concierge_service": "Concierge service",
-        "airport_transfers": "Airport transfers",
         "vip_promotions_access": "Access to VIP promotions",
         "can_compare_accommodations": "Compare accommodations",
         "can_attach_review_photos": "Upload photos in reviews",
         "can_view_search_history": "View search history",
-        "can_view_recommendations": "Personalized recommendations"
+        "can_view_recommendations": "Personalized recommendations",
+        "ai_text_improve": "AI writing assistant",
+        "ai_chat": "Ask about the accommodation (AI)",
+        "ai_search": "Smart search"
     }
 }

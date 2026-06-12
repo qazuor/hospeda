@@ -107,8 +107,8 @@ describe('Entitlement Configuration', () => {
             expect(ENTITLEMENT_DEFINITIONS).toHaveLength(enumCount);
         });
 
-        it('should have 12 owner entitlements', () => {
-            // Arrange - owner entitlements are the first 12 in the definitions array
+        it('should have 9 owner entitlements', () => {
+            // Arrange - owner entitlements (API_ACCESS, DEDICATED_MANAGER, SOCIAL_MEDIA_INTEGRATION removed in SPEC-216)
             const ownerKeys: readonly EntitlementKey[] = [
                 EntitlementKey.PUBLISH_ACCOMMODATIONS,
                 EntitlementKey.EDIT_ACCOMMODATION_INFO,
@@ -118,14 +118,11 @@ describe('Entitlement Configuration', () => {
                 EntitlementKey.PRIORITY_SUPPORT,
                 EntitlementKey.FEATURED_LISTING,
                 EntitlementKey.CUSTOM_BRANDING,
-                EntitlementKey.API_ACCESS,
-                EntitlementKey.DEDICATED_MANAGER,
-                EntitlementKey.CREATE_PROMOTIONS,
-                EntitlementKey.SOCIAL_MEDIA_INTEGRATION
+                EntitlementKey.CREATE_PROMOTIONS
             ] as const;
 
             // Act & Assert
-            expect(ownerKeys).toHaveLength(12);
+            expect(ownerKeys).toHaveLength(9);
             for (const key of ownerKeys) {
                 expect(ENTITLEMENT_DEFINITIONS.find((e) => e.key === key)).toBeDefined();
             }
@@ -150,37 +147,32 @@ describe('Entitlement Configuration', () => {
             }
         });
 
-        it('should have 6 complex entitlements', () => {
-            // Arrange
+        it('should have 4 complex entitlements', () => {
+            // Arrange (WHITE_LABEL, MULTI_CHANNEL_INTEGRATION removed in SPEC-216)
             const complexKeys: readonly EntitlementKey[] = [
                 EntitlementKey.MULTI_PROPERTY_MANAGEMENT,
                 EntitlementKey.CONSOLIDATED_ANALYTICS,
                 EntitlementKey.CENTRALIZED_BOOKING,
-                EntitlementKey.STAFF_MANAGEMENT,
-                EntitlementKey.WHITE_LABEL,
-                EntitlementKey.MULTI_CHANNEL_INTEGRATION
+                EntitlementKey.STAFF_MANAGEMENT
             ] as const;
 
             // Act & Assert
-            expect(complexKeys).toHaveLength(6);
+            expect(complexKeys).toHaveLength(4);
             for (const key of complexKeys) {
                 expect(ENTITLEMENT_DEFINITIONS.find((e) => e.key === key)).toBeDefined();
             }
         });
 
-        it('should have 15 tourist entitlements', () => {
-            // Arrange
+        it('should have 12 tourist entitlements', () => {
+            // Arrange (EARLY_ACCESS_EVENTS, CONCIERGE_SERVICE, AIRPORT_TRANSFERS removed in SPEC-216)
             const touristKeys: readonly EntitlementKey[] = [
                 EntitlementKey.SAVE_FAVORITES,
                 EntitlementKey.WRITE_REVIEWS,
                 EntitlementKey.READ_REVIEWS,
                 EntitlementKey.AD_FREE,
                 EntitlementKey.PRICE_ALERTS,
-                EntitlementKey.EARLY_ACCESS_EVENTS,
                 EntitlementKey.EXCLUSIVE_DEALS,
                 EntitlementKey.VIP_SUPPORT,
-                EntitlementKey.CONCIERGE_SERVICE,
-                EntitlementKey.AIRPORT_TRANSFERS,
                 EntitlementKey.VIP_PROMOTIONS_ACCESS,
                 EntitlementKey.CAN_COMPARE_ACCOMMODATIONS,
                 EntitlementKey.CAN_ATTACH_REVIEW_PHOTOS,
@@ -189,18 +181,18 @@ describe('Entitlement Configuration', () => {
             ] as const;
 
             // Act & Assert
-            expect(touristKeys).toHaveLength(15);
+            expect(touristKeys).toHaveLength(12);
             for (const key of touristKeys) {
                 expect(ENTITLEMENT_DEFINITIONS.find((e) => e.key === key)).toBeDefined();
             }
         });
 
         it('should have all 5 categories totaling to the full definitions count', () => {
-            // Arrange
-            const ownerCount = 12;
+            // Arrange (SPEC-216: owner 12→9, complex 6→4, tourist 15→12)
+            const ownerCount = 9;
             const accommodationCount = 7;
-            const complexCount = 6;
-            const touristCount = 15;
+            const complexCount = 4;
+            const touristCount = 12;
             const aiCount = 4; // AI feature entitlements added in SPEC-173
 
             // Act & Assert

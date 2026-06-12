@@ -2,6 +2,17 @@
     "version": "1.0",
     "specs": [
         {
+            "specId": "SPEC-217",
+            "title": "Deterministic Billing for E2E — wire the QZPay test-control adapter for fault injection and produce real terminal subscription states so the gated paywall specs run in CI",
+            "type": "test",
+            "status": "in-progress",
+            "complexity": "high",
+            "path": "SPEC-217-qzpay-test-control-e2e-wiring",
+            "base": "staging",
+            "priority": "P1",
+            "archived": false
+        },
+        {
             "specId": "SPEC-211",
             "title": "AI Monetization Model",
             "type": "feat",
@@ -903,15 +914,98 @@
             "archived": false
         },
         {
-            "specId": "SPEC-217",
-            "title": "Deterministic Billing for E2E — wire the QZPay test-control adapter for fault injection and produce real terminal subscription states so the gated paywall specs run in CI",
-            "type": "test",
+            "specId": "SPEC-213",
+            "title": "Web + Admin pre-beta polish & bugfix batch",
+            "type": "bugfix",
+            "complexity": "medium",
             "status": "in-progress",
-            "complexity": "high",
-            "path": "SPEC-217-qzpay-test-control-e2e-wiring",
-            "base": "staging",
-            "priority": "P1",
+            "path": "SPEC-213-web-admin-prebeta-fixes-batch",
+            "created": "2026-06-10T21:29:49Z",
+            "tags": ["web", "admin", "i18n", "bugfix", "polish"],
             "archived": false
+        },
+        {
+            "specId": "SPEC-214",
+            "title": "Editable AI prompt rules (DB-backed, per feature)",
+            "type": "feature",
+            "complexity": "medium",
+            "status": "completed",
+            "path": "SPEC-214-ai-prompt-rules-editable",
+            "created": "2026-06-10T21:35:00Z",
+            "tags": ["ai", "ai-core", "admin", "prompts", "db-migration"],
+            "archived": true,
+            "archivedAt": "2026-06-12T17:39:12Z",
+            "completionRef": "PR #1583 merged to staging"
+        },
+        {
+            "specId": "SPEC-215",
+            "title": "Destination climate & live weather",
+            "type": "feature",
+            "complexity": "high",
+            "status": "approved",
+            "path": "SPEC-215-destination-climate-weather",
+            "created": "2026-06-10T22:05:00Z",
+            "tags": ["destinations", "weather", "climate", "web", "admin", "cron"],
+            "archived": false
+        },
+        {
+            "specId": "SPEC-216",
+            "title": "Owner plans inherit tourist entitlements & limits (owner = superset of tourist)",
+            "type": "improvement",
+            "complexity": "medium",
+            "status": "completed",
+            "path": "SPEC-216-owner-inherits-tourist-entitlements",
+            "created": "2026-06-10T22:15:00Z",
+            "tags": ["billing", "entitlements", "plans", "owner", "tourist"],
+            "archived": true,
+            "archivedAt": "2026-06-12T00:00:00Z",
+            "completionRef": "PR #1579 merged to staging"
+        },
+        {
+            "specId": "SPEC-218",
+            "title": "astro check in web CI — load the App.Locals augmentation, clean .astro type errors, gate typecheck",
+            "type": "improvement",
+            "status": "completed",
+            "complexity": "medium",
+            "path": "SPEC-218-astro-check-web-typecheck",
+            "base": "staging",
+            "priority": "P2",
+            "archived": true,
+            "archivedAt": "2026-06-12T00:00:00Z",
+            "completionRef": "PR #1578 merged to staging"
+        },
+        {
+            "specId": "SPEC-212",
+            "title": "Conversational AI Accommodation Search",
+            "type": "feat",
+            "complexity": "high",
+            "status": "completed",
+            "path": "SPEC-212-conversational-ai-search",
+            "created": "2026-06-11T00:00:00.000Z",
+            "parentSpec": "SPEC-173",
+            "archived": true,
+            "archivedAt": "2026-06-11",
+            "completionRef": "PR #1577 merged to staging (f8df2b971)",
+            "tags": ["ai", "feature", "search", "conversational", "spec-173-child"],
+            "note": "Option A conversational search; NL->filters under the hood (NO embeddings). Reuses SPEC-199 mapper/schema/prompt + SPEC-200 chat/SSE/persistence. New SSE route POST /api/v1/protected/ai/search-chat. Supersedes SPEC-199 single-input UI. From owner-approved plan 2026-06-11. 18/18 tasks complete."
+        },
+        {
+            "specId": "SPEC-219",
+            "title": "Dependabot CI Hardening & Dependency Bump Merge Strategy",
+            "type": "infrastructure",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-219-dependabot-ci-hardening",
+            "created": "2026-06-11T00:00:00.000Z",
+            "tags": [
+                "ci",
+                "dependabot",
+                "dependencies",
+                "github-actions",
+                "infrastructure",
+                "build"
+            ],
+            "note": "Infra-only: CI build resilient to absent secrets in dependabot context + dependabot grouping/merge strategy + policy doc. Defers Zod 4.4 (.merge->.safeExtend) and TanStack Router 1.170 migrations to SPEC-132/SPEC-045 or follow-ups. Triggered by failing PRs #1548 (github-actions group, build secrets) and #1570 (66-update npm group, zod+router breaking). Planning for later, no worktree."
         }
     ]
 }

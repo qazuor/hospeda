@@ -1,0 +1,392 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-214",
+    "title": "Editable AI prompt rules (DB-backed, per feature)",
+    "created": "2026-06-11T22:53:10.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "DB: add nullable rules column to ai_prompt_versions + migration",
+            "description": "Add `rules: text('rules')` nullable column to packages/db/src/schemas/ai/ai_prompt_versions.dbschema.ts. Run pnpm db:generate to produce the numbered migration (next is 0013). Structural change -> migrations carril.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-004"],
+            "subtasks": [
+                {
+                    "title": "Add rules column to dbschema",
+                    "completed": true
+                },
+                {
+                    "title": "db:generate migration",
+                    "completed": true
+                }
+            ],
+            "tags": ["db", "migration"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-11T22:53:10.000Z",
+                "started": "2026-06-11T23:16:05.000Z",
+                "completed": "2026-06-11T23:16:05.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Schema: add rules to AiPromptVersionSchema + CreateAiPromptVersionSchema",
+            "description": "packages/schemas/src/entities/ai/ai-prompt.schema.ts: add `rules: z.string().nullable()` to AiPromptVersionSchema and `rules: z.string().optional()` to CreateAiPromptVersionSchema (+ inferred types). Extend the schema test.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-004", "T-008", "T-009"],
+            "subtasks": [
+                {
+                    "title": "Add rules to both schemas",
+                    "completed": true
+                },
+                {
+                    "title": "Update schema test",
+                    "completed": true
+                }
+            ],
+            "tags": ["schemas"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-11T22:53:10.000Z",
+                "started": "2026-06-11T23:16:05.000Z",
+                "completed": "2026-06-11T23:16:05.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "ai-core defaults: extract DEFAULT_RULES, clean DEFAULT_PROMPTS + equivalence test (GATE)",
+            "description": "In default-prompts.ts add DEFAULT_RULES: Readonly<Record<AiFeature,string>> with each feature's rules block extracted; clean the rules out of DEFAULT_PROMPTS bodies (content = conversational only). THE HARD GATE: equivalence test asserting the original prompt's instruction set == compose(cleaned content, DEFAULT_RULES) functionally (normalized sentence-set equality, since rules move to the end). chat/search/text_improve rules are mid-prompt so composition reorders \u2014 test on set-equality, not byte-equality.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-005", "T-010"],
+            "subtasks": [
+                {
+                    "title": "Define DEFAULT_RULES (4 features)",
+                    "completed": true
+                },
+                {
+                    "title": "Clean DEFAULT_PROMPTS bodies",
+                    "completed": true
+                },
+                {
+                    "title": "Equivalence test (set-equality) per feature",
+                    "completed": true
+                }
+            ],
+            "tags": ["ai-core", "gate"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-11T22:53:10.000Z",
+                "started": "2026-06-11T23:16:05.000Z",
+                "completed": "2026-06-11T23:16:05.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "ai-core storage: thread rules in getActivePrompt + createPromptVersion",
+            "description": "prompt.storage.ts: GetActivePromptResult already returns `row` (has rules after migration). Add `rules` to CreatePromptVersionInput and the insert .values({...}). Update prompt-storage test.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-005"],
+            "subtasks": [
+                {
+                    "title": "createPromptVersion accepts+inserts rules",
+                    "completed": true
+                },
+                {
+                    "title": "Update storage test",
+                    "completed": true
+                }
+            ],
+            "tags": ["ai-core", "storage"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-11T22:53:10.000Z",
+                "started": "2026-06-11T23:16:05.000Z",
+                "completed": "2026-06-11T23:16:05.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "ai-core resolver: add rules to result + DEFAULT_RULES fallback + cache + composeSystemPrompt helper",
+            "description": "prompt-resolver.ts: ResolveSystemPromptResult + PromptCacheEntry add `rules: string`. resolveSystemPrompt returns row.rules (trimmed) or DEFAULT_RULES[feature] fallback; default/error paths return DEFAULT_RULES[feature]. Cache both fields. Add exported composeSystemPrompt({content,rules}) = rules?.trim() ? content+\"\\n\\n\"+rules : content. Tests.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-004"],
+            "blocks": ["T-006", "T-007"],
+            "subtasks": [
+                {
+                    "title": "Add rules to result+cache+fallback",
+                    "completed": true
+                },
+                {
+                    "title": "composeSystemPrompt helper",
+                    "completed": true
+                },
+                {
+                    "title": "resolver tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["ai-core", "resolver"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-11T22:53:10.000Z",
+                "started": "2026-06-11T23:16:05.000Z",
+                "completed": "2026-06-11T23:16:05.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "ai-core engine: compose content+rules at the 3 resolveSystemPrompt call sites",
+            "description": "engine.ts lines ~678/744/819: `const { content, rules } = await resolveSystemPrompt(...); const systemContent = composeSystemPrompt({content, rules});`. Covers text_improve/search/support uniformly (engine-internal resolution). Engine test asserts rules are injected.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-011"],
+            "subtasks": [
+                {
+                    "title": "Apply composeSystemPrompt at 3 engine sites",
+                    "completed": true
+                },
+                {
+                    "title": "Engine test for rules injection",
+                    "completed": true
+                }
+            ],
+            "tags": ["ai-core", "engine"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-11T22:53:10.000Z",
+                "started": "2026-06-11T23:16:05.000Z",
+                "completed": "2026-06-11T23:16:05.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Runtime: chat composes content+rules in buildChatSystemMessage",
+            "description": "chat.ts resolves rules too; thread rules through assembleAccommodationContext -> buildChatSystemMessage (apps/api/src/services/accommodation-ai-context.ts) so rules sit after content, before the locale line. Update accommodation-ai-context test.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-011"],
+            "subtasks": [
+                {
+                    "title": "Thread rules through chat composition",
+                    "completed": true
+                },
+                {
+                    "title": "Update chat context test",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "chat"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-11T22:53:10.000Z",
+                "started": "2026-06-11T23:22:25.000Z",
+                "completed": "2026-06-11T23:22:25.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "API: persist rules in POST /admin/ai/prompts",
+            "description": "apps/api/src/routes/ai/prompts/index.ts createPromptRoute: pass `rules: parsed.rules` to createPromptVersion (schema now has rules). Update prompts route test.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-002", "T-004"],
+            "blocks": ["T-011"],
+            "subtasks": [
+                {
+                    "title": "Persist rules in create handler",
+                    "completed": true
+                },
+                {
+                    "title": "Update route test",
+                    "completed": true
+                }
+            ],
+            "tags": ["api"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-11T22:53:10.000Z",
+                "started": "2026-06-11T23:22:25.000Z",
+                "completed": "2026-06-11T23:22:25.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Admin UI: rules textarea in FeaturePromptEditor + types + hooks",
+            "description": "apps/admin: prompts.tsx FeaturePromptEditor add draftRules state + second Textarea seeded from activePrompt.rules; pass rules in create mutation. types.ts: add rules to AiPromptVersion + CreateAiPromptPayload. hooks.ts flows rules through. Component test.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-011"],
+            "subtasks": [
+                {
+                    "title": "Rules textarea + state",
+                    "completed": true
+                },
+                {
+                    "title": "types + hooks",
+                    "completed": true
+                },
+                {
+                    "title": "component test",
+                    "completed": true
+                }
+            ],
+            "tags": ["admin", "ui"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-11T22:53:10.000Z",
+                "started": "2026-06-11T23:22:25.000Z",
+                "completed": "2026-06-11T23:22:25.000Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Seed + backfill: seed rules=DEFAULT_RULES for v1 rows; migration backfill existing null rules",
+            "description": "aiPrompts.seed.ts: insert rules=DEFAULT_RULES[feature] for the v1 rows (so admin editor shows rules pre-filled; content already cleaned). Backfill existing DB rows: an extras data migration setting rules=DEFAULT_RULES[feature] where rules is null (best-effort; do not parse arbitrary content). Effective prompt unchanged (null also falls back to DEFAULT_RULES).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-011"],
+            "subtasks": [
+                {
+                    "title": "Seed rules=DEFAULT_RULES for v1",
+                    "completed": true
+                },
+                {
+                    "title": "Backfill data migration (extras)",
+                    "completed": true
+                }
+            ],
+            "tags": ["seed", "db"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-11T22:53:10.000Z",
+                "started": "2026-06-11T23:22:25.000Z",
+                "completed": "2026-06-11T23:22:25.000Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Verify: build + typecheck + ai-core/api/admin/schemas/db tests green; equivalence gate",
+            "description": "Build affected packages; typecheck db/schemas/ai-core/api/admin; run ai-core + schemas + db + api prompts/chat + admin ai-settings tests. Confirm equivalence test green (the US-4 gate). 0 errors.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-006", "T-007", "T-008", "T-009", "T-010"],
+            "blocks": ["T-012"],
+            "subtasks": [
+                {
+                    "title": "build+typecheck+targeted tests green",
+                    "completed": true
+                }
+            ],
+            "tags": ["verify"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-11T22:53:10.000Z",
+                "started": "2026-06-12T00:00:00.000Z",
+                "completed": "2026-06-12T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Docs: update AI prompts admin guide with the rules field",
+            "description": "Update the AI prompts admin doc to describe the new editable rules field, composition (content + rules), and the DEFAULT_RULES fallback. Note support has no runtime route yet (field exists for admin/seed).",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-011"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Doc the rules field + composition + fallback",
+                    "completed": true
+                }
+            ],
+            "tags": ["docs"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-11T22:53:10.000Z",
+                "started": "2026-06-12T00:00:00.000Z",
+                "completed": "2026-06-12T00:00:00.000Z"
+            }
+        }
+    ],
+    "summary": {
+        "total": 12,
+        "pending": 0,
+        "inProgress": 0,
+        "completed": 12,
+        "blocked": 0,
+        "averageComplexity": 1.8
+    }
+}

@@ -52,7 +52,7 @@ const publishedAt = String(post.publishedAt || post.createdAt || '');
 const updatedAt = post.updatedAt ? String(post.updatedAt) : undefined;
 const readingTime = Number(post.readingTimeMinutes || 0);
 const authorObj = post.author as Record<string, unknown> | undefined;
-const categoryColors = getPostCategoryColor(category.toLowerCase());
+const categoryColors = getPostCategoryColor({ category: category.toLowerCase() });
 
 // --- Media (gallery + videos) ---
 // Real shape per PostPublicSchema + seed: `media.featuredImage.url`, `media.gallery[].url`,
@@ -198,9 +198,7 @@ try {
 		: await postsApi.list({ category, pageSize: 4 });
 
 	if (relResult.ok) {
-		const items = (relResult.data as { items?: unknown[]; data?: unknown[] }).items
-			?? (relResult.data as { items?: unknown[]; data?: unknown[] }).data
-			?? [];
+		const items: unknown[] = relResult.data.items as unknown[];
 		relatedPosts = (items as Record<string, unknown>[]).filter((p) => p.id !== postId).slice(0, 4);
 	}
 } catch { /* graceful */ }

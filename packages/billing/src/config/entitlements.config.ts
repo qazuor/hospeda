@@ -79,24 +79,9 @@ export const ENTITLEMENT_DEFINITIONS: EntitlementDefinition[] = [
         description: 'Allows customizing the listing appearance with own branding'
     },
     {
-        key: EntitlementKey.API_ACCESS,
-        name: 'API access',
-        description: 'Access to the API for integrations with external systems'
-    },
-    {
-        key: EntitlementKey.DEDICATED_MANAGER,
-        name: 'Dedicated manager',
-        description: 'A dedicated account manager for personalized assistance'
-    },
-    {
         key: EntitlementKey.CREATE_PROMOTIONS,
         name: 'Create promotions',
         description: 'Allows creating exclusive promotions for VIP tourists'
-    },
-    {
-        key: EntitlementKey.SOCIAL_MEDIA_INTEGRATION,
-        name: 'Social media integration',
-        description: 'Automatic publishing to social media platforms'
     },
     // Accommodation feature entitlements
     {
@@ -155,16 +140,6 @@ export const ENTITLEMENT_DEFINITIONS: EntitlementDefinition[] = [
         name: 'Staff management',
         description: 'Allows creating and managing staff accounts'
     },
-    {
-        key: EntitlementKey.WHITE_LABEL,
-        name: 'White label',
-        description: 'Complete white label experience'
-    },
-    {
-        key: EntitlementKey.MULTI_CHANNEL_INTEGRATION,
-        name: 'Multi-channel integration',
-        description: 'Sync with OTAs and external sales channels'
-    },
     // Tourist entitlements
     {
         key: EntitlementKey.SAVE_FAVORITES,
@@ -192,11 +167,6 @@ export const ENTITLEMENT_DEFINITIONS: EntitlementDefinition[] = [
         description: 'Notifications when favorite accommodation prices drop'
     },
     {
-        key: EntitlementKey.EARLY_ACCESS_EVENTS,
-        name: 'Early access to events',
-        description: 'Priority access to event tickets'
-    },
-    {
         key: EntitlementKey.EXCLUSIVE_DEALS,
         name: 'Exclusive deals',
         description: 'Access to exclusive offers and discounts'
@@ -205,16 +175,6 @@ export const ENTITLEMENT_DEFINITIONS: EntitlementDefinition[] = [
         key: EntitlementKey.VIP_SUPPORT,
         name: 'VIP support',
         description: 'Dedicated VIP support channel'
-    },
-    {
-        key: EntitlementKey.CONCIERGE_SERVICE,
-        name: 'Concierge service',
-        description: 'Personalized concierge service for trip planning'
-    },
-    {
-        key: EntitlementKey.AIRPORT_TRANSFERS,
-        name: 'Airport transfers',
-        description: 'Airport transfer coordination included'
     },
     {
         key: EntitlementKey.VIP_PROMOTIONS_ACCESS,

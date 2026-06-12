@@ -13,6 +13,7 @@
  * @module hooks/useMyEntitlements
  */
 
+import { getApiUrl } from '@/lib/env';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 // ---------------------------------------------------------------------------
@@ -88,7 +89,7 @@ export function clearEntitlementsCache(): void {
 // ---------------------------------------------------------------------------
 
 async function fetchEntitlements(): Promise<EntitlementsData> {
-    const response = await fetch('/api/v1/protected/users/me/entitlements', {
+    const response = await fetch(`${getApiUrl()}/api/v1/protected/users/me/entitlements`, {
         credentials: 'include',
         headers: { Accept: 'application/json' }
     });

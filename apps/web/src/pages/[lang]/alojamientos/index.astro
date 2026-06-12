@@ -32,8 +32,8 @@ import { getAccommodationTypeLabel } from '@/lib/colors';
 import { buildAccommodationListingSummary, DEFAULT_TYPE_GRAMMAR } from '@/lib/accommodation-listing-summary';
 import type { CatalogEntry, SummaryLocale } from '@/lib/accommodation-listing-summary';
 import { resolveI18nText } from '@/lib/resolve-i18n-text';
-import AiSearchTrigger from '@/components/ai-search/AiSearchTrigger.astro';
-import { IntentChips } from '@/components/ai-search/IntentChips';
+import { getApiUrl } from '@/lib/env';
+import { SearchChatPanel } from '@/components/ai-search/SearchChatPanel.client';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -229,14 +229,14 @@ if (isAuthenticated && baseCards.length > 0) {
             favoriteChecks = bulkResult.data.checks;
         } else {
             webLogger.warn(
-                { error: bulkResult.error },
-                'Bulk bookmark check failed; falling back to per-card hydration'
+                'Bulk bookmark check failed; falling back to per-card hydration',
+                { error: bulkResult.error }
             );
         }
     } catch (error) {
         webLogger.warn(
-            { error: error instanceof Error ? error.message : String(error) },
-            'Bulk bookmark check threw; falling back to per-card hydration'
+            'Bulk bookmark check threw; falling back to per-card hydration',
+            { error: error instanceof Error ? error.message : String(error) }
         );
     }
 }
@@ -394,6 +394,9 @@ const filterGroups: FilterGroup[] = [
 			{ value: 'CAMPING', label: getAccommodationTypeLabel({ type: 'CAMPING', t }) },
 			{ value: 'ROOM', label: getAccommodationTypeLabel({ type: 'ROOM', t }) },
 			{ value: 'RESORT', label: getAccommodationTypeLabel({ type: 'RESORT', t }) },
+			{ value: 'APART_HOTEL', label: getAccommodationTypeLabel({ type: 'APART_HOTEL', t }) },
+			{ value: 'ESTANCIA', label: getAccommodationTypeLabel({ type: 'ESTANCIA', t }) },
+			{ value: 'BED_AND_BREAKFAST', label: getAccommodationTypeLabel({ type: 'BED_AND_BREAKFAST', t }) },
 		],
 	},
 	{
@@ -801,11 +804,13 @@ const emptyStateSuggestions = [
 	)}
 
 	<!--
-	    AI intent chips (SPEC-199 §5.6) — removable filter chips derived from
-	    the last AI-extracted search intent stored in sessionStorage.
-	    Renders nothing when sessionStorage is empty, so always mounted.
+	    Conversational AI search panel (SPEC-212) — chat-based natural-language
+	    search that replaces the SPEC-199 single-shot NL input. Placed above the
+	    results grid so the user finds it immediately after the type-badge nav.
+	    Uses client:load because the panel should be ready for interaction without
+	    requiring scroll (it sits near the top of the main content area).
 	-->
-	<IntentChips client:load locale={locale} lang={locale} />
+	<SearchChatPanel client:load locale={locale} apiUrl={getApiUrl()} />
 
 	{hasError && !result.ok && (
 		<ErrorBanner locale={locale} error={result.error} entityName="alojamientos" />
@@ -868,16 +873,6 @@ const emptyStateSuggestions = [
 		/>
 	)}
 
-	<!--
-	    AI Natural-Language Search floating CTA (SPEC-199 §5.6, Q2).
-	    Fixed-position; does not affect the main search bar or filter sidebar.
-	    Props: locale and isAuthenticated are already derived above; currentUrl from Astro.url.href.
-	-->
-	<AiSearchTrigger
-		locale={locale}
-		isAuthenticated={isAuthenticated}
-		currentUrl={Astro.url.href}
-	/>
 </ListingLayout>
 
 

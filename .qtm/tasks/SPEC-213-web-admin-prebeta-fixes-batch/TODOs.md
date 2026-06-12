@@ -1,0 +1,47 @@
+# SPEC-213: Web + Admin pre-beta polish & bugfix batch
+
+## Progress: 19/19 tasks (100%)
+
+**Average Complexity:** 1.6/3
+**Phases:** setup → core → integration → cleanup
+
+---
+
+### Setup Phase
+
+- [x] **T-001** (complexity: 3) - W3a: Add APART_HOTEL/ESTANCIA/BED_AND_BREAKFAST to enum + schema + DB migration
+  - Blocked by: none · Blocks: T-002
+
+### Core Phase
+
+- [x] **T-002** (complexity: 2) - W3b: i18n labels + filter sidebars + seed for new accommodation types
+  - Blocked by: T-001 · Blocks: none
+- [x] **T-003** (complexity: 1) - W6: Fix destination accommodations page pagination.total
+- [x] **T-004** (complexity: 3) - W4: Diagnose + fix map view 500 on pan/zoom (bbox params)
+- [x] **T-005** (complexity: 2) - W11: Fix post category chip 404 (casing) + add missing sidebar categories
+- [x] **T-006** (complexity: 1) - W8: Resolve I18nText for services filter on map view
+- [x] **T-007** (complexity: 2) - W2: Translate Better Auth signin credential errors
+- [x] **T-008** (complexity: 1) - W9: Add AI entitlement i18n labels + fix Embedeer typo
+- [x] **T-009** (complexity: 2) - W10: Translate price breakdown fee/discount labels
+
+### Integration Phase
+
+- [x] **T-010** (complexity: 2) - W1: Proactive login CTA on AI search open for guests
+- [x] **T-011** (complexity: 1) - W13: Remove keyword-search degradation fallback
+- [x] **T-012** (complexity: 2) - W14: Autofocus chat/search input on open
+- [x] **T-013** (complexity: 1) - W15b: Redirect already_host submit to own list
+
+### Cleanup Phase (visual polish)
+
+- [x] **T-014** (complexity: 1) - W5: Fix footer subscribe button stretch when authenticated
+- [x] **T-015** (complexity: 2) - W7: Fix hero wave flicker on resize
+- [x] **T-016** (complexity: 1) - W12: Fix sticky sidebar unreachable when taller than viewport
+- [x] **T-017** (complexity: 1) - W15a: Fix publish form bottom spacing
+- [x] **T-018** (complexity: 1) - A1: Fix admin dialog close button size
+- [x] **T-019** (complexity: 1) - A2: Register Playground IA sidebar icon
+
+---
+
+## Suggested Start
+
+Begin with **T-001** (the only setup task, unblocks T-002), or pick any complexity-1 core task for a quick win (T-003 W6 is a one-liner). Most tasks are independent and parallelizable; only T-002 depends on T-001.

@@ -32,6 +32,7 @@
  */
 
 import { createRoute } from '@hono/zod-openapi';
+import type { AiSearchChatFiltersEvent } from '@repo/schemas';
 import type { PermissionEnum } from '@repo/schemas';
 import type { Context, MiddlewareHandler } from 'hono';
 import { streamSSE } from 'hono/streaming';
@@ -72,6 +73,18 @@ export interface StreamHandlerResult {
      * the system prompt and accommodation context sent to the model.
      */
     readonly debug?: Record<string, unknown>;
+    /**
+     * Optional filters payload emitted as the second SSE event (`filters`)
+     * after the `debug` event (if present) and before any `token` frames.
+     *
+     * Used by the conversational search route (SPEC-212 T-005) to deliver
+     * URL-ready accommodation search params and the extracted intent to the
+     * client immediately after `generateObject` resolves, so the UI can
+     * render search results while the natural-language reply is still streaming.
+     *
+     * When absent the `filters` frame is suppressed — existing routes are unaffected.
+     */
+    readonly filters?: AiSearchChatFiltersEvent;
 }
 
 /**
@@ -266,6 +279,17 @@ export const createStreamingRoute = (options: StreamingRouteOptions) => {
                     await sseStream.writeSSE({
                         event: 'debug',
                         data: JSON.stringify(handlerResult.debug)
+                    });
+                }
+
+                // Emit filters payload as a prelude event (if present), after
+                // `debug` and before any `token` frames. Allows the client to
+                // render search results while the NL reply is still streaming
+                // (SPEC-212 T-005). Absent for all routes that don't set it.
+                if (handlerResult.filters !== undefined) {
+                    await sseStream.writeSSE({
+                        event: 'filters',
+                        data: JSON.stringify(handlerResult.filters)
                     });
                 }
 

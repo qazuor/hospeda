@@ -33,7 +33,6 @@ import { createErrorHandler } from '../../src/middlewares/response';
 import {
     gateAlerts,
     gateComparator,
-    gateEarlyEventAccess,
     gateExclusiveDeals,
     gateFavorites,
     gateRecommendations,
@@ -402,7 +401,7 @@ describe('entitlementMiddleware', () => {
                 // Every entitlement key granted
                 expect(data.entitlements).toHaveLength(Object.values(EntitlementKey).length);
                 expect(data.entitlements).toContain(EntitlementKey.PUBLISH_ACCOMMODATIONS);
-                expect(data.entitlements).toContain(EntitlementKey.WHITE_LABEL);
+                expect(data.entitlements).toContain(EntitlementKey.CUSTOM_BRANDING);
                 expect(data.entitlements).toContain(EntitlementKey.SAVE_FAVORITES);
                 // Every limit unlimited (-1)
                 expect(data.limits[LimitKey.MAX_ACCOMMODATIONS]).toBe(-1);
@@ -2386,77 +2385,6 @@ describe('Tourist Entitlement Gates', () => {
             const data = await res.json();
             expect(data.error.code).toBe('ENTITLEMENT_REQUIRED');
             expect(data.error.message).toContain('VIP');
-        });
-    });
-
-    describe('gateEarlyEventAccess', () => {
-        it('should allow access when user has entitlement', async () => {
-            app.use((c, next) => {
-                c.set('userEntitlements', new Set([EntitlementKey.EARLY_ACCESS_EVENTS]));
-                // Event starts in 12 hours (within 24h early access window)
-                const eventStart = new Date(Date.now() + 12 * 60 * 60 * 1000);
-                c.set('eventStartDate' as any, eventStart);
-                return next();
-            });
-            app.use(gateEarlyEventAccess());
-            app.post('/events/123/tickets', (c) => c.json({ ok: true }));
-
-            const res = await app.request('/events/123/tickets', { method: 'POST' });
-            expect(res.status).toBe(200);
-        });
-
-        it('should return 403 ENTITLEMENT_REQUIRED when user lacks entitlement', async () => {
-            app.use((c, next) => {
-                c.set('userEntitlements', new Set<EntitlementKey>());
-                return next();
-            });
-            app.use(gateEarlyEventAccess());
-            app.post('/events/123/tickets', (c) => c.json({ ok: true }));
-            app.onError(createErrorHandler());
-
-            const res = await app.request('/events/123/tickets', { method: 'POST' });
-            expect(res.status).toBe(403);
-
-            const data = await res.json();
-            expect(data.error.code).toBe('ENTITLEMENT_REQUIRED');
-        });
-
-        it('should return 403 FORBIDDEN when early access window has not started yet', async () => {
-            // Users WITH the entitlement but before the 24h window get FORBIDDEN + timing details,
-            // not ENTITLEMENT_REQUIRED. EARLY_ACCESS_NOT_STARTED is not a ServiceErrorCode;
-            // the ServiceError contract maps this to FORBIDDEN with earlyAccessStart/publicSaleStart
-            // in details (exercised by the staging smoke, not this bare-Hono harness).
-            app.use((c, next) => {
-                c.set('userEntitlements', new Set([EntitlementKey.EARLY_ACCESS_EVENTS]));
-                // Event starts in 36 hours (before 24h early access window)
-                const eventStart = new Date(Date.now() + 36 * 60 * 60 * 1000);
-                c.set('eventStartDate' as any, eventStart);
-                return next();
-            });
-            app.use(gateEarlyEventAccess());
-            app.post('/events/123/tickets', (c) => c.json({ ok: true }));
-            app.onError(createErrorHandler());
-
-            const res = await app.request('/events/123/tickets', { method: 'POST' });
-            expect(res.status).toBe(403);
-
-            const data = await res.json();
-            expect(data.error.code).toBe('FORBIDDEN');
-        });
-
-        it('should allow access when event is in public sale period', async () => {
-            app.use((c, next) => {
-                c.set('userEntitlements', new Set([EntitlementKey.EARLY_ACCESS_EVENTS]));
-                // Event started 1 hour ago (in public sale period)
-                const eventStart = new Date(Date.now() - 1 * 60 * 60 * 1000);
-                c.set('eventStartDate' as any, eventStart);
-                return next();
-            });
-            app.use(gateEarlyEventAccess());
-            app.post('/events/123/tickets', (c) => c.json({ ok: true }));
-
-            const res = await app.request('/events/123/tickets', { method: 'POST' });
-            expect(res.status).toBe(200);
         });
     });
 

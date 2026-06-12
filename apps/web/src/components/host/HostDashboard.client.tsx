@@ -91,6 +91,7 @@ export function HostDashboard({ locale }: HostDashboardProps): JSX.Element {
     const [state, setState] = useState<DashboardState>({ status: 'loading' });
 
     // ── Fetch dashboard data ──────────────────────────────────────────────
+    // biome-ignore lint/correctness/useExhaustiveDependencies: t is a stable translation function bound to a fixed locale; including it would loop the effect (Maximum update depth)
     const fetchDashboard = useCallback(async () => {
         setState({ status: 'loading' });
         try {
@@ -118,7 +119,7 @@ export function HostDashboard({ locale }: HostDashboardProps): JSX.Element {
                         : t('host.dashboard.error', 'Error al cargar el panel')
             });
         }
-    }, [t]);
+    }, []);
 
     useEffect(() => {
         void fetchDashboard();
