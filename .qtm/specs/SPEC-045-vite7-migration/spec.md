@@ -6,6 +6,8 @@ The admin app (`apps/admin`) runs TanStack Start 1.131.26 on Vite 6.4.1. Upgradi
 
 This is a prerequisite for SPEC-042 (CSP Nonce/Hash Integration) to move from report-only to enforcement mode.
 
+> **Dependabot gating (SPEC-219):** `@tanstack/react-router` is pinned via `ignore` in `.github/dependabot.yml` because a `1.131 → 1.170` bump risks the documented `/healthz` path-intercept behavior (server route handlers are a no-op in `1.131.26`; see `apps/admin/CLAUDE.md`). **Lifting that `ignore` entry is part of THIS spec's completion:** when the upgrade lands, re-validate `/healthz` and then remove the `@tanstack/react-router` entry so Dependabot resumes bumping it. See [Dependabot Policy](../../../docs/guides/dependabot-policy.md).
+
 ## Current State
 
 | Package | Current Version |
@@ -28,12 +30,14 @@ This is a prerequisite for SPEC-042 (CSP Nonce/Hash Integration) to move from re
 TanStack Start >= 1.132.0 internalizes the React plugin. The `react()` plugin call and `customViteReactPlugin: true` flag must both be removed from `vite.config.ts`.
 
 **Before:**
+
 ```ts
 tanstackStart({ customViteReactPlugin: true }),
 react(),
 ```
 
 **After:**
+
 ```ts
 tanstackStart(),
 ```
@@ -43,6 +47,7 @@ tanstackStart(),
 The curried pattern is replaced with a direct callback.
 
 **Before (`server.ts`):**
+
 ```ts
 const handler = createStartHandler({ createRouter });
 export default defineHandlerCallback(async (event) => {
@@ -52,6 +57,7 @@ export default defineHandlerCallback(async (event) => {
 ```
 
 **After:**
+
 ```ts
 export default createStartHandler(({ request }) => {
     const router = createRouter();
@@ -68,12 +74,14 @@ Simple rename across all call sites.
 Server function middleware registration moves from `registerGlobalMiddleware` to the `createStart()` API which also supports HTTP request middleware.
 
 **Before (`start.ts`):**
+
 ```ts
 import { registerGlobalMiddleware } from '@tanstack/react-start';
 registerGlobalMiddleware({ middleware: [cspMiddleware] });
 ```
 
 **After:**
+
 ```ts
 import { createStart } from '@tanstack/react-start';
 export const start = createStart({
@@ -245,6 +253,7 @@ SPEC-045 is Phase B2 in the CSP enforcement chain. It runs in PARALLEL with SPEC
 ### What This Spec Unblocks
 
 Once SPEC-045 is complete, these previously blocked items become available:
+
 - **GAP-042-13**: Admin SSR initial page load gets CSP headers (CRITICAL)
 - **GAP-042-18**: `getCspNonce()` functional in router.tsx
 - **GAP-042-19**: TanStack Start >= 1.133.12 with `ssr.nonce` support
@@ -254,6 +263,7 @@ Once SPEC-045 is complete, these previously blocked items become available:
 ### Parallel Track
 
 SPEC-047 (web unsafe-inline removal) can execute simultaneously with this spec. They affect different apps:
+
 - **SPEC-045**: `apps/admin/` only
 - **SPEC-047**: `apps/web/` only
 

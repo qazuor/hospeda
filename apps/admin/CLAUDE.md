@@ -495,7 +495,9 @@ with no real users, fed almost entirely by the healthcheck. See engram
   TanStack Start `server.handlers` route. Server routes (`createFileRoute(...).server.handlers`)
   are a **no-op** in TanStack Start / router-generator `1.131.26`: the generator never emits
   `serverRouteTree`, so the SSR dispatch short-circuits and the handler never fires. Re-evaluate
-  if the framework is upgraded.
+  if the framework is upgraded. For this reason `@tanstack/react-router` is pinned (Dependabot
+  `ignore`) until SPEC-045 takes on the upgrade and re-validates `/healthz` — see
+  [Dependabot Policy](../../docs/guides/dependabot-policy.md).
 - **Dockerfile**: the `HEALTHCHECK` instruction in `apps/admin/Dockerfile` targets `/healthz`.
 - **Coolify caveat**: a healthcheck configured in the Coolify resource UI (Health Checks tab)
   OVERRIDES the Dockerfile instruction. When deploying, confirm the UI healthcheck (if any)
