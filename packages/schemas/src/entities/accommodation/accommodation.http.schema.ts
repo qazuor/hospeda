@@ -13,6 +13,7 @@ import {
 } from '../../api/http/base-http.schema.js';
 import { PriceCurrencyEnum } from '../../enums/currency.enum.js';
 import { AccommodationTypeEnumSchema, PriceCurrencyEnumSchema } from '../../enums/index.js';
+import { stripShapeDefaults } from '../../utils/utils.js';
 
 /**
  * HTTP-compatible accommodation search schema with automatic coercion
@@ -296,9 +297,13 @@ export type AccommodationCreateDraftHttp = z.infer<typeof AccommodationCreateDra
  * HTTP-compatible accommodation update schema
  * Handles partial updates via HTTP PATCH requests
  */
-export const AccommodationUpdateHttpSchema = AccommodationCreateHttpSchema.partial().omit({
-    ownerId: true // Owner cannot be changed after creation
-});
+// Zod 4 .partial() keeps .default(); strip them so absent keys = no change (SPEC-217).
+export const AccommodationUpdateHttpSchema = z
+    .object(stripShapeDefaults(AccommodationCreateHttpSchema.shape))
+    .partial()
+    .omit({
+        ownerId: true // Owner cannot be changed after creation
+    });
 
 export type AccommodationUpdateHttp = z.infer<typeof AccommodationUpdateHttpSchema>;
 

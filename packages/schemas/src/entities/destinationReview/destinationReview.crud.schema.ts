@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { DestinationReviewIdSchema } from '../../common/id.schema.js';
+import { stripShapeDefaults } from '../../utils/utils.js';
 import { DestinationReviewSchema } from './destinationReview.schema.js';
 
 /**
@@ -75,22 +76,28 @@ export const DestinationReviewCreateOutputSchema = DestinationReviewSchema;
  * except required ones. Moderation fields are managed through the dedicated
  * moderation endpoint, not through standard CRUD operations.
  */
-export const DestinationReviewUpdateInputSchema = DestinationReviewSchema.omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-    createdById: true,
-    updatedById: true,
-    deletedAt: true,
-    deletedById: true,
-    userId: true, // Cannot change the user who wrote the review
-    destinationId: true, // Cannot change the destination being reviewed
-    averageRating: true, // Computed/denormalized field, not user-settable
-    moderationState: true,
-    moderatedById: true,
-    moderatedAt: true,
-    moderationReason: true
-})
+// Zod 4 .partial() keeps .default(); strip them so absent keys = no change (SPEC-217).
+export const DestinationReviewUpdateInputSchema = z
+    .object(
+        stripShapeDefaults(
+            DestinationReviewSchema.omit({
+                id: true,
+                createdAt: true,
+                updatedAt: true,
+                createdById: true,
+                updatedById: true,
+                deletedAt: true,
+                deletedById: true,
+                userId: true, // Cannot change the user who wrote the review
+                destinationId: true, // Cannot change the destination being reviewed
+                averageRating: true, // Computed/denormalized field, not user-settable
+                moderationState: true,
+                moderatedById: true,
+                moderatedAt: true,
+                moderationReason: true
+            }).shape
+        )
+    )
     .partial()
     .strict();
 

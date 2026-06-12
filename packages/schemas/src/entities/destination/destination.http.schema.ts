@@ -12,6 +12,7 @@ import {
     createBooleanQueryParam
 } from '../../api/http/base-http.schema.js';
 import { DestinationTypeEnumSchema } from '../../enums/destination-type.schema.js';
+import { stripShapeDefaults } from '../../utils/utils.js';
 
 /**
  * HTTP-compatible destination search schema with automatic coercion
@@ -97,7 +98,10 @@ export type DestinationCreateHttp = z.infer<typeof DestinationCreateHttpSchema>;
  * HTTP-compatible destination update schema
  * Handles partial updates via HTTP PATCH requests
  */
-export const DestinationUpdateHttpSchema = DestinationCreateHttpSchema.partial();
+// Zod 4 .partial() keeps .default(); strip them so absent keys = no change (SPEC-217).
+export const DestinationUpdateHttpSchema = z
+    .object(stripShapeDefaults(DestinationCreateHttpSchema.shape))
+    .partial();
 
 export type DestinationUpdateHttp = z.infer<typeof DestinationUpdateHttpSchema>;
 

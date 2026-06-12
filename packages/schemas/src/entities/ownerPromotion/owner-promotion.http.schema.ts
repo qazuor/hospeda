@@ -14,6 +14,7 @@ import {
 import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
 import { LifecycleStatusEnumSchema } from '../../enums/lifecycle-state.schema.js';
 import { OwnerPromotionDiscountTypeEnumSchema } from '../../enums/owner-promotion-discount-type.schema.js';
+import { stripShapeDefaults } from '../../utils/utils.js';
 
 /**
  * HTTP-compatible owner promotion search schema with automatic coercion
@@ -87,7 +88,10 @@ export type OwnerPromotionCreateHttp = z.infer<typeof OwnerPromotionCreateHttpSc
  * HTTP-compatible owner promotion update schema
  * Handles partial updates via HTTP PATCH requests
  */
-export const OwnerPromotionUpdateHttpSchema = OwnerPromotionCreateHttpSchema.partial();
+// Zod 4 .partial() keeps .default(); strip them so absent keys = no change (SPEC-217).
+export const OwnerPromotionUpdateHttpSchema = z
+    .object(stripShapeDefaults(OwnerPromotionCreateHttpSchema.shape))
+    .partial();
 
 export type OwnerPromotionUpdateHttp = z.infer<typeof OwnerPromotionUpdateHttpSchema>;
 

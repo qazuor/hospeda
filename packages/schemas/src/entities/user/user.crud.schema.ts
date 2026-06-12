@@ -3,6 +3,7 @@ import { UserIdSchema } from '../../common/id.schema.js';
 import { StrongPasswordSchema } from '../../common/password.schema.js';
 import { PermissionEnumSchema, RoleEnumSchema } from '../../enums/index.js';
 import { ModerationStatusEnumSchema } from '../../enums/moderation-status.schema.js';
+import { stripShapeDefaults } from '../../utils/utils.js';
 import { UserSchema } from './user.schema.js';
 
 /**
@@ -44,19 +45,26 @@ export const UserCreateOutputSchema = UserSchema;
 // UPDATE SCHEMAS
 // ============================================================================
 
+// Zod 4 .partial() keeps .default(); strip them so absent keys = no change (SPEC-217).
 /**
  * Schema for updating a user (PUT - complete replacement)
  * Omits auto-generated fields and makes all fields partial
  */
-export const UserUpdateInputSchema = UserSchema.omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-    createdById: true,
-    updatedById: true,
-    deletedAt: true,
-    deletedById: true
-}).partial();
+export const UserUpdateInputSchema = z
+    .object(
+        stripShapeDefaults(
+            UserSchema.omit({
+                id: true,
+                createdAt: true,
+                updatedAt: true,
+                createdById: true,
+                updatedById: true,
+                deletedAt: true,
+                deletedById: true
+            }).shape
+        )
+    )
+    .partial();
 
 /**
  * Schema for partial user updates (PATCH)

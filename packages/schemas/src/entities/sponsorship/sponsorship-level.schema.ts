@@ -3,6 +3,7 @@ import { BaseAuditFields } from '../../common/audit.schema.js';
 import { SponsorshipLevelIdSchema } from '../../common/id.schema.js';
 import { SponsorshipTargetTypeEnumSchema } from '../../enums/sponsorship-target-type.schema.js';
 import { SponsorshipTierEnumSchema } from '../../enums/sponsorship-tier.schema.js';
+import { stripShapeDefaults } from '../../utils/utils.js';
 
 /**
  * Benefit definition for a sponsorship level
@@ -92,7 +93,10 @@ export type SponsorshipLevelCreateInput = z.infer<typeof SponsorshipLevelCreateI
 /**
  * Update input for sponsorship level
  */
-export const SponsorshipLevelUpdateInputSchema = SponsorshipLevelCreateInputSchema.partial();
+// Zod 4 .partial() keeps .default(); strip them so absent keys = no change (SPEC-217).
+export const SponsorshipLevelUpdateInputSchema = z
+    .object(stripShapeDefaults(SponsorshipLevelCreateInputSchema.shape))
+    .partial();
 export type SponsorshipLevelUpdateInput = z.infer<typeof SponsorshipLevelUpdateInputSchema>;
 
 /**

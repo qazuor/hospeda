@@ -8,6 +8,7 @@
 import { z } from 'zod';
 import { BaseHttpSearchSchema, createBooleanQueryParam } from '../../api/http/base-http.schema.js';
 import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
+import { stripShapeDefaults } from '../../utils/utils.js';
 
 /**
  * HTTP-compatible destination review search schema with automatic coercion
@@ -107,7 +108,10 @@ export type DestinationReviewCreateHttp = z.infer<typeof DestinationReviewCreate
  * HTTP-compatible destination review update schema
  * Handles partial updates via HTTP PATCH requests
  */
-export const DestinationReviewUpdateHttpSchema = DestinationReviewCreateHttpSchema.partial();
+// Zod 4 .partial() keeps .default(); strip them so absent keys = no change (SPEC-217).
+export const DestinationReviewUpdateHttpSchema = z
+    .object(stripShapeDefaults(DestinationReviewCreateHttpSchema.shape))
+    .partial();
 
 export type DestinationReviewUpdateHttp = z.infer<typeof DestinationReviewUpdateHttpSchema>;
 
