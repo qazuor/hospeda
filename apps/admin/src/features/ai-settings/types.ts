@@ -151,6 +151,8 @@ export interface AiPromptVersion {
     readonly feature: string;
     readonly version: number;
     readonly content: string;
+    /** Optional guardrail rules appended after the main prompt content. Nullable to match the API contract (z.string().nullable()). */
+    readonly rules?: string | null;
     readonly isActive: boolean;
     readonly createdAt: string;
 }
@@ -159,5 +161,7 @@ export interface AiPromptVersion {
 export interface CreateAiPromptPayload {
     readonly feature: string;
     readonly content: string;
+    /** Optional guardrail rules. When omitted the API falls back to built-in defaults. */
+    readonly rules?: string;
     readonly activate?: boolean;
 }

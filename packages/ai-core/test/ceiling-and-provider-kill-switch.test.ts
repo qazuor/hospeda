@@ -49,9 +49,10 @@ import { DEFAULT_COST_CEILINGS } from '../src/usage/model-rates.js';
 
 vi.mock('../src/config/prompt-resolver.js', () => ({
     resolveSystemPrompt: vi.fn(() =>
-        Promise.resolve({ content: 'default system prompt', source: 'default' })
+        Promise.resolve({ content: 'default system prompt', rules: '', source: 'default' })
     ),
-    invalidatePromptCache: vi.fn()
+    invalidatePromptCache: vi.fn(),
+    composeSystemPrompt: vi.fn(({ content }: { content: string; rules: string | null }) => content)
 }));
 
 // ---------------------------------------------------------------------------
@@ -77,23 +78,6 @@ const mockIsFeatureKillSwitched = configResolver.isFeatureKillSwitched as Return
 const mockGetProviderOrder = configResolver.getProviderOrder as ReturnType<typeof vi.fn>;
 
 // ---------------------------------------------------------------------------
-// Mock: prompt-resolver — no DB required (T-034)
-//
-// engine.ts calls resolveSystemPrompt from config/prompt-resolver.ts which
-// in turn reads from storage. Mock the entire resolver so engine tests in
-// this file are unaffected by the new system-prompt injection.
-// ---------------------------------------------------------------------------
-
-vi.mock('../src/config/prompt-resolver.js', () => {
-    return {
-        resolveSystemPrompt: vi.fn(() =>
-            Promise.resolve({ content: 'default system prompt', source: 'default' })
-        ),
-        invalidatePromptCache: vi.fn()
-    };
-});
-
-// ---------------------------------------------------------------------------
 // Mock: storage (aggregateAiUsageByMonth + resolveConfig dependency for ceiling.ts)
 // ---------------------------------------------------------------------------
 
@@ -109,10 +93,17 @@ vi.mock('../src/storage/index.js', () => ({
     AiSettingsParseError: class AiSettingsParseError extends Error {}
 }));
 
+import * as promptResolverModule from '../src/config/prompt-resolver.js';
 import * as storageModule from '../src/storage/index.js';
 import { checkCostCeiling } from '../src/usage/ceiling.js';
 
 const mockAggregateByMonth = storageModule.aggregateAiUsageByMonth as ReturnType<typeof vi.fn>;
+const mockResolveSystemPrompt = promptResolverModule.resolveSystemPrompt as ReturnType<
+    typeof vi.fn
+>;
+const mockComposeSystemPrompt = promptResolverModule.composeSystemPrompt as ReturnType<
+    typeof vi.fn
+>;
 
 // ---------------------------------------------------------------------------
 // Shared fixtures
@@ -164,6 +155,17 @@ beforeEach(() => {
 
     // Default: aggregateAiUsageByMonth returns no rows (zero spend).
     mockAggregateByMonth.mockResolvedValue([]);
+
+    // Restore prompt-resolver mocks after resetAllMocks so engine tests can
+    // proceed (resolveSystemPrompt is called on every engine capability call).
+    mockResolveSystemPrompt.mockResolvedValue({
+        content: 'default system prompt',
+        rules: '',
+        source: 'default'
+    });
+    mockComposeSystemPrompt.mockImplementation(
+        ({ content }: { content: string; rules: string | null }) => content
+    );
 });
 
 // ---------------------------------------------------------------------------

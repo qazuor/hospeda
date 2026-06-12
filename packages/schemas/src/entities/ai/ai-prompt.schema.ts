@@ -41,6 +41,12 @@ export const AiPromptVersionSchema = z.object({
      */
     content: z.string().min(1),
     /**
+     * Editable hard rules / guardrails, managed separately from `content` and
+     * composed after it at runtime (SPEC-214). `null` falls back to the in-code
+     * `DEFAULT_RULES[feature]`, preserving the pre-migration effective prompt.
+     */
+    rules: z.string().nullable(),
+    /**
      * Whether this is the currently active prompt for the feature.
      * Only one row per feature should have `isActive = true` at any time
      * (enforced by the service layer, not by a DB constraint in V1).
@@ -78,6 +84,11 @@ export const CreateAiPromptVersionSchema = z.object({
     feature: AiFeatureSchema,
     /** System-prompt content. */
     content: z.string().min(1),
+    /**
+     * Optional editable rules / guardrails (SPEC-214). Omit to leave `null`
+     * (runtime then falls back to `DEFAULT_RULES[feature]`).
+     */
+    rules: z.string().optional(),
     /**
      * Whether to activate this prompt immediately.
      * Defaults to `true` (replaces the current active prompt for the feature).

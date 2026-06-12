@@ -70,7 +70,7 @@ import type {
 } from '@repo/schemas';
 import type { AiFeatureConfig } from '@repo/schemas';
 import type { ZodType } from 'zod';
-import { resolveSystemPrompt } from '../config/prompt-resolver.js';
+import { composeSystemPrompt, resolveSystemPrompt } from '../config/prompt-resolver.js';
 import {
     getProviderOrder,
     isFeatureKillSwitched,
@@ -680,9 +680,10 @@ export function createAiEngine(input: CreateAiEngineInput): AiEngine {
             // prompt and inject it into the request using the caller-wins policy.
             // If the caller already supplied a system message, the request is
             // passed through unchanged. Otherwise the resolved prompt is prepended.
-            const { content: systemContent } = await resolveSystemPrompt({
+            const { content: systemBody, rules: systemRules } = await resolveSystemPrompt({
                 feature: req.feature
             });
+            const systemContent = composeSystemPrompt({ content: systemBody, rules: systemRules });
             const injectedReq = injectSystemPrompt({ req, systemContent });
 
             // Inject the model from feature config if not already set by the caller.
@@ -746,8 +747,12 @@ export function createAiEngine(input: CreateAiEngineInput): AiEngine {
 
             // System-prompt injection (T-034, AC-12): same caller-wins policy as
             // generateText — resolve and inject the system prompt before routing.
-            const { content: streamSystemContent } = await resolveSystemPrompt({
+            const { content: streamBody, rules: streamRules } = await resolveSystemPrompt({
                 feature: req.feature
+            });
+            const streamSystemContent = composeSystemPrompt({
+                content: streamBody,
+                rules: streamRules
             });
             const injectedStreamReq = injectSystemPrompt({
                 req,
@@ -821,8 +826,12 @@ export function createAiEngine(input: CreateAiEngineInput): AiEngine {
             // content to the prompt string.  Caller-wins: if the caller already
             // embedded a system instruction in their prompt, this prepend is still
             // safe because the model treats the system block as higher-priority context.
-            const { content: objectSystemContent } = await resolveSystemPrompt({
+            const { content: objectBody, rules: objectRules } = await resolveSystemPrompt({
                 feature: req.feature
+            });
+            const objectSystemContent = composeSystemPrompt({
+                content: objectBody,
+                rules: objectRules
             });
             const injectedObjectReq: GenerateObjectRequest = {
                 ...req,

@@ -235,6 +235,38 @@ describe('admin AI prompts routes (SPEC-173 T-028)', () => {
                 expect.objectContaining({ isActive: true })
             );
         });
+
+        it('passes rules to createPromptVersion when provided', async () => {
+            const rowWithRules = { ...PROMPT_ROW_V1, rules: 'Always respond in Spanish.' };
+            mockCreatePromptVersion.mockResolvedValue(rowWithRules);
+
+            const handler = capturedAdminHandlers.get('/') as CapturedHandler;
+            const res = await handler(fakeCtx, undefined, {
+                feature: 'text_improve',
+                content: 'You are a writing assistant.',
+                isActive: true,
+                rules: 'Always respond in Spanish.'
+            });
+
+            expect(mockCreatePromptVersion).toHaveBeenCalledWith(
+                expect.objectContaining({ rules: 'Always respond in Spanish.' })
+            );
+            expect((res as typeof rowWithRules).rules).toBe('Always respond in Spanish.');
+        });
+
+        it('passes rules as undefined when not provided (leaves it null/undefined on the row)', async () => {
+            mockCreatePromptVersion.mockResolvedValue(PROMPT_ROW_V1);
+
+            const handler = capturedAdminHandlers.get('/') as CapturedHandler;
+            await handler(fakeCtx, undefined, {
+                feature: 'text_improve',
+                content: 'prompt text'
+                // rules omitted
+            });
+
+            const call = mockCreatePromptVersion.mock.calls[0]?.[0] as Record<string, unknown>;
+            expect(call.rules).toBeUndefined();
+        });
     });
 
     // ---- Activate -----------------------------------------------------------
