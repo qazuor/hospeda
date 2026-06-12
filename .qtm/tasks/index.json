@@ -15,10 +15,12 @@
         {
             "specId": "SPEC-200",
             "title": "AI Accommodation Chat (tourist)",
-            "status": "in-progress",
-            "progress": "11/12",
+            "status": "completed",
+            "progress": "12/12",
             "path": "SPEC-200-ai-accommodation-chat",
-            "archived": false,
+            "archived": true,
+            "archivedAt": "2026-06-12T00:00:00Z",
+            "archiveNote": "Drift fix: fully implemented + promoted to main in #1542; no state.json backed the 11/12.",
             "note": "Implemented and merged to staging via PRs #1492/#1494/#1497/#1507. Prod-readiness fixes (debug-leak, getById 404/403, ghost-bubble, FAB focus, maxTokens cap, 503 mapping, vault-key prod-required, admin url no-op) on branch fix/SPEC-200-prod-readiness (PR #1520). Chat works (ai_chat granted to every plan, tourists included); monetization is provisional: quota charged to the tourist, not the accommodation owner. SPEC-211 reworks this (owner-governed chat + Model C); SPEC-200 ships to prod after SPEC-211 Phase 0 cost mitigation."
         },
         {
@@ -356,9 +358,12 @@
         {
             "specId": "SPEC-195",
             "title": "Content Auto-Moderation Engine",
-            "status": "in-progress",
-            "progress": "6/7",
-            "path": "SPEC-195-content-auto-moderation"
+            "status": "completed",
+            "progress": "7/7",
+            "path": "SPEC-195-content-auto-moderation",
+            "archived": true,
+            "archivedAt": "2026-06-12T00:00:00Z",
+            "archiveNote": "Drift fix: fully implemented + promoted to main in #1542; no state.json backed the 6/7."
         },
         {
             "specId": "SPEC-199",
