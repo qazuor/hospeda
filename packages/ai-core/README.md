@@ -141,14 +141,40 @@ The same 5-minute TTL applies to system prompts via `resolveSystemPrompt()` and
 ### Prompt resolution
 
 System prompts are stored in `ai_prompt_versions` (one active row per feature, with
-history). The admin can edit prompts at runtime; changes take effect after the TTL
+history). Each row carries two editable fields:
+
+- **`content`** — the conversational body of the system prompt.
+- **`rules`** — the guardrails / policy block, edited independently from admin
+  (SPEC-214). Nullable: a `null`/blank value falls back to `DEFAULT_RULES[feature]`
+  at runtime.
+
+The admin can edit both fields at runtime; changes take effect after the TTL
 expires or the cache is invalidated.
 
-A code-level default prompt is **mandatory** for every feature (AC-12). If the
-active admin prompt is missing or invalid, the engine falls back to the in-code
-defaults in `src/engine/default-prompts.ts` and the feature continues serving.
+A code-level default is **mandatory** for every feature (AC-12). `content` falls
+back to `DEFAULT_PROMPTS[feature]` and `rules` to `DEFAULT_RULES[feature]` — both in
+`src/engine/default-prompts.ts`. The two fall back **independently**: an admin row
+may override `content` while leaving `rules` null (so the default guardrails still
+apply), and vice versa. `resolveSystemPrompt()` returns `{ content, rules, source }`.
+
+**Composition.** The effective system prompt is `content` + a blank line + `rules`,
+with the rules block appended **last** as the authoritative guardrail. Use the
+`composeSystemPrompt()` helper — never concatenate by hand:
+
+```ts
+import { resolveSystemPrompt, composeSystemPrompt } from '@repo/ai-core';
+
+const { content, rules } = await resolveSystemPrompt({ feature: 'text_improve' });
+const systemPrompt = composeSystemPrompt({ content, rules });
+// systemPrompt === `${content}\n\n${rules}` (a blank/missing rules returns content unchanged)
+```
+
 System-message injection from the caller wins over the stored prompt when both are
 present.
+
+> **`support` feature.** Its `content`/`rules` are seeded and editable from admin,
+> but `support` has **no runtime API route** yet, so composition is not exercised
+> for it. The field exists for forward compatibility; do not assume a live endpoint.
 
 ---
 
