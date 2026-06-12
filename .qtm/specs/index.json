@@ -918,11 +918,13 @@
             "title": "Editable AI prompt rules (DB-backed, per feature)",
             "type": "feature",
             "complexity": "medium",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-214-ai-prompt-rules-editable",
             "created": "2026-06-10T21:35:00Z",
             "tags": ["ai", "ai-core", "admin", "prompts", "db-migration"],
-            "archived": false
+            "archived": true,
+            "archivedAt": "2026-06-12T17:39:12Z",
+            "completionRef": "PR #1583 merged to staging"
         },
         {
             "specId": "SPEC-215",
@@ -940,22 +942,26 @@
             "title": "Owner plans inherit tourist entitlements & limits (owner = superset of tourist)",
             "type": "improvement",
             "complexity": "medium",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-216-owner-inherits-tourist-entitlements",
             "created": "2026-06-10T22:15:00Z",
             "tags": ["billing", "entitlements", "plans", "owner", "tourist"],
-            "archived": false
+            "archived": true,
+            "archivedAt": "2026-06-12T00:00:00Z",
+            "completionRef": "PR #1579 merged to staging"
         },
         {
             "specId": "SPEC-218",
             "title": "astro check in web CI — load the App.Locals augmentation, clean .astro type errors, gate typecheck",
             "type": "improvement",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": "medium",
             "path": "SPEC-218-astro-check-web-typecheck",
             "base": "staging",
             "priority": "P2",
-            "archived": false
+            "archived": true,
+            "archivedAt": "2026-06-12T00:00:00Z",
+            "completionRef": "PR #1578 merged to staging"
         },
         {
             "specId": "SPEC-212",
