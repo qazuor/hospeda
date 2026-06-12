@@ -24,12 +24,13 @@
  */
 
 import { ownerPromotionApi } from '@/lib/api/endpoints-protected';
+import { transformOwnerPromotion } from '@/lib/api/transforms';
 import type { OwnerPromotionData } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { OwnerPromotionDiscountTypeEnum, OwnerPromotionUpdateInputSchema } from '@repo/schemas';
-import { type ChangeEvent, type FormEvent, useId, useState } from 'react';
+import { type ChangeEvent, type FormEvent, useEffect, useId, useState } from 'react';
 import styles from './PromotionForm.module.css';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -102,6 +103,13 @@ function buildInitialFields(data?: OwnerPromotionData): FormFields {
 
 const DISCOUNT_TYPE_VALUES = Object.values(OwnerPromotionDiscountTypeEnum);
 
+// ─── Data-load state (edit mode without initialData) ─────────────────────────
+
+type DataLoadState =
+    | { readonly status: 'idle' }
+    | { readonly status: 'loading' }
+    | { readonly status: 'error'; readonly message: string };
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 /**
@@ -110,7 +118,9 @@ const DISCOUNT_TYPE_VALUES = Object.values(OwnerPromotionDiscountTypeEnum);
  * Create mode: validates with OwnerPromotionCreateInputSchema, POSTs via
  * ownerPromotionApi.create().
  * Edit mode: validates with OwnerPromotionUpdateInputSchema, PUTs via
- * ownerPromotionApi.update().
+ * ownerPromotionApi.update(). When no `initialData` is provided, the island
+ * fetches the promotion record via `ownerPromotionApi.getById({ id: promotionId })`
+ * on mount and shows a loading indicator until data arrives.
  * Success: redirects to /{locale}/mi-cuenta/promociones/.
  */
 export function PromotionForm({ locale, mode, initialData, promotionId }: PromotionFormProps) {
@@ -126,11 +136,61 @@ export function PromotionForm({ locale, mode, initialData, promotionId }: Promot
     const maxRedemptionsId = useId();
     const accommodationIdId = useId();
 
+    // Whether we need to fetch the promotion record before the form can render.
+    const needsFetch = mode === 'edit' && !initialData && !!promotionId;
+
+    const [dataLoad, setDataLoad] = useState<DataLoadState>(
+        needsFetch ? { status: 'loading' } : { status: 'idle' }
+    );
     const [fields, setFields] = useState<FormFields>(() => buildInitialFields(initialData));
     const [errors, setErrors] = useState<FieldErrors>({});
     const [formError, setFormError] = useState<string | null>(null);
     const [isLimitReached, setIsLimitReached] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // ── Fetch promotion data in edit mode ─────────────────────────────────
+    // biome-ignore lint/correctness/useExhaustiveDependencies: needsFetch encodes promotionId (stable prop); t is stable per locale; listing them would cause infinite re-fetch loops
+    useEffect(() => {
+        if (!needsFetch) return;
+
+        let cancelled = false;
+
+        async function fetchPromotion(): Promise<void> {
+            const loadFailed = 'No se pudo cargar la promoción.';
+            try {
+                const result = await ownerPromotionApi.getById({
+                    id: promotionId as string
+                });
+                if (cancelled) return;
+
+                if (!result.ok) {
+                    setDataLoad({
+                        status: 'error',
+                        message: result.error.message ?? loadFailed
+                    });
+                    return;
+                }
+
+                const promotion = transformOwnerPromotion({
+                    item: result.data as Record<string, unknown>
+                });
+                setFields(buildInitialFields(promotion));
+                setDataLoad({ status: 'idle' });
+            } catch (err) {
+                if (cancelled) return;
+                setDataLoad({
+                    status: 'error',
+                    message: err instanceof Error ? err.message : loadFailed
+                });
+            }
+        }
+
+        void fetchPromotion();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [needsFetch]);
 
     const promotionsListUrl = buildUrl({ locale, path: 'mi-cuenta/promociones' });
 
@@ -290,6 +350,39 @@ export function PromotionForm({ locale, mode, initialData, promotionId }: Promot
         } finally {
             setIsSubmitting(false);
         }
+    }
+
+    // ── Render: data loading (edit mode, fetching promotion) ─────────────
+    if (dataLoad.status === 'loading') {
+        return (
+            <div
+                className={styles.promotionForm}
+                aria-busy="true"
+                aria-label={t('host.promotions.actions.edit', 'Editar promoción')}
+            >
+                <p className={styles.loadingText}>
+                    {t('host.promotions.loading', 'Cargando promoción...')}
+                </p>
+            </div>
+        );
+    }
+
+    // ── Render: data load error ────────────────────────────────────────────
+    if (dataLoad.status === 'error') {
+        return (
+            <div
+                className={styles.promotionForm}
+                role="alert"
+            >
+                <p className="form-error">{dataLoad.message}</p>
+                <a
+                    href={promotionsListUrl}
+                    className="btn-secondary"
+                >
+                    {t('host.promotions.actions.cancel', 'Cancelar')}
+                </a>
+            </div>
+        );
     }
 
     return (

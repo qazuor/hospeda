@@ -1,0 +1,63 @@
+---
+/**
+ * @file mi-cuenta/promociones/index.astro
+ * @description Owner promotions listing page — shows the authenticated owner's
+ * promotions via the PromotionList React island.
+ *
+ * Auth protection: middleware redirects unauthenticated users. This page
+ * is only reachable by users with an active session.
+ *
+ * @route    /[lang]/mi-cuenta/promociones/
+ * @rendering SSR (prerender = false — requires authenticated user)
+ */
+
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import { PromotionList } from '@/components/host/PromotionList.client';
+
+export const prerender = false;
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+
+const title = t('host.promotions.pageTitle', 'Mis promociones');
+const description = t('host.promotions.pageDescription', 'Gestioná tus promociones y descuentos');
+
+// Auth guard: middleware protects /mi-cuenta/* automatically, safety net.
+const user = Astro.locals.user;
+if (!user) {
+    return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
+}
+---
+
+<AccountLayout locale={locale} title={title} description={description} activeSection="promociones">
+    <div class="promos-page__header">
+        <h2 class="promos-page__title">{title}</h2>
+        <p class="promos-page__subtitle">{description}</p>
+    </div>
+
+    <PromotionList client:load locale={locale} />
+</AccountLayout>
+
+<style>
+    .promos-page__header {
+        margin-bottom: var(--space-6);
+    }
+
+    .promos-page__title {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: clamp(1.5rem, 3vw, 2rem);
+        color: var(--core-foreground);
+        margin: 0 0 0.25rem;
+    }
+
+    .promos-page__subtitle {
+        font-family: var(--font-sans);
+        font-size: var(--text-body-sm, 0.9375rem);
+        color: var(--core-muted-foreground);
+        margin: 0;
+    }
+</style>

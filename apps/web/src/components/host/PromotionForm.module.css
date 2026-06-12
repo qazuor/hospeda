@@ -45,3 +45,12 @@
     font-size: var(--font-size-sm, 0.875rem);
     color: var(--color-warning-text, #92400e);
 }
+
+/** Loading indicator text shown while fetching promotion data in edit mode. */
+.loadingText {
+    font-family: var(--font-sans);
+    font-size: var(--text-body, 1rem);
+    color: var(--core-muted-foreground);
+    padding: var(--space-8, 2rem) 0;
+    text-align: center;
+}

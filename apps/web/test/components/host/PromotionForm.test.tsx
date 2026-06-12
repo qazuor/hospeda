@@ -32,14 +32,16 @@ vi.mock('../../../src/lib/i18n', () => ({
     })
 }));
 
-/** ownerPromotionApi: intercept create / update — controlled by each test. */
+/** ownerPromotionApi: intercept create / update / getById — controlled by each test. */
 const mockCreate = vi.fn();
 const mockUpdate = vi.fn();
+const mockGetById = vi.fn();
 
 vi.mock('../../../src/lib/api/endpoints-protected', () => ({
     ownerPromotionApi: {
         create: (...args: unknown[]) => mockCreate(...args),
-        update: (...args: unknown[]) => mockUpdate(...args)
+        update: (...args: unknown[]) => mockUpdate(...args),
+        getById: (...args: unknown[]) => mockGetById(...args)
     }
 }));
 
@@ -345,5 +347,91 @@ describe('PromotionForm — edit mode', () => {
 
         // Redirect on success
         expect(window.location.href).toBe('/es/mi-cuenta/promociones/');
+    });
+
+    it('fetches promotion via getById when no initialData is provided and shows loading indicator', async () => {
+        // Arrange — getById never resolves (simulates in-flight fetch)
+        mockGetById.mockReturnValue(new Promise(() => {}));
+
+        render(
+            <PromotionForm
+                locale="es"
+                mode="edit"
+                promotionId="promo-uuid-1"
+            />
+        );
+
+        // Assert — loading indicator is shown, form is not rendered
+        expect(screen.getByText(/Cargando promoción/i)).toBeInTheDocument();
+        expect(screen.queryByLabelText(/Título/i)).not.toBeInTheDocument();
+
+        // Confirm getById was called with the correct id
+        expect(mockGetById).toHaveBeenCalledWith({ id: 'promo-uuid-1' });
+    });
+
+    it('prefills fields via getById when no initialData is provided', async () => {
+        // Arrange — getById resolves with a raw API response
+        const rawApiResponse = {
+            id: INITIAL_DATA.id,
+            slug: INITIAL_DATA.slug,
+            ownerId: INITIAL_DATA.ownerId,
+            accommodationId: null,
+            title: INITIAL_DATA.title,
+            description: INITIAL_DATA.description,
+            discountType: INITIAL_DATA.discountType,
+            discountValue: INITIAL_DATA.discountValue,
+            minNights: INITIAL_DATA.minNights,
+            validFrom: INITIAL_DATA.validFrom,
+            validUntil: INITIAL_DATA.validUntil,
+            maxRedemptions: INITIAL_DATA.maxRedemptions,
+            currentRedemptions: INITIAL_DATA.currentRedemptions,
+            lifecycleState: INITIAL_DATA.lifecycleState,
+            createdAt: INITIAL_DATA.createdAt,
+            updatedAt: INITIAL_DATA.updatedAt
+        };
+        mockGetById.mockResolvedValueOnce({ ok: true, data: rawApiResponse });
+
+        render(
+            <PromotionForm
+                locale="es"
+                mode="edit"
+                promotionId="promo-uuid-1"
+            />
+        );
+
+        // Wait for the fetch to complete and the form to appear
+        await waitFor(() => {
+            expect(screen.getByLabelText(/Título/i)).toBeInTheDocument();
+        });
+
+        // Assert — form is pre-filled from the fetched data
+        expect(screen.getByLabelText(/Título/i)).toHaveValue('Oferta de verano');
+        expect(screen.getByRole('combobox', { name: /Tipo de descuento/i })).toHaveValue(
+            'percentage'
+        );
+        expect(screen.getByLabelText(/Valor del descuento/i)).toHaveValue(15);
+    });
+
+    it('shows error state when getById fails without initialData', async () => {
+        // Arrange
+        mockGetById.mockResolvedValueOnce({
+            ok: false,
+            error: { message: 'Promoción no encontrada.' }
+        });
+
+        render(
+            <PromotionForm
+                locale="es"
+                mode="edit"
+                promotionId="promo-uuid-1"
+            />
+        );
+
+        // Assert — error state shown, form not rendered
+        await waitFor(() => {
+            expect(screen.getByRole('alert')).toBeInTheDocument();
+        });
+        expect(screen.getByText(/Promoción no encontrada/i)).toBeInTheDocument();
+        expect(screen.queryByLabelText(/Título/i)).not.toBeInTheDocument();
     });
 });
