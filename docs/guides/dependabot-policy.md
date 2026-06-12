@@ -21,9 +21,12 @@ secrets** (a GitHub security boundary). In `.github/workflows/ci.yml` the build
 URL env vars (`HOSPEDA_API_URL`, `VITE_API_URL`, `VITE_SITE_URL`, `VITE_ADMIN_URL`,
 `PUBLIC_*`) are sourced from `secrets.*`. In a Dependabot run they arrive empty.
 
-The admin build (`apps/admin`) validates these as URLs at build time
-(`z.string().url()` in `apps/admin/src/env.ts`, executed during `vite build` via
-`__root.tsx`). Empty strings fail validation and abort `admin#build`.
+The admin build (`apps/admin`) validates these as URLs at build time. The gate
+that fails is `AdminViteEnvSchema` in `apps/admin/vite.config.ts`: it parses
+`process.env` with `z.string().url()` as the config loads and `process.exit(1)`s
+on failure, before any render. Empty strings fail validation and abort
+`admin#build`. (`apps/admin/src/env.ts` is a SECOND, runtime-side validation with
+the same rules plus `VITE_ADMIN_URL`.)
 
 This used to fail on **every** Dependabot PR regardless of content. It is fixed
 (SPEC-219 T-002): when a secret is empty, the workflow falls back to a
@@ -38,11 +41,12 @@ so the build passes. The build never dereferences these URLs.
 
 ### The placeholder guard
 
-The placeholder must never reach a real/deploy build. `apps/admin/src/env.ts`
-rejects any `*.invalid` URL **unless** `ALLOW_PLACEHOLDER_ENV_URLS=true`, which is
-set **only** in the CI Build step (`ci.yml`). Deploy builds (Coolify) never set
-it, so a production build misconfigured with a placeholder fails loudly. The
-test job does not set it either, so the rejection path stays covered
+The placeholder must never reach a real/deploy build. Both validation gates
+(`vite.config.ts` at build time, `apps/admin/src/env.ts` at runtime) reject any
+`*.invalid` URL **unless** `ALLOW_PLACEHOLDER_ENV_URLS=true`, which is set
+**only** in the CI Build step (`ci.yml`). Deploy builds (Coolify) never set it,
+so a production build misconfigured with a placeholder fails loudly. The test
+job does not set it either, so the rejection path stays covered
 (`apps/admin/test/env.test.ts`).
 
 ## The three CI job classes a Dependabot PR must satisfy
