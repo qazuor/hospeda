@@ -265,7 +265,7 @@ describe('admin AI prompts routes (SPEC-173 T-028)', () => {
             });
 
             const call = mockCreatePromptVersion.mock.calls[0]?.[0] as Record<string, unknown>;
-            expect(call).not.toHaveProperty('rules', expect.anything());
+            expect(call.rules).toBeUndefined();
         });
     });
 

@@ -133,6 +133,47 @@ describe('resolveSystemPrompt', () => {
             expect(result.content).toBe('Custom admin system prompt.');
             expect(result.source).toBe('admin');
         });
+
+        // SPEC-214 US-3: a non-null `rules` on the admin row must be returned
+        // verbatim (NOT replaced by DEFAULT_RULES).
+        it('should return the admin row rules when present, not DEFAULT_RULES', async () => {
+            // Arrange
+            mockGetActivePrompt.mockResolvedValue({
+                content: 'Custom admin system prompt.',
+                row: {
+                    id: 'row-1',
+                    feature: 'text_improve',
+                    isActive: true,
+                    rules: 'Custom guardrail block.'
+                }
+            });
+
+            // Act
+            const result = await resolveSystemPrompt({ feature: 'text_improve' });
+
+            // Assert
+            expect(result.rules).toBe('Custom guardrail block.');
+            expect(result.rules).not.toBe(DEFAULT_RULES.text_improve);
+            expect(result.source).toBe('admin');
+        });
+
+        // SPEC-214 US-3: content and rules fall back independently — an admin row
+        // may override content while leaving rules null (→ DEFAULT_RULES).
+        it('should keep admin content but fall back to DEFAULT_RULES when row rules is null', async () => {
+            // Arrange
+            mockGetActivePrompt.mockResolvedValue({
+                content: 'Custom admin system prompt.',
+                row: { id: 'row-1', feature: 'text_improve', isActive: true, rules: null }
+            });
+
+            // Act
+            const result = await resolveSystemPrompt({ feature: 'text_improve' });
+
+            // Assert
+            expect(result.content).toBe('Custom admin system prompt.');
+            expect(result.rules).toBe(DEFAULT_RULES.text_improve);
+            expect(result.source).toBe('admin');
+        });
     });
 
     // -------------------------------------------------------------------------
