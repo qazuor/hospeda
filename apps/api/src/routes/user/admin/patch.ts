@@ -49,7 +49,10 @@ export const adminPatchUserRoute = createAdminRoute({
             throw new ServiceError(result.error.code, result.error.message);
         }
 
-        // Audit permission/role changes
+        // Audit role changes. Permissions are NOT auditable here: they have no
+        // column on `users` and are not writable through the generic update
+        // schema — the canonical path is PermissionService / the dedicated
+        // `/admin/users/:id/permissions` endpoint.
         if (result.data && previousUser) {
             const patchRole = domainInput.role as string | undefined;
             if (patchRole !== undefined && patchRole !== previousUser.role) {
@@ -61,21 +64,6 @@ export const adminPatchUserRoute = createAdminRoute({
                     oldValue: previousUser.role,
                     newValue: patchRole
                 });
-            }
-            const patchPermissions = domainInput.permissions as string[] | undefined;
-            if (patchPermissions !== undefined) {
-                const oldPerms = (previousUser.permissions ?? []).sort().join(',');
-                const newPerms = [...patchPermissions].sort().join(',');
-                if (oldPerms !== newPerms) {
-                    auditLog({
-                        auditEvent: AuditEventType.PERMISSION_CHANGE,
-                        actorId: actor.id,
-                        targetUserId: id,
-                        changeType: 'permission_grant',
-                        oldValue: oldPerms,
-                        newValue: newPerms
-                    });
-                }
             }
         }
 
