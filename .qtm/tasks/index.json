@@ -375,9 +375,9 @@
             "specId": "SPEC-217",
             "title": "Deterministic Billing for E2E — QZPay test-control wiring + date-aware publish gate",
             "status": "in-progress",
-            "progress": "10/16",
+            "progress": "15/16",
             "path": "SPEC-217-qzpay-test-control-e2e-wiring",
-            "note": "10/16. Group A DONE (T-001..005,008,009,010): date-aware gate + write-gate + soft-cancel grace; host-03/04/07b green. Group B PARTIAL: T-006 re-wired Option B (call-site wrap in accommodation-publish-deps) + singleton fix (routes/index.ts require->import); T-007 CI flag done; T-012 host-07d DEFERRED (test.fixme). BLOCKED: T-011 (host-07c) + T-013 (res-01) e2e still 200 not 5xx — startTrial not invoked on publish; suspected publish-flow Zod-default re-injection of lifecycleState=ACTIVE, BUT contradicts host-01 passing in CI. NEXT = Option 2: cheap integration test (NO e2e harness) reproducing host-07c PATCH through real AccommodationService.update() to see if startTrial runs, BEFORE any shared-schema change. Then T-014/15/16 polish. Worktree spec-217."
+            "note": "15/16. Blocker RESOLVED: root cause was Zod 4 .partial() not stripping .default() — AccommodationUpdate/PatchInputSchema injected lifecycleState=ACTIVE etc., so a {lifecycleState:'ACTIVE'}-only PATCH ran a plain update (non-empty restFields) that flipped the row ACTIVE before publish(), bypassing startTrial. Fixed via stripShapeDefaults (accommodation + 31 other update/patch schemas repo-wide). T-011 (host-07c) + T-013 (res-01) now VERIFIED live: PATCH->5xx, DRAFT, no sub. Also fixed a real e2e fixture bug (qzpay-test-control did not unwrap the ResponseFactory envelope). T-014 done (comments already honest). T-015 done (no-silent-skip guard + self-tests). T-012 host-07d DEFERRED (covered by service-core unit tests). T-016 IN PROGRESS: local soak green x6 (3 seq + 3 parallel); remaining = 3x full PR-P0 CI soak on the PR (e2e-pr.yml has the flag). Worktree spec-217."
         }
     ],
     "standalone": {
