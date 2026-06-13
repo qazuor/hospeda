@@ -32,6 +32,21 @@ updates:
         update-types:
           - 'minor'
           - 'patch'
+    # Migration-gated packages. Their breaking changes arrive in MINOR bumps
+    # (not majors), so the group rules above cannot isolate them — a single
+    # minor bump can break the build/tests. Ignore ALL updates (incl. patch)
+    # until the owning migration spec lands and lifts the ignore. Removing an
+    # entry here is the deliberate trigger to take on that migration.
+    #   - zod: 4.4 made `.merge()` throw on object schemas containing refinements
+    #     (use `.safeExtend()`), breaking apps/admin env cross-validation and
+    #     cascading into E2E. Owner: SPEC-132 (Zod 4 migration).
+    #   - @tanstack/react-router: 1.131 -> 1.170 risks the documented /healthz
+    #     path-intercept behavior (apps/admin/CLAUDE.md). Owner: SPEC-045
+    #     (Vite/TanStack migration).
+    # Policy + routing: docs/guides/dependabot-policy.md (SPEC-219 T-003 / T-005).
+    ignore:
+      - dependency-name: 'zod'
+      - dependency-name: '@tanstack/react-router'
     commit-message:
       prefix: 'chore(deps)'
       prefix-development: 'chore(deps-dev)'
