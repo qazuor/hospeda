@@ -1,0 +1,59 @@
+# CodeQL Advanced Setup — replaces default setup.
+#
+# IMPORTANT: GitHub default setup must be DISABLED in the GitHub UI before (or
+# immediately when) this file reaches `main`. Advanced setup and default setup
+# cannot coexist. See the runbook:
+#   .qtm/specs/SPEC-220-staging-main-promotion-hardening/docs/codeql-advanced-setup-runbook.md
+#
+# Triggers mirror exactly what default setup did:
+#   - push to `main`
+#   - pull_request targeting `main`
+# Languages analysed: javascript-typescript, actions (same as default setup).
+# Neither language requires a build step (build-mode: none).
+
+name: CodeQL
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  security-events: write
+  actions: read
+  contents: read
+  packages: read
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language:
+          - javascript-typescript
+          - actions
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v4
+        with:
+          category: /language:${{ matrix.language }}
