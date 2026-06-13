@@ -449,18 +449,31 @@ The `task-master:session-resume` reminder at session start reads from `tasks/ind
 ### Specs Prioritization Tracker (`specs-prioritization.csv`)
 
 The repo root holds `specs-prioritization.csv` — a pipe-delimited (`|`) owner-facing
-prioritization board for every spec. Render it as an interactive HTML table with
-`python3 scripts/render-specs-prioritization.py` (filtering, sorting, status badges).
+prioritization board for every spec. Render / edit it with
+`python3 scripts/render-specs-prioritization.py`:
 
-**Keep it in sync — this is a standing rule, not on-demand:**
+- no flag → writes a read-only `specs-prioritization.html` and opens it (filter, sort, badges).
+- `--serve` → runs a localhost editor; owner-owned columns become editable and every
+  change is persisted back to the CSV (keyed by `rank`). `file://` cannot persist.
+
+**Two status columns by design** (do not conflate them):
+
+- **`estado`** — DERIVED from `.qtm/specs/index.json` (source of truth). Maintained by
+  the sync rule below. Read-only in the web editor.
+- **`estado_manual`** — owner-managed override / personal status. Editable in the UI.
+  Claude must NOT touch it unless the owner asks.
+- **`notes`** — free-text owner column. Editable in the UI. Claude must NOT overwrite it.
+
+**Keep `estado` in sync — this is a standing rule, not on-demand:**
 
 1. **Whenever a spec changes status** (created, started, completed, archived, blocked),
-   update its row in `specs-prioritization.csv` in the SAME change, mirroring
-   `.qtm/specs/index.json` (the source of truth).
+   update its row's `estado` in `specs-prioritization.csv` in the SAME change, mirroring
+   `.qtm/specs/index.json` (the source of truth). Leave `estado_manual` and `notes` alone.
 2. **Whenever a new spec is allocated**, add a row for it (at minimum `rank`, `spec`,
    `name`, `prioridad`, `estado`). The owner fills the judgment columns
-   (`descripcion`, `por_que_ahora`, `peligros`, `estimado`, etc.) — do NOT invent them.
-3. **`estado` column vocabulary** (only these four values):
+   (`descripcion`, `por_que_ahora`, `peligros`, `estimado`, `estado_manual`, `notes`,
+   etc.) — do NOT invent them.
+3. **`estado` column vocabulary** (only these four values; same set for `estado_manual`):
    - `done` — spec `completed` or `archived` in the index
    - `in progress` — spec `in-progress`
    - `blocked` — depends on ANOTHER spec that is not yet merged/done (an unsatisfied
