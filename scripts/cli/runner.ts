@@ -1,6 +1,25 @@
 import { spawn } from 'node:child_process';
+import { homedir } from 'node:os';
 import type { CliCommand } from './types.js';
 import { findMonorepoRoot } from './utils.js';
+
+/**
+ * Expands a leading `~` / `~/` in a token to the user's home directory.
+ *
+ * `shell`-type registry commands are spawned WITHOUT a shell wrapper (to avoid
+ * shell injection), so Node's `spawn` never performs the tilde expansion a shell
+ * would. Registry commands that reference home-relative paths (e.g.
+ * `bash ~/.claude/skills/worktree/scripts/wt-up.sh`) would otherwise be passed
+ * the literal `~/...` string and fail with `No such file or directory`.
+ *
+ * @param token - A single command/argument token.
+ * @returns The token with a leading `~` resolved to the home directory.
+ */
+export function expandTilde(token: string): string {
+    if (token === '~') return homedir();
+    if (token.startsWith('~/')) return `${homedir()}/${token.slice(2)}`;
+    return token;
+}
 
 /**
  * Arguments to pass to Node's `spawn` call.
@@ -67,10 +86,12 @@ export function buildSpawnArgs({
              * commands in the registry simple (single-word args only).
              */
             const [shellCmd, ...baseArgs] = execution.command.split(' ');
-            // shell type does not use a `--` separator
+            // shell type does not use a `--` separator. Expand a leading `~` in
+            // every token because the command is spawned without a shell, so the
+            // tilde would otherwise reach the process as a literal path segment.
             return {
-                command: shellCmd ?? execution.command,
-                args: [...baseArgs, ...extraArgs],
+                command: expandTilde(shellCmd ?? execution.command),
+                args: [...baseArgs, ...extraArgs].map(expandTilde),
                 cwd
             };
         }
