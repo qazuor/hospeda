@@ -13,6 +13,9 @@ Two status columns by design:
   - ``estado``        — derived from .qtm/specs/index.json (the source of truth). READ-ONLY.
   - ``estado_manual`` — owner-managed override / personal status. EDITABLE.
 
+UI: light/dark toggle, zebra striping, click-to-edit (edit-in-place), and each spec
+laid out as two rows (a key row + a detail grid) so wide records don't get cramped.
+
 Usage:
     python3 scripts/render-specs-prioritization.py            # static, build + open
     python3 scripts/render-specs-prioritization.py --no-open  # static, build only
@@ -30,6 +33,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CSV_PATH = os.path.join(ROOT, "specs-prioritization." + "csv")
 OUT_PATH = os.path.join(ROOT, "specs-prioritization.html")
 
+# Columns shown on the spec's first (key) row. The rest go in the detail grid below.
+MAIN_COLS = ["rank", "spec", "name", "avance", "prioridad", "estado_manual", "estado"]
 # Columns derived from the index — never editable from the UI.
 READONLY = {"rank", "spec", "name", "avance", "estado", "estado_real"}
 # Owner-owned columns — editable when served.
@@ -37,12 +42,12 @@ EDITABLE = {
     "prioridad", "estado_manual", "notes", "descripcion", "por_que_ahora",
     "por_que_no_ahora", "beneficio", "peligros", "estimado", "se_cruza_con",
 }
-# Columns rendered as wrapping multi-line cells.
+# Columns rendered as wrapping multi-line cells / textareas.
 LONG_COLS = {
     "estado_real", "descripcion", "por_que_ahora", "por_que_no_ahora",
     "beneficio", "peligros", "se_cruza_con", "name", "notes",
 }
-# Allowed values for the manual status select ("-" means unset).
+# Allowed values for the status selects ("-" means unset).
 ESTADO_OPTS = ["-", "backlog", "in progress", "done", "blocked"]
 
 
@@ -70,11 +75,7 @@ def save_cell(rank: str, col: str, value: str) -> dict:
     if col not in header:
         return {"ok": False, "error": "unknown column '%s'" % col}
     ci, ri = header.index(col), header.index("rank")
-    target = None
-    for r in rows:
-        if r[ri] == str(rank):
-            target = r
-            break
+    target = next((r for r in rows if r[ri] == str(rank)), None)
     if target is None:
         return {"ok": False, "error": "rank '%s' not found" % rank}
     target[ci] = value
@@ -91,7 +92,8 @@ def build_html(editable: bool) -> str:
     cfg = {
         "header": header,
         "rows": rows,
-        "readonly": sorted(READONLY),
+        "mainCols": [c for c in MAIN_COLS if c in header],
+        "detailCols": [c for c in header if c not in MAIN_COLS],
         "editable": sorted(EDITABLE),
         "long": sorted(LONG_COLS),
         "estadoOpts": ESTADO_OPTS,
@@ -101,55 +103,86 @@ def build_html(editable: bool) -> str:
 
 
 _TEMPLATE = r"""<!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-theme="dark">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Specs Prioritization</title>
 <style>
-  :root { color-scheme: light dark; }
   * { box-sizing: border-box; }
-  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 0; padding: 1rem; background: #0f172a; color: #e2e8f0; }
-  h1 { font-size: 1.2rem; margin: 0 0 .25rem; }
-  .mode { font-size: .75rem; color: #94a3b8; margin-bottom: .6rem; }
-  .mode b.edit { color: #6ee7b7; } .mode b.ro { color: #fca5a5; }
-  .toolbar { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-bottom: .6rem; position: sticky; top: 0; background: #0f172a; padding: .5rem 0; z-index: 5; }
-  .toolbar input, .toolbar select { background: #1e293b; color: #e2e8f0; border: 1px solid #334155; border-radius: 6px; padding: .4rem .6rem; font-size: .85rem; }
+  html[data-theme=dark] {
+    --bg:#0f172a; --fg:#e2e8f0; --panel:#1e293b; --panel2:#334155; --border:#243149;
+    --zebra:#162136; --muted:#94a3b8; --input:#0b1322; --accent:#38bdf8; --ok:#6ee7b7; --err:#fca5a5;
+  }
+  html[data-theme=light] {
+    --bg:#f8fafc; --fg:#0f172a; --panel:#e9eef5; --panel2:#d6deea; --border:#cbd5e1;
+    --zebra:#eef2f8; --muted:#64748b; --input:#ffffff; --accent:#0284c7; --ok:#047857; --err:#b91c1c;
+  }
+  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 0; padding: 1rem; background: var(--bg); color: var(--fg); }
+  h1 { font-size: 1.2rem; margin: 0 0 .25rem; display:inline-block; }
+  .mode { font-size: .75rem; color: var(--muted); margin-bottom: .6rem; }
+  .mode b.edit { color: var(--ok); } .mode b.ro { color: var(--err); }
+  .toolbar { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-bottom: .6rem; position: sticky; top: 0; background: var(--bg); padding: .5rem 0; z-index: 5; }
+  .toolbar input, .toolbar select { background: var(--panel); color: var(--fg); border: 1px solid var(--border); border-radius: 6px; padding: .4rem .6rem; font-size: .85rem; }
   .toolbar input[type=search] { min-width: 220px; }
-  .count { margin-left: auto; font-size: .8rem; color: #94a3b8; }
-  .saved { font-size: .8rem; color: #6ee7b7; min-width: 90px; }
-  button.reset { background: #334155; color: #e2e8f0; border: none; border-radius: 6px; padding: .4rem .7rem; cursor: pointer; font-size: .85rem; }
-  button.reset:hover { background: #475569; }
-  .tablewrap { overflow-x: auto; border: 1px solid #1e293b; border-radius: 8px; }
+  .count { margin-left: auto; font-size: .8rem; color: var(--muted); }
+  .saved { font-size: .8rem; color: var(--ok); min-width: 86px; }
+  button { background: var(--panel2); color: var(--fg); border: none; border-radius: 6px; padding: .4rem .7rem; cursor: pointer; font-size: .85rem; }
+  button:hover { filter: brightness(1.15); }
+  .tablewrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; }
   table { border-collapse: collapse; width: 100%; font-size: .8rem; }
-  th, td { border-bottom: 1px solid #1e293b; padding: .4rem .55rem; text-align: left; vertical-align: top; }
-  thead th { position: sticky; top: 0; background: #1e293b; cursor: pointer; white-space: nowrap; user-select: none; }
-  thead th:hover { background: #334155; }
-  thead th.ed { color: #6ee7b7; } thead th .arrow { color: #38bdf8; font-size: .7rem; }
-  tbody tr:hover { background: #15213a; }
-  td.long { max-width: 300px; white-space: normal; }
+  th, td { text-align: left; vertical-align: top; }
+  thead th { position: sticky; top: 0; background: var(--panel); cursor: pointer; white-space: nowrap; user-select: none; padding: .5rem .55rem; border-bottom: 1px solid var(--border); }
+  thead th:hover { background: var(--panel2); }
+  thead th.ed { color: var(--ok); } thead th .arrow { color: var(--accent); font-size: .7rem; }
+  tr.main td { padding: .5rem .55rem .35rem; border-top: 2px solid var(--border); background: var(--esttint, transparent); }
+  tr.detail td { padding: 0 .55rem .55rem; background: var(--esttint, transparent); }
+  tr.main td:first-child, tr.detail td:first-child { border-left: 4px solid var(--estbar, transparent); }
+  tr.main.zebra td, tr.detail.zebra td { background-image: linear-gradient(0deg, rgba(127,127,127,.06), rgba(127,127,127,.06)); }
+  td.long { max-width: 320px; white-space: normal; }
   td.short { white-space: nowrap; }
+  .colrank { color: var(--muted); font-size: .72rem; font-variant-numeric: tabular-nums; }
+  .colspec { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--fg); font-size: .92rem; font-weight: 700; }
+  .colname { font-size: .92rem; font-weight: 600; line-height: 1.25; }
+  .detail-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: .3rem .9rem; padding: .1rem 0 0 .25rem; }
+  .field { font-size: .78rem; min-width: 0; line-height: 1.35; }
+  .field .label { color: var(--accent); font-weight: 700; text-transform: uppercase; font-size: .66rem; letter-spacing: .05em; display: block; margin-bottom: .08rem; }
   .badge { display: inline-block; padding: .12rem .5rem; border-radius: 999px; font-size: .72rem; font-weight: 600; white-space: nowrap; }
   .badge.done { background: #064e3b; color: #6ee7b7; }
   .badge.inprogress { background: #1e3a8a; color: #93c5fd; }
   .badge.blocked { background: #7f1d1d; color: #fca5a5; }
-  .badge.backlog { background: #334155; color: #cbd5e1; }
-  .badge.empty { background: transparent; color: #475569; }
-  .prio { font-weight: 700; }
-  td input.cell, td textarea.cell, td select.cell { width: 100%; background: #0b1322; color: #e2e8f0; border: 1px solid #233149; border-radius: 5px; padding: .25rem .35rem; font: inherit; }
-  td textarea.cell { min-height: 2.4rem; resize: vertical; }
-  td input.cell:focus, td textarea.cell:focus, td select.cell:focus { outline: none; border-color: #38bdf8; }
-  td .cell.dirty { border-color: #6ee7b7; }
+  .badge.backlog { background: #475569; color: #e2e8f0; }
+  .badge.empty { background: transparent; color: var(--muted); }
+  .badge.pick { background: transparent; color: var(--accent); border: 1px dashed var(--accent); cursor: pointer; }
+  .val.editable:has(.badge) { border-bottom: none; padding: 0; }
+  .badge.idx { font-size: .64rem; opacity: .7; font-weight: 500; }
+  .pchip { display: inline-block; font-weight: 700; padding: .1rem .45rem; border-radius: 5px; font-size: .72rem; }
+  .pchip.P0 { background: #7f1d1d; color: #fecaca; } .pchip.P1 { background: #7c2d12; color: #fed7aa; }
+  .pchip.P2 { background: #713f12; color: #fde68a; } .pchip.P3 { background: #334155; color: #cbd5e1; }
+  .pchip.P4 { background: #1f2937; color: #9ca3af; } .pchip.none { color: var(--muted); }
+  .prog { display: inline-flex; align-items: center; gap: .4rem; }
+  .prog .track { width: 52px; height: 6px; background: var(--panel2); border-radius: 3px; overflow: hidden; }
+  .prog .fill { display: block; height: 100%; background: var(--accent); }
+  .prog .txt { font-size: .72rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .val { display: inline-block; min-width: 1rem; max-width: 100%; white-space: pre-wrap; word-break: break-word; }
+  .val .empty { color: var(--muted); }
+  .val.editable { cursor: text; border-bottom: 1px dashed var(--border); padding: 0 .1rem; border-radius: 3px; }
+  .val.editable:hover { background: var(--panel2); border-bottom-color: var(--accent); }
+  .cell { width: 100%; background: var(--input); color: var(--fg); border: 1px solid var(--accent); border-radius: 5px; padding: .25rem .35rem; font: inherit; }
+  textarea.cell { min-height: 3rem; resize: vertical; }
+  .cell:focus { outline: none; }
 </style>
 </head>
 <body>
 <h1>Specs Prioritization</h1>
+<button id="theme" style="margin-left:.6rem">◐ tema</button>
 <div class="mode" id="mode"></div>
 <div class="toolbar">
   <input type="search" id="q" placeholder="Buscar en todo..." />
   <select id="estado"><option value="">estado (index): todos</option></select>
   <select id="estado_manual"><option value="">estado_manual: todos</option></select>
   <select id="prioridad"><option value="">prioridad: todas</option></select>
+  <label style="font-size:.8rem;color:var(--muted);display:flex;align-items:center;gap:.3rem"><input type="checkbox" id="empty" /> campos vacíos</label>
   <button class="reset" id="reset">Reset</button>
   <span class="saved" id="saved"></span>
   <span class="count" id="count"></span>
@@ -161,12 +194,19 @@ _TEMPLATE = r"""<!DOCTYPE html>
 const CFG = __CFG__;
 const header = CFG.header, rows = CFG.rows;
 const idx = Object.fromEntries(header.map((h, i) => [h, i]));
-const RO = new Set(CFG.readonly), ED = new Set(CFG.editable), LONG = new Set(CFG.long);
-const canEdit = CFG.canEdit;
+const ED = new Set(CFG.editable), LONG = new Set(CFG.long), canEdit = CFG.canEdit;
 let sortCol = idx["rank"] ?? 0, sortAsc = true;
 
+// theme
+const root = document.documentElement;
+root.dataset.theme = localStorage.getItem("spp-theme") || "dark";
+document.getElementById("theme").onclick = () => {
+  root.dataset.theme = root.dataset.theme === "dark" ? "light" : "dark";
+  localStorage.setItem("spp-theme", root.dataset.theme);
+};
+
 document.getElementById("mode").innerHTML = canEdit
-  ? 'Modo <b class="edit">editable</b> — los cambios se guardan en el CSV al instante. Columnas verdes = editables.'
+  ? 'Modo <b class="edit">editable</b> — click en un campo para editar; se guarda solo. Columnas verdes = editables.'
   : 'Modo <b class="ro">solo lectura</b> — corré <code>python3 scripts/render-specs-prioritization.py --serve</code> para editar.';
 
 function badge(v) {
@@ -174,59 +214,124 @@ function badge(v) {
   if (!v || v === "-") return '<span class="badge empty">—</span>';
   let cls = "backlog";
   if (k === "done") cls = "done"; else if (k === "in progress") cls = "inprogress";
-  else if (k === "blocked") cls = "blocked"; else if (k === "backlog") cls = "backlog";
+  else if (k === "blocked") cls = "blocked";
   return '<span class="badge ' + cls + '">' + v + "</span>";
 }
+function estBar(v) {
+  const k = (v || "").toLowerCase();
+  if (k === "done") return "#10b981"; if (k === "in progress") return "#3b82f6";
+  if (k === "blocked") return "#ef4444"; if (k === "backlog") return "#64748b";
+  return "transparent";
+}
+function estTint(v) {
+  const k = (v || "").toLowerCase();
+  if (k === "done") return "rgba(16,185,129,.24)"; if (k === "in progress") return "rgba(59,130,246,.24)";
+  if (k === "blocked") return "rgba(239,68,68,.26)"; if (k === "backlog") return "rgba(100,116,139,.20)";
+  return "transparent";
+}
+// estado_manual: make the owner's editable status obvious (a clear affordance)
+function manualBadge(v) {
+  if (!canEdit) return badge(v);
+  if (!v || v === "-") return '<span class="badge pick">elegir ▾</span>';
+  return badge(v).replace("</span>", " ▾</span>");
+}
+function idxBadge(v) { return badge(v).replace('class="badge ', 'class="badge idx '); }
+function prioChip(v) {
+  if (!v || v === "-") return '<span class="pchip none">—</span>';
+  const c = ["P0", "P1", "P2", "P3", "P4"].includes(v) ? v : "none";
+  return '<span class="pchip ' + c + '">' + v + "</span>";
+}
+function avanceCell(v) {
+  const m = /^(\d+)\/(\d+)$/.exec(v || "");
+  if (m && +m[2] > 0) {
+    const pct = Math.round(100 * (+m[1]) / (+m[2]));
+    return '<span class="prog"><span class="track"><span class="fill" style="width:' + pct + '%"></span></span><span class="txt">' + v + "</span></span>";
+  }
+  return '<span class="txt" style="color:var(--muted)">' + (!v || v === "-" ? "—" : v) + "</span>";
+}
+function esc(s) { return (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
 function uniq(col) { const s = new Set(); rows.forEach(r => { if (r[col] && r[col] !== "-") s.add(r[col]); }); return [...s].sort(); }
 function fillSelect(el, col) { uniq(col).forEach(v => { const o = document.createElement("option"); o.value = v; o.textContent = v; el.appendChild(o); }); }
 
 function flashSaved(msg, ok) {
   const el = document.getElementById("saved");
-  el.textContent = msg; el.style.color = ok ? "#6ee7b7" : "#fca5a5";
+  el.textContent = msg; el.style.color = ok ? "var(--ok)" : "var(--err)";
   if (ok) setTimeout(() => { el.textContent = ""; }, 1500);
 }
-
 let warned = false;
-async function saveCell(rank, col, value, inputEl) {
-  if (!canEdit) return;
+async function saveCell(rank, col, value) {
   try {
     const res = await fetch("/cell", { method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ rank: String(rank), col, value }) });
     const data = await res.json();
-    if (data.ok) {
-      rows.find(r => r[idx["rank"]] === String(rank))[idx[col]] = data.value;
-      if (inputEl) inputEl.classList.remove("dirty");
-      flashSaved("guardado ✓", true);
-    } else { flashSaved("error: " + data.error, false); }
+    if (data.ok) { rows.find(r => r[idx["rank"]] === String(rank))[idx[col]] = data.value; flashSaved("guardado ✓", true); return data.value; }
+    flashSaved("error: " + data.error, false); return null;
   } catch (e) {
     if (!warned) { alert("No se pudo guardar. Abrí con --serve (server local), no con file://."); warned = true; }
-    flashSaved("sin conexión", false);
+    flashSaved("sin conexión", false); return null;
   }
 }
 
-function editor(col, rank, val) {
-  if (col === "estado_manual") {
-    const sel = document.createElement("select");
-    sel.className = "cell";
-    CFG.estadoOpts.forEach(o => { const op = document.createElement("option"); op.value = o; op.textContent = o; if (o === (val || "-")) op.selected = true; sel.appendChild(op); });
-    sel.onchange = () => saveCell(rank, col, sel.value, sel);
-    return sel;
+// edit-in-place: a span that shows the value and swaps to an input on click
+function paint(span, col, val) {
+  span.dataset.val = val;
+  if (col === "estado") span.innerHTML = idxBadge(val);
+  else if (col === "estado_manual") span.innerHTML = manualBadge(val);
+  else if (col === "prioridad") span.innerHTML = prioChip(val);
+  else if (col === "avance") span.innerHTML = avanceCell(val);
+  else if (col === "rank") span.innerHTML = '<span class="colrank">#' + esc(val) + "</span>";
+  else if (col === "spec") span.innerHTML = '<span class="colspec">' + esc(val) + "</span>";
+  else if (col === "name") span.innerHTML = '<span class="colname">' + esc(val) + "</span>";
+  else if (!val || val === "-") span.innerHTML = '<span class="empty">—</span>';
+  else span.textContent = val;
+}
+function valSpan(col, rank, val) {
+  const span = document.createElement("span");
+  span.className = "val";
+  paint(span, col, val);
+  if (canEdit && ED.has(col)) {
+    span.classList.add("editable");
+    span.title = "Click para editar";
+    span.onclick = () => startEdit(span, col, rank);
   }
-  const long = LONG.has(col);
-  const el = document.createElement(long ? "textarea" : "input");
-  el.className = "cell"; el.value = (val === "-" ? "" : val);
-  el.oninput = () => el.classList.add("dirty");
-  el.onblur = () => { if (el.classList.contains("dirty")) saveCell(rank, col, el.value, el); };
-  el.onkeydown = (e) => { if (!long && e.key === "Enter") el.blur(); };
-  return el;
+  return span;
+}
+function startEdit(span, col, rank) {
+  const oldVal = span.dataset.val || "-";
+  const cur = oldVal === "-" ? "" : oldVal;
+  let input;
+  if (col === "estado_manual") {
+    input = document.createElement("select"); input.className = "cell";
+    CFG.estadoOpts.forEach(o => { const op = document.createElement("option"); op.value = o; op.textContent = o; if (o === oldVal) op.selected = true; input.appendChild(op); });
+  } else if (LONG.has(col)) {
+    input = document.createElement("textarea"); input.className = "cell"; input.value = cur;
+  } else {
+    input = document.createElement("input"); input.className = "cell"; input.value = cur;
+  }
+  span.replaceWith(input); input.focus(); if (input.select) input.select();
+  let done = false;
+  const finish = async (save) => {
+    if (done) return; done = true;
+    let val = oldVal;
+    if (save && input.value !== cur) { const saved = await saveCell(rank, col, input.value); val = (saved === null) ? oldVal : saved; }
+    const back = valSpan(col, rank, val);
+    input.replaceWith(back);
+    if (save && col === "estado_manual") render();  // refresh row tint/bar from my status
+  };
+  if (col === "estado_manual") { input.onchange = () => finish(true); input.onblur = () => finish(false); }
+  else {
+    input.onblur = () => finish(true);
+    input.onkeydown = (e) => { if (e.key === "Enter" && !LONG.has(col)) { e.preventDefault(); input.blur(); } if (e.key === "Escape") finish(false); };
+  }
 }
 
 function renderHead() {
   const tr = document.getElementById("head"); tr.innerHTML = "";
-  header.forEach((h, i) => {
-    const th = document.createElement("th");
-    if (canEdit && ED.has(h)) th.className = "ed";
-    th.innerHTML = h + '<span class="arrow">' + (i === sortCol ? (sortAsc ? " ▲" : " ▼") : "") + "</span>";
+  const HL = { estado: "estado · index", estado_manual: "mi estado" };
+  CFG.mainCols.forEach(col => {
+    const i = idx[col], th = document.createElement("th");
+    if (canEdit && ED.has(col)) th.className = "ed";
+    th.innerHTML = (HL[col] || col) + '<span class="arrow">' + (i === sortCol ? (sortAsc ? " ▲" : " ▼") : "") + "</span>";
     th.onclick = () => { if (sortCol === i) sortAsc = !sortAsc; else { sortCol = i; sortAsc = true; } render(); };
     tr.appendChild(th);
   });
@@ -250,21 +355,35 @@ function render() {
     return true;
   });
   view.sort((a, b) => { const c = cmp(a[sortCol], b[sortCol]); return sortAsc ? c : -c; });
+
+  const showEmpty = document.getElementById("empty").checked;
   const body = document.getElementById("body"); body.innerHTML = "";
-  view.forEach(r => {
-    const tr = document.createElement("tr");
-    const rank = r[idx["rank"]];
-    r.forEach((cell, i) => {
-      const col = header[i];
+  view.forEach((r, vi) => {
+    const rank = r[idx["rank"]], z = (vi % 2 === 1) ? " zebra" : "";
+    const eMan = r[idx["estado_manual"]];
+    const est = (eMan && eMan !== "-") ? eMan : "";  // row color follows MY status only
+    const bar = estBar(est), tint = estTint(est);
+    const main = document.createElement("tr"); main.className = "main" + z; main.style.setProperty("--estbar", bar); main.style.setProperty("--esttint", tint);
+    CFG.mainCols.forEach(col => {
       const td = document.createElement("td");
-      td.className = LONG.has(col) ? "long" : "short";
-      if (canEdit && ED.has(col)) { td.appendChild(editor(col, rank, cell)); }
-      else if (col === "estado" || col === "estado_manual") { td.innerHTML = badge(cell); }
-      else if (col === "prioridad") { td.className += " prio"; td.textContent = cell; }
-      else td.textContent = cell;
-      tr.appendChild(td);
+      td.className = (LONG.has(col) ? "long" : "short");
+      td.appendChild(valSpan(col, rank, r[idx[col]]));
+      main.appendChild(td);
     });
-    body.appendChild(tr);
+    const det = document.createElement("tr"); det.className = "detail" + z; det.style.setProperty("--estbar", bar); det.style.setProperty("--esttint", tint);
+    const td = document.createElement("td"); td.colSpan = CFG.mainCols.length;
+    const grid = document.createElement("div"); grid.className = "detail-grid";
+    CFG.detailCols.forEach(col => {
+      const v = r[idx[col]];
+      const isEmpty = !v || v === "-";
+      if (isEmpty && !showEmpty) return;  // hide empty detail fields for cleaner scan
+      const f = document.createElement("div"); f.className = "field";
+      const lab = document.createElement("span"); lab.className = "label"; lab.textContent = col;
+      f.appendChild(lab); f.appendChild(valSpan(col, rank, v)); grid.appendChild(f);
+    });
+    td.appendChild(grid); det.appendChild(td);
+    body.appendChild(main);
+    if (grid.children.length) body.appendChild(det);  // skip empty detail rows
   });
   document.getElementById("count").textContent = view.length + " / " + rows.length + " specs";
   renderHead();
@@ -272,9 +391,12 @@ function render() {
 fillSelect(document.getElementById("estado"), idx["estado"]);
 fillSelect(document.getElementById("estado_manual"), idx["estado_manual"]);
 fillSelect(document.getElementById("prioridad"), idx["prioridad"]);
+document.getElementById("empty").checked = canEdit;  // show empties when editing, hide for clean read-only scan
 ["q", "estado", "estado_manual", "prioridad"].forEach(id => document.getElementById(id).addEventListener("input", render));
+document.getElementById("empty").addEventListener("change", render);
 document.getElementById("reset").onclick = () => {
   ["q", "estado", "estado_manual", "prioridad"].forEach(id => document.getElementById(id).value = "");
+  document.getElementById("empty").checked = canEdit;
   render();
 };
 render();
