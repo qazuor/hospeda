@@ -340,6 +340,8 @@
             "views": {
                 "title": "Vistas",
                 "empty": "Sin datos de vistas aún",
+                "error": "Error al cargar vistas",
+                "unnamed": "Sin nombre",
                 "window": {
                     "7d": "7d",
                     "30d": "30d"
@@ -354,11 +356,13 @@
                 "empty": "Sin datos de respuesta aún",
                 "avgTime": "Promedio",
                 "minutes": "min",
-                "notAvailable": "N/A"
+                "notAvailable": "N/A",
+                "error": "Error al cargar tiempo de respuesta"
             },
             "inquiries": {
                 "title": "Consultas",
-                "empty": "Sin datos de consultas aún"
+                "empty": "Sin datos de consultas aún",
+                "error": "Error al cargar consultas"
             },
             "marketComparison": {
                 "title": "Comparación de mercado",
@@ -369,7 +373,8 @@
                     "avgRating": "Prom. destino",
                     "yourPrice": "Tu precio",
                     "avgPrice": "Prom. precio"
-                }
+                },
+                "error": "Error al cargar comparación de mercado"
             },
             "sectionTitle": "Estadísticas",
             "locked": {
@@ -378,6 +383,39 @@
             },
             "loading": "Cargando estadísticas...",
             "error": "Error al cargar las estadísticas"
+        },
+        "pageTitle": "Panel del anfitrión",
+        "pageDescription": "Resumen de tus propiedades y suscripción",
+        "error": "Error al cargar el panel",
+        "retry": "Reintentar",
+        "plan": {
+            "trial": "Prueba gratuita",
+            "active": "Activo",
+            "inactive": "Inactivo",
+            "noPlan": "Sin plan"
+        },
+        "widgets": {
+            "properties": "Tus propiedades",
+            "total": "Total",
+            "published": "Publicadas",
+            "draft": "Borradores",
+            "manage": "Gestionar",
+            "plan": "Tu suscripción",
+            "noPlan": "Sin suscripción activa",
+            "messages": "Mensajes",
+            "unread": {
+                "singular": "mensaje sin leer",
+                "plural": "mensajes sin leer",
+                "none": "No tenés mensajes nuevos"
+            },
+            "viewAll": "Ver todos",
+            "quickActions": "Acciones rápidas"
+        },
+        "quickActions": {
+            "properties": "Propiedades",
+            "promotions": "Promociones",
+            "messages": "Mensajes",
+            "subscription": "Suscripción"
         }
     }
 }
