@@ -130,6 +130,7 @@
     "thread": {
         "newest": "View newest",
         "older": "Load older messages",
+        "backToInbox": "Back to my inbox",
         "readByGuest": "Read by guest",
         "readByOwner": "Read by host",
         "replyPlaceholder": "Write your reply...",
