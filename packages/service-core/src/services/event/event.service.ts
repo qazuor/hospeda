@@ -442,6 +442,8 @@ export class EventService extends BaseCrudService<
         if (translationService) {
             const fields = diffTranslatableFields({
                 previous: ctx.hookState?.previousTranslatableFields ?? {},
+                // TYPE-WORKAROUND: the entity's typed shape carries many non-string
+                // fields; diffTranslatableFields only reads the listed string columns.
                 current: entity as unknown as Record<string, string | null | undefined>,
                 fieldNames: ['name', 'summary', 'description']
             });
