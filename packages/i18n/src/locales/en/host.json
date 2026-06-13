@@ -340,6 +340,8 @@
             "views": {
                 "title": "Views",
                 "empty": "No view data yet",
+                "error": "Error loading views",
+                "unnamed": "Unnamed",
                 "window": {
                     "7d": "7d",
                     "30d": "30d"
