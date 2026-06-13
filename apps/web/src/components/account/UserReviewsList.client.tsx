@@ -18,6 +18,9 @@ import styles from './UserReviewsList.module.css';
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const PAGE_SIZE = 10;
+/** Per-type fetch size. Matches the API's max pageSize so a single request
+ * returns the full set this island then paginates client-side. */
+const API_FETCH_SIZE = 100;
 const API_PATH = '/api/v1/protected/users/me/reviews';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -58,7 +61,8 @@ interface RawAccommodationReview {
 /** Raw destination review from API */
 interface RawDestinationReview {
     readonly id: string;
-    readonly rating?: number | null;
+    /** Multi-aspect rating object (0-5 per dimension), same shape as accommodation. */
+    readonly rating?: Record<string, number> | null;
     readonly title?: string | null;
     readonly content?: string | null;
     readonly createdAt?: string | null;
@@ -119,7 +123,7 @@ function formatDate(iso: string | null | undefined, locale: SupportedLocale): st
 }
 
 /** Normalise raw API reviews into a flat ReviewItem list sorted by date desc. */
-function normaliseReviews(data: ReviewsApiResponse['data']): ReviewItem[] {
+function normaliseReviews(data: ReviewsApiResponse['data'], locale: SupportedLocale): ReviewItem[] {
     if (!data) return [];
     const acc: ReviewItem[] = (data.accommodationReviews ?? []).map((r) => ({
         id: r.id,
@@ -129,19 +133,23 @@ function normaliseReviews(data: ReviewsApiResponse['data']): ReviewItem[] {
         createdAt: r.createdAt,
         entityId: r.accommodationId,
         entityName: r.accommodationName,
-        entityUrl: r.accommodationSlug ? `/alojamientos/${r.accommodationSlug}/` : null,
+        entityUrl: r.accommodationSlug
+            ? buildUrl({ locale, path: `alojamientos/${r.accommodationSlug}` })
+            : null,
         type: 'accommodation' as const
     }));
 
     const dst: ReviewItem[] = (data.destinationReviews ?? []).map((r) => ({
         id: r.id,
-        rating: typeof r.rating === 'number' ? r.rating : null,
+        rating: computeAverageRating(r.rating),
         title: r.title,
         content: r.content,
         createdAt: r.createdAt,
         entityId: r.destinationId,
         entityName: r.destinationName,
-        entityUrl: r.destinationSlug ? `/destinos/${r.destinationSlug}/` : null,
+        entityUrl: r.destinationSlug
+            ? buildUrl({ locale, path: `destinos/${r.destinationSlug}` })
+            : null,
         type: 'destination' as const
     }));
 
@@ -201,6 +209,7 @@ export function UserReviewsList({ locale, apiUrl }: UserReviewsListProps) {
     const base = apiUrl.replace(/\/$/, '');
 
     const [reviews, setReviews] = useState<ReviewItem[]>([]);
+    const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [page, setPage] = useState(1);
@@ -223,7 +232,10 @@ export function UserReviewsList({ locale, apiUrl }: UserReviewsListProps) {
         setLoading(true);
         setError(null);
         try {
-            const res = await fetch(`${base}${API_PATH}?type=all`, {
+            // Request the max page size per type: this island paginates
+            // client-side after merging both review types, so it needs the
+            // full set in one shot. The API caps pageSize at 100 per type.
+            const res = await fetch(`${base}${API_PATH}?type=all&pageSize=${API_FETCH_SIZE}`, {
                 credentials: 'include'
             });
             if (!res.ok) {
@@ -233,14 +245,15 @@ export function UserReviewsList({ locale, apiUrl }: UserReviewsListProps) {
             if (!body.success) {
                 throw new Error(body.error?.message ?? fetchErrorMsg);
             }
-            setReviews(normaliseReviews(body.data));
+            setReviews(normaliseReviews(body.data, locale));
+            setTotal(body.data?.totals?.total ?? 0);
         } catch (err) {
             const msg = err instanceof Error ? err.message : fetchErrorMsg;
             setError(msg);
         } finally {
             setLoading(false);
         }
-    }, [base, fetchErrorMsg]);
+    }, [base, fetchErrorMsg, locale]);
 
     useEffect(() => {
         void fetchReviews();
@@ -288,7 +301,7 @@ export function UserReviewsList({ locale, apiUrl }: UserReviewsListProps) {
     return (
         <div className={styles.root}>
             <p className={styles.sectionTitle}>
-                {tPlural('account.reviews.total', reviews.length, { count: reviews.length })}
+                {tPlural('account.reviews.total', total, { count: total })}
             </p>
 
             {/* ── Review cards ────────────────────────────────────────── */}
