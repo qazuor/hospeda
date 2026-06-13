@@ -897,7 +897,7 @@
             "created": "2026-06-07T00:00:00.000Z",
             "archived": false,
             "tags": ["web", "host", "analytics", "kpis", "dashboard", "api", "metrics"],
-            "note": "Phase 3 of host migration. Analytics aggregation endpoints + KPI dashboard widgets in apps/web. Depends on SPEC-205, SPEC-206."
+            "note": "Phase 3 of host migration. Formalized 2026-06-13 with spec.md (was index-only draft). A web-only cabling pass (fix/web-mi-cuenta-host-dashboard) shipped: fixed the entitlement gate case mismatch (view_basic_stats), re-pointed response-rate/inquiries/market-comparison to their real routes, gated the market widget behind view_advanced_stats, and added missing host.dashboard.* i18n keys. Remaining epic work: (A) build a protected per-host daily-series views endpoint + re-mount ViewsWidget; (B) redesign FavoritesWidget to the per-accommodation shape (no 'collections' in the model) + re-mount; (C) staging smoke on owner-pro/owner-premium. Views & Favorites widgets are currently NOT mounted (deferred). Depends on SPEC-205, SPEC-206."
         },
         {
             "specId": "SPEC-208",
@@ -1065,15 +1065,7 @@
             "status": "draft",
             "path": "SPEC-222-accommodation-import-from-url",
             "created": "2026-06-13T12:00:00Z",
-            "tags": [
-                "accommodations",
-                "import",
-                "scraping",
-                "ai",
-                "web",
-                "admin",
-                "feature"
-            ],
+            "tags": ["accommodations", "import", "scraping", "ai", "web", "admin", "feature"],
             "archived": false,
             "note": "Import accommodation data from an external listing URL (Booking/Airbnb/etc) to pre-fill the create/edit form. JSON-LD/OG parsing primary + ai-core generate-object fallback. Human reviews draft before save. Drafted 2026-06-13, ready to implement."
         },
@@ -1085,14 +1077,7 @@
             "status": "draft",
             "path": "SPEC-223-ai-post-generation",
             "created": "2026-06-13T12:00:00Z",
-            "tags": [
-                "posts",
-                "ai",
-                "ai-core",
-                "content",
-                "admin",
-                "feature"
-            ],
+            "tags": ["posts", "ai", "ai-core", "content", "admin", "feature"],
             "archived": false,
             "note": "Admin gives topic + key points, AI generates a post draft (title/summary/content). New 'post_generate' AiFeature + admin-tier streaming route, replicating the text-improve pattern. Drafted 2026-06-13, ready to implement."
         },
@@ -1104,14 +1089,7 @@
             "status": "draft",
             "path": "SPEC-224-admin-posthog-dashboard",
             "created": "2026-06-13T12:00:00Z",
-            "tags": [
-                "admin",
-                "posthog",
-                "analytics",
-                "dashboard",
-                "observability",
-                "feature"
-            ],
+            "tags": ["admin", "posthog", "analytics", "dashboard", "observability", "feature"],
             "archived": false,
             "note": "Read PostHog Query/HogQL via a server-side proxy + dashboard datasource/widget in admin. Sibling of SPEC-225/226 (shared external-metrics proxy pattern). Drafted 2026-06-13, ready to implement."
         },
@@ -1123,14 +1101,7 @@
             "status": "draft",
             "path": "SPEC-225-admin-sentry-dashboard",
             "created": "2026-06-13T12:00:00Z",
-            "tags": [
-                "admin",
-                "sentry",
-                "errors",
-                "dashboard",
-                "observability",
-                "feature"
-            ],
+            "tags": ["admin", "sentry", "errors", "dashboard", "observability", "feature"],
             "archived": false,
             "note": "Read Sentry Issues API via server-side proxy; fill the existing super.audit.log.sentry datasource placeholder + card H DeferredWidget. Distinct from SPEC-180 (capture hardening). Sibling of SPEC-224/226. Drafted 2026-06-13, ready to implement."
         },
@@ -1142,14 +1113,7 @@
             "status": "draft",
             "path": "SPEC-226-admin-brevo-dashboard",
             "created": "2026-06-13T12:00:00Z",
-            "tags": [
-                "admin",
-                "brevo",
-                "email",
-                "newsletter",
-                "dashboard",
-                "feature"
-            ],
+            "tags": ["admin", "brevo", "email", "newsletter", "dashboard", "feature"],
             "archived": false,
             "note": "Read Brevo email/newsletter stats via server-side proxy (reuse existing HOSPEDA_EMAIL_API_KEY) + admin dashboard widget. Sibling of SPEC-224/225. Drafted 2026-06-13, ready to implement."
         }
