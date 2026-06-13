@@ -197,19 +197,21 @@ export const accommodationsApi = {
         return apiClient.get({ path: `${BASE}/accommodations/${id}` });
     },
 
-    /** Get accommodations for a destination */
+    /**
+     * Get all accommodations for a destination.
+     *
+     * NOTE: This endpoint (`GET /public/accommodations/destination/:id`) returns
+     * `{ accommodations: AccommodationPublic[] }` — NOT a paginated envelope.
+     * It ignores page/pageSize and returns ALL accommodations for the destination.
+     * Do NOT assume `.items` or `.pagination` fields exist on the response data.
+     */
     getByDestination({
-        destinationId,
-        page,
-        pageSize
+        destinationId
     }: {
         destinationId: string;
-        page?: number;
-        pageSize?: number;
-    }): Promise<ApiResult<PaginatedResponse<AccommodationPublic>>> {
-        return apiClient.getList({
-            path: `${BASE}/accommodations/destination/${destinationId}`,
-            params: { page, pageSize }
+    }): Promise<ApiResult<{ readonly accommodations: readonly AccommodationPublic[] }>> {
+        return apiClient.get({
+            path: `${BASE}/accommodations/destination/${destinationId}`
         });
     },
 

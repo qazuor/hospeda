@@ -262,10 +262,18 @@ const [heroPlaya, heroAtardecer, heroIsla] = await Promise.all([
 		   fixed 160px value forced a full repaint each time the browser
 		   recalculated overflow:clip. clamp() keeps the wave in the same
 		   visible range (120px–180px) while tracking the viewport width
-		   smoothly. will-change promotes the element to its own compositing
-		   layer so resize repaints don't flash through the stacking context. */
+		   smoothly.
+
+		   Scroll flicker fix: a bare `will-change: transform` promoted the
+		   wave to a compositing layer but left it prone to sub-pixel repaint
+		   seams while scrolling. Promoting with a STABLE layer instead
+		   (`translateZ(0)` + `backface-visibility: hidden`) pins it to the GPU
+		   without per-frame re-promotion, eliminating the scroll flicker while
+		   keeping the resize benefit. */
 		height: clamp(120px, 11vw, 180px);
-		will-change: transform;
+		transform: translateZ(0);
+		-webkit-backface-visibility: hidden;
+		backface-visibility: hidden;
 		z-index: 1;
 	}
 

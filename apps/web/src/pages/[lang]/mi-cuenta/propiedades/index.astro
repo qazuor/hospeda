@@ -26,6 +26,8 @@ import { webLogger as logger } from '@/lib/logger';
 import { MAX_ACCOMMODATIONS_LIMIT_KEY, parseUsageResponse } from '@/lib/host/usage-badge';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import PropertyCard from '@/components/host/PropertyCard.astro';
+import EmptyState from '@/components/shared/feedback/EmptyState.astro';
+import { BuildingIcon } from '@repo/icons';
 
 export const prerender = false;
 
@@ -107,7 +109,7 @@ const { t } = createTranslations(locale);
 
 const title = t('host.properties.list.title', 'Mis propiedades');
 const subtitle = t('host.properties.list.subtitle', 'Gestioná tus publicaciones');
-const emptyTitle = t('host.properties.empty.title', 'Aún no publicaste ninguna propiedad');
+const emptyMessage = t('host.properties.empty.title', 'Aún no publicaste ninguna propiedad');
 const emptyCta = t('host.properties.empty.cta', 'Publicar ahora');
 
 const publishNewUrl = buildUrl({ locale, path: 'publicar/nueva' });
@@ -170,51 +172,18 @@ const isEmpty = properties.length === 0;
             ))}
         </div>
     ) : (
-        <!-- Empty state -->
-        <div class="props-page__empty" role="status">
-            <!-- Illustration placeholder -->
-            <div class="props-page__empty-illustration" aria-hidden="true">
-                <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 120 120"
-                    fill="none"
-                    width="120"
-                    height="120"
-                    aria-hidden="true"
-                >
-                    <rect
-                        x="20"
-                        y="50"
-                        width="80"
-                        height="55"
-                        rx="8"
-                        fill="var(--surface-warm)"
-                        stroke="var(--border)"
-                        stroke-width="2"
-                    />
-                    <polygon
-                        points="10,52 60,15 110,52"
-                        fill="var(--brand-primary)"
-                        opacity="0.9"
-                    />
-                    <rect
-                        x="45"
-                        y="75"
-                        width="30"
-                        height="30"
-                        rx="3"
-                        fill="var(--brand-accent, var(--brand-accent))"
-                        opacity="0.7"
-                    />
-                </svg>
-            </div>
-
-            <p class="props-page__empty-title">{emptyTitle}</p>
-
-            <a href={publishNewUrl} class="props-page__cta-btn props-page__cta-btn--centered">
-                {emptyCta}
-            </a>
-        </div>
+        <!-- Empty state: uses the shared EmptyState component with a @repo/icons icon
+             for visual consistency with the rest of the web app. -->
+        <EmptyState
+            locale={locale}
+            variant="empty"
+            message={emptyMessage}
+            actionUrl={publishNewUrl}
+            actionLabel={emptyCta}
+            tone="warm"
+        >
+            <BuildingIcon size={56} weight="duotone" />
+        </EmptyState>
     )}
 </AccountLayout>
 
@@ -367,39 +336,6 @@ const isEmpty = properties.length === 0;
 
     .props-page__item {
         display: contents;
-    }
-
-    /* ── Empty state ── */
-    .props-page__empty {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: var(--space-4, 1rem);
-        padding: var(--space-12, 3rem) var(--space-8, 2rem);
-        background-color: var(--core-card, var(--core-card));
-        border: 1px dashed var(--border);
-        border-radius: var(--radius-card, 24px);
-        text-align: center;
-    }
-
-    .props-page__empty-illustration {
-        margin-bottom: var(--space-2, 0.5rem);
-        opacity: 0.85;
-    }
-
-    .props-page__empty-title {
-        font-family: var(--font-heading);
-        font-weight: 600;
-        font-size: clamp(1rem, 2vw, 1.25rem);
-        color: var(--core-foreground, var(--core-foreground));
-        margin: 0;
-    }
-
-    .props-page__empty-error {
-        font-family: var(--font-sans);
-        font-size: var(--text-caption, 0.875rem);
-        color: oklch(0.55 0.22 25);
-        margin: 0;
     }
 
     /* ── Error state (fetch failed) ── */

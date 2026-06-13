@@ -26,6 +26,7 @@
  * @module SearchChatPanel
  */
 
+import { buildLoginRedirect } from '@/lib/auth-redirect';
 import { formatPrice } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -44,10 +45,16 @@ import { useSearchChat } from './useSearchChat';
  * @property locale - Active locale for translations and detail links.
  * @property apiUrl - Base URL of the API server (e.g. `http://localhost:3001`).
  *   Passed by the Astro host from `import.meta.env.PUBLIC_API_URL`.
+ * @property isAuthenticated - Whether the current visitor has an active session.
+ *   When false, the chat UI is replaced by a login CTA (W14).
+ * @property currentUrl - Full URL of the current page, used to build the
+ *   post-login redirect href. Pass `Astro.url.href` from the host page.
  */
 export interface SearchChatPanelProps {
     readonly locale: SupportedLocale;
     readonly apiUrl: string;
+    readonly isAuthenticated: boolean;
+    readonly currentUrl: string;
 }
 
 // ─── Skeleton constants ─────────────────────────────────────────────────────
@@ -177,7 +184,12 @@ function ResultCard({ item, locale, t }: ResultCardProps) {
  * />
  * ```
  */
-export function SearchChatPanel({ locale, apiUrl }: SearchChatPanelProps) {
+export function SearchChatPanel({
+    locale,
+    apiUrl,
+    isAuthenticated,
+    currentUrl
+}: SearchChatPanelProps) {
     const { t } = createTranslations(locale);
     const [draft, setDraft] = useState('');
 
@@ -185,6 +197,16 @@ export function SearchChatPanel({ locale, apiUrl }: SearchChatPanelProps) {
 
     // Ref to the bottom of the messages list — used to auto-scroll on new messages.
     const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    // Ref to the chat textarea — used to autofocus on mount for authenticated users (W14).
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    // Autofocus textarea on mount for authenticated users (W14).
+    useEffect(() => {
+        if (isAuthenticated) {
+            textareaRef.current?.focus();
+        }
+    }, [isAuthenticated]);
 
     // Auto-scroll to bottom whenever a new message or streaming token arrives.
     // Guard: scrollIntoView is not available in jsdom (test environment) — the
@@ -216,6 +238,49 @@ export function SearchChatPanel({ locale, apiUrl }: SearchChatPanelProps) {
     const hasMessages = chat.messages.length > 0;
     const showThinking = chat.isStreaming && !chat.currentReply;
     const showResults = chat.results.length > 0 || chat.resultsLoading;
+
+    // Build redirect URLs for the login CTA shown to anonymous visitors (W14).
+    const loginHref = buildLoginRedirect({ locale, currentUrl });
+    const registerHref = `/${locale}/auth/signup/`;
+
+    // Anonymous visitors: replace the full chat UI with a login CTA (W14).
+    if (!isAuthenticated) {
+        return (
+            <section
+                aria-label={t(
+                    'aiSearch.chat.panelLabel',
+                    'Panel de búsqueda conversacional con IA'
+                )}
+                className={styles.panel}
+            >
+                <div className={styles.loginCtaBlock}>
+                    <h3 className={styles.loginCtaTitle}>
+                        {t('aiSearch.loginPromptTitle', 'Iniciá sesión para buscar con IA')}
+                    </h3>
+                    <p className={styles.loginCtaMessage}>
+                        {t(
+                            'aiSearch.loginPromptMessage',
+                            'La búsqueda inteligente está disponible para usuarios registrados.'
+                        )}
+                    </p>
+                    <div className={styles.loginCtaActions}>
+                        <a
+                            href={loginHref}
+                            className={styles.loginCtaSignIn}
+                        >
+                            {t('aiSearch.loginPromptCta', 'Iniciar sesión')}
+                        </a>
+                        <a
+                            href={registerHref}
+                            className={styles.loginCtaRegister}
+                        >
+                            {t('aiSearch.loginPromptRegisterCta', 'Crear cuenta')}
+                        </a>
+                    </div>
+                </div>
+            </section>
+        );
+    }
 
     return (
         <section
@@ -416,6 +481,7 @@ export function SearchChatPanel({ locale, apiUrl }: SearchChatPanelProps) {
                     {t('aiSearch.chat.inputLabel', 'Mensaje')}
                 </label>
                 <textarea
+                    ref={textareaRef}
                     id="search-chat-input"
                     className={styles.textarea}
                     placeholder={t(

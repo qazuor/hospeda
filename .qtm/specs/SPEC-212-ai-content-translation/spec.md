@@ -38,6 +38,7 @@ happens async in the background — the HOST never waits for it. Admin users can
 review and manually override auto-translations per field.
 
 **V1 scope (owner-decided 2026-06-10):**
+
 - Auto-translate on content create/update (background job)
 - Batch translate existing content (backfill)
 - Admin UI to view translation status and override per-locale
@@ -441,6 +442,7 @@ translateEntityAsync({
 ```
 
 **`translateEntityAsync`** is a thin wrapper that:
+
 1. Checks entitlement (does the plan include `ai_translate`?)
 2. Calls `aiTranslateService.translateEntity(input)`
 3. Persists the resulting `I18nText` objects to the DB
@@ -472,6 +474,7 @@ Shows per-field translation status in the entity edit page:
 ```
 
 **States per field+locale:**
+
 - `pending` — not yet translated (grey badge, "Translate now" button)
 - `auto` — auto-translated (green badge, "Edit" button)
 - `manual` — manually overridden (blue badge, "Edit" button)
@@ -575,6 +578,7 @@ Existing Spanish content stays in the original `text` columns. The `*_i18n`
 columns start as `NULL`. The backfill script (§5.4.2) populates them.
 
 **Backfill strategy:**
+
 1. Admin triggers batch translate via `/api/v1/admin/ai/translate/batch`
 2. Script iterates entities in pages of 10
 3. For each entity: copies Spanish text to `*_i18n.es`, translates to `en` and `pt`
@@ -910,6 +914,7 @@ columns. Nullable with default. No data loss.
 ### Rollback
 
 Drop the new columns:
+
 ```sql
 ALTER TABLE accommodations DROP COLUMN IF EXISTS name_i18n;
 ALTER TABLE accommodations DROP COLUMN IF EXISTS summary_i18n;
