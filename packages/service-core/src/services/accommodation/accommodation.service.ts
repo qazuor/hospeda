@@ -83,6 +83,7 @@ import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
+import { diffTranslatableFields } from '../../translation/diff-translatable-fields';
 import { getTranslationService } from '../../translation/translation-init';
 import type {
     Actor,
@@ -836,11 +837,13 @@ export class AccommodationService extends BaseCrudService<
             if (entity.description) fields.description = entity.description;
             if (entity.richDescription) fields.richDescription = entity.richDescription;
             if (Object.keys(fields).length > 0) {
-                void translationService.translate({
-                    entityType: 'accommodation',
-                    entityId: entity.id,
-                    fields
-                }).catch(() => {});
+                void translationService
+                    .translate({
+                        entityType: 'accommodation',
+                        entityId: entity.id,
+                        fields
+                    })
+                    .catch(() => {});
             }
         }
 
@@ -881,11 +884,26 @@ export class AccommodationService extends BaseCrudService<
         }
 
         // Store the incoming lifecycleState (target state) so _afterUpdate can read it.
-        // We cannot retrieve the PREVIOUS state here because the entity ID is not available
-        // in _beforeUpdate parameters. The idempotency guard in _afterUpdate handles this.
+        // The idempotency guard in _afterUpdate handles the case where this is unchanged.
         if (ctx.hookState) {
             ctx.hookState.previousLifecycleState =
                 typeof data.lifecycleState === 'string' ? data.lifecycleState : undefined;
+        }
+
+        // SPEC-212 AC-5: capture translatable field values from the entity BEFORE the update
+        // so _afterUpdate can diff and re-translate ONLY fields that actually changed.
+        // The entity ID is available via ctx.hookState.updateId (set by the update() override).
+        if (ctx.hookState) {
+            const entityId = ctx.hookState.updateId;
+            if (entityId) {
+                const current = await this.model.findById(entityId, ctx.tx);
+                ctx.hookState.previousTranslatableFields = {
+                    name: current?.name ?? undefined,
+                    summary: current?.summary ?? undefined,
+                    description: current?.description ?? undefined,
+                    richDescription: current?.richDescription ?? undefined
+                };
+            }
         }
 
         // SPEC-172: capture junction sync inputs in hookState.
@@ -1026,20 +1044,24 @@ export class AccommodationService extends BaseCrudService<
             }
         }
 
-        // SPEC-212: fire-and-forget auto-translation on field changes
+        // SPEC-212 AC-5: fire-and-forget auto-translation for changed fields only.
+        // previousTranslatableFields was captured by _beforeUpdate; diff to skip
+        // fields whose Spanish source text did not change in this update.
         const translationService = getTranslationService();
         if (translationService) {
-            const fields: Record<string, string> = {};
-            if (entity.name) fields.name = entity.name;
-            if (entity.summary) fields.summary = entity.summary;
-            if (entity.description) fields.description = entity.description;
-            if (entity.richDescription) fields.richDescription = entity.richDescription;
+            const fields = diffTranslatableFields({
+                previous: ctx.hookState?.previousTranslatableFields ?? {},
+                current: entity as unknown as Record<string, string | null | undefined>,
+                fieldNames: ['name', 'summary', 'description', 'richDescription']
+            });
             if (Object.keys(fields).length > 0) {
-                void translationService.translate({
-                    entityType: 'accommodation',
-                    entityId: entity.id,
-                    fields
-                }).catch(() => {});
+                void translationService
+                    .translate({
+                        entityType: 'accommodation',
+                        entityId: entity.id,
+                        fields
+                    })
+                    .catch(() => {});
             }
         }
 
@@ -1276,11 +1298,18 @@ export class AccommodationService extends BaseCrudService<
         actor: Actor,
         id: string,
         data: AccommodationUpdateInput,
-        ctx?: ServiceContext
+        ctx?: ServiceContext<AccommodationHookState>
     ): Promise<ServiceOutput<Accommodation>> {
+        // SPEC-212 AC-5: store the entity ID in hookState so _beforeUpdate can
+        // fetch the pre-update entity and capture its translatable field values.
+        const resolvedCtx: ServiceContext<AccommodationHookState> = { hookState: {}, ...ctx };
+        if (resolvedCtx.hookState) {
+            resolvedCtx.hookState.updateId = id;
+        }
+
         // SPEC-217: fetch accommodation once so both the write-gate and the
         // publish branch below can reuse the result without a second DB round-trip.
-        const current = this._publishDeps ? await this.model.findById(id, ctx?.tx) : null;
+        const current = this._publishDeps ? await this.model.findById(id, resolvedCtx?.tx) : null;
 
         // SPEC-217: gate ALL writes for regular HOST owners whose subscription is
         // lapsed. Admins (actor with ACCOMMODATION_UPDATE_ANY) and owners with
@@ -1299,7 +1328,7 @@ export class AccommodationService extends BaseCrudService<
                     actor.id === current.ownerId
                         ? AccommodationService.BILLING_EXEMPT_ROLES.has(actor.role)
                         : await this._userModel
-                              .findById(current.ownerId, ctx?.tx)
+                              .findById(current.ownerId, resolvedCtx?.tx)
                               .then(
                                   (owner) =>
                                       !!owner &&
@@ -1308,7 +1337,7 @@ export class AccommodationService extends BaseCrudService<
                 if (!ownerIsBillingExempt) {
                     const eligibility = await this._publishDeps.checkEligibility(
                         current.ownerId,
-                        ctx
+                        resolvedCtx
                     );
                     if (eligibility === 'subscription_required') {
                         return {
@@ -1334,11 +1363,11 @@ export class AccommodationService extends BaseCrudService<
                         actor,
                         id,
                         restFields as AccommodationUpdateInput,
-                        ctx
+                        resolvedCtx
                     );
                     if (updateResult.error) return updateResult;
                 }
-                return this.publish(actor, id, ctx, { callerSetVisibility });
+                return this.publish(actor, id, resolvedCtx, { callerSetVisibility });
             }
         }
 
@@ -1359,7 +1388,7 @@ export class AccommodationService extends BaseCrudService<
         // touch the media column at all, so no action is required.
         let normalizedData = data;
         if (data.media !== undefined) {
-            const existing = await this.model.findById(id, ctx?.tx);
+            const existing = await this.model.findById(id, resolvedCtx?.tx);
             const existingArchivedGallery = existing?.media?.archivedGallery;
             const existingVideos = existing?.media?.videos;
             // Carry forward archivedGallery when the existing row has it.
@@ -1391,17 +1420,17 @@ export class AccommodationService extends BaseCrudService<
         };
         const needsJunctionSync = amenityIds !== undefined || featureIds !== undefined;
 
-        if (needsJunctionSync && !ctx?.tx) {
+        if (needsJunctionSync && !resolvedCtx?.tx) {
             return withServiceTransaction(
                 async (txCtx) => {
                     return super.update(actor, id, normalizedData, txCtx);
                 },
-                ctx,
+                resolvedCtx,
                 { timeoutMs: 10_000 }
             );
         }
 
-        return super.update(actor, id, normalizedData, ctx);
+        return super.update(actor, id, normalizedData, resolvedCtx);
     }
 
     /**

@@ -8,7 +8,6 @@ import {
 import { createLogger } from '@repo/logger';
 import type { ImageProvider } from '@repo/media/server';
 import { resolveEnvironment } from '@repo/media/server';
-import { getTranslationService } from '../../translation/translation-init';
 import type {
     EntityOptionsItem,
     Event,
@@ -46,6 +45,8 @@ import { and, eq, inArray, isNull } from 'drizzle-orm';
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
+import { diffTranslatableFields } from '../../translation/diff-translatable-fields';
+import { getTranslationService } from '../../translation/translation-init';
 import type {
     AdminSearchExecuteParams,
     PaginatedListOutput,
@@ -189,6 +190,40 @@ export class EventService extends BaseCrudService<
     }
 
     /**
+     * Overrides the base `update()` to store the entity ID in `ctx.hookState`
+     * before the lifecycle hooks run.
+     *
+     * `_beforeUpdate` does not receive the entity ID in its parameters. Storing
+     * the ID here lets `_beforeUpdate` fetch the pre-update entity and capture
+     * its translatable field values into `ctx.hookState.previousTranslatableFields`
+     * (SPEC-212 AC-5).
+     *
+     * @param actor - The actor performing the update.
+     * @param id - The event ID.
+     * @param data - The partial update payload.
+     * @param ctx - Optional service context (transaction, hookState).
+     * @returns The updated event or a service error.
+     */
+    public async update(
+        actor: Actor,
+        id: string,
+        data: EventUpdateInput,
+        ctx?: ServiceContext<EventHookState>
+    ): Promise<ServiceOutput<Event>> {
+        const resolvedCtx: ServiceContext<EventHookState> = { hookState: {}, ...ctx };
+        if (resolvedCtx.hookState) {
+            resolvedCtx.hookState.updateId = id;
+        }
+        try {
+            return await super.update(actor, id, data, resolvedCtx as ServiceContext);
+        } finally {
+            if (resolvedCtx.hookState) {
+                resolvedCtx.hookState.updateId = undefined;
+            }
+        }
+    }
+
+    /**
      * Permission hook: checks if the actor can create an event.
      */
     protected _canCreate(actor: Actor, _data: EventCreateInput): void {
@@ -303,12 +338,25 @@ export class EventService extends BaseCrudService<
 
     /**
      * Lifecycle hook: normalizes input before updating an event and updates slug if relevant fields change.
+     * Also captures translatable field values from the entity BEFORE the update (SPEC-212 AC-5).
      */
     protected async _beforeUpdate(
         input: EventUpdateInput,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext<EventHookState>
     ): Promise<Partial<Event>> {
+        // SPEC-212 AC-5: capture translatable field values before the update so
+        // _afterUpdate can diff and re-translate ONLY changed fields.
+        const entityId = ctx.hookState?.updateId;
+        if (entityId && ctx.hookState) {
+            const snapshot = await this.model.findById(entityId, ctx.tx);
+            ctx.hookState.previousTranslatableFields = {
+                name: snapshot?.name ?? undefined,
+                summary: snapshot?.summary ?? undefined,
+                description: snapshot?.description ?? undefined
+            };
+        }
+
         const normalized = await normalizeUpdateInput(input);
         // If category, name, or date.start is present in update, regenerate slug
         if (
@@ -356,11 +404,13 @@ export class EventService extends BaseCrudService<
             if (entity.summary) fields.summary = entity.summary;
             if (entity.description) fields.description = entity.description;
             if (Object.keys(fields).length > 0) {
-                void translationService.translate({
-                    entityType: 'event',
-                    entityId: entity.id,
-                    fields
-                }).catch(() => {});
+                void translationService
+                    .translate({
+                        entityType: 'event',
+                        entityId: entity.id,
+                        fields
+                    })
+                    .catch(() => {});
             }
         }
 
@@ -370,7 +420,7 @@ export class EventService extends BaseCrudService<
     protected async _afterUpdate(
         entity: Event,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext<EventHookState>
     ): Promise<Event> {
         try {
             getRevalidationService()?.scheduleRevalidation({
@@ -385,19 +435,24 @@ export class EventService extends BaseCrudService<
             );
         }
 
-        // SPEC-212: fire-and-forget auto-translation on field changes
+        // SPEC-212 AC-5: fire-and-forget auto-translation for changed fields only.
+        // previousTranslatableFields was captured by _beforeUpdate; diff to skip
+        // fields whose Spanish source text did not change in this update.
         const translationService = getTranslationService();
         if (translationService) {
-            const fields: Record<string, string> = {};
-            if (entity.name) fields.name = entity.name;
-            if (entity.summary) fields.summary = entity.summary;
-            if (entity.description) fields.description = entity.description;
+            const fields = diffTranslatableFields({
+                previous: ctx.hookState?.previousTranslatableFields ?? {},
+                current: entity as unknown as Record<string, string | null | undefined>,
+                fieldNames: ['name', 'summary', 'description']
+            });
             if (Object.keys(fields).length > 0) {
-                void translationService.translate({
-                    entityType: 'event',
-                    entityId: entity.id,
-                    fields
-                }).catch(() => {});
+                void translationService
+                    .translate({
+                        entityType: 'event',
+                        entityId: entity.id,
+                        fields
+                    })
+                    .catch(() => {});
             }
         }
 
