@@ -160,6 +160,11 @@ _TEMPLATE = r"""<!DOCTYPE html>
   .pchip.P0 { background: #7f1d1d; color: #fecaca; } .pchip.P1 { background: #7c2d12; color: #fed7aa; }
   .pchip.P2 { background: #713f12; color: #fde68a; } .pchip.P3 { background: #334155; color: #cbd5e1; }
   .pchip.P4 { background: #1f2937; color: #9ca3af; } .pchip.none { color: var(--muted); }
+  .fg { display: inline-flex; align-items: center; gap: .25rem; flex-wrap: wrap; }
+  .fglabel { font-size: .72rem; color: var(--muted); margin-right: .1rem; }
+  .filt { cursor: pointer; opacity: .38; transition: opacity .1s; border-radius: 999px; }
+  .filt:hover { opacity: .7; }
+  .filt.on { opacity: 1; outline: 2px solid var(--accent); outline-offset: 1px; }
   .prog { display: inline-flex; align-items: center; gap: .4rem; }
   .prog .track { width: 52px; height: 6px; background: var(--panel2); border-radius: 3px; overflow: hidden; }
   .prog .fill { display: block; height: 100%; background: var(--accent); }
@@ -179,9 +184,9 @@ _TEMPLATE = r"""<!DOCTYPE html>
 <div class="mode" id="mode"></div>
 <div class="toolbar">
   <input type="search" id="q" placeholder="Buscar en todo..." />
-  <select id="estado"><option value="">estado (index): todos</option></select>
-  <select id="estado_manual"><option value="">estado_manual: todos</option></select>
-  <select id="prioridad"><option value="">prioridad: todas</option></select>
+  <span class="fg" id="fg_estado_manual"><span class="fglabel">mi estado:</span></span>
+  <span class="fg" id="fg_prioridad"><span class="fglabel">prioridad:</span></span>
+  <span class="fg" id="fg_estado"><span class="fglabel">index:</span></span>
   <label style="font-size:.8rem;color:var(--muted);display:flex;align-items:center;gap:.3rem"><input type="checkbox" id="empty" /> campos vacíos</label>
   <button class="reset" id="reset">Reset</button>
   <span class="saved" id="saved"></span>
@@ -251,7 +256,6 @@ function avanceCell(v) {
 }
 function esc(s) { return (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;"); }
 function uniq(col) { const s = new Set(); rows.forEach(r => { if (r[col] && r[col] !== "-") s.add(r[col]); }); return [...s].sort(); }
-function fillSelect(el, col) { uniq(col).forEach(v => { const o = document.createElement("option"); o.value = v; o.textContent = v; el.appendChild(o); }); }
 
 function flashSaved(msg, ok) {
   const el = document.getElementById("saved");
@@ -343,14 +347,11 @@ function cmp(a, b) {
 }
 function render() {
   const q = document.getElementById("q").value.toLowerCase().trim();
-  const fe = document.getElementById("estado").value;
-  const fm = document.getElementById("estado_manual").value;
-  const fp = document.getElementById("prioridad").value;
   const ei = idx["estado"], mi = idx["estado_manual"], pi = idx["prioridad"];
   let view = rows.filter(r => {
-    if (fe && r[ei] !== fe) return false;
-    if (fm && r[mi] !== fm) return false;
-    if (fp && r[pi] !== fp) return false;
+    if (FILT.estado_manual.size && !FILT.estado_manual.has(r[mi])) return false;
+    if (FILT.estado.size && !FILT.estado.has(r[ei])) return false;
+    if (FILT.prioridad.size && !FILT.prioridad.has(r[pi])) return false;
     if (q && !r.join(" ").toLowerCase().includes(q)) return false;
     return true;
   });
@@ -388,14 +389,29 @@ function render() {
   document.getElementById("count").textContent = view.length + " / " + rows.length + " specs";
   renderHead();
 }
-fillSelect(document.getElementById("estado"), idx["estado"]);
-fillSelect(document.getElementById("estado_manual"), idx["estado_manual"]);
-fillSelect(document.getElementById("prioridad"), idx["prioridad"]);
+// multi-value filters: a Set per column, empty Set = no filter (OR within a group)
+const FILT = { estado_manual: new Set(), estado: new Set(), prioridad: new Set() };
+function buildChips(col, containerId, values, renderChip) {
+  const cont = document.getElementById(containerId);
+  values.forEach(v => {
+    const ch = document.createElement("span");
+    ch.className = "filt"; ch.innerHTML = renderChip(v);
+    ch.onclick = () => { const s = FILT[col]; s.has(v) ? s.delete(v) : s.add(v); ch.classList.toggle("on"); render(); };
+    cont.appendChild(ch);
+  });
+}
+const STATUS_VALS = CFG.estadoOpts.filter(v => v !== "-");
+buildChips("estado_manual", "fg_estado_manual", STATUS_VALS, badge);
+buildChips("prioridad", "fg_prioridad", uniq(idx["prioridad"]), prioChip);
+buildChips("estado", "fg_estado", STATUS_VALS, idxBadge);
+
 document.getElementById("empty").checked = canEdit;  // show empties when editing, hide for clean read-only scan
-["q", "estado", "estado_manual", "prioridad"].forEach(id => document.getElementById(id).addEventListener("input", render));
+document.getElementById("q").addEventListener("input", render);
 document.getElementById("empty").addEventListener("change", render);
 document.getElementById("reset").onclick = () => {
-  ["q", "estado", "estado_manual", "prioridad"].forEach(id => document.getElementById(id).value = "");
+  document.getElementById("q").value = "";
+  Object.values(FILT).forEach(s => s.clear());
+  document.querySelectorAll(".filt.on").forEach(el => el.classList.remove("on"));
   document.getElementById("empty").checked = canEdit;
   render();
 };
