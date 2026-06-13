@@ -463,11 +463,14 @@ prioritization board for every spec. Render it as an interactive HTML table with
 3. **`estado` column vocabulary** (only these four values):
    - `done` — spec `completed` or `archived` in the index
    - `in progress` — spec `in-progress`
-   - `blocked` — waiting on an open owner decision or an unmet hard dependency
-   - `backlog` — everything else (`draft`, `approved`, not started)
+   - `blocked` — depends on ANOTHER spec that is not yet merged/done (an unsatisfied
+     hard dependency). Waiting on the owner's decisions is NOT blocked — those
+     decisions are taken when the spec starts, so it stays `backlog`.
+   - `backlog` — everything else (`draft`, `approved`, not started, deps satisfied)
 4. **Status mapping**: `completed`/`archived`/`merged` → `done`; `in-progress` →
-   `in progress`; `approved`/`draft` → `backlog`. `blocked` is set deliberately (the
-   index has no `blocked` status), never auto-derived from a plain dependency.
+   `in progress`; `approved`/`draft` → `backlog`. Then promote to `blocked` any
+   non-done spec whose `dependsOn` (plus dependencies stated in its note/estado_real)
+   point at a spec not in the done set.
 5. **On disagreement, trust `.qtm/specs/index.json`** over the CSV, same as the
    `tasks/index.json` rule above.
 
