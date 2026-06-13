@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { AttractionIdSchema, DestinationIdSchema } from '../../common/id.schema.js';
+import { stripShapeDefaults } from '../../utils/utils.js';
 import { AttractionSchema } from './attraction.schema.js';
 
 /**
@@ -24,7 +25,10 @@ export const AttractionCreateInputSchema = AttractionSchema.omit({
  * Schema for updating an attraction
  * All fields are optional for partial updates, except id is not allowed
  */
-export const AttractionUpdateInputSchema = AttractionCreateInputSchema.partial();
+// Zod 4 .partial() keeps .default(); strip them so absent keys = no change (SPEC-217).
+export const AttractionUpdateInputSchema = z
+    .object(stripShapeDefaults(AttractionCreateInputSchema.shape))
+    .partial();
 
 /**
  * Schema for deleting an attraction (soft delete)

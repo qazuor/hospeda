@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { AccommodationReviewIdSchema } from '../../common/id.schema.js';
+import { stripShapeDefaults } from '../../utils/utils.js';
 import { AccommodationReviewSchema } from './accommodationReview.schema.js';
 
 /**
@@ -79,20 +80,26 @@ export const AccommodationReviewCreateOutputSchema = AccommodationReviewSchema;
  * Moderation fields are omitted — they are managed through the dedicated
  * moderation endpoint, not through standard CRUD operations.
  */
-export const AccommodationReviewUpdateInputSchema = AccommodationReviewSchema.omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-    createdById: true,
-    updatedById: true,
-    deletedAt: true,
-    deletedById: true,
-    averageRating: true,
-    moderationState: true,
-    moderatedById: true,
-    moderatedAt: true,
-    moderationReason: true
-})
+// Zod 4 .partial() keeps .default(); strip them so absent keys = no change (SPEC-217).
+export const AccommodationReviewUpdateInputSchema = z
+    .object(
+        stripShapeDefaults(
+            AccommodationReviewSchema.omit({
+                id: true,
+                createdAt: true,
+                updatedAt: true,
+                createdById: true,
+                updatedById: true,
+                deletedAt: true,
+                deletedById: true,
+                averageRating: true,
+                moderationState: true,
+                moderatedById: true,
+                moderatedAt: true,
+                moderationReason: true
+            }).shape
+        )
+    )
     .partial()
     .strict();
 

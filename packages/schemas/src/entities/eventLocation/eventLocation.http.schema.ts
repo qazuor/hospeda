@@ -11,6 +11,7 @@ import {
     createArrayQueryParam,
     createBooleanQueryParam
 } from '../../api/http/base-http.schema.js';
+import { stripShapeDefaults } from '../../utils/utils.js';
 
 /**
  * HTTP-compatible event location search schema with automatic coercion
@@ -96,7 +97,10 @@ export type EventLocationCreateHttp = z.infer<typeof EventLocationCreateHttpSche
  * HTTP-compatible event location update schema
  * Handles partial updates via HTTP PATCH requests
  */
-export const EventLocationUpdateHttpSchema = EventLocationCreateHttpSchema.partial();
+// Zod 4 .partial() keeps .default(); strip them so absent keys = no change (SPEC-217).
+export const EventLocationUpdateHttpSchema = z
+    .object(stripShapeDefaults(EventLocationCreateHttpSchema.shape))
+    .partial();
 
 export type EventLocationUpdateHttp = z.infer<typeof EventLocationUpdateHttpSchema>;
 

@@ -107,6 +107,30 @@
     border-radius: var(--radius-pill, 9999px);
 }
 
+.statusBadge {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    padding: 2px var(--space-2, 8px);
+    border-radius: var(--radius-pill, 9999px);
+    white-space: nowrap;
+}
+
+.statusApproved {
+    background-color: var(--success-a15);
+    color: var(--success);
+}
+
+.statusPending {
+    background-color: var(--warning-a12);
+    color: var(--warning);
+}
+
+.statusRejected {
+    background-color: var(--destructive-a15);
+    color: var(--destructive);
+}
+
 .reviewTitle {
     font-family: var(--font-heading);
     font-weight: 600;

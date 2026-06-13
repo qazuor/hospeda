@@ -81,6 +81,7 @@ class MockTagModel implements BaseModel<TestTag> {
     readonly entityName = 'tag';
 
     findById = vi.fn();
+    findByIds = vi.fn();
     findOne = vi.fn();
     findOneWithRelations = vi.fn();
     create = vi.fn();

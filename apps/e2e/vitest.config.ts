@@ -1,15 +1,17 @@
 import { defineConfig } from 'vitest/config';
 
 /**
- * Minimal Vitest config for the e2e package.
+ * Vitest config for the e2e package.
  *
- * The e2e suite uses Playwright, not Vitest. This file exists only to prevent
- * Vitest from inheriting the monorepo root config (which defines `test.projects`
- * with paths relative to that root) when running `vitest run --passWithNoTests`
- * from this directory.
+ * The e2e suite primarily uses Playwright, not Vitest. This file overrides the
+ * monorepo root config (which defines `test.projects` relative to that root).
+ *
+ * Static guard tests (pure-TS, no DB/servers) live in `test/unit/` and run with
+ * Vitest. These ensure compile-time invariants about enum values and status codes
+ * that helpers write into the DB are valid and consistent with what crons produce.
  */
 export default defineConfig({
     test: {
-        include: []
+        include: ['test/**/*.test.ts']
     }
 });

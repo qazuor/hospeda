@@ -6,7 +6,11 @@
  * @route GET /api/v1/protected/users/me/reviews
  */
 import { AccommodationModel, DestinationModel } from '@repo/db';
-import { AccommodationReviewListItemSchema, DestinationReviewListItemSchema } from '@repo/schemas';
+import {
+    AccommodationReviewListItemSchema,
+    DestinationReviewListItemSchema,
+    ModerationStatusEnumSchema
+} from '@repo/schemas';
 import {
     AccommodationReviewService,
     DestinationReviewService,
@@ -31,13 +35,18 @@ const UserReviewsResponseSchema = z.object({
     accommodationReviews: z.array(
         AccommodationReviewListItemSchema.extend({
             accommodationName: z.string().nullable().optional(),
-            accommodationSlug: z.string().nullable().optional()
+            accommodationSlug: z.string().nullable().optional(),
+            // Moderation state so the user's "my reviews" view can flag reviews
+            // still pending approval or rejected. Only exposed on this owner-scoped
+            // endpoint, not on the shared public list-item schema.
+            moderationState: ModerationStatusEnumSchema.optional()
         })
     ),
     destinationReviews: z.array(
         DestinationReviewListItemSchema.extend({
             destinationName: z.string().nullable().optional(),
-            destinationSlug: z.string().nullable().optional()
+            destinationSlug: z.string().nullable().optional(),
+            moderationState: ModerationStatusEnumSchema.optional()
         })
     ),
     totals: z.object({
@@ -120,48 +129,38 @@ export const userReviewsRoute = createProtectedRoute({
         }>;
         const destTotal = destData?.pagination?.total ?? 0;
 
-        // Enrich each review with its parent entity's name + slug. Done as
-        // a batch lookup (one query per distinct id set) so the response is
-        // self-contained for the UI; the underlying services intentionally
-        // return raw rows so admin tooling stays cheap.
+        // Enrich each review with its parent entity's name + slug.
+        // Uses a single batch query per entity type (WHERE id IN (...)) to avoid
+        // the N+1 problem that sequential findById calls in a loop would cause.
         const accommodationIds = [
             ...new Set(accommodationReviewsRaw.map((r) => r.accommodationId).filter(Boolean))
         ];
         const destinationIds = [
             ...new Set(destinationReviewsRaw.map((r) => r.destinationId).filter(Boolean))
         ];
-        const [accommodationsById, destinationsById] = await Promise.all([
-            accommodationIds.length > 0
-                ? (async () => {
-                      const map = new Map<string, { name?: string; slug?: string }>();
-                      for (const id of accommodationIds) {
-                          const row = await accommodationModel.findById(id);
-                          if (row) {
-                              map.set(id, {
-                                  name: (row as { name?: string }).name,
-                                  slug: (row as { slug?: string }).slug
-                              });
-                          }
-                      }
-                      return map;
-                  })()
-                : Promise.resolve(new Map<string, { name?: string; slug?: string }>()),
-            destinationIds.length > 0
-                ? (async () => {
-                      const map = new Map<string, { name?: string; slug?: string }>();
-                      for (const id of destinationIds) {
-                          const row = await destinationModel.findById(id);
-                          if (row) {
-                              map.set(id, {
-                                  name: (row as { name?: string }).name,
-                                  slug: (row as { slug?: string }).slug
-                              });
-                          }
-                      }
-                      return map;
-                  })()
-                : Promise.resolve(new Map<string, { name?: string; slug?: string }>())
+        const [accommodationRows, destinationRows] = await Promise.all([
+            accommodationModel.findByIds(accommodationIds),
+            destinationModel.findByIds(destinationIds)
         ]);
+
+        const accommodationsById = new Map<string, { name?: string; slug?: string }>(
+            accommodationRows.map((row) => [
+                (row as { id: string }).id,
+                {
+                    name: (row as { name?: string }).name,
+                    slug: (row as { slug?: string }).slug
+                }
+            ])
+        );
+        const destinationsById = new Map<string, { name?: string; slug?: string }>(
+            destinationRows.map((row) => [
+                (row as { id: string }).id,
+                {
+                    name: (row as { name?: string }).name,
+                    slug: (row as { slug?: string }).slug
+                }
+            ])
+        );
 
         const accommodationReviews = accommodationReviewsRaw.map((r) => ({
             ...r,

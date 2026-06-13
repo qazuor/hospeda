@@ -10,6 +10,7 @@ import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
 import { SponsorshipStatusEnum } from '../../enums/sponsorship-status.enum.js';
 import { SponsorshipStatusEnumSchema } from '../../enums/sponsorship-status.schema.js';
 import { SponsorshipTargetTypeEnumSchema } from '../../enums/sponsorship-target-type.schema.js';
+import { stripShapeDefaults } from '../../utils/utils.js';
 
 /**
  * Sponsorship analytics data
@@ -132,9 +133,15 @@ export type SponsorshipCreateInput = z.infer<typeof SponsorshipCreateInputSchema
  * The base `SponsorshipCreateInputSchema.sponsorshipStatus` keeps `.default(PENDING)`
  * because new sponsorships always start as PENDING.
  */
-export const SponsorshipUpdateInputSchema = SponsorshipCreateInputSchema.extend({
-    sponsorshipStatus: SponsorshipStatusEnumSchema.optional()
-})
+// Zod 4 .partial() keeps .default(); strip them so absent keys = no change (SPEC-217).
+export const SponsorshipUpdateInputSchema = z
+    .object(
+        stripShapeDefaults(
+            SponsorshipCreateInputSchema.extend({
+                sponsorshipStatus: SponsorshipStatusEnumSchema.optional()
+            }).shape
+        )
+    )
     .partial()
     .strict();
 export type SponsorshipUpdateInput = z.infer<typeof SponsorshipUpdateInputSchema>;

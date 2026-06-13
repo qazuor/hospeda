@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { PostIdSchema } from '../../common/id.schema.js';
+import { stripShapeDefaults } from '../../utils/utils.js';
 import { PostSchema } from './post.schema.js';
 
 /**
@@ -45,19 +46,26 @@ export const PostCreateOutputSchema = PostSchema;
 // UPDATE SCHEMAS
 // ============================================================================
 
+// Zod 4 .partial() keeps .default(); strip them so absent keys = no change (SPEC-217).
 /**
  * Schema for updating a post (PUT - complete replacement)
  * Omits auto-generated fields and makes all fields partial
  */
-export const PostUpdateInputSchema = PostSchema.omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-    createdById: true,
-    updatedById: true,
-    deletedAt: true,
-    deletedById: true
-}).partial();
+export const PostUpdateInputSchema = z
+    .object(
+        stripShapeDefaults(
+            PostSchema.omit({
+                id: true,
+                createdAt: true,
+                updatedAt: true,
+                createdById: true,
+                updatedById: true,
+                deletedAt: true,
+                deletedById: true
+            }).shape
+        )
+    )
+    .partial();
 
 /**
  * Schema for partial post updates (PATCH)

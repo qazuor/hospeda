@@ -13,9 +13,9 @@ import {
 } from '@qazuor/qzpay-mercadopago';
 import { getEnv, getEnvBoolean, getEnvNumber } from '@repo/config';
 import { createLogger } from '@repo/logger';
+import { MERCADO_PAGO_DEFAULT_TIMEOUT_MS } from '../constants/billing.constants.js';
 
 const logger = createLogger('billing:mercadopago');
-import { MERCADO_PAGO_DEFAULT_TIMEOUT_MS } from '../constants/billing.constants.js';
 
 /**
  * Configuration options for creating the MercadoPago adapter

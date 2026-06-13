@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { z } from 'zod';
 import {
     FacebookUrlRegex,
     InstagramUrlRegex,
@@ -8,7 +9,8 @@ import {
     TwitterUrlRegex,
     isValidLatitude,
     isValidLongitude,
-    omittedSystemFieldsForActions
+    omittedSystemFieldsForActions,
+    stripShapeDefaults
 } from '../../src/utils/utils.js';
 
 describe('Regular Expressions', () => {
@@ -325,5 +327,50 @@ describe('System Fields Configuration', () => {
                 expect(field.length).toBeGreaterThan(0);
             }
         });
+    });
+});
+
+describe('stripShapeDefaults', () => {
+    it('removes a plain top-level default so partial() no longer injects it', () => {
+        const base = z.object({ a: z.string().default('X'), b: z.number() });
+        // Zod 4 baseline: partial() does NOT strip the default.
+        expect(base.partial().parse({})).toEqual({ a: 'X' });
+        // After stripping, an empty parse yields an empty object.
+        const stripped = z.object(stripShapeDefaults(base.shape)).partial();
+        expect(stripped.parse({})).toEqual({});
+        expect(stripped.parse({ a: 'Y' })).toEqual({ a: 'Y' });
+    });
+
+    it('removes defaults nested inside optional() / nullable() wrappers', () => {
+        const base = z.object({
+            count: z.number().default(0).optional(),
+            label: z.string().default('hi').nullable()
+        });
+        const stripped = z.object(stripShapeDefaults(base.shape)).partial();
+        expect(stripped.parse({})).toEqual({});
+    });
+
+    it('preserves the optional modifier after removing the default', () => {
+        const base = z.object({ count: z.number().default(0).optional() });
+        const stripped = z.object(stripShapeDefaults(base.shape));
+        // optional preserved → undefined still allowed, but no default injected.
+        expect(stripped.parse({})).toEqual({});
+        expect(stripped.parse({ count: 5 })).toEqual({ count: 5 });
+    });
+
+    it('leaves non-defaulted fields untouched', () => {
+        const base = z.object({ a: z.string(), b: z.number().int() });
+        const stripped = z.object(stripShapeDefaults(base.shape));
+        expect(stripped.parse({ a: 'x', b: 2 })).toEqual({ a: 'x', b: 2 });
+        expect(() => stripped.parse({ a: 'x' })).toThrow();
+    });
+
+    it('documents the known boundary: a default behind an OUTER catch wrapper is NOT stripped', () => {
+        // `ZodCatch`/`ZodPipe`/`ZodEffects` placed OUTSIDE a `ZodDefault` are not
+        // traversed (see removeFieldDefault docs). No AccommodationSchema field uses
+        // this pattern; this test pins the boundary so a future regression is visible.
+        const base = z.object({ a: z.string().default('X').catch('Y') });
+        const stripped = z.object(stripShapeDefaults(base.shape)).partial();
+        expect(stripped.parse({})).toEqual({ a: 'X' });
     });
 });

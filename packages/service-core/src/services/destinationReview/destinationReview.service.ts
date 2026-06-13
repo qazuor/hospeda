@@ -572,6 +572,14 @@ export class DestinationReviewService extends BaseCrudService<
             ctx,
             execute: async (validated, validatedActor, resolvedCtx) => {
                 await this._canList(validatedActor);
+                // Defense-in-depth: actors may only list their own reviews via this
+                // method. Admin callers use listWithUser instead.
+                if (validated.userId !== validatedActor.id) {
+                    throw new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        'Forbidden: cannot list reviews for another user'
+                    );
+                }
                 const { userId, page, pageSize, destinationId } = validated;
                 const filters: Record<string, unknown> = { userId, deletedAt: null };
                 if (destinationId) {

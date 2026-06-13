@@ -14,6 +14,7 @@ import {
 import { RoleEnum, RoleEnumSchema } from '../../enums/index.js';
 import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
 import { VisibilityEnum } from '../../enums/visibility.enum.js';
+import { stripShapeDefaults } from '../../utils/utils.js';
 
 /**
  * User status enumeration for HTTP requests
@@ -84,15 +85,19 @@ export const UserCreateHttpSchema = z.object({
 
 export type UserCreateHttp = z.infer<typeof UserCreateHttpSchema>;
 
+// Zod 4 .partial() keeps .default(); strip them so absent keys = no change (SPEC-217).
 /**
  * HTTP-compatible user update schema
  * Handles partial updates via HTTP PATCH requests
  */
-export const UserUpdateHttpSchema = UserCreateHttpSchema.partial().extend({
-    // ID is required for updates but comes from URL params, not body
-    isEmailVerified: z.coerce.boolean().optional(),
-    avatar: z.string().url().optional()
-});
+export const UserUpdateHttpSchema = z
+    .object(stripShapeDefaults(UserCreateHttpSchema.shape))
+    .partial()
+    .extend({
+        // ID is required for updates but comes from URL params, not body
+        isEmailVerified: z.coerce.boolean().optional(),
+        avatar: z.string().url().optional()
+    });
 
 export type UserUpdateHttp = z.infer<typeof UserUpdateHttpSchema>;
 

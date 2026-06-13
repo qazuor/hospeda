@@ -29,6 +29,12 @@ interface FailNextEntry {
     readonly errorCode: string;
     readonly errorMessage: string;
     readonly delayMs?: number;
+    /**
+     * Optional ownerId/subscriptionId scope. When set, the entry only matches
+     * a call whose extracted scope equals this value. When omitted, the entry
+     * matches ANY caller of `operation` (backward-compat).
+     */
+    readonly scope?: string;
 }
 
 interface RecordedCall {
@@ -65,6 +71,11 @@ export function isTestControlEnabled(): boolean {
  * Calls are consumed in FIFO order: if you queue two failNext for
  * `startTrial`, the first call fails with the first entry, the second
  * with the second, and the third uses the real adapter again.
+ *
+ * The entry may carry an optional `scope` (ownerId or subscriptionId). When
+ * set, the entry only matches a call whose extracted scope equals it — this
+ * prevents cross-contamination between parallel E2E workers that share this
+ * global queue. An entry WITHOUT `scope` matches any caller (backward-compat).
  */
 export function failNext(entry: FailNextEntry): void {
     if (!isTestControlEnabled()) return;
@@ -102,6 +113,27 @@ export function resetTestControl(): void {
 }
 
 /**
+ * Extracts the scope of a call from its `args`, used to match a scoped
+ * `failNext` entry against the specific caller that armed it.
+ *
+ * Rules:
+ *  - `args` is a string (e.g. cancelTrial receives `subscriptionId`) → that string.
+ *  - `args` is an object with a string `ownerId` (e.g. startTrial receives
+ *    `{ ownerId }`) → that ownerId.
+ *  - otherwise (null, number, object without a string `ownerId`, etc.) → undefined.
+ */
+function extractScope(args: unknown): string | undefined {
+    if (typeof args === 'string') {
+        return args;
+    }
+    if (args !== null && typeof args === 'object' && 'ownerId' in args) {
+        const ownerId = (args as { ownerId?: unknown }).ownerId;
+        return typeof ownerId === 'string' ? ownerId : undefined;
+    }
+    return undefined;
+}
+
+/**
  * Internal hook used by the QZPay adapter wrapper. Determines whether the
  * next call should fail / delay / proceed normally, and records the
  * outcome for assertions.
@@ -123,7 +155,12 @@ export async function applyTestControl(
         await new Promise((resolve) => setTimeout(resolve, delay));
     }
 
-    const failureIdx = state.failNextQueue.findIndex((entry) => entry.operation === operation);
+    const callScope = extractScope(args);
+    const failureIdx = state.failNextQueue.findIndex(
+        (entry) =>
+            entry.operation === operation &&
+            (entry.scope === undefined || entry.scope === callScope)
+    );
     if (failureIdx !== -1) {
         const failure = state.failNextQueue[failureIdx];
         if (failure === undefined) {

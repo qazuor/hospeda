@@ -1,6 +1,6 @@
 import type { PaginatedListOptions } from '@repo/schemas';
 import type { SQL, Table } from 'drizzle-orm';
-import { and, count, sql } from 'drizzle-orm';
+import { and, count, inArray, sql } from 'drizzle-orm';
 import { getDb, withTransaction } from '../client.ts';
 import type { BaseModel, DrizzleClient } from '../types.ts';
 import { buildOrderByClause, buildWhereClause } from '../utils/drizzle-helpers.ts';
@@ -227,6 +227,53 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
                 logError(this.entityName, 'findById', { id }, err);
             } catch {}
             throw new DbError(this.entityName, 'findById', { id }, err.message);
+        }
+    }
+
+    /**
+     * Finds multiple entities by their primary key IDs in a single batch query.
+     *
+     * Issues exactly ONE `SELECT ... WHERE id IN (ids)` query regardless of how many IDs
+     * are provided. This is the correct replacement for calling `findById` in a loop,
+     * which produces N sequential round trips.
+     *
+     * Semantics match `findById`: no soft-delete filtering is applied. Rows with a non-null
+     * `deletedAt` are returned just as `findById` would return them. Callers that need to
+     * exclude soft-deleted rows must filter the result themselves.
+     *
+     * @param ids - Array of entity IDs to fetch. Duplicate IDs are deduplicated by the DB
+     *   engine (all returned rows are distinct primary-key matches).
+     * @param tx - Optional transaction client.
+     * @returns Promise resolving to an array of found entities. Entities not found (by ID)
+     *   are simply absent from the result — no error is thrown for missing IDs.
+     *   Returns an empty array immediately without a DB round trip when `ids` is empty.
+     */
+    async findByIds(ids: readonly string[], tx?: DrizzleClient): Promise<T[]> {
+        if (ids.length === 0) return [];
+        const logContext = { ids, count: ids.length };
+        try {
+            const tableRecord = this.table as unknown as Record<string, unknown>;
+            const idColumn = tableRecord.id;
+            if (!idColumn) {
+                throw new Error(
+                    `Table '${this.entityName}' does not have an 'id' column — findByIds is not supported`
+                );
+            }
+            const db = this.getClient(tx);
+            const result = await db
+                .select()
+                .from(this.table)
+                .where(inArray(idColumn as Parameters<typeof inArray>[0], ids as string[]));
+            try {
+                logQuery(this.entityName, 'findByIds', logContext, result);
+            } catch {}
+            return result as T[];
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            try {
+                logError(this.entityName, 'findByIds', logContext, err);
+            } catch {}
+            throw new DbError(this.entityName, 'findByIds', logContext, err.message);
         }
     }
 

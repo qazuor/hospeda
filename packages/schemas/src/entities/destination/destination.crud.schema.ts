@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { DestinationIdSchema } from '../../common/id.schema.js';
 import { DestinationTypeEnumSchema } from '../../enums/destination-type.schema.js';
+import { stripShapeDefaults } from '../../utils/utils.js';
 import { DestinationSchema } from './destination.schema.js';
 
 /**
@@ -63,19 +64,25 @@ export type DestinationCreateOutput = z.infer<typeof DestinationCreateOutputSche
  * Schema for updating a destination (PUT - complete replacement)
  * Omits auto-generated fields and makes all fields partial
  */
-export const DestinationUpdateInputSchema = DestinationSchema.omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-    createdById: true,
-    updatedById: true,
-    deletedAt: true,
-    deletedById: true,
-    // Hierarchy fields auto-computed by service
-    path: true,
-    pathIds: true,
-    level: true
-})
+// Zod 4 .partial() keeps .default(); strip them so absent keys = no change (SPEC-217).
+export const DestinationUpdateInputSchema = z
+    .object(
+        stripShapeDefaults(
+            DestinationSchema.omit({
+                id: true,
+                createdAt: true,
+                updatedAt: true,
+                createdById: true,
+                updatedById: true,
+                deletedAt: true,
+                deletedById: true,
+                // Hierarchy fields auto-computed by service
+                path: true,
+                pathIds: true,
+                level: true
+            }).shape
+        )
+    )
     .partial()
     .strict();
 export type DestinationUpdateInput = z.infer<typeof DestinationUpdateInputSchema>;

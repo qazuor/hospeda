@@ -39,6 +39,7 @@ interface FailNextBody {
     errorCode?: string;
     errorMessage?: string;
     delayMs?: number;
+    scope?: string;
 }
 
 interface DelayNextBody {
@@ -73,7 +74,8 @@ export function createQZPayTestControlRoutes(): Hono {
             operation: body.operation,
             errorCode: body.errorCode,
             errorMessage: body.errorMessage,
-            delayMs: typeof body.delayMs === 'number' ? body.delayMs : undefined
+            delayMs: typeof body.delayMs === 'number' ? body.delayMs : undefined,
+            scope: typeof body.scope === 'string' ? body.scope : undefined
         });
         return c.json({ ok: true }, 200);
     });

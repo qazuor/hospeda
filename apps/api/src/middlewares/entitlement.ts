@@ -22,7 +22,8 @@ import {
     getDefaultEntitlements,
     getUnlimitedEntitlements,
     isEntitlementKey,
-    isLimitKey
+    isLimitKey,
+    isSubscriptionLive
 } from '@repo/billing';
 import { ServiceErrorCode } from '@repo/schemas';
 import { RoleEnum, ServiceError } from '@repo/service-core';
@@ -473,7 +474,13 @@ async function loadEntitlements(
 
             if (overdueMs > 0) {
                 const hoursOverdue = overdueMs / (60 * 60 * 1000);
-                const withinWindow = hoursOverdue <= BILLING_CRON_LAG_GRACE_HOURS;
+                // withinWindow delegates to the shared predicate (single source of truth:
+                // isSubscriptionLive uses the same BILLING_CRON_LAG_GRACE_HOURS threshold).
+                const withinWindow = isSubscriptionLive({
+                    status: activeSubscription.status,
+                    currentPeriodEnd: activeSubscription.currentPeriodEnd,
+                    nowMs
+                });
                 const hoursRemaining = withinWindow
                     ? Math.ceil(BILLING_CRON_LAG_GRACE_HOURS - hoursOverdue)
                     : 0;

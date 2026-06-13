@@ -11,6 +11,7 @@ import {
     createArrayQueryParam,
     createBooleanQueryParam
 } from '../../api/http/base-http.schema.js';
+import { stripShapeDefaults } from '../../utils/utils.js';
 
 /**
  * HTTP-compatible attraction search schema with automatic coercion
@@ -61,7 +62,10 @@ export type AttractionCreateHttp = z.infer<typeof AttractionCreateHttpSchema>;
  * HTTP-compatible attraction update schema
  * Handles partial updates via HTTP PATCH requests
  */
-export const AttractionUpdateHttpSchema = AttractionCreateHttpSchema.partial();
+// Zod 4 .partial() keeps .default(); strip them so absent keys = no change (SPEC-217).
+export const AttractionUpdateHttpSchema = z
+    .object(stripShapeDefaults(AttractionCreateHttpSchema.shape))
+    .partial();
 
 export type AttractionUpdateHttp = z.infer<typeof AttractionUpdateHttpSchema>;
 

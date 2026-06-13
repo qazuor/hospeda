@@ -78,6 +78,7 @@ type EntityB = {
 class MockModelA implements BaseModel<EntityA> {
     readonly entityName = 'entityA';
     findById = vi.fn();
+    findByIds = vi.fn();
     findOne = vi.fn();
     findOneWithRelations = vi.fn();
     create = vi.fn();
@@ -97,6 +98,7 @@ class MockModelA implements BaseModel<EntityA> {
 class MockModelB implements BaseModel<EntityB> {
     readonly entityName = 'entityB';
     findById = vi.fn();
+    findByIds = vi.fn();
     findOne = vi.fn();
     findOneWithRelations = vi.fn();
     create = vi.fn();

@@ -73,7 +73,8 @@ test.describe('HOST-07c: QZPay startTrial timeout @p0 @host @billing @resilience
         await qzpayControl.failNext({
             operation: 'startTrial',
             errorCode: 'TIMEOUT',
-            errorMessage: 'QZPay startTrial exceeded 8s timeout (HOST-07c E2E)'
+            errorMessage: 'QZPay startTrial exceeded 8s timeout (HOST-07c E2E)',
+            scope: host.id
         });
 
         // ── Publish: expect 5xx ────────────────────────────────────────────

@@ -42,19 +42,10 @@ test.describe('HOST-03: trial expired blocks writes @p0 @host @billing', () => {
     });
 
     test('trial-expired host: blocks writes via UI + API, keeps reads', async ({ page }) => {
-        // Paywall enforcement is only deterministic with the QZPay test-control
-        // adapter (HOSPEDA_QZPAY_TEST_CONTROL_ENABLED=true). A stub MP token lets
-        // billing init succeed but the entitlement middleware still falls back to
-        // "draft defaults" and grants writes regardless of trial state, so a stub
-        // run cannot validate the paywall. Real paywall behavior is covered by the
-        // staging billing smoke (the project's billing gate).
-        if (process.env.HOSPEDA_QZPAY_TEST_CONTROL_ENABLED !== 'true') {
-            test.fixme(
-                true,
-                'HOST-03: deterministic billing not configured — needs the QZPay test-control adapter (HOSPEDA_QZPAY_TEST_CONTROL_ENABLED=true); a stub MP token is not enough.'
-            );
-            return;
-        }
+        // Paywall here is enforced by the date-aware publish gate (checkEligibility
+        // + isSubscriptionLive, SPEC-217): a trial past trial_end beyond the 6h grace
+        // returns subscription_required. Deterministic against the local DB — no
+        // MercadoPago round-trip and no test-control flag needed.
 
         // ── Setup ──────────────────────────────────────────────────────────
         const host = await createUser({ role: 'HOST' }, { apiBaseUrl: API_URL });

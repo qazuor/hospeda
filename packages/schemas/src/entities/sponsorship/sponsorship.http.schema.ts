@@ -15,6 +15,7 @@ import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
 import { LifecycleStatusEnumSchema } from '../../enums/lifecycle-state.schema.js';
 import { SponsorshipStatusEnumSchema } from '../../enums/sponsorship-status.schema.js';
 import { SponsorshipTargetTypeEnumSchema } from '../../enums/sponsorship-target-type.schema.js';
+import { stripShapeDefaults } from '../../utils/utils.js';
 
 /**
  * HTTP-compatible sponsorship search schema with automatic coercion
@@ -92,7 +93,10 @@ export type SponsorshipCreateHttp = z.infer<typeof SponsorshipCreateHttpSchema>;
  * HTTP-compatible sponsorship update schema
  * Handles partial updates via HTTP PATCH requests
  */
-export const SponsorshipUpdateHttpSchema = SponsorshipCreateHttpSchema.partial();
+// Zod 4 .partial() keeps .default(); strip them so absent keys = no change (SPEC-217).
+export const SponsorshipUpdateHttpSchema = z
+    .object(stripShapeDefaults(SponsorshipCreateHttpSchema.shape))
+    .partial();
 
 export type SponsorshipUpdateHttp = z.infer<typeof SponsorshipUpdateHttpSchema>;
 
