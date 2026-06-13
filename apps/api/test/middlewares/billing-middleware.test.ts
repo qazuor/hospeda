@@ -25,7 +25,7 @@ vi.mock('@repo/db', () => ({
 
 vi.mock('@repo/billing', () => ({
     createMercadoPagoAdapter: (...args: unknown[]) => mockCreateMercadoPagoAdapter(...args),
-    createStubMercadoPagoAdapter: (...args: unknown[]) => mockCreateStubMercadoPagoAdapter(...args),
+    createStubMercadoPagoAdapter: () => mockCreateStubMercadoPagoAdapter(),
     isTestControlEnabled: () => mockIsTestControlEnabled()
 }));
 
