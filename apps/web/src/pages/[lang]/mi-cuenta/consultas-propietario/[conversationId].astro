@@ -56,7 +56,7 @@ function formatDate(dateStr: string): string {
 }
 
 const pageTitle = t('conversations.thread.title', undefined, {
-    senderName: conversation.guestName
+    senderName: conversation.guestName ?? t('conversations.senderLabels.guest')
 });
 
 // Owner reply URL for the ConversationReply component
@@ -95,14 +95,14 @@ const replyUrl = `${getApiUrl()}/api/v1/protected/conversations/owner/${conversa
                 <li
                     class:list={[
                         'conv-thread__message',
-                        `conv-thread__message--${msg.senderType}`
+                        `conv-thread__message--${msg.senderType?.toLowerCase() ?? 'system'}`
                     ]}
                 >
                     <div class="conv-thread__bubble">
                         <span class="conv-thread__sender-label">
-                            {msg.senderType === 'owner'
+                            {msg.senderType?.toLowerCase() === 'owner'
                                 ? t('conversations.senderLabels.owner')
-                                : msg.senderType === 'guest'
+                                : msg.senderType?.toLowerCase() === 'guest'
                                   ? t('conversations.senderLabels.guest')
                                   : t('conversations.thread.systemMessage')}
                         </span>
@@ -128,7 +128,7 @@ const replyUrl = `${getApiUrl()}/api/v1/protected/conversations/owner/${conversa
             />
         ) : (
             <p class="conv-thread__closed-notice">
-                {conversation.status === 'BLOCKED'
+                {conversation.status?.toUpperCase() === 'BLOCKED'
                     ? t('conversations.errors.conversationBlocked')
                     : t('conversations.status.closed')}
             </p>

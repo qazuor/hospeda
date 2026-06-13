@@ -52,7 +52,7 @@ function formatDate(dateStr: string): string {
 <AccountLayout
     locale={locale}
     title={t('conversations.inbox.ownerInboxTitle')}
-    description={t('conversations.empty.ownerInbox')}
+    description={t('conversations.inbox.ownerInboxTitle')}
     activeSection="owner-messages"
 >
     <div class="owner-inbox">
@@ -85,7 +85,7 @@ function formatDate(dateStr: string): string {
                                         {conv.accommodationName}
                                     </span>
                                     <span class="owner-inbox__guest">
-                                        {conv.guestName}
+                                        {conv.guestName ?? t('conversations.senderLabels.guest')}
                                     </span>
                                     {conv.unreadCount > 0 && (
                                         <span
