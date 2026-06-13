@@ -299,8 +299,9 @@
             "noExpiry": "No expiry",
             "maxRedemptions": "Maximum uses",
             "accommodationId": "Property",
-            "accommodationIdPlaceholder": "Property ID (empty = all properties)",
-            "accommodationIdHint": "Leave empty to apply the promotion to all your properties."
+            "accommodationIdAll": "All my properties",
+            "accommodationIdLoading": "Loading properties...",
+            "accommodationIdHint": "Select a property or leave 'All my properties' to apply the promotion to all."
         },
         "discountTypes": {
             "percentage": "Percentage",

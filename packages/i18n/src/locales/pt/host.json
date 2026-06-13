@@ -299,8 +299,9 @@
             "noExpiry": "Sem vencimento",
             "maxRedemptions": "Usos máximos",
             "accommodationId": "Imóvel",
-            "accommodationIdPlaceholder": "ID do imóvel (vazio = todos os imóveis)",
-            "accommodationIdHint": "Deixe vazio para aplicar a promoção a todos os seus imóveis."
+            "accommodationIdAll": "Todos os meus imóveis",
+            "accommodationIdLoading": "Carregando imóveis...",
+            "accommodationIdHint": "Selecione um imóvel ou deixe 'Todos os meus imóveis' para aplicar a promoção a todos."
         },
         "discountTypes": {
             "percentage": "Porcentagem",

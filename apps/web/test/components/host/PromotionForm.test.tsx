@@ -37,11 +37,17 @@ const mockCreate = vi.fn();
 const mockUpdate = vi.fn();
 const mockGetById = vi.fn();
 
+/** protectedAccommodationsApi: intercept listOwn — returns empty list by default. */
+const mockListOwn = vi.fn();
+
 vi.mock('../../../src/lib/api/endpoints-protected', () => ({
     ownerPromotionApi: {
         create: (...args: unknown[]) => mockCreate(...args),
         update: (...args: unknown[]) => mockUpdate(...args),
         getById: (...args: unknown[]) => mockGetById(...args)
+    },
+    protectedAccommodationsApi: {
+        listOwn: (...args: unknown[]) => mockListOwn(...args)
     }
 }));
 
@@ -72,6 +78,13 @@ function getSubmitButton(): HTMLElement {
 
 beforeEach(() => {
     vi.clearAllMocks();
+
+    // Default: listOwn returns an empty list — no accommodations loaded yet.
+    // Individual tests that need accommodations will override this.
+    mockListOwn.mockResolvedValue({
+        ok: true,
+        data: { items: [], total: 0, page: 1, pageSize: 100 }
+    });
 
     // Provide a writable window.location stub — JSDOM blocks direct assignment.
     Object.defineProperty(window, 'location', {
@@ -256,6 +269,156 @@ describe('PromotionForm — create mode', () => {
         });
 
         expect(window.location.href).toBe('');
+    });
+
+    it('renders the accommodation select with "all properties" option when listOwn returns empty', async () => {
+        // Arrange — default mock already returns empty list
+        render(
+            <PromotionForm
+                locale="es"
+                mode="create"
+            />
+        );
+
+        // Wait for listOwn to resolve and select to update
+        await waitFor(() => {
+            const select = screen.getByRole('combobox', { name: /Propiedad/i });
+            expect(select).toBeInTheDocument();
+        });
+
+        const select = screen.getByRole('combobox', { name: /Propiedad/i });
+        const options = select.querySelectorAll('option');
+        // Only the "all properties" option should be present
+        expect(options).toHaveLength(1);
+        expect(options[0]).toHaveValue('');
+        expect(options[0]).toHaveTextContent('Todas mis propiedades');
+    });
+
+    it('renders accommodation options from listOwn in the select', async () => {
+        // Arrange — override with two accommodations
+        mockListOwn.mockResolvedValueOnce({
+            ok: true,
+            data: {
+                items: [
+                    { id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', name: 'Casa del lago' },
+                    { id: 'b2c3d4e5-f6a7-8901-bcde-f12345678901', name: 'Cabaña del bosque' }
+                ],
+                total: 2,
+                page: 1,
+                pageSize: 100
+            }
+        });
+
+        render(
+            <PromotionForm
+                locale="es"
+                mode="create"
+            />
+        );
+
+        await waitFor(() => {
+            expect(screen.getByRole('option', { name: 'Casa del lago' })).toBeInTheDocument();
+        });
+
+        expect(screen.getByRole('option', { name: 'Todas mis propiedades' })).toBeInTheDocument();
+        expect(screen.getByRole('option', { name: 'Cabaña del bosque' })).toBeInTheDocument();
+    });
+
+    it('sends selected accommodationId in create payload when one is chosen', async () => {
+        // Arrange — use a real UUID so Zod validation passes
+        const ACC_UUID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
+        mockListOwn.mockResolvedValueOnce({
+            ok: true,
+            data: {
+                items: [{ id: ACC_UUID, name: 'Casa del lago' }],
+                total: 1,
+                page: 1,
+                pageSize: 100
+            }
+        });
+        mockCreate.mockResolvedValueOnce({ ok: true, data: { id: 'new-promo-id' } });
+
+        render(
+            <PromotionForm
+                locale="es"
+                mode="create"
+            />
+        );
+
+        // Wait for options to load
+        await waitFor(() => {
+            expect(screen.getByRole('option', { name: 'Casa del lago' })).toBeInTheDocument();
+        });
+
+        // Fill required fields and select a specific accommodation
+        fillCreateFields();
+        fireEvent.change(screen.getByRole('combobox', { name: /Propiedad/i }), {
+            target: { value: ACC_UUID }
+        });
+
+        // Act
+        fireEvent.click(getSubmitButton());
+
+        await waitFor(() => {
+            expect(window.location.href).toBe('/es/mi-cuenta/promociones/');
+        });
+
+        const callArg = mockCreate.mock.calls[0][0] as { body: Record<string, unknown> };
+        expect(callArg.body.accommodationId).toBe(ACC_UUID);
+    });
+
+    it('omits accommodationId from payload when "all properties" is selected', async () => {
+        // Arrange — default mock returns empty list (all properties selected = empty value)
+        mockCreate.mockResolvedValueOnce({ ok: true, data: { id: 'new-promo-id' } });
+
+        render(
+            <PromotionForm
+                locale="es"
+                mode="create"
+            />
+        );
+
+        await waitFor(() => {
+            const select = screen.getByRole('combobox', { name: /Propiedad/i });
+            // Select is not disabled (list loaded)
+            expect(select).not.toBeDisabled();
+        });
+
+        fillCreateFields();
+
+        fireEvent.click(getSubmitButton());
+
+        await waitFor(() => {
+            expect(window.location.href).toBe('/es/mi-cuenta/promociones/');
+        });
+
+        const callArg = mockCreate.mock.calls[0][0] as { body: Record<string, unknown> };
+        // Empty string maps to undefined — should not be in the payload
+        expect(callArg.body.accommodationId).toBeUndefined();
+    });
+
+    it('falls back gracefully to "all properties" only when listOwn fails', async () => {
+        // Arrange — simulate network failure
+        mockListOwn.mockResolvedValueOnce({ ok: false, error: { message: 'Network error' } });
+
+        render(
+            <PromotionForm
+                locale="es"
+                mode="create"
+            />
+        );
+
+        // Wait for the error path to resolve
+        await waitFor(() => {
+            const select = screen.getByRole('combobox', { name: /Propiedad/i });
+            expect(select).not.toBeDisabled();
+        });
+
+        const select = screen.getByRole('combobox', { name: /Propiedad/i });
+        const options = select.querySelectorAll('option');
+        // Only the "all properties" fallback option
+        expect(options).toHaveLength(1);
+        expect(options[0]).toHaveValue('');
     });
 });
 

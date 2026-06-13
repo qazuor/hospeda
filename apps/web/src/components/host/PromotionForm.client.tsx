@@ -14,8 +14,10 @@
  * 403 / LIMIT_REACHED: shown as a distinct inline banner with an upgrade hint
  * instead of the generic error message.
  *
- * accommodationId: rendered as a plain optional text field (simplified — see
- * implementation note at the bottom of the file).
+ * accommodationId: rendered as a <select> populated from protectedAccommodationsApi.listOwn().
+ * Empty value = promotion applies to all owner's properties. A specific accommodation
+ * can be selected from the dropdown. Falls back gracefully to an empty select (all-only) on
+ * fetch failure.
  *
  * Redirect on success: `/{locale}/mi-cuenta/promociones/` via
  * `window.location.href` (same pattern as other web islands).
@@ -23,7 +25,7 @@
  * Hydration: client:load (form is the primary interactive element on the page).
  */
 
-import { ownerPromotionApi } from '@/lib/api/endpoints-protected';
+import { ownerPromotionApi, protectedAccommodationsApi } from '@/lib/api/endpoints-protected';
 import { transformOwnerPromotion } from '@/lib/api/transforms';
 import type { OwnerPromotionData } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -110,6 +112,17 @@ type DataLoadState =
     | { readonly status: 'loading' }
     | { readonly status: 'error'; readonly message: string };
 
+/** Minimal shape extracted from a raw accommodation item returned by listOwn(). */
+type OwnAccommodationOption = {
+    readonly id: string;
+    readonly label: string;
+};
+
+type AccommodationsLoadState =
+    | { readonly status: 'loading' }
+    | { readonly status: 'ready'; readonly items: readonly OwnAccommodationOption[] }
+    | { readonly status: 'error' };
+
 // ─── Component ───────────────────────────────────────────────────────────────
 
 /**
@@ -147,6 +160,9 @@ export function PromotionForm({ locale, mode, initialData, promotionId }: Promot
     const [formError, setFormError] = useState<string | null>(null);
     const [isLimitReached, setIsLimitReached] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [accommodationsLoad, setAccommodationsLoad] = useState<AccommodationsLoadState>({
+        status: 'loading'
+    });
 
     // ── Fetch promotion data in edit mode ─────────────────────────────────
     // biome-ignore lint/correctness/useExhaustiveDependencies: needsFetch encodes promotionId (stable prop); t is stable per locale; listing them would cause infinite re-fetch loops
@@ -209,6 +225,40 @@ export function PromotionForm({ locale, mode, initialData, promotionId }: Promot
             cancelled = true;
         };
     }, [needsFetch]);
+
+    // ── Fetch owner's own accommodations for the select ───────────────────
+    // Runs once on mount in both create and edit mode — not blocking the form.
+    useEffect(() => {
+        let cancelled = false;
+
+        async function fetchOwnAccommodations(): Promise<void> {
+            try {
+                const result = await protectedAccommodationsApi.listOwn({ pageSize: 100 });
+                if (cancelled) return;
+
+                if (!result.ok) {
+                    setAccommodationsLoad({ status: 'error' });
+                    return;
+                }
+
+                const rawItems = (result.data.items ?? []) as readonly Record<string, unknown>[];
+                const options: OwnAccommodationOption[] = rawItems.map((item) => ({
+                    id: String(item.id ?? ''),
+                    label: String(item.name ?? item.title ?? item.id ?? '')
+                }));
+                setAccommodationsLoad({ status: 'ready', items: options });
+            } catch {
+                if (cancelled) return;
+                setAccommodationsLoad({ status: 'error' });
+            }
+        }
+
+        void fetchOwnAccommodations();
+
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     const promotionsListUrl = buildUrl({ locale, path: 'mi-cuenta/promociones' });
 
@@ -718,7 +768,7 @@ export function PromotionForm({ locale, mode, initialData, promotionId }: Promot
                 </div>
             </div>
 
-            {/* Accommodation ID (simplified — see implementation note) */}
+            {/* Accommodation select — populated from protectedAccommodationsApi.listOwn() */}
             <div className="form-field">
                 <label
                     className="form-label"
@@ -726,26 +776,55 @@ export function PromotionForm({ locale, mode, initialData, promotionId }: Promot
                 >
                     {t('host.promotions.fields.accommodationId', 'Propiedad')}
                 </label>
-                <input
+                <select
                     id={accommodationIdId}
                     className="form-input"
-                    type="text"
                     name="accommodationId"
                     value={fields.accommodationId}
                     onChange={handleChange}
-                    placeholder={t(
-                        'host.promotions.fields.accommodationIdPlaceholder',
-                        'ID de la propiedad (vacío = todas las propiedades)'
-                    )}
                     aria-invalid={errors.accommodationId ? 'true' : 'false'}
-                    aria-describedby={
+                    aria-describedby={[
+                        `${accommodationIdId}-hint`,
                         errors.accommodationId ? `${accommodationIdId}-error` : undefined
-                    }
-                />
-                <p className="form-hint">
+                    ]
+                        .filter(Boolean)
+                        .join(' ')}
+                    disabled={accommodationsLoad.status === 'loading'}
+                >
+                    {accommodationsLoad.status === 'loading' ? (
+                        <option value="">
+                            {t(
+                                'host.promotions.fields.accommodationIdLoading',
+                                'Cargando propiedades...'
+                            )}
+                        </option>
+                    ) : (
+                        <>
+                            <option value="">
+                                {t(
+                                    'host.promotions.fields.accommodationIdAll',
+                                    'Todas mis propiedades'
+                                )}
+                            </option>
+                            {accommodationsLoad.status === 'ready' &&
+                                accommodationsLoad.items.map((acc) => (
+                                    <option
+                                        key={acc.id}
+                                        value={acc.id}
+                                    >
+                                        {acc.label}
+                                    </option>
+                                ))}
+                        </>
+                    )}
+                </select>
+                <p
+                    id={`${accommodationIdId}-hint`}
+                    className="form-hint"
+                >
                     {t(
                         'host.promotions.fields.accommodationIdHint',
-                        'Dejalo vacío para aplicar la promoción a todas tus propiedades.'
+                        "Elegí una propiedad o dejá 'Todas mis propiedades' para aplicar la promoción a todas."
                     )}
                 </p>
                 {errors.accommodationId && (
@@ -801,19 +880,3 @@ export function PromotionForm({ locale, mode, initialData, promotionId }: Promot
         </form>
     );
 }
-
-/*
- * Implementation note — accommodationId field (simplified):
- *
- * The task asks to wire a <select> populated from `ownerPromotionApi.list` or
- * a protected "list own accommodations" endpoint. After searching
- * `endpoints-protected.ts`, the existing `ownerPromotionApi` has no
- * `listOwnAccommodations` method, and the protected accommodations API
- * (if it exists) is not trivially importable without knowing its shape.
- *
- * Decision: render `accommodationId` as a plain optional text <input>.
- * This is correct for the form's purpose (the field is optional and defaults
- * to null = all properties) and avoids inventing an endpoint. A follow-up
- * task can swap this for a SearchableSelect once the "list own props" endpoint
- * is confirmed or added.
- */
