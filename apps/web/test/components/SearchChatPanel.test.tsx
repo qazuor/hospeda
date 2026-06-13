@@ -97,6 +97,8 @@ function renderPanel(props: Partial<SearchChatPanelProps> = {}) {
         <SearchChatPanel
             locale="es"
             apiUrl="http://localhost:3001"
+            isAuthenticated={true}
+            currentUrl="http://localhost:4321/es/alojamientos"
             {...props}
         />
     );
@@ -462,6 +464,26 @@ describe('SearchChatPanel', () => {
             expect(
                 screen.getByRole('region', { name: /panel de búsqueda conversacional/i })
             ).toBeInTheDocument();
+        });
+    });
+
+    describe('auth gate (anonymous)', () => {
+        it('hides the chat input and shows login/register links when not authenticated', () => {
+            renderPanel({ isAuthenticated: false });
+
+            // The chat composer must not render for anonymous users.
+            expect(screen.queryByRole('textbox')).not.toBeInTheDocument();
+            expect(
+                screen.queryByRole('button', { name: /enviar mensaje/i })
+            ).not.toBeInTheDocument();
+
+            // The login CTA renders login + register links instead.
+            expect(screen.getAllByRole('link').length).toBeGreaterThanOrEqual(1);
+        });
+
+        it('renders the chat composer when authenticated', () => {
+            renderPanel({ isAuthenticated: true });
+            expect(screen.getByRole('textbox')).toBeInTheDocument();
         });
     });
 });
