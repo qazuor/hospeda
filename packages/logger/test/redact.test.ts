@@ -74,20 +74,20 @@ describe('redactSensitiveData', () => {
             expect(result).not.toContain('eyJ');
         });
 
-        // ReDoS regression — bounded quantifiers {1,8192} prevent unbounded
-        // backtracking on inputs that repeat the 'eyJ' prefix many times.
-        // 1 000 repetitions × 8 192 max-per-segment = ~24 M operations, well
-        // inside the 1 s budget even on slow CI; 100 000 repetitions (the
-        // truly adversarial case) would require ~2.4 B operations with the
-        // bounded regex — still bounded unlike the original unbounded `+`.
-        it('returns within 1 s on adversarial input of 1 000 "eyJ" repetitions (ReDoS guard)', () => {
+        // ReDoS regression — `eyJ` repeated with no `.` separators is the
+        // adversarial input. With an unbounded run the global-flag regex re-scans
+        // the full tail at every `eyJ` offset (O(n^2)): 20 000 repetitions took
+        // ~12 s with the unbounded form. The bounded {1,2048} run caps each
+        // attempt to a constant, so the same input finishes in well under the
+        // 1 s budget even on slow CI.
+        it('stays linear on adversarial input of 20 000 "eyJ" repetitions (ReDoS guard)', () => {
             // Arrange
-            const input = 'eyJ'.repeat(1_000);
+            const input = 'eyJ'.repeat(20_000);
             // Act
             const start = performance.now();
             redactSensitiveData(input);
             const elapsedMs = performance.now() - start;
-            // Assert — bounded quantifier keeps the match attempt well under threshold.
+            // Assert — bounded quantifier keeps total work well under threshold.
             expect(elapsedMs).toBeLessThan(1000);
         });
     });

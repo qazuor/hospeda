@@ -95,6 +95,54 @@ describe('User CRUD Schemas', () => {
 
             expect(() => UserUpdateInputSchema.parse(validInput)).not.toThrow();
         });
+
+        // Regression: system flags must NOT be re-injected as Zod defaults on a
+        // partial update. `BaseCrudService.update` re-parses input through this
+        // schema, so an injected `emailVerified: false` / `profileCompleted:
+        // false` would be persisted and silently reset the user's state.
+        it('does not inject system flags on a partial update', () => {
+            const parsed = UserUpdateInputSchema.parse({ firstName: 'Jane' });
+
+            for (const flag of [
+                'emailVerified',
+                'profileCompleted',
+                'setPasswordPrompted',
+                'serviceSuspended',
+                'permissions',
+                'banned',
+                'banReason',
+                'banExpires'
+            ]) {
+                expect(
+                    Object.prototype.hasOwnProperty.call(parsed, flag),
+                    `system flag '${flag}' must not be present after parsing a partial update`
+                ).toBe(false);
+            }
+        });
+
+        it('strips system flags supplied explicitly', () => {
+            const parsed = UserUpdateInputSchema.parse({
+                firstName: 'Jane',
+                emailVerified: true,
+                profileCompleted: true,
+                banned: true,
+                serviceSuspended: true
+            }) as Record<string, unknown>;
+
+            expect(parsed.firstName).toBe('Jane');
+            expect(Object.prototype.hasOwnProperty.call(parsed, 'emailVerified')).toBe(false);
+            expect(Object.prototype.hasOwnProperty.call(parsed, 'profileCompleted')).toBe(false);
+            expect(Object.prototype.hasOwnProperty.call(parsed, 'banned')).toBe(false);
+            expect(Object.prototype.hasOwnProperty.call(parsed, 'serviceSuspended')).toBe(false);
+        });
+
+        it('still allows role updates (no default, admin-editable)', () => {
+            const parsed = UserUpdateInputSchema.parse({ role: 'ADMIN' }) as Record<
+                string,
+                unknown
+            >;
+            expect(parsed.role).toBe('ADMIN');
+        });
     });
 
     describe('UserPatchInputSchema', () => {
