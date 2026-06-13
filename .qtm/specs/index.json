@@ -61,7 +61,7 @@
             "title": "Staging→Main Promotion Hardening — clear CodeQL security debt blocking the promotion",
             "type": "infrastructure",
             "complexity": "medium",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-220-staging-main-promotion-hardening",
             "created": "2026-06-12T00:00:00.000Z",
             "tags": ["codeql", "security", "ci", "promotion", "infrastructure"]

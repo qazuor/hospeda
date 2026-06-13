@@ -20,6 +20,7 @@
 
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { buildLocaleSwitchTarget } from '@/lib/urls';
 import { addToast } from '@/store/toast-store';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './PreferenceToggles.module.css';
@@ -274,12 +275,13 @@ export function PreferenceToggles({ userId, locale, apiUrl }: PreferenceTogglesP
         // the locale segment in the current path and reloading — mirrors the
         // header language switcher. Skip on failure (persistSettings reverted).
         if (!ok || typeof window === 'undefined') return;
-        const { pathname, search, hash } = window.location;
-        const segments = pathname.split('/');
-        const SUPPORTED_LOCALES: readonly LanguageWeb[] = ['es', 'en', 'pt'];
-        if ((SUPPORTED_LOCALES as readonly string[]).includes(segments[1] ?? '')) {
-            segments[1] = value;
-            window.location.assign(`${segments.join('/')}${search}${hash}`);
+        // Build a guaranteed same-origin target (defence-in-depth against a
+        // crafted path/hash reaching the navigation sink). `null` means the
+        // current path has no locale segment to swap, or the rebuilt target is
+        // not same-origin — in both cases we simply don't navigate.
+        const target = buildLocaleSwitchTarget({ location: window.location, locale: value });
+        if (target) {
+            window.location.assign(target);
         }
     }
 
