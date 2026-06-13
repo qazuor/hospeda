@@ -21,18 +21,19 @@
             "base": "staging",
             "archived": true,
             "archivedAt": "2026-06-13",
-            "archiveNote": "PR #1602 merged (a909ef4eb). F-1 (scope delayNextQueue) + F-2 (extractScope extensibility) shipped. F-3 dropped as contrived prod code (no sync updateSubscription in publish; compensation already unit-tested) — legitimate debugging need moved to SPEC-222 (non-blocking observability + creation-time MP enrichment).",
-            "note": "F-1 + F-2 DONE. F-3 (host-07d sync updateSubscription E2E) dropped; see SPEC-222."
+            "archiveNote": "PR #1602 merged (a909ef4eb). F-1 (scope delayNextQueue) + F-2 (extractScope extensibility) shipped. F-3 dropped as contrived prod code (no sync updateSubscription in publish; compensation already unit-tested) — legitimate debugging need moved to SPEC-227 (non-blocking observability + creation-time MP enrichment).",
+            "note": "F-1 + F-2 DONE. F-3 (host-07d sync updateSubscription E2E) dropped; see SPEC-227."
         },
         {
-            "specId": "SPEC-222",
+            "specId": "SPEC-227",
             "title": "Billing Subscription Observability — trial↔accommodation↔owner linkage logging + creation-time MP reference enrichment",
-            "status": "draft",
-            "progress": "0/0",
-            "path": "SPEC-222-billing-subscription-observability",
+            "status": "in-progress",
+            "progress": "4/4",
+            "path": "SPEC-227-billing-subscription-observability",
             "base": "staging",
             "archived": false,
-            "note": "Reshaped from SPEC-221 F-3. Two non-blocking parts, no async MP update: (1) structured logging + Sentry context tying a trial subscription to its accommodation/owner/checkout at publish time, so debugging from the observability stack is trivial; (2) enrich the MP external_reference / metadata AT subscription creation (not via a follow-up update) for MP-side traceability. Not yet atomized."
+            "renumberedFrom": "SPEC-222",
+            "note": "Renumbered from SPEC-222 (collided with the SPEC-222..226 batch / accommodation-import-from-url). Reshaped from SPEC-221 F-3. Two non-blocking parts, no async MP update: (1) structured logging + Sentry context tying a trial subscription to its accommodation/owner/checkout at publish; (2) enrich MP external_reference / metadata AT subscription creation. Implemented + adversarial review GO."
         },
         {
             "specId": "SPEC-220",

@@ -103,7 +103,7 @@ if it needs scoped delay/failure on `updateSubscription`.
 > value). The post-trial compensation contract host-07d targeted is already covered by
 > unit tests (`publish.test.ts`). The *legitimate* debugging need that motivated it
 > (tracing a trial subscription back to its accommodation/owner) is addressed by
-> **SPEC-222** (non-blocking observability of the trial↔accommodation↔owner↔checkout
+> **SPEC-227** (non-blocking observability of the trial↔accommodation↔owner↔checkout
 > linkage via structured logs + Sentry, plus creation-time MP `external_reference` /
 > metadata enrichment — no async MP update). host-07d stays `test.fixme` with this note.
 
@@ -138,7 +138,7 @@ if it needs scoped delay/failure on `updateSubscription`.
   for the unwired operations; the documented `undefined` fallback is tested (case b2).
 - **F-3 (AC-3)**: RE-DEFERRED → see the Final disposition above. host-07d's
   sync-`updateSubscription` premise is dropped (contrived prod code); the legitimate
-  debugging need it gestured at moves to **SPEC-222** (non-blocking observability +
+  debugging need it gestured at moves to **SPEC-227** (non-blocking observability +
   creation-time MP enrichment). host-07d stays `test.fixme`.
 
 SPEC-221 ships with F-1 + F-2 (PR #1586 era follow-up; merged to staging via PR #1602).

@@ -28,18 +28,20 @@
             "archived": true,
             "archivedAt": "2026-06-13",
             "completionRef": "PR #1602 merged to staging (a909ef4eb)",
-            "archiveNote": "F-1 (scope delayNextQueue) + F-2 (extractScope extensibility) shipped. F-3 (host-07d sync updateSubscription E2E) dropped as contrived prod code; the legitimate debugging need moved to SPEC-222 (non-blocking observability + creation-time MP enrichment).",
+            "archiveNote": "F-1 (scope delayNextQueue) + F-2 (extractScope extensibility) shipped. F-3 (host-07d sync updateSubscription E2E) dropped as contrived prod code; the legitimate debugging need moved to SPEC-227 (non-blocking observability + creation-time MP enrichment).",
             "tags": ["e2e", "billing", "qzpay", "test-control", "follow-up"]
         },
         {
-            "specId": "SPEC-222",
+            "specId": "SPEC-227",
             "title": "Billing Subscription Observability — trial↔accommodation↔owner linkage logging + creation-time MP reference enrichment",
             "type": "feat",
             "complexity": "low",
-            "status": "draft",
-            "path": "SPEC-222-billing-subscription-observability",
+            "status": "in-progress",
+            "path": "SPEC-227-billing-subscription-observability",
             "base": "staging",
             "created": "2026-06-13T00:00:00.000Z",
+            "renumberedFrom": "SPEC-222",
+            "renumberedReason": "SPEC-222 collided with the SPEC-222..226 batch (accommodation-import-from-url); renumbered to next free.",
             "origin": "Reshaped from SPEC-221 F-3 — legitimate debugging need without contrived prod code",
             "tags": [
                 "billing",
@@ -1065,15 +1067,7 @@
             "status": "draft",
             "path": "SPEC-222-accommodation-import-from-url",
             "created": "2026-06-13T12:00:00Z",
-            "tags": [
-                "accommodations",
-                "import",
-                "scraping",
-                "ai",
-                "web",
-                "admin",
-                "feature"
-            ],
+            "tags": ["accommodations", "import", "scraping", "ai", "web", "admin", "feature"],
             "archived": false,
             "note": "Import accommodation data from an external listing URL (Booking/Airbnb/etc) to pre-fill the create/edit form. JSON-LD/OG parsing primary + ai-core generate-object fallback. Human reviews draft before save. Drafted 2026-06-13, ready to implement."
         },
@@ -1085,14 +1079,7 @@
             "status": "draft",
             "path": "SPEC-223-ai-post-generation",
             "created": "2026-06-13T12:00:00Z",
-            "tags": [
-                "posts",
-                "ai",
-                "ai-core",
-                "content",
-                "admin",
-                "feature"
-            ],
+            "tags": ["posts", "ai", "ai-core", "content", "admin", "feature"],
             "archived": false,
             "note": "Admin gives topic + key points, AI generates a post draft (title/summary/content). New 'post_generate' AiFeature + admin-tier streaming route, replicating the text-improve pattern. Drafted 2026-06-13, ready to implement."
         },
@@ -1104,14 +1091,7 @@
             "status": "draft",
             "path": "SPEC-224-admin-posthog-dashboard",
             "created": "2026-06-13T12:00:00Z",
-            "tags": [
-                "admin",
-                "posthog",
-                "analytics",
-                "dashboard",
-                "observability",
-                "feature"
-            ],
+            "tags": ["admin", "posthog", "analytics", "dashboard", "observability", "feature"],
             "archived": false,
             "note": "Read PostHog Query/HogQL via a server-side proxy + dashboard datasource/widget in admin. Sibling of SPEC-225/226 (shared external-metrics proxy pattern). Drafted 2026-06-13, ready to implement."
         },
@@ -1123,14 +1103,7 @@
             "status": "draft",
             "path": "SPEC-225-admin-sentry-dashboard",
             "created": "2026-06-13T12:00:00Z",
-            "tags": [
-                "admin",
-                "sentry",
-                "errors",
-                "dashboard",
-                "observability",
-                "feature"
-            ],
+            "tags": ["admin", "sentry", "errors", "dashboard", "observability", "feature"],
             "archived": false,
             "note": "Read Sentry Issues API via server-side proxy; fill the existing super.audit.log.sentry datasource placeholder + card H DeferredWidget. Distinct from SPEC-180 (capture hardening). Sibling of SPEC-224/226. Drafted 2026-06-13, ready to implement."
         },
@@ -1142,14 +1115,7 @@
             "status": "draft",
             "path": "SPEC-226-admin-brevo-dashboard",
             "created": "2026-06-13T12:00:00Z",
-            "tags": [
-                "admin",
-                "brevo",
-                "email",
-                "newsletter",
-                "dashboard",
-                "feature"
-            ],
+            "tags": ["admin", "brevo", "email", "newsletter", "dashboard", "feature"],
             "archived": false,
             "note": "Read Brevo email/newsletter stats via server-side proxy (reuse existing HOSPEDA_EMAIL_API_KEY) + admin dashboard widget. Sibling of SPEC-224/225. Drafted 2026-06-13, ready to implement."
         }
