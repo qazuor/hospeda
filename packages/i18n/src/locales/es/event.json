@@ -6,6 +6,17 @@
     "found": "eventos encontrados",
     "emptyTitle": "No hay eventos disponibles",
     "emptyMessage": "Pronto agregaremos eventos emocionantes para ti.",
+    "categories": {
+        "music": "Música",
+        "culture": "Cultura",
+        "sports": "Deportes",
+        "gastronomy": "Gastronomía",
+        "festival": "Festival",
+        "nature": "Naturaleza",
+        "theater": "Teatro",
+        "workshop": "Taller",
+        "other": "Otros"
+    },
     "filters": {
         "all": "Todos",
         "upcoming": "Próximos",

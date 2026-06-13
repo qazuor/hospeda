@@ -6,6 +6,17 @@
     "found": "eventos encontrados",
     "emptyTitle": "Nenhum evento disponivel",
     "emptyMessage": "Em breve adicionaremos eventos emocionantes para voce.",
+    "categories": {
+        "music": "Música",
+        "culture": "Cultura",
+        "sports": "Esportes",
+        "gastronomy": "Gastronomia",
+        "festival": "Festival",
+        "nature": "Natureza",
+        "theater": "Teatro",
+        "workshop": "Oficina",
+        "other": "Outros"
+    },
     "filters": {
         "all": "Todos",
         "upcoming": "Proximos",
