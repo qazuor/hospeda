@@ -137,7 +137,10 @@ const mapHasItems = cards.some((c) => c.approximateLocation);
 // Filter summary
 const summaryLocale = (locale === 'en' ? 'en' : 'es') as SummaryLocale;
 const destinationCatalog: readonly CatalogEntry[] = destinations.map((d) => ({ key: d.id, label: { es: resolveI18nText(d.name, 'es'), en: resolveI18nText(d.name, 'en') } }));
-const amenityCatalog: readonly CatalogEntry[] = amenities.map((a) => ({ key: a.id, label: { es: tEs(`accommodations.amenityNames.${a.slug}`, resolveI18nText(a.name, 'es')), en: tEn(`accommodations.amenityNames.${a.slug}`, resolveI18nText(a.name, 'en')) } }));
+// NOTE: Use a.name (snake_case) as the i18n key segment — a.slug strips
+// underscores (e.g. air_conditioning → airconditioning) breaking catalog lookups
+// for multi-word amenities. a.name always holds the canonical snake_case form.
+const amenityCatalog: readonly CatalogEntry[] = amenities.map((a) => ({ key: a.id, label: { es: tEs(`accommodations.amenityNames.${resolveI18nText(a.name, 'en')}`, resolveI18nText(a.name, 'es')), en: tEn(`accommodations.amenityNames.${resolveI18nText(a.name, 'en')}`, resolveI18nText(a.name, 'en')) } }));
 const featureCatalog: readonly CatalogEntry[] = features.map((f) => ({ key: f.id, label: { es: resolveI18nText(f.name, 'es'), en: resolveI18nText(f.name, 'en') } }));
 
 const typesArray = types?.split(',').filter(Boolean) ?? [];
@@ -207,7 +210,9 @@ const filterGroups: FilterGroup[] = [
 		id: 'amenities',
 		label: t('accommodations.sidebar.amenities', 'Comodidades'),
 		type: 'icon-chips',
-		options: amenities.map((a) => ({ value: a.id, label: t(`accommodations.amenityNames.${a.slug}`, resolveI18nText(a.name, locale)), icon: a.icon ?? undefined })),
+		// NOTE: Use a.name (snake_case) as the i18n key segment — a.slug strips
+		// underscores (air_conditioning → airconditioning) breaking multi-word lookups.
+		options: amenities.map((a) => ({ value: a.id, label: t(`accommodations.amenityNames.${resolveI18nText(a.name, 'en')}`, resolveI18nText(a.name, locale)), icon: a.icon ?? undefined })),
 		maxVisible: 10,
 	},
 	{

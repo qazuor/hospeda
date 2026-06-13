@@ -263,11 +263,16 @@ const destinationCatalog: readonly CatalogEntry[] = destinations.map((d) => ({
 	key: d.id,
 	label: { es: d.name, en: d.name }
 }));
+// NOTE: The API strips underscores from amenity slugs (e.g. air_conditioning →
+// airconditioning), but the i18n catalog keys and a.name use snake_case
+// (air_conditioning). We resolve the canonical identifier from a.name (which
+// always holds the snake_case form) instead of a.slug to avoid lookup misses
+// for multi-word amenities.
 const amenityCatalog: readonly CatalogEntry[] = amenities.map((a) => ({
 	key: a.id,
 	label: {
-		es: tEs(`accommodations.amenityNames.${a.slug}`, resolveI18nText(a.name, 'es')),
-		en: tEn(`accommodations.amenityNames.${a.slug}`, resolveI18nText(a.name, 'en'))
+		es: tEs(`accommodations.amenityNames.${resolveI18nText(a.name, 'en')}`, resolveI18nText(a.name, 'es')),
+		en: tEn(`accommodations.amenityNames.${resolveI18nText(a.name, 'en')}`, resolveI18nText(a.name, 'en'))
 	}
 }));
 const featureCatalog: readonly CatalogEntry[] = features.map((f) => ({
@@ -408,7 +413,10 @@ const filterGroups: FilterGroup[] = [
 		id: 'amenities',
 		label: t('accommodations.sidebar.amenities', 'Comodidades'),
 		type: 'icon-chips',
-		options: amenities.map((a) => ({ value: a.id, label: t(`accommodations.amenityNames.${a.slug}`, resolveI18nText(a.name, locale)), icon: a.icon ?? undefined })),
+		// NOTE: Use a.name (snake_case) as the i18n key segment — a.slug strips
+		// underscores (e.g. air_conditioning → airconditioning) which breaks catalog
+		// lookups for multi-word amenities. a.name always holds the canonical form.
+		options: amenities.map((a) => ({ value: a.id, label: t(`accommodations.amenityNames.${resolveI18nText(a.name, 'en')}`, resolveI18nText(a.name, locale)), icon: a.icon ?? undefined })),
 		maxVisible: 10,
 		// Quick-filter shortcuts rendered ABOVE the regular amenity chips.
 		// Each `value` is the URL boolean param name that the backend resolves
@@ -663,8 +671,10 @@ if (amenitiesParam) {
 	for (const id of amenitiesParam.split(',').filter(Boolean)) {
 		const a = amenities.find((x) => x.id === id);
 		if (a) {
+			// NOTE: Use a.name (snake_case) as the i18n key segment — a.slug strips
+			// underscores (air_conditioning → airconditioning) breaking multi-word lookups.
 			activeFilterChips.push({
-				label: t(`accommodations.amenityNames.${a.slug}`, resolveI18nText(a.name, locale)),
+				label: t(`accommodations.amenityNames.${resolveI18nText(a.name, 'en')}`, resolveI18nText(a.name, locale)),
 				removeUrl: urlWithoutListValue('amenities', id),
 			});
 		}
