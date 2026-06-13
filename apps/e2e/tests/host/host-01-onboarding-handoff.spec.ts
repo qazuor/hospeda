@@ -216,11 +216,14 @@ test.describe('HOST-01: web→admin onboarding handoff @p0 @host @onboarding @bi
         ).toBe(true);
 
         // Step 13 of spec: ACTIVE state + trialing subscription + role unchanged
-        const accsPublished = await execSQL<{ lifecycle_state: string }>(
-            'SELECT lifecycle_state FROM accommodations WHERE id = $1',
+        const accsPublished = await execSQL<{ lifecycle_state: string; visibility: string }>(
+            'SELECT lifecycle_state, visibility FROM accommodations WHERE id = $1',
             [result.accommodationId]
         );
         expect(accsPublished[0]?.lifecycle_state).toBe('ACTIVE');
+        // Regression (SPEC-217): publishing promotes the onboarding draft from
+        // PRIVATE to PUBLIC so the public detail-by-slug page serves it (no 404).
+        expect(accsPublished[0]?.visibility).toBe('PUBLIC');
 
         // Trial subscription created OUTSIDE the local DB transaction (per
         // architecture). Only the QZPay test-control adapter (T-036) makes this

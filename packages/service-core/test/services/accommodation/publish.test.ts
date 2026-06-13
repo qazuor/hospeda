@@ -14,7 +14,8 @@ import {
     LifecycleStatusEnum,
     PermissionEnum,
     RoleEnum,
-    ServiceErrorCode
+    ServiceErrorCode,
+    VisibilityEnum
 } from '@repo/schemas';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -199,7 +200,10 @@ describe('AccommodationService.publish', () => {
             const accommodation = createMockAccommodation({
                 id: 'acc-005',
                 ownerId: 'host-005',
-                lifecycleState: LifecycleStatusEnum.DRAFT
+                lifecycleState: LifecycleStatusEnum.DRAFT,
+                // Onboarding drafts are created PRIVATE — this is the case publish
+                // must promote to PUBLIC.
+                visibility: VisibilityEnum.PRIVATE
             });
             (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
             asMock(userModel.findById as Mock).mockResolvedValue({
@@ -216,6 +220,17 @@ describe('AccommodationService.publish', () => {
 
             expect(result.error).toBeUndefined();
             expect(result.data?.lifecycleState).toBe(LifecycleStatusEnum.ACTIVE);
+            // Regression (SPEC-217): publishing must also promote visibility to
+            // PUBLIC. Onboarding drafts are created PRIVATE; without this the
+            // public detail-by-slug endpoint 404s the freshly-published listing.
+            expect(accommodationModel.update).toHaveBeenCalledWith(
+                { id: 'acc-005' },
+                expect.objectContaining({
+                    lifecycleState: LifecycleStatusEnum.ACTIVE,
+                    visibility: VisibilityEnum.PUBLIC
+                }),
+                expect.anything()
+            );
             expect(deps.checkEligibility).toHaveBeenCalledWith('host-005', expect.anything());
             expect(deps.startTrial).toHaveBeenCalledWith({ ownerId: 'host-005' });
             // Role promotion no longer happens in publish — that's done at
@@ -223,6 +238,41 @@ describe('AccommodationService.publish', () => {
             expect(userModel.update).not.toHaveBeenCalled();
             // No compensation when tx succeeds
             expect(deps.cancelTrial).not.toHaveBeenCalled();
+        });
+
+        // Regression (SPEC-217): publish must NOT clobber a deliberately-set
+        // RESTRICTED (or PUBLIC) visibility — only a PRIVATE onboarding draft is
+        // promoted. A RESTRICTED accommodation activated by an admin must stay
+        // RESTRICTED, never silently leak to the public site.
+        it('preserves a non-PRIVATE visibility on publish (no clobber)', async () => {
+            const deps = createPublishDeps();
+            const service = buildService(accommodationModel, userModel, deps);
+            const accommodation = createMockAccommodation({
+                id: 'acc-restricted',
+                ownerId: 'host-restricted',
+                lifecycleState: LifecycleStatusEnum.DRAFT,
+                visibility: VisibilityEnum.RESTRICTED
+            });
+            (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
+            asMock(userModel.findById as Mock).mockResolvedValue({
+                id: 'host-restricted',
+                role: RoleEnum.HOST
+            });
+            (accommodationModel.update as Mock).mockResolvedValue({
+                ...accommodation,
+                lifecycleState: LifecycleStatusEnum.ACTIVE
+            });
+
+            const actor = createHostActor({ id: 'host-restricted' });
+            const result = await service.publish(actor, 'acc-restricted');
+
+            expect(result.error).toBeUndefined();
+            // The update flips lifecycleState but does NOT write a visibility key.
+            expect(accommodationModel.update).toHaveBeenCalledWith(
+                { id: 'acc-restricted' },
+                expect.not.objectContaining({ visibility: expect.anything() }),
+                expect.anything()
+            );
         });
     });
 

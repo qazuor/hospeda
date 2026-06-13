@@ -73,6 +73,7 @@ import {
     RoleEnum,
     ServiceErrorCode,
     type Success,
+    VisibilityEnum,
     type WithOwnerIdParams,
     WithOwnerIdParamsSchema,
     httpToDomainAccommodationCreateDraft
@@ -1289,6 +1290,9 @@ export class AccommodationService extends BaseCrudService<
         if (target === LifecycleStatusEnum.ACTIVE && this._publishDeps) {
             if (current && current.lifecycleState !== LifecycleStatusEnum.ACTIVE) {
                 const { lifecycleState: _drop, ...restFields } = data as Record<string, unknown>;
+                // If the caller set `visibility` in the same request, it is applied
+                // via `super.update` below; publish must then NOT auto-promote it.
+                const callerSetVisibility = 'visibility' in restFields;
                 if (Object.keys(restFields).length > 0) {
                     const updateResult = await super.update(
                         actor,
@@ -1298,7 +1302,7 @@ export class AccommodationService extends BaseCrudService<
                     );
                     if (updateResult.error) return updateResult;
                 }
-                return this.publish(actor, id, ctx);
+                return this.publish(actor, id, ctx, { callerSetVisibility });
             }
         }
 
@@ -1402,6 +1406,12 @@ export class AccommodationService extends BaseCrudService<
      * @param ctx - Optional service context. When provided with a transaction,
      *   the fetch-and-validate phase runs inside it; the publish transaction
      *   itself is always opened independently to keep the boundary short.
+     * @param opts - Optional publish options.
+     * @param opts.callerSetVisibility - When `true`, the caller already set the
+     *   accommodation's `visibility` explicitly (e.g. an admin patch that carries
+     *   both `lifecycleState: ACTIVE` and a `visibility` value), so publish must
+     *   NOT auto-promote it. When omitted/`false`, publish promotes a `PRIVATE`
+     *   onboarding draft to `PUBLIC` (see the visibility note inside the method).
      * @returns The updated `Accommodation` on success, or a `ServiceError` on
      *   any failure with codes: `NOT_FOUND`, `FORBIDDEN`, `CONFIGURATION_ERROR`,
      *   `SERVICE_UNAVAILABLE`, `INTERNAL_ERROR`.
@@ -1409,7 +1419,8 @@ export class AccommodationService extends BaseCrudService<
     public async publish(
         actor: Actor,
         id: string,
-        ctx?: ServiceContext
+        ctx?: ServiceContext,
+        opts?: { readonly callerSetVisibility?: boolean }
     ): Promise<ServiceOutput<Accommodation>> {
         return this.runWithLoggingAndValidation({
             methodName: `publish(id=${id})`,
@@ -1483,6 +1494,19 @@ export class AccommodationService extends BaseCrudService<
                     }
                 }
 
+                // Visibility promotion (SPEC-217): onboarding drafts are created
+                // PRIVATE (intentionally hidden while unpublished). Publishing must
+                // reveal them so the public detail-by-slug endpoint can serve the
+                // listing; otherwise `checkCanView` rejects anonymous readers (404).
+                // We promote ONLY a PRIVATE source — never RESTRICTED or PUBLIC — so a
+                // deliberately-restricted listing is not silently leaked public on
+                // activation. And when the caller set `visibility` explicitly in the
+                // same request (`callerSetVisibility`), we respect their choice and
+                // skip promotion entirely.
+                const shouldPromoteVisibility =
+                    !opts?.callerSetVisibility &&
+                    accommodation.visibility === VisibilityEnum.PRIVATE;
+
                 let updated: Accommodation;
                 try {
                     updated = await withServiceTransaction(
@@ -1491,6 +1515,9 @@ export class AccommodationService extends BaseCrudService<
                                 { id },
                                 {
                                     lifecycleState: LifecycleStatusEnum.ACTIVE,
+                                    ...(shouldPromoteVisibility
+                                        ? { visibility: VisibilityEnum.PUBLIC }
+                                        : {}),
                                     updatedById: validatedActor.id
                                 },
                                 txCtx.tx

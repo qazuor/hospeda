@@ -8,7 +8,13 @@
  */
 
 import type { AccommodationModel, UserModel } from '@repo/db';
-import { LifecycleStatusEnum, PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
+import {
+    LifecycleStatusEnum,
+    PermissionEnum,
+    RoleEnum,
+    ServiceErrorCode,
+    VisibilityEnum
+} from '@repo/schemas';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as helpers from '../../../src/services/accommodation/accommodation.helpers';
@@ -125,6 +131,47 @@ describe('AccommodationService.update — publish routing', () => {
         // Confirm the publish path was taken (eligibility was checked + trial started)
         expect(deps.checkEligibility).toHaveBeenCalledWith('user-002', expect.anything());
         expect(deps.startTrial).toHaveBeenCalledWith({ ownerId: 'user-002' });
+    });
+
+    it('promotes a PRIVATE draft to PUBLIC when activated without an explicit visibility', async () => {
+        const deps = createPublishDeps();
+        const service = buildService(accommodationModel, userModel, deps);
+        const accommodation = createMockAccommodation({
+            id: 'acc-promote',
+            ownerId: 'user-005',
+            lifecycleState: LifecycleStatusEnum.DRAFT,
+            visibility: VisibilityEnum.PRIVATE
+        });
+        (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
+        (accommodationModel.update as Mock).mockResolvedValue({
+            ...accommodation,
+            lifecycleState: LifecycleStatusEnum.ACTIVE,
+            visibility: VisibilityEnum.PUBLIC
+        });
+        asMock(userModel.findById as Mock).mockResolvedValue({
+            id: 'user-005',
+            role: RoleEnum.USER
+        });
+
+        const actor = createActor({
+            id: 'user-005',
+            permissions: [PermissionEnum.ACCOMMODATION_UPDATE_OWN]
+        });
+        // Only lifecycleState is sent — no explicit visibility — so the routing
+        // passes callerSetVisibility=false and publish promotes PRIVATE -> PUBLIC.
+        const result = await service.update(actor, 'acc-promote', {
+            lifecycleState: LifecycleStatusEnum.ACTIVE
+        });
+
+        expect(result.error).toBeUndefined();
+        expect(accommodationModel.update).toHaveBeenCalledWith(
+            { id: 'acc-promote' },
+            expect.objectContaining({
+                lifecycleState: LifecycleStatusEnum.ACTIVE,
+                visibility: VisibilityEnum.PUBLIC
+            }),
+            expect.anything()
+        );
     });
 
     it('does NOT route to publish when current state is already ACTIVE', async () => {
