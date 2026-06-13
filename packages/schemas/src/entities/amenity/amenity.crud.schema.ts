@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { AmenityIdSchema } from '../../common/id.schema.js';
+import { stripShapeDefaults } from '../../utils/utils.js';
 import { AccommodationAmenityRelationSchema, AmenitySchema } from './amenity.schema.js';
 
 /**
@@ -45,15 +46,22 @@ export const AmenityCreateOutputSchema = AmenitySchema;
  * Schema for updating an amenity (PUT - complete replacement)
  * Omits auto-generated fields and makes all fields partial
  */
-export const AmenityUpdateInputSchema = AmenitySchema.omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-    createdById: true,
-    updatedById: true,
-    deletedAt: true,
-    deletedById: true
-}).partial();
+// Zod 4 .partial() keeps .default(); strip them so absent keys = no change (SPEC-217).
+export const AmenityUpdateInputSchema = z
+    .object(
+        stripShapeDefaults(
+            AmenitySchema.omit({
+                id: true,
+                createdAt: true,
+                updatedAt: true,
+                createdById: true,
+                updatedById: true,
+                deletedAt: true,
+                deletedById: true
+            }).shape
+        )
+    )
+    .partial();
 
 /**
  * Schema for partial amenity updates (PATCH)

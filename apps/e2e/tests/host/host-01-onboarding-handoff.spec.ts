@@ -216,11 +216,14 @@ test.describe('HOST-01: web→admin onboarding handoff @p0 @host @onboarding @bi
         ).toBe(true);
 
         // Step 13 of spec: ACTIVE state + trialing subscription + role unchanged
-        const accsPublished = await execSQL<{ lifecycle_state: string }>(
-            'SELECT lifecycle_state FROM accommodations WHERE id = $1',
+        const accsPublished = await execSQL<{ lifecycle_state: string; visibility: string }>(
+            'SELECT lifecycle_state, visibility FROM accommodations WHERE id = $1',
             [result.accommodationId]
         );
         expect(accsPublished[0]?.lifecycle_state).toBe('ACTIVE');
+        // Regression (SPEC-217): publishing promotes the onboarding draft from
+        // PRIVATE to PUBLIC so the public detail-by-slug page serves it (no 404).
+        expect(accsPublished[0]?.visibility).toBe('PUBLIC');
 
         // Trial subscription created OUTSIDE the local DB transaction (per
         // architecture). Only the QZPay test-control adapter (T-036) makes this
@@ -249,12 +252,20 @@ test.describe('HOST-01: web→admin onboarding handoff @p0 @host @onboarding @bi
         // Public visibility (step 14)
         // ───────────────────────────────────────────────────────────────────
 
-        const publicResponse = await page.request.get(
-            `${WEB_URL}/es/alojamientos/${result.accommodationSlug}`
-        );
-        expect(publicResponse.ok(), 'public detail page must respond 200 within ISR window').toBe(
-            true
-        );
+        // Publishing schedules cache/ISR revalidation as a best-effort ASYNC side
+        // effect (accommodation.service publish step 9), so the public detail page
+        // may need a moment to (re)generate after the PATCH returns. Poll until it
+        // serves 200 within the revalidation window rather than asserting on a
+        // single immediate GET (which races the async revalidation).
+        await expect(async () => {
+            const publicResponse = await page.request.get(
+                `${WEB_URL}/es/alojamientos/${result.accommodationSlug}`
+            );
+            expect(
+                publicResponse.ok(),
+                `public detail page must respond 200 within ISR window (got ${publicResponse.status()})`
+            ).toBe(true);
+        }).toPass({ timeout: 20_000, intervals: [500, 1000, 2000, 3000, 5000] });
 
         // ───────────────────────────────────────────────────────────────────
         // Idempotency on retry (step 15)

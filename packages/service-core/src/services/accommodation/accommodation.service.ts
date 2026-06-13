@@ -73,6 +73,7 @@ import {
     RoleEnum,
     ServiceErrorCode,
     type Success,
+    VisibilityEnum,
     type WithOwnerIdParams,
     WithOwnerIdParamsSchema,
     httpToDomainAccommodationCreateDraft
@@ -1206,19 +1207,27 @@ export class AccommodationService extends BaseCrudService<
     }
 
     /**
-     * Intercepts updates that transition the accommodation to `ACTIVE` and routes
-     * them through `publish()` so the trial-subscription orchestration runs
-     * atomically with the lifecycleState flip and the owner role promotion.
+     * Intercepts updates to enforce billing gates and route lifecycle transitions
+     * through the correct publish flow.
+     *
+     * SPEC-217: gates ALL writes for regular HOST owners whose subscription is lapsed
+     * (`subscription_required`). Admins and billing-exempt owners are excluded.
+     * This applies to both name/field updates on published accommodations AND to
+     * DRAFT→ACTIVE transitions. The gate fires before any DB write so lapsed hosts
+     * can never mutate accommodations regardless of the payload.
      *
      * SPEC-172: when `amenityIds` or `featureIds` are present in the update payload,
      * wraps the full update + junction sync in a `withServiceTransaction` boundary so
      * the accommodation update and the junction mutations are fully atomic.
      *
      * Behaviour matrix:
+     * - `publishDeps` wired AND owner has `subscription_required` AND actor is not admin:
+     *   → reject with FORBIDDEN immediately (all writes blocked).
      * - `lifecycleState === ACTIVE` AND current state is NOT ACTIVE AND
-     *   `publishDeps` are wired -> apply any non-lifecycle fields via the regular
-     *   update pipeline first, then delegate to `publish()`.
-     * - Anything else -> fall through to the standard `BaseCrudService.update()`
+     *   `publishDeps` are wired AND eligibility is NOT `subscription_required`:
+     *   → apply any non-lifecycle fields via the regular update pipeline first,
+     *     then delegate to `publish()`.
+     * - Anything else → fall through to the standard `BaseCrudService.update()`
      *   (including the legacy `_afterUpdate.assignHostRoleIfNeeded` best-effort
      *   path used by callers that have not wired billing deps, e.g. unit tests
      *   exercising lifecycle hooks in isolation).
@@ -1233,11 +1242,57 @@ export class AccommodationService extends BaseCrudService<
         data: AccommodationUpdateInput,
         ctx?: ServiceContext
     ): Promise<ServiceOutput<Accommodation>> {
+        // SPEC-217: fetch accommodation once so both the write-gate and the
+        // publish branch below can reuse the result without a second DB round-trip.
+        const current = this._publishDeps ? await this.model.findById(id, ctx?.tx) : null;
+
+        // SPEC-217: gate ALL writes for regular HOST owners whose subscription is
+        // lapsed. Admins (actor with ACCOMMODATION_UPDATE_ANY) and owners with
+        // billing-exempt roles (ADMIN/SUPER_ADMIN/CLIENT_MANAGER) are excluded.
+        // The gate only fires when publishDeps are wired; services instantiated
+        // without billing deps (e.g. unit tests) are unaffected.
+        if (this._publishDeps && current) {
+            const actorIsAdmin = actor.permissions.includes(
+                PermissionEnum.ACCOMMODATION_UPDATE_ANY
+            );
+            if (!actorIsAdmin) {
+                // Perf optimisation (SPEC-217): when the actor IS the owner we can
+                // derive the exempt check from actor.role directly, avoiding an extra
+                // DB round-trip for the common owner-edits-own-accommodation path.
+                const ownerIsBillingExempt =
+                    actor.id === current.ownerId
+                        ? AccommodationService.BILLING_EXEMPT_ROLES.has(actor.role)
+                        : await this._userModel
+                              .findById(current.ownerId, ctx?.tx)
+                              .then(
+                                  (owner) =>
+                                      !!owner &&
+                                      AccommodationService.BILLING_EXEMPT_ROLES.has(owner.role)
+                              );
+                if (!ownerIsBillingExempt) {
+                    const eligibility = await this._publishDeps.checkEligibility(
+                        current.ownerId,
+                        ctx
+                    );
+                    if (eligibility === 'subscription_required') {
+                        return {
+                            error: new ServiceError(
+                                ServiceErrorCode.FORBIDDEN,
+                                'subscription_required'
+                            )
+                        };
+                    }
+                }
+            }
+        }
+
         const target = (data as { lifecycleState?: unknown }).lifecycleState;
         if (target === LifecycleStatusEnum.ACTIVE && this._publishDeps) {
-            const current = await this.model.findById(id, ctx?.tx);
             if (current && current.lifecycleState !== LifecycleStatusEnum.ACTIVE) {
                 const { lifecycleState: _drop, ...restFields } = data as Record<string, unknown>;
+                // If the caller set `visibility` in the same request, it is applied
+                // via `super.update` below; publish must then NOT auto-promote it.
+                const callerSetVisibility = 'visibility' in restFields;
                 if (Object.keys(restFields).length > 0) {
                     const updateResult = await super.update(
                         actor,
@@ -1247,7 +1302,7 @@ export class AccommodationService extends BaseCrudService<
                     );
                     if (updateResult.error) return updateResult;
                 }
-                return this.publish(actor, id, ctx);
+                return this.publish(actor, id, ctx, { callerSetVisibility });
             }
         }
 
@@ -1351,6 +1406,12 @@ export class AccommodationService extends BaseCrudService<
      * @param ctx - Optional service context. When provided with a transaction,
      *   the fetch-and-validate phase runs inside it; the publish transaction
      *   itself is always opened independently to keep the boundary short.
+     * @param opts - Optional publish options.
+     * @param opts.callerSetVisibility - When `true`, the caller already set the
+     *   accommodation's `visibility` explicitly (e.g. an admin patch that carries
+     *   both `lifecycleState: ACTIVE` and a `visibility` value), so publish must
+     *   NOT auto-promote it. When omitted/`false`, publish promotes a `PRIVATE`
+     *   onboarding draft to `PUBLIC` (see the visibility note inside the method).
      * @returns The updated `Accommodation` on success, or a `ServiceError` on
      *   any failure with codes: `NOT_FOUND`, `FORBIDDEN`, `CONFIGURATION_ERROR`,
      *   `SERVICE_UNAVAILABLE`, `INTERNAL_ERROR`.
@@ -1358,7 +1419,8 @@ export class AccommodationService extends BaseCrudService<
     public async publish(
         actor: Actor,
         id: string,
-        ctx?: ServiceContext
+        ctx?: ServiceContext,
+        opts?: { readonly callerSetVisibility?: boolean }
     ): Promise<ServiceOutput<Accommodation>> {
         return this.runWithLoggingAndValidation({
             methodName: `publish(id=${id})`,
@@ -1432,6 +1494,19 @@ export class AccommodationService extends BaseCrudService<
                     }
                 }
 
+                // Visibility promotion (SPEC-217): onboarding drafts are created
+                // PRIVATE (intentionally hidden while unpublished). Publishing must
+                // reveal them so the public detail-by-slug endpoint can serve the
+                // listing; otherwise `checkCanView` rejects anonymous readers (404).
+                // We promote ONLY a PRIVATE source — never RESTRICTED or PUBLIC — so a
+                // deliberately-restricted listing is not silently leaked public on
+                // activation. And when the caller set `visibility` explicitly in the
+                // same request (`callerSetVisibility`), we respect their choice and
+                // skip promotion entirely.
+                const shouldPromoteVisibility =
+                    !opts?.callerSetVisibility &&
+                    accommodation.visibility === VisibilityEnum.PRIVATE;
+
                 let updated: Accommodation;
                 try {
                     updated = await withServiceTransaction(
@@ -1440,6 +1515,9 @@ export class AccommodationService extends BaseCrudService<
                                 { id },
                                 {
                                     lifecycleState: LifecycleStatusEnum.ACTIVE,
+                                    ...(shouldPromoteVisibility
+                                        ? { visibility: VisibilityEnum.PUBLIC }
+                                        : {}),
                                     updatedById: validatedActor.id
                                 },
                                 txCtx.tx

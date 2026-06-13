@@ -3,6 +3,7 @@ import { UserIdSchema } from '../../common/id.schema.js';
 import { StrongPasswordSchema } from '../../common/password.schema.js';
 import { PermissionEnumSchema, RoleEnumSchema } from '../../enums/index.js';
 import { ModerationStatusEnumSchema } from '../../enums/moderation-status.schema.js';
+import { stripShapeDefaults } from '../../utils/utils.js';
 import { UserSchema } from './user.schema.js';
 
 /**
@@ -44,6 +45,7 @@ export const UserCreateOutputSchema = UserSchema;
 // UPDATE SCHEMAS
 // ============================================================================
 
+// Zod 4 .partial() keeps .default(); strip them so absent keys = no change (SPEC-217).
 /**
  * Schema for updating a user (PUT - complete replacement)
  * Omits auto-generated fields and makes all fields partial.
@@ -64,24 +66,33 @@ export const UserCreateOutputSchema = UserSchema;
  * has no default (so it is never re-injected) and the admin PUT/PATCH routes
  * legitimately change it through this schema.
  */
-export const UserUpdateInputSchema = UserSchema.omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-    createdById: true,
-    updatedById: true,
-    deletedAt: true,
-    deletedById: true,
-    // System flags — never settable via a generic user update (see JSDoc).
-    emailVerified: true,
-    profileCompleted: true,
-    setPasswordPrompted: true,
-    serviceSuspended: true,
-    permissions: true,
-    banned: true,
-    banReason: true,
-    banExpires: true
-}).partial();
+export const UserUpdateInputSchema = z
+    .object(
+        // Zod 4 .partial() keeps .default(); strip them so absent keys = no change
+        // (SPEC-217). This removes the remaining defaulted fields (lifecycleState,
+        // visibility); the system flags below are omitted outright (see JSDoc).
+        stripShapeDefaults(
+            UserSchema.omit({
+                id: true,
+                createdAt: true,
+                updatedAt: true,
+                createdById: true,
+                updatedById: true,
+                deletedAt: true,
+                deletedById: true,
+                // System flags — never settable via a generic user update (see JSDoc).
+                emailVerified: true,
+                profileCompleted: true,
+                setPasswordPrompted: true,
+                serviceSuspended: true,
+                permissions: true,
+                banned: true,
+                banReason: true,
+                banExpires: true
+            }).shape
+        )
+    )
+    .partial();
 
 /**
  * Schema for partial user updates (PATCH)

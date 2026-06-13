@@ -127,15 +127,21 @@ export const trialMiddleware = (): MiddlewareHandler<AppBindings> => {
                 customerId: billingCustomerId
             });
 
-            // If trial is expired, block access
-            if (trialStatus.isExpired) {
+            // Expired trial → read-only mode: paywall mutating requests but keep
+            // reads (GET/HEAD) available so the host can still view their data.
+            // This mirrors the expired paid-subscription behaviour (read-only,
+            // not a full lockout) enforced by the date-aware publish/write gate,
+            // and satisfies SPEC-217 AC-1.1 ("reads still work" for a lapsed host).
+            const method = c.req.method.toUpperCase();
+            const isReadOnlyRequest = method === 'GET' || method === 'HEAD';
+            if (trialStatus.isExpired && !isReadOnlyRequest) {
                 apiLogger.warn(
                     {
                         customerId: billingCustomerId,
                         path,
                         expiresAt: trialStatus.expiresAt
                     },
-                    'Blocked access due to expired trial'
+                    'Blocked write access due to expired trial'
                 );
 
                 throw new HTTPException(402, {

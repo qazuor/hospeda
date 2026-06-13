@@ -8,6 +8,7 @@
 import { z } from 'zod';
 import { BaseHttpSearchSchema, createBooleanQueryParam } from '../../api/http/base-http.schema.js';
 import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
+import { stripShapeDefaults } from '../../utils/utils.js';
 
 /**
  * HTTP-compatible accommodation review search schema with automatic coercion
@@ -109,7 +110,10 @@ export type AccommodationReviewCreateHttp = z.infer<typeof AccommodationReviewCr
  * HTTP-compatible accommodation review update schema
  * Handles partial updates via HTTP PATCH requests
  */
-export const AccommodationReviewUpdateHttpSchema = AccommodationReviewCreateHttpSchema.partial();
+// Zod 4 .partial() keeps .default(); strip them so absent keys = no change (SPEC-217).
+export const AccommodationReviewUpdateHttpSchema = z
+    .object(stripShapeDefaults(AccommodationReviewCreateHttpSchema.shape))
+    .partial();
 
 export type AccommodationReviewUpdateHttp = z.infer<typeof AccommodationReviewUpdateHttpSchema>;
 

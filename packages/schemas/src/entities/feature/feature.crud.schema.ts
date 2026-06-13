@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { i18nText } from '../../common/i18n.schema.js';
 import { FeatureIdSchema } from '../../common/id.schema.js';
 import { LifecycleStatusEnumSchema } from '../../enums/index.js';
+import { stripShapeDefaults } from '../../utils/utils.js';
 import { FeatureSchema } from './feature.schema.js';
 
 /**
@@ -89,15 +90,21 @@ export const FeatureCreateOutputSchema = FeatureSchema;
  * Schema for updating a feature (PUT - complete replacement)
  * Omits auto-generated fields and makes all fields partial
  */
-export const FeatureUpdateInputSchema = FeatureSchema.omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-    createdById: true,
-    updatedById: true,
-    deletedAt: true,
-    deletedById: true
-})
+// Zod 4 .partial() keeps .default(); strip them so absent keys = no change (SPEC-217).
+export const FeatureUpdateInputSchema = z
+    .object(
+        stripShapeDefaults(
+            FeatureSchema.omit({
+                id: true,
+                createdAt: true,
+                updatedAt: true,
+                createdById: true,
+                updatedById: true,
+                deletedAt: true,
+                deletedById: true
+            }).shape
+        )
+    )
     .partial()
     .strict();
 

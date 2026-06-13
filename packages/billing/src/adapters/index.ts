@@ -11,6 +11,11 @@ export {
     type MercadoPagoAdapterConfig
 } from './mercadopago.js';
 
+// SPEC-217: deterministic in-memory MercadoPago adapter stub used under the
+// test-control gate (HOSPEDA_QZPAY_TEST_CONTROL_ENABLED=true) so the
+// accommodation-publish trial flow succeeds offline in CI.
+export { createStubMercadoPagoAdapter } from './mercadopago-stub.js';
+
 // SPEC-092 T-036: test-only control surface for E2E failure injection.
 // Gated by HOSPEDA_QZPAY_TEST_CONTROL_ENABLED=true; no-op otherwise.
 export {

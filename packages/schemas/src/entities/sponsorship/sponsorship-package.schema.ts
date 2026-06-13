@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { BaseAuditFields } from '../../common/audit.schema.js';
 import { SponsorshipLevelIdSchema, SponsorshipPackageIdSchema } from '../../common/id.schema.js';
+import { stripShapeDefaults } from '../../utils/utils.js';
 
 /**
  * Sponsorship Package entity schema
@@ -87,7 +88,10 @@ export type SponsorshipPackageCreateInput = z.infer<typeof SponsorshipPackageCre
 /**
  * Update input for sponsorship package
  */
-export const SponsorshipPackageUpdateInputSchema = SponsorshipPackageCreateInputSchema.partial();
+// Zod 4 .partial() keeps .default(); strip them so absent keys = no change (SPEC-217).
+export const SponsorshipPackageUpdateInputSchema = z
+    .object(stripShapeDefaults(SponsorshipPackageCreateInputSchema.shape))
+    .partial();
 export type SponsorshipPackageUpdateInput = z.infer<typeof SponsorshipPackageUpdateInputSchema>;
 
 /**

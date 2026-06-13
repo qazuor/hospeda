@@ -57,6 +57,7 @@ function createMockContext(
         billingEnabled?: boolean;
         billingCustomerId?: string | null;
         path?: string;
+        method?: string;
     } = {}
 ) {
     return {
@@ -69,7 +70,10 @@ function createMockContext(
             }
             return undefined;
         }),
-        req: { path: overrides.path ?? '/api/v1/accommodations' }
+        req: {
+            path: overrides.path ?? '/api/v1/accommodations',
+            method: overrides.method ?? 'GET'
+        }
     } as any;
 }
 
@@ -321,11 +325,12 @@ describe('Trial Middleware', () => {
     });
 
     describe('Expired Trial', () => {
-        it('should block access with 402 when trial is expired', async () => {
-            // Arrange
+        it('should block write access with 402 when trial is expired', async () => {
+            // Arrange — uses POST (mutating method); expired trial must be blocked
             const ctx = createMockContext({
                 billingCustomerId: 'cust-123',
-                path: '/api/v1/accommodations'
+                path: '/api/v1/accommodations',
+                method: 'POST'
             });
             const next = createMockNext();
             const middleware = trialMiddleware();
@@ -365,13 +370,13 @@ describe('Trial Middleware', () => {
                     path: '/api/v1/accommodations',
                     expiresAt: expect.any(Date)
                 },
-                'Blocked access due to expired trial'
+                'Blocked write access due to expired trial'
             );
         });
 
         it('should include trial status in error cause', async () => {
-            // Arrange
-            const ctx = createMockContext({ path: '/api/v1/posts' });
+            // Arrange — uses PUT (mutating method) to trigger the 402 block
+            const ctx = createMockContext({ path: '/api/v1/posts', method: 'PUT' });
             const next = createMockNext();
             const middleware = trialMiddleware();
 
@@ -778,11 +783,12 @@ describe('Trial Middleware', () => {
 
     describe('Integration Scenarios', () => {
         it('should handle complete flow for expired trial on protected route', async () => {
-            // Arrange
+            // Arrange — POST (mutating) to confirm write block still fires for expired trial
             const ctx = createMockContext({
                 billingEnabled: true,
                 billingCustomerId: 'cust-expired',
-                path: '/api/v1/accommodations/create'
+                path: '/api/v1/accommodations/create',
+                method: 'POST'
             });
             const next = createMockNext();
             const middleware = trialMiddleware();
@@ -808,7 +814,7 @@ describe('Trial Middleware', () => {
                 expect.objectContaining({
                     customerId: 'cust-expired'
                 }),
-                'Blocked access due to expired trial'
+                'Blocked write access due to expired trial'
             );
         });
 
@@ -860,6 +866,168 @@ describe('Trial Middleware', () => {
             // Assert
             expect(next).toHaveBeenCalledTimes(1);
             expect(TrialService).not.toHaveBeenCalled(); // Should skip trial check
+        });
+    });
+
+    describe('SPEC-217 Read-Only Contract (regression lock)', () => {
+        /**
+         * Regression lock for SPEC-217 AC-1.1.
+         * Expired trial must be READ-ONLY, not a full lockout:
+         *   - GET / HEAD  → next() called, no throw, no block warn logged
+         *   - POST / PUT / PATCH / DELETE → HTTPException(402, TRIAL_EXPIRED) thrown
+         */
+        it('should allow GET requests through when trial is expired', async () => {
+            // Arrange
+            const ctx = createMockContext({
+                billingCustomerId: 'cust-expired-ro',
+                path: '/api/v1/accommodations',
+                method: 'GET'
+            });
+            const next = createMockNext();
+            const middleware = trialMiddleware();
+
+            const mockBilling = {};
+            const mockTrialService = {
+                getTrialStatus: vi.fn().mockResolvedValue({
+                    isExpired: true,
+                    isOnTrial: false,
+                    expiresAt: new Date('2024-06-01T00:00:00Z'),
+                    daysRemaining: 0,
+                    planSlug: null
+                })
+            };
+
+            vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
+            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+
+            // Act
+            await middleware(ctx, next);
+
+            // Assert — GET passes through; no block, no 'Blocked write access' warn
+            expect(next).toHaveBeenCalledTimes(1);
+            expect(apiLogger.warn).not.toHaveBeenCalledWith(
+                expect.anything(),
+                'Blocked write access due to expired trial'
+            );
+        });
+
+        it('should allow HEAD requests through when trial is expired', async () => {
+            // Arrange
+            const ctx = createMockContext({
+                billingCustomerId: 'cust-expired-ro',
+                path: '/api/v1/accommodations/abc123',
+                method: 'HEAD'
+            });
+            const next = createMockNext();
+            const middleware = trialMiddleware();
+
+            const mockBilling = {};
+            const mockTrialService = {
+                getTrialStatus: vi.fn().mockResolvedValue({
+                    isExpired: true,
+                    isOnTrial: false,
+                    expiresAt: new Date('2024-06-01T00:00:00Z'),
+                    daysRemaining: 0,
+                    planSlug: null
+                })
+            };
+
+            vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
+            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+
+            // Act
+            await middleware(ctx, next);
+
+            // Assert — HEAD is read-only; must pass through
+            expect(next).toHaveBeenCalledTimes(1);
+            expect(apiLogger.warn).not.toHaveBeenCalledWith(
+                expect.anything(),
+                'Blocked write access due to expired trial'
+            );
+        });
+
+        it('should block PUT requests with 402 TRIAL_EXPIRED when trial is expired', async () => {
+            // Arrange
+            const ctx = createMockContext({
+                billingCustomerId: 'cust-expired-rw',
+                path: '/api/v1/accommodations/abc123',
+                method: 'PUT'
+            });
+            const next = createMockNext();
+            const middleware = trialMiddleware();
+
+            const mockBilling = {};
+            const mockTrialService = {
+                getTrialStatus: vi.fn().mockResolvedValue({
+                    isExpired: true,
+                    isOnTrial: false,
+                    expiresAt: new Date('2024-06-01T00:00:00Z'),
+                    daysRemaining: 0,
+                    planSlug: null
+                })
+            };
+
+            vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
+            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+
+            // Act & Assert — PUT must be blocked with 402
+            await expect(middleware(ctx, next)).rejects.toThrow(HTTPException);
+
+            try {
+                await middleware(ctx, next);
+            } catch (error) {
+                if (error instanceof HTTPException) {
+                    expect(error.status).toBe(402);
+                    expect((error as any).cause.code).toBe('TRIAL_EXPIRED');
+                }
+            }
+
+            expect(next).not.toHaveBeenCalled();
+        });
+
+        it('should block POST requests with 402 TRIAL_EXPIRED when trial is expired', async () => {
+            // Arrange
+            const ctx = createMockContext({
+                billingCustomerId: 'cust-expired-rw',
+                path: '/api/v1/accommodations',
+                method: 'POST'
+            });
+            const next = createMockNext();
+            const middleware = trialMiddleware();
+
+            const mockBilling = {};
+            const mockTrialService = {
+                getTrialStatus: vi.fn().mockResolvedValue({
+                    isExpired: true,
+                    isOnTrial: false,
+                    expiresAt: new Date('2024-06-01T00:00:00Z'),
+                    daysRemaining: 0,
+                    planSlug: null
+                })
+            };
+
+            vi.mocked(getQZPayBilling).mockReturnValue(mockBilling as any);
+            vi.mocked(TrialService).mockImplementation(() => mockTrialService as any);
+
+            // Act & Assert — POST must be blocked with 402
+            await expect(middleware(ctx, next)).rejects.toThrow(HTTPException);
+
+            try {
+                await middleware(ctx, next);
+            } catch (error) {
+                if (error instanceof HTTPException) {
+                    expect(error.status).toBe(402);
+                    expect((error as any).cause.code).toBe('TRIAL_EXPIRED');
+                }
+            }
+
+            expect(next).not.toHaveBeenCalled();
+            expect(apiLogger.warn).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    customerId: 'cust-expired-rw'
+                }),
+                'Blocked write access due to expired trial'
+            );
         });
     });
 });

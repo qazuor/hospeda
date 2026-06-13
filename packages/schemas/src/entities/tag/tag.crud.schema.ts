@@ -3,6 +3,7 @@ import { TagIdSchema, UserIdSchema } from '../../common/id.schema.js';
 import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
 import { LifecycleStatusEnumSchema } from '../../enums/lifecycle-state.schema.js';
 import { TagTypeSchema } from '../../enums/tag-type.schema.js';
+import { stripShapeDefaults } from '../../utils/utils.js';
 import { TagSchema } from './tag.schema.js';
 
 /**
@@ -126,7 +127,10 @@ export const TagCreateOutputSchema = TagSchema;
  * TagUpdateInputSchema.parse({ description: 'Updated description' });
  * ```
  */
-export const TagUpdateInputSchema = TagCreateBaseSchema.partial();
+// Zod 4 .partial() keeps .default(); strip them so absent keys = no change (SPEC-217).
+export const TagUpdateInputSchema = z
+    .object(stripShapeDefaults(TagCreateBaseSchema.shape))
+    .partial();
 
 /**
  * Schema for partial tag updates (PATCH).

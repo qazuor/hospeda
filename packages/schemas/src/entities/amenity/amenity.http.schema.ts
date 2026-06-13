@@ -13,6 +13,7 @@ import {
 } from '../../api/http/base-http.schema.js';
 import { i18nText } from '../../common/i18n.schema.js';
 import { AmenitiesTypeEnumSchema } from '../../enums/index.js';
+import { stripShapeDefaults } from '../../utils/utils.js';
 
 /**
  * HTTP-compatible amenity search schema with automatic coercion
@@ -83,7 +84,10 @@ export type AmenityCreateHttp = z.infer<typeof AmenityCreateHttpSchema>;
  * HTTP-compatible amenity update schema
  * Handles partial updates via HTTP PATCH requests
  */
-export const AmenityUpdateHttpSchema = AmenityCreateHttpSchema.partial();
+// Zod 4 .partial() keeps .default(); strip them so absent keys = no change (SPEC-217).
+export const AmenityUpdateHttpSchema = z
+    .object(stripShapeDefaults(AmenityCreateHttpSchema.shape))
+    .partial();
 
 export type AmenityUpdateHttp = z.infer<typeof AmenityUpdateHttpSchema>;
 

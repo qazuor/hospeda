@@ -8,6 +8,7 @@ import {
 import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
 import { LifecycleStatusEnumSchema } from '../../enums/lifecycle-state.schema.js';
 import { OwnerPromotionDiscountTypeEnumSchema } from '../../enums/owner-promotion-discount-type.schema.js';
+import { stripShapeDefaults } from '../../utils/utils.js';
 
 /**
  * Owner Promotion entity schema
@@ -128,7 +129,11 @@ export type OwnerPromotionCreateInput = z.infer<typeof OwnerPromotionCreateInput
  * (e.g. `isActive`) are rejected at the route boundary with a 400 VALIDATION_ERROR
  * instead of being silently dropped by the Hono zValidator middleware.
  */
-export const OwnerPromotionUpdateInputSchema = OwnerPromotionCreateInputSchema.partial().strict();
+// Zod 4 .partial() keeps .default(); strip them so absent keys = no change (SPEC-217).
+export const OwnerPromotionUpdateInputSchema = z
+    .object(stripShapeDefaults(OwnerPromotionCreateInputSchema.shape))
+    .partial()
+    .strict();
 export type OwnerPromotionUpdateInput = z.infer<typeof OwnerPromotionUpdateInputSchema>;
 
 /**

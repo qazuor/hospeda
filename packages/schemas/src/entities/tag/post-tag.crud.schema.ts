@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
 import { LifecycleStatusEnumSchema } from '../../enums/lifecycle-state.schema.js';
+import { stripShapeDefaults } from '../../utils/utils.js';
 import { PostTagSchema } from './post-tag.schema.js';
 
 /**
@@ -75,7 +76,10 @@ export const CreatePostTagOutputSchema = PostTagSchema;
  * UpdatePostTagSchema.parse({ slug: 'gastronomia-regional', color: 'GREEN' });
  * ```
  */
-export const UpdatePostTagSchema = CreatePostTagSchema.partial();
+// Zod 4 .partial() keeps .default(); strip them so absent keys = no change (SPEC-217).
+export const UpdatePostTagSchema = z
+    .object(stripShapeDefaults(CreatePostTagSchema.shape))
+    .partial();
 
 /**
  * Schema for PostTag update response.
