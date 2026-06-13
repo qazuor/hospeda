@@ -446,6 +446,31 @@ The `task-master:session-resume` reminder at session start reads from `tasks/ind
 - Task state: `.qtm/tasks/SPEC-NNN-slug/state.json`
 - Progress: `.qtm/tasks/SPEC-NNN-slug/progress.md`
 
+### Specs Prioritization Tracker (`specs-prioritization.csv`)
+
+The repo root holds `specs-prioritization.csv` — a pipe-delimited (`|`) owner-facing
+prioritization board for every spec. Render it as an interactive HTML table with
+`python3 scripts/render-specs-prioritization.py` (filtering, sorting, status badges).
+
+**Keep it in sync — this is a standing rule, not on-demand:**
+
+1. **Whenever a spec changes status** (created, started, completed, archived, blocked),
+   update its row in `specs-prioritization.csv` in the SAME change, mirroring
+   `.qtm/specs/index.json` (the source of truth).
+2. **Whenever a new spec is allocated**, add a row for it (at minimum `rank`, `spec`,
+   `name`, `prioridad`, `estado`). The owner fills the judgment columns
+   (`descripcion`, `por_que_ahora`, `peligros`, `estimado`, etc.) — do NOT invent them.
+3. **`estado` column vocabulary** (only these four values):
+   - `done` — spec `completed` or `archived` in the index
+   - `in progress` — spec `in-progress`
+   - `blocked` — waiting on an open owner decision or an unmet hard dependency
+   - `backlog` — everything else (`draft`, `approved`, not started)
+4. **Status mapping**: `completed`/`archived`/`merged` → `done`; `in-progress` →
+   `in progress`; `approved`/`draft` → `backlog`. `blocked` is set deliberately (the
+   index has no `blocked` status), never auto-derived from a plain dependency.
+5. **On disagreement, trust `.qtm/specs/index.json`** over the CSV, same as the
+   `tasks/index.json` rule above.
+
 ## Important Notes
 
 - Default locale is Spanish (`es`) for the Argentina market. Supported locales: es, en, pt
