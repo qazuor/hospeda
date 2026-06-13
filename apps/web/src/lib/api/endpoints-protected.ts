@@ -1004,7 +1004,10 @@ export interface ConversationDetail {
 export interface ConversationThreadResponse {
     readonly conversation: ConversationDetail;
     readonly messages: readonly ConversationMessageItem[];
-    readonly hasMore: boolean;
+    /** Cursor (oldest message's createdAt) for loading the previous page, or
+     * null when there are no older messages. Matches the API response shape;
+     * mirrors OwnerConversationThreadResponse. */
+    readonly nextCursor: string | null;
 }
 
 /** Protected conversations API endpoints (require auth session) */

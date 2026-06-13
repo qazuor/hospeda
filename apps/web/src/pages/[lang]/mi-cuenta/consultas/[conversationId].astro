@@ -42,7 +42,7 @@ if (!result.ok) {
     return new Response(null, { status: 404 });
 }
 
-const { conversation, messages, hasMore } = result.data;
+const { conversation, messages, nextCursor } = result.data;
 
 // Determine if reply is allowed
 const closedStatuses = ['CLOSED', 'BLOCKED'];
@@ -53,7 +53,7 @@ let showOwnerReadReceipt = false;
 if (conversation.lastReadAtByOwner) {
     const lastGuestMsg = [...messages]
         .reverse()
-        .find((m) => m.senderType === 'guest');
+        .find((m) => m.senderType?.toLowerCase() === 'guest');
     if (lastGuestMsg) {
         showOwnerReadReceipt =
             new Date(conversation.lastReadAtByOwner) >= new Date(lastGuestMsg.createdAt);
@@ -67,13 +67,23 @@ function formatDate(dateStr: string): string {
     );
 }
 
+/** Up-to-two-letter initials for the thread avatar. */
+function getInitials(name: string): string {
+    const words = name.trim().split(/\s+/).filter(Boolean);
+    if (words.length === 0) return '?';
+    if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+    return (words[0][0] + words[words.length - 1][0]).toUpperCase();
+}
+
+const avatarSeed = conversation.accommodationName ?? conversation.ownerName ?? '?';
+
 const pageTitle = t('conversations.thread.title', undefined, {
     senderName: conversation.ownerName
 });
 
-// Older messages link: pass oldest message cursor
-const oldestMessage = messages[0];
-const olderCursor = hasMore && oldestMessage ? oldestMessage.createdAt : null;
+// Older messages link: the API already computes the cursor for the previous
+// page (oldest message's createdAt, or null when there are no older messages).
+const olderCursor = nextCursor;
 ---
 
 <AccountLayout
@@ -83,12 +93,18 @@ const olderCursor = hasMore && oldestMessage ? oldestMessage.createdAt : null;
     activeSection="messages"
 >
     <div class="conv-thread">
+        <a href={buildUrl({ locale, path: 'mi-cuenta/consultas' })} class="conv-thread__back">
+            <span aria-hidden="true">&larr;</span>
+            {t('conversations.thread.backToInbox', 'Volver a mis consultas')}
+        </a>
         <div class="conv-thread__header">
-            <a href={buildUrl({ locale, path: 'mi-cuenta/consultas' })} class="conv-thread__back">
-                &larr;
-            </a>
-            <h1 class="conv-thread__title">{pageTitle}</h1>
-            <span class="conv-thread__accommodation">{conversation.accommodationName}</span>
+            <span class="conv-thread__avatar" aria-hidden="true">{getInitials(avatarSeed)}</span>
+            <div class="conv-thread__header-text">
+                <h1 class="conv-thread__title">
+                    {conversation.accommodationName ?? pageTitle}
+                </h1>
+                <span class="conv-thread__accommodation">{pageTitle}</span>
+            </div>
         </div>
 
         {olderCursor && (
@@ -108,7 +124,7 @@ const olderCursor = hasMore && oldestMessage ? oldestMessage.createdAt : null;
                 <li
                     class:list={[
                         'conv-thread__message',
-                        `conv-thread__message--${msg.senderType}`
+                        `conv-thread__message--${msg.senderType?.toLowerCase() ?? 'system'}`
                     ]}
                 >
                     <div class="conv-thread__bubble">
@@ -158,27 +174,62 @@ const olderCursor = hasMore && oldestMessage ? oldestMessage.createdAt : null;
         gap: var(--space-4, 16px);
     }
 
-    .conv-thread__header {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-1, 4px);
-    }
-
     .conv-thread__back {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
         font-family: var(--font-sans);
-        font-size: 0.875rem;
-        color: var(--brand-primary);
+        font-size: 0.85rem;
+        color: var(--core-muted-foreground);
         text-decoration: none;
         align-self: flex-start;
-        margin-bottom: var(--space-2, 8px);
+        transition: color var(--duration-fast, 0.2s) ease;
+    }
+
+    .conv-thread__back:hover {
+        color: var(--brand-primary);
+    }
+
+    .conv-thread__header {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3, 12px);
+        padding-bottom: var(--space-4, 16px);
+        border-bottom: 1px solid var(--border);
+    }
+
+    .conv-thread__avatar {
+        flex-shrink: 0;
+        width: 44px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background-color: var(--brand-accent-a15);
+        color: var(--brand-accent);
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: 0.95rem;
+        text-transform: uppercase;
+    }
+
+    .conv-thread__header-text {
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
     }
 
     .conv-thread__title {
         font-family: var(--font-heading);
-        font-size: 1.3rem;
+        font-size: 1.2rem;
         font-weight: 700;
         color: var(--core-foreground);
         margin: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .conv-thread__accommodation {
@@ -192,19 +243,33 @@ const olderCursor = hasMore && oldestMessage ? oldestMessage.createdAt : null;
     }
 
     .conv-thread__older-link {
+        display: inline-flex;
+        align-items: center;
         font-family: var(--font-sans);
-        font-size: 0.85rem;
+        font-size: 0.8rem;
+        font-weight: 500;
         color: var(--brand-primary);
-        text-decoration: underline;
+        text-decoration: none;
+        padding: 6px 14px;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-pill, 9999px);
+        background-color: var(--core-card);
+        transition: background-color var(--duration-fast, 0.2s) ease;
+    }
+
+    .conv-thread__older-link:hover {
+        background-color: var(--surface-warm);
     }
 
     .conv-thread__messages {
         list-style: none;
-        padding: 0;
+        padding: var(--space-4, 16px);
         margin: 0;
         display: flex;
         flex-direction: column;
         gap: var(--space-3, 12px);
+        background-color: var(--surface-warm);
+        border-radius: var(--radius-card, 16px);
     }
 
     .conv-thread__message {
