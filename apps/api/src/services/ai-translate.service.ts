@@ -56,6 +56,9 @@ type TranslatableTable = PgTable & {
  * column is guaranteed to exist because the names come from {@link I18N_COLUMN_MAP}.
  */
 function i18nColumn(table: TranslatableTable, columnName: string): PgColumn {
+    // TYPE-WORKAROUND: Drizzle exposes table columns under an internal symbol, so
+    // dynamic by-name access needs a structural cast. The name always comes from
+    // I18N_COLUMN_MAP, so the column is guaranteed to exist.
     return (table as unknown as Record<string, PgColumn>)[columnName] as PgColumn;
 }
 
@@ -69,16 +72,19 @@ function i18nColumn(table: TranslatableTable, columnName: string): PgColumn {
  * partially mocks `@repo/db/schemas`.
  */
 function getEntityTable(entityType: TranslatableEntityType): TranslatableTable {
-    switch (entityType) {
-        case 'accommodation':
-            return accommodations as unknown as TranslatableTable;
-        case 'destination':
-            return destinations as unknown as TranslatableTable;
-        case 'event':
-            return events as unknown as TranslatableTable;
-        case 'post':
-            return posts as unknown as TranslatableTable;
-    }
+    // Built lazily inside the function (never a top-level const) so importing this
+    // module does not access the bindings — the table objects are `unknown` here
+    // and narrowed by the single documented cast below.
+    const tables: Record<TranslatableEntityType, unknown> = {
+        accommodation: accommodations,
+        destination: destinations,
+        event: events,
+        post: posts
+    };
+    // TYPE-WORKAROUND: a Drizzle table's structural shape does not overlap the
+    // narrow `TranslatableTable` view (columns live under an internal symbol), so
+    // the projection requires an explicit cast from `unknown`.
+    return tables[entityType] as TranslatableTable;
 }
 
 /** Map entity type to its i18n column suffixes. */
