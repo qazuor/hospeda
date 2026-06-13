@@ -288,9 +288,12 @@
         {
             "specId": "SPEC-205",
             "title": "Host Web Foundation \u2014 Dashboard, Navigation, Promotions & Funnel",
-            "status": "in-progress",
+            "status": "completed",
             "progress": "9/9",
             "path": "SPEC-205-host-web-foundation",
+            "archived": true,
+            "archivedAt": "2026-06-13T00:00:00Z",
+            "archiveNote": "All phases shipped (1/2/4 in #1542, Phase 3 owner-promotions CRUD in #1591)",
             "tags": ["host-migration", "phase-1"]
         },
         {
