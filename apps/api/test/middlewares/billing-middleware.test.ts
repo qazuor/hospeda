@@ -13,6 +13,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mockGetDb = vi.fn();
 const mockCreateBillingAdapter = vi.fn();
 const mockCreateMercadoPagoAdapter = vi.fn();
+const mockCreateStubMercadoPagoAdapter = vi.fn(() => ({}));
+const mockIsTestControlEnabled = vi.fn(() => false);
 const mockCreateQZPayBilling = vi.fn();
 const mockCreateQZPayMiddleware = vi.fn();
 
@@ -22,7 +24,9 @@ vi.mock('@repo/db', () => ({
 }));
 
 vi.mock('@repo/billing', () => ({
-    createMercadoPagoAdapter: (...args: unknown[]) => mockCreateMercadoPagoAdapter(...args)
+    createMercadoPagoAdapter: (...args: unknown[]) => mockCreateMercadoPagoAdapter(...args),
+    createStubMercadoPagoAdapter: (...args: unknown[]) => mockCreateStubMercadoPagoAdapter(...args),
+    isTestControlEnabled: () => mockIsTestControlEnabled()
 }));
 
 vi.mock('@qazuor/qzpay-core', () => ({
