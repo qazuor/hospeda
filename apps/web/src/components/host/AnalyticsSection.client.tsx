@@ -154,6 +154,7 @@ export function AnalyticsSection({ locale }: AnalyticsSectionProps): JSX.Element
             const responseRateData =
                 responseRateResult.status === 'fulfilled' && responseRateResult.value.ok
                     ? transformResponseRate({
+                          // TYPE-WORKAROUND: apiClient returns a generic payload not inferred to the transform's input shape; the transform reads fields defensively.
                           item: responseRateResult.value.data as unknown as Record<string, unknown>
                       })
                     : undefined;
@@ -161,6 +162,7 @@ export function AnalyticsSection({ locale }: AnalyticsSectionProps): JSX.Element
             const inquiriesData =
                 inquiriesResult.status === 'fulfilled' && inquiriesResult.value.ok
                     ? transformInquiryTrend({
+                          // TYPE-WORKAROUND: apiClient returns a generic payload not inferred to the transform's input shape; the transform reads fields defensively.
                           item: inquiriesResult.value.data as unknown as Record<string, unknown>
                       })
                     : undefined;
@@ -171,6 +173,7 @@ export function AnalyticsSection({ locale }: AnalyticsSectionProps): JSX.Element
                 marketResult.value &&
                 marketResult.value.ok
                     ? transformMarketComparison({
+                          // TYPE-WORKAROUND: apiClient returns a generic payload not inferred to the transform's input shape; the transform reads fields defensively.
                           item: marketResult.value.data as unknown as Record<string, unknown>
                       })
                     : undefined;
