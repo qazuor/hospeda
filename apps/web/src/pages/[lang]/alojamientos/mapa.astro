@@ -122,7 +122,7 @@ const hasError = !result.ok;
 const items = result.ok ? result.data.items : [];
 const total = result.ok ? result.data.pagination.total : 0;
 
-const cards = items.map((item) => toAccommodationCardProps({ item: item as unknown as Record<string, unknown> }));
+const cards = items.map((item) => toAccommodationCardProps({ item: item as unknown as Record<string, unknown>, locale }));
 
 const LITORAL_CENTER: [number, number] = [-31.8, -58.5];
 const LITORAL_ZOOM = 8;

@@ -146,7 +146,8 @@ export function AccommodationsListingMap({
     const { items, onBoundsChange } = useViewportSearch({
         initialItems,
         pageSize: 100,
-        extraParams: extraSearchParams
+        extraParams: extraSearchParams,
+        locale
     });
 
     const [hoveredItemId, setHoveredItemId] = useState<string | null>(null);
