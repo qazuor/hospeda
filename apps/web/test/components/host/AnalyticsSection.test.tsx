@@ -4,10 +4,9 @@
  * entitlement gating, parallel data fetching, and renders the wired analytics
  * widgets or a locked state.
  *
- * SPEC-207 status: Views and Favorites widgets are deferred (no backend
- * daily-series endpoint; favorites needs redesign), so only Response Rate +
- * Inquiry Trend (VIEW_BASIC_STATS) and Market Comparison (VIEW_ADVANCED_STATS)
- * are mounted here.
+ * SPEC-207 status: Views widget is now mounted (per-property ranked list,
+ * cumulative counts). Only the daily-series chart variant and Favorites remain
+ * deferred to SPEC-207.
  */
 
 import { render, screen } from '@testing-library/react';
@@ -32,6 +31,8 @@ const mockGetEntitlements = vi.fn();
 const mockGetResponseRate = vi.fn();
 const mockGetInquiryTrend = vi.fn();
 const mockGetMarketComparison = vi.fn();
+const mockGetViews = vi.fn();
+const mockListOwnAccommodations = vi.fn();
 
 vi.mock('@/lib/api/endpoints-protected', () => ({
     get billingApi() {
@@ -41,7 +42,9 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
         return {
             getResponseRate: mockGetResponseRate,
             getInquiryTrend: mockGetInquiryTrend,
-            getMarketComparison: mockGetMarketComparison
+            getMarketComparison: mockGetMarketComparison,
+            getViews: mockGetViews,
+            listOwnAccommodations: mockListOwnAccommodations
         };
     }
 }));
@@ -49,7 +52,7 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
 // Import component AFTER mock setup (vitest handles hoisting)
 import { AnalyticsSection } from '../../../src/components/host/AnalyticsSection.client';
 
-/** Stub the three wired endpoints with empty-but-ok payloads. */
+/** Stub all wired endpoints with empty-but-ok payloads. */
 function stubWiredEndpoints(): void {
     mockGetResponseRate.mockResolvedValue({
         ok: true,
@@ -57,6 +60,14 @@ function stubWiredEndpoints(): void {
     });
     mockGetInquiryTrend.mockResolvedValue({ ok: true, data: { months: [] } });
     mockGetMarketComparison.mockResolvedValue({ ok: true, data: { comparisons: [] } });
+    mockGetViews.mockResolvedValue({
+        ok: true,
+        data: [{ entityId: 'a1', unique: 2, total: 5 }]
+    });
+    mockListOwnAccommodations.mockResolvedValue({
+        ok: true,
+        data: { items: [{ id: 'a1', name: 'Casa Uno' }] }
+    });
 }
 
 afterEach(() => {
@@ -96,6 +107,8 @@ describe('AnalyticsSection', () => {
 
         render(<AnalyticsSection locale="es" />);
 
+        // Views widget is now first — it shows the accommodation name
+        expect(await screen.findByText('Casa Uno')).toBeInTheDocument();
         expect((await screen.findAllByText(/Tiempo de respuesta/i)).length).toBeGreaterThanOrEqual(
             1
         );
@@ -126,7 +139,7 @@ describe('AnalyticsSection', () => {
         expect(mockGetMarketComparison).not.toHaveBeenCalled();
     });
 
-    it('does not mount the deferred Views and Favorites widgets (SPEC-207)', async () => {
+    it('mounts the Views widget and keeps Favorites deferred (SPEC-207)', async () => {
         mockGetEntitlements.mockResolvedValue({
             ok: true,
             data: {
@@ -140,8 +153,9 @@ describe('AnalyticsSection', () => {
 
         render(<AnalyticsSection locale="es" />);
 
-        await screen.findAllByText(/Tiempo de respuesta/i);
-        expect(screen.queryByText(/Vistas/i)).not.toBeInTheDocument();
+        // Views widget is mounted — the title should be visible
+        expect(await screen.findByText(/Vistas/i)).toBeInTheDocument();
+        // Favorites is still deferred
         expect(screen.queryByText(/Favoritos/i)).not.toBeInTheDocument();
     });
 

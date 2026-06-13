@@ -141,6 +141,44 @@
     }
 }
 
+/* ── Ranked list ── */
+
+.list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+}
+
+.row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    background-color: var(--core-foreground-a05, rgba(0, 0, 0, 0.03));
+    border-radius: var(--radius-sm, 6px);
+}
+
+.rowName {
+    font-family: var(--font-sans);
+    font-size: var(--text-sm, 0.875rem);
+    color: var(--core-foreground);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 70%;
+}
+
+.rowValue {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: var(--text-sm, 0.875rem);
+    color: var(--brand-primary);
+    flex-shrink: 0;
+}
+
 /* ── Screen reader only ── */
 
 .srOnly {

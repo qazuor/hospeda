@@ -1,7 +1,9 @@
 /**
  * @file ViewsWidget.client.tsx
- * @description React island showing accommodation views as a bar chart
- * with 7d/30d time window toggle. Uses recharts for chart rendering.
+ * @description React island showing the host's accommodations ranked by total
+ * views over a selected time window (7d / 30d). Renders a top-6 list with
+ * each property's name and view count. Uses no charting library — plain
+ * semantic HTML with CSS Module styling.
  *
  * @example
  * ```astro
@@ -13,7 +15,6 @@ import type { AccommodationViewsData } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { type JSX, useMemo } from 'react';
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import styles from './ViewsWidget.module.css';
 
 // ---------------------------------------------------------------------------
@@ -33,7 +34,8 @@ export interface ViewsWidgetProps {
 // ---------------------------------------------------------------------------
 
 /**
- * ViewsWidget — bar chart of accommodation views with 7d/30d toggle.
+ * ViewsWidget — ranked list of the host's accommodations by total views with
+ * a 7d/30d time window toggle.
  *
  * @example
  * ```astro
@@ -51,7 +53,12 @@ export function ViewsWidget({
 
     const totalViews = useMemo(() => {
         if (!data) return 0;
-        return data.items.reduce((sum, item) => sum + item.count, 0);
+        return data.items.reduce((sum, item) => sum + item.total, 0);
+    }, [data]);
+
+    const isEmpty = useMemo(() => {
+        if (!data || data.items.length === 0) return true;
+        return data.items.every((item) => item.total === 0);
     }, [data]);
 
     // ── Loading skeleton ────────────────────────────────────────────────
@@ -92,7 +99,7 @@ export function ViewsWidget({
     }
 
     // ── Empty state ─────────────────────────────────────────────────────
-    if (!data || data.items.length === 0) {
+    if (isEmpty) {
         return (
             <div className={styles.widget}>
                 <div className={styles.header}>
@@ -107,11 +114,10 @@ export function ViewsWidget({
         );
     }
 
-    // ── Chart data ──────────────────────────────────────────────────────
-    const chartData = data.items.map((item) => ({
-        date: item.date.slice(5), // MM-DD
-        views: item.count
-    }));
+    // ── Ready — ranked list (top 6 already sorted desc by transformAccommodationViews) ─
+    // At this point data is guaranteed non-null (isEmpty guard above catches undefined)
+    const readyData = data as AccommodationViewsData;
+    const topItems = readyData.items.slice(0, 6);
 
     return (
         <div className={styles.widget}>
@@ -124,66 +130,34 @@ export function ViewsWidget({
             <fieldset className={styles.toggle}>
                 <button
                     type="button"
-                    className={`${styles.toggleBtn} ${data.window === '7d' ? styles.toggleActive : ''}`}
-                    aria-pressed={data.window === '7d'}
+                    className={`${styles.toggleBtn} ${readyData.window === '7d' ? styles.toggleActive : ''}`}
+                    aria-pressed={readyData.window === '7d'}
                     onClick={() => onWindowChange('7d')}
                 >
                     {t('host.dashboard.analytics.views.window.7d', '7d')}
                 </button>
                 <button
                     type="button"
-                    className={`${styles.toggleBtn} ${data.window === '30d' ? styles.toggleActive : ''}`}
-                    aria-pressed={data.window === '30d'}
+                    className={`${styles.toggleBtn} ${readyData.window === '30d' ? styles.toggleActive : ''}`}
+                    aria-pressed={readyData.window === '30d'}
                     onClick={() => onWindowChange('30d')}
                 >
                     {t('host.dashboard.analytics.views.window.30d', '30d')}
                 </button>
             </fieldset>
-            <div
-                className={styles.chartContainer}
-                data-testid="views-chart"
-            >
-                <ResponsiveContainer
-                    width="100%"
-                    height={180}
-                >
-                    <BarChart
-                        data={chartData}
-                        margin={{ top: 4, right: 4, left: -20, bottom: 0 }}
+            <ul className={styles.list}>
+                {topItems.map((item) => (
+                    <li
+                        key={item.accommodationId}
+                        className={styles.row}
                     >
-                        <CartesianGrid
-                            strokeDasharray="3 3"
-                            stroke="var(--core-foreground-a08)"
-                        />
-                        <XAxis
-                            dataKey="date"
-                            tick={{ fontSize: 11, fill: 'var(--core-muted-foreground)' }}
-                            axisLine={false}
-                            tickLine={false}
-                        />
-                        <YAxis
-                            tick={{ fontSize: 11, fill: 'var(--core-muted-foreground)' }}
-                            axisLine={false}
-                            tickLine={false}
-                            allowDecimals={false}
-                        />
-                        <Tooltip
-                            contentStyle={{
-                                backgroundColor: 'var(--core-card)',
-                                border: '1px solid var(--core-foreground-a15)',
-                                borderRadius: 'var(--radius-md)',
-                                fontSize: 12
-                            }}
-                        />
-                        <Bar
-                            dataKey="views"
-                            fill="var(--brand-primary)"
-                            radius={[4, 4, 0, 0]}
-                            maxBarSize={32}
-                        />
-                    </BarChart>
-                </ResponsiveContainer>
-            </div>
+                        <span className={styles.rowName}>
+                            {item.name || t('host.dashboard.analytics.views.unnamed', 'Sin nombre')}
+                        </span>
+                        <span className={styles.rowValue}>{item.total}</span>
+                    </li>
+                ))}
+            </ul>
         </div>
     );
 }

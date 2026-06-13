@@ -5,13 +5,11 @@
  * analytics endpoints, then renders the available widgets or a locked state.
  *
  * @remarks
- * SPEC-207 status: the Views and Favorites widgets are NOT mounted yet. The
- * backend does not expose a per-host daily-series views endpoint, and the
- * favorites endpoint returns per-accommodation counts (not "collections").
- * Both are deferred to SPEC-207, which will build the views daily-series
- * endpoint and redesign the favorites widget to the per-accommodation shape.
- * Only Response Rate + Inquiry Trend (VIEW_BASIC_STATS) and Market Comparison
- * (VIEW_ADVANCED_STATS) are wired here.
+ * SPEC-207 status: the Views widget is now mounted as a per-property ranked
+ * list (cumulative counts via GET /views/accommodations/me). Only the
+ * daily-series chart variant and the Favorites widget remain deferred to
+ * SPEC-207. Response Rate + Inquiry Trend (VIEW_BASIC_STATS) and Market
+ * Comparison (VIEW_ADVANCED_STATS) continue to be wired as before.
  *
  * @example
  * ```astro
@@ -21,11 +19,17 @@
 
 import { billingApi, hostAnalyticsApi } from '@/lib/api/endpoints-protected';
 import {
+    transformAccommodationViews,
     transformInquiryTrend,
     transformMarketComparison,
     transformResponseRate
 } from '@/lib/api/transforms';
-import type { InquiryTrendData, MarketComparisonData, ResponseRateData } from '@/lib/api/types';
+import type {
+    AccommodationViewsData,
+    InquiryTrendData,
+    MarketComparisonData,
+    ResponseRateData
+} from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { type JSX, useCallback, useEffect, useState } from 'react';
@@ -33,6 +37,7 @@ import styles from './AnalyticsSection.module.css';
 import { InquiryTrendWidget } from './InquiryTrendWidget.client';
 import { MarketComparisonWidget } from './MarketComparisonWidget.client';
 import { ResponseRateWidget } from './ResponseRateWidget.client';
+import { ViewsWidget } from './ViewsWidget.client';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -66,6 +71,9 @@ interface AnalyticsData {
     readonly responseRate: ResponseRateData | undefined;
     readonly inquiries: InquiryTrendData | undefined;
     readonly marketComparison: MarketComparisonData | undefined;
+    readonly views: AccommodationViewsData | undefined;
+    /** Stored names map so window toggle can re-cross without re-listing. */
+    readonly accommodationNames: ReadonlyMap<string, string>;
     /** Whether the user holds VIEW_ADVANCED_STATS — gates the market widget. */
     readonly hasAdvanced: boolean;
 }
@@ -74,6 +82,7 @@ interface WidgetErrors {
     readonly responseRate: string | null;
     readonly inquiries: string | null;
     readonly marketComparison: string | null;
+    readonly views: string | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -95,14 +104,16 @@ export function AnalyticsSection({ locale }: AnalyticsSectionProps): JSX.Element
     const [errors, setErrors] = useState<WidgetErrors>({
         responseRate: null,
         inquiries: null,
-        marketComparison: null
+        marketComparison: null,
+        views: null
     });
+    const [viewsWindow, setViewsWindow] = useState<'7d' | '30d'>('30d');
 
     // ── Fetch analytics data ──────────────────────────────────────────
-    // biome-ignore lint/correctness/useExhaustiveDependencies: t is a stable translation function, not reactive
+    // biome-ignore lint/correctness/useExhaustiveDependencies: runs ONCE on mount. `t` is a stable translation function; `viewsWindow` is intentionally read as its initial value here — subsequent window changes are handled by handleViewsWindowChange (which re-fetches ONLY views), so this effect must NOT depend on viewsWindow or it would re-fetch the whole section on every toggle.
     const fetchAnalytics = useCallback(async () => {
         setState({ status: 'loading' });
-        setErrors({ responseRate: null, inquiries: null, marketComparison: null });
+        setErrors({ responseRate: null, inquiries: null, marketComparison: null, views: null });
 
         try {
             // Check entitlement first
@@ -127,14 +138,18 @@ export function AnalyticsSection({ locale }: AnalyticsSectionProps): JSX.Element
 
             const hasAdvanced = entitlements.includes(ENTITLEMENT_VIEW_ADVANCED_STATS);
 
-            // Fetch the wired analytics endpoints in parallel. Market comparison
-            // requires VIEW_ADVANCED_STATS, so only fetch it when entitled —
-            // otherwise the widget is hidden (not shown as an error).
-            const [responseRateResult, inquiriesResult, marketResult] = await Promise.allSettled([
-                hostAnalyticsApi.getResponseRate(),
-                hostAnalyticsApi.getInquiryTrend({ months: 6 }),
-                hasAdvanced ? hostAnalyticsApi.getMarketComparison() : Promise.resolve(undefined)
-            ]);
+            // Fetch all wired analytics endpoints in parallel. Market comparison
+            // requires VIEW_ADVANCED_STATS; views is gated by basic (already passed).
+            const [responseRateResult, inquiriesResult, marketResult, viewsResult, namesResult] =
+                await Promise.allSettled([
+                    hostAnalyticsApi.getResponseRate(),
+                    hostAnalyticsApi.getInquiryTrend({ months: 6 }),
+                    hasAdvanced
+                        ? hostAnalyticsApi.getMarketComparison()
+                        : Promise.resolve(undefined),
+                    hostAnalyticsApi.getViews({ window: viewsWindow }),
+                    hostAnalyticsApi.listOwnAccommodations()
+                ]);
 
             const responseRateData =
                 responseRateResult.status === 'fulfilled' && responseRateResult.value.ok
@@ -157,6 +172,24 @@ export function AnalyticsSection({ locale }: AnalyticsSectionProps): JSX.Element
                 marketResult.value.ok
                     ? transformMarketComparison({
                           item: marketResult.value.data as unknown as Record<string, unknown>
+                      })
+                    : undefined;
+
+            // Build id→name map from accommodations list (fail-safe: empty map on error)
+            const accommodationNames = new Map<string, string>();
+            if (namesResult.status === 'fulfilled' && namesResult.value.ok) {
+                for (const acc of namesResult.value.data.items) {
+                    accommodationNames.set(acc.id, acc.name);
+                }
+            }
+
+            // Cross views with names map
+            const viewsData =
+                viewsResult.status === 'fulfilled' && viewsResult.value.ok
+                    ? transformAccommodationViews({
+                          views: viewsResult.value.data as ReadonlyArray<Record<string, unknown>>,
+                          names: accommodationNames,
+                          window: viewsWindow
                       })
                     : undefined;
 
@@ -187,7 +220,13 @@ export function AnalyticsSection({ locale }: AnalyticsSectionProps): JSX.Element
                             !marketResult.value.ok
                           ? marketResult.value.error.message
                           : null
-                    : null
+                    : null,
+                views:
+                    viewsResult.status === 'rejected'
+                        ? t('host.dashboard.analytics.views.error', 'Error al cargar vistas')
+                        : viewsResult.status === 'fulfilled' && !viewsResult.value.ok
+                          ? viewsResult.value.error.message
+                          : null
             };
 
             setErrors(newErrors);
@@ -197,6 +236,8 @@ export function AnalyticsSection({ locale }: AnalyticsSectionProps): JSX.Element
                     responseRate: responseRateData,
                     inquiries: inquiriesData,
                     marketComparison: marketData,
+                    views: viewsData,
+                    accommodationNames,
                     hasAdvanced
                 }
             });
@@ -210,6 +251,36 @@ export function AnalyticsSection({ locale }: AnalyticsSectionProps): JSX.Element
             });
         }
     }, []);
+
+    // ── Handle views window change (re-fetches only views, re-crosses with stored names) ──
+    const handleViewsWindowChange = useCallback(
+        async (w: '7d' | '30d') => {
+            if (state.status !== 'ready') return;
+            setViewsWindow(w);
+            const result = await hostAnalyticsApi.getViews({ window: w });
+            if (result.ok) {
+                const viewsData = transformAccommodationViews({
+                    views: result.data as ReadonlyArray<Record<string, unknown>>,
+                    names: state.data.accommodationNames,
+                    window: w
+                });
+                setState((prev) => {
+                    if (prev.status !== 'ready') return prev;
+                    return {
+                        ...prev,
+                        data: { ...prev.data, views: viewsData }
+                    };
+                });
+                setErrors((prev) => ({ ...prev, views: null }));
+            } else {
+                setErrors((prev) => ({
+                    ...prev,
+                    views: result.error.message
+                }));
+            }
+        },
+        [state]
+    );
 
     useEffect(() => {
         void fetchAnalytics();
@@ -289,6 +360,13 @@ export function AnalyticsSection({ locale }: AnalyticsSectionProps): JSX.Element
                 {t('host.dashboard.analytics.sectionTitle', 'Estadísticas')}
             </h2>
             <div className={styles.analyticsGrid}>
+                <ViewsWidget
+                    locale={locale}
+                    data={data.views}
+                    isLoading={false}
+                    error={errors.views}
+                    onWindowChange={handleViewsWindowChange}
+                />
                 <ResponseRateWidget
                     locale={locale}
                     data={data.responseRate}

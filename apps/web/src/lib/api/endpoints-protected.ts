@@ -1331,32 +1331,46 @@ type AnalyticsWindow = '7d' | '30d';
 /** Protected host analytics API endpoints. All require auth + VIEW_BASIC_STATS entitlement. */
 export const hostAnalyticsApi = {
     /**
-     * Get accommodation views over a time window.
+     * Get accommodation views (cumulative) over a time window.
+     *
+     * Returns one row per owned accommodation with cumulative view counts
+     * for the requested window. Use this for the per-property ranked list
+     * in the ViewsWidget.
      *
      * @remarks
-     * SPEC-207 (pending): the protected per-host daily-series views endpoint does
-     * not exist yet — the backend only exposes a cumulative aggregate
-     * (`/views/accommodations/me` → `{entityId, unique, total}[]`), not the
-     * `{window, items: {date, count}[]}` daily series this widget needs. The
-     * ViewsWidget is therefore NOT mounted in the dashboard until SPEC-207 builds
-     * the backend endpoint. This method is left here as the contract to fulfil.
+     * The DAILY-SERIES variant (date-bucketed chart data) is still pending
+     * SPEC-207. This cumulative-aggregate endpoint is now used for the
+     * per-property ranked list widget.
      *
      * @param params - Time window: '7d' or '30d'
-     * @returns Daily view counts for the host's accommodations
+     * @returns Cumulative per-accommodation view counts for the window
      */
-    getViews({
-        window: windowParam
-    }: {
-        readonly window: AnalyticsWindow;
-    }): Promise<
-        ApiResult<{
-            readonly window: AnalyticsWindow;
-            readonly items: readonly { readonly date: string; readonly count: number }[];
-        }>
+    getViews({ window: windowParam }: { readonly window: AnalyticsWindow }): Promise<
+        ApiResult<
+            readonly {
+                readonly entityId: string;
+                readonly unique: number;
+                readonly total: number;
+            }[]
+        >
     > {
         return apiClient.getProtected({
-            path: `${PROTECTED}/host/analytics/views`,
+            path: `${PROTECTED}/views/accommodations/me`,
             params: { window: windowParam }
+        });
+    },
+
+    /**
+     * List the authenticated host's own accommodations (id + name only needed
+     * for cross-referencing analytics by accommodation). Server-side filtered
+     * by actor.id.
+     */
+    listOwnAccommodations(): Promise<
+        ApiResult<{ readonly items: readonly { readonly id: string; readonly name: string }[] }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/accommodations`,
+            params: { pageSize: 50, sortBy: 'createdAt', sortOrder: 'desc' }
         });
     },
 
