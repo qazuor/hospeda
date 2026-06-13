@@ -70,7 +70,8 @@
         "docs:validate-examples": "tsx scripts/validate-examples.ts",
         "env:check:registry": "bash scripts/check-env-registry.sh",
         "cli": "tsx scripts/cli.ts",
-        "test:cli": "vitest run --config scripts/cli/vitest.config.ts"
+        "test:cli": "vitest run --config scripts/cli/vitest.config.ts",
+        "specs:board": "python3 scripts/render-specs-prioritization.py --serve"
     },
     "devDependencies": {
         "@biomejs/biome": "1.9.4",
