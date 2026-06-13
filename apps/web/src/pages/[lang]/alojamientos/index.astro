@@ -37,6 +37,8 @@ import { SearchChatPanel } from '@/components/ai-search/SearchChatPanel.client';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
+const { t: tEs } = createTranslations('es');
+const { t: tEn } = createTranslations('en');
 
 // Read pagination and filter params from URL
 const url = Astro.url;
@@ -263,7 +265,10 @@ const destinationCatalog: readonly CatalogEntry[] = destinations.map((d) => ({
 }));
 const amenityCatalog: readonly CatalogEntry[] = amenities.map((a) => ({
 	key: a.id,
-	label: { es: resolveI18nText(a.name, 'es'), en: resolveI18nText(a.name, 'en') }
+	label: {
+		es: tEs(`accommodations.amenityNames.${a.slug}`, resolveI18nText(a.name, 'es')),
+		en: tEn(`accommodations.amenityNames.${a.slug}`, resolveI18nText(a.name, 'en'))
+	}
 }));
 const featureCatalog: readonly CatalogEntry[] = features.map((f) => ({
 	key: f.id,
@@ -403,7 +408,7 @@ const filterGroups: FilterGroup[] = [
 		id: 'amenities',
 		label: t('accommodations.sidebar.amenities', 'Comodidades'),
 		type: 'icon-chips',
-		options: amenities.map((a) => ({ value: a.id, label: resolveI18nText(a.name, locale), icon: a.icon ?? undefined })),
+		options: amenities.map((a) => ({ value: a.id, label: t(`accommodations.amenityNames.${a.slug}`, resolveI18nText(a.name, locale)), icon: a.icon ?? undefined })),
 		maxVisible: 10,
 		// Quick-filter shortcuts rendered ABOVE the regular amenity chips.
 		// Each `value` is the URL boolean param name that the backend resolves
@@ -659,7 +664,7 @@ if (amenitiesParam) {
 		const a = amenities.find((x) => x.id === id);
 		if (a) {
 			activeFilterChips.push({
-				label: resolveI18nText(a.name, locale),
+				label: t(`accommodations.amenityNames.${a.slug}`, resolveI18nText(a.name, locale)),
 				removeUrl: urlWithoutListValue('amenities', id),
 			});
 		}
@@ -810,7 +815,13 @@ const emptyStateSuggestions = [
 	    Uses client:load because the panel should be ready for interaction without
 	    requiring scroll (it sits near the top of the main content area).
 	-->
-	<SearchChatPanel client:load locale={locale} apiUrl={getApiUrl()} />
+	<SearchChatPanel
+		client:load
+		locale={locale}
+		apiUrl={getApiUrl()}
+		isAuthenticated={isAuthenticated}
+		currentUrl={Astro.url.href}
+	/>
 
 	{hasError && !result.ok && (
 		<ErrorBanner locale={locale} error={result.error} entityName="alojamientos" />

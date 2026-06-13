@@ -576,3 +576,98 @@
         max-height: 240px;
     }
 }
+
+/* ─── Login CTA block ─────────────────────────────────────────────────────────
+   Shown in place of the chat UI when the visitor is not authenticated.
+   Mirrors AiSearchPanel.module.css loginCtaBlock — ported to SearchChatPanel.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.loginCtaBlock {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-4, 1rem);
+    padding: var(--space-8, 2rem) var(--space-4, 1rem);
+    text-align: center;
+    flex: 1;
+    justify-content: center;
+}
+
+.loginCtaTitle {
+    margin: 0;
+    font-family: var(--font-sans, sans-serif);
+    font-size: var(--text-h6, 1.125rem);
+    font-weight: 700;
+    color: var(--core-foreground, #111827);
+    line-height: 1.3;
+}
+
+.loginCtaMessage {
+    margin: 0;
+    font-family: var(--font-sans, sans-serif);
+    font-size: var(--text-body-sm, 0.875rem);
+    color: var(--core-muted-foreground, #6b7280);
+    line-height: 1.5;
+    max-width: 28ch;
+}
+
+.loginCtaActions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+    width: 100%;
+    max-width: 18rem;
+}
+
+.loginCtaSignIn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-3, 0.75rem) var(--space-5, 1.25rem);
+    background-color: var(--brand-primary, oklch(0.55 0.17 264));
+    color: var(--accent-foreground, oklch(1 0 0));
+    border: none;
+    border-radius: var(--radius-button, 0.5rem);
+    font-family: var(--font-sans, sans-serif);
+    font-size: var(--text-body-sm, 0.875rem);
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.loginCtaSignIn:hover {
+    background-color: var(--brand-primary-lm05, oklch(0.5 0.17 264));
+}
+
+.loginCtaSignIn:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.loginCtaRegister {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-3, 0.75rem) var(--space-5, 1.25rem);
+    background-color: transparent;
+    color: var(--brand-primary, oklch(0.55 0.17 264));
+    border: 1.5px solid var(--brand-primary-a40, oklch(0.55 0.17 264 / 0.4));
+    border-radius: var(--radius-button, 0.5rem);
+    font-family: var(--font-sans, sans-serif);
+    font-size: var(--text-body-sm, 0.875rem);
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.loginCtaRegister:hover {
+    background-color: var(--brand-primary-a08);
+    border-color: var(--brand-primary);
+}
+
+.loginCtaRegister:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
