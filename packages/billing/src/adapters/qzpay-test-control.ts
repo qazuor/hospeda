@@ -138,12 +138,13 @@ export function resetTestControl(): void {
  * Rules:
  *  - `args` is a string (e.g. cancelTrial receives `subscriptionId`) → that string.
  *  - `args` is an object with a string `ownerId` (e.g. startTrial receives
- *    `{ ownerId }`) → that ownerId.
+ *    `{ ownerId, accommodationId }`) → that ownerId (extra fields are ignored).
  *  - otherwise (null, number, object without a string `ownerId`, etc.) → undefined.
  *
  * EXTENSIBILITY: this only understands the two arg shapes used by the operations
- * currently wired through {@link applyTestControl} — `startTrial` (`{ ownerId }`)
- * and `cancelTrial` (bare `subscriptionId` string). The other
+ * currently wired through {@link applyTestControl} — `startTrial`
+ * (`{ ownerId, accommodationId }`, scoped by `ownerId`) and `cancelTrial` (bare
+ * `subscriptionId` string). The other
  * {@link ControllableOperation}s (createPaymentPreference, capturePayment,
  * refundPayment, cancelSubscription, updateSubscription) are declared but NOT yet
  * wired. When you wire one whose args carry their scope key under a different

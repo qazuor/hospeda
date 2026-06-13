@@ -36,6 +36,16 @@ export interface TrialStatus {
 export interface StartTrialInput {
     /** Billing customer ID */
     readonly customerId: string;
+    /**
+     * Accommodation whose publish triggered this trial (SPEC-222 Part 2).
+     *
+     * Referential only ("triggered by"): trials are per-owner, so this id does
+     * NOT mean the subscription belongs to a single accommodation. Forwarded to
+     * the MercadoPago creation `metadata` as a debugging marker. Optional because
+     * other trial-start paths (e.g. auto-start on registration) have no
+     * triggering accommodation.
+     */
+    readonly accommodationId?: string;
 }
 
 /**

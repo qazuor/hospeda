@@ -1,10 +1,10 @@
 ---
-specId: SPEC-222
+specId: SPEC-227
 title: Billing Subscription Observability — trial↔accommodation↔owner linkage logging + creation-time MP reference enrichment
 slug: billing-subscription-observability
 type: feat
 complexity: low
-status: draft
+status: in-progress
 owner: qazuor
 created: 2026-06-13
 base: staging
@@ -23,7 +23,7 @@ relatedSpecs:
 linearIssues: []
 ---
 
-# SPEC-222 — Billing Subscription Observability
+# SPEC-227 — Billing Subscription Observability
 
 ## 1. Origin
 
@@ -108,14 +108,32 @@ canonical MP pattern, adds no extra API call, and no new failure surface.
   semantics — existing `publish.test.ts` stays green; no new synchronous remote call in
   the publish hot path.
 
-## 6. Open questions (resolve during planning)
+## 6. Open questions — RESOLVED
 
-- **OQ-1**: Exact field set for Part 2 — what (if anything) beyond the existing checkout
-  UUID is genuinely useful MP-side? (Default: an environment marker only; accommodation
-  context stays in logs/Sentry, not MP, given the per-owner nature.)
-- **OQ-2**: Does SPEC-180 (Sentry hardening) define a context convention this should reuse?
-- **OQ-3**: Is there a privacy/PII constraint on what goes into MP `external_reference` /
-  metadata (it leaves our system)?
+- **OQ-1** (Part 2 field set) → **RESOLVED**: environment marker + `triggeredByAccommodationId`
+  in the MP `metadata` at creation. The accommodationId is referential ("triggered by"),
+  labelled as such since trials are per-owner. (User decision, 2026-06-13.)
+- **OQ-2** (Sentry convention) → **RESOLVED**: reused the existing API Sentry context API
+  (`Sentry.setContext`/`setTag`/`addBreadcrumb` via a new `addPublishLinkageContext` helper
+  in `apps/api/src/lib/sentry.ts`, mirroring `setBillingContext`). Per-request scope
+  isolation is provided automatically by `@sentry/node` httpIntegration + AsyncLocalStorage
+  (verified — no cross-request leak). The env marker reuses `HOSPEDA_SENTRY_ENVIRONMENT ??
+  NODE_ENV` (no new env var).
+- **OQ-3** (PII) → **RESOLVED**: only the env marker + the internal accommodation UUID go to
+  MercadoPago. No names/emails/personal data; a test guards metadata keys against `name`/`email`.
+
+## 7. Implementation status (DONE — pending PR/merge)
+
+- **Part 1 / AC-1 + AC-2**: structured linkage log in `accommodation.service.ts publish()`
+  (`@repo/logger`) + Sentry context in `accommodation-publish-deps.ts` via
+  `addPublishLinkageContext`. `accommodationId` threaded through
+  `AccommodationPublishDeps.startTrial({ ownerId, accommodationId })`.
+- **Part 2 / AC-3**: `triggeredByAccommodationId` + `environment` added to the trial
+  subscription `metadata` AT creation (`trial.service.ts`), riding the existing
+  `subscriptions.create` — no async update, no new MP call. `accommodationId` optional in
+  `StartTrialInput` (auto-start-on-registration path omits it).
+- **AC-4**: publish control-flow / compensation untouched; existing `publish.test.ts` green.
+- Adversarial review: GO, no Critical/High/Medium findings.
 
 ## 7. Notes
 

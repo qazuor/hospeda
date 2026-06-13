@@ -46,8 +46,17 @@ export interface AccommodationPublishDeps {
     /**
      * Creates a new trial subscription for the owner. MUST run outside any
      * transaction. Returns the QZPay subscription identifier on success.
+     *
+     * `accommodationId` is the accommodation whose publish triggered the trial.
+     * Trials are per-owner, so this id is purely *referential* ("triggered by")
+     * — it does NOT mean the subscription belongs to a single accommodation. It
+     * is threaded through for observability (logging / Sentry linkage) and as a
+     * referential marker on the MercadoPago creation payload (SPEC-222).
      */
-    startTrial: (input: { ownerId: string }) => Promise<{ subscriptionId: string }>;
+    startTrial: (input: {
+        ownerId: string;
+        accommodationId: string;
+    }) => Promise<{ subscriptionId: string }>;
     /**
      * Cancels a previously created trial subscription. Used as compensation
      * when the post-trial transaction fails.
