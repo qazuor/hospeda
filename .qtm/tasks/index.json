@@ -27,13 +27,15 @@
         {
             "specId": "SPEC-227",
             "title": "Billing Subscription Observability — trial↔accommodation↔owner linkage logging + creation-time MP reference enrichment",
-            "status": "in-progress",
+            "status": "completed",
             "progress": "4/4",
             "path": "SPEC-227-billing-subscription-observability",
             "base": "staging",
-            "archived": false,
+            "archived": true,
+            "archivedAt": "2026-06-13",
             "renumberedFrom": "SPEC-222",
-            "note": "Renumbered from SPEC-222 (collided with the SPEC-222..226 batch / accommodation-import-from-url). Reshaped from SPEC-221 F-3. Two non-blocking parts, no async MP update: (1) structured logging + Sentry context tying a trial subscription to its accommodation/owner/checkout at publish; (2) enrich MP external_reference / metadata AT subscription creation. Implemented + adversarial review GO."
+            "archiveNote": "PR #1608 merged (d778b120c). Part 1 (publish linkage log + Sentry) + Part 2 (creation-time MP metadata) shipped; adversarial review GO; also fixed the SPEC-222 collision. Billing staging smoke not run (observability-only, inert when gate off).",
+            "note": "Renumbered from SPEC-222 (collided with the SPEC-222..226 batch). Reshaped from SPEC-221 F-3. Done."
         },
         {
             "specId": "SPEC-220",
