@@ -378,7 +378,10 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
     // ── Remove (optimistic) ───────────────────────────────────────────────
 
     async function handleRemove(bookmark: BookmarkItem) {
-        const snapshot = [...bookmarks];
+        // Capture only this bookmark's original index — NOT a full snapshot.
+        // Restoring a whole snapshot on failure would re-insert other bookmarks
+        // that a concurrent remove already deleted from the server (stale UI).
+        const originalIndex = bookmarks.findIndex((b) => b.id === bookmark.id);
         setBookmarks((prev) => prev.filter((b) => b.id !== bookmark.id));
         setTotal((prev) => Math.max(0, prev - 1));
         setRemovingIds((prev) => new Set([...prev, bookmark.id]));
@@ -405,7 +408,16 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
                 );
             }
         } catch (err) {
-            setBookmarks(snapshot);
+            // Re-insert ONLY the failed bookmark at its original position; leave
+            // any concurrently-removed bookmarks untouched.
+            setBookmarks((prev) => {
+                if (prev.some((b) => b.id === bookmark.id)) return prev;
+                const next = [...prev];
+                const insertAt =
+                    originalIndex < 0 ? next.length : Math.min(originalIndex, next.length);
+                next.splice(insertAt, 0, bookmark);
+                return next;
+            });
             setTotal((prev) => prev + 1);
             const msg =
                 err instanceof Error
