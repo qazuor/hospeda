@@ -94,13 +94,15 @@ export interface HostDashboardData {
 // Host Analytics Types (SPEC-207)
 // ---------------------------------------------------------------------------
 
-/** Single data point for accommodation views over time */
+/** A single accommodation's view counts over the selected window */
 export interface AccommodationViewsItem {
-    readonly date: string;
-    readonly count: number;
+    readonly accommodationId: string;
+    readonly name: string;
+    readonly total: number;
+    readonly unique: number;
 }
 
-/** Accommodation views data returned by the analytics API */
+/** Accommodation views data (per-property, ranked) for the ViewsWidget */
 export interface AccommodationViewsData {
     readonly window: '7d' | '30d';
     readonly items: readonly AccommodationViewsItem[];

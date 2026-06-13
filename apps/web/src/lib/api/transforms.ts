@@ -995,25 +995,38 @@ export function transformHostDashboard({
 // --- Host Analytics Transforms (SPEC-207) ---
 
 /**
- * Transforms raw API response into accommodation views data for the ViewsWidget.
+ * Transforms raw per-accommodation view counts into ranked ViewsWidget data.
  *
- * @param item - Raw API response from the host analytics views endpoint
+ * Crosses the views endpoint response (entityId + counts) with a pre-built
+ * id→name map from the accommodations list, sorts by total descending, and
+ * returns the typed AccommodationViewsData for the ViewsWidget.
+ *
+ * @param views - Raw array from GET /views/accommodations/me
+ * @param names - Map of accommodation id → display name
+ * @param window - The time window the data covers ('7d' | '30d')
  * @returns Typed AccommodationViewsData for the ViewsWidget component
  */
 export function transformAccommodationViews({
-    item
+    views,
+    names,
+    window
 }: {
-    readonly item: Record<string, unknown>;
+    readonly views: ReadonlyArray<Record<string, unknown>>;
+    readonly names: ReadonlyMap<string, string>;
+    readonly window: '7d' | '30d';
 }): import('./types').AccommodationViewsData {
-    const rawItems = item.items as ReadonlyArray<Record<string, unknown>> | undefined;
-
-    return {
-        window: (item.window === '30d' ? '30d' : '7d') as '7d' | '30d',
-        items: (rawItems ?? []).map((entry) => ({
-            date: String(entry.date ?? ''),
-            count: Number(entry.count ?? 0)
-        }))
-    };
+    const items = views
+        .map((entry) => {
+            const accommodationId = String(entry.entityId ?? '');
+            return {
+                accommodationId,
+                name: names.get(accommodationId) ?? '',
+                total: Number(entry.total ?? 0),
+                unique: Number(entry.unique ?? 0)
+            };
+        })
+        .sort((a, b) => b.total - a.total);
+    return { window, items };
 }
 
 /**
@@ -1087,7 +1100,9 @@ export function transformMarketComparison({
 }: {
     readonly item: Record<string, unknown>;
 }): import('./types').MarketComparisonData {
-    const rawItems = item.items as ReadonlyArray<Record<string, unknown>> | undefined;
+    // Backend wraps the array under `comparisons` (HostMarketComparisonSchema);
+    // the widget consumes `data.items`, so we map the wire key to the widget key.
+    const rawItems = item.comparisons as ReadonlyArray<Record<string, unknown>> | undefined;
 
     return {
         items: (rawItems ?? []).map((entry) => ({

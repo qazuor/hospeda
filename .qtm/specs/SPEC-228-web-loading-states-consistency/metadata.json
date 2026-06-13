@@ -1,0 +1,12 @@
+{
+    "specId": "SPEC-228",
+    "title": "Web loading-states consistency & coverage",
+    "type": "feature",
+    "complexity": "high",
+    "status": "draft",
+    "created": "2026-06-13T12:00:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["web", "ux", "loading", "skeleton", "accessibility", "consistency", "design-system"]
+}

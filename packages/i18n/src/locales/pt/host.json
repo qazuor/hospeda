@@ -340,6 +340,8 @@
             "views": {
                 "title": "Visualizações",
                 "empty": "Sem dados de visualizações ainda",
+                "error": "Erro ao carregar visualizações",
+                "unnamed": "Sem nome",
                 "window": {
                     "7d": "7d",
                     "30d": "30d"
@@ -354,11 +356,13 @@
                 "empty": "Sem dados de resposta ainda",
                 "avgTime": "Média",
                 "minutes": "min",
-                "notAvailable": "N/D"
+                "notAvailable": "N/D",
+                "error": "Erro ao carregar tempo de resposta"
             },
             "inquiries": {
                 "title": "Consultas",
-                "empty": "Sem dados de consultas ainda"
+                "empty": "Sem dados de consultas ainda",
+                "error": "Erro ao carregar consultas"
             },
             "marketComparison": {
                 "title": "Comparação de mercado",
@@ -369,7 +373,8 @@
                     "avgRating": "Méd. destino",
                     "yourPrice": "Seu preço",
                     "avgPrice": "Méd. preço"
-                }
+                },
+                "error": "Erro ao carregar comparação de mercado"
             },
             "sectionTitle": "Estatísticas",
             "locked": {
@@ -378,6 +383,39 @@
             },
             "loading": "Carregando estatísticas...",
             "error": "Erro ao carregar estatísticas"
+        },
+        "pageTitle": "Painel do anfitrião",
+        "pageDescription": "Resumo das suas propriedades e assinatura",
+        "error": "Erro ao carregar o painel",
+        "retry": "Tentar novamente",
+        "plan": {
+            "trial": "Teste gratuito",
+            "active": "Ativo",
+            "inactive": "Inativo",
+            "noPlan": "Sem plano"
+        },
+        "widgets": {
+            "properties": "Suas propriedades",
+            "total": "Total",
+            "published": "Publicadas",
+            "draft": "Rascunhos",
+            "manage": "Gerenciar",
+            "plan": "Sua assinatura",
+            "noPlan": "Sem assinatura ativa",
+            "messages": "Mensagens",
+            "unread": {
+                "singular": "mensagem não lida",
+                "plural": "mensagens não lidas",
+                "none": "Você não tem mensagens novas"
+            },
+            "viewAll": "Ver todas",
+            "quickActions": "Ações rápidas"
+        },
+        "quickActions": {
+            "properties": "Propriedades",
+            "promotions": "Promoções",
+            "messages": "Mensagens",
+            "subscription": "Assinatura"
         }
     }
 }
