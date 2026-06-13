@@ -4,7 +4,7 @@ title: QZPay Test-Control Hardening & Deferred E2E Coverage
 slug: qzpay-test-control-hardening
 type: test
 complexity: low
-status: draft
+status: in-progress
 owner: qazuor
 created: 2026-06-13
 base: staging
@@ -85,6 +85,18 @@ if it needs scoped delay/failure on `updateSubscription`.
   scope key (F-2), add a scoped `failNext`/`delayNext` if needed (F-1), and un-defer the
   spec.
 
+> **Finding during implementation (2026-06-13)**: `updateSubscription` (and
+> `createPaymentPreference`, `capturePayment`, `refundPayment`, `cancelSubscription`)
+> are declared in the `ControllableOperation` union and accepted by the test-control
+> HTTP route, but are **NOT wired through `applyTestControl` in any production billing
+> path** — only `startTrial` and `cancelTrial` are (`accommodation-publish-deps.ts`).
+> So host-07d cannot inject a deterministic `updateSubscription` failure today: F-3
+> first requires wiring the real subscription-update flow (plan-change / cancel) through
+> `applyTestControl`, which is a **billing-CORE production change**, not test-infra, and
+> falls outside this spec's "low-complexity, test-infra-only" scope. **Decision: F-3 is
+> re-deferred** (AC-3 permits it) pending a separate spec that scopes the billing-core
+> wiring + risk. F-1 and F-2 — the actual hardening — ship in this spec.
+
 ## 3. Out of scope
 
 - The SPEC-217 `publish()` visibility fix is DONE and not revisited here. The robust
@@ -103,11 +115,21 @@ if it needs scoped delay/failure on `updateSubscription`.
   `applyTestControl` at the time this spec lands.
 - **AC-3**: `host-07d` runs deterministically in CI (no `.skip`), asserting the
   `updateSubscription` failure/compensation contract, OR is formally re-deferred with a
-  documented reason if F-1/F-2 prove insufficient.
+  documented reason if F-1/F-2 prove insufficient. → **RE-DEFERRED** (see the F-3
+  finding above): `updateSubscription` is not wired through `applyTestControl` in any
+  production path, so wiring it is billing-core work outside this spec's scope.
 
-## 5. Notes
+## 5. Status
 
-This is a low-complexity, test-infra-only spec. It should be picked up alongside the
-next E2E billing work that needs scoped delays, rather than as standalone urgent work.
-Detail and root-cause history live in the SPEC-217 engram topic
-`spec/spec-217-qzpay-test-control-e2e-wiring/ci-fixes`.
+- **F-1 (AC-1)**: DONE — `delayNext` scoped by ownerId/subscriptionId (array queue
+  mirroring `failNext`), FIFO + scope match, unscoped matches any. Unit tests added in
+  `packages/billing/test/qzpay-test-control.scope.test.ts` (cases d1-d3).
+- **F-2 (AC-2)**: DONE — `extractScope` documented with an explicit extensibility note
+  for the unwired operations; the documented `undefined` fallback is tested (case b2).
+- **F-3 (AC-3)**: RE-DEFERRED — see the implementation finding above. Needs a separate
+  billing-core spec to wire the subscription-update flow through `applyTestControl`.
+
+## 6. Notes
+
+This is a low-complexity, test-infra-only spec. Detail and root-cause history live in the
+SPEC-217 engram topic `spec/spec-217-qzpay-test-control-e2e-wiring/ci-fixes`.

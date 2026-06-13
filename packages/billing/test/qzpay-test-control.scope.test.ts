@@ -1,10 +1,10 @@
 /**
  * Unit tests for the scope-matching behavior of the QZPay test-control
- * `failNext` queue (SPEC-217).
+ * `failNext` (SPEC-217) and `delayNext` (SPEC-221) queues.
  *
- * The queue is a GLOBAL in-memory structure shared across parallel E2E
- * workers. Scoping a `failNext` entry by ownerId/subscriptionId prevents one
- * worker's queued failure from being consumed by another worker's call to the
+ * Both queues are GLOBAL in-memory structures shared across parallel E2E
+ * workers. Scoping an entry by ownerId/subscriptionId prevents one worker's
+ * queued failure/delay from being consumed by another worker's call to the
  * same operation. These tests lock in:
  *   (a) a scoped entry is only consumed by a call whose scope matches,
  *   (b) an unscoped entry is consumed by any caller (backward-compat),
@@ -14,8 +14,10 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
     applyTestControl,
+    delayNext,
     failNext,
     getRecordedCalls,
+    getTestControlSnapshot,
     resetTestControl
 } from '../src/adapters/qzpay-test-control.ts';
 
@@ -157,5 +159,63 @@ describe('qzpay-test-control — failNext scope matching', () => {
         await expect(applyTestControl('startTrial', { ownerId: 'owner-A' }, ok)).rejects.toThrow(
             'only-A'
         );
+    });
+});
+
+describe('qzpay-test-control — delayNext scope matching (SPEC-221)', () => {
+    beforeEach(() => {
+        process.env.HOSPEDA_QZPAY_TEST_CONTROL_ENABLED = 'true';
+        resetTestControl();
+    });
+
+    afterEach(() => {
+        resetTestControl();
+        process.env.HOSPEDA_QZPAY_TEST_CONTROL_ENABLED = undefined;
+    });
+
+    it('(d1) a scoped delay is consumed only by the matching scope', async () => {
+        // Pair each delay with a same-scope failure so the recorded outcome
+        // ('delayed-then-failed' vs plain 'failed') reveals whether the delay
+        // actually fired — no brittle wall-clock timing assertions needed.
+        delayNext('startTrial', 1, 'owner-A');
+        failNext({ operation: 'startTrial', errorCode: 'E', errorMessage: 'A', scope: 'owner-A' });
+        failNext({ operation: 'startTrial', errorCode: 'E', errorMessage: 'B', scope: 'owner-B' });
+
+        // owner-B does NOT consume the owner-A delay → outcome 'failed'.
+        await expect(applyTestControl('startTrial', { ownerId: 'owner-B' }, ok)).rejects.toThrow(
+            'B'
+        );
+        // owner-A consumes its delay → outcome 'delayed-then-failed'.
+        await expect(applyTestControl('startTrial', { ownerId: 'owner-A' }, ok)).rejects.toThrow(
+            'A'
+        );
+
+        const calls = getRecordedCalls('startTrial');
+        expect(calls[0]?.outcome).toBe('failed');
+        expect(calls[1]?.outcome).toBe('delayed-then-failed');
+    });
+
+    it('(d2) an unscoped delay is consumed by any caller (backward-compat)', async () => {
+        delayNext('startTrial', 1);
+        failNext({ operation: 'startTrial', errorCode: 'E', errorMessage: 'x' });
+
+        await expect(applyTestControl('startTrial', { ownerId: 'whoever' }, ok)).rejects.toThrow(
+            'x'
+        );
+        expect(getRecordedCalls('startTrial')[0]?.outcome).toBe('delayed-then-failed');
+        expect(getTestControlSnapshot().delayNextQueueLength).toBe(0);
+    });
+
+    it('(d3) a non-matching delay stays queued while the matching one is consumed', async () => {
+        delayNext('startTrial', 1, 'owner-A');
+        delayNext('startTrial', 1, 'owner-B');
+
+        // owner-A consumes only its own delay; owner-B's remains queued.
+        await applyTestControl('startTrial', { ownerId: 'owner-A' }, ok);
+        expect(getTestControlSnapshot().delayNextQueueLength).toBe(1);
+
+        // owner-B then consumes the remaining delay.
+        await applyTestControl('startTrial', { ownerId: 'owner-B' }, ok);
+        expect(getTestControlSnapshot().delayNextQueueLength).toBe(0);
     });
 });

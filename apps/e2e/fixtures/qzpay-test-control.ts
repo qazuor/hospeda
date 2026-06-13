@@ -60,7 +60,16 @@ export interface QZPayTestControl {
          */
         readonly scope?: string;
     }) => Promise<void>;
-    readonly delayNext: (operation: ControllableOperation, ms: number) => Promise<void>;
+    readonly delayNext: (
+        operation: ControllableOperation,
+        ms: number,
+        /**
+         * Optional ownerId/subscriptionId scope. When set, only a call whose
+         * extracted scope matches consumes this queued delay. Omit for
+         * backward-compat (matches any caller). Mirrors `failNext`'s scope.
+         */
+        scope?: string
+    ) => Promise<void>;
     readonly getRecordedCalls: (
         operation?: ControllableOperation
     ) => Promise<ReadonlyArray<RecordedCall>>;
@@ -115,8 +124,8 @@ export function createQZPayTestControl(baseUrl: string = DEFAULT_API_BASE_URL): 
         failNext: async (options) => {
             await call<{ ok: boolean }>('POST', '/fail-next', options);
         },
-        delayNext: async (operation, ms) => {
-            await call<{ ok: boolean }>('POST', '/delay-next', { operation, ms });
+        delayNext: async (operation, ms, scope) => {
+            await call<{ ok: boolean }>('POST', '/delay-next', { operation, ms, scope });
         },
         getRecordedCalls: async (operation) => {
             const data = await call<{ calls: ReadonlyArray<RecordedCall> }>(

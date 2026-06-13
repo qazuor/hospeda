@@ -15,11 +15,12 @@
         {
             "specId": "SPEC-221",
             "title": "QZPay Test-Control Hardening & Deferred E2E Coverage",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "in-progress",
+            "progress": "2/3",
             "path": "SPEC-221-qzpay-test-control-hardening",
+            "base": "staging",
             "archived": false,
-            "note": "Follow-up findings from SPEC-217 adversarial review: (1) scope delayNextQueue by ownerId too (still operation-only keyed → latent parallel contamination); (2) extend extractScope / wire scope for the other 5 ControllableOperations; (3) complete deferred host-07d (T-012) updateSubscription-failure E2E. Not yet atomized into tasks."
+            "note": "F-1 (scope delayNextQueue by ownerId) + F-2 (extractScope extensibility doc + tested fallback) DONE — billing adapter array-queue + scoped match, /delay-next route + e2e fixture forward scope, unit tests d1-d3. F-3 (host-07d updateSubscription E2E) RE-DEFERRED: updateSubscription is NOT wired through applyTestControl in any production path (only startTrial/cancelTrial are), so wiring it is billing-CORE work outside this test-infra spec — needs a separate spec. Worktree hospeda-SPEC-221, branch spec/SPEC-221-qzpay-test-control-hardening."
         },
         {
             "specId": "SPEC-220",
