@@ -18,14 +18,21 @@ import styles from './UserReviewsList.module.css';
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const PAGE_SIZE = 10;
+/** Per-type fetch size. Matches the API's max pageSize so a single request
+ * returns the full set this island then paginates client-side. */
+const API_FETCH_SIZE = 100;
 const API_PATH = '/api/v1/protected/users/me/reviews';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+/** Moderation state of a review. Mirrors @repo/schemas ModerationStatusEnum;
+ * declared locally to avoid pulling a schemas import into client island code. */
+type ModerationState = 'PENDING' | 'APPROVED' | 'REJECTED';
+
 /** A single review item (accommodation or destination) */
 interface ReviewItem {
     readonly id: string;
-    /** Numeric rating 0-10 (stored as average across aspects or direct value) */
+    /** Average rating 0-5 computed from the multi-aspect rating object. */
     readonly rating?: number | null;
     readonly title?: string | null;
     readonly content?: string | null;
@@ -34,6 +41,7 @@ interface ReviewItem {
     readonly entityName?: string | null;
     readonly entityUrl?: string | null;
     readonly type: 'accommodation' | 'destination';
+    readonly moderationState?: ModerationState | null;
 }
 
 /** Raw accommodation review from API */
@@ -53,18 +61,21 @@ interface RawAccommodationReview {
     readonly accommodationId?: string | null;
     readonly accommodationName?: string | null;
     readonly accommodationSlug?: string | null;
+    readonly moderationState?: ModerationState | null;
 }
 
 /** Raw destination review from API */
 interface RawDestinationReview {
     readonly id: string;
-    readonly rating?: number | null;
+    /** Multi-aspect rating object (0-5 per dimension), same shape as accommodation. */
+    readonly rating?: Record<string, number> | null;
     readonly title?: string | null;
     readonly content?: string | null;
     readonly createdAt?: string | null;
     readonly destinationId?: string | null;
     readonly destinationName?: string | null;
     readonly destinationSlug?: string | null;
+    readonly moderationState?: ModerationState | null;
 }
 
 /** API response for me/reviews */
@@ -91,7 +102,8 @@ interface UserReviewsListProps {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-/** Compute average rating from multi-aspect object (0-10 scale, 2 decimal). */
+/** Compute average rating from a multi-aspect object. Each aspect is 0-5, so the
+ * average is also 0-5 (rounded to 1 decimal). */
 function computeAverageRating(ratingObj: Record<string, number> | null | undefined): number | null {
     if (!ratingObj) return null;
     const values = Object.values(ratingObj).filter((v): v is number => typeof v === 'number');
@@ -119,7 +131,7 @@ function formatDate(iso: string | null | undefined, locale: SupportedLocale): st
 }
 
 /** Normalise raw API reviews into a flat ReviewItem list sorted by date desc. */
-function normaliseReviews(data: ReviewsApiResponse['data']): ReviewItem[] {
+function normaliseReviews(data: ReviewsApiResponse['data'], locale: SupportedLocale): ReviewItem[] {
     if (!data) return [];
     const acc: ReviewItem[] = (data.accommodationReviews ?? []).map((r) => ({
         id: r.id,
@@ -129,20 +141,26 @@ function normaliseReviews(data: ReviewsApiResponse['data']): ReviewItem[] {
         createdAt: r.createdAt,
         entityId: r.accommodationId,
         entityName: r.accommodationName,
-        entityUrl: r.accommodationSlug ? `/alojamientos/${r.accommodationSlug}/` : null,
-        type: 'accommodation' as const
+        entityUrl: r.accommodationSlug
+            ? buildUrl({ locale, path: `alojamientos/${r.accommodationSlug}` })
+            : null,
+        type: 'accommodation' as const,
+        moderationState: r.moderationState
     }));
 
     const dst: ReviewItem[] = (data.destinationReviews ?? []).map((r) => ({
         id: r.id,
-        rating: typeof r.rating === 'number' ? r.rating : null,
+        rating: computeAverageRating(r.rating),
         title: r.title,
         content: r.content,
         createdAt: r.createdAt,
         entityId: r.destinationId,
         entityName: r.destinationName,
-        entityUrl: r.destinationSlug ? `/destinos/${r.destinationSlug}/` : null,
-        type: 'destination' as const
+        entityUrl: r.destinationSlug
+            ? buildUrl({ locale, path: `destinos/${r.destinationSlug}` })
+            : null,
+        type: 'destination' as const,
+        moderationState: r.moderationState
     }));
 
     return [...acc, ...dst].sort((a, b) => {
@@ -201,6 +219,12 @@ export function UserReviewsList({ locale, apiUrl }: UserReviewsListProps) {
     const base = apiUrl.replace(/\/$/, '');
 
     const [reviews, setReviews] = useState<ReviewItem[]>([]);
+    // `total` is the real count from the API (full DB count, ignoring page size);
+    // `reviews` holds the loaded set (capped at API_FETCH_SIZE per type, i.e. up
+    // to 200 rows). Client-side pagination operates over the loaded set. With
+    // more than 100 reviews of one type the header count can exceed what is
+    // navigable — an accepted trade-off given how rare that is in practice.
+    const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [page, setPage] = useState(1);
@@ -223,7 +247,10 @@ export function UserReviewsList({ locale, apiUrl }: UserReviewsListProps) {
         setLoading(true);
         setError(null);
         try {
-            const res = await fetch(`${base}${API_PATH}?type=all`, {
+            // Request the max page size per type: this island paginates
+            // client-side after merging both review types, so it needs the
+            // full set in one shot. The API caps pageSize at 100 per type.
+            const res = await fetch(`${base}${API_PATH}?type=all&pageSize=${API_FETCH_SIZE}`, {
                 credentials: 'include'
             });
             if (!res.ok) {
@@ -233,14 +260,15 @@ export function UserReviewsList({ locale, apiUrl }: UserReviewsListProps) {
             if (!body.success) {
                 throw new Error(body.error?.message ?? fetchErrorMsg);
             }
-            setReviews(normaliseReviews(body.data));
+            setReviews(normaliseReviews(body.data, locale));
+            setTotal(body.data?.totals?.total ?? 0);
         } catch (err) {
             const msg = err instanceof Error ? err.message : fetchErrorMsg;
             setError(msg);
         } finally {
             setLoading(false);
         }
-    }, [base, fetchErrorMsg]);
+    }, [base, fetchErrorMsg, locale]);
 
     useEffect(() => {
         void fetchReviews();
@@ -288,7 +316,7 @@ export function UserReviewsList({ locale, apiUrl }: UserReviewsListProps) {
     return (
         <div className={styles.root}>
             <p className={styles.sectionTitle}>
-                {tPlural('account.reviews.total', reviews.length, { count: reviews.length })}
+                {tPlural('account.reviews.total', total, { count: total })}
             </p>
 
             {/* ── Review cards ────────────────────────────────────────── */}
@@ -332,6 +360,26 @@ export function UserReviewsList({ locale, apiUrl }: UserReviewsListProps) {
                                     ? t('account.reviews.typeAccommodation', 'Alojamiento')
                                     : t('account.reviews.typeDestination', 'Destino')}
                             </span>
+                            {review.moderationState && (
+                                <span
+                                    className={`${styles.statusBadge} ${
+                                        review.moderationState === 'APPROVED'
+                                            ? styles.statusApproved
+                                            : review.moderationState === 'PENDING'
+                                              ? styles.statusPending
+                                              : styles.statusRejected
+                                    }`}
+                                >
+                                    {review.moderationState === 'APPROVED'
+                                        ? t('account.reviews.status.approved', 'Publicada')
+                                        : review.moderationState === 'PENDING'
+                                          ? t(
+                                                'account.reviews.status.pending',
+                                                'Pendiente de aprobación'
+                                            )
+                                          : t('account.reviews.status.rejected', 'Rechazada')}
+                                </span>
+                            )}
                         </div>
                     </div>
 

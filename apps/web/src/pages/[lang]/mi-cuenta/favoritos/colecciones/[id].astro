@@ -91,13 +91,15 @@ const result = await userBookmarkCollectionsApi.getById({
 	cookieHeader
 });
 
-// Treat 404 (collection doesn't exist) and 400 (id is not a valid UUID, i.e.
-// someone hit a manually-typed URL) the same way: redirect to the favorites
-// listing. We only render the error state below for 5xx or other unexpected
-// failures the user can actually retry.
+// Treat 404 (collection doesn't exist), 400 (id is not a valid UUID, i.e.
+// someone hit a manually-typed URL) and 403 (the collection belongs to another
+// user) the same way: redirect to the favorites listing. None of these are
+// retryable and 403 must not surface a "server problem" error to someone who
+// guessed another user's collection id. We only render the error state below
+// for 5xx or other unexpected failures the user can actually retry.
 if (!result.ok) {
 	const status = result.error.status;
-	if (status === 404 || status === 400) {
+	if (status === 404 || status === 400 || status === 403) {
 		webLogger.warn('[coleccion-detail] collection unavailable, redirecting', { id, status });
 		return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta/favoritos' }));
 	}

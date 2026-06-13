@@ -298,6 +298,11 @@
         "total_other": "Total: {{count}} reviews",
         "typeAccommodation": "Accommodation",
         "typeDestination": "Destination",
+        "status": {
+            "approved": "Published",
+            "pending": "Pending approval",
+            "rejected": "Rejected"
+        },
         "errors": {
             "fetchFailed": "Error loading reviews"
         }

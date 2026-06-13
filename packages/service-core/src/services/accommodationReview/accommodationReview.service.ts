@@ -696,6 +696,14 @@ export class AccommodationReviewService extends BaseCrudService<
             schema: AccommodationReviewsByUserSchema,
             execute: async (validated, validatedActor) => {
                 await this._canList(validatedActor);
+                // Defense-in-depth: actors may only list their own reviews via this
+                // method. Admin callers use listWithUser instead.
+                if (validated.userId !== validatedActor.id) {
+                    throw new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        'Forbidden: cannot list reviews for another user'
+                    );
+                }
                 const { userId, page, pageSize, accommodationId } = validated;
                 const filters: Record<string, unknown> = { userId, deletedAt: null };
                 if (accommodationId) {

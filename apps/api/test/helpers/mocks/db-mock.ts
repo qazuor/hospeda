@@ -194,6 +194,9 @@ export function createDbMock() {
             async findById(_id: string) {
                 return null;
             }
+            async findByIds(_ids: readonly string[]) {
+                return [];
+            }
             async findAll(_filters: unknown) {
                 return { items: [], total: 0 };
             }
@@ -203,6 +206,9 @@ export function createDbMock() {
         DestinationModel: class MockDestinationModel {
             async findById(_id: string) {
                 return null;
+            }
+            async findByIds(_ids: readonly string[]) {
+                return [];
             }
             async findAll(_filters: unknown) {
                 return { items: [], total: 0 };
