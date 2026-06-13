@@ -10,7 +10,9 @@ import {
     toArticleCardProps,
     toDestinationCardProps,
     toEventCardProps,
-    toTestimonialCardProps
+    toTestimonialCardProps,
+    transformOwnerPromotion,
+    transformOwnerPromotionList
 } from '../../../src/lib/api/transforms';
 
 describe('toAccommodationCardProps', () => {
@@ -928,5 +930,188 @@ describe('SPEC-018 displayWeight ordering', () => {
         });
         expect(result.amenities.map((a) => a.amenityId)).toEqual(['am2', 'am1']);
         expect(result.features.map((f) => f.featureId)).toEqual(['f2', 'f1']);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Owner Promotions Transforms (SPEC-205)
+// ---------------------------------------------------------------------------
+
+describe('transformOwnerPromotion', () => {
+    const fullItem = {
+        id: 'promo-uuid-1',
+        slug: 'summer-deal',
+        ownerId: 'owner-uuid-1',
+        accommodationId: 'acc-uuid-1',
+        title: 'Summer Deal',
+        description: 'Get 10% off this summer',
+        discountType: 'percentage',
+        discountValue: 10,
+        minNights: 3,
+        validFrom: '2026-07-01T00:00:00.000Z',
+        validUntil: '2026-08-31T23:59:59.000Z',
+        maxRedemptions: 100,
+        currentRedemptions: 5,
+        lifecycleState: 'ACTIVE',
+        createdAt: '2026-06-01T10:00:00.000Z',
+        updatedAt: '2026-06-10T12:00:00.000Z'
+    };
+
+    it('should transform a complete promotion item', () => {
+        const result = transformOwnerPromotion({ item: fullItem });
+
+        expect(result.id).toBe('promo-uuid-1');
+        expect(result.slug).toBe('summer-deal');
+        expect(result.ownerId).toBe('owner-uuid-1');
+        expect(result.accommodationId).toBe('acc-uuid-1');
+        expect(result.title).toBe('Summer Deal');
+        expect(result.description).toBe('Get 10% off this summer');
+        expect(result.discountType).toBe('percentage');
+        expect(result.discountValue).toBe(10);
+        expect(result.minNights).toBe(3);
+        expect(result.validFrom).toBe('2026-07-01T00:00:00.000Z');
+        expect(result.validUntil).toBe('2026-08-31T23:59:59.000Z');
+        expect(result.maxRedemptions).toBe(100);
+        expect(result.currentRedemptions).toBe(5);
+        expect(result.lifecycleState).toBe('ACTIVE');
+        expect(result.createdAt).toBe('2026-06-01T10:00:00.000Z');
+        expect(result.updatedAt).toBe('2026-06-10T12:00:00.000Z');
+    });
+
+    it('should coerce null optional fields: accommodationId, description, validUntil, minNights, maxRedemptions', () => {
+        const item = {
+            ...fullItem,
+            accommodationId: null,
+            description: null,
+            validUntil: null,
+            minNights: null,
+            maxRedemptions: null
+        };
+        const result = transformOwnerPromotion({ item });
+
+        expect(result.accommodationId).toBeNull();
+        expect(result.description).toBeNull();
+        expect(result.validUntil).toBeNull();
+        expect(result.minNights).toBeNull();
+        expect(result.maxRedemptions).toBeNull();
+    });
+
+    it('should coerce absent optional fields to null', () => {
+        const item = {
+            id: 'promo-uuid-2',
+            slug: 'flash-sale',
+            ownerId: 'owner-uuid-2',
+            title: 'Flash Sale',
+            discountType: 'fixed',
+            discountValue: 500,
+            validFrom: '2026-09-01T00:00:00.000Z',
+            currentRedemptions: 0,
+            lifecycleState: 'DRAFT',
+            createdAt: '2026-06-12T00:00:00.000Z',
+            updatedAt: '2026-06-12T00:00:00.000Z'
+        };
+        const result = transformOwnerPromotion({ item });
+
+        expect(result.accommodationId).toBeNull();
+        expect(result.description).toBeNull();
+        expect(result.validUntil).toBeNull();
+        expect(result.minNights).toBeNull();
+        expect(result.maxRedemptions).toBeNull();
+        expect(result.discountType).toBe('fixed');
+        expect(result.discountValue).toBe(500);
+        expect(result.currentRedemptions).toBe(0);
+    });
+
+    it('should coerce numeric fields with Number()', () => {
+        const item = {
+            ...fullItem,
+            discountValue: '15',
+            minNights: '2',
+            maxRedemptions: '50',
+            currentRedemptions: '7'
+        };
+        const result = transformOwnerPromotion({ item });
+
+        expect(result.discountValue).toBe(15);
+        expect(result.minNights).toBe(2);
+        expect(result.maxRedemptions).toBe(50);
+        expect(result.currentRedemptions).toBe(7);
+    });
+
+    it('should pass through lifecycleState as string regardless of value', () => {
+        const result = transformOwnerPromotion({
+            item: { ...fullItem, lifecycleState: 'ARCHIVED' }
+        });
+        expect(result.lifecycleState).toBe('ARCHIVED');
+    });
+
+    it('should handle missing required fields with safe defaults', () => {
+        const result = transformOwnerPromotion({ item: {} });
+
+        expect(result.id).toBe('');
+        expect(result.slug).toBe('');
+        expect(result.title).toBe('');
+        expect(result.discountValue).toBe(0);
+        expect(result.currentRedemptions).toBe(0);
+        expect(result.lifecycleState).toBe('DRAFT');
+        expect(result.validFrom).toBe('');
+        expect(result.createdAt).toBe('');
+        expect(result.updatedAt).toBe('');
+    });
+});
+
+describe('transformOwnerPromotionList', () => {
+    it('should transform an array of promotion items', () => {
+        const items = [
+            {
+                id: 'p1',
+                slug: 'deal-1',
+                ownerId: 'o1',
+                accommodationId: null,
+                title: 'Deal 1',
+                description: null,
+                discountType: 'percentage',
+                discountValue: 10,
+                minNights: null,
+                validFrom: '2026-07-01T00:00:00.000Z',
+                validUntil: null,
+                maxRedemptions: null,
+                currentRedemptions: 0,
+                lifecycleState: 'ACTIVE',
+                createdAt: '2026-06-01T00:00:00.000Z',
+                updatedAt: '2026-06-01T00:00:00.000Z'
+            },
+            {
+                id: 'p2',
+                slug: 'deal-2',
+                ownerId: 'o1',
+                accommodationId: 'acc-1',
+                title: 'Deal 2',
+                description: 'A fixed discount',
+                discountType: 'fixed',
+                discountValue: 200,
+                minNights: 2,
+                validFrom: '2026-08-01T00:00:00.000Z',
+                validUntil: '2026-08-31T00:00:00.000Z',
+                maxRedemptions: 20,
+                currentRedemptions: 3,
+                lifecycleState: 'DRAFT',
+                createdAt: '2026-06-05T00:00:00.000Z',
+                updatedAt: '2026-06-06T00:00:00.000Z'
+            }
+        ];
+        const result = transformOwnerPromotionList({ items });
+
+        expect(result).toHaveLength(2);
+        expect(result[0].id).toBe('p1');
+        expect(result[0].accommodationId).toBeNull();
+        expect(result[1].id).toBe('p2');
+        expect(result[1].accommodationId).toBe('acc-1');
+        expect(result[1].minNights).toBe(2);
+    });
+
+    it('should return an empty array for an empty items list', () => {
+        const result = transformOwnerPromotionList({ items: [] });
+        expect(result).toHaveLength(0);
     });
 });

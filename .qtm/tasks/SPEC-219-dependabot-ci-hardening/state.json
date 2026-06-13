@@ -5,9 +5,9 @@
     "created": "2026-06-11T00:00:00.000Z",
     "summary": {
         "total": 8,
-        "pending": 2,
+        "pending": 1,
         "inProgress": 0,
-        "completed": 6,
+        "completed": 7,
         "blocked": 0,
         "averageComplexity": 3.4
     },
@@ -70,7 +70,7 @@
             "id": "T-004",
             "title": "Re-validate PR #1548 passes CI after the build fix",
             "description": "Re-run CI on PR #1548 (github-actions group bump) and confirm Build + CI Pass go green with the absent-secrets fix from T-002. If green, the PR becomes mergeable per policy.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002"],
             "blocks": [],
@@ -78,10 +78,11 @@
             "tags": ["ci", "validation", "dependabot"],
             "phase": "integration",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "note": "Confirmed end-to-end: after rebasing onto staging (which carries the secrets/flag fix #1587 + esbuild fix #1589), #1548 went fully green (CI Pass SUCCESS) and was merged. Exposed and fixed a follow-up bug: the ALLOW_PLACEHOLDER_ENV_URLS flag had to be workflow-wide, not just the Build step (#1587), because it is in Turbo globalEnv and downstream jobs re-run admin#build.",
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-12T00:00:00.000Z",
+                "completed": "2026-06-12T00:00:00.000Z"
             }
         },
         {
@@ -96,9 +97,10 @@
             "tags": ["dependabot", "triage", "validation"],
             "phase": "integration",
             "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "note": "BLOCKED on staging->main promotion. Dependabot reads .github/dependabot.yml from the DEFAULT branch (main), not target-branch (staging) — see docs/guides/dependabot-policy.md. The ignore for zod/@tanstack/react-router is on staging but not main, so Dependabot re-created the group (#1570 -> #1588) STILL carrying the breaking bumps. The peel-off activates only once the ignore reaches main via a planned staging->main promotion (promotion #1594 was paused: the large diff surfaces pre-existing CodeQL security debt, tracked in its own follow-up spec). The mechanism is verified correct; this task waits on the promotion.",
             "timestamps": {
                 "created": "2026-06-11T00:00:00.000Z",
-                "started": null,
+                "started": "2026-06-12T00:00:00.000Z",
                 "completed": null
             }
         },

@@ -96,6 +96,18 @@ jobs are OK; failed/cancelled are not).
   (and, for the router, re-validate `/healthz` per `apps/admin/CLAUDE.md`), and
   only then let Dependabot resume bumping it.
 
+> **CRITICAL — config is read from the DEFAULT branch (`main`):** Dependabot
+> reads `.github/dependabot.yml` (groups, `ignore`, schedule) from the repo's
+> **default branch (`main`)**, NOT from `target-branch`. `target-branch: staging`
+> only controls where PRs are opened. So an `ignore` (or grouping change) merged
+> to `staging` has **no effect** until it also reaches `main` — Dependabot keeps
+> regenerating groups with the gated packages. This bit SPEC-219: the `ignore`
+> above landed on `staging`, but `@dependabot recreate` still produced a group
+> carrying `zod` 4.4 + `@tanstack/react-router` 1.170 (#1570 → #1588), failing on
+> the real zod breaking change. The fix only activates with a `staging → main`
+> promotion. (Contrast `ci.yml`, which runs from the PR head branch, so rebasing
+> a Dependabot PR onto `staging` DOES pick up workflow fixes.)
+
 ### Security updates caveat
 
 Because `dependabot.yml` sets `target-branch: staging` (a non-default branch),

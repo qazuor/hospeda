@@ -328,7 +328,8 @@
                 "myProperties": "My properties",
                 "myPropertiesDesc": "Manage your published accommodations",
                 "hostDashboard": "Host dashboard",
-                "hostDashboardDesc": "Summary of your activity as a host"
+                "hostDashboardDesc": "Summary of your activity as a host",
+                "promotions": "My Promotions"
             },
             "stats": {
                 "favorites": "My Favorites",

@@ -1116,8 +1116,9 @@ const PARSE_STRIP_CONFIGS: readonly ParseStripConfig[] = [
     // ------------------------------------------------------------------
     // OwnerPromotion
     // No BaseAdminFields (no adminInfo). Has BaseAuditFields.
-    // NOTE: lifecycleState is only on the AdminSchema (SPEC-063 preemptive field).
-    // Absent from Public and Protected tiers.
+    // NOTE: lifecycleState is present on Protected and Admin tiers (SPEC-205
+    // Phase 3 — owners need DRAFT/ACTIVE/ARCHIVED to manage their promotions).
+    // Absent from Public tier only.
     // ------------------------------------------------------------------
     {
         entityName: 'OwnerPromotion',
@@ -1165,7 +1166,7 @@ const PARSE_STRIP_CONFIGS: readonly ParseStripConfig[] = [
             {
                 field: 'lifecycleState',
                 absentFromPublic: true,
-                absentFromProtected: true,
+                absentFromProtected: false,
                 presentInAdmin: true
             }
         ]

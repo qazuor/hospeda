@@ -10,6 +10,13 @@
             "note": "15/16. Blocker RESOLVED: root cause was Zod 4 .partial() not stripping .default() — AccommodationUpdate/PatchInputSchema injected lifecycleState=ACTIVE etc., so a {lifecycleState:'ACTIVE'}-only PATCH ran a plain update (non-empty restFields) that flipped the row ACTIVE before publish(), bypassing startTrial. Fixed via stripShapeDefaults (accommodation + 31 other update/patch schemas repo-wide). T-011 (host-07c) + T-013 (res-01) now VERIFIED live: PATCH->5xx, DRAFT, no sub. Also fixed a real e2e fixture bug (qzpay-test-control did not unwrap the ResponseFactory envelope). T-014 done (comments already honest). T-015 done (no-silent-skip guard + self-tests). T-012 host-07d DEFERRED (covered by service-core unit tests). T-016 IN PROGRESS: local soak green x6 (3 seq + 3 parallel); remaining = 3x full PR-P0 CI soak on the PR (e2e-pr.yml has the flag). Worktree spec-217."
         },
         {
+            "specId": "SPEC-220",
+            "title": "Staging→Main Promotion Hardening — clear CodeQL security debt blocking the promotion",
+            "status": "draft",
+            "progress": "0/7",
+            "path": "SPEC-220-staging-main-promotion-hardening"
+        },
+        {
             "specId": "SPEC-211",
             "title": "AI Monetization Model",
             "status": "completed",
@@ -282,7 +289,7 @@
             "specId": "SPEC-205",
             "title": "Host Web Foundation \u2014 Dashboard, Navigation, Promotions & Funnel",
             "status": "in-progress",
-            "progress": "0/1",
+            "progress": "9/9",
             "path": "SPEC-205-host-web-foundation",
             "tags": ["host-migration", "phase-1"]
         },
@@ -438,7 +445,7 @@
             "specId": "SPEC-219",
             "title": "Dependabot CI Hardening & Dependency Bump Merge Strategy",
             "status": "in-progress",
-            "progress": "6/8",
+            "progress": "7/8",
             "path": "SPEC-219-dependabot-ci-hardening"
         }
     ],

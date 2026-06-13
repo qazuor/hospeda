@@ -137,6 +137,18 @@ export const OwnerPromotionUpdateInputSchema = z
 export type OwnerPromotionUpdateInput = z.infer<typeof OwnerPromotionUpdateInputSchema>;
 
 /**
+ * Client-facing create request schema for owner promotions.
+ *
+ * Omits `ownerId` so the client cannot supply or forge it.
+ * The route handler injects `ownerId` from the authenticated session actor.
+ * This is the schema used as `requestBody` on POST /api/v1/protected/owner-promotions.
+ */
+export const OwnerPromotionCreateRequestSchema = OwnerPromotionCreateInputSchema.omit({
+    ownerId: true
+});
+export type OwnerPromotionCreateRequest = z.infer<typeof OwnerPromotionCreateRequestSchema>;
+
+/**
  * Search input for owner promotions
  */
 export const OwnerPromotionSearchSchema = z.object({
