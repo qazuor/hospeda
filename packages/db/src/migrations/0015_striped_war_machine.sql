@@ -3,7 +3,6 @@ ALTER TABLE "accommodations" ADD COLUMN "summary_i18n" jsonb;--> statement-break
 ALTER TABLE "accommodations" ADD COLUMN "description_i18n" jsonb;--> statement-breakpoint
 ALTER TABLE "accommodations" ADD COLUMN "rich_description_i18n" jsonb;--> statement-breakpoint
 ALTER TABLE "accommodations" ADD COLUMN "translation_meta" jsonb DEFAULT '{}'::jsonb;--> statement-breakpoint
-ALTER TABLE "ai_prompt_versions" ADD COLUMN "rules" text;--> statement-breakpoint
 ALTER TABLE "destinations" ADD COLUMN "name_i18n" jsonb;--> statement-breakpoint
 ALTER TABLE "destinations" ADD COLUMN "summary_i18n" jsonb;--> statement-breakpoint
 ALTER TABLE "destinations" ADD COLUMN "description_i18n" jsonb;--> statement-breakpoint
