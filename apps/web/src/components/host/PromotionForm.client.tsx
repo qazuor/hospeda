@@ -368,12 +368,14 @@ export function PromotionForm({ locale, mode, initialData, promotionId }: Promot
             const result =
                 mode === 'create'
                     ? await ownerPromotionApi.create({
+                          // TYPE-WORKAROUND: Zod-validated data (@repo/schemas) is structurally the web-local create input; the nominal types differ across the schema/web-lib boundary and serialize identically to JSON.
                           body: parsed.data as unknown as import(
                               '@/lib/api/types'
                           ).OwnerPromotionCreateInput
                       })
                     : await ownerPromotionApi.update({
                           id: promotionId ?? '',
+                          // TYPE-WORKAROUND: Zod-validated data (@repo/schemas) is structurally the web-local update input; the nominal types differ across the schema/web-lib boundary and serialize identically to JSON.
                           body: parsed.data as unknown as import(
                               '@/lib/api/types'
                           ).OwnerPromotionUpdateInput

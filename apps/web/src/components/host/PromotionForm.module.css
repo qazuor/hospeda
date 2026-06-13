@@ -14,7 +14,7 @@
 .row {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: var(--spacing-4, 1rem);
+    gap: 1rem;
 }
 
 @media (max-width: 480px) {
@@ -27,7 +27,7 @@
 .promotionForm {
     display: flex;
     flex-direction: column;
-    gap: var(--spacing-5, 1.25rem);
+    gap: 1.25rem;
 }
 
 /**
@@ -36,14 +36,14 @@
  * Falls back gracefully if the CSS variable is absent.
  */
 .limitReachedBanner {
-    background-color: var(--color-warning-bg, #fef9c3);
-    border-color: var(--color-warning-border, #fbbf24);
+    background-color: var(--palette-warning-100);
+    border-color: var(--palette-warning-400);
 }
 
 .limitReachedHint {
-    margin-top: var(--spacing-1, 0.25rem);
-    font-size: var(--font-size-sm, 0.875rem);
-    color: var(--color-warning-text, #92400e);
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: var(--palette-warning-700);
 }
 
 /** Loading indicator text shown while fetching promotion data in edit mode. */
