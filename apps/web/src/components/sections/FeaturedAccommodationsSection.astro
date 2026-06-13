@@ -45,7 +45,7 @@ let items: AccommodationCardData[] = [];
 try {
   const result = await accommodationsApi.list({ isFeatured: true, pageSize: 8, includeAmenities: true, includeFeatures: true, sortBy: 'averageRating', sortOrder: 'desc' });
   if (result.ok) {
-    items = result.data.items.map((raw) => toAccommodationCardProps({ item: raw as Record<string, unknown> }));
+    items = result.data.items.map((raw) => toAccommodationCardProps({ item: raw as Record<string, unknown>, locale }));
   }
 } catch (err) {
   webLogger.error('API fetch failed', { endpoint: 'accommodations', error: err instanceof Error ? err.message : err });

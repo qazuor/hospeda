@@ -142,7 +142,8 @@ async function seedSettingsWithFallback(
             chat: featureConfig,
             text_improve: featureConfig,
             search: featureConfig,
-            support: featureConfig
+            support: featureConfig,
+            translate: featureConfig
         }
     };
 
@@ -229,7 +230,8 @@ describe('AI provider swap without redeploy (SPEC-173 T-038 AC-1)', () => {
                     chat: newFeatureConfig,
                     text_improve: newFeatureConfig,
                     search: newFeatureConfig,
-                    support: newFeatureConfig
+                    support: newFeatureConfig,
+                    translate: newFeatureConfig
                 }
             };
 
@@ -290,7 +292,8 @@ describe('AI provider swap without redeploy (SPEC-173 T-038 AC-1)', () => {
                     chat: updatedFeatureConfig,
                     text_improve: updatedFeatureConfig,
                     search: updatedFeatureConfig,
-                    support: updatedFeatureConfig
+                    support: updatedFeatureConfig,
+                    translate: updatedFeatureConfig
                 }
             };
             await saveConfig({ value: updatedSettings, actorId: TEST_ACTOR_ID });
@@ -328,7 +331,8 @@ describe('AI provider swap without redeploy (SPEC-173 T-038 AC-1)', () => {
                     chat: updatedFeatureConfig,
                     text_improve: updatedFeatureConfig,
                     search: updatedFeatureConfig,
-                    support: updatedFeatureConfig
+                    support: updatedFeatureConfig,
+                    translate: updatedFeatureConfig
                 }
             };
             await saveConfig({ value: updatedSettings, actorId: TEST_ACTOR_ID });

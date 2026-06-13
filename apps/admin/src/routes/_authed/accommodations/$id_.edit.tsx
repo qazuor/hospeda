@@ -7,6 +7,7 @@ import { AccommodationQualityScore } from '@/features/accommodations/components/
 import { AiTextImproveFieldAddon } from '@/features/accommodations/components/AiTextImproveFieldAddon';
 import { useAccommodationHeaderProps } from '@/features/accommodations/hooks/useAccommodationHeaderProps';
 import { useAccommodationPage } from '@/features/accommodations/hooks/useAccommodationPage';
+import { TranslationSection } from '@/features/content/components/TranslationSection';
 import { createUploadHandler, useMediaUpload } from '@/hooks/use-media-upload';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
 import {
@@ -152,6 +153,13 @@ function AccommodationEditPage() {
                         anchorSectionIds={anchorSectionIds}
                         fieldAddons={fieldAddons}
                     />
+                    {entityData.entity && (
+                        <TranslationSection
+                            entityType="accommodation"
+                            entityId={id}
+                            entity={entityData.entity as Record<string, unknown>}
+                        />
+                    )}
                 </EntityPageBase>
             </div>
         </RoutePermissionGuard>

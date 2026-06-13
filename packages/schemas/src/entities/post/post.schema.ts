@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { BaseAdminFields } from '../../common/admin.schema.js';
 import { BaseAuditFields } from '../../common/audit.schema.js';
+import { I18nTextSchema, TranslationMetaSchema } from '../../common/i18n.schema.js';
 import {
     AccommodationIdSchema,
     DestinationIdSchema,
@@ -71,6 +72,20 @@ export const PostSchema = z.object({
         })
         .min(100, { message: 'zodError.post.content.min' })
         .max(50000, { message: 'zodError.post.content.max' }),
+
+    // SPEC-212: I18nText translations for multi-language content.
+    // Mirror the plain text fields above (title/summary/content).
+    // Nullish: DB columns are nullable jsonb with no default. Surfaced on
+    // public + admin responses so web/admin can render en/pt.
+    titleI18n: I18nTextSchema.nullish(),
+    summaryI18n: I18nTextSchema.nullish(),
+    contentI18n: I18nTextSchema.nullish(),
+
+    /**
+     * Per-field, per-locale translation curation metadata (SPEC-212).
+     * Internal: exposed on admin responses only, never on public payloads.
+     */
+    translationMeta: TranslationMetaSchema.nullish(),
 
     category: PostCategoryEnumSchema,
 

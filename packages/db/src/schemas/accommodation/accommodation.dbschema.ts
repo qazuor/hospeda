@@ -2,9 +2,11 @@ import type {
     AccommodationLocationType,
     AdminInfoType,
     ContactInfo,
+    I18nText,
     Media,
     Seo,
-    SocialNetwork
+    SocialNetwork,
+    TranslationMeta
 } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import {
@@ -53,6 +55,12 @@ export const accommodations = pgTable(
          * `packages/schemas/src/entities/accommodation/accommodation.schema.ts`.
          */
         richDescription: text('rich_description'),
+        // SPEC-212: I18nText columns for multi-language content
+        nameI18n: jsonb('name_i18n').$type<I18nText>(),
+        summaryI18n: jsonb('summary_i18n').$type<I18nText>(),
+        descriptionI18n: jsonb('description_i18n').$type<I18nText>(),
+        richDescriptionI18n: jsonb('rich_description_i18n').$type<I18nText>(),
+        translationMeta: jsonb('translation_meta').$type<TranslationMeta>().default({}),
         contactInfo: jsonb('contact_info').$type<ContactInfo>(),
         socialNetworks: jsonb('social_networks').$type<SocialNetwork>(),
         price: jsonb('price').$type<Record<string, unknown>>(),

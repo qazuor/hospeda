@@ -1,4 +1,13 @@
-import type { AdminInfoType, ContactInfo, EventDate, EventPrice, Media, Seo } from '@repo/schemas';
+import type {
+    AdminInfoType,
+    ContactInfo,
+    EventDate,
+    EventPrice,
+    I18nText,
+    Media,
+    Seo,
+    TranslationMeta
+} from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import { boolean, index, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { destinations } from '../destination/destination.dbschema.ts';
@@ -21,6 +30,11 @@ export const events = pgTable(
         name: text('name').notNull(),
         summary: text('summary').notNull(),
         description: text('description'),
+        // SPEC-212: I18nText columns for multi-language content
+        nameI18n: jsonb('name_i18n').$type<I18nText>(),
+        summaryI18n: jsonb('summary_i18n').$type<I18nText>(),
+        descriptionI18n: jsonb('description_i18n').$type<I18nText>(),
+        translationMeta: jsonb('translation_meta').$type<TranslationMeta>().default({}),
         media: jsonb('media').$type<Media>(),
         category: EventCategoryPgEnum('category').notNull(),
         date: jsonb('date').$type<EventDate>().notNull(),

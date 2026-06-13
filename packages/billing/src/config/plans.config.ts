@@ -102,7 +102,8 @@ export const OWNER_BASICO_PLAN: PlanDefinition = {
         EntitlementKey.CAN_USE_CALENDAR,
         EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
         EntitlementKey.AI_TEXT_IMPROVE,
-        EntitlementKey.AI_CHAT
+        EntitlementKey.AI_CHAT,
+        EntitlementKey.AI_TRANSLATE
         // ai_search removed from all plans (SPEC-211 T-004)
         // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
     ]),
@@ -111,7 +112,8 @@ export const OWNER_BASICO_PLAN: PlanDefinition = {
         limit(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 5),
         limit(LimitKey.MAX_ACTIVE_PROMOTIONS, 0),
         limit(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 20),
-        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 20)
+        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 20),
+        limit(LimitKey.MAX_AI_TRANSLATE_PER_MONTH, 200)
         // MAX_AI_SEARCH_PER_MONTH removed from all plans (SPEC-211 T-004)
     ])
 };
@@ -147,7 +149,8 @@ export const OWNER_PRO_PLAN: PlanDefinition = {
         EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
         EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT,
         EntitlementKey.AI_TEXT_IMPROVE,
-        EntitlementKey.AI_CHAT
+        EntitlementKey.AI_CHAT,
+        EntitlementKey.AI_TRANSLATE
         // ai_search removed from all plans (SPEC-211 T-004)
         // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
     ]),
@@ -156,7 +159,8 @@ export const OWNER_PRO_PLAN: PlanDefinition = {
         limit(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 15),
         limit(LimitKey.MAX_ACTIVE_PROMOTIONS, 3),
         limit(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 100),
-        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 100)
+        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 100),
+        limit(LimitKey.MAX_AI_TRANSLATE_PER_MONTH, 500)
         // MAX_AI_SEARCH_PER_MONTH removed from all plans (SPEC-211 T-004)
     ])
 };
@@ -194,7 +198,8 @@ export const OWNER_PREMIUM_PLAN: PlanDefinition = {
         EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT,
         EntitlementKey.HAS_VERIFICATION_BADGE,
         EntitlementKey.AI_TEXT_IMPROVE,
-        EntitlementKey.AI_CHAT
+        EntitlementKey.AI_CHAT,
+        EntitlementKey.AI_TRANSLATE
         // ai_search removed from all plans (SPEC-211 T-004)
         // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
     ]),
@@ -204,7 +209,8 @@ export const OWNER_PREMIUM_PLAN: PlanDefinition = {
         limit(LimitKey.MAX_ACTIVE_PROMOTIONS, -1), // unlimited
         // AI limits are finite (no -1) — cost guardrail (SPEC-211 Phase 0, §6.1)
         limit(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 1000),
-        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 2000)
+        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 2000),
+        limit(LimitKey.MAX_AI_TRANSLATE_PER_MONTH, 2000)
         // MAX_AI_SEARCH_PER_MONTH removed from all plans (SPEC-211 T-004)
     ])
 };
@@ -235,7 +241,8 @@ export const COMPLEX_BASICO_PLAN: PlanDefinition = {
         EntitlementKey.CAN_USE_CALENDAR,
         EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
         EntitlementKey.AI_TEXT_IMPROVE,
-        EntitlementKey.AI_CHAT
+        EntitlementKey.AI_CHAT,
+        EntitlementKey.AI_TRANSLATE
         // ai_search removed from all plans (SPEC-211 T-004)
         // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
     ]),
@@ -245,7 +252,8 @@ export const COMPLEX_BASICO_PLAN: PlanDefinition = {
         limit(LimitKey.MAX_STAFF_ACCOUNTS, 2),
         limit(LimitKey.MAX_ACTIVE_PROMOTIONS, 0),
         limit(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 30),
-        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 30)
+        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 30),
+        limit(LimitKey.MAX_AI_TRANSLATE_PER_MONTH, 300)
         // MAX_AI_SEARCH_PER_MONTH removed from all plans (SPEC-211 T-004)
     ])
 };
@@ -285,7 +293,8 @@ export const COMPLEX_PRO_PLAN: PlanDefinition = {
         EntitlementKey.CAN_CONTACT_WHATSAPP_DISPLAY,
         EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT,
         EntitlementKey.AI_TEXT_IMPROVE,
-        EntitlementKey.AI_CHAT
+        EntitlementKey.AI_CHAT,
+        EntitlementKey.AI_TRANSLATE
         // ai_search removed from all plans (SPEC-211 T-004)
         // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
     ]),
@@ -295,7 +304,8 @@ export const COMPLEX_PRO_PLAN: PlanDefinition = {
         limit(LimitKey.MAX_STAFF_ACCOUNTS, 5),
         limit(LimitKey.MAX_ACTIVE_PROMOTIONS, 5),
         limit(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 150),
-        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 150)
+        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 150),
+        limit(LimitKey.MAX_AI_TRANSLATE_PER_MONTH, 500)
         // MAX_AI_SEARCH_PER_MONTH removed from all plans (SPEC-211 T-004)
     ])
 };
@@ -337,7 +347,8 @@ export const COMPLEX_PREMIUM_PLAN: PlanDefinition = {
         EntitlementKey.CAN_CONTACT_WHATSAPP_DIRECT,
         EntitlementKey.HAS_VERIFICATION_BADGE,
         EntitlementKey.AI_TEXT_IMPROVE,
-        EntitlementKey.AI_CHAT
+        EntitlementKey.AI_CHAT,
+        EntitlementKey.AI_TRANSLATE
         // ai_search removed from all plans (SPEC-211 T-004)
         // ai_support deliberately ungranted pending SPEC-200 audience decision (owner 2026-06-05)
     ]),
@@ -348,7 +359,8 @@ export const COMPLEX_PREMIUM_PLAN: PlanDefinition = {
         limit(LimitKey.MAX_ACTIVE_PROMOTIONS, -1), // unlimited
         // AI limits are finite (no -1) — cost guardrail (SPEC-211 Phase 0, §6.1)
         limit(LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 2000),
-        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 5000)
+        limit(LimitKey.MAX_AI_CHAT_PER_MONTH, 5000),
+        limit(LimitKey.MAX_AI_TRANSLATE_PER_MONTH, 5000)
         // MAX_AI_SEARCH_PER_MONTH removed from all plans (SPEC-211 T-004)
     ])
 };

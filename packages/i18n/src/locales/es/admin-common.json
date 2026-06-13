@@ -323,5 +323,38 @@
             "NETWORK_INTERRUPTED": "Se cortó la conexión. Reintentá.",
             "default": "Error al generar la sugerencia. Tu texto original no fue modificado."
         }
+    },
+    "aiTranslate": {
+        "status": "Traducciones",
+        "statusTooltip": "Estado de las traducciones de contenido",
+        "autoTranslated": "auto",
+        "manualTranslated": "manual",
+        "pending": "pendiente",
+        "failed": "error",
+        "editButton": "Editar",
+        "translateNow": "Traducir ahora",
+        "retryButton": "Reintentar",
+        "overrideTitle": "Editar traducción",
+        "overrideSave": "Guardar",
+        "overrideCancel": "Cancelar",
+        "overrideSaved": "Traducción guardada",
+        "batchStart": "Iniciar traducción masiva",
+        "batchProgress": "Traduciendo... {translated}/{total}",
+        "batchComplete": "Traducción masiva completada",
+        "batchError": "Error en la traducción masiva",
+        "field": {
+            "name": "Nombre",
+            "summary": "Resumen",
+            "description": "Descripción",
+            "richDescription": "Descripción (rica)",
+            "title": "Título",
+            "content": "Contenido"
+        },
+        "error": {
+            "TRANSLATION_FAILED": "Error al traducir. El contenido en español no fue modificado.",
+            "ENTITLEMENT_REQUIRED": "Tu plan no incluye traducción con IA. Actualizá tu plan para acceder.",
+            "LIMIT_REACHED": "Alcanzaste el límite mensual de traducciones. Esperá el próximo mes.",
+            "default": "Error al traducir. Reintentá."
+        }
     }
 }

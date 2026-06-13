@@ -89,5 +89,9 @@ export const LIMIT_METADATA: Record<LimitKey, { name: string; description: strin
         name: 'AI support interactions per month',
         description:
             'Maximum number of AI support assistant interactions allowed per calendar month'
+    },
+    [LimitKey.MAX_AI_TRANSLATE_PER_MONTH]: {
+        name: 'AI translations per month',
+        description: 'Maximum number of AI content translation requests allowed per calendar month'
     }
 };

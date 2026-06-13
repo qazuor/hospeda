@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { BaseAdminFields } from '../../common/admin.schema.js';
 import { BaseAuditFields } from '../../common/audit.schema.js';
 import { BaseContactFields } from '../../common/contact.schema.js';
+import { I18nTextSchema, TranslationMetaSchema } from '../../common/i18n.schema.js';
 import {
     EventIdSchema,
     EventLocationIdSchema,
@@ -64,6 +65,20 @@ export const EventSchema = z.object({
         .min(50, { message: 'zodError.event.description.min' })
         .max(5000, { message: 'zodError.event.description.max' })
         .optional(),
+
+    // SPEC-212: I18nText translations for multi-language content.
+    // Mirror the plain text fields above (name/summary/description).
+    // Nullish: DB columns are nullable jsonb with no default. Surfaced on
+    // public + admin responses so web/admin can render en/pt.
+    nameI18n: I18nTextSchema.nullish(),
+    summaryI18n: I18nTextSchema.nullish(),
+    descriptionI18n: I18nTextSchema.nullish(),
+
+    /**
+     * Per-field, per-locale translation curation metadata (SPEC-212).
+     * Internal: exposed on admin responses only, never on public payloads.
+     */
+    translationMeta: TranslationMetaSchema.nullish(),
 
     category: EventCategoryEnumSchema,
 

@@ -30,7 +30,8 @@ const result = await accommodationsApi.getBySlug({ slug });
 if (!result.ok || !result.data) return new Response(null, { status: 404 });
 
 const accommodation = toAccommodationDetailPageProps({
-    item: result.data as Record<string, unknown>
+    item: result.data as Record<string, unknown>,
+    locale
 });
 
 // Build gallery items: featured image first, then gallery images, then videos

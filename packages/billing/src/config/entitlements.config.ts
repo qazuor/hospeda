@@ -225,5 +225,11 @@ export const ENTITLEMENT_DEFINITIONS: EntitlementDefinition[] = [
         name: 'AI support assistant',
         description:
             'Access to the AI-powered support assistant for platform help and troubleshooting'
+    },
+    {
+        key: EntitlementKey.AI_TRANSLATE,
+        name: 'AI content translation',
+        description:
+            'Access to AI-powered auto-translation of content entities (accommodations, destinations, events, posts) to English and Portuguese'
     }
 ];

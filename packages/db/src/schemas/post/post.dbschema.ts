@@ -1,4 +1,4 @@
-import type { AdminInfoType, Media, Seo } from '@repo/schemas';
+import type { AdminInfoType, I18nText, Media, Seo, TranslationMeta } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import {
@@ -34,6 +34,11 @@ export const posts = pgTable(
         title: text('title').notNull(),
         summary: text('summary').notNull(),
         content: text('content').notNull(),
+        // SPEC-212: I18nText columns for multi-language content
+        titleI18n: jsonb('title_i18n').$type<I18nText>(),
+        summaryI18n: jsonb('summary_i18n').$type<I18nText>(),
+        contentI18n: jsonb('content_i18n').$type<I18nText>(),
+        translationMeta: jsonb('translation_meta').$type<TranslationMeta>().default({}),
         media: jsonb('media').$type<Media | null>(),
         authorId: uuid('author_id')
             .notNull()

@@ -23,6 +23,7 @@ interface UseViewportSearchInput {
     readonly pageSize?: number;
     readonly extraParams?: Record<string, unknown>;
     readonly debounceMs?: number;
+    readonly locale?: string;
 }
 
 interface UseViewportSearchOutput {
@@ -42,7 +43,8 @@ export function useViewportSearch({
     initialItems,
     pageSize = 100,
     extraParams,
-    debounceMs = DEFAULT_DEBOUNCE_MS
+    debounceMs = DEFAULT_DEBOUNCE_MS,
+    locale = 'es'
 }: UseViewportSearchInput): UseViewportSearchOutput {
     const [items, setItems] = useState<ReadonlyArray<AccommodationCardData>>(initialItems);
     const [isFetching, setIsFetching] = useState(false);
@@ -78,7 +80,8 @@ export function useViewportSearch({
                         const next = result.data.items.map((item) =>
                             toAccommodationCardProps({
                                 // TYPE-WORKAROUND: toAccommodationCardProps expects an opaque record because it accepts shapes from multiple endpoints; the search endpoint payload is structurally compatible.
-                                item: item as unknown as Record<string, unknown>
+                                item: item as unknown as Record<string, unknown>,
+                                locale
                             })
                         );
                         setItems(next);
@@ -88,7 +91,7 @@ export function useViewportSearch({
                 }
             }, debounceMs);
         },
-        [debounceMs, pageSize, extraParams]
+        [debounceMs, pageSize, extraParams, locale]
     );
 
     return { items, isFetching, onBoundsChange };
