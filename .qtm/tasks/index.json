@@ -15,12 +15,24 @@
         {
             "specId": "SPEC-221",
             "title": "QZPay Test-Control Hardening & Deferred E2E Coverage",
-            "status": "in-progress",
+            "status": "completed",
             "progress": "2/3",
             "path": "SPEC-221-qzpay-test-control-hardening",
             "base": "staging",
+            "archived": true,
+            "archivedAt": "2026-06-13",
+            "archiveNote": "PR #1602 merged (a909ef4eb). F-1 (scope delayNextQueue) + F-2 (extractScope extensibility) shipped. F-3 dropped as contrived prod code (no sync updateSubscription in publish; compensation already unit-tested) — legitimate debugging need moved to SPEC-222 (non-blocking observability + creation-time MP enrichment).",
+            "note": "F-1 + F-2 DONE. F-3 (host-07d sync updateSubscription E2E) dropped; see SPEC-222."
+        },
+        {
+            "specId": "SPEC-222",
+            "title": "Billing Subscription Observability — trial↔accommodation↔owner linkage logging + creation-time MP reference enrichment",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-222-billing-subscription-observability",
+            "base": "staging",
             "archived": false,
-            "note": "F-1 (scope delayNextQueue by ownerId) + F-2 (extractScope extensibility doc + tested fallback) DONE — billing adapter array-queue + scoped match, /delay-next route + e2e fixture forward scope, unit tests d1-d3. F-3 (host-07d updateSubscription E2E) RE-DEFERRED: updateSubscription is NOT wired through applyTestControl in any production path (only startTrial/cancelTrial are), so wiring it is billing-CORE work outside this test-infra spec — needs a separate spec. Worktree hospeda-SPEC-221, branch spec/SPEC-221-qzpay-test-control-hardening."
+            "note": "Reshaped from SPEC-221 F-3. Two non-blocking parts, no async MP update: (1) structured logging + Sentry context tying a trial subscription to its accommodation/owner/checkout at publish time, so debugging from the observability stack is trivial; (2) enrich the MP external_reference / metadata AT subscription creation (not via a follow-up update) for MP-side traceability. Not yet atomized."
         },
         {
             "specId": "SPEC-220",
