@@ -20,8 +20,9 @@
             "title": "QZPay Test-Control Hardening & Deferred E2E Coverage",
             "type": "test",
             "complexity": "low",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-221-qzpay-test-control-hardening",
+            "base": "staging",
             "created": "2026-06-13T00:00:00.000Z",
             "origin": "Follow-up findings from SPEC-217 adversarial review",
             "tags": ["e2e", "billing", "qzpay", "test-control", "follow-up"]
