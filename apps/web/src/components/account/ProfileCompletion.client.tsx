@@ -180,6 +180,10 @@ export function ProfileCompletion({
                 'account.profileCompletion.errors.lastNameMax',
                 'El apellido no puede superar los 50 caracteres.'
             ),
+            birthDate_invalid: t(
+                'account.profileCompletion.errors.birthDateInvalid',
+                'Ingresá una fecha válida (dd/mm/yyyy).'
+            ),
             phone_format: t(
                 'account.profileCompletion.errors.phoneFormat',
                 'Ingresá un número de teléfono válido con código de país.'
@@ -231,6 +235,7 @@ export function ProfileCompletion({
             firstName,
             lastName,
             phone,
+            birthDate,
             acceptedTerms,
             bio: bio || undefined,
             website: website || undefined,
