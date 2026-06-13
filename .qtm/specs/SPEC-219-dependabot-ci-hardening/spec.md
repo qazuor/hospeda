@@ -140,6 +140,54 @@ Add a concise guide (e.g. `docs/guides/dependabot-policy.md`) covering:
 - The secrets/build caveat (why Dependabot runs lack secrets) so future failures are not
   re-diagnosed from scratch.
 
+### 3.4 T-005 triage findings — `production-minor-patch` group (#1570 → #1588)
+
+The grouped production PR was triaged in June 2026. Findings recorded so they are not
+re-diagnosed from scratch:
+
+**Three chained breaking changes in one 69-bump group** (each fix exposed the next):
+
+1. `zod` 4.3.6 → 4.4.3 — `.merge()` throws on object schemas containing refinements
+   (`.safeExtend()` is the replacement). Breaks `@repo/schemas` (web prerender build and
+   the admin env cross-validation test run by Guards). Owner: **SPEC-132**.
+2. `@astrojs/node` 10.1.1 → 10.1.4 — imports `createRequestFromNodeRequest` from astro
+   internals, which only exists in **astro ≥ 6.4.0** (verified empirically: the export is
+   absent from every 6.3.x tarball, present from 6.4.0). apps/web pins astro `^6.3.3`, so
+   the web build fails with `[MISSING_EXPORT]`. The package's `peerDependencies` declares
+   `astro: ^6.3.0`, which is misleading — do NOT trust the peer range. Owner: astro 6.4
+   alignment (this spec / a follow-up).
+3. `vite` 8 in `apps/landing` — astro 5.18 (landing) declares `vite: ^6.4.1`, but the
+   uncapped root override `"vite@^6.0.0": ">=6.4.2"` resolves it to the latest vite 8 on
+   any fresh install; astro 5.18 crashes under vite 8.0.13+ ("Invalid URL"). NOT ignorable
+   (no single bump to exclude — it is a lockfile-regeneration side effect). Decision:
+   **exclude landing from CI** (it is a temporary pre-launch app, removed at launch).
+
+**Critical infra finding — Dependabot reads `dependabot.yml` from the DEFAULT branch
+(`main`), NOT the `target-branch` (`staging`).** The `zod` / `@tanstack/react-router`
+ignores were added to `staging` but never took effect, because Dependabot evaluates the
+config from `main`, which is currently far behind `staging`. **No ignore works until
+`dependabot.yml` reaches `main`.** This is the single highest-leverage fix and is gated on
+the staging→main promotion (SPEC-220).
+
+**Actions taken (PR #1605 → staging):** excluded `hospeda-landing` from the turbo-fanned
+CI tasks (`--filter=!hospeda-landing`); added `@astrojs/node` to the dependabot `ignore`.
+
+**Still required:** promote `dependabot.yml` (with the ignores) to `main` so Dependabot
+honours it. Until then the group PR keeps regenerating red regardless of fixes on staging.
+
+### 3.5 Active ignores & unblock roadmap
+
+Removing an `ignore` entry (or the landing CI exclusion) is the deliberate trigger to take
+on that migration. This table is the source of truth for what is currently held back and
+who owns lifting it.
+
+| Held back | Why | Lift trigger / owner |
+| --- | --- | --- |
+| `zod` (ignore) | 4.4 `.merge()` breaks `@repo/schemas` | Migrate `.merge()` → `.safeExtend()` across schemas. **SPEC-132** |
+| `@tanstack/react-router` (ignore) | 1.170 risks `/healthz` path-intercept (admin) | Validate against admin healthcheck behavior. **SPEC-045** |
+| `@astrojs/node` (ignore) | 10.1.4 needs astro ≥ 6.4; web pins 6.3.3 | Move apps/web to astro ≥ 6.4, then lift the ignore. **this spec / follow-up** |
+| `apps/landing` (CI-excluded) | astro 5.18 breaks under vite 8 on fresh install | Removed at production launch (app is temporary, no migration owed) |
+
 ## 4. Risks
 
 | Risk | Impact | Likelihood | Mitigation |
@@ -185,6 +233,15 @@ Add a concise guide (e.g. `docs/guides/dependabot-policy.md`) covering:
 
 - T-008: Link SPEC-219 from SPEC-132 / SPEC-045 (and create dedicated migration follow-up
   specs if those are not the right home) so the major migrations have an owner.
+
+### T-005 follow-through (production-minor-patch triage, June 2026)
+
+- T-009: Exclude the temporary `hospeda-landing` app from the turbo-fanned CI tasks and
+  add `@astrojs/node` to the dependabot `ignore` list (PR #1605 → staging). See §3.4.
+- T-010: Promote `dependabot.yml` (with the zod / react-router / @astrojs/node ignores) to
+  `main` so Dependabot actually honours them — Dependabot reads config from the default
+  branch, not the target branch. Gated on / coordinated with the staging→main promotion
+  (SPEC-220). Until this lands, every `production-minor-patch` group PR regenerates red.
 
 ## 6. Internal Review Notes
 
