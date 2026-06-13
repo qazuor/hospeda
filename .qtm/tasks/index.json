@@ -274,7 +274,7 @@
             "specId": "SPEC-205",
             "title": "Host Web Foundation \u2014 Dashboard, Navigation, Promotions & Funnel",
             "status": "in-progress",
-            "progress": "0/1",
+            "progress": "9/9",
             "path": "SPEC-205-host-web-foundation",
             "tags": ["host-migration", "phase-1"]
         },
