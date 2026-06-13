@@ -5,7 +5,7 @@
  * Tests AdminEnvSchema parsing, transforms, defaults, and helper functions.
  */
 
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 // Mock the logger before importing env.ts (it imports @/utils/logger)
 vi.mock('@/utils/logger', () => ({
@@ -96,6 +96,59 @@ describe('AdminEnvSchema', () => {
                 createValidEnv({ HOSPEDA_API_URL: 'not-a-url' })
             );
             expect(result.success).toBe(false);
+        });
+    });
+
+    describe('placeholder URL guard (SPEC-219 T-006)', () => {
+        const FLAG = 'ALLOW_PLACEHOLDER_ENV_URLS';
+        const original = process.env[FLAG];
+
+        afterEach(() => {
+            if (original === undefined) {
+                delete process.env[FLAG];
+            } else {
+                process.env[FLAG] = original;
+            }
+        });
+
+        it('rejects a placeholder (.invalid) URL when the flag is unset', () => {
+            delete process.env[FLAG];
+            const result = AdminEnvSchema.safeParse(
+                createValidEnv({ VITE_API_URL: 'https://example.invalid' })
+            );
+            expect(result.success).toBe(false);
+        });
+
+        it.each(['VITE_SITE_URL', 'VITE_ADMIN_URL', 'HOSPEDA_API_URL'])(
+            'rejects a placeholder %s when the flag is unset',
+            (field) => {
+                delete process.env[FLAG];
+                const result = AdminEnvSchema.safeParse(
+                    createValidEnv({ [field]: 'https://example.invalid' })
+                );
+                expect(result.success).toBe(false);
+            }
+        );
+
+        it('accepts placeholder URLs when ALLOW_PLACEHOLDER_ENV_URLS=true (CI build context)', () => {
+            process.env[FLAG] = 'true';
+            const result = AdminEnvSchema.safeParse(
+                createValidEnv({
+                    VITE_API_URL: 'https://example.invalid',
+                    VITE_SITE_URL: 'https://example.invalid',
+                    VITE_ADMIN_URL: 'https://example.invalid',
+                    HOSPEDA_API_URL: 'https://example.invalid'
+                })
+            );
+            expect(result.success).toBe(true);
+        });
+
+        it('accepts a real URL regardless of the flag', () => {
+            delete process.env[FLAG];
+            const result = AdminEnvSchema.safeParse(
+                createValidEnv({ VITE_API_URL: 'https://api.hospeda.com.ar' })
+            );
+            expect(result.success).toBe(true);
         });
     });
 

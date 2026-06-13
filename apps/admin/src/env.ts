@@ -8,24 +8,76 @@ import { adminLogger } from '@/utils/logger';
 import { z } from 'zod';
 
 /**
+ * Detects the CI build placeholder URL.
+ *
+ * CI runs without repository secrets (most visibly Dependabot PRs), so the
+ * workflow falls back to `https://example.invalid` for the URL env vars to let
+ * the admin build's URL validation pass — see `.github/workflows/ci.yml` and
+ * SPEC-219. The `.invalid` TLD is reserved by RFC 2606 and never resolves, so
+ * it is a safe, recognizable marker that must NEVER reach a real/deploy build.
+ *
+ * @param value - The candidate URL string.
+ * @returns `true` when the URL host is under the reserved `.invalid` TLD.
+ */
+const isPlaceholderUrl = (value: string): boolean => {
+    try {
+        const { hostname } = new URL(value);
+        return hostname === 'invalid' || hostname.endsWith('.invalid');
+    } catch {
+        return false;
+    }
+};
+
+/**
+ * A required, syntactically-valid URL that additionally rejects the CI
+ * placeholder (`*.invalid`) unless `ALLOW_PLACEHOLDER_ENV_URLS` is explicitly
+ * set to `'true'`. Only the CI Build step sets that flag (SPEC-219 T-002), so a
+ * production/deploy build that is misconfigured with a placeholder URL fails
+ * loudly instead of silently shipping a non-functional value (SPEC-219 T-006).
+ *
+ * The flag is read inside the refinement (not at module scope) so it reflects
+ * the environment at validation time.
+ *
+ * NOTE: `process.env` is only meaningful in Node contexts (build / SSR). Vite
+ * replaces `process.env` with `{}` in the browser bundle, so in a hydrated
+ * client this guard always sees the flag as absent and therefore always rejects
+ * a placeholder — which is the intended behavior: `ALLOW_PLACEHOLDER_ENV_URLS`
+ * is a build-time-only CI signal and must never relax the guard in a running
+ * browser. The build-time counterpart of this guard lives in `vite.config.ts`.
+ *
+ * @param label - Field name, used in the rejection message.
+ * @returns A Zod string schema enforcing the rules above.
+ */
+const requiredUrl = (label: string) =>
+    z
+        .string()
+        .url()
+        .refine(
+            (value) =>
+                process.env.ALLOW_PLACEHOLDER_ENV_URLS === 'true' || !isPlaceholderUrl(value),
+            {
+                message: `${label} is a placeholder (.invalid) URL; a real URL is required outside CI builds`
+            }
+        );
+
+/**
  * Schema for Admin App environment variables
  * Validates VITE_ prefixed variables that are available in the browser
  */
 const AdminEnvSchema = z.object({
     // API Configuration
-    VITE_API_URL: z.string().url().describe('API base URL'),
-    VITE_SITE_URL: z.string().url().describe('Public web app URL'),
+    VITE_API_URL: requiredUrl('VITE_API_URL').describe('API base URL'),
+    VITE_SITE_URL: requiredUrl('VITE_SITE_URL').describe('Public web app URL'),
     // Admin's own public URL. Used to build the absolute callbackUrl when the
     // _authed guard redirects unauthenticated users to the web signin (SPEC-182).
-    VITE_ADMIN_URL: z.string().url().describe('Admin dashboard own public URL'),
+    VITE_ADMIN_URL: requiredUrl('VITE_ADMIN_URL').describe('Admin dashboard own public URL'),
 
     // Server-side API URL used by TanStack Start server functions (e.g. auth-session.ts).
     // Must be set as a plain process.env variable (no VITE_ prefix) since it is never
     // exposed to the browser bundle.
-    HOSPEDA_API_URL: z
-        .string()
-        .url()
-        .describe('API base URL for server-side requests (server functions)'),
+    HOSPEDA_API_URL: requiredUrl('HOSPEDA_API_URL').describe(
+        'API base URL for server-side requests (server functions)'
+    ),
 
     // Authentication
     VITE_BETTER_AUTH_URL: z.string().min(1).describe('Better Auth URL for authentication'),

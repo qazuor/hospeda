@@ -207,7 +207,7 @@ export function PreferenceToggles({ userId, locale, apiUrl }: PreferenceTogglesP
         patch: Partial<WebSettings>,
         fieldKey: string,
         previousSettings: WebSettings
-    ): Promise<void> {
+    ): Promise<boolean> {
         setSavingField(fieldKey);
         try {
             const body: Record<string, unknown> = {};
@@ -236,6 +236,7 @@ export function PreferenceToggles({ userId, locale, apiUrl }: PreferenceTogglesP
                 }
                 throw new Error(msg);
             }
+            return true;
         } catch (err) {
             // Revert on failure
             setSettings(previousSettings);
@@ -247,6 +248,7 @@ export function PreferenceToggles({ userId, locale, apiUrl }: PreferenceTogglesP
                           'No se pudo guardar la preferencia'
                       );
             addToast({ type: 'error', message: msg });
+            return false;
         } finally {
             setSavingField(null);
         }
@@ -262,11 +264,23 @@ export function PreferenceToggles({ userId, locale, apiUrl }: PreferenceTogglesP
         void persistSettings({ themeWeb: value }, 'themeWeb', prev);
     }
 
-    function handleLanguageChange(value: LanguageWeb) {
+    async function handleLanguageChange(value: LanguageWeb) {
         const prev = { ...settings };
         const next = { ...settings, languageWeb: value };
         setSettings(next);
-        void persistSettings({ languageWeb: value }, 'languageWeb', prev);
+        const ok = await persistSettings({ languageWeb: value }, 'languageWeb', prev);
+        // The web locale comes from the URL prefix, not from `languageWeb`, so
+        // persisting alone changes nothing visible. Apply the choice by swapping
+        // the locale segment in the current path and reloading — mirrors the
+        // header language switcher. Skip on failure (persistSettings reverted).
+        if (!ok || typeof window === 'undefined') return;
+        const { pathname, search, hash } = window.location;
+        const segments = pathname.split('/');
+        const SUPPORTED_LOCALES: readonly LanguageWeb[] = ['es', 'en', 'pt'];
+        if ((SUPPORTED_LOCALES as readonly string[]).includes(segments[1] ?? '')) {
+            segments[1] = value;
+            window.location.assign(`${segments.join('/')}${search}${hash}`);
+        }
     }
 
     function handleNotifToggle(key: keyof NotificationSettings) {
@@ -382,7 +396,9 @@ export function PreferenceToggles({ userId, locale, apiUrl }: PreferenceTogglesP
                             value={settings.languageWeb}
                             disabled={savingField === 'languageWeb'}
                             aria-label={t('account.preferences.language.label', 'Idioma')}
-                            onChange={(e) => handleLanguageChange(e.target.value as LanguageWeb)}
+                            onChange={(e) => {
+                                void handleLanguageChange(e.target.value as LanguageWeb);
+                            }}
                         >
                             <option value="es">Español</option>
                             <option value="en">English</option>

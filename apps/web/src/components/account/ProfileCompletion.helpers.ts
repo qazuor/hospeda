@@ -5,6 +5,8 @@
  * limit and to make the validation logic separately testable.
  */
 
+import { InternationalPhoneRegex } from '@repo/schemas';
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 /**
@@ -15,6 +17,7 @@ export type ProfileCompletionFieldErrors = Partial<
     Record<
         | 'firstName'
         | 'lastName'
+        | 'birthDate'
         | 'displayName'
         | 'phone'
         | 'locale'
@@ -118,6 +121,31 @@ export function computeDisplayName({
     return override.trim() || auto;
 }
 
+/**
+ * Parses a `dd/mm/yyyy` string into a `Date`, returning `null` when the string
+ * is not a complete, calendar-valid date. Rejects roll-overs like `31/02/2000`
+ * (which JS would otherwise silently coerce to early March).
+ *
+ * Single source of truth shared by the birth-date input (masking/picker) and
+ * the submit-time validation, so both agree on what "a valid date" means.
+ *
+ * @param value - User-typed value in `dd/mm/yyyy` format.
+ * @returns A `Date` for a valid calendar date, otherwise `null`.
+ */
+export function ddmmyyyyToDate(value: string): Date | null {
+    const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (!match) return null;
+    const day = Number(match[1]);
+    const month = Number(match[2]);
+    const year = Number(match[3]);
+    const date = new Date(year, month - 1, day);
+    // Reject roll-overs like 31/02 → 03/03.
+    if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+        return null;
+    }
+    return date;
+}
+
 // ─── Validation ───────────────────────────────────────────────────────────────
 
 /**
@@ -127,6 +155,7 @@ export interface ProfileCompletionValidationInput {
     readonly firstName: string;
     readonly lastName: string;
     readonly phone: string;
+    readonly birthDate?: string;
     readonly acceptedTerms: boolean;
     readonly bio?: string;
     readonly website?: string;
@@ -144,7 +173,8 @@ export function validateProfileCompletionFields(
     input: ProfileCompletionValidationInput
 ): ProfileCompletionFieldErrors {
     const errors: ProfileCompletionFieldErrors = {};
-    const { firstName, lastName, phone, acceptedTerms, bio, website, occupation } = input;
+    const { firstName, lastName, phone, birthDate, acceptedTerms, bio, website, occupation } =
+        input;
 
     if (!firstName.trim()) {
         errors.firstName = 'required';
@@ -158,8 +188,23 @@ export function validateProfileCompletionFields(
         errors.lastName = 'max';
     }
 
-    if (phone.trim() && !/^\+\d{7,15}$/.test(phone.replace(/[\s\-().]/g, ''))) {
+    // Use the canonical E.164 regex from @repo/schemas so client validation
+    // can never drift from what CompleteProfileBodySchema enforces server-side.
+    // Strip spaces/dashes/parens first — the picker + number input let users
+    // type those for readability, and buildPhone() removes them before sending.
+    if (phone.trim() && !InternationalPhoneRegex.test(phone.replace(/[\s\-().]/g, ''))) {
         errors.phone = 'format';
+    }
+
+    // birthDate is optional, but if the user typed something it must be a
+    // complete, calendar-valid dd/mm/yyyy date. Otherwise the server rejects
+    // the ISO string with a generic 422 and the field gets no error marker.
+    if (
+        birthDate !== undefined &&
+        birthDate.trim().length > 0 &&
+        ddmmyyyyToDate(birthDate) === null
+    ) {
+        errors.birthDate = 'invalid';
     }
 
     if (!acceptedTerms) {

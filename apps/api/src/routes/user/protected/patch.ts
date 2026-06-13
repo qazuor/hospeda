@@ -18,23 +18,45 @@ import { createProtectedRoute } from '../../../utils/route-factory';
 import { userCache } from '../../../utils/user-cache';
 
 /**
- * Body schema for the protected PATCH route. Identical to the general
- * UserPatchInputSchema except that the `settings` field is constrained to
- * the web-scoped allowlist (no `themeAdmin` / `languageAdmin`, no defaults).
+ * Body schema for the protected PATCH route.
  *
- * Why this matters: the canonical `UserSettingsSchema` declares
- * `themeAdmin`/`languageAdmin` with `.default('system')`. When Hono's
- * validator middleware ran the request body through `UserPatchInputSchema`
- * (which embeds `UserSettingsSchema`), Zod silently injected those admin
- * defaults — and the route's admin-leak check then fired a spurious 403
- * for clients that never sent those keys. Using `UserSettingsWebPatchSchema`
- * here means Zod sees only the four web-allowed keys; strict mode rejects
- * admin keys at parse time (400) and never fills them as defaults.
+ * This is an EXPLICIT ALLOWLIST (`pick`) of the only fields a user may edit
+ * on their own profile from the web app. Everything else is dropped by Zod
+ * before the payload ever reaches `UserService.update`.
+ *
+ * Why an allowlist and not `UserPatchInputSchema` (= `UserSchema` made
+ * partial)? Several system-managed flags on `UserSchema` declare a
+ * `.default(false)` / `.default([])` — `emailVerified`, `profileCompleted`,
+ * `setPasswordPrompted`, `banned`, `serviceSuspended`, `permissions`. Zod's
+ * `.partial()` does NOT suppress those defaults: when the field is absent from
+ * a partial PATCH body, Zod still injects the default value. Hono's validator
+ * returns that parsed output, so a user editing (say) their display name would
+ * have `emailVerified`/`profileCompleted` silently reset to `false` and
+ * persisted — locking them out on next login and bouncing them back to the
+ * onboarding flow. Picking only the editable fields makes mass-assignment of
+ * system flags structurally impossible, defaults included.
+ *
+ * The editable set is the union of every field the web app sends on this
+ * endpoint (profile edit form, avatar upload, preferences toggles). `settings`
+ * is layered in separately and constrained to the web-scoped allowlist
+ * (`UserSettingsWebPatchSchema`): no `themeAdmin` / `languageAdmin`, no admin
+ * defaults — strict-mode parsing rejects admin keys at the validator layer.
+ *
+ * If a new user-editable field is added to the profile UI, it MUST be added
+ * to this `pick` or it will be silently ignored.
  *
  * SPEC-096 / REQ-096-05 / T-032.
  */
-const UserProtectedPatchInputSchema = UserPatchInputSchema.omit({
-    settings: true
+const UserProtectedPatchInputSchema = UserPatchInputSchema.pick({
+    displayName: true,
+    firstName: true,
+    lastName: true,
+    image: true,
+    birthDate: true,
+    profile: true,
+    contactInfo: true,
+    socialNetworks: true,
+    location: true
 }).extend({
     settings: UserSettingsWebPatchSchema.optional()
 });
