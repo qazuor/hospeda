@@ -1,0 +1,12 @@
+{
+    "specId": "SPEC-223",
+    "title": "Create post from data with AI",
+    "type": "feature",
+    "complexity": "medium-high",
+    "status": "draft",
+    "created": "2026-06-13T12:00:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["ai", "posts", "admin", "streaming", "sse", "ai-core", "feature"]
+}

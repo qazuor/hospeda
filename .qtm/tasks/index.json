@@ -95,14 +95,14 @@
         {
             "specId": "SPEC-180",
             "title": "Sentry Observability Hardening \u2014 source maps, environments, and logger-driven capture",
-            "status": "in-progress",
+            "status": "approved",
             "progress": "0/14",
             "path": "SPEC-180-sentry-observability"
         },
         {
             "specId": "SPEC-183",
             "title": "API Error i18n Standardization",
-            "status": "in-progress",
+            "status": "approved",
             "progress": "0/14",
             "path": "SPEC-183-api-error-i18n-standardization",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-183-api-error-i18n-standardization",

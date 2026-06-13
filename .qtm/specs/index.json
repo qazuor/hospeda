@@ -517,7 +517,7 @@
             "title": "Sentry Observability Hardening — source maps, environments, and logger-driven capture",
             "type": "fix",
             "complexity": "medium-high",
-            "status": "in-progress",
+            "status": "approved",
             "path": "SPEC-180-sentry-observability",
             "created": "2026-06-01T00:00:00.000Z",
             "branch": "spec/SPEC-180-sentry-observability",
@@ -540,7 +540,7 @@
         {
             "specId": "SPEC-183",
             "title": "API Error i18n Standardization",
-            "status": "in-progress",
+            "status": "approved",
             "complexity": "medium",
             "path": "SPEC-183-api-error-i18n-standardization",
             "created": "2026-06-02T00:00:00.000Z",
@@ -1032,6 +1032,102 @@
                 "build"
             ],
             "note": "Infra-only: CI build resilient to absent secrets in dependabot context + dependabot grouping/merge strategy + policy doc. Defers Zod 4.4 (.merge->.safeExtend) and TanStack Router 1.170 migrations to SPEC-132/SPEC-045 or follow-ups. Triggered by failing PRs #1548 (github-actions group, build secrets) and #1570 (66-update npm group, zod+router breaking). Planning for later, no worktree."
+        },
+        {
+            "specId": "SPEC-222",
+            "title": "Accommodation import from URL",
+            "type": "feature",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-222-accommodation-import-from-url",
+            "created": "2026-06-13T12:00:00Z",
+            "tags": [
+                "accommodations",
+                "import",
+                "scraping",
+                "ai",
+                "web",
+                "admin",
+                "feature"
+            ],
+            "archived": false,
+            "note": "Import accommodation data from an external listing URL (Booking/Airbnb/etc) to pre-fill the create/edit form. JSON-LD/OG parsing primary + ai-core generate-object fallback. Human reviews draft before save. Drafted 2026-06-13, ready to implement."
+        },
+        {
+            "specId": "SPEC-223",
+            "title": "Create post from data with AI",
+            "type": "feature",
+            "complexity": "medium-high",
+            "status": "draft",
+            "path": "SPEC-223-ai-post-generation",
+            "created": "2026-06-13T12:00:00Z",
+            "tags": [
+                "posts",
+                "ai",
+                "ai-core",
+                "content",
+                "admin",
+                "feature"
+            ],
+            "archived": false,
+            "note": "Admin gives topic + key points, AI generates a post draft (title/summary/content). New 'post_generate' AiFeature + admin-tier streaming route, replicating the text-improve pattern. Drafted 2026-06-13, ready to implement."
+        },
+        {
+            "specId": "SPEC-224",
+            "title": "Admin PostHog analytics dashboard",
+            "type": "feature",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-224-admin-posthog-dashboard",
+            "created": "2026-06-13T12:00:00Z",
+            "tags": [
+                "admin",
+                "posthog",
+                "analytics",
+                "dashboard",
+                "observability",
+                "feature"
+            ],
+            "archived": false,
+            "note": "Read PostHog Query/HogQL via a server-side proxy + dashboard datasource/widget in admin. Sibling of SPEC-225/226 (shared external-metrics proxy pattern). Drafted 2026-06-13, ready to implement."
+        },
+        {
+            "specId": "SPEC-225",
+            "title": "Admin Sentry errors dashboard",
+            "type": "feature",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-225-admin-sentry-dashboard",
+            "created": "2026-06-13T12:00:00Z",
+            "tags": [
+                "admin",
+                "sentry",
+                "errors",
+                "dashboard",
+                "observability",
+                "feature"
+            ],
+            "archived": false,
+            "note": "Read Sentry Issues API via server-side proxy; fill the existing super.audit.log.sentry datasource placeholder + card H DeferredWidget. Distinct from SPEC-180 (capture hardening). Sibling of SPEC-224/226. Drafted 2026-06-13, ready to implement."
+        },
+        {
+            "specId": "SPEC-226",
+            "title": "Admin Brevo email/newsletter dashboard",
+            "type": "feature",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-226-admin-brevo-dashboard",
+            "created": "2026-06-13T12:00:00Z",
+            "tags": [
+                "admin",
+                "brevo",
+                "email",
+                "newsletter",
+                "dashboard",
+                "feature"
+            ],
+            "archived": false,
+            "note": "Read Brevo email/newsletter stats via server-side proxy (reuse existing HOSPEDA_EMAIL_API_KEY) + admin dashboard widget. Sibling of SPEC-224/225. Drafted 2026-06-13, ready to implement."
         }
     ]
 }
