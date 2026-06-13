@@ -368,7 +368,7 @@
                 "started": "2026-06-12T00:00:00.000Z",
                 "completed": null
             },
-            "resultRef": "LOCAL soak done: the 5 active SPEC-217 specs (host-03/04/07b/07c + res-01) ran green x6 against the live worktree harness — 3 sequential (workers=1) + 3 parallel (workers=4), zero flakes; the global failNext-queue contamination risk did not materialise. host-07d stays deferred (T-012). REMAINING: the 3x full PR-P0 CI soak runs on the PR (e2e-pr.yml already enables HOSPEDA_QZPAY_TEST_CONTROL_ENABLED via T-007); documented fallback if Group B flakes in CI = move it to nightly."
+            "resultRef": "PR #1586 open -> staging; most CI green (Guards/Security/Lint/Build/Integration/Unit; Typecheck fixed in unpushed 7a07584df). BLOCKED on E2E P0: enabling the flag in CI's 4-worker parallel E2E exposed TWO real failures the local soak (workers=1..4 but single API, low contention) did NOT catch: (1) GLOBAL failNext-queue contamination — host-01's happy-path publish (now runs startTrial via the stub) consumes res-01's armed startTrial fault -> res-01 first publish 200 not 5xx, host-01 503. (2) host-01 public detail page /es/alojamientos/{slug} 404 even after a 20s poll (real visibility/revalidation regression in the new publish path). User chose ROBUST deterministic fixes: Task A = scope failNext by ownerId (packages/billing test-control + route + e2e fixture + specs); Task B = root-cause + fix host-01 public visibility. Paused by user before completing. Full detail: engram topic spec/spec-217-qzpay-test-control-e2e-wiring/ci-fixes."
         }
     ],
     "summary": {
