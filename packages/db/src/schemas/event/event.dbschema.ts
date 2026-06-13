@@ -1,4 +1,13 @@
-import type { AdminInfoType, ContactInfo, EventDate, EventPrice, I18nText, Media, Seo, TranslationMeta } from '@repo/schemas';
+import type {
+    AdminInfoType,
+    ContactInfo,
+    EventDate,
+    EventPrice,
+    I18nText,
+    Media,
+    Seo,
+    TranslationMeta
+} from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import { boolean, index, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { destinations } from '../destination/destination.dbschema.ts';
