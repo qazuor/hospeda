@@ -4,7 +4,7 @@ title: Billing Subscription Observability — trial↔accommodation↔owner link
 slug: billing-subscription-observability
 type: feat
 complexity: low
-status: in-progress
+status: completed
 owner: qazuor
 created: 2026-06-13
 base: staging
