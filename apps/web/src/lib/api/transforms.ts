@@ -1050,7 +1050,9 @@ export function transformMarketComparison({
 }: {
     readonly item: Record<string, unknown>;
 }): import('./types').MarketComparisonData {
-    const rawItems = item.items as ReadonlyArray<Record<string, unknown>> | undefined;
+    // Backend wraps the array under `comparisons` (HostMarketComparisonSchema);
+    // the widget consumes `data.items`, so we map the wire key to the widget key.
+    const rawItems = item.comparisons as ReadonlyArray<Record<string, unknown>> | undefined;
 
     return {
         items: (rawItems ?? []).map((entry) => ({

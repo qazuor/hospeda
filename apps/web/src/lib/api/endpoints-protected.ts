@@ -1333,14 +1333,16 @@ export const hostAnalyticsApi = {
     /**
      * Get accommodation views over a time window.
      *
+     * @remarks
+     * SPEC-207 (pending): the protected per-host daily-series views endpoint does
+     * not exist yet — the backend only exposes a cumulative aggregate
+     * (`/views/accommodations/me` → `{entityId, unique, total}[]`), not the
+     * `{window, items: {date, count}[]}` daily series this widget needs. The
+     * ViewsWidget is therefore NOT mounted in the dashboard until SPEC-207 builds
+     * the backend endpoint. This method is left here as the contract to fulfil.
+     *
      * @param params - Time window: '7d' or '30d'
      * @returns Daily view counts for the host's accommodations
-     *
-     * @example
-     * ```ts
-     * const result = await hostAnalyticsApi.getViews({ window: '7d' });
-     * if (result.ok) console.log(result.data.items);
-     * ```
      */
     getViews({
         window: windowParam
@@ -1359,15 +1361,17 @@ export const hostAnalyticsApi = {
     },
 
     /**
-     * Get favorites breakdown across collections.
+     * Get favorites breakdown.
      *
-     * @returns Bookmark counts per collection for the host's accommodations
+     * @remarks
+     * SPEC-207 (pending): "collections" do not exist in the bookmark model. The
+     * real backend endpoint (`/accommodations/my/favorites-breakdown`) returns
+     * favorites per accommodation (`{accommodationId, slug, bookmarkCount}[]`),
+     * not per collection. The FavoritesWidget needs a redesign to the
+     * per-accommodation shape before it can be mounted; deferred to SPEC-207.
      *
-     * @example
-     * ```ts
-     * const result = await hostAnalyticsApi.getFavoritesBreakdown();
-     * if (result.ok) console.log(result.data.collections);
-     * ```
+     * @returns Bookmark counts (per-accommodation on the wire — return type
+     *   below is the legacy "collections" shape, to be reshaped in SPEC-207)
      */
     getFavoritesBreakdown(): Promise<
         ApiResult<{
@@ -1400,7 +1404,7 @@ export const hostAnalyticsApi = {
         }>
     > {
         return apiClient.getProtected({
-            path: `${PROTECTED}/host/analytics/response-rate`
+            path: `${PROTECTED}/conversations/me/response-rate`
         });
     },
 
@@ -1426,7 +1430,7 @@ export const hostAnalyticsApi = {
         }>
     > {
         return apiClient.getProtected({
-            path: `${PROTECTED}/host/analytics/inquiries`,
+            path: `${PROTECTED}/conversations/me/monthly-inquiries`,
             params: { months }
         });
     },
@@ -1444,21 +1448,23 @@ export const hostAnalyticsApi = {
      */
     getMarketComparison(): Promise<
         ApiResult<{
-            readonly items: readonly {
+            readonly comparisons: readonly {
                 readonly accommodationId: string;
                 readonly accommodationName: string;
                 readonly accommodationType: string;
+                readonly destinationId: string;
                 readonly destinationName: string | null;
                 readonly yourRating: number | null;
                 readonly yourReviews: number;
                 readonly destinationAvgRating: number | null;
+                readonly destinationReviewsTotal: number;
                 readonly yourPrice: number | null;
                 readonly destinationAvgPrice: number | null;
             }[];
         }>
     > {
         return apiClient.getProtected({
-            path: `${PROTECTED}/host/analytics/market-comparison`
+            path: `${PROTECTED}/accommodations/my/market-comparison`
         });
     }
 };

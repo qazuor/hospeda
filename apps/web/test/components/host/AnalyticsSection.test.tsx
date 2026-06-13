@@ -1,8 +1,13 @@
 /**
  * @file AnalyticsSection.test.tsx
- * @description TDD tests for AnalyticsSection — container component that
- * handles entitlement gating, parallel data fetching, and renders all
- * analytics widgets or a locked state.
+ * @description Tests for AnalyticsSection — container component that handles
+ * entitlement gating, parallel data fetching, and renders the wired analytics
+ * widgets or a locked state.
+ *
+ * SPEC-207 status: Views and Favorites widgets are deferred (no backend
+ * daily-series endpoint; favorites needs redesign), so only Response Rate +
+ * Inquiry Trend (VIEW_BASIC_STATS) and Market Comparison (VIEW_ADVANCED_STATS)
+ * are mounted here.
  */
 
 import { render, screen } from '@testing-library/react';
@@ -24,8 +29,6 @@ vi.mock('recharts', () => ({
 
 // Mock before any imports — vitest hoists vi.mock to top of file
 const mockGetEntitlements = vi.fn();
-const mockGetViews = vi.fn();
-const mockGetFavoritesBreakdown = vi.fn();
 const mockGetResponseRate = vi.fn();
 const mockGetInquiryTrend = vi.fn();
 const mockGetMarketComparison = vi.fn();
@@ -36,8 +39,6 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
     },
     get hostAnalyticsApi() {
         return {
-            getViews: mockGetViews,
-            getFavoritesBreakdown: mockGetFavoritesBreakdown,
             getResponseRate: mockGetResponseRate,
             getInquiryTrend: mockGetInquiryTrend,
             getMarketComparison: mockGetMarketComparison
@@ -47,6 +48,16 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
 
 // Import component AFTER mock setup (vitest handles hoisting)
 import { AnalyticsSection } from '../../../src/components/host/AnalyticsSection.client';
+
+/** Stub the three wired endpoints with empty-but-ok payloads. */
+function stubWiredEndpoints(): void {
+    mockGetResponseRate.mockResolvedValue({
+        ok: true,
+        data: { responseRatePct: 85, avgResponseTimeMinutes: 12 }
+    });
+    mockGetInquiryTrend.mockResolvedValue({ ok: true, data: { months: [] } });
+    mockGetMarketComparison.mockResolvedValue({ ok: true, data: { comparisons: [] } });
+}
 
 afterEach(() => {
     vi.clearAllMocks();
@@ -60,7 +71,7 @@ describe('AnalyticsSection', () => {
         expect(screen.getByTestId('analytics-section-skeleton')).toBeInTheDocument();
     });
 
-    it('renders locked state when entitlement is absent', async () => {
+    it('renders locked state when basic-stats entitlement is absent', async () => {
         mockGetEntitlements.mockResolvedValue({
             ok: true,
             data: { entitlements: [], limits: {}, plan: null, asOf: '2026-01-01' }
@@ -71,87 +82,80 @@ describe('AnalyticsSection', () => {
         expect(lockedTitle).toBeInTheDocument();
     });
 
-    it('renders all 5 widgets when entitlement is present', async () => {
+    it('renders the wired widgets with basic + advanced entitlements', async () => {
         mockGetEntitlements.mockResolvedValue({
             ok: true,
             data: {
-                entitlements: ['VIEW_BASIC_STATS'],
+                entitlements: ['view_basic_stats', 'view_advanced_stats'],
                 limits: {},
                 plan: { slug: 'owner-pro', name: 'Owner Pro', status: 'active' },
                 asOf: '2026-01-01'
             }
         });
-        mockGetViews.mockResolvedValue({
-            ok: true,
-            data: { window: '7d', items: [] }
-        });
-        mockGetFavoritesBreakdown.mockResolvedValue({
-            ok: true,
-            data: { collections: [] }
-        });
-        mockGetResponseRate.mockResolvedValue({
-            ok: true,
-            data: { responseRatePct: 85, avgResponseTimeMinutes: 12 }
-        });
-        mockGetInquiryTrend.mockResolvedValue({
-            ok: true,
-            data: { months: [] }
-        });
-        mockGetMarketComparison.mockResolvedValue({
-            ok: true,
-            data: { items: [] }
-        });
+        stubWiredEndpoints();
 
         render(<AnalyticsSection locale="es" />);
 
-        // Wait for all data to load — all 5 widget titles should appear
-        // Use findAllByText with specific heading level to avoid matching empty state text
-        const viewsTitles = await screen.findAllByText(/Vistas/i);
-        expect(viewsTitles.length).toBeGreaterThanOrEqual(1);
+        expect((await screen.findAllByText(/Tiempo de respuesta/i)).length).toBeGreaterThanOrEqual(
+            1
+        );
+        expect((await screen.findAllByText(/Consultas/i)).length).toBeGreaterThanOrEqual(1);
+        expect(
+            (await screen.findAllByText(/Comparación de mercado/i)).length
+        ).toBeGreaterThanOrEqual(1);
+    });
 
-        const favoritesTitles = await screen.findAllByText(/Favoritos/i);
-        expect(favoritesTitles.length).toBeGreaterThanOrEqual(1);
+    it('hides the market widget when the advanced-stats entitlement is absent', async () => {
+        mockGetEntitlements.mockResolvedValue({
+            ok: true,
+            data: {
+                entitlements: ['view_basic_stats'],
+                limits: {},
+                plan: { slug: 'owner-basico', name: 'Owner Básico', status: 'active' },
+                asOf: '2026-01-01'
+            }
+        });
+        stubWiredEndpoints();
 
-        const responseRateTitles = await screen.findAllByText(/Tiempo de respuesta/i);
-        expect(responseRateTitles.length).toBeGreaterThanOrEqual(1);
+        render(<AnalyticsSection locale="es" />);
 
-        const inquiriesTitles = await screen.findAllByText(/Consultas/i);
-        expect(inquiriesTitles.length).toBeGreaterThanOrEqual(1);
+        // Basic widgets render…
+        await screen.findAllByText(/Tiempo de respuesta/i);
+        // …and the advanced market widget is not fetched nor rendered.
+        expect(screen.queryByText(/Comparación de mercado/i)).not.toBeInTheDocument();
+        expect(mockGetMarketComparison).not.toHaveBeenCalled();
+    });
 
-        const marketTitles = await screen.findAllByText(/Comparación de mercado/i);
-        expect(marketTitles.length).toBeGreaterThanOrEqual(1);
+    it('does not mount the deferred Views and Favorites widgets (SPEC-207)', async () => {
+        mockGetEntitlements.mockResolvedValue({
+            ok: true,
+            data: {
+                entitlements: ['view_basic_stats', 'view_advanced_stats'],
+                limits: {},
+                plan: { slug: 'owner-pro', name: 'Owner Pro', status: 'active' },
+                asOf: '2026-01-01'
+            }
+        });
+        stubWiredEndpoints();
+
+        render(<AnalyticsSection locale="es" />);
+
+        await screen.findAllByText(/Tiempo de respuesta/i);
+        expect(screen.queryByText(/Vistas/i)).not.toBeInTheDocument();
+        expect(screen.queryByText(/Favoritos/i)).not.toBeInTheDocument();
     });
 
     it('shows section title when entitlement is present', async () => {
         mockGetEntitlements.mockResolvedValue({
             ok: true,
             data: {
-                entitlements: ['VIEW_BASIC_STATS'],
+                entitlements: ['view_basic_stats'],
                 limits: {},
-                plan: { slug: 'owner-pro', name: 'Owner Pro', status: 'active' },
+                plan: { slug: 'owner-basico', name: 'Owner Básico', status: 'active' },
                 asOf: '2026-01-01'
             }
         });
-        mockGetViews.mockResolvedValue({
-            ok: true,
-            data: { window: '7d', items: [] }
-        });
-        mockGetFavoritesBreakdown.mockResolvedValue({
-            ok: true,
-            data: { collections: [] }
-        });
-        mockGetResponseRate.mockResolvedValue({
-            ok: true,
-            data: { responseRatePct: 85, avgResponseTimeMinutes: 12 }
-        });
-        mockGetInquiryTrend.mockResolvedValue({
-            ok: true,
-            data: { months: [] }
-        });
-        mockGetMarketComparison.mockResolvedValue({
-            ok: true,
-            data: { items: [] }
-        });
+        stubWiredEndpoints();
 
         render(<AnalyticsSection locale="es" />);
 
