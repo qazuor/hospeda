@@ -1046,7 +1046,7 @@
             "title": "Dependabot CI Hardening & Dependency Bump Merge Strategy",
             "type": "infrastructure",
             "complexity": "medium",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-219-dependabot-ci-hardening",
             "created": "2026-06-11T00:00:00.000Z",
             "tags": [
@@ -1057,7 +1057,9 @@
                 "infrastructure",
                 "build"
             ],
-            "note": "Infra-only: CI build resilient to absent secrets in dependabot context + dependabot grouping/merge strategy + policy doc. Defers Zod 4.4 (.merge->.safeExtend) and TanStack Router 1.170 migrations to SPEC-132/SPEC-045 or follow-ups. Triggered by failing PRs #1548 (github-actions group, build secrets) and #1570 (66-update npm group, zod+router breaking). Planning for later, no worktree."
+            "note": "Infra-only: CI build resilient to absent secrets in dependabot context + dependabot grouping/merge strategy + policy doc. Defers Zod 4.4 (.merge->.safeExtend) and TanStack Router 1.170 migrations to SPEC-132/SPEC-045 or follow-ups. Triggered by failing PRs #1548 (github-actions group, build secrets) and #1570 (66-update npm group, zod+router breaking). Planning for later, no worktree.",
+            "archived": true,
+            "archivedAt": "2026-06-13"
         },
         {
             "specId": "SPEC-222",
