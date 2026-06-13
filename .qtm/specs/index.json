@@ -1124,6 +1124,26 @@
             "tags": ["admin", "brevo", "email", "newsletter", "dashboard", "feature"],
             "archived": false,
             "note": "Read Brevo email/newsletter stats via server-side proxy (reuse existing HOSPEDA_EMAIL_API_KEY) + admin dashboard widget. Sibling of SPEC-224/225. Drafted 2026-06-13, ready to implement."
+        },
+        {
+            "specId": "SPEC-228",
+            "title": "Web loading-states consistency & coverage",
+            "type": "feature",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-228-web-loading-states-consistency",
+            "created": "2026-06-13T12:00:00Z",
+            "tags": [
+                "web",
+                "ux",
+                "loading",
+                "skeleton",
+                "accessibility",
+                "consistency",
+                "design-system"
+            ],
+            "archived": false,
+            "note": "ONE canonical loading toolkit (React Spinner/Skeleton + LoadingButton + convention doc) to replace the 'mil maneras' of showing loading (text '...', emoji, ad-hoc spinners). Phase 1 foundation, then migrate audited cases by priority: map zoom/pan sidebar (isFetching unused), eventos/publicaciones skeleton-swap parity, AiChatWidget thinking indicator, review modals, ContactHost double-submit, ConversationReply. From the 2026-06-13 web UX audit. Drafted, ready to implement."
         }
     ]
 }
