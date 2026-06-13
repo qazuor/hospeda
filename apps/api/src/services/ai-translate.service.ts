@@ -14,17 +14,13 @@
  * @module services/ai-translate
  */
 
-import type { AiFeature, I18nText } from '@repo/schemas';
 import { getDb } from '@repo/db';
-import {
-    accommodations,
-    destinations,
-    events,
-    posts
-} from '@repo/db/schemas';
-import { eq, isNull, and, gt } from 'drizzle-orm';
-import { createConfiguredAiService } from './ai-service.factory.js';
+import { events, accommodations, destinations, posts } from '@repo/db/schemas';
+import type { AiFeature, I18nText, TranslationMeta } from '@repo/schemas';
+import { and, eq, gt, isNull } from 'drizzle-orm';
+import type { PgColumn, PgTable } from 'drizzle-orm/pg-core';
 import { apiLogger } from '../utils/logger.js';
+import { createConfiguredAiService } from './ai-service.factory.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -41,13 +37,49 @@ const ENTITY_FIELDS: Readonly<Record<TranslatableEntityType, readonly string[]>>
     post: ['title', 'summary', 'content']
 } as const;
 
-/** Map entity type to its Drizzle table. */
-const ENTITY_TABLES: Record<TranslatableEntityType, any> = {
-    accommodation: accommodations,
-    destination: destinations,
-    event: events,
-    post: posts
+/**
+ * Structural view of a translatable entity table.
+ *
+ * The four content tables share the `id`, `deletedAt` and `translationMeta`
+ * columns (typed here so they stay strongly typed) plus the per-field `*I18n`
+ * columns that are accessed dynamically by name via {@link i18nColumn}. This
+ * keeps the dynamic-column ergonomics without resorting to `any`.
+ */
+type TranslatableTable = PgTable & {
+    id: PgColumn;
+    deletedAt: PgColumn;
+    translationMeta: PgColumn;
 };
+
+/**
+ * Resolves a dynamic per-field i18n column (e.g. `nameI18n`) by name. The
+ * column is guaranteed to exist because the names come from {@link I18N_COLUMN_MAP}.
+ */
+function i18nColumn(table: TranslatableTable, columnName: string): PgColumn {
+    return (table as unknown as Record<string, PgColumn>)[columnName] as PgColumn;
+}
+
+/**
+ * Resolves the Drizzle table for a translatable entity type.
+ *
+ * Resolution is lazy (inside a function, never a module-level constant) so that
+ * importing this module does NOT touch the `@repo/db/schemas` table bindings at
+ * load time. The AI translate routes are registered in the global API route
+ * tree, so a top-level table reference would crash every route test that
+ * partially mocks `@repo/db/schemas`.
+ */
+function getEntityTable(entityType: TranslatableEntityType): TranslatableTable {
+    switch (entityType) {
+        case 'accommodation':
+            return accommodations as unknown as TranslatableTable;
+        case 'destination':
+            return destinations as unknown as TranslatableTable;
+        case 'event':
+            return events as unknown as TranslatableTable;
+        case 'post':
+            return posts as unknown as TranslatableTable;
+    }
+}
 
 /** Map entity type to its i18n column suffixes. */
 const I18N_COLUMN_MAP: Record<TranslatableEntityType, Record<string, string>> = {
@@ -76,6 +108,9 @@ const I18N_COLUMN_MAP: Record<TranslatableEntityType, Record<string, string>> = 
 
 /** Target locales for translation (Spanish is the source). */
 const TARGET_LOCALES = ['en', 'pt'] as const;
+
+/** Delay between concurrency batches to stay under provider rate limits. */
+const BATCH_DELAY_MS = 500;
 
 const FEATURE: AiFeature = 'translate';
 
@@ -115,6 +150,8 @@ export interface BatchTranslateInput {
 
 export interface BatchTranslateResult {
     translated: number;
+    /** Entities skipped because every target locale was already translated. */
+    skipped: number;
     failed: number;
     nextCursor?: string;
     errors: Array<{ entityId: string; error: string }>;
@@ -139,7 +176,12 @@ async function translateField(
     aiService: Awaited<ReturnType<typeof createConfiguredAiService>>,
     fieldValue: string,
     targetLocale: string
-): Promise<{ text: string; usage: { promptTokens: number; completionTokens: number; totalTokens: number }; provider: string; model: string }> {
+): Promise<{
+    text: string;
+    usage: { promptTokens: number; completionTokens: number; totalTokens: number };
+    provider: string;
+    model: string;
+}> {
     const prompt = buildTranslationPrompt(fieldValue, targetLocale);
 
     const result = await aiService.generateText({
@@ -156,9 +198,17 @@ async function translateField(
     };
 }
 
+/** Per-field translation outcome, carrying usage/provider/model for metering. */
+interface FieldTranslationOutcome {
+    result: TranslateResult;
+    totalTokens: number;
+    provider: string | null;
+    model: string | null;
+}
+
 /**
  * Translates a single field with retry logic.
- * On failure, returns the original Spanish text.
+ * On failure, returns the original Spanish text and null usage metadata.
  */
 async function translateFieldWithRetry(
     aiService: Awaited<ReturnType<typeof createConfiguredAiService>>,
@@ -166,14 +216,19 @@ async function translateFieldWithRetry(
     targetLocale: string,
     fieldType: string,
     entityId: string
-): Promise<TranslateResult> {
+): Promise<FieldTranslationOutcome> {
     try {
         const result = await translateField(aiService, fieldValue, targetLocale);
         return {
-            fieldType,
-            locale: targetLocale,
-            translatedText: result.text,
-            success: true
+            result: {
+                fieldType,
+                locale: targetLocale,
+                translatedText: result.text,
+                success: true
+            },
+            totalTokens: result.usage.totalTokens,
+            provider: result.provider,
+            model: result.model
         };
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
@@ -182,11 +237,16 @@ async function translateFieldWithRetry(
             'ai-translate: translation failed for field, keeping Spanish value'
         );
         return {
-            fieldType,
-            locale: targetLocale,
-            translatedText: fieldValue,
-            success: false,
-            error: errorMessage
+            result: {
+                fieldType,
+                locale: targetLocale,
+                translatedText: fieldValue,
+                success: false,
+                error: errorMessage
+            },
+            totalTokens: 0,
+            provider: null,
+            model: null
         };
     }
 }
@@ -202,7 +262,7 @@ async function translateFieldWithRetry(
  * @returns Translation results with usage metadata.
  */
 export async function translateEntity(input: TranslateEntityInput): Promise<TranslateEntityResult> {
-    const { entityType, entityId, fields, targetLocales = TARGET_LOCALES } = input;
+    const { entityId, fields, targetLocales = TARGET_LOCALES } = input;
 
     const aiService = await createConfiguredAiService();
     const translations: TranslateResult[] = [];
@@ -216,7 +276,7 @@ export async function translateEntity(input: TranslateEntityInput): Promise<Tran
         }
 
         for (const locale of targetLocales) {
-            const result = await translateFieldWithRetry(
+            const outcome = await translateFieldWithRetry(
                 aiService,
                 fieldValue,
                 locale,
@@ -224,12 +284,18 @@ export async function translateEntity(input: TranslateEntityInput): Promise<Tran
                 entityId
             );
 
-            translations.push(result);
+            translations.push(outcome.result);
 
-            if (result.success) {
-                // Track usage from the last successful call
-                // (each call produces its own usage; we accumulate)
-                totalTokens += 0; // usage is per-call, not accumulated here
+            if (outcome.result.success) {
+                // Accumulate per-call usage and remember the provider/model that
+                // actually served the request (used for persisted metadata).
+                totalTokens += outcome.totalTokens;
+                if (outcome.provider) {
+                    provider = outcome.provider;
+                }
+                if (outcome.model) {
+                    model = outcome.model;
+                }
             }
         }
     }
@@ -255,87 +321,191 @@ export async function persistTranslations(
     provider: string,
     model: string
 ): Promise<void> {
-    const table = ENTITY_TABLES[entityType] as any;
+    const table = getEntityTable(entityType);
     const i18nColumnMap = I18N_COLUMN_MAP[entityType];
 
-    // Build the I18nText objects per field
-    const i18nUpdates: Record<string, { es: string; en: string; pt: string }> = {};
-    const metaUpdates: Record<string, Record<string, { autoTranslated: boolean; translatedAt: string; provider: string; model: string }>> = {};
-
+    // Group successful results by field so each i18n column is written once.
+    const resultsByField = new Map<string, TranslateResult[]>();
     for (const result of results) {
-        const i18nColumn = i18nColumnMap[result.fieldType];
-        if (!i18nColumn) continue;
+        if (!i18nColumnMap[result.fieldType]) continue;
+        const bucket = resultsByField.get(result.fieldType) ?? [];
+        bucket.push(result);
+        resultsByField.set(result.fieldType, bucket);
+    }
 
-        if (!i18nUpdates[result.fieldType]) {
-            // Initialize with Spanish as base
-            i18nUpdates[result.fieldType] = {
-                es: fieldValues[result.fieldType] ?? '',
-                en: '',
-                pt: ''
+    if (resultsByField.size === 0) {
+        return;
+    }
+
+    // Read the CURRENT i18n columns + meta so we MERGE rather than clobber.
+    // This preserves previously-translated locales and admin manual overrides
+    // (locales flagged `autoTranslated: false` are never overwritten).
+    const selection: Record<string, PgColumn> = { translationMeta: table.translationMeta };
+    for (const column of Object.values(i18nColumnMap)) {
+        selection[column] = i18nColumn(table, column);
+    }
+
+    const db = getDb();
+    const [existing] = await db
+        .select(selection)
+        .from(table)
+        .where(eq(table.id, entityId))
+        .limit(1);
+
+    const existingRow = (existing ?? {}) as Record<string, unknown>;
+    const existingMeta = (existingRow.translationMeta as TranslationMeta | null) ?? {};
+
+    const updateSet: Record<string, unknown> = {};
+    const mergedMeta: TranslationMeta = { ...existingMeta };
+    const fieldsUpdated: string[] = [];
+
+    for (const [fieldType, fieldResults] of resultsByField) {
+        const column = i18nColumnMap[fieldType];
+        if (!column) continue;
+        const existingValue = (existingRow[column] as I18nText | null) ?? {
+            es: '',
+            en: '',
+            pt: ''
+        };
+
+        // Start from the existing localized value, refresh the Spanish source.
+        const nextValue: I18nText = {
+            es: fieldValues[fieldType] ?? existingValue.es ?? '',
+            en: existingValue.en ?? '',
+            pt: existingValue.pt ?? ''
+        };
+        const fieldMeta: TranslationMeta[string] = { ...(existingMeta[fieldType] ?? {}) };
+
+        for (const result of fieldResults) {
+            // Failed translations leave the locale untouched so the renderer
+            // can fall back to Spanish; they are not recorded as overrides.
+            if (!result.success) continue;
+
+            const locale = result.locale as 'en' | 'pt';
+            // Never overwrite a human-curated manual override.
+            if (existingMeta[fieldType]?.[locale]?.autoTranslated === false) continue;
+
+            nextValue[locale] = result.translatedText;
+            fieldMeta[locale] = {
+                autoTranslated: true,
+                translatedAt: new Date().toISOString(),
+                provider,
+                model
             };
         }
 
-        // Set the translated locale
-        const i18nEntry = i18nUpdates[result.fieldType];
-        if (i18nEntry) {
-            i18nEntry[result.locale as 'en' | 'pt'] = result.translatedText;
-        }
-
-        // Track metadata
-        if (!metaUpdates[result.fieldType]) {
-            metaUpdates[result.fieldType] = {};
-        }
-        metaUpdates[result.fieldType]![result.locale] = {
-            autoTranslated: result.success,
-            translatedAt: new Date().toISOString(),
-            provider: result.success ? provider : '',
-            model: result.success ? model : ''
-        };
+        updateSet[column] = nextValue;
+        mergedMeta[fieldType] = fieldMeta;
+        fieldsUpdated.push(fieldType);
     }
 
-    // Build the update set
-    const updateSet: Record<string, unknown> = {};
-    for (const [fieldType, i18nValue] of Object.entries(i18nUpdates)) {
-        const i18nColumn = i18nColumnMap[fieldType];
-        if (i18nColumn) {
-            updateSet[i18nColumn] = i18nValue;
-        }
-    }
+    updateSet.translationMeta = mergedMeta;
 
-    // Merge translation metadata
-    if (Object.keys(metaUpdates).length > 0) {
-        // Read existing meta
-        const db = getDb();
-        const [existing] = await db
-            .select({ translationMeta: (table as any).translationMeta })
-            .from(table)
-            .where(eq((table as any).id, entityId))
-            .limit(1);
+    await db.update(table).set(updateSet).where(eq(table.id, entityId));
 
-        const existingMeta = (existing?.translationMeta as Record<string, Record<string, unknown>> | null) ?? {};
-        const mergedMeta: Record<string, Record<string, unknown>> = { ...existingMeta };
+    apiLogger.info({ entityType, entityId, fieldsUpdated }, 'ai-translate: translations persisted');
+}
 
-        for (const [fieldType, localeMeta] of Object.entries(metaUpdates)) {
-            if (!mergedMeta[fieldType]) {
-                mergedMeta[fieldType] = {};
-            }
-            Object.assign(mergedMeta[fieldType] as Record<string, unknown>, localeMeta);
-        }
-
-        updateSet.translationMeta = mergedMeta;
-    }
-
-    // Perform the update
+/**
+ * Loads the current non-empty translatable text fields for an entity.
+ *
+ * Shared by the protected translate route so route handlers do not duplicate
+ * table resolution or field extraction.
+ *
+ * @returns The field map, or `null` when the entity does not exist.
+ */
+export async function loadTranslatableFields(
+    entityType: TranslatableEntityType,
+    entityId: string
+): Promise<Record<string, string> | null> {
+    const table = getEntityTable(entityType);
     const db = getDb();
+    const [row] = await db.select().from(table).where(eq(table.id, entityId)).limit(1);
+
+    if (!row) {
+        return null;
+    }
+
+    const data = row as Record<string, unknown>;
+    const fields: Record<string, string> = {};
+    for (const field of ENTITY_FIELDS[entityType]) {
+        const value = data[field];
+        if (typeof value === 'string' && value.trim().length > 0) {
+            fields[field] = value;
+        }
+    }
+    return fields;
+}
+
+/** Input for an admin manual translation override. */
+export interface ManualOverrideInput {
+    entityType: TranslatableEntityType;
+    entityId: string;
+    fieldType: string;
+    locale: 'en' | 'pt';
+    value: string;
+}
+
+/** Result of a manual override attempt. */
+export type ManualOverrideResult =
+    | { ok: true }
+    | { ok: false; code: 'INVALID_FIELD' | 'NOT_FOUND' };
+
+/**
+ * Applies an admin manual translation override for a single field/locale.
+ *
+ * Reads the current i18n value + meta, sets only the targeted locale, and flags
+ * it as `autoTranslated: false` so future auto-translation never overwrites it.
+ */
+export async function applyManualOverride(
+    input: ManualOverrideInput
+): Promise<ManualOverrideResult> {
+    const { entityType, entityId, fieldType, locale, value } = input;
+
+    const column = I18N_COLUMN_MAP[entityType][fieldType];
+    if (!column) {
+        return { ok: false, code: 'INVALID_FIELD' };
+    }
+
+    const table = getEntityTable(entityType);
+    const db = getDb();
+    const [existing] = await db
+        .select({ value: i18nColumn(table, column), translationMeta: table.translationMeta })
+        .from(table)
+        .where(eq(table.id, entityId))
+        .limit(1);
+
+    if (!existing) {
+        return { ok: false, code: 'NOT_FOUND' };
+    }
+
+    const existingRow = existing as Record<string, unknown>;
+    const existingValue = (existingRow.value as I18nText | null) ?? { es: '', en: '', pt: '' };
+    const nextValue: I18nText = {
+        es: existingValue.es ?? '',
+        en: existingValue.en ?? '',
+        pt: existingValue.pt ?? ''
+    };
+    nextValue[locale] = value;
+
+    const existingMeta = (existingRow.translationMeta as TranslationMeta | null) ?? {};
+    const nextMeta: TranslationMeta = {
+        ...existingMeta,
+        [fieldType]: {
+            ...(existingMeta[fieldType] ?? {}),
+            [locale]: {
+                autoTranslated: false,
+                translatedAt: new Date().toISOString()
+            }
+        }
+    };
+
     await db
         .update(table)
-        .set(updateSet)
-        .where(eq((table as any).id, entityId));
+        .set({ [column]: nextValue, translationMeta: nextMeta })
+        .where(eq(table.id, entityId));
 
-    apiLogger.info(
-        { entityType, entityId, fieldsUpdated: Object.keys(i18nUpdates) },
-        'ai-translate: translations persisted'
-    );
+    return { ok: true };
 }
 
 /**
@@ -346,14 +516,10 @@ export async function persistTranslations(
  * @returns Batch results with counts and next cursor.
  */
 export async function batchTranslate(input: BatchTranslateInput): Promise<BatchTranslateResult> {
-    const {
-        entityType,
-        cursor,
-        batchSize = 10,
-        concurrency = 3
-    } = input;
+    const { entityType, cursor, batchSize = 10, concurrency = 3 } = input;
 
-    const table = ENTITY_TABLES[entityType] as any;
+    const table = getEntityTable(entityType);
+    const i18nColumnMap = I18N_COLUMN_MAP[entityType];
     const db = getDb();
     const fields = ENTITY_FIELDS[entityType];
 
@@ -363,27 +529,34 @@ export async function batchTranslate(input: BatchTranslateInput): Promise<BatchT
         conditions.push(gt(table.id, cursor));
     }
 
-    const entities = await db
+    const entities = (await db
         .select({ id: table.id })
         .from(table)
         .where(and(...conditions))
         .orderBy(table.id)
-        .limit(batchSize + 1); // +1 to detect if there's a next page
+        .limit(batchSize + 1)) as Array<{ id: string }>; // +1 to detect if there's a next page
 
     const hasMore = entities.length > batchSize;
     const pageEntities = hasMore ? entities.slice(0, batchSize) : entities;
 
     let translated = 0;
+    let skipped = 0;
     let failed = 0;
     const errors: Array<{ entityId: string; error: string }> = [];
+
+    type EntityOutcome = {
+        entityId: string;
+        status: 'translated' | 'skipped' | 'failed';
+        error?: string;
+    };
 
     // Process entities with concurrency control
     for (let i = 0; i < pageEntities.length; i += concurrency) {
         const batch = pageEntities.slice(i, i + concurrency);
 
-        const results = await Promise.allSettled(
-            batch.map(async (entity) => {
-                // Fetch the entity's current text fields
+        const results = await Promise.allSettled<EntityOutcome>(
+            batch.map(async (entity): Promise<EntityOutcome> => {
+                // Fetch the entity's current text fields + existing translations
                 const [entityData] = await db
                     .select()
                     .from(table)
@@ -391,30 +564,46 @@ export async function batchTranslate(input: BatchTranslateInput): Promise<BatchT
                     .limit(1);
 
                 if (!entityData) {
-                    return { entityId: entity.id, error: 'Entity not found' };
+                    return { entityId: entity.id, status: 'failed', error: 'Entity not found' };
                 }
+
+                const row = entityData as Record<string, unknown>;
 
                 // Extract field values
                 const fieldValues: Record<string, string> = {};
                 for (const field of fields) {
-                    const value = entityData[field];
+                    const value = row[field];
                     if (typeof value === 'string' && value.trim().length > 0) {
                         fieldValues[field] = value;
                     }
                 }
 
                 if (Object.keys(fieldValues).length === 0) {
-                    return { entityId: entity.id, error: 'No translatable fields' };
+                    return { entityId: entity.id, status: 'skipped' };
                 }
 
-                // Translate
+                // Idempotency: skip when every translatable field already has all
+                // target locales populated (AC-13 — no redundant cost on re-runs).
+                const fullyTranslated = Object.keys(fieldValues).every((field) => {
+                    const col = i18nColumnMap[field];
+                    if (!col) return false;
+                    const value = row[col] as I18nText | null;
+                    return (
+                        Boolean(value) && TARGET_LOCALES.every((locale) => Boolean(value?.[locale]))
+                    );
+                });
+                if (fullyTranslated) {
+                    return { entityId: entity.id, status: 'skipped' };
+                }
+
+                // Translate then persist (persist merges, so manual overrides and
+                // already-translated locales are preserved).
                 const translateResult = await translateEntity({
                     entityType,
                     entityId: entity.id,
                     fields: fieldValues
                 });
 
-                // Persist
                 await persistTranslations(
                     entityType,
                     entity.id,
@@ -424,38 +613,49 @@ export async function batchTranslate(input: BatchTranslateInput): Promise<BatchT
                     translateResult.model
                 );
 
-                return { entityId: entity.id, error: null };
+                return { entityId: entity.id, status: 'translated' };
             })
         );
 
         for (const result of results) {
-            if (result.status === 'fulfilled' && result.value.error === null) {
-                translated++;
+            if (result.status === 'fulfilled') {
+                if (result.value.status === 'translated') {
+                    translated++;
+                } else if (result.value.status === 'skipped') {
+                    skipped++;
+                } else {
+                    failed++;
+                    errors.push({
+                        entityId: result.value.entityId,
+                        error: result.value.error ?? 'Unknown error'
+                    });
+                }
             } else {
                 failed++;
-                const entityId = result.status === 'fulfilled' ? result.value.entityId : 'unknown';
-                const error = result.status === 'fulfilled'
-                    ? (result.value.error ?? 'Unknown error')
-                    : result.reason instanceof Error
-                        ? result.reason.message
-                        : String(result.reason);
-                errors.push({ entityId, error });
+                const error =
+                    result.reason instanceof Error ? result.reason.message : String(result.reason);
+                errors.push({ entityId: 'unknown', error });
             }
+        }
+
+        // Throttle between concurrency batches to respect provider rate limits.
+        if (i + concurrency < pageEntities.length) {
+            await new Promise((resolve) => setTimeout(resolve, BATCH_DELAY_MS));
         }
     }
 
-    const lastEntity = hasMore && pageEntities.length > 0
-        ? pageEntities[pageEntities.length - 1]
-        : undefined;
+    const lastEntity =
+        hasMore && pageEntities.length > 0 ? pageEntities[pageEntities.length - 1] : undefined;
     const nextCursor = lastEntity?.id;
 
     apiLogger.info(
-        { entityType, translated, failed, hasMore: !!nextCursor },
+        { entityType, translated, skipped, failed, hasMore: !!nextCursor },
         'ai-translate: batch complete'
     );
 
     return {
         translated,
+        skipped,
         failed,
         nextCursor,
         errors

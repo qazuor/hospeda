@@ -29,13 +29,13 @@ import { createEntityResolver } from './lib/entity-resolver';
 import { shutdownPostHog } from './lib/posthog';
 import { closeSentry, initializeSentry } from './lib/sentry';
 import { getDecryptedAiProviderCredential } from './services/ai-credential-vault.service';
-import { createTranslationServiceAdapter } from './services/translation-service.adapter';
 import { initializeMediaProvider } from './services/media';
 import {
     closeNewsletterDispatchResources,
     getBullMQConnection,
     getNewsletterDeliveryService
 } from './services/newsletter/delivery-factory';
+import { createTranslationServiceAdapter } from './services/translation-service.adapter';
 import { AuditEventType, auditLog } from './utils/audit-logger';
 import { closeDatabase, initializeDatabase } from './utils/database';
 import { env, validateApiEnv } from './utils/env';

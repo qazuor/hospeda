@@ -348,7 +348,7 @@ describe('persistTranslations', () => {
         expect(meta.name?.en?.autoTranslated).toBe(true);
     });
 
-    it('should mark failed translations properly', async () => {
+    it('does NOT record meta or a value for a failed translation (so it can be retried)', async () => {
         mockLimit.mockResolvedValue([{ translationMeta: {} }]);
 
         const fieldValues = { name: 'Cabaña' };
@@ -372,6 +372,47 @@ describe('persistTranslations', () => {
         );
 
         const setArg = mockSet.mock.calls[0]?.[0] as Record<string, unknown>;
+
+        // A failed translation must NOT be flagged autoTranslated:false — that
+        // would alias a transient failure as a permanent manual override and
+        // block future retries. No meta entry is written for the failed locale.
+        const meta = setArg.translationMeta as Record<
+            string,
+            Record<string, { autoTranslated: boolean }>
+        >;
+        expect(meta.name?.en).toBeUndefined();
+
+        // The en value stays empty so the renderer falls back to Spanish.
+        const i18nValue = setArg.nameI18n as { es: string; en: string; pt: string };
+        expect(i18nValue.en).toBe('');
+        expect(i18nValue.es).toBe('Cabaña');
+    });
+
+    it('preserves a manual override (autoTranslated:false) against re-translation', async () => {
+        // Existing en is a human override; an auto-translate run must NOT clobber it.
+        mockLimit.mockResolvedValue([
+            {
+                nameI18n: { es: 'Cabaña', en: 'Hand-curated cabin', pt: '' },
+                translationMeta: { name: { en: { autoTranslated: false, translatedAt: 'x' } } }
+            }
+        ]);
+
+        const translations = [
+            { fieldType: 'name', locale: 'en', translatedText: 'Auto cabin', success: true }
+        ];
+
+        await persistTranslations(
+            'accommodation',
+            'test-uuid',
+            { name: 'Cabaña' },
+            translations,
+            'stub',
+            'stub-model'
+        );
+
+        const setArg = mockSet.mock.calls[0]?.[0] as Record<string, unknown>;
+        const i18nValue = setArg.nameI18n as { es: string; en: string; pt: string };
+        expect(i18nValue.en).toBe('Hand-curated cabin');
         const meta = setArg.translationMeta as Record<
             string,
             Record<string, { autoTranslated: boolean }>

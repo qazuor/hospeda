@@ -11,16 +11,17 @@
  * @module routes/ai/admin/translate
  */
 
-import { z } from 'zod';
 import { PermissionEnum } from '@repo/schemas';
+import { z } from 'zod';
+import { adminAuthMiddleware } from '../../../middlewares/authorization';
 import {
-    batchTranslate,
-    type TranslatableEntityType
+    type TranslatableEntityType,
+    applyManualOverride,
+    batchTranslate
 } from '../../../services/ai-translate.service';
 import { getActorFromContext } from '../../../utils/actor';
-import { apiLogger } from '../../../utils/logger';
 import { createRouter } from '../../../utils/create-app';
-import { adminAuthMiddleware } from '../../../middlewares/authorization';
+import { apiLogger } from '../../../utils/logger';
 
 // ---------------------------------------------------------------------------
 // Schemas
@@ -59,7 +60,10 @@ adminAiTranslateRoute.post('/batch', async (c) => {
 
     if (!parsed.success) {
         return c.json(
-            { success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid request body' } },
+            {
+                success: false,
+                error: { code: 'VALIDATION_ERROR', message: 'Invalid request body' }
+            },
             400
         );
     }
@@ -83,6 +87,7 @@ adminAiTranslateRoute.post('/batch', async (c) => {
             success: true,
             data: {
                 translated: result.translated,
+                skipped: result.skipped,
                 failed: result.failed,
                 nextCursor: result.nextCursor,
                 errors: result.errors
@@ -95,7 +100,10 @@ adminAiTranslateRoute.post('/batch', async (c) => {
             'admin-ai-translate: batch failed'
         );
         return c.json(
-            { success: false, error: { code: 'BATCH_FAILED', message: 'Batch translation failed' } },
+            {
+                success: false,
+                error: { code: 'BATCH_FAILED', message: 'Batch translation failed' }
+            },
             500
         );
     }
@@ -111,7 +119,10 @@ adminAiTranslateRoute.put('/override', async (c) => {
 
     if (!parsed.success) {
         return c.json(
-            { success: false, error: { code: 'VALIDATION_ERROR', message: 'Invalid request body' } },
+            {
+                success: false,
+                error: { code: 'VALIDATION_ERROR', message: 'Invalid request body' }
+            },
             400
         );
     }
@@ -125,106 +136,35 @@ adminAiTranslateRoute.put('/override', async (c) => {
     );
 
     try {
-        const { getDb } = await import('@repo/db');
-        const schemas = await import('@repo/db/schemas');
-        const { eq } = await import('drizzle-orm');
+        const result = await applyManualOverride({
+            entityType: entityType as TranslatableEntityType,
+            entityId,
+            fieldType,
+            locale,
+            value
+        });
 
-        const db = getDb();
-        const tableMap: Record<string, any> = {
-            accommodation: schemas.accommodations,
-            destination: schemas.destinations,
-            event: schemas.events,
-            post: schemas.posts
-        };
-
-        const i18nColumnMap: Record<string, Record<string, string>> = {
-            accommodation: {
-                name: 'nameI18n',
-                summary: 'summaryI18n',
-                description: 'descriptionI18n',
-                richDescription: 'richDescriptionI18n'
-            },
-            destination: {
-                name: 'nameI18n',
-                summary: 'summaryI18n',
-                description: 'descriptionI18n'
-            },
-            event: {
-                name: 'nameI18n',
-                summary: 'summaryI18n',
-                description: 'descriptionI18n'
-            },
-            post: {
-                title: 'titleI18n',
-                summary: 'summaryI18n',
-                content: 'contentI18n'
+        if (!result.ok) {
+            if (result.code === 'INVALID_FIELD') {
+                return c.json(
+                    {
+                        success: false,
+                        error: {
+                            code: 'INVALID_FIELD',
+                            message: `Field '${fieldType}' is not translatable for entity type '${entityType}'`
+                        }
+                    },
+                    400
+                );
             }
-        };
-
-        const table = tableMap[entityType];
-        const i18nCols = i18nColumnMap[entityType];
-        const i18nColumn = i18nCols?.[fieldType];
-
-        if (!i18nColumn) {
             return c.json(
                 {
                     success: false,
-                    error: {
-                        code: 'INVALID_FIELD',
-                        message: `Field '${fieldType}' is not translatable for entity type '${entityType}'`
-                    }
+                    error: { code: 'NOT_FOUND', message: `${entityType} not found` }
                 },
-                400
-            );
-        }
-
-        const [entity] = await db
-            .select()
-            .from(table)
-            .where(eq(table.id, entityId))
-            .limit(1);
-
-        if (!entity) {
-            return c.json(
-                { success: false, error: { code: 'NOT_FOUND', message: `${entityType} not found` } },
                 404
             );
         }
-
-        const existingI18n = (entity[i18nColumn] as Record<string, string> | null) ?? {
-            es: '',
-            en: '',
-            pt: ''
-        };
-        const updatedI18n = {
-            es: existingI18n.es ?? '',
-            en: locale === 'en' ? value : (existingI18n.en ?? ''),
-            pt: locale === 'pt' ? value : (existingI18n.pt ?? '')
-        };
-
-        const existingMeta = (entity.translationMeta as Record<string, Record<string, Record<string, unknown>>> | null) ?? {};
-        const fieldMeta = (existingMeta[fieldType] ?? {}) as Record<string, Record<string, unknown>>;
-        const localeMeta = (fieldMeta[locale] ?? {}) as Record<string, unknown>;
-
-        const updatedMeta = {
-            ...existingMeta,
-            [fieldType]: {
-                ...fieldMeta,
-                [locale]: {
-                    ...localeMeta,
-                    autoTranslated: false,
-                    translatedAt: new Date().toISOString()
-                }
-            }
-        };
-
-        await db
-            .update(table)
-            .set({
-                [i18nColumn]: updatedI18n,
-                translationMeta: updatedMeta
-            } as any)
-            .where(eq(table.id, entityId));
 
         apiLogger.info(
             { userId: actor.id, entityType, entityId, fieldType, locale },
@@ -242,7 +182,10 @@ adminAiTranslateRoute.put('/override', async (c) => {
             'admin-ai-translate: manual override failed'
         );
         return c.json(
-            { success: false, error: { code: 'OVERRIDE_FAILED', message: 'Manual override failed' } },
+            {
+                success: false,
+                error: { code: 'OVERRIDE_FAILED', message: 'Manual override failed' }
+            },
             500
         );
     }

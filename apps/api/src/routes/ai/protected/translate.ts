@@ -12,20 +12,20 @@
  * @module apps/api/routes/ai/protected/translate
  */
 
-import { z } from 'zod';
 import type { AiFeature } from '@repo/schemas';
+import { z } from 'zod';
 import { createAiQuotaMiddleware } from '../../../middlewares/ai-quota';
 import { createAiRateLimitMiddlewares } from '../../../middlewares/ai-rate-limit';
+import { protectedAuthMiddleware } from '../../../middlewares/authorization';
 import { entitlementMiddleware } from '../../../middlewares/entitlement';
 import {
-    translateEntity,
+    loadTranslatableFields,
     persistTranslations,
-    type TranslatableEntityType
+    translateEntity
 } from '../../../services/ai-translate.service';
 import { getActorFromContext } from '../../../utils/actor';
-import { apiLogger } from '../../../utils/logger';
 import { createRouter } from '../../../utils/create-app';
-import { protectedAuthMiddleware } from '../../../middlewares/authorization';
+import { apiLogger } from '../../../utils/logger';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -37,24 +37,13 @@ const FEATURE: AiFeature = 'translate';
 // Request schema
 // ---------------------------------------------------------------------------
 
-const TranslateRequestSchema = z.object({
-    entityType: z.enum(['accommodation', 'destination', 'event', 'post']),
-    entityId: z.string().uuid(),
-    targetLocales: z.array(z.enum(['en', 'pt'])).optional()
-}).strict();
-
-type TranslateRequest = z.infer<typeof TranslateRequestSchema>;
-
-// ---------------------------------------------------------------------------
-// Field config per entity type
-// ---------------------------------------------------------------------------
-
-const FIELD_CONFIG: Record<TranslatableEntityType, readonly string[]> = {
-    accommodation: ['name', 'summary', 'description', 'richDescription'],
-    destination: ['name', 'summary', 'description'],
-    event: ['name', 'summary', 'description'],
-    post: ['title', 'summary', 'content']
-};
+const TranslateRequestSchema = z
+    .object({
+        entityType: z.enum(['accommodation', 'destination', 'event', 'post']),
+        entityId: z.string().uuid(),
+        targetLocales: z.array(z.enum(['en', 'pt'])).optional()
+    })
+    .strict();
 
 // ---------------------------------------------------------------------------
 // Route
@@ -99,27 +88,9 @@ protectedAiTranslateRoute.post('/', async (c) => {
     );
 
     try {
-        // Dynamic imports to avoid circular deps
-        const { getDb } = await import('@repo/db');
-        const schemas = await import('@repo/db/schemas');
-        const { eq } = await import('drizzle-orm');
+        const fields = await loadTranslatableFields(entityType, entityId);
 
-        const db = getDb();
-        const tableMap: Record<TranslatableEntityType, any> = {
-            accommodation: schemas.accommodations,
-            destination: schemas.destinations,
-            event: schemas.events,
-            post: schemas.posts
-        };
-
-        const table = tableMap[entityType];
-        const [entity] = await db
-            .select()
-            .from(table)
-            .where(eq(table.id, entityId))
-            .limit(1);
-
-        if (!entity) {
+        if (fields === null) {
             return c.json(
                 {
                     success: false,
@@ -130,16 +101,6 @@ protectedAiTranslateRoute.post('/', async (c) => {
                 },
                 404
             );
-        }
-
-        // Extract translatable fields from the entity row
-        const fields: Record<string, string> = {};
-        const config = FIELD_CONFIG[entityType];
-        for (const field of config) {
-            const value = (entity as Record<string, unknown>)[field];
-            if (typeof value === 'string' && value.trim().length > 0) {
-                fields[field] = value;
-            }
         }
 
         if (Object.keys(fields).length === 0) {

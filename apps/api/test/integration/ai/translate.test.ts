@@ -360,6 +360,13 @@ describe('POST /api/v1/protected/ai/translate (integration)', () => {
         const data = body.data as Record<string, unknown>;
         expect(data.entityId).toBeDefined();
         expect(data.translations).toBeDefined();
+
+        // Regression guard (SPEC-212 S-1): provider/model/totalTokens must be
+        // captured from the AI call, not returned empty/zero.
+        expect(data.provider).toBe('stub');
+        expect(data.model).toBe('stub-model');
+        expect(typeof data.totalTokens).toBe('number');
+        expect(data.totalTokens as number).toBeGreaterThan(0);
     });
 
     it('includes targetLocales in the response', async () => {
