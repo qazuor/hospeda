@@ -61,6 +61,17 @@ export interface BaseModel<T extends Record<string, unknown>> {
     findById(id: string, tx?: DrizzleClient): Promise<T | null>;
 
     /**
+     * Find multiple entities by their primary key IDs in a single batch query.
+     *
+     * Issues one `SELECT ... WHERE id IN (ids)` query. Returns an empty array immediately
+     * when `ids` is empty (no DB round trip). Does not filter soft-deleted rows — semantics
+     * match `findById`. Entities not found by ID are simply absent from the result.
+     *
+     * @throws {DbError} When the database operation fails or the table has no `id` column
+     */
+    findByIds(ids: readonly string[], tx?: DrizzleClient): Promise<T[]>;
+
+    /**
      * Find a single entity matching the given filter conditions.
      * @throws {DbError} When the database operation fails
      */

@@ -444,6 +444,129 @@ describe('BaseModel', () => {
     // simultaneously. The shallow getDb mock cannot replicate this without becoming
     // a full Drizzle query-builder reimplementation. Covered by integration tests.
 
+    describe('findByIds', () => {
+        it('returns [] immediately without a DB round trip when ids is empty', async () => {
+            // Arrange: a mock that would fail if called — proves no DB query is issued
+            getDb.mockReturnValue({
+                select: () => {
+                    throw new Error('select should not be called for empty ids');
+                }
+            });
+
+            // Act
+            const result = await model.findByIds([]);
+
+            // Assert
+            expect(result).toEqual([]);
+            expect(getDb).not.toHaveBeenCalled();
+        });
+
+        it('issues a single query and returns matching rows for multiple ids', async () => {
+            // Arrange
+            const rows = [
+                { id: 'a', name: 'Alice' },
+                { id: 'b', name: 'Bob' }
+            ];
+            getDb.mockReturnValue({
+                select: () => ({
+                    from: () => ({
+                        where: () => Promise.resolve(rows)
+                    })
+                })
+            });
+
+            // Act
+            const result = await model.findByIds(['a', 'b']);
+
+            // Assert
+            expect(result).toEqual(rows);
+            expect(logQuery).toHaveBeenCalledWith(
+                'dummy',
+                'findByIds',
+                expect.objectContaining({ count: 2 }),
+                rows
+            );
+        });
+
+        it('returns [] when no rows match any of the provided ids', async () => {
+            // Arrange
+            getDb.mockReturnValue({
+                select: () => ({
+                    from: () => ({
+                        where: () => Promise.resolve([])
+                    })
+                })
+            });
+
+            // Act
+            const result = await model.findByIds(['nonexistent-1', 'nonexistent-2']);
+
+            // Assert
+            expect(result).toEqual([]);
+        });
+
+        it('throws DbError and logs when the table has no id column', async () => {
+            // Arrange: NoIdModel has a table without an 'id' column
+            logError.mockImplementation(() => {});
+            const noIdModel = new NoIdModel();
+
+            // Act & Assert
+            await expect(noIdModel.findByIds(['some-id'])).rejects.toThrow(DbError);
+            expect(logError).toHaveBeenCalledWith(
+                'noid',
+                'findByIds',
+                expect.objectContaining({ ids: ['some-id'] }),
+                expect.any(Error)
+            );
+        });
+
+        it('throws DbError and logs on database error', async () => {
+            // Arrange
+            logError.mockImplementation(() => {});
+            getDb.mockReturnValue({
+                select: () => ({
+                    from: () => ({
+                        where: () => {
+                            throw new Error('DB failure');
+                        }
+                    })
+                })
+            });
+
+            // Act & Assert
+            await expect(model.findByIds(['x'])).rejects.toThrow(DbError);
+            expect(logError).toHaveBeenCalledWith(
+                'dummy',
+                'findByIds',
+                expect.objectContaining({ ids: ['x'] }),
+                expect.any(Error)
+            );
+        });
+
+        it('passes tx to getClient()', async () => {
+            // Arrange
+            const mockTx = {
+                select: () => ({
+                    from: () => ({
+                        where: () => Promise.resolve([{ id: 'a' }])
+                    })
+                })
+            } as unknown as import('../../src/types.ts').DrizzleClient;
+
+            const getClientSpy = vi.spyOn(
+                model as unknown as { getClient(tx?: unknown): unknown },
+                'getClient'
+            );
+            getClientSpy.mockReturnValue(mockTx);
+
+            // Act
+            await model.findByIds(['a'], mockTx);
+
+            // Assert
+            expect(getClientSpy).toHaveBeenCalledWith(mockTx);
+        });
+    });
+
     describe('tx propagation', () => {
         /**
          * Shared minimal mock for a DrizzleClient that supports all query shapes
