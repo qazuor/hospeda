@@ -276,11 +276,11 @@ const olderCursor = nextCursor;
         display: flex;
     }
 
-    .conv-thread__message--guest {
+    .conv-thread__message--owner {
         justify-content: flex-end;
     }
 
-    .conv-thread__message--owner,
+    .conv-thread__message--guest,
     .conv-thread__message--system {
         justify-content: flex-start;
     }
@@ -292,7 +292,7 @@ const olderCursor = nextCursor;
         gap: var(--space-1, 4px);
     }
 
-    .conv-thread__message--guest .conv-thread__bubble {
+    .conv-thread__message--owner .conv-thread__bubble {
         background-color: var(--brand-primary);
         color: white;
         border-radius: var(--radius-card);
@@ -301,7 +301,7 @@ const olderCursor = nextCursor;
         box-shadow: var(--shadow-card);
     }
 
-    .conv-thread__message--owner .conv-thread__bubble {
+    .conv-thread__message--guest .conv-thread__bubble {
         background-color: var(--core-card);
         border: 1px solid var(--border);
         border-radius: var(--radius-card);
@@ -324,11 +324,11 @@ const olderCursor = nextCursor;
         word-break: break-word;
     }
 
-    .conv-thread__message--guest .conv-thread__body {
+    .conv-thread__message--owner .conv-thread__body {
         color: white;
     }
 
-    .conv-thread__message--owner .conv-thread__body,
+    .conv-thread__message--guest .conv-thread__body,
     .conv-thread__message--system .conv-thread__body {
         color: var(--core-foreground);
     }
@@ -340,7 +340,7 @@ const olderCursor = nextCursor;
         align-self: flex-end;
     }
 
-    .conv-thread__message--guest .conv-thread__timestamp {
+    .conv-thread__message--owner .conv-thread__timestamp {
         color: var(--white-a75);
     }
 
