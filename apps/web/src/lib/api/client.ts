@@ -186,6 +186,11 @@ export const apiClient = {
         return request<T>({ method: 'PATCH', path, body, withCredentials: true });
     },
 
+    /** PUT request (full-replacement update, authenticated) */
+    put<T>({ path, body }: { path: string; body?: unknown }): Promise<ApiResult<T>> {
+        return request<T>({ method: 'PUT', path, body, withCredentials: true });
+    },
+
     /** DELETE request */
     delete<T>({ path }: { path: string }): Promise<ApiResult<T>> {
         return request<T>({ method: 'DELETE', path, withCredentials: true });

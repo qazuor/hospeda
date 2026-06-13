@@ -281,6 +281,60 @@
             "RESORT": "Resort"
         }
     },
+    "promotions": {
+        "pageTitle": "Mis promociones",
+        "pageDescription": "Creá y gestioná descuentos y ofertas especiales para tus propiedades",
+        "empty": "Todavía no tenés ninguna promoción. ¡Creá tu primera oferta!",
+        "createButton": "Nueva promoción",
+        "loading": "Cargando promoción...",
+        "fields": {
+            "title": "Título",
+            "description": "Descripción",
+            "discountType": "Tipo de descuento",
+            "discountTypePlaceholder": "Elegí una opción",
+            "discountValue": "Valor del descuento",
+            "minNights": "Noches mínimas",
+            "validFrom": "Válido desde",
+            "validUntil": "Válido hasta",
+            "noExpiry": "Sin vencimiento",
+            "maxRedemptions": "Usos máximos",
+            "accommodationId": "Propiedad",
+            "accommodationIdAll": "Todas mis propiedades",
+            "accommodationIdLoading": "Cargando propiedades...",
+            "accommodationIdHint": "Elegí una propiedad o dejá 'Todas mis propiedades' para aplicar la promoción a todas."
+        },
+        "discountTypes": {
+            "percentage": "Porcentaje",
+            "fixed": "Monto fijo",
+            "free_night": "Noche gratis"
+        },
+        "lifecycleStates": {
+            "active": "Activa",
+            "draft": "Borrador",
+            "archived": "Archivada"
+        },
+        "errors": {
+            "loadFailed": "No se pudieron cargar las promociones. Intentá de nuevo.",
+            "saveFailed": "No se pudo guardar la promoción. Intentá de nuevo.",
+            "deleteFailed": "No se pudo eliminar la promoción. Intentá de nuevo.",
+            "titleRequired": "El título es requerido.",
+            "discountTypeRequired": "El tipo de descuento es requerido.",
+            "discountValueRequired": "El valor del descuento es requerido.",
+            "discountValueMaxPercentage": "El porcentaje no puede superar 100.",
+            "validFromRequired": "La fecha de inicio es requerida.",
+            "limitReachedHint": "Alcanzaste el límite de promociones activas de tu plan. Mejorá tu plan para crear más.",
+            "notFound": "No se encontró la promoción.",
+            "forbidden": "No tenés permiso para acceder a esta promoción."
+        },
+        "actions": {
+            "edit": "Editar",
+            "delete": "Eliminar",
+            "save": "Guardar",
+            "saving": "Guardando...",
+            "cancel": "Cancelar",
+            "confirmDelete": "¿Eliminar esta promoción? Esta acción no se puede deshacer."
+        }
+    },
     "dashboard": {
         "analytics": {
             "views": {

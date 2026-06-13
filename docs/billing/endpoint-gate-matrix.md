@@ -74,6 +74,8 @@
 | `POST /api/v1/protected/user-bookmark-collections/{id}/bookmarks/{bookmarkId}` | `user-bookmark-collection/protected/addBookmark.ts` | none | - | n/a | Collection management ungated per ADR-026 — T-145-05 |
 | `DELETE /api/v1/protected/user-bookmark-collections/{id}/bookmarks/{bookmarkId}` | `user-bookmark-collection/protected/removeBookmark.ts` | none | - | n/a | Removal ungated per BETA-42 + ADR-026 — T-145-05 |
 | **OWNER PROMOTIONS — PROTECTED** | | | | | |
+| `GET /api/v1/protected/owner-promotions` | `owner-promotion/protected/list.ts` | none | - | n/a | Read own promotions (all lifecycle states); auth-only sufficient — SPEC-205 |
+| `GET /api/v1/protected/owner-promotions/{id}` | `owner-promotion/protected/get.ts` | none | - | n/a | Read own promotion by id; auth-only sufficient — SPEC-205 |
 | `POST /api/v1/protected/owner-promotions` | `owner-promotion/protected/create.ts` | gate+limit | `create_promotions`, `max_active_promotions` | wired | requireEntitlement(CREATE_PROMOTIONS) before enforcePromotionLimit() (SPEC-145 T-005) |
 | `PATCH /api/v1/protected/owner-promotions/{id}` | `owner-promotion/protected/patch.ts` | gate | `create_promotions` | wired | requireEntitlement(CREATE_PROMOTIONS) middleware wired (SPEC-145 T-005) |
 | `PUT /api/v1/protected/owner-promotions/{id}` | `owner-promotion/protected/update.ts` | gate | `create_promotions` | wired | requireEntitlement(CREATE_PROMOTIONS) middleware wired (SPEC-145 T-005) |

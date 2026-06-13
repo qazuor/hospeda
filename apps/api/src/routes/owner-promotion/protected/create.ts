@@ -4,7 +4,7 @@
  */
 import { EntitlementKey } from '@repo/billing';
 import {
-    OwnerPromotionCreateInputSchema,
+    OwnerPromotionCreateRequestSchema,
     OwnerPromotionProtectedSchema,
     PermissionEnum
 } from '@repo/schemas';
@@ -29,7 +29,7 @@ export const protectedCreateOwnerPromotionRoute = createProtectedRoute({
     description: 'Creates a new owner promotion. Requires OWNER_PROMOTION_CREATE permission.',
     tags: ['Owner Promotions'],
     requiredPermissions: [PermissionEnum.OWNER_PROMOTION_CREATE],
-    requestBody: OwnerPromotionCreateInputSchema,
+    requestBody: OwnerPromotionCreateRequestSchema,
     responseSchema: OwnerPromotionProtectedSchema,
     handler: async (
         ctx: Context,
@@ -37,7 +37,13 @@ export const protectedCreateOwnerPromotionRoute = createProtectedRoute({
         body: Record<string, unknown>
     ) => {
         const actor = getActorFromContext(ctx);
-        const result = await ownerPromotionService.create(actor, body as never);
+        // Inject ownerId from the authenticated session actor so the client
+        // cannot supply or forge it. The body is validated against
+        // OwnerPromotionCreateRequestSchema which omits ownerId entirely.
+        const result = await ownerPromotionService.create(actor, {
+            ...body,
+            ownerId: actor.id
+        } as never);
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);
