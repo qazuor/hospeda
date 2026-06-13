@@ -7,7 +7,7 @@
  * Updates `lastReadAtByOwner` and cancels pending notification schedules.
  */
 
-import { accommodations, getDb } from '@repo/db';
+import { AccommodationModel, UserModel, accommodations, getDb } from '@repo/db';
 import { PermissionEnum, ServiceErrorCode, ThreadQuerySchema } from '@repo/schemas';
 import { ConversationService } from '@repo/service-core';
 import { eq } from 'drizzle-orm';
@@ -20,6 +20,9 @@ import {
     createResponse,
     handleRouteError
 } from '../../../../utils/response-helpers';
+
+const accommodationModel = new AccommodationModel();
+const userModel = new UserModel();
 
 const router = createRouter();
 
@@ -153,7 +156,45 @@ router.get('/:id', async (c) => {
         const nextCursor =
             hasMore && messages.length > 0 ? (messages[0]?.createdAt?.toISOString() ?? null) : null;
 
-        return createResponse({ conversation, messages, nextCursor }, c, 200);
+        // TYPE-WORKAROUND: getThread returns a generic conversation type that doesn't
+        // surface userId/anonymousName at the TS level; the runtime shape always carries
+        // these columns. Widening through unknown to access them for enrichment.
+        const convRaw = conversation as unknown as {
+            accommodationId: string;
+            userId: string | null;
+            anonymousName: string | null;
+            [k: string]: unknown;
+        };
+
+        // Enrich with human-readable accommodation name and guest display name
+        // so the thread header can render "Conversación con <name>" and the
+        // accommodation subtitle without extra round trips from the client.
+        const accRow = await accommodationModel.findById(convRaw.accommodationId);
+        const accommodationName = (accRow as { name?: string } | null)?.name ?? null;
+
+        let guestName = convRaw.anonymousName?.trim() ?? null;
+        if (!guestName && convRaw.userId) {
+            const userRows = await userModel.findByIds([convRaw.userId]);
+            if (userRows.length > 0) {
+                const u = userRows[0] as {
+                    displayName?: string | null;
+                    firstName?: string | null;
+                    lastName?: string | null;
+                    email?: string | null;
+                };
+                guestName =
+                    u.displayName?.trim() ||
+                    [u.firstName, u.lastName].filter(Boolean).join(' ').trim() ||
+                    u.email ||
+                    null;
+            }
+        }
+        // Leave guestName null when unresolved; the UI applies a localized
+        // fallback label (no hardcoded server-side string).
+
+        const enrichedConversation = { ...convRaw, accommodationName, guestName };
+
+        return createResponse({ conversation: enrichedConversation, messages, nextCursor }, c, 200);
     } catch (error) {
         return handleRouteError(error, c);
     }
