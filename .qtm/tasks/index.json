@@ -2,6 +2,13 @@
     "version": "1.0",
     "epics": [
         {
+            "specId": "SPEC-220",
+            "title": "Staging→Main Promotion Hardening — clear CodeQL security debt blocking the promotion",
+            "status": "draft",
+            "progress": "0/7",
+            "path": "SPEC-220-staging-main-promotion-hardening"
+        },
+        {
             "specId": "SPEC-211",
             "title": "AI Monetization Model",
             "status": "completed",
