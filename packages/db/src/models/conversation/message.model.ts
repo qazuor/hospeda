@@ -311,6 +311,77 @@ export class MessageModel extends BaseModelImpl<SelectMessage> {
             );
         }
     }
+
+    /**
+     * Counts unread GUEST messages per conversation for an owner, in a single batch query.
+     *
+     * A message is considered unread by the owner when:
+     * - `sender_type = 'GUEST'`
+     * - `deleted_at IS NULL`
+     * - `created_at > conversations.last_read_at_by_owner` OR
+     *   `conversations.last_read_at_by_owner IS NULL`
+     *
+     * Empty input short-circuits to avoid an invalid `IN ()` clause.
+     *
+     * @param conversationIds - UUIDs of the conversations to count unread messages for
+     * @param tx - Optional transaction client
+     * @returns Map from conversation ID to the count of unread GUEST messages
+     *
+     * @example
+     * ```ts
+     * const unreadMap = await messageModel.countUnreadForOwnerByConversation(['conv-1']);
+     * const count = unreadMap.get('conv-1') ?? 0;
+     * ```
+     */
+    async countUnreadForOwnerByConversation(
+        conversationIds: readonly string[],
+        tx?: DrizzleClient
+    ): Promise<Map<string, number>> {
+        if (conversationIds.length === 0) return new Map();
+
+        const db = this.getClient(tx);
+        const ctx = { conversationIds };
+
+        try {
+            const rows = await db
+                .select({
+                    conversationId: messages.conversationId,
+                    total: count()
+                })
+                .from(messages)
+                .innerJoin(conversations, eq(conversations.id, messages.conversationId))
+                .where(
+                    and(
+                        inArray(messages.conversationId, [...conversationIds]),
+                        eq(messages.senderType, 'GUEST'),
+                        isNull(messages.deletedAt),
+                        or(
+                            isNull(conversations.lastReadAtByOwner),
+                            gt(messages.createdAt, conversations.lastReadAtByOwner)
+                        )
+                    )
+                )
+                .groupBy(messages.conversationId);
+
+            const result = new Map<string, number>(
+                rows.map((row) => [row.conversationId, Number(row.total)])
+            );
+
+            logQuery(this.entityName, 'countUnreadForOwnerByConversation', ctx, {
+                count: result.size
+            });
+            return result;
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            logError(this.entityName, 'countUnreadForOwnerByConversation', ctx, err);
+            throw new DbError(
+                this.entityName,
+                'countUnreadForOwnerByConversation',
+                ctx,
+                err.message
+            );
+        }
+    }
 }
 
 /** Singleton instance of MessageModel for use across the application. */

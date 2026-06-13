@@ -239,4 +239,119 @@ describe('MessageModel', () => {
             );
         });
     });
+
+    // ---------------------------------------------------------------------------
+    // countUnreadForOwnerByConversation
+    // ---------------------------------------------------------------------------
+
+    describe('countUnreadForOwnerByConversation', () => {
+        it('should return an empty Map without querying when ids array is empty', async () => {
+            // Arrange — getDb should never be called
+            getDb.mockReturnValue({});
+
+            // Act
+            const result = await model.countUnreadForOwnerByConversation([]);
+
+            // Assert
+            expect(result).toEqual(new Map());
+            expect(getDb).not.toHaveBeenCalled();
+            expect(logQuery).not.toHaveBeenCalled();
+        });
+
+        it('should return a Map of conversationId → unread count from query rows', async () => {
+            // Arrange
+            const rows = [
+                { conversationId: 'conv-1', total: 2 },
+                { conversationId: 'conv-2', total: 0 }
+            ];
+
+            const groupByMock = vi.fn().mockResolvedValue(rows);
+            const whereMock = vi.fn().mockReturnValue({ groupBy: groupByMock });
+            const innerJoinMock = vi.fn().mockReturnValue({ where: whereMock });
+            const fromMock = vi.fn().mockReturnValue({ innerJoin: innerJoinMock });
+            const selectMock = vi.fn().mockReturnValue({ from: fromMock });
+
+            getDb.mockReturnValue({ select: selectMock });
+
+            // Act
+            const result = await model.countUnreadForOwnerByConversation(['conv-1', 'conv-2']);
+
+            // Assert
+            expect(result.size).toBe(2);
+            expect(result.get('conv-1')).toBe(2);
+            expect(result.get('conv-2')).toBe(0);
+            expect(selectMock).toHaveBeenCalledOnce();
+            expect(logQuery).toHaveBeenCalledWith(
+                'messages',
+                'countUnreadForOwnerByConversation',
+                expect.any(Object),
+                { count: 2 }
+            );
+        });
+
+        it('should return an empty Map when no unread messages exist', async () => {
+            // Arrange
+            const groupByMock = vi.fn().mockResolvedValue([]);
+            const whereMock = vi.fn().mockReturnValue({ groupBy: groupByMock });
+            const innerJoinMock = vi.fn().mockReturnValue({ where: whereMock });
+            const fromMock = vi.fn().mockReturnValue({ innerJoin: innerJoinMock });
+            const selectMock = vi.fn().mockReturnValue({ from: fromMock });
+
+            getDb.mockReturnValue({ select: selectMock });
+
+            // Act
+            const result = await model.countUnreadForOwnerByConversation(['conv-999']);
+
+            // Assert
+            expect(result).toEqual(new Map());
+            expect(logQuery).toHaveBeenCalledWith(
+                'messages',
+                'countUnreadForOwnerByConversation',
+                expect.any(Object),
+                { count: 0 }
+            );
+        });
+
+        it('should coerce string totals from the DB to numbers', async () => {
+            // Arrange — Postgres count() can return strings via some drivers
+            const rows = [{ conversationId: 'conv-1', total: '7' }];
+
+            const groupByMock = vi.fn().mockResolvedValue(rows);
+            const whereMock = vi.fn().mockReturnValue({ groupBy: groupByMock });
+            const innerJoinMock = vi.fn().mockReturnValue({ where: whereMock });
+            const fromMock = vi.fn().mockReturnValue({ innerJoin: innerJoinMock });
+            const selectMock = vi.fn().mockReturnValue({ from: fromMock });
+
+            getDb.mockReturnValue({ select: selectMock });
+
+            // Act
+            const result = await model.countUnreadForOwnerByConversation(['conv-1']);
+
+            // Assert
+            expect(result.get('conv-1')).toBe(7);
+            expect(typeof result.get('conv-1')).toBe('number');
+        });
+
+        it('should throw a DbError and log when the query fails', async () => {
+            // Arrange
+            const groupByMock = vi.fn().mockRejectedValue(new Error('connection refused'));
+            const whereMock = vi.fn().mockReturnValue({ groupBy: groupByMock });
+            const innerJoinMock = vi.fn().mockReturnValue({ where: whereMock });
+            const fromMock = vi.fn().mockReturnValue({ innerJoin: innerJoinMock });
+            const selectMock = vi.fn().mockReturnValue({ from: fromMock });
+
+            getDb.mockReturnValue({ select: selectMock });
+
+            // Act & Assert
+            await expect(model.countUnreadForOwnerByConversation(['conv-1'])).rejects.toThrow(
+                'connection refused'
+            );
+            expect(logError).toHaveBeenCalledWith(
+                'messages',
+                'countUnreadForOwnerByConversation',
+                expect.any(Object),
+                expect.any(Error)
+            );
+        });
+    });
 });
