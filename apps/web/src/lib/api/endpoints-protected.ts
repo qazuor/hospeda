@@ -2131,3 +2131,131 @@ export const userBookmarkCollectionsApi = {
         });
     }
 };
+
+// --- Owner Promotions (Protected — SPEC-205) ---
+
+/** Lifecycle state filter for owner promotion list queries */
+type OwnerPromotionLifecycleState = 'ACTIVE' | 'DRAFT' | 'ARCHIVED';
+
+/**
+ * Protected owner-promotions API endpoints.
+ * All operations are scoped to the authenticated owner (server enforces ownerId === actor.id).
+ */
+export const ownerPromotionApi = {
+    /**
+     * List the authenticated owner's promotions with optional filters.
+     *
+     * @param params - Optional lifecycle state filter and pagination
+     * @returns Paginated list of the owner's promotions
+     *
+     * @example
+     * ```ts
+     * const result = await ownerPromotionApi.list({ lifecycleState: 'ACTIVE', pageSize: 20 });
+     * if (result.ok) console.log(result.data.items);
+     * ```
+     */
+    list(params?: {
+        readonly lifecycleState?: OwnerPromotionLifecycleState;
+        readonly page?: number;
+        readonly pageSize?: number;
+        readonly sortBy?: string;
+        readonly sortOrder?: 'asc' | 'desc';
+    }): Promise<ApiResult<PaginatedResponse<Record<string, unknown>>>> {
+        return apiClient.getList({
+            path: `${PROTECTED}/owner-promotions`,
+            params
+        });
+    },
+
+    /**
+     * Get a single owner promotion by ID.
+     * Returns non-ok if not found (404) or not owned by the actor (403).
+     *
+     * @param params - Promotion ID
+     * @returns The promotion record or an error result
+     *
+     * @example
+     * ```ts
+     * const result = await ownerPromotionApi.getById({ id: 'promo-uuid' });
+     * if (result.ok) console.log(result.data.title);
+     * ```
+     */
+    getById({
+        id
+    }: {
+        readonly id: string;
+    }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.getProtected({ path: `${PROTECTED}/owner-promotions/${id}` });
+    },
+
+    /**
+     * Create a new owner promotion.
+     *
+     * @param params - Promotion creation payload
+     * @returns The newly created promotion record
+     *
+     * @example
+     * ```ts
+     * const result = await ownerPromotionApi.create({
+     *   body: { title: 'Summer deal', discountType: 'percentage', discountValue: 10, validFrom: '2026-07-01' }
+     * });
+     * if (result.ok) console.log(result.data.id);
+     * ```
+     */
+    create({
+        body
+    }: {
+        readonly body: import('./types').OwnerPromotionCreateInput;
+    }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/owner-promotions`,
+            body
+        });
+    },
+
+    /**
+     * Update an existing owner promotion (full replacement via PUT).
+     * Only updates the fields provided in `body`; the server ignores absent fields.
+     *
+     * @param params - Promotion ID and partial update payload
+     * @returns The updated promotion record
+     *
+     * @example
+     * ```ts
+     * const result = await ownerPromotionApi.update({ id: 'promo-uuid', body: { title: 'New title' } });
+     * if (result.ok) console.log(result.data.updatedAt);
+     * ```
+     */
+    update({
+        id,
+        body
+    }: {
+        readonly id: string;
+        readonly body: import('./types').OwnerPromotionUpdateInput;
+    }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.put({
+            path: `${PROTECTED}/owner-promotions/${id}`,
+            body
+        });
+    },
+
+    /**
+     * Soft-delete an owner promotion.
+     *
+     * @param params - Promotion ID to delete
+     * @returns Whether the deletion succeeded
+     *
+     * @example
+     * ```ts
+     * const result = await ownerPromotionApi.remove({ id: 'promo-uuid' });
+     * if (result.ok) console.log('Promotion deleted');
+     * ```
+     */
+    remove({
+        id
+    }: {
+        readonly id: string;
+    }): Promise<ApiResult<{ readonly success: boolean }>> {
+        return apiClient.delete({ path: `${PROTECTED}/owner-promotions/${id}` });
+    }
+};

@@ -43,11 +43,15 @@ so the build passes. The build never dereferences these URLs.
 
 The placeholder must never reach a real/deploy build. Both validation gates
 (`vite.config.ts` at build time, `apps/admin/src/env.ts` at runtime) reject any
-`*.invalid` URL **unless** `ALLOW_PLACEHOLDER_ENV_URLS=true`, which is set
-**only** in the CI Build step (`ci.yml`). Deploy builds (Coolify) never set it,
-so a production build misconfigured with a placeholder fails loudly. The test
-job does not set it either, so the rejection path stays covered
-(`apps/admin/test/env.test.ts`).
+`*.invalid` URL **unless** `ALLOW_PLACEHOLDER_ENV_URLS=true`. That flag is set at
+**workflow level** in `ci.yml`, so every job that reaches `admin#build` through
+its Turbo graph (Build, plus typecheck / test-unit via `dependsOn: build`) sees
+it — it must be, because the flag is in Turbo `globalEnv` and thus part of the
+`admin#build` cache key; a job without it would re-run `vite build` and, in a
+secret-less Dependabot run, the guard would reject the placeholder. Deploy builds
+(Coolify) never set the flag, so a production build misconfigured with a
+placeholder still fails loudly. The guard's unit tests do not rely on the flag's
+absence — they toggle `process.env` explicitly (`apps/admin/test/env.test.ts`).
 
 ## The three CI job classes a Dependabot PR must satisfy
 
@@ -91,6 +95,18 @@ jobs are OK; failed/cancelled are not).
   migration: do it on a branch owned by the migration spec, run the full suite
   (and, for the router, re-validate `/healthz` per `apps/admin/CLAUDE.md`), and
   only then let Dependabot resume bumping it.
+
+> **CRITICAL — config is read from the DEFAULT branch (`main`):** Dependabot
+> reads `.github/dependabot.yml` (groups, `ignore`, schedule) from the repo's
+> **default branch (`main`)**, NOT from `target-branch`. `target-branch: staging`
+> only controls where PRs are opened. So an `ignore` (or grouping change) merged
+> to `staging` has **no effect** until it also reaches `main` — Dependabot keeps
+> regenerating groups with the gated packages. This bit SPEC-219: the `ignore`
+> above landed on `staging`, but `@dependabot recreate` still produced a group
+> carrying `zod` 4.4 + `@tanstack/react-router` 1.170 (#1570 → #1588), failing on
+> the real zod breaking change. The fix only activates with a `staging → main`
+> promotion. (Contrast `ci.yml`, which runs from the PR head branch, so rebasing
+> a Dependabot PR onto `staging` DOES pick up workflow fixes.)
 
 ### Security updates caveat
 

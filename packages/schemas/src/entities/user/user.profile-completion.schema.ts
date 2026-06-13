@@ -8,6 +8,7 @@
  */
 
 import { z } from 'zod';
+import { StrongPasswordSchema } from '../../common/password.schema.js';
 import { InternationalPhoneRegex } from '../../utils/utils.js';
 
 // ---------------------------------------------------------------------------
@@ -225,12 +226,16 @@ export type CompleteProfileResponse = z.infer<typeof CompleteProfileResponseSche
  */
 export const SetPasswordBodySchema = z
     .object({
-        /** The password the user wants to set. */
-        password: z
-            .string({ message: 'zodError.user.password.required' })
-            .min(PROFILE_COMPLETION_MIN_PASSWORD_LENGTH, {
-                message: 'zodError.user.password.min'
-            })
+        /**
+         * The password the user wants to set.
+         *
+         * Uses the monorepo-wide `StrongPasswordSchema` (min 8, max 128,
+         * upper/lower/digit/special) — the same rule enforced on password
+         * change/reset and mirrored client-side via `StrongPasswordRegex`.
+         * Better Auth's `setPassword` only checks min length, so validating the
+         * full strength policy here closes the gap for direct API callers.
+         */
+        password: StrongPasswordSchema
     })
     .strict();
 

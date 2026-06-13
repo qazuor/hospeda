@@ -1,0 +1,142 @@
+{
+    "version": "1.0",
+    "title": "Staging→Main Promotion Hardening — clear CodeQL security debt blocking the promotion",
+    "specRef": "SPEC-220-staging-main-promotion-hardening",
+    "created": "2026-06-12T00:00:00.000Z",
+    "summary": {
+        "total": 7,
+        "pending": 7,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 3.0
+    },
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Enumerate the complete CodeQL finding set for the staging→main diff",
+            "description": "Open (or reuse) a staging→main promotion PR and read the FULL CodeQL annotation set from the check run, plus the repo's open code-scanning alerts, in one pass — not one-at-a-time. Classify each finding real vs false positive. Record the authoritative inventory in progress.md. Known so far: 2 ReDoS (already fixed on staging), 1 DOM-XSS in PreferenceToggles (likely FP).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-003", "T-004"],
+            "subtasks": [],
+            "tags": ["codeql", "security", "investigation"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-12T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Resolve PreferenceToggles DOM-XSS (same-origin guard or justified dismissal)",
+            "description": "apps/web/src/components/account/PreferenceToggles.client.tsx:282 — window.location.assign of a path rebuilt from location segments + validated locale. Add a defensive same-origin guard on the constructed target (assert it starts with '/' and carries no scheme) — defence-in-depth that also clears CodeQL — or dismiss with a written justification if confirmed inert.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-005"],
+            "subtasks": [],
+            "tags": ["codeql", "security", "web", "xss"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-12T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Fix any remaining real CodeQL findings from the inventory",
+            "description": "For each finding classified real in T-001 (beyond the XSS and the already-fixed ReDoS), implement the fix on staging with a regression test where applicable, so it clears when promoted.",
+            "status": "pending",
+            "complexity": 4,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-005"],
+            "subtasks": [],
+            "tags": ["codeql", "security", "fix"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-12T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Dismiss/justify confirmed false positives",
+            "description": "For findings classified false-positive in T-001, dismiss them via GitHub code-scanning with a written justification (or add the supported inline suppression). Record each rationale in progress.md so future promotions don't re-litigate them.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-005"],
+            "subtasks": [],
+            "tags": ["codeql", "security", "false-positive"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-12T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Re-validate a staging→main promotion is fully green (CI Pass + CodeQL)",
+            "description": "Open a staging→main promotion PR and confirm CodeQL = success (0 new high/critical) and CI Pass = success. Confirms the already-fixed ReDoS alerts (#1/#2) clear once on main, and the XSS + any other findings are resolved.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-002", "T-003", "T-004"],
+            "blocks": ["T-007"],
+            "subtasks": [],
+            "tags": ["codeql", "validation", "promotion"],
+            "phase": "verification",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-12T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Decide & wire a measure to prevent CodeQL debt re-accumulating on staging",
+            "description": "CodeQL runs only against main today, so staging accrues invisible findings. Evaluate: (A) run CodeQL on staging PRs/push, (B) scheduled CodeQL on staging, (C) promote more often to keep the diff small. Decide, document the rationale, and implement if adopted.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["codeql", "ci", "prevention", "decision"],
+            "phase": "prevention",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-12T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Hand off the green promotion to the owner (unblocks SPEC-219 T-005)",
+            "description": "On a green promotion PR, hand off to the owner to merge staging→main. Note this also lands the SPEC-219 Dependabot ignore on main, unblocking SPEC-219 T-005 (then @dependabot recreate #1588 to regenerate the group without zod / @tanstack/react-router).",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-005"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["promotion", "handoff", "cross-reference"],
+            "phase": "cleanup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-12T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ]
+}

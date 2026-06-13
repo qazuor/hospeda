@@ -234,3 +234,73 @@ export interface DestinationData {
     readonly name: string;
     readonly path: string;
 }
+
+// ---------------------------------------------------------------------------
+// Owner Promotions Types (SPEC-205)
+// ---------------------------------------------------------------------------
+
+/** Discount type for an owner promotion */
+export type OwnerPromotionDiscountType = 'percentage' | 'fixed' | 'free_night';
+
+/** Lifecycle state for an owner promotion */
+export type OwnerPromotionLifecycleState = 'ACTIVE' | 'DRAFT' | 'ARCHIVED' | string;
+
+/**
+ * Owner promotion item returned by the protected owner-promotions endpoint.
+ * Dates are kept as ISO strings (consistent with how transforms.ts handles
+ * date coercion — the raw API returns ISO strings, and web components work
+ * with string representations).
+ */
+export interface OwnerPromotionData {
+    readonly id: string;
+    readonly slug: string;
+    readonly ownerId: string;
+    readonly accommodationId: string | null;
+    readonly title: string;
+    readonly description: string | null;
+    readonly discountType: OwnerPromotionDiscountType;
+    readonly discountValue: number;
+    readonly minNights: number | null;
+    readonly validFrom: string;
+    readonly validUntil: string | null;
+    readonly maxRedemptions: number | null;
+    readonly currentRedemptions: number;
+    readonly lifecycleState: OwnerPromotionLifecycleState;
+    readonly createdAt: string;
+    readonly updatedAt: string;
+}
+
+/**
+ * Input for creating an owner promotion.
+ * Omits server-managed fields (id, currentRedemptions, audit, lifecycleState).
+ * slug is optional — the server generates one if not provided.
+ */
+export interface OwnerPromotionCreateInput {
+    readonly slug?: string;
+    readonly accommodationId?: string | null;
+    readonly title: string;
+    readonly description?: string | null;
+    readonly discountType: OwnerPromotionDiscountType;
+    readonly discountValue: number;
+    readonly minNights?: number | null;
+    readonly validFrom: string;
+    readonly validUntil?: string | null;
+    readonly maxRedemptions?: number | null;
+}
+
+/**
+ * Input for updating an owner promotion.
+ * All fields are optional (partial update via PUT replaces provided fields).
+ */
+export interface OwnerPromotionUpdateInput {
+    readonly slug?: string;
+    readonly accommodationId?: string | null;
+    readonly title?: string;
+    readonly description?: string | null;
+    readonly discountType?: OwnerPromotionDiscountType;
+    readonly discountValue?: number;
+    readonly minNights?: number | null;
+    readonly validFrom?: string;
+    readonly validUntil?: string | null;
+    readonly maxRedemptions?: number | null;
+}

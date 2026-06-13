@@ -16,7 +16,7 @@ import { DayPicker } from 'react-day-picker';
 import { enUS as enLocale, es as esLocale, ptBR as ptLocale } from 'react-day-picker/locale';
 import 'react-day-picker/style.css';
 import type { SupportedLocale } from '@/lib/i18n';
-import type { ProfileCompletionFieldErrors } from './ProfileCompletion.helpers';
+import { type ProfileCompletionFieldErrors, ddmmyyyyToDate } from './ProfileCompletion.helpers';
 import styles from './ProfileCompletion.module.css';
 import { ProfileCompletionAvatarPicker } from './ProfileCompletionAvatarPicker';
 
@@ -252,6 +252,7 @@ export function ProfileCompletionBasicFields({
                 onChange={onBirthDateChange}
                 disabled={submitting}
                 locale={locale}
+                error={errors.birthDate}
                 t={t}
             />
         </>
@@ -269,12 +270,14 @@ function BirthDateField({
     onChange,
     disabled,
     locale,
+    error,
     t
 }: {
     readonly value: string;
     readonly onChange: (value: string) => void;
     readonly disabled: boolean;
     readonly locale: SupportedLocale;
+    readonly error?: string;
     readonly t: (key: string, fallback: string) => string;
 }) {
     const [pickerOpen, setPickerOpen] = useState(false);
@@ -317,14 +320,17 @@ function BirthDateField({
                     id="pc-birthDate"
                     type="text"
                     inputMode="numeric"
-                    className={styles.input}
+                    className={error ? `${styles.input} ${styles.inputError}` : styles.input}
                     value={value}
                     onChange={(e) => onChange(maskBirthDate(e.target.value))}
                     placeholder="dd/mm/yyyy"
                     maxLength={10}
                     autoComplete="bday"
                     disabled={disabled}
-                    aria-describedby="pc-birthDate-hint"
+                    aria-invalid={error ? 'true' : undefined}
+                    aria-describedby={
+                        error ? 'pc-birthDate-error pc-birthDate-hint' : 'pc-birthDate-hint'
+                    }
                 />
                 <button
                     type="button"
@@ -370,6 +376,15 @@ function BirthDateField({
                     </div>
                 )}
             </div>
+            {error && (
+                <p
+                    id="pc-birthDate-error"
+                    className={styles.errorMsg}
+                    role="alert"
+                >
+                    {error}
+                </p>
+            )}
             <p
                 id="pc-birthDate-hint"
                 className={styles.hint}
@@ -392,21 +407,6 @@ function maskBirthDate(value: string): string {
     if (digits.length <= 2) return digits;
     if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
     return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
-}
-
-/** Parses a dd/mm/yyyy string into a local-time Date, or null when invalid. */
-function ddmmyyyyToDate(value: string): Date | null {
-    const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-    if (!match) return null;
-    const day = Number(match[1]);
-    const month = Number(match[2]);
-    const year = Number(match[3]);
-    const date = new Date(year, month - 1, day);
-    // Reject roll-overs like 31/02 → 03/03.
-    if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
-        return null;
-    }
-    return date;
 }
 
 /** Formats a Date into dd/mm/yyyy (local time, zero-padded). */

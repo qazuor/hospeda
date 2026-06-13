@@ -25,6 +25,7 @@ import {
 	NewsletterIcon,
 	BuildingIcon,
 	DashboardIcon,
+	MegaphoneIcon,
 } from '@repo/icons';
 import type { ComponentType } from 'react';
 import type { IconProps } from '@repo/icons';
@@ -109,6 +110,12 @@ const navGroups: ReadonlyArray<NavGroup> = [
 							label: t('conversations.inbox.ownerInboxTitle', 'Mensajes de huéspedes'),
 							path: 'mi-cuenta/consultas-propietario',
 							Icon: ChatIcon
+						},
+						{
+							section: 'promociones',
+							label: t('account.nav.promotions', 'Mis promociones'),
+							path: 'mi-cuenta/promociones',
+							Icon: MegaphoneIcon
 						},
 					],
 				} as NavGroup,

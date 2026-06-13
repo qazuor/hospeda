@@ -85,3 +85,23 @@ so the var is always present, not only the secret-derived URLs.
   empty (placeholders accepted because the Build step sets `ALLOW_PLACEHOLDER_ENV_URLS=true`),
   while push/branch runs still use real secret values and deploy builds reject placeholders
   (build-time guard in `vite.config.ts`, runtime guard in `src/env.ts` — T-006).
+
+## Closeout (2026-06-12) — 7/8, T-005 deferred to promotion
+
+- **T-002/T-006 follow-up (#1587):** `ALLOW_PLACEHOLDER_ENV_URLS` had to move from the
+  Build step to **workflow-level env**. It is in Turbo `globalEnv`, so it is part of the
+  `admin#build` cache key; downstream jobs (typecheck, test-unit via `dependsOn: build`) ran
+  without it, re-ran `vite build`, and the guard rejected the placeholders in a secret-less
+  Dependabot run. Only surfaced on #1548 (T-004), not on the SPEC-219 PR (#1585, which had
+  real secrets). Also note the real build gate is `apps/admin/vite.config.ts`
+  (`AdminViteEnvSchema`, `process.exit` on load), not `src/env.ts`.
+- **esbuild advisory (#1589):** an out-of-cycle high-severity advisory for `esbuild <0.28.1`
+  (RCE) failed the `Security` gate on every PR/staging push. Tightened the existing override to
+  `>=0.28.1`. Orthogonal to SPEC-219 but blocked all merges; fixed separately.
+- **T-004:** ✅ confirmed end-to-end — #1548 (github-actions bump) went fully green after rebase
+  and was merged.
+- **T-005:** ⏳ deferred. The `ignore` is correct but Dependabot reads config from `main`
+  (default branch), so it only activates on a `staging → main` promotion. Promotion #1594 was
+  **paused** — its large diff surfaces pre-existing CodeQL security debt (E2E babel toolchain
+  already fixed on staging; 2 ReDoS fixed in #1596; 1 false-positive DOM-XSS; possibly more).
+  That cleanup is tracked in a dedicated follow-up spec. T-005 closes when the promotion lands.

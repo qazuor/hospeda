@@ -212,10 +212,7 @@ export function toAccommodationCardProps({
     return {
         id: String(item.id || ''),
         slug: String(item.slug || ''),
-        name: resolveI18nText(
-            (item.nameI18n as I18nTextLike | string) ?? item.name,
-            locale
-        ),
+        name: resolveI18nText((item.nameI18n as I18nTextLike | string) ?? item.name, locale),
         summary: resolveI18nText(
             (item.summaryI18n as I18nTextLike | string) ?? item.summary ?? item.description,
             locale
@@ -277,7 +274,10 @@ export function toAccommodationCardProps({
 export function toAccommodationDetailedProps({
     item,
     locale = 'es'
-}: { readonly item: Record<string, unknown>; readonly locale?: string }): AccommodationDetailedCardData {
+}: {
+    readonly item: Record<string, unknown>;
+    readonly locale?: string;
+}): AccommodationDetailedCardData {
     const { featuredImage, galleryUrls } = processEntityImages({
         item,
         entity: 'accommodation-detailed',
@@ -298,10 +298,7 @@ export function toAccommodationDetailedProps({
     return {
         id: String(item.id || ''),
         slug: String(item.slug || ''),
-        name: resolveI18nText(
-            (item.nameI18n as I18nTextLike | string) ?? item.name,
-            locale
-        ),
+        name: resolveI18nText((item.nameI18n as I18nTextLike | string) ?? item.name, locale),
         type: String(item.type || item.accommodationType || ''),
         images,
         location: {
@@ -437,10 +434,7 @@ export function toEventCardProps({
     return {
         id,
         slug: String(item.slug || ''),
-        name: resolveI18nText(
-            (item.nameI18n as I18nTextLike | string) ?? item.name,
-            locale
-        ),
+        name: resolveI18nText((item.nameI18n as I18nTextLike | string) ?? item.name, locale),
         summary: resolveI18nText(
             (item.summaryI18n as I18nTextLike | string) ?? item.summary ?? item.description,
             locale
@@ -523,10 +517,7 @@ export function toArticleCardProps({
     return {
         id,
         slug: String(item.slug || ''),
-        title: resolveI18nText(
-            (item.titleI18n as I18nTextLike | string) ?? item.title,
-            locale
-        ),
+        title: resolveI18nText((item.titleI18n as I18nTextLike | string) ?? item.title, locale),
         summary: resolveI18nText(
             (item.summaryI18n as I18nTextLike | string) ?? item.summary ?? item.content,
             locale
@@ -624,10 +615,7 @@ export function toAccommodationDetailPageProps({
     return {
         id: String(item.id || ''),
         slug: String(item.slug || ''),
-        name: resolveI18nText(
-            (item.nameI18n as I18nTextLike | string) ?? item.name,
-            locale
-        ),
+        name: resolveI18nText((item.nameI18n as I18nTextLike | string) ?? item.name, locale),
         summary: resolveI18nText(
             (item.summaryI18n as I18nTextLike | string) ?? item.summary,
             locale
@@ -991,10 +979,10 @@ export function transformHostDashboard({
             : null,
         unreadCount: Number(item.unreadConversations ?? 0),
         quickActions: [
-            { label: 'Mis propiedades', href: '/mis-propiedades', icon: 'building' },
-            { label: 'Promociones', href: '/promociones', icon: 'megaphone' },
-            { label: 'Mensajes', href: '/mensajes', icon: 'chat-dots' },
-            { label: 'Suscripción', href: '/suscripcion', icon: 'credit-card' }
+            { label: 'Mis propiedades', href: 'mi-cuenta/propiedades', icon: 'building' },
+            { label: 'Promociones', href: 'mi-cuenta/promociones', icon: 'megaphone' },
+            { label: 'Mensajes', href: 'mi-cuenta/consultas', icon: 'chat-dots' },
+            { label: 'Suscripción', href: 'mi-cuenta/suscripcion', icon: 'credit-card' }
         ]
     };
 }
@@ -1626,4 +1614,74 @@ export function transformAccommodationMedia({
         .filter((img): img is MediaImage => img !== null);
 
     return { featuredImage, gallery };
+}
+
+// --- Owner Promotions Transforms (SPEC-205) ---
+
+/**
+ * Transforms a raw API owner-promotion record into a typed `OwnerPromotionData` object.
+ *
+ * Dates are kept as ISO strings — consistent with how other transforms handle
+ * date fields (e.g. event dates in `toEventDetailProps`). Nullable fields are
+ * coerced to `null` when absent rather than falling back to a default value,
+ * which preserves the distinction between "not set" and "set to zero/empty".
+ *
+ * @param item - Raw API response item (Record<string, unknown>)
+ * @returns Typed OwnerPromotionData for use in web components
+ *
+ * @example
+ * ```ts
+ * const apiResult = await ownerPromotionApi.getById({ id: 'promo-uuid' });
+ * if (apiResult.ok) {
+ *   const data = transformOwnerPromotion({ item: apiResult.data });
+ * }
+ * ```
+ */
+export function transformOwnerPromotion({
+    item
+}: {
+    readonly item: Record<string, unknown>;
+}): import('./types').OwnerPromotionData {
+    return {
+        id: String(item.id ?? ''),
+        slug: String(item.slug ?? ''),
+        ownerId: String(item.ownerId ?? ''),
+        accommodationId: item.accommodationId != null ? String(item.accommodationId) : null,
+        title: String(item.title ?? ''),
+        description: item.description != null ? String(item.description) : null,
+        discountType: String(item.discountType ?? 'percentage') as import(
+            './types'
+        ).OwnerPromotionDiscountType,
+        discountValue: Number(item.discountValue ?? 0),
+        minNights: item.minNights != null ? Number(item.minNights) : null,
+        validFrom: String(item.validFrom ?? ''),
+        validUntil: item.validUntil != null ? String(item.validUntil) : null,
+        maxRedemptions: item.maxRedemptions != null ? Number(item.maxRedemptions) : null,
+        currentRedemptions: Number(item.currentRedemptions ?? 0),
+        lifecycleState: String(item.lifecycleState ?? 'DRAFT'),
+        createdAt: String(item.createdAt ?? ''),
+        updatedAt: String(item.updatedAt ?? '')
+    };
+}
+
+/**
+ * Transforms a paginated raw API response into a typed list of `OwnerPromotionData`.
+ *
+ * @param items - Array of raw API response items
+ * @returns Array of typed OwnerPromotionData objects
+ *
+ * @example
+ * ```ts
+ * const apiResult = await ownerPromotionApi.list({ lifecycleState: 'ACTIVE' });
+ * if (apiResult.ok) {
+ *   const promotions = transformOwnerPromotionList({ items: apiResult.data.items });
+ * }
+ * ```
+ */
+export function transformOwnerPromotionList({
+    items
+}: {
+    readonly items: ReadonlyArray<Record<string, unknown>>;
+}): ReadonlyArray<import('./types').OwnerPromotionData> {
+    return items.map((item) => transformOwnerPromotion({ item }));
 }
