@@ -63,24 +63,31 @@ Web-only fixes that needed no backend work, landed ahead of this epic:
    and rendered when the host holds that entitlement; otherwise it is hidden,
    not shown as an error).
 5. Added all missing `host.dashboard.*` i18n keys in es/en/pt.
-6. **Deferred the Views and Favorites widgets** — they are no longer mounted in
-   the dashboard because their backend support is incomplete (see remaining
-   work). Their components, API methods, transforms, and types remain in the
-   tree as the contract to fulfil, documented with SPEC-207 references.
+6. **Mounted the Views widget as a per-property ranked list** — using the
+   existing cumulative endpoint (`/views/accommodations/me?window=7d|30d`,
+   `{entityId, unique, total}[]`) crossed with the host's accommodations list
+   (`/accommodations?pageSize=50`) to resolve id→name. The widget shows the
+   top accommodations by total views with a 7d/30d toggle (the toggle re-fetches
+   ONLY views and re-crosses against the already-loaded names map — no full
+   section re-fetch).
+7. **Deferred the Favorites widget** — still not mounted: the backend returns
+   favorites per accommodation, not "collections"; the widget needs a redesign.
+   Its component, API method, transform, and type remain in the tree as the
+   contract to fulfil, documented with SPEC-207 references.
 
 ## Remaining work (this spec)
 
-### A. Accommodation views — daily series endpoint + widget
+### A. Accommodation views — OPTIONAL daily-series chart (the per-property list shipped)
 
-- Build a **protected** per-host daily-series views endpoint returning
-  `{ window: '7d'|'30d', items: { date, count }[] }` scoped to the host's own
-  accommodations (gap-filled, no sparse days), gated by `VIEW_BASIC_STATS`.
-  Reference the existing admin daily-series endpoint
-  (`/api/v1/admin/views/daily-series`) and the `entityView` service for the
-  query shape, but scope it to `actor.id`'s accommodations and parameterise the
-  window.
-- Re-mount `ViewsWidget` in `AnalyticsSection`, restore the `getViews` call and
-  the 7d/30d window toggle, and verify the transform against the real shape.
+The per-property ranked Views widget already shipped (see cabling pass #6),
+using the cumulative endpoint. What remains is OPTIONAL polish, not a blocker:
+
+- If a time-trend chart is wanted, build a **protected** per-host daily-series
+  views endpoint returning `{ window: '7d'|'30d', items: { date, count }[] }`
+  scoped to the host's own accommodations (gap-filled), gated by
+  `VIEW_BASIC_STATS`. Reference the admin daily-series endpoint
+  (`/api/v1/admin/views/daily-series`) and the `entityView` service, scoped to
+  `actor.id`'s accommodations. Then add a chart view alongside the current list.
 
 ### B. Favorites widget redesign (per-accommodation)
 
