@@ -1,3 +1,4 @@
+import { randomBytes } from 'node:crypto';
 import { execSQL } from './db-helpers.ts';
 
 /**
@@ -53,13 +54,22 @@ function resolveBaseUrls(config?: ApiHelperConfig): {
     };
 }
 
+/**
+ * Generate a short random hex token. Uses node:crypto (not Math.random) so the
+ * test passwords/emails it feeds into the real auth stack are not flagged by
+ * CodeQL's `js/insecure-randomness` as cryptographically weak.
+ */
+function randomToken(byteLength = 8): string {
+    return randomBytes(byteLength).toString('hex');
+}
+
 function randomEmail(): string {
-    const suffix = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    const suffix = `${Date.now()}-${randomToken(6)}`;
     return `e2e-${suffix}@hospeda-test.local`;
 }
 
 function randomPassword(): string {
-    return `Test-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}-Aa1!`;
+    return `Test-${Date.now().toString(36)}-${randomToken(4)}-Aa1!`;
 }
 
 interface SignupResponse {
@@ -389,9 +399,7 @@ export async function createAccommodation(options: {
     readonly lifecycleState?: 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
 }): Promise<CreatedAccommodation> {
     const destinationId = options.destinationId ?? (await getAnyCityDestinationId());
-    const slug = `${options.slugPrefix ?? 'e2e-acc'}-${Date.now().toString(36)}-${Math.random()
-        .toString(36)
-        .slice(2, 6)}`;
+    const slug = `${options.slugPrefix ?? 'e2e-acc'}-${Date.now().toString(36)}-${randomToken(2)}`;
     const lifecycleState = options.lifecycleState ?? 'DRAFT';
     const rows = await execSQL<{ id: string }>(
         `INSERT INTO accommodations (
