@@ -247,6 +247,16 @@
                 "geolocationUnavailable": "La geolocalización no está disponible en este navegador.",
                 "geolocationDenied": "Permiso denegado. Podés escribir la dirección manualmente.",
                 "geolocationError": "No se pudo obtener la ubicación. Probá escribir la dirección."
+            },
+            "translation": {
+                "sectionTitle": "Traducciones",
+                "sectionDescription": "Estado de traducción de los campos principales de tu propiedad. Las traducciones faltantes se generan automáticamente con IA a partir del idioma que estás usando.",
+                "fieldRichDescription": "Descripción enriquecida",
+                "generateButton": "Generar traducciones faltantes",
+                "generating": "Generando traducciones...",
+                "successMessage": "Traducciones generadas. Recargando...",
+                "errorGeneric": "No se pudieron generar las traducciones. Intentá de nuevo.",
+                "errorNetwork": "Error de conexión al intentar generar las traducciones."
             }
         },
         "empty": {

@@ -1621,6 +1621,50 @@ export function transformAccommodationMedia({
     return { featuredImage, gallery };
 }
 
+// --- Accommodation Translation Transforms (SPEC-212) ---
+
+import type { AccommodationTranslationData, I18nFieldValues } from './types';
+
+/**
+ * Extracts an I18nFieldValues object from a raw i18n jsonb field.
+ * Treats empty strings as null (no content for that locale).
+ */
+function extractI18nField(raw: unknown): I18nFieldValues {
+    const obj = raw as Record<string, unknown> | null | undefined;
+    const toVal = (v: unknown): string | null => {
+        if (v == null) return null;
+        const s = String(v);
+        return s.length > 0 ? s : null;
+    };
+    return {
+        es: toVal(obj?.es),
+        en: toVal(obj?.en),
+        pt: toVal(obj?.pt)
+    };
+}
+
+/**
+ * Extracts translation status data from a raw accommodation API response.
+ *
+ * Returns an {@link AccommodationTranslationData} object that the host-facing
+ * TranslationPanel uses to determine which locales already have content and
+ * which ones are missing — WITHOUT touching or polluting
+ * {@link AccommodationEditData}, which exclusively drives the PATCH diff.
+ *
+ * @param item - Raw accommodation object from the protected GET endpoint
+ * @returns Per-field i18n values for the four translatable fields
+ */
+export function transformAccommodationTranslations({
+    item
+}: { readonly item: Record<string, unknown> }): AccommodationTranslationData {
+    return {
+        name: extractI18nField(item.nameI18n),
+        summary: extractI18nField(item.summaryI18n),
+        description: extractI18nField(item.descriptionI18n),
+        richDescription: extractI18nField(item.richDescriptionI18n)
+    };
+}
+
 // --- Owner Promotions Transforms (SPEC-205) ---
 
 /**
