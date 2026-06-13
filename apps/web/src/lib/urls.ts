@@ -67,52 +67,40 @@ export function buildUrlWithParams({
 }
 
 /**
- * Rebuild the current location's path with its leading locale segment swapped,
- * returning a guaranteed same-origin navigation target.
+ * Rebuild the current path with its leading locale segment swapped, for use with
+ * the `window.location.pathname` setter.
  *
- * The result is meant to be handed to `window.location.assign`. Because the
- * target is reconstructed from `window.location` (`pathname`/`search`/`hash`),
- * which is attacker-influenceable DOM text, the rebuilt value is resolved
- * against the current origin and only returned when it stays same-origin. This
- * is defence-in-depth: it prevents a crafted path/hash from ever smuggling a
- * non-same-origin (e.g. `javascript:` or protocol-relative) URL into the
- * navigation sink, and it also clears CodeQL's `js/xss-through-dom` finding.
+ * The returned value is assigned to `location.pathname` (NOT `location.assign`):
+ * the `pathname` setter only ever replaces the path component, so it cannot carry
+ * a scheme or authority and the navigation is inherently same-origin. A crafted
+ * path therefore can never become a `javascript:` or cross-origin navigation —
+ * the safe API is the guard, which is why this also clears CodeQL's
+ * `js/xss-through-dom` finding (no `javascript:`-capable sink is involved). The
+ * current query string and fragment are preserved automatically by the browser.
  *
  * @param params - Switch parameters.
- * @param params.location - The current location (only `pathname`, `search`,
- *   `hash`, and `origin` are read).
+ * @param params.pathname - The current `location.pathname`.
  * @param params.locale - The locale to place in the first path segment.
- * @returns A same-origin path string (`/{locale}/...?...#...`), or `null` when
- *   the current first segment is not a supported locale (nothing to switch) or
- *   the rebuilt target would not resolve same-origin.
+ * @returns The new path string (`/{locale}/...`), or `null` when the current
+ *   first segment is not a supported locale (nothing to switch).
  *
  * @example
  * ```ts
- * buildLocaleSwitchTarget({ location: window.location, locale: 'en' });
- * // From '/es/mi-cuenta/?tab=1#top' -> '/en/mi-cuenta/?tab=1#top'
+ * buildLocaleSwitchPathname({ pathname: '/es/mi-cuenta/', locale: 'en' });
+ * // Returns: '/en/mi-cuenta/'
  * ```
  */
-export function buildLocaleSwitchTarget({
-    location,
+export function buildLocaleSwitchPathname({
+    pathname,
     locale
 }: {
-    readonly location: Pick<Location, 'pathname' | 'search' | 'hash' | 'origin'>;
+    readonly pathname: string;
     readonly locale: SupportedLocale;
 }): string | null {
-    const segments = location.pathname.split('/');
+    const segments = pathname.split('/');
     if (!(SUPPORTED_LOCALES as readonly string[]).includes(segments[1] ?? '')) {
         return null;
     }
     segments[1] = locale;
-    const relative = `${segments.join('/')}${location.search}${location.hash}`;
-    let resolved: URL;
-    try {
-        resolved = new URL(relative, location.origin);
-    } catch {
-        return null;
-    }
-    if (resolved.origin !== location.origin) {
-        return null;
-    }
-    return `${resolved.pathname}${resolved.search}${resolved.hash}`;
+    return segments.join('/');
 }

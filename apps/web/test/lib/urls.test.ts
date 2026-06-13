@@ -4,14 +4,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { buildLocaleSwitchTarget, buildUrl, buildUrlWithParams } from '../../src/lib/urls';
-
-const ORIGIN = 'https://staging.hospeda.com.ar';
-
-/** Build a minimal location-like object for buildLocaleSwitchTarget. */
-function loc(pathname: string, search = '', hash = '', origin = ORIGIN) {
-    return { pathname, search, hash, origin };
-}
+import { buildLocaleSwitchPathname, buildUrl, buildUrlWithParams } from '../../src/lib/urls';
 
 describe('buildUrl', () => {
     it('should prefix path with locale and ensure trailing slash', () => {
@@ -76,50 +69,42 @@ describe('buildUrlWithParams', () => {
     });
 });
 
-describe('buildLocaleSwitchTarget', () => {
+describe('buildLocaleSwitchPathname', () => {
     it('swaps the leading locale segment, preserving the rest of the path', () => {
-        expect(buildLocaleSwitchTarget({ location: loc('/es/mi-cuenta/'), locale: 'en' })).toBe(
+        expect(buildLocaleSwitchPathname({ pathname: '/es/mi-cuenta/', locale: 'en' })).toBe(
             '/en/mi-cuenta/'
         );
     });
 
-    it('preserves search and hash', () => {
-        expect(
-            buildLocaleSwitchTarget({
-                location: loc('/es/busqueda/', '?q=hotel', '#resultados'),
-                locale: 'pt'
-            })
-        ).toBe('/pt/busqueda/?q=hotel#resultados');
+    it('switches at the locale root', () => {
+        expect(buildLocaleSwitchPathname({ pathname: '/es/', locale: 'en' })).toBe('/en/');
     });
 
-    it('switches at the locale root', () => {
-        expect(buildLocaleSwitchTarget({ location: loc('/es/'), locale: 'en' })).toBe('/en/');
+    it('handles nested paths', () => {
+        expect(buildLocaleSwitchPathname({ pathname: '/es/mi-cuenta/editar/', locale: 'pt' })).toBe(
+            '/pt/mi-cuenta/editar/'
+        );
     });
 
     it('returns null when the first segment is not a supported locale', () => {
-        expect(buildLocaleSwitchTarget({ location: loc('/about/'), locale: 'en' })).toBeNull();
-        expect(buildLocaleSwitchTarget({ location: loc('/'), locale: 'en' })).toBeNull();
-        expect(buildLocaleSwitchTarget({ location: loc('/fr/page/'), locale: 'en' })).toBeNull();
+        expect(buildLocaleSwitchPathname({ pathname: '/about/', locale: 'en' })).toBeNull();
+        expect(buildLocaleSwitchPathname({ pathname: '/', locale: 'en' })).toBeNull();
+        expect(buildLocaleSwitchPathname({ pathname: '/fr/page/', locale: 'en' })).toBeNull();
     });
 
-    it('always returns a same-origin path (never a scheme or host)', () => {
-        // Even with hostile search/hash, the result stays a relative same-origin
-        // path so it can never be reinterpreted as a `javascript:` or external URL.
-        const target = buildLocaleSwitchTarget({
-            location: loc('/es/x/', '?next=//evil.com', '#javascript:alert(1)'),
-            locale: 'en'
-        });
-        expect(target).not.toBeNull();
+    it('always returns a path-only value (never a scheme or host)', () => {
+        // The result feeds the location.pathname setter, which cannot carry a
+        // scheme/authority; assert the value is a bare same-origin path.
+        const target = buildLocaleSwitchPathname({ pathname: '/es/x/', locale: 'en' });
+        expect(target).toBe('/en/x/');
         expect(target?.startsWith('/')).toBe(true);
         expect(target?.startsWith('//')).toBe(false);
         expect(target).not.toContain('://');
     });
 
-    it('rejects a protocol-relative-looking pathname (no locale first segment)', () => {
+    it('does not switch a protocol-relative-looking pathname (empty first segment)', () => {
         // `//evil.com/...` splits to an empty first segment, so it is never a
-        // supported locale and the switch is dropped before any navigation.
-        expect(
-            buildLocaleSwitchTarget({ location: loc('//evil.com/es/'), locale: 'en' })
-        ).toBeNull();
+        // supported locale and the switch is dropped.
+        expect(buildLocaleSwitchPathname({ pathname: '//evil.com/es/', locale: 'en' })).toBeNull();
     });
 });
