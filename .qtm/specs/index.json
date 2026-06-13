@@ -1032,6 +1032,17 @@
                 "build"
             ],
             "note": "Infra-only: CI build resilient to absent secrets in dependabot context + dependabot grouping/merge strategy + policy doc. Defers Zod 4.4 (.merge->.safeExtend) and TanStack Router 1.170 migrations to SPEC-132/SPEC-045 or follow-ups. Triggered by failing PRs #1548 (github-actions group, build secrets) and #1570 (66-update npm group, zod+router breaking). Planning for later, no worktree."
+        },
+        {
+            "specId": "SPEC-222",
+            "title": "Accommodation partial-update data loss — partial JSONB objects + shallow-merge nested columns",
+            "type": "fix",
+            "status": "draft",
+            "complexity": "medium",
+            "path": "SPEC-222-accommodation-partial-update-merge",
+            "base": "staging",
+            "priority": "P1",
+            "archived": false
         }
     ]
 }
