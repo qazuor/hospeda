@@ -1,0 +1,12 @@
+{
+    "specId": "SPEC-222",
+    "title": "Accommodation import from URL",
+    "type": "feature",
+    "complexity": "high",
+    "status": "draft",
+    "created": "2026-06-13T12:00:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["accommodations", "import", "ai", "scraping", "host", "admin"]
+}

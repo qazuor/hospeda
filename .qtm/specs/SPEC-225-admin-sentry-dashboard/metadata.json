@@ -1,0 +1,12 @@
+{
+    "specId": "SPEC-225",
+    "title": "Admin Sentry errors dashboard",
+    "type": "feature",
+    "complexity": "medium",
+    "status": "draft",
+    "created": "2026-06-13T12:00:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["sentry", "admin", "dashboard", "monitoring", "proxy", "super-admin", "feature"]
+}

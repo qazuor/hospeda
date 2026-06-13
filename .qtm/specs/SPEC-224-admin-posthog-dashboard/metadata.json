@@ -1,0 +1,12 @@
+{
+    "specId": "SPEC-224",
+    "title": "Admin PostHog analytics dashboard",
+    "type": "feature",
+    "complexity": "medium",
+    "status": "draft",
+    "created": "2026-06-13T12:00:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": []
+}

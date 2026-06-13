@@ -37,6 +37,19 @@ interface FailNextEntry {
     readonly scope?: string;
 }
 
+interface DelayNextEntry {
+    readonly operation: ControllableOperation;
+    readonly ms: number;
+    /**
+     * Optional ownerId/subscriptionId scope. When set, the entry only matches
+     * a call whose extracted scope equals this value. When omitted, the entry
+     * matches ANY caller of `operation` (backward-compat). Same semantics as
+     * {@link FailNextEntry.scope} — required so parallel E2E workers that share
+     * this global queue do not consume each other's delays.
+     */
+    readonly scope?: string;
+}
+
 interface RecordedCall {
     readonly operation: ControllableOperation;
     readonly args: unknown;
@@ -46,13 +59,13 @@ interface RecordedCall {
 
 interface ControlState {
     failNextQueue: FailNextEntry[];
-    delayNextQueue: Map<ControllableOperation, number>;
+    delayNextQueue: DelayNextEntry[];
     recordedCalls: RecordedCall[];
 }
 
 const state: ControlState = {
     failNextQueue: [],
-    delayNextQueue: new Map(),
+    delayNextQueue: [],
     recordedCalls: []
 };
 
@@ -86,10 +99,16 @@ export function failNext(entry: FailNextEntry): void {
  * Programs the next call to `operation` to delay by `ms` milliseconds
  * before invoking the real adapter (or the queued failure, whichever
  * comes first).
+ *
+ * Like {@link failNext}, the delay is consumed in FIFO order and may carry an
+ * optional `scope` (ownerId or subscriptionId). When set, only a call whose
+ * extracted scope equals it consumes this delay; when omitted, any caller of
+ * `operation` does (backward-compat). Scoping prevents cross-contamination
+ * between parallel E2E workers sharing this global queue.
  */
-export function delayNext(operation: ControllableOperation, ms: number): void {
+export function delayNext(operation: ControllableOperation, ms: number, scope?: string): void {
     if (!isTestControlEnabled()) return;
-    state.delayNextQueue.set(operation, ms);
+    state.delayNextQueue.push({ operation, ms, scope });
 }
 
 /**
@@ -108,19 +127,30 @@ export function getRecordedCalls(operation?: ControllableOperation): ReadonlyArr
  */
 export function resetTestControl(): void {
     state.failNextQueue.length = 0;
-    state.delayNextQueue.clear();
+    state.delayNextQueue.length = 0;
     state.recordedCalls.length = 0;
 }
 
 /**
  * Extracts the scope of a call from its `args`, used to match a scoped
- * `failNext` entry against the specific caller that armed it.
+ * `failNext` / `delayNext` entry against the specific caller that armed it.
  *
  * Rules:
  *  - `args` is a string (e.g. cancelTrial receives `subscriptionId`) → that string.
  *  - `args` is an object with a string `ownerId` (e.g. startTrial receives
  *    `{ ownerId }`) → that ownerId.
  *  - otherwise (null, number, object without a string `ownerId`, etc.) → undefined.
+ *
+ * EXTENSIBILITY: this only understands the two arg shapes used by the operations
+ * currently wired through {@link applyTestControl} — `startTrial` (`{ ownerId }`)
+ * and `cancelTrial` (bare `subscriptionId` string). The other
+ * {@link ControllableOperation}s (createPaymentPreference, capturePayment,
+ * refundPayment, cancelSubscription, updateSubscription) are declared but NOT yet
+ * wired. When you wire one whose args carry their scope key under a different
+ * field (e.g. `{ subscriptionId }` or `{ paymentId }`), extend this resolver to
+ * read that field — otherwise a scoped entry for that operation silently never
+ * matches (it falls back to `undefined`, so only UNSCOPED entries match it). Add
+ * a unit case proving the new operation's scope key is extracted.
  */
 function extractScope(args: unknown): string | undefined {
     if (typeof args === 'string') {
@@ -149,13 +179,23 @@ export async function applyTestControl(
         return realCall();
     }
 
-    const delay = state.delayNextQueue.get(operation);
-    if (delay !== undefined) {
-        state.delayNextQueue.delete(operation);
-        await new Promise((resolve) => setTimeout(resolve, delay));
+    const callScope = extractScope(args);
+
+    const delayIdx = state.delayNextQueue.findIndex(
+        (entry) =>
+            entry.operation === operation &&
+            (entry.scope === undefined || entry.scope === callScope)
+    );
+    let delayed = false;
+    if (delayIdx !== -1) {
+        const entry = state.delayNextQueue[delayIdx];
+        state.delayNextQueue.splice(delayIdx, 1);
+        if (entry !== undefined) {
+            delayed = true;
+            await new Promise((resolve) => setTimeout(resolve, entry.ms));
+        }
     }
 
-    const callScope = extractScope(args);
     const failureIdx = state.failNextQueue.findIndex(
         (entry) =>
             entry.operation === operation &&
@@ -171,7 +211,7 @@ export async function applyTestControl(
             operation,
             args,
             timestamp: Date.now(),
-            outcome: delay !== undefined ? 'delayed-then-failed' : 'failed'
+            outcome: delayed ? 'delayed-then-failed' : 'failed'
         });
         const error = new Error(failure.errorMessage);
         (error as Error & { code?: string }).code = failure.errorCode;
@@ -203,7 +243,7 @@ export function getTestControlSnapshot(): {
     return {
         enabled: isTestControlEnabled(),
         failNextQueueLength: state.failNextQueue.length,
-        delayNextQueueLength: state.delayNextQueue.size,
+        delayNextQueueLength: state.delayNextQueue.length,
         recordedCallsLength: state.recordedCalls.length
     };
 }

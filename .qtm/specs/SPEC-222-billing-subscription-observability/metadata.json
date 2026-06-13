@@ -1,0 +1,14 @@
+{
+    "specId": "SPEC-222",
+    "title": "Billing Subscription Observability — trial↔accommodation↔owner linkage logging + creation-time MP reference enrichment",
+    "type": "feat",
+    "complexity": "low",
+    "status": "draft",
+    "created": "2026-06-13T00:00:00.000Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "origin": "Reshaped from SPEC-221 F-3 — legitimate debugging need without contrived prod code",
+    "relatedSpecs": ["SPEC-221", "SPEC-217", "SPEC-143", "SPEC-180"],
+    "tags": ["billing", "observability", "sentry", "logging", "mercadopago", "subscriptions"]
+}
