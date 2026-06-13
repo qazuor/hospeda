@@ -3,7 +3,7 @@ spec-id: SPEC-220
 title: Staging→Main Promotion Hardening — clear CodeQL security debt blocking the promotion
 type: infrastructure
 complexity: medium
-status: draft
+status: in-progress
 created: 2026-06-12
 ---
 

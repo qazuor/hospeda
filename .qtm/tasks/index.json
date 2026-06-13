@@ -40,7 +40,7 @@
         {
             "specId": "SPEC-220",
             "title": "Staging→Main Promotion Hardening — clear CodeQL security debt blocking the promotion",
-            "status": "draft",
+            "status": "in-progress",
             "progress": "0/7",
             "path": "SPEC-220-staging-main-promotion-hardening"
         },
