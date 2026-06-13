@@ -39,11 +39,13 @@ interface FailNextBody {
     errorCode?: string;
     errorMessage?: string;
     delayMs?: number;
+    scope?: string;
 }
 
 interface DelayNextBody {
     operation?: string;
     ms?: number;
+    scope?: string;
 }
 
 function isControllableOperation(value: unknown): value is ControllableOperation {
@@ -73,7 +75,8 @@ export function createQZPayTestControlRoutes(): Hono {
             operation: body.operation,
             errorCode: body.errorCode,
             errorMessage: body.errorMessage,
-            delayMs: typeof body.delayMs === 'number' ? body.delayMs : undefined
+            delayMs: typeof body.delayMs === 'number' ? body.delayMs : undefined,
+            scope: typeof body.scope === 'string' ? body.scope : undefined
         });
         return c.json({ ok: true }, 200);
     });
@@ -86,7 +89,7 @@ export function createQZPayTestControlRoutes(): Hono {
         if (typeof body.ms !== 'number' || body.ms < 0) {
             return c.json({ error: 'ms must be a non-negative number' }, 400);
         }
-        delayNext(body.operation, body.ms);
+        delayNext(body.operation, body.ms, typeof body.scope === 'string' ? body.scope : undefined);
         return c.json({ ok: true }, 200);
     });
 

@@ -1,3 +1,4 @@
+import type { AppSourceId, ReportTypeId } from '@repo/schemas';
 /**
  * Tests for the FeedbackFAB component.
  *
@@ -11,7 +12,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FeedbackFAB, type FeedbackFABProps } from '../../src/components/FeedbackFAB.js';
 import { FEEDBACK_CONFIG } from '../../src/config/feedback.config.js';
 import { FEEDBACK_STRINGS } from '../../src/config/strings.js';
-import type { AppSourceId, ReportTypeId } from '../../src/schemas/feedback.schema.js';
 
 // ---------------------------------------------------------------------------
 // Pure helper: toggle state logic

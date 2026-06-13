@@ -83,10 +83,12 @@ test.describe('HOST-02: trial → MP upgrade @p0 @host @billing @real-payment', 
         userId = host.id;
         await forceVerifyEmail(host.id);
 
+        // `has_trial` column does not exist; trial info lives on billing_prices.trial_days.
         const trialPlanRows = await execSQL<{ id: string }>(
-            `SELECT id FROM billing_plans
-             WHERE has_trial = true AND is_active = true
-             ORDER BY created_at ASC
+            `SELECT DISTINCT bp.id FROM billing_plans bp
+             JOIN billing_prices pr ON pr.plan_id = bp.id
+             WHERE bp.active = true AND pr.trial_days > 0
+             ORDER BY bp.id ASC
              LIMIT 1`
         );
         const trialPlanId = trialPlanRows[0]?.id;
@@ -97,7 +99,7 @@ test.describe('HOST-02: trial → MP upgrade @p0 @host @billing @real-payment', 
 
         const paidPlanRows = await execSQL<{ id: string }>(
             `SELECT id FROM billing_plans
-             WHERE is_active = true AND id != $1
+             WHERE active = true AND id != $1
              ORDER BY created_at ASC
              LIMIT 1`,
             [trialPlanId]

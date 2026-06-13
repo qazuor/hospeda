@@ -73,7 +73,8 @@ test.describe('RES-01: API down during checkout → retry, no duplicates @p0 @re
         await qzpayControl.failNext({
             operation: 'startTrial',
             errorCode: 'API_DOWN',
-            errorMessage: 'MP sandbox temporarily unreachable (RES-01 E2E)'
+            errorMessage: 'MP sandbox temporarily unreachable (RES-01 E2E)',
+            scope: host.id
         });
 
         // ── 1. First publish fails 5xx, no subscription row created ───────

@@ -99,11 +99,13 @@ budget ≥ price of the cheapest annual plan.
    while the bug is open).
 8. Wait for the MP webhook to land (~5-30s observed in staging; allow
    up to 2 min in prod). Confirm in `hops psql prod`:
+
    ```sql
    SELECT id, status, current_period_end, mp_subscription_id
    FROM billing_subscriptions
    WHERE id = '<localSubscriptionId>';
    ```
+
    Expected: `status='active'`, `current_period_end ≈ now() + 1 year`,
    `mp_subscription_id` populated.
 9. Reload `/mi-cuenta/`. Confirm entitlements active.
@@ -145,10 +147,12 @@ or fail (we do not keep a real charge on a smoke account).
    - `hops psql prod` → confirm sub status is the terminal cancelled
      state.
    - Force entitlement cache clear:
+
      ```bash
      curl -X POST https://api.hospeda.com.ar/api/v1/admin/billing/cache/clear \
        -H "Cookie: <admin-session>" -d '{"customerId": "<UUID>"}'
      ```
+
    - Confirm `/mi-cuenta/` shows free-plan entitlements.
 
 ### Run log
@@ -180,10 +184,12 @@ cheapest plan.
 6. After redirect, wait for the `subscription_preapproval.updated`
    webhook (~5-30s in staging, up to 2 min in prod).
 7. Confirm local sub flipped from `incomplete` to `active`:
+
    ```sql
    SELECT status, mp_subscription_id, current_period_end
    FROM billing_subscriptions WHERE id = '<localSubscriptionId>';
    ```
+
 8. Reload `/mi-cuenta/`. Confirm entitlements.
 9. Verify Sentry clean.
 
@@ -242,12 +248,14 @@ Budget ≥ addon price.
 4. If a checkout URL is returned, follow it and complete payment.
 5. Capture the addon purchase id from the response.
 6. Confirm in `hops psql prod`:
+
    ```sql
    SELECT id, addon_id, status, source_id, expires_at
    FROM billing_addon_purchases
    WHERE customer_id = '<CUSTOMER_UUID>'
    ORDER BY created_at DESC LIMIT 1;
    ```
+
 7. Reload `/mi-cuenta/`. Confirm the addon entitlement override is
    reflected (limit increase, feature unlock, etc.).
 8. Verify Sentry clean.
@@ -281,6 +289,72 @@ Budget ≥ addon price.
 | Date | Executor | Release | Test user | Card last4 | Addon | Charge $ | Result | Refund verified | Notes |
 |------|----------|---------|-----------|------------|-------|----------|--------|-----------------|-------|
 |      |          |         |           |            |       |          |        |                 |       |
+
+---
+
+## Flow 4 — SPEC-211 Model C migration + owner-governed AI (production)
+
+SPEC-211 is not a checkout/webhook change, but it ships **one production billing-data
+mutation**: the Model C extras migration (`014-spec211-ai-monetization.data.sql`)
+writes the `AI_CHAT` / `AI_SUPPORT` capability layer onto every `billing_plans` row.
+This flow is the go-live gate proving the migration **added capabilities without
+clobbering commercial columns** (prices, quotas) and that the owner-governed chat gate
+plus the USD ceiling backstop behave on real production billing + the real engine.
+
+Run this **once, immediately after the production deploy** that applies the migration.
+No MercadoPago charge is involved.
+
+### Steps
+
+1. **Pre-migration snapshot** (before deploy): capture the commercial columns that the
+   migration must NOT touch:
+
+   ```sql
+   -- hops psql prod
+   SELECT slug, monthly_price_ars, annual_price_ars, limits
+   FROM billing_plans ORDER BY slug;
+   ```
+
+   Save the output.
+2. Deploy the release and apply the migration:
+   `hops db-migrate --target=prod` then `hops db-apply-extras --target=prod`.
+3. **Post-migration diff**: re-run the same SELECT. Confirm `monthly_price_ars`,
+   `annual_price_ars`, and `limits` are **identical** to the pre-migration snapshot for
+   every plan. Only the capability layer (`entitlements` text[] gaining `AI_CHAT` /
+   `AI_SUPPORT` where the config dictates) may differ.
+4. Confirm a plan that should grant chat now carries `AI_CHAT` in `entitlements`
+   (`text[]`, so `'AI_CHAT' = ANY(entitlements)`), and a plan that should not, does not.
+5. **Live owner-gate sanity**: against a real owner whose plan lacks `AI_CHAT`,
+   `POST /api/v1/protected/ai/chat` for their accommodation → expect
+   **403 ENTITLEMENT_REQUIRED** (`accommodations.aiChat.unavailable`). Against an owner
+   whose plan grants it and is under quota → expect a **200 SSE stream**.
+6. **Ceiling backstop present**: confirm the production `ai_settings` blob has a
+   resolvable `costCeilings` (or that `DEFAULT_COST_CEILINGS` applies) so AI spend is
+   capped. A quick check: hit `search-intent` once and confirm it does not 503 under
+   normal spend (ceiling not mis-set to a breached value).
+
+### Expected outcome
+
+- Commercial columns byte-for-byte unchanged across the migration; only the AI
+  capability layer added.
+- Owner-governed chat gate denies (403 ENTITLEMENT_REQUIRED) / allows (200 SSE) per the
+  owner's plan.
+- USD ceiling resolves and does not spuriously block normal traffic.
+
+### Rollback procedure
+
+The migration is additive (it appends capability entitlements; it does not drop
+commercial data). If a plan's commercial columns DID change, that is a defect — do NOT
+hand-edit prod; capture the diff, page the on-call, and restore `billing_plans` from
+the pre-deploy table backup (see the manual backup step in `docs/guides/migrations.md`).
+To neutralise the capability layer without a restore, `array_remove(entitlements,
+'AI_CHAT')` per affected plan and clear the entitlement cache (see toolkit below).
+
+### Run log
+
+| Date | Executor | Release | Commercial cols unchanged | Owner gate (deny/allow) | Ceiling OK | Result | Notes |
+|------|----------|---------|---------------------------|-------------------------|------------|--------|-------|
+|      |          |         |                           |                         |            |        |       |
 
 ---
 
@@ -330,6 +404,7 @@ When hospeda's refund endpoint does not propagate to MP
 4. Confirm. Wait for the refund confirmation email.
 5. Update the hospeda payment row's `refunded_amount` manually if the
    admin endpoint did not stamp it:
+
    ```sql
    UPDATE payments SET refunded_amount = <amount_in_cents>
    WHERE provider_payment_id = '<mp_payment_id>';

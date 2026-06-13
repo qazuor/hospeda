@@ -59,7 +59,7 @@ export type { WithRetryInput } from './retry.js';
 // Default prompts (T-034)
 // ---------------------------------------------------------------------------
 
-export { DEFAULT_PROMPTS } from './default-prompts.js';
+export { DEFAULT_PROMPTS, DEFAULT_RULES } from './default-prompts.js';
 
 // ---------------------------------------------------------------------------
 // Prompt injection helper (T-034)

@@ -9,7 +9,14 @@
  */
 
 import type { AccommodationModel, UserModel } from '@repo/db';
-import { LifecycleStatusEnum, PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
+import {
+    AccommodationPatchInputSchema,
+    LifecycleStatusEnum,
+    PermissionEnum,
+    RoleEnum,
+    ServiceErrorCode,
+    VisibilityEnum
+} from '@repo/schemas';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
@@ -193,7 +200,10 @@ describe('AccommodationService.publish', () => {
             const accommodation = createMockAccommodation({
                 id: 'acc-005',
                 ownerId: 'host-005',
-                lifecycleState: LifecycleStatusEnum.DRAFT
+                lifecycleState: LifecycleStatusEnum.DRAFT,
+                // Onboarding drafts are created PRIVATE — this is the case publish
+                // must promote to PUBLIC.
+                visibility: VisibilityEnum.PRIVATE
             });
             (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
             asMock(userModel.findById as Mock).mockResolvedValue({
@@ -210,13 +220,108 @@ describe('AccommodationService.publish', () => {
 
             expect(result.error).toBeUndefined();
             expect(result.data?.lifecycleState).toBe(LifecycleStatusEnum.ACTIVE);
+            // Regression (SPEC-217): publishing must also promote visibility to
+            // PUBLIC. Onboarding drafts are created PRIVATE; without this the
+            // public detail-by-slug endpoint 404s the freshly-published listing.
+            expect(accommodationModel.update).toHaveBeenCalledWith(
+                { id: 'acc-005' },
+                expect.objectContaining({
+                    lifecycleState: LifecycleStatusEnum.ACTIVE,
+                    visibility: VisibilityEnum.PUBLIC
+                }),
+                expect.anything()
+            );
             expect(deps.checkEligibility).toHaveBeenCalledWith('host-005', expect.anything());
-            expect(deps.startTrial).toHaveBeenCalledWith({ ownerId: 'host-005' });
+            expect(deps.startTrial).toHaveBeenCalledWith({
+                ownerId: 'host-005',
+                accommodationId: 'acc-005'
+            });
             // Role promotion no longer happens in publish — that's done at
             // draft creation. The user model stays untouched.
             expect(userModel.update).not.toHaveBeenCalled();
             // No compensation when tx succeeds
             expect(deps.cancelTrial).not.toHaveBeenCalled();
+        });
+
+        // SPEC-222 Part 1 (AC-1): a single structured linkage line is emitted at
+        // first publish, tying the trial subscription to the accommodation that
+        // triggered it and its owner. Searching logs by any of these ids surfaces
+        // the whole linkage even though trials are per-owner.
+        it('emits a structured linkage log line at first publish', async () => {
+            const deps = createPublishDeps();
+            const logger = createLoggerMock();
+            const service = new AccommodationService(
+                { logger },
+                accommodationModel as AccommodationModel,
+                null,
+                userModel,
+                deps
+            );
+            const accommodation = createMockAccommodation({
+                id: 'acc-link',
+                ownerId: 'host-link',
+                lifecycleState: LifecycleStatusEnum.DRAFT,
+                visibility: VisibilityEnum.PRIVATE
+            });
+            (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
+            asMock(userModel.findById as Mock).mockResolvedValue({
+                id: 'host-link',
+                role: RoleEnum.HOST
+            });
+            (accommodationModel.update as Mock).mockResolvedValue({
+                ...accommodation,
+                lifecycleState: LifecycleStatusEnum.ACTIVE
+            });
+
+            const actor = createHostActor({ id: 'host-link' });
+            const result = await service.publish(actor, 'acc-link');
+
+            expect(result.error).toBeUndefined();
+            expect(logger.info).toHaveBeenCalledWith(
+                {
+                    subscriptionId: 'qzpay-sub-001',
+                    accommodationId: 'acc-link',
+                    ownerId: 'host-link',
+                    planSlug: 'owner-basico',
+                    eligibility: 'first_publish'
+                },
+                '[accommodation.publish] trial subscription linkage'
+            );
+        });
+
+        // Regression (SPEC-217): publish must NOT clobber a deliberately-set
+        // RESTRICTED (or PUBLIC) visibility — only a PRIVATE onboarding draft is
+        // promoted. A RESTRICTED accommodation activated by an admin must stay
+        // RESTRICTED, never silently leak to the public site.
+        it('preserves a non-PRIVATE visibility on publish (no clobber)', async () => {
+            const deps = createPublishDeps();
+            const service = buildService(accommodationModel, userModel, deps);
+            const accommodation = createMockAccommodation({
+                id: 'acc-restricted',
+                ownerId: 'host-restricted',
+                lifecycleState: LifecycleStatusEnum.DRAFT,
+                visibility: VisibilityEnum.RESTRICTED
+            });
+            (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
+            asMock(userModel.findById as Mock).mockResolvedValue({
+                id: 'host-restricted',
+                role: RoleEnum.HOST
+            });
+            (accommodationModel.update as Mock).mockResolvedValue({
+                ...accommodation,
+                lifecycleState: LifecycleStatusEnum.ACTIVE
+            });
+
+            const actor = createHostActor({ id: 'host-restricted' });
+            const result = await service.publish(actor, 'acc-restricted');
+
+            expect(result.error).toBeUndefined();
+            // The update flips lifecycleState but does NOT write a visibility key.
+            expect(accommodationModel.update).toHaveBeenCalledWith(
+                { id: 'acc-restricted' },
+                expect.not.objectContaining({ visibility: expect.anything() }),
+                expect.anything()
+            );
         });
     });
 
@@ -376,5 +481,179 @@ describe('AccommodationService.publish', () => {
             // Compensation was attempted even though it failed
             expect(deps.cancelTrial).toHaveBeenCalledWith('qzpay-sub-001');
         });
+    });
+});
+
+/**
+ * SPEC-217 — host-07c reproduction at the SERVICE layer.
+ *
+ * host-07c (apps/e2e/tests/host/host-07c-qzpay-timeout.spec.ts) PATCHes a DRAFT
+ * accommodation with `{ lifecycleState: 'ACTIVE' }` and NOTHING else, expecting a
+ * 5xx when the armed QZPay `startTrial` fault fires.
+ *
+ * These tests pin the SERVICE contract: given a CLEAN `{ lifecycleState: 'ACTIVE' }`
+ * payload, `AccommodationService.update()` routes through `publish()` and reaches
+ * `startTrial`. With a clean payload `restFields` is empty (the only key,
+ * `lifecycleState`, is stripped), so `super.update()` is never called and `update()`
+ * delegates straight to `publish()`.
+ *
+ * HISTORY: before the SPEC-217 schema-default fix, the real admin PATCH route did
+ * NOT reach the service with a clean payload. `AccommodationPatchInputSchema`
+ * (`.partial()`) re-injected `.default()` values (`lifecycleState:'ACTIVE'`,
+ * `visibility:'PUBLIC'`, `moderationState:'PENDING'`, `isFeatured:false`,
+ * `reviewsCount:0`, `averageRating:0`) on EVERY parse. Those extra keys made
+ * `restFields` non-empty, so `super.update()` ran, re-injected `lifecycleState:'ACTIVE'`,
+ * flipped the row to ACTIVE, and `publish()` then early-returned idempotently —
+ * bypassing `startTrial` and returning 200 instead of 5xx. `stripShapeDefaults`
+ * (packages/schemas/src/utils/utils.ts) removed the default injection; the FAITHFUL
+ * tests below now drive the schema-parsed payload through `update()` and assert the
+ * trial flow is reached. The service publish flow itself was never the defect.
+ */
+describe('AccommodationService.update → publish routing (host-07c reproduction)', () => {
+    let accommodationModel: ReturnType<typeof createMockBaseModel>;
+    let userModel: UserModel;
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        accommodationModel = createMockBaseModel();
+        userModel = createUserModelMock();
+    });
+
+    it('invokes startTrial when a HOST publishes a DRAFT acc via update({lifecycleState:ACTIVE}) only', async () => {
+        const deps = createPublishDeps(); // checkEligibility → 'first_publish'
+        const service = buildService(accommodationModel, userModel, deps);
+        const accommodation = createMockAccommodation({
+            id: 'acc-07c',
+            ownerId: 'host-07c',
+            lifecycleState: LifecycleStatusEnum.DRAFT
+        });
+        (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
+        asMock(userModel.findById as Mock).mockResolvedValue({
+            id: 'host-07c',
+            role: RoleEnum.HOST
+        });
+        (accommodationModel.update as Mock).mockResolvedValue({
+            ...accommodation,
+            lifecycleState: LifecycleStatusEnum.ACTIVE
+        });
+
+        const actor = createHostActor({ id: 'host-07c' });
+        const result = await service.update(actor, 'acc-07c', {
+            lifecycleState: LifecycleStatusEnum.ACTIVE
+        } as never);
+
+        expect(result.error).toBeUndefined();
+        expect(result.data?.lifecycleState).toBe(LifecycleStatusEnum.ACTIVE);
+        // The decisive assertion: the publish flow DID reach the billing trial.
+        expect(deps.startTrial).toHaveBeenCalledWith({
+            ownerId: 'host-07c',
+            accommodationId: 'acc-07c'
+        });
+    });
+
+    it('surfaces SERVICE_UNAVAILABLE with no DB write when startTrial fails (host-07c fault contract via update path)', async () => {
+        const deps = createPublishDeps({
+            startTrial: vi.fn().mockRejectedValue(new Error('QZPay timeout'))
+        });
+        const service = buildService(accommodationModel, userModel, deps);
+        const accommodation = createMockAccommodation({
+            id: 'acc-07c-fail',
+            ownerId: 'host-07c-fail',
+            lifecycleState: LifecycleStatusEnum.DRAFT
+        });
+        (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
+        asMock(userModel.findById as Mock).mockResolvedValue({
+            id: 'host-07c-fail',
+            role: RoleEnum.HOST
+        });
+
+        const actor = createHostActor({ id: 'host-07c-fail' });
+        const result = await service.update(actor, 'acc-07c-fail', {
+            lifecycleState: LifecycleStatusEnum.ACTIVE
+        } as never);
+
+        expect(result.error?.code).toBe(ServiceErrorCode.SERVICE_UNAVAILABLE);
+        // DRAFT must stay DRAFT: no accommodation write on a failed trial.
+        expect(accommodationModel.update).not.toHaveBeenCalled();
+        expect(deps.cancelTrial).not.toHaveBeenCalled();
+    });
+
+    // ── FAITHFUL repro: the EXACT bytes host-07c sends, parsed by the REAL route
+    // schema (which used to inject `.default()` values), driven through update()
+    // with a STATEFUL model so a `super.update()` write is reflected in the next
+    // findById(). Before the schema-default fix, the injected defaults made
+    // `restFields` non-empty → `super.update()` flipped the row to ACTIVE → publish()
+    // early-returned → startTrial was bypassed (200 instead of 5xx). These tests are
+    // the regression guard for SPEC-217.
+    it('FAITHFUL: schema-parsed {lifecycleState:ACTIVE} still reaches startTrial (no default-injection bypass)', async () => {
+        const deps = createPublishDeps();
+        const service = buildService(accommodationModel, userModel, deps);
+
+        const row = createMockAccommodation({
+            id: 'acc-07c-real',
+            ownerId: 'host-07c-real',
+            lifecycleState: LifecycleStatusEnum.DRAFT
+        });
+        (accommodationModel.findById as Mock).mockImplementation(async () => ({ ...row }));
+        (accommodationModel.update as Mock).mockImplementation(
+            async (_where: unknown, data: Record<string, unknown>) => {
+                Object.assign(row, data);
+                return { ...row };
+            }
+        );
+        asMock(userModel.findById as Mock).mockResolvedValue({
+            id: 'host-07c-real',
+            role: RoleEnum.HOST
+        });
+
+        // EXACTLY what the admin PATCH route does before calling the service.
+        const routePayload = AccommodationPatchInputSchema.parse({
+            lifecycleState: LifecycleStatusEnum.ACTIVE
+        });
+
+        const actor = createHostActor({ id: 'host-07c-real' });
+        const result = await service.update(actor, 'acc-07c-real', routePayload as never);
+
+        expect(result.error).toBeUndefined();
+        // The decisive guard: the trial flow ran (it didn't before the fix).
+        expect(deps.startTrial).toHaveBeenCalledWith({
+            ownerId: 'host-07c-real',
+            accommodationId: 'acc-07c-real'
+        });
+    });
+
+    it('FAITHFUL: schema-parsed publish surfaces SERVICE_UNAVAILABLE and keeps DRAFT when startTrial fails', async () => {
+        const deps = createPublishDeps({
+            startTrial: vi.fn().mockRejectedValue(new Error('QZPay timeout'))
+        });
+        const service = buildService(accommodationModel, userModel, deps);
+
+        const row = createMockAccommodation({
+            id: 'acc-07c-real-fail',
+            ownerId: 'host-07c-real-fail',
+            lifecycleState: LifecycleStatusEnum.DRAFT
+        });
+        (accommodationModel.findById as Mock).mockImplementation(async () => ({ ...row }));
+        (accommodationModel.update as Mock).mockImplementation(
+            async (_where: unknown, data: Record<string, unknown>) => {
+                Object.assign(row, data);
+                return { ...row };
+            }
+        );
+        asMock(userModel.findById as Mock).mockResolvedValue({
+            id: 'host-07c-real-fail',
+            role: RoleEnum.HOST
+        });
+
+        const routePayload = AccommodationPatchInputSchema.parse({
+            lifecycleState: LifecycleStatusEnum.ACTIVE
+        });
+
+        const actor = createHostActor({ id: 'host-07c-real-fail' });
+        const result = await service.update(actor, 'acc-07c-real-fail', routePayload as never);
+
+        expect(result.error?.code).toBe(ServiceErrorCode.SERVICE_UNAVAILABLE);
+        // The row must NOT have been flipped to ACTIVE by an injected-default write.
+        expect(row.lifecycleState).toBe(LifecycleStatusEnum.DRAFT);
     });
 });

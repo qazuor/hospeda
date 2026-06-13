@@ -1,5 +1,5 @@
 /**
- * AI accommodation-chat streaming route (SPEC-200 T-004).
+ * AI accommodation-chat streaming route (SPEC-200 T-004, SPEC-211 T-009).
  *
  * Mounted at `POST /api/v1/protected/ai/chat` by the protected-AI barrel.
  * Serves the tourist-facing accommodation assistant on the detail page.
@@ -9,21 +9,31 @@
  * `createProtectedStreamingRoute` prepends `protectedAuthMiddleware`, so the
  * effective order is:
  *
- *   auth → entitlement → rateLimit-perUser → rateLimit-perIP → quota
+ *   auth → entitlement → rateLimit-perUser → rateLimit-perIP
  *
- * `entitlementMiddleware()` MUST run before `createAiQuotaMiddleware('chat')`
- * because the quota middleware reads `c.get('userEntitlements')`.
+ * `entitlementMiddleware()` loads the requesting tourist's entitlements for
+ * other purposes. The AI_CHAT gate and quota are now evaluated INLINE in the
+ * handler against the **listing owner** (SPEC-211 Phase 1, §7.3), NOT the
+ * tourist. The `createAiQuotaMiddleware('chat')` is intentionally removed:
+ * it was tourist-keyed and cannot be reused for owner-governed metering.
  *
- * ## Flow
+ * Per-tourist + per-IP rate limiting (`createAiRateLimitMiddlewares('chat')`)
+ * is preserved as the burst guard (still keyed by the requesting tourist).
+ *
+ * ## Flow (SPEC-211 Phase 1 §7.3)
  *
  * 1. Validate `AiChatRequestSchema` (1..20 messages, locale optional).
  * 2. Resolve the actor from context.
- * 3. Resolve the admin/default system prompt for `chat`.
- * 4. Assemble the accommodation-scoped context and system message.
- * 5. Prepend `messages[0].role === 'system'` (caller-wins injection).
- * 6. Stream tokens from `aiService.streamText({ feature: 'chat', messages, locale })`.
- * 7. After drain, race `persistChatTurn(...)` vs 1500 ms and add
- *    `conversationId` to the `done` frame only on win.
+ * 3. Fetch `ownerId` from the accommodation row (pre-stream 404 guard).
+ * 4. Resolve owner entitlements + limits in parallel.
+ * 5. Gate: owner lacks `AI_CHAT` → 403 `ENTITLEMENT_REQUIRED` (pre-stream).
+ * 6. Quota: `ownerLimit === -1` → unlimited; else count owner's monthly usage;
+ *    count >= ownerLimit → 403 `LIMIT_REACHED` (pre-stream).
+ * 7. Assemble the accommodation-scoped context and system message.
+ * 8. Stream tokens from `aiService.streamText({ feature: 'chat', messages, locale })`.
+ * 9. After drain, `recordAiUsage({ userId: ownerId, ... })` (owner-metered).
+ * 10. Race `persistChatTurn(...)` vs 1500 ms and add `conversationId` to the
+ *     `done` frame only on win.
  *
  * ## Analytics
  *
@@ -37,7 +47,15 @@
  * @module apps/api/routes/ai/protected/chat
  */
 
-import { resolveFeatureConfig, resolveSystemPrompt } from '@repo/ai-core';
+import {
+    composeSystemPrompt,
+    getMonthlyCallCount,
+    recordAiUsage,
+    resolveFeatureConfig,
+    resolveSystemPrompt
+} from '@repo/ai-core';
+import { EntitlementKey, LimitKey } from '@repo/billing';
+import { accommodations, getDb } from '@repo/db';
 import {
     AI_CHAT_MAX_MESSAGES,
     type AiChatMessage,
@@ -46,12 +64,18 @@ import {
     type AiFeature,
     type AiMessage,
     type LanguageEnum,
-    PermissionEnum
+    PermissionEnum,
+    ServiceErrorCode
 } from '@repo/schemas';
+import { ServiceError } from '@repo/service-core';
+import { eq } from 'drizzle-orm';
 import { getPostHogClient } from '../../../lib/posthog.js';
-import { createAiQuotaMiddleware } from '../../../middlewares/ai-quota';
 import { createAiRateLimitMiddlewares } from '../../../middlewares/ai-rate-limit';
 import { entitlementMiddleware } from '../../../middlewares/entitlement';
+import {
+    resolveOwnerEntitlementsForOwnerId,
+    resolveOwnerLimitsForOwnerId
+} from '../../../middlewares/owner-entitlement.js';
 import { assembleAccommodationContext } from '../../../services/accommodation-ai-context.js';
 import { persistChatTurn } from '../../../services/ai-chat-persistence.js';
 import { createConfiguredAiService } from '../../../services/ai-service.factory.js';
@@ -144,20 +168,140 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
     description:
         'Answers tourist questions about a specific accommodation using scoped accommodation context. ' +
         'Streams the answer token-by-token via Server-Sent Events. ' +
-        'Gated by the `ai_chat` billing entitlement and per-plan monthly quota.',
+        "Gated by the listing owner's `ai_chat` billing entitlement and per-owner monthly quota (SPEC-211).",
     tags: ['AI - Chat'],
     requestSchema: AiChatRequestSchema,
     options: {
         middlewares: [
             entitlementMiddleware(),
-            ...createAiRateLimitMiddlewares(FEATURE),
-            createAiQuotaMiddleware(FEATURE)
+            ...createAiRateLimitMiddlewares(FEATURE)
+            // NOTE (SPEC-211 Phase 1): `createAiQuotaMiddleware('chat')` is intentionally
+            // removed from here. It was tourist-keyed and cannot be reused for
+            // owner-governed metering. The AI_CHAT gate + quota are enforced inline below
+            // against the listing owner (§7.3), BEFORE streaming starts.
         ]
     },
     streamHandler: async ({ c }) => {
         const body = (await c.req.json()) as AiChatRequest;
         const actor = getActorFromContext(c);
         const locale = body.locale ?? DEFAULT_LOCALE;
+        const now = new Date();
+        const handlerStartMs = Date.now();
+
+        // -----------------------------------------------------------------------
+        // Step 1: Resolve ownerId from the accommodation row (pre-stream 404 guard).
+        //
+        // This is the seam described in SPEC-211 §7.3 step 1. The accommodation
+        // must exist before we can determine whose quota to check. A missing
+        // accommodation throws ServiceError(NOT_FOUND) which the factory maps to
+        // HTTP 404 before any SSE bytes are written.
+        // -----------------------------------------------------------------------
+        const db = getDb();
+        const rows = await db
+            .select({ ownerId: accommodations.ownerId })
+            .from(accommodations)
+            .where(eq(accommodations.id, body.accommodationId))
+            .limit(1);
+
+        const ownerRow = rows[0] as { ownerId: string } | undefined;
+        if (!ownerRow) {
+            throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found.', {
+                accommodationId: body.accommodationId
+            });
+        }
+        const ownerId = ownerRow.ownerId;
+
+        // -----------------------------------------------------------------------
+        // Step 2: Resolve owner entitlements + limits in parallel (SPEC-211 §7.3).
+        //
+        // Both functions are cached 5 min per QZPay customerId — no per-request
+        // billing round-trip overhead on warm traffic.
+        // -----------------------------------------------------------------------
+        const [ownerEntitlements, ownerLimits] = await Promise.all([
+            resolveOwnerEntitlementsForOwnerId(ownerId),
+            resolveOwnerLimitsForOwnerId(ownerId)
+        ]);
+
+        // -----------------------------------------------------------------------
+        // Step 3: Entitlement gate (pre-stream) — SPEC-211 §7.3 step 3.
+        //
+        // If the listing owner's plan does not include AI_CHAT, the tourist
+        // sees the OQ-8 copy: "AI chat is not available for this accommodation".
+        // We throw ServiceError so the global error handler maps it to HTTP 403
+        // with code ENTITLEMENT_REQUIRED — consistent with the rest of the API.
+        // -----------------------------------------------------------------------
+        if (!ownerEntitlements.includes(EntitlementKey.AI_CHAT)) {
+            apiLogger.warn(
+                { ownerId, accommodationId: body.accommodationId },
+                'ai-chat: blocked — owner lacks AI_CHAT entitlement'
+            );
+            throw new ServiceError(
+                ServiceErrorCode.ENTITLEMENT_REQUIRED,
+                'accommodations.aiChat.unavailable',
+                { requiredEntitlement: EntitlementKey.AI_CHAT }
+            );
+        }
+
+        // -----------------------------------------------------------------------
+        // Step 4: Quota check (pre-stream) — SPEC-211 §7.3 step 4.
+        //
+        // ownerLimit === -1  → unlimited (staff owners via INV-6 bypass); skip count.
+        // ownerLimit === 0   → feature disabled in plan (deny immediately).
+        // ownerLimit === N   → finite monthly budget; compare vs. actual usage.
+        //
+        // After Phase 0, no real plan should carry -1 for AI features, but the
+        // check is kept for correctness (staff bypass still produces -1).
+        // -----------------------------------------------------------------------
+        const ownerLimit = ownerLimits.get(LimitKey.MAX_AI_CHAT_PER_MONTH) ?? 0;
+
+        if (ownerLimit !== -1) {
+            if (ownerLimit === 0) {
+                apiLogger.warn(
+                    { ownerId, accommodationId: body.accommodationId },
+                    'ai-chat: blocked — owner chat limit is 0 (feature disabled in plan)'
+                );
+                throw new ServiceError(
+                    ServiceErrorCode.LIMIT_REACHED,
+                    'El chat de IA no está disponible en el plan del alojamiento.',
+                    {
+                        limitKey: LimitKey.MAX_AI_CHAT_PER_MONTH,
+                        currentCount: 0,
+                        maxAllowed: 0
+                    }
+                );
+            }
+
+            const ownerUsed = await getMonthlyCallCount({
+                userId: ownerId,
+                feature: FEATURE,
+                now
+            });
+
+            if (ownerUsed >= ownerLimit) {
+                apiLogger.warn(
+                    {
+                        ownerId,
+                        accommodationId: body.accommodationId,
+                        currentCount: ownerUsed,
+                        maxAllowed: ownerLimit
+                    },
+                    'ai-chat: blocked — owner monthly quota reached'
+                );
+                throw new ServiceError(
+                    ServiceErrorCode.LIMIT_REACHED,
+                    'El propietario de este alojamiento ha alcanzado el límite mensual de chats de IA.',
+                    {
+                        limitKey: LimitKey.MAX_AI_CHAT_PER_MONTH,
+                        currentCount: ownerUsed,
+                        maxAllowed: ownerLimit
+                    }
+                );
+            }
+        }
+
+        // -----------------------------------------------------------------------
+        // Gate + quota passed — proceed to streaming.
+        // -----------------------------------------------------------------------
 
         if (body.messages.length === 1) {
             captureChatEvent(actor.id, 'ai_chat_opened', {
@@ -173,7 +317,8 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
             });
         }
 
-        const { content: resolvedPrompt } = await resolveSystemPrompt({ feature: FEATURE });
+        const { content, rules } = await resolveSystemPrompt({ feature: FEATURE });
+        const resolvedPrompt = composeSystemPrompt({ content, rules });
         const { contextBlock, systemMessage } = await assembleAccommodationContext({
             actor,
             accommodationId: body.accommodationId,
@@ -221,6 +366,39 @@ export const protectedAiChatRoute = createProtectedStreamingRoute({
 
         const augmentedMeta = meta.then(async (resolvedMeta) => {
             let resolvedConversationId: string | null = null;
+
+            // -------------------------------------------------------------------
+            // Owner-keyed usage metering (SPEC-211 Phase 1 §7.3 step 5).
+            //
+            // recordAiUsage is keyed by ownerId — the listing owner bears the
+            // metered cost, NOT the requesting tourist. This is the central change
+            // of SPEC-211 T-009. The call is fire-and-try: a metering failure is
+            // logged but must NOT affect the tourist's already-completed stream.
+            // -------------------------------------------------------------------
+            try {
+                await recordAiUsage({
+                    userId: ownerId,
+                    feature: FEATURE,
+                    provider: resolvedMeta.provider,
+                    model: resolvedMeta.model,
+                    promptTokens: resolvedMeta.usage.promptTokens,
+                    completionTokens: resolvedMeta.usage.completionTokens,
+                    latencyMs: Date.now() - handlerStartMs,
+                    status: 'success'
+                });
+            } catch (meteringError) {
+                apiLogger.warn(
+                    {
+                        ownerId,
+                        accommodationId: body.accommodationId,
+                        error:
+                            meteringError instanceof Error
+                                ? meteringError.message
+                                : String(meteringError)
+                    },
+                    'ai-chat: failed to record owner usage (non-fatal — stream already complete)'
+                );
+            }
 
             try {
                 const persistPromise = persistChatTurn({

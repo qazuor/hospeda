@@ -176,7 +176,15 @@ const FS_EXCLUSIONS: ReadonlySet<string> = new Set([
     // the qzpay-hono factory and covered by the billing/admin/index.ts (qzpay) row
     'billing/admin/qzpay-admin-hooks.ts',
     // Shared SYSTEM_ACTOR constant for owner conversation routes (not a route handler)
-    'conversations/protected/owner/system-actor.ts'
+    'conversations/protected/owner/system-actor.ts',
+    // Pure amenity/feature allowlist data + matching helpers consumed by search-chat.ts (not a Hono route)
+    'ai/protected/amenity-allowlist.ts',
+    // Pure intent→search-params mapper consumed by search-chat.ts (not a Hono route)
+    'ai/protected/search-intent.mapper.ts',
+    // Per-request prompt builder for search-chat (not a Hono route) — SPEC-212 T-003/T-006
+    'ai/protected/search-chat.prompt.ts',
+    // Best-effort conversation persistence helper for search-chat (not a Hono route) — SPEC-212 T-007
+    'ai/protected/search-chat.persistence.ts'
 ]);
 
 /**

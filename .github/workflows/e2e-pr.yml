@@ -3,13 +3,17 @@ name: E2E (PR)
 # SPEC-092 T-039: PR-time E2E suite. Runs P0 only with mocked external
 # services. Target wall-clock: < 6 minutes.
 #
-# When this workflow fails, the PR cannot merge. Failures are usually
-# regressions in cross-app behavior; check the uploaded HTML report and
-# Playwright trace for first-retry forensics.
+# Runs on PRs targeting both `staging` and `main`. `staging` was added
+# (issue #1547) so the suite exercises on every integration PR instead of
+# only the rare `staging -> main` promotion — that infrequency is what let
+# it bit-rot. This is a standalone check, separate from the product
+# `CI Pass` gate; failures surface regressions in cross-app behavior (see the
+# uploaded HTML report and Playwright trace for first-retry forensics).
 
 on:
   pull_request:
     branches:
+      - staging
       - main
 
 concurrency:
@@ -72,40 +76,70 @@ jobs:
       HOSPEDA_DATABASE_URL: postgresql://hospeda_user:hospeda_pass@localhost:5433/hospeda_e2e
       HOSPEDA_E2E_DATABASE_URL: postgresql://hospeda_user:hospeda_pass@localhost:5433/hospeda_e2e
       HOSPEDA_REDIS_URL: redis://localhost:6380
-      HOSPEDA_BETTER_AUTH_SECRET: ${{ secrets.HOSPEDA_BETTER_AUTH_SECRET }}
+      # Deterministic e2e secrets — isolated throwaway DB, NOT real secrets.
+      # All three are min-32 per the API env schema; hardcoded (not repo secrets)
+      # so the apps boot consistently and share one secret for cross-app auth.
+      HOSPEDA_BETTER_AUTH_SECRET: e2e-better-auth-secret-deterministic-min-32-chars
+      HOSPEDA_LOCATION_SALT: e2e-location-salt-deterministic-min-32-characters
+      HOSPEDA_VIEWS_HASH_SECRET: e2e-views-hash-secret-deterministic-min-32-chars
       HOSPEDA_BETTER_AUTH_URL: http://localhost:3001/api/auth
       HOSPEDA_API_URL: http://localhost:3001
       HOSPEDA_SITE_URL: http://localhost:4321
       HOSPEDA_ADMIN_URL: http://localhost:3000
+      # Build-time + runtime vars for the web (PUBLIC_*) and admin (VITE_*) apps,
+      # required by their env schemas when they actually boot under the webServer.
+      PUBLIC_API_URL: http://localhost:3001
+      PUBLIC_SITE_URL: http://localhost:4321
+      PUBLIC_ADMIN_URL: http://localhost:3000
+      VITE_API_URL: http://localhost:3001
+      VITE_SITE_URL: http://localhost:4321
+      VITE_ADMIN_URL: http://localhost:3000
+      VITE_BETTER_AUTH_URL: http://localhost:3001/api/auth
       HOSPEDA_MAILER_HOST: localhost
       HOSPEDA_MAILER_PORT: '1025'
 
       # MercadoPago: PR mode uses simulated webhook only (no real sandbox calls).
-      # The webhook secret signs the simulated POST; the access_token is a stub.
-      HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN: TEST-pr-stub-access-token
-      HOSPEDA_MERCADO_PAGO_PUBLIC_KEY: TEST-pr-stub-public-key
+      # The webhook secret signs the simulated POST; the access_token is a stub,
+      # but the QZPay adapter validates the format (must start with 'APP_USR-')
+      # at billing init, so the stub has to match that shape or billing fails to
+      # initialize and every entitlement-gated route errors.
+      HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN: APP_USR-0000000000000000-010125-00000000000000000000000000000000-000000000
+      HOSPEDA_MERCADO_PAGO_PUBLIC_KEY: APP_USR-00000000-0000-0000-0000-000000000000
       HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET: ${{ secrets.HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET }}
       HOSPEDA_MERCADO_PAGO_SANDBOX: 'true'
+      # SPEC-217: enable the QZPay test-control adapter so the fault-injection specs
+      # (host-07c/res-01) mount the control endpoint and applyTestControl intercepts
+      # the wrapped subscription ops. Gated to non-production by routes/index.ts.
+      HOSPEDA_QZPAY_TEST_CONTROL_ENABLED: 'true'
 
       # Cloudinary: optional in PR (tests tagged @cloudinary skip when absent)
       HOSPEDA_CLOUDINARY_CLOUD_NAME: ${{ secrets.HOSPEDA_CLOUDINARY_CLOUD_NAME }}
       HOSPEDA_CLOUDINARY_API_KEY: ${{ secrets.HOSPEDA_CLOUDINARY_API_KEY }}
       HOSPEDA_CLOUDINARY_API_SECRET: ${{ secrets.HOSPEDA_CLOUDINARY_API_SECRET }}
 
+      # Disable API response cache + rate limiting for deterministic e2e: tests
+      # mutate state (publish/unpublish, subscription changes) and immediately
+      # assert the public/entitlement read, which a cached response would serve
+      # stale. NOTE: these use z.coerce.boolean() in the API env schema, where a
+      # NON-EMPTY string (even "false") coerces to true — so an EMPTY string is
+      # the only way to set them false. Do not change '' to 'false'.
+      API_CACHE_ENABLED: ''
+      API_RATE_LIMIT_ENABLED: ''
+
       # Playwright tuning
       E2E_MODE: pr
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '22'
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
 
       - name: Get pnpm store directory
         shell: bash
@@ -113,7 +147,7 @@ jobs:
           echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
 
       - name: Setup pnpm cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ${{ env.STORE_PATH }}
           key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
@@ -121,7 +155,7 @@ jobs:
             ${{ runner.os }}-pnpm-store-
 
       - name: Setup turbo cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: .turbo
           key: ${{ runner.os }}-turbo-${{ github.sha }}
@@ -155,7 +189,7 @@ jobs:
 
       - name: Upload Playwright HTML report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report-pr-${{ github.run_id }}
           path: apps/e2e/playwright-report/
@@ -163,7 +197,7 @@ jobs:
 
       - name: Upload Playwright traces
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-traces-pr-${{ github.run_id }}
           path: apps/e2e/test-results/

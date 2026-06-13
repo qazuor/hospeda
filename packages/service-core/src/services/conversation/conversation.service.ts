@@ -780,10 +780,14 @@ export class ConversationService extends BaseService {
                     { cursor: validated.cursor, limit: effectiveLimit + 1 }
                 );
 
+                // The model returns the most recent rows first. Keep the newest
+                // `effectiveLimit` of them, then reverse to ascending order so the
+                // chat renders oldest-at-top with the latest message at the bottom.
                 const hasMore = loadedMessages.length > effectiveLimit;
-                const pageMessages = hasMore
+                const recentMessages = hasMore
                     ? loadedMessages.slice(0, effectiveLimit)
                     : loadedMessages;
+                const pageMessages = [...recentMessages].reverse();
 
                 // Update read receipt and cancel notification schedule
                 await withServiceTransaction(async (txCtx) => {

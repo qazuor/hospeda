@@ -152,6 +152,13 @@ const VALID_SETTINGS_BLOB = {
             fallbackChain: [],
             model: 'gpt-4o-mini',
             params: {}
+        },
+        translate: {
+            enabled: false,
+            primaryProvider: 'openai',
+            fallbackChain: [],
+            model: 'gpt-4o-mini',
+            params: {}
         }
     }
 };
@@ -200,6 +207,29 @@ describe('admin AI settings routes (SPEC-173 T-027)', () => {
             await handler(fakeCtx);
 
             expect(mockResolveConfig).toHaveBeenCalledTimes(1);
+        });
+
+        // Regression test: empty DB / first-time setup must return 200 with
+        // value.features = {} — NOT throw (which previously caused HTTP 500 via
+        // stripWithSchema when AiSettingsResponseSchema validated the full record).
+        it('returns 200-shape (no throw) when resolveConfig returns empty features (fresh DB)', async () => {
+            // Arrange: the exact shape resolveConfig() returns when ai_settings is empty.
+            const emptyConfig = { providers: {}, features: {} };
+            mockResolveConfig.mockResolvedValue(emptyConfig);
+            mockReadAiSettings.mockResolvedValue(null);
+
+            const entry = capturedHandlers.get('/:get');
+            const handler = entry?.handler as CapturedHandler;
+
+            // Act + Assert — must NOT throw; before the fix this would propagate
+            // as a ServiceError(INTERNAL_ERROR) → HTTP 500 from stripWithSchema.
+            const res = (await handler(fakeCtx)) as {
+                key: string;
+                value: typeof emptyConfig;
+            };
+
+            expect(res.key).toBe('global');
+            expect(res.value).toEqual(emptyConfig);
         });
     });
 

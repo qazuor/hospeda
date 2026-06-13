@@ -10,7 +10,7 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Module mocks (hoisted — must appear before any imports that depend on them)
@@ -172,6 +172,63 @@ describe('TrialService', () => {
                     })
                 })
             );
+        });
+
+        // SPEC-222 Part 2 (AC-3): the MercadoPago creation payload is enriched AT
+        // creation time with an environment marker and the referential
+        // (triggered-by) accommodationId. No extra MP call — it rides the existing
+        // subscriptions.create. PII (names/emails) must NOT be present.
+        it('enriches the MP creation metadata with env marker + triggering accommodationId', async () => {
+            // Arrange
+            const customerId = 'customer-222';
+            const mockPlan = { id: 'plan-owner-basico', name: 'owner-basico' };
+            vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
+                data: [mockPlan]
+            } as never);
+            vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([] as never);
+            vi.spyOn(mockBilling.subscriptions, 'create').mockResolvedValue({
+                id: 'sub-222'
+            } as never);
+
+            // Act
+            await trialService.startTrial({ customerId, accommodationId: 'acc-222' });
+
+            // Assert
+            const createArg = (mockBilling.subscriptions.create as unknown as Mock).mock
+                .calls[0]?.[0] as { metadata: Record<string, string> };
+            expect(createArg.metadata).toMatchObject({
+                autoStarted: 'true',
+                createdBy: 'trial-service',
+                triggeredByAccommodationId: 'acc-222'
+            });
+            // Env marker present (NODE_ENV defaults to 'test' under vitest).
+            expect(typeof createArg.metadata.environment).toBe('string');
+            expect((createArg.metadata.environment ?? '').length).toBeGreaterThan(0);
+            // PII guard: no name / email fields leak into the MP payload.
+            const metaKeys = Object.keys(createArg.metadata).map((k) => k.toLowerCase());
+            expect(metaKeys.some((k) => k.includes('email') || k.includes('name'))).toBe(false);
+        });
+
+        it('omits the accommodation marker when no triggering accommodation is provided', async () => {
+            // Arrange
+            const customerId = 'customer-223';
+            const mockPlan = { id: 'plan-owner-basico', name: 'owner-basico' };
+            vi.spyOn(mockBilling.plans, 'list').mockResolvedValue({
+                data: [mockPlan]
+            } as never);
+            vi.spyOn(mockBilling.subscriptions, 'getByCustomerId').mockResolvedValue([] as never);
+            vi.spyOn(mockBilling.subscriptions, 'create').mockResolvedValue({
+                id: 'sub-223'
+            } as never);
+
+            // Act — auto-start path (e.g. registration), no accommodationId
+            await trialService.startTrial({ customerId });
+
+            // Assert
+            const createArg = (mockBilling.subscriptions.create as unknown as Mock).mock
+                .calls[0]?.[0] as { metadata: Record<string, string> };
+            expect(createArg.metadata).not.toHaveProperty('triggeredByAccommodationId');
+            expect(typeof createArg.metadata.environment).toBe('string');
         });
 
         it('should not start trial if user already has subscription', async () => {

@@ -31,7 +31,7 @@
  */
 
 import type { AiFeature } from '@repo/schemas';
-import { DEFAULT_PROMPTS } from '../engine/default-prompts.js';
+import { DEFAULT_PROMPTS, DEFAULT_RULES } from '../engine/default-prompts.js';
 import { getActivePrompt } from '../storage/prompt.storage.js';
 
 // ---------------------------------------------------------------------------
@@ -60,6 +60,8 @@ const PROMPT_CACHE_TTL_MS = 300_000;
 /** Single cache entry for a resolved prompt. */
 interface PromptCacheEntry {
     readonly content: string;
+    /** Resolved rules (DB row rules, or `DEFAULT_RULES[feature]` fallback). */
+    readonly rules: string;
     readonly source: 'admin' | 'default';
     /** Epoch ms when this entry was populated. */
     readonly cachedAt: number;
@@ -103,8 +105,15 @@ export interface ResolveSystemPromptInput {
  *               `'default'` if the in-code fallback was used (AC-12).
  */
 export interface ResolveSystemPromptResult {
-    /** The effective system-prompt text. Always a non-empty string. */
+    /** The effective system-prompt content (conversational body). Non-empty. */
     readonly content: string;
+    /**
+     * The effective rules / guardrails block (SPEC-214). Resolved from the active
+     * DB row's `rules`, or `DEFAULT_RULES[feature]` when the row's rules is
+     * null/blank (US-3). Compose with {@link composeSystemPrompt} to get the
+     * full system prompt.
+     */
+    readonly rules: string;
     /**
      * Identifies where the content came from.
      *
@@ -196,7 +205,7 @@ export async function resolveSystemPrompt(
         // Non-null assertion: isEntryCacheValid already confirmed the entry exists.
         // biome-ignore lint/style/noNonNullAssertion: guarded by isEntryCacheValid
         const cached = _promptCache.get(feature)!;
-        return { content: cached.content, source: cached.source };
+        return { content: cached.content, rules: cached.rules, source: cached.source };
     }
 
     // Cache miss — read from storage.
@@ -205,28 +214,58 @@ export async function resolveSystemPrompt(
     // fall back to the in-code default WITHOUT caching the failure result.
     // This keeps a recovered DB usable on the next call — no poisoned cache.
     let adminContent: string | null;
+    let adminRules: string | null;
     try {
         const storageResult = await getActivePrompt({ feature });
         adminContent = storageResult.content;
+        adminRules = storageResult.row?.rules ?? null;
     } catch {
-        // Storage error — return the in-code default without caching so
+        // Storage error — return the in-code defaults without caching so
         // a subsequent call after DB recovery will retry the storage read.
-        return { content: DEFAULT_PROMPTS[feature], source: 'default' };
+        return {
+            content: DEFAULT_PROMPTS[feature],
+            rules: DEFAULT_RULES[feature],
+            source: 'default'
+        };
     }
 
     // AC-12: null or blank admin prompt → use in-code default.
     const isAdminPromptBlank = adminContent === null || adminContent.trim() === '';
+    // SPEC-214 US-3: rules fall back to DEFAULT_RULES when null/blank, independently
+    // of the content source (an admin row may set content but leave rules null).
+    const effectiveRules =
+        adminRules !== null && adminRules.trim() !== '' ? adminRules : DEFAULT_RULES[feature];
     const resolved: ResolveSystemPromptResult = isAdminPromptBlank
-        ? { content: DEFAULT_PROMPTS[feature], source: 'default' as const }
-        : { content: adminContent as string, source: 'admin' as const };
+        ? { content: DEFAULT_PROMPTS[feature], rules: effectiveRules, source: 'default' as const }
+        : { content: adminContent as string, rules: effectiveRules, source: 'admin' as const };
 
     // Populate the cache only on a clean successful read.
     const entry: PromptCacheEntry = {
         content: resolved.content,
+        rules: resolved.rules,
         source: resolved.source,
         cachedAt: Date.now()
     };
     _promptCache.set(feature, entry);
 
     return resolved;
+}
+
+/**
+ * Compose the effective system prompt from a resolved `content` + `rules`
+ * (SPEC-214). The rules block is appended last, as the authoritative guardrail,
+ * separated by a blank line. A blank/missing `rules` returns `content` unchanged.
+ *
+ * @example
+ * ```ts
+ * const { content, rules } = await resolveSystemPrompt({ feature: 'text_improve' });
+ * const systemPrompt = composeSystemPrompt({ content, rules });
+ * ```
+ */
+export function composeSystemPrompt(input: {
+    readonly content: string;
+    readonly rules: string | null;
+}): string {
+    const { content, rules } = input;
+    return rules !== null && rules.trim() !== '' ? `${content}\n\n${rules}` : content;
 }

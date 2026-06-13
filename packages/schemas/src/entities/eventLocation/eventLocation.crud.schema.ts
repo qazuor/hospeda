@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { EventLocationIdSchema } from '../../common/id.schema.js';
+import { stripShapeDefaults } from '../../utils/utils.js';
 import { EventLocationSchema } from './eventLocation.schema.js';
 
 /**
@@ -47,15 +48,21 @@ export type EventLocationCreateOutput = z.infer<typeof EventLocationCreateOutput
  * Schema for updating an event location (PUT - complete replacement)
  * Omits auto-generated fields and makes all fields partial
  */
-export const EventLocationUpdateInputSchema = EventLocationSchema.omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-    createdById: true,
-    updatedById: true,
-    deletedAt: true,
-    deletedById: true
-})
+// Zod 4 .partial() keeps .default(); strip them so absent keys = no change (SPEC-217).
+export const EventLocationUpdateInputSchema = z
+    .object(
+        stripShapeDefaults(
+            EventLocationSchema.omit({
+                id: true,
+                createdAt: true,
+                updatedAt: true,
+                createdById: true,
+                updatedById: true,
+                deletedAt: true,
+                deletedById: true
+            }).shape
+        )
+    )
     .partial()
     .strict();
 export type EventLocationUpdateInput = z.infer<typeof EventLocationUpdateInputSchema>;

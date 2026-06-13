@@ -46,7 +46,7 @@ let eventItems: EventCardData[] = [];
 try {
   const result = await eventsApi.getUpcoming({ pageSize: 6, daysAhead: 60 });
   if (result.ok) {
-    eventItems = result.data.items.map((raw) => toEventCardProps({ item: raw as Record<string, unknown> }));
+    eventItems = result.data.items.map((raw) => toEventCardProps({ item: raw as Record<string, unknown>, locale }));
   }
 } catch (err) {
   webLogger.error('API fetch failed', { endpoint: 'events', error: err instanceof Error ? err.message : err });

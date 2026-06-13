@@ -50,7 +50,7 @@ export type AiProviderId = z.infer<typeof AiProviderIdSchema>;
  * - `search`       → `ai_search`
  * - `support`      → `ai_support`
  */
-export const AiFeatureSchema = z.enum(['text_improve', 'chat', 'search', 'support']);
+export const AiFeatureSchema = z.enum(['text_improve', 'chat', 'search', 'support', 'translate']);
 
 /** TypeScript type for a supported AI feature. */
 export type AiFeature = z.infer<typeof AiFeatureSchema>;

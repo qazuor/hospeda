@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { DeleteResultSchema, RestoreResultSchema } from '../../api/result.schema.js';
 import { EventOrganizerIdSchema } from '../../common/id.schema.js';
+import { stripShapeDefaults } from '../../utils/utils.js';
 import { EventOrganizerSchema } from './eventOrganizer.schema.js';
 
 /**
@@ -45,15 +46,21 @@ export const EventOrganizerCreateOutputSchema = EventOrganizerSchema;
  * Schema for updating an event organizer (PUT - complete replacement)
  * Omits auto-generated fields and makes all fields partial
  */
-export const EventOrganizerUpdateInputSchema = EventOrganizerSchema.omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-    createdById: true,
-    updatedById: true,
-    deletedAt: true,
-    deletedById: true
-})
+// Zod 4 .partial() keeps .default(); strip them so absent keys = no change (SPEC-217).
+export const EventOrganizerUpdateInputSchema = z
+    .object(
+        stripShapeDefaults(
+            EventOrganizerSchema.omit({
+                id: true,
+                createdAt: true,
+                updatedAt: true,
+                createdById: true,
+                updatedById: true,
+                deletedAt: true,
+                deletedById: true
+            }).shape
+        )
+    )
     .partial()
     .strict();
 

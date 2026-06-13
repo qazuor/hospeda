@@ -2,6 +2,60 @@
     "version": "1.0",
     "epics": [
         {
+            "specId": "SPEC-217",
+            "title": "Deterministic Billing for E2E — QZPay test-control wiring + date-aware publish gate",
+            "status": "completed",
+            "progress": "15/16",
+            "path": "SPEC-217-qzpay-test-control-e2e-wiring",
+            "archived": true,
+            "archivedAt": "2026-06-13",
+            "archiveNote": "PR #1586 merged to staging (4f374036a); E2E P0 Suite green. Final 2 blockers closed: failNext scoped by ownerId (parallel-worker contamination) + publish() promotes PRIVATE->PUBLIC visibility (robust variant — never clobbers RESTRICTED or explicit caller visibility; adversarial review caught the unconditional-PUBLIC security regression). T-012 host-07d deferred; qzpay test-control hardening + deferred coverage tracked in SPEC-221.",
+            "note": "15/16 (T-012 host-07d deferred to SPEC-221). Earlier blocker (Zod 4 .partial() not stripping .default()) fixed via stripShapeDefaults across 32 update/patch schemas. T-011 (host-07c) + T-013 (res-01) verified live. T-014/T-015 done. T-016 CI soak green."
+        },
+        {
+            "specId": "SPEC-221",
+            "title": "QZPay Test-Control Hardening & Deferred E2E Coverage",
+            "status": "completed",
+            "progress": "2/3",
+            "path": "SPEC-221-qzpay-test-control-hardening",
+            "base": "staging",
+            "archived": true,
+            "archivedAt": "2026-06-13",
+            "archiveNote": "PR #1602 merged (a909ef4eb). F-1 (scope delayNextQueue) + F-2 (extractScope extensibility) shipped. F-3 dropped as contrived prod code (no sync updateSubscription in publish; compensation already unit-tested) — legitimate debugging need moved to SPEC-227 (non-blocking observability + creation-time MP enrichment).",
+            "note": "F-1 + F-2 DONE. F-3 (host-07d sync updateSubscription E2E) dropped; see SPEC-227."
+        },
+        {
+            "specId": "SPEC-227",
+            "title": "Billing Subscription Observability — trial↔accommodation↔owner linkage logging + creation-time MP reference enrichment",
+            "status": "completed",
+            "progress": "4/4",
+            "path": "SPEC-227-billing-subscription-observability",
+            "base": "staging",
+            "archived": true,
+            "archivedAt": "2026-06-13",
+            "renumberedFrom": "SPEC-222",
+            "archiveNote": "PR #1608 merged (d778b120c). Part 1 (publish linkage log + Sentry) + Part 2 (creation-time MP metadata) shipped; adversarial review GO; also fixed the SPEC-222 collision. Billing staging smoke not run (observability-only, inert when gate off).",
+            "note": "Renumbered from SPEC-222 (collided with the SPEC-222..226 batch). Reshaped from SPEC-221 F-3. Done."
+        },
+        {
+            "specId": "SPEC-220",
+            "title": "Staging→Main Promotion Hardening — clear CodeQL security debt blocking the promotion",
+            "status": "in-progress",
+            "progress": "0/7",
+            "path": "SPEC-220-staging-main-promotion-hardening"
+        },
+        {
+            "specId": "SPEC-211",
+            "title": "AI Monetization Model",
+            "status": "completed",
+            "progress": "17/17",
+            "path": "SPEC-211-ai-monetization-model",
+            "note": "Follow-up to SPEC-200. Owner-governed AI chat + Model C config-driven capability sync. All 17 tasks complete; full monorepo typecheck green. Stays in-progress until merged to staging (closeout flips to completed/archived post-merge). ai_support feature route + AC-4.2 metering deferred to a future spec.",
+            "archived": true,
+            "archivedAt": "2026-06-10T19:28:09.000Z",
+            "archiveNote": "PR #1560 merged to staging. Owner ops gates still pending before staging->main: SPEC-143 staging smoke (MP sandbox + OpenAI vault). ai_support feature route + AC-4.2 metering deferred to a future spec."
+        },
+        {
             "specId": "SPEC-200",
             "title": "AI Accommodation Chat (tourist)",
             "status": "in-progress",
@@ -57,14 +111,14 @@
         {
             "specId": "SPEC-180",
             "title": "Sentry Observability Hardening — source maps, environments, and logger-driven capture",
-            "status": "in-progress",
+            "status": "approved",
             "progress": "0/14",
             "path": "SPEC-180-sentry-observability"
         },
         {
             "specId": "SPEC-183",
             "title": "API Error i18n Standardization",
-            "status": "in-progress",
+            "status": "approved",
             "progress": "0/14",
             "path": "SPEC-183-api-error-i18n-standardization",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-183-api-error-i18n-standardization",
@@ -132,11 +186,11 @@
             "specId": "SPEC-190",
             "title": "Admin Bundle Perf — Icon Tree-Shaking & Entity-Chunk Code-Split",
             "status": "draft",
-            "progress": "0/0",
+            "progress": "12/14",
             "path": "SPEC-190-admin-bundle-perf-icons-and-codesplit",
             "branch": "spec/SPEC-190-admin-bundle-perf-icons-and-codesplit",
             "linearIssues": ["BETA-74"],
-            "note": "tasks pending atomization",
+            "note": "Tests added, pending smoke",
             "archived": false
         },
         {
@@ -262,9 +316,12 @@
         {
             "specId": "SPEC-205",
             "title": "Host Web Foundation — Dashboard, Navigation, Promotions & Funnel",
-            "status": "in-progress",
-            "progress": "0/1",
+            "status": "completed",
+            "progress": "9/9",
             "path": "SPEC-205-host-web-foundation",
+            "archived": true,
+            "archivedAt": "2026-06-13T00:00:00Z",
+            "archiveNote": "All phases shipped (1/2/4 in #1542, Phase 3 owner-promotions CRUD in #1591)",
             "tags": ["host-migration", "phase-1"]
         },
         {
@@ -348,6 +405,82 @@
             "status": "in-progress",
             "progress": "6/7",
             "path": "SPEC-195-content-auto-moderation"
+        },
+        {
+            "specId": "SPEC-199",
+            "title": "AI Natural-Language Search",
+            "status": "completed",
+            "progress": "21/21",
+            "path": "SPEC-199-ai-nl-search",
+            "archived": true,
+            "archivedAt": "2026-06-10",
+            "archiveNote": "Shipped via PR #1557 (merged to staging 2026-06-10); 21/21 tasks complete.",
+            "note": "Child B of SPEC-173. NL search: generateObject -> SearchIntentEntities -> AccommodationSearchHttp params, NO embeddings V1. All §3 decisions resolved. spec-realign 2026-06-10: greenfield, foundation stable; slot set expanded (D-5: bedrooms/bathrooms/maxRating/featureSlugs). 21 atomic tasks generated. IN-PROGRESS."
+        },
+        {
+            "specId": "SPEC-213",
+            "title": "Web + Admin pre-beta polish & bugfix batch",
+            "status": "in-progress",
+            "progress": "19/19",
+            "path": "SPEC-213-web-admin-prebeta-fixes-batch"
+        },
+        {
+            "specId": "SPEC-214",
+            "title": "Editable AI prompt rules (DB-backed, per feature)",
+            "status": "completed",
+            "progress": "12/12",
+            "path": "SPEC-214-ai-prompt-rules-editable",
+            "archived": true,
+            "archivedAt": "2026-06-12T17:39:12Z",
+            "archiveNote": "PR #1583 merged to staging"
+        },
+        {
+            "specId": "SPEC-215",
+            "title": "Destination climate & live weather",
+            "status": "pending",
+            "progress": "0/0",
+            "path": "SPEC-215-destination-climate-weather"
+        },
+        {
+            "specId": "SPEC-216",
+            "title": "Owner plans inherit tourist entitlements & limits (owner = superset of tourist)",
+            "status": "completed",
+            "progress": "12/12",
+            "path": "SPEC-216-owner-inherits-tourist-entitlements",
+            "archived": true,
+            "archivedAt": "2026-06-12T00:00:00Z",
+            "archiveNote": "PR #1579 merged to staging"
+        },
+        {
+            "specId": "SPEC-218",
+            "title": "astro check in web CI — load the App.Locals augmentation, clean .astro type errors, gate typecheck",
+            "status": "completed",
+            "progress": "10/10",
+            "path": "SPEC-218-astro-check-web-typecheck",
+            "archived": true,
+            "archivedAt": "2026-06-12T00:00:00Z",
+            "archiveNote": "PR #1578 merged to staging"
+        },
+        {
+            "specId": "SPEC-212",
+            "title": "Conversational AI Accommodation Search",
+            "status": "completed",
+            "progress": "18/18",
+            "path": "SPEC-212-conversational-ai-search",
+            "archived": true,
+            "archivedAt": "2026-06-11",
+            "archiveNote": "PR #1577 merged to staging (f8df2b971); 18/18 tasks complete. Post-merge pending (owner-gated): @ai e2e + manual conversational-search smoke on staging once AI is configured, then staging->main promotion after soak.",
+            "note": "ALL 18 TASKS DONE (implementation complete, all green). Conversational AI search live: NL->filters extraction (generateObject) -> filters SSE event -> frontend GET /public/accommodations -> streamed NL reply -> best-effort persistence. SPEC-199 UI+route retired. E2E (T-016) is write-only, runs in CI/staging with @ai tag."
+        },
+        {
+            "specId": "SPEC-219",
+            "title": "Dependabot CI Hardening & Dependency Bump Merge Strategy",
+            "status": "completed",
+            "progress": "10/10",
+            "path": "SPEC-219-dependabot-ci-hardening",
+            "archived": true,
+            "archivedAt": "2026-06-13",
+            "archiveNote": "Closed: dependabot.yml ignores reached main via forced merge of #1607; #1588 closed. Clean main resolution owned by SPEC-220 promotion."
         }
     ],
     "standalone": {

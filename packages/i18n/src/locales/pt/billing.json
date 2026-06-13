@@ -426,10 +426,7 @@
         "priority_support": "Suporte prioritário",
         "featured_listing": "Aparecer em destaque nas buscas",
         "custom_branding": "Identidade visual personalizada",
-        "api_access": "Acesso à API",
-        "dedicated_manager": "Gerente de conta dedicado",
         "create_promotions": "Criar promoções",
-        "social_media_integration": "Integração com redes sociais",
         "can_use_rich_description": "Descrições enriquecidas",
         "can_embed_video": "Inserir vídeos no anúncio",
         "can_use_calendar": "Calendário de disponibilidade",
@@ -442,15 +439,15 @@
         "read_reviews": "Ler avaliações completas",
         "ad_free": "Navegação sem anúncios",
         "price_alerts": "Alertas de preço",
-        "early_access_events": "Acesso antecipado a eventos",
         "exclusive_deals": "Ofertas exclusivas",
         "vip_support": "Suporte VIP",
-        "concierge_service": "Serviço de concierge",
-        "airport_transfers": "Traslados ao aeroporto",
         "vip_promotions_access": "Acesso a promoções VIP",
         "can_compare_accommodations": "Comparar hospedagens",
         "can_attach_review_photos": "Enviar fotos nas avaliações",
         "can_view_search_history": "Ver histórico de buscas",
-        "can_view_recommendations": "Recomendações personalizadas"
+        "can_view_recommendations": "Recomendações personalizadas",
+        "ai_text_improve": "Melhoria de textos com IA",
+        "ai_chat": "Consultas sobre a acomodação com IA",
+        "ai_search": "Busca inteligente"
     }
 }

@@ -3,6 +3,7 @@ import { UserIdSchema } from '../../common/id.schema.js';
 import { StrongPasswordSchema } from '../../common/password.schema.js';
 import { PermissionEnumSchema, RoleEnumSchema } from '../../enums/index.js';
 import { ModerationStatusEnumSchema } from '../../enums/moderation-status.schema.js';
+import { stripShapeDefaults } from '../../utils/utils.js';
 import { UserSchema } from './user.schema.js';
 
 /**
@@ -44,19 +45,54 @@ export const UserCreateOutputSchema = UserSchema;
 // UPDATE SCHEMAS
 // ============================================================================
 
+// Zod 4 .partial() keeps .default(); strip them so absent keys = no change (SPEC-217).
 /**
  * Schema for updating a user (PUT - complete replacement)
- * Omits auto-generated fields and makes all fields partial
+ * Omits auto-generated fields and makes all fields partial.
+ *
+ * SYSTEM FLAGS are also omitted. Several of these declare a Zod
+ * `.default(false)` / `.default([])` on `UserSchema`; because the generic
+ * `BaseCrudService.update` re-parses the input through this schema, a
+ * `.partial()` update that omits them would have Zod RE-INJECT the default and
+ * persist it — silently resetting `emailVerified`, `profileCompleted`,
+ * `serviceSuspended`, etc. on every unrelated edit (e.g. a user changing their
+ * display name would lose email verification and bounce back to onboarding).
+ * None of these flags are written through the generic update path: each has a
+ * dedicated writer — Better Auth (`emailVerified`, `banned`, `banReason`,
+ * `banExpires`), `UserService.completeProfile` (`profileCompleted`),
+ * `UserService.skip/markSetPassword` (`setPasswordPrompted`),
+ * `setOwnerServiceSuspension` (`serviceSuspended`), and `PermissionService`
+ * (`permissions`, which has no column on `users` anyway). `role` is kept: it
+ * has no default (so it is never re-injected) and the admin PUT/PATCH routes
+ * legitimately change it through this schema.
  */
-export const UserUpdateInputSchema = UserSchema.omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-    createdById: true,
-    updatedById: true,
-    deletedAt: true,
-    deletedById: true
-}).partial();
+export const UserUpdateInputSchema = z
+    .object(
+        // Zod 4 .partial() keeps .default(); strip them so absent keys = no change
+        // (SPEC-217). This removes the remaining defaulted fields (lifecycleState,
+        // visibility); the system flags below are omitted outright (see JSDoc).
+        stripShapeDefaults(
+            UserSchema.omit({
+                id: true,
+                createdAt: true,
+                updatedAt: true,
+                createdById: true,
+                updatedById: true,
+                deletedAt: true,
+                deletedById: true,
+                // System flags — never settable via a generic user update (see JSDoc).
+                emailVerified: true,
+                profileCompleted: true,
+                setPasswordPrompted: true,
+                serviceSuspended: true,
+                permissions: true,
+                banned: true,
+                banReason: true,
+                banExpires: true
+            }).shape
+        )
+    )
+    .partial();
 
 /**
  * Schema for partial user updates (PATCH)

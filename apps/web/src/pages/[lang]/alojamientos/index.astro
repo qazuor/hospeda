@@ -32,9 +32,13 @@ import { getAccommodationTypeLabel } from '@/lib/colors';
 import { buildAccommodationListingSummary, DEFAULT_TYPE_GRAMMAR } from '@/lib/accommodation-listing-summary';
 import type { CatalogEntry, SummaryLocale } from '@/lib/accommodation-listing-summary';
 import { resolveI18nText } from '@/lib/resolve-i18n-text';
+import { getApiUrl } from '@/lib/env';
+import { SearchChatPanel } from '@/components/ai-search/SearchChatPanel.client';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
+const { t: tEs } = createTranslations('es');
+const { t: tEn } = createTranslations('en');
 
 // Read pagination and filter params from URL
 const url = Astro.url;
@@ -204,7 +208,7 @@ const total = result.ok ? result.data.pagination.total : 0;
 const totalPages = result.ok ? result.data.pagination.totalPages : 0;
 
 // Transform items for cards
-const baseCards = items.map((item) => toAccommodationCardProps({ item: item as unknown as Record<string, unknown> }));
+const baseCards = items.map((item) => toAccommodationCardProps({ item: item as unknown as Record<string, unknown>, locale }));
 
 // SPEC-098 T-041 — Pre-hydrate FavoriteButton state for authenticated users.
 // We issue a single bulk-check request for all the entity IDs on the current
@@ -227,14 +231,14 @@ if (isAuthenticated && baseCards.length > 0) {
             favoriteChecks = bulkResult.data.checks;
         } else {
             webLogger.warn(
-                { error: bulkResult.error },
-                'Bulk bookmark check failed; falling back to per-card hydration'
+                'Bulk bookmark check failed; falling back to per-card hydration',
+                { error: bulkResult.error }
             );
         }
     } catch (error) {
         webLogger.warn(
-            { error: error instanceof Error ? error.message : String(error) },
-            'Bulk bookmark check threw; falling back to per-card hydration'
+            'Bulk bookmark check threw; falling back to per-card hydration',
+            { error: error instanceof Error ? error.message : String(error) }
         );
     }
 }
@@ -259,9 +263,17 @@ const destinationCatalog: readonly CatalogEntry[] = destinations.map((d) => ({
 	key: d.id,
 	label: { es: d.name, en: d.name }
 }));
+// NOTE: The API strips underscores from amenity slugs (e.g. air_conditioning →
+// airconditioning), but the i18n catalog keys and a.name use snake_case
+// (air_conditioning). We resolve the canonical identifier from a.name (which
+// always holds the snake_case form) instead of a.slug to avoid lookup misses
+// for multi-word amenities.
 const amenityCatalog: readonly CatalogEntry[] = amenities.map((a) => ({
 	key: a.id,
-	label: { es: resolveI18nText(a.name, 'es'), en: resolveI18nText(a.name, 'en') }
+	label: {
+		es: tEs(`accommodations.amenityNames.${resolveI18nText(a.name, 'en')}`, resolveI18nText(a.name, 'es')),
+		en: tEn(`accommodations.amenityNames.${resolveI18nText(a.name, 'en')}`, resolveI18nText(a.name, 'en'))
+	}
 }));
 const featureCatalog: readonly CatalogEntry[] = features.map((f) => ({
 	key: f.id,
@@ -392,13 +404,19 @@ const filterGroups: FilterGroup[] = [
 			{ value: 'CAMPING', label: getAccommodationTypeLabel({ type: 'CAMPING', t }) },
 			{ value: 'ROOM', label: getAccommodationTypeLabel({ type: 'ROOM', t }) },
 			{ value: 'RESORT', label: getAccommodationTypeLabel({ type: 'RESORT', t }) },
+			{ value: 'APART_HOTEL', label: getAccommodationTypeLabel({ type: 'APART_HOTEL', t }) },
+			{ value: 'ESTANCIA', label: getAccommodationTypeLabel({ type: 'ESTANCIA', t }) },
+			{ value: 'BED_AND_BREAKFAST', label: getAccommodationTypeLabel({ type: 'BED_AND_BREAKFAST', t }) },
 		],
 	},
 	{
 		id: 'amenities',
 		label: t('accommodations.sidebar.amenities', 'Comodidades'),
 		type: 'icon-chips',
-		options: amenities.map((a) => ({ value: a.id, label: resolveI18nText(a.name, locale), icon: a.icon ?? undefined })),
+		// NOTE: Use a.name (snake_case) as the i18n key segment — a.slug strips
+		// underscores (e.g. air_conditioning → airconditioning) which breaks catalog
+		// lookups for multi-word amenities. a.name always holds the canonical form.
+		options: amenities.map((a) => ({ value: a.id, label: t(`accommodations.amenityNames.${resolveI18nText(a.name, 'en')}`, resolveI18nText(a.name, locale)), icon: a.icon ?? undefined })),
 		maxVisible: 10,
 		// Quick-filter shortcuts rendered ABOVE the regular amenity chips.
 		// Each `value` is the URL boolean param name that the backend resolves
@@ -653,8 +671,10 @@ if (amenitiesParam) {
 	for (const id of amenitiesParam.split(',').filter(Boolean)) {
 		const a = amenities.find((x) => x.id === id);
 		if (a) {
+			// NOTE: Use a.name (snake_case) as the i18n key segment — a.slug strips
+			// underscores (air_conditioning → airconditioning) breaking multi-word lookups.
 			activeFilterChips.push({
-				label: resolveI18nText(a.name, locale),
+				label: t(`accommodations.amenityNames.${resolveI18nText(a.name, 'en')}`, resolveI18nText(a.name, locale)),
 				removeUrl: urlWithoutListValue('amenities', id),
 			});
 		}
@@ -798,6 +818,21 @@ const emptyStateSuggestions = [
 		</div>
 	)}
 
+	<!--
+	    Conversational AI search panel (SPEC-212) — chat-based natural-language
+	    search that replaces the SPEC-199 single-shot NL input. Placed above the
+	    results grid so the user finds it immediately after the type-badge nav.
+	    Uses client:load because the panel should be ready for interaction without
+	    requiring scroll (it sits near the top of the main content area).
+	-->
+	<SearchChatPanel
+		client:load
+		locale={locale}
+		apiUrl={getApiUrl()}
+		isAuthenticated={isAuthenticated}
+		currentUrl={Astro.url.href}
+	/>
+
 	{hasError && !result.ok && (
 		<ErrorBanner locale={locale} error={result.error} entityName="alojamientos" />
 	)}
@@ -858,6 +893,7 @@ const emptyStateSuggestions = [
 			})()}
 		/>
 	)}
+
 </ListingLayout>
 
 

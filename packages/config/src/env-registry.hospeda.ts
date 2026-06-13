@@ -1154,11 +1154,11 @@ export const HOSPEDA_ENV_VARS = [
         category: 'moderation'
     },
     {
-        name: 'HOSPEDA_OPENAI_API_KEY',
+        name: 'HOSPEDA_MODERATION_OPENAI_API_KEY',
         description:
-            'OpenAI API key for the Moderation API provider. Required when HOSPEDA_MODERATION_PROVIDER=openai.',
+            'OpenAI API key for the content-moderation engine. Required when HOSPEDA_MODERATION_PROVIDER=openai.',
         descriptionEs:
-            'API key de OpenAI para el proveedor de la API de Moderación. Obligatoria cuando HOSPEDA_MODERATION_PROVIDER=openai.',
+            'API key de OpenAI para el motor de moderación de contenido. Obligatoria cuando HOSPEDA_MODERATION_PROVIDER=openai.',
         type: 'string',
         required: false,
         secret: true,

@@ -1,3 +1,4 @@
+import type { AppSourceId, FeedbackEnvironment } from '@repo/schemas';
 /**
  * @repo/feedback - useAutoCollect hook.
  *
@@ -12,7 +13,6 @@ import {
     getNavigationHistory,
     installRuntimeTrackers
 } from '../lib/runtime-trackers.js';
-import type { AppSourceId, FeedbackEnvironment } from '../schemas/feedback.schema.js';
 import { useConsoleCapture } from './useConsoleCapture.js';
 
 /**

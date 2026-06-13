@@ -63,6 +63,7 @@ import {
     adminAiCredentialsRoutes,
     adminAiPromptsRoutes,
     adminAiSettingsRoutes,
+    adminAiTranslateRoute,
     adminAiUsageRoutes
 } from './ai/index.js';
 import { protectedAiRoutes } from './ai/protected/index.js';
@@ -103,6 +104,12 @@ import { adminSponsorshipLevelRoutes } from './sponsorship-level';
 import { adminSponsorshipPackageRoutes } from './sponsorship-package';
 import { publicStatsRoutes } from './stats/public';
 import { adminSystemRoutes } from './system/admin';
+// SPEC-217: static import (NOT require) so tsup inlines qzpay-control once and it
+// shares the single @repo/billing test-control `state` singleton with applyTestControl.
+// A dynamic require() here produced a second module instance under the ESM bundle,
+// so the failNext queue written by the HTTP handler was invisible to applyTestControl.
+// The module is inert in production (every entry point is gated by isTestControlEnabled()).
+import { createQZPayTestControlRoutes } from './test/qzpay-control.js';
 import { publicTestimonialRoutes } from './testimonials/public';
 import { adminUserRoutes, protectedUserRoutes, publicUserRoutes } from './user';
 import { protectedUserBookmarkRoutes, publicUserBookmarkRoutes } from './user-bookmark';
@@ -401,6 +408,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/ai/settings', adminAiSettingsRoutes);
         app.route('/api/v1/admin/ai/prompts', adminAiPromptsRoutes);
         app.route('/api/v1/admin/ai/usage', adminAiUsageRoutes);
+        app.route('/api/v1/admin/ai/translate', adminAiTranslateRoute);
 
         // Media (entity image uploads + asset deletion)
         app.route('/api/v1/admin/media', adminMediaRoutes);
@@ -436,12 +444,6 @@ export const setupRoutes = (app: AppOpenAPI) => {
             env.NODE_ENV !== 'production' &&
             process.env.HOSPEDA_QZPAY_TEST_CONTROL_ENABLED === 'true'
         ) {
-            // Static import — registerRoutes is called from an async context
-            // but the function itself is synchronous. Importing statically
-            // keeps the module graph intact for tsup builds.
-            // eslint-disable-next-line @typescript-eslint/no-require-imports
-            const { createQZPayTestControlRoutes } =
-                require('./test/qzpay-control.js') as typeof import('./test/qzpay-control.js');
             app.route('/api/v1/test/qzpay-control', createQZPayTestControlRoutes());
             apiLogger.warn(
                 '⚠️ QZPay test-control endpoint mounted at /api/v1/test/qzpay-control (test-only)'

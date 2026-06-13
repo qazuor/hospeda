@@ -1,5 +1,5 @@
 import type { Accommodation, AccommodationCreateInput } from '@repo/schemas';
-import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
+import { LifecycleStatusEnum, PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { ServiceError } from '../../types';
 import { checkGenericPermission, getOwnershipDescriptor, hasPermission } from '../../utils';
@@ -123,6 +123,25 @@ export function checkCanRestore(actor: Actor, entity: Accommodation): void {
  * @throws {ServiceError} If the permission check fails.
  */
 export function checkCanView(actor: Actor, entity: Accommodation): void {
+    // Soft-deleted accommodations are invisible to everyone.
+    // The base model's findOneWithRelations does not filter deleted_at IS NULL,
+    // so we enforce it here to prevent ghost rows from leaking on public reads.
+    if (entity.deletedAt !== null && entity.deletedAt !== undefined) {
+        throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+    }
+
+    // Draft/inactive/archived accommodations are not visible to the public.
+    // Only the owner or staff with ACCOMMODATION_VIEW_ALL can see non-ACTIVE
+    // accommodations. This prevents DRAFT content from leaking to anonymous
+    // readers when lifecycle_state is set to a non-ACTIVE value via SQL or API.
+    if (
+        entity.lifecycleState !== LifecycleStatusEnum.ACTIVE &&
+        !isOwner(actor, entity) &&
+        !hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL)
+    ) {
+        throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+    }
+
     // SPEC-143 #29: a service-suspended owner's accommodations are hidden from
     // public reads and behave as if they do not exist (NOT_FOUND, not FORBIDDEN,
     // so existence is not leaked). The owner themselves and staff holding

@@ -77,7 +77,7 @@ if (isAuthenticated) {
             }
         }
     } catch (error) {
-        logger.warn({ error }, 'publicar/index: failed to fetch trial status');
+        logger.warn('publicar/index: failed to fetch trial status', { error });
         // Non-fatal: keep the default trial callout on error.
     }
 }

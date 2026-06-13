@@ -5,6 +5,7 @@ import {
     PostSponsorshipIdSchema
 } from '../../common/id.schema.js';
 import { BaseSearchSchema } from '../../common/pagination.schema.js';
+import { stripShapeDefaults } from '../../utils/utils.js';
 import { PostSponsorshipSchema } from './postSponsorship.schema.js';
 
 /**
@@ -53,7 +54,10 @@ export const PostSponsorshipCreateOutputSchema = z.object({
  * Schema for updating a post sponsorship
  * All fields optional except those that shouldn't be updated
  */
-export const PostSponsorshipUpdateInputSchema = PostSponsorshipCreateInputSchema.partial();
+// Zod 4 .partial() keeps .default(); strip them so absent keys = no change (SPEC-217).
+export const PostSponsorshipUpdateInputSchema = z
+    .object(stripShapeDefaults(PostSponsorshipCreateInputSchema.shape))
+    .partial();
 
 /**
  * Schema for post sponsorship update response

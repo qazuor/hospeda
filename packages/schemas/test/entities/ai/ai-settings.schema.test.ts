@@ -61,6 +61,11 @@ const minimalSettingsValue = {
             model: 'claude-3-5-haiku-20241022',
             primaryProvider: 'anthropic' as const,
             fallbackChain: ['openai'] as const
+        },
+        translate: {
+            ...validFeatureConfig,
+            model: 'gemini-1.5-flash',
+            primaryProvider: 'google' as const
         }
     }
 };
@@ -215,7 +220,7 @@ describe('AiCostCeilingsSchema', () => {
 
     it('rejects an unknown feature key in perFeatureMonthlyMicroUsd', () => {
         const result = AiCostCeilingsSchema.safeParse({
-            perFeatureMonthlyMicroUsd: { translate: 1000 }
+            perFeatureMonthlyMicroUsd: { unknown_feature: 1000 }
         });
         expect(result.success).toBe(false);
     });
@@ -474,6 +479,67 @@ describe('AiSettingsResponseSchema', () => {
         const result = AiSettingsResponseSchema.safeParse({
             ...validResponse,
             value: { providers: {}, features: {}, unknownKey: true }
+        });
+        expect(result.success).toBe(false);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// AiSettingsValueSchema — opt-in moderation field
+// ---------------------------------------------------------------------------
+
+describe('AiSettingsValueSchema — moderation field (opt-in)', () => {
+    it('accepts a blob without moderation (field absent = moderation disabled)', () => {
+        // minimalSettingsValue has no moderation key — this is the normal case.
+        const result = AiSettingsValueSchema.safeParse(minimalSettingsValue);
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.moderation).toBeUndefined();
+        }
+    });
+
+    it('accepts a blob with moderation.providerId set to a known provider', () => {
+        const result = AiSettingsValueSchema.safeParse({
+            ...minimalSettingsValue,
+            moderation: { providerId: 'openai' }
+        });
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.moderation?.providerId).toBe('openai');
+        }
+    });
+
+    it('accepts a blob with moderation.providerId set to a custom provider string', () => {
+        const result = AiSettingsValueSchema.safeParse({
+            ...minimalSettingsValue,
+            moderation: { providerId: 'my-custom-moderation-provider' }
+        });
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.moderation?.providerId).toBe('my-custom-moderation-provider');
+        }
+    });
+
+    it('rejects moderation object missing providerId', () => {
+        const result = AiSettingsValueSchema.safeParse({
+            ...minimalSettingsValue,
+            moderation: {}
+        });
+        expect(result.success).toBe(false);
+    });
+
+    it('rejects moderation object with empty string providerId', () => {
+        const result = AiSettingsValueSchema.safeParse({
+            ...minimalSettingsValue,
+            moderation: { providerId: '' }
+        });
+        expect(result.success).toBe(false);
+    });
+
+    it('rejects moderation object with unknown extra keys (.strict enforcement)', () => {
+        const result = AiSettingsValueSchema.safeParse({
+            ...minimalSettingsValue,
+            moderation: { providerId: 'openai', extraKey: true }
         });
         expect(result.success).toBe(false);
     });

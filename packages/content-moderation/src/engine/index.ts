@@ -35,7 +35,8 @@ let moderationEngine: ModerationOrchestrator | null = null;
 function readEnv(overrides?: ModerationEnv): Required<ModerationEnv> {
     return {
         provider: overrides?.provider ?? process.env.HOSPEDA_MODERATION_PROVIDER ?? 'stub',
-        openaiApiKey: overrides?.openaiApiKey ?? process.env.HOSPEDA_OPENAI_API_KEY ?? '',
+        openaiApiKey:
+            overrides?.openaiApiKey ?? process.env.HOSPEDA_MODERATION_OPENAI_API_KEY ?? '',
         timeoutMs:
             overrides?.timeoutMs ??
             Number.parseInt(process.env.HOSPEDA_MODERATION_TIMEOUT_MS ?? '1500', 10),
@@ -61,7 +62,7 @@ export function createProviderFromEnv(options: InitializeModerationEngineOptions
         case 'openai':
             if (env.openaiApiKey.trim().length === 0) {
                 throw new EngineConfigError(
-                    'HOSPEDA_OPENAI_API_KEY is required when HOSPEDA_MODERATION_PROVIDER=openai'
+                    'HOSPEDA_MODERATION_OPENAI_API_KEY is required when HOSPEDA_MODERATION_PROVIDER=openai'
                 );
             }
             return {

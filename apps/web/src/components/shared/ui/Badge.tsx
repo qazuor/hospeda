@@ -9,7 +9,7 @@
  * Badge.astro — see that file for the complete spec.
  */
 
-import { resolveIcon } from '@repo/icons';
+import { resolveIcon } from '@repo/icons/resolver';
 import type { ReactElement } from 'react';
 import styles from './Badge.module.css';
 import type { BadgeBaseProps } from './badge.types';

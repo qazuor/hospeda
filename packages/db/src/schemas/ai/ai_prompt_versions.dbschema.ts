@@ -38,8 +38,16 @@ export const aiPromptVersions = pgTable(
          */
         version: integer('version').notNull(),
 
-        /** System prompt content (the full prompt string). */
+        /** System prompt content (the conversational instructions). */
         content: text('content').notNull(),
+
+        /**
+         * Editable hard "rules"/guardrails for the feature, managed separately
+         * from `content` and composed after it at runtime (SPEC-214). Nullable:
+         * `NULL` falls back to the in-code `DEFAULT_RULES[feature]` so the
+         * pre-migration effective prompt is preserved.
+         */
+        rules: text('rules'),
 
         /**
          * Whether this version is the currently active prompt for the feature.

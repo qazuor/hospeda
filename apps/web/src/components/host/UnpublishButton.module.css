@@ -1,0 +1,54 @@
+/**
+ * Styles for the UnpublishButton island.
+ *
+ * The button lives inside PropertyCard.astro, whose `.prop-card__action`
+ * styles are Astro-scoped and therefore do NOT reach this React island (it
+ * carries no `data-astro-*` hash). These classes mirror that action-button
+ * look so the "Despublicar" control matches the sibling Edit / View links.
+ */
+
+.action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 8px 14px;
+    border-radius: var(--radius-pill, 9999px);
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 0.8125rem;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: opacity 150ms ease-out, background-color 150ms ease-out;
+    cursor: pointer;
+}
+
+.action:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.danger {
+    background-color: oklch(0.96 0.02 25);
+    color: oklch(0.45 0.2 25);
+    border: 1px solid oklch(0.88 0.06 25);
+}
+
+.danger:hover:not(:disabled) {
+    background-color: oklch(0.92 0.04 25);
+}
+
+.secondary {
+    background-color: var(--surface-warm, oklch(0.96 0.02 60));
+    color: var(--core-foreground);
+    border: 1px solid var(--border);
+}
+
+.secondary:hover {
+    background-color: var(--muted, oklch(0.93 0.01 60));
+}
+
+.action:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}

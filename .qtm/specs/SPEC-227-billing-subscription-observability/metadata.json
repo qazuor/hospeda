@@ -1,0 +1,16 @@
+{
+    "specId": "SPEC-227",
+    "title": "Billing Subscription Observability — trial↔accommodation↔owner linkage logging + creation-time MP reference enrichment",
+    "type": "feat",
+    "complexity": "low",
+    "status": "completed",
+    "created": "2026-06-13T00:00:00.000Z",
+    "approved": "2026-06-13T00:00:00.000Z",
+    "completed": "2026-06-13T00:00:00.000Z",
+    "planFileRef": null,
+    "renumberedFrom": "SPEC-222",
+    "renumberedReason": "SPEC-222 collided with the SPEC-222..226 batch (accommodation-import-from-url); renumbered to next free.",
+    "origin": "Reshaped from SPEC-221 F-3 — legitimate debugging need without contrived prod code",
+    "relatedSpecs": ["SPEC-221", "SPEC-217", "SPEC-143", "SPEC-180"],
+    "tags": ["billing", "observability", "sentry", "logging", "mercadopago", "subscriptions"]
+}

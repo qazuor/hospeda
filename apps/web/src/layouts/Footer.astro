@@ -75,12 +75,12 @@ const STATS_FALLBACK = {
     averageRating: 4.5,
 } as const;
 
-let statsAccommodations = STATS_FALLBACK.accommodations;
-let statsAverageRating = STATS_FALLBACK.averageRating;
+let statsAccommodations: number = STATS_FALLBACK.accommodations;
+let statsAverageRating: number = STATS_FALLBACK.averageRating;
 
 try {
     const result = await statsApi.getPlatformStats();
-    if (result.success && result.data) {
+    if (result.ok) {
         statsAccommodations = roundDown(result.data.accommodations) || STATS_FALLBACK.accommodations;
         statsAverageRating = result.data.averageRating > 0
             ? result.data.averageRating
@@ -309,7 +309,7 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
                     paymentMethods.map(({ Icon, label }) => (
                         <li>
                             <Icon
-                                class="footer__payment"
+                                className="footer__payment"
                                 size={32}
                                 aria-label={label}
                             />

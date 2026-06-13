@@ -182,8 +182,9 @@ function extractRelationItems(
  * @returns Typed AccommodationCardData for the card component
  */
 export function toAccommodationCardProps({
-    item
-}: { readonly item: Record<string, unknown> }): AccommodationCardData {
+    item,
+    locale = 'es'
+}: { readonly item: Record<string, unknown>; readonly locale?: string }): AccommodationCardData {
     const priceData = item.price as
         | { price?: number; amount?: number; currency?: string }
         | undefined;
@@ -211,8 +212,11 @@ export function toAccommodationCardProps({
     return {
         id: String(item.id || ''),
         slug: String(item.slug || ''),
-        name: String(item.name || ''),
-        summary: String(item.summary || item.description || ''),
+        name: resolveI18nText((item.nameI18n as I18nTextLike | string) ?? item.name, locale),
+        summary: resolveI18nText(
+            (item.summaryI18n as I18nTextLike | string) ?? item.summary ?? item.description,
+            locale
+        ),
         type: String(item.type || item.accommodationType || ''),
         featuredImage,
         photoCount,
@@ -268,8 +272,12 @@ export function toAccommodationCardProps({
  * @returns Typed AccommodationDetailedCardData for the detailed card component
  */
 export function toAccommodationDetailedProps({
-    item
-}: { readonly item: Record<string, unknown> }): AccommodationDetailedCardData {
+    item,
+    locale = 'es'
+}: {
+    readonly item: Record<string, unknown>;
+    readonly locale?: string;
+}): AccommodationDetailedCardData {
     const { featuredImage, galleryUrls } = processEntityImages({
         item,
         entity: 'accommodation-detailed',
@@ -290,7 +298,7 @@ export function toAccommodationDetailedProps({
     return {
         id: String(item.id || ''),
         slug: String(item.slug || ''),
-        name: String(item.name || ''),
+        name: resolveI18nText((item.nameI18n as I18nTextLike | string) ?? item.name, locale),
         type: String(item.type || item.accommodationType || ''),
         images,
         location: {
@@ -321,8 +329,9 @@ export function toAccommodationDetailedProps({
  * @returns Typed DestinationCardData for the card component
  */
 export function toDestinationCardProps({
-    item
-}: { readonly item: Record<string, unknown> }): DestinationCardData {
+    item,
+    locale = 'es'
+}: { readonly item: Record<string, unknown>; readonly locale?: string }): DestinationCardData {
     const { featuredImage } = processEntityImages({
         item,
         entity: 'destination',
@@ -355,8 +364,14 @@ export function toDestinationCardProps({
     return {
         id,
         slug: String(item.slug || ''),
-        name: String(item.name || 'Sin nombre'),
-        summary: String(item.summary || item.description || ''),
+        name: resolveI18nText(
+            (item.nameI18n as I18nTextLike | string) ?? item.name ?? 'Sin nombre',
+            locale
+        ),
+        summary: resolveI18nText(
+            (item.summaryI18n as I18nTextLike | string) ?? item.summary ?? item.description,
+            locale
+        ),
         featuredImage,
         accommodationsCount: Number(item.accommodationsCount || 0),
         isFeatured: Boolean(item.isFeatured),
@@ -389,8 +404,9 @@ export function toDestinationCardProps({
  * @returns Typed EventCardData for the card component
  */
 export function toEventCardProps({
-    item
-}: { readonly item: Record<string, unknown> }): EventCardData {
+    item,
+    locale = 'es'
+}: { readonly item: Record<string, unknown>; readonly locale?: string }): EventCardData {
     const { featuredImage } = processEntityImages({
         item,
         entity: 'event',
@@ -418,8 +434,11 @@ export function toEventCardProps({
     return {
         id,
         slug: String(item.slug || ''),
-        name: String(item.name || ''),
-        summary: String(item.summary || item.description || ''),
+        name: resolveI18nText((item.nameI18n as I18nTextLike | string) ?? item.name, locale),
+        summary: resolveI18nText(
+            (item.summaryI18n as I18nTextLike | string) ?? item.summary ?? item.description,
+            locale
+        ),
         featuredImage,
         category: String(item.category || ''),
         date: {
@@ -459,8 +478,9 @@ export function toEventCardProps({
  * @returns Typed ArticleCardData for the card component
  */
 export function toArticleCardProps({
-    item
-}: { readonly item: Record<string, unknown> }): ArticleCardData {
+    item,
+    locale = 'es'
+}: { readonly item: Record<string, unknown>; readonly locale?: string }): ArticleCardData {
     const id = String(item.id || '');
     if (!id) {
         webLogger.warn(
@@ -497,8 +517,11 @@ export function toArticleCardProps({
     return {
         id,
         slug: String(item.slug || ''),
-        title: String(item.title || ''),
-        summary: String(item.summary || item.content || ''),
+        title: resolveI18nText((item.titleI18n as I18nTextLike | string) ?? item.title, locale),
+        summary: resolveI18nText(
+            (item.summaryI18n as I18nTextLike | string) ?? item.summary ?? item.content,
+            locale
+        ),
         featuredImage,
         category: String(item.category || ''),
         publishedAt: String(item.publishedAt || item.createdAt || ''),
@@ -592,10 +615,24 @@ export function toAccommodationDetailPageProps({
     return {
         id: String(item.id || ''),
         slug: String(item.slug || ''),
-        name: String(item.name || ''),
-        summary: String(item.summary || ''),
-        description: String(item.description || ''),
-        richDescription: item.richDescription == null ? undefined : String(item.richDescription),
+        name: resolveI18nText((item.nameI18n as I18nTextLike | string) ?? item.name, locale),
+        summary: resolveI18nText(
+            (item.summaryI18n as I18nTextLike | string) ?? item.summary,
+            locale
+        ),
+        description: resolveI18nText(
+            (item.descriptionI18n as I18nTextLike | string) ?? item.description,
+            locale
+        ),
+        richDescription:
+            item.richDescriptionI18n != null || item.richDescription != null
+                ? resolveI18nText(
+                      (item.richDescriptionI18n as I18nTextLike | string) ??
+                          item.richDescription ??
+                          null,
+                      locale
+                  )
+                : undefined,
         type: String(item.type || ''),
         isFeatured: Boolean(item.isFeatured),
         createdAt: item.createdAt ? String(item.createdAt) : new Date().toISOString(),
@@ -947,10 +984,10 @@ export function transformHostDashboard({
             : null,
         unreadCount: Number(item.unreadConversations ?? 0),
         quickActions: [
-            { label: 'Mis propiedades', href: '/mis-propiedades', icon: 'building' },
-            { label: 'Promociones', href: '/promociones', icon: 'megaphone' },
-            { label: 'Mensajes', href: '/mensajes', icon: 'chat-dots' },
-            { label: 'Suscripción', href: '/suscripcion', icon: 'credit-card' }
+            { label: 'Mis propiedades', href: 'mi-cuenta/propiedades', icon: 'building' },
+            { label: 'Promociones', href: 'mi-cuenta/promociones', icon: 'megaphone' },
+            { label: 'Mensajes', href: 'mi-cuenta/consultas', icon: 'chat-dots' },
+            { label: 'Suscripción', href: 'mi-cuenta/suscripcion', icon: 'credit-card' }
         ]
     };
 }
@@ -958,25 +995,38 @@ export function transformHostDashboard({
 // --- Host Analytics Transforms (SPEC-207) ---
 
 /**
- * Transforms raw API response into accommodation views data for the ViewsWidget.
+ * Transforms raw per-accommodation view counts into ranked ViewsWidget data.
  *
- * @param item - Raw API response from the host analytics views endpoint
+ * Crosses the views endpoint response (entityId + counts) with a pre-built
+ * id→name map from the accommodations list, sorts by total descending, and
+ * returns the typed AccommodationViewsData for the ViewsWidget.
+ *
+ * @param views - Raw array from GET /views/accommodations/me
+ * @param names - Map of accommodation id → display name
+ * @param window - The time window the data covers ('7d' | '30d')
  * @returns Typed AccommodationViewsData for the ViewsWidget component
  */
 export function transformAccommodationViews({
-    item
+    views,
+    names,
+    window
 }: {
-    readonly item: Record<string, unknown>;
+    readonly views: ReadonlyArray<Record<string, unknown>>;
+    readonly names: ReadonlyMap<string, string>;
+    readonly window: '7d' | '30d';
 }): import('./types').AccommodationViewsData {
-    const rawItems = item.items as ReadonlyArray<Record<string, unknown>> | undefined;
-
-    return {
-        window: (item.window === '30d' ? '30d' : '7d') as '7d' | '30d',
-        items: (rawItems ?? []).map((entry) => ({
-            date: String(entry.date ?? ''),
-            count: Number(entry.count ?? 0)
-        }))
-    };
+    const items = views
+        .map((entry) => {
+            const accommodationId = String(entry.entityId ?? '');
+            return {
+                accommodationId,
+                name: names.get(accommodationId) ?? '',
+                total: Number(entry.total ?? 0),
+                unique: Number(entry.unique ?? 0)
+            };
+        })
+        .sort((a, b) => b.total - a.total);
+    return { window, items };
 }
 
 /**
@@ -1050,7 +1100,9 @@ export function transformMarketComparison({
 }: {
     readonly item: Record<string, unknown>;
 }): import('./types').MarketComparisonData {
-    const rawItems = item.items as ReadonlyArray<Record<string, unknown>> | undefined;
+    // Backend wraps the array under `comparisons` (HostMarketComparisonSchema);
+    // the widget consumes `data.items`, so we map the wire key to the widget key.
+    const rawItems = item.comparisons as ReadonlyArray<Record<string, unknown>> | undefined;
 
     return {
         items: (rawItems ?? []).map((entry) => ({
@@ -1070,8 +1122,9 @@ export function transformMarketComparison({
 }
 
 export function toEventDetailProps({
-    item
-}: { readonly item: Record<string, unknown> }): EventDetailData {
+    item,
+    locale = 'es'
+}: { readonly item: Record<string, unknown>; readonly locale?: string }): EventDetailData {
     // --- Identity ---
     const id = String(item.id || '');
     if (!id) {
@@ -1115,7 +1168,10 @@ export function toEventDetailProps({
     });
 
     // Build gallery with alt text. Use name as fallback alt.
-    const eventName = String(item.name || item.title || '');
+    const eventName = resolveI18nText(
+        (item.nameI18n as I18nTextLike | string) ?? item.name ?? item.title,
+        locale
+    );
     const mediaObj = item.media as
         | {
               gallery?: ReadonlyArray<{
@@ -1266,8 +1322,14 @@ export function toEventDetailProps({
         id,
         slug: String(item.slug || ''),
         name: eventName,
-        summary: String(item.summary || item.description || ''),
-        description: String(item.description || ''),
+        summary: resolveI18nText(
+            (item.summaryI18n as I18nTextLike | string) ?? item.summary ?? item.description,
+            locale
+        ),
+        description: resolveI18nText(
+            (item.descriptionI18n as I18nTextLike | string) ?? item.description,
+            locale
+        ),
         contentHtml: item.contentHtml ? String(item.contentHtml) : undefined,
         category: String(item.category || ''),
         isFeatured: Boolean(item.isFeatured),
@@ -1335,6 +1397,27 @@ export function transformAccommodationEdit({
         | undefined;
     const featuresArr = item.features as readonly (Record<string, unknown> | string)[] | undefined;
 
+    // Coordinates live under location.coordinates.lat / location.coordinates.long (strings in DB)
+    const locationObj = item.location as
+        | { coordinates?: { lat?: string | number; long?: string | number } }
+        | null
+        | undefined;
+    const coordLat = locationObj?.coordinates?.lat;
+    const coordLong = locationObj?.coordinates?.long;
+    const latitude = coordLat != null && String(coordLat).length > 0 ? Number(coordLat) : null;
+    const longitude = coordLong != null && String(coordLong).length > 0 ? Number(coordLong) : null;
+
+    // Capacity lives under extraInfo (capacity → maxGuests, bedrooms, bathrooms, beds)
+    const extraInfo = item.extraInfo as
+        | {
+              capacity?: number | null;
+              bedrooms?: number | null;
+              bathrooms?: number | null;
+              beds?: number | null;
+          }
+        | null
+        | undefined;
+
     return {
         id: String(item.id ?? ''),
         name: String(item.name ?? ''),
@@ -1342,12 +1425,12 @@ export function transformAccommodationEdit({
         description: String(item.description ?? ''),
         type: String(item.type ?? ''),
         destinationId: String(item.destinationId ?? ''),
-        latitude: item.latitude != null ? Number(item.latitude) : null,
-        longitude: item.longitude != null ? Number(item.longitude) : null,
-        maxGuests: item.maxGuests != null ? Number(item.maxGuests) : null,
-        bedrooms: item.bedrooms != null ? Number(item.bedrooms) : null,
-        bathrooms: item.bathrooms != null ? Number(item.bathrooms) : null,
-        beds: item.beds != null ? Number(item.beds) : null,
+        latitude: Number.isFinite(latitude) ? latitude : null,
+        longitude: Number.isFinite(longitude) ? longitude : null,
+        maxGuests: extraInfo?.capacity != null ? Number(extraInfo.capacity) : null,
+        bedrooms: extraInfo?.bedrooms != null ? Number(extraInfo.bedrooms) : null,
+        bathrooms: extraInfo?.bathrooms != null ? Number(extraInfo.bathrooms) : null,
+        beds: extraInfo?.beds != null ? Number(extraInfo.beds) : null,
         basePrice:
             priceObj?.price != null
                 ? Number(priceObj.price)
@@ -1434,17 +1517,42 @@ function extractIdList(
 }
 
 /**
+ * Resolves a possibly-localized name into a plain string.
+ *
+ * The public amenities endpoint returns `name` as an i18n object
+ * (`{ es, en, pt }`), while other endpoints return a plain string. Calling
+ * `String()` on the object yields "[object Object]", so resolve the locale
+ * (falling back to es → en → first available) before stringifying.
+ */
+function resolveLocalizedName(raw: unknown, locale: string): string {
+    if (typeof raw === 'string') {
+        return raw;
+    }
+    if (raw && typeof raw === 'object') {
+        const map = raw as Record<string, unknown>;
+        const value = map[locale] ?? map.es ?? map.en ?? Object.values(map)[0];
+        return typeof value === 'string' ? value : '';
+    }
+    return '';
+}
+
+/**
  * Transforms a list of raw amenity objects into AmenityData[].
  *
  * @param items - Raw amenity objects from the public amenities endpoint
+ * @param locale - Locale used to resolve the i18n `name` field (default `es`)
  * @returns Typed AmenityData array for the editor's checkbox group
  */
 export function transformAmenityList({
-    items
-}: { readonly items: readonly Record<string, unknown>[] }): readonly AmenityData[] {
+    items,
+    locale = 'es'
+}: {
+    readonly items: readonly Record<string, unknown>[];
+    readonly locale?: string;
+}): readonly AmenityData[] {
     return items.map((item) => ({
         id: String(item.id ?? ''),
-        name: String(item.name ?? ''),
+        name: resolveLocalizedName(item.name, locale),
         category: item.category != null ? String(item.category) : null
     }));
 }
@@ -1526,4 +1634,74 @@ export function transformAccommodationMedia({
         .filter((img): img is MediaImage => img !== null);
 
     return { featuredImage, gallery };
+}
+
+// --- Owner Promotions Transforms (SPEC-205) ---
+
+/**
+ * Transforms a raw API owner-promotion record into a typed `OwnerPromotionData` object.
+ *
+ * Dates are kept as ISO strings — consistent with how other transforms handle
+ * date fields (e.g. event dates in `toEventDetailProps`). Nullable fields are
+ * coerced to `null` when absent rather than falling back to a default value,
+ * which preserves the distinction between "not set" and "set to zero/empty".
+ *
+ * @param item - Raw API response item (Record<string, unknown>)
+ * @returns Typed OwnerPromotionData for use in web components
+ *
+ * @example
+ * ```ts
+ * const apiResult = await ownerPromotionApi.getById({ id: 'promo-uuid' });
+ * if (apiResult.ok) {
+ *   const data = transformOwnerPromotion({ item: apiResult.data });
+ * }
+ * ```
+ */
+export function transformOwnerPromotion({
+    item
+}: {
+    readonly item: Record<string, unknown>;
+}): import('./types').OwnerPromotionData {
+    return {
+        id: String(item.id ?? ''),
+        slug: String(item.slug ?? ''),
+        ownerId: String(item.ownerId ?? ''),
+        accommodationId: item.accommodationId != null ? String(item.accommodationId) : null,
+        title: String(item.title ?? ''),
+        description: item.description != null ? String(item.description) : null,
+        discountType: String(item.discountType ?? 'percentage') as import(
+            './types'
+        ).OwnerPromotionDiscountType,
+        discountValue: Number(item.discountValue ?? 0),
+        minNights: item.minNights != null ? Number(item.minNights) : null,
+        validFrom: String(item.validFrom ?? ''),
+        validUntil: item.validUntil != null ? String(item.validUntil) : null,
+        maxRedemptions: item.maxRedemptions != null ? Number(item.maxRedemptions) : null,
+        currentRedemptions: Number(item.currentRedemptions ?? 0),
+        lifecycleState: String(item.lifecycleState ?? 'DRAFT'),
+        createdAt: String(item.createdAt ?? ''),
+        updatedAt: String(item.updatedAt ?? '')
+    };
+}
+
+/**
+ * Transforms a paginated raw API response into a typed list of `OwnerPromotionData`.
+ *
+ * @param items - Array of raw API response items
+ * @returns Array of typed OwnerPromotionData objects
+ *
+ * @example
+ * ```ts
+ * const apiResult = await ownerPromotionApi.list({ lifecycleState: 'ACTIVE' });
+ * if (apiResult.ok) {
+ *   const promotions = transformOwnerPromotionList({ items: apiResult.data.items });
+ * }
+ * ```
+ */
+export function transformOwnerPromotionList({
+    items
+}: {
+    readonly items: ReadonlyArray<Record<string, unknown>>;
+}): ReadonlyArray<import('./types').OwnerPromotionData> {
+    return items.map((item) => transformOwnerPromotion({ item }));
 }

@@ -73,7 +73,7 @@ describe('DestinationNearbySection.astro', () => {
         });
 
         it('should apply toDestinationCardProps transform to each destination', () => {
-            expect(src).toContain('toDestinationCardProps({ item })');
+            expect(src).toContain('toDestinationCardProps({ item, locale })');
         });
 
         it('should render DestinationCard with variant="grid"', () => {

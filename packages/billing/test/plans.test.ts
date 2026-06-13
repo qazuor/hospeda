@@ -142,25 +142,33 @@ describe('Plan Configuration', () => {
             expect(found).toBeUndefined();
         });
 
-        it('tourist-free max_ai_chat_per_month should be 10', () => {
+        // SPEC-211 T-003: ai_chat removed from tourist plans entirely
+        it('tourist-free should NOT have AI_CHAT entitlement (SPEC-211 T-003)', () => {
+            expect(TOURIST_FREE_PLAN.entitlements).not.toContain(EntitlementKey.AI_CHAT);
+        });
+
+        it('tourist-free should NOT have MAX_AI_CHAT_PER_MONTH limit (SPEC-211 T-003)', () => {
             const found = TOURIST_FREE_PLAN.limits.find(
                 (l) => l.key === LimitKey.MAX_AI_CHAT_PER_MONTH
             );
-            expect(found).toBeDefined();
-            expect(found?.value).toBe(10);
+            expect(found).toBeUndefined();
         });
 
-        it('tourist-vip AI limits should all be -1 (unlimited)', () => {
-            // ai_support ungranted (SPEC-200 pending) — only chat + search are unlimited
-            const aiLimitKeys = [
-                LimitKey.MAX_AI_CHAT_PER_MONTH,
-                LimitKey.MAX_AI_SEARCH_PER_MONTH
-            ] as const;
-            for (const key of aiLimitKeys) {
-                const found = TOURIST_VIP_PLAN.limits.find((l) => l.key === key);
-                expect(found).toBeDefined();
-                expect(found?.value).toBe(-1);
-            }
+        // SPEC-211 T-003 + T-004: ai_chat and ai_search removed from tourist-vip
+        it('tourist-vip should NOT have AI_CHAT entitlement or MAX_AI_CHAT_PER_MONTH limit (SPEC-211 T-003)', () => {
+            expect(TOURIST_VIP_PLAN.entitlements).not.toContain(EntitlementKey.AI_CHAT);
+            const chatLimit = TOURIST_VIP_PLAN.limits.find(
+                (l) => l.key === LimitKey.MAX_AI_CHAT_PER_MONTH
+            );
+            expect(chatLimit).toBeUndefined();
+        });
+
+        it('tourist-vip should NOT have AI_SEARCH entitlement or MAX_AI_SEARCH_PER_MONTH limit (SPEC-211 T-004)', () => {
+            expect(TOURIST_VIP_PLAN.entitlements).not.toContain(EntitlementKey.AI_SEARCH);
+            const searchLimit = TOURIST_VIP_PLAN.limits.find(
+                (l) => l.key === LimitKey.MAX_AI_SEARCH_PER_MONTH
+            );
+            expect(searchLimit).toBeUndefined();
         });
 
         it('owner-pro max_ai_text_improve_per_month should be 100', () => {
@@ -171,18 +179,23 @@ describe('Plan Configuration', () => {
             expect(found?.value).toBe(100);
         });
 
-        it('complex-premium AI limits (text/chat/search) should be -1 (unlimited)', () => {
-            // ai_support ungranted (SPEC-200 pending) — 3 keys not 4
-            const aiLimitKeys = [
-                LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH,
-                LimitKey.MAX_AI_CHAT_PER_MONTH,
-                LimitKey.MAX_AI_SEARCH_PER_MONTH
+        it('complex-premium AI limits should be finite — text 2000, chat 5000; search absent (SPEC-211 T-004)', () => {
+            // SPEC-211 cost guardrail: no -1 on AI limits. ai_search removed (T-004).
+            const presentLimits: ReadonlyArray<readonly [LimitKey, number]> = [
+                [LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH, 2000],
+                [LimitKey.MAX_AI_CHAT_PER_MONTH, 5000]
             ] as const;
-            for (const key of aiLimitKeys) {
+            for (const [key, value] of presentLimits) {
                 const found = COMPLEX_PREMIUM_PLAN.limits.find((l) => l.key === key);
                 expect(found).toBeDefined();
-                expect(found?.value).toBe(-1);
+                expect(found?.value).toBe(value);
             }
+            // search is absent (SPEC-211 T-004)
+            expect(COMPLEX_PREMIUM_PLAN.entitlements).not.toContain(EntitlementKey.AI_SEARCH);
+            const searchLimit = COMPLEX_PREMIUM_PLAN.limits.find(
+                (l) => l.key === LimitKey.MAX_AI_SEARCH_PER_MONTH
+            );
+            expect(searchLimit).toBeUndefined();
         });
 
         it('every plan with an AI gate should have the matching AI limit and vice versa', () => {
@@ -209,6 +222,49 @@ describe('Plan Configuration', () => {
             for (const plan of ALL_PLANS) {
                 expect(plan.entitlements).not.toContain(EntitlementKey.AI_SUPPORT);
                 expect(plan.limits.some((l) => l.key === LimitKey.MAX_AI_SUPPORT_PER_MONTH)).toBe(
+                    false
+                );
+            }
+        });
+
+        it('NO plan should carry a -1 (unlimited) AI limit — cost guardrail (SPEC-211 Phase 0, AC-0.1)', () => {
+            // The cost guardrail forbids unlimited AI on any client plan: a present
+            // AI limit must be finite and positive. Absent keys are fine (the plan
+            // simply does not grant that AI feature). Staff get unlimited via
+            // getUnlimitedEntitlements(), which is intentionally out of scope here.
+            const aiLimitKeys = [
+                LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH,
+                LimitKey.MAX_AI_CHAT_PER_MONTH,
+                LimitKey.MAX_AI_SEARCH_PER_MONTH,
+                LimitKey.MAX_AI_SUPPORT_PER_MONTH
+            ] as const;
+            for (const plan of ALL_PLANS) {
+                for (const key of aiLimitKeys) {
+                    const found = plan.limits.find((l) => l.key === key);
+                    if (found) {
+                        expect(found.value).not.toBe(-1);
+                        expect(found.value).toBeGreaterThan(0);
+                    }
+                }
+            }
+        });
+
+        // AC-1.4 (SPEC-211 T-003): no tourist plan grants AI_CHAT or carries MAX_AI_CHAT_PER_MONTH
+        it('AC-1.4: no tourist plan lists AI_CHAT entitlement or MAX_AI_CHAT_PER_MONTH limit (SPEC-211 T-003)', () => {
+            const touristPlans = ALL_PLANS.filter((p) => p.category === 'tourist');
+            for (const plan of touristPlans) {
+                expect(plan.entitlements).not.toContain(EntitlementKey.AI_CHAT);
+                expect(plan.limits.some((l) => l.key === LimitKey.MAX_AI_CHAT_PER_MONTH)).toBe(
+                    false
+                );
+            }
+        });
+
+        // AC-3.1 (SPEC-211 T-004): no plan of any category grants AI_SEARCH or carries MAX_AI_SEARCH_PER_MONTH
+        it('AC-3.1: NO plan grants AI_SEARCH entitlement or carries MAX_AI_SEARCH_PER_MONTH limit (SPEC-211 T-004)', () => {
+            for (const plan of ALL_PLANS) {
+                expect(plan.entitlements).not.toContain(EntitlementKey.AI_SEARCH);
+                expect(plan.limits.some((l) => l.key === LimitKey.MAX_AI_SEARCH_PER_MONTH)).toBe(
                     false
                 );
             }
@@ -253,7 +309,7 @@ describe('Plan Configuration', () => {
             const entitlementSet = new Set(entitlements);
             const limitMap = new Map(limits.map((l) => [l.key, l.value]));
 
-            expect(entitlementSet.has(EntitlementKey.WHITE_LABEL)).toBe(true);
+            expect(entitlementSet.has(EntitlementKey.PUBLISH_ACCOMMODATIONS)).toBe(true);
             expect(limitMap.get(LimitKey.MAX_ACCOMMODATIONS)).toBe(-1);
         });
     });

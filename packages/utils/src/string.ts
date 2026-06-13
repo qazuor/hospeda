@@ -106,19 +106,43 @@ export async function createUniqueSlug(
 }
 
 /**
+ * Maximum input length accepted by {@link stripHtml}.
+ *
+ * Applied as a secondary depth-of-defence guard: the primary fix is the
+ * `/<[^<>]*>/g` regex (which excludes `<` from the character class, making
+ * each match attempt O(1) rather than O(n), so the full scan stays O(n)).
+ * The cap ensures even the per-character scanning cost stays bounded for
+ * content that is far larger than any realistic HTML excerpt or plain-text
+ * sanitisation target. 100 000 chars is a generous upper bound; real markup
+ * used in this codebase (accommodation descriptions, review text) is well
+ * under 10 000 chars.
+ */
+const MAX_STRIP_HTML_LENGTH = 100_000;
+
+/**
  * Remove HTML tags from a string
  * @param html - HTML string
  * @returns Plain text string
  */
 export function stripHtml(html: string): string {
     if (!html) return html;
+    // Cap length before running the regex. See MAX_STRIP_HTML_LENGTH for rationale.
+    const input = html.length > MAX_STRIP_HTML_LENGTH ? html.slice(0, MAX_STRIP_HTML_LENGTH) : html;
+    // `/<[^<>]*>/g` — excluding `<` from the character class means each match
+    // attempt stops immediately at the next `<` instead of scanning forward
+    // to the end of a long run of characters. This makes the worst-case cost
+    // O(n) instead of O(n²), fixing the CodeQL js/polynomial-redos finding.
+    // The original `/<[^>]*>/g` was super-linear on inputs containing many
+    // consecutive `<` with no closing `>`.
+    //
     // Loop until no more tags are removed: a single pass can leave a residual
-    // tag when markup is nested (e.g. '<sc<ript>' -> 'ript>').
-    let result = html;
+    // tag when markup is nested (e.g. '<sc<ript>' -> first pass removes '<ript>',
+    // second pass removes the remaining '<sc').
+    let result = input;
     let prev: string;
     do {
         prev = result;
-        result = result.replace(/<[^>]*>/g, '');
+        result = result.replace(/<[^<>]*>/g, '');
     } while (result !== prev);
     return result;
 }

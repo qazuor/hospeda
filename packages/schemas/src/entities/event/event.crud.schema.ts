@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { EventIdSchema } from '../../common/id.schema.js';
 import { ModerationStatusEnumSchema } from '../../enums/index.js';
+import { stripShapeDefaults } from '../../utils/utils.js';
 import { EventSchema } from './event.schema.js';
 
 /**
@@ -54,18 +55,24 @@ export const EventCreateOutputSchema = EventSchema;
  * Schema for updating an event (PUT - complete replacement)
  * Omits auto-generated fields and makes all fields partial
  */
-export const EventUpdateInputSchema = EventSchema.omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-    createdById: true,
-    updatedById: true,
-    deletedAt: true,
-    deletedById: true,
-    // moderationState is editable on update so admins can change it inline from
-    // the events list (gated by EVENT_MODERATION_CHANGE on the frontend).
-    tags: true
-})
+// Zod 4 .partial() keeps .default(); strip them so absent keys = no change (SPEC-217).
+export const EventUpdateInputSchema = z
+    .object(
+        stripShapeDefaults(
+            EventSchema.omit({
+                id: true,
+                createdAt: true,
+                updatedAt: true,
+                createdById: true,
+                updatedById: true,
+                deletedAt: true,
+                deletedById: true,
+                // moderationState is editable on update so admins can change it inline from
+                // the events list (gated by EVENT_MODERATION_CHANGE on the frontend).
+                tags: true
+            }).shape
+        )
+    )
     .partial()
     .strict();
 

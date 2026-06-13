@@ -1,0 +1,1 @@
+ALTER TABLE "ai_prompt_versions" ADD COLUMN "rules" text;

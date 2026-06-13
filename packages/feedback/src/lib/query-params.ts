@@ -4,8 +4,8 @@
  * Allows pre-filling the feedback form via URL query string parameters.
  * All parsed values are sanitized to prevent XSS injection.
  */
-import { REPORT_TYPE_IDS } from '../schemas/feedback.schema.js';
-import type { ReportTypeId } from '../schemas/feedback.schema.js';
+import { REPORT_TYPE_IDS } from '@repo/schemas';
+import type { ReportTypeId } from '@repo/schemas';
 
 /**
  * Parameters that can be pre-filled via URL query string.

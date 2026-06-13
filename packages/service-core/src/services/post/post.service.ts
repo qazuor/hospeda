@@ -43,6 +43,8 @@ import {
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
+import { diffTranslatableFields } from '../../translation/diff-translatable-fields';
+import { getTranslationService } from '../../translation/translation-init';
 import type {
     Actor,
     AdminSearchExecuteParams,
@@ -249,6 +251,18 @@ export class PostService extends BaseCrudService<
                 'id is required for post update.'
             );
         }
+
+        // SPEC-212 AC-5: capture translatable field values before the update so
+        // _afterUpdate can diff and re-translate ONLY changed fields.
+        if (ctx.hookState) {
+            const snapshot = await this.model.findById(id, ctx.tx);
+            ctx.hookState.previousTranslatableFields = {
+                title: snapshot?.title ?? undefined,
+                summary: snapshot?.summary ?? undefined,
+                content: snapshot?.content ?? undefined
+            };
+        }
+
         const updateFields = data;
         const { id: _omitId, ...restUpdateFields } = updateFields as {
             id?: unknown;
@@ -522,10 +536,33 @@ export class PostService extends BaseCrudService<
                 'Revalidation scheduling failed (non-blocking)'
             );
         }
+
+        // SPEC-212: fire-and-forget auto-translation
+        const translationService = getTranslationService();
+        if (translationService) {
+            const fields: Record<string, string> = {};
+            if (entity.title) fields.title = entity.title;
+            if (entity.summary) fields.summary = entity.summary;
+            if (entity.content) fields.content = entity.content;
+            if (Object.keys(fields).length > 0) {
+                void translationService
+                    .translate({
+                        entityType: 'post',
+                        entityId: entity.id,
+                        fields
+                    })
+                    .catch(() => {});
+            }
+        }
+
         return entity;
     }
 
-    protected async _afterUpdate(entity: Post, _actor: Actor, _ctx: ServiceContext): Promise<Post> {
+    protected async _afterUpdate(
+        entity: Post,
+        _actor: Actor,
+        ctx: ServiceContext<PostHookState>
+    ): Promise<Post> {
         // User-tags do not have slugs per SPEC-086 D-002
         const tagSlugs: string[] | undefined = undefined;
         try {
@@ -540,6 +577,30 @@ export class PostService extends BaseCrudService<
                 'Revalidation scheduling failed (non-blocking)'
             );
         }
+
+        // SPEC-212 AC-5: fire-and-forget auto-translation for changed fields only.
+        // previousTranslatableFields was captured by _beforeUpdate; diff to skip
+        // fields whose Spanish source text did not change in this update.
+        const translationService = getTranslationService();
+        if (translationService) {
+            const fields = diffTranslatableFields({
+                previous: ctx.hookState?.previousTranslatableFields ?? {},
+                // TYPE-WORKAROUND: the entity's typed shape carries many non-string
+                // fields; diffTranslatableFields only reads the listed string columns.
+                current: entity as unknown as Record<string, string | null | undefined>,
+                fieldNames: ['title', 'summary', 'content']
+            });
+            if (Object.keys(fields).length > 0) {
+                void translationService
+                    .translate({
+                        entityType: 'post',
+                        entityId: entity.id,
+                        fields
+                    })
+                    .catch(() => {});
+            }
+        }
+
         return entity;
     }
 

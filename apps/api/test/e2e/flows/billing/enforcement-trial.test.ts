@@ -17,23 +17,22 @@
  *    - Gated route GET /accommodations/my/favorites-breakdown → 200 (trial grants
  *      the plan's entitlements at the route level).
  *
- * 2. TRIAL EXPIRY
+ * 2. TRIAL EXPIRY (SPEC-217 AC-1.1 — read-only contract)
  *    - Drive trial expiry through the REAL path:
  *        TrialService.blockExpiredTrials()
  *        → qzpay billing.subscriptions.cancel (immediate)
  *        → clearEntitlementCache(customerId)   [trial.service.ts — n(sub.customerId)]
- *    - Gated route → 402 TRIAL_EXPIRED IMMEDIATELY (no manual cache clear).
+ *    - Gated route GET → 403 ENTITLEMENT_REQUIRED IMMEDIATELY (no manual cache clear).
+ *      Under the new read-only contract trialMiddleware passes GET through; the
+ *      entitlement cache was cleared by blockExpiredTrials so the gate sees no
+ *      VIEW_ADVANCED_STATS and returns 403.
  *
- * Cache-clear gap investigation:
- *   blockExpiredTrials DOES call clearEntitlementCache (via the `n` alias in
- *   trial.service.ts — confirmed by trial-lifecycle.test.ts T-143-25 cache-size
- *   delta assertion). The cache IS cleared. However, the post-expiry block is
- *   402 TRIAL_EXPIRED (not 403 ENTITLEMENT_REQUIRED) because trialMiddleware
- *   mounts BEFORE entitlementMiddleware in the protected route stack (create-app.ts).
- *   After cancellation, trialMiddleware's getTrialStatus() finds the historical
- *   canceled subscription with trialEnd != null → isExpired: true → 402, short-
- *   circuiting before the entitlement gate fires. This is a middleware ordering
- *   effect, NOT a cache bug. Test documents 402 explicitly rather than masking.
+ * SPEC-217 read-only contract (replaces old "402 on all methods"):
+ *   trialMiddleware now only blocks MUTATING requests (POST/PUT/PATCH/DELETE) with
+ *   402 TRIAL_EXPIRED. GET/HEAD pass through so the host can still read their data.
+ *   This mirrors the expired paid-subscription behaviour (read-only, not full lockout).
+ *   The post-expiry GET to a gated route therefore sees 403 ENTITLEMENT_REQUIRED
+ *   from the entitlement gate rather than 402 TRIAL_EXPIRED from trial middleware.
  *
  * Real paths used:
  *
@@ -162,31 +161,37 @@ function makeStatsActor(userId: string): Actor {
 // ---------------------------------------------------------------------------
 
 /**
- * Assert that a response is a 402 TRIAL_EXPIRED block from the trial middleware.
+ * Assert that a response is blocked after trial expiry (read-only contract).
  *
- * CACHE-CLEAR GAP DOCUMENTED HERE (trial middleware ordering):
+ * SPEC-217 AC-1.1: trial middleware is now READ-ONLY.
  *
- * After blockExpiredTrials() cancels the subscription:
+ * After blockExpiredTrials() cancels the subscription AND the request is a
+ * GET (read), the new behavior is:
+ *   - trialMiddleware passes GET through (isReadOnlyRequest = true → no 402).
  *   - The entitlement cache IS cleared (trial.service.ts calls n(customerId)).
- *   - BUT the trialMiddleware (create-app.ts mount) runs BEFORE entitlementMiddleware.
- *   - trialMiddleware calls getTrialStatus() which finds the historical 'canceled'
- *     subscription with trialEnd != null → returns isExpired: true → 402 TRIAL_EXPIRED.
- *   - The entitlement gate (403 ENTITLEMENT_REQUIRED) is never reached on these routes
- *     because trialMiddleware short-circuits first with 402.
+ *   - entitlementMiddleware loads the now-empty entitlement set for the
+ *     canceled subscription → requireEntitlement(VIEW_ADVANCED_STATS) fires 403.
+ *   - Post-expiry GET → 403 ENTITLEMENT_REQUIRED.
  *
- * This is NOT a stale-cache issue — the cache IS cleared. The 402 comes from
- * trialMiddleware's own getTrialStatus() call (which is NOT cache-backed). It is a
- * middleware ordering effect: trial gate fires at 402 before the entitlement gate
- * at 403 for post-expiry canceled subscriptions.
+ * The old behavior was 402 TRIAL_EXPIRED on all methods. Under the new
+ * read-only contract, mutating methods (POST/PUT/PATCH/DELETE) still receive
+ * 402 TRIAL_EXPIRED from trialMiddleware. Read methods (GET/HEAD) pass through
+ * and hit the entitlement gate which returns 403.
  *
- * We document this instead of masking it: the test asserts 402 TRIAL_EXPIRED
- * post-expiry (not 403 ENTITLEMENT_REQUIRED) to pin the exact observable behavior.
+ * This change was introduced by SPEC-217 AC-1.1 to match the expired
+ * paid-subscription behaviour (read-only, not full lockout).
  */
 async function expectTrialExpiredBlock(res: Response): Promise<void> {
+    // GET request after expiry: trialMiddleware passes through (read-only),
+    // entitlement gate fires 403 ENTITLEMENT_REQUIRED.
     expect(
         res.status,
-        `expected 402 (TRIAL_EXPIRED from trialMiddleware) but got ${res.status}`
-    ).toBe(402);
+        `expected 403 (ENTITLEMENT_REQUIRED after trial expiry, GET read-only passthrough) but got ${res.status}`
+    ).toBe(403);
+    const body = (await res.clone().json()) as { error?: { code?: string } };
+    expect(body?.error?.code, 'expected ENTITLEMENT_REQUIRED code in 403 response').toBe(
+        'ENTITLEMENT_REQUIRED'
+    );
 }
 
 /** Assert the entitlement gate passed (NOT 403 ENTITLEMENT_REQUIRED). */
@@ -364,19 +369,20 @@ describe('SPEC-145 T-019 — trial entitlement grant and expire at route level',
         // blockExpiredTrials called clearEntitlementCache(customerId) internally
         // (via the `n` alias in trial.service.ts).
         //
-        // CACHE-CLEAR GAP NOTE (see expectTrialExpiredBlock docstring above):
+        // SPEC-217 AC-1.1 READ-ONLY CONTRACT:
+        // The request is a GET (read-only). Under the new trialMiddleware contract,
+        // expired trials do NOT block GET/HEAD — only mutating methods (POST/PUT/
+        // PATCH/DELETE) receive 402 TRIAL_EXPIRED. The GET passes through trial
+        // middleware and reaches the entitlement gate.
         //
-        // The block is 402 TRIAL_EXPIRED (from trialMiddleware), NOT 403
-        // ENTITLEMENT_REQUIRED (from entitlementMiddleware). The trialMiddleware
-        // mounts BEFORE entitlementMiddleware in the protected route stack
-        // (create-app.ts). When the subscription is canceled with a past trialEnd,
-        // getTrialStatus() in trialMiddleware detects the historical expired trial
-        // and fires 402 before the entitlement gate is reached.
+        // Because blockExpiredTrials DID call clearEntitlementCache, the
+        // entitlement middleware sees a fresh (empty) entitlement set for the
+        // now-canceled subscription. VIEW_ADVANCED_STATS is no longer present
+        // → requireEntitlement fires 403 ENTITLEMENT_REQUIRED.
         //
-        // This is NOT a cache problem — clearEntitlementCache IS called by
-        // blockExpiredTrials. It is a middleware ordering effect. The test
-        // pins 402 to document the exact observable behavior rather than
-        // masking it by manually calling clearEntitlementCache.
+        // This is NOT a cache problem — the cache IS cleared. The 403 is the
+        // correct post-expiry observable behavior for a GET to a gated route
+        // under the new read-only trial contract.
         const afterExpiryRes = await statsClient.get(GATED_ROUTE);
         await expectTrialExpiredBlock(afterExpiryRes);
     });

@@ -1004,7 +1004,10 @@ export interface ConversationDetail {
 export interface ConversationThreadResponse {
     readonly conversation: ConversationDetail;
     readonly messages: readonly ConversationMessageItem[];
-    readonly hasMore: boolean;
+    /** Cursor (oldest message's createdAt) for loading the previous page, or
+     * null when there are no older messages. Matches the API response shape;
+     * mirrors OwnerConversationThreadResponse. */
+    readonly nextCursor: string | null;
 }
 
 /** Protected conversations API endpoints (require auth session) */
@@ -1331,43 +1334,61 @@ type AnalyticsWindow = '7d' | '30d';
 /** Protected host analytics API endpoints. All require auth + VIEW_BASIC_STATS entitlement. */
 export const hostAnalyticsApi = {
     /**
-     * Get accommodation views over a time window.
+     * Get accommodation views (cumulative) over a time window.
+     *
+     * Returns one row per owned accommodation with cumulative view counts
+     * for the requested window. Use this for the per-property ranked list
+     * in the ViewsWidget.
+     *
+     * @remarks
+     * The DAILY-SERIES variant (date-bucketed chart data) is still pending
+     * SPEC-207. This cumulative-aggregate endpoint is now used for the
+     * per-property ranked list widget.
      *
      * @param params - Time window: '7d' or '30d'
-     * @returns Daily view counts for the host's accommodations
-     *
-     * @example
-     * ```ts
-     * const result = await hostAnalyticsApi.getViews({ window: '7d' });
-     * if (result.ok) console.log(result.data.items);
-     * ```
+     * @returns Cumulative per-accommodation view counts for the window
      */
-    getViews({
-        window: windowParam
-    }: {
-        readonly window: AnalyticsWindow;
-    }): Promise<
-        ApiResult<{
-            readonly window: AnalyticsWindow;
-            readonly items: readonly { readonly date: string; readonly count: number }[];
-        }>
+    getViews({ window: windowParam }: { readonly window: AnalyticsWindow }): Promise<
+        ApiResult<
+            readonly {
+                readonly entityId: string;
+                readonly unique: number;
+                readonly total: number;
+            }[]
+        >
     > {
         return apiClient.getProtected({
-            path: `${PROTECTED}/host/analytics/views`,
+            path: `${PROTECTED}/views/accommodations/me`,
             params: { window: windowParam }
         });
     },
 
     /**
-     * Get favorites breakdown across collections.
+     * List the authenticated host's own accommodations (id + name only needed
+     * for cross-referencing analytics by accommodation). Server-side filtered
+     * by actor.id.
+     */
+    listOwnAccommodations(): Promise<
+        ApiResult<{ readonly items: readonly { readonly id: string; readonly name: string }[] }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/accommodations`,
+            params: { pageSize: 50, sortBy: 'createdAt', sortOrder: 'desc' }
+        });
+    },
+
+    /**
+     * Get favorites breakdown.
      *
-     * @returns Bookmark counts per collection for the host's accommodations
+     * @remarks
+     * SPEC-207 (pending): "collections" do not exist in the bookmark model. The
+     * real backend endpoint (`/accommodations/my/favorites-breakdown`) returns
+     * favorites per accommodation (`{accommodationId, slug, bookmarkCount}[]`),
+     * not per collection. The FavoritesWidget needs a redesign to the
+     * per-accommodation shape before it can be mounted; deferred to SPEC-207.
      *
-     * @example
-     * ```ts
-     * const result = await hostAnalyticsApi.getFavoritesBreakdown();
-     * if (result.ok) console.log(result.data.collections);
-     * ```
+     * @returns Bookmark counts (per-accommodation on the wire — return type
+     *   below is the legacy "collections" shape, to be reshaped in SPEC-207)
      */
     getFavoritesBreakdown(): Promise<
         ApiResult<{
@@ -1400,7 +1421,7 @@ export const hostAnalyticsApi = {
         }>
     > {
         return apiClient.getProtected({
-            path: `${PROTECTED}/host/analytics/response-rate`
+            path: `${PROTECTED}/conversations/me/response-rate`
         });
     },
 
@@ -1426,7 +1447,7 @@ export const hostAnalyticsApi = {
         }>
     > {
         return apiClient.getProtected({
-            path: `${PROTECTED}/host/analytics/inquiries`,
+            path: `${PROTECTED}/conversations/me/monthly-inquiries`,
             params: { months }
         });
     },
@@ -1444,21 +1465,23 @@ export const hostAnalyticsApi = {
      */
     getMarketComparison(): Promise<
         ApiResult<{
-            readonly items: readonly {
+            readonly comparisons: readonly {
                 readonly accommodationId: string;
                 readonly accommodationName: string;
                 readonly accommodationType: string;
+                readonly destinationId: string;
                 readonly destinationName: string | null;
                 readonly yourRating: number | null;
                 readonly yourReviews: number;
                 readonly destinationAvgRating: number | null;
+                readonly destinationReviewsTotal: number;
                 readonly yourPrice: number | null;
                 readonly destinationAvgPrice: number | null;
             }[];
         }>
     > {
         return apiClient.getProtected({
-            path: `${PROTECTED}/host/analytics/market-comparison`
+            path: `${PROTECTED}/accommodations/my/market-comparison`
         });
     }
 };
@@ -1703,6 +1726,26 @@ export const accommodationEditApi = {
         return apiClient.patch({
             path: `${PROTECTED}/accommodations/${id}`,
             body: data
+        });
+    },
+
+    /**
+     * Unpublish an accommodation (ACTIVE → INACTIVE).
+     * The accommodation will stop appearing on the public site immediately.
+     * Only the owner or a user with ACCOMMODATION_UPDATE_ANY can call this.
+     *
+     * @param params - Accommodation ID to unpublish
+     * @returns The updated accommodation record
+     *
+     * @example
+     * ```ts
+     * const result = await accommodationEditApi.unpublish({ id: 'acc-uuid' });
+     * if (result.ok) console.log('Accommodation is now paused');
+     * ```
+     */
+    unpublish({ id }: { readonly id: string }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/accommodations/${id}/unpublish`
         });
     },
 
@@ -2109,5 +2152,133 @@ export const userBookmarkCollectionsApi = {
         return apiClient.delete({
             path: `${PROTECTED}/user-bookmark-collections/${id}`
         });
+    }
+};
+
+// --- Owner Promotions (Protected — SPEC-205) ---
+
+/** Lifecycle state filter for owner promotion list queries */
+type OwnerPromotionLifecycleState = 'ACTIVE' | 'DRAFT' | 'ARCHIVED';
+
+/**
+ * Protected owner-promotions API endpoints.
+ * All operations are scoped to the authenticated owner (server enforces ownerId === actor.id).
+ */
+export const ownerPromotionApi = {
+    /**
+     * List the authenticated owner's promotions with optional filters.
+     *
+     * @param params - Optional lifecycle state filter and pagination
+     * @returns Paginated list of the owner's promotions
+     *
+     * @example
+     * ```ts
+     * const result = await ownerPromotionApi.list({ lifecycleState: 'ACTIVE', pageSize: 20 });
+     * if (result.ok) console.log(result.data.items);
+     * ```
+     */
+    list(params?: {
+        readonly lifecycleState?: OwnerPromotionLifecycleState;
+        readonly page?: number;
+        readonly pageSize?: number;
+        readonly sortBy?: string;
+        readonly sortOrder?: 'asc' | 'desc';
+    }): Promise<ApiResult<PaginatedResponse<Record<string, unknown>>>> {
+        return apiClient.getList({
+            path: `${PROTECTED}/owner-promotions`,
+            params
+        });
+    },
+
+    /**
+     * Get a single owner promotion by ID.
+     * Returns non-ok if not found (404) or not owned by the actor (403).
+     *
+     * @param params - Promotion ID
+     * @returns The promotion record or an error result
+     *
+     * @example
+     * ```ts
+     * const result = await ownerPromotionApi.getById({ id: 'promo-uuid' });
+     * if (result.ok) console.log(result.data.title);
+     * ```
+     */
+    getById({
+        id
+    }: {
+        readonly id: string;
+    }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.getProtected({ path: `${PROTECTED}/owner-promotions/${id}` });
+    },
+
+    /**
+     * Create a new owner promotion.
+     *
+     * @param params - Promotion creation payload
+     * @returns The newly created promotion record
+     *
+     * @example
+     * ```ts
+     * const result = await ownerPromotionApi.create({
+     *   body: { title: 'Summer deal', discountType: 'percentage', discountValue: 10, validFrom: '2026-07-01' }
+     * });
+     * if (result.ok) console.log(result.data.id);
+     * ```
+     */
+    create({
+        body
+    }: {
+        readonly body: import('./types').OwnerPromotionCreateInput;
+    }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/owner-promotions`,
+            body
+        });
+    },
+
+    /**
+     * Update an existing owner promotion (full replacement via PUT).
+     * Only updates the fields provided in `body`; the server ignores absent fields.
+     *
+     * @param params - Promotion ID and partial update payload
+     * @returns The updated promotion record
+     *
+     * @example
+     * ```ts
+     * const result = await ownerPromotionApi.update({ id: 'promo-uuid', body: { title: 'New title' } });
+     * if (result.ok) console.log(result.data.updatedAt);
+     * ```
+     */
+    update({
+        id,
+        body
+    }: {
+        readonly id: string;
+        readonly body: import('./types').OwnerPromotionUpdateInput;
+    }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.put({
+            path: `${PROTECTED}/owner-promotions/${id}`,
+            body
+        });
+    },
+
+    /**
+     * Soft-delete an owner promotion.
+     *
+     * @param params - Promotion ID to delete
+     * @returns Whether the deletion succeeded
+     *
+     * @example
+     * ```ts
+     * const result = await ownerPromotionApi.remove({ id: 'promo-uuid' });
+     * if (result.ok) console.log('Promotion deleted');
+     * ```
+     */
+    remove({
+        id
+    }: {
+        readonly id: string;
+    }): Promise<ApiResult<{ readonly success: boolean }>> {
+        return apiClient.delete({ path: `${PROTECTED}/owner-promotions/${id}` });
     }
 };

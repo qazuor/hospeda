@@ -8,6 +8,7 @@ import {
 import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
 import { LifecycleStatusEnumSchema } from '../../enums/lifecycle-state.schema.js';
 import { OwnerPromotionDiscountTypeEnumSchema } from '../../enums/owner-promotion-discount-type.schema.js';
+import { stripShapeDefaults } from '../../utils/utils.js';
 
 /**
  * Owner Promotion entity schema
@@ -128,8 +129,24 @@ export type OwnerPromotionCreateInput = z.infer<typeof OwnerPromotionCreateInput
  * (e.g. `isActive`) are rejected at the route boundary with a 400 VALIDATION_ERROR
  * instead of being silently dropped by the Hono zValidator middleware.
  */
-export const OwnerPromotionUpdateInputSchema = OwnerPromotionCreateInputSchema.partial().strict();
+// Zod 4 .partial() keeps .default(); strip them so absent keys = no change (SPEC-217).
+export const OwnerPromotionUpdateInputSchema = z
+    .object(stripShapeDefaults(OwnerPromotionCreateInputSchema.shape))
+    .partial()
+    .strict();
 export type OwnerPromotionUpdateInput = z.infer<typeof OwnerPromotionUpdateInputSchema>;
+
+/**
+ * Client-facing create request schema for owner promotions.
+ *
+ * Omits `ownerId` so the client cannot supply or forge it.
+ * The route handler injects `ownerId` from the authenticated session actor.
+ * This is the schema used as `requestBody` on POST /api/v1/protected/owner-promotions.
+ */
+export const OwnerPromotionCreateRequestSchema = OwnerPromotionCreateInputSchema.omit({
+    ownerId: true
+});
+export type OwnerPromotionCreateRequest = z.infer<typeof OwnerPromotionCreateRequestSchema>;
 
 /**
  * Search input for owner promotions

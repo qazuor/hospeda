@@ -156,7 +156,13 @@ export function MoveToCollectionModal({
                 return true;
             }
 
-            if (currentCollectionId === null && targetCollectionId !== null) {
+            // Moving INTO a collection (a fresh add, or a move A→B) is a SINGLE
+            // update that sets collectionId = target regardless of the previous
+            // value (see UserBookmarkCollectionService.addBookmarkToCollection).
+            // There is no separate remove step, so a move can never leave the
+            // bookmark uncollected on a partial failure — on error it stays in
+            // its current collection.
+            if (targetCollectionId !== null) {
                 const result = await userBookmarkCollectionsApi.addBookmark({
                     collectionId: targetCollectionId,
                     bookmarkId
@@ -171,48 +177,22 @@ export function MoveToCollectionModal({
                 return true;
             }
 
-            if (currentCollectionId !== null && targetCollectionId === null) {
-                const result = await userBookmarkCollectionsApi.removeBookmark({
-                    collectionId: currentCollectionId,
-                    bookmarkId
-                });
-                if (!result.ok) {
-                    addToast({
-                        type: 'error',
-                        message: translateApiError({ error: result.error, t })
-                    });
-                    return false;
-                }
+            // targetCollectionId === null: remove from the current collection.
+            // (null→null already returned via the equality guard above.)
+            if (currentCollectionId === null) {
                 return true;
             }
-
-            if (currentCollectionId !== null && targetCollectionId !== null) {
-                // Move: remove from old, add to new (sequential — no atomic endpoint)
-                const removeResult = await userBookmarkCollectionsApi.removeBookmark({
-                    collectionId: currentCollectionId,
-                    bookmarkId
+            const result = await userBookmarkCollectionsApi.removeBookmark({
+                collectionId: currentCollectionId,
+                bookmarkId
+            });
+            if (!result.ok) {
+                addToast({
+                    type: 'error',
+                    message: translateApiError({ error: result.error, t })
                 });
-                if (!removeResult.ok) {
-                    addToast({
-                        type: 'error',
-                        message: translateApiError({ error: removeResult.error, t })
-                    });
-                    return false;
-                }
-                const addResult = await userBookmarkCollectionsApi.addBookmark({
-                    collectionId: targetCollectionId,
-                    bookmarkId
-                });
-                if (!addResult.ok) {
-                    addToast({
-                        type: 'error',
-                        message: translateApiError({ error: addResult.error, t })
-                    });
-                    return false;
-                }
-                return true;
+                return false;
             }
-
             return true;
         },
         [currentCollectionId, bookmarkId, t]

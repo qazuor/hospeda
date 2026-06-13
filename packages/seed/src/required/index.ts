@@ -3,6 +3,7 @@ import { logger } from '../utils/logger.js';
 import type { SeedContext } from '../utils/seedContext.js';
 import { summaryTracker } from '../utils/summaryTracker.js';
 import { seedAiPrompts } from './aiPrompts.seed.js';
+import { seedAiSettings } from './aiSettings.seed.js';
 import { seedAmenities } from './amenities.seed.js';
 import { seedAttractions } from './attractions.seed.js';
 import { seedBillingAddons } from './billingAddons.seed.js';
@@ -74,6 +75,8 @@ import { seedUsers } from './users.seed.js';
  * // 18. Exchange rate config
  * // 19. Exchange rates
  * // 20. Revalidation config
+ * // 21. AI prompt versions (default system prompts)
+ * // 22. AI settings costCeilings defaults (SPEC-211 T-002)
  * ```
  *
  * @throws {Error} When seeding fails and continueOnError is false
@@ -155,6 +158,10 @@ export async function runRequiredSeeds(context: SeedContext): Promise<void> {
 
         // 18. Load AI prompt defaults (system prompts for all AI features)
         await seedAiPrompts();
+
+        // 19. Seed AI settings costCeilings defaults (SPEC-211 T-002)
+        //     Idempotent: skips if costCeilings is already set by an operator.
+        await seedAiSettings();
 
         logger.info(`${separator}`);
         // biome-ignore lint/suspicious/noConsoleLog: seed script uses console.log for visual spacing in terminal output

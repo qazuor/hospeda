@@ -71,7 +71,7 @@ test.describe('ACC-01: host publishes, guest discovers @p0 @accommodation @cloud
         await forceVerifyEmail(host.id);
 
         const planRows = await execSQL<{ id: string }>(
-            'SELECT id FROM billing_plans WHERE is_active = true ORDER BY created_at ASC LIMIT 1'
+            'SELECT id FROM billing_plans WHERE active = true ORDER BY created_at ASC LIMIT 1'
         );
         const planId = planRows[0]?.id;
         if (!planId) {
@@ -103,19 +103,22 @@ test.describe('ACC-01: host publishes, guest discovers @p0 @accommodation @cloud
         expect(detailBody.data?.slug).toBe(accommodation.slug);
 
         // ── 2. Guest GET public listing includes the accommodation ────────
+        // The seed has 100+ active accommodations; pageSize caps at 100.
+        // Sort by created_at DESC so the newest item (just created) lands on
+        // page 1. This guarantees the freshly-published accommodation is
+        // findable without multi-page iteration.
         const listRes = await page.request.get(
-            `${API_URL}/api/v1/public/accommodations?pageSize=100`
+            `${API_URL}/api/v1/public/accommodations?pageSize=100&sortBy=createdAt&sortOrder=desc`
         );
-        if (listRes.ok()) {
-            const listBody = (await listRes.json()) as {
-                data?: ReadonlyArray<{ id: string }>;
-            };
-            const ids = listBody.data?.map((row) => row.id) ?? [];
-            expect(
-                ids.includes(accommodation.id),
-                'public listing should include the published accommodation'
-            ).toBe(true);
-        }
+        expect(listRes.ok(), `public listing should be 200, got ${listRes.status()}`).toBe(true);
+        const listBody = (await listRes.json()) as {
+            data?: { items?: ReadonlyArray<{ id: string }> };
+        };
+        const ids = listBody.data?.items?.map((row) => row.id) ?? [];
+        expect(
+            ids.includes(accommodation.id),
+            'public listing should include the published accommodation'
+        ).toBe(true);
 
         // ── 3. Cloudinary leg (skipped when not configured) ──────────────
         if (!isCloudinaryConfigured()) {

@@ -53,10 +53,10 @@ test.describe('ADM-04: super-admin lists plans + addons @p1 @admin @billing', ()
 
         // Sanity check: seed has plans and addons.
         const planRows = await execSQL<{ count: string }>(
-            'SELECT COUNT(*)::text AS count FROM billing_plans WHERE is_active = true'
+            'SELECT COUNT(*)::text AS count FROM billing_plans WHERE active = true'
         );
         const addonRows = await execSQL<{ count: string }>(
-            'SELECT COUNT(*)::text AS count FROM billing_addons WHERE is_active = true'
+            'SELECT COUNT(*)::text AS count FROM billing_addons WHERE active = true'
         );
         if (Number(planRows[0]?.count ?? 0) === 0 || Number(addonRows[0]?.count ?? 0) === 0) {
             test.fixme(true, 'Seed has no plans or addons — ADM-04 cannot run');

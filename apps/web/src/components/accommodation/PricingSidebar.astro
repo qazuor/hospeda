@@ -9,6 +9,7 @@ import type { AccommodationDetailData } from '@/data/types';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import GradientButton from '@/components/shared/ui/GradientButton.astro';
+import { UsersIcon, MoonIcon, CalendarIcon, ChevronDownIcon } from '@repo/icons';
 
 interface Props {
   readonly price: AccommodationDetailData['price'];
@@ -130,19 +131,25 @@ const hasDiscounts = discountEntries.length > 0;
     <ul class="pricing-sidebar__facts">
       {capacity != null && (
         <li class="pricing-sidebar__fact">
-          <span class="pricing-sidebar__fact-icon" aria-hidden="true">👥</span>
+          <span class="pricing-sidebar__fact-icon">
+            <UsersIcon size="sm" weight="duotone" aria-hidden="true" />
+          </span>
           <span>{t('accommodations.detail.pricing.capacityFact', undefined, { n: capacity })}</span>
         </li>
       )}
       {minNights != null && minNights > 1 && (
         <li class="pricing-sidebar__fact">
-          <span class="pricing-sidebar__fact-icon" aria-hidden="true">🌙</span>
+          <span class="pricing-sidebar__fact-icon">
+            <MoonIcon size="sm" weight="duotone" aria-hidden="true" />
+          </span>
           <span>{t('accommodations.detail.pricing.minNightsFact', undefined, { n: minNights })}</span>
         </li>
       )}
       {maxNights != null && maxNights > 0 && maxNights < 30 && (
         <li class="pricing-sidebar__fact">
-          <span class="pricing-sidebar__fact-icon" aria-hidden="true">📅</span>
+          <span class="pricing-sidebar__fact-icon">
+            <CalendarIcon size="sm" weight="duotone" aria-hidden="true" />
+          </span>
           <span>{t('accommodations.detail.pricing.maxNightsFact', undefined, { n: maxNights })}</span>
         </li>
       )}
@@ -152,21 +159,44 @@ const hasDiscounts = discountEntries.length > 0;
   {(hasFees || hasDiscounts) && (
     <details class="pricing-sidebar__breakdown">
       <summary class="pricing-sidebar__breakdown-toggle">
-        {t('accommodations.detail.pricing.viewBreakdown')}
+        <span class="pricing-sidebar__breakdown-toggle-label">
+          {t('accommodations.detail.pricing.viewBreakdown')}
+        </span>
+        <span class="pricing-sidebar__breakdown-chevron" aria-hidden="true">
+          <ChevronDownIcon size="sm" weight="regular" />
+        </span>
       </summary>
       <div class="pricing-sidebar__breakdown-content">
-        {feeEntries.map(({ key, amount, isPercent }) => (
-          <div class="pricing-sidebar__fee-row">
-            <span class="pricing-sidebar__fee-name">{key}</span>
-            <span class="pricing-sidebar__fee-amount">{isPercent ? `${amount}%` : formatPrice(amount)}</span>
+        {hasFees && (
+          <div class="pricing-sidebar__breakdown-group">
+            <p class="pricing-sidebar__breakdown-heading">
+              {t('accommodations.detail.pricing.feesHeading')}
+            </p>
+            {feeEntries.map(({ key, amount, isPercent, customName }) => (
+              <div class="pricing-sidebar__fee-row">
+                <span class="pricing-sidebar__fee-name">
+                  {customName ?? t(`accommodations.detail.pricing.fees.${key}`, key)}
+                </span>
+                <span class="pricing-sidebar__fee-amount">{isPercent ? `${amount}%` : formatPrice(amount)}</span>
+              </div>
+            ))}
           </div>
-        ))}
-        {discountEntries.map(({ key, pct }) => (
-          <div class="pricing-sidebar__discount-row">
-            <span class="pricing-sidebar__discount-name">{key}</span>
-            <span class="pricing-sidebar__discount-value">-{pct}%</span>
+        )}
+        {hasDiscounts && (
+          <div class="pricing-sidebar__breakdown-group pricing-sidebar__breakdown-group--discounts">
+            <p class="pricing-sidebar__breakdown-heading pricing-sidebar__breakdown-heading--discount">
+              {t('accommodations.detail.pricing.discountsHeading')}
+            </p>
+            {discountEntries.map(({ key, pct, customName }) => (
+              <div class="pricing-sidebar__discount-row">
+                <span class="pricing-sidebar__discount-name">
+                  {customName ?? t(`accommodations.detail.pricing.discounts.${key}`, key)}
+                </span>
+                <span class="pricing-sidebar__discount-value">-{pct}%</span>
+              </div>
+            ))}
           </div>
-        ))}
+        )}
       </div>
     </details>
   )}
@@ -232,8 +262,9 @@ const hasDiscounts = discountEntries.length > 0;
   }
   .pricing-sidebar__fact-icon {
     flex-shrink: 0;
-    font-size: 1rem;
-    line-height: 1;
+    display: flex;
+    align-items: center;
+    color: var(--brand-primary);
   }
   .pricing-sidebar__amount {
     font-family: var(--font-heading);
@@ -253,17 +284,62 @@ const hasDiscounts = discountEntries.length > 0;
     padding: var(--space-4, 16px) 0;
   }
   .pricing-sidebar__breakdown-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     font-family: var(--font-sans);
     font-size: 0.9rem;
     font-weight: 500;
     color: var(--brand-primary);
     cursor: pointer;
     list-style: none;
+    padding: var(--space-1, 4px) 0;
+    border-radius: var(--radius-sm, 6px);
+    transition: color 150ms ease;
   }
   .pricing-sidebar__breakdown-toggle::-webkit-details-marker { display: none; }
-  .pricing-sidebar__breakdown-toggle:hover { text-decoration: underline; }
+  .pricing-sidebar__breakdown-toggle::marker { display: none; }
+  .pricing-sidebar__breakdown-toggle:hover {
+    color: var(--brand-accent);
+  }
+  .pricing-sidebar__breakdown-toggle-label {
+    flex: 1;
+  }
+  .pricing-sidebar__breakdown-chevron {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    transition: transform 200ms ease;
+  }
+  details[open] .pricing-sidebar__breakdown-chevron {
+    transform: rotate(180deg);
+  }
   .pricing-sidebar__breakdown-content {
     padding-top: var(--space-3, 12px);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 12px);
+  }
+  .pricing-sidebar__breakdown-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 4px);
+  }
+  .pricing-sidebar__breakdown-group--discounts {
+    padding-top: var(--space-2, 8px);
+    border-top: 1px dashed var(--border);
+  }
+  .pricing-sidebar__breakdown-heading {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--core-muted-foreground);
+    margin-bottom: var(--space-1, 4px);
+  }
+  .pricing-sidebar__breakdown-heading--discount {
+    color: var(--success);
   }
   @media (prefers-reduced-motion: reduce) {
     .pricing-sidebar,
@@ -276,20 +352,30 @@ const hasDiscounts = discountEntries.length > 0;
   .pricing-sidebar__discount-row {
     display: flex;
     justify-content: space-between;
+    align-items: baseline;
+    gap: var(--space-3, 12px);
     font-family: var(--font-sans);
     font-size: 0.85rem;
     padding: var(--space-1, 4px) 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .pricing-sidebar__fee-row:last-child,
+  .pricing-sidebar__discount-row:last-child {
+    border-bottom: none;
   }
   .pricing-sidebar__fee-name,
   .pricing-sidebar__discount-name {
     color: var(--core-muted-foreground);
+    flex: 1;
   }
   .pricing-sidebar__fee-amount {
     color: var(--core-foreground);
     font-weight: 500;
+    white-space: nowrap;
   }
   .pricing-sidebar__discount-value {
-    color: oklch(0.6 0.2 145);
-    font-weight: 500;
+    color: var(--success);
+    font-weight: 600;
+    white-space: nowrap;
   }
 </style>

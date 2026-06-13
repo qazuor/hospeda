@@ -101,6 +101,13 @@ export const PostPublicSchema = PostSchema.pick({
     content: true,
     category: true,
 
+    // SPEC-212: I18nText translations (public-safe content fields).
+    // Web public pages render these to switch the visible locale to en/pt.
+    // translationMeta is internal and deliberately NOT picked here.
+    titleI18n: true,
+    summaryI18n: true,
+    contentI18n: true,
+
     // Author (only ID, not full details)
     authorId: true,
 

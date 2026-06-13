@@ -12,6 +12,7 @@ import {
     createBooleanQueryParam
 } from '../../api/http/base-http.schema.js';
 import { EventCategoryEnumSchema, PriceCurrencyEnumSchema } from '../../enums/index.js';
+import { stripShapeDefaults } from '../../utils/utils.js';
 
 /**
  * HTTP-compatible event search schema with automatic coercion
@@ -188,7 +189,10 @@ export type EventCreateHttp = z.infer<typeof EventCreateHttpSchema>;
  * HTTP-compatible event update schema
  * Handles partial updates via HTTP PATCH requests
  */
-export const EventUpdateHttpSchema = EventCreateHttpSchema.partial();
+// Zod 4 .partial() keeps .default(); strip them so absent keys = no change (SPEC-217).
+export const EventUpdateHttpSchema = z
+    .object(stripShapeDefaults(EventCreateHttpSchema.shape))
+    .partial();
 
 export type EventUpdateHttp = z.infer<typeof EventUpdateHttpSchema>;
 

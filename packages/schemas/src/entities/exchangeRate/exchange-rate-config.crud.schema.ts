@@ -1,4 +1,5 @@
-import type { z } from 'zod';
+import { z } from 'zod';
+import { stripShapeDefaults } from '../../utils/utils.js';
 import { ExchangeRateConfigSchema } from './exchange-rate-config.schema.js';
 
 /**
@@ -37,11 +38,18 @@ export const ExchangeRateConfigGetOutputSchema = ExchangeRateConfigSchema;
  * - disclaimerText: Custom disclaimer text
  * - enableAutoFetch: Whether automatic fetching is enabled
  */
-export const ExchangeRateConfigUpdateInputSchema = ExchangeRateConfigSchema.omit({
-    id: true,
-    updatedAt: true,
-    updatedById: true
-}).partial();
+// Zod 4 .partial() keeps .default(); strip them so absent keys = no change (SPEC-217).
+export const ExchangeRateConfigUpdateInputSchema = z
+    .object(
+        stripShapeDefaults(
+            ExchangeRateConfigSchema.omit({
+                id: true,
+                updatedAt: true,
+                updatedById: true
+            }).shape
+        )
+    )
+    .partial();
 
 /**
  * Schema for config update response

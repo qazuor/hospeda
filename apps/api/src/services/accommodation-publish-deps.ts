@@ -19,8 +19,10 @@
  * the request open for the duration of the platform default timeout.
  */
 import type { QZPayBilling } from '@qazuor/qzpay-core';
+import { applyTestControl, isSubscriptionLive } from '@repo/billing';
 import { UserModel, billingCustomers, billingSubscriptions, desc, eq, getDb } from '@repo/db';
 import type { AccommodationPublishDeps, PublishEligibility } from '@repo/service-core';
+import { addPublishLinkageContext } from '../lib/sentry';
 import { clearEntitlementCache } from '../middlewares/entitlement';
 import { apiLogger } from '../utils/logger';
 import { BillingCustomerSyncService } from './billing-customer-sync';
@@ -87,62 +89,85 @@ export function buildAccommodationPublishDeps(
             if (subscriptions.length === 0) {
                 return 'first_publish';
             }
-            const hasActive = subscriptions.some(
-                (s) => s.status === 'active' || s.status === 'trialing'
+            const hasActive = subscriptions.some((s) =>
+                isSubscriptionLive({
+                    status: s.status,
+                    trialEnd: s.trialEnd,
+                    currentPeriodEnd: s.currentPeriodEnd
+                })
             );
             return hasActive ? 'has_active_sub' : 'subscription_required';
         },
 
-        startTrial: async ({ ownerId }: { ownerId: string }) => {
-            const billing = getBilling();
-            const customerSync = new BillingCustomerSyncService(billing);
-            const trialService = new TrialService(billing);
-            const user = await userModel.findById(ownerId);
-            if (!user) {
-                throw new Error(`Cannot start trial: user ${ownerId} not found`);
-            }
-            const customerId = await withTimeout(
-                customerSync.ensureCustomerExists({
-                    userId: user.id,
-                    email: user.email ?? '',
-                    name: user.displayName ?? user.firstName ?? user.email ?? undefined
-                }),
-                QZPAY_TRIAL_TIMEOUT_MS,
-                'billing.ensureCustomer'
-            );
-            if (!customerId) {
-                throw new Error('Billing customer sync returned no customer id');
-            }
-            const subscriptionId = await withTimeout(
-                trialService.startTrial({ customerId }),
-                QZPAY_TRIAL_TIMEOUT_MS,
-                'billing.startTrial'
-            );
-            if (!subscriptionId) {
-                throw new Error('Trial creation returned no subscription id');
-            }
-            clearEntitlementCache(customerId);
-            apiLogger.info(
-                { ownerId, customerId, subscriptionId },
-                '[publish] trial subscription created'
-            );
-            return { subscriptionId };
-        },
+        startTrial: async ({
+            ownerId,
+            accommodationId
+        }: { ownerId: string; accommodationId: string }) =>
+            applyTestControl('startTrial', { ownerId, accommodationId }, async () => {
+                const billing = getBilling();
+                const customerSync = new BillingCustomerSyncService(billing);
+                const trialService = new TrialService(billing);
+                const user = await userModel.findById(ownerId);
+                if (!user) {
+                    throw new Error(`Cannot start trial: user ${ownerId} not found`);
+                }
+                const customerId = await withTimeout(
+                    customerSync.ensureCustomerExists({
+                        userId: user.id,
+                        email: user.email ?? '',
+                        name: user.displayName ?? user.firstName ?? user.email ?? undefined
+                    }),
+                    QZPAY_TRIAL_TIMEOUT_MS,
+                    'billing.ensureCustomer'
+                );
+                if (!customerId) {
+                    throw new Error('Billing customer sync returned no customer id');
+                }
+                // SPEC-222 Part 2: forward the triggering accommodation so the
+                // MercadoPago creation metadata carries the referential marker
+                // (no extra MP call — it rides the existing create payload).
+                const subscriptionId = await withTimeout(
+                    trialService.startTrial({ customerId, accommodationId }),
+                    QZPAY_TRIAL_TIMEOUT_MS,
+                    'billing.startTrial'
+                );
+                if (!subscriptionId) {
+                    throw new Error('Trial creation returned no subscription id');
+                }
+                clearEntitlementCache(customerId);
+                // SPEC-222 Part 1: attach the trial↔accommodation↔owner linkage to
+                // the Sentry scope so any error captured on this request carries it
+                // and the issue is searchable by any of the ids. Scope enrichment
+                // only — no event emitted, no-op when Sentry is disabled.
+                addPublishLinkageContext({
+                    subscriptionId,
+                    accommodationId,
+                    ownerId,
+                    customerId,
+                    planSlug: 'owner-basico'
+                });
+                apiLogger.info(
+                    { ownerId, customerId, subscriptionId, accommodationId },
+                    '[publish] trial subscription created'
+                );
+                return { subscriptionId };
+            }) as Promise<{ subscriptionId: string }>,
 
-        cancelTrial: async (subscriptionId: string) => {
-            const billing = getBilling();
-            if (!billing) {
-                throw new Error('Billing client unavailable; cannot cancel trial');
-            }
-            await withTimeout(
-                billing.subscriptions.cancel(subscriptionId),
-                QZPAY_TRIAL_TIMEOUT_MS,
-                'billing.cancel'
-            );
-            apiLogger.warn(
-                { subscriptionId },
-                '[publish] trial subscription cancelled (compensation)'
-            );
-        }
+        cancelTrial: async (subscriptionId: string) =>
+            applyTestControl('cancelTrial', subscriptionId, async () => {
+                const billing = getBilling();
+                if (!billing) {
+                    throw new Error('Billing client unavailable; cannot cancel trial');
+                }
+                await withTimeout(
+                    billing.subscriptions.cancel(subscriptionId),
+                    QZPAY_TRIAL_TIMEOUT_MS,
+                    'billing.cancel'
+                );
+                apiLogger.warn(
+                    { subscriptionId },
+                    '[publish] trial subscription cancelled (compensation)'
+                );
+            }) as Promise<void>
     };
 }

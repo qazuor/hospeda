@@ -11,7 +11,7 @@
  */
 
 import type { SupportedLocale } from '@/lib/i18n';
-import { resolveIcon } from '@repo/icons';
+import { resolveIcon } from '@repo/icons/resolver';
 import styles from './SectionHeader.module.css';
 
 interface SectionHeaderProps {

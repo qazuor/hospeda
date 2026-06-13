@@ -46,8 +46,17 @@ export interface AccommodationPublishDeps {
     /**
      * Creates a new trial subscription for the owner. MUST run outside any
      * transaction. Returns the QZPay subscription identifier on success.
+     *
+     * `accommodationId` is the accommodation whose publish triggered the trial.
+     * Trials are per-owner, so this id is purely *referential* ("triggered by")
+     * — it does NOT mean the subscription belongs to a single accommodation. It
+     * is threaded through for observability (logging / Sentry linkage) and as a
+     * referential marker on the MercadoPago creation payload (SPEC-222).
      */
-    startTrial: (input: { ownerId: string }) => Promise<{ subscriptionId: string }>;
+    startTrial: (input: {
+        ownerId: string;
+        accommodationId: string;
+    }) => Promise<{ subscriptionId: string }>;
     /**
      * Cancels a previously created trial subscription. Used as compensation
      * when the post-trial transaction fails.
@@ -75,6 +84,11 @@ export type HostOnboardingResult =
  * Replaces mutable instance fields with request-scoped context.
  */
 export interface AccommodationHookState extends Record<string, unknown> {
+    /**
+     * ID of the entity being updated. Set by the public `update()` override so
+     * that `_beforeUpdate` can fetch the pre-update entity (SPEC-212 AC-5).
+     */
+    updateId?: string;
     /** Entity data captured before soft-delete for post-delete side effects (revalidation). */
     deletedEntity?: { destinationId?: string; slug: string; type?: string };
     /** Entity data captured before restore for post-restore side effects (revalidation). */
@@ -110,4 +124,13 @@ export interface AccommodationHookState extends Record<string, unknown> {
      * `[…]` → list of AiTextImproveFieldType values.
      */
     pendingAiAssistedFields?: readonly string[];
+    /**
+     * Translatable field values captured from the entity BEFORE an update
+     * (SPEC-212, AC-5). Set by `_beforeUpdate`, read by `_afterUpdate` to
+     * emit a translate call only for fields whose Spanish source text changed.
+     *
+     * Keys: `name`, `summary`, `description`, `richDescription`.
+     * `undefined` value means the field was absent on the pre-update entity.
+     */
+    previousTranslatableFields?: Readonly<Record<string, string | undefined>>;
 }

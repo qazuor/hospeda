@@ -155,7 +155,10 @@ vi.mock('@repo/ai-core', () => {
         AnthropicAdapter: mockAnthropicAdapterConstructor,
         StubProvider: mockStubProviderConstructor,
         AiProviderUnconfiguredError: MockAiProviderUnconfiguredError,
-        AiFeatureNotConfiguredError
+        AiFeatureNotConfiguredError,
+        // resolveConfig: returns minimal config with no moderation field by default
+        // (opt-in disabled). Tests that need a moderation provider must override this.
+        resolveConfig: vi.fn().mockResolvedValue({ providers: {}, features: {} })
     };
 });
 

@@ -30,6 +30,12 @@ export * from './services';
 export * from './revalidation';
 
 /**
+ * --- TRANSLATION ---
+ * Exports translation service interface and singleton management (SPEC-212).
+ */
+export * from './translation/translation-init';
+
+/**
  * --- ENUMS (re-exported to prevent warnings and expose them to consumers) ---
  */
 export {

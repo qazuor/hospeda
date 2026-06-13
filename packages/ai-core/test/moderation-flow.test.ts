@@ -748,3 +748,129 @@ describe('runModerationPass — credential-missing vs transient failure (SPEC-19
         });
     });
 });
+
+// ---------------------------------------------------------------------------
+// Opt-in skip: moderationProviderId undefined → no provider call, no error
+//
+// Post-SPEC-198 revision: when no provider is configured, the engine SKIPS
+// moderation entirely (opt-in). No fail-closed, no event — just a clean return.
+// This is the correct behaviour for local/Ollama-only setups.
+// ---------------------------------------------------------------------------
+
+describe('runModerationPass — opt-in skip when moderationProviderId is undefined', () => {
+    it('should resolve without calling getProvider when moderationProviderId is undefined', async () => {
+        // Arrange — a getProvider spy that must NEVER be called.
+        const getProviderSpy = vi.fn();
+        const events: AiEngineEvent[] = [];
+
+        // Act — must NOT throw and must NOT call getProvider.
+        await expect(
+            runModerationPass({
+                feature: 'text_improve',
+                direction: 'input',
+                text: 'some user text',
+                moderationProviderId: undefined,
+                getProvider: getProviderSpy,
+                recordEvent: (event) => events.push(event)
+            })
+        ).resolves.toBeUndefined();
+
+        // Assert — provider was never contacted and no events were emitted.
+        expect(getProviderSpy).not.toHaveBeenCalled();
+        expect(events).toHaveLength(0);
+    });
+
+    it('should resolve without calling getProvider when text is empty even if moderationProviderId would be truthy', async () => {
+        // Arrange — this validates the early-return for empty text (step 1 in runModerationPass).
+        const moderateSpy = vi.fn();
+        const moderationProvider: AiProvider = {
+            ...new StubProvider(),
+            id: 'openai',
+            moderate: moderateSpy
+        };
+        const events: AiEngineEvent[] = [];
+
+        // Act — empty text, provider is configured, but empty-text skip fires first.
+        await expect(
+            runModerationPass({
+                feature: 'chat',
+                direction: 'output',
+                text: '   ',
+                moderationProviderId: 'openai',
+                getProvider: () => moderationProvider,
+                recordEvent: (event) => events.push(event)
+            })
+        ).resolves.toBeUndefined();
+
+        // Assert — moderate was never called due to whitespace-only skip.
+        expect(moderateSpy).not.toHaveBeenCalled();
+        expect(events).toHaveLength(0);
+    });
+});
+
+describe('engine — opt-in skip when no moderationProviderId is configured', () => {
+    it('generateText: should succeed and call moderate ZERO times when no moderationProviderId is given', async () => {
+        // Arrange — engine created WITHOUT moderationProviderId (undefined by default).
+        const moderateSpy = vi.fn().mockResolvedValue({ flagged: false, categories: {} });
+        const moderationProvider: AiProvider = {
+            ...new StubProvider(),
+            id: 'openai',
+            moderate: moderateSpy
+        };
+
+        const engine = createAiEngine({
+            getProvider: (id) => {
+                if (id === 'openai') return moderationProvider;
+                return new StubProvider();
+            }
+            // moderationProviderId intentionally absent — opt-in disabled.
+        });
+
+        // Act — should succeed without calling moderate.
+        const result = await engine.generateText({
+            feature: 'text_improve',
+            locale: 'es',
+            prompt: 'clean prompt'
+        });
+
+        // Assert — response returned, moderation provider was NEVER called.
+        expect(result.text).toBeDefined();
+        expect(moderateSpy).not.toHaveBeenCalled();
+    });
+
+    it('engine.moderate: should return unflagged clean result when no moderationProviderId is given', async () => {
+        // Arrange
+        const moderateSpy = vi.fn();
+        const engine = createAiEngine({
+            getProvider: (_id) => {
+                return { ...new StubProvider(), moderate: moderateSpy };
+            }
+            // no moderationProviderId
+        });
+
+        // Act
+        const result = await engine.moderate({ input: 'some text' });
+
+        // Assert — returns clean result without calling any provider.
+        expect(result.flagged).toBe(false);
+        expect(moderateSpy).not.toHaveBeenCalled();
+    });
+
+    it('generateText: a prompt containing [stub:flagged] should NOT be blocked when moderationProviderId is absent', async () => {
+        // Arrange — without a moderation provider, flagged content passes through.
+        const engine = createAiEngine({
+            getProvider: () => new StubProvider()
+            // no moderationProviderId
+        });
+
+        // Act + Assert — must NOT throw AiModerationBlockedError.
+        const result = await engine.generateText({
+            feature: 'text_improve',
+            locale: 'es',
+            prompt: 'This would normally be flagged: [stub:flagged]'
+        });
+
+        expect(result).toBeDefined();
+        expect(result.text).toBeDefined();
+    });
+});

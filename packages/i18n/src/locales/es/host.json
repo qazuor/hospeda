@@ -128,15 +128,22 @@
             "status": {
                 "DRAFT": "Borrador",
                 "PUBLISHED": "Publicada",
-                "SUSPENDED": "Suspendida"
+                "SUSPENDED": "Suspendida",
+                "INACTIVE": "Pausada"
             },
             "actions": {
                 "edit": "Editar",
                 "publish": "Publicar",
                 "unpublish": "Despublicar",
-                "viewOnSite": "Ver en el sitio"
+                "viewOnSite": "Ver en el sitio",
+                "unpublishConfirm": "¿Despublicar esta propiedad? Dejará de aparecer en el sitio.",
+                "confirmYes": "Sí, despublicar",
+                "confirmNo": "Cancelar"
             },
-            "pricePerNight": "por noche"
+            "pricePerNight": "por noche",
+            "unpublishSuccess": "Propiedad despublicada",
+            "unpublishError": "No se pudo despublicar. Intentá de nuevo.",
+            "priceOnRequest": "Precio a consultar"
         },
         "editor": {
             "section": {
@@ -215,6 +222,7 @@
             "entitlement": {
                 "premiumFeature": "Función premium",
                 "richDescriptionNudge": "Actualizá tu plan para usar descripciones enriquecidas con formato.",
+                "richDescriptionHint": "Mejorá tu plan para dar formato a tu descripción (negritas, listas y más).",
                 "videoNudge": "Actualizá tu plan para incrustar videos en tu propiedad.",
                 "genericNudge": "Esta función está disponible en un plan superior.",
                 "upgradeLink": "Mejorar plan"
@@ -273,11 +281,67 @@
             "RESORT": "Resort"
         }
     },
+    "promotions": {
+        "pageTitle": "Mis promociones",
+        "pageDescription": "Creá y gestioná descuentos y ofertas especiales para tus propiedades",
+        "empty": "Todavía no tenés ninguna promoción. ¡Creá tu primera oferta!",
+        "createButton": "Nueva promoción",
+        "loading": "Cargando promoción...",
+        "fields": {
+            "title": "Título",
+            "description": "Descripción",
+            "discountType": "Tipo de descuento",
+            "discountTypePlaceholder": "Elegí una opción",
+            "discountValue": "Valor del descuento",
+            "minNights": "Noches mínimas",
+            "validFrom": "Válido desde",
+            "validUntil": "Válido hasta",
+            "noExpiry": "Sin vencimiento",
+            "maxRedemptions": "Usos máximos",
+            "accommodationId": "Propiedad",
+            "accommodationIdAll": "Todas mis propiedades",
+            "accommodationIdLoading": "Cargando propiedades...",
+            "accommodationIdHint": "Elegí una propiedad o dejá 'Todas mis propiedades' para aplicar la promoción a todas."
+        },
+        "discountTypes": {
+            "percentage": "Porcentaje",
+            "fixed": "Monto fijo",
+            "free_night": "Noche gratis"
+        },
+        "lifecycleStates": {
+            "active": "Activa",
+            "draft": "Borrador",
+            "archived": "Archivada"
+        },
+        "errors": {
+            "loadFailed": "No se pudieron cargar las promociones. Intentá de nuevo.",
+            "saveFailed": "No se pudo guardar la promoción. Intentá de nuevo.",
+            "deleteFailed": "No se pudo eliminar la promoción. Intentá de nuevo.",
+            "titleRequired": "El título es requerido.",
+            "discountTypeRequired": "El tipo de descuento es requerido.",
+            "discountValueRequired": "El valor del descuento es requerido.",
+            "discountValueMaxPercentage": "El porcentaje no puede superar 100.",
+            "validFromRequired": "La fecha de inicio es requerida.",
+            "limitReachedHint": "Alcanzaste el límite de promociones activas de tu plan. Mejorá tu plan para crear más.",
+            "notFound": "No se encontró la promoción.",
+            "forbidden": "No tenés permiso para acceder a esta promoción."
+        },
+        "actions": {
+            "edit": "Editar",
+            "delete": "Eliminar",
+            "save": "Guardar",
+            "saving": "Guardando...",
+            "cancel": "Cancelar",
+            "confirmDelete": "¿Eliminar esta promoción? Esta acción no se puede deshacer."
+        }
+    },
     "dashboard": {
         "analytics": {
             "views": {
                 "title": "Vistas",
                 "empty": "Sin datos de vistas aún",
+                "error": "Error al cargar vistas",
+                "unnamed": "Sin nombre",
                 "window": {
                     "7d": "7d",
                     "30d": "30d"
@@ -292,11 +356,13 @@
                 "empty": "Sin datos de respuesta aún",
                 "avgTime": "Promedio",
                 "minutes": "min",
-                "notAvailable": "N/A"
+                "notAvailable": "N/A",
+                "error": "Error al cargar tiempo de respuesta"
             },
             "inquiries": {
                 "title": "Consultas",
-                "empty": "Sin datos de consultas aún"
+                "empty": "Sin datos de consultas aún",
+                "error": "Error al cargar consultas"
             },
             "marketComparison": {
                 "title": "Comparación de mercado",
@@ -307,7 +373,8 @@
                     "avgRating": "Prom. destino",
                     "yourPrice": "Tu precio",
                     "avgPrice": "Prom. precio"
-                }
+                },
+                "error": "Error al cargar comparación de mercado"
             },
             "sectionTitle": "Estadísticas",
             "locked": {
@@ -316,6 +383,39 @@
             },
             "loading": "Cargando estadísticas...",
             "error": "Error al cargar las estadísticas"
+        },
+        "pageTitle": "Panel del anfitrión",
+        "pageDescription": "Resumen de tus propiedades y suscripción",
+        "error": "Error al cargar el panel",
+        "retry": "Reintentar",
+        "plan": {
+            "trial": "Prueba gratuita",
+            "active": "Activo",
+            "inactive": "Inactivo",
+            "noPlan": "Sin plan"
+        },
+        "widgets": {
+            "properties": "Tus propiedades",
+            "total": "Total",
+            "published": "Publicadas",
+            "draft": "Borradores",
+            "manage": "Gestionar",
+            "plan": "Tu suscripción",
+            "noPlan": "Sin suscripción activa",
+            "messages": "Mensajes",
+            "unread": {
+                "singular": "mensaje sin leer",
+                "plural": "mensajes sin leer",
+                "none": "No tenés mensajes nuevos"
+            },
+            "viewAll": "Ver todos",
+            "quickActions": "Acciones rápidas"
+        },
+        "quickActions": {
+            "properties": "Propiedades",
+            "promotions": "Promociones",
+            "messages": "Mensajes",
+            "subscription": "Suscripción"
         }
     }
 }

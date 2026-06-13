@@ -1,3 +1,4 @@
+import type { AppSourceId, ReportTypeId } from '@repo/schemas';
 /**
  * @repo/feedback - FeedbackErrorBoundary component.
  *
@@ -15,7 +16,6 @@ import { Component } from 'react';
 import type { ErrorInfo, ReactNode } from 'react';
 import { FEEDBACK_STRINGS } from '../config/strings.js';
 import { serializeFeedbackParams } from '../lib/query-params.js';
-import type { AppSourceId, ReportTypeId } from '../schemas/feedback.schema.js';
 import { Button } from '../ui/Button.js';
 import './FeedbackErrorBoundary.css';
 import { FeedbackModal } from './FeedbackModal.js';

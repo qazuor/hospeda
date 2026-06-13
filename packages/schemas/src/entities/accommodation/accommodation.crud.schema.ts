@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { AccommodationIdSchema } from '../../common/id.schema.js';
+import { stripShapeDefaults } from '../../utils/utils.js';
 import { AiTextImproveFieldTypeSchema } from '../ai/ai-text-improve.schema.js';
 import { AccommodationSchema } from './accommodation.schema.js';
 
@@ -117,19 +118,33 @@ export type AccommodationCreateOutput = z.infer<typeof AccommodationCreateOutput
  *
  * These fields are **write-only inputs** and do NOT appear in read responses.
  */
-export const AccommodationUpdateInputSchema = AccommodationSchema.omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true,
-    createdById: true,
-    updatedById: true,
-    deletedAt: true,
-    deletedById: true,
-    // Server-managed (SPEC-143 #29): only the pause/resume flow flips this.
-    ownerSuspended: true,
-    // Server-managed (SPEC-167 §3): only the downgrade-restriction flow flips this.
-    planRestricted: true
-})
+export const AccommodationUpdateInputSchema = z
+    .object(
+        // Zod 4's `.partial()` does NOT strip `.default()` (unlike Zod 3): without
+        // this, a PATCH like `{ lifecycleState: 'ACTIVE' }` would arrive at the
+        // service carrying injected defaults (`visibility:'PUBLIC'`,
+        // `moderationState:'PENDING'`, `isFeatured:false`, review stats, etc.),
+        // silently overwriting server state AND — for a DRAFT→ACTIVE publish —
+        // making the non-empty rest-fields trigger a plain update that flips the row
+        // to ACTIVE before the publish/trial flow runs (SPEC-217). Stripping the
+        // top-level defaults restores correct "absent key = no change" PATCH
+        // semantics. See `stripShapeDefaults`.
+        stripShapeDefaults(
+            AccommodationSchema.omit({
+                id: true,
+                createdAt: true,
+                updatedAt: true,
+                createdById: true,
+                updatedById: true,
+                deletedAt: true,
+                deletedById: true,
+                // Server-managed (SPEC-143 #29): only the pause/resume flow flips this.
+                ownerSuspended: true,
+                // Server-managed (SPEC-167 §3): only the downgrade-restriction flow flips this.
+                planRestricted: true
+            }).shape
+        )
+    )
     .partial()
     .extend({
         /**

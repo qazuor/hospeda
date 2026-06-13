@@ -1,0 +1,125 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-205",
+    "title": "Host Web Foundation — Phase 3: Owner Promotions CRUD",
+    "created": "2026-06-12T00:00:00.000Z",
+    "note": "Phases 1/2/4 shipped earlier (promoted to main in #1542). This state tracks the remaining Phase 3 only. Scope corrected: the protected owner-promotions tier had no GET endpoints, so Phase 3 adds them.",
+    "tasks": [
+        {
+            "id": "T-301",
+            "title": "API: GET /protected/owner-promotions (owner's own list, all lifecycle states)",
+            "description": "Add protectedListOwnerPromotionRoute. Lists promotions owned by the authenticated actor across ALL lifecycle states (not ACTIVE-only). Reuse OwnerPromotionService search/list but scope by actor ownerId and do not force lifecycleState=ACTIVE (the public path forces it at ownerPromotion.service.ts:133 — protected must not). Wire into protected/index.ts. Permission OWNER_PROMOTION_VIEW (or existing read perm). Add route tests (auth, owner-scope isolation, includes drafts).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-303"],
+            "tags": ["api", "owner-promotion", "service-core"],
+            "phase": "backend",
+            "qualityGate": { "lint": "pending", "typecheck": "pending", "tests": "pending" }
+        },
+        {
+            "id": "T-302",
+            "title": "API: GET /protected/owner-promotions/{id} (owner's own by id)",
+            "description": "Add protectedGetOwnerPromotionRoute returning a single promotion owned by the actor; 404 if not found, 403 if owned by another user. Wire into protected/index.ts. Response = OwnerPromotionProtectedSchema. Add route tests (found, not-found, wrong-owner).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-303"],
+            "tags": ["api", "owner-promotion"],
+            "phase": "backend",
+            "qualityGate": { "lint": "pending", "typecheck": "pending", "tests": "pending" }
+        },
+        {
+            "id": "T-303",
+            "title": "Web API layer: OwnerPromotionData type + ownerPromotionApi + transformOwnerPromotion",
+            "description": "apps/web/src/lib/api/types.ts: add OwnerPromotionData (all readonly). endpoints-protected.ts: add ownerPromotionApi { list, getById, create, update, remove } mirroring hostDashboardApi. transforms.ts: add transformOwnerPromotion (Record<string,unknown> -> OwnerPromotionData, coerce dates/numbers). Unit tests for the transform.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-301", "T-302"],
+            "blocks": ["T-304", "T-305"],
+            "tags": ["web", "api-client"],
+            "phase": "web-data",
+            "qualityGate": { "lint": "pending", "typecheck": "pending", "tests": "pending" }
+        },
+        {
+            "id": "T-304",
+            "title": "Web: PromotionForm.client.tsx island (create/edit) + CSS Module",
+            "description": "Native HTML form (NOT TanStack Form). Props mode 'create'|'edit' + initialData?. Validate with OwnerPromotionCreateInputSchema (create) / UpdateInputSchema (edit) via safeParse; field errors flat record, role='alert' + aria-invalid; form-error banner. Discount type select (percentage/fixed/free_night); client-side check discountValue<=100 for percentage. Handle 403 LIMIT_REACHED / missing entitlement. Submit via ownerPromotionApi. Colocated PromotionForm.module.css.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-303"],
+            "blocks": ["T-306", "T-308"],
+            "tags": ["web", "island", "forms"],
+            "phase": "web-ui",
+            "qualityGate": { "lint": "pending", "typecheck": "pending", "tests": "pending" }
+        },
+        {
+            "id": "T-305",
+            "title": "Web: PromotionList.client.tsx island (list + delete) + CSS Module",
+            "description": "Island with loading/ready/error states (useState + useCallback + useEffect) fetching via ownerPromotionApi.list. Renders cards with title, discount, validity window, lifecycle badge, edit link, delete action (confirm). Empty state. Colocated PromotionList.module.css. i18n via createTranslations(locale).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-303"],
+            "blocks": ["T-306", "T-308"],
+            "tags": ["web", "island"],
+            "phase": "web-ui",
+            "qualityGate": { "lint": "pending", "typecheck": "pending", "tests": "pending" }
+        },
+        {
+            "id": "T-306",
+            "title": "Web: 3 SSR pages under [lang]/mi-cuenta/promociones/",
+            "description": "index.astro (mounts PromotionList), nueva.astro (mounts PromotionForm create), [id]/editar.astro (mounts PromotionForm edit, loads initialData by id). Follow host-dashboard.astro pattern: prerender=false, locale from Astro.locals, auth guard redirect, AccountLayout with activeSection='promociones', client:load.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-304", "T-305"],
+            "blocks": ["T-309"],
+            "tags": ["web", "astro", "pages"],
+            "phase": "web-ui",
+            "qualityGate": { "lint": "pending", "typecheck": "pending", "tests": "pending" }
+        },
+        {
+            "id": "T-307",
+            "title": "Nav + i18n: AccountLayout 'Promociones' entry + es/en/pt keys",
+            "description": "AccountLayout.astro: add 'Promociones' item to the 'host' nav group (section 'promociones', path 'mi-cuenta/promociones', MegaphoneIcon). i18n: add promotions key block to packages/i18n/src/locales/{es,en,pt}/host.json (pageTitle, fields, discountTypes, errors, actions) + account.nav.promotions label.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "tags": ["web", "i18n", "navigation"],
+            "phase": "web-ui",
+            "qualityGate": { "lint": "pending", "typecheck": "pending", "tests": "pending" }
+        },
+        {
+            "id": "T-308",
+            "title": "Tests: islands + missing HostDashboard.test.tsx",
+            "description": "Component tests for PromotionList.client.tsx and PromotionForm.client.tsx (render, validation errors, submit, delete). Add the Phase-2 missing apps/web/test/components/host/HostDashboard.test.tsx (render, widgets, loading/error).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-304", "T-305"],
+            "blocks": [],
+            "tags": ["web", "tests"],
+            "phase": "polish",
+            "qualityGate": { "lint": "pending", "typecheck": "pending", "tests": "pending" }
+        },
+        {
+            "id": "T-309",
+            "title": "Fix dead-link + locale-prefix quickActions hrefs",
+            "description": "Confirm HostDashboard.client.tsx:60 quick-action ('mi-cuenta/promociones') resolves now. Fix hardcoded quickActions hrefs in transforms.ts (~949-953) to use buildUrl({ locale, path }) instead of bare paths.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-306"],
+            "blocks": [],
+            "tags": ["web", "bugfix"],
+            "phase": "polish",
+            "qualityGate": { "lint": "pending", "typecheck": "pending", "tests": "pending" }
+        }
+    ],
+    "summary": {
+        "total": 9,
+        "pending": 0,
+        "inProgress": 0,
+        "completed": 9,
+        "blocked": 0,
+        "averageComplexity": 2.2
+    }
+}

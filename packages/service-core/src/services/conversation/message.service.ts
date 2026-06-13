@@ -579,8 +579,11 @@ export class MessageService extends BaseService {
                     execCtx?.tx
                 );
 
+                // The model returns the most recent rows first. Keep the newest
+                // `safeLimit`, then reverse to ascending order for display.
                 const hasMore = rows.length > safeLimit;
-                const page = hasMore ? rows.slice(0, safeLimit) : rows;
+                const recent = hasMore ? rows.slice(0, safeLimit) : rows;
+                const page = [...recent].reverse();
                 // Oldest message in the page provides the cursor for the next request
                 const nextCursor = hasMore && page.length > 0 ? page[0]?.createdAt : undefined;
 

@@ -33,7 +33,7 @@
  * - T-049d: PATCH failure shows toast; editor stays open
  */
 
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { UserFavoritesList } from '../../../src/components/account/UserFavoritesList.client';
 import { addToast } from '../../../src/store/toast-store';
@@ -382,6 +382,53 @@ describe('UserFavoritesList', () => {
         await waitFor(() => {
             expect(screen.getByText('Casa del Litoral')).toBeInTheDocument();
         });
+    });
+
+    it('rolls back only the failed bookmark on concurrent removes', async () => {
+        // bm-1's DELETE hangs until we reject it; bm-2's DELETE succeeds.
+        let rejectBm1: (reason?: unknown) => void = () => undefined;
+        const bm1Pending = new Promise<Response>((_resolve, reject) => {
+            rejectBm1 = reject;
+        });
+        globalThis.fetch = vi.fn().mockImplementation((url: string, opts?: RequestInit) => {
+            const method = opts?.method ?? 'GET';
+            if (method === 'DELETE') {
+                if (url.includes('bm-1')) return bm1Pending;
+                return Promise.resolve(makeSuccessResponse());
+            }
+            if (typeof url === 'string' && url.includes('user-bookmark-collections')) {
+                return Promise.resolve(makeEmptyCollectionsResponse());
+            }
+            return Promise.resolve(makeListResponse([BOOKMARK_1, BOOKMARK_2], 2));
+        });
+
+        renderList();
+        await waitFor(() => {
+            expect(screen.getByText('Casa del Litoral')).toBeInTheDocument();
+            expect(screen.getByText('Hotel Paraná')).toBeInTheDocument();
+        });
+
+        // Remove bm-1 first — its DELETE stays in flight (optimistically gone).
+        fireEvent.click(
+            screen.getByRole('button', { name: /quitar de favoritos: casa del litoral/i })
+        );
+        await waitFor(() => expect(screen.queryByText('Casa del Litoral')).not.toBeInTheDocument());
+
+        // Remove bm-2 concurrently — its DELETE resolves successfully.
+        fireEvent.click(screen.getByRole('button', { name: /quitar de favoritos: hotel paraná/i }));
+        await waitFor(() => expect(screen.queryByText('Hotel Paraná')).not.toBeInTheDocument());
+
+        // Now fail bm-1's delete → rollback must restore ONLY bm-1.
+        await act(async () => {
+            rejectBm1(new Error('network'));
+            await Promise.resolve();
+        });
+
+        await waitFor(() => {
+            expect(screen.getByText('Casa del Litoral')).toBeInTheDocument();
+        });
+        // The successfully-removed bm-2 must NOT be revived by bm-1's rollback.
+        expect(screen.queryByText('Hotel Paraná')).not.toBeInTheDocument();
     });
 
     it('does not render pagination for results <= PAGE_SIZE', async () => {

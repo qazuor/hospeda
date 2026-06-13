@@ -11,25 +11,35 @@
  *   after all chunks are yielded, the accumulated text is moderated. If flagged,
  *   the generator throws `AiModerationBlockedError` after the last token.
  *
+ * ## Opt-in moderation (post-SPEC-198 revision)
+ *
+ * Moderation is now OPT-IN. When `moderationProviderId` is `undefined` (not
+ * configured by the admin), the pass returns immediately without calling any
+ * provider. No error is thrown and no event is emitted — the capability call
+ * continues as if the pass were clean. Moderation is only active when an admin
+ * explicitly sets a moderation provider in `ai_settings.moderation.providerId`.
+ *
  * ## Fail-open guarantee (with one fail-CLOSED exception — SPEC-198)
  *
- * If the moderation provider call throws because of a TRANSIENT failure (network
- * error, timeout, rate-limit, 5xx, provider down), the error is caught, a
- * `moderation_error` event is emitted via `recordEvent`, and the helper returns
- * normally — allowing the capability call to continue unmoderated. A provider
- * hiccup MUST NOT take down AI features.
+ * When a provider IS configured: if the moderation provider call throws because
+ * of a TRANSIENT failure (network error, timeout, rate-limit, 5xx, provider
+ * down), the error is caught, a `moderation_error` event is emitted via
+ * `recordEvent`, and the helper returns normally — allowing the capability call
+ * to continue unmoderated. A provider hiccup MUST NOT take down AI features.
  *
  * The SOLE exception is `AiProviderUnconfiguredError`: when `getProvider` throws
- * because the moderation provider has NO resolvable credential configured, the
- * helper RE-THROWS it (fail-CLOSED). A missing credential is a server
- * misconfiguration, not a transient hiccup — passing such a request through
- * unmoderated would silently disable moderation, so the request is blocked
- * instead. `AiModerationBlockedError` is also always re-thrown (deliberate
- * content block, never swallowed).
+ * because the configured moderation provider has NO resolvable credential, the
+ * helper RE-THROWS it (fail-CLOSED). A configured-but-uncredentialed provider
+ * is a server misconfiguration — if the admin explicitly configured a provider
+ * and its credential is missing, we block rather than silently proceed.
+ * `AiModerationBlockedError` is also always re-thrown (deliberate content block,
+ * never swallowed).
  *
- * ## Skip condition
+ * ## Skip conditions
  *
- * Empty or whitespace-only text is skipped entirely (no provider call made).
+ * - `moderationProviderId` is `undefined` or empty string: skipped entirely
+ *   (opt-in — no provider configured means no moderation).
+ * - Empty or whitespace-only text: skipped (no provider call made).
  *
  * @module ai-core/engine/moderation-pass
  */
@@ -69,18 +79,21 @@ export interface RunModerationPassInput {
     /**
      * The configured moderation provider ID.
      *
-     * Passed to `getProvider` to obtain the concrete adapter.
+     * When `undefined` or empty string, the pass is skipped entirely (opt-in
+     * moderation — no provider configured means no moderation). When set, it
+     * is passed to `getProvider` to obtain the concrete adapter.
      */
-    readonly moderationProviderId: AiProviderId;
+    readonly moderationProviderId: AiProviderId | undefined;
 
     /**
      * Provider factory injected from the engine.
      *
-     * The factory may throw `AiProviderUnconfiguredError` when the moderation
-     * provider has no resolvable credential — that case fails CLOSED (the error
-     * is re-thrown, the request is blocked). Any other throw is a transient
-     * failure and fails OPEN (moderation error event, call continues). See the
-     * module doc for the full fail-open/fail-closed contract (SPEC-198).
+     * Only called when `moderationProviderId` is set. The factory may throw
+     * `AiProviderUnconfiguredError` when the configured moderation provider has
+     * no resolvable credential — that case fails CLOSED (the error is re-thrown,
+     * the request is blocked). Any other throw is a transient failure and fails
+     * OPEN (moderation error event, call continues). See the module doc for the
+     * full fail-open/fail-closed contract.
      */
     readonly getProvider: (id: AiProviderId) => AiProvider;
 
@@ -101,6 +114,8 @@ export interface RunModerationPassInput {
  * Runs one moderation pass for an AI capability call.
  *
  * **Behaviour**:
+ * 0. If `moderationProviderId` is `undefined` or empty string, returns
+ *    immediately (opt-in — no provider configured means no moderation).
  * 1. If `text` is empty or whitespace-only, returns immediately (no-op).
  * 2. Calls `getProvider(moderationProviderId).moderate({ input: text })`.
  * 3. If the result is flagged: emits a `moderation_blocked` event and throws
@@ -108,7 +123,7 @@ export interface RunModerationPassInput {
  * 4. If `moderate()` throws (or `getProvider()` throws) a TRANSIENT error: emits
  *    a `moderation_error` event and returns normally (fail-open — the AI call
  *    continues unmoderated). EXCEPTION: `AiProviderUnconfiguredError` (no
- *    resolvable credential) is re-thrown (fail-CLOSED, SPEC-198).
+ *    resolvable credential for the configured provider) is re-thrown (fail-CLOSED).
  * 5. If the result is clean: returns normally.
  *
  * **Input text for the three capabilities**:
@@ -126,11 +141,17 @@ export interface RunModerationPassInput {
  * @param input - {@link RunModerationPassInput}
  * @returns A promise that resolves when the text is clean or skipped.
  * @throws {AiModerationBlockedError} If the moderation provider flagged the text.
- * @throws {AiProviderUnconfiguredError} If the moderation provider has no
- *   resolvable credential (fail-CLOSED, SPEC-198).
+ * @throws {AiProviderUnconfiguredError} If the configured moderation provider has
+ *   no resolvable credential (fail-CLOSED — a provider was set but its key is
+ *   missing; this is a real misconfiguration, not an opt-in absence).
  */
 export async function runModerationPass(input: RunModerationPassInput): Promise<void> {
     const { feature, direction, text, moderationProviderId, getProvider, recordEvent } = input;
+
+    // 0. Opt-in skip: no provider configured → moderation disabled, return normally.
+    if (!moderationProviderId) {
+        return;
+    }
 
     // 1. Skip empty / whitespace-only text — no provider call needed.
     if (text.trim().length === 0) {
@@ -167,11 +188,13 @@ export async function runModerationPass(input: RunModerationPassInput): Promise<
             throw err;
         }
 
-        // SPEC-198: re-throw AiProviderUnconfiguredError (fail-CLOSED). A missing
-        // moderation credential is a server misconfiguration — letting the request
-        // through would silently disable moderation, so we block instead. This is
-        // the ONLY non-block error that is NOT swallowed; transient failures below
-        // still fail-open.
+        // Re-throw AiProviderUnconfiguredError (fail-CLOSED). If the admin
+        // explicitly configured a moderation provider but its credential is
+        // missing, the provider is misconfigured — block the request rather than
+        // silently proceeding unmoderated. This is the ONLY non-block error that
+        // is NOT swallowed; transient failures below still fail-open.
+        // Note: when NO provider is configured at all (opt-in absent), we never
+        // reach this point because step 0 above returns early.
         if (err instanceof AiProviderUnconfiguredError) {
             throw err;
         }
@@ -244,8 +267,10 @@ export interface WrapStreamWithOutputModerationInput {
 
     /**
      * The configured moderation provider ID.
+     *
+     * When `undefined` or empty string, output moderation is skipped (opt-in).
      */
-    readonly moderationProviderId: AiProviderId;
+    readonly moderationProviderId: AiProviderId | undefined;
 
     /**
      * Provider factory injected from the engine.

@@ -86,6 +86,29 @@ export const EXTRA_PROPERTIES_ADDON: AddonDefinition = {
     sortOrder: 5
 };
 
+export const AI_SUPPORT_ADDON: AddonDefinition = {
+    slug: 'ai-support-monthly',
+    name: 'AI Support (monthly)',
+    description:
+        'Unlocks AI-powered support tools for hosts, including smart reply suggestions and automated guest FAQ handling. Renews monthly.',
+    billingType: 'recurring',
+    // Placeholder pricing/quota — the ai_support FEATURE route is deferred to a
+    // future spec (SPEC-211 §AC-4.2). Until that spec lands with final pricing,
+    // the addon ships INACTIVE so it never surfaces in the purchasable catalog:
+    // an active addon at a TBD price would grant AI_SUPPORT for a feature that
+    // does not exist yet (host pays, receives nothing). Flip isActive to true in
+    // the ai_support feature spec once price/quota are confirmed by the owner.
+    priceArs: 800000, // ARS $8,000/month — TBD: owner to confirm final price at implementation
+    annualPriceArs: 7680000, // ARS $76,800/year (20% annual discount) — TBD: owner to confirm at implementation
+    durationDays: null,
+    affectsLimitKey: LimitKey.MAX_AI_SUPPORT_PER_MONTH,
+    limitIncrease: 100, // TBD: owner to confirm the monthly AI interaction quota at implementation
+    grantsEntitlement: EntitlementKey.AI_SUPPORT,
+    targetCategories: ['owner', 'complex'],
+    isActive: false,
+    sortOrder: 6
+};
+
 // ─── ALL ADD-ONS ───────────────────────────────────────────────
 
 /** All available add-ons in the system */
@@ -94,7 +117,8 @@ export const ALL_ADDONS: AddonDefinition[] = [
     VISIBILITY_BOOST_30D_ADDON,
     EXTRA_PHOTOS_ADDON,
     EXTRA_ACCOMMODATIONS_ADDON,
-    EXTRA_PROPERTIES_ADDON
+    EXTRA_PROPERTIES_ADDON,
+    AI_SUPPORT_ADDON
 ];
 
 /**

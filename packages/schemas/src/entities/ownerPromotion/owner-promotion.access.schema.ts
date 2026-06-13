@@ -77,6 +77,10 @@ export const OwnerPromotionProtectedSchema = OwnerPromotionSchema.pick({
     maxRedemptions: true,
     currentRedemptions: true,
 
+    // Lifecycle state (SPEC-205 Phase 3): owners need to see DRAFT/ACTIVE/ARCHIVED
+    // to manage their promotions from the web CRUD.
+    lifecycleState: true,
+
     // Audit (for owners)
     createdAt: true,
     updatedAt: true

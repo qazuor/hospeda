@@ -12,10 +12,7 @@ export enum EntitlementKey {
     PRIORITY_SUPPORT = 'priority_support',
     FEATURED_LISTING = 'featured_listing',
     CUSTOM_BRANDING = 'custom_branding',
-    API_ACCESS = 'api_access',
-    DEDICATED_MANAGER = 'dedicated_manager',
     CREATE_PROMOTIONS = 'create_promotions',
-    SOCIAL_MEDIA_INTEGRATION = 'social_media_integration',
 
     /** Accommodation feature entitlements */
     CAN_USE_RICH_DESCRIPTION = 'can_use_rich_description',
@@ -31,8 +28,6 @@ export enum EntitlementKey {
     CONSOLIDATED_ANALYTICS = 'consolidated_analytics',
     CENTRALIZED_BOOKING = 'centralized_booking',
     STAFF_MANAGEMENT = 'staff_management',
-    WHITE_LABEL = 'white_label',
-    MULTI_CHANNEL_INTEGRATION = 'multi_channel_integration',
 
     /** Tourist entitlements */
     SAVE_FAVORITES = 'save_favorites',
@@ -40,11 +35,8 @@ export enum EntitlementKey {
     READ_REVIEWS = 'read_reviews',
     AD_FREE = 'ad_free',
     PRICE_ALERTS = 'price_alerts',
-    EARLY_ACCESS_EVENTS = 'early_access_events',
     EXCLUSIVE_DEALS = 'exclusive_deals',
     VIP_SUPPORT = 'vip_support',
-    CONCIERGE_SERVICE = 'concierge_service',
-    AIRPORT_TRANSFERS = 'airport_transfers',
     VIP_PROMOTIONS_ACCESS = 'vip_promotions_access',
     CAN_COMPARE_ACCOMMODATIONS = 'can_compare_accommodations',
     CAN_ATTACH_REVIEW_PHOTOS = 'can_attach_review_photos',
@@ -73,7 +65,13 @@ export enum EntitlementKey {
      * Allows the user to access the AI-powered support assistant
      * for platform help and troubleshooting.
      */
-    AI_SUPPORT = 'ai_support'
+    AI_SUPPORT = 'ai_support',
+    /**
+     * Allows the user to use the AI-powered content translation feature
+     * to auto-translate accommodation, destination, event, and post content
+     * to English and Portuguese.
+     */
+    AI_TRANSLATE = 'ai_translate'
 }
 
 /**

@@ -46,11 +46,15 @@ interface CollectionListResponse {
 }
 
 interface BookmarkListResponse {
-    readonly data?: ReadonlyArray<{
-        readonly id: string;
-        readonly entityId: string;
-        readonly collectionId?: string | null;
-    }>;
+    // GET /api/v1/protected/user-bookmarks returns { data: { bookmarks: [...], total } }
+    readonly data?: {
+        readonly bookmarks?: ReadonlyArray<{
+            readonly id: string;
+            readonly entityId: string;
+            readonly collectionId?: string | null;
+        }>;
+        readonly total?: number;
+    };
 }
 
 test.describe('E2E-03: collections CRUD @p0 @favorites @collections @crud @spec-098', () => {
@@ -228,7 +232,7 @@ test.describe('E2E-03: collections CRUD @p0 @favorites @collections @crud @spec-
         });
         expect(listRes.ok()).toBe(true);
         const listBody = (await listRes.json()) as BookmarkListResponse;
-        const bookmark = listBody.data?.find((bm) => bm.id === bookmarkId);
+        const bookmark = listBody.data?.bookmarks?.find((bm) => bm.id === bookmarkId);
         expect(bookmark, 'bookmark should still exist after collection deletion').toBeTruthy();
         expect(bookmark?.collectionId ?? null).toBeNull();
     });

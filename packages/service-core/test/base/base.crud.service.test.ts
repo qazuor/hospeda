@@ -11,6 +11,7 @@ class MockModel {
     findAllWithRelations = vi.fn();
     findAll = vi.fn();
     findById = vi.fn();
+    findByIds = vi.fn();
     findOne = vi.fn();
     count = vi.fn();
     create = vi.fn();

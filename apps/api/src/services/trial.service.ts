@@ -108,7 +108,7 @@ export class TrialService {
             return null;
         }
 
-        const { customerId } = input;
+        const { customerId, accommodationId } = input;
 
         try {
             // All users start on the same base plan with the same trial duration.
@@ -162,13 +162,25 @@ export class TrialService {
             const trialEnd = new Date(now);
             trialEnd.setDate(trialEnd.getDate() + trialDays);
 
+            // SPEC-222 Part 2: enrich the MercadoPago creation payload AT
+            // creation time (no follow-up update, no extra MP call) with:
+            //  - an environment marker so MP-side records can be filtered by
+            //    deployment (prod / staging / development), reusing the same
+            //    convention as Sentry (HOSPEDA_SENTRY_ENVIRONMENT ?? NODE_ENV);
+            //  - the accommodation that triggered the trial, clearly labelled as
+            //    referential ("triggered_by") since trials are PER-OWNER and the
+            //    subscription does NOT belong to a single accommodation.
+            // Only env marker + internal UUIDs go to MP — no PII (no names/emails).
+            const environmentMarker = env.HOSPEDA_SENTRY_ENVIRONMENT ?? env.NODE_ENV;
             const subscription = await this.billing.subscriptions.create({
                 customerId,
                 planId: plan.id,
                 trialDays,
                 metadata: {
                     autoStarted: 'true',
-                    createdBy: 'trial-service'
+                    createdBy: 'trial-service',
+                    environment: environmentMarker,
+                    ...(accommodationId ? { triggeredByAccommodationId: accommodationId } : {})
                 }
             });
 

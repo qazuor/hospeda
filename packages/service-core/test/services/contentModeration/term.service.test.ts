@@ -9,7 +9,8 @@ const { invalidateModerationCache, invalidateModerationCacheByTermPattern } = vi
     invalidateModerationCacheByTermPattern: vi.fn()
 }));
 
-vi.mock('@repo/content-moderation/engine/index', () => ({
+vi.mock('@repo/content-moderation', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/content-moderation')>()),
     invalidateModerationCache,
     invalidateModerationCacheByTermPattern
 }));

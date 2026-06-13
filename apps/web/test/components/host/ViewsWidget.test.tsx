@@ -1,7 +1,7 @@
 /**
  * @file ViewsWidget.test.tsx
- * @description TDD tests for ViewsWidget — bar chart showing accommodation views
- * with 7d/30d toggle, loading skeleton, and empty state.
+ * @description Tests for ViewsWidget — per-property ranked list of accommodation
+ * views with 7d/30d toggle, loading skeleton, error, and empty states.
  */
 
 import { render, screen } from '@testing-library/react';
@@ -12,13 +12,9 @@ import { ViewsWidget } from '../../../src/components/host/ViewsWidget.client';
 const mockData = {
     window: '7d' as const,
     items: [
-        { date: '2026-06-01', count: 12 },
-        { date: '2026-06-02', count: 8 },
-        { date: '2026-06-03', count: 15 },
-        { date: '2026-06-04', count: 3 },
-        { date: '2026-06-05', count: 20 },
-        { date: '2026-06-06', count: 7 },
-        { date: '2026-06-07', count: 11 }
+        { accommodationId: 'a1', name: 'Casa del Sol', total: 42, unique: 30 },
+        { accommodationId: 'a2', name: 'Cabaña del Río', total: 28, unique: 20 },
+        { accommodationId: 'a3', name: 'Apartamento Centro', total: 15, unique: 12 }
     ]
 };
 
@@ -36,18 +32,18 @@ describe('ViewsWidget', () => {
         expect(screen.getByTestId('views-skeleton')).toBeInTheDocument();
     });
 
-    it('renders error state with message', () => {
+    it('renders error state with role alert and message', () => {
         render(
             <ViewsWidget
                 locale="es"
                 data={undefined}
                 isLoading={false}
-                error="Failed to load"
+                error="Error al cargar vistas"
                 onWindowChange={vi.fn()}
             />
         );
         expect(screen.getByRole('alert')).toBeInTheDocument();
-        expect(screen.getByText('Failed to load')).toBeInTheDocument();
+        expect(screen.getByText('Error al cargar vistas')).toBeInTheDocument();
     });
 
     it('renders empty state when data has no items', () => {
@@ -63,7 +59,23 @@ describe('ViewsWidget', () => {
         expect(screen.getByText(/Sin datos/i)).toBeInTheDocument();
     });
 
-    it('renders bar chart with view data', () => {
+    it('renders empty state when all items have total === 0', () => {
+        render(
+            <ViewsWidget
+                locale="es"
+                data={{
+                    window: '30d',
+                    items: [{ accommodationId: 'a1', name: 'Casa', total: 0, unique: 0 }]
+                }}
+                isLoading={false}
+                error={null}
+                onWindowChange={vi.fn()}
+            />
+        );
+        expect(screen.getByText(/Sin datos/i)).toBeInTheDocument();
+    });
+
+    it('renders accommodation names and totals sorted by total desc', () => {
         render(
             <ViewsWidget
                 locale="es"
@@ -73,13 +85,29 @@ describe('ViewsWidget', () => {
                 onWindowChange={vi.fn()}
             />
         );
-        // The widget title should be present
-        expect(screen.getByText(/Vistas/i)).toBeInTheDocument();
-        // recharts renders SVG bars — check for the chart container
-        expect(screen.getByTestId('views-chart')).toBeInTheDocument();
+        expect(screen.getByText('Casa del Sol')).toBeInTheDocument();
+        expect(screen.getByText('42')).toBeInTheDocument();
+        expect(screen.getByText('Cabaña del Río')).toBeInTheDocument();
+        expect(screen.getByText('28')).toBeInTheDocument();
+        expect(screen.getByText('Apartamento Centro')).toBeInTheDocument();
+        expect(screen.getByText('15')).toBeInTheDocument();
     });
 
-    it('shows 7d toggle as active by default', () => {
+    it('shows the total badge with sum of all items totals', () => {
+        render(
+            <ViewsWidget
+                locale="es"
+                data={mockData}
+                isLoading={false}
+                error={null}
+                onWindowChange={vi.fn()}
+            />
+        );
+        // 42 + 28 + 15 = 85
+        expect(screen.getByText('85')).toBeInTheDocument();
+    });
+
+    it('shows 7d toggle as active when data.window is 7d', () => {
         render(
             <ViewsWidget
                 locale="es"
@@ -93,7 +121,7 @@ describe('ViewsWidget', () => {
         expect(btn7d).toHaveAttribute('aria-pressed', 'true');
     });
 
-    it('calls onWindowChange when toggle is clicked', async () => {
+    it('calls onWindowChange with 30d when toggle is clicked', async () => {
         const user = userEvent.setup();
         const onWindowChange = vi.fn();
         render(
@@ -110,17 +138,19 @@ describe('ViewsWidget', () => {
         expect(onWindowChange).toHaveBeenCalledWith('30d');
     });
 
-    it('shows total views count', () => {
+    it('falls back to unnamed translation when accommodation name is empty', () => {
         render(
             <ViewsWidget
                 locale="es"
-                data={mockData}
+                data={{
+                    window: '7d',
+                    items: [{ accommodationId: 'x1', name: '', total: 10, unique: 8 }]
+                }}
                 isLoading={false}
                 error={null}
                 onWindowChange={vi.fn()}
             />
         );
-        // Total: 12+8+15+3+20+7+11 = 76
-        expect(screen.getByText('76')).toBeInTheDocument();
+        expect(screen.getByText(/Sin nombre/i)).toBeInTheDocument();
     });
 });

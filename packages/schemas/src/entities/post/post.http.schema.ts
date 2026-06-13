@@ -12,6 +12,7 @@ import {
     createBooleanQueryParam
 } from '../../api/http/base-http.schema.js';
 import { LifecycleStatusEnumSchema, PostCategoryEnumSchema } from '../../enums/index.js';
+import { stripShapeDefaults } from '../../utils/utils.js';
 
 /**
  * HTTP-compatible post search schema with automatic coercion
@@ -204,11 +205,14 @@ export const PostCreateHttpSchema = z.object({
 
 export type PostCreateHttp = z.infer<typeof PostCreateHttpSchema>;
 
+// Zod 4 .partial() keeps .default(); strip them so absent keys = no change (SPEC-217).
 /**
  * HTTP-compatible post update schema
  * Handles partial updates via HTTP PATCH requests
  */
-export const PostUpdateHttpSchema = PostCreateHttpSchema.partial();
+export const PostUpdateHttpSchema = z
+    .object(stripShapeDefaults(PostCreateHttpSchema.shape))
+    .partial();
 
 export type PostUpdateHttp = z.infer<typeof PostUpdateHttpSchema>;
 

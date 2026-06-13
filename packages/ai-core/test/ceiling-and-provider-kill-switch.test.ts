@@ -38,6 +38,7 @@ import {
 import type { AiEngine, AiEngineEvent } from '../src/engine/index.js';
 import type { AiProvider } from '../src/providers/ai-provider.interface.js';
 import { StubProvider } from '../src/providers/index.js';
+import { DEFAULT_COST_CEILINGS } from '../src/usage/model-rates.js';
 
 // ---------------------------------------------------------------------------
 // Mock: prompt-resolver — no DB required (T-034)
@@ -48,9 +49,10 @@ import { StubProvider } from '../src/providers/index.js';
 
 vi.mock('../src/config/prompt-resolver.js', () => ({
     resolveSystemPrompt: vi.fn(() =>
-        Promise.resolve({ content: 'default system prompt', source: 'default' })
+        Promise.resolve({ content: 'default system prompt', rules: '', source: 'default' })
     ),
-    invalidatePromptCache: vi.fn()
+    invalidatePromptCache: vi.fn(),
+    composeSystemPrompt: vi.fn(({ content }: { content: string; rules: string | null }) => content)
 }));
 
 // ---------------------------------------------------------------------------
@@ -76,23 +78,6 @@ const mockIsFeatureKillSwitched = configResolver.isFeatureKillSwitched as Return
 const mockGetProviderOrder = configResolver.getProviderOrder as ReturnType<typeof vi.fn>;
 
 // ---------------------------------------------------------------------------
-// Mock: prompt-resolver — no DB required (T-034)
-//
-// engine.ts calls resolveSystemPrompt from config/prompt-resolver.ts which
-// in turn reads from storage. Mock the entire resolver so engine tests in
-// this file are unaffected by the new system-prompt injection.
-// ---------------------------------------------------------------------------
-
-vi.mock('../src/config/prompt-resolver.js', () => {
-    return {
-        resolveSystemPrompt: vi.fn(() =>
-            Promise.resolve({ content: 'default system prompt', source: 'default' })
-        ),
-        invalidatePromptCache: vi.fn()
-    };
-});
-
-// ---------------------------------------------------------------------------
 // Mock: storage (aggregateAiUsageByMonth + resolveConfig dependency for ceiling.ts)
 // ---------------------------------------------------------------------------
 
@@ -108,10 +93,17 @@ vi.mock('../src/storage/index.js', () => ({
     AiSettingsParseError: class AiSettingsParseError extends Error {}
 }));
 
+import * as promptResolverModule from '../src/config/prompt-resolver.js';
 import * as storageModule from '../src/storage/index.js';
 import { checkCostCeiling } from '../src/usage/ceiling.js';
 
 const mockAggregateByMonth = storageModule.aggregateAiUsageByMonth as ReturnType<typeof vi.fn>;
+const mockResolveSystemPrompt = promptResolverModule.resolveSystemPrompt as ReturnType<
+    typeof vi.fn
+>;
+const mockComposeSystemPrompt = promptResolverModule.composeSystemPrompt as ReturnType<
+    typeof vi.fn
+>;
 
 // ---------------------------------------------------------------------------
 // Shared fixtures
@@ -163,6 +155,17 @@ beforeEach(() => {
 
     // Default: aggregateAiUsageByMonth returns no rows (zero spend).
     mockAggregateByMonth.mockResolvedValue([]);
+
+    // Restore prompt-resolver mocks after resetAllMocks so engine tests can
+    // proceed (resolveSystemPrompt is called on every engine capability call).
+    mockResolveSystemPrompt.mockResolvedValue({
+        content: 'default system prompt',
+        rules: '',
+        source: 'default'
+    });
+    mockComposeSystemPrompt.mockImplementation(
+        ({ content }: { content: string; rules: string | null }) => content
+    );
 });
 
 // ---------------------------------------------------------------------------
@@ -196,19 +199,84 @@ function makeEngine(
 
 describe('checkCostCeiling', () => {
     // -------------------------------------------------------------------------
-    // 1. No ceilings configured → resolves silently
+    // 1. No ceilings configured → DEFAULT_COST_CEILINGS applied (SPEC-211 G-1)
     // -------------------------------------------------------------------------
 
-    describe('when no costCeilings are configured', () => {
-        it('should resolve without throwing', async () => {
-            // Arrange
+    describe('when no costCeilings are configured in the blob', () => {
+        it('should still enforce DEFAULT_COST_CEILINGS (ceiling is always-on)', async () => {
+            // Arrange — no costCeilings in blob; spend is zero, well below defaults.
             mockResolveConfig.mockResolvedValue(makeSettingsValue({}));
-            // aggregateAiUsageByMonth should NOT be called when no ceilings configured.
+            mockAggregateByMonth.mockResolvedValue([]);
 
-            // Act + Assert
+            // Act + Assert — with zero spend, neither global nor feature ceiling is
+            // breached so the call resolves silently, but the DB IS queried because
+            // DEFAULT_COST_CEILINGS kicks in and enforcement runs.
             await expect(checkCostCeiling({ feature: 'chat', now: NOW })).resolves.toBeUndefined();
 
-            expect(mockAggregateByMonth).not.toHaveBeenCalled();
+            // aggregateAiUsageByMonth MUST be called — enforcement is active.
+            expect(mockAggregateByMonth).toHaveBeenCalled();
+        });
+
+        it('should throw AiCeilingHitError when global default ceiling is breached', async () => {
+            // Arrange — no costCeilings blob; global spend >= 100_000_000 µUSD default.
+            mockResolveConfig.mockResolvedValue(makeSettingsValue({}));
+            mockAggregateByMonth.mockResolvedValueOnce([
+                {
+                    month: '2026-06',
+                    calls: 100,
+                    tokensIn: 1_000_000,
+                    tokensOut: 500_000,
+                    costMicroUsd: 100_000_000 // equals DEFAULT_COST_CEILINGS.globalMonthlyMicroUsd
+                }
+            ]);
+
+            // Act + Assert — default global ceiling must block the call.
+            await expect(checkCostCeiling({ feature: 'chat', now: NOW })).rejects.toThrow(
+                AiCeilingHitError
+            );
+        });
+
+        it('should throw AiCeilingHitError when per-feature default ceiling is breached', async () => {
+            // Arrange — no costCeilings blob; chat feature spend >= 45_000_000 µUSD default.
+            // Global query returns below global ceiling; feature query returns at feature ceiling.
+            mockResolveConfig.mockResolvedValue(makeSettingsValue({}));
+            // Global query: below global default (100_000_000)
+            mockAggregateByMonth.mockResolvedValueOnce([
+                {
+                    month: '2026-06',
+                    calls: 10,
+                    tokensIn: 100_000,
+                    tokensOut: 50_000,
+                    costMicroUsd: 10_000_000
+                }
+            ]);
+            // Feature query: AT default chat ceiling (45_000_000)
+            mockAggregateByMonth.mockResolvedValueOnce([
+                {
+                    month: '2026-06',
+                    calls: 5,
+                    tokensIn: 50_000,
+                    tokensOut: 25_000,
+                    costMicroUsd: 45_000_000
+                }
+            ]);
+
+            // Act
+            let caughtErr: unknown;
+            try {
+                await checkCostCeiling({ feature: 'chat', now: NOW });
+            } catch (err) {
+                caughtErr = err;
+            }
+
+            // Assert — default per-feature ceiling enforced
+            expect(caughtErr).toBeInstanceOf(AiCeilingHitError);
+            const ceilErr = caughtErr as AiCeilingHitError;
+            expect(ceilErr.scope).toBe('feature');
+            expect(ceilErr.feature).toBe('chat');
+            expect(ceilErr.ceilingMicroUsd).toBe(
+                DEFAULT_COST_CEILINGS.perFeatureMonthlyMicroUsd?.chat
+            );
         });
     });
 
@@ -644,20 +712,63 @@ describe('checkCostCeiling', () => {
         });
 
         // -----------------------------------------------------------------------
-        // 14. Hook NOT called when no ceilings configured
+        // 14. When no ceilings in blob, DEFAULT_COST_CEILINGS applies — hook
+        //     fires only if DEFAULT spend thresholds are crossed (SPEC-211 G-1).
         // -----------------------------------------------------------------------
 
-        describe('when no ceilings are configured', () => {
-            it('should NOT call the hook', async () => {
-                // Arrange
+        describe('when no ceilings are configured in the blob (DEFAULT_COST_CEILINGS applies)', () => {
+            it('should NOT call the hook when spend is well below the default ceilings', async () => {
+                // Arrange — zero spend, no blob ceilings; defaults apply but thresholds
+                // are not crossed (0 < 50% of 100_000_000).
                 mockResolveConfig.mockResolvedValue(makeSettingsValue({}));
+                mockAggregateByMonth.mockResolvedValue([]);
                 const hook = vi.fn();
 
                 // Act
                 await checkCostCeiling({ feature: 'chat', now: NOW, onThresholdAlert: hook });
 
-                // Assert
+                // Assert — no threshold crossed, hook silent
                 expect(hook).not.toHaveBeenCalled();
+            });
+
+            it('should call the hook when spend crosses the default global 50% band', async () => {
+                // Arrange — global spend at exactly 50% of DEFAULT global ceiling (50_000_000).
+                // The per-feature chat query returns below the chat ceiling (45_000_000) so
+                // only the global 50% alert fires and no ceiling breach is thrown.
+                mockResolveConfig.mockResolvedValue(makeSettingsValue({}));
+                // Global aggregate query
+                mockAggregateByMonth.mockResolvedValueOnce([
+                    {
+                        month: '2026-06',
+                        calls: 50,
+                        tokensIn: 500_000,
+                        tokensOut: 250_000,
+                        costMicroUsd: 50_000_000 // exactly 50% of 100_000_000 global default
+                    }
+                ]);
+                // Per-feature chat query — below the 45_000_000 chat ceiling
+                mockAggregateByMonth.mockResolvedValueOnce([
+                    {
+                        month: '2026-06',
+                        calls: 10,
+                        tokensIn: 100_000,
+                        tokensOut: 50_000,
+                        costMicroUsd: 10_000_000 // well below 45_000_000 chat ceiling
+                    }
+                ]);
+                const hook = vi.fn();
+
+                // Act
+                await checkCostCeiling({ feature: 'chat', now: NOW, onThresholdAlert: hook });
+
+                // Assert — global 50% band crossed → hook fired with global scope
+                expect(hook).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        scope: 'global',
+                        thresholdPct: 50,
+                        ceilingMicroUsd: DEFAULT_COST_CEILINGS.globalMonthlyMicroUsd
+                    })
+                );
             });
         });
 

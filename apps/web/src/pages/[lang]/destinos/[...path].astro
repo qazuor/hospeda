@@ -182,15 +182,16 @@ function extractTotal(settled: PromiseSettledResult<unknown>): number {
 try {
 	const [
 		accResult,
-		accCountResult,
 		eventsResult,
 		eventsCountResult,
 		statsResult,
 		postsResult,
 		siblingsResult
 	] = await Promise.allSettled([
-		accommodationsApi.getByDestination({ destinationId: destId, pageSize: 3 }),
-		accommodationsApi.getByDestination({ destinationId: destId, pageSize: 1 }),
+		// NOTE: getByDestination returns ALL accommodations for the destination in a
+		// single non-paginated payload — pageSize is not accepted. One call serves both
+		// the preview cards (sliced below) and the total count (array length).
+		accommodationsApi.getByDestination({ destinationId: destId }),
 		eventsApi.list({ pageSize: 3, destinationId: destId }),
 		eventsApi.list({ pageSize: 1, destinationId: destId }),
 		destinationsApi.getStats({ id: destId }),
@@ -202,12 +203,12 @@ try {
 
 	accCards = extractItems(accResult)
 		.slice(0, 3)
-		.map((item) => toAccommodationCardProps({ item }));
-	accCount = extractTotal(accCountResult);
+		.map((item) => toAccommodationCardProps({ item, locale }));
+	accCount = extractTotal(accResult);
 
 	eventCards = extractItems(eventsResult)
 		.slice(0, 3)
-		.map((item) => toEventCardProps({ item }));
+		.map((item) => toEventCardProps({ item, locale }));
 	eventsCount = extractTotal(eventsCountResult);
 
 	if (statsResult.status === 'fulfilled' && statsResult.value.ok) {

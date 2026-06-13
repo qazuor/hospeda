@@ -20,6 +20,13 @@ export const DestinationPublicSchema = DestinationSchema.pick({
     description: true,
     isFeatured: true,
 
+    // SPEC-212: I18nText translations (public-safe content fields).
+    // Web public pages render these to switch the visible locale to en/pt.
+    // translationMeta is internal and deliberately NOT picked here.
+    nameI18n: true,
+    summaryI18n: true,
+    descriptionI18n: true,
+
     // Hierarchy (public safe)
     destinationType: true,
     level: true,

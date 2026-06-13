@@ -135,7 +135,7 @@ export function CreatePropertyMiniForm({
     apiUrl,
     adminUrl,
     accountPropertiesUrl,
-    canAccessAdminPanel
+    canAccessAdminPanel: _canAccessAdminPanel
 }: CreatePropertyMiniFormProps) {
     const { t } = createTranslations(locale);
 
@@ -347,14 +347,15 @@ export function CreatePropertyMiniForm({
 
             const adminBase = adminUrl.replace(/\/$/, '');
 
-            // `already_host`: the user already held a privileged role before
-            // this submit, so the pre-submit `canAccessAdminPanel` flag is
-            // still accurate. No session refresh is needed because nothing
-            // changed in the user's role / permissions.
+            // `already_host`: the user already had an active HOST/ADMIN role
+            // before this submit — nothing changed in their permissions, so
+            // no session refresh is needed. Always send them to their own
+            // property list on the web app (`/me/accommodations` path resolved
+            // via `accountPropertiesUrl`). Redirecting admin-capable users to
+            // the global admin list (`/accommodations`) is confusing because
+            // they didn't create or resume any particular draft here.
             if (data.status === 'already_host') {
-                window.location.href = canAccessAdminPanel
-                    ? `${adminBase}/accommodations`
-                    : accountPropertiesUrl;
+                window.location.href = accountPropertiesUrl;
                 return;
             }
 

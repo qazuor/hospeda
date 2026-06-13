@@ -4,6 +4,7 @@ import { sentryVitePlugin } from '@sentry/vite-plugin';
 import tailwindcss from '@tailwindcss/vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import react from '@vitejs/plugin-react';
+import { visualizer } from 'rollup-plugin-visualizer';
 import { defineConfig, loadEnv } from 'vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import { z } from 'zod';
@@ -36,11 +37,37 @@ process.env.VITE_BETTER_AUTH_URL ??=
     process.env.HOSPEDA_BETTER_AUTH_URL ??
     (process.env.HOSPEDA_API_URL ? `${process.env.HOSPEDA_API_URL}/api/auth` : undefined);
 
+// SPEC-219: CI runs without repository secrets (most visibly Dependabot PRs)
+// fall back to placeholder `.invalid` URLs so this build-time validation — which
+// only needs syntactically-valid URLs — passes. A placeholder must NEVER reach a
+// real/deploy build, so it is rejected here unless `ALLOW_PLACEHOLDER_ENV_URLS`
+// is explicitly set, which ONLY the CI Build step does. This is the BUILD-TIME
+// half of the placeholder guard (it runs as `vite build` loads this config and
+// `process.exit(1)`s on failure). The RUNTIME half lives in `src/env.ts`
+// (`validateAdminEnv`), which additionally covers `VITE_ADMIN_URL` — validated
+// only at runtime, not here. Keep the two halves in sync.
+const allowPlaceholderUrls = process.env.ALLOW_PLACEHOLDER_ENV_URLS === 'true';
+const isPlaceholderUrl = (value: string): boolean => {
+    try {
+        const { hostname } = new URL(value);
+        return hostname === 'invalid' || hostname.endsWith('.invalid');
+    } catch {
+        return false;
+    }
+};
+const requiredUrl = (message: string) =>
+    z
+        .string()
+        .url(message)
+        .refine((value) => allowPlaceholderUrls || !isPlaceholderUrl(value), {
+            message: `${message} (placeholder .invalid URL is rejected outside CI builds)`
+        });
+
 // Validate required environment variables for the Admin App.
 const AdminViteEnvSchema = z.object({
-    VITE_API_URL: z.string().url('Must be a valid API URL'),
-    VITE_SITE_URL: z.string().url('Must be a valid site URL'),
-    HOSPEDA_API_URL: z.string().url('Must be a valid API URL for server-side requests'),
+    VITE_API_URL: requiredUrl('Must be a valid API URL'),
+    VITE_SITE_URL: requiredUrl('Must be a valid site URL'),
+    HOSPEDA_API_URL: requiredUrl('Must be a valid API URL for server-side requests'),
     VITE_BETTER_AUTH_URL: z.string().min(1, 'Must be a non-empty Better Auth URL')
 });
 
@@ -160,6 +187,16 @@ export default defineConfig({
                       authToken: process.env.SENTRY_AUTH_TOKEN
                   })
               ]
+            : []),
+        // Bundle analysis — only when ANALYZE=1 (pnpm build:analyze)
+        ...(process.env.ANALYZE
+            ? [
+                  visualizer({
+                      open: false,
+                      filename: 'stats.html',
+                      gzipSize: true
+                  })
+              ]
             : [])
     ],
     resolve: {
@@ -272,11 +309,6 @@ export default defineConfig({
                             return 'vendor-zod';
                         }
 
-                        // Lucide icons
-                        if (id.includes('lucide')) {
-                            return 'vendor-icons';
-                        }
-
                         // Other vendor code
                         return 'vendor';
                     }
@@ -289,9 +321,22 @@ export default defineConfig({
                         }
                     }
 
-                    // Component chunks
-                    if (id.includes('/components/entity-')) {
-                        return 'components-entity';
+                    // Component chunks — split entity trees so lazy-loaded
+                    // fields (entity-form/fields/) land in their own async chunks.
+                    if (id.includes('/components/entity-list/')) {
+                        return 'components-entity-list';
+                    }
+                    if (id.includes('/components/entity-form/fields/')) {
+                        // Heavy fields (tiptap, leaflet, upload) are lazy-loaded
+                        // via React.lazy — let Rollup create async chunks for them
+                        // by returning undefined (no manual chunk assignment).
+                        return undefined;
+                    }
+                    if (id.includes('/components/entity-form/')) {
+                        return 'components-entity-form';
+                    }
+                    if (id.includes('/components/entity-pages/')) {
+                        return 'components-entity-pages';
                     }
                     if (id.includes('/components/table/')) {
                         return 'components-table';

@@ -1,3 +1,4 @@
+import type { AppSourceId } from '@repo/schemas';
 /**
  * Tests for the FeedbackErrorBoundary component.
  *
@@ -15,7 +16,6 @@ import {
 } from '../../src/components/FeedbackErrorBoundary.js';
 import { FEEDBACK_STRINGS } from '../../src/config/strings.js';
 import { serializeFeedbackParams } from '../../src/lib/query-params.js';
-import type { AppSourceId } from '../../src/schemas/feedback.schema.js';
 
 // ---------------------------------------------------------------------------
 // Pure helper: truncate (mirrors the private truncate() in FeedbackErrorBoundary)

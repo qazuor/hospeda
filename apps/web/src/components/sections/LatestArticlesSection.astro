@@ -39,7 +39,7 @@ let posts: ArticleCardData[] = [];
 try {
     const result = await postsApi.list({ sortBy: 'publishedAt', sortOrder: 'desc', pageSize: 4 });
     if (result.ok) {
-        const rawPosts = result.data.items.map((raw) => toArticleCardProps({ item: raw as Record<string, unknown> }));
+        const rawPosts = result.data.items.map((raw) => toArticleCardProps({ item: raw as Record<string, unknown>, locale }));
         // SSRF guard (SPEC-099 S-1): only call getImage() when the avatar
         // hostname is in the allowlist. Untrusted URLs pass through unchanged.
         posts = await Promise.all(

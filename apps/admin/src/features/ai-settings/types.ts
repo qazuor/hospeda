@@ -18,8 +18,8 @@ export interface AiProviderConfig {
 /** Map of providers to their configuration. */
 export type AiProvidersMap = Record<string, AiProviderConfig>;
 
-/** The four V1 AI feature identifiers. */
-export type AiFeatureId = 'text_improve' | 'chat' | 'search' | 'support';
+/** The V1 AI feature identifiers. */
+export type AiFeatureId = 'text_improve' | 'chat' | 'search' | 'support' | 'translate';
 
 /** Optional inference parameters for a feature. */
 export interface AiModelParams {
@@ -37,8 +37,19 @@ export interface AiFeatureConfig {
     readonly params: AiModelParams;
 }
 
-/** Map of features to their configuration. */
-export type AiFeaturesMap = Record<AiFeatureId, AiFeatureConfig>;
+/**
+ * Map of features to their configuration in API responses.
+ *
+ * This is intentionally a PARTIAL record: when the `ai_settings` table is
+ * empty (no admin has ever saved a config), the GET endpoint returns
+ * `features: {}`. The admin page's `toFormValues()` fills in any missing keys
+ * from `DEFAULT_SETTINGS` before seeding the form, so the UI renders correctly
+ * for first-time setup.
+ *
+ * Note: the PUT request body requires ALL four feature keys (full record).
+ * Only the response shape is partial.
+ */
+export type AiFeaturesMap = Partial<Record<AiFeatureId, AiFeatureConfig>>;
 
 /** Admin-set monthly cost ceilings in micro-USD (µUSD). */
 export interface AiCostCeilings {
@@ -127,7 +138,8 @@ export const FEATURE_LABELS: Record<AiFeatureId, string> = {
     text_improve: 'Mejora de texto',
     chat: 'Chat',
     search: 'Búsqueda',
-    support: 'Soporte'
+    support: 'Soporte',
+    translate: 'Traducción'
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -140,6 +152,8 @@ export interface AiPromptVersion {
     readonly feature: string;
     readonly version: number;
     readonly content: string;
+    /** Optional guardrail rules appended after the main prompt content. Nullable to match the API contract (z.string().nullable()). */
+    readonly rules?: string | null;
     readonly isActive: boolean;
     readonly createdAt: string;
 }
@@ -148,5 +162,7 @@ export interface AiPromptVersion {
 export interface CreateAiPromptPayload {
     readonly feature: string;
     readonly content: string;
+    /** Optional guardrail rules. When omitted the API falls back to built-in defaults. */
+    readonly rules?: string;
     readonly activate?: boolean;
 }

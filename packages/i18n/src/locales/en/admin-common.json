@@ -323,5 +323,38 @@
             "NETWORK_INTERRUPTED": "Connection interrupted. Please try again.",
             "default": "Error generating suggestion. Your original text is unchanged."
         }
+    },
+    "aiTranslate": {
+        "status": "Translations",
+        "statusTooltip": "Content translation status",
+        "autoTranslated": "auto",
+        "manualTranslated": "manual",
+        "pending": "pending",
+        "failed": "error",
+        "editButton": "Edit",
+        "translateNow": "Translate now",
+        "retryButton": "Retry",
+        "overrideTitle": "Edit translation",
+        "overrideSave": "Save",
+        "overrideCancel": "Cancel",
+        "overrideSaved": "Translation saved",
+        "batchStart": "Start batch translation",
+        "batchProgress": "Translating... {translated}/{total}",
+        "batchComplete": "Batch translation complete",
+        "batchError": "Batch translation error",
+        "field": {
+            "name": "Name",
+            "summary": "Summary",
+            "description": "Description",
+            "richDescription": "Description (rich)",
+            "title": "Title",
+            "content": "Content"
+        },
+        "error": {
+            "TRANSLATION_FAILED": "Translation failed. Spanish content was not modified.",
+            "ENTITLEMENT_REQUIRED": "Your plan does not include AI translation. Upgrade to access.",
+            "LIMIT_REACHED": "Monthly translation limit reached. Wait for next month.",
+            "default": "Translation error. Please try again."
+        }
     }
 }

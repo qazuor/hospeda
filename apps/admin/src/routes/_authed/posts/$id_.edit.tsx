@@ -2,6 +2,7 @@ import { RevalidateEntityButton } from '@/components/RevalidateEntityButton';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
+import { TranslationSection } from '@/features/content/components/TranslationSection';
 import { PostQualityScore } from '@/features/posts/components/PostQualityScore';
 import { usePostPage } from '@/features/posts/hooks/usePostPage';
 import { createUploadHandler, useMediaUpload } from '@/hooks/use-media-upload';
@@ -78,6 +79,13 @@ function PostEditPage() {
                         entityType="post"
                         fieldHandlers={galleryFieldHandlers}
                     />
+                    {entityData.entity && (
+                        <TranslationSection
+                            entityType="post"
+                            entityId={id}
+                            entity={entityData.entity as Record<string, unknown>}
+                        />
+                    )}
                 </EntityPageBase>
             </div>
         </RoutePermissionGuard>

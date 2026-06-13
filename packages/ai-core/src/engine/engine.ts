@@ -44,12 +44,13 @@
  *
  * ## Moderation routing (§12 flag)
  *
- * // Decision (owner-approved 2026-06-04): `moderate` does NOT use the standard
- * // feature-config routing because `ModerateRequest` has no `feature` field
- * // (it is a lower-level primitive). The engine routes moderation calls directly
- * // to the configured `moderationProviderId` (default 'openai', since OpenAI
- * // Moderation API is a first-class endpoint). The caller passes an explicit
- * // `moderationProviderId` to `createAiEngine`; if absent, the engine uses 'openai'.
+ * // Decision (owner-approved 2026-06-04, revised post-SPEC-198): `moderate` does
+ * // NOT use the standard feature-config routing because `ModerateRequest` has no
+ * // `feature` field (it is a lower-level primitive). The engine routes moderation
+ * // calls directly to the configured `moderationProviderId`. When absent
+ * // (`undefined`), ALL moderation passes are SKIPPED (opt-in — no default
+ * // provider). The caller (apps/api ai-service.factory) resolves the provider
+ * // from `ai_settings.moderation.providerId` and passes it here only when set.
  *
  * @module ai-core/engine/engine
  */
@@ -69,7 +70,7 @@ import type {
 } from '@repo/schemas';
 import type { AiFeatureConfig } from '@repo/schemas';
 import type { ZodType } from 'zod';
-import { resolveSystemPrompt } from '../config/prompt-resolver.js';
+import { composeSystemPrompt, resolveSystemPrompt } from '../config/prompt-resolver.js';
 import {
     getProviderOrder,
     isFeatureKillSwitched,
@@ -286,18 +287,22 @@ export interface CreateAiEngineInput {
     readonly selectProviderOrder?: ProviderOrderStrategy;
 
     /**
-     * Optional explicit provider ID to use for `moderate` calls.
+     * Optional explicit provider ID to use for moderation passes and `moderate`
+     * calls.
      *
      * `moderate` has no `feature` field in its request schema, so it cannot
      * use the standard feature-config routing. The engine routes moderation
      * calls to this provider directly.
      *
-     * Defaults to `'openai'` when absent.
+     * **Opt-in**: when absent (`undefined`), ALL moderation passes are skipped —
+     * no provider is called, no fail-closed, no event. This is the correct
+     * default for local/Ollama-only setups that have no OpenAI credential. Set
+     * this only when an admin has explicitly configured a moderation provider in
+     * `ai_settings.moderation.providerId`.
      *
-     * * **Decision (owner-approved 2026-06-04):** Moderation routes directly to
-     * `moderationProviderId` (default 'openai'). No 'moderation' entry is added
-     * to AiFeature. This keeps the V1 implementation simple; a future provider
-     * supporting moderation may be wired through feature-config in V2.
+     * When set, the existing fail-open/fail-closed contract applies: transient
+     * provider errors fail-open; `AiProviderUnconfiguredError` (configured
+     * provider but missing credential) fails-CLOSED.
      */
     readonly moderationProviderId?: AiProviderId;
 
@@ -621,7 +626,7 @@ export function createAiEngine(input: CreateAiEngineInput): AiEngine {
         getProvider,
         recordEvent,
         selectProviderOrder = defaultProviderOrderStrategy,
-        moderationProviderId = 'openai',
+        moderationProviderId,
         checkCeiling,
         getNow
     } = input;
@@ -675,9 +680,10 @@ export function createAiEngine(input: CreateAiEngineInput): AiEngine {
             // prompt and inject it into the request using the caller-wins policy.
             // If the caller already supplied a system message, the request is
             // passed through unchanged. Otherwise the resolved prompt is prepended.
-            const { content: systemContent } = await resolveSystemPrompt({
+            const { content: systemBody, rules: systemRules } = await resolveSystemPrompt({
                 feature: req.feature
             });
+            const systemContent = composeSystemPrompt({ content: systemBody, rules: systemRules });
             const injectedReq = injectSystemPrompt({ req, systemContent });
 
             // Inject the model from feature config if not already set by the caller.
@@ -741,8 +747,12 @@ export function createAiEngine(input: CreateAiEngineInput): AiEngine {
 
             // System-prompt injection (T-034, AC-12): same caller-wins policy as
             // generateText — resolve and inject the system prompt before routing.
-            const { content: streamSystemContent } = await resolveSystemPrompt({
+            const { content: streamBody, rules: streamRules } = await resolveSystemPrompt({
                 feature: req.feature
+            });
+            const streamSystemContent = composeSystemPrompt({
+                content: streamBody,
+                rules: streamRules
             });
             const injectedStreamReq = injectSystemPrompt({
                 req,
@@ -816,13 +826,24 @@ export function createAiEngine(input: CreateAiEngineInput): AiEngine {
             // content to the prompt string.  Caller-wins: if the caller already
             // embedded a system instruction in their prompt, this prepend is still
             // safe because the model treats the system block as higher-priority context.
-            const { content: objectSystemContent } = await resolveSystemPrompt({
+            const { content: objectBody, rules: objectRules } = await resolveSystemPrompt({
                 feature: req.feature
+            });
+            const objectSystemContent = composeSystemPrompt({
+                content: objectBody,
+                rules: objectRules
             });
             const injectedObjectReq: GenerateObjectRequest = {
                 ...req,
                 prompt: `${objectSystemContent}\n\nUser request: ${req.prompt}`
             };
+
+            // Propagate the feature's configured model (e.g. from ai_settings) so the
+            // provider adapter uses it instead of its hardcoded default. Caller-wins:
+            // an explicit request model is left untouched. Mirrors generateText/stream.
+            if (!injectedObjectReq.model && featureConfig.model) {
+                (injectedObjectReq as Record<string, unknown>).model = featureConfig.model;
+            }
 
             const providersConfig = await getProvidersConfig();
 
@@ -899,7 +920,11 @@ export function createAiEngine(input: CreateAiEngineInput): AiEngine {
         async moderate(req: ModerateRequest): Promise<ModerateResponse> {
             // Moderation bypasses feature-config routing — it goes directly to
             // the configured moderation provider without kill-switch or fallback.
-            // See §12 flag in the module JSDoc for the rationale and open question.
+            // See §12 flag in the module JSDoc for the rationale.
+            // Opt-in: if no provider is configured, return a clean (unflagged) result.
+            if (!moderationProviderId) {
+                return { flagged: false, categories: {} };
+            }
             const provider = getProvider(moderationProviderId);
             return provider.moderate(req);
         }

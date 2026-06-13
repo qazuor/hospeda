@@ -157,7 +157,25 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
             return () => mq.removeEventListener('change', apply);
         }, []);
 
-        const canAddMore = value.length < maxImages;
+        // Backfill the frontend-only `id`/`order` fields for items loaded from
+        // the API. Stored gallery items (media.gallery) only carry
+        // url/caption/description/moderationState; `id` (React key + dnd-kit
+        // identifier + the key remove/update look up) and `order` (sort key) are
+        // frontend-only. Without this, API-loaded items have `id === undefined`,
+        // which breaks reorder/remove/update and triggers duplicate React keys.
+        // The url is a stable natural identifier, so derive the id from it when
+        // absent; new uploads already carry their own id.
+        const normalizedValue = React.useMemo<GalleryImage[]>(
+            () =>
+                value.map((img, index) => ({
+                    ...img,
+                    id: img.id || img.url,
+                    order: img.order ?? index
+                })),
+            [value]
+        );
+
+        const canAddMore = normalizedValue.length < maxImages;
 
         const {
             isUploading,
@@ -169,7 +187,7 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
             handleRemoveImage,
             handleUpdateImage
         } = useGalleryUploads({
-            value,
+            value: normalizedValue,
             onChange,
             maxImages,
             maxSize,
@@ -207,8 +225,8 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
 
         // Sorted view used both for rendering and SortableContext items.
         const sortedImages = React.useMemo(
-            () => [...value].sort((a, b) => a.order - b.order),
-            [value]
+            () => [...normalizedValue].sort((a, b) => a.order - b.order),
+            [normalizedValue]
         );
         const itemIds = React.useMemo<UniqueIdentifier[]>(
             () => sortedImages.map((img) => img.id),
@@ -306,7 +324,7 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
                     </p>
                 )}
 
-                {value.length > 0 && (
+                {normalizedValue.length > 0 && (
                     <DndContext
                         sensors={sensors}
                         onDragEnd={handleDragEnd}
@@ -424,7 +442,7 @@ export const GalleryField = React.forwardRef<HTMLInputElement, GalleryFieldProps
                                     <p className="font-medium text-sm">
                                         <AddIcon className="mr-1 inline h-4 w-4" />
                                         {t('admin-entities.fields.gallery.addImages', {
-                                            current: String(value.length),
+                                            current: String(normalizedValue.length),
                                             max: String(maxImages)
                                         })}
                                     </p>

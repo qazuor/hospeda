@@ -426,12 +426,9 @@
         "priority_support": "Soporte prioritario",
         "featured_listing": "Aparecer destacado en búsquedas",
         "custom_branding": "Branding personalizado",
-        "api_access": "Acceso a la API",
-        "dedicated_manager": "Gestor de cuenta dedicado",
         "create_promotions": "Crear promociones",
-        "social_media_integration": "Integración con redes sociales",
         "can_use_rich_description": "Descripciones enriquecidas",
-        "can_embed_video": "Embedeer videos en el alojamiento",
+        "can_embed_video": "Videos en tu publicación",
         "can_use_calendar": "Calendario de disponibilidad",
         "can_sync_external_calendar": "Sincronizar calendarios externos",
         "can_contact_whatsapp_display": "Mostrar contacto por WhatsApp",
@@ -442,15 +439,15 @@
         "read_reviews": "Leer reseñas completas",
         "ad_free": "Navegación sin publicidad",
         "price_alerts": "Alertas de precio",
-        "early_access_events": "Acceso anticipado a eventos",
         "exclusive_deals": "Ofertas exclusivas",
         "vip_support": "Soporte VIP",
-        "concierge_service": "Servicio de conserjería",
-        "airport_transfers": "Traslados al aeropuerto",
         "vip_promotions_access": "Acceso a promociones VIP",
         "can_compare_accommodations": "Comparar alojamientos",
         "can_attach_review_photos": "Subir fotos en reseñas",
         "can_view_search_history": "Ver historial de búsquedas",
-        "can_view_recommendations": "Recomendaciones personalizadas"
+        "can_view_recommendations": "Recomendaciones personalizadas",
+        "ai_text_improve": "Mejora de textos con IA",
+        "ai_chat": "Consultas sobre el alojamiento con IA",
+        "ai_search": "Búsqueda inteligente"
     }
 }

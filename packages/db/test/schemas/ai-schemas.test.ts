@@ -120,12 +120,22 @@ describe('ai_prompt_versions schema', () => {
         expect(sqlNames).toContain('feature');
         expect(sqlNames).toContain('version');
         expect(sqlNames).toContain('content');
+        expect(sqlNames).toContain('rules');
         expect(sqlNames).toContain('is_active');
         expect(sqlNames).toContain('created_by');
         expect(sqlNames).toContain('created_at');
         expect(sqlNames).toContain('updated_at');
         expect(sqlNames).toContain('deleted_at');
         expect(sqlNames).toContain('deleted_by_id');
+    });
+
+    it('rules column should be nullable text (SPEC-214)', () => {
+        // Arrange + Act
+        const rulesCol = col(aiPromptVersions, 'rules');
+        // Assert — column exists, is text type, and nullable
+        expect(rulesCol).toBeDefined();
+        expect(rulesCol?.columnType).toBe('PgText');
+        expect(rulesCol?.notNull).toBe(false);
     });
 
     it('is_active should default to false', () => {

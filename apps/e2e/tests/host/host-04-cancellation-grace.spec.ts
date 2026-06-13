@@ -45,6 +45,11 @@ test.describe('HOST-04: paid plan cancellation, grace, expiration @p0 @host @bil
     test('paid host: write OK → cancel keeps grace → period_end past blocks writes', async ({
         page
     }) => {
+        // Paywall here is enforced by the date-aware publish gate (checkEligibility
+        // + isSubscriptionLive, SPEC-217): a cancelled sub whose current_period_end is
+        // past the 6h grace returns subscription_required. Deterministic against the
+        // local DB — no MercadoPago round-trip and no test-control flag needed.
+
         // ── Setup: paid host with active subscription ──────────────────────
         const host = await createUser({ role: 'HOST' }, { apiBaseUrl: API_URL });
         userId = host.id;
@@ -53,7 +58,7 @@ test.describe('HOST-04: paid plan cancellation, grace, expiration @p0 @host @bil
         // Pick any active non-trial plan from seed.
         const planRows = await execSQL<{ id: string }>(
             `SELECT id FROM billing_plans
-             WHERE is_active = true
+             WHERE active = true
              ORDER BY created_at ASC
              LIMIT 1`
         );

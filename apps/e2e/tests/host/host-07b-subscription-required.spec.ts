@@ -48,13 +48,18 @@ test.describe('HOST-07b: subscription_required on republish @p0 @host @billing @
     test('cancelled+expired host: PATCH ACTIVE rejected, accommodation stays DRAFT', async ({
         page
     }) => {
+        // Paywall here is enforced by the date-aware publish gate (checkEligibility
+        // + isSubscriptionLive, SPEC-217): a cancelled+expired sub returns
+        // subscription_required. Deterministic against the local DB — no MercadoPago
+        // round-trip and no test-control flag needed.
+
         // ── Setup: host with cancelled+expired subscription + DRAFT acc ───
         const host = await createUser({ role: 'HOST' }, { apiBaseUrl: API_URL });
         userId = host.id;
         await forceVerifyEmail(host.id);
 
         const planRows = await execSQL<{ id: string }>(
-            'SELECT id FROM billing_plans WHERE is_active = true ORDER BY created_at ASC LIMIT 1'
+            'SELECT id FROM billing_plans WHERE active = true ORDER BY created_at ASC LIMIT 1'
         );
         const planId = planRows[0]?.id;
         if (!planId) {

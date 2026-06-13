@@ -420,10 +420,11 @@ All non-trivial work MUST go through the formal spec and task system. This ensur
 
 ### Index Sync Rules (CRITICAL — read every session that touches specs/tasks)
 
-There are TWO index files that must stay in sync:
+There are THREE artifacts that must stay in sync:
 
 - `.qtm/specs/index.json` — **source of truth** for spec status (driven by the formal spec workflow / `/spec`, `/task-master:*`, `/sdd-*`)
 - `.qtm/tasks/index.json` — **mirror** of spec status with task progress info (driven by task tracking)
+- `specs-prioritization.csv` (repo root) — owner-facing prioritization board; its `estado` column mirrors spec status. Full rules in [Specs Prioritization Tracker](#specs-prioritization-tracker-specs-prioritizationcsv) below.
 
 The `task-master:session-resume` reminder at session start reads from `tasks/index.json`, NOT `specs/index.json`. If the two drift, every new session starts with **lies about what's active**. This already happened twice (2026-05-14 and 2026-05-15) — entries stayed `pending`/`in-progress` in `tasks/index.json` after the underlying spec was archived in `specs/index.json`.
 
@@ -435,6 +436,7 @@ The `task-master:session-resume` reminder at session start reads from `tasks/ind
    - `archived: true`
    - `archivedAt: <ISO date>`
    - Optionally `archiveNote` if there's anything notable (drift fix, supersession, etc.)
+   - And flip that spec's `estado` to `done` in `specs-prioritization.csv` (same change). Any spec status change (create/start/complete/archive/block) must update the CSV row too.
 2. **Trust `specs/index.json` over `tasks/index.json`** on any disagreement — the formal spec workflow writes to specs first.
 3. **At session start**, if the `session-resume` reminder shows "active epics" that look suspicious (too many, names you don't recognize as currently-worked, very low progress like 0/N), **cross-check against `specs/index.json` before reporting anything to the user**. Treat session-resume as a hint, not a fact.
 4. **NEVER create new entries in `tasks/index.json` for specs that don't have a corresponding directory in `.qtm/specs/SPEC-NNN-slug/`**. Orphan entries (specs that were never formalized) are the second source of drift — mark them `obsolete` with an archiveNote explaining why, never leave them `pending`.
@@ -445,6 +447,47 @@ The `task-master:session-resume` reminder at session start reads from `tasks/ind
 - Specifications: `.qtm/specs/SPEC-NNN-slug/spec.md`
 - Task state: `.qtm/tasks/SPEC-NNN-slug/state.json`
 - Progress: `.qtm/tasks/SPEC-NNN-slug/progress.md`
+
+### Specs Prioritization Tracker (`specs-prioritization.csv`)
+
+The repo root holds `specs-prioritization.csv` — a pipe-delimited (`|`) owner-facing
+prioritization board for every spec. Render / edit it with
+`python3 scripts/render-specs-prioritization.py`:
+
+- no flag → writes a read-only `specs-prioritization.html` and opens it (filter, sort, badges).
+- `--serve` → runs a localhost editor; owner-owned columns become editable and every
+  change is persisted back to the CSV (keyed by `rank`). `file://` cannot persist.
+
+**Two status columns by design** (do not conflate them):
+
+- **`estado`** — DERIVED from `.qtm/specs/index.json` (source of truth). Maintained by
+  the sync rule below. Read-only in the web editor.
+- **`estado_manual`** — owner-managed override / personal status. Editable in the UI.
+  Claude must NOT touch it unless the owner asks.
+- **`notes`** — free-text owner column. Editable in the UI. Claude must NOT overwrite it.
+
+**Keep `estado` in sync — this is a standing rule, not on-demand:**
+
+1. **Whenever a spec changes status** (created, started, completed, archived, blocked),
+   update its row's `estado` in `specs-prioritization.csv` in the SAME change, mirroring
+   `.qtm/specs/index.json` (the source of truth). Leave `estado_manual` and `notes` alone.
+2. **Whenever a new spec is allocated**, add a row for it (at minimum `rank`, `spec`,
+   `name`, `prioridad`, `estado`). The owner fills the judgment columns
+   (`descripcion`, `por_que_ahora`, `peligros`, `estimado`, `estado_manual`, `notes`,
+   etc.) — do NOT invent them.
+3. **`estado` column vocabulary** (only these four values; same set for `estado_manual`):
+   - `done` — spec `completed` or `archived` in the index
+   - `in progress` — spec `in-progress`
+   - `blocked` — depends on ANOTHER spec that is not yet merged/done (an unsatisfied
+     hard dependency). Waiting on the owner's decisions is NOT blocked — those
+     decisions are taken when the spec starts, so it stays `backlog`.
+   - `backlog` — everything else (`draft`, `approved`, not started, deps satisfied)
+4. **Status mapping**: `completed`/`archived`/`merged` → `done`; `in-progress` →
+   `in progress`; `approved`/`draft` → `backlog`. Then promote to `blocked` any
+   non-done spec whose `dependsOn` (plus dependencies stated in its note/estado_real)
+   point at a spec not in the done set.
+5. **On disagreement, trust `.qtm/specs/index.json`** over the CSV, same as the
+   `tasks/index.json` rule above.
 
 ## Important Notes
 

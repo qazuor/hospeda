@@ -298,6 +298,11 @@
         "total_other": "Total: {{count}} avaliações",
         "typeAccommodation": "Acomodação",
         "typeDestination": "Destino",
+        "status": {
+            "approved": "Publicada",
+            "pending": "Pendente de aprovação",
+            "rejected": "Rejeitada"
+        },
         "errors": {
             "fetchFailed": "Erro ao carregar avaliações"
         }
@@ -312,15 +317,24 @@
             "viewLabel": "Ver",
             "nav": {
                 "editProfile": "Editar perfil",
-                "editProfileDesc": "Atualize suas informações pessoais",
+                "editProfileDesc": "Atualize suas informações pessoais e foto de perfil",
                 "myFavorites": "Meus favoritos",
-                "myFavoritesDesc": "Acomodações que vocêsalvou",
+                "myFavoritesDesc": "Acomodações que você salvou",
                 "myReviews": "Minhas avaliações",
-                "myReviewsDesc": "Avaliações que vocêescreveu",
-                "preferences": "Preferencias",
-                "preferencesDesc": "Configurações de notificacoes e privacidade",
+                "myReviewsDesc": "Avaliações que você escreveu",
+                "preferences": "Preferências",
+                "preferencesDesc": "Configure notificações, idioma e privacidade",
                 "mySubscription": "Minha assinatura",
-                "mySubscriptionDesc": "Plano atual e faturamento"
+                "mySubscriptionDesc": "Plano atual e faturamento",
+                "myMessages": "Minhas consultas",
+                "myMessagesDesc": "Conversas com anfitriões",
+                "newsletter": "Boletim de novidades",
+                "newsletterDesc": "Gerencie sua assinatura do boletim",
+                "myProperties": "Meus imóveis",
+                "myPropertiesDesc": "Gerencie suas acomodações publicadas",
+                "hostDashboard": "Painel do anfitrião",
+                "hostDashboardDesc": "Resumo da sua atividade como anfitrião",
+                "promotions": "Minhas promoções"
             },
             "stats": {
                 "favorites": "Meus favoritos",
@@ -332,7 +346,11 @@
                 "subscriptionStatus": "Plano Gratuito",
                 "activeStatus": "Ativo",
                 "trialStatus": "Período de avaliação",
-                "freeStatus": "Plano Gratuito"
+                "freeStatus": "Plano Gratuito",
+                "properties": "Meus imóveis",
+                "propertiesDesc": "Acomodações publicadas",
+                "messages": "Mensagens não lidas",
+                "messagesDesc": "Consultas de hóspedes"
             }
         },
         "editProfile": {

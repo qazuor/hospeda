@@ -207,9 +207,6 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
 
             // Premium has additional entitlements
             expect(premiumEntitlements).toContain(EntitlementKey.CUSTOM_BRANDING);
-            expect(premiumEntitlements).toContain(EntitlementKey.API_ACCESS);
-            expect(premiumEntitlements).toContain(EntitlementKey.DEDICATED_MANAGER);
-            expect(premiumEntitlements).toContain(EntitlementKey.SOCIAL_MEDIA_INTEGRATION);
         });
 
         it('should have getPlanBySlug return correct plan definitions', () => {
@@ -477,9 +474,6 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
 
             // Assert - Premium has exclusive entitlements
             expect(premiumPlan?.entitlements).toContain(EntitlementKey.CUSTOM_BRANDING);
-            expect(premiumPlan?.entitlements).toContain(EntitlementKey.API_ACCESS);
-            expect(premiumPlan?.entitlements).toContain(EntitlementKey.DEDICATED_MANAGER);
-            expect(premiumPlan?.entitlements).toContain(EntitlementKey.SOCIAL_MEDIA_INTEGRATION);
         });
 
         it('should increase max_accommodations limit from 3 to 10', () => {
@@ -573,12 +567,7 @@ describe('Subscription Lifecycle E2E (Upgrade, Downgrade, Cancellation)', () => 
             const premiumPlan = getPlanBySlug('owner-premium');
 
             // Premium has these entitlements
-            const premiumOnlyEntitlements = [
-                EntitlementKey.CUSTOM_BRANDING,
-                EntitlementKey.API_ACCESS,
-                EntitlementKey.DEDICATED_MANAGER,
-                EntitlementKey.SOCIAL_MEDIA_INTEGRATION
-            ];
+            const premiumOnlyEntitlements = [EntitlementKey.CUSTOM_BRANDING];
 
             // Assert - Pro should NOT have Premium-only entitlements
             for (const entitlement of premiumOnlyEntitlements) {

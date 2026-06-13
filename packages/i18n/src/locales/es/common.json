@@ -21,7 +21,10 @@
             "house": "Casa",
             "motel": "Motel",
             "resort": "Resort",
-            "room": "Habitación"
+            "room": "Habitación",
+            "apart_hotel": "Apart Hotel",
+            "estancia": "Estancia",
+            "bed_and_breakfast": "Bed & Breakfast"
         },
         "lifecycleStatus": {
             "active": "Activo",
@@ -64,7 +67,9 @@
         "BAD_REQUEST": "La solicitud no es válida.",
         "CONFLICT": "El recurso está en conflicto con el estado actual.",
         "SERVICE_UNAVAILABLE": "Este servicio no está disponible temporalmente. Probá de nuevo en unos minutos.",
-        "NEWSLETTER_NOT_CONFIGURED": "El newsletter no está disponible en este momento. Estamos trabajando para restablecerlo."
+        "NEWSLETTER_NOT_CONFIGURED": "El newsletter no está disponible en este momento. Estamos trabajando para restablecerlo.",
+        "INVALID_EMAIL_OR_PASSWORD": "El correo electrónico o la contraseña son incorrectos.",
+        "ACCOUNT_LOCKED": "Tu cuenta está bloqueada temporalmente por demasiados intentos fallidos. Intentá de nuevo en unos minutos o usá la opción de recuperar contraseña."
     },
     "filters": "Filtros",
     "goHome": "Volver al inicio",

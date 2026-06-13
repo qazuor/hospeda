@@ -1,3 +1,4 @@
+import type { FeedbackFormData } from '@repo/schemas';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 /**
  * T-042: Rate limiting verification tests.
@@ -15,7 +16,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
  */
 import { FEEDBACK_CONFIG } from '../../src/config/feedback.config.js';
 import { FEEDBACK_STRINGS } from '../../src/config/strings.js';
-import type { FeedbackFormData } from '../../src/schemas/feedback.schema.js';
 
 // ---------------------------------------------------------------------------
 // Constants

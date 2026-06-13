@@ -128,15 +128,22 @@
             "status": {
                 "DRAFT": "[TODO]",
                 "PUBLISHED": "[TODO]",
-                "SUSPENDED": "[TODO]"
+                "SUSPENDED": "[TODO]",
+                "INACTIVE": "Paused"
             },
             "actions": {
                 "edit": "Edit",
                 "publish": "[TODO]",
                 "unpublish": "[TODO]",
-                "viewOnSite": "[TODO]"
+                "viewOnSite": "[TODO]",
+                "unpublishConfirm": "Unpublish this property? It will no longer appear on the site.",
+                "confirmYes": "Yes, unpublish",
+                "confirmNo": "Cancel"
             },
-            "pricePerNight": "[TODO]"
+            "pricePerNight": "[TODO]",
+            "unpublishSuccess": "Property unpublished",
+            "unpublishError": "Could not unpublish. Please try again.",
+            "priceOnRequest": "Price on request"
         },
         "editor": {
             "section": {
@@ -215,6 +222,7 @@
             "entitlement": {
                 "premiumFeature": "Premium feature",
                 "richDescriptionNudge": "Upgrade your plan to use rich formatted descriptions.",
+                "richDescriptionHint": "Upgrade your plan to format your description (bold, lists and more).",
                 "videoNudge": "Upgrade your plan to embed videos in your property.",
                 "genericNudge": "This feature is available on a higher plan.",
                 "upgradeLink": "Upgrade plan"
@@ -273,11 +281,67 @@
             "RESORT": "Resort"
         }
     },
+    "promotions": {
+        "pageTitle": "My Promotions",
+        "pageDescription": "Create and manage discounts and special offers for your properties",
+        "empty": "You don't have any promotions yet. Create your first offer!",
+        "createButton": "New promotion",
+        "loading": "Loading promotion...",
+        "fields": {
+            "title": "Title",
+            "description": "Description",
+            "discountType": "Discount type",
+            "discountTypePlaceholder": "Choose an option",
+            "discountValue": "Discount value",
+            "minNights": "Minimum nights",
+            "validFrom": "Valid from",
+            "validUntil": "Valid until",
+            "noExpiry": "No expiry",
+            "maxRedemptions": "Maximum uses",
+            "accommodationId": "Property",
+            "accommodationIdAll": "All my properties",
+            "accommodationIdLoading": "Loading properties...",
+            "accommodationIdHint": "Select a property or leave 'All my properties' to apply the promotion to all."
+        },
+        "discountTypes": {
+            "percentage": "Percentage",
+            "fixed": "Fixed amount",
+            "free_night": "Free night"
+        },
+        "lifecycleStates": {
+            "active": "Active",
+            "draft": "Draft",
+            "archived": "Archived"
+        },
+        "errors": {
+            "loadFailed": "Could not load promotions. Please try again.",
+            "saveFailed": "Could not save the promotion. Please try again.",
+            "deleteFailed": "Could not delete the promotion. Please try again.",
+            "titleRequired": "Title is required.",
+            "discountTypeRequired": "Discount type is required.",
+            "discountValueRequired": "Discount value is required.",
+            "discountValueMaxPercentage": "Percentage cannot exceed 100.",
+            "validFromRequired": "Start date is required.",
+            "limitReachedHint": "You have reached the active promotions limit for your plan. Upgrade your plan to create more.",
+            "notFound": "Promotion not found.",
+            "forbidden": "You do not have permission to access this promotion."
+        },
+        "actions": {
+            "edit": "Edit",
+            "delete": "Delete",
+            "save": "Save",
+            "saving": "Saving...",
+            "cancel": "Cancel",
+            "confirmDelete": "Delete this promotion? This action cannot be undone."
+        }
+    },
     "dashboard": {
         "analytics": {
             "views": {
                 "title": "Views",
                 "empty": "No view data yet",
+                "error": "Error loading views",
+                "unnamed": "Unnamed",
                 "window": {
                     "7d": "7d",
                     "30d": "30d"
@@ -292,11 +356,13 @@
                 "empty": "No response data yet",
                 "avgTime": "Average",
                 "minutes": "min",
-                "notAvailable": "N/A"
+                "notAvailable": "N/A",
+                "error": "Error loading response time"
             },
             "inquiries": {
                 "title": "Inquiries",
-                "empty": "No inquiry data yet"
+                "empty": "No inquiry data yet",
+                "error": "Error loading inquiries"
             },
             "marketComparison": {
                 "title": "Market comparison",
@@ -307,7 +373,8 @@
                     "avgRating": "Dest. avg",
                     "yourPrice": "Your price",
                     "avgPrice": "Avg. price"
-                }
+                },
+                "error": "Error loading market comparison"
             },
             "sectionTitle": "Statistics",
             "locked": {
@@ -316,6 +383,39 @@
             },
             "loading": "Loading statistics...",
             "error": "Error loading statistics"
+        },
+        "pageTitle": "Host dashboard",
+        "pageDescription": "Overview of your properties and subscription",
+        "error": "Error loading the dashboard",
+        "retry": "Retry",
+        "plan": {
+            "trial": "Free trial",
+            "active": "Active",
+            "inactive": "Inactive",
+            "noPlan": "No plan"
+        },
+        "widgets": {
+            "properties": "Your properties",
+            "total": "Total",
+            "published": "Published",
+            "draft": "Drafts",
+            "manage": "Manage",
+            "plan": "Your subscription",
+            "noPlan": "No active subscription",
+            "messages": "Messages",
+            "unread": {
+                "singular": "unread message",
+                "plural": "unread messages",
+                "none": "You have no new messages"
+            },
+            "viewAll": "View all",
+            "quickActions": "Quick actions"
+        },
+        "quickActions": {
+            "properties": "Properties",
+            "promotions": "Promotions",
+            "messages": "Messages",
+            "subscription": "Subscription"
         }
     }
 }

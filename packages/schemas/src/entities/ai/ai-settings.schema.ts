@@ -114,11 +114,35 @@ export type AiFeatureConfig = z.infer<typeof AiFeatureConfigSchema>;
  * Uses `z.record` (full, not partial) — every `AiFeature` member MUST be
  * present. A missing feature entry is a configuration error: the engine cannot
  * route calls for a feature with no config.
+ *
+ * This schema is used at WRITE boundaries (PUT request body + internal
+ * validation). See {@link AiFeaturesMapResponseSchema} for the READ-side
+ * schema that tolerates an empty/partial map.
  */
 export const AiFeaturesMapSchema = z.record(AiFeatureSchema, AiFeatureConfigSchema);
 
 /** TypeScript type for the features map. */
 export type AiFeaturesMap = z.infer<typeof AiFeaturesMapSchema>;
+
+/**
+ * READ-side (response) variant of the features map.
+ *
+ * Uses `z.partialRecord` so the map may contain none, some, or all feature
+ * keys. This is required for the initial/empty-DB state: when no admin has
+ * ever saved AI settings, `resolveConfig()` intentionally returns
+ * `{ providers: {}, features: {} }`. Validating that empty object against the
+ * full-record {@link AiFeaturesMapSchema} would fail and cause HTTP 500 on
+ * the first-time load of the admin AI settings page — a catch-22 that blocks
+ * the UI from rendering before a config can be saved.
+ *
+ * The PUT request body still uses {@link AiFeaturesMapSchema} (full record)
+ * so the write contract is NOT relaxed — a save must always provide all
+ * feature keys.
+ */
+export const AiFeaturesMapResponseSchema = z.partialRecord(AiFeatureSchema, AiFeatureConfigSchema);
+
+/** TypeScript type for the response features map (partial — all keys optional). */
+export type AiFeaturesMapResponse = z.infer<typeof AiFeaturesMapResponseSchema>;
 
 // ---------------------------------------------------------------------------
 // Cost ceilings (§5.8)
@@ -215,9 +239,10 @@ export type AiCostCeilings = z.infer<typeof AiCostCeilingsSchema>;
 /**
  * The full validated shape of the `ai_settings.value` JSONB blob.
  *
- * This schema is used at every write boundary (admin save route + service) so
- * the DB never stores an invalid config. It is also used by the config resolver
- * in `@repo/ai-core` when reading and hydrating the in-memory config cache.
+ * This schema is used at every **write** boundary (admin PUT request body +
+ * the `saveConfig` service) so the DB never stores an invalid config. It is
+ * also used by the config resolver in `@repo/ai-core` when hydrating the
+ * in-memory config cache.
  *
  * **Key used in `ai_settings`**: `'global'` (single row, single config blob).
  * This mirrors the `platform_settings` pattern where each `key` corresponds to
@@ -225,6 +250,10 @@ export type AiCostCeilings = z.infer<typeof AiCostCeilingsSchema>;
  *
  * `.strict()` is applied so that unknown top-level keys are rejected, keeping
  * the blob free of stale/unknown fields as the schema evolves.
+ *
+ * **IMPORTANT — write contract**: `features` is a FULL record here (all four
+ * `AiFeature` keys required). The admin UI must send a complete feature map
+ * on every PUT. For the READ/response side see {@link AiSettingsValueResponseSchema}.
  */
 export const AiSettingsValueSchema = z
     .object({
@@ -236,6 +265,7 @@ export const AiSettingsValueSchema = z
         /**
          * Per-feature routing + model + kill-switch configuration.
          * Keys are `AiFeature` values; each maps to `AiFeatureConfigSchema`.
+         * All four feature keys are required on write (PUT body validation).
          */
         features: AiFeaturesMapSchema,
         /**
@@ -258,12 +288,69 @@ export const AiSettingsValueSchema = z
          * Keys are model identifier strings (e.g. `'gpt-4o-mini'`, `'claude-3-5-sonnet-20241022'`).
          * Values are {@link AiModelRateSchema} objects (µUSD per 1M tokens).
          */
-        modelRates: z.record(z.string(), AiModelRateSchema).optional()
+        modelRates: z.record(z.string(), AiModelRateSchema).optional(),
+        /**
+         * Opt-in content-moderation provider configuration.
+         *
+         * When absent, the AI engine skips all moderation passes entirely — no
+         * provider is called and no fail-closed behaviour is triggered. This is
+         * the safe default for local/Ollama-only setups and any environment that
+         * has not yet provisioned a moderation credential.
+         *
+         * When present, `providerId` is forwarded to `createAiService` as
+         * `moderationProviderId`. The engine then runs input and output
+         * moderation for every AI feature call via that provider. If the
+         * provider's vault credential is missing, the request fails CLOSED
+         * (`AiProviderUnconfiguredError`), signalling a real misconfiguration.
+         *
+         * **Additive field** — absence equals moderation disabled (opt-in
+         * semantics). Safe to add without a migration.
+         */
+        moderation: z
+            .object({
+                /**
+                 * The AI provider to use for content moderation calls.
+                 * Must match a key in `providers` that has a vault credential
+                 * stored in `ai_provider_credentials`.
+                 */
+                providerId: AiProviderIdSchema
+            })
+            .strict()
+            .optional()
     })
     .strict();
 
 /** TypeScript type for the full AI settings blob. */
 export type AiSettingsValue = z.infer<typeof AiSettingsValueSchema>;
+
+/**
+ * READ-side (response) variant of the top-level settings blob.
+ *
+ * Identical to {@link AiSettingsValueSchema} except `features` uses the
+ * partial-record {@link AiFeaturesMapResponseSchema}. This tolerates the
+ * initial/empty-DB state where `resolveConfig()` returns
+ * `{ providers: {}, features: {} }` before any admin has saved a config.
+ *
+ * Why a separate schema instead of changing {@link AiSettingsValueSchema}?
+ * The PUT request body contract MUST keep requiring all four feature keys —
+ * relaxing it would allow a partial save that leaves the engine in an
+ * unconfigured state for the missing features. Additive-only policy: we add
+ * a new response schema rather than changing the write schema.
+ *
+ * `.strict()` is preserved so unknown keys are still rejected on parsing.
+ */
+export const AiSettingsValueResponseSchema = AiSettingsValueSchema.extend({
+    /**
+     * Per-feature config — partial on reads: the empty-DB / never-saved
+     * state returns `{}` (no features configured yet). The admin UI fills
+     * missing keys from its `DEFAULT_SETTINGS` constant so the form renders
+     * correctly before the first save.
+     */
+    features: AiFeaturesMapResponseSchema
+});
+
+/** TypeScript type for the READ-side AI settings blob (partial features). */
+export type AiSettingsValueResponse = z.infer<typeof AiSettingsValueResponseSchema>;
 
 // ---------------------------------------------------------------------------
 // Settings key
@@ -286,12 +373,22 @@ export type AiSettingsKey = z.infer<typeof AiSettingsKeySchema>;
 /**
  * Response shape for `GET /api/v1/admin/ai/settings`.
  * Wraps the blob with the row metadata the API returns at the boundary.
+ *
+ * Uses {@link AiSettingsValueResponseSchema} (partial `features`) rather than
+ * {@link AiSettingsValueSchema} (full `features`) so the empty/initial-DB
+ * state — where `resolveConfig()` returns `{ providers: {}, features: {} }` —
+ * passes validation and the admin UI can load the page for the first-time
+ * configuration. The PUT body still uses the full {@link AiSettingsValueSchema}
+ * so the write contract is NOT relaxed.
  */
 export const AiSettingsResponseSchema = z.object({
     /** Always `'global'` in V1. */
     key: AiSettingsKeySchema,
-    /** The validated settings blob. */
-    value: AiSettingsValueSchema,
+    /**
+     * The settings blob. On the response side `features` is a partial record
+     * (see {@link AiSettingsValueResponseSchema}) to tolerate empty initial state.
+     */
+    value: AiSettingsValueResponseSchema,
     /** ISO-8601 timestamp of the last write. */
     updatedAt: z.string().datetime({ offset: true }),
     /** UUID of the SUPER_ADMIN who last wrote the settings. */

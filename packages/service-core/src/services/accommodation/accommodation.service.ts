@@ -73,6 +73,7 @@ import {
     RoleEnum,
     ServiceErrorCode,
     type Success,
+    VisibilityEnum,
     type WithOwnerIdParams,
     WithOwnerIdParamsSchema,
     httpToDomainAccommodationCreateDraft
@@ -82,6 +83,8 @@ import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
+import { diffTranslatableFields } from '../../translation/diff-translatable-fields';
+import { getTranslationService } from '../../translation/translation-init';
 import type {
     Actor,
     AdminSearchExecuteParams,
@@ -824,6 +827,26 @@ export class AccommodationService extends BaseCrudService<
                 'Revalidation scheduling failed (non-blocking)'
             );
         }
+
+        // SPEC-212: fire-and-forget auto-translation
+        const translationService = getTranslationService();
+        if (translationService) {
+            const fields: Record<string, string> = {};
+            if (entity.name) fields.name = entity.name;
+            if (entity.summary) fields.summary = entity.summary;
+            if (entity.description) fields.description = entity.description;
+            if (entity.richDescription) fields.richDescription = entity.richDescription;
+            if (Object.keys(fields).length > 0) {
+                void translationService
+                    .translate({
+                        entityType: 'accommodation',
+                        entityId: entity.id,
+                        fields
+                    })
+                    .catch(() => {});
+            }
+        }
+
         return entity;
     }
 
@@ -861,11 +884,26 @@ export class AccommodationService extends BaseCrudService<
         }
 
         // Store the incoming lifecycleState (target state) so _afterUpdate can read it.
-        // We cannot retrieve the PREVIOUS state here because the entity ID is not available
-        // in _beforeUpdate parameters. The idempotency guard in _afterUpdate handles this.
+        // The idempotency guard in _afterUpdate handles the case where this is unchanged.
         if (ctx.hookState) {
             ctx.hookState.previousLifecycleState =
                 typeof data.lifecycleState === 'string' ? data.lifecycleState : undefined;
+        }
+
+        // SPEC-212 AC-5: capture translatable field values from the entity BEFORE the update
+        // so _afterUpdate can diff and re-translate ONLY fields that actually changed.
+        // The entity ID is available via ctx.hookState.updateId (set by the update() override).
+        if (ctx.hookState) {
+            const entityId = ctx.hookState.updateId;
+            if (entityId) {
+                const current = await this.model.findById(entityId, ctx.tx);
+                ctx.hookState.previousTranslatableFields = {
+                    name: current?.name ?? undefined,
+                    summary: current?.summary ?? undefined,
+                    description: current?.description ?? undefined,
+                    richDescription: current?.richDescription ?? undefined
+                };
+            }
         }
 
         // SPEC-172: capture junction sync inputs in hookState.
@@ -1003,6 +1041,29 @@ export class AccommodationService extends BaseCrudService<
                     { error, accommodationId: entity.id, aiAssistedFields: pendingAi },
                     '[accommodation] Failed to persist AI-assisted fields to extraInfo (non-blocking)'
                 );
+            }
+        }
+
+        // SPEC-212 AC-5: fire-and-forget auto-translation for changed fields only.
+        // previousTranslatableFields was captured by _beforeUpdate; diff to skip
+        // fields whose Spanish source text did not change in this update.
+        const translationService = getTranslationService();
+        if (translationService) {
+            const fields = diffTranslatableFields({
+                previous: ctx.hookState?.previousTranslatableFields ?? {},
+                // TYPE-WORKAROUND: the entity's typed shape carries many non-string
+                // fields; diffTranslatableFields only reads the listed string columns.
+                current: entity as unknown as Record<string, string | null | undefined>,
+                fieldNames: ['name', 'summary', 'description', 'richDescription']
+            });
+            if (Object.keys(fields).length > 0) {
+                void translationService
+                    .translate({
+                        entityType: 'accommodation',
+                        entityId: entity.id,
+                        fields
+                    })
+                    .catch(() => {});
             }
         }
 
@@ -1206,19 +1267,27 @@ export class AccommodationService extends BaseCrudService<
     }
 
     /**
-     * Intercepts updates that transition the accommodation to `ACTIVE` and routes
-     * them through `publish()` so the trial-subscription orchestration runs
-     * atomically with the lifecycleState flip and the owner role promotion.
+     * Intercepts updates to enforce billing gates and route lifecycle transitions
+     * through the correct publish flow.
+     *
+     * SPEC-217: gates ALL writes for regular HOST owners whose subscription is lapsed
+     * (`subscription_required`). Admins and billing-exempt owners are excluded.
+     * This applies to both name/field updates on published accommodations AND to
+     * DRAFT→ACTIVE transitions. The gate fires before any DB write so lapsed hosts
+     * can never mutate accommodations regardless of the payload.
      *
      * SPEC-172: when `amenityIds` or `featureIds` are present in the update payload,
      * wraps the full update + junction sync in a `withServiceTransaction` boundary so
      * the accommodation update and the junction mutations are fully atomic.
      *
      * Behaviour matrix:
+     * - `publishDeps` wired AND owner has `subscription_required` AND actor is not admin:
+     *   → reject with FORBIDDEN immediately (all writes blocked).
      * - `lifecycleState === ACTIVE` AND current state is NOT ACTIVE AND
-     *   `publishDeps` are wired -> apply any non-lifecycle fields via the regular
-     *   update pipeline first, then delegate to `publish()`.
-     * - Anything else -> fall through to the standard `BaseCrudService.update()`
+     *   `publishDeps` are wired AND eligibility is NOT `subscription_required`:
+     *   → apply any non-lifecycle fields via the regular update pipeline first,
+     *     then delegate to `publish()`.
+     * - Anything else → fall through to the standard `BaseCrudService.update()`
      *   (including the legacy `_afterUpdate.assignHostRoleIfNeeded` best-effort
      *   path used by callers that have not wired billing deps, e.g. unit tests
      *   exercising lifecycle hooks in isolation).
@@ -1231,23 +1300,76 @@ export class AccommodationService extends BaseCrudService<
         actor: Actor,
         id: string,
         data: AccommodationUpdateInput,
-        ctx?: ServiceContext
+        ctx?: ServiceContext<AccommodationHookState>
     ): Promise<ServiceOutput<Accommodation>> {
+        // SPEC-212 AC-5: store the entity ID in hookState so _beforeUpdate can
+        // fetch the pre-update entity and capture its translatable field values.
+        const resolvedCtx: ServiceContext<AccommodationHookState> = { hookState: {}, ...ctx };
+        if (resolvedCtx.hookState) {
+            resolvedCtx.hookState.updateId = id;
+        }
+
+        // SPEC-217: fetch accommodation once so both the write-gate and the
+        // publish branch below can reuse the result without a second DB round-trip.
+        const current = this._publishDeps ? await this.model.findById(id, resolvedCtx?.tx) : null;
+
+        // SPEC-217: gate ALL writes for regular HOST owners whose subscription is
+        // lapsed. Admins (actor with ACCOMMODATION_UPDATE_ANY) and owners with
+        // billing-exempt roles (ADMIN/SUPER_ADMIN/CLIENT_MANAGER) are excluded.
+        // The gate only fires when publishDeps are wired; services instantiated
+        // without billing deps (e.g. unit tests) are unaffected.
+        if (this._publishDeps && current) {
+            const actorIsAdmin = actor.permissions.includes(
+                PermissionEnum.ACCOMMODATION_UPDATE_ANY
+            );
+            if (!actorIsAdmin) {
+                // Perf optimisation (SPEC-217): when the actor IS the owner we can
+                // derive the exempt check from actor.role directly, avoiding an extra
+                // DB round-trip for the common owner-edits-own-accommodation path.
+                const ownerIsBillingExempt =
+                    actor.id === current.ownerId
+                        ? AccommodationService.BILLING_EXEMPT_ROLES.has(actor.role)
+                        : await this._userModel
+                              .findById(current.ownerId, resolvedCtx?.tx)
+                              .then(
+                                  (owner) =>
+                                      !!owner &&
+                                      AccommodationService.BILLING_EXEMPT_ROLES.has(owner.role)
+                              );
+                if (!ownerIsBillingExempt) {
+                    const eligibility = await this._publishDeps.checkEligibility(
+                        current.ownerId,
+                        resolvedCtx
+                    );
+                    if (eligibility === 'subscription_required') {
+                        return {
+                            error: new ServiceError(
+                                ServiceErrorCode.FORBIDDEN,
+                                'subscription_required'
+                            )
+                        };
+                    }
+                }
+            }
+        }
+
         const target = (data as { lifecycleState?: unknown }).lifecycleState;
         if (target === LifecycleStatusEnum.ACTIVE && this._publishDeps) {
-            const current = await this.model.findById(id, ctx?.tx);
             if (current && current.lifecycleState !== LifecycleStatusEnum.ACTIVE) {
                 const { lifecycleState: _drop, ...restFields } = data as Record<string, unknown>;
+                // If the caller set `visibility` in the same request, it is applied
+                // via `super.update` below; publish must then NOT auto-promote it.
+                const callerSetVisibility = 'visibility' in restFields;
                 if (Object.keys(restFields).length > 0) {
                     const updateResult = await super.update(
                         actor,
                         id,
                         restFields as AccommodationUpdateInput,
-                        ctx
+                        resolvedCtx
                     );
                     if (updateResult.error) return updateResult;
                 }
-                return this.publish(actor, id, ctx);
+                return this.publish(actor, id, resolvedCtx, { callerSetVisibility });
             }
         }
 
@@ -1268,7 +1390,7 @@ export class AccommodationService extends BaseCrudService<
         // touch the media column at all, so no action is required.
         let normalizedData = data;
         if (data.media !== undefined) {
-            const existing = await this.model.findById(id, ctx?.tx);
+            const existing = await this.model.findById(id, resolvedCtx?.tx);
             const existingArchivedGallery = existing?.media?.archivedGallery;
             const existingVideos = existing?.media?.videos;
             // Carry forward archivedGallery when the existing row has it.
@@ -1300,17 +1422,17 @@ export class AccommodationService extends BaseCrudService<
         };
         const needsJunctionSync = amenityIds !== undefined || featureIds !== undefined;
 
-        if (needsJunctionSync && !ctx?.tx) {
+        if (needsJunctionSync && !resolvedCtx?.tx) {
             return withServiceTransaction(
                 async (txCtx) => {
                     return super.update(actor, id, normalizedData, txCtx);
                 },
-                ctx,
+                resolvedCtx,
                 { timeoutMs: 10_000 }
             );
         }
 
-        return super.update(actor, id, normalizedData, ctx);
+        return super.update(actor, id, normalizedData, resolvedCtx);
     }
 
     /**
@@ -1351,6 +1473,12 @@ export class AccommodationService extends BaseCrudService<
      * @param ctx - Optional service context. When provided with a transaction,
      *   the fetch-and-validate phase runs inside it; the publish transaction
      *   itself is always opened independently to keep the boundary short.
+     * @param opts - Optional publish options.
+     * @param opts.callerSetVisibility - When `true`, the caller already set the
+     *   accommodation's `visibility` explicitly (e.g. an admin patch that carries
+     *   both `lifecycleState: ACTIVE` and a `visibility` value), so publish must
+     *   NOT auto-promote it. When omitted/`false`, publish promotes a `PRIVATE`
+     *   onboarding draft to `PUBLIC` (see the visibility note inside the method).
      * @returns The updated `Accommodation` on success, or a `ServiceError` on
      *   any failure with codes: `NOT_FOUND`, `FORBIDDEN`, `CONFIGURATION_ERROR`,
      *   `SERVICE_UNAVAILABLE`, `INTERNAL_ERROR`.
@@ -1358,7 +1486,8 @@ export class AccommodationService extends BaseCrudService<
     public async publish(
         actor: Actor,
         id: string,
-        ctx?: ServiceContext
+        ctx?: ServiceContext,
+        opts?: { readonly callerSetVisibility?: boolean }
     ): Promise<ServiceOutput<Accommodation>> {
         return this.runWithLoggingAndValidation({
             methodName: `publish(id=${id})`,
@@ -1416,9 +1545,26 @@ export class AccommodationService extends BaseCrudService<
                     if (eligibility === 'first_publish') {
                         try {
                             const result = await this._publishDeps.startTrial({
-                                ownerId: accommodation.ownerId
+                                ownerId: accommodation.ownerId,
+                                accommodationId: id
                             });
                             trialSubscriptionId = result.subscriptionId;
+                            // SPEC-222 Part 1: emit a single structured linkage line
+                            // tying the trial subscription to the accommodation that
+                            // triggered it and its owner. Searching the observability
+                            // stack by ANY of these ids surfaces the whole linkage,
+                            // even though trials are per-owner. Logging only — no extra
+                            // remote call, no change to publish timing/compensation.
+                            this.logger.info(
+                                {
+                                    subscriptionId: trialSubscriptionId,
+                                    accommodationId: id,
+                                    ownerId: accommodation.ownerId,
+                                    planSlug: 'owner-basico',
+                                    eligibility
+                                },
+                                '[accommodation.publish] trial subscription linkage'
+                            );
                         } catch (error) {
                             this.logger.error(
                                 { error, ownerId: accommodation.ownerId, accommodationId: id },
@@ -1432,6 +1578,19 @@ export class AccommodationService extends BaseCrudService<
                     }
                 }
 
+                // Visibility promotion (SPEC-217): onboarding drafts are created
+                // PRIVATE (intentionally hidden while unpublished). Publishing must
+                // reveal them so the public detail-by-slug endpoint can serve the
+                // listing; otherwise `checkCanView` rejects anonymous readers (404).
+                // We promote ONLY a PRIVATE source — never RESTRICTED or PUBLIC — so a
+                // deliberately-restricted listing is not silently leaked public on
+                // activation. And when the caller set `visibility` explicitly in the
+                // same request (`callerSetVisibility`), we respect their choice and
+                // skip promotion entirely.
+                const shouldPromoteVisibility =
+                    !opts?.callerSetVisibility &&
+                    accommodation.visibility === VisibilityEnum.PRIVATE;
+
                 let updated: Accommodation;
                 try {
                     updated = await withServiceTransaction(
@@ -1440,6 +1599,9 @@ export class AccommodationService extends BaseCrudService<
                                 { id },
                                 {
                                     lifecycleState: LifecycleStatusEnum.ACTIVE,
+                                    ...(shouldPromoteVisibility
+                                        ? { visibility: VisibilityEnum.PUBLIC }
+                                        : {}),
                                     updatedById: validatedActor.id
                                 },
                                 txCtx.tx
@@ -1498,6 +1660,97 @@ export class AccommodationService extends BaseCrudService<
                     this.logger.warn(
                         { error, entityType: 'accommodation' },
                         '[accommodation.publish] Revalidation scheduling failed (non-blocking)'
+                    );
+                }
+
+                return updated;
+            }
+        });
+    }
+
+    /**
+     * Transitions an accommodation from `ACTIVE` to `INACTIVE` (paused).
+     *
+     * The accommodation stops appearing on the public site immediately after
+     * unpublishing. It can be reactivated at any time by the owner. This is a
+     * soft pause — the accommodation retains all data, FAQs, media, and settings.
+     *
+     * Permission model mirrors `publish()`:
+     * - The actor must be the owner (`ACCOMMODATION_UPDATE_OWN`) or hold
+     *   `ACCOMMODATION_UPDATE_ANY`.
+     * - Owner-suspended accommodations are also blocked by `checkCanUpdate`.
+     *
+     * @param actor - The actor performing the unpublish action.
+     * @param id    - The accommodation ID to unpublish.
+     * @param ctx   - Optional service context (transaction / hookState).
+     * @returns A `ServiceOutput` containing the updated accommodation, or a
+     *   `ServiceError` on permission / state / update failure.
+     *
+     * @throws {ServiceError} NOT_FOUND    — accommodation does not exist.
+     * @throws {ServiceError} FORBIDDEN    — actor lacks update permission or owner is suspended.
+     * @throws {ServiceError} VALIDATION_ERROR — accommodation is not currently ACTIVE.
+     * @throws {ServiceError} INTERNAL_ERROR — DB update returned nothing.
+     */
+    public async unpublish(
+        actor: Actor,
+        id: string,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<Accommodation>> {
+        return this.runWithLoggingAndValidation({
+            methodName: `unpublish(id=${id})`,
+            input: { actor },
+            schema: z.object({}),
+            ctx,
+            execute: async (_, validatedActor, execCtx) => {
+                const accommodation = await this.model.findById(id, execCtx?.tx);
+                if (!accommodation) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `Accommodation ${id} not found`
+                    );
+                }
+
+                // Reuse checkCanUpdate: verifies ownership OR ACCOMMODATION_UPDATE_ANY,
+                // and blocks edits when ownerSuspended (billing pause).
+                checkCanUpdate(validatedActor, accommodation);
+
+                if (accommodation.lifecycleState !== LifecycleStatusEnum.ACTIVE) {
+                    throw new ServiceError(
+                        ServiceErrorCode.VALIDATION_ERROR,
+                        'Only an active accommodation can be unpublished'
+                    );
+                }
+
+                const updated = await this.model.update(
+                    { id },
+                    {
+                        lifecycleState: LifecycleStatusEnum.INACTIVE,
+                        updatedById: validatedActor.id
+                    },
+                    execCtx?.tx
+                );
+
+                if (!updated) {
+                    throw new ServiceError(
+                        ServiceErrorCode.INTERNAL_ERROR,
+                        'Failed to flip accommodation lifecycleState to INACTIVE'
+                    );
+                }
+
+                const destinationSlug = updated.destinationId
+                    ? await this._resolveDestinationSlug(updated.destinationId)
+                    : undefined;
+                try {
+                    getRevalidationService()?.scheduleRevalidation({
+                        entityType: 'accommodation',
+                        slug: updated.slug,
+                        destinationSlug,
+                        accommodationType: updated.type?.toLowerCase()
+                    });
+                } catch (error) {
+                    this.logger.warn(
+                        { error, entityType: 'accommodation' },
+                        '[accommodation.unpublish] Revalidation scheduling failed (non-blocking)'
                     );
                 }
 
@@ -1778,7 +2031,11 @@ export class AccommodationService extends BaseCrudService<
             sortOrder: ctx.pagination?.sortOrder,
             excludeRestricted: !hasVipAccess,
             excludeOwnerSuspended: !hasVipAccess && !isOwnScope,
-            excludePlanRestricted: !hasVipAccess && !isOwnScope
+            excludePlanRestricted: !hasVipAccess && !isOwnScope,
+            // Restrict to ACTIVE lifecycle state for public reads.
+            // Owners always see their own non-ACTIVE accommodations (so their
+            // "my listings" view shows DRAFTs); VIP/staff see all lifecycleStates.
+            activeOnly: !hasVipAccess && !isOwnScope
         });
     }
 
@@ -1807,7 +2064,8 @@ export class AccommodationService extends BaseCrudService<
             ...params,
             excludeRestricted: !hasVipAccess,
             excludeOwnerSuspended: !hasVipAccess && !isOwnScope,
-            excludePlanRestricted: !hasVipAccess && !isOwnScope
+            excludePlanRestricted: !hasVipAccess && !isOwnScope,
+            activeOnly: !hasVipAccess && !isOwnScope
         });
     }
 
@@ -1871,7 +2129,8 @@ export class AccommodationService extends BaseCrudService<
                     pageSize,
                     excludeRestricted: !hasVipAccess,
                     excludeOwnerSuspended: !hasVipAccess && !isOwnScope,
-                    excludePlanRestricted: !hasVipAccess && !isOwnScope
+                    excludePlanRestricted: !hasVipAccess && !isOwnScope,
+                    activeOnly: !hasVipAccess && !isOwnScope
                 };
 
                 const result = await this.model.searchWithRelations(modelParams);
@@ -1933,7 +2192,8 @@ export class AccommodationService extends BaseCrudService<
                     excludeOwnerSuspended: !hasVipAccess,
                     // SPEC-167 T-004: top-rated list is always a public view (no
                     // own-scope), so plan-restricted mirrors ownerSuspended exactly.
-                    excludePlanRestricted: !hasVipAccess
+                    excludePlanRestricted: !hasVipAccess,
+                    activeOnly: !hasVipAccess
                     // type: validated.type, // Field not available in schema
                     // onlyFeatured: validated.onlyFeatured // Field not available in schema
                 });
@@ -2089,7 +2349,8 @@ export class AccommodationService extends BaseCrudService<
                         // SPEC-167 T-026: destination list is always a public view (no
                         // own-scope), so both visibility flags mirror each other exactly.
                         excludeOwnerSuspended: !hasVipAccess,
-                        excludePlanRestricted: !hasVipAccess
+                        excludePlanRestricted: !hasVipAccess,
+                        activeOnly: !hasVipAccess
                     },
                     ctx?.tx
                 );
@@ -2144,7 +2405,8 @@ export class AccommodationService extends BaseCrudService<
                     excludeRestricted: !hasVipAccess,
                     excludeOwnerSuspended: !hasVipAccess,
                     // SPEC-167 T-004: destination top-rated is always a public view.
-                    excludePlanRestricted: !hasVipAccess
+                    excludePlanRestricted: !hasVipAccess,
+                    activeOnly: !hasVipAccess
                 });
 
                 const accommodations =

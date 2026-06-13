@@ -1,3 +1,10 @@
+import type {
+    ColorSchemeId,
+    DeviceTypeId,
+    FeedbackEnvironment,
+    FeedbackInteraction,
+    SeverityId
+} from '@repo/schemas';
 /**
  * @repo/feedback - StepDetails component
  *
@@ -8,13 +15,6 @@
 import { useMemo, useState } from 'react';
 import { FEEDBACK_CONFIG, SEVERITY_LEVELS } from '../../config/feedback.config.js';
 import { FEEDBACK_STRINGS } from '../../config/strings.js';
-import type {
-    ColorSchemeId,
-    DeviceTypeId,
-    FeedbackEnvironment,
-    FeedbackInteraction,
-    SeverityId
-} from '../../schemas/feedback.schema.js';
 import { Button } from '../../ui/Button.js';
 import { Input } from '../../ui/Input.js';
 import { Label } from '../../ui/Label.js';

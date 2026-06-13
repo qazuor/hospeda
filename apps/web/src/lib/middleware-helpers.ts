@@ -263,28 +263,11 @@ export function isBetaRoute({ path }: { path: string }): boolean {
     return path === BETA_PREFIX || path.startsWith(`${BETA_PREFIX}/`);
 }
 
-/**
- * Builds a redirect URL to the login page with a return URL parameter.
- *
- * @param params - Object with locale and the current URL to redirect back to after login
- * @returns Absolute path to the signin page with returnUrl encoded as a query param
- *
- * @example
- * ```ts
- * buildLoginRedirect({ locale: 'es', currentUrl: '/es/mi-cuenta/perfil/' })
- * // => '/es/auth/signin?returnUrl=%2Fes%2Fmi-cuenta%2Fperfil%2F'
- * ```
- */
-export function buildLoginRedirect({
-    locale,
-    currentUrl
-}: {
-    locale: SupportedLocale;
-    currentUrl: string;
-}): string {
-    const encodedReturnUrl = encodeURIComponent(currentUrl);
-    return `/${locale}/auth/signin/?returnUrl=${encodedReturnUrl}`;
-}
+// `buildLoginRedirect` now lives in the client-safe `./auth-redirect` module so
+// React islands can use it without dragging this server-only module (logger,
+// Sentry, process.env) into the browser bundle. Re-exported here so existing
+// server consumers keep importing it from `middleware-helpers` unchanged.
+export { buildLoginRedirect } from './auth-redirect';
 
 /**
  * Builds a redirect URL for an invalid or missing locale, defaulting to the default locale.

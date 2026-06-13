@@ -99,19 +99,54 @@ Entitlements are feature flags defined in the `EntitlementKey` enum. Each plan i
 2. At runtime, the API checks if the user's active plan includes the required entitlement
 3. **Never check roles directly**.. always check entitlements via `EntitlementKey`
 
+### Owner = superset of tourist (SPEC-216)
+
+Every **owner** and **complex** plan is a **superset of the tourist-VIP tier**: an
+owner is also a full tourist, so owner/complex plans grant the entire tourist-VIP
+entitlement + limit set in addition to their owner-specific ones (e.g. an owner can
+save favorites and write reviews).
+
+This is config-only — there is **no runtime resolver change** (the resolver stays a
+flat per-plan consumer). The single source of truth is the
+`TOURIST_VIP_ENTITLEMENTS` / `TOURIST_VIP_LIMITS` constants in `plans.config.ts`: the
+`tourist-vip` plan and the owner/complex inheritance both build from them via
+`dedupe()` / `mergeLimits()` (plan-specific limit values stay authoritative on key
+clash), so the tourist tier and the owner inheritance can never drift. The invariant
+is guarded by `packages/billing/test/owner-inherits-tourist.test.ts`.
+
+### Re-seeding after a catalog change
+
+The catalog seeders (`packages/seed/src/required/billingEntitlements.seed.ts`, etc.)
+are **insert-only / idempotent** — they never delete rows removed from config. So:
+
+- **Local/dev:** `pnpm db:fresh-dev` (or `pnpm db:seed --reset`) wipes + reseeds, so
+  the DB matches the pruned config exactly.
+- **Staging/prod (no wipe):** re-seed `billing_plans` to carry the new entitlement/limit
+  lists, AND explicitly delete the rows for the 8 removed keys from `billing_entitlements`
+  (the insert-only seeder leaves them behind). Do this as a deploy-time ops step
+  (check FK references to `billing_entitlements` before deleting). The effective
+  entitlements resolve from the plan row at request time, so no per-subscription
+  migration is needed.
+
 ### Entitlement categories
 
-**Owner entitlements** (12 keys):
-`PUBLISH_ACCOMMODATIONS`, `EDIT_ACCOMMODATION_INFO`, `VIEW_BASIC_STATS`, `VIEW_ADVANCED_STATS`, `RESPOND_REVIEWS`, `PRIORITY_SUPPORT`, `FEATURED_LISTING`, `CUSTOM_BRANDING`, `API_ACCESS`, `DEDICATED_MANAGER`, `CREATE_PROMOTIONS`, `SOCIAL_MEDIA_INTEGRATION`
+> **Catalog pruned (SPEC-216 Part 0, 2026-06-11).** Eight entitlements describing
+> services Hospeda does not deliver were removed: `AIRPORT_TRANSFERS`,
+> `CONCIERGE_SERVICE`, `WHITE_LABEL`, `MULTI_CHANNEL_INTEGRATION`,
+> `SOCIAL_MEDIA_INTEGRATION`, `EARLY_ACCESS_EVENTS`, `DEDICATED_MANAGER`,
+> `API_ACCESS`. See the audit verdict in the SPEC-216 spec docs.
+
+**Owner entitlements** (9 keys):
+`PUBLISH_ACCOMMODATIONS`, `EDIT_ACCOMMODATION_INFO`, `VIEW_BASIC_STATS`, `VIEW_ADVANCED_STATS`, `RESPOND_REVIEWS`, `PRIORITY_SUPPORT`, `FEATURED_LISTING`, `CUSTOM_BRANDING`, `CREATE_PROMOTIONS`
 
 **Accommodation feature entitlements** (7 keys):
 `CAN_USE_RICH_DESCRIPTION`, `CAN_EMBED_VIDEO`, `CAN_USE_CALENDAR`, `CAN_SYNC_EXTERNAL_CALENDAR`, `CAN_CONTACT_WHATSAPP_DISPLAY`, `CAN_CONTACT_WHATSAPP_DIRECT`, `HAS_VERIFICATION_BADGE`
 
-**Complex entitlements** (6 keys):
-`MULTI_PROPERTY_MANAGEMENT`, `CONSOLIDATED_ANALYTICS`, `CENTRALIZED_BOOKING`, `STAFF_MANAGEMENT`, `WHITE_LABEL`, `MULTI_CHANNEL_INTEGRATION`
+**Complex entitlements** (4 keys):
+`MULTI_PROPERTY_MANAGEMENT`, `CONSOLIDATED_ANALYTICS`, `CENTRALIZED_BOOKING`, `STAFF_MANAGEMENT`
 
-**Tourist entitlements** (15 keys):
-`SAVE_FAVORITES`, `WRITE_REVIEWS`, `READ_REVIEWS`, `AD_FREE`, `PRICE_ALERTS`, `EARLY_ACCESS_EVENTS`, `EXCLUSIVE_DEALS`, `VIP_SUPPORT`, `CONCIERGE_SERVICE`, `AIRPORT_TRANSFERS`, `VIP_PROMOTIONS_ACCESS`, `CAN_COMPARE_ACCOMMODATIONS`, `CAN_ATTACH_REVIEW_PHOTOS`, `CAN_VIEW_SEARCH_HISTORY`, `CAN_VIEW_RECOMMENDATIONS`
+**Tourist entitlements** (12 keys):
+`SAVE_FAVORITES`, `WRITE_REVIEWS`, `READ_REVIEWS`, `AD_FREE`, `PRICE_ALERTS`, `EXCLUSIVE_DEALS`, `VIP_SUPPORT`, `VIP_PROMOTIONS_ACCESS`, `CAN_COMPARE_ACCOMMODATIONS`, `CAN_ATTACH_REVIEW_PHOTOS`, `CAN_VIEW_SEARCH_HISTORY`, `CAN_VIEW_RECOMMENDATIONS`
 
 ### Usage example
 

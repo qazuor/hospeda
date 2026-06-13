@@ -85,8 +85,9 @@ export const createUserBookmarkRoute = createProtectedRoute({
     },
     options: {
         // gateFavorites — entitlement check (SAVE_FAVORITES). Tourist plans
-        // (free/plus/vip) all include it; HOST / CLIENT_MANAGER do NOT. Throws
-        // 403 ENTITLEMENT_REQUIRED if missing.
+        // (free/plus/vip) all include it; owner/complex plans also include it
+        // via tourist-VIP inheritance (SPEC-216). Throws 403 ENTITLEMENT_REQUIRED
+        // if missing (e.g. an unauthenticated or free-role actor).
         //
         // The MAX_FAVORITES limit (free=3, plus=20, vip=-1 unlimited) is NOT
         // enforced as a middleware here: a toggle can either ADD or REMOVE a

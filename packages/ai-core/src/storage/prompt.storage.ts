@@ -110,6 +110,11 @@ export interface CreatePromptVersionInput {
     /** System-prompt content. */
     readonly content: string;
     /**
+     * Editable hard rules / guardrails (SPEC-214). `null`/omitted persists as
+     * `NULL`, which falls back to `DEFAULT_RULES[feature]` at resolution time.
+     */
+    readonly rules?: string | null;
+    /**
      * Whether to activate this version immediately.
      * When `true`, all other rows for the feature are deactivated atomically.
      */
@@ -166,7 +171,7 @@ export interface ListPromptVersionsByFeatureInput {
 export async function createPromptVersion(
     input: CreatePromptVersionInput
 ): Promise<SelectAiPromptVersion> {
-    const { feature, content, isActive, actorId, tx: outerTx } = input;
+    const { feature, content, rules, isActive, actorId, tx: outerTx } = input;
 
     const run = async (tx: DrizzleClient): Promise<SelectAiPromptVersion> => {
         // 1. Compute next version: MAX(version) for the feature (all rows, including deleted).
@@ -193,6 +198,7 @@ export async function createPromptVersion(
                 feature,
                 version: nextVersion,
                 content,
+                rules: rules ?? null,
                 isActive,
                 createdBy: actorId
             })

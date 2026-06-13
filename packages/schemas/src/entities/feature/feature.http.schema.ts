@@ -12,6 +12,7 @@ import {
     createBooleanQueryParam
 } from '../../api/http/base-http.schema.js';
 import { i18nText } from '../../common/i18n.schema.js';
+import { stripShapeDefaults } from '../../utils/utils.js';
 
 /**
  * HTTP-compatible feature search schema with automatic coercion
@@ -80,7 +81,10 @@ export type FeatureCreateHttp = z.infer<typeof FeatureCreateHttpSchema>;
  * HTTP-compatible feature update schema
  * Handles partial updates via HTTP PATCH requests
  */
-export const FeatureUpdateHttpSchema = FeatureCreateHttpSchema.partial();
+// Zod 4 .partial() keeps .default(); strip them so absent keys = no change (SPEC-217).
+export const FeatureUpdateHttpSchema = z
+    .object(stripShapeDefaults(FeatureCreateHttpSchema.shape))
+    .partial();
 
 export type FeatureUpdateHttp = z.infer<typeof FeatureUpdateHttpSchema>;
 

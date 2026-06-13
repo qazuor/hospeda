@@ -57,7 +57,14 @@ const ACCOMMODATION_REVIEW = {
 
 const DESTINATION_REVIEW = {
     id: 'rev-dst-1',
-    rating: 8,
+    // Destination ratings are a multi-aspect object (0-5 per aspect), same shape
+    // as accommodation — not a bare number. The client averages it.
+    rating: {
+        landscape: 4,
+        safety: 4,
+        cleanliness: 3,
+        gastronomy: 5
+    },
     title: null,
     content: 'Destino hermoso.',
     createdAt: '2025-02-20T10:00:00Z',
@@ -157,7 +164,8 @@ describe('UserReviewsList', () => {
         renderList();
         await waitFor(() => {
             const link = screen.getByRole('link', { name: 'Casa del Litoral' });
-            expect(link).toHaveAttribute('href', '/alojamientos/casa-del-litoral/');
+            // Entity links are locale-prefixed via buildUrl (locale="es" here).
+            expect(link).toHaveAttribute('href', '/es/alojamientos/casa-del-litoral/');
         });
     });
 

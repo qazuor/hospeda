@@ -146,8 +146,7 @@ const premiumPlan = createMockPlan({
         'view_stats',
         'view_advanced_stats',
         'priority_support',
-        'custom_branding',
-        'api_access'
+        'custom_branding'
     ],
     limits: {
         max_accommodations: 10,

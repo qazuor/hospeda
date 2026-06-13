@@ -1,0 +1,14 @@
+{
+    "specId": "SPEC-221",
+    "title": "QZPay Test-Control Hardening & Deferred E2E Coverage",
+    "type": "test",
+    "complexity": "low",
+    "status": "completed",
+    "created": "2026-06-13T00:00:00.000Z",
+    "approved": "2026-06-13T00:00:00.000Z",
+    "completed": "2026-06-13T00:00:00.000Z",
+    "planFileRef": null,
+    "origin": "Follow-up findings from SPEC-217 adversarial review",
+    "relatedSpecs": ["SPEC-217", "SPEC-092", "SPEC-143"],
+    "tags": ["e2e", "billing", "qzpay", "test-control", "follow-up"]
+}

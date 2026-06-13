@@ -65,14 +65,24 @@ const PRICE_SORT_FIELD = 'price';
  * Build the correlated subquery used as the ORDER BY expression for the
  * `mostSaved` synthetic sort. NULL counts (i.e. no active bookmarks) are folded
  * to zero by `COUNT(*)`, so no `NULLS LAST` clause is required.
+ *
+ * Implementation note (`sql.raw` identifiers): when this expression is composed
+ * into `searchWithRelations` (Drizzle's relational API with lateral joins),
+ * template-literal column refs like `${userBookmarks.entityId}` get re-aliased
+ * to the OUTER table (`accommodations`), producing
+ * `WHERE "accommodations"."entity_id" = ...` — nonsense that fails at runtime
+ * with a 500. Emitting the `user_bookmarks` column names as raw identifiers
+ * avoids the aliasing. The table reference (`${userBookmarks}`) and the outer
+ * correlation (`${accommodations.id}`) resolve correctly and stay template args.
+ * Same workaround as {@link buildAmenityIntersectionClause}.
  */
 function buildMostSavedOrderExpr(order: 'asc' | 'desc'): SQL {
     const direction = order === 'desc' ? sql`DESC` : sql`ASC`;
     return sql`(
         SELECT COUNT(*) FROM ${userBookmarks}
-        WHERE ${userBookmarks.entityId} = ${accommodations.id}
-          AND ${userBookmarks.entityType} = 'ACCOMMODATION'
-          AND ${userBookmarks.deletedAt} IS NULL
+        WHERE "user_bookmarks"."entity_id" = ${accommodations.id}
+          AND "user_bookmarks"."entity_type" = 'ACCOMMODATION'
+          AND "user_bookmarks"."deleted_at" IS NULL
     ) ${direction}`;
 }
 
@@ -380,6 +390,8 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
             excludeOwnerSuspended?: boolean;
             /** SPEC-167 T-004: exclude plan-restricted accommodations from public counts. */
             excludePlanRestricted?: boolean;
+            /** Restrict results to ACTIVE lifecycle state (excludes DRAFT, INACTIVE, ARCHIVED). */
+            activeOnly?: boolean;
         },
         tx?: DrizzleClient
     ): Promise<{ count: number }> {
@@ -412,6 +424,11 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         // Mirrors excludeOwnerSuspended treatment (same layers, same query helper).
         if (params.excludePlanRestricted) {
             whereClauses.push(eq(accommodations.planRestricted, false));
+        }
+        // Restrict to ACTIVE lifecycle state for public reads.
+        // When true, excludes DRAFT, INACTIVE, and ARCHIVED accommodations.
+        if (params.activeOnly) {
+            whereClauses.push(eq(accommodations.lifecycleState, 'ACTIVE'));
         }
         if (params.minGuests !== undefined) {
             whereClauses.push(
@@ -519,6 +536,8 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
             excludeOwnerSuspended?: boolean;
             /** SPEC-167 T-004: exclude plan-restricted accommodations from public searches. */
             excludePlanRestricted?: boolean;
+            /** Restrict results to ACTIVE lifecycle state (excludes DRAFT, INACTIVE, ARCHIVED). */
+            activeOnly?: boolean;
         },
         tx?: DrizzleClient
     ): Promise<{ items: Accommodation[]; total: number }> {
@@ -550,6 +569,11 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         // SPEC-167 T-004: plan-restricted accommodations are hidden from public reads.
         if (params.excludePlanRestricted) {
             whereClauses.push(eq(accommodations.planRestricted, false));
+        }
+        // Restrict to ACTIVE lifecycle state for public reads.
+        // When true, excludes DRAFT, INACTIVE, and ARCHIVED accommodations.
+        if (params.activeOnly) {
+            whereClauses.push(eq(accommodations.lifecycleState, 'ACTIVE'));
         }
         if (params.minGuests !== undefined) {
             whereClauses.push(
@@ -683,6 +707,8 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
             excludeOwnerSuspended?: boolean;
             /** SPEC-167 T-004: exclude plan-restricted accommodations from public searches. */
             excludePlanRestricted?: boolean;
+            /** Restrict results to ACTIVE lifecycle state (excludes DRAFT, INACTIVE, ARCHIVED). */
+            activeOnly?: boolean;
         },
         tx?: DrizzleClient
     ): Promise<{
@@ -722,6 +748,11 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
         // SPEC-167 T-004: plan-restricted accommodations are hidden from public reads.
         if (params.excludePlanRestricted) {
             whereClauses.push(eq(accommodations.planRestricted, false));
+        }
+        // Restrict to ACTIVE lifecycle state for public reads.
+        // When true, excludes DRAFT, INACTIVE, and ARCHIVED accommodations.
+        if (params.activeOnly) {
+            whereClauses.push(eq(accommodations.lifecycleState, 'ACTIVE'));
         }
         if (params.minGuests !== undefined) {
             whereClauses.push(
@@ -917,6 +948,8 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
             excludeOwnerSuspended?: boolean;
             /** SPEC-167 T-004: exclude plan-restricted accommodations from public top-rated lists. */
             excludePlanRestricted?: boolean;
+            /** Restrict results to ACTIVE lifecycle state (excludes DRAFT, INACTIVE, ARCHIVED). */
+            activeOnly?: boolean;
         },
         tx?: DrizzleClient
     ): Promise<Accommodation[]> {
@@ -928,7 +961,8 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
             onlyFeatured = false,
             excludeRestricted = false,
             excludeOwnerSuspended = false,
-            excludePlanRestricted = false
+            excludePlanRestricted = false,
+            activeOnly = false
         } = params ?? {};
 
         // Single query with all relations loaded via Drizzle's `with` clause
@@ -943,6 +977,8 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
                 if (excludeOwnerSuspended) clauses.push(eq(fields.ownerSuspended, false));
                 // SPEC-167 T-004: plan-restricted accommodations are hidden from public reads.
                 if (excludePlanRestricted) clauses.push(eq(fields.planRestricted, false));
+                // Restrict to ACTIVE lifecycle state for public reads.
+                if (activeOnly) clauses.push(eq(fields.lifecycleState, 'ACTIVE'));
                 return and(...clauses);
             },
             with: {

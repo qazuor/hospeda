@@ -7,10 +7,12 @@
  */
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
+import AccountEmptyState from '@/components/account/AccountEmptyState.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { ownerConversationsApi } from '@/lib/api/endpoints-protected';
+import { ChatIcon } from '@repo/icons';
 
 export const prerender = false;
 
@@ -62,7 +64,12 @@ function formatDate(dateStr: string): string {
                 <a href={Astro.url.pathname} class="owner-inbox__retry">{t('conversations.errors.retry', 'Reintentar')}</a>
             </div>
         ) : conversations.length === 0 ? (
-            <p class="owner-inbox__empty">{t('conversations.empty.ownerInbox')}</p>
+            <AccountEmptyState
+                title={t('conversations.empty.ownerInboxTitle', 'Todavía no tenés mensajes')}
+                description={t('conversations.empty.ownerInbox')}
+            >
+                <ChatIcon slot="icon" size={28} aria-hidden={true} />
+            </AccountEmptyState>
         ) : (
             <ul class="owner-inbox__list" role="list">
                 {conversations.map((conv) => {

@@ -58,12 +58,13 @@ test.describe('ADM-03: super-admin user suspend + reactivate @p1 @admin @cross-a
         ).toBe(true);
 
         // ── Suspend ───────────────────────────────────────────────────────
+        // Note: users table uses `service_suspended` (boolean) not `suspended_at`.
         await suspendUser(user.id);
-        const dbAfterSuspend = await execSQL<{ suspended_at: string | null; email: string }>(
-            'SELECT suspended_at, email FROM users WHERE id = $1',
+        const dbAfterSuspend = await execSQL<{ service_suspended: boolean; email: string }>(
+            'SELECT service_suspended, email FROM users WHERE id = $1',
             [user.id]
         );
-        expect(dbAfterSuspend[0]?.suspended_at).not.toBeNull();
+        expect(dbAfterSuspend[0]?.service_suspended).toBe(true);
         expect(dbAfterSuspend[0]?.email).toBe(user.email);
 
         // ── While suspended: protected access blocked ─────────────────────
@@ -88,11 +89,11 @@ test.describe('ADM-03: super-admin user suspend + reactivate @p1 @admin @cross-a
 
         // ── Reactivate ────────────────────────────────────────────────────
         await reactivateUser(user.id);
-        const dbAfterReactivate = await execSQL<{ suspended_at: string | null }>(
-            'SELECT suspended_at FROM users WHERE id = $1',
+        const dbAfterReactivate = await execSQL<{ service_suspended: boolean }>(
+            'SELECT service_suspended FROM users WHERE id = $1',
             [user.id]
         );
-        expect(dbAfterReactivate[0]?.suspended_at).toBeNull();
+        expect(dbAfterReactivate[0]?.service_suspended).toBe(false);
 
         // ── After reactivation: protected /me works again ─────────────────
         const afterRes = await page.request.get(`${API_URL}/api/v1/public/auth/me`, {

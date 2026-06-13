@@ -7,10 +7,12 @@
  */
 
 import AccountLayout from '@/layouts/AccountLayout.astro';
+import AccountEmptyState from '@/components/account/AccountEmptyState.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { protectedConversationsApi } from '@/lib/api/endpoints-protected';
+import { ChatIcon } from '@repo/icons';
 
 export const prerender = false;
 
@@ -43,6 +45,14 @@ function formatDate(dateStr: string): string {
         { day: '2-digit', month: 'short', year: 'numeric' }
     );
 }
+
+/** Up-to-two-letter initials from the accommodation name for the avatar. */
+function getInitials(name: string): string {
+    const words = name.trim().split(/\s+/).filter(Boolean);
+    if (words.length === 0) return '?';
+    if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+    return (words[0][0] + words[words.length - 1][0]).toUpperCase();
+}
 ---
 
 <AccountLayout
@@ -55,7 +65,14 @@ function formatDate(dateStr: string): string {
         <h1 class="messages-inbox__title">{t('conversations.inbox.guestInboxTitle')}</h1>
 
         {conversations.length === 0 ? (
-            <p class="messages-inbox__empty">{t('conversations.empty.guestInbox')}</p>
+            <AccountEmptyState
+                title={t('conversations.empty.guestInboxTitle', 'Todavía no tenés consultas')}
+                description={t('conversations.empty.guestInbox')}
+                ctaHref={buildUrl({ locale, path: 'alojamientos' })}
+                ctaLabel={t('conversations.empty.guestInboxCta', 'Explorar alojamientos')}
+            >
+                <ChatIcon slot="icon" size={28} aria-hidden={true} />
+            </AccountEmptyState>
         ) : (
             <ul class="messages-inbox__list" role="list">
                 {conversations.map((conv) => {
@@ -63,14 +80,35 @@ function formatDate(dateStr: string): string {
                     const excerpt = conv.lastMessageExcerpt
                         ? conv.lastMessageExcerpt.slice(0, 200)
                         : '';
+                    const isUnread = conv.unreadCount > 0;
                     return (
                         <li class="messages-inbox__item">
-                            <a href={threadUrl} class="messages-inbox__link">
-                                <div class="messages-inbox__row">
+                            <a
+                                href={threadUrl}
+                                class:list={[
+                                    'messages-inbox__link',
+                                    { 'messages-inbox__link--unread': isUnread }
+                                ]}
+                            >
+                                <span class="messages-inbox__avatar" aria-hidden="true">
+                                    {getInitials(conv.accommodationName)}
+                                </span>
+                                <div class="messages-inbox__content">
                                     <span class="messages-inbox__accommodation">
                                         {conv.accommodationName}
                                     </span>
-                                    {conv.unreadCount > 0 && (
+                                    {excerpt && (
+                                        <p class="messages-inbox__excerpt">{excerpt}</p>
+                                    )}
+                                </div>
+                                <div class="messages-inbox__meta">
+                                    <time
+                                        datetime={conv.lastActivityAt}
+                                        class="messages-inbox__time"
+                                    >
+                                        {formatDate(conv.lastActivityAt)}
+                                    </time>
+                                    {isUnread && (
                                         <span
                                             class="messages-inbox__badge"
                                             aria-label={t(
@@ -82,16 +120,7 @@ function formatDate(dateStr: string): string {
                                             {conv.unreadCount}
                                         </span>
                                     )}
-                                    <time
-                                        datetime={conv.lastActivityAt}
-                                        class="messages-inbox__time"
-                                    >
-                                        {formatDate(conv.lastActivityAt)}
-                                    </time>
                                 </div>
-                                {excerpt && (
-                                    <p class="messages-inbox__excerpt">{excerpt}</p>
-                                )}
                             </a>
                         </li>
                     );
@@ -159,27 +188,50 @@ function formatDate(dateStr: string): string {
 
     .messages-inbox__item {
         border: 1px solid var(--border);
-        border-radius: var(--radius-card, 24px);
+        border-radius: var(--radius-card, 16px);
         overflow: hidden;
-        transition: box-shadow var(--duration-fast, 0.2s) ease;
+        transition: border-color var(--duration-fast, 0.2s) ease,
+            box-shadow var(--duration-fast, 0.2s) ease;
     }
 
     .messages-inbox__item:hover {
+        border-color: var(--brand-primary);
         box-shadow: var(--shadow-card-hover);
     }
 
     .messages-inbox__link {
-        display: block;
+        display: flex;
+        align-items: center;
+        gap: var(--space-4, 16px);
         padding: var(--space-4, 16px);
         text-decoration: none;
         background-color: var(--core-card);
     }
 
-    .messages-inbox__row {
+    /* Avatar with the accommodation's initials */
+    .messages-inbox__avatar {
+        flex-shrink: 0;
+        width: 48px;
+        height: 48px;
         display: flex;
         align-items: center;
-        gap: var(--space-2, 8px);
-        margin-bottom: var(--space-1, 4px);
+        justify-content: center;
+        border-radius: 50%;
+        background-color: var(--brand-accent-a15);
+        color: var(--brand-accent);
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: 1rem;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+    }
+
+    .messages-inbox__content {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
     }
 
     .messages-inbox__accommodation {
@@ -187,24 +239,8 @@ function formatDate(dateStr: string): string {
         font-weight: 600;
         font-size: 0.95rem;
         color: var(--core-foreground);
-        flex: 1;
-    }
-
-    .messages-inbox__badge {
-        font-family: var(--font-sans);
-        font-size: 0.75rem;
-        font-weight: 700;
-        color: white;
-        background-color: var(--brand-accent);
-        border-radius: var(--radius-pill, 9999px);
-        padding: 2px 8px;
-        line-height: 1.4;
-    }
-
-    .messages-inbox__time {
-        font-family: var(--font-sans);
-        font-size: 0.78rem;
-        color: var(--core-muted-foreground);
+        overflow: hidden;
+        text-overflow: ellipsis;
         white-space: nowrap;
     }
 
@@ -214,9 +250,69 @@ function formatDate(dateStr: string): string {
         color: var(--core-muted-foreground);
         margin: 0;
         overflow: hidden;
-        display: -webkit-box;
-        -webkit-line-clamp: 2;
-        -webkit-box-orient: vertical;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .messages-inbox__meta {
+        flex-shrink: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: var(--space-2, 8px);
+    }
+
+    .messages-inbox__time {
+        font-family: var(--font-sans);
+        font-size: 0.75rem;
+        color: var(--core-muted-foreground);
+        white-space: nowrap;
+    }
+
+    .messages-inbox__badge {
+        font-family: var(--font-sans);
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: var(--primary-foreground, #fff);
+        background-color: var(--brand-accent);
+        border-radius: var(--radius-pill, 9999px);
+        min-width: 20px;
+        height: 20px;
+        padding: 0 6px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        line-height: 1;
+    }
+
+    /* Unread state: stronger name, accent avatar, accent rail */
+    .messages-inbox__link--unread {
+        position: relative;
+    }
+
+    .messages-inbox__link--unread::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background-color: var(--brand-accent);
+    }
+
+    .messages-inbox__link--unread .messages-inbox__accommodation {
+        font-weight: 700;
+        color: var(--core-foreground);
+    }
+
+    .messages-inbox__link--unread .messages-inbox__excerpt {
+        color: var(--core-foreground);
+        font-weight: 500;
+    }
+
+    .messages-inbox__link--unread .messages-inbox__avatar {
+        background-color: var(--brand-accent);
+        color: var(--primary-foreground, #fff);
     }
 
     .messages-inbox__pagination {

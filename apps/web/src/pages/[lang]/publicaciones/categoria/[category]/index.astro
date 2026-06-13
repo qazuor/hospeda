@@ -17,6 +17,7 @@ import { postsApi } from '@/lib/api/endpoints';
 import { toArticleCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { resolvePostCategorySlug } from '@/lib/post-category';
 import { buildUrl } from '@/lib/urls';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -24,25 +25,23 @@ const { t } = createTranslations(locale);
 const { category: catSlug } = Astro.params;
 const isAuthenticated = Boolean(Astro.locals.user);
 
-const VALID: Record<string, string> = {
-	events: 'EVENTS', culture: 'CULTURE', gastronomy: 'GASTRONOMY', nature: 'NATURE',
-	tourism: 'TOURISM', general: 'GENERAL', sport: 'SPORT', carnival: 'CARNIVAL',
-	nightlife: 'NIGHTLIFE', history: 'HISTORY', traditions: 'TRADITIONS', wellness: 'WELLNESS',
-	family: 'FAMILY', tips: 'TIPS', art: 'ART', beach: 'BEACH', rural: 'RURAL', festivals: 'FESTIVALS',
-};
-
-const catEnum = catSlug ? VALID[catSlug] : undefined;
+// Normalize the slug to lowercase so uppercase inbound URLs (e.g. /CULTURE/)
+// resolve cleanly. The helper is case-insensitive internally.
+const catEnum = resolvePostCategorySlug({ slug: catSlug });
 if (!catEnum) return new Response(null, { status: 404 });
+
+// Canonical lowercase slug for URLs and i18n key lookups.
+const catSlugLower = catEnum.toLowerCase();
 
 const page = Math.max(1, Number(Astro.url.searchParams.get('page')) || 1);
 const result = await postsApi.list({ page, pageSize: 9, category: catEnum });
 const hasError = !result.ok;
 const items = result.ok ? result.data.items : [];
-const total = result.ok ? result.data.total : 0;
-const totalPages = result.ok ? Math.ceil(total / 9) : 0;
-const cards = items.map((item) => toArticleCardProps({ item: item as unknown as Record<string, unknown> }));
-const catLabel = t(`blog.categories.${catSlug}`, catSlug ?? '');
-const baseUrl = buildUrl({ locale, path: `publicaciones/categoria/${catSlug}` });
+const total = result.ok ? result.data.pagination.total : 0;
+const totalPages = result.ok ? result.data.pagination.totalPages : 0;
+const cards = items.map((item) => toArticleCardProps({ item: item as unknown as Record<string, unknown>, locale }));
+const catLabel = t(`blog.categories.${catSlugLower}`, catSlugLower);
+const baseUrl = buildUrl({ locale, path: `publicaciones/categoria/${catSlugLower}` });
 ---
 
 <ListingLayout locale={locale} title={`${catLabel} - ${t('blog.title', 'Publicaciones')}`} description={`Publicaciones de ${catLabel}`} showFilters={false} noindex={true}>

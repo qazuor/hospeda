@@ -12,7 +12,7 @@ import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import Pagination from '@/components/shared/feedback/Pagination.astro';
-import { featuresApi } from '@/lib/api/endpoints';
+import { accommodationsApi, featuresApi } from '@/lib/api/endpoints';
 import { toAccommodationCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -26,20 +26,20 @@ if (!slug) return new Response(null, { status: 404 });
 // Resolve feature slug: fetch full list, find by slug
 const featuresResult = await featuresApi.list({ pageSize: 100 });
 if (!featuresResult.ok) return new Response(null, { status: 404 });
-const featureItems = featuresResult.data.items as Array<Record<string, unknown>>;
+const featureItems = featuresResult.data.items as unknown as Array<Record<string, unknown>>;
 const feature = featureItems.find((f) => String(f.slug) === slug);
 if (!feature) return new Response(null, { status: 404 });
 const featureId = String(feature.id);
 const featureName = String(feature.name || slug);
 
-// Use dedicated endpoint for accommodations by feature
+// Use accommodations list endpoint filtered by feature UUID
 const page = Math.max(1, Number(Astro.url.searchParams.get('page')) || 1);
-const result = await featuresApi.getAccommodations({ featureId, page, pageSize: 9 });
+const result = await accommodationsApi.list({ features: featureId, page, pageSize: 9 });
 const hasError = !result.ok;
 const items = result.ok ? result.data.items : [];
-const total = result.ok ? result.data.total : 0;
-const totalPages = result.ok ? Math.ceil(total / 9) : 0;
-const cards = items.map((item) => toAccommodationCardProps({ item: item as unknown as Record<string, unknown> }));
+const total = result.ok ? result.data.pagination.total : 0;
+const totalPages = result.ok ? result.data.pagination.totalPages : 0;
+const cards = items.map((item: (typeof items)[number]) => toAccommodationCardProps({ item: item as unknown as Record<string, unknown>, locale }));
 const baseUrl = buildUrl({ locale, path: `alojamientos/caracteristicas/${slug}` });
 ---
 

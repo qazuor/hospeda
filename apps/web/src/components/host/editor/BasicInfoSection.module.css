@@ -62,6 +62,19 @@
     margin-top: var(--space-1, 0.25rem);
 }
 
+.fieldHint {
+    display: block;
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+    margin-top: var(--space-1, 0.25rem);
+}
+
+.fieldHint a {
+    color: var(--brand-primary);
+    text-decoration: underline;
+}
+
 select.fieldInput {
     appearance: auto;
 }

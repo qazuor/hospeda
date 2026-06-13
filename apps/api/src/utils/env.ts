@@ -21,7 +21,22 @@ const __dirname = dirname(__filename);
 
 const envLogger = createLogger('env');
 
-const appDir = resolve(__dirname, '../..');
+// Locate the app root reliably in both source (src/utils/env.ts) and bundled
+// (dist/index.js) modes. Walking up via __dirname fails in the bundled case
+// because tsup collapses the directory depth from two levels (src/utils → app)
+// to one (dist → app).  process.cwd() is the canonical app root when executed
+// via `pnpm <script>` because pnpm always cd-s into the package directory.
+const appDir = (() => {
+    const cwd = process.cwd();
+    // Verify cwd looks like our app root (has package.json). If not — e.g. when
+    // running tests that do not cd — fall back to the old dirname-based path so
+    // existing test setups keep working without change.
+    if (existsSync(resolve(cwd, 'package.json'))) {
+        return cwd;
+    }
+    // Fallback: works for source layout (src/utils/env.ts → two levels up)
+    return resolve(__dirname, '../..');
+})();
 const envFiles = [resolve(appDir, '.env.local')];
 
 if (process.env.NODE_ENV === 'test') {
@@ -520,8 +535,8 @@ export const ApiEnvBaseSchema = z.object({
     // Content auto-moderation engine (SPEC-195)
     /** Moderation engine provider: 'openai' | 'local' | 'stub' (kill-switch). Default 'stub' preserves v1 binary behavior. */
     HOSPEDA_MODERATION_PROVIDER: z.enum(['openai', 'local', 'stub']).default('stub'),
-    /** OpenAI API key for the Moderation API. Required when HOSPEDA_MODERATION_PROVIDER=openai. */
-    HOSPEDA_OPENAI_API_KEY: z.string().min(1).optional(),
+    /** OpenAI API key for the content-moderation engine. Required when HOSPEDA_MODERATION_PROVIDER=openai. */
+    HOSPEDA_MODERATION_OPENAI_API_KEY: z.string().min(1).optional(),
     /** TTL in seconds for the in-memory LRU moderation cache. */
     HOSPEDA_MODERATION_CACHE_TTL_SECONDS: z.coerce.number().int().positive().default(300),
     /** Timeout in ms for the OpenAI Moderation API call before falling back to local. */

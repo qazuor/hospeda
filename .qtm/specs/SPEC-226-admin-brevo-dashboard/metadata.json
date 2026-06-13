@@ -1,0 +1,12 @@
+{
+    "specId": "SPEC-226",
+    "title": "Admin Brevo email/newsletter dashboard",
+    "type": "feature",
+    "complexity": "medium",
+    "status": "draft",
+    "created": "2026-06-13T12:00:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["admin", "brevo", "email", "newsletter", "dashboard", "analytics", "feature", "proxy"]
+}
