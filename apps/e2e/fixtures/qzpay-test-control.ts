@@ -52,6 +52,13 @@ export interface QZPayTestControl {
         readonly errorCode: string;
         readonly errorMessage: string;
         readonly delayMs?: number;
+        /**
+         * Optional ownerId/subscriptionId scope. When set, only a call whose
+         * extracted scope matches consumes this queued failure. Prevents
+         * cross-contamination between parallel Playwright workers sharing the
+         * API's global failNext queue. Omit for backward-compat (matches any).
+         */
+        readonly scope?: string;
     }) => Promise<void>;
     readonly delayNext: (operation: ControllableOperation, ms: number) => Promise<void>;
     readonly getRecordedCalls: (
