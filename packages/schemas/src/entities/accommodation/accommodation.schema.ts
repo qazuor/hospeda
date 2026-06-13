@@ -3,6 +3,7 @@ import { BaseAdminFields } from '../../common/admin.schema.js';
 import { BaseAuditFields } from '../../common/audit.schema.js';
 import { BaseContactFields } from '../../common/contact.schema.js';
 import { BaseFaqSchema } from '../../common/faq.schema.js';
+import { I18nTextSchema, TranslationMetaSchema } from '../../common/i18n.schema.js';
 import {
     AccommodationIdSchema,
     DestinationIdSchema,
@@ -63,6 +64,24 @@ export const AccommodationSchema = z.object({
         .string()
         .max(5000, { message: 'zodError.accommodation.richDescription.max' })
         .nullish(),
+
+    // SPEC-212: I18nText translations for multi-language content.
+    // Mirror the plain text fields above (name/summary/description/richDescription).
+    // Nullish: DB columns are nullable jsonb with no default. Populated by the
+    // AI translation service; surfaced on public + admin responses so web/admin
+    // can render en/pt. richDescriptionI18n follows the same premium gating as
+    // the plain richDescription field (CAN_USE_RICH_DESCRIPTION) on public tier.
+    nameI18n: I18nTextSchema.nullish(),
+    summaryI18n: I18nTextSchema.nullish(),
+    descriptionI18n: I18nTextSchema.nullish(),
+    richDescriptionI18n: I18nTextSchema.nullish(),
+
+    /**
+     * Per-field, per-locale translation curation metadata (SPEC-212).
+     * Internal: exposed on admin responses only, never on public payloads.
+     */
+    translationMeta: TranslationMetaSchema.nullish(),
+
     isFeatured: z.boolean().default(false),
 
     // Base field groups

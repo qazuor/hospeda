@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { i18nText } from '../../common/i18n.schema.js';
+import { I18nTextSchema, i18nText } from '../../common/i18n.schema.js';
 import { ApproximateLocationSchema } from '../../common/location.schema.js';
 import { BaseMediaObjectSchema } from '../../common/media.schema.js';
 import { AmenityAdminSchema, AmenityProtectedSchema } from '../amenity/amenity.access.schema.js';
@@ -27,6 +27,15 @@ export const AccommodationPublicSchema = AccommodationSchema.pick({
     summary: true,
     description: true,
     isFeatured: true,
+
+    // SPEC-212: I18nText translations (public-safe content fields).
+    // Web public pages render these to switch the visible locale to en/pt.
+    // richDescriptionI18n is intentionally NOT picked here — like the plain
+    // richDescription it is premium/entitlement-gated and re-added via .extend()
+    // below (the CAN_USE_RICH_DESCRIPTION strip runs server-side before serialization).
+    nameI18n: true,
+    summaryI18n: true,
+    descriptionI18n: true,
 
     // Destination reference
     destinationId: true,
@@ -72,6 +81,15 @@ export const AccommodationPublicSchema = AccommodationSchema.pick({
         .string()
         .max(5000, { message: 'zodError.accommodation.richDescription.max' })
         .nullish(),
+    /**
+     * SPEC-212: I18nText translations of richDescription. Follows EXACTLY the
+     * same premium gating as the plain richDescription field above — the
+     * entitlement-by-omission gate (CAN_USE_RICH_DESCRIPTION) strips it
+     * server-side for non-entitled owners BEFORE stripWithSchema runs, so schema
+     * presence is safe; omission is the protection. Re-added via .extend() (not
+     * .pick()) so it mirrors richDescription's deliberate public exposure.
+     */
+    richDescriptionI18n: I18nTextSchema.nullish(),
     /**
      * Media WITHOUT archivedGallery. The entity schema carries `archivedGallery`
      * for server-side use (restore on re-upgrade), but it must never be exposed

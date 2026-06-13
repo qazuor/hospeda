@@ -20,6 +20,7 @@
 
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { buildLocaleSwitchPathname } from '@/lib/urls';
 import { addToast } from '@/store/toast-store';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './PreferenceToggles.module.css';
@@ -274,12 +275,18 @@ export function PreferenceToggles({ userId, locale, apiUrl }: PreferenceTogglesP
         // the locale segment in the current path and reloading — mirrors the
         // header language switcher. Skip on failure (persistSettings reverted).
         if (!ok || typeof window === 'undefined') return;
-        const { pathname, search, hash } = window.location;
-        const segments = pathname.split('/');
-        const SUPPORTED_LOCALES: readonly LanguageWeb[] = ['es', 'en', 'pt'];
-        if ((SUPPORTED_LOCALES as readonly string[]).includes(segments[1] ?? '')) {
-            segments[1] = value;
-            window.location.assign(`${segments.join('/')}${search}${hash}`);
+        // Swap the locale segment of the current path and reload. We assign to
+        // `location.pathname` (not `location.assign`) so the navigation target
+        // can only ever be a same-origin path — the setter cannot carry a scheme,
+        // so a crafted path can never become a `javascript:`/cross-origin
+        // navigation. The browser preserves the current query and hash. `null`
+        // means there is no locale segment to swap, so we don't navigate.
+        const nextPath = buildLocaleSwitchPathname({
+            pathname: window.location.pathname,
+            locale: value
+        });
+        if (nextPath) {
+            window.location.pathname = nextPath;
         }
     }
 

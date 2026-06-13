@@ -49,7 +49,7 @@ const totalPages = pagination?.totalPages ?? 1;
 const totalPosts = pagination?.total ?? 0;
 
 const articleCards = rawItems.map((item) =>
-	toArticleCardProps({ item: item as unknown as Record<string, unknown> })
+	toArticleCardProps({ item: item as unknown as Record<string, unknown>, locale })
 );
 
 const canonical = `${Astro.site ?? Astro.url.origin}${Astro.url.pathname}`;

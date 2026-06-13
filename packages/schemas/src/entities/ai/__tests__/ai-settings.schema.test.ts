@@ -34,7 +34,8 @@ const FULL_FEATURES_MAP = {
     text_improve: VALID_FEATURE_CONFIG,
     chat: { ...VALID_FEATURE_CONFIG, enabled: false },
     search: { ...VALID_FEATURE_CONFIG, enabled: false },
-    support: { ...VALID_FEATURE_CONFIG, enabled: false }
+    support: { ...VALID_FEATURE_CONFIG, enabled: false },
+    translate: { ...VALID_FEATURE_CONFIG, enabled: false }
 } as const;
 
 /** A valid full settings value blob. */
@@ -100,7 +101,7 @@ describe('AiSettingsResponseSchema', () => {
     });
 
     describe('valid full response', () => {
-        it('should ACCEPT a complete response with all four features', () => {
+        it('should ACCEPT a complete response with all features', () => {
             // Act
             const result = AiSettingsResponseSchema.safeParse(VALID_RESPONSE);
 
@@ -165,7 +166,7 @@ describe('AiSettingsResponseSchema', () => {
 // ============================================================================
 
 describe('AiSettingsValueSchema (PUT request body — write contract)', () => {
-    it('should ACCEPT a complete blob with all four features (happy path)', () => {
+    it('should ACCEPT a complete blob with all features (happy path)', () => {
         // Act
         const result = AiSettingsValueSchema.safeParse(VALID_SETTINGS_BLOB);
 
@@ -173,7 +174,7 @@ describe('AiSettingsValueSchema (PUT request body — write contract)', () => {
         expect(result.success).toBe(true);
     });
 
-    it('should REJECT an empty features map (write contract requires all 4 keys)', () => {
+    it('should REJECT an empty features map (write contract requires all feature keys)', () => {
         // Arrange: the empty state that is valid for GET but NOT for PUT.
         const emptyFeatures = {
             providers: { openai: { enabled: true } },

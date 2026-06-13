@@ -206,7 +206,7 @@ const total = result.ok ? result.data.pagination.total : 0;
 const totalPages = result.ok ? result.data.pagination.totalPages : 0;
 
 // Transform items for cards
-const baseCards = items.map((item) => toAccommodationCardProps({ item: item as unknown as Record<string, unknown> }));
+const baseCards = items.map((item) => toAccommodationCardProps({ item: item as unknown as Record<string, unknown>, locale }));
 
 // SPEC-098 T-041 — Pre-hydrate FavoriteButton state for authenticated users.
 // We issue a single bulk-check request for all the entity IDs on the current

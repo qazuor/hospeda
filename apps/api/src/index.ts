@@ -15,6 +15,7 @@ import { LogFormat, configureLogger } from '@repo/logger';
 import {
     ensureDefaultPromoCodes,
     initializeRevalidationService,
+    initializeTranslationService,
     setPermissionChangeAuditEmitter,
     setUserPermissionsCacheInvalidator
 } from '@repo/service-core';
@@ -34,6 +35,7 @@ import {
     getBullMQConnection,
     getNewsletterDeliveryService
 } from './services/newsletter/delivery-factory';
+import { createTranslationServiceAdapter } from './services/translation-service.adapter';
 import { AuditEventType, auditLog } from './utils/audit-logger';
 import { closeDatabase, initializeDatabase } from './utils/database';
 import { env, validateApiEnv } from './utils/env';
@@ -208,6 +210,10 @@ const startServer = async (): Promise<void> => {
             });
             apiLogger.info('ISR revalidation service initialized');
         }
+
+        // Initialize AI content translation service (SPEC-212)
+        initializeTranslationService(createTranslationServiceAdapter());
+        apiLogger.info('AI translation service initialized');
 
         // SPEC-170: wire per-user permission-override side-effects into
         // @repo/service-core. The service cannot import the API's in-memory

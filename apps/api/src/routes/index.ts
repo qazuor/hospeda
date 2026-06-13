@@ -63,6 +63,7 @@ import {
     adminAiCredentialsRoutes,
     adminAiPromptsRoutes,
     adminAiSettingsRoutes,
+    adminAiTranslateRoute,
     adminAiUsageRoutes
 } from './ai/index.js';
 import { protectedAiRoutes } from './ai/protected/index.js';
@@ -407,6 +408,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/ai/settings', adminAiSettingsRoutes);
         app.route('/api/v1/admin/ai/prompts', adminAiPromptsRoutes);
         app.route('/api/v1/admin/ai/usage', adminAiUsageRoutes);
+        app.route('/api/v1/admin/ai/translate', adminAiTranslateRoute);
 
         // Media (entity image uploads + asset deletion)
         app.route('/api/v1/admin/media', adminMediaRoutes);

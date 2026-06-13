@@ -1,7 +1,8 @@
 import { existsSync } from 'node:fs';
+import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { buildSpawnArgs, runCommand } from '../runner.js';
+import { buildSpawnArgs, expandTilde, runCommand } from '../runner.js';
 import type { CliCommand } from '../types.js';
 
 /** Minimal stub for a pnpm-root CliCommand */
@@ -222,6 +223,57 @@ describe('buildSpawnArgs', () => {
             // Assert
             expect(result.command).toBe('docker-compose');
             expect(result.args).toEqual([]);
+        });
+
+        it('should expand a leading ~ in shell command args (no shell wrapper expands it)', () => {
+            // Arrange — mirrors the worktree registry commands (wt:up/down/remove).
+            const cmd = makeShellCmd('bash ~/.claude/skills/worktree/scripts/wt-up.sh');
+
+            // Act
+            const result = buildSpawnArgs({ cmd });
+
+            // Assert — the literal `~` must be resolved to the home directory,
+            // otherwise the spawned process receives a non-existent path.
+            expect(result.command).toBe('bash');
+            expect(result.args).toHaveLength(1);
+            expect(result.args[0]).toBe(`${homedir()}/.claude/skills/worktree/scripts/wt-up.sh`);
+            expect(result.args[0]).not.toContain('~');
+        });
+
+        it('should expand a bare ~ token to the home directory', () => {
+            // Arrange
+            const cmd = makeShellCmd('ls ~');
+
+            // Act
+            const result = buildSpawnArgs({ cmd });
+
+            // Assert
+            expect(result.args).toEqual([homedir()]);
+        });
+
+        it('should leave non-tilde tokens untouched', () => {
+            // Arrange
+            const cmd = makeShellCmd('bash ./scripts/local.sh');
+
+            // Act
+            const result = buildSpawnArgs({ cmd });
+
+            // Assert
+            expect(result.args).toEqual(['./scripts/local.sh']);
+        });
+    });
+
+    describe('expandTilde', () => {
+        it('resolves "~" to the home directory', () => {
+            expect(expandTilde('~')).toBe(homedir());
+        });
+
+        it('resolves a "~/path" prefix', () => {
+            expect(expandTilde('~/a/b')).toBe(`${homedir()}/a/b`);
+        });
+
+        it('does not touch a mid-token tilde', () => {
+            expect(expandTilde('a~b')).toBe('a~b');
         });
     });
 

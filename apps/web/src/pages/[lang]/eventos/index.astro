@@ -213,7 +213,7 @@ const items = result.ok ? result.data.items : [];
 // PaginatedResponse exposes counters under `pagination`, not at the top level.
 const total = result.ok ? result.data.pagination.total : 0;
 const totalPages = result.ok ? result.data.pagination.totalPages : 0;
-const cards = items.map((item) => toEventCardProps({ item: item as unknown as Record<string, unknown> }));
+const cards = items.map((item) => toEventCardProps({ item: item as unknown as Record<string, unknown>, locale }));
 
 /**
  * Build a human-readable summary like "Mostrando 3 de 4 eventos en Colón..."

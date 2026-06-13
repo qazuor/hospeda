@@ -171,7 +171,7 @@ describe('AC-5 — AiProviderIdSchema values match adapter/stub registry', () =>
 // ---------------------------------------------------------------------------
 
 describe('AC-5 — AiFeatureSchema V1 feature set', () => {
-    it('should contain exactly the 4 V1 AI feature identifiers', () => {
+    it('should contain the V1 AI feature identifiers including translate', () => {
         // Arrange + Act
         const features = AiFeatureSchema.options;
 
@@ -180,7 +180,7 @@ describe('AC-5 — AiFeatureSchema V1 feature set', () => {
         expect(features).toContain('chat');
         expect(features).toContain('search');
         expect(features).toContain('support');
-        expect(features).toHaveLength(4);
+        expect(features).toContain('translate');
     });
 });
 

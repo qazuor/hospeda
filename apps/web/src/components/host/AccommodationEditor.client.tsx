@@ -93,6 +93,7 @@ export function AccommodationEditor({
     const [errors, setErrors] = useState<FieldErrors>({});
     const [isSaving, setIsSaving] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
+    const [submitSuccess, setSubmitSuccess] = useState(false);
 
     // --- Photo state ---
     const [photoData, setPhotoData] = useState<PhotoSectionData>({
@@ -107,6 +108,7 @@ export function AccommodationEditor({
             setFormData((prev) => ({ ...prev, [field]: value }));
             // Clear field error on change
             setErrors((prev) => ({ ...prev, [field]: undefined }));
+            setSubmitSuccess(false);
         },
         []
     );
@@ -115,6 +117,7 @@ export function AccommodationEditor({
         (field: keyof AccommodationEditData, value: number | null) => {
             setFormData((prev) => ({ ...prev, [field]: value }));
             setErrors((prev) => ({ ...prev, [field]: undefined }));
+            setSubmitSuccess(false);
         },
         []
     );
@@ -123,6 +126,7 @@ export function AccommodationEditor({
         (field: keyof AccommodationEditData, value: number | string | null) => {
             setFormData((prev) => ({ ...prev, [field]: value }));
             setErrors((prev) => ({ ...prev, [field]: undefined }));
+            setSubmitSuccess(false);
         },
         []
     );
@@ -336,6 +340,7 @@ export function AccommodationEditor({
         async (e: React.FormEvent) => {
             e.preventDefault();
             setSubmitError(null);
+            setSubmitSuccess(false);
 
             const validationErrors = validateForm(formData);
             const hasErrors = Object.values(validationErrors).some(Boolean);
@@ -359,7 +364,7 @@ export function AccommodationEditor({
                 });
 
                 if (result.ok) {
-                    // Show success — could use toast store in future
+                    setSubmitSuccess(true);
                     setSubmitError(null);
                 } else {
                     setSubmitError(
@@ -460,6 +465,12 @@ export function AccommodationEditor({
                 onFeaturedImageChange={handleFeaturedImageChange}
                 onGalleryChange={handleGalleryChange}
             />
+
+            {submitSuccess && (
+                <output className={styles.submitSuccess}>
+                    {t('host.properties.editor.toast.saveSuccess', 'Cambios guardados')}
+                </output>
+            )}
 
             {submitError && (
                 <div

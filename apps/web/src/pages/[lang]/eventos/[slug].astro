@@ -37,7 +37,7 @@ if (!slug) return new Response(null, { status: 404 });
 const result = await eventsApi.getBySlug({ slug });
 if (!result.ok) return new Response(null, { status: 404 });
 
-const event = toEventDetailProps({ item: result.data as Record<string, unknown> });
+const event = toEventDetailProps({ item: result.data as Record<string, unknown>, locale });
 
 const {
 	id: eventId,

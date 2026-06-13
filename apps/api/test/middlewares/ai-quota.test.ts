@@ -538,6 +538,11 @@ describe('createAiQuotaMiddleware', () => {
                 feature: 'support',
                 entitlement: EntitlementKey.AI_SUPPORT,
                 limitKey: LimitKey.MAX_AI_SUPPORT_PER_MONTH
+            },
+            {
+                feature: 'translate',
+                entitlement: EntitlementKey.AI_TRANSLATE,
+                limitKey: LimitKey.MAX_AI_TRANSLATE_PER_MONTH
             }
         ] as const;
 

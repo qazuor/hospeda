@@ -3,6 +3,7 @@ import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { PageTabs, destinationTabs } from '@/components/layout/PageTabs';
+import { TranslationSection } from '@/features/content/components/TranslationSection';
 import { useDestinationPage } from '@/features/destinations/hooks/useDestinationPage';
 import { createUploadHandler, useMediaUpload } from '@/hooks/use-media-upload';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
@@ -84,6 +85,13 @@ function DestinationEditPage() {
                         fieldHandlers={galleryFieldHandlers}
                         flat
                     />
+                    {entityData.entity && (
+                        <TranslationSection
+                            entityType="destination"
+                            entityId={id}
+                            entity={entityData.entity as Record<string, unknown>}
+                        />
+                    )}
                 </EntityPageBase>
             </div>
         </RoutePermissionGuard>

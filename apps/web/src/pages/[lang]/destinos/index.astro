@@ -72,7 +72,7 @@ const hasError = !result.ok;
 const items = result.ok ? result.data.items : [];
 const total = result.ok ? result.data.pagination.total : 0;
 const rawCards = items.map((item) =>
-    toDestinationCardProps({ item: item as unknown as Record<string, unknown> })
+    toDestinationCardProps({ item: item as unknown as Record<string, unknown>, locale })
 );
 
 // API already returns featured-first then alphabetical (see

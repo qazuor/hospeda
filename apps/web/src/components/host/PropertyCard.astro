@@ -84,11 +84,22 @@ const statusInfo = STATUS_MAP[lifecycleState] ?? {
 const cityDestination = (property as { cityDestination?: { name?: string } }).cityDestination;
 const locationText = cityDestination?.name ?? '';
 
-/** Price display: show the amount when available, otherwise a "price on request" label. */
-const hasPrice = property.price?.price != null && property.price?.currency != null;
-const priceText = hasPrice
-    ? `${property.price?.currency} ${property.price?.price}`
-    : null;
+/** Price display: format with the locale's currency conventions (thousands
+ * separator, currency symbol), mirroring the public detail PricingSidebar.
+ * The accommodation price is stored in whole currency units, not centavos, so
+ * the amount is formatted directly (no division). */
+const priceAmount = property.price?.price;
+const priceCurrency = property.price?.currency;
+const priceLocale = locale === 'pt' ? 'pt-BR' : locale === 'en' ? 'en-US' : 'es-AR';
+const priceText =
+    priceAmount != null && priceCurrency != null
+        ? new Intl.NumberFormat(priceLocale, {
+              style: 'currency',
+              currency: priceCurrency,
+              minimumFractionDigits: 0,
+              maximumFractionDigits: 0
+          }).format(priceAmount)
+        : null;
 const pricePerNightLabel = t('host.properties.card.pricePerNight', 'por noche');
 const priceOnRequestLabel = t('host.properties.card.priceOnRequest', 'Precio a consultar');
 

@@ -108,7 +108,8 @@ async function seedAiSettings(actorId: string): Promise<void> {
             chat: stubFeatureConfig,
             text_improve: stubFeatureConfig,
             search: stubFeatureConfig,
-            support: stubFeatureConfig
+            support: stubFeatureConfig,
+            translate: stubFeatureConfig
         }
     };
 

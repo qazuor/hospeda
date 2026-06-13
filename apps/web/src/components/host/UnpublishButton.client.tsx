@@ -29,6 +29,7 @@
 import { accommodationEditApi } from '@/lib/api/endpoints-protected';
 import type { SupportedLocale } from '@/lib/i18n';
 import { type JSX, useState } from 'react';
+import styles from './UnpublishButton.module.css';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -116,7 +117,7 @@ export function UnpublishButton({
             <span style={{ display: 'contents' }}>
                 <button
                     type="button"
-                    className="prop-card__action prop-card__action--danger"
+                    className={`${styles.action} ${styles.danger}`}
                     onClick={handleRequestConfirm}
                 >
                     {label}
@@ -161,14 +162,14 @@ export function UnpublishButton({
                 </span>
                 <button
                     type="button"
-                    className="prop-card__action prop-card__action--danger"
+                    className={`${styles.action} ${styles.danger}`}
                     onClick={handleConfirm}
                 >
                     {confirmYes}
                 </button>
                 <button
                     type="button"
-                    className="prop-card__action prop-card__action--secondary"
+                    className={`${styles.action} ${styles.secondary}`}
                     onClick={handleCancel}
                 >
                     {confirmNo}
@@ -181,10 +182,9 @@ export function UnpublishButton({
     return (
         <button
             type="button"
-            className="prop-card__action prop-card__action--danger"
+            className={`${styles.action} ${styles.danger}`}
             disabled
             aria-busy="true"
-            style={{ opacity: 0.6, cursor: 'not-allowed' }}
         >
             {confirmYes}…
         </button>

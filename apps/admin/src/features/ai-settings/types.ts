@@ -18,8 +18,8 @@ export interface AiProviderConfig {
 /** Map of providers to their configuration. */
 export type AiProvidersMap = Record<string, AiProviderConfig>;
 
-/** The four V1 AI feature identifiers. */
-export type AiFeatureId = 'text_improve' | 'chat' | 'search' | 'support';
+/** The V1 AI feature identifiers. */
+export type AiFeatureId = 'text_improve' | 'chat' | 'search' | 'support' | 'translate';
 
 /** Optional inference parameters for a feature. */
 export interface AiModelParams {
@@ -138,7 +138,8 @@ export const FEATURE_LABELS: Record<AiFeatureId, string> = {
     text_improve: 'Mejora de texto',
     chat: 'Chat',
     search: 'Búsqueda',
-    support: 'Soporte'
+    support: 'Soporte',
+    translate: 'Traducción'
 } as const;
 
 // ---------------------------------------------------------------------------

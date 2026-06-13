@@ -61,7 +61,7 @@
             "title": "Staging→Main Promotion Hardening — clear CodeQL security debt blocking the promotion",
             "type": "infrastructure",
             "complexity": "medium",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-220-staging-main-promotion-hardening",
             "created": "2026-06-12T00:00:00.000Z",
             "tags": ["codeql", "security", "ci", "promotion", "infrastructure"]
@@ -1124,6 +1124,17 @@
             "tags": ["admin", "brevo", "email", "newsletter", "dashboard", "feature"],
             "archived": false,
             "note": "Read Brevo email/newsletter stats via server-side proxy (reuse existing HOSPEDA_EMAIL_API_KEY) + admin dashboard widget. Sibling of SPEC-224/225. Drafted 2026-06-13, ready to implement."
+        },
+        {
+            "specId": "SPEC-227",
+            "title": "Accommodation partial-update data loss — partial JSONB objects + shallow-merge nested columns",
+            "type": "fix",
+            "status": "draft",
+            "complexity": "medium",
+            "path": "SPEC-227-accommodation-partial-update-merge",
+            "base": "staging",
+            "priority": "P1",
+            "archived": false
         },
         {
             "specId": "SPEC-228",

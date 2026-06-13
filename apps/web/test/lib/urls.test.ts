@@ -4,7 +4,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { buildUrl, buildUrlWithParams } from '../../src/lib/urls';
+import { buildLocaleSwitchPathname, buildUrl, buildUrlWithParams } from '../../src/lib/urls';
 
 describe('buildUrl', () => {
     it('should prefix path with locale and ensure trailing slash', () => {
@@ -66,5 +66,45 @@ describe('buildUrlWithParams', () => {
             params: {}
         });
         expect(result).toBe('/es/destinos/');
+    });
+});
+
+describe('buildLocaleSwitchPathname', () => {
+    it('swaps the leading locale segment, preserving the rest of the path', () => {
+        expect(buildLocaleSwitchPathname({ pathname: '/es/mi-cuenta/', locale: 'en' })).toBe(
+            '/en/mi-cuenta/'
+        );
+    });
+
+    it('switches at the locale root', () => {
+        expect(buildLocaleSwitchPathname({ pathname: '/es/', locale: 'en' })).toBe('/en/');
+    });
+
+    it('handles nested paths', () => {
+        expect(buildLocaleSwitchPathname({ pathname: '/es/mi-cuenta/editar/', locale: 'pt' })).toBe(
+            '/pt/mi-cuenta/editar/'
+        );
+    });
+
+    it('returns null when the first segment is not a supported locale', () => {
+        expect(buildLocaleSwitchPathname({ pathname: '/about/', locale: 'en' })).toBeNull();
+        expect(buildLocaleSwitchPathname({ pathname: '/', locale: 'en' })).toBeNull();
+        expect(buildLocaleSwitchPathname({ pathname: '/fr/page/', locale: 'en' })).toBeNull();
+    });
+
+    it('always returns a path-only value (never a scheme or host)', () => {
+        // The result feeds the location.pathname setter, which cannot carry a
+        // scheme/authority; assert the value is a bare same-origin path.
+        const target = buildLocaleSwitchPathname({ pathname: '/es/x/', locale: 'en' });
+        expect(target).toBe('/en/x/');
+        expect(target?.startsWith('/')).toBe(true);
+        expect(target?.startsWith('//')).toBe(false);
+        expect(target).not.toContain('://');
+    });
+
+    it('does not switch a protocol-relative-looking pathname (empty first segment)', () => {
+        // `//evil.com/...` splits to an empty first segment, so it is never a
+        // supported locale and the switch is dropped.
+        expect(buildLocaleSwitchPathname({ pathname: '//evil.com/es/', locale: 'en' })).toBeNull();
     });
 });
