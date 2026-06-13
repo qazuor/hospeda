@@ -8,6 +8,10 @@
  * @module features/content/components/TranslationSection
  */
 
+import {
+    SectionAccordion,
+    SectionAccordionItem
+} from '@/components/entity-form/accordion/SectionAccordion';
 import { useToast } from '@/components/ui/ToastProvider';
 import { useTranslations } from '@/hooks/use-translations';
 import { fetchApi } from '@/lib/api/client';
@@ -133,11 +137,34 @@ export function TranslationSection({ entityType, entityId, entity }: Translation
         [entityType, entityId, addToast, t]
     );
 
+    // Compact one-line summary shown while the section is collapsed: number of
+    // target-locale slots still missing a translation, or the locale codes when
+    // everything is filled.
+    const collapsedSummary = useMemo(() => {
+        let pending = 0;
+        for (const field of fieldStates) {
+            for (const locale of Object.values(field.locales)) {
+                if (!locale.value) pending += 1;
+            }
+        }
+        return pending === 0 ? 'EN · PT' : `${pending} ${t('admin-common.aiTranslate.pending')}`;
+    }, [fieldStates, t]);
+
     return (
-        <TranslationStatus
-            fields={fieldStates}
-            onTranslateNow={handleTranslateNow}
-            onOverrideSaved={handleOverrideSaved}
-        />
+        <SectionAccordion>
+            <SectionAccordionItem
+                id="translations"
+                title={t('admin-common.aiTranslate.status')}
+                collapsedSummary={collapsedSummary}
+                defaultCollapsed={true}
+            >
+                <TranslationStatus
+                    fields={fieldStates}
+                    onTranslateNow={handleTranslateNow}
+                    onOverrideSaved={handleOverrideSaved}
+                    variant="section"
+                />
+            </SectionAccordionItem>
+        </SectionAccordion>
     );
 }
