@@ -1,0 +1,113 @@
+---
+specId: SPEC-221
+title: QZPay Test-Control Hardening & Deferred E2E Coverage
+slug: qzpay-test-control-hardening
+type: test
+complexity: low
+status: draft
+owner: qazuor
+created: 2026-06-13
+base: staging
+tags:
+  - e2e
+  - billing
+  - qzpay
+  - test-control
+  - follow-up
+relatedSpecs:
+  - SPEC-217
+  - SPEC-092
+  - SPEC-143
+linearIssues: []
+---
+
+# SPEC-221 — QZPay Test-Control Hardening & Deferred E2E Coverage
+
+## 1. Origin
+
+Follow-up findings surfaced during SPEC-217 (PR #1586, merged to staging at
+`4f374036a`). SPEC-217 wired the QZPay test-control adapter so the gated paywall E2E
+specs run deterministically in CI, and closed two parallel-execution blockers. The
+adversarial review of that PR surfaced three residual items that were intentionally
+left out of SPEC-217's scope to keep it shippable. This spec captures them so they
+are not lost.
+
+None of these block production. They are test-infrastructure robustness and coverage
+items.
+
+## 2. Findings to address
+
+### F-1 — Scope `delayNextQueue` by ownerId (latent parallel contamination)
+
+SPEC-217 fixed cross-worker contamination of the **failure** queue by scoping
+`failNext` entries by `ownerId` (see `packages/billing/src/adapters/qzpay-test-control.ts`,
+`extractScope` + the operation+scope match in `applyTestControl`). The **delay** queue
+(`delayNextQueue`) is still keyed by operation only, so any future E2E spec that arms
+`delayNext` under the 4-worker CI matrix will hit exactly the same cross-worker
+contamination that `failNext` just escaped.
+
+- **Where**: `packages/billing/src/adapters/qzpay-test-control.ts` (`delayNextQueue`,
+  `delayNext`, `applyTestControl`).
+- **Fix shape**: mirror the `failNext` scoping — accept an optional `scope` on the
+  delay entry, match operation + scope, with `scope === undefined` matching any caller
+  (backward-compat). Thread `scope` through the `/delay-next` test route and the e2e
+  fixture, same as `failNext`.
+- **Trigger to prioritize**: the first new spec that needs a scoped `delayNext`. Until
+  then it is latent (no current spec arms scoped delays).
+
+### F-2 — Make `extractScope` extensible across all controllable operations
+
+`extractScope(args)` today only understands the two arg shapes actually wired through
+`applyTestControl`: an object with a string `ownerId` (`startTrial`) and a bare string
+(`cancelTrial` = `subscriptionId`). The `ControllableOperation` union also lists five
+operations that are **declared but not yet wired**: `createPaymentPreference`,
+`capturePayment`, `refundPayment`, `cancelSubscription`, `updateSubscription`. When one
+of those is wired and passes, e.g., `{ subscriptionId }` or `{ paymentId }` (no
+`ownerId`), `extractScope` returns `undefined`, so a *scoped* entry silently fails to
+match while an *unscoped* one matches any caller.
+
+- **Where**: `packages/billing/src/adapters/qzpay-test-control.ts` (`extractScope`).
+- **Fix shape**: document explicitly that `extractScope` only knows `ownerId` /
+  string-arg shapes, and extend it (per-operation scope-key resolution) whenever a new
+  operation is wired through `applyTestControl`. Add a unit case per newly-wired
+  operation proving its scope key is extracted.
+
+### F-3 — Complete the deferred host-07d E2E (SPEC-217 T-012)
+
+SPEC-217 T-012 (`host-07d`) was deferred. It exercises the `updateSubscription`
+failure path (partial-failure / compensation), which is covered today only by
+service-core unit tests, not by a deterministic E2E. Completing it depends on F-1/F-2
+if it needs scoped delay/failure on `updateSubscription`.
+
+- **Where**: `apps/e2e/tests/host/host-07d-*.spec.ts` (deferred), the
+  `updateSubscription` path in the QZPay adapter + `applyTestControl`.
+- **Fix shape**: wire `updateSubscription` through `applyTestControl` with a correct
+  scope key (F-2), add a scoped `failNext`/`delayNext` if needed (F-1), and un-defer the
+  spec.
+
+## 3. Out of scope
+
+- The SPEC-217 `publish()` visibility fix is DONE and not revisited here. The robust
+  variant (promote only `PRIVATE` → `PUBLIC`, never clobber `RESTRICTED` or an explicit
+  caller visibility) shipped in PR #1586 with regression tests.
+- No production code paths change as a result of this spec beyond the test-control
+  adapter and E2E suites.
+
+## 4. Acceptance criteria (high level — to be atomized)
+
+- **AC-1**: `delayNext` can be scoped by `ownerId`; an unscoped delay still matches any
+  caller; a scoped delay is consumed only by the matching scope. Proven by a billing
+  unit test analogous to `qzpay-test-control.scope.test.ts`.
+- **AC-2**: `extractScope` has explicit per-operation scope-key handling (or a
+  documented, tested fallback) for every `ControllableOperation` that is wired through
+  `applyTestControl` at the time this spec lands.
+- **AC-3**: `host-07d` runs deterministically in CI (no `.skip`), asserting the
+  `updateSubscription` failure/compensation contract, OR is formally re-deferred with a
+  documented reason if F-1/F-2 prove insufficient.
+
+## 5. Notes
+
+This is a low-complexity, test-infra-only spec. It should be picked up alongside the
+next E2E billing work that needs scoped delays, rather than as standalone urgent work.
+Detail and root-cause history live in the SPEC-217 engram topic
+`spec/spec-217-qzpay-test-control-e2e-wiring/ci-fixes`.
