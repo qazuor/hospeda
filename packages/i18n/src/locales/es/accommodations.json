@@ -352,6 +352,8 @@
             "perNightLabel": "/noche",
             "viewBreakdown": "Ver desglose",
             "hideBreakdown": "Ocultar desglose",
+            "feesHeading": "Costos adicionales",
+            "discountsHeading": "Descuentos",
             "consult": "Consultar",
             "included": "incluido",
             "optional": "opcional",
