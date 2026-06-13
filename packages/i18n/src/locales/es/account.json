@@ -298,6 +298,11 @@
         "total_other": "Total: {{count}} reseñas",
         "typeAccommodation": "Alojamiento",
         "typeDestination": "Destino",
+        "status": {
+            "approved": "Publicada",
+            "pending": "Pendiente de aprobación",
+            "rejected": "Rechazada"
+        },
         "errors": {
             "fetchFailed": "Error al cargar las reseñas"
         }

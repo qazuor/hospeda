@@ -25,10 +25,14 @@ const API_PATH = '/api/v1/protected/users/me/reviews';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+/** Moderation state of a review. Mirrors @repo/schemas ModerationStatusEnum;
+ * declared locally to avoid pulling a schemas import into client island code. */
+type ModerationState = 'PENDING' | 'APPROVED' | 'REJECTED';
+
 /** A single review item (accommodation or destination) */
 interface ReviewItem {
     readonly id: string;
-    /** Numeric rating 0-10 (stored as average across aspects or direct value) */
+    /** Average rating 0-5 computed from the multi-aspect rating object. */
     readonly rating?: number | null;
     readonly title?: string | null;
     readonly content?: string | null;
@@ -37,6 +41,7 @@ interface ReviewItem {
     readonly entityName?: string | null;
     readonly entityUrl?: string | null;
     readonly type: 'accommodation' | 'destination';
+    readonly moderationState?: ModerationState | null;
 }
 
 /** Raw accommodation review from API */
@@ -56,6 +61,7 @@ interface RawAccommodationReview {
     readonly accommodationId?: string | null;
     readonly accommodationName?: string | null;
     readonly accommodationSlug?: string | null;
+    readonly moderationState?: ModerationState | null;
 }
 
 /** Raw destination review from API */
@@ -69,6 +75,7 @@ interface RawDestinationReview {
     readonly destinationId?: string | null;
     readonly destinationName?: string | null;
     readonly destinationSlug?: string | null;
+    readonly moderationState?: ModerationState | null;
 }
 
 /** API response for me/reviews */
@@ -136,7 +143,8 @@ function normaliseReviews(data: ReviewsApiResponse['data'], locale: SupportedLoc
         entityUrl: r.accommodationSlug
             ? buildUrl({ locale, path: `alojamientos/${r.accommodationSlug}` })
             : null,
-        type: 'accommodation' as const
+        type: 'accommodation' as const,
+        moderationState: r.moderationState
     }));
 
     const dst: ReviewItem[] = (data.destinationReviews ?? []).map((r) => ({
@@ -150,7 +158,8 @@ function normaliseReviews(data: ReviewsApiResponse['data'], locale: SupportedLoc
         entityUrl: r.destinationSlug
             ? buildUrl({ locale, path: `destinos/${r.destinationSlug}` })
             : null,
-        type: 'destination' as const
+        type: 'destination' as const,
+        moderationState: r.moderationState
     }));
 
     return [...acc, ...dst].sort((a, b) => {
@@ -345,6 +354,26 @@ export function UserReviewsList({ locale, apiUrl }: UserReviewsListProps) {
                                     ? t('account.reviews.typeAccommodation', 'Alojamiento')
                                     : t('account.reviews.typeDestination', 'Destino')}
                             </span>
+                            {review.moderationState && (
+                                <span
+                                    className={`${styles.statusBadge} ${
+                                        review.moderationState === 'APPROVED'
+                                            ? styles.statusApproved
+                                            : review.moderationState === 'PENDING'
+                                              ? styles.statusPending
+                                              : styles.statusRejected
+                                    }`}
+                                >
+                                    {review.moderationState === 'APPROVED'
+                                        ? t('account.reviews.status.approved', 'Publicada')
+                                        : review.moderationState === 'PENDING'
+                                          ? t(
+                                                'account.reviews.status.pending',
+                                                'Pendiente de aprobación'
+                                            )
+                                          : t('account.reviews.status.rejected', 'Rechazada')}
+                                </span>
+                            )}
                         </div>
                     </div>
 
