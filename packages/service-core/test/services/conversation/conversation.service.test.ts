@@ -1151,5 +1151,45 @@ describe('ConversationService', () => {
             expect(withServiceTransaction).toHaveBeenCalledOnce();
             expect(notificationScheduleMock.cancelForRecipient).toHaveBeenCalledOnce();
         });
+
+        it('keeps the most recent messages and returns them ascending (newest at bottom)', async () => {
+            // Regression: the page must hold the LATEST messages, not the oldest.
+            // The model returns rows newest-first; getThread keeps the newest
+            // `limit` and reverses to ascending order for chat display.
+            const ownedConversation = makeConversation({
+                id: CONVERSATION_ID,
+                accommodationId: ACCOMMODATION_ID,
+                userId: null
+            });
+            asMock(conversationModelMock.findById).mockResolvedValue(ownedConversation);
+            // limit=2 -> service requests 3; model returns 3 newest-first (m3,m2,m1).
+            const msg = (n: number, iso: string) =>
+                ({
+                    id: `m${n}`,
+                    conversationId: CONVERSATION_ID,
+                    body: `msg ${n}`,
+                    senderType: 'GUEST',
+                    createdAt: new Date(iso)
+                }) as unknown as Awaited<
+                    ReturnType<typeof messageModelMock.findByConversationId>
+                >[number];
+            asMock(messageModelMock.findByConversationId).mockResolvedValue([
+                msg(3, '2026-01-03T00:00:00Z'),
+                msg(2, '2026-01-02T00:00:00Z'),
+                msg(1, '2026-01-01T00:00:00Z')
+            ]);
+
+            const result = await service.getThread(
+                OWNER_ACTOR,
+                { conversationId: CONVERSATION_ID, actorSide: 'OWNER', limit: 2 },
+                [ACCOMMODATION_ID]
+            );
+
+            expectSuccess(result);
+            if (!result.data) throw new Error('expected thread data');
+            // Newest two kept (m3, m2), reversed to ascending -> [m2, m3]; m1 dropped.
+            expect(result.data.hasMore).toBe(true);
+            expect(result.data.messages.map((m) => m.id)).toEqual(['m2', 'm3']);
+        });
     });
 });
