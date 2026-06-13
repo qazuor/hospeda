@@ -35,7 +35,7 @@ const result = await accommodationsApi.getByDestination({ destinationId: destId 
 const hasError = !result.ok;
 const items = result.ok ? result.data.accommodations : [];
 const total = items.length;
-const cards = items.map((item) => toAccommodationCardProps({ item: item as unknown as Record<string, unknown> }));
+const cards = items.map((item) => toAccommodationCardProps({ item: item as unknown as Record<string, unknown>, locale }));
 ---
 
 <ListingLayout locale={locale} title={`${t('accommodations.title', 'Alojamientos')} en ${destName}`} showFilters={false}>

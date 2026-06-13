@@ -43,10 +43,15 @@ updates:
     #   - @tanstack/react-router: 1.131 -> 1.170 risks the documented /healthz
     #     path-intercept behavior (apps/admin/CLAUDE.md). Owner: SPEC-045
     #     (Vite/TanStack migration).
+    #   - @astrojs/node: 10.1.4 imports `createRequestFromNodeRequest` from astro
+    #     internals, which only exists in astro >= 6.4.0. apps/web pins astro
+    #     ^6.3.3, so the web build fails with [MISSING_EXPORT]. Lift this ignore
+    #     when web is moved to astro >= 6.4. Owner: SPEC-219 (astro 6.4 alignment).
     # Policy + routing: docs/guides/dependabot-policy.md (SPEC-219 T-003 / T-005).
     ignore:
       - dependency-name: 'zod'
       - dependency-name: '@tanstack/react-router'
+      - dependency-name: '@astrojs/node'
     commit-message:
       prefix: 'chore(deps)'
       prefix-development: 'chore(deps-dev)'

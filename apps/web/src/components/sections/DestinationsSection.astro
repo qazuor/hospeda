@@ -41,7 +41,7 @@ let destinations: DestinationCardData[] = [];
 try {
     const result = await destinationsApi.list({ destinationType: 'CITY', pageSize: 50 });
     if (result.ok) {
-        destinations = result.data.items.map((raw) => toDestinationCardProps({ item: raw as Record<string, unknown> }));
+        destinations = result.data.items.map((raw) => toDestinationCardProps({ item: raw as Record<string, unknown>, locale }));
     }
 } catch (err) {
     webLogger.error('API fetch failed', { endpoint: 'destinations', error: err instanceof Error ? err.message : err });

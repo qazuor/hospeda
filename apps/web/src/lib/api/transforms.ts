@@ -182,8 +182,9 @@ function extractRelationItems(
  * @returns Typed AccommodationCardData for the card component
  */
 export function toAccommodationCardProps({
-    item
-}: { readonly item: Record<string, unknown> }): AccommodationCardData {
+    item,
+    locale = 'es'
+}: { readonly item: Record<string, unknown>; readonly locale?: string }): AccommodationCardData {
     const priceData = item.price as
         | { price?: number; amount?: number; currency?: string }
         | undefined;
@@ -211,8 +212,11 @@ export function toAccommodationCardProps({
     return {
         id: String(item.id || ''),
         slug: String(item.slug || ''),
-        name: String(item.name || ''),
-        summary: String(item.summary || item.description || ''),
+        name: resolveI18nText((item.nameI18n as I18nTextLike | string) ?? item.name, locale),
+        summary: resolveI18nText(
+            (item.summaryI18n as I18nTextLike | string) ?? item.summary ?? item.description,
+            locale
+        ),
         type: String(item.type || item.accommodationType || ''),
         featuredImage,
         photoCount,
@@ -268,8 +272,12 @@ export function toAccommodationCardProps({
  * @returns Typed AccommodationDetailedCardData for the detailed card component
  */
 export function toAccommodationDetailedProps({
-    item
-}: { readonly item: Record<string, unknown> }): AccommodationDetailedCardData {
+    item,
+    locale = 'es'
+}: {
+    readonly item: Record<string, unknown>;
+    readonly locale?: string;
+}): AccommodationDetailedCardData {
     const { featuredImage, galleryUrls } = processEntityImages({
         item,
         entity: 'accommodation-detailed',
@@ -290,7 +298,7 @@ export function toAccommodationDetailedProps({
     return {
         id: String(item.id || ''),
         slug: String(item.slug || ''),
-        name: String(item.name || ''),
+        name: resolveI18nText((item.nameI18n as I18nTextLike | string) ?? item.name, locale),
         type: String(item.type || item.accommodationType || ''),
         images,
         location: {
@@ -321,8 +329,9 @@ export function toAccommodationDetailedProps({
  * @returns Typed DestinationCardData for the card component
  */
 export function toDestinationCardProps({
-    item
-}: { readonly item: Record<string, unknown> }): DestinationCardData {
+    item,
+    locale = 'es'
+}: { readonly item: Record<string, unknown>; readonly locale?: string }): DestinationCardData {
     const { featuredImage } = processEntityImages({
         item,
         entity: 'destination',
@@ -355,8 +364,14 @@ export function toDestinationCardProps({
     return {
         id,
         slug: String(item.slug || ''),
-        name: String(item.name || 'Sin nombre'),
-        summary: String(item.summary || item.description || ''),
+        name: resolveI18nText(
+            (item.nameI18n as I18nTextLike | string) ?? item.name ?? 'Sin nombre',
+            locale
+        ),
+        summary: resolveI18nText(
+            (item.summaryI18n as I18nTextLike | string) ?? item.summary ?? item.description,
+            locale
+        ),
         featuredImage,
         accommodationsCount: Number(item.accommodationsCount || 0),
         isFeatured: Boolean(item.isFeatured),
@@ -389,8 +404,9 @@ export function toDestinationCardProps({
  * @returns Typed EventCardData for the card component
  */
 export function toEventCardProps({
-    item
-}: { readonly item: Record<string, unknown> }): EventCardData {
+    item,
+    locale = 'es'
+}: { readonly item: Record<string, unknown>; readonly locale?: string }): EventCardData {
     const { featuredImage } = processEntityImages({
         item,
         entity: 'event',
@@ -418,8 +434,11 @@ export function toEventCardProps({
     return {
         id,
         slug: String(item.slug || ''),
-        name: String(item.name || ''),
-        summary: String(item.summary || item.description || ''),
+        name: resolveI18nText((item.nameI18n as I18nTextLike | string) ?? item.name, locale),
+        summary: resolveI18nText(
+            (item.summaryI18n as I18nTextLike | string) ?? item.summary ?? item.description,
+            locale
+        ),
         featuredImage,
         category: String(item.category || ''),
         date: {
@@ -459,8 +478,9 @@ export function toEventCardProps({
  * @returns Typed ArticleCardData for the card component
  */
 export function toArticleCardProps({
-    item
-}: { readonly item: Record<string, unknown> }): ArticleCardData {
+    item,
+    locale = 'es'
+}: { readonly item: Record<string, unknown>; readonly locale?: string }): ArticleCardData {
     const id = String(item.id || '');
     if (!id) {
         webLogger.warn(
@@ -497,8 +517,11 @@ export function toArticleCardProps({
     return {
         id,
         slug: String(item.slug || ''),
-        title: String(item.title || ''),
-        summary: String(item.summary || item.content || ''),
+        title: resolveI18nText((item.titleI18n as I18nTextLike | string) ?? item.title, locale),
+        summary: resolveI18nText(
+            (item.summaryI18n as I18nTextLike | string) ?? item.summary ?? item.content,
+            locale
+        ),
         featuredImage,
         category: String(item.category || ''),
         publishedAt: String(item.publishedAt || item.createdAt || ''),
@@ -592,10 +615,24 @@ export function toAccommodationDetailPageProps({
     return {
         id: String(item.id || ''),
         slug: String(item.slug || ''),
-        name: String(item.name || ''),
-        summary: String(item.summary || ''),
-        description: String(item.description || ''),
-        richDescription: item.richDescription == null ? undefined : String(item.richDescription),
+        name: resolveI18nText((item.nameI18n as I18nTextLike | string) ?? item.name, locale),
+        summary: resolveI18nText(
+            (item.summaryI18n as I18nTextLike | string) ?? item.summary,
+            locale
+        ),
+        description: resolveI18nText(
+            (item.descriptionI18n as I18nTextLike | string) ?? item.description,
+            locale
+        ),
+        richDescription:
+            item.richDescriptionI18n != null || item.richDescription != null
+                ? resolveI18nText(
+                      (item.richDescriptionI18n as I18nTextLike | string) ??
+                          item.richDescription ??
+                          null,
+                      locale
+                  )
+                : undefined,
         type: String(item.type || ''),
         isFeatured: Boolean(item.isFeatured),
         createdAt: item.createdAt ? String(item.createdAt) : new Date().toISOString(),
@@ -1070,8 +1107,9 @@ export function transformMarketComparison({
 }
 
 export function toEventDetailProps({
-    item
-}: { readonly item: Record<string, unknown> }): EventDetailData {
+    item,
+    locale = 'es'
+}: { readonly item: Record<string, unknown>; readonly locale?: string }): EventDetailData {
     // --- Identity ---
     const id = String(item.id || '');
     if (!id) {
@@ -1115,7 +1153,10 @@ export function toEventDetailProps({
     });
 
     // Build gallery with alt text. Use name as fallback alt.
-    const eventName = String(item.name || item.title || '');
+    const eventName = resolveI18nText(
+        (item.nameI18n as I18nTextLike | string) ?? item.name ?? item.title,
+        locale
+    );
     const mediaObj = item.media as
         | {
               gallery?: ReadonlyArray<{
@@ -1266,8 +1307,14 @@ export function toEventDetailProps({
         id,
         slug: String(item.slug || ''),
         name: eventName,
-        summary: String(item.summary || item.description || ''),
-        description: String(item.description || ''),
+        summary: resolveI18nText(
+            (item.summaryI18n as I18nTextLike | string) ?? item.summary ?? item.description,
+            locale
+        ),
+        description: resolveI18nText(
+            (item.descriptionI18n as I18nTextLike | string) ?? item.description,
+            locale
+        ),
         contentHtml: item.contentHtml ? String(item.contentHtml) : undefined,
         category: String(item.category || ''),
         isFeatured: Boolean(item.isFeatured),

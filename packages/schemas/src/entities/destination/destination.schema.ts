@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { BaseAdminFields } from '../../common/admin.schema.js';
 import { BaseAuditFields } from '../../common/audit.schema.js';
 import { BaseFaqSchema } from '../../common/faq.schema.js';
+import { I18nTextSchema, TranslationMetaSchema } from '../../common/i18n.schema.js';
 import { DestinationIdSchema } from '../../common/id.schema.js';
 import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
 import { BaseLocationFields } from '../../common/location.schema.js';
@@ -57,6 +58,21 @@ export const DestinationSchema = z.object({
         .string()
         .min(30, { message: 'zodError.destination.description.min' })
         .max(8000, { message: 'zodError.destination.description.max' }),
+
+    // SPEC-212: I18nText translations for multi-language content.
+    // Mirror the plain text fields above (name/summary/description).
+    // Nullish: DB columns are nullable jsonb with no default. Surfaced on
+    // public + admin responses so web/admin can render en/pt.
+    nameI18n: I18nTextSchema.nullish(),
+    summaryI18n: I18nTextSchema.nullish(),
+    descriptionI18n: I18nTextSchema.nullish(),
+
+    /**
+     * Per-field, per-locale translation curation metadata (SPEC-212).
+     * Internal: exposed on admin responses only, never on public payloads.
+     */
+    translationMeta: TranslationMetaSchema.nullish(),
+
     isFeatured: z.boolean().default(false),
     ...BaseLifecycleFields,
     ...BaseAdminFields,

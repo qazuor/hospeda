@@ -2,8 +2,10 @@ import type {
     AdminInfoType,
     BaseLocationType,
     DestinationRatingInput,
+    I18nText,
     Media,
-    Seo
+    Seo,
+    TranslationMeta
 } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
@@ -51,6 +53,11 @@ export const destinations = pgTable(
         name: text('name').notNull(),
         summary: text('summary').notNull(),
         description: text('description').notNull(),
+        // SPEC-212: I18nText columns for multi-language content
+        nameI18n: jsonb('name_i18n').$type<I18nText>(),
+        summaryI18n: jsonb('summary_i18n').$type<I18nText>(),
+        descriptionI18n: jsonb('description_i18n').$type<I18nText>(),
+        translationMeta: jsonb('translation_meta').$type<TranslationMeta>().default({}),
         location: jsonb('location').$type<BaseLocationType>().notNull(),
         media: jsonb('media').$type<Media | null>(),
         isFeatured: boolean('is_featured').notNull().default(false),

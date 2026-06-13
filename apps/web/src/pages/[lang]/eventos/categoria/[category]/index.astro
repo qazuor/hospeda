@@ -38,7 +38,7 @@ const hasError = !result.ok;
 const items = result.ok ? result.data.items : [];
 const total = result.ok ? result.data.pagination.total : 0;
 const totalPages = result.ok ? result.data.pagination.totalPages : 0;
-const cards = items.map((item) => toEventCardProps({ item: item as unknown as Record<string, unknown> }));
+const cards = items.map((item) => toEventCardProps({ item: item as unknown as Record<string, unknown>, locale }));
 const catLabel = t(`events.categories.${catSlug}`, catSlug ?? '');
 const baseUrl = buildUrl({ locale, path: `eventos/categoria/${catSlug}` });
 ---

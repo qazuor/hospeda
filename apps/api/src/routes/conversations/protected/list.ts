@@ -5,7 +5,7 @@
  * Supports optional `archivedByGuest` filter and `page`/`pageSize` pagination.
  */
 
-import { AccommodationModel } from '@repo/db';
+import { AccommodationModel, MessageModel } from '@repo/db';
 import { GuestInboxQuerySchema } from '@repo/schemas';
 import { ConversationService } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
@@ -20,6 +20,7 @@ import {
 } from '../../../utils/response-helpers';
 
 const accommodationModel = new AccommodationModel();
+const messageModel = new MessageModel();
 
 const router = createRouter();
 
@@ -94,6 +95,7 @@ router.get('/', async (c) => {
         // surface `accommodationId`; the runtime shape always carries it. Widening
         // through unknown to add the field to the type without losing other keys.
         const itemsRaw = (result.data.items ?? []) as unknown as Array<{
+            id: string;
             accommodationId: string;
             [k: string]: unknown;
         }>;
@@ -111,12 +113,23 @@ router.get('/', async (c) => {
             }
         }
 
+        // Batch-fetch last message previews and per-conversation unread counts for
+        // the guest. Both queries are single round-trips regardless of inbox size.
+        const conversationIds = itemsRaw.map((item) => item.id);
+        const [lastMessagePreviews, unreadCountMap] = await Promise.all([
+            messageModel.getLastMessagePreviews(conversationIds),
+            messageModel.countUnreadForGuestByConversation(conversationIds)
+        ]);
+
         const items = itemsRaw.map((item) => {
             const acc = accommodationsById.get(item.accommodationId);
+            const rawExcerpt = lastMessagePreviews.get(item.id) ?? '';
             return {
                 ...item,
                 accommodationName: acc?.name ?? null,
-                accommodationSlug: acc?.slug ?? null
+                accommodationSlug: acc?.slug ?? null,
+                lastMessageExcerpt: rawExcerpt.slice(0, 200) || null,
+                unreadCount: unreadCountMap.get(item.id) ?? 0
             };
         });
 

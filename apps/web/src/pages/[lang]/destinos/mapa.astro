@@ -31,7 +31,7 @@ const result = await destinationsApi.list({ page: 1, pageSize: MAP_FETCH_CAP, de
 const hasError = !result.ok;
 const items = result.ok ? result.data.items : [];
 const total = result.ok ? result.data.pagination.total : 0;
-const cards = items.map((item) => toDestinationCardProps({ item: item as unknown as Record<string, unknown> }));
+const cards = items.map((item) => toDestinationCardProps({ item: item as unknown as Record<string, unknown>, locale }));
 
 const mapItems = cards
 	.filter((c) => c.coordinates?.lat && c.coordinates?.long)

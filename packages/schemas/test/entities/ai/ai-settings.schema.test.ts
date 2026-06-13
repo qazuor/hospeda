@@ -61,6 +61,11 @@ const minimalSettingsValue = {
             model: 'claude-3-5-haiku-20241022',
             primaryProvider: 'anthropic' as const,
             fallbackChain: ['openai'] as const
+        },
+        translate: {
+            ...validFeatureConfig,
+            model: 'gemini-1.5-flash',
+            primaryProvider: 'google' as const
         }
     }
 };
@@ -215,7 +220,7 @@ describe('AiCostCeilingsSchema', () => {
 
     it('rejects an unknown feature key in perFeatureMonthlyMicroUsd', () => {
         const result = AiCostCeilingsSchema.safeParse({
-            perFeatureMonthlyMicroUsd: { translate: 1000 }
+            perFeatureMonthlyMicroUsd: { unknown_feature: 1000 }
         });
         expect(result.success).toBe(false);
     });

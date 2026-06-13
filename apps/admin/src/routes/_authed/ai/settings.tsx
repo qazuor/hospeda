@@ -47,7 +47,7 @@ export const Route = createFileRoute('/_authed/ai/settings')({
 // Constants
 // ---------------------------------------------------------------------------
 
-const ALL_FEATURES: AiFeatureId[] = ['text_improve', 'chat', 'search', 'support'];
+const ALL_FEATURES: AiFeatureId[] = ['text_improve', 'chat', 'search', 'support', 'translate'];
 
 /** Default settings blob used when the API returns an empty/missing value. */
 const DEFAULT_SETTINGS: AiSettingsValue = {
@@ -84,6 +84,13 @@ const DEFAULT_SETTINGS: AiSettingsValue = {
             fallbackChain: [],
             model: 'gpt-4o-mini',
             params: {}
+        },
+        translate: {
+            enabled: false,
+            primaryProvider: 'stub',
+            fallbackChain: [],
+            model: 'gpt-4o-mini',
+            params: {}
         }
     }
 };
@@ -105,7 +112,8 @@ function toFormValues(settings: AiSettingsValue | undefined): AiSettingsValue {
             text_improve: settings.features.text_improve ?? DEFAULT_SETTINGS.features.text_improve,
             chat: settings.features.chat ?? DEFAULT_SETTINGS.features.chat,
             search: settings.features.search ?? DEFAULT_SETTINGS.features.search,
-            support: settings.features.support ?? DEFAULT_SETTINGS.features.support
+            support: settings.features.support ?? DEFAULT_SETTINGS.features.support,
+            translate: settings.features.translate ?? DEFAULT_SETTINGS.features.translate
         }
     };
 }

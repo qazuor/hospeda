@@ -22,6 +22,7 @@ import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { applyTestControl, isSubscriptionLive } from '@repo/billing';
 import { UserModel, billingCustomers, billingSubscriptions, desc, eq, getDb } from '@repo/db';
 import type { AccommodationPublishDeps, PublishEligibility } from '@repo/service-core';
+import { addPublishLinkageContext } from '../lib/sentry';
 import { clearEntitlementCache } from '../middlewares/entitlement';
 import { apiLogger } from '../utils/logger';
 import { BillingCustomerSyncService } from './billing-customer-sync';
@@ -98,8 +99,11 @@ export function buildAccommodationPublishDeps(
             return hasActive ? 'has_active_sub' : 'subscription_required';
         },
 
-        startTrial: async ({ ownerId }: { ownerId: string }) =>
-            applyTestControl('startTrial', { ownerId }, async () => {
+        startTrial: async ({
+            ownerId,
+            accommodationId
+        }: { ownerId: string; accommodationId: string }) =>
+            applyTestControl('startTrial', { ownerId, accommodationId }, async () => {
                 const billing = getBilling();
                 const customerSync = new BillingCustomerSyncService(billing);
                 const trialService = new TrialService(billing);
@@ -119,8 +123,11 @@ export function buildAccommodationPublishDeps(
                 if (!customerId) {
                     throw new Error('Billing customer sync returned no customer id');
                 }
+                // SPEC-222 Part 2: forward the triggering accommodation so the
+                // MercadoPago creation metadata carries the referential marker
+                // (no extra MP call — it rides the existing create payload).
                 const subscriptionId = await withTimeout(
-                    trialService.startTrial({ customerId }),
+                    trialService.startTrial({ customerId, accommodationId }),
                     QZPAY_TRIAL_TIMEOUT_MS,
                     'billing.startTrial'
                 );
@@ -128,8 +135,19 @@ export function buildAccommodationPublishDeps(
                     throw new Error('Trial creation returned no subscription id');
                 }
                 clearEntitlementCache(customerId);
+                // SPEC-222 Part 1: attach the trial↔accommodation↔owner linkage to
+                // the Sentry scope so any error captured on this request carries it
+                // and the issue is searchable by any of the ids. Scope enrichment
+                // only — no event emitted, no-op when Sentry is disabled.
+                addPublishLinkageContext({
+                    subscriptionId,
+                    accommodationId,
+                    ownerId,
+                    customerId,
+                    planSlug: 'owner-basico'
+                });
                 apiLogger.info(
-                    { ownerId, customerId, subscriptionId },
+                    { ownerId, customerId, subscriptionId, accommodationId },
                     '[publish] trial subscription created'
                 );
                 return { subscriptionId };

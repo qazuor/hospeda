@@ -1,6 +1,7 @@
 import type { SQL } from 'drizzle-orm';
-import { and, count, eq, gt, isNull, lt, sql } from 'drizzle-orm';
+import { and, count, desc, eq, gt, inArray, isNull, lt, or, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
+import { conversations } from '../../schemas/conversation/conversations.dbschema.ts';
 import { messages } from '../../schemas/conversation/messages.dbschema.ts';
 import type { InsertMessage, SelectMessage } from '../../schemas/conversation/messages.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
@@ -42,15 +43,18 @@ export class MessageModel extends BaseModelImpl<SelectMessage> {
     /**
      * Fetch messages for a conversation thread using cursor-based pagination.
      *
-     * Results are sorted by `created_at ASC` so the oldest message appears first
-     * (standard chat layout). When `cursor` is provided only messages created
-     * **before** that timestamp are returned, enabling backward scroll.
+     * Returns the **most recent** `limit` messages, sorted `created_at DESC`
+     * (newest first). Callers that render a chat reverse the page for display
+     * and use the oldest row's `createdAt` as the cursor for the previous page.
+     * When `cursor` is provided only messages created **before** that timestamp
+     * are returned, enabling backward scroll. Sorting DESC + LIMIT is what makes
+     * the page hold the latest messages rather than the oldest.
      *
      * @param conversationId - UUID of the parent conversation
      * @param options.cursor - ISO timestamp cursor; fetch messages older than this
      * @param options.limit - Maximum rows to return (default 50, max 100)
      * @param tx - Optional transaction client
-     * @returns Array of message rows
+     * @returns Array of message rows, newest first
      */
     async findByConversationId(
         conversationId: string,
@@ -74,7 +78,7 @@ export class MessageModel extends BaseModelImpl<SelectMessage> {
                 .select()
                 .from(messages)
                 .where(and(...conditions))
-                .orderBy(messages.createdAt)
+                .orderBy(desc(messages.createdAt))
                 .limit(safeLimit);
 
             logQuery(this.entityName, 'findByConversationId', ctx, { count: rows.length });
@@ -178,6 +182,133 @@ export class MessageModel extends BaseModelImpl<SelectMessage> {
             const err = error instanceof Error ? error : new Error(String(error));
             logError(this.entityName, 'sumUnreadForOwner', ctx, err);
             throw new DbError(this.entityName, 'sumUnreadForOwner', ctx, err.message);
+        }
+    }
+
+    /**
+     * Returns the body of the most recent non-deleted message for each of the
+     * given conversation IDs, in a single batch query.
+     *
+     * Uses `DISTINCT ON (conversation_id)` ordered by `(conversation_id, created_at DESC)`
+     * so Postgres picks the newest row per conversation without a subquery. Empty input
+     * short-circuits immediately to avoid an invalid `IN ()` clause.
+     *
+     * @param conversationIds - UUIDs of the conversations to fetch previews for
+     * @param tx - Optional transaction client
+     * @returns Map from conversation ID to the latest message body (truncation is
+     *   the caller's responsibility)
+     *
+     * @example
+     * ```ts
+     * const previews = await messageModel.getLastMessagePreviews(['conv-1', 'conv-2']);
+     * const excerpt = (previews.get('conv-1') ?? '').slice(0, 200) || null;
+     * ```
+     */
+    async getLastMessagePreviews(
+        conversationIds: readonly string[],
+        tx?: DrizzleClient
+    ): Promise<Map<string, string>> {
+        if (conversationIds.length === 0) return new Map();
+
+        const db = this.getClient(tx);
+        const ctx = { conversationIds };
+
+        try {
+            const rows = await db
+                .selectDistinctOn([messages.conversationId], {
+                    conversationId: messages.conversationId,
+                    body: messages.body
+                })
+                .from(messages)
+                .where(
+                    and(
+                        inArray(messages.conversationId, [...conversationIds]),
+                        isNull(messages.deletedAt)
+                    )
+                )
+                .orderBy(messages.conversationId, desc(messages.createdAt));
+
+            const result = new Map<string, string>(
+                rows.map((row) => [row.conversationId, row.body])
+            );
+
+            logQuery(this.entityName, 'getLastMessagePreviews', ctx, { count: result.size });
+            return result;
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            logError(this.entityName, 'getLastMessagePreviews', ctx, err);
+            throw new DbError(this.entityName, 'getLastMessagePreviews', ctx, err.message);
+        }
+    }
+
+    /**
+     * Counts unread OWNER messages per conversation for a guest, in a single batch query.
+     *
+     * A message is considered unread by the guest when:
+     * - `sender_type = 'OWNER'`
+     * - `deleted_at IS NULL`
+     * - `created_at > conversations.last_read_at_by_guest` OR
+     *   `conversations.last_read_at_by_guest IS NULL`
+     *
+     * Empty input short-circuits to avoid an invalid `IN ()` clause.
+     *
+     * @param conversationIds - UUIDs of the conversations to count unread messages for
+     * @param tx - Optional transaction client
+     * @returns Map from conversation ID to the count of unread OWNER messages
+     *
+     * @example
+     * ```ts
+     * const unreadMap = await messageModel.countUnreadForGuestByConversation(['conv-1']);
+     * const count = unreadMap.get('conv-1') ?? 0;
+     * ```
+     */
+    async countUnreadForGuestByConversation(
+        conversationIds: readonly string[],
+        tx?: DrizzleClient
+    ): Promise<Map<string, number>> {
+        if (conversationIds.length === 0) return new Map();
+
+        const db = this.getClient(tx);
+        const ctx = { conversationIds };
+
+        try {
+            const rows = await db
+                .select({
+                    conversationId: messages.conversationId,
+                    total: count()
+                })
+                .from(messages)
+                .innerJoin(conversations, eq(conversations.id, messages.conversationId))
+                .where(
+                    and(
+                        inArray(messages.conversationId, [...conversationIds]),
+                        eq(messages.senderType, 'OWNER'),
+                        isNull(messages.deletedAt),
+                        or(
+                            isNull(conversations.lastReadAtByGuest),
+                            gt(messages.createdAt, conversations.lastReadAtByGuest)
+                        )
+                    )
+                )
+                .groupBy(messages.conversationId);
+
+            const result = new Map<string, number>(
+                rows.map((row) => [row.conversationId, Number(row.total)])
+            );
+
+            logQuery(this.entityName, 'countUnreadForGuestByConversation', ctx, {
+                count: result.size
+            });
+            return result;
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            logError(this.entityName, 'countUnreadForGuestByConversation', ctx, err);
+            throw new DbError(
+                this.entityName,
+                'countUnreadForGuestByConversation',
+                ctx,
+                err.message
+            );
         }
     }
 }

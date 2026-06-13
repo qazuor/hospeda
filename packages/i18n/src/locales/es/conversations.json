@@ -130,6 +130,7 @@
     "thread": {
         "newest": "Ver los más nuevos",
         "older": "Cargar mensajes anteriores",
+        "backToInbox": "Volver a mis consultas",
         "readByGuest": "Leído por el huésped",
         "readByOwner": "Leído por el anfitrión",
         "replyPlaceholder": "Escribí tu respuesta...",

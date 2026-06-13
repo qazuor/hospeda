@@ -203,12 +203,12 @@ try {
 
 	accCards = extractItems(accResult)
 		.slice(0, 3)
-		.map((item) => toAccommodationCardProps({ item }));
+		.map((item) => toAccommodationCardProps({ item, locale }));
 	accCount = extractTotal(accResult);
 
 	eventCards = extractItems(eventsResult)
 		.slice(0, 3)
-		.map((item) => toEventCardProps({ item }));
+		.map((item) => toEventCardProps({ item, locale }));
 	eventsCount = extractTotal(eventsCountResult);
 
 	if (statsResult.status === 'fulfilled' && statsResult.value.ok) {

@@ -120,6 +120,13 @@ const VALID_SETTINGS_BLOB = {
             fallbackChain: [],
             model: 'gpt-4o-mini',
             params: {}
+        },
+        translate: {
+            enabled: false,
+            primaryProvider: 'openai' as const,
+            fallbackChain: [],
+            model: 'gemini-1.5-flash',
+            params: {}
         }
     }
 } as const;

@@ -227,6 +227,30 @@ describe('AccommodationEditor', () => {
         expect(callArg.data.name).toBe('Hotel Actualizado');
     });
 
+    it('should show a success message after a successful save', async () => {
+        // Regression: a successful save was previously silent (only cleared the
+        // error), leaving the user with no confirmation that the change applied.
+        const mockUpdate = vi.fn().mockResolvedValue({ ok: true, data: {} });
+        vi.doMock('@/lib/api/endpoints-protected', () => ({
+            accommodationEditApi: { update: mockUpdate }
+        }));
+
+        const user = userEvent.setup();
+        render(<AccommodationEditor {...DEFAULT_PROPS} />);
+
+        const nameInput = screen.getByLabelText(/nombre/i) as HTMLInputElement;
+        await user.clear(nameInput);
+        await user.type(nameInput, 'Hotel Actualizado');
+        fireEvent.submit(nameInput.closest('form')!);
+
+        await vi.waitFor(() => {
+            expect(mockUpdate).toHaveBeenCalledOnce();
+        });
+        await vi.waitFor(() => {
+            expect(screen.getByText(/cambios guardados/i)).toBeInTheDocument();
+        });
+    });
+
     it('should include contact info fields in PATCH payload when changed', async () => {
         const mockUpdate = vi.fn().mockResolvedValue({ ok: true, data: {} });
         vi.doMock('@/lib/api/endpoints-protected', () => ({

@@ -28,18 +28,24 @@
             "archived": true,
             "archivedAt": "2026-06-13",
             "completionRef": "PR #1602 merged to staging (a909ef4eb)",
-            "archiveNote": "F-1 (scope delayNextQueue) + F-2 (extractScope extensibility) shipped. F-3 (host-07d sync updateSubscription E2E) dropped as contrived prod code; the legitimate debugging need moved to SPEC-222 (non-blocking observability + creation-time MP enrichment).",
+            "archiveNote": "F-1 (scope delayNextQueue) + F-2 (extractScope extensibility) shipped. F-3 (host-07d sync updateSubscription E2E) dropped as contrived prod code; the legitimate debugging need moved to SPEC-227 (non-blocking observability + creation-time MP enrichment).",
             "tags": ["e2e", "billing", "qzpay", "test-control", "follow-up"]
         },
         {
-            "specId": "SPEC-222",
+            "specId": "SPEC-227",
             "title": "Billing Subscription Observability — trial↔accommodation↔owner linkage logging + creation-time MP reference enrichment",
             "type": "feat",
             "complexity": "low",
-            "status": "draft",
-            "path": "SPEC-222-billing-subscription-observability",
+            "status": "completed",
+            "path": "SPEC-227-billing-subscription-observability",
             "base": "staging",
             "created": "2026-06-13T00:00:00.000Z",
+            "archived": true,
+            "archivedAt": "2026-06-13",
+            "completionRef": "PR #1608 merged to staging (d778b120c)",
+            "archiveNote": "Part 1 (publish linkage log + Sentry context) + Part 2 (creation-time MP metadata: env marker + triggeredByAccommodationId) shipped; no async MP update, no new sync remote call in publish. Adversarial review GO. Same PR fixed the SPEC-222 number collision (renumbered 222->227). NOTE: billing staging smoke not executed — change is observability-only and inert when test-control gate is off; run smoke if a regression is suspected.",
+            "renumberedFrom": "SPEC-222",
+            "renumberedReason": "SPEC-222 collided with the SPEC-222..226 batch (accommodation-import-from-url); renumbered to next free.",
             "origin": "Reshaped from SPEC-221 F-3 — legitimate debugging need without contrived prod code",
             "tags": [
                 "billing",
@@ -55,7 +61,7 @@
             "title": "Staging→Main Promotion Hardening — clear CodeQL security debt blocking the promotion",
             "type": "infrastructure",
             "complexity": "medium",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-220-staging-main-promotion-hardening",
             "created": "2026-06-12T00:00:00.000Z",
             "tags": ["codeql", "security", "ci", "promotion", "infrastructure"]
@@ -1044,7 +1050,7 @@
             "title": "Dependabot CI Hardening & Dependency Bump Merge Strategy",
             "type": "infrastructure",
             "complexity": "medium",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-219-dependabot-ci-hardening",
             "created": "2026-06-11T00:00:00.000Z",
             "tags": [
@@ -1055,7 +1061,9 @@
                 "infrastructure",
                 "build"
             ],
-            "note": "Infra-only: CI build resilient to absent secrets in dependabot context + dependabot grouping/merge strategy + policy doc. Defers Zod 4.4 (.merge->.safeExtend) and TanStack Router 1.170 migrations to SPEC-132/SPEC-045 or follow-ups. Triggered by failing PRs #1548 (github-actions group, build secrets) and #1570 (66-update npm group, zod+router breaking). Planning for later, no worktree."
+            "note": "Infra-only: CI build resilient to absent secrets in dependabot context + dependabot grouping/merge strategy + policy doc. Defers Zod 4.4 (.merge->.safeExtend) and TanStack Router 1.170 migrations to SPEC-132/SPEC-045 or follow-ups. Triggered by failing PRs #1548 (github-actions group, build secrets) and #1570 (66-update npm group, zod+router breaking). Planning for later, no worktree.",
+            "archived": true,
+            "archivedAt": "2026-06-13"
         },
         {
             "specId": "SPEC-222",
@@ -1065,15 +1073,7 @@
             "status": "draft",
             "path": "SPEC-222-accommodation-import-from-url",
             "created": "2026-06-13T12:00:00Z",
-            "tags": [
-                "accommodations",
-                "import",
-                "scraping",
-                "ai",
-                "web",
-                "admin",
-                "feature"
-            ],
+            "tags": ["accommodations", "import", "scraping", "ai", "web", "admin", "feature"],
             "archived": false,
             "note": "Import accommodation data from an external listing URL (Booking/Airbnb/etc) to pre-fill the create/edit form. JSON-LD/OG parsing primary + ai-core generate-object fallback. Human reviews draft before save. Drafted 2026-06-13, ready to implement."
         },
@@ -1085,14 +1085,7 @@
             "status": "draft",
             "path": "SPEC-223-ai-post-generation",
             "created": "2026-06-13T12:00:00Z",
-            "tags": [
-                "posts",
-                "ai",
-                "ai-core",
-                "content",
-                "admin",
-                "feature"
-            ],
+            "tags": ["posts", "ai", "ai-core", "content", "admin", "feature"],
             "archived": false,
             "note": "Admin gives topic + key points, AI generates a post draft (title/summary/content). New 'post_generate' AiFeature + admin-tier streaming route, replicating the text-improve pattern. Drafted 2026-06-13, ready to implement."
         },
@@ -1104,14 +1097,7 @@
             "status": "draft",
             "path": "SPEC-224-admin-posthog-dashboard",
             "created": "2026-06-13T12:00:00Z",
-            "tags": [
-                "admin",
-                "posthog",
-                "analytics",
-                "dashboard",
-                "observability",
-                "feature"
-            ],
+            "tags": ["admin", "posthog", "analytics", "dashboard", "observability", "feature"],
             "archived": false,
             "note": "Read PostHog Query/HogQL via a server-side proxy + dashboard datasource/widget in admin. Sibling of SPEC-225/226 (shared external-metrics proxy pattern). Drafted 2026-06-13, ready to implement."
         },
@@ -1123,14 +1109,7 @@
             "status": "draft",
             "path": "SPEC-225-admin-sentry-dashboard",
             "created": "2026-06-13T12:00:00Z",
-            "tags": [
-                "admin",
-                "sentry",
-                "errors",
-                "dashboard",
-                "observability",
-                "feature"
-            ],
+            "tags": ["admin", "sentry", "errors", "dashboard", "observability", "feature"],
             "archived": false,
             "note": "Read Sentry Issues API via server-side proxy; fill the existing super.audit.log.sentry datasource placeholder + card H DeferredWidget. Distinct from SPEC-180 (capture hardening). Sibling of SPEC-224/226. Drafted 2026-06-13, ready to implement."
         },
@@ -1142,16 +1121,20 @@
             "status": "draft",
             "path": "SPEC-226-admin-brevo-dashboard",
             "created": "2026-06-13T12:00:00Z",
-            "tags": [
-                "admin",
-                "brevo",
-                "email",
-                "newsletter",
-                "dashboard",
-                "feature"
-            ],
+            "tags": ["admin", "brevo", "email", "newsletter", "dashboard", "feature"],
             "archived": false,
             "note": "Read Brevo email/newsletter stats via server-side proxy (reuse existing HOSPEDA_EMAIL_API_KEY) + admin dashboard widget. Sibling of SPEC-224/225. Drafted 2026-06-13, ready to implement."
+        },
+        {
+            "specId": "SPEC-227",
+            "title": "Accommodation partial-update data loss — partial JSONB objects + shallow-merge nested columns",
+            "type": "fix",
+            "status": "draft",
+            "complexity": "medium",
+            "path": "SPEC-227-accommodation-partial-update-merge",
+            "base": "staging",
+            "priority": "P1",
+            "archived": false
         }
     ]
 }

@@ -232,12 +232,61 @@ describe('AccommodationService.publish', () => {
                 expect.anything()
             );
             expect(deps.checkEligibility).toHaveBeenCalledWith('host-005', expect.anything());
-            expect(deps.startTrial).toHaveBeenCalledWith({ ownerId: 'host-005' });
+            expect(deps.startTrial).toHaveBeenCalledWith({
+                ownerId: 'host-005',
+                accommodationId: 'acc-005'
+            });
             // Role promotion no longer happens in publish — that's done at
             // draft creation. The user model stays untouched.
             expect(userModel.update).not.toHaveBeenCalled();
             // No compensation when tx succeeds
             expect(deps.cancelTrial).not.toHaveBeenCalled();
+        });
+
+        // SPEC-222 Part 1 (AC-1): a single structured linkage line is emitted at
+        // first publish, tying the trial subscription to the accommodation that
+        // triggered it and its owner. Searching logs by any of these ids surfaces
+        // the whole linkage even though trials are per-owner.
+        it('emits a structured linkage log line at first publish', async () => {
+            const deps = createPublishDeps();
+            const logger = createLoggerMock();
+            const service = new AccommodationService(
+                { logger },
+                accommodationModel as AccommodationModel,
+                null,
+                userModel,
+                deps
+            );
+            const accommodation = createMockAccommodation({
+                id: 'acc-link',
+                ownerId: 'host-link',
+                lifecycleState: LifecycleStatusEnum.DRAFT,
+                visibility: VisibilityEnum.PRIVATE
+            });
+            (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
+            asMock(userModel.findById as Mock).mockResolvedValue({
+                id: 'host-link',
+                role: RoleEnum.HOST
+            });
+            (accommodationModel.update as Mock).mockResolvedValue({
+                ...accommodation,
+                lifecycleState: LifecycleStatusEnum.ACTIVE
+            });
+
+            const actor = createHostActor({ id: 'host-link' });
+            const result = await service.publish(actor, 'acc-link');
+
+            expect(result.error).toBeUndefined();
+            expect(logger.info).toHaveBeenCalledWith(
+                {
+                    subscriptionId: 'qzpay-sub-001',
+                    accommodationId: 'acc-link',
+                    ownerId: 'host-link',
+                    planSlug: 'owner-basico',
+                    eligibility: 'first_publish'
+                },
+                '[accommodation.publish] trial subscription linkage'
+            );
         });
 
         // Regression (SPEC-217): publish must NOT clobber a deliberately-set
@@ -496,7 +545,10 @@ describe('AccommodationService.update → publish routing (host-07c reproduction
         expect(result.error).toBeUndefined();
         expect(result.data?.lifecycleState).toBe(LifecycleStatusEnum.ACTIVE);
         // The decisive assertion: the publish flow DID reach the billing trial.
-        expect(deps.startTrial).toHaveBeenCalledWith({ ownerId: 'host-07c' });
+        expect(deps.startTrial).toHaveBeenCalledWith({
+            ownerId: 'host-07c',
+            accommodationId: 'acc-07c'
+        });
     });
 
     it('surfaces SERVICE_UNAVAILABLE with no DB write when startTrial fails (host-07c fault contract via update path)', async () => {
@@ -564,7 +616,10 @@ describe('AccommodationService.update → publish routing (host-07c reproduction
 
         expect(result.error).toBeUndefined();
         // The decisive guard: the trial flow ran (it didn't before the fix).
-        expect(deps.startTrial).toHaveBeenCalledWith({ ownerId: 'host-07c-real' });
+        expect(deps.startTrial).toHaveBeenCalledWith({
+            ownerId: 'host-07c-real',
+            accommodationId: 'acc-07c-real'
+        });
     });
 
     it('FAITHFUL: schema-parsed publish surfaces SERVICE_UNAVAILABLE and keeps DRAFT when startTrial fails', async () => {

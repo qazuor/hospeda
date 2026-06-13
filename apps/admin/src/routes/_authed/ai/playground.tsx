@@ -51,7 +51,7 @@ export const Route = createFileRoute('/_authed/ai/playground')({
 // Constants
 // ---------------------------------------------------------------------------
 
-const ALL_FEATURES: AiFeatureId[] = ['text_improve', 'chat', 'search', 'support'];
+const ALL_FEATURES: AiFeatureId[] = ['text_improve', 'chat', 'search', 'support', 'translate'];
 
 const DEFAULT_PARAMS: AiModelParams = {
     temperature: 0.7,
