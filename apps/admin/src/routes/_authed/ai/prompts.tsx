@@ -35,7 +35,7 @@ export const Route = createFileRoute('/_authed/ai/prompts')({
 // Constants
 // ---------------------------------------------------------------------------
 
-const ALL_FEATURES: AiFeatureId[] = ['text_improve', 'chat', 'search', 'support'];
+const ALL_FEATURES: AiFeatureId[] = ['text_improve', 'chat', 'search', 'support', 'translate'];
 
 // ---------------------------------------------------------------------------
 // FeaturePromptEditor (sub-component)

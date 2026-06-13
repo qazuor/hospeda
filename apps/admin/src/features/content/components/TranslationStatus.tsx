@@ -8,10 +8,10 @@
  * @module features/content/components/TranslationStatus
  */
 
-import { useCallback, useState } from 'react';
-import { useTranslations } from '@/hooks/use-translations';
 import { Badge } from '@/components/ui-wrapped/Badge';
 import { Button } from '@/components/ui-wrapped/Button';
+import { useTranslations } from '@/hooks/use-translations';
+import { useCallback, useState } from 'react';
 import { TranslationOverrideModal } from './TranslationOverrideModal';
 
 // ---------------------------------------------------------------------------
@@ -59,10 +59,13 @@ export function TranslationStatus({
         setEditingLocale(null);
     }, []);
 
-    const handleSave = useCallback((fieldType: string, locale: string, value: string) => {
-        onOverrideSaved(fieldType, locale, value);
-        handleCloseModal();
-    }, [onOverrideSaved, handleCloseModal]);
+    const handleSave = useCallback(
+        (fieldType: string, locale: string, value: string) => {
+            onOverrideSaved(fieldType, locale, value);
+            handleCloseModal();
+        },
+        [onOverrideSaved, handleCloseModal]
+    );
 
     if (fields.length === 0) return null;
 
@@ -73,30 +76,50 @@ export function TranslationStatus({
     const localeBeingEdited = editingLocale;
 
     return (
-        <div className="mt-4 space-y-3 border-t border-border pt-3">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+        <div className="mt-4 space-y-3 border-border border-t pt-3">
+            <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                <svg
+                    aria-hidden="true"
+                    className="h-4 w-4"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                >
+                    <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
+                    />
                 </svg>
                 <span>{t('admin-common.aiTranslate.status')}</span>
             </div>
 
             {fields.map((field) => (
-                <div key={field.fieldType} className="space-y-1">
-                    <div className="text-xs font-medium text-muted-foreground">
+                <div
+                    key={field.fieldType}
+                    className="space-y-1"
+                >
+                    <div className="font-medium text-muted-foreground text-xs">
                         {field.fieldType}
                     </div>
                     {Object.entries(field.locales).map(([locale, state]) => (
-                        <div key={locale} className="flex items-center gap-2 text-sm">
-                            <span className="text-xs font-mono w-6 text-muted-foreground">
+                        <div
+                            key={locale}
+                            className="flex items-center gap-2 text-sm"
+                        >
+                            <span className="w-6 font-mono text-muted-foreground text-xs">
                                 {locale.toUpperCase()}
                             </span>
-                            <span className="flex-1 truncate text-xs text-muted-foreground">
+                            <span className="flex-1 truncate text-muted-foreground text-xs">
                                 {state.value || '—'}
                             </span>
                             {state.error ? (
                                 <>
-                                    <Badge variant="destructive" size="sm">
+                                    <Badge
+                                        variant="destructive"
+                                        size="sm"
+                                    >
                                         {t('admin-common.aiTranslate.failed')}
                                     </Badge>
                                     <Button
@@ -107,20 +130,7 @@ export function TranslationStatus({
                                         {t('admin-common.aiTranslate.retryButton')}
                                     </Button>
                                 </>
-                            ) : !state.value ? (
-                                <>
-                                    <Badge variant="secondary" size="sm">
-                                        {t('admin-common.aiTranslate.pending')}
-                                    </Badge>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => onTranslateNow(field.fieldType)}
-                                    >
-                                        {t('admin-common.aiTranslate.translateNow')}
-                                    </Button>
-                                </>
-                            ) : (
+                            ) : state.value ? (
                                 <>
                                     <Badge
                                         variant={state.autoTranslated ? 'success' : 'outline'}
@@ -138,6 +148,22 @@ export function TranslationStatus({
                                         {t('admin-common.aiTranslate.editButton')}
                                     </Button>
                                 </>
+                            ) : (
+                                <>
+                                    <Badge
+                                        variant="secondary"
+                                        size="sm"
+                                    >
+                                        {t('admin-common.aiTranslate.pending')}
+                                    </Badge>
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => onTranslateNow(field.fieldType)}
+                                    >
+                                        {t('admin-common.aiTranslate.translateNow')}
+                                    </Button>
+                                </>
                             )}
                         </div>
                     ))}
@@ -148,12 +174,12 @@ export function TranslationStatus({
                 <TranslationOverrideModal
                     open={true}
                     onClose={handleCloseModal}
-                    onSave={(value) => handleSave(fieldBeingEdited.fieldType, localeBeingEdited, value)}
+                    onSave={(value) =>
+                        handleSave(fieldBeingEdited.fieldType, localeBeingEdited, value)
+                    }
                     fieldType={fieldBeingEdited.fieldType}
                     locale={localeBeingEdited}
-                    currentValue={
-                        fieldBeingEdited.locales[localeBeingEdited]?.value ?? ''
-                    }
+                    currentValue={fieldBeingEdited.locales[localeBeingEdited]?.value ?? ''}
                 />
             )}
         </div>

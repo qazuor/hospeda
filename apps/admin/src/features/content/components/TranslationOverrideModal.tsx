@@ -7,10 +7,17 @@
  * @module features/content/components/TranslationOverrideModal
  */
 
-import { useCallback, useState } from 'react';
-import { useTranslations } from '@/hooks/use-translations';
 import { Button } from '@/components/ui-wrapped/Button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle
+} from '@/components/ui/dialog';
+import { useTranslations } from '@/hooks/use-translations';
+import { useCallback, useState } from 'react';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -64,7 +71,12 @@ export function TranslationOverrideModal({
     const fieldLabel = fieldLabels[fieldType] || fieldType;
 
     return (
-        <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) handleClose(); }}>
+        <Dialog
+            open={open}
+            onOpenChange={(isOpen) => {
+                if (!isOpen) handleClose();
+            }}
+        >
             <DialogContent className="max-w-lg">
                 <DialogHeader>
                     <DialogTitle>{t('admin-common.aiTranslate.overrideTitle')}</DialogTitle>
@@ -74,15 +86,28 @@ export function TranslationOverrideModal({
                 </DialogHeader>
 
                 <div className="mt-4 space-y-4">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <svg className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                    <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                        <svg
+                            aria-hidden="true"
+                            className="h-4 w-4"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
+                            />
                         </svg>
-                        <span>{locale === 'en' ? 'English translation' : 'Tradução em português'}</span>
+                        <span>
+                            {locale === 'en' ? 'English translation' : 'Tradução em português'}
+                        </span>
                     </div>
 
                     <textarea
-                        className="w-full min-h-32 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        className="min-h-32 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                         value={value}
                         onChange={(e) => setValue(e.target.value)}
                         placeholder={t('admin-common.aiTranslate.overrideTitle')}
@@ -91,10 +116,16 @@ export function TranslationOverrideModal({
                 </div>
 
                 <DialogFooter>
-                    <Button variant="outline" onClick={handleClose}>
+                    <Button
+                        variant="outline"
+                        onClick={handleClose}
+                    >
                         {t('admin-common.aiTranslate.overrideCancel')}
                     </Button>
-                    <Button onClick={handleSave} disabled={value.trim().length === 0}>
+                    <Button
+                        onClick={handleSave}
+                        disabled={value.trim().length === 0}
+                    >
                         {t('admin-common.aiTranslate.overrideSave')}
                     </Button>
                 </DialogFooter>
