@@ -5,12 +5,26 @@
             "specId": "SPEC-217",
             "title": "Deterministic Billing for E2E — wire the QZPay test-control adapter for fault injection and produce real terminal subscription states so the gated paywall specs run in CI",
             "type": "test",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": "high",
             "path": "SPEC-217-qzpay-test-control-e2e-wiring",
             "base": "staging",
             "priority": "P1",
-            "archived": false
+            "archived": true,
+            "archivedAt": "2026-06-13",
+            "completionRef": "PR #1586 merged to staging (4f374036a)",
+            "archiveNote": "E2E P0 green. Closed the 2 final blockers: failNext scoped by ownerId (parallel-worker contamination) + publish() promotes PRIVATE->PUBLIC (robust variant — never clobbers RESTRICTED or an explicit caller visibility). T-012 host-07d deferred; qzpay test-control hardening + deferred coverage tracked in SPEC-221."
+        },
+        {
+            "specId": "SPEC-221",
+            "title": "QZPay Test-Control Hardening & Deferred E2E Coverage",
+            "type": "test",
+            "complexity": "low",
+            "status": "draft",
+            "path": "SPEC-221-qzpay-test-control-hardening",
+            "created": "2026-06-13T00:00:00.000Z",
+            "origin": "Follow-up findings from SPEC-217 adversarial review",
+            "tags": ["e2e", "billing", "qzpay", "test-control", "follow-up"]
         },
         {
             "specId": "SPEC-220",

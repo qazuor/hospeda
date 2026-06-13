@@ -4,10 +4,22 @@
         {
             "specId": "SPEC-217",
             "title": "Deterministic Billing for E2E — QZPay test-control wiring + date-aware publish gate",
-            "status": "in-progress",
+            "status": "completed",
             "progress": "15/16",
             "path": "SPEC-217-qzpay-test-control-e2e-wiring",
-            "note": "15/16. Blocker RESOLVED: root cause was Zod 4 .partial() not stripping .default() — AccommodationUpdate/PatchInputSchema injected lifecycleState=ACTIVE etc., so a {lifecycleState:'ACTIVE'}-only PATCH ran a plain update (non-empty restFields) that flipped the row ACTIVE before publish(), bypassing startTrial. Fixed via stripShapeDefaults (accommodation + 31 other update/patch schemas repo-wide). T-011 (host-07c) + T-013 (res-01) now VERIFIED live: PATCH->5xx, DRAFT, no sub. Also fixed a real e2e fixture bug (qzpay-test-control did not unwrap the ResponseFactory envelope). T-014 done (comments already honest). T-015 done (no-silent-skip guard + self-tests). T-012 host-07d DEFERRED (covered by service-core unit tests). T-016 IN PROGRESS: local soak green x6 (3 seq + 3 parallel); remaining = 3x full PR-P0 CI soak on the PR (e2e-pr.yml has the flag). Worktree spec-217."
+            "archived": true,
+            "archivedAt": "2026-06-13",
+            "archiveNote": "PR #1586 merged to staging (4f374036a); E2E P0 Suite green. Final 2 blockers closed: failNext scoped by ownerId (parallel-worker contamination) + publish() promotes PRIVATE->PUBLIC visibility (robust variant — never clobbers RESTRICTED or explicit caller visibility; adversarial review caught the unconditional-PUBLIC security regression). T-012 host-07d deferred; qzpay test-control hardening + deferred coverage tracked in SPEC-221.",
+            "note": "15/16 (T-012 host-07d deferred to SPEC-221). Earlier blocker (Zod 4 .partial() not stripping .default()) fixed via stripShapeDefaults across 32 update/patch schemas. T-011 (host-07c) + T-013 (res-01) verified live. T-014/T-015 done. T-016 CI soak green."
+        },
+        {
+            "specId": "SPEC-221",
+            "title": "QZPay Test-Control Hardening & Deferred E2E Coverage",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-221-qzpay-test-control-hardening",
+            "archived": false,
+            "note": "Follow-up findings from SPEC-217 adversarial review: (1) scope delayNextQueue by ownerId too (still operation-only keyed → latent parallel contamination); (2) extend extractScope / wire scope for the other 5 ControllableOperations; (3) complete deferred host-07d (T-012) updateSubscription-failure E2E. Not yet atomized into tasks."
         },
         {
             "specId": "SPEC-220",
