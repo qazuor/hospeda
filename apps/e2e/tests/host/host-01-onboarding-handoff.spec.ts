@@ -249,12 +249,20 @@ test.describe('HOST-01: web→admin onboarding handoff @p0 @host @onboarding @bi
         // Public visibility (step 14)
         // ───────────────────────────────────────────────────────────────────
 
-        const publicResponse = await page.request.get(
-            `${WEB_URL}/es/alojamientos/${result.accommodationSlug}`
-        );
-        expect(publicResponse.ok(), 'public detail page must respond 200 within ISR window').toBe(
-            true
-        );
+        // Publishing schedules cache/ISR revalidation as a best-effort ASYNC side
+        // effect (accommodation.service publish step 9), so the public detail page
+        // may need a moment to (re)generate after the PATCH returns. Poll until it
+        // serves 200 within the revalidation window rather than asserting on a
+        // single immediate GET (which races the async revalidation).
+        await expect(async () => {
+            const publicResponse = await page.request.get(
+                `${WEB_URL}/es/alojamientos/${result.accommodationSlug}`
+            );
+            expect(
+                publicResponse.ok(),
+                `public detail page must respond 200 within ISR window (got ${publicResponse.status()})`
+            ).toBe(true);
+        }).toPass({ timeout: 20_000, intervals: [500, 1000, 2000, 3000, 5000] });
 
         // ───────────────────────────────────────────────────────────────────
         // Idempotency on retry (step 15)
