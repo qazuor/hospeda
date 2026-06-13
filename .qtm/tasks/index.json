@@ -473,9 +473,12 @@
         {
             "specId": "SPEC-219",
             "title": "Dependabot CI Hardening & Dependency Bump Merge Strategy",
-            "status": "in-progress",
-            "progress": "9/10",
-            "path": "SPEC-219-dependabot-ci-hardening"
+            "status": "completed",
+            "progress": "10/10",
+            "path": "SPEC-219-dependabot-ci-hardening",
+            "archived": true,
+            "archivedAt": "2026-06-13",
+            "archiveNote": "Closed: dependabot.yml ignores reached main via forced merge of #1607; #1588 closed. Clean main resolution owned by SPEC-220 promotion."
         }
     ],
     "standalone": {
