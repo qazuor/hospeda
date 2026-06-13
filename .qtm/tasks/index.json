@@ -58,10 +58,12 @@
         {
             "specId": "SPEC-200",
             "title": "AI Accommodation Chat (tourist)",
-            "status": "in-progress",
+            "status": "completed",
             "progress": "11/12",
             "path": "SPEC-200-ai-accommodation-chat",
-            "archived": false,
+            "archived": true,
+            "archivedAt": "2026-06-13",
+            "archiveNote": "DRIFT FIX: shipped (#1492/#1494/#1497/#1507 + #1520), archived by #1584, promoted to main via #1542. Stale-base edit reverted it; restored. Metering deferred to SPEC-211 (12th item).",
             "note": "Implemented and merged to staging via PRs #1492/#1494/#1497/#1507. Prod-readiness fixes (debug-leak, getById 404/403, ghost-bubble, FAB focus, maxTokens cap, 503 mapping, vault-key prod-required, admin url no-op) on branch fix/SPEC-200-prod-readiness (PR #1520). Chat works (ai_chat granted to every plan, tourists included); monetization is provisional: quota charged to the tourist, not the accommodation owner. SPEC-211 reworks this (owner-governed chat + Model C); SPEC-200 ships to prod after SPEC-211 Phase 0 cost mitigation."
         },
         {
@@ -402,9 +404,12 @@
         {
             "specId": "SPEC-195",
             "title": "Content Auto-Moderation Engine",
-            "status": "in-progress",
+            "status": "completed",
             "progress": "6/7",
-            "path": "SPEC-195-content-auto-moderation"
+            "path": "SPEC-195-content-auto-moderation",
+            "archived": true,
+            "archivedAt": "2026-06-13",
+            "archiveNote": "DRIFT FIX: shipped via #1491/#1496/#1499/#1508, archived by #1584, promoted to main via #1542. Stale-base edit reverted it; restored."
         },
         {
             "specId": "SPEC-199",
@@ -420,9 +425,12 @@
         {
             "specId": "SPEC-213",
             "title": "Web + Admin pre-beta polish & bugfix batch",
-            "status": "in-progress",
+            "status": "completed",
             "progress": "19/19",
-            "path": "SPEC-213-web-admin-prebeta-fixes-batch"
+            "path": "SPEC-213-web-admin-prebeta-fixes-batch",
+            "archived": true,
+            "archivedAt": "2026-06-13",
+            "archiveNote": "DRIFT FIX: 19/19 done, archived by #1584. Stale-base edit reverted it; restored."
         },
         {
             "specId": "SPEC-214",

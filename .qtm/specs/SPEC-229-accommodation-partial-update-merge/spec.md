@@ -1,13 +1,15 @@
 ---
-spec-id: SPEC-227
+spec-id: SPEC-229
 title: Accommodation partial-update data loss — partial JSONB objects + shallow-merge nested columns
 type: fix
 complexity: medium
 status: draft
 created: 2026-06-13T00:00:00Z
+renumberedFrom: SPEC-227
+renumberedReason: SPEC-227 collided with the already-merged billing-subscription-observability spec; renumbered to next free (228 taken by web-loading-states).
 ---
 
-# SPEC-227 — Accommodation partial-update data loss
+# SPEC-229 — Accommodation partial-update data loss
 
 ## Overview
 

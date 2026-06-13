@@ -725,11 +725,13 @@
             "title": "Content Auto-Moderation Engine",
             "type": "feat",
             "complexity": "medium",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-195-content-auto-moderation",
             "created": "2026-06-04T00:00:00.000Z",
             "extractedFrom": "SPEC-166",
-            "archived": false,
+            "archived": true,
+            "archivedAt": "2026-06-13",
+            "archiveNote": "DRIFT FIX: shipped via PRs #1491/#1496/#1499/#1508, archived by #1584, promoted to main via #1542. A stale-base index edit reverted it to in-progress; this restores completed/archived.",
             "extractionReason": "Spun off from SPEC-166 2026-06-04: @repo/content-moderation ships with a frozen public API but a stub engine. This spec implements the internals only (real scoring engine + DB-backed editable word lists), no consumer changes.",
             "enables": [
                 "SPEC-166 graded REJECTED/PENDING decisions via real scoring",
@@ -798,11 +800,13 @@
             "title": "AI Accommodation Chat (tourist)",
             "type": "feat",
             "complexity": "high",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-200-ai-accommodation-chat",
             "created": "2026-06-05T00:00:00.000Z",
             "parentSpec": "SPEC-173",
-            "archived": false,
+            "archived": true,
+            "archivedAt": "2026-06-13",
+            "archiveNote": "DRIFT FIX: shipped via PRs #1492/#1494/#1497/#1507 + prod-readiness #1520, archived by #1584, promoted to main via #1542. A stale-base index edit reverted it to in-progress; this restores completed/archived. The provisional monetization/metering was deliberately deferred to SPEC-211 (not pending work in SPEC-200).",
             "tags": ["ai", "feature", "spec-173-child"],
             "note": "Implemented and merged to staging via PRs #1492/#1494/#1497/#1507. Prod-readiness fixes on branch fix/SPEC-200-prod-readiness (PR #1520). Chat works (ai_chat is granted to every plan, tourists included), but its monetization is provisional: the quota is charged to the tourist, not the accommodation owner, so a VIP tourist gets unlimited chat the owner never pays for. SPEC-211 reworks this (owner-governed chat + Model C). SPEC-200 can ship to prod after SPEC-211 Phase 0 cost mitigation (finite quotas + USD ceiling)."
         },
@@ -974,11 +978,13 @@
             "title": "Web + Admin pre-beta polish & bugfix batch",
             "type": "bugfix",
             "complexity": "medium",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-213-web-admin-prebeta-fixes-batch",
             "created": "2026-06-10T21:29:49Z",
             "tags": ["web", "admin", "i18n", "bugfix", "polish"],
-            "archived": false
+            "archived": true,
+            "archivedAt": "2026-06-13",
+            "archiveNote": "DRIFT FIX: 19/19 tasks done, archived by #1584. A stale-base index edit reverted it to in-progress; this restores completed/archived."
         },
         {
             "specId": "SPEC-214",
@@ -1126,15 +1132,17 @@
             "note": "Read Brevo email/newsletter stats via server-side proxy (reuse existing HOSPEDA_EMAIL_API_KEY) + admin dashboard widget. Sibling of SPEC-224/225. Drafted 2026-06-13, ready to implement."
         },
         {
-            "specId": "SPEC-227",
+            "specId": "SPEC-229",
             "title": "Accommodation partial-update data loss — partial JSONB objects + shallow-merge nested columns",
             "type": "fix",
             "status": "draft",
             "complexity": "medium",
-            "path": "SPEC-227-accommodation-partial-update-merge",
+            "path": "SPEC-229-accommodation-partial-update-merge",
             "base": "staging",
             "priority": "P1",
-            "archived": false
+            "archived": false,
+            "renumberedFrom": "SPEC-227",
+            "renumberedReason": "Collided with the already-merged SPEC-227 billing-subscription-observability; renumbered to next free (228 taken by web-loading-states)."
         },
         {
             "specId": "SPEC-228",
