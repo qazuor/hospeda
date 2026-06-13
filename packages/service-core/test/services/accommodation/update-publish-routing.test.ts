@@ -130,7 +130,10 @@ describe('AccommodationService.update — publish routing', () => {
         expect(result.error).toBeUndefined();
         // Confirm the publish path was taken (eligibility was checked + trial started)
         expect(deps.checkEligibility).toHaveBeenCalledWith('user-002', expect.anything());
-        expect(deps.startTrial).toHaveBeenCalledWith({ ownerId: 'user-002' });
+        expect(deps.startTrial).toHaveBeenCalledWith({
+            ownerId: 'user-002',
+            accommodationId: 'acc-publish'
+        });
     });
 
     it('promotes a PRIVATE draft to PUBLIC when activated without an explicit visibility', async () => {

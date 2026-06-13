@@ -1478,9 +1478,26 @@ export class AccommodationService extends BaseCrudService<
                     if (eligibility === 'first_publish') {
                         try {
                             const result = await this._publishDeps.startTrial({
-                                ownerId: accommodation.ownerId
+                                ownerId: accommodation.ownerId,
+                                accommodationId: id
                             });
                             trialSubscriptionId = result.subscriptionId;
+                            // SPEC-222 Part 1: emit a single structured linkage line
+                            // tying the trial subscription to the accommodation that
+                            // triggered it and its owner. Searching the observability
+                            // stack by ANY of these ids surfaces the whole linkage,
+                            // even though trials are per-owner. Logging only — no extra
+                            // remote call, no change to publish timing/compensation.
+                            this.logger.info(
+                                {
+                                    subscriptionId: trialSubscriptionId,
+                                    accommodationId: id,
+                                    ownerId: accommodation.ownerId,
+                                    planSlug: 'owner-basico',
+                                    eligibility
+                                },
+                                '[accommodation.publish] trial subscription linkage'
+                            );
                         } catch (error) {
                             this.logger.error(
                                 { error, ownerId: accommodation.ownerId, accommodationId: id },

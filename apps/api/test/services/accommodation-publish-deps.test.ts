@@ -6,11 +6,19 @@ const mocks = vi.hoisted(() => ({
     startTrial: vi.fn(),
     findUserById: vi.fn(),
     clearEntitlementCache: vi.fn(),
-    getDb: vi.fn()
+    getDb: vi.fn(),
+    addPublishLinkageContext: vi.fn()
 }));
 
 vi.mock('../../src/middlewares/entitlement', () => ({
     clearEntitlementCache: mocks.clearEntitlementCache
+}));
+
+// SPEC-222 Part 1: mock the Sentry linkage helper so AC-2 can assert the scope
+// enrichment is invoked with the full linkage. The real helper is a no-op when
+// Sentry is disabled (as in tests), so mocking is the only way to observe it.
+vi.mock('../../src/lib/sentry', () => ({
+    addPublishLinkageContext: mocks.addPublishLinkageContext
 }));
 
 vi.mock('../../src/services/billing-customer-sync', () => ({
@@ -107,11 +115,44 @@ describe('buildAccommodationPublishDeps.startTrial', () => {
     it('clears the entitlement cache after creating the first-publish trial', async () => {
         const deps = buildAccommodationPublishDeps(() => ({}) as never);
 
-        const result = await deps.startTrial({ ownerId: 'owner-1' });
+        const result = await deps.startTrial({ ownerId: 'owner-1', accommodationId: 'acc-1' });
 
         expect(result).toEqual({ subscriptionId: 'sub_123' });
         expect(mocks.clearEntitlementCache).toHaveBeenCalledTimes(1);
         expect(mocks.clearEntitlementCache).toHaveBeenCalledWith('cust_123');
+    });
+
+    // SPEC-222 Part 2 (AC-3 at the dep boundary): the triggering accommodationId
+    // is forwarded to TrialService.startTrial so the MP creation metadata can
+    // carry the referential marker. No extra MP call is made here — the dep only
+    // threads the id into the single existing create path.
+    it('forwards the triggering accommodationId to TrialService.startTrial', async () => {
+        const deps = buildAccommodationPublishDeps(() => ({}) as never);
+
+        await deps.startTrial({ ownerId: 'owner-1', accommodationId: 'acc-42' });
+
+        expect(mocks.startTrial).toHaveBeenCalledTimes(1);
+        expect(mocks.startTrial).toHaveBeenCalledWith({
+            customerId: 'cust_123',
+            accommodationId: 'acc-42'
+        });
+    });
+
+    // SPEC-222 Part 1 (AC-2): the trial↔accommodation↔owner linkage is attached
+    // to the Sentry scope after the trial subscription is created.
+    it('enriches the Sentry scope with the publish linkage', async () => {
+        const deps = buildAccommodationPublishDeps(() => ({}) as never);
+
+        await deps.startTrial({ ownerId: 'owner-1', accommodationId: 'acc-7' });
+
+        expect(mocks.addPublishLinkageContext).toHaveBeenCalledTimes(1);
+        expect(mocks.addPublishLinkageContext).toHaveBeenCalledWith({
+            subscriptionId: 'sub_123',
+            accommodationId: 'acc-7',
+            ownerId: 'owner-1',
+            customerId: 'cust_123',
+            planSlug: 'owner-basico'
+        });
     });
 });
 
@@ -309,9 +350,9 @@ describe('buildAccommodationPublishDeps — test-control wrapping', () => {
             const deps = buildAccommodationPublishDeps(() => ({}) as never);
 
             // Act & Assert
-            await expect(deps.startTrial({ ownerId: 'owner-1' })).rejects.toThrow(
-                'simulated start-trial timeout'
-            );
+            await expect(
+                deps.startTrial({ ownerId: 'owner-1', accommodationId: 'acc-1' })
+            ).rejects.toThrow('simulated start-trial timeout');
 
             // Inner work must NOT have been invoked — fault short-circuits before the body.
             expect(mocks.findUserById).not.toHaveBeenCalled();
@@ -325,7 +366,7 @@ describe('buildAccommodationPublishDeps — test-control wrapping', () => {
             const deps = buildAccommodationPublishDeps(() => ({}) as never);
 
             // Act
-            const result = await deps.startTrial({ ownerId: 'owner-1' });
+            const result = await deps.startTrial({ ownerId: 'owner-1', accommodationId: 'acc-1' });
 
             // Assert — body executed normally
             expect(result).toEqual({ subscriptionId: 'sub_123' });
@@ -344,7 +385,7 @@ describe('buildAccommodationPublishDeps — test-control wrapping', () => {
             const deps = buildAccommodationPublishDeps(() => ({}) as never);
 
             // Act
-            const result = await deps.startTrial({ ownerId: 'owner-1' });
+            const result = await deps.startTrial({ ownerId: 'owner-1', accommodationId: 'acc-1' });
 
             // Assert — no interception, body ran
             expect(result).toEqual({ subscriptionId: 'sub_123' });

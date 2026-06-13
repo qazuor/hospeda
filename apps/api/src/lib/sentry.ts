@@ -445,6 +445,71 @@ export function setBillingContext(context: BillingContext): void {
 }
 
 /**
+ * Linkage between a freshly-created trial subscription and the accommodation /
+ * owner that triggered it (SPEC-222 Part 1).
+ *
+ * All ids are internal UUIDs / slugs — no PII. `accommodationId` is referential
+ * ("triggered by"): trials are per-owner, so it does NOT imply the subscription
+ * belongs to a single accommodation.
+ */
+export interface PublishLinkageContext {
+    /** Trial subscription id returned by QZPay. */
+    subscriptionId: string;
+    /** Accommodation whose publish triggered the trial (referential). */
+    accommodationId: string;
+    /** Owner the trial belongs to. */
+    ownerId: string;
+    /** Billing customer id for the owner, if resolved. */
+    customerId?: string;
+    /** Plan slug the trial was started on (e.g. `owner-basico`). */
+    planSlug?: string;
+}
+
+/**
+ * Attach the trial↔accommodation↔owner linkage to the current Sentry scope at
+ * first-publish (SPEC-222 Part 1).
+ *
+ * Adds both a breadcrumb (timeline visibility) and a scope context + tags so
+ * that any error captured during or after the publish on this request carries
+ * the linkage, and the Sentry issue is searchable by subscription, accommodation
+ * or owner id. No event is emitted here — this only enriches the scope; it is a
+ * no-op when Sentry is disabled.
+ *
+ * @param context - The publish linkage to attach.
+ */
+export function addPublishLinkageContext(context: PublishLinkageContext): void {
+    if (!Sentry.isEnabled()) {
+        return;
+    }
+
+    Sentry.addBreadcrumb({
+        category: 'billing.publish',
+        type: 'info',
+        level: 'info',
+        message: 'trial subscription linkage',
+        data: {
+            subscriptionId: context.subscriptionId,
+            accommodationId: context.accommodationId,
+            ownerId: context.ownerId,
+            ...(context.customerId ? { customerId: context.customerId } : {}),
+            ...(context.planSlug ? { planSlug: context.planSlug } : {})
+        }
+    });
+
+    Sentry.setContext('publish_linkage', {
+        subscriptionId: context.subscriptionId,
+        accommodationId: context.accommodationId,
+        ownerId: context.ownerId,
+        customerId: context.customerId,
+        planSlug: context.planSlug
+    });
+
+    Sentry.setTag('subscription_id', context.subscriptionId);
+    Sentry.setTag('accommodation_id', context.accommodationId);
+    Sentry.setTag('owner_id', context.ownerId);
+}
+
+/**
  * Add user context from Hono context
  *
  * @param c - Hono context
