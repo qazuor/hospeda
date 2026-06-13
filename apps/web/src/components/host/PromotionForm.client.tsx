@@ -156,7 +156,10 @@ export function PromotionForm({ locale, mode, initialData, promotionId }: Promot
         let cancelled = false;
 
         async function fetchPromotion(): Promise<void> {
-            const loadFailed = 'No se pudo cargar la promoción.';
+            const loadFailed = t(
+                'host.promotions.errors.loadFailed',
+                'No se pudo cargar la promoción.'
+            );
             try {
                 const result = await ownerPromotionApi.getById({
                     id: promotionId as string
@@ -164,9 +167,24 @@ export function PromotionForm({ locale, mode, initialData, promotionId }: Promot
                 if (cancelled) return;
 
                 if (!result.ok) {
+                    const status = (result.error as { status?: number }).status;
+                    let message: string;
+                    if (status === 404) {
+                        message = t(
+                            'host.promotions.errors.notFound',
+                            'No se encontró la promoción.'
+                        );
+                    } else if (status === 403) {
+                        message = t(
+                            'host.promotions.errors.forbidden',
+                            'No tenés permiso para acceder a esta promoción.'
+                        );
+                    } else {
+                        message = result.error.message ?? loadFailed;
+                    }
                     setDataLoad({
                         status: 'error',
-                        message: result.error.message ?? loadFailed
+                        message
                     });
                     return;
                 }
@@ -358,7 +376,7 @@ export function PromotionForm({ locale, mode, initialData, promotionId }: Promot
             <div
                 className={styles.promotionForm}
                 aria-busy="true"
-                aria-label={t('host.promotions.actions.edit', 'Editar promoción')}
+                aria-label={t('host.promotions.loading', 'Cargando promoción...')}
             >
                 <p className={styles.loadingText}>
                     {t('host.promotions.loading', 'Cargando promoción...')}
@@ -541,7 +559,12 @@ export function PromotionForm({ locale, mode, initialData, promotionId }: Promot
                         value={fields.discountValue}
                         onChange={handleChange}
                         min={0}
-                        step="any"
+                        step={1}
+                        max={
+                            fields.discountType === OwnerPromotionDiscountTypeEnum.PERCENTAGE
+                                ? 100
+                                : undefined
+                        }
                         required
                         aria-invalid={errors.discountValue ? 'true' : 'false'}
                         aria-describedby={

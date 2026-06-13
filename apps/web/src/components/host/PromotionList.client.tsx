@@ -286,7 +286,7 @@ export function PromotionList({ locale }: PromotionListProps): JSX.Element {
                         });
                         const validityText = promo.validUntil
                             ? `${formatDate({ date: promo.validFrom, locale })} → ${formatDate({ date: promo.validUntil, locale })}`
-                            : `${formatDate({ date: promo.validFrom, locale })} → ${t('host.promotions.fields.validUntil', 'Sin vencimiento')}`;
+                            : `${formatDate({ date: promo.validFrom, locale })} → ${t('host.promotions.fields.noExpiry', 'Sin vencimiento')}`;
 
                         return (
                             <li
@@ -313,7 +313,10 @@ export function PromotionList({ locale }: PromotionListProps): JSX.Element {
                                 {/* ── Inline confirm or action buttons ── */}
                                 {isConfirming ? (
                                     <div className={styles.confirmRow}>
-                                        <span className={styles.confirmText}>
+                                        <span
+                                            className={styles.confirmText}
+                                            role="alert"
+                                        >
                                             {t(
                                                 'host.promotions.actions.confirmDelete',
                                                 '¿Eliminar esta promoción? Esta acción no se puede deshacer.'

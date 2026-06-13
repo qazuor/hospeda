@@ -286,16 +286,21 @@
         "pageDescription": "Crie e gerencie descontos e ofertas especiais para seus imóveis",
         "empty": "Você ainda não tem nenhuma promoção. Crie sua primeira oferta!",
         "createButton": "Nova promoção",
+        "loading": "Carregando promoção...",
         "fields": {
             "title": "Título",
             "description": "Descrição",
             "discountType": "Tipo de desconto",
+            "discountTypePlaceholder": "Escolha uma opção",
             "discountValue": "Valor do desconto",
             "minNights": "Noites mínimas",
             "validFrom": "Válido a partir de",
             "validUntil": "Válido até",
+            "noExpiry": "Sem vencimento",
             "maxRedemptions": "Usos máximos",
-            "accommodationId": "Imóvel"
+            "accommodationId": "Imóvel",
+            "accommodationIdPlaceholder": "ID do imóvel (vazio = todos os imóveis)",
+            "accommodationIdHint": "Deixe vazio para aplicar a promoção a todos os seus imóveis."
         },
         "discountTypes": {
             "percentage": "Porcentagem",
@@ -310,12 +315,21 @@
         "errors": {
             "loadFailed": "Não foi possível carregar as promoções. Tente novamente.",
             "saveFailed": "Não foi possível salvar a promoção. Tente novamente.",
-            "deleteFailed": "Não foi possível excluir a promoção. Tente novamente."
+            "deleteFailed": "Não foi possível excluir a promoção. Tente novamente.",
+            "titleRequired": "O título é obrigatório.",
+            "discountTypeRequired": "O tipo de desconto é obrigatório.",
+            "discountValueRequired": "O valor do desconto é obrigatório.",
+            "discountValueMaxPercentage": "A porcentagem não pode exceder 100.",
+            "validFromRequired": "A data de início é obrigatória.",
+            "limitReachedHint": "Você atingiu o limite de promoções ativas do seu plano. Faça upgrade do seu plano para criar mais.",
+            "notFound": "Promoção não encontrada.",
+            "forbidden": "Você não tem permissão para acessar esta promoção."
         },
         "actions": {
             "edit": "Editar",
             "delete": "Excluir",
             "save": "Salvar",
+            "saving": "Salvando...",
             "cancel": "Cancelar",
             "confirmDelete": "Excluir esta promoção? Esta ação não pode ser desfeita."
         }
