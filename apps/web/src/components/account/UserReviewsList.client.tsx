@@ -102,7 +102,8 @@ interface UserReviewsListProps {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-/** Compute average rating from multi-aspect object (0-10 scale, 2 decimal). */
+/** Compute average rating from a multi-aspect object. Each aspect is 0-5, so the
+ * average is also 0-5 (rounded to 1 decimal). */
 function computeAverageRating(ratingObj: Record<string, number> | null | undefined): number | null {
     if (!ratingObj) return null;
     const values = Object.values(ratingObj).filter((v): v is number => typeof v === 'number');
@@ -218,6 +219,11 @@ export function UserReviewsList({ locale, apiUrl }: UserReviewsListProps) {
     const base = apiUrl.replace(/\/$/, '');
 
     const [reviews, setReviews] = useState<ReviewItem[]>([]);
+    // `total` is the real count from the API (full DB count, ignoring page size);
+    // `reviews` holds the loaded set (capped at API_FETCH_SIZE per type, i.e. up
+    // to 200 rows). Client-side pagination operates over the loaded set. With
+    // more than 100 reviews of one type the header count can exceed what is
+    // navigable — an accepted trade-off given how rare that is in practice.
     const [total, setTotal] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
