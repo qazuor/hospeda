@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { OwnerPromotionIdSchema } from '../../common/id.schema.js';
 import {
     OwnerPromotionCreateInputSchema,
+    OwnerPromotionCreateRequestSchema,
     OwnerPromotionSchema,
     OwnerPromotionUpdateInputSchema
 } from './owner-promotion.schema.js';
@@ -24,6 +25,15 @@ import {
  */
 export { OwnerPromotionCreateInputSchema };
 export type { OwnerPromotionCreateInput } from './owner-promotion.schema.js';
+
+/**
+ * Client-facing create request schema.
+ * Omits `ownerId` — the route handler injects it from the authenticated actor.
+ * Use this as `requestBody` on POST /api/v1/protected/owner-promotions to prevent
+ * clients from supplying or forging the owner.
+ */
+export { OwnerPromotionCreateRequestSchema };
+export type { OwnerPromotionCreateRequest } from './owner-promotion.schema.js';
 
 /**
  * Schema for owner promotion creation response.

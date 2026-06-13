@@ -1,0 +1,63 @@
+---
+/**
+ * @file mi-cuenta/promociones/nueva.astro
+ * @description Create new owner promotion page — mounts the PromotionForm island
+ * in create mode so the authenticated owner can add a new promotion.
+ *
+ * Auth protection: middleware redirects unauthenticated users. This page
+ * is only reachable by users with an active session.
+ *
+ * @route    /[lang]/mi-cuenta/promociones/nueva
+ * @rendering SSR (prerender = false — requires authenticated user)
+ */
+
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import { PromotionForm } from '@/components/host/PromotionForm.client';
+
+export const prerender = false;
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+
+const title = t('host.promotions.createButton', 'Nueva promoción');
+const description = t('host.promotions.pageDescription', 'Gestioná tus promociones y descuentos');
+
+// Auth guard: middleware protects /mi-cuenta/* automatically, safety net.
+const user = Astro.locals.user;
+if (!user) {
+    return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
+}
+---
+
+<AccountLayout locale={locale} title={title} description={description} activeSection="promociones">
+    <div class="nueva-promo-page__header">
+        <h2 class="nueva-promo-page__title">{title}</h2>
+        <p class="nueva-promo-page__subtitle">{description}</p>
+    </div>
+
+    <PromotionForm client:load locale={locale} mode="create" />
+</AccountLayout>
+
+<style>
+    .nueva-promo-page__header {
+        margin-bottom: var(--space-6);
+    }
+
+    .nueva-promo-page__title {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: clamp(1.5rem, 3vw, 2rem);
+        color: var(--core-foreground);
+        margin: 0 0 0.25rem;
+    }
+
+    .nueva-promo-page__subtitle {
+        font-family: var(--font-sans);
+        font-size: var(--text-body-sm, 0.9375rem);
+        color: var(--core-muted-foreground);
+        margin: 0;
+    }
+</style>

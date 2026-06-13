@@ -328,7 +328,8 @@
                 "myProperties": "Meus imóveis",
                 "myPropertiesDesc": "Gerencie suas acomodações publicadas",
                 "hostDashboard": "Painel do anfitrião",
-                "hostDashboardDesc": "Resumo da sua atividade como anfitrião"
+                "hostDashboardDesc": "Resumo da sua atividade como anfitrião",
+                "promotions": "Minhas promoções"
             },
             "stats": {
                 "favorites": "Meus favoritos",

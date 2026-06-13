@@ -125,8 +125,16 @@ describe('validateProfileCompletionFields', () => {
             expect(errors.phone).toBe('format');
         });
 
-        it('flags phone shorter than 7 digits as format error', () => {
+        it('accepts a short but E.164-valid number (no artificial min length)', () => {
+            // The canonical InternationalPhoneRegex allows 2+ digits; the old
+            // client-only /^\+\d{7,15}$/ wrongly rejected this. Now kept in sync
+            // with the server's CompleteProfileBodySchema.
             const errors = validateProfileCompletionFields({ ...baseValid, phone: '+12345' });
+            expect(errors.phone).toBeUndefined();
+        });
+
+        it('flags a leading-zero country digit as format error', () => {
+            const errors = validateProfileCompletionFields({ ...baseValid, phone: '+0123456' });
             expect(errors.phone).toBe('format');
         });
 
@@ -136,6 +144,41 @@ describe('validateProfileCompletionFields', () => {
                 phone: '+1234567890123456'
             });
             expect(errors.phone).toBe('format');
+        });
+    });
+
+    // ── birthDate (optional) ─────────────────────────────────────────────────────
+
+    describe('birthDate', () => {
+        it('skips validation when birthDate is undefined', () => {
+            const errors = validateProfileCompletionFields({ ...baseValid, birthDate: undefined });
+            expect(errors.birthDate).toBeUndefined();
+        });
+
+        it('skips validation when birthDate is empty', () => {
+            const errors = validateProfileCompletionFields({ ...baseValid, birthDate: '' });
+            expect(errors.birthDate).toBeUndefined();
+        });
+
+        it('accepts a valid dd/mm/yyyy date', () => {
+            const errors = validateProfileCompletionFields({
+                ...baseValid,
+                birthDate: '15/05/1990'
+            });
+            expect(errors.birthDate).toBeUndefined();
+        });
+
+        it('flags a calendar-impossible date (roll-over) as invalid', () => {
+            const errors = validateProfileCompletionFields({
+                ...baseValid,
+                birthDate: '31/02/2000'
+            });
+            expect(errors.birthDate).toBe('invalid');
+        });
+
+        it('flags an incomplete date as invalid', () => {
+            const errors = validateProfileCompletionFields({ ...baseValid, birthDate: '12/05' });
+            expect(errors.birthDate).toBe('invalid');
         });
     });
 

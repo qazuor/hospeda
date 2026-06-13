@@ -40,7 +40,13 @@ export const protectedPatchOwnerPromotionRoute = createProtectedRoute({
     ) => {
         const actor = getActorFromContext(ctx);
         const id = params.id as string;
-        const result = await ownerPromotionService.update(actor, id, body as never);
+        // Strip ownerId from the patch body so a client cannot reassign ownership.
+        // The service layer does not guard against this field, so we drop it at the
+        // route boundary before it reaches the service.
+        const { ownerId: _drop, ...safeBody } = body as Record<string, unknown> & {
+            ownerId?: unknown;
+        };
+        const result = await ownerPromotionService.update(actor, id, safeBody as never);
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);
