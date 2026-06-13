@@ -20,12 +20,35 @@
             "title": "QZPay Test-Control Hardening & Deferred E2E Coverage",
             "type": "test",
             "complexity": "low",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-221-qzpay-test-control-hardening",
             "base": "staging",
             "created": "2026-06-13T00:00:00.000Z",
             "origin": "Follow-up findings from SPEC-217 adversarial review",
+            "archived": true,
+            "archivedAt": "2026-06-13",
+            "completionRef": "PR #1602 merged to staging (a909ef4eb)",
+            "archiveNote": "F-1 (scope delayNextQueue) + F-2 (extractScope extensibility) shipped. F-3 (host-07d sync updateSubscription E2E) dropped as contrived prod code; the legitimate debugging need moved to SPEC-222 (non-blocking observability + creation-time MP enrichment).",
             "tags": ["e2e", "billing", "qzpay", "test-control", "follow-up"]
+        },
+        {
+            "specId": "SPEC-222",
+            "title": "Billing Subscription Observability — trial↔accommodation↔owner linkage logging + creation-time MP reference enrichment",
+            "type": "feat",
+            "complexity": "low",
+            "status": "draft",
+            "path": "SPEC-222-billing-subscription-observability",
+            "base": "staging",
+            "created": "2026-06-13T00:00:00.000Z",
+            "origin": "Reshaped from SPEC-221 F-3 — legitimate debugging need without contrived prod code",
+            "tags": [
+                "billing",
+                "observability",
+                "sentry",
+                "logging",
+                "mercadopago",
+                "subscriptions"
+            ]
         },
         {
             "specId": "SPEC-220",

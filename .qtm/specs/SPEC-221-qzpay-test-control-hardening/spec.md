@@ -4,7 +4,7 @@ title: QZPay Test-Control Hardening & Deferred E2E Coverage
 slug: qzpay-test-control-hardening
 type: test
 complexity: low
-status: in-progress
+status: completed
 owner: qazuor
 created: 2026-06-13
 base: staging
@@ -94,8 +94,18 @@ if it needs scoped delay/failure on `updateSubscription`.
 > first requires wiring the real subscription-update flow (plan-change / cancel) through
 > `applyTestControl`, which is a **billing-CORE production change**, not test-infra, and
 > falls outside this spec's "low-complexity, test-infra-only" scope. **Decision: F-3 is
-> re-deferred** (AC-3 permits it) pending a separate spec that scopes the billing-core
-> wiring + risk. F-1 and F-2 — the actual hardening — ship in this spec.
+> re-deferred** (AC-3 permits it). F-1 and F-2 — the actual hardening — ship in this spec.
+>
+> **Final disposition (2026-06-13)**: host-07d's underlying premise — a *synchronous,
+> failable* `updateSubscription` inside the publish hot path — will NOT be built: there
+> is no such operation today, and adding one purely to enable a test would be contrived
+> production code (extra MP round-trip + 8s timeout on every first publish, zero user
+> value). The post-trial compensation contract host-07d targeted is already covered by
+> unit tests (`publish.test.ts`). The *legitimate* debugging need that motivated it
+> (tracing a trial subscription back to its accommodation/owner) is addressed by
+> **SPEC-222** (non-blocking observability of the trial↔accommodation↔owner↔checkout
+> linkage via structured logs + Sentry, plus creation-time MP `external_reference` /
+> metadata enrichment — no async MP update). host-07d stays `test.fixme` with this note.
 
 ## 3. Out of scope
 
@@ -126,8 +136,12 @@ if it needs scoped delay/failure on `updateSubscription`.
   `packages/billing/test/qzpay-test-control.scope.test.ts` (cases d1-d3).
 - **F-2 (AC-2)**: DONE — `extractScope` documented with an explicit extensibility note
   for the unwired operations; the documented `undefined` fallback is tested (case b2).
-- **F-3 (AC-3)**: RE-DEFERRED — see the implementation finding above. Needs a separate
-  billing-core spec to wire the subscription-update flow through `applyTestControl`.
+- **F-3 (AC-3)**: RE-DEFERRED → see the Final disposition above. host-07d's
+  sync-`updateSubscription` premise is dropped (contrived prod code); the legitimate
+  debugging need it gestured at moves to **SPEC-222** (non-blocking observability +
+  creation-time MP enrichment). host-07d stays `test.fixme`.
+
+SPEC-221 ships with F-1 + F-2 (PR #1586 era follow-up; merged to staging via PR #1602).
 
 ## 6. Notes
 
