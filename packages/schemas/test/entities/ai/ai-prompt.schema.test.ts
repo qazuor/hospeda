@@ -189,7 +189,7 @@ describe('CreateAiPromptVersionSchema', () => {
     it('rejects an unknown feature', () => {
         const result = CreateAiPromptVersionSchema.safeParse({
             ...validInput,
-            feature: 'translate'
+            feature: 'unknown_feature'
         });
         expect(result.success).toBe(false);
     });

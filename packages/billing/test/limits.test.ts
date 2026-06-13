@@ -6,13 +6,12 @@ describe('Limits Configuration', () => {
     describe('LIMIT_METADATA', () => {
         const allLimitKeys = Object.values(LimitKey);
 
-        it('should have entries for all 12 LimitKey values', () => {
-            // Arrange
+        it('should have entries for all LimitKey values', () => {
             const metadataKeys = Object.keys(LIMIT_METADATA);
+            const allLimitKeys = Object.values(LimitKey);
 
-            // Act & Assert
-            expect(metadataKeys).toHaveLength(12);
-            expect(allLimitKeys).toHaveLength(12);
+            expect(metadataKeys).toHaveLength(allLimitKeys.length);
+            expect(allLimitKeys.length).toBeGreaterThan(0);
         });
 
         it('should have an entry for MAX_ACCOMMODATIONS', () => {
