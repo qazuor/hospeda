@@ -624,10 +624,15 @@ export function toAccommodationDetailPageProps({
             (item.descriptionI18n as I18nTextLike | string) ?? item.description,
             locale
         ),
-        richDescription: resolveI18nText(
-            (item.richDescriptionI18n as I18nTextLike | string) ?? item.richDescription ?? null,
-            locale
-        ),
+        richDescription:
+            item.richDescriptionI18n != null || item.richDescription != null
+                ? resolveI18nText(
+                      (item.richDescriptionI18n as I18nTextLike | string) ??
+                          item.richDescription ??
+                          null,
+                      locale
+                  )
+                : undefined,
         type: String(item.type || ''),
         isFeatured: Boolean(item.isFeatured),
         createdAt: item.createdAt ? String(item.createdAt) : new Date().toISOString(),
