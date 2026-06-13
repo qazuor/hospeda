@@ -88,7 +88,9 @@ export function TranslationSection({ entityType, entityId, entity }: Translation
                 await fetchApi({
                     path: '/api/v1/admin/ai/translate',
                     method: 'POST',
-                    body: { entityType, entityId, targetLocales: ['en', 'pt'] }
+                    // The admin edit form works in Spanish; the backend fills the
+                    // missing en/pt locales from it.
+                    body: { entityType, entityId, sourceLocale: 'es' }
                 });
 
                 addToast({

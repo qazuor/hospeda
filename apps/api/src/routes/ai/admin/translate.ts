@@ -40,7 +40,12 @@ const BatchTranslateRequestSchema = z.object({
 const TranslateEntityRequestSchema = z.object({
     entityType: z.enum(['accommodation', 'destination', 'event', 'post']),
     entityId: z.string().uuid(),
-    targetLocales: z.array(z.enum(['en', 'pt'])).optional()
+    // The locale the editor is working in; translations flow OUT of it. Defaults
+    // to Spanish for backward compatibility.
+    sourceLocale: z.enum(['es', 'en', 'pt']).default('es'),
+    // When omitted, the service translates every locale except the source that
+    // is still missing a value.
+    targetLocales: z.array(z.enum(['es', 'en', 'pt'])).optional()
 });
 
 const OverrideRequestSchema = z.object({
@@ -78,16 +83,20 @@ adminAiTranslateRoute.post('/', async (c) => {
         );
     }
 
-    const { entityType, entityId, targetLocales } = parsed.data;
+    const { entityType, entityId, sourceLocale, targetLocales } = parsed.data;
     const actor = getActorFromContext(c);
 
     apiLogger.info(
-        { userId: actor.id, entityType, entityId, targetLocales },
+        { userId: actor.id, entityType, entityId, sourceLocale, targetLocales },
         'admin-ai-translate: single-entity translate'
     );
 
     try {
-        const fields = await loadTranslatableFields(entityType as TranslatableEntityType, entityId);
+        const fields = await loadTranslatableFields(
+            entityType as TranslatableEntityType,
+            entityId,
+            sourceLocale
+        );
 
         if (fields === null) {
             return c.json(
@@ -116,7 +125,9 @@ adminAiTranslateRoute.post('/', async (c) => {
             entityType: entityType as TranslatableEntityType,
             entityId,
             fields,
-            targetLocales
+            sourceLocale,
+            targetLocales,
+            onlyMissing: true
         });
 
         await persistTranslations(
@@ -125,7 +136,8 @@ adminAiTranslateRoute.post('/', async (c) => {
             fields,
             result.translations,
             result.provider,
-            result.model
+            result.model,
+            sourceLocale
         );
 
         return c.json({

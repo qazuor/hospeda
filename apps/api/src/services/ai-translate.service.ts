@@ -112,7 +112,23 @@ const I18N_COLUMN_MAP: Record<TranslatableEntityType, Record<string, string>> = 
     }
 };
 
-/** Target locales for translation (Spanish is the source). */
+/** Content locales that participate in translation. */
+export type ContentLocale = 'es' | 'en' | 'pt';
+
+/** All content locales, used to derive target locales from a source locale. */
+const CONTENT_LOCALES: readonly ContentLocale[] = ['es', 'en', 'pt'] as const;
+
+/** Human-readable language names for prompt construction. */
+const LOCALE_NAMES: Record<ContentLocale, string> = {
+    es: 'Spanish',
+    en: 'English',
+    pt: 'Portuguese'
+};
+
+/**
+ * Default target locales for the batch path (Spanish is the implicit source).
+ * The single-entity path derives targets from the caller's source locale.
+ */
 const TARGET_LOCALES = ['en', 'pt'] as const;
 
 /** Delay between concurrency batches to stay under provider rate limits. */
@@ -127,8 +143,21 @@ const FEATURE: AiFeature = 'translate';
 export interface TranslateEntityInput {
     entityType: TranslatableEntityType;
     entityId: string;
+    /** Source field values, expressed in {@link sourceLocale}. */
     fields: Record<string, string>;
-    targetLocales?: ('en' | 'pt')[];
+    /** Locale the source `fields` are written in. Defaults to `'es'`. */
+    sourceLocale?: ContentLocale;
+    /**
+     * Locales to translate into. Defaults to every content locale except
+     * {@link sourceLocale} (the source is never translated into itself).
+     */
+    targetLocales?: ContentLocale[];
+    /**
+     * When `true`, skip any (field, locale) pair that already has a non-empty
+     * value — translate only the missing locales. Requires a DB read, so it is
+     * `false` by default (the batch / auto paths manage idempotency themselves).
+     */
+    onlyMissing?: boolean;
 }
 
 export interface TranslateResult {
@@ -168,10 +197,15 @@ export interface BatchTranslateResult {
 // ---------------------------------------------------------------------------
 
 /**
- * Builds the user prompt for translating a single field.
+ * Builds the user prompt for translating a single field from a source locale to
+ * a target locale.
  */
-function buildTranslationPrompt(fieldValue: string, targetLocale: string): string {
-    return `Translate the following Spanish text to ${targetLocale === 'en' ? 'English' : 'Portuguese'}:\n\n${fieldValue}`;
+function buildTranslationPrompt(
+    fieldValue: string,
+    sourceLocale: ContentLocale,
+    targetLocale: ContentLocale
+): string {
+    return `Translate the following ${LOCALE_NAMES[sourceLocale]} text to ${LOCALE_NAMES[targetLocale]}:\n\n${fieldValue}`;
 }
 
 /**
@@ -181,19 +215,20 @@ function buildTranslationPrompt(fieldValue: string, targetLocale: string): strin
 async function translateField(
     aiService: Awaited<ReturnType<typeof createConfiguredAiService>>,
     fieldValue: string,
-    targetLocale: string
+    sourceLocale: ContentLocale,
+    targetLocale: ContentLocale
 ): Promise<{
     text: string;
     usage: { promptTokens: number; completionTokens: number; totalTokens: number };
     provider: string;
     model: string;
 }> {
-    const prompt = buildTranslationPrompt(fieldValue, targetLocale);
+    const prompt = buildTranslationPrompt(fieldValue, sourceLocale, targetLocale);
 
     const result = await aiService.generateText({
         feature: FEATURE,
         prompt,
-        locale: targetLocale as 'en' | 'pt'
+        locale: targetLocale
     });
 
     return {
@@ -219,12 +254,13 @@ interface FieldTranslationOutcome {
 async function translateFieldWithRetry(
     aiService: Awaited<ReturnType<typeof createConfiguredAiService>>,
     fieldValue: string,
-    targetLocale: string,
+    sourceLocale: ContentLocale,
+    targetLocale: ContentLocale,
     fieldType: string,
     entityId: string
 ): Promise<FieldTranslationOutcome> {
     try {
-        const result = await translateField(aiService, fieldValue, targetLocale);
+        const result = await translateField(aiService, fieldValue, sourceLocale, targetLocale);
         return {
             result: {
                 fieldType,
@@ -268,7 +304,13 @@ async function translateFieldWithRetry(
  * @returns Translation results with usage metadata.
  */
 export async function translateEntity(input: TranslateEntityInput): Promise<TranslateEntityResult> {
-    const { entityId, fields, targetLocales = TARGET_LOCALES } = input;
+    const { entityType, entityId, fields, sourceLocale = 'es', onlyMissing = false } = input;
+    const targetLocales =
+        input.targetLocales ?? CONTENT_LOCALES.filter((locale) => locale !== sourceLocale);
+
+    // When asked to translate only the gaps, read the existing i18n values so we
+    // can skip (field, locale) pairs that are already populated.
+    const existing = onlyMissing ? await loadExistingTranslations(entityType, entityId) : null;
 
     const aiService = await createConfiguredAiService();
     const translations: TranslateResult[] = [];
@@ -282,9 +324,19 @@ export async function translateEntity(input: TranslateEntityInput): Promise<Tran
         }
 
         for (const locale of targetLocales) {
+            // Never translate the source into itself.
+            if (locale === sourceLocale) {
+                continue;
+            }
+            // Skip locales already filled when translating only the gaps.
+            if (existing?.[fieldType]?.[locale]) {
+                continue;
+            }
+
             const outcome = await translateFieldWithRetry(
                 aiService,
                 fieldValue,
+                sourceLocale,
                 locale,
                 fieldType,
                 entityId
@@ -316,6 +368,40 @@ export async function translateEntity(input: TranslateEntityInput): Promise<Tran
 }
 
 /**
+ * Reads the current i18n values for every translatable field of an entity.
+ *
+ * Used by {@link translateEntity} when `onlyMissing` is set, to decide which
+ * (field, locale) pairs already have content and can be skipped.
+ *
+ * @returns A map of fieldType → { locale → value } for non-empty i18n columns.
+ */
+async function loadExistingTranslations(
+    entityType: TranslatableEntityType,
+    entityId: string
+): Promise<Record<string, Partial<Record<ContentLocale, string>>>> {
+    const table = getEntityTable(entityType);
+    const i18nColumnMap = I18N_COLUMN_MAP[entityType];
+    const db = getDb();
+
+    const selection: Record<string, PgColumn> = {};
+    for (const column of Object.values(i18nColumnMap)) {
+        selection[column] = i18nColumn(table, column);
+    }
+
+    const [row] = await db.select(selection).from(table).where(eq(table.id, entityId)).limit(1);
+    const existingRow = (row ?? {}) as Record<string, unknown>;
+
+    const result: Record<string, Partial<Record<ContentLocale, string>>> = {};
+    for (const [fieldType, column] of Object.entries(i18nColumnMap)) {
+        const value = existingRow[column] as I18nText | null;
+        if (value) {
+            result[fieldType] = { es: value.es, en: value.en, pt: value.pt };
+        }
+    }
+    return result;
+}
+
+/**
  * Persists translation results to the database.
  * Updates the I18nText columns and translation_meta for the entity.
  */
@@ -325,7 +411,8 @@ export async function persistTranslations(
     fieldValues: Record<string, string>,
     results: readonly TranslateResult[],
     provider: string,
-    model: string
+    model: string,
+    sourceLocale: ContentLocale = 'es'
 ): Promise<void> {
     const table = getEntityTable(entityType);
     const i18nColumnMap = I18N_COLUMN_MAP[entityType];
@@ -374,12 +461,14 @@ export async function persistTranslations(
             pt: ''
         };
 
-        // Start from the existing localized value, refresh the Spanish source.
+        // Start from the existing localized value, refresh the source locale
+        // from the provided source field value (Spanish by default).
         const nextValue: I18nText = {
-            es: fieldValues[fieldType] ?? existingValue.es ?? '',
+            es: existingValue.es ?? '',
             en: existingValue.en ?? '',
             pt: existingValue.pt ?? ''
         };
+        nextValue[sourceLocale] = fieldValues[fieldType] ?? existingValue[sourceLocale] ?? '';
         const fieldMeta: TranslationMeta[string] = { ...(existingMeta[fieldType] ?? {}) };
 
         for (const result of fieldResults) {
@@ -422,7 +511,8 @@ export async function persistTranslations(
  */
 export async function loadTranslatableFields(
     entityType: TranslatableEntityType,
-    entityId: string
+    entityId: string,
+    sourceLocale: ContentLocale = 'es'
 ): Promise<Record<string, string> | null> {
     const table = getEntityTable(entityType);
     const db = getDb();
@@ -433,9 +523,19 @@ export async function loadTranslatableFields(
     }
 
     const data = row as Record<string, unknown>;
+    const i18nColumnMap = I18N_COLUMN_MAP[entityType];
     const fields: Record<string, string> = {};
     for (const field of ENTITY_FIELDS[entityType]) {
-        const value = data[field];
+        // For Spanish the plain column holds the canonical source; for other
+        // locales read the value from the per-field i18n column.
+        let value: unknown;
+        if (sourceLocale === 'es') {
+            value = data[field];
+        } else {
+            const i18nCol = i18nColumnMap[field];
+            const i18nValue = i18nCol ? (data[i18nCol] as I18nText | null) : null;
+            value = i18nValue?.[sourceLocale];
+        }
         if (typeof value === 'string' && value.trim().length > 0) {
             fields[field] = value;
         }
