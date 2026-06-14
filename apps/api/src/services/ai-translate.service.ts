@@ -162,7 +162,8 @@ export interface TranslateEntityInput {
 
 export interface TranslateResult {
     fieldType: string;
-    locale: string;
+    /** Target locale this result was produced for (never the source locale). */
+    locale: ContentLocale;
     translatedText: string;
     success: boolean;
     error?: string;
@@ -329,7 +330,8 @@ export async function translateEntity(input: TranslateEntityInput): Promise<Tran
                 continue;
             }
             // Skip locales already filled when translating only the gaps.
-            if (existing?.[fieldType]?.[locale]) {
+            // Trim guards against whitespace-only values counting as "filled".
+            if (existing?.[fieldType]?.[locale]?.trim()) {
                 continue;
             }
 
@@ -476,7 +478,8 @@ export async function persistTranslations(
             // can fall back to Spanish; they are not recorded as overrides.
             if (!result.success) continue;
 
-            const locale = result.locale as 'en' | 'pt';
+            // `result.locale` is a target locale (es/en/pt), never the source.
+            const locale = result.locale;
             // Never overwrite a human-curated manual override.
             if (existingMeta[fieldType]?.[locale]?.autoTranslated === false) continue;
 

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Mock } from 'vitest';
+import type { TranslateResult } from '../ai-translate.service.js';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -315,6 +316,7 @@ describe('translateEntity — source locale and direction', () => {
         // Assert — en already present is skipped; only pt is translated.
         expect(result.translations).toHaveLength(1);
         expect(result.translations[0]?.locale).toBe('pt');
+        expect(result.translations.every((t) => t.locale !== 'en')).toBe(true);
     });
 });
 
@@ -351,7 +353,7 @@ describe('persistTranslations', () => {
     it('should update i18n columns with translated values', async () => {
         // Arrange
         const fieldValues = { name: 'Cabaña del Río', summary: 'Hermosa cabaña' };
-        const translations = [
+        const translations: TranslateResult[] = [
             { fieldType: 'name', locale: 'en', translatedText: 'River Cabin', success: true },
             { fieldType: 'name', locale: 'pt', translatedText: 'Cabana do Rio', success: true },
             {
@@ -384,7 +386,7 @@ describe('persistTranslations', () => {
 
     it('should preserve Spanish values in I18nText', async () => {
         const fieldValues = { name: 'Cabaña del Río' };
-        const translations = [
+        const translations: TranslateResult[] = [
             { fieldType: 'name', locale: 'en', translatedText: 'River Cabin', success: true }
         ];
 
@@ -404,7 +406,7 @@ describe('persistTranslations', () => {
 
     it('should track autoTranslated status in metadata', async () => {
         const fieldValues = { name: 'Cabaña' };
-        const translations = [
+        const translations: TranslateResult[] = [
             { fieldType: 'name', locale: 'en', translatedText: 'Cabin', success: true }
         ];
 
@@ -429,7 +431,7 @@ describe('persistTranslations', () => {
         mockLimit.mockResolvedValue([{ translationMeta: {} }]);
 
         const fieldValues = { name: 'Cabaña' };
-        const translations = [
+        const translations: TranslateResult[] = [
             {
                 fieldType: 'name',
                 locale: 'en',
@@ -469,7 +471,7 @@ describe('persistTranslations', () => {
         // The editor worked in English, so the English column is the source of
         // truth and Portuguese is the translated target.
         const fieldValues = { name: 'River Cabin' };
-        const translations = [
+        const translations: TranslateResult[] = [
             { fieldType: 'name', locale: 'pt', translatedText: 'Cabana do Rio', success: true }
         ];
 
@@ -487,6 +489,9 @@ describe('persistTranslations', () => {
         const nameI18n = setArg.nameI18n as { es: string; en: string; pt: string };
         expect(nameI18n.en).toBe('River Cabin');
         expect(nameI18n.pt).toBe('Cabana do Rio');
+        // The canonical Spanish column must NOT be touched when it is not a
+        // result locale (regression guard: locale typing must stay honest).
+        expect(nameI18n.es).toBe('');
     });
 
     it('preserves a manual override (autoTranslated:false) against re-translation', async () => {
@@ -498,7 +503,7 @@ describe('persistTranslations', () => {
             }
         ]);
 
-        const translations = [
+        const translations: TranslateResult[] = [
             { fieldType: 'name', locale: 'en', translatedText: 'Auto cabin', success: true }
         ];
 
