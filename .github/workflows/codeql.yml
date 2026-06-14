@@ -8,8 +8,9 @@
 # Triggers mirror exactly what default setup did:
 #   - push to `main`
 #   - pull_request targeting `main`
-# Languages analysed: javascript-typescript, actions (same as default setup).
-# Neither language requires a build step (build-mode: none).
+# Languages analysed: javascript-typescript, actions, python (matches the
+# languages default setup auto-detected for this repo, so no coverage regression).
+# None of these require a build step (build-mode: none).
 
 name: CodeQL
 
@@ -42,6 +43,7 @@ jobs:
         language:
           - javascript-typescript
           - actions
+          - python
 
     steps:
       - name: Checkout repository
