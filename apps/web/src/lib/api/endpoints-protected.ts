@@ -561,7 +561,7 @@ export const billingApi = {
         readonly page?: number;
         readonly pageSize?: number;
     }): Promise<ApiResult<PaginatedResponse<InvoiceItem>>> {
-        return apiClient.getList({
+        return apiClient.getListProtected({
             path: `${PROTECTED}/billing/invoices`,
             params
         });
@@ -582,7 +582,7 @@ export const billingApi = {
         readonly page?: number;
         readonly pageSize?: number;
     }): Promise<ApiResult<PaginatedResponse<PaymentItem>>> {
-        return apiClient.getList({
+        return apiClient.getListProtected({
             path: `${PROTECTED}/billing/payments`,
             params
         });
@@ -1533,7 +1533,7 @@ export const protectedAccommodationsApi = {
         readonly pageSize?: number;
         readonly lifecycleState?: AccommodationLifecycleState;
     }): Promise<ApiResult<PaginatedResponse<Record<string, unknown>>>> {
-        return apiClient.getList({ path: `${PROTECTED}/accommodations`, params });
+        return apiClient.getListProtected({ path: `${PROTECTED}/accommodations`, params });
     },
 
     /**
@@ -2184,7 +2184,7 @@ export const ownerPromotionApi = {
         readonly sortBy?: string;
         readonly sortOrder?: 'asc' | 'desc';
     }): Promise<ApiResult<PaginatedResponse<Record<string, unknown>>>> {
-        return apiClient.getList({
+        return apiClient.getListProtected({
             path: `${PROTECTED}/owner-promotions`,
             params
         });
