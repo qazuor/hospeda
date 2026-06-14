@@ -1135,7 +1135,7 @@
             "specId": "SPEC-229",
             "title": "Accommodation partial-update data loss — partial JSONB objects + shallow-merge nested columns",
             "type": "fix",
-            "status": "draft",
+            "status": "in-progress",
             "complexity": "medium",
             "path": "SPEC-229-accommodation-partial-update-merge",
             "base": "staging",
