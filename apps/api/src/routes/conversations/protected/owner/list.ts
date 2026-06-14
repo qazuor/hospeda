@@ -3,10 +3,12 @@
  *
  * Returns a paginated inbox for the authenticated owner.
  * Resolves accommodation IDs via inline DB query (eq(accommodations.ownerId, actor.id))
- * and delegates to ConversationService.listForOwner().
+ * and delegates to ConversationService.listForOwner(). Each item is enriched
+ * with accommodationName, guestName, lastMessageExcerpt, and unreadCount before
+ * returning so the UI can render inbox rows without additional round trips.
  */
 
-import { accommodations, getDb } from '@repo/db';
+import { AccommodationModel, MessageModel, UserModel, accommodations, getDb } from '@repo/db';
 import { ConversationStatusEnum, PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { ConversationService } from '@repo/service-core';
 import { eq } from 'drizzle-orm';
@@ -21,6 +23,10 @@ import {
     handleRouteError
 } from '../../../../utils/response-helpers';
 import { SYSTEM_ACTOR } from './system-actor';
+
+const accommodationModel = new AccommodationModel();
+const messageModel = new MessageModel();
+const userModel = new UserModel();
 
 const router = createRouter();
 
@@ -121,7 +127,82 @@ router.get('/', async (c) => {
             total: result.data.total
         });
 
-        return createPaginatedResponse(result.data.items as unknown[], pagination, c);
+        // TYPE-WORKAROUND: listForOwner returns a generic item type that doesn't
+        // surface accommodationId/userId/anonymousName at the TS level; the runtime
+        // shape always carries these columns. Widening through unknown so we can
+        // access them without losing other keys during enrichment.
+        const itemsRaw = (result.data.items ?? []) as unknown as Array<{
+            id: string;
+            accommodationId: string;
+            userId: string | null;
+            anonymousName: string | null;
+            [k: string]: unknown;
+        }>;
+
+        // Batch-resolve accommodation names (dedup'd, single findById per unique ID).
+        const uniqueAccommodationIds = [
+            ...new Set(itemsRaw.map((item) => item.accommodationId).filter(Boolean))
+        ];
+        const accommodationsById = new Map<string, { name?: string }>();
+        for (const id of uniqueAccommodationIds) {
+            const row = await accommodationModel.findById(id);
+            if (row) {
+                accommodationsById.set(id, { name: (row as { name?: string }).name });
+            }
+        }
+
+        // Batch-resolve registered user display names (single findByIds call).
+        const registeredUserIds = [
+            ...new Set(itemsRaw.map((item) => item.userId).filter((id): id is string => !!id))
+        ];
+        const usersById = new Map<string, string>();
+        if (registeredUserIds.length > 0) {
+            const userRows = await userModel.findByIds(registeredUserIds);
+            for (const u of userRows) {
+                const userRow = u as {
+                    id: string;
+                    displayName?: string | null;
+                    firstName?: string | null;
+                    lastName?: string | null;
+                    email?: string | null;
+                };
+                const name =
+                    userRow.displayName?.trim() ||
+                    [userRow.firstName, userRow.lastName].filter(Boolean).join(' ').trim() ||
+                    userRow.email ||
+                    null;
+                if (name) usersById.set(userRow.id, name);
+            }
+        }
+
+        // Batch-fetch last message previews and per-conversation unread counts for
+        // the owner. Both queries are single round-trips regardless of inbox size.
+        const conversationIds = itemsRaw.map((item) => item.id);
+        const [lastMessagePreviews, unreadCountMap] = await Promise.all([
+            messageModel.getLastMessagePreviews(conversationIds),
+            messageModel.countUnreadForOwnerByConversation(conversationIds)
+        ]);
+
+        const items = itemsRaw.map((item) => {
+            const acc = accommodationsById.get(item.accommodationId);
+            const rawExcerpt = lastMessagePreviews.get(item.id) ?? '';
+            // Resolve a display name; leave null when neither an anonymous name
+            // nor a registered user name is available — the UI applies a
+            // localized fallback label (never a hardcoded server-side string).
+            const guestName =
+                item.anonymousName?.trim() ||
+                (item.userId ? (usersById.get(item.userId) ?? null) : null) ||
+                null;
+            return {
+                ...item,
+                accommodationName: acc?.name ?? null,
+                guestName,
+                lastMessageExcerpt: rawExcerpt.slice(0, 200) || null,
+                unreadCount: unreadCountMap.get(item.id) ?? 0
+            };
+        });
+
+        return createPaginatedResponse(items as unknown[], pagination, c);
     } catch (error) {
         return handleRouteError(error, c);
     }

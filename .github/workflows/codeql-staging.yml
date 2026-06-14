@@ -1,0 +1,95 @@
+# CodeQL Scheduled Scan — staging branch
+#
+# Purpose: scan the `staging` ref nightly so security findings surface
+# continuously instead of accumulating silently until a staging→main promotion.
+# See SPEC-220 §4.3 (option B — scheduled scan) and the runbook:
+#   .qtm/specs/SPEC-220-staging-main-promotion-hardening/docs/codeql-advanced-setup-runbook.md
+#
+# Schedule: 02:15 UTC daily (low-traffic window; staggered from top-of-hour
+# to spread load on GitHub's infrastructure).
+#
+# IMPORTANT — schedule trigger behaviour:
+#   GitHub only executes `on: schedule` workflows from the file on the DEFAULT
+#   branch (main). This workflow living on `staging` is inert until it reaches
+#   `main`. Once on `main`, the job explicitly checks out the `staging` ref so
+#   the correct code is scanned.
+#
+# Non-default-ref upload:
+#   CodeQL's `analyze` action accepts `ref` + `sha` inputs so results are
+#   attributed to `staging` in the Security → Code scanning tab rather than to
+#   `main`. The `sha` is resolved at job start via `git rev-parse` on the
+#   checked-out staging HEAD. Both inputs are required together when either is
+#   provided (per analyze/action.yml).
+#   Docs: https://github.com/github/codeql-action/blob/main/analyze/action.yml
+#
+# Category:
+#   Using `/language:<lang>/staging` keeps staging results in a separate Code
+#   Scanning bucket so they do NOT overwrite or pollute the main-branch baseline.
+
+name: CodeQL (staging)
+
+on:
+  schedule:
+    # 02:15 UTC daily — staggered to avoid top-of-hour load spikes.
+    - cron: '15 2 * * *'
+  workflow_dispatch:
+
+concurrency:
+  # Workflow-level concurrency groups whole runs (not matrix legs), so the
+  # group must not reference matrix.language (unavailable at this scope). One
+  # staging scan at a time; a new run cancels an in-progress one.
+  group: codeql-staging
+  cancel-in-progress: true
+
+permissions:
+  security-events: write
+  actions: read
+  contents: read
+  packages: read
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }}) [staging]
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language:
+          - javascript-typescript
+          - actions
+          - python
+
+    steps:
+      - name: Checkout staging branch
+        uses: actions/checkout@v4
+        with:
+          ref: staging
+          # Full history is not needed; shallow clone is fine for CodeQL.
+
+      # Resolve the exact HEAD SHA of the checked-out staging ref.
+      # This is stored in STAGING_SHA and passed to the analyze action so
+      # Code Scanning attributes results to the correct commit on staging.
+      # The SHA comes from git itself (trusted), not from any user-controlled
+      # GitHub context expression, so there is no injection risk here.
+      - name: Resolve staging HEAD SHA
+        id: staging-ref
+        run: |
+          STAGING_SHA=$(git rev-parse HEAD)
+          echo "sha=${STAGING_SHA}" >> "$GITHUB_OUTPUT"
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v4
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: none
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v4
+        with:
+          # Attribute results to the staging ref, not to main (where this
+          # workflow file lives). Both ref + sha are required together.
+          ref: refs/heads/staging
+          sha: ${{ steps.staging-ref.outputs.sha }}
+          # Distinct category keeps staging results separate from main's baseline.
+          category: /language:${{ matrix.language }}/staging

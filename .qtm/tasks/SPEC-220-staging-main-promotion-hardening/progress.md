@@ -56,6 +56,58 @@ CodeQL taint via the canonical `new URL(tainted, origin)` + origin-check sanitiz
 pattern). 6 unit tests added; web typecheck/lint/tests green. Adversarial review:
 no bypass found, APPROVE. PR → staging pending.
 
+## T-005 round 1 — promo #1618 surfaced 2 findings (2026-06-13)
+
+Opened the `staging → main` promotion PR **#1618** (the T-005 validation). On the
+current diff (373 commits) it ran: `CI Pass = SUCCESS`, but `CodeQL = FAILURE`
+with **2** findings — the 105 new commits changed the picture vs #1594:
+
+1. `js/xss-through-dom` — **still** at `PreferenceToggles.client.tsx`. The T-002
+   `new URL` + origin-check guard did NOT clear it: CodeQL re-taints the
+   reconstructed `pathname+search+hash` string and traces it to
+   `window.location.assign`, which it treats as a `javascript:`-capable sink.
+2. `js/insecure-randomness` — **new**, at `apps/e2e/fixtures/api-helpers.ts`
+   (`Math.random()` feeding test passwords/emails = a security context).
+
+## T-003 — clear both findings (done, PR #1622 → merged to staging)
+
+- **XSS**: pivoted from `location.assign(string)` to the **`window.location.pathname`
+  setter**. The pathname setter can only replace the path component (no scheme/
+  authority), so it is inherently same-origin and is not modelled as an
+  xss-through-dom sink — the safe API is the guard. Helper renamed
+  `buildLocaleSwitchPathname` (path-only; browser preserves query/hash). The
+  `new URL`/origin machinery was dropped.
+- **insecure-randomness**: replaced the three `Math.random()` uses with a
+  `randomToken` helper backed by `node:crypto` `randomBytes`.
+- Verified: web typecheck 0 errors, biome clean, web tests 25/25, e2e `tsc` clean.
+
+## T-005 round 2 — promo #1618 GREEN ✅ (2026-06-13)
+
+After #1622 merged to `staging`, #1618 re-ran on the new staging HEAD and is
+**fully green: `CodeQL = SUCCESS` + `CI Pass = SUCCESS`, 0 failures**. The
+pathname-setter cleared the XSS and crypto cleared the randomness. T-005 met.
+PR #1618 is **owner-merge-only** (protected `main`) — that's T-007.
+
+## T-006 — prevention: scheduled CodeQL on staging (prepared, PR pending)
+
+Owner chose **option B** (scheduled scan of staging). Repo uses GitHub **default
+setup** today (no committed codeql workflow), which only scans `main` + PRs to
+`main` — the root cause of invisible staging debt. Migrating to **advanced setup**
+on branch `chore/SPEC-220-codeql-staging-scanning`:
+
+- `.github/workflows/codeql.yml` — replaces default setup; scans `main` on
+  push + PR for `javascript-typescript` + `actions` (preserves current coverage).
+- `.github/workflows/codeql-staging.yml` — nightly (02:15 UTC) + `workflow_dispatch`;
+  checks out `staging`, sets the analyze `ref`/`sha` so results attribute to
+  `staging`, distinct `/staging` category.
+- Runbook: `docs/codeql-advanced-setup-runbook.md` (in this spec dir).
+
+**Rollout (see runbook):** these files are inert on `staging` (schedule fires only
+from `main`; push/PR triggers are `main`-scoped). They reach `main` via a promotion
+**after** #1618 is merged (do not entangle). The owner must **disable default setup
+in the GitHub UI** at the moment that promotion lands `codeql.yml` on `main`
+(default + advanced cannot coexist). Uses `github/codeql-action@v4` (current latest).
+
 ## Already resolved on staging (clear automatically on promotion)
 
 - **esbuild advisory** (`Security` gate): override tightened to `>=0.28.1` (#1589).
