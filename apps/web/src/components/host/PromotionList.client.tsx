@@ -122,12 +122,10 @@ export function PromotionList({ locale }: PromotionListProps): JSX.Element {
             if (!result.ok) {
                 setState({
                     status: 'error',
-                    message:
-                        result.error.message ??
-                        t(
-                            'host.promotions.errors.loadFailed',
-                            'No se pudieron cargar las promociones.'
-                        )
+                    message: t(
+                        'host.promotions.errors.loadFailed',
+                        'No se pudieron cargar las promociones.'
+                    )
                 });
                 return;
             }
@@ -135,16 +133,13 @@ export function PromotionList({ locale }: PromotionListProps): JSX.Element {
                 items: result.data.items as ReadonlyArray<Record<string, unknown>>
             });
             setState({ status: 'ready', items });
-        } catch (err) {
+        } catch {
             setState({
                 status: 'error',
-                message:
-                    err instanceof Error
-                        ? err.message
-                        : t(
-                              'host.promotions.errors.loadFailed',
-                              'No se pudieron cargar las promociones.'
-                          )
+                message: t(
+                    'host.promotions.errors.loadFailed',
+                    'No se pudieron cargar las promociones.'
+                )
             });
         }
     }, []);

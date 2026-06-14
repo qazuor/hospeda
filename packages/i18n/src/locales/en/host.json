@@ -323,6 +323,8 @@
             "discountValueMaxPercentage": "Percentage cannot exceed 100.",
             "validFromRequired": "Start date is required.",
             "limitReachedHint": "You have reached the active promotions limit for your plan. Upgrade your plan to create more.",
+            "entitlementRequired": "Your plan does not include promotions.",
+            "entitlementRequiredHint": "Upgrade your plan to create promotions.",
             "notFound": "Promotion not found.",
             "forbidden": "You do not have permission to access this promotion."
         },
@@ -332,7 +334,8 @@
             "save": "Save",
             "saving": "Saving...",
             "cancel": "Cancel",
-            "confirmDelete": "Delete this promotion? This action cannot be undone."
+            "confirmDelete": "Delete this promotion? This action cannot be undone.",
+            "upgradePlan": "View plans"
         }
     },
     "dashboard": {
