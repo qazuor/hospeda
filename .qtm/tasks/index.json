@@ -4,10 +4,12 @@
         {
             "specId": "SPEC-229",
             "title": "Accommodation partial-update data loss — partial JSONB objects + shallow-merge nested columns",
-            "status": "in-progress",
-            "progress": "0/4",
+            "status": "completed",
+            "progress": "4/4",
             "path": "SPEC-229-accommodation-partial-update-merge",
-            "archived": false,
+            "archived": true,
+            "archivedAt": "2026-06-14",
+            "archiveNote": "PR #1632 merged to staging. Converter emits partial nested objects (no default injection) + extraInfo/contactInfo deep-partial in update schema + price/extraInfo/contactInfo/socialNetworks/location added to mergeableJsonbColumns. Adversarial review caught + fixed a null-merge column-corruption bug (col::jsonb || 'null' yields [x,null], not a clear) — guarded in buildMergeSetClause. Tests: schemas 4877, db 960, api patch-persistence 13.",
             "note": "P1 fix. 3 coordinated changes: converter emits partial nested objects (no default injection); AccommodationUpdateInputSchema makes extraInfo+contactInfo inner fields optional; AccommodationModel.mergeableJsonbColumns gains price/extraInfo/contactInfo/socialNetworks/location. Regression tests in schemas+db+api."
         },
         {
