@@ -669,30 +669,36 @@ export const httpToDomainAccommodationUpdate = (
           }
         : {}),
 
-    // Price mapping (only if basePrice is provided)
-    ...(httpData.basePrice !== undefined
+    // Price mapping (SPEC-229): emit a partial group from whatever is present.
+    // A lone `currency` (or lone `basePrice`) is now preserved-merged onto the
+    // stored JSONB instead of being dropped. No defaults are injected so omitted
+    // siblings survive the shallow merge.
+    ...(httpData.basePrice !== undefined || httpData.currency !== undefined
         ? {
               price: {
-                  price: httpData.basePrice,
-                  currency: httpData.currency
+                  ...(httpData.basePrice !== undefined ? { price: httpData.basePrice } : {}),
+                  ...(httpData.currency !== undefined ? { currency: httpData.currency } : {})
               }
           }
         : {}),
 
-    // Contact info mapping (only if any contact field is provided)
+    // Contact info mapping (SPEC-229): emit only the fields actually provided.
+    // Critically, do NOT inject `mobilePhone: ''` when `phone` is absent — that
+    // empty-string default would clobber the stored phone via the JSONB merge.
     ...(httpData.phone !== undefined ||
     httpData.email !== undefined ||
     httpData.website !== undefined
         ? {
               contactInfo: {
-                  mobilePhone: httpData.phone || '',
-                  personalEmail: httpData.email,
-                  website: httpData.website
+                  ...(httpData.phone !== undefined ? { mobilePhone: httpData.phone } : {}),
+                  ...(httpData.email !== undefined ? { personalEmail: httpData.email } : {}),
+                  ...(httpData.website !== undefined ? { website: httpData.website } : {})
               }
           }
         : {}),
 
-    // Social networks mapping (only if any social field is provided)
+    // Social networks mapping (SPEC-229): emit only the provided handles so the
+    // others are preserved by the shallow merge.
     ...(httpData.twitter !== undefined ||
     httpData.facebook !== undefined ||
     httpData.instagram !== undefined ||
@@ -701,27 +707,29 @@ export const httpToDomainAccommodationUpdate = (
     httpData.youtube !== undefined
         ? {
               socialNetworks: {
-                  twitter: httpData.twitter,
-                  facebook: httpData.facebook,
-                  instagram: httpData.instagram,
-                  linkedIn: httpData.linkedin,
-                  tiktok: httpData.tiktok,
-                  youtube: httpData.youtube
+                  ...(httpData.twitter !== undefined ? { twitter: httpData.twitter } : {}),
+                  ...(httpData.facebook !== undefined ? { facebook: httpData.facebook } : {}),
+                  ...(httpData.instagram !== undefined ? { instagram: httpData.instagram } : {}),
+                  ...(httpData.linkedin !== undefined ? { linkedIn: httpData.linkedin } : {}),
+                  ...(httpData.tiktok !== undefined ? { tiktok: httpData.tiktok } : {}),
+                  ...(httpData.youtube !== undefined ? { youtube: httpData.youtube } : {})
               }
           }
         : {}),
 
-    // Extra info mapping (only if all required fields are provided)
-    ...(httpData.maxGuests !== undefined &&
-    httpData.bedrooms !== undefined &&
+    // Extra info mapping (SPEC-229): emit a partial group from whatever is present.
+    // Previously this required maxGuests AND bedrooms AND bathrooms together and
+    // injected `minNights: 1` / `smokingAllowed: false` defaults — both of which
+    // overwrote stored values on every edit. Now a lone field (e.g. `bedrooms`)
+    // is merged and unsent siblings (capacity/minNights/bathrooms/...) are kept.
+    ...(httpData.maxGuests !== undefined ||
+    httpData.bedrooms !== undefined ||
     httpData.bathrooms !== undefined
         ? {
               extraInfo: {
-                  capacity: httpData.maxGuests,
-                  minNights: 1, // Default minimum stay
-                  bedrooms: httpData.bedrooms,
-                  bathrooms: httpData.bathrooms,
-                  smokingAllowed: false // Default
+                  ...(httpData.maxGuests !== undefined ? { capacity: httpData.maxGuests } : {}),
+                  ...(httpData.bedrooms !== undefined ? { bedrooms: httpData.bedrooms } : {}),
+                  ...(httpData.bathrooms !== undefined ? { bathrooms: httpData.bathrooms } : {})
               }
           }
         : {}),

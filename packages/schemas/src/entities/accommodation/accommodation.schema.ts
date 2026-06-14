@@ -24,6 +24,32 @@ import { AccommodationPriceSchema } from './subtypes/accommodation.price.schema.
 import { AccommodationRatingSchema } from './subtypes/accommodation.rating.schema.js';
 
 /**
+ * Structured "extra info" stored as a grouped JSONB column.
+ *
+ * Extracted as a named schema (single source of truth) so the update path can
+ * derive a deep-partial variant via `.partial()` for partial PATCH semantics
+ * (SPEC-229) while the full entity keeps the required-field contract.
+ */
+export const AccommodationExtraInfoSchema = z.object({
+    capacity: z.number().int({
+        message: 'zodError.accommodation.extraInfo.capacity.required'
+    }),
+    minNights: z.number().int({
+        message: 'zodError.accommodation.extraInfo.minNights.required'
+    }),
+    maxNights: z.number().int().optional(),
+    bedrooms: z.number().int({
+        message: 'zodError.accommodation.extraInfo.bedrooms.required'
+    }),
+    beds: z.number().int().optional(),
+    bathrooms: z.number().int({
+        message: 'zodError.accommodation.extraInfo.bathrooms.required'
+    }),
+    smokingAllowed: z.boolean().optional(),
+    extraInfo: z.array(z.string()).optional()
+});
+
+/**
  * Accommodation Schema - Main Entity Schema
  *
  * This schema defines the complete structure of an Accommodation entity
@@ -146,25 +172,6 @@ export const AccommodationSchema = z.object({
     lastWarnedAt: z.date().nullable().optional(),
 
     // Extra Info
-    extraInfo: z
-        .object({
-            capacity: z.number().int({
-                message: 'zodError.accommodation.extraInfo.capacity.required'
-            }),
-            minNights: z.number().int({
-                message: 'zodError.accommodation.extraInfo.minNights.required'
-            }),
-            maxNights: z.number().int().optional(),
-            bedrooms: z.number().int({
-                message: 'zodError.accommodation.extraInfo.bedrooms.required'
-            }),
-            beds: z.number().int().optional(),
-            bathrooms: z.number().int({
-                message: 'zodError.accommodation.extraInfo.bathrooms.required'
-            }),
-            smokingAllowed: z.boolean().optional(),
-            extraInfo: z.array(z.string()).optional()
-        })
-        .nullish()
+    extraInfo: AccommodationExtraInfoSchema.nullish()
 });
 export type Accommodation = z.infer<typeof AccommodationSchema>;

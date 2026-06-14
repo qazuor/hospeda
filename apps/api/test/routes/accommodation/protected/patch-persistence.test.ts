@@ -280,6 +280,87 @@ describe('PATCH /api/v1/protected/accommodations/:id — flat→domain conversio
         expect(domainInput.summary).toBe('A short summary text here');
     });
 
+    // -----------------------------------------------------------------------
+    // SPEC-229: partial grouped-object emission reproducing the data-loss table.
+    // A single-field PATCH of a grouped column must reach the service as a
+    // PARTIAL object (only the sent key), with NO synthetic defaults — so the
+    // DB shallow-merge preserves the untouched siblings. Before the fix, a lone
+    // `currency` produced no `price` at all, and a lone `bedrooms` was dropped
+    // (extraInfo required all three + injected minNights/smokingAllowed).
+    // -----------------------------------------------------------------------
+
+    it('emits a partial price (only currency) when basePrice is absent (SPEC-229)', async () => {
+        await app.request(`${BASE}/${VALID_UUID}`, {
+            method: 'PATCH',
+            headers: {
+                'content-type': 'application/json',
+                'user-agent': 'vitest',
+                'x-mock-actor-role': 'OWNER_BASICO',
+                'x-mock-actor-id': 'user-owner-1'
+            },
+            body: JSON.stringify({ currency: 'USD' })
+        });
+
+        const domainInput = (globalThis as Record<string, unknown>).__lastUpdateInput as
+            | Record<string, unknown>
+            | undefined;
+        if (!domainInput) return;
+
+        const price = domainInput.price as Record<string, unknown> | undefined;
+        expect(price).toBeDefined();
+        expect(price?.currency).toBe('USD');
+        expect(price && 'price' in price).toBe(false);
+    });
+
+    it('emits a partial extraInfo (only bedrooms) with no injected defaults (SPEC-229)', async () => {
+        await app.request(`${BASE}/${VALID_UUID}`, {
+            method: 'PATCH',
+            headers: {
+                'content-type': 'application/json',
+                'user-agent': 'vitest',
+                'x-mock-actor-role': 'OWNER_BASICO',
+                'x-mock-actor-id': 'user-owner-1'
+            },
+            body: JSON.stringify({ bedrooms: 8 })
+        });
+
+        const domainInput = (globalThis as Record<string, unknown>).__lastUpdateInput as
+            | Record<string, unknown>
+            | undefined;
+        if (!domainInput) return;
+
+        const extra = domainInput.extraInfo as Record<string, unknown> | undefined;
+        expect(extra).toBeDefined();
+        expect(extra?.bedrooms).toBe(8);
+        // No required-sibling or default injection that would clobber stored data.
+        expect(extra && 'capacity' in extra).toBe(false);
+        expect(extra && 'minNights' in extra).toBe(false);
+        expect(extra && 'smokingAllowed' in extra).toBe(false);
+    });
+
+    it('emits a partial contactInfo (only website) without an empty mobilePhone (SPEC-229)', async () => {
+        await app.request(`${BASE}/${VALID_UUID}`, {
+            method: 'PATCH',
+            headers: {
+                'content-type': 'application/json',
+                'user-agent': 'vitest',
+                'x-mock-actor-role': 'OWNER_BASICO',
+                'x-mock-actor-id': 'user-owner-1'
+            },
+            body: JSON.stringify({ website: 'https://hotel.com' })
+        });
+
+        const domainInput = (globalThis as Record<string, unknown>).__lastUpdateInput as
+            | Record<string, unknown>
+            | undefined;
+        if (!domainInput) return;
+
+        const contact = domainInput.contactInfo as Record<string, unknown> | undefined;
+        expect(contact).toBeDefined();
+        expect(contact?.website).toBe('https://hotel.com');
+        expect(contact && 'mobilePhone' in contact).toBe(false);
+    });
+
     it('should convert media field with moderationState defaulting to APPROVED', async () => {
         await app.request(`${BASE}/${VALID_UUID}`, {
             method: 'PATCH',

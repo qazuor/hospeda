@@ -19,6 +19,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest
 import { BaseModelImpl } from '../../src/base/base.model';
 import * as clientModule from '../../src/client';
 import { setDb } from '../../src/client';
+import { accommodations } from '../../src/schemas/accommodation/accommodation.dbschema';
 import type { DrizzleClient } from '../../src/types';
 import { buildMergeSetClause } from '../../src/utils/jsonb-merge';
 
@@ -120,6 +121,60 @@ describe('buildMergeSetClause — unit', () => {
 
         expect(result.slug).toBe('z');
         expect((result.slug as Record<string, unknown>)?.queryChunks).toBeUndefined();
+    });
+
+    // SPEC-229 review finding: a `null` value for a mergeable column must NOT take
+    // the `||` merge path. `existing::jsonb || 'null'::jsonb` does not clear the
+    // column — PostgreSQL yields the corrupt array `[<existing>, null]`. Null must
+    // fall through to plain assignment (SET column = NULL) so callers can clear.
+    it('TC4b: a null value for a mergeable column falls through to plain assignment (clear)', () => {
+        // Arrange
+        const data: Record<string, unknown> = { media: null };
+
+        // Act
+        const result = buildMergeSetClause(data, tableWithMedia, ['media']);
+
+        // Assert: plain null, NOT a SQL merge fragment
+        expect(result.media).toBeNull();
+        expect((result.media as Record<string, unknown> | null)?.queryChunks).toBeUndefined();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// SPEC-229: grouped accommodation JSONB columns merge against the real table
+//
+// buildMergeSetClause only emits a merge fragment when the column key exists on
+// the table (TC3 covers the fallback). These assertions prove the SPEC-229
+// columns are real columns on `accommodations` AND that, given the model's
+// mergeable list, a partial patch becomes a `||` merge rather than a replace.
+// ---------------------------------------------------------------------------
+
+describe('buildMergeSetClause — accommodation grouped columns (SPEC-229)', () => {
+    const SPEC_229_COLUMNS = [
+        'price',
+        'extraInfo',
+        'contactInfo',
+        'socialNetworks',
+        'location'
+    ] as const;
+
+    it.each(SPEC_229_COLUMNS)('emits a merge SQL fragment for the %s column', (column) => {
+        const result = buildMergeSetClause({ [column]: { someKey: 'value' } }, accommodations, [
+            ...SPEC_229_COLUMNS,
+            'media'
+        ]);
+        const value = result[column] as Record<string, unknown>;
+        expect(Array.isArray(value?.queryChunks)).toBe(true);
+    });
+
+    it('preserves siblings semantics: only the sent key is serialised into the patch', () => {
+        const result = buildMergeSetClause({ price: { currency: 'USD' } }, accommodations, [
+            'price'
+        ]);
+        const value = result.price as Record<string, unknown>;
+        const chunks = value.queryChunks as Array<unknown>;
+        const patchJson = JSON.stringify({ currency: 'USD' });
+        expect(chunks.some((c) => typeof c === 'string' && c === patchJson)).toBe(true);
     });
 });
 
