@@ -1,12 +1,13 @@
 import type { HostConversationResponseRate } from '@repo/schemas';
 import type { SQL } from 'drizzle-orm';
-import { and, count, desc, eq, gte, inArray, isNotNull, isNull, sql } from 'drizzle-orm';
+import { and, count, desc, eq, gte, inArray, isNotNull, isNull, or, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { conversations } from '../../schemas/conversation/conversations.dbschema.ts';
 import type {
     InsertConversation,
     SelectConversation
 } from '../../schemas/conversation/conversations.dbschema.ts';
+import { users } from '../../schemas/user/user.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 import { safeIlike } from '../../utils/drizzle-helpers.ts';
 import { DbError } from '../../utils/error.ts';
@@ -236,29 +237,49 @@ export class ConversationModel extends BaseModelImpl<SelectConversation> {
                 );
             }
             if (search?.trim()) {
-                conditions.push(safeIlike(conversations.anonymousName, search) as SQL<unknown>);
+                // Match anonymous guests by name OR registered guests by their
+                // user display name / first name / last name (via left join).
+                conditions.push(
+                    or(
+                        safeIlike(conversations.anonymousName, search),
+                        safeIlike(users.displayName, search),
+                        safeIlike(users.firstName, search),
+                        safeIlike(users.lastName, search)
+                    ) as SQL<unknown>
+                );
             }
 
             const where = and(...conditions);
             const offset = (page - 1) * pageSize;
 
+            // Left-join users so registered-guest name search works. The join
+            // is cheap: conversations.user_id is indexed and the result set is
+            // already scoped to a small number of accommodation IDs.
             const [items, [countRow]] = await Promise.all([
                 db
-                    .select()
+                    .select({ conversation: conversations })
                     .from(conversations)
+                    .leftJoin(users, eq(users.id, conversations.userId))
                     .where(where)
                     .orderBy(desc(conversations.lastActivityAt))
                     .limit(pageSize)
                     .offset(offset),
-                db.select({ total: count() }).from(conversations).where(where)
+                db
+                    .select({ total: count() })
+                    .from(conversations)
+                    .leftJoin(users, eq(users.id, conversations.userId))
+                    .where(where)
             ]);
 
+            // Unwrap the nested conversation object produced by the left-join
+            // select shape so callers receive plain SelectConversation rows.
+            const unwrapped = items.map((row) => row.conversation);
             const total = Number(countRow?.total ?? 0);
             logQuery(this.entityName, 'listByAccommodationIds', ctx, {
-                count: items.length,
+                count: unwrapped.length,
                 total
             });
-            return { items, total };
+            return { items: unwrapped, total };
         } catch (error) {
             const err = error instanceof Error ? error : new Error(String(error));
             logError(this.entityName, 'listByAccommodationIds', ctx, err);
