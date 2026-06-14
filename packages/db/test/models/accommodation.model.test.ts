@@ -122,6 +122,26 @@ describe('AccommodationModel', () => {
         });
     });
 
+    // SPEC-229 regression: grouped JSONB columns must be shallow-merged on update
+    // so a single-field PATCH (e.g. only `currency` or only `bedrooms`) preserves
+    // the sibling keys instead of replacing the whole column. Previously only
+    // `media` was mergeable, so partial price/extraInfo/etc. patches lost data.
+    describe('mergeableJsonbColumns (SPEC-229)', () => {
+        it('declares all grouped JSONB columns as mergeable', () => {
+            const mergeable = (model as any).mergeableJsonbColumns as readonly string[];
+            expect(mergeable).toEqual(
+                expect.arrayContaining([
+                    'media',
+                    'price',
+                    'extraInfo',
+                    'contactInfo',
+                    'socialNetworks',
+                    'location'
+                ])
+            );
+        });
+    });
+
     describe('findAllWithRelations', () => {
         it('should call parent findAllWithRelations with correct table name', async () => {
             const mockFindMany = vi.fn().mockResolvedValue([

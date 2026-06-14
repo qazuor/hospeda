@@ -373,12 +373,27 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
     ] as const;
 
     /**
-     * The `media` column stores structured image metadata as JSONB.
-     * Opting in here ensures that a partial media patch (e.g. updating only
-     * `gallery`) does not overwrite sibling keys (e.g. `featuredImage`) that
-     * were written by a concurrent request (GAP-078-186, GAP-078-198).
+     * Grouped JSONB columns that must be **shallow-merged** (PostgreSQL `||`)
+     * on update instead of wholesale-replaced, so a partial PATCH preserves the
+     * sibling keys the caller did not send.
+     *
+     * - `media` — a partial media patch (e.g. only `gallery`) must not drop
+     *   sibling keys like `featuredImage` (GAP-078-186, GAP-078-198).
+     * - `price` / `extraInfo` / `contactInfo` / `socialNetworks` / `location`
+     *   (SPEC-229) — single-field edits of these grouped columns (e.g. only
+     *   `currency`, or only `bedrooms`) were silently lost because the column
+     *   was replaced with the partial object. Merging preserves the unsent
+     *   fields. The merge is shallow, which is correct: each group is one level
+     *   deep (`location.coordinates` travels as a unit).
      */
-    protected override readonly mergeableJsonbColumns = ['media'] as const;
+    protected override readonly mergeableJsonbColumns = [
+        'media',
+        'price',
+        'extraInfo',
+        'contactInfo',
+        'socialNetworks',
+        'location'
+    ] as const;
 
     protected getTableName(): string {
         return 'accommodations';

@@ -1,8 +1,9 @@
 import { z } from 'zod';
+import { ContactInfoSchema } from '../../common/contact.schema.js';
 import { AccommodationIdSchema } from '../../common/id.schema.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
 import { AiTextImproveFieldTypeSchema } from '../ai/ai-text-improve.schema.js';
-import { AccommodationSchema } from './accommodation.schema.js';
+import { AccommodationExtraInfoSchema, AccommodationSchema } from './accommodation.schema.js';
 
 /**
  * Accommodation CRUD Schemas
@@ -172,7 +173,20 @@ export const AccommodationUpdateInputSchema = z
          * Valid values are members of {@link AiTextImproveFieldTypeSchema}:
          * `'description' | 'summary' | 'faq_answer'`.
          */
-        aiAssistedFields: z.array(AiTextImproveFieldTypeSchema).optional()
+        aiAssistedFields: z.array(AiTextImproveFieldTypeSchema).optional(),
+
+        /**
+         * Deep-partial override for grouped JSONB columns (SPEC-229).
+         *
+         * The full entity requires `capacity`/`minNights`/`bedrooms`/`bathrooms`
+         * (extraInfo) and `mobilePhone` (contactInfo). On a PATCH, the caller may
+         * touch a single inner field (e.g. only `bedrooms`), and the backend
+         * shallow-merges it onto the stored JSONB. Re-deriving these as `.partial()`
+         * lets the converter emit a partial group without tripping required-field
+         * validation, so omitted siblings are preserved instead of being lost.
+         */
+        extraInfo: AccommodationExtraInfoSchema.partial().nullish(),
+        contactInfo: ContactInfoSchema.partial().nullish()
     });
 
 // Type: Update Input

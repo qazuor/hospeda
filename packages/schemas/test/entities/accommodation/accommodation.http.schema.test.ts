@@ -530,3 +530,91 @@ describe('httpToDomainAccommodationUpdate — null featuredImage clears field (S
         expect(media?.gallery?.[1]?.moderationState).toBe('APPROVED');
     });
 });
+
+// ---------------------------------------------------------------------------
+// SPEC-229: partial grouped-object emission (no default injection)
+//
+// The converter must emit a grouped object built from ONLY the fields the
+// client sent, with no synthetic defaults. Combined with the DB shallow-merge,
+// this preserves sibling keys the client did not touch. The previous behaviour
+// dropped lone fields (a bare `currency`) or injected defaults (`minNights: 1`,
+// `smokingAllowed: false`, `mobilePhone: ''`) that clobbered stored values.
+// ---------------------------------------------------------------------------
+
+describe('httpToDomainAccommodationUpdate — partial price (SPEC-229)', () => {
+    it('emits a partial price with only currency when basePrice is absent', () => {
+        const result = httpToDomainAccommodationUpdate({ currency: PriceCurrencyEnum.USD });
+        expect(result.price).toEqual({ currency: PriceCurrencyEnum.USD });
+        expect(result.price && 'price' in result.price).toBe(false);
+    });
+
+    it('emits a partial price with only the amount when currency is absent', () => {
+        const result = httpToDomainAccommodationUpdate({ basePrice: 50000 });
+        expect(result.price).toEqual({ price: 50000 });
+        expect(result.price && 'currency' in result.price).toBe(false);
+    });
+
+    it('emits the full price when both are sent', () => {
+        const result = httpToDomainAccommodationUpdate({
+            basePrice: 50000,
+            currency: PriceCurrencyEnum.USD
+        });
+        expect(result.price).toEqual({ price: 50000, currency: PriceCurrencyEnum.USD });
+    });
+
+    it('leaves price undefined when neither field is sent', () => {
+        const result = httpToDomainAccommodationUpdate({ name: 'Hotel' });
+        expect(result.price).toBeUndefined();
+    });
+});
+
+describe('httpToDomainAccommodationUpdate — partial extraInfo (SPEC-229)', () => {
+    it('emits only bedrooms (no minNights/smokingAllowed defaults) when sent alone', () => {
+        const result = httpToDomainAccommodationUpdate({ bedrooms: 8 });
+        expect(result.extraInfo).toEqual({ bedrooms: 8 });
+    });
+
+    it('maps maxGuests → capacity without injecting siblings', () => {
+        const result = httpToDomainAccommodationUpdate({ maxGuests: 6 });
+        expect(result.extraInfo).toEqual({ capacity: 6 });
+    });
+
+    it('emits the present subset when several capacity fields are sent', () => {
+        const result = httpToDomainAccommodationUpdate({
+            maxGuests: 6,
+            bedrooms: 4,
+            bathrooms: 2
+        });
+        expect(result.extraInfo).toEqual({ capacity: 6, bedrooms: 4, bathrooms: 2 });
+        // No injected minNights / smokingAllowed defaults.
+        expect(result.extraInfo && 'minNights' in result.extraInfo).toBe(false);
+        expect(result.extraInfo && 'smokingAllowed' in result.extraInfo).toBe(false);
+    });
+
+    it('leaves extraInfo undefined when no capacity field is sent', () => {
+        const result = httpToDomainAccommodationUpdate({ name: 'Hotel' });
+        expect(result.extraInfo).toBeUndefined();
+    });
+});
+
+describe('httpToDomainAccommodationUpdate — partial contactInfo (SPEC-229)', () => {
+    it('does NOT inject an empty mobilePhone when only website is sent', () => {
+        const result = httpToDomainAccommodationUpdate({ website: 'https://example.com' });
+        expect(result.contactInfo).toEqual({ website: 'https://example.com' });
+        expect(result.contactInfo && 'mobilePhone' in result.contactInfo).toBe(false);
+    });
+
+    it('emits only mobilePhone when only phone is sent', () => {
+        const result = httpToDomainAccommodationUpdate({ phone: '+5491112345678' });
+        expect(result.contactInfo).toEqual({ mobilePhone: '+5491112345678' });
+    });
+});
+
+describe('httpToDomainAccommodationUpdate — partial socialNetworks (SPEC-229)', () => {
+    it('emits only the provided handle', () => {
+        const result = httpToDomainAccommodationUpdate({
+            instagram: 'https://instagram.com/test'
+        });
+        expect(result.socialNetworks).toEqual({ instagram: 'https://instagram.com/test' });
+    });
+});
