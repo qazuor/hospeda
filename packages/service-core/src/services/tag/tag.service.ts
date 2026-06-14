@@ -585,10 +585,15 @@ export class TagService extends BaseCrudRelatedService<
     protected async _executeSearch(
         params: z.infer<typeof TagSearchInputSchema>,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ) {
-        const { page = 1, pageSize = 10, ...filterParams } = params;
-        return this.model.findAll(filterParams, { page, pageSize });
+        // BaseCrudRead.search strips page/pageSize/sortBy/sortOrder from params
+        // and republishes them on ctx.pagination. Read from ctx so the
+        // caller-provided pageSize is honored (params would always fall back
+        // to the default, capping results — see the amenity search fix).
+        const page = ctx.pagination?.page ?? 1;
+        const pageSize = ctx.pagination?.pageSize ?? 10;
+        return this.model.findAll(params, { page, pageSize });
     }
 
     protected async _executeCount(

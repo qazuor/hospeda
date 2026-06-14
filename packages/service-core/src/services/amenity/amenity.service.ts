@@ -485,14 +485,8 @@ export class AmenityService extends BaseCrudRelatedService<
      * @param _actor - The actor performing the search.
      * @returns An object containing the search results, page, pageSize, and total count.
      */
-    protected async _executeSearch(
-        params: AmenitySearchInput,
-        _actor: Actor,
-        _ctx: ServiceContext
-    ) {
+    protected async _executeSearch(params: AmenitySearchInput, _actor: Actor, ctx: ServiceContext) {
         const {
-            page = 1,
-            pageSize = 10,
             sortBy: _sortBy,
             sortOrder: _sortOrder,
             q: _q,
@@ -502,6 +496,12 @@ export class AmenityService extends BaseCrudRelatedService<
             name,
             ...filterParams
         } = params;
+        // BaseCrudRead.search strips page/pageSize/sortBy/sortOrder from params
+        // before reaching this hook (SPEC-088) and re-publishes them via
+        // ctx.pagination. Read from ctx so the caller-provided pageSize is used
+        // instead of falling back to the destructuring default of 10.
+        const page = ctx.pagination?.page ?? 1;
+        const pageSize = ctx.pagination?.pageSize ?? 10;
         // name is a plain text search term; the DB column is now JSONB.
         // Do NOT pass it to buildWhereClause — use additionalConditions instead
         // to query the Spanish locale via name->>'es' ILIKE %term%.
