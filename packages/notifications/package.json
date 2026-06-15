@@ -19,7 +19,7 @@
         "clean": "rm -rf node_modules && rm -rf dist",
         "test": "vitest run --passWithNoTests",
         "test:watch": "vitest --passWithNoTests",
-        "test:coverage": "vitest run --coverage"
+        "test:coverage": "vitest run --coverage --passWithNoTests"
     },
     "dependencies": {
         "@react-email/components": "^0.0.30",

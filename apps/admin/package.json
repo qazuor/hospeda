@@ -12,7 +12,7 @@
         "serve": "vite preview",
         "test": "vitest run --passWithNoTests",
         "test:watch": "vitest",
-        "test:coverage": "vitest run --coverage",
+        "test:coverage": "vitest run --coverage --passWithNoTests",
         "test:ui": "vitest --ui",
         "test:visual:install": "playwright install chromium --with-deps",
         "test:visual:baseline": "playwright test --config=playwright-visual.config.ts --update-snapshots",

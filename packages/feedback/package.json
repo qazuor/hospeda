@@ -32,7 +32,7 @@
         "clean": "rm -rf node_modules && rm -rf dist",
         "test": "vitest run --passWithNoTests",
         "test:watch": "vitest --passWithNoTests",
-        "test:coverage": "vitest run --coverage"
+        "test:coverage": "vitest run --coverage --passWithNoTests"
     },
     "dependencies": {
         "@repo/icons": "workspace:*",
