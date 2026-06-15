@@ -401,7 +401,7 @@
         {
             "specId": "SPEC-207",
             "title": "Host Analytics & KPIs — Business Dashboard in Web",
-            "status": "draft",
+            "status": "in-progress",
             "progress": "0/1",
             "path": "SPEC-207-host-analytics-kpis",
             "tags": ["host-migration", "phase-3"]

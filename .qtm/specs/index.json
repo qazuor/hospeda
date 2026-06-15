@@ -985,12 +985,12 @@
             "title": "Host Analytics & KPIs — Business Dashboard in Web",
             "type": "epic",
             "complexity": "high",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-207-host-analytics-kpis",
             "created": "2026-06-07T00:00:00.000Z",
             "archived": false,
             "tags": ["web", "host", "analytics", "kpis", "dashboard", "api", "metrics"],
-            "note": "Phase 3 of host migration. Formalized 2026-06-13 with spec.md (was index-only draft). A web-only cabling pass (fix/web-mi-cuenta-host-dashboard) shipped: fixed the entitlement gate case mismatch (view_basic_stats), re-pointed response-rate/inquiries/market-comparison to their real routes, gated the market widget behind view_advanced_stats, and added missing host.dashboard.* i18n keys. Remaining epic work: (A) build a protected per-host daily-series views endpoint + re-mount ViewsWidget; (B) redesign FavoritesWidget to the per-accommodation shape (no 'collections' in the model) + re-mount; (C) staging smoke on owner-pro/owner-premium. Views & Favorites widgets are currently NOT mounted (deferred). Depends on SPEC-205, SPEC-206."
+            "note": "Phase 3 host migration. Dashboard + 5 analytics widgets built; cabling pass (#1621) fixed gate/404s/transforms/i18n and mounted Views as per-property ranked list. REMAINING: Favorites widget redesign (deferred, per-accommodation shape), optional views daily-series chart, staging smoke with paid entitlements. PRs #1504/#1621."
         },
         {
             "specId": "SPEC-208",
