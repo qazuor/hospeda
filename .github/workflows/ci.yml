@@ -480,10 +480,12 @@ jobs:
             # current coverage (coverage is deterministic, so a floor only
             # fails when a future change LOWERS it — exactly the intent)
             # while we ratchet back up to the 90% target under SPEC-236.
-            # Floors (lines %, 2026-06-15): admin 45, feedback 43,
-            # api 70, seed 75, service-core 79, notifications 80, schemas 83,
-            # billing 87, web 55. Everything else stays at the 90% default.
-            # SPEC-236 ratchet: icons restored to the 90% default (now 100%).
+            # Framework-app floors (web 55, admin 45, api 70) stay low by
+            # design — those surfaces are covered by integration/E2E, not
+            # per-file unit tests. The only remaining sub-90 floor is
+            # mid-ratchet under SPEC-236: service-core 82. Everything else is
+            # at the 90% default — icons, billing, schemas, notifications,
+            # seed and feedback were ratcheted back to 90 as coverage was restored.
             THRESHOLD=90
             if [ "$PACKAGE_NAME" = "web" ]; then
               THRESHOLD=55
@@ -493,8 +495,6 @@ jobs:
               THRESHOLD=70
             elif [ "$PACKAGE_NAME" = "service-core" ]; then
               THRESHOLD=82
-            elif [ "$PACKAGE_NAME" = "seed" ]; then
-              THRESHOLD=75
             fi
 
             if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
