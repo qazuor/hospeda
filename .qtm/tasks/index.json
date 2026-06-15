@@ -2,6 +2,13 @@
     "version": "1.0",
     "epics": [
         {
+            "specId": "SPEC-236",
+            "title": "Coverage ratchet-up — restore per-package thresholds to the 90% target",
+            "status": "draft",
+            "progress": "0/3",
+            "path": "SPEC-236-coverage-ratchet-up"
+        },
+        {
             "specId": "SPEC-230",
             "title": "Soft-delete filtering in the service list() path — make BaseCrudService.list exclude soft-deleted rows by default so protected list endpoints stop returning deleted records",
             "status": "draft",
