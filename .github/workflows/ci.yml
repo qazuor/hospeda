@@ -493,7 +493,7 @@ jobs:
             elif [ "$PACKAGE_NAME" = "schemas" ]; then
               THRESHOLD=83
             elif [ "$PACKAGE_NAME" = "service-core" ]; then
-              THRESHOLD=79
+              THRESHOLD=82
             elif [ "$PACKAGE_NAME" = "seed" ]; then
               THRESHOLD=75
             elif [ "$PACKAGE_NAME" = "billing" ]; then
