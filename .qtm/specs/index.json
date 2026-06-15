@@ -971,12 +971,14 @@
             "title": "Host Conversations — Inbox, Threads, Replies & Archive in Web",
             "type": "epic",
             "complexity": "high",
-            "status": "draft",
+            "status": "completed",
             "path": "SPEC-206-host-conversations",
             "created": "2026-06-07T00:00:00.000Z",
-            "archived": false,
+            "archived": true,
             "tags": ["web", "host", "conversations", "inbox", "api", "permissions"],
-            "note": "Phase 2 of host migration. Protected host conversation endpoints + inbox UI in apps/web. Depends on SPEC-205."
+            "note": "Phase 2 of host migration. Protected host conversation endpoints + inbox UI in apps/web. Depends on SPEC-205.",
+            "archivedAt": "2026-06-15",
+            "archiveNote": "Ghost-completed (like SPEC-208): shipped ad-hoc as an epic WITHOUT a formal spec.md. Full scope implemented + merged: owner inbox (protected/owner/list + web consultas-propietario), threads (owner/thread + [conversationId]), replies (owner/reply + ConversationReply), archive (protected/archive.ts). PRs #1503/#1521/#1627/#1610, promoted to main. No spec.md kept (owner decision 2026-06-15, same as SPEC-208). Worktree/branch left intact (possible other-agent activity)."
         },
         {
             "specId": "SPEC-207",
