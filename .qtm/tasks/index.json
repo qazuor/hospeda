@@ -578,6 +578,16 @@
             "archived": true,
             "archivedAt": "2026-06-07",
             "archiveNote": "DRIFT FIX (2026-06-15 cleanup): specs/index had completed+archived but tasks/index had NO entry. state.json shows 26/26 completed. Shipped via PR #1484, closed out #1485. Reconstructed entry."
+        },
+        {
+            "specId": "SPEC-173",
+            "title": "AI Foundation (@repo/ai-core)",
+            "status": "completed",
+            "progress": "43/43",
+            "path": "SPEC-173-ai-core",
+            "archived": true,
+            "archivedAt": "2026-06-05",
+            "archiveNote": "DRIFT FIX (2026-06-15 cleanup): specs/index had completed+archived but tasks/index had NO entry. state.json shows 43/43 completed. AI foundation pkg shipped via PR #1466, closed out #1467, e2e fix #1477. Reconstructed entry."
         }
     ],
     "standalone": {
