@@ -433,7 +433,27 @@
         "resendVerification": "Reenviar email de confirmación",
         "confirmCancelTitle": "¿Cancelar suscripción?",
         "confirmCancelYes": "Sí, cancelar",
-        "confirmCancelNo": "No, quedarme"
+        "confirmCancelNo": "No, quedarme",
+        "channels": {
+            "title": "Cómo te llegan",
+            "email": "Email",
+            "enabled": "Activado",
+            "whatsapp": "WhatsApp",
+            "comingSoon": "Próximamente"
+        },
+        "preferences": {
+            "title": "Qué querés recibir",
+            "saved": "Preferencia guardada.",
+            "error": "No pudimos guardar tu preferencia. Probá de nuevo.",
+            "offers": "Ofertas",
+            "offersDesc": "Promociones y descuentos por tiempo limitado.",
+            "events": "Eventos",
+            "eventsDesc": "Festivales, agenda cultural y eventos próximos.",
+            "guides": "Guías",
+            "guidesDesc": "Guías editoriales e itinerarios curados.",
+            "productNews": "Novedades del producto",
+            "productNewsDesc": "Nuevas funcionalidades y novedades de la plataforma."
+        }
     },
     "profileCompletion": {
         "pageTitle": "Completá tu perfil",

@@ -13,33 +13,33 @@
     "successUnsubscribe": "Successfully unsubscribed from newsletter",
     "errorMessage": "Could not update subscription",
     "authPopover": {
-        "title": "Iniciá sesión para suscribirte",
-        "message": "Creá una cuenta gratuita y recibí novedades del Litoral en tu email.",
-        "registerCta": "Registrarse",
-        "loginLink": "Ya tengo cuenta"
+        "title": "Sign in to subscribe",
+        "message": "Create a free account and receive news from the Litoral region in your inbox.",
+        "registerCta": "Sign up",
+        "loginLink": "I already have an account"
     },
     "verify": {
-        "successTitle": "¡Bienvenido! Tu suscripción fue confirmada.",
-        "successDescription": "A partir de ahora recibirás novedades de Hospeda en tu email.",
-        "homeLink": "Ir al sitio",
-        "preferencesLink": "Gestionar preferencias"
+        "successTitle": "Welcome! Your subscription has been confirmed.",
+        "successDescription": "From now on you will receive news from Hospeda in your inbox.",
+        "homeLink": "Go to site",
+        "preferencesLink": "Manage preferences"
     },
     "errorPage": {
-        "tokenExpiredTitle": "El enlace expiró",
-        "tokenExpiredDescription": "El enlace de confirmación expiró. Podés solicitar uno nuevo.",
-        "resendButton": "Reenviar email de confirmación",
-        "resendSuccess": "Reenviamos el email de confirmación. Revisá tu bandeja de entrada.",
-        "invalidTokenTitle": "Enlace inválido",
-        "invalidTokenDescription": "El enlace de confirmación no es válido."
+        "tokenExpiredTitle": "Link expired",
+        "tokenExpiredDescription": "The confirmation link has expired. You can request a new one.",
+        "resendButton": "Resend confirmation email",
+        "resendSuccess": "We resent the confirmation email. Check your inbox.",
+        "invalidTokenTitle": "Invalid link",
+        "invalidTokenDescription": "The confirmation link is not valid."
     },
     "unsubscribePage": {
-        "title": "Tu suscripción fue cancelada.",
-        "description": "Ya no recibirás emails de Hospeda.",
-        "resubscribeLink": "Si fue un error, volver a suscribirme"
+        "title": "Your subscription has been cancelled.",
+        "description": "You will no longer receive emails from Hospeda.",
+        "resubscribeLink": "If this was a mistake, resubscribe"
     },
     "whatsapp": {
-        "title": "Sumate al canal de WhatsApp de Hospeda",
-        "description": "Recibí ofertas exclusivas y novedades del Litoral en tu WhatsApp.",
-        "ctaButton": "Unirse al canal"
+        "title": "Join the Hospeda WhatsApp channel",
+        "description": "Receive exclusive deals and Litoral news on your WhatsApp.",
+        "ctaButton": "Join the channel"
     }
 }
