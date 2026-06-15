@@ -265,7 +265,8 @@ describe('httpToDomainDestinationCreate', () => {
         summary: 'Beautiful city in Entre Rios',
         description:
             'A historic city on the shores of the Uruguay River with rich cultural heritage and natural beauty.',
-        country: 'AR'
+        country: 'AR',
+        isFeatured: false
     };
 
     it('should map required fields to domain create input', () => {

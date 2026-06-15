@@ -309,7 +309,8 @@ describe('httpToDomainUserCreate', () => {
         const result = httpToDomainUserCreate(httpData);
 
         // Assert
-        expect(result.contactInfo.personalEmail).toBe('contact@example.com');
+        expect(result.contactInfo).toBeDefined();
+        expect(result.contactInfo?.personalEmail).toBe('contact@example.com');
     });
 
     it('should use provided phone in mobilePhone when given', () => {
@@ -327,7 +328,8 @@ describe('httpToDomainUserCreate', () => {
         const result = httpToDomainUserCreate(httpData);
 
         // Assert
-        expect(result.contactInfo.mobilePhone).toBe('+5491112345678');
+        expect(result.contactInfo).toBeDefined();
+        expect(result.contactInfo?.mobilePhone).toBe('+5491112345678');
     });
 });
 
