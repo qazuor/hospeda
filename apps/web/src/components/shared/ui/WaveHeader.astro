@@ -74,22 +74,30 @@ const { paddingTop = 'listing', class: className } = Astro.props;
 
 <script>
   /**
-   * WaveHeader scroll observer.
-   * Only toggles a CSS class. All visual changes are CSS transitions.
-   * Compatible with Astro View Transitions.
+   * WaveHeader compact-mode toggle, driven by scroll position with HYSTERESIS.
+   *
+   * The header expands only near the very top of the page and compacts once
+   * you have scrolled clearly past it, with a wide dead zone between the two
+   * thresholds. That dead zone is the whole point: collapsing/expanding the
+   * sticky bar near the top shifts the scroll position by a few dozen px
+   * (the breadcrumbs grow/shrink on-screen and the sticky bar re-lays-out
+   * right at its pinning boundary). The previous `IntersectionObserver` used a
+   * single crossing line, so that scroll shift re-crossed the line and toggled
+   * the header straight back — it trembled when scrolling UP into the top
+   * (measured: expanding bounced scrollY from ~10 back to ~55, re-compacting).
+   * Two thresholds wider apart than that bounce absorb it.
+   *
+   * Still only toggles a CSS class — all visual changes remain CSS
+   * transitions. Compatible with Astro View Transitions.
    */
   function initWaveHeaders(): void {
     const headers = document.querySelectorAll<HTMLElement>('[data-wave-header]');
-    // Read navbar height from the CSS var published by Header.astro.
-    // The bar's CSS `top` already uses var(--navbar-height); here we only need
-    // the value to align the IntersectionObserver rootMargin.
-    const readNavbarHeight = (): number => {
-      const raw = getComputedStyle(document.documentElement)
-        .getPropertyValue('--navbar-height')
-        .trim();
-      const parsed = Number.parseInt(raw, 10);
-      return Number.isFinite(parsed) && parsed > 0 ? parsed : 80;
-    };
+
+    // Scroll offsets (px) for the two trigger lines. The gap (COMPACT_AT minus
+    // EXPAND_AT) must exceed the scroll bounce that toggling near the top
+    // induces (~45px measured; ~80px worst case if the breadcrumbs are tall).
+    const EXPAND_AT = 8;
+    const COMPACT_AT = 96;
 
     for (const header of headers) {
       const sentinel = header.querySelector<HTMLElement>('[data-wave-sentinel]');
@@ -99,40 +107,53 @@ const { paddingTop = 'listing', class: className } = Astro.props;
       if (header.dataset.waveInitialized === 'true') continue;
       header.dataset.waveInitialized = 'true';
 
+      let compact = false;
+      const setCompact = (next: boolean): void => {
+        if (next === compact) return;
+        compact = next;
+        header.classList.toggle('wave-header--compact', next);
+      };
+
       // Opt-in lock: a page can keep the wave header permanently compact by
       // setting `data-locked-compact="true"` on the root .wave-header element.
       // Used by the mobile fullscreen map view so the bar doesn't expand back
       // out when the auto-scroll lands at the top of the map.
       if (header.dataset.lockedCompact === 'true') {
-        header.classList.add('wave-header--compact');
+        setCompact(true);
         continue;
       }
 
-      const navbarHeight = readNavbarHeight();
-
-      const observer = new IntersectionObserver(
-        (entries) => {
-          // Bail if the page locked the header in compact mode after the
-          // observer was attached (e.g. the mobile map view sets this on
-          // astro:page-load). We don't want to fight a deliberate lock.
-          if (header.dataset.lockedCompact === 'true') {
-            header.classList.add('wave-header--compact');
-            return;
-          }
-          for (const entry of entries) {
-            header.classList.toggle('wave-header--compact', !entry.isIntersecting);
-          }
-        },
-        {
-          rootMargin: `-${navbarHeight}px 0px 0px 0px`,
-          threshold: 0,
+      let ticking = false;
+      const evaluate = (): void => {
+        ticking = false;
+        // Respect a lock applied after init (e.g. the mobile map view sets it
+        // on astro:page-load). Don't fight a deliberate lock.
+        if (header.dataset.lockedCompact === 'true') {
+          setCompact(true);
+          return;
         }
-      );
+        const y = window.scrollY;
+        if (!compact && y >= COMPACT_AT) {
+          setCompact(true);
+        } else if (compact && y <= EXPAND_AT) {
+          setCompact(false);
+        }
+      };
 
-      observer.observe(sentinel);
+      const onScroll = (): void => {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(evaluate);
+      };
+
+      window.addEventListener('scroll', onScroll, { passive: true });
+      window.addEventListener('resize', onScroll, { passive: true });
+      // Set the initial state (handles navigating in already scrolled down).
+      evaluate();
 
       document.addEventListener('astro:before-swap', () => {
-        observer.disconnect();
+        window.removeEventListener('scroll', onScroll);
+        window.removeEventListener('resize', onScroll);
         header.dataset.waveInitialized = '';
       }, { once: true });
     }
@@ -143,6 +164,25 @@ const { paddingTop = 'listing', class: className } = Astro.props;
 </script>
 
 <style>
+  /* Disable the browser's scroll anchoring on pages that use the wave header.
+   *
+   * This is the root-cause fix for the header trembling when scrolling back UP
+   * toward the top. Expanding the bar grows the breadcrumbs (~80px) ABOVE the
+   * current scroll position; with anchoring ON, the browser compensates by
+   * nudging scrollY by that same ~80px to keep the visible content from
+   * jumping — but that nudge crosses the compact trigger, which re-compacts,
+   * which shrinks the bar again: a feedback loop. Measured directly: requesting
+   * scrollY=4 bounced to ~63 with anchoring on, and stayed at 4 with it off.
+   * The compact toggle itself never moves the scroll once anchoring is off.
+   *
+   * Scoped via `:has` so every other page keeps anchoring. `html` is the scroll
+   * container in this app (the `overflow-x: clip` on html/body does not create
+   * one), and `body` is covered too as a belt-and-suspenders. */
+  :global(html:has(.wave-header)),
+  :global(html:has(.wave-header) body) {
+    overflow-anchor: none;
+  }
+
   /* =========================================================
    * Expanded (default) state
    * ========================================================= */
