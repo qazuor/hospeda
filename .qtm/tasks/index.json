@@ -509,7 +509,7 @@
         {
             "specId": "SPEC-215",
             "title": "Destination climate & live weather",
-            "status": "pending",
+            "status": "approved",
             "progress": "0/0",
             "path": "SPEC-215-destination-climate-weather"
         },
