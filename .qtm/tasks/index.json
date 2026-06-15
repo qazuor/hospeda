@@ -344,7 +344,10 @@
             "status": "completed",
             "progress": "15/15",
             "path": "SPEC-159-cross-entity-view-tracking",
-            "branch": "spec/SPEC-159-cross-entity-view-tracking"
+            "branch": "spec/SPEC-159-cross-entity-view-tracking",
+            "archived": true,
+            "archivedAt": "2026-06-05",
+            "archiveNote": "DRIFT FIX (2026-06-15): added missing archived flag. Shipped via #1461."
         },
         {
             "specId": "SPEC-197",
@@ -555,6 +558,63 @@
             "archived": true,
             "archivedAt": "2026-06-15",
             "archiveNote": "Renumbered from SPEC-212 (collision with SPEC-212-conversational-ai-search). Shipped via PRs #1581 + #1623 + #1652 merged to staging; full browser smoke (admin + web host happy-path) + curl SEO verification passed. No formal .qtm/tasks breakdown existed (spec was draft); delivered directly."
+        },
+        {
+            "specId": "SPEC-238",
+            "title": "Reduce apps/api per-file test cold-import overhead (~9% suite speedup)",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-238-api-test-cold-import-perf"
+        },
+        {
+            "specId": "SPEC-198",
+            "title": "AI Text Improvement (HOST)",
+            "status": "completed",
+            "progress": "10/10",
+            "path": "SPEC-198-ai-text-improvement",
+            "archived": true,
+            "archivedAt": "2026-06-06",
+            "archiveNote": "DRIFT FIX (2026-06-15 cleanup): specs/index had this completed+archived but tasks/index had NO entry. state.json shows 10/10 tasks completed, 77/77 tests. Shipped via PRs #1487 + #1514. Reconstructed entry to match specs/index."
+        },
+        {
+            "specId": "SPEC-167",
+            "title": "Downgrade preflight + remediation",
+            "status": "completed",
+            "progress": "26/26",
+            "path": "SPEC-167-downgrade-preflight-remediation",
+            "archived": true,
+            "archivedAt": "2026-06-07",
+            "archiveNote": "DRIFT FIX (2026-06-15 cleanup): specs/index had completed+archived but tasks/index had NO entry. state.json shows 26/26 completed. Shipped via PR #1484, closed out #1485. Reconstructed entry."
+        },
+        {
+            "specId": "SPEC-173",
+            "title": "AI Foundation (@repo/ai-core)",
+            "status": "completed",
+            "progress": "43/43",
+            "path": "SPEC-173-ai-core",
+            "archived": true,
+            "archivedAt": "2026-06-05",
+            "archiveNote": "DRIFT FIX (2026-06-15 cleanup): specs/index had completed+archived but tasks/index had NO entry. state.json shows 43/43 completed. AI foundation pkg shipped via PR #1466, closed out #1467, e2e fix #1477. Reconstructed entry."
+        },
+        {
+            "specId": "SPEC-181",
+            "title": "PostHog Reverse Proxy — first-party analytics ingestion (web)",
+            "status": "completed",
+            "progress": "11/11",
+            "path": "SPEC-181-posthog-reverse-proxy",
+            "archived": true,
+            "archivedAt": "2026-06-04",
+            "archiveNote": "DRIFT FIX (2026-06-15): restored deleted entry. Completed via PR #1421."
+        },
+        {
+            "specId": "SPEC-182",
+            "title": "Unified Authentication + Host-Mode Access Model",
+            "status": "completed",
+            "progress": "22/22",
+            "path": "SPEC-182-unified-auth-host-access",
+            "archived": true,
+            "archivedAt": "2026-06-04",
+            "archiveNote": "DRIFT FIX (2026-06-15): restored deleted entry. Completed via PR #1445."
         }
     ],
     "standalone": {

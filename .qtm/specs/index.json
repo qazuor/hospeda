@@ -503,7 +503,10 @@
                 "event",
                 "backend",
                 "phase-2"
-            ]
+            ],
+            "archived": true,
+            "archivedAt": "2026-06-05",
+            "archiveNote": "DRIFT FIX (2026-06-15 cleanup): was completed but missing archived flag in both indexes. Shipped via PR #1461. Branch merged."
         },
         {
             "specId": "SPEC-160",
@@ -686,14 +689,16 @@
             "specId": "SPEC-187",
             "title": "Rich Text Entity Descriptions — per-entity toolbars, plain-text accommodation.description, full richDescription backing, ratify canonical format & harden rendering",
             "type": "feature",
-            "status": "draft",
+            "status": "completed",
             "complexity": "high",
             "path": "SPEC-187-rich-text-entity-descriptions",
             "branch": "spec/SPEC-187-rich-text-entity-descriptions",
             "base": "staging",
             "linearIssues": ["BETA-60"],
             "created": "2026-06-02",
-            "archived": false
+            "archived": true,
+            "archivedAt": "2026-06-08",
+            "archiveNote": "DRIFT FIX (2026-06-15 cleanup): tasks/index was completed+archived (25/25) but specs/index stayed draft — the closeout PR #1501 flipped task status but a stale-base edit reverted specs status. Shipped via PRs #1488/#1489/#1498/#1500/#1501 + prod-readiness #1505. All branches merged."
         },
         {
             "specId": "SPEC-189",
@@ -1007,13 +1012,6 @@
             "note": "Final phase of host migration. Full accommodation editor in apps/web including media upload, all section forms, validation, and preview. Shipped ad-hoc via PRs #1509/#1513/#1516 (Phases A/B/C) WITHOUT a formal .qtm/specs/SPEC-208-web-accommodation-editor/ directory (no spec.md). Prod-readiness review (2026-06-09) found blockers, all fixed + merged to staging: protected update dropped nested fields + media (#1528), open geocoding proxy (#1529), no protected media delete + orphan assets (#1533, re-landed via #1540 after stacked-base stranding), index drift (#1534). Local e2e PASSED 6/6 (persistence, no-clobber, geocoding 401/200, media delete own-200/foreign-403). Closed 2026-06-10."
         },
         {
-            "id": "SPEC-187",
-            "title": "Rich Text Entity Descriptions",
-            "status": "completed",
-            "archived": true,
-            "path": "SPEC-187-rich-text-entity-descriptions"
-        },
-        {
             "specId": "SPEC-209",
             "title": "Admin SSR memory leak + cheap healthcheck",
             "type": "bugfix",
@@ -1221,17 +1219,18 @@
             "renumberedReason": "Collided with the already-merged SPEC-227 billing-subscription-observability; renumbered to next free (228 taken by web-loading-states)."
         },
         {
-            "specId": "SPEC-230",
+            "specId": "SPEC-237",
             "title": "External-platform reviews & reputation on accommodation pages",
             "type": "feature",
             "complexity": "high",
             "status": "draft",
-            "path": "SPEC-230-accommodation-external-reviews",
+            "path": "SPEC-237-accommodation-external-reviews",
             "base": "staging",
             "created": "2026-06-15T00:00:00Z",
             "tags": ["accommodations", "reviews", "reputation", "google-places", "external", "web"],
             "archived": false,
-            "note": "Show an accommodation's external-platform reputation on its detail page: Google real review snippets via official Places API + aggregate-only (rating+count+link) for Booking/Airbnb, clearly labeled. Separate stateful entity (two new tables) from internal reviews; never pollutes internal averageRating. Owner registers listings + per-platform/global toggles for link and reviews; constrained backend (refresh-via-button + cron, list-only, no user edit/delete). Google text TTL→degrade to aggregate. Sibling of SPEC-222 (shares safeExternalFetch/Apify/Places). This is the deferred reviews feature SPEC-222 excluded. Drafted 2026-06-15."
+            "note": "Show an accommodation's external-platform reputation on its detail page: Google real review snippets via official Places API + aggregate-only (rating+count+link) for Booking/Airbnb, clearly labeled. Separate stateful entity (two new tables) from internal reviews; never pollutes internal averageRating. Owner registers listings + per-platform/global toggles for link and reviews; constrained backend (refresh-via-button + cron, list-only, no user edit/delete). Google text TTL→degrade to aggregate. Sibling of SPEC-222 (shares safeExternalFetch/Apify/Places). This is the deferred reviews feature SPEC-222 excluded. Drafted 2026-06-15.",
+            "renumberNote": "Renumbered from SPEC-230 (collision with SPEC-230-list-soft-delete-filtering) during 2026-06-15 cleanup; soft-delete kept 230 as it was in active use."
         },
         {
             "specId": "SPEC-228",
@@ -1277,6 +1276,45 @@
                 "spec-173-child"
             ],
             "note": "Renumbered from SPEC-212 (collided with SPEC-212-conversational-ai-search, which holds the 212 index entry). AI translation of accommodation/destination/event/post content into en/pt: i18n migration + schema fields + translate service + admin TranslationSection (collapsible, source-locale aware, only-missing) + web host translation panel + locale-aware SEO. Shipped via #1581 (core), #1623 (admin endpoint + UX/direction + host panel), #1652 (SEO i18n)."
+        },
+        {
+            "specId": "SPEC-238",
+            "title": "Reduce apps/api per-file test cold-import overhead (~9% suite speedup)",
+            "type": "improvement",
+            "status": "draft",
+            "complexity": "medium",
+            "path": "SPEC-238-api-test-cold-import-perf",
+            "base": "staging",
+            "priority": "P3",
+            "created": "2026-06-15T00:00:00Z",
+            "tags": ["ci", "testing", "vitest", "performance", "api", "infrastructure"],
+            "archived": false,
+            "note": "B2 lever extracted from SPEC-188 (~9% api test speedup via service-core mock + Sentry mock + shared vitest config). Reference impl on deleted branch spec/SPEC-188-vitest-test-performance (tip 9825dd9ff, perf commit d6c023179) was 1760 commits behind; re-implement fresh on staging, do NOT cherry-pick (stale service-core mock). Drafted 2026-06-15.",
+            "renumberNote": "Renumbered from SPEC-236 (collision with another agent already working SPEC-236) on 2026-06-15."
+        },
+        {
+            "specId": "SPEC-181",
+            "title": "PostHog Reverse Proxy — first-party analytics ingestion (web)",
+            "type": "fix",
+            "status": "completed",
+            "complexity": "low-medium",
+            "path": "SPEC-181-posthog-reverse-proxy",
+            "base": "staging",
+            "archived": true,
+            "archivedAt": "2026-06-04",
+            "archiveNote": "DRIFT FIX (2026-06-15 cleanup): was completed+archived via PR #1421 but the index entry was later DELETED by a stale-base edit. Restored. spec.md=completed, 11/11 tasks. Shipped via #1385/#1388/#1393/#1396."
+        },
+        {
+            "specId": "SPEC-182",
+            "title": "Unified Authentication + Host-Mode Access Model",
+            "type": "feature",
+            "status": "completed",
+            "complexity": "high",
+            "path": "SPEC-182-unified-auth-host-access",
+            "base": "staging",
+            "archived": true,
+            "archivedAt": "2026-06-04",
+            "archiveNote": "DRIFT FIX (2026-06-15 cleanup): was completed+archived via PR #1445 but the index entry was later DELETED by a stale-base edit. Restored. spec.md=completed, 22/22 tasks. Shipped via #1414/#1397."
         }
     ]
 }
