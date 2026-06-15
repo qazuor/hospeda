@@ -1000,13 +1000,6 @@
             "note": "Final phase of host migration. Full accommodation editor in apps/web including media upload, all section forms, validation, and preview. Shipped ad-hoc via PRs #1509/#1513/#1516 (Phases A/B/C) WITHOUT a formal .qtm/specs/SPEC-208-web-accommodation-editor/ directory (no spec.md). Prod-readiness review (2026-06-09) found blockers, all fixed + merged to staging: protected update dropped nested fields + media (#1528), open geocoding proxy (#1529), no protected media delete + orphan assets (#1533, re-landed via #1540 after stacked-base stranding), index drift (#1534). Local e2e PASSED 6/6 (persistence, no-clobber, geocoding 401/200, media delete own-200/foreign-403). Closed 2026-06-10."
         },
         {
-            "id": "SPEC-187",
-            "title": "Rich Text Entity Descriptions",
-            "status": "completed",
-            "archived": true,
-            "path": "SPEC-187-rich-text-entity-descriptions"
-        },
-        {
             "specId": "SPEC-209",
             "title": "Admin SSR memory leak + cheap healthcheck",
             "type": "bugfix",
