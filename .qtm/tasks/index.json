@@ -40,9 +40,12 @@
         {
             "specId": "SPEC-220",
             "title": "Staging→Main Promotion Hardening — clear CodeQL security debt blocking the promotion",
-            "status": "in-progress",
-            "progress": "0/7",
-            "path": "SPEC-220-staging-main-promotion-hardening"
+            "status": "completed",
+            "progress": "7/7",
+            "path": "SPEC-220-staging-main-promotion-hardening",
+            "archived": true,
+            "archivedAt": "2026-06-14",
+            "archiveNote": "T-001..T-007 done (T-004 N/A — both findings fixed by code, no dismissals). T-006 live: advanced setup (GitHub codeql.yml on main + default setup disabled) + codeql-staging.yml nightly staging scan; staging↔main reconciled. Promo #1629 merged to main; #1618 unblocked SPEC-219 T-005."
         },
         {
             "specId": "SPEC-211",
