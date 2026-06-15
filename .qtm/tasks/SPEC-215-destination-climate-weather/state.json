@@ -1,0 +1,940 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-215",
+    "title": "Destination climate & live weather",
+    "created": "2026-06-15T22:30:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add climate and weather_current jsonb columns to destination dbschema",
+            "description": "In packages/db/src/schemas/destination/destination.dbschema.ts add two nullable jsonb columns: `climate` (Part A seasonal) and `weather_current` (Part B live cache). Follow the existing JSONB subtype pattern (location, media, seo, rating). No data backfill. Test: column presence is covered by the migration/drift guard in T-002; no unit test for the column itself.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002"],
+            "subtasks": [
+                {
+                    "title": "Add `climate jsonb` nullable column",
+                    "completed": false
+                },
+                {
+                    "title": "Add `weather_current jsonb` nullable column",
+                    "completed": false
+                }
+            ],
+            "tags": ["database", "schema"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:30:00.000Z",
+                "started": "2026-06-15T23:10:00.000Z",
+                "completed": "2026-06-15T23:10:00.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Generate and apply structural migration for the new destination columns",
+            "description": "Run `pnpm db:generate` to produce the migration adding `climate` + `weather_current`, commit the generated file under packages/db/src/migrations/, then `pnpm db:migrate` + `pnpm db:apply-extras`. Verify the drift guard passes (db:generate clean afterwards). Test: migration applies on a fresh DB without error; drift guard green.",
+            "status": "in-progress",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-006", "T-007"],
+            "subtasks": [
+                {
+                    "title": "db:generate migration file",
+                    "completed": false
+                },
+                {
+                    "title": "db:migrate + db:apply-extras",
+                    "completed": false
+                },
+                {
+                    "title": "verify drift guard clean",
+                    "completed": false
+                }
+            ],
+            "tags": ["database", "migration"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:30:00.000Z",
+                "started": "2026-06-15T23:10:00.000Z",
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Create ClimateSeasonEnum and DestinationClimateSchema subtype",
+            "description": "New file packages/schemas/src/entities/destination/subtypes/destination.climate.schema.ts: `ClimateSeasonEnum` ('spring'|'summer'|'autumn'|'winter') and `DestinationClimateSchema` = { bestSeason, bestMonths?, seasons: { spring?/summer?/autumn?/winter? : { avgTempMinC, avgTempMaxC, rainfallMm? } }, note?: I18nText }. Integer-safe temps. Named exports, RO-RO, JSDoc. Test: unit tests covered in T-026 (valid shape, optional fields, enum rejection).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-005", "T-018", "T-026"],
+            "subtasks": [
+                {
+                    "title": "ClimateSeasonEnum",
+                    "completed": false
+                },
+                {
+                    "title": "DestinationClimateSchema with per-season subtype",
+                    "completed": false
+                }
+            ],
+            "tags": ["schemas", "zod"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:30:00.000Z",
+                "started": "2026-06-15T23:10:00.000Z",
+                "completed": "2026-06-15T23:10:00.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Create weather Zod schemas (WMO condition enum, current, daily forecast, cache)",
+            "description": "New file(s) under packages/schemas/src/entities/destination/subtypes/ (e.g. destination.weather.schema.ts): `WeatherConditionEnum` (internal conditions mapped from WMO codes), `DestinationWeatherCurrentSchema` (temperatureC, apparentTemperatureC, weatherCode, condition, windSpeed, humidity, isDay), `DestinationWeatherDailySchema` (date, tempMinC, tempMaxC, weatherCode, condition, precipMm), and `DestinationWeatherCacheSchema` = { current, daily: array length<=16, fetchedAt }. Named exports, RO-RO, JSDoc. Test: covered in T-026.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-005", "T-007", "T-008", "T-020", "T-026"],
+            "subtasks": [
+                {
+                    "title": "WeatherConditionEnum",
+                    "completed": false
+                },
+                {
+                    "title": "current + daily schemas",
+                    "completed": false
+                },
+                {
+                    "title": "cache wrapper schema { current, daily[16], fetchedAt }",
+                    "completed": false
+                }
+            ],
+            "tags": ["schemas", "zod", "weather"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:30:00.000Z",
+                "started": "2026-06-15T23:10:00.000Z",
+                "completed": "2026-06-15T23:10:00.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Wire climate + weatherCurrent into DestinationSchema and remove dead HTTP stubs",
+            "description": "In packages/schemas add `climate` (DestinationClimateSchema) and `weatherCurrent` (DestinationWeatherCacheSchema) to DestinationSchema (nullable). Remove the orphaned `climate`/`bestSeason` filter fields from destination.http.schema.ts (~L44/86). Decision 5: these dead filters are removed, not repurposed. Test: schema still parses existing fixtures; removed filter keys no longer accepted (T-026).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003", "T-004"],
+            "blocks": ["T-006", "T-015"],
+            "subtasks": [
+                {
+                    "title": "Add climate + weatherCurrent to DestinationSchema",
+                    "completed": false
+                },
+                {
+                    "title": "Remove dead climate/bestSeason HTTP filter fields",
+                    "completed": false
+                }
+            ],
+            "tags": ["schemas", "cleanup"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:30:00.000Z",
+                "started": "2026-06-15T23:10:00.000Z",
+                "completed": "2026-06-15T23:10:00.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Include climate in destination service CRUD and remove silent-drop logic",
+            "description": "In packages/service-core destination.service.ts: include `climate` in create/update/read mapping. Remove the silent-drop logic for the dead climate/bestSeason filters (~L330-344). Test: service create/update round-trips climate; reading returns it; unit tests in service-core test dir.",
+            "status": "in-progress",
+            "complexity": 3,
+            "blockedBy": ["T-005", "T-002"],
+            "blocks": ["T-016", "T-019", "T-021"],
+            "subtasks": [
+                {
+                    "title": "Map climate in create/update/read",
+                    "completed": false
+                },
+                {
+                    "title": "Remove silent-drop filter logic",
+                    "completed": false
+                },
+                {
+                    "title": "Unit tests for climate round-trip",
+                    "completed": false
+                }
+            ],
+            "tags": ["service-core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:30:00.000Z",
+                "started": "2026-06-15T23:10:00.000Z",
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Add weather cache read/write to the destination/weather service",
+            "description": "Add service methods to read `weather_current` for one destination and to upsert the cache payload ({ current, daily[16], fetchedAt }). Result<T> typed returns. Used by the public endpoint (T-013) and the cron job (T-010). Test: unit tests for read (hit/miss) and upsert.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-004", "T-002"],
+            "blocks": ["T-010", "T-013"],
+            "subtasks": [
+                {
+                    "title": "getWeather(destinationId) read",
+                    "completed": false
+                },
+                {
+                    "title": "upsertWeatherCache(...) write",
+                    "completed": false
+                },
+                {
+                    "title": "unit tests hit/miss",
+                    "completed": false
+                }
+            ],
+            "tags": ["service-core", "weather"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Create WMO weather_code to internal condition + icon mapping",
+            "description": "Module in service-core (and shared key for web) mapping the documented WMO weather_code set to WeatherConditionEnum + an icon key + a fallback (generic condition) for gaps. Pure function, fully unit-tested across the WMO code table. Test: every documented code maps; unknown code falls back.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-009"],
+            "subtasks": [
+                {
+                    "title": "WMO code -> condition map",
+                    "completed": false
+                },
+                {
+                    "title": "fallback for unmapped codes",
+                    "completed": false
+                },
+                {
+                    "title": "unit tests over code table",
+                    "completed": false
+                }
+            ],
+            "tags": ["service-core", "weather"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Implement Open-Meteo client (current + 16-day daily forecast)",
+            "description": "packages/service-core/src/services/weather/clients/open-meteo.client.ts: native fetch class, configurable baseUrl + timeoutMs, no API key. Requests `current=temperature_2m,weather_code,wind_speed_10m,relative_humidity_2m,apparent_temperature,is_day` AND `daily=temperature_2m_max,temperature_2m_min,weather_code,precipitation_sum` with `forecast_days=16`. Maps via T-008 to the cache shape. Test: unit tests with mocked fetch — happy path, timeout, non-200, malformed payload; assert 16 daily entries parsed.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-010"],
+            "subtasks": [
+                {
+                    "title": "fetch current + daily[16] with timeout",
+                    "completed": false
+                },
+                {
+                    "title": "map response to cache schema",
+                    "completed": false
+                },
+                {
+                    "title": "unit tests (mocked fetch: ok/timeout/500/malformed)",
+                    "completed": false
+                }
+            ],
+            "tags": ["service-core", "weather", "open-meteo"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Implement destination-weather-fetch cron job",
+            "description": "apps/api/src/cron/jobs/destination-weather-fetch.job.ts following the exchange-rate-fetch pattern: fetch current + 16-day forecast for all published destinations with coordinates, upsert cache via T-007. Advisory lock (new key), withTransaction, dryRun support, throttle/batch, tolerate per-destination failure (serve last cache). Test: dry-run test in T-012.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-007", "T-009"],
+            "blocks": ["T-011", "T-012"],
+            "subtasks": [
+                {
+                    "title": "Iterate published destinations w/ coords",
+                    "completed": false
+                },
+                {
+                    "title": "Advisory lock + withTransaction + dryRun",
+                    "completed": false
+                },
+                {
+                    "title": "Per-destination failure tolerance",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "cron", "weather"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Register weather cron in schedules manifest and registry (12h)",
+            "description": "Add the job to apps/api/src/cron/schedules.manifest.ts with a 12h schedule + displayName + category, register in registry.ts, and add the new advisory-lock key. Decision 7: interval is 12h. Test: manifest/registry wiring covered by existing cron registration tests if present; otherwise a small unit assertion.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-028"],
+            "subtasks": [
+                {
+                    "title": "Add to schedules.manifest.ts (12h) + metadata",
+                    "completed": false
+                },
+                {
+                    "title": "Register in registry.ts + advisory lock key",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "cron"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Cron dry-run test for destination-weather-fetch",
+            "description": "Test the job in dryRun mode: asserts it enumerates destinations, calls the (mocked) Open-Meteo client, and does NOT write when dryRun=true; writes when dryRun=false. Mocked client + DB. Test file under apps/api cron test dir.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-010"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "dryRun=true writes nothing",
+                    "completed": false
+                },
+                {
+                    "title": "dryRun=false upserts cache",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "cron", "testing"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Add public GET /api/v1/public/destinations/:id/weather endpoint",
+            "description": "Thin public route (no auth) returning the cached current conditions + 16-day forecast for one destination via T-007. Typed response shape; concrete public-tier output schema. Degrades to neutral empty payload when no cache/coords (never 500). Test: integration test in T-014.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-014", "T-022", "T-027"],
+            "subtasks": [
+                {
+                    "title": "Route factory + public-tier response schema",
+                    "completed": false
+                },
+                {
+                    "title": "Cache hit returns current + daily[16]",
+                    "completed": false
+                },
+                {
+                    "title": "Cache/coords miss returns neutral payload",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "public-route", "weather"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Integration test for the public weather endpoint",
+            "description": "apps/api integration test: cached destination returns current+forecast; destination without cache returns neutral 200; unknown id returns 404. Seed/mocked DB. Asserts response matches the public-tier schema (no leakage).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-013"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "cached -> current+daily",
+                    "completed": false
+                },
+                {
+                    "title": "no cache -> neutral 200",
+                    "completed": false
+                },
+                {
+                    "title": "unknown id -> 404",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "testing"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Create admin Climate section config for the destination edit form",
+            "description": "apps/admin/src/features/destinations/config/sections/climate.consolidated.ts: TanStack Form section for bestSeason (enum select), bestMonths (text), per-season avgTempMin/Max + rainfall (number), note (i18n text). Validation via Zod from @repo/schemas (schema.safeParse in handler, NOT zodResolver). Tailwind. Test: component test in T-017.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-016"],
+            "subtasks": [
+                {
+                    "title": "bestSeason + bestMonths fields",
+                    "completed": false
+                },
+                {
+                    "title": "per-season numeric fields",
+                    "completed": false
+                },
+                {
+                    "title": "note i18n field + Zod validation",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin", "tanstack-form"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Wire Climate section into the destination edit form",
+            "description": "Mount the climate.consolidated section into apps/admin destinations $id_.edit.tsx so save persists `climate` through the service. Ensure load hydrates existing values. Test: form persistence asserted in T-017.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-015", "T-006"],
+            "blocks": ["T-017", "T-028"],
+            "subtasks": [
+                {
+                    "title": "Mount section in edit form",
+                    "completed": false
+                },
+                {
+                    "title": "Hydrate + persist climate",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Admin Climate section component test",
+            "description": "Component test: renders the section, edits fields, runs Zod validation (rejects bad temp), and asserts the submitted payload carries the climate object in the expected shape. testing-library + Vitest.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-016"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "render + edit fields",
+                    "completed": false
+                },
+                {
+                    "title": "validation + submit payload shape",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin", "testing"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Offline helper script to derive seasonal averages from Open-Meteo Climate API",
+            "description": "Decision 6: build-time helper (NOT a runtime dependency) that, given a destination's coordinates, queries the Open-Meteo Climate API offline and emits DestinationClimateSchema-shaped seasonal averages (avg temp min/max, rainfall per season) to paste/merge into seed JSON. Documented usage. Test: a small unit test on the API-response -> climate-shape transform with a fixture.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-019"],
+            "subtasks": [
+                {
+                    "title": "Query Climate API for a coordinate (offline script)",
+                    "completed": false
+                },
+                {
+                    "title": "Transform monthly normals -> per-season averages",
+                    "completed": false
+                },
+                {
+                    "title": "Emit DestinationClimateSchema-shaped JSON + unit test on transform",
+                    "completed": false
+                }
+            ],
+            "tags": ["seed", "weather", "tooling"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Populate climate in seed JSON for featured destinations",
+            "description": "Using the T-018 helper output, add `climate` to packages/seed/src/data/destination/*.json for featured destinations (at minimum). Values labelled approximate. Test: seed validates against DestinationClimateSchema (extend existing seed validation test).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-018", "T-006"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add climate to featured destination seeds",
+                    "completed": false
+                },
+                {
+                    "title": "Seed validates against schema",
+                    "completed": false
+                }
+            ],
+            "tags": ["seed"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Web WMO code to icon (@repo/icons) + i18n label mapping",
+            "description": "In apps/web, a mapping from WMO weather_code / internal condition to a @repo/icons icon + an i18n label key (used by the live badge and forecast strip). Shares the condition enum from @repo/schemas. Test: unit test asserting each condition resolves an icon + label key, with fallback.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-022"],
+            "subtasks": [
+                {
+                    "title": "condition -> icon key",
+                    "completed": false
+                },
+                {
+                    "title": "condition -> i18n label key + fallback",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "weather"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Build DestinationClimateCard.astro (seasonal SSR)",
+            "description": "apps/web DestinationClimateCard.astro: SSR-render seasonal climate from destination.climate (best season, best months, per-season temp range + rainfall, optional note) in the active locale. CSS Modules (no Tailwind). Renders nothing/neutral when climate is null. Test: covered by web component/source tests + visual via T-027 path; assert it reads destination.climate.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-006", "T-024"],
+            "blocks": ["T-023"],
+            "subtasks": [
+                {
+                    "title": "SSR seasonal layout + i18n",
+                    "completed": false
+                },
+                {
+                    "title": "CSS Module styling",
+                    "completed": false
+                },
+                {
+                    "title": "neutral render when climate null",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "astro"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Build DestinationWeatherLive.client.tsx island (current badge + 16-day forecast)",
+            "description": "apps/web React island (client:idle/client:visible) that fetches GET /public/destinations/:id/weather and renders the live current-conditions badge AND the 16-day daily forecast strip (per-day icon + min/max + precip). Graceful degradation to a neutral 'no disponible' state on error/empty/no-coords; never blocks render. Uses T-020 mapping. CSS Modules. Test: covered in T-027.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-013", "T-020", "T-025"],
+            "blocks": ["T-023", "T-027"],
+            "subtasks": [
+                {
+                    "title": "Fetch public weather endpoint",
+                    "completed": false
+                },
+                {
+                    "title": "Render current badge + 16-day strip",
+                    "completed": false
+                },
+                {
+                    "title": "Graceful 'no disponible' degradation",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "react-island", "weather"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Wire climate card into destination sidebar and remove placeholder",
+            "description": "Replace DestinationClimatePlaceholder.astro usage in the destination detail sidebar (3rd card) with DestinationClimateCard.astro embedding the weather island; delete the placeholder component. Test: source test asserts the placeholder is gone and the card is mounted.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-021", "T-022"],
+            "blocks": ["T-028"],
+            "subtasks": [
+                {
+                    "title": "Mount card in sidebar",
+                    "completed": false
+                },
+                {
+                    "title": "Delete DestinationClimatePlaceholder.astro",
+                    "completed": false
+                }
+            ],
+            "tags": ["web"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Complete i18n climate/season keys (es/en/pt)",
+            "description": "Extend packages/i18n/src/locales/{es,en,pt}/destination.json with the climate keys: best season, best months, season names, per-field labels (avg temp, rainfall) and units. Reuse existing partial keys. Test: i18n parity test (all three locales same keys) green.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-021"],
+            "subtasks": [
+                {
+                    "title": "es/en/pt climate + season + field labels",
+                    "completed": false
+                },
+                {
+                    "title": "i18n parity test green",
+                    "completed": false
+                }
+            ],
+            "tags": ["i18n"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Add i18n WMO weather condition labels (es/en/pt)",
+            "description": "Add localized labels for each internal weather condition (mapped from WMO codes) plus a generic fallback label, used by the live badge + forecast strip. Test: i18n parity + every WeatherConditionEnum value has a label in all locales.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-022"],
+            "subtasks": [
+                {
+                    "title": "Condition labels es/en/pt",
+                    "completed": false
+                },
+                {
+                    "title": "Generic fallback label + parity test",
+                    "completed": false
+                }
+            ],
+            "tags": ["i18n", "weather"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Schema unit tests for climate and weather schemas",
+            "description": "packages/schemas tests: DestinationClimateSchema (valid, optional fields, ClimateSeasonEnum rejection), weather schemas (current/daily/cache, daily length<=16), and that the removed HTTP filter keys are no longer accepted. AAA pattern.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-003", "T-004"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "climate schema tests",
+                    "completed": false
+                },
+                {
+                    "title": "weather schema tests (incl daily<=16)",
+                    "completed": false
+                }
+            ],
+            "tags": ["schemas", "testing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Graceful-degradation tests (US-3)",
+            "description": "Cover US-3: weather island/endpoint degrade to neutral 'no disponible' when (a) no coordinates, (b) API/cache empty, (c) fetch error — seasonal climate still renders, layout never breaks, no thrown error. Web island test + endpoint neutral-path test.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-013", "T-022"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "no-coords degradation",
+                    "completed": false
+                },
+                {
+                    "title": "empty cache degradation",
+                    "completed": false
+                },
+                {
+                    "title": "fetch-error degradation",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "testing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Document weather cron and climate admin field",
+            "description": "Add the destination-weather-fetch cron (12h, no env/key) to the cron docs, and document the climate field in the destination admin doc. Note the offline seed helper (T-018) and Open-Meteo non-commercial usage. Docs-only.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-011", "T-016", "T-023"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Cron docs entry",
+                    "completed": false
+                },
+                {
+                    "title": "Destination admin climate field doc",
+                    "completed": false
+                }
+            ],
+            "tags": ["docs"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 28,
+        "pending": 22,
+        "inProgress": 2,
+        "completed": 4,
+        "blocked": 0,
+        "averageComplexity": 2.3
+    }
+}
