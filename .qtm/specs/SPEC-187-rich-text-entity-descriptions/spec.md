@@ -3,7 +3,7 @@ specId: SPEC-187
 title: Rich Text Entity Descriptions — per-entity toolbars, plain-text accommodation.description, full richDescription backing, ratify canonical format & harden rendering
 slug: rich-text-entity-descriptions
 type: feature
-status: draft
+status: completed
 complexity: high
 owner: qazuor
 created: 2026-06-02
@@ -120,7 +120,7 @@ than the original "two field flips". The work breaks down as:
 | accommodation | `richDescription` | `TEXTAREA` ❌ (TODO; maxLength 5000) | **`RICH_TEXT`** (FR-3, full backing + premium gate) | **ADDED THIS SPEC** — new `z.string().max(5000).optional()` in `@repo/schemas` + new `rich_description` DB column (versioned migration) | **YES (NEW)** — rendered on accommodation detail via `renderContent`. The PUBLIC premium gate is **server-side by omission** (FR-3b): the public transform includes `richDescription` only for entitled hosts; the web renders rich if present else plain `description` and never evaluates `CAN_USE_RICH_DESCRIPTION` (FR-4) |
 | destination | `description` | `RICH_TEXT` ✅ | `RICH_TEXT` (no change; declare `allowedFeatures` full incl. link) | yes | **yes** — via `renderContent` (`set:html`) |
 | destination | `summary` | `TEXTAREA` | `TEXTAREA` (no change — non-goal) | yes | n/a |
-| event | `description` | `TEXTAREA` ❌ (maxLength 5000) | **`RICH_TEXT`** (FR-1; `allowedFeatures` full incl. link) | yes (`event.schema.ts` `z.string().min(50).max(5000)`) | **yes** — via `renderContent` (already calls it on `contentHtml || description || summary`) |
+| event | `description` | `TEXTAREA` ❌ (maxLength 5000) | **`RICH_TEXT`** (FR-1; `allowedFeatures` full incl. link) | yes (`event.schema.ts` `z.string().min(50).max(5000)`) | **yes** — via `renderContent` (already calls it on `contentHtml` / `description` / `summary`) |
 | event | `summary` | `TEXTAREA` | `TEXTAREA` (no change — non-goal) | yes (10–300 chars) | n/a |
 | post | `content` | `RICH_TEXT` ✅ (maxLength 50000) | `RICH_TEXT` (no change; declare `allowedFeatures` full incl. link) | yes | **yes** — via `renderContent` (`set:html`) |
 
@@ -221,6 +221,7 @@ consumer, and coupling presentation to the API. The cost is a single presence-ch
 web, which is cheap and correct.
 
 **Rejected alternatives** (recorded in §10 D-14 / D-15):
+
 - **Option 2 — backend sends pre-rendered sanitized HTML and the web is 100% dumb.** Rejected as
   over-engineering unless more clients appear: it moves the markdown + sanitize pipeline to the
   backend, forces a double-shape (raw for admin, HTML for public), and couples cache-invalidation to
@@ -256,8 +257,8 @@ out of scope for entity descriptions.
 
 ### FINDING D — a third markdown→HTML path exists in the admin view renderer
 
-`RichTextViewField.tsx` renders the stored markdown via a hand-rolled regex `parseMarkdown`
-+ `DOMPurify.sanitize`, NOT via `marked`. This means the admin VIEW mode and the web render
+`RichTextViewField.tsx` renders the stored markdown via a hand-rolled regex `parseMarkdown` +
+`DOMPurify.sanitize`, NOT via `marked`. This means the admin VIEW mode and the web render
 can diverge for the same markdown. This is noted for the ADR (document the three touchpoints:
 admin-edit `tiptap-markdown`, admin-view regex+DOMPurify, web `marked`+sanitize-html). Aligning
 the admin view renderer onto `marked` is a candidate hardening item but is treated as
@@ -678,6 +679,7 @@ tests cover it too (a host-authored richDescription with a malicious payload mus
 web render).
 
 Required malicious cases (each asserted stripped/neutralized):
+
 - `<script>alert(1)</script>` → no `<script>` in output.
 - A link with `href="javascript:alert(1)"` → `href` dropped or link removed (scheme not in
   `ALLOWED_SCHEMES`).
@@ -718,6 +720,7 @@ Two parts: a REQUIRED data migration for `accommodation.description` (it becomes
 and a verify-then-decide audit for `event.description` / `richDescription`.
 
 **REQUIRED — `accommodation.description` markdown strip:**
+
 - `accommodation.description` is reverting `RICH_TEXT → PLAIN TEXT` (FR-2). Existing seed/prod rows
   may contain markdown (`**bold**`, `## heading`, `[text](url)`, lists). Because the web render
   stops interpreting it as markdown, those markers would otherwise become visible raw text.
@@ -730,6 +733,7 @@ and a verify-then-decide audit for `event.description` / `richDescription`.
 - This is a real, required data task — NOT optional.
 
 **Verify-then-decide — `event.description` / `accommodation.richDescription`:**
+
 - These stay/become markdown (rich). Verify existing rows are plain text (valid markdown as-is)
   rather than raw HTML.
 - Query the column(s); inspect a sample + count rows with raw HTML markers (`<p>`, `<div>`,
@@ -850,7 +854,7 @@ committed and isolated.
 | **New `rich_description` DB migration** — wrong carril / uncommitted drift / `db:push` against a remote | FR-3 / Phase 3 mandate the SPEC-178 versioned carril (`pnpm db:generate` → `pnpm db:migrate`, commit the migration file); drift guard blocks CI on uncommitted schema drift; NEVER `db:push`; migration isolated in its own phase |
 | **Premium entitlement-gate regression on `richDescription` (admin EDIT surface)** — the rich editor shows/hides for the wrong actor | Keep the `entitlementKey` on the admin field config; FR-3 tests assert the EDIT gate for entitled vs non-entitled actors (admin); manual smoke with both |
 | **Backend gate-by-omission is incorrect (FR-3b, security-relevant)** — a bug either LEAKS premium rich content on a non-premium host's public page, or HIDES it for a premium host | FR-3b enforces the gate in ONE server-side place (public transform/read path) and is pinned by acceptance tests for BOTH cases: premium owning-host → `richDescription` present in the public payload; non-premium owning-host → omitted/null; plus an admin-raw test. FR-4 keeps the web dumb (presence check only) so the gate cannot be bypassed client-side. Manual smoke covers both owning-host tiers |
-| **Markdown shown as raw text** — `## ` / `**` leaking to users if a rich field skips `renderContent` | FR-4 pins all rich pages render via `renderContent`; event-detail markdown render test asserts `<h2>`/`<strong>` not literal markers |
+| **Markdown shown as raw text** — `##` / `**` leaking to users if a rich field skips `renderContent` | FR-4 pins all rich pages render via `renderContent`; event-detail markdown render test asserts `<h2>`/`<strong>` not literal markers |
 | **Deleting `tiptap-renderer` (mistaken as dead)** | Finding C proves it powers newsletters; §10 D-4 forbids deletion; ADR documents the boundary |
 | **Admin-view vs web-render divergence** (finding D — different markdown parsers) | Documented in the ADR as a known divergence; aligning the admin view renderer is optional/verify-then-decide, not mandated, to keep blast radius small |
 

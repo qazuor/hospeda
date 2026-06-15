@@ -674,14 +674,16 @@
             "specId": "SPEC-187",
             "title": "Rich Text Entity Descriptions — per-entity toolbars, plain-text accommodation.description, full richDescription backing, ratify canonical format & harden rendering",
             "type": "feature",
-            "status": "draft",
+            "status": "completed",
             "complexity": "high",
             "path": "SPEC-187-rich-text-entity-descriptions",
             "branch": "spec/SPEC-187-rich-text-entity-descriptions",
             "base": "staging",
             "linearIssues": ["BETA-60"],
             "created": "2026-06-02",
-            "archived": false
+            "archived": true,
+            "archivedAt": "2026-06-08",
+            "archiveNote": "DRIFT FIX (2026-06-15 cleanup): tasks/index was completed+archived (25/25) but specs/index stayed draft — the closeout PR #1501 flipped task status but a stale-base edit reverted specs status. Shipped via PRs #1488/#1489/#1498/#1500/#1501 + prod-readiness #1505. All branches merged."
         },
         {
             "specId": "SPEC-189",
