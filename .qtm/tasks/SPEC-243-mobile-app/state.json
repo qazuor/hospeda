@@ -1,0 +1,225 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-243",
+    "title": "Hospeda mobile app (React Native / Expo) — Sub-0 Foundation",
+    "created": "2026-06-15T00:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Scaffold apps/mobile — Expo SDK init, pnpm workspace, TurboRepo pipeline tasks (lint/typecheck/test/build)",
+            "description": "Create apps/mobile as an Expo managed-workflow app. Register it in the pnpm workspace and wire Turbo pipeline tasks: build (expo export), typecheck (tsc --noEmit), lint (@repo/biome-config), test (vitest + @testing-library/react-native). Expo Router renders a placeholder home screen.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-006", "T-008", "T-012"],
+            "subtasks": [],
+            "tags": ["scaffold", "expo", "turborepo"],
+            "phase": "scaffold",
+            "qualityGate": { "lint": "pending", "typecheck": "pending", "tests": "pending" },
+            "timestamps": { "created": "2026-06-15T00:00:00.000Z" }
+        },
+        {
+            "id": "T-002",
+            "title": "Configure Metro + Biome for monorepo internal packages (@repo/schemas, @repo/i18n)",
+            "description": "Make Metro resolve internal workspace packages (@repo/schemas, @repo/i18n) — path aliases / symlink resolution in metro.config.js as needed. Confirm eager locale-JSON import bundle size is acceptable (ADR-033 decision 5); fall back to lazy-by-locale only if size is unacceptable.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-003"],
+            "subtasks": [
+                { "title": "Metro resolves @repo/schemas + @repo/i18n", "completed": false },
+                { "title": "Measure eager locale bundle size; document result", "completed": false }
+            ],
+            "tags": ["scaffold", "metro", "i18n"],
+            "phase": "scaffold",
+            "qualityGate": { "lint": "pending", "typecheck": "pending", "tests": "pending" },
+            "timestamps": { "created": "2026-06-15T00:00:00.000Z" }
+        },
+        {
+            "id": "T-003",
+            "title": "Auth spike: validate better-auth/expo + expo-secure-store session flow (sign-in, persist, refresh, sign-out)",
+            "description": "HIGHEST RISK TASK. Validate the better-auth/expo client adapter against the server BA config: cookie vs Bearer mode, secure-store token persistence (iOS + Android), session refresh on app resume, sign-out. Outcome also LOCKS the API client transport (ADR-033 decision 3): if better-auth/expo requires @better-fetch/fetch, adopt it; else native fetch. Document findings before T-004/T-009 commit.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-004", "T-009"],
+            "subtasks": [
+                {
+                    "title": "Sign-in via better-auth/expo, token in expo-secure-store",
+                    "completed": false
+                },
+                {
+                    "title": "Session restore on cold launch + refresh on resume",
+                    "completed": false
+                },
+                { "title": "Sign-out clears secure store", "completed": false },
+                {
+                    "title": "Decide transport (fetch vs @better-fetch/fetch), record in ADR-033",
+                    "completed": false
+                }
+            ],
+            "tags": ["auth", "spike", "risk"],
+            "phase": "auth",
+            "qualityGate": { "lint": "pending", "typecheck": "pending", "tests": "pending" },
+            "timestamps": { "created": "2026-06-15T00:00:00.000Z" }
+        },
+        {
+            "id": "T-004",
+            "title": "Implement sign-in + sign-up screens (native RN) using the spiked auth client",
+            "description": "Native RN sign-in and sign-up screens under app/(auth)/. Email/password via Better Auth. Form validation with @repo/schemas Zod. Errors surfaced via i18n. Reuses the validated auth client from T-003.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-005", "T-011"],
+            "subtasks": [],
+            "tags": ["auth", "ui"],
+            "phase": "auth",
+            "qualityGate": { "lint": "pending", "typecheck": "pending", "tests": "pending" },
+            "timestamps": { "created": "2026-06-15T00:00:00.000Z" }
+        },
+        {
+            "id": "T-005",
+            "title": "Root layout: role-gated navigator (tourist vs host), session restore on cold launch",
+            "description": "app/_layout.tsx: on session load, read user.role and route to (tourist) or (host). Restore existing session from secure store on cold launch without re-login. Users with multiple roles see a role-switcher (Sub-4). Unauthenticated → (auth).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-004"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["auth", "navigation", "expo-router"],
+            "phase": "auth",
+            "qualityGate": { "lint": "pending", "typecheck": "pending", "tests": "pending" },
+            "timestamps": { "created": "2026-06-15T00:00:00.000Z" }
+        },
+        {
+            "id": "T-006",
+            "title": "Mobile design system: color tokens (JS objects from brand palette), typography, spacing, radius constants",
+            "description": "apps/mobile/src/design/: port the brand palette color values to JS token objects for RN StyleSheet (ADR-033 decision 1). Define typography scale, spacing scale, radius constants. Same color values as @repo/design-tokens but as JS objects (CSS/OKLCH tokens are not usable in RN).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-007", "T-013"],
+            "subtasks": [],
+            "tags": ["design", "tokens"],
+            "phase": "design",
+            "qualityGate": { "lint": "pending", "typecheck": "pending", "tests": "pending" },
+            "timestamps": { "created": "2026-06-15T00:00:00.000Z" }
+        },
+        {
+            "id": "T-007",
+            "title": "Wire styling strategy (StyleSheet.create per ADR-033) into the design-system layer",
+            "description": "Styling decision is LOCKED to StyleSheet.create in ADR-033 (decision 1) — NativeWind rejected for v1. This task wires the convention: a small StyleSheet helper/pattern over the T-006 tokens, plus a short usage note. No decision work remains here.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-006"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["design", "styling", "adr-033"],
+            "phase": "design",
+            "qualityGate": { "lint": "pending", "typecheck": "pending", "tests": "pending" },
+            "timestamps": { "created": "2026-06-15T00:00:00.000Z" }
+        },
+        {
+            "id": "T-008",
+            "title": "Integrate phosphor-react-native (per ADR-033) + add lint rule banning @repo/icons in apps/mobile",
+            "description": "Icon library is LOCKED to phosphor-react-native in ADR-033 (decision 2). Integrate it and add a Biome/lint guard that bans importing @repo/icons (DOM phosphor SVG, crashes in RN) anywhere in apps/mobile.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Integrate phosphor-react-native", "completed": false },
+                { "title": "Lint rule banning @repo/icons in apps/mobile", "completed": false }
+            ],
+            "tags": ["icons", "lint", "adr-033"],
+            "phase": "design",
+            "qualityGate": { "lint": "pending", "typecheck": "pending", "tests": "pending" },
+            "timestamps": { "created": "2026-06-15T00:00:00.000Z" }
+        },
+        {
+            "id": "T-009",
+            "title": "API client (src/lib/api/client.ts): typed fetch wrapper + Zod parse + auth header injection",
+            "description": "Typed API client initialized with baseUrl from expo-constants (EXPO_PUBLIC_API_URL). Attaches the BA session token (cookie or Bearer, per T-003 outcome). Every response parsed with the matching @repo/schemas schema before returning (fail-fast on drift). Only calls /public/* and /protected/* — never /admin/*.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-010", "T-013"],
+            "subtasks": [],
+            "tags": ["api", "client", "zod"],
+            "phase": "api",
+            "qualityGate": { "lint": "pending", "typecheck": "pending", "tests": "pending" },
+            "timestamps": { "created": "2026-06-15T00:00:00.000Z" }
+        },
+        {
+            "id": "T-010",
+            "title": "TanStack Query setup: QueryClient in root layout, custom hooks pattern",
+            "description": "Initialize @tanstack/react-query QueryClient in the root layout (same version pinned in the monorepo / apps/admin). Establish the custom-hooks pattern for entity data fetching that Sub-1/3/4 will consume.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-009"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["api", "tanstack-query"],
+            "phase": "api",
+            "qualityGate": { "lint": "pending", "typecheck": "pending", "tests": "pending" },
+            "timestamps": { "created": "2026-06-15T00:00:00.000Z" }
+        },
+        {
+            "id": "T-011",
+            "title": "Push notification setup: expo-notifications init, getExpoPushTokenAsync, new POST /protected/profile/push-token API endpoint",
+            "description": "Initialize expo-notifications (single channel v1, ADR-033 decision 6). On first authenticated launch call getExpoPushTokenAsync() and POST the token to a NEW endpoint POST /api/v1/protected/profile/push-token (small API addition). Foreground notifications shown in-app; background follows OS behavior. Register EXPO_PUBLIC_API_URL + EXPO_PUBLIC_APP_ENV env vars.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-004"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "expo-notifications init + push token retrieval", "completed": false },
+                {
+                    "title": "POST /protected/profile/push-token endpoint (API)",
+                    "completed": false
+                },
+                { "title": "Foreground/background receipt handling", "completed": false }
+            ],
+            "tags": ["native", "push", "api"],
+            "phase": "native",
+            "qualityGate": { "lint": "pending", "typecheck": "pending", "tests": "pending" },
+            "timestamps": { "created": "2026-06-15T00:00:00.000Z" }
+        },
+        {
+            "id": "T-012",
+            "title": "CI: add apps/mobile to GitHub Actions (typecheck + lint + test); EAS Build setup skeleton (eas.json, app identifiers)",
+            "description": "Wire apps/mobile into the GitHub Actions pipeline (typecheck + lint + test). Add EAS Build skeleton (eas.json with development/preview/production profiles, Apple/Google app identifiers placeholders). EAS chosen in ADR-033 (decision 7). Flag owner to add EXPO_PUBLIC_API_URL to EAS Secrets per build profile.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["ci", "eas"],
+            "phase": "ci",
+            "qualityGate": { "lint": "pending", "typecheck": "pending", "tests": "pending" },
+            "timestamps": { "created": "2026-06-15T00:00:00.000Z" }
+        },
+        {
+            "id": "T-013",
+            "title": "Unit tests for API client (Zod parse, error handling), auth utilities, design token exports",
+            "description": "Vitest unit tests: API client Zod parse + error handling paths, auth utility functions, design-token exports. AAA pattern, 90% coverage target on the new modules.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-009", "T-006"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "vitest"],
+            "phase": "testing",
+            "qualityGate": { "lint": "pending", "typecheck": "pending", "tests": "pending" },
+            "timestamps": { "created": "2026-06-15T00:00:00.000Z" }
+        }
+    ],
+    "summary": {
+        "total": 13,
+        "pending": 13,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 1.9
+    }
+}
