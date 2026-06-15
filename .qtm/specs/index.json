@@ -1285,6 +1285,30 @@
             "tags": ["ci", "testing", "vitest", "performance", "api", "infrastructure"],
             "archived": false,
             "note": "B2 lever extracted from SPEC-188 (~9% api test speedup via service-core mock + Sentry mock + shared vitest config). Reference impl on deleted branch spec/SPEC-188-vitest-test-performance (tip 9825dd9ff, perf commit d6c023179) was 1760 commits behind; re-implement fresh on staging, do NOT cherry-pick (stale service-core mock). Drafted 2026-06-15."
+        },
+        {
+            "specId": "SPEC-181",
+            "title": "PostHog Reverse Proxy — first-party analytics ingestion (web)",
+            "type": "fix",
+            "status": "completed",
+            "complexity": "low-medium",
+            "path": "SPEC-181-posthog-reverse-proxy",
+            "base": "staging",
+            "archived": true,
+            "archivedAt": "2026-06-04",
+            "archiveNote": "DRIFT FIX (2026-06-15 cleanup): was completed+archived via PR #1421 but the index entry was later DELETED by a stale-base edit. Restored. spec.md=completed, 11/11 tasks. Shipped via #1385/#1388/#1393/#1396."
+        },
+        {
+            "specId": "SPEC-182",
+            "title": "Unified Authentication + Host-Mode Access Model",
+            "type": "feature",
+            "status": "completed",
+            "complexity": "high",
+            "path": "SPEC-182-unified-auth-host-access",
+            "base": "staging",
+            "archived": true,
+            "archivedAt": "2026-06-04",
+            "archiveNote": "DRIFT FIX (2026-06-15 cleanup): was completed+archived via PR #1445 but the index entry was later DELETED by a stale-base edit. Restored. spec.md=completed, 22/22 tasks. Shipped via #1414/#1397."
         }
     ]
 }
