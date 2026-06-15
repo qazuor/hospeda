@@ -77,10 +77,16 @@ Web-only fixes that needed no backend work, landed ahead of this epic:
 
 ## Remaining work (this spec)
 
-### A. Accommodation views — OPTIONAL daily-series chart (the per-property list shipped)
+### A. Accommodation views — daily-series chart — ✅ DONE (branch `spec/SPEC-207-analytics-completion`, 2026-06-15)
+
+Implemented: a new protected per-host daily-series endpoint
+`GET /api/v1/protected/views/accommodations/me/daily-series?window=7d|30d`
+(`VIEW_BASIC_STATS`, owner-scoped via `findIdsByOwnerId`, gap-filled) plus a
+recharts `LineChart` in `ViewsWidget` above the existing ranked list; the
+7d/30d toggle drives both. Original optional-scope note kept below.
 
 The per-property ranked Views widget already shipped (see cabling pass #6),
-using the cumulative endpoint. What remains is OPTIONAL polish, not a blocker:
+using the cumulative endpoint. What remained was OPTIONAL polish, not a blocker:
 
 - If a time-trend chart is wanted, build a **protected** per-host daily-series
   views endpoint returning `{ window: '7d'|'30d', items: { date, count }[] }`
@@ -89,7 +95,13 @@ using the cumulative endpoint. What remains is OPTIONAL polish, not a blocker:
   (`/api/v1/admin/views/daily-series`) and the `entityView` service, scoped to
   `actor.id`'s accommodations. Then add a chart view alongside the current list.
 
-### B. Favorites widget redesign (per-accommodation)
+### B. Favorites widget redesign (per-accommodation) — ✅ DONE (branch `spec/SPEC-207-analytics-completion`, 2026-06-15)
+
+Implemented (100% frontend — the backend endpoint already existed): fixed the
+client URL to `/accommodations/my/favorites-breakdown`, reshaped the type and
+transform to `{accommodationId, slug, bookmarkCount}`, redesigned the widget as
+a per-property bar list, and mounted it in `AnalyticsSection` gated by
+`VIEW_ADVANCED_STATS`. Original task note kept below.
 
 - Redesign `FavoritesWidget` + `FavoritesBreakdownData` to the real backend
   shape: favorites per accommodation (`{accommodationId, slug, bookmarkCount}`),
@@ -98,7 +110,9 @@ using the cumulative endpoint. What remains is OPTIONAL polish, not a blocker:
 - Re-mount it in `AnalyticsSection`, restore the `getFavoritesBreakdown` call and
   fix the transform.
 
-### C. End-to-end verification
+### C. End-to-end verification — ⏳ PENDING (owner staging smoke)
+
+This is the only remaining gate. The spec stays `in-progress` until it passes.
 
 - Staging smoke with real paid entitlements (local always degrades HOST to
   `owner-basico` because billing is unconfigured, so the advanced widgets and

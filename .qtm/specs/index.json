@@ -990,7 +990,7 @@
             "created": "2026-06-07T00:00:00.000Z",
             "archived": false,
             "tags": ["web", "host", "analytics", "kpis", "dashboard", "api", "metrics"],
-            "note": "Phase 3 host migration. Dashboard + 5 analytics widgets built; cabling pass (#1621) fixed gate/404s/transforms/i18n and mounted Views as per-property ranked list. REMAINING: Favorites widget redesign (deferred, per-accommodation shape), optional views daily-series chart, staging smoke with paid entitlements. PRs #1504/#1621."
+            "note": "Phase 3 host migration. Dashboard + 5 analytics widgets built (#1504/#1621). Fase A (views daily-series chart: new protected owner-scoped endpoint + recharts chart) and Fase B (favorites widget redesign to per-accommodation, mounted gated view_advanced_stats) IMPLEMENTED on branch spec/SPEC-207-analytics-completion (6 commits). REMAINING: Fase C — owner staging smoke on owner-pro/owner-premium (the only gate; spec stays in-progress until it passes)."
         },
         {
             "specId": "SPEC-208",
