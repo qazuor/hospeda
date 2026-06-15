@@ -1209,6 +1209,19 @@
             "renumberedReason": "Collided with the already-merged SPEC-227 billing-subscription-observability; renumbered to next free (228 taken by web-loading-states)."
         },
         {
+            "specId": "SPEC-230",
+            "title": "External-platform reviews & reputation on accommodation pages",
+            "type": "feature",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-230-accommodation-external-reviews",
+            "base": "staging",
+            "created": "2026-06-15T00:00:00Z",
+            "tags": ["accommodations", "reviews", "reputation", "google-places", "external", "web"],
+            "archived": false,
+            "note": "Show an accommodation's external-platform reputation on its detail page: Google real review snippets via official Places API + aggregate-only (rating+count+link) for Booking/Airbnb, clearly labeled. Separate stateful entity (two new tables) from internal reviews; never pollutes internal averageRating. Owner registers listings + per-platform/global toggles for link and reviews; constrained backend (refresh-via-button + cron, list-only, no user edit/delete). Google text TTL→degrade to aggregate. Sibling of SPEC-222 (shares safeExternalFetch/Apify/Places). This is the deferred reviews feature SPEC-222 excluded. Drafted 2026-06-15."
+        },
+        {
             "specId": "SPEC-228",
             "title": "Web loading-states consistency & coverage",
             "type": "feature",
