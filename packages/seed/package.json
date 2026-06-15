@@ -25,7 +25,7 @@
         "typecheck": "tsc --noEmit",
         "test": "vitest run --passWithNoTests",
         "test:watch": "vitest --passWithNoTests",
-        "test:coverage": "vitest run --coverage",
+        "test:coverage": "vitest run --coverage --passWithNoTests",
         "migrate:accommodation-prices": "tsx --tsconfig ./tsconfig.json ./scripts/migrate-accommodation-prices.ts",
         "validate:accommodations": "tsx --tsconfig ./tsconfig.json ./scripts/validate-fix-accommodations.ts",
         "lint:image-pool": "tsx --tsconfig ./tsconfig.json ./scripts/check-image-pool-coverage.ts"

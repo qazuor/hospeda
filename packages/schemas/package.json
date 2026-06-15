@@ -23,7 +23,7 @@
         "test": "vitest run --passWithNoTests",
         "test:watch": "vitest",
         "test:file": "vitest run --passWithNoTests",
-        "test:coverage": "vitest run --coverage",
+        "test:coverage": "vitest run --coverage --passWithNoTests",
         "typecheck": "tsc --noEmit",
         "lint": "biome check .",
         "format": "biome format --write .",

@@ -23,7 +23,7 @@
         "dev": "tsc --watch",
         "test": "vitest run --passWithNoTests",
         "test:watch": "vitest",
-        "test:coverage": "vitest run --coverage",
+        "test:coverage": "vitest run --coverage --passWithNoTests",
         "typecheck": "tsc --noEmit",
         "lint": "biome check .",
         "format": "biome format --write .",
