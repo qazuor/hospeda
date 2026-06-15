@@ -317,9 +317,11 @@ const galleryImages = (() => {
 // --- SEO ---
 // Stored seo.* overrides are authored in the source locale (es); on en/pt
 // prefer the localized name/summary so the <title> isn't Spanish (SPEC-212).
+// SEOHead already appends " | Hospeda", so the fallback is the bare localized
+// name (the old `${name} | Hospeda` fallback double-suffixed the brand).
 const seoTitle = pickLocalizedSeo({
     stored: accommodation.seo?.title,
-    fallback: `${accommodation.name} | Hospeda`,
+    fallback: accommodation.name,
     locale
 });
 const seoDescription = pickLocalizedSeo({
