@@ -89,3 +89,8 @@ rank|spec|name|avance|prioridad|estado|estado_manual|estado_real|descripcion|por
 88|SPEC-236|Coverage ratchet-up — restore per-package thresholds to the 90% target|3/3|-|done|backlog|index staging: status=completed archived=True|-|-|-|-|-|-|SPEC-188, SPEC-233|-
 89|SPEC-230|Soft-delete filtering in the service list() path — make BaseCrudService.list exclude soft-deleted rows by default so protected list endpoints stop returning deleted records|-|P2|backlog|backlog|index staging: status=draft archived=False|-|-|-|-|-|-|-|-
 90|SPEC-238|Reduce apps/api per-file test cold-import overhead (~9% suite speedup)|-|P3|backlog|backlog|index staging: status=draft archived=False|-|-|-|-|-|-|-|-
+91|SPEC-239|Commerce listing core (merchant-with-subscription) + Gastronomía|-|-|backlog|backlog|index staging: status=draft archived=False|-|-|-|-|-|-|SPEC-240, SPEC-242, SPEC-243|-
+92|SPEC-240|Experiencias y Servicios (tourism services & experiences)|-|-|blocked|backlog|index staging: status=draft archived=False|-|-|-|-|-|-|SPEC-239, SPEC-242, SPEC-243|-
+93|SPEC-241|Host trades/services directory (24h emergency trades for hosts)|-|-|backlog|backlog|index staging: status=draft archived=False|-|-|-|-|-|-|-|-
+94|SPEC-242|Tarjeta Hospeda (benefits card for guests)|-|-|blocked|backlog|index staging: status=draft archived=False|-|-|-|-|-|-|SPEC-239, SPEC-240, SPEC-243|-
+95|SPEC-243|Hospeda mobile app (React Native / Expo)|-|-|blocked|backlog|index staging: status=draft archived=False|-|-|-|-|-|-|SPEC-239, SPEC-240, SPEC-242|-
