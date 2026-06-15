@@ -1,8 +1,10 @@
 ---
-id: SPEC-212
+id: SPEC-235
 slug: ai-content-translation
 title: AI Content Translation for Multi-Language Listings
-status: draft
+status: completed
+renumberedFrom: SPEC-212  # was SPEC-212; collided with conversational-ai-search
+completed: 2026-06-15
 owner: qazuor
 created: 2026-06-10
 parentSpec: SPEC-173
@@ -15,7 +17,7 @@ relatedSpecs:
 tags: [ai, feature, i18n, translation, content, multi-language, admin]
 ---
 
-# SPEC-212 — AI Content Translation for Multi-Language Listings
+# SPEC-235 — AI Content Translation for Multi-Language Listings
 
 > ⛔ **DECISION PROTOCOL (read first, applies to the whole spec):** In every
 > single case — without exception — if a change or decision is not *extremely*

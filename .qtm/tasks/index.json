@@ -538,6 +538,16 @@
             "archived": true,
             "archivedAt": "2026-06-13",
             "archiveNote": "Closed: dependabot.yml ignores reached main via forced merge of #1607; #1588 closed. Clean main resolution owned by SPEC-220 promotion."
+        },
+        {
+            "specId": "SPEC-235",
+            "title": "AI Content Translation for Multi-Language Listings",
+            "status": "completed",
+            "progress": "shipped (no formal task breakdown)",
+            "path": "SPEC-235-ai-content-translation",
+            "archived": true,
+            "archivedAt": "2026-06-15",
+            "archiveNote": "Renumbered from SPEC-212 (collision with SPEC-212-conversational-ai-search). Shipped via PRs #1581 + #1623 + #1652 merged to staging; full browser smoke (admin + web host happy-path) + curl SEO verification passed. No formal .qtm/tasks breakdown existed (spec was draft); delivered directly."
         }
     ],
     "standalone": {
