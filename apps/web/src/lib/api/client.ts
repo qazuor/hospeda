@@ -220,6 +220,30 @@ export const apiClient = {
     },
 
     /**
+     * GET request returning paginated data with authentication credentials.
+     * Protected counterpart of `getList`: forwards the session cookie so
+     * browser callers (`credentials: 'include'`) and SSR callers (`cookieHeader`)
+     * can hit `/protected/*` list endpoints without a 401.
+     */
+    getListProtected<T>({
+        path,
+        params,
+        cookieHeader
+    }: {
+        path: string;
+        params?: Record<string, unknown>;
+        cookieHeader?: string;
+    }): Promise<ApiResult<PaginatedResponse<T>>> {
+        return request<PaginatedResponse<T>>({
+            method: 'GET',
+            path,
+            params,
+            withCredentials: true,
+            cookieHeader
+        });
+    },
+
+    /**
      * POST request with authentication credentials.
      *
      * @param headers - Optional extra request headers. Required when hitting

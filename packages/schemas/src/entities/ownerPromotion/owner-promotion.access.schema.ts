@@ -43,8 +43,13 @@ export const OwnerPromotionPublicSchema = OwnerPromotionSchema.pick({
 }).extend({
     /** Resolved owner data (public tier). Available when the API joins the user. */
     owner: UserPublicSchema.optional(),
-    /** Resolved accommodation data (public tier). Available when the API joins the record. */
-    accommodation: AccommodationPublicSchema.optional()
+    /**
+     * Resolved accommodation data (public tier). Available when the API joins the
+     * record. Nullable because a promotion can target ALL of the owner's
+     * accommodations (`accommodationId` is null), in which case the relation
+     * loader returns `null` — `.optional()` alone rejects null and 500s the list.
+     */
+    accommodation: AccommodationPublicSchema.nullable().optional()
 });
 
 export type OwnerPromotionPublic = z.infer<typeof OwnerPromotionPublicSchema>;
@@ -87,8 +92,14 @@ export const OwnerPromotionProtectedSchema = OwnerPromotionSchema.pick({
 }).extend({
     /** Resolved owner data (protected tier). Available when the API joins the user. */
     owner: UserProtectedSchema.optional(),
-    /** Resolved accommodation data (protected tier). Available when the API joins the record. */
-    accommodation: AccommodationProtectedSchema.optional()
+    /**
+     * Resolved accommodation data (protected tier). Available when the API joins
+     * the record. Nullable because a promotion can target ALL of the owner's
+     * accommodations (`accommodationId` is null), in which case the relation
+     * loader returns `null` — `.optional()` alone rejects null and 500s the list
+     * (the same fix the admin tier already carries).
+     */
+    accommodation: AccommodationProtectedSchema.nullable().optional()
 });
 
 export type OwnerPromotionProtected = z.infer<typeof OwnerPromotionProtectedSchema>;
