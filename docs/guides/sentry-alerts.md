@@ -249,5 +249,5 @@ hops redeploy prod
 
 - [Sentry Alert Docs](https://docs.sentry.io/product/alerts/)
 - [Sentry Search Syntax](https://docs.sentry.io/concepts/search/)
-- [SPEC-195 Proposal](../changes/SPEC-195-content-auto-moderation/proposal.md) — moderation degraded alert
-- [SPEC-145](../../.qtm/specs/SPEC-143-billing-testing-coverage/) — billing testing coverage (webhook monitoring)
+- [SPEC-195](../../.qtm/specs/SPEC-195-content-auto-moderation/spec.md) — moderation degraded alert
+- [SPEC-143](../../.qtm/specs/SPEC-143-billing-testing-coverage/spec.md) — billing testing coverage (webhook monitoring)
