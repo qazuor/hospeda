@@ -6,7 +6,7 @@
             "title": "Coverage ratchet-up — restore per-package thresholds to the 90% target",
             "type": "chore",
             "complexity": "medium",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-236-coverage-ratchet-up",
             "created": "2026-06-15T00:00:00.000Z",
             "base": "staging",
@@ -717,14 +717,15 @@
             "specId": "SPEC-190",
             "title": "Admin Bundle Perf — Icon Tree-Shaking & Entity-Chunk Code-Split",
             "type": "refactor",
-            "status": "draft",
+            "status": "completed",
             "complexity": "medium-high",
             "path": "SPEC-190-admin-bundle-perf-icons-and-codesplit",
             "branch": "spec/SPEC-190-admin-bundle-perf-icons-and-codesplit",
             "base": "staging",
             "linearIssues": ["BETA-74"],
             "created": "2026-06-02",
-            "archived": false
+            "archived": true,
+            "archivedAt": "2026-06-15"
         },
         {
             "specId": "SPEC-191",
@@ -970,24 +971,26 @@
             "title": "Host Conversations — Inbox, Threads, Replies & Archive in Web",
             "type": "epic",
             "complexity": "high",
-            "status": "draft",
+            "status": "completed",
             "path": "SPEC-206-host-conversations",
             "created": "2026-06-07T00:00:00.000Z",
-            "archived": false,
+            "archived": true,
             "tags": ["web", "host", "conversations", "inbox", "api", "permissions"],
-            "note": "Phase 2 of host migration. Protected host conversation endpoints + inbox UI in apps/web. Depends on SPEC-205."
+            "note": "Phase 2 of host migration. Protected host conversation endpoints + inbox UI in apps/web. Depends on SPEC-205.",
+            "archivedAt": "2026-06-15",
+            "archiveNote": "Ghost-completed (like SPEC-208): shipped ad-hoc as an epic WITHOUT a formal spec.md. Full scope implemented + merged: owner inbox (protected/owner/list + web consultas-propietario), threads (owner/thread + [conversationId]), replies (owner/reply + ConversationReply), archive (protected/archive.ts). PRs #1503/#1521/#1627/#1610, promoted to main. No spec.md kept (owner decision 2026-06-15, same as SPEC-208). Worktree/branch left intact (possible other-agent activity)."
         },
         {
             "specId": "SPEC-207",
             "title": "Host Analytics & KPIs — Business Dashboard in Web",
             "type": "epic",
             "complexity": "high",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-207-host-analytics-kpis",
             "created": "2026-06-07T00:00:00.000Z",
             "archived": false,
             "tags": ["web", "host", "analytics", "kpis", "dashboard", "api", "metrics"],
-            "note": "Phase 3 of host migration. Formalized 2026-06-13 with spec.md (was index-only draft). A web-only cabling pass (fix/web-mi-cuenta-host-dashboard) shipped: fixed the entitlement gate case mismatch (view_basic_stats), re-pointed response-rate/inquiries/market-comparison to their real routes, gated the market widget behind view_advanced_stats, and added missing host.dashboard.* i18n keys. Remaining epic work: (A) build a protected per-host daily-series views endpoint + re-mount ViewsWidget; (B) redesign FavoritesWidget to the per-accommodation shape (no 'collections' in the model) + re-mount; (C) staging smoke on owner-pro/owner-premium. Views & Favorites widgets are currently NOT mounted (deferred). Depends on SPEC-205, SPEC-206."
+            "note": "Phase 3 host migration. Dashboard + 5 analytics widgets built; cabling pass (#1621) fixed gate/404s/transforms/i18n and mounted Views as per-property ranked list. REMAINING: Favorites widget redesign (deferred, per-accommodation shape), optional views daily-series chart, staging smoke with paid entitlements. PRs #1504/#1621."
         },
         {
             "specId": "SPEC-208",
