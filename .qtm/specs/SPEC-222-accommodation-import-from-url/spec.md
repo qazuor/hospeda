@@ -69,7 +69,9 @@ the existing create flow.
 - `apps/web/src/pages/[lang]/publicar/nueva.astro` mounts
   `CreatePropertyMiniForm.client.tsx` (auth-guarded in-page).
 - `apps/api/src/routes/accommodation/protected/` — protected tier; pattern is
-  `createProtectedRoute` + `PermissionEnum` + `ResponseFactory`.
+  `createProtectedRoute` + `PermissionEnum`. The route handler returns data
+  directly; `ResponseFactory` is applied **inside** `createProtectedRoute`
+  (`apps/api/src/utils/route-factory.ts`), not called per-route.
 - `httpToDomainAccommodationCreateDraft` +
   `AccommodationCreateDraftHttpSchema`
   (`packages/schemas/src/entities/accommodation/accommodation.http.schema.ts`):
@@ -77,8 +79,11 @@ the existing create flow.
   (`AccommodationTypeEnum`), `destinationId` (UUID FK); `description` optional
   (min 30, placeholder injected if absent); `ownerId` from the authenticated
   actor.
-- `AccommodationTypeEnum` has **10 values**: APARTMENT, HOUSE, COUNTRY_HOUSE,
-  CABIN, HOTEL, HOSTEL, CAMPING, ROOM, MOTEL, RESORT.
+- `AccommodationTypeEnum` has **13 values** (verified against
+  `packages/schemas/src/enums/accommodation-type.enum.ts`): APARTMENT, HOUSE,
+  COUNTRY_HOUSE, CABIN, HOTEL, HOSTEL, CAMPING, ROOM, MOTEL, RESORT,
+  APART_HOTEL, ESTANCIA, BED_AND_BREAKFAST. The AI type-mapping prompt (AC-8.1)
+  MUST enumerate all 13.
 - `destinationId` is a **NOT NULL FK** to `destinations` (`onDelete: restrict`).
   No free-text city/country on the accommodation. Resolution via public
   `GET /api/v1/public/destinations?q=<city>&searchScope=name`.
@@ -163,6 +168,12 @@ WHEN they exceed the per-user rate limit (default 10/hour, configurable),
 THEN HTTP 429 with a `retryAfter` hint. When Strategy B (AI) is used, the AI
 quota/entitlement + cost ceiling for the new `accommodation_import` feature apply.
 
+> **Implementation note (verified):** there is NO existing 10/h/user default.
+> The reusable per-user limiter (`createSlidingWindowPerUserRateLimit`,
+> `apps/api/src/middlewares/rate-limit.ts`) defaults to 30/min. This route must
+> define its own `{ requests: 10, windowMs: 3_600_000 }` explicitly (driven by
+> `HOSPEDA_IMPORT_RATE_LIMIT_RPH`).
+
 ### US-7 — URL-acquisition guidance (new requirement)
 
 GIVEN a host/admin in the import UI,
@@ -222,6 +233,23 @@ response size.
 - **AC-10.2** Official-API tiers (ML/Google/Apify) call fixed, trusted hosts and
   are exempt from the user-URL SSRF path (the only user input there is an ID
   parsed from the URL).
+
+### US-11 — Credential-less adapter degradation (5-source MVP decision, 2026-06-15)
+
+GIVEN an adapter whose external credential is not configured (no Apify token, no
+Google Places key, ML OAuth not set up),
+WHEN that source is detected for a pasted URL,
+THEN the adapter MUST degrade cleanly — return an empty `RawExtraction` with
+`source: 'none'` and a human-readable `message` ("esta fuente no está disponible
+todavía") — and NEVER throw, 500, or block the endpoint. A missing credential is
+a disabled-source condition, identical to US-4 graceful degradation.
+
+- **AC-11.1** Each adapter checks its required credential at the start of
+  `extract()`; if absent, it returns the degraded empty result, not an error.
+- **AC-11.2** The endpoint stays fully functional for the other sources while one
+  source's credential is unconfigured (no shared failure).
+- **AC-11.3** A unit test per credential-gated adapter asserts the degraded path
+  when the credential env var is empty.
 
 ---
 
@@ -332,9 +360,15 @@ Out of the draft (no home in the model): `checkInTime`, `checkOutTime`,
 2. Add a `DEFAULT_PROMPTS['accommodation_import']` entry
    (`packages/ai-core/src/engine/default-prompts.ts`) — JSON-only extraction
    prompt in `es`.
-3. Add `EntitlementKey.AI_ACCOMMODATION_IMPORT` +
+3. Add `EntitlementKey.AI_ACCOMMODATION_IMPORT`
+   (`packages/billing/src/types/entitlement.types.ts`) +
    `LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH`
-   (`packages/billing/src/types/`) + plan-limit defaults + entitlement seed.
+   (`packages/billing/src/types/plan.types.ts` — **separate file**). Both enums
+   are exhaustiveness-checked, so also add entries to `LIMIT_METADATA`
+   (`packages/billing/src/config/limits.config.ts`) and `RESOURCE_NAMES`
+   (`apps/api/src/utils/limit-check.ts`) — both are `Record<LimitKey, ...>` and
+   will fail to compile without the new key. Plus plan-limit defaults +
+   entitlement seed.
 4. Add a default `ai_settings` config entry for the feature (treat missing as
    disabled).
 5. Optional admin-editable prompt via the existing `/ai/prompts` editor;
@@ -475,6 +509,11 @@ Coolify + redeploy.
    Default: omit. Alt: store `houseRules` in `extraInfo.extraInfo[]` (unvalidated).
 2. **`destinationHint` UX**: returns candidates; host always confirms in the
    picker. Default: never auto-select even on a single exact match.
-3. **MercadoLibre token**: verify whether the public `/items/{id}` needs an app
-   token; if yes, `HOSPEDA_MERCADOLIBRE_TOKEN` is required, else drop it.
+3. **MercadoLibre token**: ML's `/items/{id}` is **no longer anonymous** (since
+   ~2024 ML requires an OAuth `access_token` on most resources, including items).
+   The adapter needs an app-level token (client credentials) with refresh
+   handling, NOT a plain fetch. `HOSPEDA_MERCADOLIBRE_TOKEN` (or a client-id/
+   secret pair) is therefore required. Per US-11, if it's unset the ML adapter
+   degrades to `source: 'none'`. Flag at impl: confirm exact ML auth flow
+   (client-credentials vs full OAuth) with a live call before building the adapter.
 4. **Analytics**: optional ephemeral PostHog events; not a blocking AC.
