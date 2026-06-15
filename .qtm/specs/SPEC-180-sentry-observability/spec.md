@@ -2,7 +2,7 @@
 specId: SPEC-180
 title: Sentry Observability Hardening — source maps, environments, and logger-driven capture
 type: fix
-status: in-progress
+status: approved
 complexity: medium-high
 owner: qazuor
 created: 2026-06-01
