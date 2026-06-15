@@ -152,13 +152,19 @@ function makeDbChain(rows: unknown[] = []) {
 describe('ContentModerationTermService — extended coverage', () => {
     beforeEach(async () => {
         vi.clearAllMocks();
+        // Isolate from any ambient value (CI sets these) and cross-test leakage
+        // so each seedFromEnv test controls exactly what is present. Empty string
+        // is treated as "no items" by seedFromEnv's empty-segment filter and
+        // overrides the ambient value. (Assigning undefined would store the
+        // literal string "undefined" — 1 item; the delete operator is lint-banned.)
+        vi.stubEnv('HOSPEDA_MESSAGING_BLOCKED_WORDS', '');
+        vi.stubEnv('HOSPEDA_MESSAGING_BLOCKED_DOMAINS', '');
         const mod = await import('../../../src/services/contentModeration/term.service.js');
         TermService = mod.ContentModerationTermService;
     });
 
     afterEach(() => {
-        process.env.HOSPEDA_MESSAGING_BLOCKED_WORDS = undefined;
-        process.env.HOSPEDA_MESSAGING_BLOCKED_DOMAINS = undefined;
+        vi.unstubAllEnvs();
     });
 
     // ── seedFromEnv ─────────────────────────────────────────────────────────
