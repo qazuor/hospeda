@@ -98,7 +98,7 @@
         "zod": "^4.0.8"
     },
     "devDependencies": {
-        "@biomejs/biome": "1.9.4",
+        "@biomejs/biome": "2.5.0",
         "@phosphor-icons/react": "^2.1.10",
         "@playwright/test": "^1.60.0",
         "@sentry/vite-plugin": "^5.1.1",
