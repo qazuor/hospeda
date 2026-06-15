@@ -241,7 +241,7 @@
             "id": "T-008",
             "title": "Create WMO weather_code to internal condition + icon mapping",
             "description": "Module in service-core (and shared key for web) mapping the documented WMO weather_code set to WeatherConditionEnum + an icon key + a fallback (generic condition) for gaps. Pure function, fully unit-tested across the WMO code table. Test: every documented code maps; unknown code falls back.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-004"],
             "blocks": ["T-009"],
@@ -268,15 +268,15 @@
             },
             "timestamps": {
                 "created": "2026-06-15T22:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-15T23:50:00.000Z",
+                "completed": "2026-06-15T23:50:00.000Z"
             }
         },
         {
             "id": "T-009",
             "title": "Implement Open-Meteo client (current + 16-day daily forecast)",
             "description": "packages/service-core/src/services/weather/clients/open-meteo.client.ts: native fetch class, configurable baseUrl + timeoutMs, no API key. Requests `current=temperature_2m,weather_code,wind_speed_10m,relative_humidity_2m,apparent_temperature,is_day` AND `daily=temperature_2m_max,temperature_2m_min,weather_code,precipitation_sum` with `forecast_days=16`. Maps via T-008 to the cache shape. Test: unit tests with mocked fetch — happy path, timeout, non-200, malformed payload; assert 16 daily entries parsed.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-008"],
             "blocks": ["T-010"],
@@ -303,8 +303,8 @@
             },
             "timestamps": {
                 "created": "2026-06-15T22:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-15T23:50:00.000Z",
+                "completed": "2026-06-15T23:50:00.000Z"
             }
         },
         {
@@ -931,9 +931,9 @@
     ],
     "summary": {
         "total": 28,
-        "pending": 22,
+        "pending": 20,
         "inProgress": 2,
-        "completed": 4,
+        "completed": 6,
         "blocked": 0,
         "averageComplexity": 2.3
     }
