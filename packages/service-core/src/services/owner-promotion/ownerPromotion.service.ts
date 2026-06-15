@@ -13,6 +13,7 @@ import {
 } from '@repo/schemas';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, ServiceConfig, ServiceContext } from '../../types';
+import { generateOwnerPromotionSlug } from './ownerPromotion.helpers';
 import {
     checkCanAdminList,
     checkCanCount,
@@ -71,6 +72,22 @@ export class OwnerPromotionService extends BaseCrudService<
 
     protected _canCreate(actor: Actor, data: OwnerPromotionCreateInput): void {
         checkCanCreate(actor, data);
+    }
+
+    /**
+     * Lifecycle hook: generates a unique slug before creating a promotion.
+     *
+     * The `slug` column is NOT NULL and has no DB default; without this hook the
+     * INSERT sends `DEFAULT` for slug and fails with a not-null violation. When
+     * the caller does not supply a slug, derive a unique one from the title.
+     */
+    protected async _beforeCreate(
+        data: OwnerPromotionCreateInput,
+        _actor: Actor,
+        _ctx: ServiceContext
+    ): Promise<Partial<OwnerPromotion>> {
+        const slug = data.slug ?? (await generateOwnerPromotionSlug(data.title, this.model));
+        return { ...data, slug };
     }
 
     protected _canUpdate(actor: Actor, entity: OwnerPromotion): void {

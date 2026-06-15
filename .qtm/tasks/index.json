@@ -2,6 +2,34 @@
     "version": "1.0",
     "epics": [
         {
+            "specId": "SPEC-231",
+            "title": "TypeScript 6 Migration",
+            "status": "draft",
+            "progress": "0/4",
+            "path": "SPEC-231-typescript-6-migration"
+        },
+        {
+            "specId": "SPEC-232",
+            "title": "Biome 2 Migration",
+            "status": "draft",
+            "progress": "0/4",
+            "path": "SPEC-232-biome-2-migration"
+        },
+        {
+            "specId": "SPEC-233",
+            "title": "Vitest 4 Migration",
+            "status": "draft",
+            "progress": "0/4",
+            "path": "SPEC-233-vitest-4-migration"
+        },
+        {
+            "specId": "SPEC-234",
+            "title": "TanStack Router family bump — unblock the production-minor-patch Dependabot group",
+            "status": "draft",
+            "progress": "0/4",
+            "path": "SPEC-234-tanstack-router-family-bump"
+        },
+        {
             "specId": "SPEC-229",
             "title": "Accommodation partial-update data loss — partial JSONB objects + shallow-merge nested columns",
             "status": "completed",

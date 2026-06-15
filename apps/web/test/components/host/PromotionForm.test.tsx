@@ -271,6 +271,47 @@ describe('PromotionForm — create mode', () => {
         expect(window.location.href).toBe('');
     });
 
+    it('shows ENTITLEMENT_REQUIRED upgrade banner with plans link on 403', async () => {
+        // Arrange — host whose plan does not include promotions (bug #4): the
+        // form must surface an upgrade prompt + plans link, not a generic
+        // "could not save" message the host would retry forever.
+        mockCreate.mockResolvedValueOnce({
+            ok: false,
+            error: {
+                status: 403,
+                code: 'ENTITLEMENT_REQUIRED',
+                message:
+                    "Access denied. This feature requires the 'create_promotions' entitlement.",
+                details: { requiredEntitlement: 'create_promotions', upgradeUrl: '/billing/plans' }
+            }
+        });
+
+        render(
+            <PromotionForm
+                locale="es"
+                mode="create"
+            />
+        );
+
+        fillCreateFields();
+
+        // Act
+        fireEvent.click(getSubmitButton());
+
+        // Assert — upgrade banner + localized hint + web plans link (not the
+        // backend /billing/plans path); backend technical message must not leak.
+        await waitFor(() => {
+            expect(screen.getByText('Tu plan no incluye promociones.')).toBeInTheDocument();
+        });
+        expect(screen.getByText(/Mejorá tu plan para crear promociones/i)).toBeInTheDocument();
+        const plansLink = screen.getByRole('link', { name: /ver planes/i });
+        expect(plansLink).toHaveAttribute('href', '/es/suscriptores/planes/');
+        expect(
+            screen.queryByText(/requires the 'create_promotions' entitlement/i)
+        ).not.toBeInTheDocument();
+        expect(window.location.href).toBe('');
+    });
+
     it('renders the accommodation select with "all properties" option when listOwn returns empty', async () => {
         // Arrange — default mock already returns empty list
         render(
@@ -575,11 +616,12 @@ describe('PromotionForm — edit mode', () => {
         expect(screen.getByLabelText(/Valor del descuento/i)).toHaveValue(15);
     });
 
-    it('shows error state when getById fails without initialData', async () => {
-        // Arrange
+    it('shows localized not-found error when getById returns 404 without initialData', async () => {
+        // Arrange — backend 404 carries a technical message that must NOT leak
+        // (bug #3 regression): the status is mapped to a localized string.
         mockGetById.mockResolvedValueOnce({
             ok: false,
-            error: { message: 'Promoción no encontrada.' }
+            error: { status: 404, message: 'Promotion not found' }
         });
 
         render(
@@ -594,7 +636,8 @@ describe('PromotionForm — edit mode', () => {
         await waitFor(() => {
             expect(screen.getByRole('alert')).toBeInTheDocument();
         });
-        expect(screen.getByText(/Promoción no encontrada/i)).toBeInTheDocument();
+        expect(screen.getByText('No se encontró la promoción.')).toBeInTheDocument();
+        expect(screen.queryByText('Promotion not found')).not.toBeInTheDocument();
         expect(screen.queryByLabelText(/Título/i)).not.toBeInTheDocument();
     });
 });

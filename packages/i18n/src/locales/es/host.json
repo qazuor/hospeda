@@ -333,6 +333,8 @@
             "discountValueMaxPercentage": "El porcentaje no puede superar 100.",
             "validFromRequired": "La fecha de inicio es requerida.",
             "limitReachedHint": "Alcanzaste el límite de promociones activas de tu plan. Mejorá tu plan para crear más.",
+            "entitlementRequired": "Tu plan no incluye promociones.",
+            "entitlementRequiredHint": "Mejorá tu plan para crear promociones.",
             "notFound": "No se encontró la promoción.",
             "forbidden": "No tenés permiso para acceder a esta promoción."
         },
@@ -342,7 +344,8 @@
             "save": "Guardar",
             "saving": "Guardando...",
             "cancel": "Cancelar",
-            "confirmDelete": "¿Eliminar esta promoción? Esta acción no se puede deshacer."
+            "confirmDelete": "¿Eliminar esta promoción? Esta acción no se puede deshacer.",
+            "upgradePlan": "Ver planes"
         }
     },
     "dashboard": {

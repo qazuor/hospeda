@@ -10,10 +10,15 @@
  * is captured through the mocked model so we can assert its exact shape.
  */
 
-import { LifecycleStatusEnum, RoleEnum } from '@repo/schemas';
+import { LifecycleStatusEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { OwnerPromotionService } from '../../../src/services/owner-promotion/ownerPromotion.service';
 import type { Actor, ServiceConfig, ServiceContext } from '../../../src/types';
+import { createActor } from '../../factories/actorFactory';
+import {
+    createMockOwnerPromotion,
+    createMockOwnerPromotionCreateInput
+} from '../../factories/ownerPromotionFactory';
 
 class MockOwnerPromotionModel {
     findAll = vi.fn();
@@ -225,5 +230,80 @@ describe('OwnerPromotionService — AC-005-01 lifecycle enforcement', () => {
             const [filterParams] = mockModel.findAll.mock.calls[0] as [Record<string, unknown>];
             expect(filterParams.planRestricted).toBe(false);
         });
+    });
+});
+
+/**
+ * Regression tests for bug #5 — slug generation via _beforeCreate hook.
+ *
+ * Before this fix, `slug` (NOT NULL, no DB default) was never populated on
+ * create and every INSERT failed with a not-null constraint violation. The
+ * `_beforeCreate` hook now derives a unique slug from `title` when the caller
+ * does not supply one.
+ */
+describe('OwnerPromotionService — _beforeCreate slug generation (bug #5 regression)', () => {
+    let service: OwnerPromotionService;
+    let mockModel: MockOwnerPromotionModel;
+    let actor: Actor;
+    const ctx: ServiceContext = {} as ServiceContext;
+
+    beforeEach(() => {
+        mockModel = new MockOwnerPromotionModel();
+        actor = createActor({ permissions: [PermissionEnum.OWNER_PROMOTION_CREATE] });
+        service = new OwnerPromotionService({
+            model: mockModel as never
+        } as ServiceConfig & { model?: never });
+    });
+
+    it('derives a non-empty slug from the title when no slug is supplied', async () => {
+        // Arrange — findOne returns null (slug does not exist yet), create returns the entity
+        const input = createMockOwnerPromotionCreateInput({ title: 'Summer Deal' });
+        // Remove slug so _beforeCreate must generate it
+        const { slug: _slug, ...inputWithoutSlug } = input as typeof input & { slug?: string };
+        const created = createMockOwnerPromotion({ title: 'Summer Deal', slug: 'summer-deal' });
+        mockModel.findOne.mockResolvedValue(null); // slug uniqueness check → available
+        mockModel.create.mockResolvedValue(created);
+
+        // Act — call _beforeCreate directly to isolate the hook
+        const processed = await (
+            service as never as {
+                _beforeCreate: (
+                    data: Record<string, unknown>,
+                    actor: Actor,
+                    ctx: ServiceContext
+                ) => Promise<Record<string, unknown>>;
+            }
+        )._beforeCreate(inputWithoutSlug as never, actor, ctx);
+
+        // Assert — a slug was generated and is derived from the title
+        expect(typeof processed.slug).toBe('string');
+        expect((processed.slug as string).length).toBeGreaterThan(0);
+        // "Summer Deal" → "summer-deal" (slugified)
+        expect(processed.slug).toMatch(/summer[-_]?deal/i);
+    });
+
+    it('preserves an explicitly supplied slug unchanged', async () => {
+        // Arrange — caller already provides a slug; hook must not overwrite it
+        const input = createMockOwnerPromotionCreateInput({ title: 'Summer Deal' });
+        const inputWithSlug = { ...input, slug: 'my-custom-slug' };
+        // findOne would be called for uniqueness if we derived a new slug — it should NOT be
+        // called at all when a slug is supplied
+        mockModel.findOne.mockResolvedValue(null);
+
+        // Act
+        const processed = await (
+            service as never as {
+                _beforeCreate: (
+                    data: Record<string, unknown>,
+                    actor: Actor,
+                    ctx: ServiceContext
+                ) => Promise<Record<string, unknown>>;
+            }
+        )._beforeCreate(inputWithSlug as never, actor, ctx);
+
+        // Assert — supplied slug is preserved as-is
+        expect(processed.slug).toBe('my-custom-slug');
+        // model.findOne should NOT have been called (no slug derivation needed)
+        expect(mockModel.findOne).not.toHaveBeenCalled();
     });
 });
