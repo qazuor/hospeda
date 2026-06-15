@@ -16,8 +16,8 @@ import { createTranslations } from '@/lib/i18n';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { getApiUrl } from '@/lib/env';
 import { webLogger as logger } from '@/lib/logger';
-import type { MediaImage } from '@/lib/api/types';
-import { transformAccommodationEdit, transformAccommodationMedia, transformAmenityList, transformDestinationList } from '@/lib/api/transforms';
+import type { AccommodationTranslationData, MediaImage } from '@/lib/api/types';
+import { transformAccommodationEdit, transformAccommodationMedia, transformAccommodationTranslations, transformAmenityList, transformDestinationList } from '@/lib/api/transforms';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import { AccommodationEditor } from '@/components/host/AccommodationEditor.client';
 
@@ -53,6 +53,7 @@ if (!accommodationId) {
 // ---------------------------------------------------------------------------
 
 let accommodationData = null;
+let translationData: AccommodationTranslationData | null = null;
 let destinations: Awaited<ReturnType<typeof transformDestinationList>> = [];
 let amenities: Awaited<ReturnType<typeof transformAmenityList>> = [];
 let features: Awaited<ReturnType<typeof transformAmenityList>> = [];
@@ -81,6 +82,8 @@ try {
             const body = (await accomResponse.json()) as { data?: Record<string, unknown> };
             const rawAccom: Record<string, unknown> = body.data ?? (body as Record<string, unknown>);
             accommodationData = transformAccommodationEdit({ item: rawAccom as Record<string, unknown> });
+            // SPEC-212: extract translation status data for the TranslationPanel
+            translationData = transformAccommodationTranslations({ item: rawAccom as Record<string, unknown> });
             // SPEC-208: extract media for the photo section (never pass raw API data)
             const mediaResult = transformAccommodationMedia({ item: rawAccom as Record<string, unknown> });
             initialFeaturedImage = mediaResult.featuredImage;
@@ -178,6 +181,7 @@ if (!accommodationData || fetchError) {
                 locale={locale}
                 accommodationId={accommodationId}
                 initialData={accommodationData}
+                translationData={translationData}
                 destinations={destinations}
                 amenities={amenities}
                 features={features}

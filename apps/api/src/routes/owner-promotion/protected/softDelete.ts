@@ -19,9 +19,14 @@ export const protectedDeleteOwnerPromotionRoute = createProtectedRoute({
     method: 'delete',
     path: '/{id}',
     summary: 'Delete owner promotion',
-    description: 'Soft deletes an owner promotion. Requires OWNER_PROMOTION_DELETE permission.',
+    description:
+        'Soft deletes an owner promotion. Requires OWNER_PROMOTION_SOFT_DELETE_OWN permission.',
     tags: ['Owner Promotions'],
-    requiredPermissions: [PermissionEnum.OWNER_PROMOTION_DELETE],
+    // Hosts hold the `_OWN` variant (mirrors get/list which use VIEW_OWN). The
+    // generic OWNER_PROMOTION_DELETE permission is not granted to any host role,
+    // so requiring it here 403'd every owner delete. Ownership is enforced in the
+    // service via checkCanSoftDelete (which also accepts SOFT_DELETE_ANY for admins).
+    requiredPermissions: [PermissionEnum.OWNER_PROMOTION_SOFT_DELETE_OWN],
     requestParams: { id: OwnerPromotionIdSchema },
     responseSchema: SuccessSchema,
     handler: async (ctx: Context, params: Record<string, unknown>) => {

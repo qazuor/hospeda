@@ -9,6 +9,34 @@
             "path": "SPEC-230-list-soft-delete-filtering"
         },
         {
+            "specId": "SPEC-231",
+            "title": "TypeScript 6 Migration",
+            "status": "draft",
+            "progress": "0/4",
+            "path": "SPEC-231-typescript-6-migration"
+        },
+        {
+            "specId": "SPEC-232",
+            "title": "Biome 2 Migration",
+            "status": "draft",
+            "progress": "0/4",
+            "path": "SPEC-232-biome-2-migration"
+        },
+        {
+            "specId": "SPEC-233",
+            "title": "Vitest 4 Migration",
+            "status": "draft",
+            "progress": "0/4",
+            "path": "SPEC-233-vitest-4-migration"
+        },
+        {
+            "specId": "SPEC-234",
+            "title": "TanStack Router family bump — unblock the production-minor-patch Dependabot group",
+            "status": "draft",
+            "progress": "0/4",
+            "path": "SPEC-234-tanstack-router-family-bump"
+        },
+        {
             "specId": "SPEC-229",
             "title": "Accommodation partial-update data loss — partial JSONB objects + shallow-merge nested columns",
             "status": "completed",
@@ -58,9 +86,12 @@
         {
             "specId": "SPEC-220",
             "title": "Staging→Main Promotion Hardening — clear CodeQL security debt blocking the promotion",
-            "status": "in-progress",
-            "progress": "0/7",
-            "path": "SPEC-220-staging-main-promotion-hardening"
+            "status": "completed",
+            "progress": "7/7",
+            "path": "SPEC-220-staging-main-promotion-hardening",
+            "archived": true,
+            "archivedAt": "2026-06-14",
+            "archiveNote": "T-001..T-007 done (T-004 N/A — both findings fixed by code, no dismissals). T-006 live: advanced setup (GitHub codeql.yml on main + default setup disabled) + codeql-staging.yml nightly staging scan; staging↔main reconciled. Promo #1629 merged to main; #1618 unblocked SPEC-219 T-005."
         },
         {
             "specId": "SPEC-211",

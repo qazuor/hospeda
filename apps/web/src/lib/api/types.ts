@@ -238,6 +238,37 @@ export interface DestinationData {
 }
 
 // ---------------------------------------------------------------------------
+// Accommodation Translation Types (SPEC-212)
+// ---------------------------------------------------------------------------
+
+/**
+ * Per-field i18n values for the accommodation translatable fields.
+ * Each field holds the three supported locale values.
+ * `null` means the locale has no content stored for that field.
+ */
+export interface I18nFieldValues {
+    readonly es: string | null;
+    readonly en: string | null;
+    readonly pt: string | null;
+}
+
+/**
+ * Translation data for the host-facing TranslationPanel.
+ *
+ * Carries the raw i18n content for each translatable field so the panel can
+ * determine which locales already have content and which are missing without
+ * touching or polluting `AccommodationEditData` (which drives the PATCH diff).
+ *
+ * @see transformAccommodationTranslations
+ */
+export interface AccommodationTranslationData {
+    readonly name: I18nFieldValues;
+    readonly summary: I18nFieldValues;
+    readonly description: I18nFieldValues;
+    readonly richDescription: I18nFieldValues;
+}
+
+// ---------------------------------------------------------------------------
 // Owner Promotions Types (SPEC-205)
 // ---------------------------------------------------------------------------
 

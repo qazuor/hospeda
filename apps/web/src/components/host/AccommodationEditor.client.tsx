@@ -9,7 +9,12 @@
  * owns all state + handlers, delegates rendering to section subcomponents.
  */
 
-import type { AccommodationEditData, AmenityData, DestinationData } from '@/lib/api/types';
+import type {
+    AccommodationEditData,
+    AccommodationTranslationData,
+    AmenityData,
+    DestinationData
+} from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { useCallback, useState } from 'react';
@@ -24,6 +29,7 @@ import { PhotoSection } from './editor/PhotoSection.client';
 import type { MediaImage, PhotoSectionData } from './editor/PhotoSection.client';
 import { PricingSection } from './editor/PricingSection.client';
 import { SocialNetworksSection } from './editor/SocialNetworksSection.client';
+import { TranslationPanel } from './editor/TranslationPanel.client';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -34,6 +40,12 @@ export interface AccommodationEditorProps {
     readonly locale: SupportedLocale;
     readonly accommodationId: string;
     readonly initialData: AccommodationEditData;
+    /**
+     * Translation status data for the TranslationPanel (SPEC-212).
+     * Kept separate from `initialData` / `AccommodationEditData` to ensure it
+     * never enters the PATCH diff produced by `buildPatchPayload`.
+     */
+    readonly translationData?: AccommodationTranslationData | null;
     readonly destinations: readonly DestinationData[];
     readonly amenities: readonly AmenityData[];
     readonly features: readonly AmenityData[];
@@ -80,6 +92,7 @@ export function AccommodationEditor({
     locale,
     accommodationId,
     initialData,
+    translationData = null,
     destinations,
     amenities,
     features,
@@ -465,6 +478,14 @@ export function AccommodationEditor({
                 onFeaturedImageChange={handleFeaturedImageChange}
                 onGalleryChange={handleGalleryChange}
             />
+
+            {translationData && (
+                <TranslationPanel
+                    locale={locale}
+                    accommodationId={accommodationId}
+                    translations={translationData}
+                />
+            )}
 
             {submitSuccess && (
                 <output className={styles.submitSuccess}>

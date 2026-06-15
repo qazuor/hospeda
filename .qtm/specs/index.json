@@ -12,6 +12,55 @@
             "priority": "P2"
         },
         {
+            "specId": "SPEC-231",
+            "title": "TypeScript 6 Migration",
+            "type": "chore",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-231-typescript-6-migration",
+            "created": "2026-06-15T00:00:00.000Z",
+            "base": "staging",
+            "origin": "Blocked Dependabot major PR #1643 (typescript 5.7→6.0)",
+            "tags": ["typescript", "toolchain", "dependencies", "migration", "dependabot"]
+        },
+        {
+            "specId": "SPEC-232",
+            "title": "Biome 2 Migration",
+            "type": "chore",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-232-biome-2-migration",
+            "created": "2026-06-15T00:00:00.000Z",
+            "base": "staging",
+            "origin": "Blocked Dependabot major PR #1642 (@biomejs/biome 1.9→2.5)",
+            "tags": ["biome", "lint", "toolchain", "dependencies", "migration", "dependabot"]
+        },
+        {
+            "specId": "SPEC-233",
+            "title": "Vitest 4 Migration",
+            "type": "chore",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-233-vitest-4-migration",
+            "created": "2026-06-15T00:00:00.000Z",
+            "base": "staging",
+            "origin": "Blocked Dependabot major PR #1639 (@vitest/ui 3.2→4.1; needs vitest core 4)",
+            "tags": ["vitest", "testing", "toolchain", "dependencies", "migration", "dependabot"]
+        },
+        {
+            "specId": "SPEC-234",
+            "title": "TanStack Router family bump — unblock the production-minor-patch Dependabot group",
+            "type": "chore",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-234-tanstack-router-family-bump",
+            "created": "2026-06-15T00:00:00.000Z",
+            "base": "staging",
+            "origin": "Blocked Dependabot group PR #1615 (router family version-split)",
+            "dependsOn": ["SPEC-219"],
+            "tags": ["tanstack-router", "admin", "dependencies", "migration", "dependabot"]
+        },
+        {
             "specId": "SPEC-217",
             "title": "Deterministic Billing for E2E — wire the QZPay test-control adapter for fault injection and produce real terminal subscription states so the gated paywall specs run in CI",
             "type": "test",
@@ -71,9 +120,13 @@
             "title": "Staging→Main Promotion Hardening — clear CodeQL security debt blocking the promotion",
             "type": "infrastructure",
             "complexity": "medium",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-220-staging-main-promotion-hardening",
             "created": "2026-06-12T00:00:00.000Z",
+            "archived": true,
+            "archivedAt": "2026-06-14",
+            "completionRef": "Promo #1629 merged to main; #1618 (earlier promo) unblocked SPEC-219 T-005",
+            "archiveNote": "CodeQL debt cleared: DOM-XSS via location.pathname setter + e2e crypto randomness (#1616/#1622). T-005 promo green + merged (#1618, #1629). T-006 (prevention, option B) LIVE: owner switched to advanced setup (GitHub codeql.yml on main, default setup disabled) + custom codeql-staging.yml nightly staging scan added (#1625/#1633); reconciled staging↔main so promos no longer conflict. Verified: codeql-staging workflow_dispatch scanned staging (actions/python/js-ts) successfully. Languages: actions, javascript-typescript, python.",
             "tags": ["codeql", "security", "ci", "promotion", "infrastructure"]
         },
         {

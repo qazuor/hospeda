@@ -34,7 +34,29 @@ export interface TranslationStatusProps {
     fields: TranslationFieldState[];
     onTranslateNow: (fieldType: string) => void;
     onOverrideSaved: (fieldType: string, locale: string, value: string) => void;
+    /**
+     * Layout variant.
+     * - `inline` (default): renders a divider + "Traducciones" header row, for
+     *   placement directly below form fields.
+     * - `section`: bare list with no header/divider, for placement inside a
+     *   collapsible section card whose own header already names the section.
+     */
+    variant?: 'inline' | 'section';
 }
+
+/**
+ * Maps a translatable field key to its i18n label key. Kept as explicit string
+ * literals so they resolve to the strict `TranslationKey` union (a dynamic
+ * template string would not typecheck against it).
+ */
+const FIELD_LABEL_KEYS = {
+    name: 'admin-common.aiTranslate.field.name',
+    summary: 'admin-common.aiTranslate.field.summary',
+    description: 'admin-common.aiTranslate.field.description',
+    richDescription: 'admin-common.aiTranslate.field.richDescription',
+    title: 'admin-common.aiTranslate.field.title',
+    content: 'admin-common.aiTranslate.field.content'
+} as const;
 
 // ---------------------------------------------------------------------------
 // Component
@@ -43,7 +65,8 @@ export interface TranslationStatusProps {
 export function TranslationStatus({
     fields,
     onTranslateNow,
-    onOverrideSaved
+    onOverrideSaved,
+    variant = 'inline'
 }: TranslationStatusProps) {
     const { t } = useTranslations();
     const [editingField, setEditingField] = useState<string | null>(null);
@@ -76,24 +99,30 @@ export function TranslationStatus({
     const localeBeingEdited = editingLocale;
 
     return (
-        <div className="mt-4 space-y-3 border-border border-t pt-3">
-            <div className="flex items-center gap-2 text-muted-foreground text-sm">
-                <svg
-                    aria-hidden="true"
-                    className="h-4 w-4"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    viewBox="0 0 24 24"
-                >
-                    <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
-                    />
-                </svg>
-                <span>{t('admin-common.aiTranslate.status')}</span>
-            </div>
+        <div
+            className={
+                variant === 'section' ? 'space-y-3' : 'mt-4 space-y-3 border-border border-t pt-3'
+            }
+        >
+            {variant === 'inline' && (
+                <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                    <svg
+                        aria-hidden="true"
+                        className="h-4 w-4"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        viewBox="0 0 24 24"
+                    >
+                        <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
+                        />
+                    </svg>
+                    <span>{t('admin-common.aiTranslate.status')}</span>
+                </div>
+            )}
 
             {fields.map((field) => (
                 <div
@@ -101,7 +130,9 @@ export function TranslationStatus({
                     className="space-y-1"
                 >
                     <div className="font-medium text-muted-foreground text-xs">
-                        {field.fieldType}
+                        {field.fieldType in FIELD_LABEL_KEYS
+                            ? t(FIELD_LABEL_KEYS[field.fieldType as keyof typeof FIELD_LABEL_KEYS])
+                            : field.fieldType}
                     </div>
                     {Object.entries(field.locales).map(([locale, state]) => (
                         <div
