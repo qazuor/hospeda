@@ -225,6 +225,7 @@ export function AnalyticsSection({ locale }: AnalyticsSectionProps): JSX.Element
             const viewsDailySeriesData =
                 dailySeriesResult.status === 'fulfilled' && dailySeriesResult.value.ok
                     ? transformViewsDailySeries({
+                          // TYPE-WORKAROUND: apiClient returns a generic payload not inferred to the transform's input shape; the transform reads fields defensively.
                           series: dailySeriesResult.value.data as unknown as Record<string, unknown>
                       })
                     : undefined;
@@ -337,6 +338,7 @@ export function AnalyticsSection({ locale }: AnalyticsSectionProps): JSX.Element
             const newDailySeriesData =
                 dailySeriesResult.status === 'fulfilled' && dailySeriesResult.value.ok
                     ? transformViewsDailySeries({
+                          // TYPE-WORKAROUND: apiClient returns a generic payload not inferred to the transform's input shape; the transform reads fields defensively.
                           series: dailySeriesResult.value.data as unknown as Record<string, unknown>
                       })
                     : undefined;
