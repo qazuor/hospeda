@@ -18,6 +18,7 @@
 | [Log Management](log-management.md) | API log output (pretty/NDJSON), Coolify stdout retention, WARN/ERROR DB sink + admin viewer, purge policy (SPEC-184) |
 | [Markdown Formatting](markdown-formatting.md) | Documentation formatting standards |
 | [Review Moderation](review-moderation.md) | Review moderation model (PENDING/APPROVED/REJECTED), hybrid default policy, content-moderation gate, admin API surface (SPEC-166) |
+| [Sentry Alerts](sentry-alerts.md) | Alert rule tracking: moderation degraded, error rate spikes, billing webhooks, cron failures, auth spikes, DB pool exhaustion |
 
 ## Policy Documents
 
