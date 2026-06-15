@@ -337,7 +337,10 @@
             "status": "completed",
             "progress": "15/15",
             "path": "SPEC-159-cross-entity-view-tracking",
-            "branch": "spec/SPEC-159-cross-entity-view-tracking"
+            "branch": "spec/SPEC-159-cross-entity-view-tracking",
+            "archived": true,
+            "archivedAt": "2026-06-05",
+            "archiveNote": "DRIFT FIX (2026-06-15): added missing archived flag. Shipped via #1461."
         },
         {
             "specId": "SPEC-197",

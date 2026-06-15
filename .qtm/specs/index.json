@@ -491,7 +491,10 @@
                 "event",
                 "backend",
                 "phase-2"
-            ]
+            ],
+            "archived": true,
+            "archivedAt": "2026-06-05",
+            "archiveNote": "DRIFT FIX (2026-06-15 cleanup): was completed but missing archived flag in both indexes. Shipped via PR #1461. Branch merged."
         },
         {
             "specId": "SPEC-160",
