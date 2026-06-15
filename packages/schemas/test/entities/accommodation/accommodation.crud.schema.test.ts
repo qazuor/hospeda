@@ -67,3 +67,41 @@ describe('AccommodationCreateInputSchema — defaults preserved', () => {
         expect(parsed).toHaveProperty('visibility', 'PUBLIC');
     });
 });
+
+/**
+ * SPEC-229 regression: the update schema must accept PARTIAL grouped JSONB
+ * objects so a single-field PATCH (e.g. only `bedrooms`, or a lone `website`)
+ * survives re-validation in the service layer. Before the fix, `extraInfo`
+ * required capacity/minNights/bedrooms/bathrooms and `contactInfo` required
+ * mobilePhone, so a partial group was rejected.
+ */
+describe('AccommodationUpdateInputSchema — partial grouped objects (SPEC-229)', () => {
+    it('accepts extraInfo with only bedrooms', () => {
+        const result = AccommodationUpdateInputSchema.safeParse({ extraInfo: { bedrooms: 8 } });
+        expect(result.success).toBe(true);
+    });
+
+    it('accepts contactInfo without mobilePhone', () => {
+        const result = AccommodationUpdateInputSchema.safeParse({
+            contactInfo: { website: 'https://example.com' }
+        });
+        expect(result.success).toBe(true);
+    });
+
+    it('accepts price with only currency', () => {
+        const result = AccommodationUpdateInputSchema.safeParse({ price: { currency: 'USD' } });
+        expect(result.success).toBe(true);
+    });
+
+    it('still rejects an unknown-typed inner field (bedrooms as string)', () => {
+        const result = AccommodationUpdateInputSchema.safeParse({
+            extraInfo: { bedrooms: 'eight' }
+        });
+        expect(result.success).toBe(false);
+    });
+
+    it('AccommodationPatchInputSchema mirrors the partial behaviour', () => {
+        const result = AccommodationPatchInputSchema.safeParse({ extraInfo: { bathrooms: 3 } });
+        expect(result.success).toBe(true);
+    });
+});

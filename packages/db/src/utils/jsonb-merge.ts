@@ -7,9 +7,15 @@ import { sql } from 'drizzle-orm';
  * instead of being replaced wholesale.
  *
  * For each key in `data`:
- * - If the key is in `mergeableColumns` AND the table has that column, the assignment
- *   becomes `column || <value>::jsonb` (PostgreSQL shallow JSONB merge).
- * - Otherwise the plain value is used (standard replacement).
+ * - If the key is in `mergeableColumns` AND the table has that column AND the value is
+ *   not `null`, the assignment becomes `column || <value>::jsonb` (PostgreSQL shallow
+ *   JSONB merge).
+ * - Otherwise the plain value is used (standard replacement). In particular, a `null`
+ *   value for a mergeable column falls through to plain assignment so the column is set
+ *   to SQL `NULL` (explicit clear). This is deliberate: `existing::jsonb || 'null'::jsonb`
+ *   does NOT clear — PostgreSQL treats it as array concatenation and yields the corrupt
+ *   value `[<existing>, null]`. Routing `null` through plain assignment gives the correct
+ *   "clear the whole column" semantics callers expect.
  *
  * **Semantics of `||` (shallow merge):**
  * The PostgreSQL `||` operator on two JSONB objects produces a new object containing
@@ -47,11 +53,12 @@ export function buildMergeSetClause(
     const tableRecord = table as unknown as Record<string, unknown>;
 
     for (const [key, value] of Object.entries(data)) {
-        if (mergeableColumns.includes(key) && key in tableRecord) {
+        if (mergeableColumns.includes(key) && key in tableRecord && value !== null) {
             // Use PostgreSQL JSONB || operator for shallow merge.
             // JSON.stringify is safe here: value comes from a typed Partial<T> patch.
             result[key] = sql`${tableRecord[key] as SQL}::jsonb || ${JSON.stringify(value)}::jsonb`;
         } else {
+            // Plain assignment — including `null`, which clears the column (see JSDoc).
             result[key] = value;
         }
     }

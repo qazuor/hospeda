@@ -41,6 +41,7 @@ import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { toAccommodationDetailPageProps, toAccommodationCardProps, toEventCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { pickLocalizedSeo } from '@/lib/seo';
 
 export const prerender = false;
 
@@ -314,8 +315,20 @@ const galleryImages = (() => {
 })();
 
 // --- SEO ---
-const seoTitle = accommodation.seo?.title ?? `${accommodation.name} | Hospeda`;
-const seoDescription = accommodation.seo?.description ?? accommodation.summary;
+// Stored seo.* overrides are authored in the source locale (es); on en/pt
+// prefer the localized name/summary so the <title> isn't Spanish (SPEC-212).
+// SEOHead already appends " | Hospeda", so the fallback is the bare localized
+// name (the old `${name} | Hospeda` fallback double-suffixed the brand).
+const seoTitle = pickLocalizedSeo({
+    stored: accommodation.seo?.title,
+    fallback: accommodation.name,
+    locale
+});
+const seoDescription = pickLocalizedSeo({
+    stored: accommodation.seo?.description,
+    fallback: accommodation.summary,
+    locale
+});
 
 // --- OG card (PHOTO mode) ---
 // Use the entity featured image (skip the local placeholder so brand mode kicks

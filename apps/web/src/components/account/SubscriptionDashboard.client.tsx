@@ -4,7 +4,7 @@
  *
  * Displays the current plan, status badge, next billing date, payment method,
  * and plan features. Provides cancel and invoice download actions.
- * HOST/ADMIN/SUPERADMIN roles see an additional admin escalation button.
+ * SUPER_ADMIN sees an additional admin escalation button.
  */
 
 import { translateApiError } from '@/lib/api-errors';
@@ -24,15 +24,17 @@ import styles from './SubscriptionDashboard.module.css';
 // Types
 // ---------------------------------------------------------------------------
 
-/** Roles that can access the admin panel escalation button. */
-const ADMIN_ROLES = new Set([
-    'HOST',
-    'ADMIN',
-    'CLIENT_MANAGER',
-    'EDITOR',
-    'SPONSOR',
-    'SUPER_ADMIN'
-]);
+/**
+ * Roles that may see the admin-panel escalation link.
+ *
+ * The link points at the admin `/billing/settings` route, which is guarded by
+ * `requireBillingAccess` (`BILLING_READ_ALL`). Per SPEC-164 that permission is
+ * granted to SUPER_ADMIN only (every other role — including ADMIN,
+ * CLIENT_MANAGER, EDITOR, HOST, SPONSOR — is bounced to `/auth/forbidden`), so
+ * the link is shown to SUPER_ADMIN exclusively to match who can actually load
+ * the route.
+ */
+const BILLING_ADMIN_ROLES = new Set(['SUPER_ADMIN']);
 
 /** Subscription status label map keys */
 type SubscriptionStatus =
@@ -385,7 +387,7 @@ function PauseConfirmModal({
  * - Payment method (card or MercadoPago)
  * - Plan features list
  * - Cancel + invoice download actions
- * - Admin escalation button for HOST/ADMIN/SUPERADMIN roles
+ * - Admin escalation button for SUPER_ADMIN
  *
  * @param props - {@link SubscriptionDashboardProps}
  */
@@ -402,7 +404,7 @@ export function SubscriptionDashboard({ locale, user }: SubscriptionDashboardPro
     const [isPausing, setIsPausing] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
 
-    const isAdminRole = ADMIN_ROLES.has(user.role);
+    const isBillingAdmin = BILLING_ADMIN_ROLES.has(user.role);
 
     // ── Fetch ──────────────────────────────────────────────────────────────
 
@@ -740,8 +742,8 @@ export function SubscriptionDashboard({ locale, user }: SubscriptionDashboardPro
                         </button>
                     )}
 
-                    {/* Admin escalation (HOST and above) */}
-                    {isAdminRole && adminUrl && (
+                    {/* Admin escalation (SUPER_ADMIN only — see BILLING_ADMIN_ROLES) */}
+                    {isBillingAdmin && adminUrl && (
                         <a
                             href={adminUrl}
                             className={styles.btnAdmin}

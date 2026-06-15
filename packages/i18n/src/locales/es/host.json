@@ -247,6 +247,16 @@
                 "geolocationUnavailable": "La geolocalización no está disponible en este navegador.",
                 "geolocationDenied": "Permiso denegado. Podés escribir la dirección manualmente.",
                 "geolocationError": "No se pudo obtener la ubicación. Probá escribir la dirección."
+            },
+            "translation": {
+                "sectionTitle": "Traducciones",
+                "sectionDescription": "Estado de traducción de los campos principales de tu propiedad. Las traducciones faltantes se generan automáticamente con IA a partir del idioma que estás usando.",
+                "fieldRichDescription": "Descripción enriquecida",
+                "generateButton": "Generar traducciones faltantes",
+                "generating": "Generando traducciones...",
+                "successMessage": "Traducciones generadas. Recargando...",
+                "errorGeneric": "No se pudieron generar las traducciones. Intentá de nuevo.",
+                "errorNetwork": "Error de conexión al intentar generar las traducciones."
             }
         },
         "empty": {
@@ -323,6 +333,8 @@
             "discountValueMaxPercentage": "El porcentaje no puede superar 100.",
             "validFromRequired": "La fecha de inicio es requerida.",
             "limitReachedHint": "Alcanzaste el límite de promociones activas de tu plan. Mejorá tu plan para crear más.",
+            "entitlementRequired": "Tu plan no incluye promociones.",
+            "entitlementRequiredHint": "Mejorá tu plan para crear promociones.",
             "notFound": "No se encontró la promoción.",
             "forbidden": "No tenés permiso para acceder a esta promoción."
         },
@@ -332,7 +344,8 @@
             "save": "Guardar",
             "saving": "Guardando...",
             "cancel": "Cancelar",
-            "confirmDelete": "¿Eliminar esta promoción? Esta acción no se puede deshacer."
+            "confirmDelete": "¿Eliminar esta promoción? Esta acción no se puede deshacer.",
+            "upgradePlan": "Ver planes"
         }
     },
     "dashboard": {

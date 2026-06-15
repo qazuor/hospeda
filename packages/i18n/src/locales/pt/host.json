@@ -247,6 +247,16 @@
                 "geolocationUnavailable": "A geolocalização não está disponível neste navegador.",
                 "geolocationDenied": "Permissão negada. Você pode digitar o endereço manualmente.",
                 "geolocationError": "Não foi possível obter a localização. Tente digitar o endereço."
+            },
+            "translation": {
+                "sectionTitle": "Traduções",
+                "sectionDescription": "Status de tradução dos campos principais do seu imóvel. As traduções ausentes são geradas automaticamente por IA a partir do idioma que você está usando.",
+                "fieldRichDescription": "Descrição enriquecida",
+                "generateButton": "Gerar traduções ausentes",
+                "generating": "Gerando traduções...",
+                "successMessage": "Traduções geradas. Recarregando...",
+                "errorGeneric": "Não foi possível gerar as traduções. Tente novamente.",
+                "errorNetwork": "Erro de conexão ao tentar gerar as traduções."
             }
         },
         "empty": {
@@ -323,6 +333,8 @@
             "discountValueMaxPercentage": "A porcentagem não pode exceder 100.",
             "validFromRequired": "A data de início é obrigatória.",
             "limitReachedHint": "Você atingiu o limite de promoções ativas do seu plano. Faça upgrade do seu plano para criar mais.",
+            "entitlementRequired": "Seu plano não inclui promoções.",
+            "entitlementRequiredHint": "Faça upgrade do seu plano para criar promoções.",
             "notFound": "Promoção não encontrada.",
             "forbidden": "Você não tem permissão para acessar esta promoção."
         },
@@ -332,7 +344,8 @@
             "save": "Salvar",
             "saving": "Salvando...",
             "cancel": "Cancelar",
-            "confirmDelete": "Excluir esta promoção? Esta ação não pode ser desfeita."
+            "confirmDelete": "Excluir esta promoção? Esta ação não pode ser desfeita.",
+            "upgradePlan": "Ver planos"
         }
     },
     "dashboard": {

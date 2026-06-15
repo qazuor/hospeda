@@ -159,6 +159,7 @@ export function PromotionForm({ locale, mode, initialData, promotionId }: Promot
     const [errors, setErrors] = useState<FieldErrors>({});
     const [formError, setFormError] = useState<string | null>(null);
     const [isLimitReached, setIsLimitReached] = useState(false);
+    const [entitlementRequired, setEntitlementRequired] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [accommodationsLoad, setAccommodationsLoad] = useState<AccommodationsLoadState>({
         status: 'loading'
@@ -196,7 +197,7 @@ export function PromotionForm({ locale, mode, initialData, promotionId }: Promot
                             'No tenés permiso para acceder a esta promoción.'
                         );
                     } else {
-                        message = result.error.message ?? loadFailed;
+                        message = loadFailed;
                     }
                     setDataLoad({
                         status: 'error',
@@ -210,11 +211,11 @@ export function PromotionForm({ locale, mode, initialData, promotionId }: Promot
                 });
                 setFields(buildInitialFields(promotion));
                 setDataLoad({ status: 'idle' });
-            } catch (err) {
+            } catch {
                 if (cancelled) return;
                 setDataLoad({
                     status: 'error',
-                    message: err instanceof Error ? err.message : loadFailed
+                    message: loadFailed
                 });
             }
         }
@@ -261,6 +262,7 @@ export function PromotionForm({ locale, mode, initialData, promotionId }: Promot
     }, []);
 
     const promotionsListUrl = buildUrl({ locale, path: 'mi-cuenta/promociones' });
+    const upgradeUrl = buildUrl({ locale, path: 'suscriptores/planes' });
 
     function handleChange(
         e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -272,6 +274,7 @@ export function PromotionForm({ locale, mode, initialData, promotionId }: Promot
         }
         setFormError(null);
         setIsLimitReached(false);
+        setEntitlementRequired(false);
     }
 
     async function handleSubmit(e: FormEvent<HTMLFormElement>): Promise<void> {
@@ -280,6 +283,7 @@ export function PromotionForm({ locale, mode, initialData, promotionId }: Promot
 
         setFormError(null);
         setIsLimitReached(false);
+        setEntitlementRequired(false);
         setErrors({});
 
         // Build payload — coerce number fields, null-out empty optionals.
@@ -399,12 +403,25 @@ export function PromotionForm({ locale, mode, initialData, promotionId }: Promot
                     return;
                 }
 
-                setFormError(
-                    result.error.message ??
+                // 403 ENTITLEMENT_REQUIRED: the actor's plan does not include
+                // promotions at all — surface an upgrade prompt instead of a
+                // generic "could not save" message the host would retry forever.
+                if (result.error.status === 403 && result.error.code === 'ENTITLEMENT_REQUIRED') {
+                    setEntitlementRequired(true);
+                    setFormError(
                         t(
-                            'host.promotions.errors.saveFailed',
-                            'No se pudo guardar la promoción. Intentá de nuevo.'
+                            'host.promotions.errors.entitlementRequired',
+                            'Tu plan no incluye promociones.'
                         )
+                    );
+                    return;
+                }
+
+                setFormError(
+                    t(
+                        'host.promotions.errors.saveFailed',
+                        'No se pudo guardar la promoción. Intentá de nuevo.'
+                    )
                 );
                 return;
             }
@@ -843,7 +860,9 @@ export function PromotionForm({ locale, mode, initialData, promotionId }: Promot
             {/* Form-level error / LIMIT_REACHED banner */}
             {formError && (
                 <div
-                    className={`form-error-banner ${isLimitReached ? styles.limitReachedBanner : ''}`}
+                    className={`form-error-banner ${
+                        isLimitReached || entitlementRequired ? styles.limitReachedBanner : ''
+                    }`}
                     role="alert"
                 >
                     <p>{formError}</p>
@@ -853,6 +872,17 @@ export function PromotionForm({ locale, mode, initialData, promotionId }: Promot
                                 'host.promotions.errors.limitReachedHint',
                                 'Alcanzaste el límite de promociones activas de tu plan. Mejorá tu plan para crear más.'
                             )}
+                        </p>
+                    )}
+                    {entitlementRequired && (
+                        <p className={styles.limitReachedHint}>
+                            {t(
+                                'host.promotions.errors.entitlementRequiredHint',
+                                'Mejorá tu plan para crear promociones.'
+                            )}{' '}
+                            <a href={upgradeUrl}>
+                                {t('host.promotions.actions.upgradePlan', 'Ver planes')}
+                            </a>
                         </p>
                     )}
                 </div>

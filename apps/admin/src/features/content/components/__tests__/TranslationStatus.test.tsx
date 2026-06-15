@@ -217,7 +217,8 @@ describe('TranslationStatus', () => {
             />
         );
 
-        expect(screen.getByText('description')).toBeInTheDocument();
+        // Field labels are now i18n'd; the mocked t() echoes the key.
+        expect(screen.getByText('admin-common.aiTranslate.field.description')).toBeInTheDocument();
     });
 
     it('renders multiple fields correctly', () => {
@@ -234,8 +235,8 @@ describe('TranslationStatus', () => {
             />
         );
 
-        expect(screen.getByText('name')).toBeInTheDocument();
-        expect(screen.getByText('summary')).toBeInTheDocument();
+        expect(screen.getByText('admin-common.aiTranslate.field.name')).toBeInTheDocument();
+        expect(screen.getByText('admin-common.aiTranslate.field.summary')).toBeInTheDocument();
         expect(screen.getByText('Cabin')).toBeInTheDocument();
         expect(screen.getByText('Cabana')).toBeInTheDocument();
         expect(screen.getByText('Nice place')).toBeInTheDocument();

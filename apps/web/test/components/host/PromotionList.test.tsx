@@ -99,16 +99,22 @@ describe('PromotionList', () => {
     });
 
     it('renders error state with retry button when list api fails', async () => {
+        // Backend error carries an English/technical message — it must NOT leak
+        // to the user (bug #3 regression): the localized loadFailed string is
+        // shown instead.
         mockOwnerPromotionList.mockResolvedValue({
             ok: false,
-            error: { message: 'Error al cargar' }
+            error: { message: 'Authentication required' }
         });
 
         render(<PromotionList locale="es" />);
 
         const alert = await screen.findByRole('alert');
         expect(alert).toBeInTheDocument();
-        expect(screen.getByText('Error al cargar')).toBeInTheDocument();
+        expect(screen.queryByText('Authentication required')).not.toBeInTheDocument();
+        expect(
+            screen.getByText('No se pudieron cargar las promociones. Intentá de nuevo.')
+        ).toBeInTheDocument();
         expect(screen.getByRole('button', { name: /reintentar/i })).toBeInTheDocument();
     });
 

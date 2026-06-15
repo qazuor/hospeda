@@ -27,9 +27,13 @@ export const protectedPatchOwnerPromotionRoute = createProtectedRoute({
     path: '/{id}',
     summary: 'Patch owner promotion',
     description:
-        'Partially updates an existing owner promotion. Requires OWNER_PROMOTION_UPDATE permission.',
+        'Partially updates an existing owner promotion. Requires OWNER_PROMOTION_UPDATE_OWN permission.',
     tags: ['Owner Promotions'],
-    requiredPermissions: [PermissionEnum.OWNER_PROMOTION_UPDATE],
+    // Hosts hold the `_OWN` variant (mirrors get/list which use VIEW_OWN). The
+    // generic OWNER_PROMOTION_UPDATE permission is not granted to any host role,
+    // so requiring it here 403'd every owner edit. Ownership is enforced in the
+    // service via checkCanUpdate (which also accepts UPDATE_ANY for admins).
+    requiredPermissions: [PermissionEnum.OWNER_PROMOTION_UPDATE_OWN],
     requestParams: { id: OwnerPromotionIdSchema },
     requestBody: OwnerPromotionUpdateInputSchema,
     responseSchema: OwnerPromotionProtectedSchema,

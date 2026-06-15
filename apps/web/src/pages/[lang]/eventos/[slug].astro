@@ -25,6 +25,7 @@ import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { toEventDetailProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { pickLocalizedSeo } from '@/lib/seo';
 import { Image } from 'astro:assets';
 import { renderContent } from '@/lib/render-content';
 
@@ -59,6 +60,11 @@ const {
 	isPast,
 	eventStatus,
 } = event;
+
+// Stored seo.* overrides are authored in the source locale (es); on en/pt
+// prefer the localized name/summary so the <title> isn't Spanish (SPEC-212).
+const seoTitle = pickLocalizedSeo({ stored: seo.title, fallback: name, locale });
+const seoDescription = pickLocalizedSeo({ stored: seo.description, fallback: summary, locale });
 
 // --- Auth ---
 const userId = Astro.locals.user?.id ?? null;
@@ -143,8 +149,8 @@ const featuredIsPlaceholder = featuredImage.url.includes('placeholder');
 
 <DetailLayout
 	locale={locale}
-	title={seo.title || name}
-	description={seo.description || summary}
+	title={seoTitle}
+	description={seoDescription}
 	ogImage={featuredIsPlaceholder ? undefined : featuredImage.url}
 	ogType="Evento"
 	ogSubtitle={location.city || location.name || undefined}
@@ -154,7 +160,7 @@ const featuredIsPlaceholder = featuredImage.url.includes('placeholder');
 	<EventJsonLd
 		slot="head-extra"
 		name={name}
-		description={seo.description || summary}
+		description={seoDescription}
 		startDate={startDate}
 		endDate={endDate}
 		url={canonical}
