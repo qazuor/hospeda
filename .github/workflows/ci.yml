@@ -480,9 +480,10 @@ jobs:
             # current coverage (coverage is deterministic, so a floor only
             # fails when a future change LOWERS it — exactly the intent)
             # while we ratchet back up to the 90% target under SPEC-236.
-            # Floors (lines %, 2026-06-15): admin 45, feedback 43, icons 56,
+            # Floors (lines %, 2026-06-15): admin 45, feedback 43,
             # api 70, seed 75, service-core 79, notifications 80, schemas 83,
             # billing 87, web 55. Everything else stays at the 90% default.
+            # SPEC-236 ratchet: icons restored to the 90% default (now 100%).
             THRESHOLD=90
             if [ "$PACKAGE_NAME" = "web" ]; then
               THRESHOLD=55
@@ -490,20 +491,12 @@ jobs:
               THRESHOLD=45
             elif [ "$PACKAGE_NAME" = "api" ]; then
               THRESHOLD=70
-            elif [ "$PACKAGE_NAME" = "schemas" ]; then
-              THRESHOLD=83
             elif [ "$PACKAGE_NAME" = "service-core" ]; then
-              THRESHOLD=79
+              THRESHOLD=82
             elif [ "$PACKAGE_NAME" = "seed" ]; then
               THRESHOLD=75
-            elif [ "$PACKAGE_NAME" = "billing" ]; then
-              THRESHOLD=87
-            elif [ "$PACKAGE_NAME" = "notifications" ]; then
-              THRESHOLD=80
-            elif [ "$PACKAGE_NAME" = "icons" ]; then
-              THRESHOLD=56
             elif [ "$PACKAGE_NAME" = "feedback" ]; then
-              THRESHOLD=43
+              THRESHOLD=60
             fi
 
             if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then

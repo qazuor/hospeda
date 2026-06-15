@@ -23,12 +23,16 @@ export default defineConfig({
             provider: 'v8',
             reporter: ['text', 'json', 'html'],
             thresholds: {
-                lines: 70,
-                functions: 70,
-                branches: 60,
-                statements: 70
+                lines: 82,
+                functions: 82,
+                branches: 80,
+                statements: 82
             },
-            exclude: ['node_modules/', 'dist/']
+            // Measure production source only. Without an include, vitest v8
+            // instruments docs/examples, test utilities/factories, and root
+            // config files at 0%, masking real src coverage (SPEC-236).
+            include: ['src/**/*.ts'],
+            exclude: ['node_modules/', 'dist/', '**/*.d.ts', '**/*.config.*', '**/index.ts']
         }
     }
 });
