@@ -555,6 +555,16 @@
             "status": "draft",
             "progress": "0/0",
             "path": "SPEC-236-api-test-cold-import-perf"
+        },
+        {
+            "specId": "SPEC-198",
+            "title": "AI Text Improvement (HOST)",
+            "status": "completed",
+            "progress": "10/10",
+            "path": "SPEC-198-ai-text-improvement",
+            "archived": true,
+            "archivedAt": "2026-06-06",
+            "archiveNote": "DRIFT FIX (2026-06-15 cleanup): specs/index had this completed+archived but tasks/index had NO entry. state.json shows 10/10 tasks completed, 77/77 tests. Shipped via PRs #1487 + #1514. Reconstructed entry to match specs/index."
         }
     ],
     "standalone": {
