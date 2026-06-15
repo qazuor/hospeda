@@ -500,7 +500,7 @@ jobs:
             elif [ "$PACKAGE_NAME" = "notifications" ]; then
               THRESHOLD=80
             elif [ "$PACKAGE_NAME" = "feedback" ]; then
-              THRESHOLD=43
+              THRESHOLD=60
             fi
 
             if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
