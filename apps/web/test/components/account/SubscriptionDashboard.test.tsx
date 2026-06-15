@@ -390,24 +390,24 @@ describe('SubscriptionDashboard — cancel modal', () => {
 });
 
 describe('SubscriptionDashboard — role-conditional admin button', () => {
-    it('shows admin button for HOST role', async () => {
+    // The admin escalation link points at admin /billing/settings, guarded by
+    // BILLING_READ_ALL — granted to SUPER_ADMIN only (SPEC-164). Every other
+    // role (HOST, ADMIN, CLIENT_MANAGER, EDITOR, SPONSOR, USER) would be bounced
+    // to /auth/forbidden, so the link must be hidden for them.
+    it('hides admin button for HOST role', async () => {
         mockSubscriptionSuccess();
         renderDashboard(HOST_ROLE);
 
-        await waitFor(() => {
-            // Admin button text is "Más opciones (panel admin)"
-            const adminLink = screen.getByRole('link', { name: /más opciones/i });
-            expect(adminLink).toBeInTheDocument();
-        });
+        await waitForLoaded();
+        expect(screen.queryByRole('link', { name: /más opciones/i })).not.toBeInTheDocument();
     });
 
-    it('shows admin button for ADMIN role', async () => {
+    it('hides admin button for ADMIN role', async () => {
         mockSubscriptionSuccess();
         renderDashboard(ADMIN_ROLE);
 
-        await waitFor(() => {
-            expect(screen.getByRole('link', { name: /más opciones/i })).toBeInTheDocument();
-        });
+        await waitForLoaded();
+        expect(screen.queryByRole('link', { name: /más opciones/i })).not.toBeInTheDocument();
     });
 
     it('shows admin button for SUPER_ADMIN role', async () => {
@@ -421,7 +421,7 @@ describe('SubscriptionDashboard — role-conditional admin button', () => {
 
     it('admin button points to admin billing settings URL', async () => {
         mockSubscriptionSuccess();
-        renderDashboard(HOST_ROLE);
+        renderDashboard(SUPER_ADMIN_ROLE);
 
         await waitFor(() => {
             const adminLink = screen.getByRole('link', { name: /más opciones/i });
@@ -431,7 +431,7 @@ describe('SubscriptionDashboard — role-conditional admin button', () => {
 
     it('admin button opens in a new tab', async () => {
         mockSubscriptionSuccess();
-        renderDashboard(HOST_ROLE);
+        renderDashboard(SUPER_ADMIN_ROLE);
 
         await waitFor(() => {
             const adminLink = screen.getByRole('link', { name: /más opciones/i });
