@@ -110,14 +110,31 @@ a per-property bar list, and mounted it in `AnalyticsSection` gated by
 - Re-mount it in `AnalyticsSection`, restore the `getFavoritesBreakdown` call and
   fix the transform.
 
-### C. End-to-end verification — ⏳ PENDING (owner staging smoke)
+### C. End-to-end verification — ✅ DONE (local smoke, 2026-06-15)
 
-This is the only remaining gate. The spec stays `in-progress` until it passes.
+Smoke executed locally in a real browser (Chrome) as `host-pro@local.test`
+(owner-pro). **Correction to the earlier "local always degrades to
+owner-basico" note:** that is only true when billing is fully unconfigured.
+Setting `HOSPEDA_QZPAY_TEST_CONTROL_ENABLED=true` marks billing as configured,
+so `loadEntitlements()` reads the seeded `billing_subscriptions` row and the
+host receives `view_advanced_stats`. With test data seeded (3 accommodations +
+views over 30 days + bookmarks), the smoke confirmed:
 
-- Staging smoke with real paid entitlements (local always degrades HOST to
-  `owner-basico` because billing is unconfigured, so the advanced widgets and
-  real plan limits cannot be exercised locally — see the by-design note below).
-- Confirm each widget against a host on `owner-pro` / `owner-premium`.
+- **Views**: daily-series chart renders with real data; 7d/30d toggle re-fetches
+  both chart and ranked list (total 120 ↔ 23); endpoint `→ 200`.
+- **Favorites**: per-property bars (3/2/1); endpoint `→ 200`.
+- **Advanced gating** works (favorites + market shown, not locked).
+- No console errors.
+
+The smoke also surfaced an unrelated pre-existing bug, **fixed in this PR**:
+the market-comparison widget 403'd for every real host because
+`getHostMarketComparison` still gated on `ACCOMMODATION_VIEW_ALL` (removed from
+HOST by SPEC-169). Changed to `ACCOMMODATION_VIEW_OWN` + regression test; widget
+now renders the comparison table.
+
+A staging smoke against production-like infra is still nice-to-have post-merge
+but NOT a blocker — SPEC-207 touches no MercadoPago path, so test-control covers
+the relevant surface. Original staging-oriented notes kept below.
 
 ## Out of scope
 
