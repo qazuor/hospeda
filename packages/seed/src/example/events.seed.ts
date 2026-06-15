@@ -1,4 +1,3 @@
-import path from 'node:path';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { EventService } from '@repo/service-core';
 import exampleManifest from '../manifest-example.json';
@@ -91,7 +90,7 @@ const preProcessEvent = async (item: unknown, context: SeedContext) => {
 export const seedEvents = createSeedFactory({
     entityName: 'Events',
     serviceClass: EventService,
-    folder: path.resolve('src/data/event'),
+    folder: 'src/data/event',
     files: exampleManifest.events,
     normalizer: eventNormalizer,
     preProcess: preProcessEvent,

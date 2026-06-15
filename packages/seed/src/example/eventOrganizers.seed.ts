@@ -1,4 +1,3 @@
-import path from 'node:path';
 import { EventOrganizerService } from '@repo/service-core';
 import exampleManifest from '../manifest-example.json';
 import { createSeedFactory } from '../utils/seedFactory.js';
@@ -32,7 +31,7 @@ const getEventOrganizerInfo = (item: unknown) => {
 export const seedEventOrganizers = createSeedFactory({
     entityName: 'EventOrganizers',
     serviceClass: EventOrganizerService,
-    folder: path.resolve('src/data/eventOrganizer'),
+    folder: 'src/data/eventOrganizer',
     files: exampleManifest.eventOrganizers,
     normalizer: eventOrganizerNormalizer,
     getEntityInfo: getEventOrganizerInfo

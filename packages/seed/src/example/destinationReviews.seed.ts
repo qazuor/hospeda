@@ -1,4 +1,3 @@
-import path from 'node:path';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { DestinationReviewService } from '@repo/service-core';
 import exampleManifest from '../manifest-example.json';
@@ -94,7 +93,7 @@ const getDestinationReviewInfo = (item: unknown, context: SeedContext) => {
 export const seedDestinationReviews = createSeedFactory({
     entityName: 'DestinationReviews',
     serviceClass: DestinationReviewService,
-    folder: path.resolve('src/data/destinationReview'),
+    folder: 'src/data/destinationReview',
     files: exampleManifest.destinationReviews,
     normalizer: destinationReviewNormalizer,
     getEntityInfo: getDestinationReviewInfo,
