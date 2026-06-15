@@ -29,7 +29,8 @@
         "MD040": false,
         "MD041": false,
         "MD051": true,
-        "MD058": true
+        "MD058": true,
+        "MD060": false
     },
     "ignores": ["node_modules/**", "**/node_modules/**", "dist/**", "build/**", ".claude/**"]
 }
