@@ -3,7 +3,7 @@ specId: SPEC-190
 title: Admin Bundle Perf — Icon Tree-Shaking & Entity-Chunk Code-Split
 slug: admin-bundle-perf-icons-and-codesplit
 type: refactor
-status: draft
+status: completed
 complexity: medium-high
 owner: qazuor
 created: 2026-06-02

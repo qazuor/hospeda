@@ -243,13 +243,15 @@
         {
             "specId": "SPEC-190",
             "title": "Admin Bundle Perf — Icon Tree-Shaking & Entity-Chunk Code-Split",
-            "status": "draft",
-            "progress": "12/14",
+            "status": "completed",
+            "progress": "14/14",
             "path": "SPEC-190-admin-bundle-perf-icons-and-codesplit",
             "branch": "spec/SPEC-190-admin-bundle-perf-icons-and-codesplit",
             "linearIssues": ["BETA-74"],
             "note": "Tests added, pending smoke",
-            "archived": false
+            "archived": true,
+            "archivedAt": "2026-06-15",
+            "archiveNote": "Admin bundle perf (icon tree-shaking + entity code-split). All 14 tasks done: code shipped via PR #1559; T-013 doc (final-report + sideEffects claim now true via T-003); T-014 browser smoke VERIFIED 2026-06-15 — all 3 lazy fields (tiptap rich-text, leaflet coordinates, media upload) render in admin edit, zero dynamic-chunk errors."
         },
         {
             "specId": "SPEC-191",

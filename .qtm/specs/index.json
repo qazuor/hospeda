@@ -717,14 +717,15 @@
             "specId": "SPEC-190",
             "title": "Admin Bundle Perf — Icon Tree-Shaking & Entity-Chunk Code-Split",
             "type": "refactor",
-            "status": "draft",
+            "status": "completed",
             "complexity": "medium-high",
             "path": "SPEC-190-admin-bundle-perf-icons-and-codesplit",
             "branch": "spec/SPEC-190-admin-bundle-perf-icons-and-codesplit",
             "base": "staging",
             "linearIssues": ["BETA-74"],
             "created": "2026-06-02",
-            "archived": false
+            "archived": true,
+            "archivedAt": "2026-06-15"
         },
         {
             "specId": "SPEC-191",
