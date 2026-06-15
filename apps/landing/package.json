@@ -19,7 +19,7 @@
     "devDependencies": {
         "@astrojs/check": "^0.9.4",
         "@repo/typescript-config": "workspace:*",
-        "sharp": "^0.34.5",
+        "sharp": "^0.35.1",
         "typescript": "5.9.3",
         "vitest": "^3.1.3"
     }
