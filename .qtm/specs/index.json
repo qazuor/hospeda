@@ -2,6 +2,16 @@
     "version": "1.0",
     "specs": [
         {
+            "specId": "SPEC-230",
+            "title": "Soft-delete filtering in the service list() path — make BaseCrudService.list exclude soft-deleted rows by default so protected list endpoints stop returning deleted records",
+            "type": "fix",
+            "status": "draft",
+            "complexity": "medium",
+            "path": "SPEC-230-list-soft-delete-filtering",
+            "base": "staging",
+            "priority": "P2"
+        },
+        {
             "specId": "SPEC-217",
             "title": "Deterministic Billing for E2E — wire the QZPay test-control adapter for fault injection and produce real terminal subscription states so the gated paywall specs run in CI",
             "type": "test",
