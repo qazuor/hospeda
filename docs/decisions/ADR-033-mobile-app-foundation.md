@@ -1,0 +1,90 @@
+# ADR-033: Mobile App Foundation (Expo / React Native)
+
+## Status
+
+Accepted (2026-06-15)
+
+## Context
+
+SPEC-243 introduces a native mobile application (`apps/mobile`) built with Expo /
+React Native, added to the existing TurboRepo monorepo. The app is a first-class
+client of the Hono API (public + protected tiers) serving both tourists and hosts
+from a single role-gated binary. It introduces a stack the monorepo does not yet
+have (React Native), so the Sub-0 (Foundation) sub-spec must lock a set of
+architecture decisions before any UI work starts. Deferring these decisions until
+after screens exist means rewriting those screens.
+
+The locked high-level decisions (from the spec) are:
+
+- New pnpm workspace app `apps/mobile`, Expo **managed** workflow, Expo Router (file-based).
+- Single binary, role-gated navigation from the Better Auth session.
+- Only `/api/v1/public/*` and `/api/v1/protected/*` are called — never the admin tier.
+- UI rebuilt from scratch in RN. Only the data/contract layer is reused:
+  `@repo/schemas` (Zod), `@repo/i18n` (locales), TypeScript types, and the Hono API.
+- `@repo/icons` (DOM phosphor SVG) is **never** imported in `apps/mobile`.
+
+This ADR records the seven Sub-0 micro-decisions that the spec left open.
+
+## Decision
+
+| # | Decision | Choice |
+|---|----------|--------|
+| 1 | Styling | **`StyleSheet.create`** (RN standard). Not NativeWind. |
+| 2 | Icons | **`phosphor-react-native`** (visual parity with the web). |
+| 3 | API client transport | **Deferred to the Better Auth Expo spike (T-003).** |
+| 4 | Map library | **Out of Sub-0 scope** — decided in Sub-1 (T-026). |
+| 5 | Locale loading in Metro | **Eager** import of `es/en/pt`; validate bundle size in T-002. |
+| 6 | Push notification channels | **Single channel** in v1; per-category prefs in Sub-4. |
+| 7 | Builds | **EAS Build** for CI and distribution. |
+
+## Rationale
+
+1. **Styling — `StyleSheet.create`.** RN standard, zero extra build-plugin risk, full
+   control. NativeWind would bring Tailwind DX (familiar from `apps/admin`) but adds a
+   Babel plugin and has historically lagged behind new Expo SDK releases. For a
+   greenfield v1 where build stability on SDK upgrades matters more than maximum UI
+   velocity, the lower-risk option wins. A mobile design system
+   (`apps/mobile/src/design/`) of JS token objects mitigates the verbosity cost.
+2. **Icons — `phosphor-react-native`.** Same icon family as the web (`@repo/icons`
+   wraps `@phosphor-icons/react`), so visual parity is preserved while staying
+   RN-compatible. `@expo/vector-icons` is larger and less branded.
+3. **Transport — deferred.** The transport choice is downstream of the auth spike: if
+   `better-auth/expo` requires `@better-fetch/fetch`, the decision is already made.
+   Committing to native `fetch` before the spike risks a rework. Default remains native
+   `fetch` (Expo SDK 49+ global) unless the spike proves otherwise.
+4. **Map library — Sub-1.** Geolocation/map is a Sub-1 deliverable (nearby discovery).
+   It also carries a billing implication (`react-native-maps` via Google Maps vs.
+   MapLibre open tiles) that should be decided with Sub-1 context, not in Foundation.
+5. **Locales — eager.** Three locale JSONs are small; eager import is the simplest
+   correct option. Metro does not tree-shake like esbuild, so T-002 must measure the
+   real bundle contribution and fall back to lazy-by-locale only if the size is
+   unacceptable. This is a measurement, not a preference.
+6. **Push channels — single.** One notification channel in v1 keeps the push setup
+   (T-011) minimal. Per-category preferences are a Sub-4 deliverable (notification
+   prefs screen), layered on top later without reworking the channel model.
+7. **Builds — EAS.** EAS Build is the standard path for native compilation,
+   environment-secret injection, and store distribution in the Expo managed workflow.
+   Local bare builds are a fallback only if EAS has blocking issues.
+
+## Consequences
+
+- (+) All Sub-0 UI and tooling work proceeds against a fixed set of choices — no
+  churn from late styling/icon switches.
+- (+) Lower build-fragility risk on Expo SDK upgrades (no NativeWind, managed workflow).
+- (+) Data-contract reuse (`@repo/schemas`, `@repo/i18n`) keeps the mobile client in
+  lockstep with the API without duplicating types.
+- (-) `StyleSheet.create` is more verbose than utility classes; partially offset by the
+  mobile design-system token layer.
+- (-) Two decisions remain genuinely open (transport, map) — tracked explicitly against
+  T-003 and T-026 respectively, not silently assumed.
+- (~) `@repo/icons` is banned in `apps/mobile`; a lint guard (T-008) enforces this since
+  importing the DOM phosphor build crashes in RN.
+
+## Alternatives Considered
+
+- **NativeWind for styling** — rejected for v1 due to Babel-plugin + SDK-lag risk on a
+  greenfield app; reconsider once the app is stable and the team wants Tailwind DX.
+- **`@expo/vector-icons`** — rejected for weaker brand/web parity.
+- **Committing transport to `fetch` now** — rejected; the auth spike must inform it.
+- **Lazy locale loading by default** — rejected as premature optimization; gated on the
+  T-002 bundle-size measurement instead.
