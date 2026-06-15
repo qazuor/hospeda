@@ -2,6 +2,55 @@
     "version": "1.0",
     "specs": [
         {
+            "specId": "SPEC-231",
+            "title": "TypeScript 6 Migration",
+            "type": "chore",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-231-typescript-6-migration",
+            "created": "2026-06-15T00:00:00.000Z",
+            "base": "staging",
+            "origin": "Blocked Dependabot major PR #1643 (typescript 5.7→6.0)",
+            "tags": ["typescript", "toolchain", "dependencies", "migration", "dependabot"]
+        },
+        {
+            "specId": "SPEC-232",
+            "title": "Biome 2 Migration",
+            "type": "chore",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-232-biome-2-migration",
+            "created": "2026-06-15T00:00:00.000Z",
+            "base": "staging",
+            "origin": "Blocked Dependabot major PR #1642 (@biomejs/biome 1.9→2.5)",
+            "tags": ["biome", "lint", "toolchain", "dependencies", "migration", "dependabot"]
+        },
+        {
+            "specId": "SPEC-233",
+            "title": "Vitest 4 Migration",
+            "type": "chore",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-233-vitest-4-migration",
+            "created": "2026-06-15T00:00:00.000Z",
+            "base": "staging",
+            "origin": "Blocked Dependabot major PR #1639 (@vitest/ui 3.2→4.1; needs vitest core 4)",
+            "tags": ["vitest", "testing", "toolchain", "dependencies", "migration", "dependabot"]
+        },
+        {
+            "specId": "SPEC-234",
+            "title": "TanStack Router family bump — unblock the production-minor-patch Dependabot group",
+            "type": "chore",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-234-tanstack-router-family-bump",
+            "created": "2026-06-15T00:00:00.000Z",
+            "base": "staging",
+            "origin": "Blocked Dependabot group PR #1615 (router family version-split)",
+            "dependsOn": ["SPEC-219"],
+            "tags": ["tanstack-router", "admin", "dependencies", "migration", "dependabot"]
+        },
+        {
             "specId": "SPEC-217",
             "title": "Deterministic Billing for E2E — wire the QZPay test-control adapter for fault injection and produce real terminal subscription states so the gated paywall specs run in CI",
             "type": "test",
