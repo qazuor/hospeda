@@ -387,16 +387,25 @@
             "headingDesc": "Gerencie seu plano e preferencias de pagamento",
             "loading": "Carregando assinatura...",
             "emptyTitle": "Sem assinatura ativa",
+            "emptyBody": "Você ainda não tem um plano ativo. Explore nossos planos para acessar benefícios exclusivos.",
             "errorTitle": "Erro ao carregar a assinatura",
+            "planCardLabel": "Detalhes do plano atual",
             "statusLabel": "Status",
+            "nextBillingLabel": "Próxima cobrança",
             "paymentMethodLabel": "Método de pagamento",
             "paymentMercadoPago": "MercadoPago",
             "noBillingDate": "Sem data de faturamento disponível",
             "actionsLabel": "Ações",
-            "actionsTitle": "Mais opções",
+            "actionsTitle": "Gerenciar assinatura",
+            "downloadInvoice": "Baixar última fatura",
+            "invoiceError": "Não foi possível obter a última fatura.",
+            "noInvoices": "Você ainda não tem faturas disponíveis.",
+            "invoiceNoPdf": "A fatura ainda não tem um PDF disponível.",
             "cancelButton": "Cancelar assinatura",
+            "cancelAriaLabel": "Cancelar assinatura",
+            "adminLink": "Mais opções (painel admin)",
             "viewPlans": "Ver planos",
-            "upgradeLink": "Melhorar plano",
+            "upgradeLink": "Ver planos disponíveis",
             "pauseButton": "Pausar assinatura",
             "pauseAriaLabel": "Pausar assinatura",
             "resumeButton": "Retomar assinatura",
@@ -405,6 +414,12 @@
             "resumeSuccess": "Assinatura retomada.",
             "resumeError": "Não foi possível retomar a assinatura.",
             "status": {
+                "active": "Ativa",
+                "trial": "Teste",
+                "cancelled": "Cancelada",
+                "expired": "Expirada",
+                "past_due": "Vencida",
+                "pending": "Pendente",
                 "paused": "Pausada"
             },
             "pauseModal": {
@@ -413,7 +428,10 @@
                 "confirm": "Pausar"
             },
             "cancelModal": {
-                "title": "Cancelar assinatura?",
+                "title": "Cancelar assinatura",
+                "emailSubject": "Cancelamento de assinatura",
+                "body": "Para cancelar sua assinatura, envie um e-mail para info@hospeda.com e um agente irá processá-la em breve. Seu plano continuará ativo até o final do período atual.",
+                "contactSupport": "Contatar suporte",
                 "confirm": "Sim, cancelar assinatura"
             }
         }

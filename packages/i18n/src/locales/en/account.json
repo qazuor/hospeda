@@ -387,16 +387,25 @@
             "headingDesc": "Manage your plan and payment preferences",
             "loading": "Loading subscription...",
             "emptyTitle": "No active subscription",
+            "emptyBody": "You don't have an active plan yet. Explore our plans to access exclusive benefits.",
             "errorTitle": "Error loading subscription",
+            "planCardLabel": "Current plan details",
             "statusLabel": "Status",
+            "nextBillingLabel": "Next billing date",
             "paymentMethodLabel": "Payment method",
             "paymentMercadoPago": "MercadoPago",
             "noBillingDate": "No billing date available",
             "actionsLabel": "Actions",
-            "actionsTitle": "More options",
+            "actionsTitle": "Manage subscription",
+            "downloadInvoice": "Download last invoice",
+            "invoiceError": "Could not retrieve the last invoice.",
+            "noInvoices": "You don't have any invoices yet.",
+            "invoiceNoPdf": "The invoice does not have a PDF available yet.",
             "cancelButton": "Cancel subscription",
+            "cancelAriaLabel": "Cancel subscription",
+            "adminLink": "More options (admin panel)",
             "viewPlans": "View plans",
-            "upgradeLink": "Upgrade plan",
+            "upgradeLink": "View available plans",
             "pauseButton": "Pause subscription",
             "pauseAriaLabel": "Pause subscription",
             "resumeButton": "Resume subscription",
@@ -405,6 +414,12 @@
             "resumeSuccess": "Subscription resumed.",
             "resumeError": "Could not resume the subscription.",
             "status": {
+                "active": "Active",
+                "trial": "Trial",
+                "cancelled": "Cancelled",
+                "expired": "Expired",
+                "past_due": "Past due",
+                "pending": "Pending",
                 "paused": "Paused"
             },
             "pauseModal": {
@@ -413,7 +428,10 @@
                 "confirm": "Pause"
             },
             "cancelModal": {
-                "title": "Cancel subscription?",
+                "title": "Cancel subscription",
+                "emailSubject": "Subscription cancellation",
+                "body": "To cancel your subscription, email us at info@hospeda.com and an agent will process it promptly. Your plan will remain active until the end of the current period.",
+                "contactSupport": "Contact support",
                 "confirm": "Yes, cancel subscription"
             }
         }
