@@ -387,16 +387,25 @@
             "headingDesc": "Administrá tu plan y preferencias de pago",
             "loading": "Cargando suscripción...",
             "emptyTitle": "Sin suscripción activa",
+            "emptyBody": "Todavía no tenés un plan activo. Explorá nuestros planes para acceder a beneficios exclusivos.",
             "errorTitle": "Error al cargar la suscripción",
+            "planCardLabel": "Detalles del plan actual",
             "statusLabel": "Estado",
+            "nextBillingLabel": "Próxima facturación",
             "paymentMethodLabel": "Método de pago",
             "paymentMercadoPago": "MercadoPago",
             "noBillingDate": "No hay fecha de facturación disponible",
             "actionsLabel": "Acciones",
-            "actionsTitle": "Más opciones",
+            "actionsTitle": "Gestionar suscripción",
+            "downloadInvoice": "Descargar última factura",
+            "invoiceError": "No se pudo obtener la última factura.",
+            "noInvoices": "Todavía no tenés facturas disponibles.",
+            "invoiceNoPdf": "La factura no tiene un PDF disponible todavía.",
             "cancelButton": "Cancelar suscripción",
+            "cancelAriaLabel": "Cancelar suscripción",
+            "adminLink": "Más opciones (panel admin)",
             "viewPlans": "Ver planes",
-            "upgradeLink": "Mejorar plan",
+            "upgradeLink": "Ver planes disponibles",
             "pauseButton": "Pausar suscripción",
             "pauseAriaLabel": "Pausar suscripción",
             "resumeButton": "Reanudar suscripción",
@@ -405,6 +414,12 @@
             "resumeSuccess": "Suscripción reanudada.",
             "resumeError": "No se pudo reanudar la suscripción.",
             "status": {
+                "active": "Activa",
+                "trial": "Prueba",
+                "cancelled": "Cancelada",
+                "expired": "Vencida",
+                "past_due": "Pago pendiente",
+                "pending": "Pendiente",
                 "paused": "Pausada"
             },
             "pauseModal": {
@@ -413,7 +428,10 @@
                 "confirm": "Pausar"
             },
             "cancelModal": {
-                "title": "¿Cancelar suscripción?",
+                "title": "Cancelar suscripción",
+                "emailSubject": "Cancelación de suscripción",
+                "body": "Para cancelar tu suscripción, escribinos a info@hospeda.com y un agente la procesará a la brevedad. Tu plan seguirá activo hasta el final del período actual.",
+                "contactSupport": "Escribir a soporte",
                 "confirm": "Sí, cancelar suscripción"
             }
         }
