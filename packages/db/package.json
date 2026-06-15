@@ -46,7 +46,7 @@
         "test": "vitest run --passWithNoTests",
         "test:watch": "vitest",
         "test:file": "vitest run --passWithNoTests",
-        "test:coverage": "vitest run --coverage",
+        "test:coverage": "vitest run --coverage --passWithNoTests",
         "test:integration": "vitest run --config vitest.config.integration.ts",
         "test:integration:watch": "vitest --config vitest.config.integration.ts"
     },

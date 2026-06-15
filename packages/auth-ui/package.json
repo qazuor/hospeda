@@ -14,7 +14,7 @@
     "scripts": {
         "test": "vitest run --passWithNoTests",
         "test:watch": "vitest",
-        "test:coverage": "vitest run --coverage",
+        "test:coverage": "vitest run --coverage --passWithNoTests",
         "lint": "biome check .",
         "format": "biome format --write .",
         "typecheck": "tsc --noEmit --project ./tsconfig.json"

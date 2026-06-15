@@ -1240,6 +1240,31 @@
             ],
             "archived": false,
             "note": "ONE canonical loading toolkit (React Spinner/Skeleton + LoadingButton + convention doc) to replace the 'mil maneras' of showing loading (text '...', emoji, ad-hoc spinners). Phase 1 foundation, then migrate audited cases by priority: map zoom/pan sidebar (isFetching unused), eventos/publicaciones skeleton-swap parity, AiChatWidget thinking indicator, review modals, ContactHost double-submit, ConversationReply. From the 2026-06-13 web UX audit. Drafted, ready to implement."
+        },
+        {
+            "specId": "SPEC-235",
+            "title": "AI Content Translation for Multi-Language Listings",
+            "type": "feat",
+            "complexity": "high",
+            "status": "completed",
+            "path": "SPEC-235-ai-content-translation",
+            "created": "2026-06-10T00:00:00.000Z",
+            "parentSpec": "SPEC-173",
+            "archived": true,
+            "archivedAt": "2026-06-15",
+            "completionRef": "PRs #1581 + #1623 + #1652 merged to staging",
+            "renumberedFrom": "SPEC-212",
+            "tags": [
+                "ai",
+                "feature",
+                "i18n",
+                "translation",
+                "content",
+                "multi-language",
+                "admin",
+                "spec-173-child"
+            ],
+            "note": "Renumbered from SPEC-212 (collided with SPEC-212-conversational-ai-search, which holds the 212 index entry). AI translation of accommodation/destination/event/post content into en/pt: i18n migration + schema fields + translate service + admin TranslationSection (collapsible, source-locale aware, only-missing) + web host translation panel + locale-aware SEO. Shipped via #1581 (core), #1623 (admin endpoint + UX/direction + host panel), #1652 (SEO i18n)."
         }
     ]
 }
