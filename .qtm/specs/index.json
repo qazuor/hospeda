@@ -993,7 +993,7 @@
             "created": "2026-06-07T00:00:00.000Z",
             "archived": false,
             "tags": ["web", "host", "analytics", "kpis", "dashboard", "api", "metrics"],
-            "note": "Phase 3 host migration. Dashboard + 5 analytics widgets built; cabling pass (#1621) fixed gate/404s/transforms/i18n and mounted Views as per-property ranked list. REMAINING: Favorites widget redesign (deferred, per-accommodation shape), optional views daily-series chart, staging smoke with paid entitlements. PRs #1504/#1621."
+            "note": "Phase 3 host migration. Dashboard + 5 analytics widgets built (#1504/#1621). Fase A (views daily-series chart) + Fase B (favorites redesign) IMPLEMENTED + Fase C local browser smoke PASSED (host-pro, owner-pro, test-control + seeded data: chart/toggle/favorites/gating all OK) on branch spec/SPEC-207-analytics-completion (PR #1678). Smoke also found+fixed an unrelated bug: market-comparison 403'd for all real hosts (getHostMarketComparison gated on VIEW_ALL removed by SPEC-169 → changed to VIEW_OWN + test). REMAINING: owner review/merge of #1678; optional staging smoke post-merge (not a blocker — no MP path touched)."
         },
         {
             "specId": "SPEC-208",
