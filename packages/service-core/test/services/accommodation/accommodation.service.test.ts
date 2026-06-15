@@ -7,6 +7,9 @@ import type { Actor, ServiceConfig } from '../../../src/types';
 class MockAccommodationModel {
     findAllWithRelations = vi.fn();
     findAll = vi.fn();
+    // BaseModel always exposes getTable(); default to an empty table (no deletedAt
+    // column) so list() does not inject the SPEC-230 soft-delete predicate here.
+    getTable = vi.fn().mockReturnValue({});
     findById = vi.fn();
     findOne = vi.fn();
     count = vi.fn();

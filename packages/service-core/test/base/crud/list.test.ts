@@ -320,4 +320,94 @@ describe('BaseService: list', () => {
             );
         });
     });
+
+    /**
+     * Soft-delete filtering regression tests (SPEC-230).
+     *
+     * Before SPEC-230, `list()` did not inject a `deletedAt: null` predicate, so
+     * every protected list endpoint returned soft-deleted rows. The fix mirrors the
+     * `adminList()` path: when the table has a `deletedAt` column and the caller did
+     * not opt in via `includeDeleted`, `list()` adds `deletedAt: null` to the where
+     * clause. These tests assert the contract between `list()` and `model.findAll`.
+     */
+    describe('soft-delete filtering (SPEC-230)', () => {
+        // A minimal stand-in for a Drizzle PgTable that HAS a deletedAt column. The
+        // injection logic only checks `'deletedAt' in table`, so the column value is
+        // irrelevant — its mere presence is what matters.
+        const tableWithDeletedAt = {
+            id: { name: 'id' },
+            name: { name: 'name' },
+            deletedAt: { name: 'deleted_at' }
+        };
+        // A table WITHOUT a deletedAt column — no predicate must be injected.
+        const tableWithoutDeletedAt = {
+            id: { name: 'id' },
+            name: { name: 'name' }
+        };
+
+        const buildModelMock = (table: Record<string, unknown>) => {
+            const m = createBaseModelMock<TestEntity>();
+            asMock(m.findAll).mockResolvedValue({ items: [mockEntity], total: 1 });
+            asMock(m.getTable).mockReturnValue(table);
+            return m;
+        };
+
+        it('should inject deletedAt: null by default when the table has a deletedAt column', async () => {
+            // Arrange
+            const localModelMock: BaseModel<TestEntity> = buildModelMock(tableWithDeletedAt);
+            const svc = createServiceTestInstance(TestService, localModelMock);
+
+            // Act — no includeDeleted, no explicit deletedAt
+            await svc.list(mockActor, { page: 1, pageSize: 10 });
+
+            // Assert — soft-deleted rows are excluded by default.
+            const whereArg = asMock(localModelMock.findAll).mock.calls[0]?.[0];
+            expect(whereArg).toEqual({ deletedAt: null });
+        });
+
+        it('should NOT inject deletedAt when includeDeleted is true', async () => {
+            // Arrange
+            const localModelMock: BaseModel<TestEntity> = buildModelMock(tableWithDeletedAt);
+            const svc = createServiceTestInstance(TestService, localModelMock);
+
+            // Act — opt in to seeing soft-deleted rows.
+            await svc.list(mockActor, { page: 1, pageSize: 10, includeDeleted: true });
+
+            // Assert — no soft-delete predicate added.
+            const whereArg = asMock(localModelMock.findAll).mock.calls[0]?.[0];
+            expect(whereArg).toEqual({});
+        });
+
+        it('should respect a caller-supplied deletedAt value (explicit intent wins)', async () => {
+            // Arrange — caller passes deletedAt explicitly; the default predicate must
+            // not clobber it.
+            const localModelMock: BaseModel<TestEntity> = buildModelMock(tableWithDeletedAt);
+            const svc = createServiceTestInstance(TestService, localModelMock);
+            const explicitDate = new Date('2026-01-01T00:00:00.000Z');
+
+            // Act
+            await svc.list(mockActor, {
+                page: 1,
+                pageSize: 10,
+                where: { deletedAt: explicitDate }
+            });
+
+            // Assert — the caller's deletedAt survives untouched.
+            const whereArg = asMock(localModelMock.findAll).mock.calls[0]?.[0];
+            expect(whereArg).toEqual({ deletedAt: explicitDate });
+        });
+
+        it('should add NO predicate when the table has no deletedAt column', async () => {
+            // Arrange
+            const localModelMock: BaseModel<TestEntity> = buildModelMock(tableWithoutDeletedAt);
+            const svc = createServiceTestInstance(TestService, localModelMock);
+
+            // Act
+            await svc.list(mockActor, { page: 1, pageSize: 10, where: { name: 'foo' } });
+
+            // Assert — query is unchanged; no spurious deletedAt predicate.
+            const whereArg = asMock(localModelMock.findAll).mock.calls[0]?.[0];
+            expect(whereArg).toEqual({ name: 'foo' });
+        });
+    });
 });
