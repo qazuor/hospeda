@@ -495,8 +495,6 @@ jobs:
               THRESHOLD=82
             elif [ "$PACKAGE_NAME" = "seed" ]; then
               THRESHOLD=75
-            elif [ "$PACKAGE_NAME" = "notifications" ]; then
-              THRESHOLD=80
             elif [ "$PACKAGE_NAME" = "feedback" ]; then
               THRESHOLD=60
             fi
