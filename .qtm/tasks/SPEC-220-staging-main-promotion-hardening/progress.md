@@ -108,7 +108,34 @@ from `main`; push/PR triggers are `main`-scoped). They reach `main` via a promot
 in the GitHub UI** at the moment that promotion lands `codeql.yml` on `main`
 (default + advanced cannot coexist). Uses `github/codeql-action@v4` (current latest).
 
-## Already resolved on staging (clear automatically on promotion)
+## CLOSED — T-006 live + SPEC-220 done (2026-06-14)
+
+Rollout diverged from the planned PR-based path (and ended up cleaner):
+
+- The owner switched CodeQL to **advanced setup via the GitHub UI**, which
+  committed GitHub's generated `codeql.yml` **directly to `main`** (commit
+  `0756088f3`) and **disabled default setup**. GitHub's template already covers
+  `actions`, `javascript-typescript`, **and `python`** (push/PR to main + weekly).
+- This diverged from the custom `codeql.yml` on `staging`. Reconciled via #1633:
+  replaced staging's custom `codeql.yml` with main's exact GitHub version (so
+  promotions stop conflicting) and added `python` to the custom `codeql-staging.yml`
+  (the nightly staging scan GitHub does NOT generate — the unique T-006 piece).
+- Promo **#1629** then went fully green (CodeQL + Analyze actions/js-ts/python +
+  CI Pass) and merged → `codeql-staging.yml` now on `main`.
+- **Verified**: `workflow_dispatch` of "CodeQL (staging)" scanned `staging`
+  successfully (actions/python/js-ts via the `ref`/`sha` mechanism).
+- Net end state: `main` has GitHub's `codeql.yml` (main + PR scans, weekly) +
+  custom `codeql-staging.yml` (nightly staging scan); default setup disabled;
+  staging == main on these files. The original problem (staging CodeQL debt
+  invisible until a big promo) is solved.
+
+Obsolete along the way: #1630 (python-to-custom-codeql.yml, closed — GitHub's
+template already had python). Follow-up debt (NOT SPEC-220): Dependabot group
+PR #1615 — the `@tanstack/react-router` ignore doesn't cover the family cousins
+(`-devtools`, `-ssr-query`), so the recreated group may still break the build;
+tighten the ignore to the router family (SPEC-219 / Monday).
+
+## Already resolved on staging (cleared automatically on promotion)
 
 - **esbuild advisory** (`Security` gate): override tightened to `>=0.28.1` (#1589).
 - **E2E babel `declare`-field toolchain**: staging's E2E config handles it; the

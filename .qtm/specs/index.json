@@ -61,9 +61,13 @@
             "title": "Staging→Main Promotion Hardening — clear CodeQL security debt blocking the promotion",
             "type": "infrastructure",
             "complexity": "medium",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-220-staging-main-promotion-hardening",
             "created": "2026-06-12T00:00:00.000Z",
+            "archived": true,
+            "archivedAt": "2026-06-14",
+            "completionRef": "Promo #1629 merged to main; #1618 (earlier promo) unblocked SPEC-219 T-005",
+            "archiveNote": "CodeQL debt cleared: DOM-XSS via location.pathname setter + e2e crypto randomness (#1616/#1622). T-005 promo green + merged (#1618, #1629). T-006 (prevention, option B) LIVE: owner switched to advanced setup (GitHub codeql.yml on main, default setup disabled) + custom codeql-staging.yml nightly staging scan added (#1625/#1633); reconciled staging↔main so promos no longer conflict. Verified: codeql-staging workflow_dispatch scanned staging (actions/python/js-ts) successfully. Languages: actions, javascript-typescript, python.",
             "tags": ["codeql", "security", "ci", "promotion", "infrastructure"]
         },
         {
