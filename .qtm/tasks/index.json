@@ -388,10 +388,13 @@
         {
             "specId": "SPEC-206",
             "title": "Host Conversations — Inbox, Threads, Replies & Archive in Web",
-            "status": "draft",
-            "progress": "0/1",
+            "status": "completed",
+            "progress": "1/1",
             "path": "SPEC-206-host-conversations",
-            "tags": ["host-migration", "phase-2"]
+            "tags": ["host-migration", "phase-2"],
+            "archived": true,
+            "archivedAt": "2026-06-15",
+            "archiveNote": "Ghost-completed: epic shipped ad-hoc (inbox/threads/replies/archive for owner), PRs #1503/#1521/#1627/#1610 merged + on main. No formal spec.md (owner decision, like SPEC-208)."
         },
         {
             "specId": "SPEC-207",
