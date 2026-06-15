@@ -3,7 +3,7 @@ spec-id: SPEC-236
 title: Coverage ratchet-up — restore per-package thresholds to the 90% target
 type: chore
 complexity: medium
-status: in-progress
+status: completed
 created: 2026-06-15
 ---
 
