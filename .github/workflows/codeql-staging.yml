@@ -62,7 +62,7 @@ jobs:
 
     steps:
       - name: Checkout staging branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           ref: staging
           # Full history is not needed; shallow clone is fine for CodeQL.
