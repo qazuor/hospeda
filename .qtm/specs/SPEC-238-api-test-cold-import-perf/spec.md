@@ -1,5 +1,5 @@
 ---
-spec-id: SPEC-236
+spec-id: SPEC-238
 title: Reduce apps/api per-file test cold-import overhead (~9% suite speedup)
 type: improvement
 complexity: medium
@@ -8,7 +8,7 @@ created: 2026-06-15T00:00:00Z
 tags: [ci, testing, vitest, performance, api, infrastructure]
 ---
 
-# SPEC-236 — Reduce apps/api per-file test cold-import overhead
+# SPEC-238 — Reduce apps/api per-file test cold-import overhead
 
 ## 1. Overview
 
