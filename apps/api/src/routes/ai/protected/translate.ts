@@ -41,7 +41,12 @@ const TranslateRequestSchema = z
     .object({
         entityType: z.enum(['accommodation', 'destination', 'event', 'post']),
         entityId: z.string().uuid(),
-        targetLocales: z.array(z.enum(['en', 'pt'])).optional()
+        // Locale the host is editing in; translations flow OUT of it. Defaults
+        // to Spanish for backward compatibility.
+        sourceLocale: z.enum(['es', 'en', 'pt']).default('es'),
+        // When omitted, the service fills every locale except the source that is
+        // still missing a value.
+        targetLocales: z.array(z.enum(['es', 'en', 'pt'])).optional()
     })
     .strict();
 
@@ -79,16 +84,16 @@ protectedAiTranslateRoute.post('/', async (c) => {
         );
     }
 
-    const { entityType, entityId, targetLocales } = parseResult.data;
+    const { entityType, entityId, sourceLocale, targetLocales } = parseResult.data;
     const actor = getActorFromContext(c);
 
     apiLogger.info(
-        { userId: actor.id, entityType, entityId, targetLocales },
+        { userId: actor.id, entityType, entityId, sourceLocale, targetLocales },
         'ai-translate: starting translation'
     );
 
     try {
-        const fields = await loadTranslatableFields(entityType, entityId);
+        const fields = await loadTranslatableFields(entityType, entityId, sourceLocale);
 
         if (fields === null) {
             return c.json(
@@ -121,7 +126,9 @@ protectedAiTranslateRoute.post('/', async (c) => {
             entityType,
             entityId,
             fields,
-            targetLocales: targetLocales as ('en' | 'pt')[] | undefined
+            sourceLocale,
+            targetLocales,
+            onlyMissing: true
         });
 
         // Persist results
@@ -131,7 +138,8 @@ protectedAiTranslateRoute.post('/', async (c) => {
             fields,
             result.translations,
             result.provider,
-            result.model
+            result.model,
+            sourceLocale
         );
 
         return c.json({

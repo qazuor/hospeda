@@ -8,8 +8,13 @@
  * @module features/content/components/TranslationSection
  */
 
+import {
+    SectionAccordion,
+    SectionAccordionItem
+} from '@/components/entity-form/accordion/SectionAccordion';
 import { useToast } from '@/components/ui/ToastProvider';
 import { useTranslations } from '@/hooks/use-translations';
+import { fetchApi } from '@/lib/api/client';
 import { useCallback, useMemo } from 'react';
 import { type TranslationFieldState, TranslationStatus } from './TranslationStatus';
 
@@ -78,38 +83,29 @@ export function TranslationSection({ entityType, entityId, entity }: Translation
     const handleTranslateNow = useCallback(
         async (fieldType: string) => {
             try {
-                const response = await fetch('/api/v1/admin/ai/translate', {
+                // fetchApi targets the API server (admin and API are separate
+                // origins) and throws on a non-2xx response.
+                await fetchApi({
+                    path: '/api/v1/admin/ai/translate',
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        entityType,
-                        entityId,
-                        targetLocales: ['en', 'pt']
-                    }),
-                    credentials: 'include'
+                    // The admin edit form works in Spanish; the backend fills the
+                    // missing en/pt locales from it.
+                    body: { entityType, entityId, sourceLocale: 'es' }
                 });
 
-                const result = await response.json();
-
-                if (result.success) {
-                    addToast({
-                        title: t('admin-common.aiTranslate.batchComplete'),
-                        message: `${fieldType} translated successfully`,
-                        variant: 'success'
-                    });
-                    setTimeout(() => window.location.reload(), 1000);
-                } else {
-                    addToast({
-                        title: t('admin-common.aiTranslate.batchError'),
-                        message:
-                            result.error?.message ?? t('admin-common.aiTranslate.error.default'),
-                        variant: 'error'
-                    });
-                }
-            } catch {
+                addToast({
+                    title: t('admin-common.aiTranslate.batchComplete'),
+                    message: `${fieldType} translated successfully`,
+                    variant: 'success'
+                });
+                setTimeout(() => window.location.reload(), 1000);
+            } catch (error) {
                 addToast({
                     title: t('admin-common.aiTranslate.batchError'),
-                    message: t('admin-common.aiTranslate.error.default'),
+                    message:
+                        error instanceof Error
+                            ? error.message
+                            : t('admin-common.aiTranslate.error.default'),
                     variant: 'error'
                 });
             }
@@ -120,39 +116,22 @@ export function TranslationSection({ entityType, entityId, entity }: Translation
     const handleOverrideSaved = useCallback(
         async (fieldType: string, locale: string, value: string) => {
             try {
-                const response = await fetch('/api/v1/admin/ai/translate/override', {
+                await fetchApi({
+                    path: '/api/v1/admin/ai/translate/override',
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        entityType,
-                        entityId,
-                        locale,
-                        fieldType,
-                        value
-                    }),
-                    credentials: 'include'
+                    body: { entityType, entityId, locale, fieldType, value }
                 });
 
-                const result = await response.json();
-
-                if (result.success) {
-                    addToast({
-                        title: t('admin-common.aiTranslate.overrideSaved'),
-                        message: `${fieldType} (${locale.toUpperCase()}) updated`,
-                        variant: 'success'
-                    });
-                    setTimeout(() => window.location.reload(), 1000);
-                } else {
-                    addToast({
-                        title: t('admin-common.aiTranslate.error.default'),
-                        message: result.error?.message ?? '',
-                        variant: 'error'
-                    });
-                }
-            } catch {
+                addToast({
+                    title: t('admin-common.aiTranslate.overrideSaved'),
+                    message: `${fieldType} (${locale.toUpperCase()}) updated`,
+                    variant: 'success'
+                });
+                setTimeout(() => window.location.reload(), 1000);
+            } catch (error) {
                 addToast({
                     title: t('admin-common.aiTranslate.error.default'),
-                    message: '',
+                    message: error instanceof Error ? error.message : '',
                     variant: 'error'
                 });
             }
@@ -160,11 +139,34 @@ export function TranslationSection({ entityType, entityId, entity }: Translation
         [entityType, entityId, addToast, t]
     );
 
+    // Compact one-line summary shown while the section is collapsed: number of
+    // target-locale slots still missing a translation, or the locale codes when
+    // everything is filled.
+    const collapsedSummary = useMemo(() => {
+        let pending = 0;
+        for (const field of fieldStates) {
+            for (const locale of Object.values(field.locales)) {
+                if (!locale.value) pending += 1;
+            }
+        }
+        return pending === 0 ? 'EN · PT' : `${pending} ${t('admin-common.aiTranslate.pending')}`;
+    }, [fieldStates, t]);
+
     return (
-        <TranslationStatus
-            fields={fieldStates}
-            onTranslateNow={handleTranslateNow}
-            onOverrideSaved={handleOverrideSaved}
-        />
+        <SectionAccordion>
+            <SectionAccordionItem
+                id="translations"
+                title={t('admin-common.aiTranslate.status')}
+                collapsedSummary={collapsedSummary}
+                defaultCollapsed={true}
+            >
+                <TranslationStatus
+                    fields={fieldStates}
+                    onTranslateNow={handleTranslateNow}
+                    onOverrideSaved={handleOverrideSaved}
+                    variant="section"
+                />
+            </SectionAccordionItem>
+        </SectionAccordion>
     );
 }

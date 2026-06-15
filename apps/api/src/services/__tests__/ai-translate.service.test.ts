@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Mock } from 'vitest';
+import type { TranslateResult } from '../ai-translate.service.js';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -242,6 +243,84 @@ describe('translateEntity', () => {
 });
 
 // ============================================================================
+// translateEntity — source locale & missing-only (SPEC-212 follow-up)
+// ============================================================================
+
+describe('translateEntity — source locale and direction', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('derives target locales from the source locale (en source → es + pt)', async () => {
+        // Arrange
+        setupAiServiceMock('traducido');
+
+        // Act — editor works in English; translate OUT of English.
+        const result = await translateEntity({
+            entityType: 'accommodation',
+            entityId: 'test-uuid',
+            fields: { name: 'River Cabin' },
+            sourceLocale: 'en'
+        });
+
+        // Assert — only es and pt, never en (the source is not translated).
+        const locales = result.translations.map((t) => t.locale).sort();
+        expect(locales).toEqual(['es', 'pt']);
+    });
+
+    it('builds a prompt naming the source and target languages', async () => {
+        // Arrange
+        setupAiServiceMock('traduzido');
+
+        // Act
+        await translateEntity({
+            entityType: 'accommodation',
+            entityId: 'test-uuid',
+            fields: { name: 'River Cabin' },
+            sourceLocale: 'en',
+            targetLocales: ['pt']
+        });
+
+        // Assert — prompt reflects the actual direction, not a hardcoded Spanish source.
+        const call = mockGenerateText.mock.calls[0]?.[0] as { prompt: string };
+        expect(call.prompt).toContain('English');
+        expect(call.prompt).toContain('Portuguese');
+    });
+
+    it('with onlyMissing, skips locales that already have a value', async () => {
+        // Arrange — existing row has en filled, pt empty.
+        setupAiServiceMock('traducido');
+        (getDb as Mock).mockReturnValue({
+            select: vi.fn().mockReturnValue({
+                from: vi.fn().mockReturnValue({
+                    where: vi.fn().mockReturnValue({
+                        limit: vi
+                            .fn()
+                            .mockResolvedValue([
+                                { nameI18n: { es: 'Cabaña', en: 'Cabin', pt: '' } }
+                            ])
+                    })
+                })
+            })
+        });
+
+        // Act
+        const result = await translateEntity({
+            entityType: 'accommodation',
+            entityId: 'test-uuid',
+            fields: { name: 'Cabaña' },
+            sourceLocale: 'es',
+            onlyMissing: true
+        });
+
+        // Assert — en already present is skipped; only pt is translated.
+        expect(result.translations).toHaveLength(1);
+        expect(result.translations[0]?.locale).toBe('pt');
+        expect(result.translations.every((t) => t.locale !== 'en')).toBe(true);
+    });
+});
+
+// ============================================================================
 // persistTranslations
 // ============================================================================
 
@@ -274,7 +353,7 @@ describe('persistTranslations', () => {
     it('should update i18n columns with translated values', async () => {
         // Arrange
         const fieldValues = { name: 'Cabaña del Río', summary: 'Hermosa cabaña' };
-        const translations = [
+        const translations: TranslateResult[] = [
             { fieldType: 'name', locale: 'en', translatedText: 'River Cabin', success: true },
             { fieldType: 'name', locale: 'pt', translatedText: 'Cabana do Rio', success: true },
             {
@@ -307,7 +386,7 @@ describe('persistTranslations', () => {
 
     it('should preserve Spanish values in I18nText', async () => {
         const fieldValues = { name: 'Cabaña del Río' };
-        const translations = [
+        const translations: TranslateResult[] = [
             { fieldType: 'name', locale: 'en', translatedText: 'River Cabin', success: true }
         ];
 
@@ -327,7 +406,7 @@ describe('persistTranslations', () => {
 
     it('should track autoTranslated status in metadata', async () => {
         const fieldValues = { name: 'Cabaña' };
-        const translations = [
+        const translations: TranslateResult[] = [
             { fieldType: 'name', locale: 'en', translatedText: 'Cabin', success: true }
         ];
 
@@ -352,7 +431,7 @@ describe('persistTranslations', () => {
         mockLimit.mockResolvedValue([{ translationMeta: {} }]);
 
         const fieldValues = { name: 'Cabaña' };
-        const translations = [
+        const translations: TranslateResult[] = [
             {
                 fieldType: 'name',
                 locale: 'en',
@@ -388,6 +467,33 @@ describe('persistTranslations', () => {
         expect(i18nValue.es).toBe('Cabaña');
     });
 
+    it('writes the source value to the given source locale (en source)', async () => {
+        // The editor worked in English, so the English column is the source of
+        // truth and Portuguese is the translated target.
+        const fieldValues = { name: 'River Cabin' };
+        const translations: TranslateResult[] = [
+            { fieldType: 'name', locale: 'pt', translatedText: 'Cabana do Rio', success: true }
+        ];
+
+        await persistTranslations(
+            'accommodation',
+            'test-uuid',
+            fieldValues,
+            translations,
+            'stub',
+            'stub-model',
+            'en'
+        );
+
+        const setArg = mockSet.mock.calls[0]?.[0] as Record<string, unknown>;
+        const nameI18n = setArg.nameI18n as { es: string; en: string; pt: string };
+        expect(nameI18n.en).toBe('River Cabin');
+        expect(nameI18n.pt).toBe('Cabana do Rio');
+        // The canonical Spanish column must NOT be touched when it is not a
+        // result locale (regression guard: locale typing must stay honest).
+        expect(nameI18n.es).toBe('');
+    });
+
     it('preserves a manual override (autoTranslated:false) against re-translation', async () => {
         // Existing en is a human override; an auto-translate run must NOT clobber it.
         mockLimit.mockResolvedValue([
@@ -397,7 +503,7 @@ describe('persistTranslations', () => {
             }
         ]);
 
-        const translations = [
+        const translations: TranslateResult[] = [
             { fieldType: 'name', locale: 'en', translatedText: 'Auto cabin', success: true }
         ];
 

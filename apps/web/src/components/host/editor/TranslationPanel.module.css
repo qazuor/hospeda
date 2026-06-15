@@ -1,0 +1,151 @@
+/* TranslationPanel.module.css — SPEC-212 */
+
+/* Section card — matches the fieldset pattern used by other editor sections */
+.section {
+    border: none;
+    padding: 0;
+    margin: 0 0 var(--space-5, 2rem);
+}
+
+.sectionTitle {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 1.125rem;
+    color: var(--core-foreground);
+    margin-bottom: var(--space-2, 0.5rem);
+    padding-bottom: var(--space-2, 0.5rem);
+    border-bottom: 1px solid var(--border);
+}
+
+.sectionDescription {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+    margin: 0 0 var(--space-4, 1.5rem);
+}
+
+/* Grid showing each field's locale status */
+.grid {
+    display: grid;
+    gap: var(--space-3, 1rem);
+    margin-bottom: var(--space-4, 1.5rem);
+}
+
+/* One card per translatable field */
+.fieldCard {
+    padding: var(--space-3, 1rem);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 10px);
+    background-color: var(--core-card);
+}
+
+.fieldName {
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: var(--core-foreground);
+    margin-bottom: var(--space-2, 0.5rem);
+}
+
+/* Row of locale badges */
+.locales {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2, 0.5rem);
+}
+
+/* Individual locale badge */
+.localeBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.625rem;
+    border-radius: var(--radius-pill, 9999px);
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    border: 1px solid transparent;
+}
+
+.localeBadgePresent {
+    background-color: var(--success-a15, oklch(0.96 0.04 155 / 0.15));
+    color: var(--success, oklch(0.55 0.18 155));
+    border-color: var(--success-a30, oklch(0.85 0.08 155 / 0.3));
+}
+
+.localeBadgeMissing {
+    background-color: oklch(0.96 0.015 45 / 0.15);
+    color: var(--core-muted-foreground);
+    border-color: oklch(0.85 0.03 45 / 0.3);
+}
+
+/* Marks the source locale (the one being edited) */
+.localeBadgeSource {
+    background-color: oklch(0.96 0.02 240 / 0.15);
+    color: var(--brand-primary);
+    border-color: oklch(0.85 0.05 240 / 0.3);
+}
+
+/* Status icon inside a badge */
+.localeIcon {
+    width: 0.875rem;
+    height: 0.875rem;
+    flex-shrink: 0;
+}
+
+/* Generate button */
+.generateButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    min-height: 40px;
+    padding: 0.5rem 1.25rem;
+    border: none;
+    border-radius: var(--radius-pill, 9999px);
+    background-color: var(--brand-primary);
+    color: var(--primary-foreground, #ffffff);
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    cursor: pointer;
+    transition: opacity 150ms ease-out, background-color 150ms ease-out;
+}
+
+.generateButton:hover:not(:disabled) {
+    opacity: 0.88;
+}
+
+.generateButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.generateButton:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+/* Inline error / success feedback */
+.feedbackError {
+    margin-top: var(--space-3, 1rem);
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-md, 10px);
+    background-color: oklch(0.96 0.02 25);
+    color: oklch(0.45 0.2 25);
+    border: 1px solid oklch(0.88 0.06 25);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+}
+
+.feedbackSuccess {
+    margin-top: var(--space-3, 1rem);
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-md, 10px);
+    background-color: var(--success-a15, oklch(0.96 0.04 155 / 0.15));
+    color: var(--success, oklch(0.55 0.18 155));
+    border: 1px solid var(--success-a30, oklch(0.85 0.08 155 / 0.3));
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+}
