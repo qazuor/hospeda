@@ -1265,6 +1265,20 @@
                 "spec-173-child"
             ],
             "note": "Renumbered from SPEC-212 (collided with SPEC-212-conversational-ai-search, which holds the 212 index entry). AI translation of accommodation/destination/event/post content into en/pt: i18n migration + schema fields + translate service + admin TranslationSection (collapsible, source-locale aware, only-missing) + web host translation panel + locale-aware SEO. Shipped via #1581 (core), #1623 (admin endpoint + UX/direction + host panel), #1652 (SEO i18n)."
+        },
+        {
+            "specId": "SPEC-236",
+            "title": "Reduce apps/api per-file test cold-import overhead (~9% suite speedup)",
+            "type": "improvement",
+            "status": "draft",
+            "complexity": "medium",
+            "path": "SPEC-236-api-test-cold-import-perf",
+            "base": "staging",
+            "priority": "P3",
+            "created": "2026-06-15T00:00:00Z",
+            "tags": ["ci", "testing", "vitest", "performance", "api", "infrastructure"],
+            "archived": false,
+            "note": "B2 lever extracted from SPEC-188 (~9% api test speedup via service-core mock + Sentry mock + shared vitest config). Reference impl on deleted branch spec/SPEC-188-vitest-test-performance (tip 9825dd9ff, perf commit d6c023179) was 1760 commits behind; re-implement fresh on staging, do NOT cherry-pick (stale service-core mock). Drafted 2026-06-15."
         }
     ]
 }

@@ -1,0 +1,12 @@
+{
+    "specId": "SPEC-236",
+    "title": "Reduce apps/api per-file test cold-import overhead (~9% suite speedup)",
+    "type": "improvement",
+    "complexity": "medium",
+    "status": "draft",
+    "created": "2026-06-15T00:00:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["ci", "testing", "vitest", "performance", "api", "infrastructure"]
+}

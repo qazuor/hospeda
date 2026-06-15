@@ -548,6 +548,13 @@
             "archived": true,
             "archivedAt": "2026-06-15",
             "archiveNote": "Renumbered from SPEC-212 (collision with SPEC-212-conversational-ai-search). Shipped via PRs #1581 + #1623 + #1652 merged to staging; full browser smoke (admin + web host happy-path) + curl SEO verification passed. No formal .qtm/tasks breakdown existed (spec was draft); delivered directly."
+        },
+        {
+            "specId": "SPEC-236",
+            "title": "Reduce apps/api per-file test cold-import overhead (~9% suite speedup)",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-236-api-test-cold-import-perf"
         }
     ],
     "standalone": {
