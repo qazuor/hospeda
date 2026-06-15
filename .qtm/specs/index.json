@@ -2,6 +2,18 @@
     "version": "1.0",
     "specs": [
         {
+            "specId": "SPEC-236",
+            "title": "Coverage ratchet-up — restore per-package thresholds to the 90% target",
+            "type": "chore",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-236-coverage-ratchet-up",
+            "created": "2026-06-15T00:00:00.000Z",
+            "base": "staging",
+            "origin": "Surfaced after PR #1658 fixed the vitest sortSpecs crash that had masked the broken coverage gate; thresholds recalibrated to current floors as interim",
+            "tags": ["ci", "coverage", "tests", "quality", "tech-debt"]
+        },
+        {
             "specId": "SPEC-230",
             "title": "Soft-delete filtering in the service list() path — make BaseCrudService.list exclude soft-deleted rows by default so protected list endpoints stop returning deleted records",
             "type": "fix",
