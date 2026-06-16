@@ -50,7 +50,7 @@ describe('DestinationClimateCard.astro', () => {
 
     describe('rendering', () => {
         it('should render the card title via t()', () => {
-            expect(src).toContain("t('destination.climate.title'");
+            expect(src).toContain("t('destinations.climate.title'");
         });
 
         it('should wire DestinationWeatherIsland with client:idle', () => {
