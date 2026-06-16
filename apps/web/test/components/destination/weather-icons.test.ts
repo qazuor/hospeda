@@ -69,12 +69,12 @@ describe('getWeatherConditionKey', () => {
     it('should return an i18n key for every condition', () => {
         for (const condition of ALL_CONDITIONS) {
             const key = getWeatherConditionKey(condition);
-            expect(key).toBe(`destination.weather.conditions.${condition}`);
+            expect(key).toBe(`destinations.weather.conditions.${condition}`);
         }
     });
 
     it('should handle unknown strings gracefully', () => {
         const key = getWeatherConditionKey('not-a-condition');
-        expect(key).toBe('destination.weather.conditions.not-a-condition');
+        expect(key).toBe('destinations.weather.conditions.not-a-condition');
     });
 });
