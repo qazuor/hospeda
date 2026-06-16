@@ -123,7 +123,7 @@
             "id": "T-005",
             "title": "Root layout: role-gated navigator (tourist vs host), session restore on cold launch",
             "description": "app/_layout.tsx: on session load, read user.role and route to (tourist) or (host). Restore existing session from secure store on cold launch without re-login. Users with multiple roles see a role-switcher (Sub-4). Unauthenticated \u2192 (auth).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-004"],
             "blocks": [],
@@ -131,13 +131,16 @@
             "tags": ["auth", "navigation", "expo-router"],
             "phase": "auth",
             "qualityGate": {
-                "lint": "pending",
-                "typecheck": "pending",
-                "tests": "pending"
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
-                "created": "2026-06-15T00:00:00.000Z"
-            }
+                "created": "2026-06-15T00:00:00.000Z",
+                "started": "2026-06-16T00:00:00.000Z",
+                "completed": "2026-06-16T00:00:00.000Z"
+            },
+            "note": "Role-gated root layout: useSession() gate in app/_layout.tsx (effect-based useSegments + router.replace \u2014 handles cold-launch, post-sign-in, post-sign-out). Splash held until !isPending. Owner-locked mapping in src/lib/auth/roles.ts: host={HOST,ADMIN,SUPER_ADMIN}, everyone else authenticated (USER/EDITOR/CLIENT_MANAGER/SPONSOR/unknown)->tourist, no session->auth (DIVERGES from web isHostRole which includes EDITOR/CLIENT_MANAGER \u2014 documented). Placeholder (tourist)/(host) groups with Sign Out. role.role accessed via documented cast (BA client doesn't infer additionalFields). KNOWN LIMITATION: no group-level guard (a deep-link into the wrong group isn't bounced) \u2014 deferred to Sub-1 when real screens exist. 27 unit tests for roles.ts. Verified green: typecheck/lint(42 files)/test(98)/build(ios+android) exit 0. DEVICE-GATED (owner): live session-restore/redirect on simulator (T-003 gate)."
         },
         {
             "id": "T-006",
@@ -339,9 +342,9 @@
     ],
     "summary": {
         "total": 13,
-        "pending": 3,
+        "pending": 2,
         "inProgress": 0,
-        "completed": 10,
+        "completed": 11,
         "blocked": 0,
         "averageComplexity": 1.9
     }
