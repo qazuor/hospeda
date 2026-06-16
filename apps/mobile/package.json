@@ -31,10 +31,12 @@
         "expo-splash-screen": "~56.0.10",
         "expo-status-bar": "~56.0.4",
         "expo-web-browser": "~56.0.5",
+        "phosphor-react-native": "^3.0.6",
         "react": "19.2.3",
         "react-native": "0.85.3",
         "react-native-safe-area-context": "^5.7.0",
-        "react-native-screens": "~4.25.2"
+        "react-native-screens": "~4.25.2",
+        "react-native-svg": "15.15.4"
     },
     "devDependencies": {
         "@biomejs/biome": "1.9.4",

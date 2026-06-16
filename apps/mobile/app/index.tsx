@@ -1,5 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View } from 'react-native';
+import { HouseIcon, ICON_DEFAULTS } from '../src/components/icons';
 import { theme } from '../src/design';
 import { appDefaultLocale, getTranslation, supportedLocales } from '../src/lib/i18n';
 
@@ -19,6 +20,10 @@ import { appDefaultLocale, getTranslation, supportedLocales } from '../src/lib/i
  *
  * T-002: imports from src/lib/i18n to force Metro to bundle @repo/i18n and
  * @repo/schemas, confirming workspace package resolution works correctly.
+ *
+ * T-008: imports `HouseIcon` from the icon wrapper to force Metro to bundle
+ * `phosphor-react-native` + `react-native-svg`, verifying the icon layer
+ * (ADR-033 decision #2) resolves correctly at compile time.
  */
 export default function HomeScreen() {
     // T-002: exercise @repo/i18n via the lib helper (Metro resolution proof)
@@ -26,6 +31,13 @@ export default function HomeScreen() {
 
     return (
         <View style={styles.container}>
+            {/* T-008: icon wrapper proof-of-bundle — HouseIcon from phosphor-react-native */}
+            <HouseIcon
+                color={ICON_DEFAULTS.color}
+                size={ICON_DEFAULTS.size}
+                weight={ICON_DEFAULTS.weight}
+                style={styles.icon}
+            />
             <Text style={styles.title}>Hospeda</Text>
             <Text style={styles.subtitle}>Tu plataforma de alojamiento turístico</Text>
             <Text style={styles.locale}>
@@ -37,6 +49,10 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+    // T-008: spacing below the brand icon before the title
+    icon: {
+        marginBottom: theme.spacing[3]
+    },
     container: {
         flex: 1,
         // semantic.background = '#ffffff'  (oklch(1 0 0) → sRGB white)
