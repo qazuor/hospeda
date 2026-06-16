@@ -1504,6 +1504,35 @@
         "summary": {
             "max": "El resumen no puede superar los {{max}} caracteres",
             "min": "El resumen debe tener al menos {{min}} caracteres"
+        },
+        "climate": {
+            "avgTempMinC": {
+                "int": "La temperatura mínima debe ser un número entero",
+                "min": "La temperatura mínima no puede ser menor a {{min}}°C",
+                "max": "La temperatura mínima no puede superar los {{max}}°C"
+            },
+            "avgTempMaxC": {
+                "int": "La temperatura máxima debe ser un número entero",
+                "min": "La temperatura máxima no puede ser menor a {{min}}°C",
+                "max": "La temperatura máxima no puede superar los {{max}}°C"
+            },
+            "rainfallMm": {
+                "int": "Las precipitaciones deben ser un número entero",
+                "min": "Las precipitaciones no pueden ser negativas",
+                "max": "Las precipitaciones no pueden superar los {{max}} mm"
+            },
+            "bestMonths": {
+                "min": "Los meses recomendados deben tener al menos {{min}} caracteres",
+                "max": "Los meses recomendados no pueden superar los {{max}} caracteres"
+            }
+        },
+        "weather": {
+            "date": {
+                "format": "El formato de la fecha no es válido"
+            },
+            "fetchedAt": {
+                "format": "El formato de la fecha de actualización no es válido"
+            }
         }
     },
     "destinationReview": {

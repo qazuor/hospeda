@@ -328,9 +328,7 @@ export class DestinationService extends BaseCrudService<
             maxAccommodations,
             minRating,
             tags,
-            hasAttractions,
-            climate,
-            bestSeason
+            hasAttractions
         } = params;
 
         const unimplemented: Record<string, unknown> = {};
@@ -342,8 +340,6 @@ export class DestinationService extends BaseCrudService<
         if (minRating !== undefined) unimplemented.minRating = minRating;
         if (tags !== undefined) unimplemented.tags = tags;
         if (hasAttractions !== undefined) unimplemented.hasAttractions = hasAttractions;
-        if (climate !== undefined) unimplemented.climate = climate;
-        if (bestSeason !== undefined) unimplemented.bestSeason = bestSeason;
 
         if (Object.keys(unimplemented).length > 0) {
             this.logger.warn(

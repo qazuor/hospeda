@@ -2,6 +2,7 @@ import type { useTranslations } from '@repo/i18n';
 import type { ConsolidatedEntityConfig } from '../types/consolidated-config.types';
 import {
     createBasicInfoConsolidatedSection,
+    createClimateConsolidatedSection,
     createLocationConsolidatedSection,
     createMediaConsolidatedSection,
     createStatesModerationConsolidatedSection,
@@ -21,6 +22,7 @@ export const createDestinationConsolidatedConfig = (
         sections: [
             createBasicInfoConsolidatedSection(),
             createLocationConsolidatedSection(),
+            createClimateConsolidatedSection(),
             createMediaConsolidatedSection(),
             createStatesModerationConsolidatedSection(),
             createStatisticsConsolidatedSection()

@@ -1195,7 +1195,7 @@
             "title": "Destination climate & live weather",
             "type": "feature",
             "complexity": "high",
-            "status": "approved",
+            "status": "in-progress",
             "path": "SPEC-215-destination-climate-weather",
             "created": "2026-06-10T22:05:00Z",
             "tags": ["destinations", "weather", "climate", "web", "admin", "cron"],
