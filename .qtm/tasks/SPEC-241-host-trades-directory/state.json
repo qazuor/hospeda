@@ -499,101 +499,101 @@
             "id": "T-014",
             "title": "Create Astro page directorio-proveedores (SSR + empty states)",
             "description": "Create apps/web/src/pages/[lang]/mi-cuenta/directorio-proveedores/index.astro: SSR session check (redirect to login if unauthenticated), internal fetch of GET /api/v1/protected/host-trades with session cookie, pass trades array (or empty) to the React island. Handle two empty states (no accommodations vs no trades for destinations). Tourist/non-host -> access-denied state. Follows existing /mi-cuenta sub-page pattern.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-004", "T-012"],
             "blocks": ["T-015"],
             "subtasks": [
                 {
                     "title": "SSR auth check + login redirect",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Fetch protected endpoint with session cookie",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Pass data to island + handle empty/denied states",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "astro"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T23:39:47.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T14:52:15.000Z",
+                "completed": "2026-06-16T15:08:07.000Z"
             }
         },
         {
             "id": "T-015",
             "title": "Create TradesDirectory React island + TradeCard (CSS Modules)",
             "description": "Create apps/web TradesDirectory.client.tsx (client:idle): category filter bar (pill buttons, i18n labels, 'Todos' resets, client-side filtering, empty state per selected category) + card grid. TradeCard shows name, category badge (i18n), contact link (generic 'Contactar', tel:/wa.me as applicable), benefit text, is24h badge, scheduleText. Styling via TradesDirectory.module.css + TradeCard.module.css + design tokens (no Tailwind). i18n via createTranslations. AC-1.5: group trades by category and sort the category groups alphabetically by their localized i18n label (client-side); the server order is only a stable name-ASC default.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-004", "T-014"],
             "blocks": ["T-016"],
             "subtasks": [
                 {
                     "title": "Category filter bar (pills, client-side filter, Todos reset)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "TradeCard component (badge, contact, benefit, is24h, schedule)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "CSS Modules + design tokens, i18n labels",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "react", "ui"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T23:39:47.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T14:52:15.000Z",
+                "completed": "2026-06-16T15:08:07.000Z"
             }
         },
         {
             "id": "T-016",
             "title": "Component tests for TradesDirectory + TradeCard",
             "description": "Write vitest + testing-library component tests for TradesDirectory (category filtering behavior, 'Todos' reset, empty state per category) and TradeCard (renders all fields, is24h badge conditional, scheduleText conditional, contact link).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-015"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "TradesDirectory filter/reset/empty tests",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "TradeCard field-render + conditional tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "testing"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T23:39:47.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T14:52:15.000Z",
+                "completed": "2026-06-16T15:08:07.000Z"
             }
         },
         {
@@ -700,9 +700,9 @@
     ],
     "summary": {
         "total": 19,
-        "pending": 6,
+        "pending": 3,
         "inProgress": 0,
-        "completed": 13,
+        "completed": 16,
         "blocked": 0,
         "averageComplexity": 1.6
     }
