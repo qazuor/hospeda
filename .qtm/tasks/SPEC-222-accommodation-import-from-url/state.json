@@ -943,39 +943,39 @@
             "id": "T-026",
             "title": "Admin: import-from-url section in consolidated edit form",
             "description": "New import-from-url.section.ts wired into accommodation-consolidated.config.ts (Tailwind). TanStack Query mutation → endpoint; legal checkbox gate; on success form.setFieldValue per returned field with confidence badges; request validated via AccommodationImportRequestSchema.safeParse. Admin component test: setFieldValue per field; no save; checkbox gate. [REVIEW NOTE (T-004/005): apps/admin AiFeatureId union + FEATURE_LABELS + the 3 ALL_FEATURES arrays in routes/_authed/ai/{prompts,playground,settings}.tsx are hand-maintained and still 5-member; add accommodation_import here so the feature is manageable in the admin AI settings UI.]",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-020"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Section config + wire into consolidated",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "TanStack mutation + form.setFieldValue",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Confidence badges + checkbox gate",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Admin component test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T22:40:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T16:15:00.000Z",
+                "completed": "2026-06-16T16:35:00.000Z"
             }
         },
         {
@@ -1047,9 +1047,9 @@
     ],
     "summary": {
         "total": 28,
-        "pending": 3,
+        "pending": 2,
         "inProgress": 0,
-        "completed": 25,
+        "completed": 26,
         "blocked": 0,
         "averageComplexity": 2.5
     }
