@@ -1051,12 +1051,13 @@
             "title": "Host Analytics & KPIs — Business Dashboard in Web",
             "type": "epic",
             "complexity": "high",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-207-host-analytics-kpis",
             "created": "2026-06-07T00:00:00.000Z",
-            "archived": false,
+            "archived": true,
+            "archivedAt": "2026-06-15T00:00:00.000Z",
             "tags": ["web", "host", "analytics", "kpis", "dashboard", "api", "metrics"],
-            "note": "Phase 3 host migration. Dashboard + 5 analytics widgets built (#1504/#1621). Fase A (views daily-series chart) + Fase B (favorites redesign) IMPLEMENTED + Fase C local browser smoke PASSED (host-pro, owner-pro, test-control + seeded data: chart/toggle/favorites/gating all OK) on branch spec/SPEC-207-analytics-completion (PR #1678). Smoke also found+fixed an unrelated bug: market-comparison 403'd for all real hosts (getHostMarketComparison gated on VIEW_ALL removed by SPEC-169 → changed to VIEW_OWN + test). REMAINING: owner review/merge of #1678; optional staging smoke post-merge (not a blocker — no MP path touched)."
+            "note": "DONE — merged to staging via PR #1678 (ee0192a35). Fase A (views daily-series chart) + Fase B (favorites redesign) + market-comparison VIEW_OWN fix; local browser smoke PASSED (host-pro/owner-pro, test-control + seeded data). Note: #1678 merged at commit 59071499f BEFORE the i18n keys for HostViewDailySeries landed, so a follow-up PR (fix/SPEC-207-i18n-hostdailyseries) adds the 4 missing zodError translations to keep the i18n guard green on staging. Security CI red on #1678 was vite advisories published 2026-06-15 (not from this work)."
         },
         {
             "specId": "SPEC-208",
