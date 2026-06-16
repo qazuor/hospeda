@@ -37,6 +37,7 @@ import { isGuestActor } from '../../utils/actor';
 import { createRouter } from '../../utils/create-app';
 import { apiLogger } from '../../utils/logger';
 import { addonsRouter } from './addons';
+import { downgradePreviewRouter } from './downgrade-preview';
 import { planChangeRouter } from './plan-change';
 import { userPromoCodesRouter } from './promo-codes';
 import { startPaidRouter } from './start-paid';
@@ -225,6 +226,10 @@ export function createBillingRoutesHandler(): AppOpenAPI {
 
     // Mount custom plan change routes
     router.route('/subscriptions', planChangeRouter);
+
+    // Mount read-only downgrade preview endpoint (SPEC-203 UI contract).
+    // No idempotency-key middleware — this is a safe GET; no mutation performed.
+    router.route('/subscriptions', downgradePreviewRouter);
 
     // Mount custom subscription status polling routes (SPEC-126 D2).
     // Sits on the same `/subscriptions` prefix as plan-change because both
