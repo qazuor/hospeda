@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { DestinationUpdateInputSchema } from '../../../src/entities/destination/destination.crud.schema.js';
 import {
     ClimateSeasonEnum,
     DestinationClimateSchema,
@@ -62,5 +63,24 @@ describe('DestinationClimateSchema', () => {
 
     it('exposes exactly the four seasons in the enum', () => {
         expect(ClimateSeasonEnum.options).toEqual(['spring', 'summer', 'autumn', 'winter']);
+    });
+});
+
+describe('destination CRUD accepts climate (SPEC-215 T-006)', () => {
+    const validClimate = {
+        bestSeason: 'spring' as const,
+        seasons: { spring: { avgTempMinC: 13, avgTempMaxC: 24, rainfallMm: 220 } }
+    };
+
+    it('update input accepts a climate object', () => {
+        const result = DestinationUpdateInputSchema.safeParse({ climate: validClimate });
+        expect(result.success).toBe(true);
+    });
+
+    it('update input rejects an invalid climate object', () => {
+        const result = DestinationUpdateInputSchema.safeParse({
+            climate: { bestSeason: 'monsoon', seasons: {} }
+        });
+        expect(result.success).toBe(false);
     });
 });
