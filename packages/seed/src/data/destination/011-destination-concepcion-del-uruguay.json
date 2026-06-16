@@ -418,5 +418,36 @@
     ],
     "visibility": "PUBLIC",
     "accommodationsCount": 0,
-    "lifecycleState": "ACTIVE"
+    "lifecycleState": "ACTIVE",
+    "climate": {
+        "bestSeason": "spring",
+        "bestMonths": "Sep–Nov",
+        "seasons": {
+            "spring": {
+                "avgTempMinC": 13,
+                "avgTempMaxC": 24,
+                "rainfallMm": 223
+            },
+            "summer": {
+                "avgTempMinC": 20,
+                "avgTempMaxC": 30,
+                "rainfallMm": 327
+            },
+            "autumn": {
+                "avgTempMinC": 15,
+                "avgTempMaxC": 23,
+                "rainfallMm": 284
+            },
+            "winter": {
+                "avgTempMinC": 8,
+                "avgTempMaxC": 17,
+                "rainfallMm": 144
+            }
+        },
+        "note": {
+            "es": "Clima templado subtropical húmedo. La primavera y el otoño ofrecen las temperaturas más agradables para visitar.",
+            "en": "Humid subtropical climate. Spring and autumn offer the most pleasant temperatures to visit.",
+            "pt": "Clima subtropical úmido. Primavera e outono oferecem as temperaturas mais agradáveis para visitar."
+        }
+    }
 }
