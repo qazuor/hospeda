@@ -1,4 +1,3 @@
-import path from 'node:path';
 import { TagService } from '@repo/service-core';
 import exampleManifest from '../manifest-example.json';
 import type { SeedContext } from '../utils/seedContext.js';
@@ -33,7 +32,7 @@ const getTagInfo = (item: unknown, _context: SeedContext) => {
 export const seedTags = createSeedFactory({
     entityName: 'Tags',
     serviceClass: TagService,
-    folder: path.resolve('src/data/tag'),
+    folder: 'src/data/tag',
     files: exampleManifest.tags,
     normalizer: tagNormalizer,
     getEntityInfo: getTagInfo

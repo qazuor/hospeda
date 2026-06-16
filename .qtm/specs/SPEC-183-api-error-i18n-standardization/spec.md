@@ -2,7 +2,7 @@
 specId: SPEC-183
 title: API Error i18n Standardization
 type: refactor
-status: in-progress
+status: approved
 complexity: medium
 owner: qazuor
 created: 2026-06-02

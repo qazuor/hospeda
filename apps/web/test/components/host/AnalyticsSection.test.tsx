@@ -4,9 +4,9 @@
  * entitlement gating, parallel data fetching, and renders the wired analytics
  * widgets or a locked state.
  *
- * SPEC-207 status: Views widget is now mounted (per-property ranked list,
- * cumulative counts). Only the daily-series chart variant and Favorites remain
- * deferred to SPEC-207.
+ * SPEC-207 Fase A: daily-series endpoint is now fetched alongside getViews.
+ * Both are gated by view_basic_stats and re-fetched on window toggle.
+ * Favorites widget remains gated by view_advanced_stats (SPEC-207 Fase B).
  */
 
 import { render, screen } from '@testing-library/react';
@@ -33,6 +33,8 @@ const mockGetInquiryTrend = vi.fn();
 const mockGetMarketComparison = vi.fn();
 const mockGetViews = vi.fn();
 const mockListOwnAccommodations = vi.fn();
+const mockGetFavoritesBreakdown = vi.fn();
+const mockGetViewsDailySeries = vi.fn();
 
 vi.mock('@/lib/api/endpoints-protected', () => ({
     get billingApi() {
@@ -44,7 +46,9 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
             getInquiryTrend: mockGetInquiryTrend,
             getMarketComparison: mockGetMarketComparison,
             getViews: mockGetViews,
-            listOwnAccommodations: mockListOwnAccommodations
+            listOwnAccommodations: mockListOwnAccommodations,
+            getFavoritesBreakdown: mockGetFavoritesBreakdown,
+            getViewsDailySeries: mockGetViewsDailySeries
         };
     }
 }));
@@ -67,6 +71,20 @@ function stubWiredEndpoints(): void {
     mockListOwnAccommodations.mockResolvedValue({
         ok: true,
         data: { items: [{ id: 'a1', name: 'Casa Uno' }] }
+    });
+    mockGetFavoritesBreakdown.mockResolvedValue({
+        ok: true,
+        data: [{ accommodationId: 'a1', slug: 'casa-uno', bookmarkCount: 7 }]
+    });
+    mockGetViewsDailySeries.mockResolvedValue({
+        ok: true,
+        data: {
+            window: '30d',
+            items: [
+                { date: '2026-05-17', total: 3 },
+                { date: '2026-05-18', total: 0 }
+            ]
+        }
     });
 }
 
@@ -107,8 +125,8 @@ describe('AnalyticsSection', () => {
 
         render(<AnalyticsSection locale="es" />);
 
-        // Views widget is now first — it shows the accommodation name
-        expect(await screen.findByText('Casa Uno')).toBeInTheDocument();
+        // Views widget and Favorites widget both show the accommodation name (appears twice now)
+        expect((await screen.findAllByText('Casa Uno')).length).toBeGreaterThanOrEqual(1);
         expect((await screen.findAllByText(/Tiempo de respuesta/i)).length).toBeGreaterThanOrEqual(
             1
         );
@@ -139,7 +157,7 @@ describe('AnalyticsSection', () => {
         expect(mockGetMarketComparison).not.toHaveBeenCalled();
     });
 
-    it('mounts the Views widget and keeps Favorites deferred (SPEC-207)', async () => {
+    it('mounts both Views and Favorites widgets when view_advanced_stats is present (SPEC-207)', async () => {
         mockGetEntitlements.mockResolvedValue({
             ok: true,
             data: {
@@ -155,8 +173,32 @@ describe('AnalyticsSection', () => {
 
         // Views widget is mounted — the title should be visible
         expect(await screen.findByText(/Vistas/i)).toBeInTheDocument();
-        // Favorites is still deferred
+        // Favorites is now mounted too (SPEC-207 Fase B)
+        expect(await screen.findByText(/Favoritos/i)).toBeInTheDocument();
+        // The favorites API was called
+        expect(mockGetFavoritesBreakdown).toHaveBeenCalled();
+    });
+
+    it('hides Favorites widget and does not call getFavoritesBreakdown when view_advanced_stats is absent', async () => {
+        mockGetEntitlements.mockResolvedValue({
+            ok: true,
+            data: {
+                entitlements: ['view_basic_stats'],
+                limits: {},
+                plan: { slug: 'owner-basico', name: 'Owner Básico', status: 'active' },
+                asOf: '2026-01-01'
+            }
+        });
+        stubWiredEndpoints();
+
+        render(<AnalyticsSection locale="es" />);
+
+        // Basic widgets render…
+        await screen.findAllByText(/Tiempo de respuesta/i);
+        // …and the favorites widget is not rendered
         expect(screen.queryByText(/Favoritos/i)).not.toBeInTheDocument();
+        // …and the endpoint was never called
+        expect(mockGetFavoritesBreakdown).not.toHaveBeenCalled();
     });
 
     it('shows section title when entitlement is present', async () => {
@@ -175,5 +217,77 @@ describe('AnalyticsSection', () => {
 
         const sectionTitle = await screen.findByText(/Estadísticas/i);
         expect(sectionTitle).toBeInTheDocument();
+    });
+
+    // ── SPEC-207 Fase A: daily-series fetch ─────────────────────────────
+
+    it('calls getViewsDailySeries on mount when view_basic_stats is present', async () => {
+        mockGetEntitlements.mockResolvedValue({
+            ok: true,
+            data: {
+                entitlements: ['view_basic_stats'],
+                limits: {},
+                plan: { slug: 'owner-basico', name: 'Owner Básico', status: 'active' },
+                asOf: '2026-01-01'
+            }
+        });
+        stubWiredEndpoints();
+
+        render(<AnalyticsSection locale="es" />);
+        await screen.findAllByText(/Tiempo de respuesta/i);
+
+        expect(mockGetViewsDailySeries).toHaveBeenCalledOnce();
+        expect(mockGetViewsDailySeries).toHaveBeenCalledWith({ window: '30d' });
+    });
+
+    it('does NOT call getViewsDailySeries when view_basic_stats is absent', async () => {
+        mockGetEntitlements.mockResolvedValue({
+            ok: true,
+            data: { entitlements: [], limits: {}, plan: null, asOf: '2026-01-01' }
+        });
+
+        render(<AnalyticsSection locale="es" />);
+        await screen.findByText(/Estadísticas disponibles/i);
+
+        expect(mockGetViewsDailySeries).not.toHaveBeenCalled();
+    });
+
+    it('passes dailySeries data to ViewsWidget (smoke: Views title visible)', async () => {
+        mockGetEntitlements.mockResolvedValue({
+            ok: true,
+            data: {
+                entitlements: ['view_basic_stats'],
+                limits: {},
+                plan: { slug: 'owner-basico', name: 'Owner Básico', status: 'active' },
+                asOf: '2026-01-01'
+            }
+        });
+        stubWiredEndpoints();
+
+        render(<AnalyticsSection locale="es" />);
+
+        // Views widget renders (the daily-series is wired internally in ViewsWidget)
+        expect(await screen.findByText(/Vistas/i)).toBeInTheDocument();
+        expect(mockGetViewsDailySeries).toHaveBeenCalled();
+    });
+
+    it('favorites tests still pass: favorites API called with advanced stats', async () => {
+        mockGetEntitlements.mockResolvedValue({
+            ok: true,
+            data: {
+                entitlements: ['view_basic_stats', 'view_advanced_stats'],
+                limits: {},
+                plan: { slug: 'owner-pro', name: 'Owner Pro', status: 'active' },
+                asOf: '2026-01-01'
+            }
+        });
+        stubWiredEndpoints();
+
+        render(<AnalyticsSection locale="es" />);
+
+        await screen.findByText(/Favoritos/i);
+        expect(mockGetFavoritesBreakdown).toHaveBeenCalled();
+        // Daily series also called
+        expect(mockGetViewsDailySeries).toHaveBeenCalled();
     });
 });

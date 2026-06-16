@@ -1,6 +1,9 @@
 import { EventModel } from '@repo/db';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { generateEventSlug } from '../../../src/services/event/event.helpers';
+import {
+    buildEventPriceConditions,
+    generateEventSlug
+} from '../../../src/services/event/event.helpers';
 
 /**
  * Test suite for generateEventSlug helper in EventService.
@@ -52,5 +55,55 @@ describe('generateEventSlug (EventService)', () => {
     it('throws if model throws', async () => {
         findOneMock.mockRejectedValue(new Error('DB error'));
         await expect(generateEventSlug('error', 'Name', '2024-01-01')).rejects.toThrow('DB error');
+    });
+});
+
+describe('buildEventPriceConditions', () => {
+    it('should return empty array when no filters are provided', () => {
+        const result = buildEventPriceConditions({});
+        expect(result).toEqual([]);
+    });
+
+    it('should return isFree condition when isFree is provided', () => {
+        const result = buildEventPriceConditions({ isFree: true });
+        expect(result).toHaveLength(1);
+    });
+
+    it('should return minPrice condition when minPrice is provided', () => {
+        const result = buildEventPriceConditions({ minPrice: 100 });
+        expect(result).toHaveLength(1);
+    });
+
+    it('should return maxPrice condition when maxPrice is provided', () => {
+        const result = buildEventPriceConditions({ maxPrice: 500 });
+        expect(result).toHaveLength(1);
+    });
+
+    it('should return price condition when price is provided', () => {
+        const result = buildEventPriceConditions({ price: 250 });
+        expect(result).toHaveLength(1);
+    });
+
+    it('should return currency condition when currency is provided', () => {
+        const result = buildEventPriceConditions({ currency: 'ARS' });
+        expect(result).toHaveLength(1);
+    });
+
+    it('should combine multiple conditions', () => {
+        const result = buildEventPriceConditions({ minPrice: 100, maxPrice: 500, currency: 'ARS' });
+        // Three separate conditions without includeUnpriced
+        expect(result).toHaveLength(3);
+    });
+
+    it('should wrap with includeUnpriced OR clause when includeUnpriced=true and conditions exist', () => {
+        const result = buildEventPriceConditions({ minPrice: 100, includeUnpriced: true });
+        // Single OR clause wrapping the conditions
+        expect(result).toHaveLength(1);
+    });
+
+    it('should ignore includeUnpriced when no price conditions are active', () => {
+        const result = buildEventPriceConditions({ includeUnpriced: true });
+        // No other filters → includeUnpriced has no effect
+        expect(result).toHaveLength(0);
     });
 });

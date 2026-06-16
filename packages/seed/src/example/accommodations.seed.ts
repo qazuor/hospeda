@@ -1,4 +1,3 @@
-import path from 'node:path';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { AccommodationService, AmenityService, FeatureService } from '@repo/service-core/index.js';
 import exampleManifest from '../manifest-example.json';
@@ -145,7 +144,7 @@ const getAccommodationInfo = (item: unknown) => {
 export const seedAccommodations = createSeedFactory({
     entityName: 'Accommodations',
     serviceClass: AccommodationService,
-    folder: path.resolve('src/data/accommodation'),
+    folder: 'src/data/accommodation',
     files: exampleManifest.accommodations,
     normalizer: accommodationNormalizer,
     preProcess: preProcessAccommodation,

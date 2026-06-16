@@ -6,16 +6,19 @@
  * `getActorFromContext`; no caller-supplied owner IDs are accepted.
  *
  * Routes registered here:
- *   GET /accommodations/me   — host's own accommodation view stats (T-009)
- *   GET /posts               — editor view stats for a batch of POSTs (T-010)
- *   GET /events              — editor view stats for a batch of EVENTs (T-010)
+ *   GET /accommodations/me             — host's own accommodation view stats (T-009)
+ *   GET /accommodations/me/daily-series — host's own daily view-count series (SPEC-207)
+ *   GET /posts                         — editor view stats for a batch of POSTs (T-010)
+ *   GET /events                        — editor view stats for a batch of EVENTs (T-010)
  *
  * @module routes/views/protected
  * @see SPEC-159 T-009, T-010
+ * @see SPEC-207 §4.1
  */
 
 import { createRouter } from '../../../utils/create-app';
 import { hostAccommodationViewStatsRoute } from './accommodations-me';
+import { hostAccommodationDailySeriesRoute } from './daily-series';
 import { eventViewStatsRoute } from './events';
 import { postViewStatsRoute } from './posts';
 
@@ -24,6 +27,10 @@ const app = createRouter();
 // T-009: host's own accommodation view stats
 // Path: GET /accommodations/me — declared as /accommodations/me in the route file
 app.route('/', hostAccommodationViewStatsRoute);
+
+// SPEC-207: host's own daily view-count series (trend chart)
+// Path: GET /accommodations/me/daily-series
+app.route('/', hostAccommodationDailySeriesRoute);
 
 // T-010: editor view stats for POSTs
 // Path: GET /posts

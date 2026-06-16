@@ -219,6 +219,32 @@ vi.mock('@repo/db/schemas', () => ({
     }
 }));
 
+// Mock Sentry (@sentry/node + @sentry/profiling-node) globally (SPEC-238).
+// The real packages load a native .node addon and run init machinery on import,
+// paid once per test file. Tests that assert on Sentry calls override these
+// per-file (vi.mock wins locally). startSpan must run its callback so any logic
+// wrapped in a span still executes; isEnabled returns false to mirror the
+// uninitialized test environment.
+vi.mock('@sentry/node', () => ({
+    init: vi.fn(),
+    captureException: vi.fn(),
+    captureMessage: vi.fn(),
+    addBreadcrumb: vi.fn(),
+    setUser: vi.fn(),
+    setTag: vi.fn(),
+    setContext: vi.fn(),
+    isEnabled: vi.fn().mockReturnValue(false),
+    flush: vi.fn().mockResolvedValue(true),
+    close: vi.fn().mockResolvedValue(true),
+    startSpan: vi.fn((_options: unknown, callback: (span?: unknown) => unknown) =>
+        callback(undefined)
+    )
+}));
+
+vi.mock('@sentry/profiling-node', () => ({
+    nodeProfilingIntegration: vi.fn(() => ({ name: 'ProfilingIntegration' }))
+}));
+
 // Mock @repo/service-core - service classes are imported from dedicated mock files.
 // Must be top-level to ensure hoisting before module imports.
 // Pure utility functions (no side effects) are passed through from the real module.
