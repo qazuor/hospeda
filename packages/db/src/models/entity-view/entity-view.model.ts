@@ -99,6 +99,42 @@ export interface GetDailySeriesInput {
 }
 
 /**
+ * Input to retrieve daily view-count totals restricted to a given set of
+ * accommodation IDs, summed across all of them per day (SPEC-207 §4.1).
+ *
+ * Unlike {@link GetDailySeriesInput} (which is platform-wide and grouped by
+ * entity type), this variant filters by an explicit IN-list of entity IDs and
+ * aggregates all matching rows into a single `total` per calendar day — not
+ * split by entity type.
+ */
+export interface GetDailySeriesForEntityIdsInput {
+    /**
+     * Rolling window in days (7 or 30). The model returns only days that have
+     * at least one view; gap-filling is a service concern.
+     */
+    readonly windowDays: number;
+    /**
+     * Array of accommodation UUIDs to filter by. Must not be empty; callers
+     * should skip this method when the owner has no accommodations and return
+     * an all-zero gap-filled series instead.
+     */
+    readonly entityIds: readonly string[];
+}
+
+/**
+ * One row of the per-host daily series result.
+ *
+ * Unlike {@link DailySeriesRow} this shape has no `entityType` field because
+ * the query aggregates across ALL of the host's accommodations per day.
+ */
+export interface HostDailySeriesRow {
+    /** Calendar date in 'YYYY-MM-DD' format. */
+    readonly date: string;
+    /** Deduplicated total visits across all owned accommodations for this day. */
+    readonly total: number;
+}
+
+/**
  * Input to retrieve platform-wide view totals grouped by entity type
  * without an IN-list filter. (SPEC-197 §4.1 method C)
  */
@@ -166,6 +202,16 @@ interface RawStatsRow extends Record<string, unknown> {
 interface RawDailySeriesRow extends Record<string, unknown> {
     date: string;
     entityType: string;
+    total: string | number;
+}
+
+/**
+ * Raw shape of one row returned by the `getDailySeriesForEntityIds` aggregation
+ * query. `date` is produced by `to_char`. `total` may come back as a string.
+ * No `entityType` column — the query aggregates across all entity IDs per day.
+ */
+interface RawHostDailySeriesRow extends Record<string, unknown> {
+    date: string;
     total: string | number;
 }
 
@@ -557,6 +603,111 @@ export class EntityViewModel {
                 logError('entityViews', 'getDailySeries', logContext, err);
             } catch {}
             throw new DbError('entityViews', 'getDailySeries', logContext, err.message);
+        }
+    }
+
+    /**
+     * Returns date-bucketed view totals restricted to a given set of entity IDs
+     * (accommodations), summed across ALL matching IDs per day.
+     *
+     * Unlike {@link getDailySeries} (platform-wide, grouped by entity type),
+     * this query filters by an explicit `entity_id IN (...)` clause and produces
+     * one row per calendar day with a single `total` count across all supplied
+     * IDs. Designed for the per-host daily-series chart (SPEC-207 §4.1).
+     *
+     * Only days that have at least one view in the window are returned — gap-filling
+     * (ensuring every calendar day in the window appears, even as 0) is a
+     * **service-layer concern** (`getDailySeriesForHostAccommodations`).
+     *
+     * Date strings in the result are always in `'YYYY-MM-DD'` format.
+     *
+     * **Window semantics:** `windowStart` is anchored to UTC midnight of the
+     * oldest calendar date in the range, matching the convention in
+     * {@link getDailySeries}.
+     *
+     * @param input - windowDays and entityIds (must be non-empty).
+     * @param tx - Optional transaction client.
+     * @returns Array of {@link HostDailySeriesRow} ordered by date ASC.
+     * @throws {DbError} If the database operation fails.
+     */
+    async getDailySeriesForEntityIds(
+        input: GetDailySeriesForEntityIdsInput,
+        tx?: DrizzleClient
+    ): Promise<HostDailySeriesRow[]> {
+        const { windowDays, entityIds } = input;
+
+        if (entityIds.length === 0) {
+            return [];
+        }
+
+        const db = this.getClient(tx);
+        const logContext = { windowDays, entityIdCount: entityIds.length };
+
+        try {
+            const nowUtc = new Date();
+            const todayUtc = new Date(
+                Date.UTC(nowUtc.getUTCFullYear(), nowUtc.getUTCMonth(), nowUtc.getUTCDate())
+            );
+            const windowStart = new Date(
+                todayUtc.getTime() - (windowDays - 1) * 24 * 60 * 60 * 1000
+            );
+
+            // Build the IN-list using Drizzle's sql tag — values are bound as
+            // parameterized placeholders, not interpolated strings.
+            const entityIdList = sql.join(
+                entityIds.map((id) => sql`${id}::uuid`),
+                sql`, `
+            );
+
+            /*
+             * SELECT
+             *   to_char(DATE_TRUNC('day', viewed_at), 'YYYY-MM-DD') AS "date",
+             *   COUNT(DISTINCT (visitor_hash, FLOOR(EXTRACT(EPOCH FROM viewed_at) / 1800)))::int
+             *                                                        AS "total"
+             * FROM entity_views
+             * WHERE entity_type = 'ACCOMMODATION'::entity_type_enum
+             *   AND entity_id IN ($1, $2, …)
+             *   AND viewed_at >= $windowStart
+             * GROUP BY DATE_TRUNC('day', viewed_at)
+             * ORDER BY "date" ASC
+             */
+            const rows = await db.execute<RawHostDailySeriesRow>(sql`
+                SELECT
+                    to_char(DATE_TRUNC('day', viewed_at), 'YYYY-MM-DD') AS "date",
+                    COUNT(DISTINCT (
+                        visitor_hash,
+                        FLOOR(EXTRACT(EPOCH FROM viewed_at) / 1800)
+                    ))::int                                              AS "total"
+                FROM entity_views
+                WHERE entity_type = 'ACCOMMODATION'::entity_type_enum
+                  AND entity_id IN (${entityIdList})
+                  AND viewed_at >= ${windowStart}
+                GROUP BY DATE_TRUNC('day', viewed_at)
+                ORDER BY "date" ASC
+            `);
+
+            const rawRows: RawHostDailySeriesRow[] = Array.isArray(rows)
+                ? (rows as RawHostDailySeriesRow[])
+                : ((rows as { rows?: RawHostDailySeriesRow[] }).rows ?? []);
+
+            const series: HostDailySeriesRow[] = rawRows.map((row) => ({
+                date: row.date,
+                total: Number(row.total)
+            }));
+
+            try {
+                logQuery('entityViews', 'getDailySeriesForEntityIds', logContext, {
+                    rowCount: series.length
+                });
+            } catch {}
+
+            return series;
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            try {
+                logError('entityViews', 'getDailySeriesForEntityIds', logContext, err);
+            } catch {}
+            throw new DbError('entityViews', 'getDailySeriesForEntityIds', logContext, err.message);
         }
     }
 

@@ -2949,15 +2949,18 @@ export class AccommodationService extends BaseCrudService<
             schema: z.object({}),
             ctx,
             execute: async (_validated, validatedActor, execCtx) => {
-                // ACCOMMODATION_VIEW_ALL is the permission HOSTs hold on
-                // their own listing surface (see seed/role-permissions for
-                // HOST). The endpoint scopes results to ownerId = actor.id
-                // so this gate is about being able to read accommodation
-                // data at all, not about seeing other hosts' listings.
-                if (!validatedActor.permissions.includes(PermissionEnum.ACCOMMODATION_VIEW_ALL)) {
+                // ACCOMMODATION_VIEW_OWN is the permission HOSTs hold on their
+                // own listing surface since SPEC-169 (which removed the broad
+                // ACCOMMODATION_VIEW_ALL from HOST). The endpoint scopes results
+                // to ownerId = actor.id and the destination averages it returns
+                // are server-side aggregates (no other host's listing data is
+                // exposed), so VIEW_OWN is the correct gate — matching the other
+                // host analytics endpoints (views, favorites). Using VIEW_ALL
+                // here made the widget 403 for every real host.
+                if (!validatedActor.permissions.includes(PermissionEnum.ACCOMMODATION_VIEW_OWN)) {
                     throw new ServiceError(
                         ServiceErrorCode.FORBIDDEN,
-                        'Permission denied: ACCOMMODATION_VIEW_ALL required for market comparison'
+                        'Permission denied: ACCOMMODATION_VIEW_OWN required for market comparison'
                     );
                 }
                 return this.model.getMarketComparisonByOwnerId(validatedActor.id, execCtx?.tx);

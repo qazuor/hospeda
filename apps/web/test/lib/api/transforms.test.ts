@@ -12,8 +12,10 @@ import {
     toEventCardProps,
     toEventDetailProps,
     toTestimonialCardProps,
+    transformFavoritesBreakdown,
     transformOwnerPromotion,
-    transformOwnerPromotionList
+    transformOwnerPromotionList,
+    transformViewsDailySeries
 } from '../../../src/lib/api/transforms';
 
 describe('toAccommodationCardProps', () => {
@@ -1392,5 +1394,152 @@ describe('SPEC-212 locale-aware transform resolution', () => {
             });
             expect(result.name).toBe('Solo español');
         });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// transformFavoritesBreakdown
+// ---------------------------------------------------------------------------
+
+describe('transformFavoritesBreakdown', () => {
+    it('resolves accommodation name from the names map', () => {
+        const names = new Map([['acc-1', 'Casa del Río']]);
+        const result = transformFavoritesBreakdown({
+            favorites: [{ accommodationId: 'acc-1', slug: 'casa-del-rio', bookmarkCount: 10 }],
+            names
+        });
+        expect(result.items).toHaveLength(1);
+        expect(result.items[0].name).toBe('Casa del Río');
+        expect(result.items[0].accommodationId).toBe('acc-1');
+        expect(result.items[0].bookmarkCount).toBe(10);
+    });
+
+    it('falls back to slug when accommodation id is not in the names map', () => {
+        const names = new Map<string, string>();
+        const result = transformFavoritesBreakdown({
+            favorites: [
+                { accommodationId: 'acc-unknown', slug: 'mi-alojamiento', bookmarkCount: 5 }
+            ],
+            names
+        });
+        expect(result.items[0].name).toBe('mi-alojamiento');
+    });
+
+    it('sorts items by bookmarkCount descending', () => {
+        const names = new Map([
+            ['acc-1', 'Primero'],
+            ['acc-2', 'Segundo'],
+            ['acc-3', 'Tercero']
+        ]);
+        const result = transformFavoritesBreakdown({
+            favorites: [
+                { accommodationId: 'acc-1', slug: 'primero', bookmarkCount: 5 },
+                { accommodationId: 'acc-2', slug: 'segundo', bookmarkCount: 20 },
+                { accommodationId: 'acc-3', slug: 'tercero', bookmarkCount: 12 }
+            ],
+            names
+        });
+        expect(result.items[0].bookmarkCount).toBe(20);
+        expect(result.items[1].bookmarkCount).toBe(12);
+        expect(result.items[2].bookmarkCount).toBe(5);
+    });
+
+    it('returns empty items array when favorites is empty', () => {
+        const result = transformFavoritesBreakdown({
+            favorites: [],
+            names: new Map()
+        });
+        expect(result.items).toHaveLength(0);
+    });
+
+    it('handles missing bookmarkCount gracefully (defaults to 0)', () => {
+        const names = new Map([['acc-1', 'Test']]);
+        const result = transformFavoritesBreakdown({
+            favorites: [{ accommodationId: 'acc-1', slug: 'test' }],
+            names
+        });
+        expect(result.items[0].bookmarkCount).toBe(0);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// transformViewsDailySeries (SPEC-207 Fase A)
+// ---------------------------------------------------------------------------
+
+describe('transformViewsDailySeries', () => {
+    const mockSeries = {
+        window: '7d',
+        items: [
+            { date: '2026-06-09', total: 3 },
+            { date: '2026-06-10', total: 0 },
+            { date: '2026-06-11', total: 7 },
+            { date: '2026-06-12', total: 2 },
+            { date: '2026-06-13', total: 5 },
+            { date: '2026-06-14', total: 1 },
+            { date: '2026-06-15', total: 4 }
+        ]
+    };
+
+    it('returns correctly shaped HostViewDailySeriesData', () => {
+        const result = transformViewsDailySeries({ series: mockSeries });
+        expect(result.window).toBe('7d');
+        expect(result.items).toHaveLength(7);
+        expect(result.items[0]).toEqual({ date: '2026-06-09', total: 3 });
+        expect(result.items[1]).toEqual({ date: '2026-06-10', total: 0 });
+    });
+
+    it('preserves server chronological order (does NOT re-sort)', () => {
+        const reversed = {
+            window: '7d',
+            items: [
+                { date: '2026-06-15', total: 10 },
+                { date: '2026-06-14', total: 5 }
+            ]
+        };
+        const result = transformViewsDailySeries({ series: reversed });
+        // Items must remain in the original order — server is the authority on order
+        expect(result.items[0].date).toBe('2026-06-15');
+        expect(result.items[1].date).toBe('2026-06-14');
+    });
+
+    it('defaults window to "30d" when the wire value is unknown', () => {
+        const result = transformViewsDailySeries({ series: { window: 'unexpected', items: [] } });
+        expect(result.window).toBe('30d');
+    });
+
+    it('returns empty items array when items is missing', () => {
+        const result = transformViewsDailySeries({ series: { window: '30d' } });
+        expect(result.items).toHaveLength(0);
+    });
+
+    it('coerces non-number total to 0 defensively', () => {
+        const result = transformViewsDailySeries({
+            series: {
+                window: '7d',
+                items: [{ date: '2026-06-15', total: null }]
+            }
+        });
+        expect(result.items[0].total).toBe(0);
+    });
+
+    it('coerces missing date to empty string defensively', () => {
+        const result = transformViewsDailySeries({
+            series: {
+                window: '7d',
+                items: [{ total: 5 }]
+            }
+        });
+        expect(result.items[0].date).toBe('');
+        expect(result.items[0].total).toBe(5);
+    });
+
+    it('handles 30d window correctly', () => {
+        const items = Array.from({ length: 30 }, (_, i) => ({
+            date: `2026-05-${String(i + 1).padStart(2, '0')}`,
+            total: i
+        }));
+        const result = transformViewsDailySeries({ series: { window: '30d', items } });
+        expect(result.window).toBe('30d');
+        expect(result.items).toHaveLength(30);
     });
 });

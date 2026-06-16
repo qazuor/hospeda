@@ -108,15 +108,33 @@ export interface AccommodationViewsData {
     readonly items: readonly AccommodationViewsItem[];
 }
 
-/** A single collection's bookmark count */
-export interface FavoritesBreakdownItem {
-    readonly collection: string;
-    readonly count: number;
+/** A single data point in the daily view-count series (SPEC-207) */
+export interface HostViewDailySeriesPoint {
+    /** Calendar date in 'YYYY-MM-DD' format */
+    readonly date: string;
+    /** Deduplicated total visits across all owned accommodations for this day */
+    readonly total: number;
 }
 
-/** Favorites breakdown across all collections */
+/** Daily view-count series for the host (gap-filled, oldest → newest) */
+export interface HostViewDailySeriesData {
+    /** Rolling window echoed from the request: '7d' or '30d' */
+    readonly window: '7d' | '30d';
+    /** One entry per calendar day — exactly 7 or 30 items */
+    readonly items: readonly HostViewDailySeriesPoint[];
+}
+
+/** A single accommodation's bookmark count for the FavoritesWidget */
+export interface FavoritesBreakdownItem {
+    readonly accommodationId: string;
+    /** Display name (resolved from id→name map); falls back to slug when name is unknown */
+    readonly name: string;
+    readonly bookmarkCount: number;
+}
+
+/** Favorites breakdown per accommodation (ranked, desc by bookmarkCount) */
 export interface FavoritesBreakdownData {
-    readonly collections: readonly FavoritesBreakdownItem[];
+    readonly items: readonly FavoritesBreakdownItem[];
 }
 
 /** Response rate KPI data */
