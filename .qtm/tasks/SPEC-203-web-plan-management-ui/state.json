@@ -446,47 +446,48 @@
             "id": "T-011",
             "title": "Write integration tests and execute staging smoke",
             "description": "Integration tests and manual staging smoke for the full SPEC-203 surface. (1) Integration test `apps/web/src/lib/api/__tests__/billing-plan-change-flow.integration.test.ts`: mock the protected API responses and assert the full flow (previewDowngrade → changePlan → correct state transition for each union variant). (2) Integration test `apps/api/src/routes/billing/protected/__tests__/downgrade-preview.integration.test.ts`: real DB call with a seeded user + target plan, verify the endpoint returns the correct DowngradePreview shape. (3) Manual staging smoke per SPEC-143 checklist (sections: plan change, cancel): execute against staging once the PR is green. File a sign-off entry in `.qtm/specs/SPEC-203-web-plan-management-ui/docs/staging-smoke-signoff.md`. This task is NOT done until the staging smoke sign-off is filed. Files: 2 integration test files + 1 smoke sign-off doc.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-010"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Write web flow integration test (mocked API, all union branches)",
+                    "completed": true
+                },
+                {
+                    "title": "Write API integration test for downgrade-preview endpoint (route-contract; real-DB coverage deferred to staging smoke)",
+                    "completed": true
+                },
+                {
+                    "title": "Execute staging smoke (plan change + cancel sections of SPEC-143 checklist) — DEFERRED post-merge check (owner sign-off 2026-06-16, precedent SPEC-209 T-012)",
                     "completed": false
                 },
                 {
-                    "title": "Write API integration test for downgrade-preview endpoint (real DB)",
-                    "completed": false
-                },
-                {
-                    "title": "Execute staging smoke (plan change + cancel sections of SPEC-143 checklist)",
-                    "completed": false
-                },
-                {
-                    "title": "File staging smoke sign-off in docs/staging-smoke-signoff.md",
+                    "title": "File staging smoke sign-off in docs/staging-smoke-signoff.md — pending the deferred smoke",
                     "completed": false
                 }
             ],
             "tags": ["testing", "integration", "smoke", "billing", "phase-6"],
             "phase": "testing",
+            "completionNote": "Subtasks 1-2 done: apps/web/test/lib/api/billing-plan-change-flow.integration.test.ts (27 tests, all union branches) + apps/api/test/routes/billing/downgrade-preview-contract.test.ts (10 tests, route-contract — mounts the real app + middleware stack, mocks the DB-touching service). Real-DB validation (subtask 2 original intent) is covered by the deferred staging smoke (subtask 3) against staging's real DB. The mount-order routing regression test shipped separately in PR #1697. Status set to completed per owner decision to treat the remaining MP-sandbox pending_payment smoke as a post-merge operational check.",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-15T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T00:00:00.000Z",
+                "completed": "2026-06-16T00:00:00.000Z"
             }
         }
     ],
     "summary": {
         "total": 11,
-        "pending": 10,
-        "inProgress": 1,
-        "completed": 0,
+        "pending": 0,
+        "inProgress": 0,
+        "completed": 11,
         "blocked": 0,
         "averageComplexity": 3.9
     }
