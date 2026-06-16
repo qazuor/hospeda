@@ -352,7 +352,16 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.MODERATION_THRESHOLD_VIEW,
         PermissionEnum.MODERATION_THRESHOLD_UPDATE,
         PermissionEnum.MODERATION_THRESHOLD_RESTORE,
-        PermissionEnum.MODERATION_THRESHOLD_HARD_DELETE
+        PermissionEnum.MODERATION_THRESHOLD_HARD_DELETE,
+
+        // COMMERCE: Admin-tier gastronomy / commerce management (SPEC-239).
+        // Listed explicitly here so the all-permissions short-circuit in actor.ts
+        // is never the sole reason these grants exist for SUPER_ADMIN.
+        PermissionEnum.COMMERCE_CREATE,
+        PermissionEnum.COMMERCE_VIEW_ALL,
+        PermissionEnum.COMMERCE_EDIT_ALL,
+        PermissionEnum.COMMERCE_DELETE,
+        PermissionEnum.COMMERCE_MODERATE_REVIEW
     ],
 
     [RoleEnum.ADMIN]: [
@@ -625,7 +634,16 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.MODERATION_THRESHOLD_VIEW,
         PermissionEnum.MODERATION_THRESHOLD_UPDATE,
         PermissionEnum.MODERATION_THRESHOLD_RESTORE,
-        PermissionEnum.MODERATION_THRESHOLD_HARD_DELETE
+        PermissionEnum.MODERATION_THRESHOLD_HARD_DELETE,
+
+        // COMMERCE: Admin-tier gastronomy / commerce management (SPEC-239).
+        // SUPER_ADMIN already holds these via the all-permissions short-circuit
+        // in actor.ts; seeded here for completeness should that bypass ever change.
+        PermissionEnum.COMMERCE_CREATE,
+        PermissionEnum.COMMERCE_VIEW_ALL,
+        PermissionEnum.COMMERCE_EDIT_ALL,
+        PermissionEnum.COMMERCE_DELETE,
+        PermissionEnum.COMMERCE_MODERATE_REVIEW
     ],
 
     // KNOWN DEBT (SPEC-169): CLIENT_MANAGER broad grants (USER_READ_ALL, ACCOMMODATION_VIEW_ALL,
@@ -910,6 +928,68 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
 
         // PLATFORM SETTINGS V1 (SPEC-156): HOST self-billing landing + Mi cuenta self-edit.
         // BILLING_VIEW_OWN/SUBSCRIPTION_VIEW_OWN are distinct from BILLING_READ_ALL (admin-tier).
+        PermissionEnum.BILLING_VIEW_OWN,
+        PermissionEnum.SUBSCRIPTION_VIEW_OWN,
+        PermissionEnum.USER_UPDATE_SELF
+    ],
+
+    // ---------------------------------------------------------------------------
+    // COMMERCE_OWNER — Gastronomía / commerce listings operator (SPEC-239)
+    //
+    // Mirrors the HOST role but scoped to commerce vertical.
+    // Identity fields (name, slug, type, destinationId) are admin-controlled on
+    // create and cannot be changed by the owner; the 10 *_EDIT_OWN permissions
+    // cover every operational section the owner may self-manage after onboarding.
+    // ---------------------------------------------------------------------------
+    [RoleEnum.COMMERCE_OWNER]: [
+        // GASTRONOMY: Operational section permissions (own listings only).
+        // Identity (name/slug/type/destination) is NOT editable by the owner —
+        // those gates belong to admin-tier COMMERCE_EDIT_ALL.
+        PermissionEnum.COMMERCE_SCHEDULE_EDIT_OWN,
+        PermissionEnum.COMMERCE_CONTACT_EDIT_OWN,
+        PermissionEnum.COMMERCE_SOCIAL_EDIT_OWN,
+        PermissionEnum.COMMERCE_MEDIA_EDIT_OWN,
+        PermissionEnum.COMMERCE_MENU_EDIT_OWN,
+        PermissionEnum.COMMERCE_PRICE_RANGE_EDIT_OWN,
+        PermissionEnum.COMMERCE_RICH_DESCRIPTION_EDIT_OWN,
+        PermissionEnum.COMMERCE_AMENITIES_EDIT_OWN,
+        PermissionEnum.COMMERCE_FEATURES_EDIT_OWN,
+        PermissionEnum.COMMERCE_FAQS_EDIT_OWN,
+
+        // USER: Basic profile permissions
+        PermissionEnum.USER_VIEW_PROFILE,
+        PermissionEnum.USER_UPDATE_PROFILE,
+        PermissionEnum.USER_SETTINGS_UPDATE,
+
+        // USER_BOOKMARK: Own bookmarks
+        PermissionEnum.USER_BOOKMARK_CREATE,
+        PermissionEnum.USER_BOOKMARK_UPDATE,
+        PermissionEnum.USER_BOOKMARK_DELETE,
+        PermissionEnum.USER_BOOKMARK_VIEW,
+        PermissionEnum.USER_BOOKMARK_RESTORE,
+
+        // USER_BOOKMARK_COLLECTION: Own collections
+        PermissionEnum.USER_BOOKMARK_COLLECTION_CREATE,
+        PermissionEnum.USER_BOOKMARK_COLLECTION_UPDATE,
+        PermissionEnum.USER_BOOKMARK_COLLECTION_DELETE,
+        PermissionEnum.USER_BOOKMARK_COLLECTION_VIEW,
+
+        // ACCESS: Admin panel access (for the owner self-service section)
+        PermissionEnum.DASHBOARD_BASE_VIEW,
+        PermissionEnum.ACCESS_PANEL_ADMIN,
+        PermissionEnum.ACCESS_API_PUBLIC,
+
+        // MEDIA: Upload and delete own images
+        PermissionEnum.MEDIA_UPLOAD,
+        PermissionEnum.MEDIA_DELETE,
+
+        // CONVERSATION: Own-scoped conversations with guests
+        PermissionEnum.CONVERSATION_VIEW_OWN,
+        PermissionEnum.CONVERSATION_REPLY_OWN,
+        PermissionEnum.CONVERSATION_UPDATE_STATUS_OWN,
+        PermissionEnum.CONVERSATION_BLOCK_OWN,
+
+        // BILLING: Own subscription and billing view (mirrors HOST)
         PermissionEnum.BILLING_VIEW_OWN,
         PermissionEnum.SUBSCRIPTION_VIEW_OWN,
         PermissionEnum.USER_UPDATE_SELF
