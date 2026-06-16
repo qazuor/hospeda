@@ -835,7 +835,7 @@
             "id": "T-026",
             "title": "Schema unit tests for climate and weather schemas",
             "description": "packages/schemas tests: DestinationClimateSchema (valid, optional fields, ClimateSeasonEnum rejection), weather schemas (current/daily/cache, daily length<=16), and that the removed HTTP filter keys are no longer accepted. AAA pattern.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-003", "T-004"],
             "blocks": [],
@@ -858,15 +858,15 @@
             },
             "timestamps": {
                 "created": "2026-06-15T22:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T01:20:00.000Z",
+                "completed": "2026-06-16T01:20:00.000Z"
             }
         },
         {
             "id": "T-027",
             "title": "Graceful-degradation tests (US-3)",
             "description": "Cover US-3: weather island/endpoint degrade to neutral 'no disponible' when (a) no coordinates, (b) API/cache empty, (c) fetch error — seasonal climate still renders, layout never breaks, no thrown error. Web island test + endpoint neutral-path test.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-013", "T-022"],
             "blocks": [],
@@ -893,8 +893,8 @@
             },
             "timestamps": {
                 "created": "2026-06-15T22:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T01:20:00.000Z",
+                "completed": "2026-06-16T01:20:00.000Z"
             }
         },
         {
@@ -931,9 +931,9 @@
     ],
     "summary": {
         "total": 28,
-        "pending": 9,
+        "pending": 7,
         "inProgress": 2,
-        "completed": 17,
+        "completed": 19,
         "blocked": 0,
         "averageComplexity": 2.3
     }
