@@ -2,7 +2,7 @@
 id: SPEC-198
 slug: ai-text-improvement
 title: AI Text Improvement for HOST Listings
-status: draft
+status: completed
 owner: qazuor
 created: 2026-06-05
 resolvedAt: 2026-06-05

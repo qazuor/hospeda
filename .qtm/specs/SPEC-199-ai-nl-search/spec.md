@@ -2,7 +2,7 @@
 id: SPEC-199
 slug: ai-nl-search
 title: AI Natural-Language Search (Intent to Structured Query)
-status: draft
+status: completed
 owner: qazuor
 created: 2026-06-05
 parentSpec: SPEC-173

@@ -1,4 +1,3 @@
-import path from 'node:path';
 import { RoleEnum } from '@repo/schemas';
 import { UserService } from '@repo/service-core/index.js';
 import exampleManifest from '../manifest-example.json';
@@ -58,7 +57,7 @@ const getUserInfo = (item: unknown) => {
 export const seedUsers = createSeedFactory({
     entityName: 'Users',
     serviceClass: UserService,
-    folder: path.resolve('src/data/user/example'),
+    folder: 'src/data/user/example',
     files: exampleManifest.users,
     normalizer: userNormalizer,
     getEntityInfo: getUserInfo

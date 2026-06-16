@@ -2,14 +2,80 @@
     "version": "1.0",
     "specs": [
         {
+            "specId": "SPEC-239",
+            "title": "Commerce listing core (merchant-with-subscription) + Gastronomía",
+            "type": "feature",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-239-commerce-listings-core-gastronomy",
+            "created": "2026-06-15T00:00:00.000Z",
+            "base": "staging",
+            "origin": "Design session 'panel 1.1' (2026-06-15): foundational comercio-con-suscripción core proven with Gastronomía as first consumer; reused by SPEC-240",
+            "tags": ["gastronomy", "commerce", "billing", "subscription", "reviews", "web", "admin"]
+        },
+        {
+            "specId": "SPEC-240",
+            "title": "Experiencias y Servicios (tourism services & experiences)",
+            "type": "feature",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-240-experiences-services",
+            "created": "2026-06-15T00:00:00.000Z",
+            "base": "staging",
+            "origin": "Design session 'panel 1.1' (2026-06-15): reuses the SPEC-239 commerce core",
+            "dependsOn": ["SPEC-239"],
+            "tags": ["experiences", "services", "commerce", "subscription", "web", "admin"]
+        },
+        {
+            "specId": "SPEC-241",
+            "title": "Host trades/services directory (24h emergency trades for hosts)",
+            "type": "feature",
+            "complexity": "low",
+            "status": "draft",
+            "path": "SPEC-241-host-trades-directory",
+            "created": "2026-06-15T00:00:00.000Z",
+            "base": "staging",
+            "origin": "Design session 'panel 1.1' (2026-06-15): admin-curated private directory, perk for hosts; decoupled from the Tarjeta",
+            "tags": ["hosts", "directory", "admin", "perk", "web"]
+        },
+        {
+            "specId": "SPEC-242",
+            "title": "Tarjeta Hospeda (benefits card for guests)",
+            "type": "epic",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-242-hospeda-card",
+            "created": "2026-06-15T00:00:00.000Z",
+            "base": "staging",
+            "origin": "Design session 'panel 1.1' (2026-06-15): host-mode benefits card; growth hook to register tourists; 2 phases",
+            "dependsOn": ["SPEC-239", "SPEC-240"],
+            "tags": ["card", "benefits", "merchants", "growth", "web", "admin"]
+        },
+        {
+            "specId": "SPEC-243",
+            "title": "Hospeda mobile app (React Native / Expo)",
+            "type": "epic",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-243-mobile-app",
+            "created": "2026-06-15T00:00:00.000Z",
+            "base": "staging",
+            "origin": "Design session 'panel 1.1' (2026-06-15): master/umbrella spec, RN/Expo, tourist+host; split into sub-specs",
+            "dependsOn": ["SPEC-239", "SPEC-240", "SPEC-242"],
+            "tags": ["mobile", "react-native", "expo", "app", "tourist", "host"]
+        },
+        {
             "specId": "SPEC-236",
             "title": "Coverage ratchet-up — restore per-package thresholds to the 90% target",
             "type": "chore",
             "complexity": "medium",
-            "status": "draft",
+            "status": "completed",
             "path": "SPEC-236-coverage-ratchet-up",
             "created": "2026-06-15T00:00:00.000Z",
             "base": "staging",
+            "archived": true,
+            "archivedAt": "2026-06-15",
+            "archiveNote": "10 PRs merged to staging (#1663/#1664/#1665/#1666/#1668/#1671/#1673/#1674/#1676/#1684 + closeout #1677). Logic packages raised to/past target: icons 56->100, billing 87->99, schemas 83->95, notifications 80->99, feedback 43->95, seed 75->97, service-core 78->90.25. Both threshold systems (per-package vitest.config + ci.yml coverage-check floors) ratcheted in lockstep; icons/billing/schemas/notifications/seed/feedback rejoined the 90 default, service-core floored at 88 (real 90.25 — kept special vs strict-90 for margin on a large package). web/admin/api keep framework bars by design. Half the gaps were non-production code in the coverage denominator (test stubs, docs/examples instrumented by v8, pure types) fixed via excludes, not test-writing.",
             "origin": "Surfaced after PR #1658 fixed the vitest sortSpecs crash that had masked the broken coverage gate; thresholds recalibrated to current floors as interim",
             "tags": ["ci", "coverage", "tests", "quality", "tech-debt"]
         },
@@ -17,7 +83,7 @@
             "specId": "SPEC-230",
             "title": "Soft-delete filtering in the service list() path — make BaseCrudService.list exclude soft-deleted rows by default so protected list endpoints stop returning deleted records",
             "type": "fix",
-            "status": "draft",
+            "status": "in-progress",
             "complexity": "medium",
             "path": "SPEC-230-list-soft-delete-filtering",
             "base": "staging",
@@ -503,7 +569,10 @@
                 "event",
                 "backend",
                 "phase-2"
-            ]
+            ],
+            "archived": true,
+            "archivedAt": "2026-06-05",
+            "archiveNote": "DRIFT FIX (2026-06-15 cleanup): was completed but missing archived flag in both indexes. Shipped via PR #1461. Branch merged."
         },
         {
             "specId": "SPEC-160",
@@ -587,6 +656,48 @@
             "tags": ["billing", "downgrade", "entitlements", "limits", "backend"],
             "note": "Backfilled into index 2026-05-30 (dir + spec.md existed but had no index entry — registry drift). Implementation deferred until SPEC-143 smoke fixes F-B1/F-B2/F-A1/F-E1 land.",
             "archivedAt": "2026-06-07"
+        },
+        {
+            "specId": "SPEC-174",
+            "title": "Admin Guided Welcome Tour (role-based, config-driven)",
+            "type": "feature",
+            "status": "completed",
+            "complexity": "high",
+            "path": "SPEC-174-admin-welcome-tour",
+            "base": "staging",
+            "priority": "P4",
+            "archived": true,
+            "archivedAt": "2026-06-04",
+            "completionRef": "PR #1451 merged to staging (archived in PR #1454)",
+            "archiveNote": "Index entry was lost to a stale-base edit; restored 2026-06-15. Spec was implemented and archived in June (feat #1451, archive #1454); frontmatter already completed."
+        },
+        {
+            "specId": "SPEC-175",
+            "title": "Admin What's New / Release Notes Dialog",
+            "type": "feature",
+            "status": "completed",
+            "complexity": "medium",
+            "path": "SPEC-175-admin-whats-new",
+            "base": "staging",
+            "priority": "P4",
+            "archived": true,
+            "archivedAt": "2026-06-04",
+            "completionRef": "PR #1437 merged to staging (archived in PR #1440)",
+            "archiveNote": "Index entry was lost to a stale-base edit; restored 2026-06-15. Spec was implemented and archived in June (feat #1437, archive #1440); frontmatter already completed."
+        },
+        {
+            "specId": "SPEC-179",
+            "title": "Self-Hosted Runner for PR CI (GitHub Actions cost/quota reduction)",
+            "type": "infra",
+            "status": "completed",
+            "complexity": "medium",
+            "path": "SPEC-179-self-hosted-pr-ci-runner",
+            "base": "staging",
+            "priority": "P3",
+            "archived": true,
+            "archivedAt": "2026-06-03",
+            "completionRef": "PR #1369 merged to staging (archived in PR #1415)",
+            "archiveNote": "Index entry was lost to a stale-base edit; restored 2026-06-15. Spec was implemented and archived in June (feat #1369, archive #1415); frontmatter already completed."
         },
         {
             "specId": "SPEC-173",
@@ -686,14 +797,16 @@
             "specId": "SPEC-187",
             "title": "Rich Text Entity Descriptions — per-entity toolbars, plain-text accommodation.description, full richDescription backing, ratify canonical format & harden rendering",
             "type": "feature",
-            "status": "draft",
+            "status": "completed",
             "complexity": "high",
             "path": "SPEC-187-rich-text-entity-descriptions",
             "branch": "spec/SPEC-187-rich-text-entity-descriptions",
             "base": "staging",
             "linearIssues": ["BETA-60"],
             "created": "2026-06-02",
-            "archived": false
+            "archived": true,
+            "archivedAt": "2026-06-08",
+            "archiveNote": "DRIFT FIX (2026-06-15 cleanup): tasks/index was completed+archived (25/25) but specs/index stayed draft — the closeout PR #1501 flipped task status but a stale-base edit reverted specs status. Shipped via PRs #1488/#1489/#1498/#1500/#1501 + prod-readiness #1505. All branches merged."
         },
         {
             "specId": "SPEC-189",
@@ -712,14 +825,15 @@
             "specId": "SPEC-190",
             "title": "Admin Bundle Perf — Icon Tree-Shaking & Entity-Chunk Code-Split",
             "type": "refactor",
-            "status": "draft",
+            "status": "completed",
             "complexity": "medium-high",
             "path": "SPEC-190-admin-bundle-perf-icons-and-codesplit",
             "branch": "spec/SPEC-190-admin-bundle-perf-icons-and-codesplit",
             "base": "staging",
             "linearIssues": ["BETA-74"],
             "created": "2026-06-02",
-            "archived": false
+            "archived": true,
+            "archivedAt": "2026-06-15"
         },
         {
             "specId": "SPEC-191",
@@ -965,24 +1079,27 @@
             "title": "Host Conversations — Inbox, Threads, Replies & Archive in Web",
             "type": "epic",
             "complexity": "high",
-            "status": "draft",
+            "status": "completed",
             "path": "SPEC-206-host-conversations",
             "created": "2026-06-07T00:00:00.000Z",
-            "archived": false,
+            "archived": true,
             "tags": ["web", "host", "conversations", "inbox", "api", "permissions"],
-            "note": "Phase 2 of host migration. Protected host conversation endpoints + inbox UI in apps/web. Depends on SPEC-205."
+            "note": "Phase 2 of host migration. Protected host conversation endpoints + inbox UI in apps/web. Depends on SPEC-205.",
+            "archivedAt": "2026-06-15",
+            "archiveNote": "Ghost-completed (like SPEC-208): shipped ad-hoc as an epic WITHOUT a formal spec.md. Full scope implemented + merged: owner inbox (protected/owner/list + web consultas-propietario), threads (owner/thread + [conversationId]), replies (owner/reply + ConversationReply), archive (protected/archive.ts). PRs #1503/#1521/#1627/#1610, promoted to main. No spec.md kept (owner decision 2026-06-15, same as SPEC-208). Worktree/branch left intact (possible other-agent activity)."
         },
         {
             "specId": "SPEC-207",
             "title": "Host Analytics & KPIs — Business Dashboard in Web",
             "type": "epic",
             "complexity": "high",
-            "status": "draft",
+            "status": "completed",
             "path": "SPEC-207-host-analytics-kpis",
             "created": "2026-06-07T00:00:00.000Z",
-            "archived": false,
+            "archived": true,
+            "archivedAt": "2026-06-15T00:00:00.000Z",
             "tags": ["web", "host", "analytics", "kpis", "dashboard", "api", "metrics"],
-            "note": "Phase 3 of host migration. Formalized 2026-06-13 with spec.md (was index-only draft). A web-only cabling pass (fix/web-mi-cuenta-host-dashboard) shipped: fixed the entitlement gate case mismatch (view_basic_stats), re-pointed response-rate/inquiries/market-comparison to their real routes, gated the market widget behind view_advanced_stats, and added missing host.dashboard.* i18n keys. Remaining epic work: (A) build a protected per-host daily-series views endpoint + re-mount ViewsWidget; (B) redesign FavoritesWidget to the per-accommodation shape (no 'collections' in the model) + re-mount; (C) staging smoke on owner-pro/owner-premium. Views & Favorites widgets are currently NOT mounted (deferred). Depends on SPEC-205, SPEC-206."
+            "note": "DONE — merged to staging via PR #1678 (ee0192a35). Fase A (views daily-series chart) + Fase B (favorites redesign) + market-comparison VIEW_OWN fix; local browser smoke PASSED (host-pro/owner-pro, test-control + seeded data). Note: #1678 merged at commit 59071499f BEFORE the i18n keys for HostViewDailySeries landed, so a follow-up PR (fix/SPEC-207-i18n-hostdailyseries) adds the 4 missing zodError translations to keep the i18n guard green on staging. Security CI red on #1678 was vite advisories published 2026-06-15 (not from this work)."
         },
         {
             "specId": "SPEC-208",
@@ -1005,13 +1122,6 @@
                 "entitlements"
             ],
             "note": "Final phase of host migration. Full accommodation editor in apps/web including media upload, all section forms, validation, and preview. Shipped ad-hoc via PRs #1509/#1513/#1516 (Phases A/B/C) WITHOUT a formal .qtm/specs/SPEC-208-web-accommodation-editor/ directory (no spec.md). Prod-readiness review (2026-06-09) found blockers, all fixed + merged to staging: protected update dropped nested fields + media (#1528), open geocoding proxy (#1529), no protected media delete + orphan assets (#1533, re-landed via #1540 after stacked-base stranding), index drift (#1534). Local e2e PASSED 6/6 (persistence, no-clobber, geocoding 401/200, media delete own-200/foreign-403). Closed 2026-06-10."
-        },
-        {
-            "id": "SPEC-187",
-            "title": "Rich Text Entity Descriptions",
-            "status": "completed",
-            "archived": true,
-            "path": "SPEC-187-rich-text-entity-descriptions"
         },
         {
             "specId": "SPEC-209",
@@ -1221,17 +1331,18 @@
             "renumberedReason": "Collided with the already-merged SPEC-227 billing-subscription-observability; renumbered to next free (228 taken by web-loading-states)."
         },
         {
-            "specId": "SPEC-230",
+            "specId": "SPEC-237",
             "title": "External-platform reviews & reputation on accommodation pages",
             "type": "feature",
             "complexity": "high",
             "status": "draft",
-            "path": "SPEC-230-accommodation-external-reviews",
+            "path": "SPEC-237-accommodation-external-reviews",
             "base": "staging",
             "created": "2026-06-15T00:00:00Z",
             "tags": ["accommodations", "reviews", "reputation", "google-places", "external", "web"],
             "archived": false,
-            "note": "Show an accommodation's external-platform reputation on its detail page: Google real review snippets via official Places API + aggregate-only (rating+count+link) for Booking/Airbnb, clearly labeled. Separate stateful entity (two new tables) from internal reviews; never pollutes internal averageRating. Owner registers listings + per-platform/global toggles for link and reviews; constrained backend (refresh-via-button + cron, list-only, no user edit/delete). Google text TTL→degrade to aggregate. Sibling of SPEC-222 (shares safeExternalFetch/Apify/Places). This is the deferred reviews feature SPEC-222 excluded. Drafted 2026-06-15."
+            "note": "Show an accommodation's external-platform reputation on its detail page: Google real review snippets via official Places API + aggregate-only (rating+count+link) for Booking/Airbnb, clearly labeled. Separate stateful entity (two new tables) from internal reviews; never pollutes internal averageRating. Owner registers listings + per-platform/global toggles for link and reviews; constrained backend (refresh-via-button + cron, list-only, no user edit/delete). Google text TTL→degrade to aggregate. Sibling of SPEC-222 (shares safeExternalFetch/Apify/Places). This is the deferred reviews feature SPEC-222 excluded. Drafted 2026-06-15.",
+            "renumberNote": "Renumbered from SPEC-230 (collision with SPEC-230-list-soft-delete-filtering) during 2026-06-15 cleanup; soft-delete kept 230 as it was in active use."
         },
         {
             "specId": "SPEC-228",
@@ -1277,6 +1388,22 @@
                 "spec-173-child"
             ],
             "note": "Renumbered from SPEC-212 (collided with SPEC-212-conversational-ai-search, which holds the 212 index entry). AI translation of accommodation/destination/event/post content into en/pt: i18n migration + schema fields + translate service + admin TranslationSection (collapsible, source-locale aware, only-missing) + web host translation panel + locale-aware SEO. Shipped via #1581 (core), #1623 (admin endpoint + UX/direction + host panel), #1652 (SEO i18n)."
+        },
+        {
+            "specId": "SPEC-238",
+            "title": "Reduce apps/api per-file test cold-import overhead (~9% suite speedup)",
+            "type": "improvement",
+            "status": "completed",
+            "complexity": "medium",
+            "path": "SPEC-238-api-test-cold-import-perf",
+            "base": "staging",
+            "priority": "P3",
+            "created": "2026-06-15T00:00:00Z",
+            "tags": ["ci", "testing", "vitest", "performance", "api", "infrastructure"],
+            "archived": true,
+            "note": "B2 lever extracted from SPEC-188 (~9% api test speedup via service-core mock + Sentry mock + shared vitest config). Reference impl on deleted branch spec/SPEC-188-vitest-test-performance (tip 9825dd9ff, perf commit d6c023179) was 1760 commits behind; re-implement fresh on staging, do NOT cherry-pick (stale service-core mock). Drafted 2026-06-15.",
+            "renumberNote": "Renumbered from SPEC-236 (collision with another agent already working SPEC-236) on 2026-06-15.",
+            "archivedAt": "2026-06-16T01:29:32Z"
         }
     ]
 }

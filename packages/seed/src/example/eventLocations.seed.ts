@@ -1,4 +1,3 @@
-import path from 'node:path';
 import { EventLocationService } from '@repo/service-core';
 import exampleManifest from '../manifest-example.json';
 import type { SeedContext } from '../utils/seedContext.js';
@@ -59,7 +58,7 @@ const getEventLocationInfo = (item: unknown, _context: SeedContext) => {
 export const seedEventLocations = createSeedFactory({
     entityName: 'EventLocations',
     serviceClass: EventLocationService,
-    folder: path.resolve('src/data/eventLocation'),
+    folder: 'src/data/eventLocation',
     files: exampleManifest.eventLocations,
     normalizer: eventLocationNormalizer,
     preProcess: preProcessEventLocation,

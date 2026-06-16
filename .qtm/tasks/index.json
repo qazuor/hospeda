@@ -2,16 +2,54 @@
     "version": "1.0",
     "epics": [
         {
+            "specId": "SPEC-239",
+            "title": "Commerce listing core (merchant-with-subscription) + Gastronomía",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-239-commerce-listings-core-gastronomy"
+        },
+        {
+            "specId": "SPEC-240",
+            "title": "Experiencias y Servicios (tourism services & experiences)",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-240-experiences-services"
+        },
+        {
+            "specId": "SPEC-241",
+            "title": "Host trades/services directory (24h emergency trades for hosts)",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-241-host-trades-directory"
+        },
+        {
+            "specId": "SPEC-242",
+            "title": "Tarjeta Hospeda (benefits card for guests)",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-242-hospeda-card"
+        },
+        {
+            "specId": "SPEC-243",
+            "title": "Hospeda mobile app (React Native / Expo)",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-243-mobile-app"
+        },
+        {
             "specId": "SPEC-236",
             "title": "Coverage ratchet-up — restore per-package thresholds to the 90% target",
-            "status": "draft",
-            "progress": "0/3",
-            "path": "SPEC-236-coverage-ratchet-up"
+            "status": "completed",
+            "progress": "3/3",
+            "path": "SPEC-236-coverage-ratchet-up",
+            "archived": true,
+            "archivedAt": "2026-06-15",
+            "archiveNote": "10 PRs merged to staging. All logic packages raised to/past target + floors ratcheted in lockstep. service-core floored at 88 (real 90.25); icons/billing/schemas/notifications/seed/feedback back to 90 default."
         },
         {
             "specId": "SPEC-230",
             "title": "Soft-delete filtering in the service list() path — make BaseCrudService.list exclude soft-deleted rows by default so protected list endpoints stop returning deleted records",
-            "status": "draft",
+            "status": "in-progress",
             "progress": "0/0",
             "path": "SPEC-230-list-soft-delete-filtering"
         },
@@ -243,13 +281,15 @@
         {
             "specId": "SPEC-190",
             "title": "Admin Bundle Perf — Icon Tree-Shaking & Entity-Chunk Code-Split",
-            "status": "draft",
-            "progress": "12/14",
+            "status": "completed",
+            "progress": "14/14",
             "path": "SPEC-190-admin-bundle-perf-icons-and-codesplit",
             "branch": "spec/SPEC-190-admin-bundle-perf-icons-and-codesplit",
             "linearIssues": ["BETA-74"],
             "note": "Tests added, pending smoke",
-            "archived": false
+            "archived": true,
+            "archivedAt": "2026-06-15",
+            "archiveNote": "Admin bundle perf (icon tree-shaking + entity code-split). All 14 tasks done: code shipped via PR #1559; T-013 doc (final-report + sideEffects claim now true via T-003); T-014 browser smoke VERIFIED 2026-06-15 — all 3 lazy fields (tiptap rich-text, leaflet coordinates, media upload) render in admin edit, zero dynamic-chunk errors."
         },
         {
             "specId": "SPEC-191",
@@ -344,7 +384,10 @@
             "status": "completed",
             "progress": "15/15",
             "path": "SPEC-159-cross-entity-view-tracking",
-            "branch": "spec/SPEC-159-cross-entity-view-tracking"
+            "branch": "spec/SPEC-159-cross-entity-view-tracking",
+            "archived": true,
+            "archivedAt": "2026-06-05",
+            "archiveNote": "DRIFT FIX (2026-06-15): added missing archived flag. Shipped via #1461."
         },
         {
             "specId": "SPEC-197",
@@ -385,17 +428,23 @@
         {
             "specId": "SPEC-206",
             "title": "Host Conversations — Inbox, Threads, Replies & Archive in Web",
-            "status": "draft",
-            "progress": "0/1",
+            "status": "completed",
+            "progress": "1/1",
             "path": "SPEC-206-host-conversations",
-            "tags": ["host-migration", "phase-2"]
+            "tags": ["host-migration", "phase-2"],
+            "archived": true,
+            "archivedAt": "2026-06-15",
+            "archiveNote": "Ghost-completed: epic shipped ad-hoc (inbox/threads/replies/archive for owner), PRs #1503/#1521/#1627/#1610 merged + on main. No formal spec.md (owner decision, like SPEC-208)."
         },
         {
             "specId": "SPEC-207",
             "title": "Host Analytics & KPIs — Business Dashboard in Web",
-            "status": "draft",
-            "progress": "0/1",
+            "status": "completed",
+            "progress": "1/1",
             "path": "SPEC-207-host-analytics-kpis",
+            "archived": true,
+            "archivedAt": "2026-06-15T00:00:00.000Z",
+            "archiveNote": "Merged to staging via PR #1678. Follow-up fix/SPEC-207-i18n-hostdailyseries adds the i18n keys that landed after the merge commit.",
             "tags": ["host-migration", "phase-3"]
         },
         {
@@ -501,7 +550,7 @@
         {
             "specId": "SPEC-215",
             "title": "Destination climate & live weather",
-            "status": "pending",
+            "status": "approved",
             "progress": "0/0",
             "path": "SPEC-215-destination-climate-weather"
         },
@@ -555,6 +604,76 @@
             "archived": true,
             "archivedAt": "2026-06-15",
             "archiveNote": "Renumbered from SPEC-212 (collision with SPEC-212-conversational-ai-search). Shipped via PRs #1581 + #1623 + #1652 merged to staging; full browser smoke (admin + web host happy-path) + curl SEO verification passed. No formal .qtm/tasks breakdown existed (spec was draft); delivered directly."
+        },
+        {
+            "specId": "SPEC-238",
+            "title": "Reduce apps/api per-file test cold-import overhead (~9% suite speedup)",
+            "status": "completed",
+            "progress": "10/10",
+            "path": "SPEC-238-api-test-cold-import-perf",
+            "archived": true,
+            "archivedAt": "2026-06-16T01:29:32Z",
+            "archiveNote": "Shipped Sentry mock (PR #1685, -18% local, beats ~9% 2x); service-core ...actual lever deferred (4 tasks cancelled): ~58 symbols/~50 files, no subpath exports, AC#3 risk, not worth it for P3. CI runner re-measure authoritative."
+        },
+        {
+            "specId": "SPEC-198",
+            "title": "AI Text Improvement (HOST)",
+            "status": "completed",
+            "progress": "10/10",
+            "path": "SPEC-198-ai-text-improvement",
+            "archived": true,
+            "archivedAt": "2026-06-06",
+            "archiveNote": "DRIFT FIX (2026-06-15 cleanup): specs/index had this completed+archived but tasks/index had NO entry. state.json shows 10/10 tasks completed, 77/77 tests. Shipped via PRs #1487 + #1514. Reconstructed entry to match specs/index."
+        },
+        {
+            "specId": "SPEC-167",
+            "title": "Downgrade preflight + remediation",
+            "status": "completed",
+            "progress": "26/26",
+            "path": "SPEC-167-downgrade-preflight-remediation",
+            "archived": true,
+            "archivedAt": "2026-06-07",
+            "archiveNote": "DRIFT FIX (2026-06-15 cleanup): specs/index had completed+archived but tasks/index had NO entry. state.json shows 26/26 completed. Shipped via PR #1484, closed out #1485. Reconstructed entry."
+        },
+        {
+            "specId": "SPEC-174",
+            "title": "Admin Guided Welcome Tour (role-based, config-driven)",
+            "status": "completed",
+            "progress": "18/18",
+            "path": "SPEC-174-admin-welcome-tour",
+            "archived": true,
+            "archivedAt": "2026-06-04",
+            "archiveNote": "Restored 2026-06-15 (entry lost to stale-base edit). Completed + archived in June via feat #1451 / archive #1454. state.json shows 18/18 tasks completed."
+        },
+        {
+            "specId": "SPEC-175",
+            "title": "Admin What's New / Release Notes Dialog",
+            "status": "completed",
+            "progress": "20/20",
+            "path": "SPEC-175-admin-whats-new",
+            "archived": true,
+            "archivedAt": "2026-06-04",
+            "archiveNote": "Restored 2026-06-15 (entry lost to stale-base edit). Completed + archived in June via feat #1437 / archive #1440. state.json shows 20/20 tasks completed."
+        },
+        {
+            "specId": "SPEC-179",
+            "title": "Self-Hosted Runner for PR CI (GitHub Actions cost/quota reduction)",
+            "status": "completed",
+            "progress": "0/0",
+            "path": "SPEC-179-self-hosted-pr-ci-runner",
+            "archived": true,
+            "archivedAt": "2026-06-03",
+            "archiveNote": "Restored 2026-06-15 (entry lost to stale-base edit). Completed + archived in June via feat #1369 / archive #1415. Implemented without atomized tasks (progress shown as 0/0)."
+        },
+        {
+            "specId": "SPEC-173",
+            "title": "AI Foundation (@repo/ai-core)",
+            "status": "completed",
+            "progress": "43/43",
+            "path": "SPEC-173-ai-core",
+            "archived": true,
+            "archivedAt": "2026-06-05",
+            "archiveNote": "DRIFT FIX (2026-06-15 cleanup): specs/index had completed+archived but tasks/index had NO entry. state.json shows 43/43 completed. AI foundation pkg shipped via PR #1466, closed out #1467, e2e fix #1477. Reconstructed entry."
         }
     ],
     "standalone": {

@@ -1,0 +1,13 @@
+{
+    "specId": "SPEC-240",
+    "title": "Experiencias y Servicios (tourism services & experiences)",
+    "type": "feature",
+    "complexity": "medium",
+    "status": "draft",
+    "created": "2026-06-15T00:00:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "dependsOn": ["SPEC-239"],
+    "tags": ["experiences", "services", "commerce", "subscription", "tourism", "web", "public"]
+}

@@ -21,10 +21,10 @@ export default defineConfig({
             provider: 'v8',
             reporter: ['text', 'json', 'html'],
             thresholds: {
-                lines: 70,
+                lines: 90,
                 functions: 70,
-                branches: 60,
-                statements: 70
+                branches: 85,
+                statements: 90
             },
             exclude: [
                 'node_modules/',
@@ -32,7 +32,12 @@ export default defineConfig({
                 'test/',
                 '**/*.d.ts',
                 '**/*.config.*',
-                '**/index.ts' // Re-export files
+                '**/index.ts', // Re-export files
+                // Documentation-only example code (imports libs not in deps;
+                // never exported or imported by production schemas).
+                'docs/',
+                // Copy-paste scaffolding template for devs — not imported anywhere.
+                'src/templates/'
             ]
         }
     }

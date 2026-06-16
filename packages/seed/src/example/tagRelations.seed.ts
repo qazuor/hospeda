@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { TagService } from '@repo/service-core';
 import exampleManifest from '../manifest-example.json';
 import requiredManifest from '../manifest-required.json';
@@ -7,6 +8,11 @@ import { STATUS_ICONS } from '../utils/icons.js';
 import { logger } from '../utils/logger.js';
 import type { SeedContext } from '../utils/seedContext.js';
 import { summaryTracker } from '../utils/summaryTracker.js';
+
+// ESM-safe anchor to this package's own src/data directory
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const SEED_DATA_BASE = path.resolve(__dirname, '../data');
 
 /**
  * Entity type mapping for tag relations
@@ -66,7 +72,7 @@ async function processTagRelations(
     for (const fileName of entityFiles) {
         try {
             const directoryName = ENTITY_DIRECTORY_MAP[entityType];
-            const filePath = path.resolve(`src/data/${directoryName}/${fileName}`);
+            const filePath = path.resolve(SEED_DATA_BASE, `${directoryName}/${fileName}`);
             const entityData = await import(filePath, { assert: { type: 'json' } });
             const entity = entityData.default as EntityWithTags;
 
@@ -82,7 +88,7 @@ async function processTagRelations(
     for (const fileName of entityFiles) {
         try {
             const directoryName = ENTITY_DIRECTORY_MAP[entityType];
-            const filePath = path.resolve(`src/data/${directoryName}/${fileName}`);
+            const filePath = path.resolve(SEED_DATA_BASE, `${directoryName}/${fileName}`);
             const entityData = await import(filePath, { assert: { type: 'json' } });
             const entity = entityData.default as EntityWithTags;
 

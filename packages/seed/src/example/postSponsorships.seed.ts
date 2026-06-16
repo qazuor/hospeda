@@ -1,4 +1,3 @@
-import path from 'node:path';
 import { PostSponsorshipService } from '@repo/service-core';
 import exampleManifest from '../manifest-example.json';
 import { STATUS_ICONS } from '../utils/icons.js';
@@ -74,7 +73,7 @@ const getPostSponsorshipInfo = (item: unknown, context: SeedContext) => {
 export const seedPostSponsorships = createSeedFactory({
     entityName: 'PostSponsorships',
     serviceClass: PostSponsorshipService,
-    folder: path.resolve('src/data/postSponsorship'),
+    folder: 'src/data/postSponsorship',
     files: exampleManifest.postSponsorships,
     normalizer: postSponsorshipNormalizer,
     getEntityInfo: getPostSponsorshipInfo,

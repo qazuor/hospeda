@@ -9,7 +9,8 @@ import {
 import { describe, expect, it } from 'vitest';
 import {
     canAccessBookmark,
-    canCreateBookmark
+    canCreateBookmark,
+    checkCanAdminList
 } from '../../../src/services/userBookmark/userBookmark.permissions';
 import { ServiceError } from '../../../src/types';
 
@@ -73,5 +74,29 @@ describe('userBookmark.permissions', () => {
             expect(e).toBeInstanceOf(ServiceError);
             expect((e as ServiceError).code).toBe(ServiceErrorCode.FORBIDDEN);
         }
+    });
+
+    describe('checkCanAdminList', () => {
+        it('allows actor with USER_BOOKMARK_VIEW_ANY', () => {
+            const adminActor = {
+                ...owner,
+                permissions: [PermissionEnum.USER_BOOKMARK_VIEW_ANY]
+            };
+            expect(() => checkCanAdminList(adminActor)).not.toThrow();
+        });
+
+        it('throws FORBIDDEN when actor lacks USER_BOOKMARK_VIEW_ANY', () => {
+            // Arrange — actor has no relevant permission
+            const unprivilegedActor = { ...owner, permissions: [] };
+
+            // Act + Assert
+            expect(() => checkCanAdminList(unprivilegedActor)).toThrowError(ServiceError);
+            try {
+                checkCanAdminList(unprivilegedActor);
+            } catch (e) {
+                expect(e).toBeInstanceOf(ServiceError);
+                expect((e as ServiceError).code).toBe(ServiceErrorCode.FORBIDDEN);
+            }
+        });
     });
 });

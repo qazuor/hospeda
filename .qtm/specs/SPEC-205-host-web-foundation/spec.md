@@ -1,6 +1,6 @@
 # SPEC-205 — Host Web Foundation (Phase 3: Owner Promotions CRUD)
 
-> Status: in-progress. Phases 1, 2 and 4 already shipped (host dashboard API + UI, nav, funnel polish) and were promoted to main in PR #1542. This spec file formalizes the **remaining Phase 3** scope, which was never built. Canonical design source: [`openspec/changes/host-web-foundation/`](../../../openspec/changes/host-web-foundation/) (proposal.md / design.md / tasks.md).
+> Status: completed (archived 2026-06-13). All phases shipped: Phases 1, 2 and 4 (host dashboard API + UI, nav, funnel polish) promoted to main in PR #1542; Phase 3 (owner promotions CRUD) shipped in PR #1591; spec archived via PR #1599. Canonical design source: [`openspec/changes/host-web-foundation/`](../../../openspec/changes/host-web-foundation/) (proposal.md / design.md / tasks.md).
 
 ## Context
 

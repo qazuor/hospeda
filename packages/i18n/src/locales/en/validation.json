@@ -3390,6 +3390,16 @@
         "entityType": {
             "invalid": "Entity type is not valid for view tracking"
         },
+        "hostDailySeries": {
+            "date": {
+                "invalid": "Date must be in YYYY-MM-DD format"
+            },
+            "total": {
+                "integer": "Total visits must be an integer",
+                "nonnegative": "Total visits cannot be negative",
+                "required": "Total visits is required"
+            }
+        },
         "id": {
             "invalidUuid": "ID must be a valid UUID",
             "required": "ID is required"

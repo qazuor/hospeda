@@ -1,6 +1,7 @@
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
+    checkCanAdminList,
     checkCanCreateAttraction,
     checkCanDeleteAttraction,
     checkCanListAttractions,
@@ -69,6 +70,22 @@ describe('Attraction permissions', () => {
         expect(() => checkCanDeleteAttraction(actorNoPerms)).toThrowError(ServiceError);
         try {
             checkCanDeleteAttraction(actorNoPerms);
+        } catch (err) {
+            expect((err as ServiceError).code).toBe(ServiceErrorCode.FORBIDDEN);
+        }
+    });
+
+    it('checkCanAdminList allows with ATTRACTION_VIEW', () => {
+        const actorWithAttractionView = createActor({
+            permissions: [PermissionEnum.ATTRACTION_VIEW]
+        });
+        expect(() => checkCanAdminList(actorWithAttractionView)).not.toThrow();
+    });
+
+    it('checkCanAdminList throws FORBIDDEN without ATTRACTION_VIEW', () => {
+        expect(() => checkCanAdminList(actorNoPerms)).toThrowError(ServiceError);
+        try {
+            checkCanAdminList(actorNoPerms);
         } catch (err) {
             expect((err as ServiceError).code).toBe(ServiceErrorCode.FORBIDDEN);
         }
