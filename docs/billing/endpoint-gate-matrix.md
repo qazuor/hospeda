@@ -102,6 +102,7 @@
 | `GET /api/v1/protected/host/dashboard` | `host/protected/dashboard.ts` | gate | `view_basic_stats` | wired | requireEntitlement(VIEW_BASIC_STATS) middleware wired (SPEC-205) — aggregator for property counts, plan info, unread conversations |
 | **VIEWS — PROTECTED (SPEC-159)** | | | | | |
 | `GET /api/v1/protected/views/accommodations/me` | `views/protected/accommodations-me.ts` | gate | `view_basic_stats` | wired | View stats feed HOST Card G alongside ratings/response-rate, all VIEW_BASIC_STATS-gated — views must match (SPEC-159) |
+| `GET /api/v1/protected/views/accommodations/me/daily-series` | `views/protected/daily-series.ts` | gate | `view_basic_stats` | wired | Per-host daily view totals time-series for the HOST dashboard trend chart (SPEC-207); same VIEW_BASIC_STATS gate as the views list, owner-scoped via findIdsByOwnerId |
 | `GET /api/v1/protected/views/posts` | `views/protected/posts.ts` | none | - | n/a | Editor staff dashboard read; permission-gated via POST_VIEW_ALL, editors are not billing customers |
 | `GET /api/v1/protected/views/events` | `views/protected/events.ts` | none | - | n/a | Editor staff dashboard read; permission-gated via EVENT_VIEW_ALL, editors are not billing customers |
 | **GEOCODING — PROTECTED (SPEC-208)** | | | | | |
