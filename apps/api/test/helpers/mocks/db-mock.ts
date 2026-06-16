@@ -643,6 +643,22 @@ export function createDbMock() {
             insertView: vi.fn().mockResolvedValue({ id: 'ev_mock_id' }),
             getStatsForEntities: vi.fn().mockResolvedValue([]),
             purgeOlderThan: vi.fn().mockResolvedValue(0)
-        }
+        },
+
+        // SPEC-239: Gastronomy singleton model instances. GastronomyService,
+        // GastronomyReviewService, and the standalone FAQ helpers access these at module
+        // scope (via service constructor or direct import). They are exported as singleton
+        // instances (not classes) in @repo/db — mirror that here with GenericMockModel
+        // instances so initApp() can construct all gastronomy routes without a real DB.
+        gastronomyModel: new GenericMockModel(),
+        gastronomyReviewModel: new GenericMockModel(),
+        rGastronomyAmenityModel: new GenericMockModel(),
+        rGastronomyFeatureModel: new GenericMockModel(),
+
+        // GastronomyFaqModel is also exported as a class (used by gastronomy.faq.ts
+        // helpers which accept a GastronomyModel instance and internally call a new
+        // GastronomyFaqModel for FAQ CRUD). Expose both the class and singleton.
+        GastronomyFaqModel: GenericMockModel,
+        gastronomyFaqModel: new GenericMockModel()
     };
 }

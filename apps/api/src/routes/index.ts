@@ -39,6 +39,7 @@ import {
     publicEventOrganizerRoutes
 } from './event-organizer';
 import { adminFeatureRoutes, protectedFeatureRoutes, publicFeatureRoutes } from './feature';
+import { protectedGastronomyRoutes, publicGastronomyRoutes } from './gastronomy';
 import { protectedHostRoutes } from './host';
 import { protectedHostOnboardingRoutes } from './host-onboarding';
 import { adminHostTradeRoutes, protectedHostTradeRoutes } from './host-trade';
@@ -183,6 +184,8 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
         // Core entities
         app.route('/api/v1/public/accommodations', publicAccommodationRoutes);
+        // Commerce listings: gastronomy (SPEC-239 T-042)
+        app.route('/api/v1/public/gastronomies', publicGastronomyRoutes);
         app.route('/api/v1/public/destinations', publicDestinationRoutes);
         app.route('/api/v1/public/events', publicEventRoutes);
 
@@ -265,6 +268,8 @@ export const setupRoutes = (app: AppOpenAPI) => {
             protectedUserBookmarkCollectionRoutes
         );
         app.route('/api/v1/protected/accommodations', protectedAccommodationRoutes);
+        // Commerce listings: gastronomy (SPEC-239 T-043 / T-044)
+        app.route('/api/v1/protected/gastronomies', protectedGastronomyRoutes);
         app.route('/api/v1/protected/host', protectedHostRoutes);
         app.route('/api/v1/protected/host-trades', protectedHostTradeRoutes);
         app.route('/api/v1/protected/host-onboarding', protectedHostOnboardingRoutes);
