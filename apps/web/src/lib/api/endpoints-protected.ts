@@ -199,6 +199,8 @@ type SubscriptionStatus = 'active' | 'trial' | 'cancelled' | 'expired' | 'past_d
 
 /** Subscription data returned by the protected subscription endpoint */
 export interface SubscriptionData {
+    /** Subscription id — required to call the cancel/plan-change endpoints. */
+    readonly id: string;
     readonly planSlug: string;
     readonly planName: string;
     readonly status: SubscriptionStatus;
@@ -220,10 +222,8 @@ export interface SubscriptionData {
      *
      * Present when the host scheduled a downgrade via `billingApi.changePlan` and
      * it has not yet been applied. The backend (`GET /protected/users/me/subscription`)
-     * does NOT currently return this field — it is declared here as an optional
-     * type so the SPEC-203 UI can wire the banner immediately once the API is
-     * extended. The UI task should treat absence of this field as "no scheduled
-     * change" and skip the banner render.
+     * returns this field (null when no pending change). The UI treats a null/absent
+     * value as "no scheduled change" and skips the banner render.
      *
      * Field names match the `QZPayScheduledPlanChange` shape stored by QZPay:
      * `newPlanId` is the target plan ID and `effectiveAt` is an ISO 8601 datetime
