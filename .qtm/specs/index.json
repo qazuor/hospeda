@@ -1195,11 +1195,14 @@
             "title": "Destination climate & live weather",
             "type": "feature",
             "complexity": "high",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-215-destination-climate-weather",
             "created": "2026-06-10T22:05:00Z",
+            "base": "staging",
             "tags": ["destinations", "weather", "climate", "web", "admin", "cron"],
-            "archived": false
+            "archived": true,
+            "archivedAt": "2026-06-16",
+            "archiveNote": "28/28. Implementation delivered via PR #1690 (merge 69147a17c) to staging. PR #1573 had only merged the spec doc. Feature: seasonal climate (DB jsonb + seed + admin editor) + live Open-Meteo current weather/16-day forecast island in the destination sidebar. Final session fixed a stale i18n-namespace unit test, the climate season-stats overflow (icon-based compact layout), made seasons + forecast collapsible (card 879->525px), and removed the mobile sidebar internal scroll."
         },
         {
             "specId": "SPEC-216",

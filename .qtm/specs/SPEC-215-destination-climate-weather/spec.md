@@ -3,7 +3,7 @@ spec-id: SPEC-215
 title: Destination climate & live weather
 type: feature
 complexity: high
-status: in-progress
+status: completed
 created: 2026-06-10T22:05:00Z
 ---
 
