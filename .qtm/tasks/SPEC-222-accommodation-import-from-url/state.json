@@ -1013,42 +1013,43 @@
             "id": "T-028",
             "title": "Polish: PostHog events + legal copy + smoke test",
             "description": "Optional ephemeral fire-and-forget PostHog events (accommodation_import_started/completed/failed) via getPostHogClient (no DB). Legal notice copy review. Manual smoke: import against a real JSON-LD page + one live Apify call. Mark spec open micro-decisions resolved.",
-            "status": "pending",
+            "status": "in_progress",
             "complexity": 2,
             "blockedBy": ["T-020"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Ephemeral PostHog events (optional)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Legal copy review",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Live smoke (JSON-LD + Apify)",
-                    "completed": false
+                    "completed": false,
+                    "note": "BLOCKED on owner: needs Coolify credentials (Apify token+actors, Google Places key, ML OAuth). Each adapter degrades clean until then (US-11)."
                 }
             ],
             "tags": ["docs", "cleanup"],
             "phase": "cleanup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T22:40:00.000Z",
-                "started": null,
+                "started": "2026-06-16T16:50:00.000Z",
                 "completed": null
             }
         }
     ],
     "summary": {
         "total": 28,
-        "pending": 1,
-        "inProgress": 0,
+        "pending": 0,
+        "inProgress": 1,
         "completed": 27,
         "blocked": 0,
         "averageComplexity": 2.5
