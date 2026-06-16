@@ -2,6 +2,41 @@
     "version": "1.0",
     "epics": [
         {
+            "specId": "SPEC-239",
+            "title": "Commerce listing core (merchant-with-subscription) + Gastronomía",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-239-commerce-listings-core-gastronomy"
+        },
+        {
+            "specId": "SPEC-240",
+            "title": "Experiencias y Servicios (tourism services & experiences)",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-240-experiences-services"
+        },
+        {
+            "specId": "SPEC-241",
+            "title": "Host trades/services directory (24h emergency trades for hosts)",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-241-host-trades-directory"
+        },
+        {
+            "specId": "SPEC-242",
+            "title": "Tarjeta Hospeda (benefits card for guests)",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-242-hospeda-card"
+        },
+        {
+            "specId": "SPEC-243",
+            "title": "Hospeda mobile app (React Native / Expo)",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-243-mobile-app"
+        },
+        {
             "specId": "SPEC-236",
             "title": "Coverage ratchet-up — restore per-package thresholds to the 90% target",
             "status": "completed",
@@ -404,9 +439,12 @@
         {
             "specId": "SPEC-207",
             "title": "Host Analytics & KPIs — Business Dashboard in Web",
-            "status": "in-progress",
-            "progress": "0/1",
+            "status": "completed",
+            "progress": "1/1",
             "path": "SPEC-207-host-analytics-kpis",
+            "archived": true,
+            "archivedAt": "2026-06-15T00:00:00.000Z",
+            "archiveNote": "Merged to staging via PR #1678. Follow-up fix/SPEC-207-i18n-hostdailyseries adds the i18n keys that landed after the merge commit.",
             "tags": ["host-migration", "phase-3"]
         },
         {
