@@ -30,6 +30,19 @@ vi.mock('../../../src/components/account/SubscriptionDashboard.module.css', () =
     })
 }));
 
+// PlanChangeFlow and its sub-components are statically imported by SubscriptionDashboard
+vi.mock('../../../src/components/account/PlanChangeFlow.module.css', () => ({
+    default: new Proxy({} as Record<string, string>, { get: (_t, p) => String(p) })
+}));
+
+vi.mock('../../../src/components/account/PlanPicker.module.css', () => ({
+    default: new Proxy({} as Record<string, string>, { get: (_t, p) => String(p) })
+}));
+
+vi.mock('../../../src/components/account/DowngradePreviewPanel.module.css', () => ({
+    default: new Proxy({} as Record<string, string>, { get: (_t, p) => String(p) })
+}));
+
 // Mock @repo/icons — return simple span elements for each icon.
 vi.mock('@repo/icons', () => ({
     CheckIcon: () => <span data-testid="icon-check" />,
@@ -58,6 +71,9 @@ const mockListInvoices = vi.fn();
 const mockCancelSubscription = vi.fn();
 const mockPauseSubscription = vi.fn();
 const mockResumeSubscription = vi.fn();
+// Plan-change flow methods (used by PlanChangeFlow — statically imported)
+const mockChangePlan = vi.fn();
+const mockPreviewDowngrade = vi.fn();
 
 vi.mock('../../../src/lib/api/endpoints-protected', () => ({
     userApi: {
@@ -67,7 +83,9 @@ vi.mock('../../../src/lib/api/endpoints-protected', () => ({
         listInvoices: () => mockListInvoices(),
         cancelSubscription: (...args: unknown[]) => mockCancelSubscription(...args),
         pauseSubscription: () => mockPauseSubscription(),
-        resumeSubscription: () => mockResumeSubscription()
+        resumeSubscription: () => mockResumeSubscription(),
+        changePlan: (...args: unknown[]) => mockChangePlan(...args),
+        previewDowngrade: (...args: unknown[]) => mockPreviewDowngrade(...args)
     }
 }));
 
@@ -80,7 +98,9 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
         listInvoices: () => mockListInvoices(),
         cancelSubscription: (...args: unknown[]) => mockCancelSubscription(...args),
         pauseSubscription: () => mockPauseSubscription(),
-        resumeSubscription: () => mockResumeSubscription()
+        resumeSubscription: () => mockResumeSubscription(),
+        changePlan: (...args: unknown[]) => mockChangePlan(...args),
+        previewDowngrade: (...args: unknown[]) => mockPreviewDowngrade(...args)
     }
 }));
 

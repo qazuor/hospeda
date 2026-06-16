@@ -444,6 +444,50 @@
             "scheduledChange": {
                 "title": "Cambio de plan programado",
                 "body": "Tu plan cambiará a {plan} el {date}."
+            },
+            "changePlanButton": "Cambiar plan",
+            "changePlanAriaLabel": "Cambiar plan de suscripción",
+            "planPicker": {
+                "title": "Cambiar plan",
+                "subtitle": "Elegí el plan al que querés cambiar.",
+                "listLabel": "Planes disponibles",
+                "currentBadge": "Plan actual",
+                "upgradeBadge": "Mejora",
+                "downgradeBadge": "Reducción",
+                "selectMonthly": "Mensual",
+                "selectAnnual": "Anual"
+            },
+            "downgradePreview": {
+                "title": "Revisá los cambios antes de continuar",
+                "intro": "Al cambiar al plan {plan} se aplicarán restricciones a tu cuenta. Elegí qué querés conservar.",
+                "accommodationsTitle": "Alojamientos ({active} activos, máx. {cap})",
+                "accommodationsHint": "Seleccioná hasta {cap} alojamientos para mantener activos. El resto quedará inactivo.",
+                "accommodationsListLabel": "Lista de alojamientos",
+                "promotionsTitle": "Promociones ({active} activas, máx. {cap})",
+                "promotionsHint": "Seleccioná hasta {cap} promociones para mantener activas.",
+                "promotionsListLabel": "Lista de promociones",
+                "overCapWarning": "Tenés {selected} seleccionados pero el plan permite {cap}. Deseleccioná {extra}.",
+                "defaultKeep": "Sugerido",
+                "photosTitle": "Fotos excedidas",
+                "photosHint": "Algunos alojamientos tienen más fotos de las permitidas. Las excedidas se moverán al archivo.",
+                "photosOf": "fotos, máx.",
+                "photoOverflowLabel": "Fotos que se archivarán",
+                "keepPhotoLabel": "Conservar foto {url}",
+                "grandfatherTitle": "Contenido que quedará en modo lectura",
+                "grandfatherHint": "Estos alojamientos tienen contenido que no podrás editar con el nuevo plan, pero NO se eliminará.",
+                "richDescription": "Descripción enriquecida",
+                "videoEmbed": "Video embebido",
+                "confirmButton": "Continuar con el cambio"
+            },
+            "planChangeFlow": {
+                "scheduledTitle": "Cambio programado",
+                "scheduledBody": "Tu plan cambiará el {date}. Hasta entonces, seguís con tu plan actual.",
+                "restrictionHint": "Las restricciones se aplicarán en ese momento. El detalle exacto puede variar según tu uso al momento del cambio.",
+                "activeTitle": "Plan actualizado",
+                "activeBody": "Tu plan fue cambiado exitosamente.",
+                "redirecting": "Redirigiendo al pago...",
+                "previewError": "No se pudo obtener la vista previa del cambio. Intentá de nuevo.",
+                "changeError": "No se pudo cambiar el plan. Intentá de nuevo."
             }
         }
     },

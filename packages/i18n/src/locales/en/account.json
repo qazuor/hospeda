@@ -444,6 +444,50 @@
             "scheduledChange": {
                 "title": "Scheduled plan change",
                 "body": "Your plan will change to {plan} on {date}."
+            },
+            "changePlanButton": "Change plan",
+            "changePlanAriaLabel": "Change subscription plan",
+            "planPicker": {
+                "title": "Change plan",
+                "subtitle": "Choose the plan you want to switch to.",
+                "listLabel": "Available plans",
+                "currentBadge": "Current plan",
+                "upgradeBadge": "Upgrade",
+                "downgradeBadge": "Downgrade",
+                "selectMonthly": "Monthly",
+                "selectAnnual": "Annual"
+            },
+            "downgradePreview": {
+                "title": "Review changes before continuing",
+                "intro": "Switching to the {plan} plan will apply restrictions to your account. Choose what you want to keep.",
+                "accommodationsTitle": "Accommodations ({active} active, max {cap})",
+                "accommodationsHint": "Select up to {cap} accommodations to keep active. The rest will be deactivated.",
+                "accommodationsListLabel": "Accommodations list",
+                "promotionsTitle": "Promotions ({active} active, max {cap})",
+                "promotionsHint": "Select up to {cap} promotions to keep active.",
+                "promotionsListLabel": "Promotions list",
+                "overCapWarning": "You have {selected} selected but the plan allows {cap}. Deselect {extra}.",
+                "defaultKeep": "Suggested",
+                "photosTitle": "Excess photos",
+                "photosHint": "Some accommodations have more photos than allowed. The excess will be archived.",
+                "photosOf": "photos, max.",
+                "photoOverflowLabel": "Photos to be archived",
+                "keepPhotoLabel": "Keep photo {url}",
+                "grandfatherTitle": "Content that will become read-only",
+                "grandfatherHint": "These accommodations have content you won't be able to edit with the new plan, but it will NOT be deleted.",
+                "richDescription": "Rich description",
+                "videoEmbed": "Embedded video",
+                "confirmButton": "Continue with change"
+            },
+            "planChangeFlow": {
+                "scheduledTitle": "Change scheduled",
+                "scheduledBody": "Your plan will change on {date}. Until then, you keep your current plan.",
+                "restrictionHint": "Restrictions will be applied at that time. The exact details may vary based on your usage at the time of the change.",
+                "activeTitle": "Plan updated",
+                "activeBody": "Your plan was changed successfully.",
+                "redirecting": "Redirecting to payment...",
+                "previewError": "Could not get the change preview. Please try again.",
+                "changeError": "Could not change the plan. Please try again."
             }
         }
     },
