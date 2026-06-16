@@ -111,29 +111,37 @@
             "id": "T-006",
             "title": "Mobile design system: color tokens (JS objects from brand palette), typography, spacing, radius constants",
             "description": "apps/mobile/src/design/: port the brand palette color values to JS token objects for RN StyleSheet (ADR-033 decision 1). Define typography scale, spacing scale, radius constants. Same color values as @repo/design-tokens but as JS objects (CSS/OKLCH tokens are not usable in RN).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": ["T-007", "T-013"],
             "subtasks": [],
             "tags": ["design", "tokens"],
             "phase": "design",
-            "qualityGate": { "lint": "pending", "typecheck": "pending", "tests": "pending" },
-            "timestamps": { "created": "2026-06-15T00:00:00.000Z" }
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-06-15T00:00:00.000Z",
+                "started": "2026-06-16T00:00:00.000Z",
+                "completed": "2026-06-16T00:00:00.000Z"
+            }
         },
         {
             "id": "T-007",
             "title": "Wire styling strategy (StyleSheet.create per ADR-033) into the design-system layer",
             "description": "Styling decision is LOCKED to StyleSheet.create in ADR-033 (decision 1) — NativeWind rejected for v1. This task wires the convention: a small StyleSheet helper/pattern over the T-006 tokens, plus a short usage note. No decision work remains here.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-006"],
             "blocks": [],
             "subtasks": [],
             "tags": ["design", "styling", "adr-033"],
             "phase": "design",
-            "qualityGate": { "lint": "pending", "typecheck": "pending", "tests": "pending" },
-            "timestamps": { "created": "2026-06-15T00:00:00.000Z" }
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-06-15T00:00:00.000Z",
+                "started": "2026-06-16T00:00:00.000Z",
+                "completed": "2026-06-16T00:00:00.000Z"
+            }
         },
         {
             "id": "T-008",
@@ -232,9 +240,9 @@
     ],
     "summary": {
         "total": 13,
-        "pending": 10,
+        "pending": 8,
         "inProgress": 0,
-        "completed": 3,
+        "completed": 5,
         "blocked": 0,
         "averageComplexity": 1.9
     }
