@@ -59,7 +59,8 @@ export enum PermissionCategoryEnum {
     SYSTEM = 'SYSTEM',
     ACCESS = 'ACCESS',
     MEDIA = 'MEDIA',
-    MODERATION = 'MODERATION'
+    MODERATION = 'MODERATION',
+    HOST_TRADE = 'HOST_TRADE'
 }
 
 // PermissionEnum defines all possible built-in permissions for the Hospeda platform.
@@ -839,5 +840,14 @@ export enum PermissionEnum {
     MODERATION_THRESHOLD_VIEW = 'moderation.threshold.view', // Allows viewing moderation threshold configuration.
     MODERATION_THRESHOLD_UPDATE = 'moderation.threshold.update', // Allows updating moderation threshold values (pending/reject).
     MODERATION_THRESHOLD_RESTORE = 'moderation.threshold.restore', // Allows restoring a soft-deleted moderation threshold.
-    MODERATION_THRESHOLD_HARD_DELETE = 'moderation.threshold.hardDelete' // Allows permanently deleting a moderation threshold.
+    MODERATION_THRESHOLD_HARD_DELETE = 'moderation.threshold.hardDelete', // Allows permanently deleting a moderation threshold.
+
+    // HOST_TRADE: Admin-curated host trades/services directory (SPEC-241). Host-only read perk; admin-only CRUD.
+    HOST_TRADE_VIEW = 'hostTrade.view', // Allows an authenticated host to read active trade listings for their accommodation destinations.
+    HOST_TRADE_CREATE = 'hostTrade.create', // Admin: create a trade entry.
+    HOST_TRADE_UPDATE = 'hostTrade.update', // Admin: update a trade entry.
+    HOST_TRADE_DELETE = 'hostTrade.delete', // Admin: soft-delete a trade entry.
+    HOST_TRADE_RESTORE = 'hostTrade.restore', // Admin: restore a soft-deleted trade entry.
+    HOST_TRADE_HARD_DELETE = 'hostTrade.hardDelete', // Admin: permanently delete a trade entry.
+    HOST_TRADE_VIEW_ALL = 'hostTrade.viewAll' // Admin: list all trades including inactive/soft-deleted.
 }
