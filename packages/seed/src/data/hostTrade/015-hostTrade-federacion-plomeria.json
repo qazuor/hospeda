@@ -1,0 +1,14 @@
+{
+    "$schema": "../../../schemas/hostTrade.schema.json",
+    "id": "015-hostTrade-federacion-plomeria",
+    "name": "Plomería Las Termas",
+    "slug": "plomeria-las-termas",
+    "category": "PLOMERIA",
+    "contact": "+54 9 3456 123456",
+    "benefit": "Especialistas en instalaciones termales. 10% de descuento para alojamientos registrados en Hospeda.",
+    "destinationId": "004-destination-federacion",
+    "is24h": false,
+    "scheduleText": "Lunes a Sábado 7:00–18:00",
+    "isActive": true,
+    "createdById": "super-admin-user"
+}

@@ -11,6 +11,7 @@ export * from './entity-comment/index.ts';
 export * from './entity-view/index.ts';
 export * from './event/index.ts';
 export * from './exchange-rate/index.ts';
+export * from './hostTrade/index.ts';
 export * from './owner-promotion/index.ts';
 export * from './platform/index.ts';
 export * from './post/index.ts';

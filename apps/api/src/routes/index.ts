@@ -41,6 +41,7 @@ import {
 import { adminFeatureRoutes, protectedFeatureRoutes, publicFeatureRoutes } from './feature';
 import { protectedHostRoutes } from './host';
 import { protectedHostOnboardingRoutes } from './host-onboarding';
+import { adminHostTradeRoutes, protectedHostTradeRoutes } from './host-trade';
 import { adminPostRoutes, protectedPostRoutes, publicPostRoutes } from './post';
 import {
     adminPostTagAssignmentRoutes,
@@ -265,6 +266,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         );
         app.route('/api/v1/protected/accommodations', protectedAccommodationRoutes);
         app.route('/api/v1/protected/host', protectedHostRoutes);
+        app.route('/api/v1/protected/host-trades', protectedHostTradeRoutes);
         app.route('/api/v1/protected/host-onboarding', protectedHostOnboardingRoutes);
         app.route('/api/v1/protected/destinations', protectedDestinationRoutes);
         app.route('/api/v1/protected/events', protectedEventRoutes);
@@ -346,6 +348,9 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/amenities', adminAmenityRoutes);
         app.route('/api/v1/admin/features', adminFeatureRoutes);
         app.route('/api/v1/admin/attractions', adminAttractionRoutes);
+
+        // Host-trade directory (SPEC-241) — admin-curated; host read perk
+        app.route('/api/v1/admin/host-trades', adminHostTradeRoutes);
 
         // User-tag admin routes (SPEC-086 T-025..T-028)
         // IMPORTANT mounting order: more-specific prefixes MUST be registered BEFORE

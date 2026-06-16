@@ -1,0 +1,88 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "hostTrade.schema.json",
+    "title": "HostTrade Seed Schema",
+    "description": "JSON schema for HostTrade entity seeds — matches the host_trades table and HostTradeSchema (SPEC-241)",
+    "type": "object",
+    "properties": {
+        "$schema": {
+            "type": "string"
+        },
+        "id": {
+            "type": "string",
+            "description": "Seed identifier (not the DB UUID — resolved at runtime via idMapper)"
+        },
+        "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Display name of the tradesperson or business"
+        },
+        "slug": {
+            "type": "string",
+            "minLength": 1,
+            "description": "URL-safe slug (optional — server auto-generates from name if omitted)"
+        },
+        "category": {
+            "type": "string",
+            "enum": [
+                "CERRAJERIA",
+                "PLOMERIA",
+                "ELECTRICIDAD",
+                "GAS",
+                "CLIMATIZACION",
+                "LIMPIEZA",
+                "FLETES",
+                "VIDRIERIA",
+                "CARPINTERIA",
+                "PILETA_JARDIN",
+                "PLAGAS",
+                "INTERNET",
+                "ALBANILERIA"
+            ],
+            "description": "Service category matching HostTradeCategoryEnum"
+        },
+        "contact": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Contact information — phone number or wa.me deep-link"
+        },
+        "benefit": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Benefit or special terms for hosts who mention Hospeda"
+        },
+        "destinationId": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Seed destination ID (e.g. '011-destination-concepcion-del-uruguay') — resolved to real UUID at runtime"
+        },
+        "is24h": {
+            "type": "boolean",
+            "description": "Whether the provider is available 24 hours a day"
+        },
+        "scheduleText": {
+            "type": ["string", "null"],
+            "description": "Human-readable schedule when not 24h (e.g. 'Lunes a Viernes 8:00–18:00')"
+        },
+        "isActive": {
+            "type": "boolean",
+            "description": "Whether this entry is publicly visible in the host directory"
+        },
+        "createdById": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Seed user ID for the creator — resolved to real UUID at runtime (use 'super-admin-user' or 'admin-user')"
+        }
+    },
+    "required": [
+        "id",
+        "name",
+        "category",
+        "contact",
+        "benefit",
+        "destinationId",
+        "is24h",
+        "isActive"
+    ],
+    "additionalProperties": false
+}

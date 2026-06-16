@@ -1739,6 +1739,9 @@
         },
         "productDomain": {
             "invalid": "El dominio de producto no es válido"
+        },
+        "hostTradeCategory": {
+            "invalid": "La categoría de oficio seleccionada no es válida"
         }
     },
     "event": {
@@ -3609,6 +3612,20 @@
         "hostReWriteName": {
             "max": "El host re write name no puede superar los {{max}} caracteres",
             "min": "El host re write name debe tener al menos {{min}} caracteres"
+        }
+    },
+    "hostTrade": {
+        "name": {
+            "min": "El nombre debe tener al menos {{min}} caracteres"
+        },
+        "slug": {
+            "min": "El slug debe tener al menos {{min}} caracteres"
+        },
+        "contact": {
+            "min": "El contacto debe tener al menos {{min}} caracteres"
+        },
+        "benefit": {
+            "min": "El beneficio debe tener al menos {{min}} caracteres"
         }
     }
 }

@@ -61,7 +61,8 @@ export enum PermissionCategoryEnum {
     MEDIA = 'MEDIA',
     MODERATION = 'MODERATION',
     /** Commerce listings (gastronomy, experience). Added in SPEC-239. */
-    COMMERCE = 'COMMERCE'
+    COMMERCE = 'COMMERCE',
+    HOST_TRADE = 'HOST_TRADE'
 }
 
 // PermissionEnum defines all possible built-in permissions for the Hospeda platform.
@@ -861,5 +862,14 @@ export enum PermissionEnum {
     COMMERCE_VIEW_ALL = 'commerce.viewAll', // Allows viewing all commerce listings (including private/draft).
     COMMERCE_EDIT_ALL = 'commerce.editAll', // Allows editing any commerce listing regardless of ownership.
     COMMERCE_DELETE = 'commerce.delete', // Allows soft-deleting any commerce listing.
-    COMMERCE_MODERATE_REVIEW = 'commerce.moderateReview' // Allows moderating reviews on commerce listings.
+    COMMERCE_MODERATE_REVIEW = 'commerce.moderateReview', // Allows moderating reviews on commerce listings.
+
+    // HOST_TRADE: Admin-curated host trades/services directory (SPEC-241). Host-only read perk; admin-only CRUD.
+    HOST_TRADE_VIEW = 'hostTrade.view', // Allows an authenticated host to read active trade listings for their accommodation destinations.
+    HOST_TRADE_CREATE = 'hostTrade.create', // Admin: create a trade entry.
+    HOST_TRADE_UPDATE = 'hostTrade.update', // Admin: update a trade entry.
+    HOST_TRADE_DELETE = 'hostTrade.delete', // Admin: soft-delete a trade entry.
+    HOST_TRADE_RESTORE = 'hostTrade.restore', // Admin: restore a soft-deleted trade entry.
+    HOST_TRADE_HARD_DELETE = 'hostTrade.hardDelete', // Admin: permanently delete a trade entry.
+    HOST_TRADE_VIEW_ALL = 'hostTrade.viewAll' // Admin: list all trades including inactive/soft-deleted.
 }

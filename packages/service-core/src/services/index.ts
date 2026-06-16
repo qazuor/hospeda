@@ -17,6 +17,8 @@ export * from './eventLocation/eventLocation.service';
 export * from './eventOrganizer/eventOrganizer.service';
 export * from './feature/feature.service';
 export * from './feature/feature.normalizers';
+export * from './hostTrade/host-trade.service';
+export * from './hostTrade/host-trade.permissions';
 export * from './permission/permission.effects';
 export * from './permission/permission.service';
 export * from './platformSettings/index.js';

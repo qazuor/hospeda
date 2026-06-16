@@ -59,6 +59,9 @@ export * from './exchange-rate-source.schema.js';
 export * from './exchange-rate-type.enum.js';
 export * from './exchange-rate-type.schema.js';
 
+export * from './host-trade-category.enum.js';
+export * from './host-trade-category.schema.js';
+
 export * from './invoice-status.enum.js';
 export * from './invoice-status.schema.js';
 

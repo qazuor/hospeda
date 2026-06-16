@@ -37,8 +37,8 @@
         {
             "specId": "SPEC-241",
             "title": "Host trades/services directory (24h emergency trades for hosts)",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "in-progress",
+            "progress": "19/19",
             "path": "SPEC-241-host-trades-directory"
         },
         {
@@ -572,9 +572,12 @@
         {
             "specId": "SPEC-215",
             "title": "Destination climate & live weather",
-            "status": "in-progress",
+            "status": "completed",
             "progress": "28/28",
-            "path": "SPEC-215-destination-climate-weather"
+            "path": "SPEC-215-destination-climate-weather",
+            "archived": true,
+            "archivedAt": "2026-06-16",
+            "archiveNote": "Implementation merged to staging via PR #1690 (merge 69147a17c). PR #1573 had only carried the spec doc."
         },
         {
             "specId": "SPEC-216",
