@@ -352,7 +352,16 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.MODERATION_THRESHOLD_VIEW,
         PermissionEnum.MODERATION_THRESHOLD_UPDATE,
         PermissionEnum.MODERATION_THRESHOLD_RESTORE,
-        PermissionEnum.MODERATION_THRESHOLD_HARD_DELETE
+        PermissionEnum.MODERATION_THRESHOLD_HARD_DELETE,
+
+        // HOST_TRADE: Admin-curated host trades directory (SPEC-241) — full CRUD.
+        PermissionEnum.HOST_TRADE_VIEW,
+        PermissionEnum.HOST_TRADE_VIEW_ALL,
+        PermissionEnum.HOST_TRADE_CREATE,
+        PermissionEnum.HOST_TRADE_UPDATE,
+        PermissionEnum.HOST_TRADE_DELETE,
+        PermissionEnum.HOST_TRADE_RESTORE,
+        PermissionEnum.HOST_TRADE_HARD_DELETE
     ],
 
     [RoleEnum.ADMIN]: [
@@ -625,7 +634,16 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.MODERATION_THRESHOLD_VIEW,
         PermissionEnum.MODERATION_THRESHOLD_UPDATE,
         PermissionEnum.MODERATION_THRESHOLD_RESTORE,
-        PermissionEnum.MODERATION_THRESHOLD_HARD_DELETE
+        PermissionEnum.MODERATION_THRESHOLD_HARD_DELETE,
+
+        // HOST_TRADE: Admin-curated host trades directory (SPEC-241) — full CRUD.
+        PermissionEnum.HOST_TRADE_VIEW,
+        PermissionEnum.HOST_TRADE_VIEW_ALL,
+        PermissionEnum.HOST_TRADE_CREATE,
+        PermissionEnum.HOST_TRADE_UPDATE,
+        PermissionEnum.HOST_TRADE_DELETE,
+        PermissionEnum.HOST_TRADE_RESTORE,
+        PermissionEnum.HOST_TRADE_HARD_DELETE
     ],
 
     // KNOWN DEBT (SPEC-169): CLIENT_MANAGER broad grants (USER_READ_ALL, ACCOMMODATION_VIEW_ALL,
@@ -912,7 +930,10 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         // BILLING_VIEW_OWN/SUBSCRIPTION_VIEW_OWN are distinct from BILLING_READ_ALL (admin-tier).
         PermissionEnum.BILLING_VIEW_OWN,
         PermissionEnum.SUBSCRIPTION_VIEW_OWN,
-        PermissionEnum.USER_UPDATE_SELF
+        PermissionEnum.USER_UPDATE_SELF,
+
+        // HOST_TRADE: read-only access to the admin-curated host trades directory (SPEC-241).
+        PermissionEnum.HOST_TRADE_VIEW
     ],
 
     [RoleEnum.USER]: [
