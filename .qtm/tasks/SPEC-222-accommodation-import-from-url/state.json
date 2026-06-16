@@ -764,35 +764,35 @@
             "id": "T-021",
             "title": "Integration test for import endpoint",
             "description": "Stub HTTP server serving a JSON-LD LodgingBusiness page → assert pre-filled draft with confidence/source. Mock Apify + AI. Cases: 200 partial draft; legalConfirmed false → rejected; rate-limit 429 with retryAfter; unauthorized → 401; reviews never in response. File: apps/api/test/routes/accommodation-import.integration.test.ts.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-020"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Stub JSON-LD server path",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "legalConfirmed reject + 429 + 401 cases",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Assert no reviews leak",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "testing"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T22:40:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T15:10:00.000Z",
+                "completed": "2026-06-16T15:25:00.000Z"
             }
         },
         {
@@ -1047,9 +1047,9 @@
     ],
     "summary": {
         "total": 28,
-        "pending": 8,
+        "pending": 7,
         "inProgress": 0,
-        "completed": 20,
+        "completed": 21,
         "blocked": 0,
         "averageComplexity": 2.5
     }
