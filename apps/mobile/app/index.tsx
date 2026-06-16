@@ -1,5 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View } from 'react-native';
+import { theme } from '../src/design';
 import { appDefaultLocale, getTranslation, supportedLocales } from '../src/lib/i18n';
 
 /**
@@ -12,6 +13,9 @@ import { appDefaultLocale, getTranslation, supportedLocales } from '../src/lib/i
  * one legitimate exception to the named-export-only rule (see CLAUDE.md).
  *
  * Styling uses StyleSheet.create as locked in ADR-033 (decision #1).
+ * Colors are sourced from the mobile design system (T-006/T-007) — no
+ * hardcoded hex values. All tokens flow through `theme` from
+ * `apps/mobile/src/design/` per the StyleSheet.create convention.
  *
  * T-002: imports from src/lib/i18n to force Metro to bundle @repo/i18n and
  * @repo/schemas, confirming workspace package resolution works correctly.
@@ -35,27 +39,34 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#ffffff',
+        // semantic.background = '#ffffff'  (oklch(1 0 0) → sRGB white)
+        backgroundColor: theme.colors.semantic.background,
         alignItems: 'center',
         justifyContent: 'center',
-        padding: 24
+        padding: theme.spacing[6]
     },
     title: {
-        fontSize: 32,
+        // typography.semantic.display = 32px (web: clamp(2rem…3rem), mobile lower-bound)
+        fontSize: theme.typography.semantic.display,
         fontWeight: '700',
-        color: '#111827',
-        marginBottom: 8
+        // neutral[700] = '#2e2e2e'  (oklch(0.30 0 0) → near-black heading)
+        color: theme.colors.neutral[700],
+        marginBottom: theme.spacing[2]
     },
     subtitle: {
-        fontSize: 16,
-        color: '#6b7280',
+        // typography.semantic.body = 16px
+        fontSize: theme.typography.semantic.body,
+        // neutral[500] = '#717171'  (oklch(0.55 0 0) → mid-gray body text)
+        color: theme.colors.neutral[500],
         textAlign: 'center',
-        marginBottom: 8
+        marginBottom: theme.spacing[2]
     },
     locale: {
-        fontSize: 12,
-        color: '#9ca3af',
+        // typography.semantic.caption = 12px
+        fontSize: theme.typography.semantic.caption,
+        // neutral[400] = '#9e9e9e'  (oklch(0.70 0 0) → muted / meta text)
+        color: theme.colors.neutral[400],
         textAlign: 'center',
-        marginTop: 4
+        marginTop: theme.spacing[1]
     }
 });
