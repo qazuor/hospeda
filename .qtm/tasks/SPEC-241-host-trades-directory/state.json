@@ -160,187 +160,187 @@
             "id": "T-005",
             "title": "Add HostTradeCategoryPgEnum to enums.dbschema.ts",
             "description": "In packages/db/src/schemas/enums.dbschema.ts add HostTradeCategoryPgEnum = pgEnum('host_trade_category_enum', enumToTuple(HostTradeCategoryEnum)). PermissionPgEnum already wraps the new permission values via enumToTuple (no manual change needed once T-002 is done).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-001"],
             "blocks": ["T-006"],
             "subtasks": [
                 {
                     "title": "Add HostTradeCategoryPgEnum via pgEnum + enumToTuple",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Confirm PermissionPgEnum auto-includes new perms",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["db", "enum"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T23:39:47.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T00:14:43.000Z",
+                "completed": "2026-06-16T00:23:41.000Z"
             }
         },
         {
             "id": "T-006",
             "title": "Create host_trade.dbschema.ts table + relations",
             "description": "Create packages/db/src/schemas/host-trade/host_trade.dbschema.ts defining the hostTrades Drizzle table (table name host_trades) with all columns from the domain model (id, slug UNIQUE, name, category via HostTradeCategoryPgEnum, contact, benefit, destinationId FK ON DELETE RESTRICT, is24h default false, scheduleText nullable, isActive default true, audit + soft-delete columns). Relations: one(destinations), one(users createdBy/updatedBy/deletedBy). Add packages/db/src/schemas/host-trade/index.ts and update packages/db/src/schemas/index.ts.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-005", "T-003"],
             "blocks": ["T-007", "T-008"],
             "subtasks": [
                 {
                     "title": "Define hostTrades table columns",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Define relations (destinations, users)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add schema index.ts + update schemas/index.ts",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["db", "drizzle", "schema"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T23:39:47.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T00:14:43.000Z",
+                "completed": "2026-06-16T00:23:41.000Z"
             }
         },
         {
             "id": "T-007",
             "title": "Generate and verify migration",
             "description": "Run pnpm db:generate to produce the host_trades migration .sql, review it (table + enum creation, FK constraints, unique slug index), commit it. Verify with pnpm db:migrate locally. No extras (no triggers/matviews) required.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-006"],
             "blocks": ["T-008", "T-009"],
             "subtasks": [
                 {
                     "title": "Run pnpm db:generate",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Review generated SQL (enum, table, FKs, unique slug)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify pnpm db:migrate applies cleanly",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["db", "migration"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T23:39:47.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T00:23:51.000Z",
+                "completed": "2026-06-16T00:42:33.000Z"
             }
         },
         {
             "id": "T-008",
             "title": "Create HostTradeModel with findForHost + integration tests",
             "description": "Create packages/db/src/models/hostTrade/host-trade.model.ts extending BaseModel<HostTrade>. Custom method findForHost(destinationIds: string[]): returns active, non-deleted trades where destinationId IN (destinationIds) ordered by category ASC, name ASC. Update packages/db/src/models/index.ts. Tests: integration tests for findForHost (filtering, ordering, empty input, soft-delete exclusion).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-006", "T-007"],
             "blocks": ["T-009", "T-010"],
             "subtasks": [
                 {
                     "title": "HostTradeModel extends BaseModel",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "findForHost(destinationIds) ordered query",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update models/index.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Integration tests (filter/order/empty/soft-delete)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["db", "model", "testing"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T23:39:47.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T00:42:48.000Z",
+                "completed": "2026-06-16T01:05:37.000Z"
             }
         },
         {
             "id": "T-009",
             "title": "Add example seed data for host_trades",
             "description": "Add packages/seed/src/data/hostTrade/*.json (>=2 trades per seeded destination across several categories: CERRAJERIA, PLOMERIA, ELECTRICIDAD, GAS, CLIMATIZACION at minimum; mixed is24h true/false; some with scheduleText). Register filenames under a 'hostTrades' array in packages/seed/src/manifest-example.json. Create packages/seed/src/example/hostTrades.seed.ts loader and wire it into packages/seed/src/example/index.ts AFTER destinations and users (FK order: destinationId -> destinations, createdById -> users). Add the seed schema entry under packages/seed/src/schemas/ if the package validates rows. Verify with pnpm db:fresh-dev that the directory is non-empty for a seeded host.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-007", "T-008"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Author *.json trade rows across destinations/categories",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Register filenames in manifest-example.json",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Create example/hostTrades.seed.ts loader",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Wire into example/index.ts after destinations+users",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add seed schema entry if package validates rows",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify pnpm db:fresh-dev populates directory",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["seed", "data"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T23:39:47.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T01:06:13.000Z",
+                "completed": "2026-06-16T01:26:01.000Z"
             }
         },
         {
@@ -533,7 +533,7 @@
         {
             "id": "T-015",
             "title": "Create TradesDirectory React island + TradeCard (CSS Modules)",
-            "description": "Create apps/web TradesDirectory.client.tsx (client:idle): category filter bar (pill buttons, i18n labels, 'Todos' resets, client-side filtering, empty state per selected category) + card grid. TradeCard shows name, category badge (i18n), contact link (generic 'Contactar', tel:/wa.me as applicable), benefit text, is24h badge, scheduleText. Styling via TradesDirectory.module.css + TradeCard.module.css + design tokens (no Tailwind). i18n via createTranslations.",
+            "description": "Create apps/web TradesDirectory.client.tsx (client:idle): category filter bar (pill buttons, i18n labels, 'Todos' resets, client-side filtering, empty state per selected category) + card grid. TradeCard shows name, category badge (i18n), contact link (generic 'Contactar', tel:/wa.me as applicable), benefit text, is24h badge, scheduleText. Styling via TradesDirectory.module.css + TradeCard.module.css + design tokens (no Tailwind). i18n via createTranslations. AC-1.5: group trades by category and sort the category groups alphabetically by their localized i18n label (client-side); the server order is only a stable name-ASC default.",
             "status": "pending",
             "complexity": 2,
             "blockedBy": ["T-004", "T-014"],
@@ -700,9 +700,9 @@
     ],
     "summary": {
         "total": 19,
-        "pending": 15,
+        "pending": 10,
         "inProgress": 0,
-        "completed": 4,
+        "completed": 9,
         "blocked": 0,
         "averageComplexity": 1.6
     }

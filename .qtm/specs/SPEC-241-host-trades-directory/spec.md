@@ -171,8 +171,13 @@ THEN they see a list of active trades filtered by their accommodation destinatio
 - **AC-1.4** Each card shows: name, category badge (i18n label), contact
   (click-to-call/WhatsApp link), benefit text, is24h badge (if true), and
   scheduleText (if present).
-- **AC-1.5** Trades are ordered alphabetically by category, then by name within
-  the category (server default order).
+- **AC-1.5** The server returns a stable order: `name ASC` within each category
+  (the `category` column sorts by pg-enum declaration order, which is not
+  meaningful on its own). The **client island groups trades by category and
+  sorts the category groups alphabetically by their localized i18n label**, so
+  the visible order is alphabetical in the user's locale (es/en/pt). Decision
+  2026-06-15: ordering-by-localized-label is a client concern, not a server
+  `ORDER BY category::text` — the displayed labels differ per locale.
 
 ### US-2 — Host filters trades by category
 
