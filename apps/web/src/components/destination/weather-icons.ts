@@ -88,8 +88,8 @@ export function getWeatherIcon({ condition, isDay = true }: WeatherIconInput): I
  * Returns the i18n key for a WMO condition string.
  *
  * @param condition - WMO condition string
- * @returns Translation key under destination.weather.conditions.*
+ * @returns Translation key under destinations.weather.conditions.*
  */
 export function getWeatherConditionKey(condition: string): string {
-    return `destination.weather.conditions.${condition}`;
+    return `destinations.weather.conditions.${condition}`;
 }

@@ -58,7 +58,7 @@ const note = climate?.note
     aria-labelledby="dest-climate-card-title"
 >
     <h2 class="dest-climate-card__title" id="dest-climate-card-title">
-        {t('destination.climate.title', 'Clima')}
+        {t('destinations.climate.title', 'Clima')}
     </h2>
 
     {climate && (
@@ -66,17 +66,17 @@ const note = climate?.note
             {climate.bestSeason && (
                 <p class="dest-climate-card__best-season">
                     <span class="dest-climate-card__label">
-                        {t('destination.climate.bestSeason', 'Mejor época para visitar')}:
+                        {t('destinations.climate.bestSeason', 'Mejor época para visitar')}:
                     </span>
                     {' '}
-                    <strong>{t(`destination.climate.seasons.${climate.bestSeason}`, climate.bestSeason)}</strong>
+                    <strong>{t(`destinations.climate.seasons.${climate.bestSeason}`, climate.bestSeason)}</strong>
                 </p>
             )}
 
             {climate.bestMonths && (
                 <p class="dest-climate-card__best-months">
                     <span class="dest-climate-card__label">
-                        {t('destination.climate.bestMonths', 'Meses recomendados')}:
+                        {t('destinations.climate.bestMonths', 'Meses recomendados')}:
                     </span>
                     {' '}
                     {climate.bestMonths}
@@ -88,31 +88,31 @@ const note = climate?.note
                     {presentSeasons.map(({ key, data }) => (
                         <div class="dest-climate-card__season">
                             <h3 class="dest-climate-card__season-name">
-                                {t(`destination.climate.seasons.${key}`, key)}
+                                {t(`destinations.climate.seasons.${key}`, key)}
                             </h3>
                             <div class="dest-climate-card__season-stats">
                                 {data.avgTempMinC !== undefined && (
                                     <span class="dest-climate-card__stat">
                                         <span class="dest-climate-card__stat-label">
-                                            {t('destination.climate.fields.minTemp', 'Mín.')}
+                                            {t('destinations.climate.fields.minTemp', 'Mín.')}
                                         </span>
-                                        {Math.round(data.avgTempMinC)}{t('destination.climate.units.celsius', '°C')}
+                                        {Math.round(data.avgTempMinC)}{t('destinations.climate.units.celsius', '°C')}
                                     </span>
                                 )}
                                 {data.avgTempMaxC !== undefined && (
                                     <span class="dest-climate-card__stat">
                                         <span class="dest-climate-card__stat-label">
-                                            {t('destination.climate.fields.maxTemp', 'Máx.')}
+                                            {t('destinations.climate.fields.maxTemp', 'Máx.')}
                                         </span>
-                                        {Math.round(data.avgTempMaxC)}{t('destination.climate.units.celsius', '°C')}
+                                        {Math.round(data.avgTempMaxC)}{t('destinations.climate.units.celsius', '°C')}
                                     </span>
                                 )}
                                 {data.rainfallMm !== undefined && (
                                     <span class="dest-climate-card__stat">
                                         <span class="dest-climate-card__stat-label">
-                                            {t('destination.climate.fields.rainfall', 'Precipitaciones')}
+                                            {t('destinations.climate.fields.rainfall', 'Precipitaciones')}
                                         </span>
-                                        {Math.round(data.rainfallMm)}{t('destination.climate.units.mm', 'mm')}
+                                        {Math.round(data.rainfallMm)}{t('destinations.climate.units.mm', 'mm')}
                                     </span>
                                 )}
                             </div>
@@ -126,7 +126,7 @@ const note = climate?.note
             )}
 
             <p class="dest-climate-card__approximate">
-                {t('destination.climate.approximate', 'Valores aproximados')}
+                {t('destinations.climate.approximate', 'Valores aproximados')}
             </p>
         </div>
     )}

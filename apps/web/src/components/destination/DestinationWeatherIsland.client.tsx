@@ -135,7 +135,7 @@ export function DestinationWeatherIsland({
             <div
                 className={styles.skeleton}
                 aria-busy="true"
-                aria-label={t('destination.weather.title', 'Tiempo actual')}
+                aria-label={t('destinations.weather.title', 'Tiempo actual')}
             />
         );
     }
@@ -143,7 +143,7 @@ export function DestinationWeatherIsland({
     if (state.status === 'empty') {
         return (
             <p className={styles.unavailable}>
-                {t('destination.weather.unavailable', 'Clima no disponible por el momento')}
+                {t('destinations.weather.unavailable', 'Clima no disponible por el momento')}
             </p>
         );
     }
@@ -168,7 +168,7 @@ export function DestinationWeatherIsland({
                 <div className={styles.currentInfo}>
                     <p className={styles.currentTemp}>
                         {Math.round(current.temperatureC)}
-                        {t('destination.climate.units.celsius', '°C')}
+                        {t('destinations.climate.units.celsius', '°C')}
                     </p>
                     <p className={styles.currentCondition}>{conditionLabel}</p>
                     <div className={styles.currentMeta}>
@@ -179,10 +179,10 @@ export function DestinationWeatherIsland({
                                 aria-hidden="true"
                             />
                             <span className={styles.currentMetaLabel}>
-                                {t('destination.weather.feelsLike', 'Sensación térmica')}:
+                                {t('destinations.weather.feelsLike', 'Sensación térmica')}:
                             </span>{' '}
                             {Math.round(current.apparentTemperatureC)}
-                            {t('destination.climate.units.celsius', '°C')}
+                            {t('destinations.climate.units.celsius', '°C')}
                         </span>
                         <span className={styles.currentMetaItem}>
                             <DropIcon
@@ -191,7 +191,7 @@ export function DestinationWeatherIsland({
                                 aria-hidden="true"
                             />
                             <span className={styles.currentMetaLabel}>
-                                {t('destination.weather.humidity', 'Humedad')}:
+                                {t('destinations.weather.humidity', 'Humedad')}:
                             </span>{' '}
                             {current.humidityPct}%
                         </span>
@@ -202,7 +202,7 @@ export function DestinationWeatherIsland({
                                 aria-hidden="true"
                             />
                             <span className={styles.currentMetaLabel}>
-                                {t('destination.weather.wind', 'Viento')}:
+                                {t('destinations.weather.wind', 'Viento')}:
                             </span>{' '}
                             {Math.round(current.windSpeedKmh)} km/h
                         </span>
@@ -214,11 +214,11 @@ export function DestinationWeatherIsland({
             {daily.length > 0 && (
                 <div className={styles.forecastSection}>
                     <p className={styles.forecastTitle}>
-                        {t('destination.weather.forecast', 'Pronóstico a 16 días')}
+                        {t('destinations.weather.forecast', 'Pronóstico a 16 días')}
                     </p>
                     <ul
                         className={styles.forecastStrip}
-                        aria-label={t('destination.weather.forecast', 'Pronóstico a 16 días')}
+                        aria-label={t('destinations.weather.forecast', 'Pronóstico a 16 días')}
                     >
                         {daily.map((day) => {
                             const DayIcon = getWeatherIcon({
