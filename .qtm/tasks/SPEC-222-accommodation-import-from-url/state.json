@@ -799,31 +799,31 @@
             "id": "T-022",
             "title": "Docs: route-architecture + endpoint-gate-matrix",
             "description": "Add the import endpoint row to docs/billing/endpoint-gate-matrix.md (gate: AI quota on Strategy B) and update apps/api/docs/route-architecture.md with the new protected route. Docs-only.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-020"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "endpoint-gate-matrix row",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "route-architecture update",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T22:40:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T15:30:00.000Z",
+                "completed": "2026-06-16T15:32:00.000Z"
             }
         },
         {
@@ -1047,9 +1047,9 @@
     ],
     "summary": {
         "total": 28,
-        "pending": 7,
+        "pending": 6,
         "inProgress": 0,
-        "completed": 21,
+        "completed": 22,
         "blocked": 0,
         "averageComplexity": 2.5
     }
