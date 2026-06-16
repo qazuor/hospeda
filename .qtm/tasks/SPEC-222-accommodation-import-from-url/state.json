@@ -904,39 +904,39 @@
             "id": "T-025",
             "title": "Web: wire into CreatePropertyMiniForm + confidence badges + prefill",
             "description": "Mount ImportFromUrl as a collapsible section in CreatePropertyMiniForm.client.tsx; on success pre-fill name/summary/type with per-field confidence badges + source + 'revisá y confirmá' notice (AC-1.2/1.3). destinationHint surfaced for picker; nothing auto-saved. Component test: prefill maps returned fields; badges render; no auto-save.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-023"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Mount collapsible section",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Prefill + confidence badges + notice",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "destinationHint surfaced (no auto-set)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Component test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T22:40:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T15:55:00.000Z",
+                "completed": "2026-06-16T16:10:00.000Z"
             }
         },
         {
@@ -1047,9 +1047,9 @@
     ],
     "summary": {
         "total": 28,
-        "pending": 4,
+        "pending": 3,
         "inProgress": 0,
-        "completed": 24,
+        "completed": 25,
         "blocked": 0,
         "averageComplexity": 2.5
     }
