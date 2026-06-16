@@ -105,4 +105,30 @@ describe('listByUser', () => {
             expect(reviewModel.findAll as Mock).not.toHaveBeenCalled();
         });
     });
+
+    describe('when actor filters by accommodationId', () => {
+        it('should pass accommodationId to the model query when provided', async () => {
+            // Arrange
+            const actor = createActor({ id: ownerId });
+            (reviewModel.findAll as Mock).mockResolvedValue({ items: [], total: 0 });
+
+            // Act
+            await service.listByUser(actor, {
+                userId: ownerId,
+                accommodationId,
+                page: 1,
+                pageSize: 10,
+                sortBy: 'createdAt',
+                sortOrder: 'desc'
+            });
+
+            // Assert — accommodationId must be included in the model filter
+            expect(reviewModel.findAll).toHaveBeenCalledWith(
+                expect.objectContaining({ userId: ownerId, accommodationId }),
+                expect.any(Object),
+                undefined,
+                undefined
+            );
+        });
+    });
 });

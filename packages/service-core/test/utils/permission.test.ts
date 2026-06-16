@@ -406,4 +406,26 @@ describe('getEntityPermission', () => {
         const invalidActor = { role: RoleEnum.USER } as any; // Missing id and permissions
         expect(getEntityPermission(invalidActor, baseEntity, 'view').allowed).toBe(false);
     });
+
+    it('should return RESTRICTED reason when entity is RESTRICTED and actor lacks permissions', () => {
+        // Arrange — RESTRICTED visibility + no hasAny/hasOwn → line 211 (RESTRICTED reason)
+        const restrictedEntity = entity({ visibility: VisibilityEnum.RESTRICTED });
+
+        // Act — user with no special permissions trying to view a RESTRICTED entity
+        const result = getEntityPermission(user, restrictedEntity, 'view');
+
+        // Assert
+        expect(result.allowed).toBe(false);
+        expect(result.reason).toBe(EntityPermissionReasonEnum.RESTRICTED);
+    });
+
+    it('should fall through to DENIED when no rule matches (default deny branch, line 230)', () => {
+        // All named EntityAction values are handled by dedicated branches.
+        // The only way to reach the default deny at line 230 is to pass an action
+        // string that is not in any of the handled lists. We cast it to EntityAction
+        // to simulate a caller that constructs the action dynamically at runtime.
+        const result = getEntityPermission(user, baseEntity, 'create' as EntityAction);
+        expect(result.allowed).toBe(false);
+        expect(result.reason).toBe(EntityPermissionReasonEnum.DENIED);
+    });
 });
