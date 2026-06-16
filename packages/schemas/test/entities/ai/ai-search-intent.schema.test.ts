@@ -931,7 +931,6 @@ describe('Model-facing schema has no regex pattern constraints (Ollama crash reg
             // Fallback: schema already proven by the "accepts arbitrary string" tests.
             return;
         }
-        // biome-ignore lint/suspicious/noExplicitAny: z.toJSONSchema is a runtime API not in all type stubs
         const jsonSchema = (
             z as unknown as { toJSONSchema: (schema: unknown) => unknown }
         ).toJSONSchema(SearchIntentEntitiesSchema) as {

@@ -42,8 +42,6 @@ export const DestinationSearchHttpSchema = BaseHttpSearchSchema.extend({
     // Features with HTTP coercion
     hasAttractions: createBooleanQueryParam('Filter destinations with attractions'),
     includeEventCount: createBooleanQueryParam('Include event count per destination'),
-    climate: z.string().min(1).max(50).optional(),
-    bestSeason: z.string().min(1).max(50).optional(),
 
     // Array filters with HTTP coercion
     tags: createArrayQueryParam('Filter by tag UUIDs'),
@@ -84,8 +82,6 @@ export const DestinationCreateHttpSchema = z.object({
     latitude: z.coerce.number().min(-90).max(90).optional(),
     longitude: z.coerce.number().min(-180).max(180).optional(),
     isFeatured: z.coerce.boolean().default(false),
-    climate: z.string().min(1).max(50).optional(),
-    bestSeason: z.string().min(1).max(50).optional(),
 
     // Hierarchy fields
     destinationType: DestinationTypeEnumSchema.optional(),
@@ -151,8 +147,8 @@ export const httpToDomainDestinationSearch = (
     // column only (default is name + description).
     searchScope: httpParams.searchScope
 
-    // Note: hasAttractions, climate, bestSeason exist in HTTP schema but
-    // may not exist in domain search schema - these are handled by the service layer
+    // Note: hasAttractions exists in the HTTP schema but is not implemented in
+    // the domain search; it is ignored by the service layer.
 });
 
 /**
@@ -201,9 +197,6 @@ export const httpToDomainDestinationCreate = (
     // Hierarchy fields
     destinationType: httpData.destinationType ?? DestinationTypeEnum.CITY,
     parentDestinationId: httpData.parentDestinationId ?? null
-
-    // Note: Fields like climate, bestSeason from HTTP schema don't exist
-    // in the domain schema and should be handled by service layer extensions
 });
 
 /**
@@ -222,5 +215,4 @@ export const httpToDomainDestinationUpdate = (
 
     // Note: Location updates are complex due to nested structure and required fields
     // The service layer should handle merging location data properly
-    // Note: climate, bestSeason fields don't exist in domain schema
 });

@@ -15,7 +15,9 @@ import { DestinationTypeEnumSchema } from '../../enums/destination-type.schema.j
 import { AttractionSummarySchema } from '../attraction/attraction.schema.js';
 import { DestinationReviewSchema } from '../destinationReview/destinationReview.schema.js';
 import { TagSchema } from '../tag/tag.schema.js';
+import { DestinationClimateSchema } from './subtypes/destination.climate.schema.js';
 import { DestinationRatingSchema } from './subtypes/destination.rating.schema.js';
+import { DestinationWeatherCacheSchema } from './subtypes/destination.weather.schema.js';
 
 /**
  * Destination Schema - Main Entity Schema
@@ -97,6 +99,15 @@ export const DestinationSchema = z.object({
     attractions: z.array(AttractionSummarySchema).optional(),
     reviews: z.array(DestinationReviewSchema).optional(),
     rating: DestinationRatingSchema.nullish(),
+
+    // Climate (SPEC-215): structured seasonal climate. Nullish: nullable jsonb
+    // column with no default, seeded/admin-edited per destination.
+    climate: DestinationClimateSchema.nullish(),
+
+    // Weather (SPEC-215): cached live current conditions + 16-day daily forecast,
+    // refreshed by the destination-weather-fetch cron. Nullish: nullable jsonb
+    // column, absent until the cron first populates it (or no coordinates).
+    weatherCurrent: DestinationWeatherCacheSchema.nullish(),
 
     // FAQs (1-to-N child entity, included in detail responses)
     faqs: z.array(BaseFaqSchema).optional()

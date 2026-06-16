@@ -31,6 +31,7 @@ export * from './tag/post-tag.service';
 export * from './tag/post-tag.permissions';
 export * from './newsletter';
 export * from './user/user.service';
+export * from './weather/index.js';
 export * from './userBookmark/userBookmark.service';
 export * from './userBookmarkCollection/userBookmarkCollection.service';
 export * from './billing';

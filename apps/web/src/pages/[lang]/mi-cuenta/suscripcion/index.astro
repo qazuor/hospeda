@@ -11,6 +11,7 @@ import { SubscriptionDashboard } from '@/components/account/SubscriptionDashboar
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { fetchPublicPlans, filterPlansByCategory } from '@/lib/billing/fetch-plans';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const user = Astro.locals.user;
@@ -27,6 +28,14 @@ const islandUser = {
 	id: user.id,
 	role: (user as { role?: string }).role ?? 'USER',
 };
+
+/**
+ * Fetch owner plans server-side so the PlanChangeFlow island has the full plan
+ * catalog without an extra client-side request. Degrades gracefully on error
+ * (island falls back to the plain pricing-page link).
+ */
+const plansResult = await fetchPublicPlans();
+const ownerPlans = plansResult.ok ? filterPlansByCategory(plansResult.plans, 'owner') : [];
 ---
 
 <AccountLayout locale={locale} title={title} activeSection="suscripcion">
@@ -35,6 +44,7 @@ const islandUser = {
 	<SubscriptionDashboard
 		locale={locale}
 		user={islandUser}
+		plans={ownerPlans}
 		client:load
 	/>
 </AccountLayout>

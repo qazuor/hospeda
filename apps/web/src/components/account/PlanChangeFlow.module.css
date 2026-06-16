@@ -1,0 +1,162 @@
+/* PlanChangeFlow.module.css */
+/* Scoped styles for the multi-step plan-change flow modal. */
+/* Uses CSS custom properties from global.css (no Tailwind — web app convention). */
+
+/* ── Modal overlay ─────────────────────────────────────────────────────────── */
+
+.backdrop {
+    position: fixed;
+    inset: 0;
+    background-color: oklch(0 0 0 / 0.55);
+    z-index: 60;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-4, 16px);
+    overflow-y: auto;
+}
+
+.modal {
+    position: relative;
+    background-color: var(--core-card);
+    border: 1px solid var(--border, oklch(0.8 0 0));
+    border-radius: var(--radius-card, 24px);
+    padding: var(--space-8, 32px);
+    width: 100%;
+    max-width: 600px;
+    min-height: 200px;
+    overflow: hidden;
+}
+
+/* ── Loading overlay ───────────────────────────────────────────────────────── */
+
+.loadingOverlay {
+    position: absolute;
+    inset: 0;
+    background-color: oklch(from var(--core-card) l c h / 0.85);
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: inherit;
+}
+
+.spinner {
+    display: inline-block;
+    width: 36px;
+    height: 36px;
+    border: 3px solid var(--border, oklch(0.8 0 0));
+    border-top-color: var(--primary, oklch(0.5 0.18 260));
+    border-radius: 50%;
+    animation: spin 0.75s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ── Global error ──────────────────────────────────────────────────────────── */
+
+.globalError {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3, 12px);
+    flex-wrap: wrap;
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    color: var(--destructive, oklch(0.55 0.22 25));
+    background-color: var(--destructive-a05);
+    border: 1px solid var(--destructive-a25);
+    border-radius: var(--radius-sm, 8px);
+    padding: var(--space-3, 12px) var(--space-4, 16px);
+    margin: 0;
+}
+
+.retryLink {
+    background: none;
+    border: none;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--primary, oklch(0.5 0.18 260));
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 0;
+}
+
+.retryLink:hover {
+    opacity: 0.8;
+}
+
+/* ── Result step ───────────────────────────────────────────────────────────── */
+
+.result {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-4, 16px);
+    text-align: center;
+    padding: var(--space-6, 24px) 0;
+}
+
+.resultIcon {
+    font-size: 2.5rem;
+    line-height: 1;
+}
+
+.resultTitle {
+    font-family: var(--font-heading);
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--core-foreground);
+    margin: 0;
+}
+
+.resultBody {
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+    color: var(--core-muted-foreground);
+    margin: 0;
+    max-width: 380px;
+    line-height: 1.6;
+}
+
+.resultHint {
+    font-family: var(--font-sans);
+    font-size: 0.82rem;
+    color: var(--core-muted-foreground);
+    margin: 0;
+    max-width: 380px;
+    opacity: 0.75;
+    line-height: 1.5;
+}
+
+/* ── Buttons (shared) ──────────────────────────────────────────────────────── */
+
+.btnPrimary {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--space-2, 8px) var(--space-6, 24px);
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: white;
+    background-color: var(--primary, oklch(0.5 0.18 260));
+    border: none;
+    border-radius: var(--radius-button, 8px);
+    cursor: pointer;
+    transition: opacity var(--duration-normal, 0.4s) ease;
+    min-height: 40px;
+    text-decoration: none;
+}
+
+.btnPrimary:hover {
+    opacity: 0.85;
+}
+
+.btnPrimary:focus-visible {
+    outline: 2px solid var(--brand-accent);
+    outline-offset: 2px;
+}

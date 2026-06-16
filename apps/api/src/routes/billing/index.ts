@@ -37,6 +37,7 @@ import { isGuestActor } from '../../utils/actor';
 import { createRouter } from '../../utils/create-app';
 import { apiLogger } from '../../utils/logger';
 import { addonsRouter } from './addons';
+import { downgradePreviewRouter } from './downgrade-preview';
 import { planChangeRouter } from './plan-change';
 import { userPromoCodesRouter } from './promo-codes';
 import { startPaidRouter } from './start-paid';
@@ -200,6 +201,15 @@ export function createBillingRoutesHandler(): AppOpenAPI {
     cancelWrapper.use('*', billingAdminGuardMiddleware());
     cancelWrapper.route('/', subscriptionCancelRouter);
     router.route('/subscriptions', cancelWrapper);
+
+    // Mount read-only downgrade preview (SPEC-203) BEFORE the qzpay wrapper.
+    // qzpay-hono's prebuilt `GET /subscriptions/:id` would otherwise match
+    // `/subscriptions/downgrade-preview` (:id = "downgrade-preview") and reject it
+    // via billingOwnershipMiddleware (403 "not your billing resource"). Hono uses
+    // first-match routing, so our custom GET must be registered first — same
+    // ordering rule the soft-cancel route relies on above. Safe GET: no
+    // idempotency-key middleware, no mutation.
+    router.route('/subscriptions', downgradePreviewRouter);
 
     // Mount QZPay pre-built billing routes with ownership verification.
     // The ownership middleware ensures users can only access their own billing

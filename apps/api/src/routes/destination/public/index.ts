@@ -14,6 +14,7 @@ import { publicGetDestinationChildrenRoute } from './getChildren';
 import { publicGetDestinationDescendantsRoute } from './getDescendants';
 import { publicGetDestinationStatsRoute } from './getStats';
 import { publicGetDestinationSummaryRoute } from './getSummary';
+import { publicGetDestinationWeatherRoute } from './getWeather';
 import { publicListDestinationsRoute } from './list';
 
 const app = createRouter();
@@ -26,6 +27,8 @@ app.route('/', publicGetDestinationByIdRoute);
 app.route('/', publicGetDestinationSummaryRoute);
 app.route('/', publicGetDestinationStatsRoute);
 app.route('/', publicGetDestinationAccommodationsRoute);
+
+app.route('/', publicGetDestinationWeatherRoute);
 
 // Hierarchy routes (use :id param - registered after static paths)
 app.route('/', publicGetDestinationChildrenRoute);

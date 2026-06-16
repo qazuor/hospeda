@@ -23,7 +23,13 @@ export const listOptionsSchema = z.object({
     /** Column to sort by */
     sortBy: z.string().optional(),
     /** Sort direction */
-    sortOrder: z.enum(['asc', 'desc']).optional()
+    sortOrder: z.enum(['asc', 'desc']).optional(),
+    /**
+     * When true, soft-deleted rows (non-null `deletedAt`) are included in the
+     * result. Defaults to false: `list()` excludes soft-deleted rows for any
+     * table that has a `deletedAt` column, mirroring the admin-search path.
+     */
+    includeDeleted: z.boolean().optional()
 });
 
 /**
@@ -37,6 +43,7 @@ export const listOptionsSchema = z.object({
  * @property where - Where clause filters.
  * @property sortBy - Column to sort by.
  * @property sortOrder - Sort direction ('asc' | 'desc').
+ * @property includeDeleted - Include soft-deleted rows (default false).
  *
  * @example
  * ```ts

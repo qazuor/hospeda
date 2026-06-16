@@ -23,10 +23,10 @@ export default defineConfig({
             provider: 'v8',
             reporter: ['text', 'json', 'html'],
             thresholds: {
-                lines: 85,
-                functions: 85,
-                branches: 80,
-                statements: 85
+                lines: 88,
+                functions: 88,
+                branches: 82,
+                statements: 88
             },
             // Measure production source only. Without an include, vitest v8
             // instruments docs/examples, test utilities/factories, and root

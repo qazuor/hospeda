@@ -51,6 +51,8 @@ const QZPAY_STATUS_MAP: Record<string, (typeof SUBSCRIPTION_STATUSES)[number]> =
 const SubscriptionResponseSchema = z.object({
     subscription: z
         .object({
+            /** QZPay subscription id — required by the cancel flow (SPEC-203). */
+            id: z.string(),
             planSlug: z.string(),
             planName: z.string(),
             status: z.enum(SUBSCRIPTION_STATUSES),
@@ -83,7 +85,20 @@ const SubscriptionResponseSchema = z.object({
                 .nullable()
                 .optional(),
             gracePeriodDaysRemaining: z.number().nullable().optional(),
-            gracePeriodExpiresAt: z.string().nullable().optional()
+            gracePeriodExpiresAt: z.string().nullable().optional(),
+            /**
+             * Pending scheduled plan change, set when a downgrade was queued
+             * via `scheduleSubscriptionDowngrade` (SPEC-203 UI banner).
+             * Null when no change is pending.
+             */
+            scheduledPlanChange: z
+                .object({
+                    /** Plan id the subscription will switch to at `effectiveAt`. */
+                    newPlanId: z.string(),
+                    /** ISO 8601 timestamp when the change will be applied (= currentPeriodEnd at schedule time). */
+                    effectiveAt: z.string()
+                })
+                .nullable()
         })
         .nullable()
 });
@@ -267,8 +282,18 @@ export const userSubscriptionRoute = createProtectedRoute({
             }
         }
 
+        // Resolve scheduled plan change: only expose pending ones.
+        // Status 'applied' / 'cancelled' / 'failed' are historical — the UI
+        // only needs to know about a change that is still queued for the
+        // future. applyAt on QZPayScheduledPlanChange holds the ISO timestamp.
+        const pendingChange =
+            activeSubscription.scheduledPlanChange?.status === 'pending'
+                ? activeSubscription.scheduledPlanChange
+                : null;
+
         return {
             subscription: {
+                id: activeSubscription.id,
                 planSlug: resolvedPlanSlug,
                 planName,
                 status: mappedStatus,
@@ -280,7 +305,13 @@ export const userSubscriptionRoute = createProtectedRoute({
                 monthlyPriceArs,
                 paymentMethod: null,
                 gracePeriodDaysRemaining,
-                gracePeriodExpiresAt
+                gracePeriodExpiresAt,
+                scheduledPlanChange: pendingChange
+                    ? {
+                          newPlanId: pendingChange.newPlanId,
+                          effectiveAt: pendingChange.applyAt
+                      }
+                    : null
             }
         };
     },

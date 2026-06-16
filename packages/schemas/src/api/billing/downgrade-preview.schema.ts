@@ -209,6 +209,30 @@ export const DowngradePreviewSchema = z.object({
 export type DowngradePreview = z.infer<typeof DowngradePreviewSchema>;
 
 // ---------------------------------------------------------------------------
+// HTTP query schema — GET /subscriptions/downgrade-preview
+// ---------------------------------------------------------------------------
+
+/**
+ * Query parameters for the GET downgrade-preview endpoint.
+ *
+ * `targetPlan` is the billing catalog slug for the plan the host is
+ * considering downgrading to (e.g. `'owner-basico'`). The server uses
+ * it to call `computeDowngradeExcess` and returns the resulting
+ * {@link DowngradePreview}.
+ *
+ * @module api/billing/downgrade-preview
+ */
+export const DowngradePreviewQuerySchema = z.object({
+    /**
+     * Billing catalog slug of the target plan.
+     * Must be a non-empty string; the server validates it against the
+     * static billing catalog and returns 422 if not found.
+     */
+    targetPlan: z.string().min(1, 'targetPlan must not be empty')
+});
+export type DowngradePreviewQuery = z.infer<typeof DowngradePreviewQuerySchema>;
+
+// ---------------------------------------------------------------------------
 // Input schema
 // ---------------------------------------------------------------------------
 
