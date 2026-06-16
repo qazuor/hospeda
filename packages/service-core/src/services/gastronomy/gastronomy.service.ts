@@ -144,8 +144,10 @@ export class GastronomyService extends BaseCommerceListingService<
         this.adminSearchSchema = GastronomyAdminSearchSchema;
         this._amenityModelInstance = new AmenityModel();
         this._featureModelInstance = new FeatureModel();
+        // TYPE-WORKAROUND: concrete gastronomy junction model bridged to the generic CommerceJunctionModel contract
         this._amenityJunctionModelInstance =
             rGastronomyAmenityModel as unknown as CommerceJunctionModel<Record<string, unknown>>;
+        // TYPE-WORKAROUND: concrete gastronomy junction model bridged to the generic CommerceJunctionModel contract
         this._featureJunctionModelInstance =
             rGastronomyFeatureModel as unknown as CommerceJunctionModel<Record<string, unknown>>;
     }
@@ -335,7 +337,7 @@ export class GastronomyService extends BaseCommerceListingService<
             undefined,
             ctx?.tx
         );
-        return result as unknown as PaginatedListOutput<Gastronomy>;
+        return result as unknown as PaginatedListOutput<Gastronomy>; // TYPE-WORKAROUND: base list result narrowed to the gastronomy entity type (Drizzle row vs Zod entity, same bridge as accommodation services)
     }
 
     /**

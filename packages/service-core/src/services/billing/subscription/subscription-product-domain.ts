@@ -27,9 +27,9 @@ const COMMERCE_DOMAIN = 'commerce' as const;
  *
  * Reads `productDomain` defensively from an opaque runtime object because
  * the column is NOT in the `@qazuor/qzpay-core` TypeScript types — it is
- * added directly to the PostgreSQL table via the extras carril.  Accessing
- * it through `(sub as unknown as Record<string, unknown>)['productDomain']`
- * avoids `any` and keeps strict-mode happy.
+ * added directly to the PostgreSQL table via the extras carril.  The value
+ * is read by casting `sub` to `Record<string, unknown>` so that bracket
+ * access avoids `any` and keeps strict-mode happy.
  *
  * **Inclusion rule**: include unless explicitly `'commerce'`.
  * - `undefined` (column not yet in SELECT) → include

@@ -94,6 +94,7 @@ function resolveOwnerImage(owner: Record<string, unknown> | undefined | null): s
  */
 export function projectGastronomyOwnerAvatar<T extends Gastronomy>(entity: T | null): T | null {
     if (!entity) return entity;
+    // TYPE-WORKAROUND: projection reads an optionally-loaded relation not present on the base entity type
     const owner = (entity as unknown as { owner?: Record<string, unknown> }).owner;
     if (!owner) return entity;
     const resolved = resolveOwnerImage(owner);

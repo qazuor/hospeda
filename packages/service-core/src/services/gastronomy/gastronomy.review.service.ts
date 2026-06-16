@@ -318,7 +318,7 @@ export class GastronomyReviewService extends BaseCrudService<
             undefined,
             ctx?.tx
         );
-        return result as unknown as PaginatedListOutput<GastronomyReview>;
+        return result as unknown as PaginatedListOutput<GastronomyReview>; // TYPE-WORKAROUND: base list result narrowed to the gastronomy review entity type (Drizzle row vs Zod entity, same bridge as accommodation services)
     }
 
     /**
@@ -411,7 +411,7 @@ export class GastronomyReviewService extends BaseCrudService<
             // Recompute listing rating after every moderation decision.
             await this._recomputeListingRating(gastronomyId, ctx ?? {});
 
-            return { data: updated as unknown as GastronomyReview };
+            return { data: updated as unknown as GastronomyReview }; // TYPE-WORKAROUND: model row narrowed to the Zod GastronomyReview entity type
         } catch (err) {
             if (err instanceof ServiceError) {
                 return { error: { code: err.code, message: err.message } };
@@ -496,7 +496,7 @@ export class GastronomyReviewService extends BaseCrudService<
             );
             return {
                 data: {
-                    reviews: result.items as unknown as GastronomyReview[],
+                    reviews: result.items as unknown as GastronomyReview[], // TYPE-WORKAROUND: base list result narrowed to the gastronomy review entity type (Drizzle row vs Zod entity, same bridge as accommodation services)
                     total: result.total
                 }
             };
