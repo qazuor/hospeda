@@ -20,9 +20,9 @@ export const Route = createFileRoute('/_authed/platform/host-trades/new')({
 function HostTradeCreatePage() {
     const navigate = useNavigate();
     const { t } = useTranslations();
-    // Cast needed: EntityCreatePageBase expects a generic mutation shape;
+    // TYPE-WORKAROUND: EntityCreatePageBase expects a generic mutation shape;
     // useCreateHostTradeMutation returns a strongly-typed variant that is
-    // structurally compatible at runtime.
+    // structurally compatible at runtime (brand-only mismatch, safe at the call site).
     const createMutation = useCreateHostTradeMutation() as unknown as {
         mutateAsync: (values: Record<string, unknown>) => Promise<unknown>;
         isPending: boolean;

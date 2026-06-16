@@ -105,8 +105,8 @@ export const hostTradesConfig: EntityConfig<HostTradeListItem> = {
     basePath: '/platform/host-trades',
     detailPath: '/platform/host-trades/[id]',
 
-    // Schema — cast required because HostTradeListItemSchema has branded effects
-    // from @repo/schemas that are structurally compatible but brand-only mismatched.
+    // Schemas - Use type assertion for Zod version compatibility
+    // TYPE-WORKAROUND: EntityConfig generic narrows the schema to z.ZodSchema<HostTradeListItem>, but HostTradeListItemSchema carries branded effects from @repo/schemas; structurally compatible, brand-only mismatch.
     listItemSchema: HostTradeListItemSchema as unknown as z.ZodSchema<HostTradeListItem>,
 
     // Search

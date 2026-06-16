@@ -42,7 +42,7 @@
     align-items: center;
     padding: 0.25rem 0.625rem;
     border-radius: var(--radius-pill, 9999px);
-    background-color: oklch(from var(--brand-primary) l c h / 0.12);
+    background-color: var(--brand-primary-a12);
     color: var(--brand-primary);
     font-family: var(--font-sans);
     font-size: 0.75rem;
@@ -59,7 +59,7 @@
     align-self: flex-start;
     padding: 0.25rem 0.625rem;
     border-radius: var(--radius-pill, 9999px);
-    background-color: oklch(from var(--brand-accent) l c h / 0.12);
+    background-color: var(--brand-accent-a12);
     color: var(--brand-accent);
     font-family: var(--font-sans);
     font-size: 0.75rem;
@@ -84,9 +84,9 @@
     flex-direction: column;
     gap: 0.25rem;
     padding: var(--space-3, 0.75rem);
-    background-color: oklch(from var(--brand-tertiary) l c h / 0.08);
+    background-color: var(--core-foreground-a08);
     border-radius: var(--radius-md, 10px);
-    border: 1px solid oklch(from var(--brand-tertiary) l c h / 0.15);
+    border: 1px solid var(--core-foreground-a15);
 }
 
 .benefitLabel {
