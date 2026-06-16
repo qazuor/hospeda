@@ -190,7 +190,7 @@
             "id": "T-010",
             "title": "TanStack Query setup: QueryClient in root layout, custom hooks pattern",
             "description": "Initialize @tanstack/react-query QueryClient in the root layout (same version pinned in the monorepo / apps/admin). Establish the custom-hooks pattern for entity data fetching that Sub-1/3/4 will consume.",
-            "status": "in_progress",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-009"],
             "blocks": [],
@@ -230,15 +230,20 @@
             "id": "T-012",
             "title": "CI: add apps/mobile to GitHub Actions (typecheck + lint + test); EAS Build setup skeleton (eas.json, app identifiers)",
             "description": "Wire apps/mobile into the GitHub Actions pipeline (typecheck + lint + test). Add EAS Build skeleton (eas.json with development/preview/production profiles, Apple/Google app identifiers placeholders). EAS chosen in ADR-033 (decision 7). Flag owner to add EXPO_PUBLIC_API_URL to EAS Secrets per build profile.",
-            "status": "pending",
+            "status": "in_progress",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": [],
             "subtasks": [],
             "tags": ["ci", "eas"],
             "phase": "ci",
-            "qualityGate": { "lint": "pending", "typecheck": "pending", "tests": "pending" },
-            "timestamps": { "created": "2026-06-15T00:00:00.000Z" }
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-06-15T00:00:00.000Z",
+                "started": "2026-06-16T00:00:00.000Z",
+                "completed": "2026-06-16T00:00:00.000Z"
+            },
+            "note": "CI: mobile is already swept by GitHub Actions via Turbo globs — `pnpm lint/typecheck/test/build` schedule mobile#lint/typecheck/test/build (verified with turbo dry-run). No mobile-specific CI job added (same pattern as web/admin/api). FIX REQUIRED: `pnpm build` runs `expo export` with NO platform flag → defaulted to ALL platforms incl web → failed (no react-native-web). Set app.json `platforms: [ios, android]` (matches ADR-033 native-only intent) so the CI build job exports ios+android Hermes bundles to dist/ (5.2/6.4MB) and passes. EAS skeleton: apps/mobile/eas.json with development/preview/production profiles (appVersionSource remote, channels, EXPO_PUBLIC_APP_ENV per profile; staging/prod EXPO_PUBLIC_API_URL inlined — public, not secret). app identifiers com.hospeda.app already in app.json. Owner action items (eas init projectId, expo-dev-client, credentials) in apps/mobile/docs/eas-build.md. Verified green: typecheck/lint(26 files)/test(42)/build all exit 0."
         },
         {
             "id": "T-013",
@@ -257,9 +262,9 @@
     ],
     "summary": {
         "total": 13,
-        "pending": 5,
+        "pending": 4,
         "inProgress": 0,
-        "completed": 8,
+        "completed": 9,
         "blocked": 0,
         "averageComplexity": 1.9
     }
