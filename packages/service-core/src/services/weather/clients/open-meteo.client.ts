@@ -5,7 +5,12 @@ import type { OpenMeteoClientConfig, OpenMeteoCoordinates, OpenMeteoFetchResult 
 const DEFAULT_BASE_URL = 'https://api.open-meteo.com';
 const DEFAULT_TIMEOUT_MS = 10000;
 
-/** Number of daily forecast days requested (Open-Meteo free maximum). */
+/**
+ * Number of daily forecast days requested (Open-Meteo free maximum).
+ *
+ * Must stay ≤ the `daily` array cap in `DestinationWeatherCacheSchema` (.max(16));
+ * raising this past 16 without widening the schema makes every fetch fail validation.
+ */
 const FORECAST_DAYS = 16;
 
 const CURRENT_FIELDS =
@@ -83,6 +88,12 @@ export class OpenMeteoClient {
             }
 
             const raw = (await response.json()) as OpenMeteoForecastRaw;
+            // Guard against a 200 with a missing/empty payload (e.g. a proxy or a
+            // partial response): mapping it would fabricate plausible 0°C / unknown
+            // data. Treat it as a failure so the cron keeps the last good cache.
+            if (!raw.current || !raw.daily?.time || raw.daily.time.length === 0) {
+                return { weather: null, error: 'Open-Meteo returned an empty payload', fetchedAt };
+            }
             const weather = this.mapResponse(raw, fetchedAt);
             const parsed = DestinationWeatherCacheSchema.safeParse(weather);
             if (!parsed.success) {
@@ -135,7 +146,8 @@ export class OpenMeteoClient {
                 condition: mapWmoCodeToCondition({ weatherCode: current.weather_code ?? -1 }),
                 windSpeedKmh: current.wind_speed_10m ?? 0,
                 humidityPct: current.relative_humidity_2m ?? 0,
-                isDay: current.is_day === 1
+                // Open-Meteo returns 1/0; tolerate a boolean just in case.
+                isDay: current.is_day === 1 || (current.is_day as unknown) === true
             },
             daily: dates.map((date, i) => {
                 const weatherCode = daily.weather_code?.[i] ?? 0;

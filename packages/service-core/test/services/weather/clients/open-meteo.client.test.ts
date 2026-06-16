@@ -86,6 +86,20 @@ describe('OpenMeteoClient', () => {
         expect(result.error).toContain('request failed');
     });
 
+    it('returns a null weather with error on a 200 with an empty payload', async () => {
+        fetchMock.mockResolvedValue({
+            ok: true,
+            status: 200,
+            statusText: 'OK',
+            json: async () => ({})
+        });
+
+        const result = await client.fetchForecast(COORDS);
+
+        expect(result.weather).toBeNull();
+        expect(result.error).toContain('empty payload');
+    });
+
     it('returns a null weather with error on a payload that fails validation', async () => {
         const bad = buildPayload(3);
         bad.current.relative_humidity_2m = 150; // out of 0-100 range
