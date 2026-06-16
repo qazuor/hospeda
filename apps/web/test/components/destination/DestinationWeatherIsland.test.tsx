@@ -95,11 +95,12 @@ describe('DestinationWeatherIsland (US-3 graceful degradation)', () => {
         await waitFor(() => expect(screen.getByText(UNAVAILABLE)).toBeInTheDocument());
     });
 
-    it('renders the current temperature and forecast when data is present', async () => {
+    it('renders the current temperature and forecast from the wrapped API payload', async () => {
+        // The public API wraps the payload as { success, data }.
         (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
             ok: true,
             status: 200,
-            json: async () => validPayload
+            json: async () => ({ success: true, data: validPayload })
         });
         renderIsland();
         await waitFor(() => expect(screen.getByText(/21°C/)).toBeInTheDocument());

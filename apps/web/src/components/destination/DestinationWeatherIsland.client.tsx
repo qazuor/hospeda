@@ -98,7 +98,16 @@ export function DestinationWeatherIsland({
                     if (!cancelled) setState({ status: 'empty' });
                     return;
                 }
-                const body = (await response.json()) as WeatherData | null;
+                // The public API wraps payloads as { success, data }; unwrap it
+                // (tolerate a bare payload too).
+                const json = (await response.json()) as
+                    | { data?: WeatherData | null }
+                    | WeatherData
+                    | null;
+                const body =
+                    json && typeof json === 'object' && 'data' in json
+                        ? (json.data ?? null)
+                        : (json as WeatherData | null);
                 if (cancelled) return;
                 if (
                     !body ||
