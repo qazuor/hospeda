@@ -171,15 +171,20 @@
             "id": "T-009",
             "title": "API client (src/lib/api/client.ts): typed fetch wrapper + Zod parse + auth header injection",
             "description": "Typed API client initialized with baseUrl from expo-constants (EXPO_PUBLIC_API_URL). Attaches the BA session token (cookie or Bearer, per T-003 outcome). Every response parsed with the matching @repo/schemas schema before returning (fail-fast on drift). Only calls /public/* and /protected/* — never /admin/*.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-003"],
             "blocks": ["T-010", "T-013"],
             "subtasks": [],
             "tags": ["api", "client", "zod"],
             "phase": "api",
-            "qualityGate": { "lint": "pending", "typecheck": "pending", "tests": "pending" },
-            "timestamps": { "created": "2026-06-15T00:00:00.000Z" }
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-06-15T00:00:00.000Z",
+                "started": "2026-06-16T00:00:00.000Z",
+                "completed": "2026-06-16T00:00:00.000Z"
+            },
+            "note": "apiFetch RO-RO typed client (src/lib/api/): tier-guard (no admin), getCookie() reuse from T-003 auth-client, {success,data} envelope unwrap, Zod safeParse→ApiSchemaError on drift, typed ApiError/ApiSchemaError. 21 real unit tests pass (verified)."
         },
         {
             "id": "T-010",
@@ -247,9 +252,9 @@
     ],
     "summary": {
         "total": 13,
-        "pending": 7,
+        "pending": 6,
         "inProgress": 0,
-        "completed": 6,
+        "completed": 7,
         "blocked": 0,
         "averageComplexity": 1.9
     }
