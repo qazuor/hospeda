@@ -40,6 +40,11 @@ export default function RootLayout() {
                     name="index"
                     options={{ title: 'Hospeda', headerShown: false }}
                 />
+                {/* T-004: auth group — sign-in and sign-up screens */}
+                <Stack.Screen
+                    name="(auth)"
+                    options={{ headerShown: false }}
+                />
             </Stack>
         </QueryClientProvider>
     );
