@@ -230,105 +230,105 @@
             "id": "T-007",
             "title": "Implement safeExternalFetch SSRF-guarded fetch util",
             "description": "New util (packages/utils/src/safe-fetch.ts): HTTPS-only; reject file://,ftp://,localhost,internal hostnames; DNS-resolve hostname and block private/loopback/link-local ranges (RFC-1918, 127.0.0.0/8, 169.254.0.0/16, ::1, fc00::/7) BEFORE connecting (anti DNS-rebind); cap redirects, enforce timeout (HOSPEDA_IMPORT_FETCH_TIMEOUT_MS) and max body size (HOSPEDA_IMPORT_FETCH_MAX_BYTES). RO-RO, typed error result. Export from @repo/utils.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-006"],
             "blocks": ["T-008", "T-014", "T-015"],
             "subtasks": [
                 {
                     "title": "HTTPS + scheme/host rejects",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "DNS resolve + private-range block",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "redirect cap + timeout + max-bytes",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["utils", "security"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T22:40:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-15T23:30:00.000Z",
+                "completed": "2026-06-15T23:45:00.000Z"
             }
         },
         {
             "id": "T-008",
             "title": "Unit tests for safeExternalFetch (SSRF matrix)",
             "description": "AAA tests: reject file://, ftp://, http:// (non-https), localhost, 127.0.0.1, 10.x/172.16.x/192.168.x, 169.254.x, ::1, fc00::; DNS-rebind (hostname resolving to private IP) blocked; timeout enforced; response over max-bytes aborted. File: packages/utils/test/safe-fetch.test.ts. Mock DNS + fetch.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-007"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Scheme/host rejection cases",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Private-range + rebind cases",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "timeout + max-bytes cases",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["utils", "security", "testing"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T22:40:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-15T23:30:00.000Z",
+                "completed": "2026-06-15T23:45:00.000Z"
             }
         },
         {
             "id": "T-009",
             "title": "ImportSourceAdapter interface + RawExtraction + detectSource",
             "description": "Define ImportSourceAdapter { source; supports(url): boolean; extract(url, ctx): Promise<RawExtraction> }, RawExtraction (loose candidate bag + per-field source tags, pre-validation), ImportContext, and detectSource(url): ImportSource (normalize hostname → source). Files: packages/service-core/src/services/accommodation-import/ (new module). Tests: detectSource maps known hosts; unknown → 'generic'.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-010", "T-011", "T-014", "T-015", "T-016", "T-017", "T-018", "T-019"],
             "subtasks": [
                 {
                     "title": "Interface + RawExtraction + ImportContext types",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "detectSource hostname normalization",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests for detection",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T22:40:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-15T23:30:00.000Z",
+                "completed": "2026-06-15T23:40:00.000Z"
             }
         },
         {
@@ -1047,9 +1047,9 @@
     ],
     "summary": {
         "total": 28,
-        "pending": 22,
+        "pending": 19,
         "inProgress": 0,
-        "completed": 6,
+        "completed": 9,
         "blocked": 0,
         "averageComplexity": 2.5
     }
