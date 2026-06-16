@@ -592,6 +592,36 @@
             "archiveNote": "DRIFT FIX (2026-06-15 cleanup): specs/index had completed+archived but tasks/index had NO entry. state.json shows 26/26 completed. Shipped via PR #1484, closed out #1485. Reconstructed entry."
         },
         {
+            "specId": "SPEC-174",
+            "title": "Admin Guided Welcome Tour (role-based, config-driven)",
+            "status": "completed",
+            "progress": "18/18",
+            "path": "SPEC-174-admin-welcome-tour",
+            "archived": true,
+            "archivedAt": "2026-06-04",
+            "archiveNote": "Restored 2026-06-15 (entry lost to stale-base edit). Completed + archived in June via feat #1451 / archive #1454. state.json shows 18/18 tasks completed."
+        },
+        {
+            "specId": "SPEC-175",
+            "title": "Admin What's New / Release Notes Dialog",
+            "status": "completed",
+            "progress": "20/20",
+            "path": "SPEC-175-admin-whats-new",
+            "archived": true,
+            "archivedAt": "2026-06-04",
+            "archiveNote": "Restored 2026-06-15 (entry lost to stale-base edit). Completed + archived in June via feat #1437 / archive #1440. state.json shows 20/20 tasks completed."
+        },
+        {
+            "specId": "SPEC-179",
+            "title": "Self-Hosted Runner for PR CI (GitHub Actions cost/quota reduction)",
+            "status": "completed",
+            "progress": "0/0",
+            "path": "SPEC-179-self-hosted-pr-ci-runner",
+            "archived": true,
+            "archivedAt": "2026-06-03",
+            "archiveNote": "Restored 2026-06-15 (entry lost to stale-base edit). Completed + archived in June via feat #1369 / archive #1415. Implemented without atomized tasks (progress shown as 0/0)."
+        },
+        {
             "specId": "SPEC-173",
             "title": "AI Foundation (@repo/ai-core)",
             "status": "completed",
