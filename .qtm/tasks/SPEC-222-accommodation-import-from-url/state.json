@@ -869,35 +869,35 @@
             "id": "T-024",
             "title": "Web: per-platform URL-acquisition help panel (US-7) + i18n",
             "description": "Collapsible/inline help next to the URL input (AC-7.1): per-platform short steps to copy the listing URL (Airbnb, Booking, MercadoLibre, Google Maps) + example URL shapes (AC-7.2/7.3). All copy via @repo/i18n keys importFromUrl.* in es/en/pt. Tests: i18n keys exist in 3 locales; panel toggles.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-023"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Collapsible help panel per platform",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "i18n keys es/en/pt",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Tests (keys + toggle)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "i18n"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T22:40:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T15:46:00.000Z",
+                "completed": "2026-06-16T15:52:00.000Z"
             }
         },
         {
@@ -1047,9 +1047,9 @@
     ],
     "summary": {
         "total": 28,
-        "pending": 5,
+        "pending": 4,
         "inProgress": 0,
-        "completed": 23,
+        "completed": 24,
         "blocked": 0,
         "averageComplexity": 2.5
     }
