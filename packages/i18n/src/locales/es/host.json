@@ -16,6 +16,21 @@
             "submit": "No pudimos importar el alojamiento. Intentá de nuevo.",
             "network": "No pudimos conectar con el servidor."
         },
+        "prefill": {
+            "sectionToggle": "Importar desde una URL",
+            "reviewNotice": "Revisá y confirmá los datos importados antes de continuar.",
+            "badge": {
+                "imported": "Importado",
+                "confidence": "{{confidence}}%",
+                "separator": "·"
+            },
+            "destinationHint": {
+                "label": "Sugerencia de destino",
+                "locality": "Se detectó la localidad: {{locality}}",
+                "candidates": "Destinos sugeridos: {{names}}",
+                "hint": "Elegí el destino manualmente en el campo Ciudad."
+            }
+        },
         "help": {
             "toggle": "¿Cómo obtengo la URL del alojamiento?",
             "title": "Cómo copiar la URL según la plataforma",

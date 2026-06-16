@@ -16,6 +16,21 @@
             "submit": "Não foi possível importar a acomodação. Tente novamente.",
             "network": "Não foi possível conectar ao servidor."
         },
+        "prefill": {
+            "sectionToggle": "Importar a partir de uma URL",
+            "reviewNotice": "Revise e confirme os dados importados antes de continuar.",
+            "badge": {
+                "imported": "Importado",
+                "confidence": "{{confidence}}%",
+                "separator": "·"
+            },
+            "destinationHint": {
+                "label": "Sugestão de destino",
+                "locality": "Localidade detectada: {{locality}}",
+                "candidates": "Destinos sugeridos: {{names}}",
+                "hint": "Selecione o destino manualmente no campo Cidade."
+            }
+        },
         "help": {
             "toggle": "Como obtenho a URL da acomodação?",
             "title": "Como copiar a URL em cada plataforma",
