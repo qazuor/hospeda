@@ -223,6 +223,7 @@
     },
     "climate": {
         "title": "Climate",
+        "seasonsTitle": "Climate by season",
         "bestSeason": "Best season to visit",
         "bestMonths": "Recommended months",
         "approximate": "Approximate values",

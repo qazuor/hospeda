@@ -114,7 +114,13 @@
     gap: var(--space-2, 0.5rem);
 }
 
-.forecastTitle {
+.forecastSummary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+    cursor: pointer;
+    list-style: none;
     font-family: var(--font-heading);
     font-size: 0.875rem;
     font-weight: 600;
@@ -122,6 +128,25 @@
     margin: 0;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+}
+
+.forecastSummary::-webkit-details-marker {
+    display: none;
+}
+
+.forecastSummary::after {
+    content: "";
+    flex-shrink: 0;
+    width: 0.45rem;
+    height: 0.45rem;
+    border-right: 2px solid var(--core-muted-foreground);
+    border-bottom: 2px solid var(--core-muted-foreground);
+    transform: rotate(45deg);
+    transition: transform var(--duration-normal, 0.3s) ease;
+}
+
+.forecastSection[open] .forecastSummary::after {
+    transform: rotate(-135deg);
 }
 
 .forecastStrip {

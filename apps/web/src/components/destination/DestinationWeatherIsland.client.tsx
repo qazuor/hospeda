@@ -210,12 +210,12 @@ export function DestinationWeatherIsland({
                 </div>
             </div>
 
-            {/* 16-day forecast strip */}
+            {/* 16-day forecast strip (collapsible to keep the card compact) */}
             {daily.length > 0 && (
-                <div className={styles.forecastSection}>
-                    <p className={styles.forecastTitle}>
+                <details className={styles.forecastSection}>
+                    <summary className={styles.forecastSummary}>
                         {t('destinations.weather.forecast', 'Pronóstico a 16 días')}
-                    </p>
+                    </summary>
                     <ul
                         className={styles.forecastStrip}
                         aria-label={t('destinations.weather.forecast', 'Pronóstico a 16 días')}
@@ -259,7 +259,7 @@ export function DestinationWeatherIsland({
                             );
                         })}
                     </ul>
-                </div>
+                </details>
             )}
         </div>
     );

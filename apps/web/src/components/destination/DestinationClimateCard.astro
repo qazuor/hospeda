@@ -85,7 +85,11 @@ const note = climate?.note
             )}
 
             {presentSeasons.length > 0 && (
-                <div class="dest-climate-card__seasons">
+                <details class="dest-climate-card__collapse">
+                    <summary class="dest-climate-card__collapse-summary">
+                        {t('destinations.climate.seasonsTitle', 'Clima por estación')}
+                    </summary>
+                    <div class="dest-climate-card__seasons">
                     {presentSeasons.map(({ key, data }) => (
                         <div class="dest-climate-card__season">
                             <h3 class="dest-climate-card__season-name">
@@ -117,7 +121,8 @@ const note = climate?.note
                             </div>
                         </div>
                     ))}
-                </div>
+                    </div>
+                </details>
             )}
 
             {note && (
@@ -176,10 +181,44 @@ const note = climate?.note
         color: var(--core-muted-foreground);
     }
 
+    /* Collapsible "seasons" disclosure keeps the card compact by default. */
+    .dest-climate-card__collapse-summary {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-2, 0.5rem);
+        cursor: pointer;
+        list-style: none;
+        font-family: var(--font-sans);
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--core-foreground);
+    }
+
+    .dest-climate-card__collapse-summary::-webkit-details-marker {
+        display: none;
+    }
+
+    .dest-climate-card__collapse-summary::after {
+        content: "";
+        flex-shrink: 0;
+        width: 0.45rem;
+        height: 0.45rem;
+        border-right: 2px solid var(--core-muted-foreground);
+        border-bottom: 2px solid var(--core-muted-foreground);
+        transform: rotate(45deg);
+        transition: transform var(--duration-normal, 0.3s) ease;
+    }
+
+    .dest-climate-card__collapse[open] .dest-climate-card__collapse-summary::after {
+        transform: rotate(-135deg);
+    }
+
     .dest-climate-card__seasons {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: var(--space-2, 0.5rem);
+        margin-top: var(--space-2, 0.5rem);
     }
 
     .dest-climate-card__season {
