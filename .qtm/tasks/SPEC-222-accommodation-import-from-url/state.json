@@ -479,195 +479,195 @@
             "id": "T-014",
             "title": "GenericAdapter (fetch + JSON-LD → AI Strategy B)",
             "description": "safeExternalFetch the URL, run JSON-LD/OG/meta extractors; if fewer than N useful fields (default 2, HOSPEDA configurable), strip HTML to text (max HOSPEDA_IMPORT_AI_MAX_CHARS) and call ai-core generateObject({feature:'accommodation_import'}, AccommodationImportDraftSchema); AI fields get lowest confidence. If AI disabled/unconfigured, return structured partial. Tests: JSON-LD-rich page no AI; sparse page triggers AI (mocked); AI-off path.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-007", "T-010", "T-004"],
             "blocks": ["T-019"],
             "subtasks": [
                 {
                     "title": "Fetch + structured extraction",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Strategy B AI fallback (threshold)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "AI-disabled graceful path",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests (mocked fetch/AI)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "ai-core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T22:40:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T00:40:00.000Z",
+                "completed": "2026-06-16T00:50:00.000Z"
             }
         },
         {
             "id": "T-015",
             "title": "BookingAdapter (fetch + JSON-LD Hotel → Apify fallback)",
             "description": "safeExternalFetch Booking URL, parse JSON-LD @type Hotel (strip aggregateRating/review); on block/empty → Apify fallback (shared Apify client). Realistic headers. Tests: JSON-LD fixture maps name/address/geo/images (NO rating); blocked → Apify path (mocked); empty → degraded.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-007", "T-010"],
             "blocks": ["T-019"],
             "subtasks": [
                 {
                     "title": "Direct fetch + Hotel JSON-LD map",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Strip rating/review (AC-9.1)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Apify fallback on block/empty",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T22:40:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T00:50:00.000Z",
+                "completed": "2026-06-16T00:55:00.000Z"
             }
         },
         {
             "id": "T-016",
             "title": "AirbnbAdapter (Apify actor REST) + credential degradation",
             "description": "Call Apify run-sync-get-dataset-items (POST api.apify.com/v2/acts/<actor>/...?token) with {mode:'listing', urls:[url]} using native fetch; map dataset item; MUST strip reviews/reviewsCount/rating/ratingBreakdown (AC-9.1). Provider abstracted (actor from HOSPEDA_APIFY_AIRBNB_ACTOR). US-11: if HOSPEDA_APIFY_TOKEN unset → return source:'none' + message, never throw. Tests: mapping (mocked dataset, NO rating); missing token → degraded; actor error → degraded.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-006", "T-009"],
             "blocks": ["T-019"],
             "subtasks": [
                 {
                     "title": "Apify REST call + dataset mapping",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Strip review/rating fields",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Credential-less degradation (US-11)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T22:40:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T00:40:00.000Z",
+                "completed": "2026-06-16T00:50:00.000Z"
             }
         },
         {
             "id": "T-017",
             "title": "MercadoLibreAdapter (OAuth /items/{id}) + credential degradation",
             "description": "Parse item ID from URL; call api.mercadolibre.com/items/{id} with OAuth app token (ML is no longer anonymous — needs HOSPEDA_MERCADOLIBRE_TOKEN, confirm client-credentials vs full OAuth with a live call at impl). Map title/description/location/attributes(bedrooms/bathrooms/area)/photos. US-11: token unset → source:'none'. Tests: mapping (mocked JSON); token unset → degraded; bad URL → degraded.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-006", "T-009"],
             "blocks": ["T-019"],
             "subtasks": [
                 {
                     "title": "Item-ID parse + ML API call (OAuth)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Attribute mapping",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Credential-less degradation (US-11)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T22:40:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T00:30:00.000Z",
+                "completed": "2026-06-16T00:40:00.000Z"
             }
         },
         {
             "id": "T-018",
             "title": "GooglePlacesAdapter (Place Details New) + credential degradation",
             "description": "Extract Place ID from URL; call Places API (New) Place Details with HOSPEDA_GOOGLE_PLACES_API_KEY; map name/address/coords/phone/website/type/photos. US-11: key unset → source:'none'. Tests: mapping (mocked); key unset → degraded; no place id → degraded.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-006", "T-009"],
             "blocks": ["T-019"],
             "subtasks": [
                 {
                     "title": "Place-ID extraction + Place Details call",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Field mapping",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Credential-less degradation (US-11)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T22:40:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T00:30:00.000Z",
+                "completed": "2026-06-16T00:40:00.000Z"
             }
         },
         {
@@ -1047,9 +1047,9 @@
     ],
     "summary": {
         "total": 28,
-        "pending": 15,
+        "pending": 10,
         "inProgress": 0,
-        "completed": 13,
+        "completed": 18,
         "blocked": 0,
         "averageComplexity": 2.5
     }
