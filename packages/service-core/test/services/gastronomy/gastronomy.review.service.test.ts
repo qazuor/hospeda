@@ -51,7 +51,6 @@ function makeReview(overrides: Partial<Record<string, unknown>> = {}): Gastronom
         userId: REVIEWER_ID,
         overallRating: 4,
         averageRating: 0,
-        isVerified: false,
         lifecycleState: LifecycleStatusEnum.ACTIVE,
         moderationState: ModerationStatusEnum.PENDING,
         createdAt: new Date('2024-01-01'),

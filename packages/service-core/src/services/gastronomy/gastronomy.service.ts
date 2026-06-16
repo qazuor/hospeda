@@ -111,8 +111,7 @@ type _GastronomyEntityFilters = EntityFilters<typeof GastronomyAdminSearchSchema
  */
 export class GastronomyService extends BaseCommerceListingService<
     Gastronomy,
-    // biome-ignore lint/suspicious/noExplicitAny: SPEC-239 schema/DB divergence — the Zod `Gastronomy` type carries fields not present in the `gastronomies` table (inherited from the accommodation mirror). Tracked for alignment as a SPEC-239 follow-up; `any` is a temporary bridge, NOT a sanctioned pattern.
-    any,
+    GastronomyModel,
     typeof GastronomyAdminCreateInputSchema,
     typeof GastronomyUpdateInputSchema,
     typeof GastronomySearchSchema
