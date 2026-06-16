@@ -52,8 +52,6 @@ export const DestinationFiltersSchema = z.object({
 
     // Features
     hasAttractions: z.boolean().optional(),
-    climate: z.string().min(1).max(50).optional(),
-    bestSeason: z.string().min(1).max(50).optional(),
 
     // Hierarchy filters
     parentDestinationId: z.string().uuid().optional(),
@@ -103,8 +101,6 @@ export const DestinationSearchSchema = BaseSearchSchema.extend({
 
     // Features
     hasAttractions: z.boolean().optional(),
-    climate: z.string().min(1).max(50).optional(),
-    bestSeason: z.string().min(1).max(50).optional(),
 
     // Hierarchy filters
     parentDestinationId: z.string().uuid().optional(),

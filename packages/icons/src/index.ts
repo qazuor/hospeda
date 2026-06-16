@@ -593,3 +593,14 @@ export { ShareIcon } from './icons/actions/ShareIcon';
 export { SynchronizeIcon } from './icons/actions/SynchronizeIcon';
 export { RotateCcwIcon } from './icons/actions/RotateCcwIcon';
 export { UploadIcon } from './icons/actions/UploadIcon';
+
+// Export weather icons
+export { CloudIcon } from './icons/weather/CloudIcon';
+export { CloudSunIcon } from './icons/weather/CloudSunIcon';
+export { CloudMoonIcon } from './icons/weather/CloudMoonIcon';
+export { CloudFogIcon } from './icons/weather/CloudFogIcon';
+export { CloudRainIcon } from './icons/weather/CloudRainIcon';
+export { CloudSnowIcon } from './icons/weather/CloudSnowIcon';
+export { CloudLightningIcon } from './icons/weather/CloudLightningIcon';
+export { SnowflakeIcon } from './icons/weather/SnowflakeIcon';
+export { WindIcon } from './icons/weather/WindIcon';

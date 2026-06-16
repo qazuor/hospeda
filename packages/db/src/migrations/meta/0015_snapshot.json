@@ -1,5 +1,5 @@
 {
-    "id": "df006554-63af-4972-9da5-54740ac294dd",
+    "id": "f53f51f6-b9ee-41c8-9433-ffea8e7a6883",
     "prevId": "99c1cd28-2af3-499a-a5d0-b03f26c506f1",
     "version": "7",
     "dialect": "postgresql",
@@ -5421,6 +5421,18 @@
                     "type": "jsonb",
                     "primaryKey": false,
                     "notNull": false
+                },
+                "climate": {
+                    "name": "climate",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "weather_current": {
+                    "name": "weather_current",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
                 }
             },
             "indexes": {
@@ -7528,231 +7540,6 @@
             "foreignKeys": {},
             "compositePrimaryKeys": {},
             "uniqueConstraints": {},
-            "policies": {},
-            "checkConstraints": {},
-            "isRLSEnabled": false
-        },
-        "public.host_trades": {
-            "name": "host_trades",
-            "schema": "",
-            "columns": {
-                "id": {
-                    "name": "id",
-                    "type": "uuid",
-                    "primaryKey": true,
-                    "notNull": true,
-                    "default": "gen_random_uuid()"
-                },
-                "slug": {
-                    "name": "slug",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": true
-                },
-                "name": {
-                    "name": "name",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": true
-                },
-                "category": {
-                    "name": "category",
-                    "type": "host_trade_category_enum",
-                    "typeSchema": "public",
-                    "primaryKey": false,
-                    "notNull": true
-                },
-                "contact": {
-                    "name": "contact",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": true
-                },
-                "benefit": {
-                    "name": "benefit",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": true
-                },
-                "destination_id": {
-                    "name": "destination_id",
-                    "type": "uuid",
-                    "primaryKey": false,
-                    "notNull": true
-                },
-                "is_24h": {
-                    "name": "is_24h",
-                    "type": "boolean",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "default": false
-                },
-                "schedule_text": {
-                    "name": "schedule_text",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": false
-                },
-                "is_active": {
-                    "name": "is_active",
-                    "type": "boolean",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "default": true
-                },
-                "created_at": {
-                    "name": "created_at",
-                    "type": "timestamp with time zone",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "default": "now()"
-                },
-                "updated_at": {
-                    "name": "updated_at",
-                    "type": "timestamp with time zone",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "default": "now()"
-                },
-                "created_by_id": {
-                    "name": "created_by_id",
-                    "type": "uuid",
-                    "primaryKey": false,
-                    "notNull": false
-                },
-                "updated_by_id": {
-                    "name": "updated_by_id",
-                    "type": "uuid",
-                    "primaryKey": false,
-                    "notNull": false
-                },
-                "deleted_at": {
-                    "name": "deleted_at",
-                    "type": "timestamp with time zone",
-                    "primaryKey": false,
-                    "notNull": false
-                },
-                "deleted_by_id": {
-                    "name": "deleted_by_id",
-                    "type": "uuid",
-                    "primaryKey": false,
-                    "notNull": false
-                }
-            },
-            "indexes": {
-                "hostTrades_destinationId_idx": {
-                    "name": "hostTrades_destinationId_idx",
-                    "columns": [
-                        {
-                            "expression": "destination_id",
-                            "isExpression": false,
-                            "asc": true,
-                            "nulls": "last"
-                        }
-                    ],
-                    "isUnique": false,
-                    "concurrently": false,
-                    "method": "btree",
-                    "with": {}
-                },
-                "hostTrades_category_idx": {
-                    "name": "hostTrades_category_idx",
-                    "columns": [
-                        {
-                            "expression": "category",
-                            "isExpression": false,
-                            "asc": true,
-                            "nulls": "last"
-                        }
-                    ],
-                    "isUnique": false,
-                    "concurrently": false,
-                    "method": "btree",
-                    "with": {}
-                },
-                "hostTrades_isActive_idx": {
-                    "name": "hostTrades_isActive_idx",
-                    "columns": [
-                        {
-                            "expression": "is_active",
-                            "isExpression": false,
-                            "asc": true,
-                            "nulls": "last"
-                        }
-                    ],
-                    "isUnique": false,
-                    "concurrently": false,
-                    "method": "btree",
-                    "with": {}
-                },
-                "hostTrades_destinationId_category_idx": {
-                    "name": "hostTrades_destinationId_category_idx",
-                    "columns": [
-                        {
-                            "expression": "destination_id",
-                            "isExpression": false,
-                            "asc": true,
-                            "nulls": "last"
-                        },
-                        {
-                            "expression": "category",
-                            "isExpression": false,
-                            "asc": true,
-                            "nulls": "last"
-                        }
-                    ],
-                    "isUnique": false,
-                    "concurrently": false,
-                    "method": "btree",
-                    "with": {}
-                }
-            },
-            "foreignKeys": {
-                "host_trades_destination_id_destinations_id_fk": {
-                    "name": "host_trades_destination_id_destinations_id_fk",
-                    "tableFrom": "host_trades",
-                    "tableTo": "destinations",
-                    "columnsFrom": ["destination_id"],
-                    "columnsTo": ["id"],
-                    "onDelete": "restrict",
-                    "onUpdate": "no action"
-                },
-                "host_trades_created_by_id_users_id_fk": {
-                    "name": "host_trades_created_by_id_users_id_fk",
-                    "tableFrom": "host_trades",
-                    "tableTo": "users",
-                    "columnsFrom": ["created_by_id"],
-                    "columnsTo": ["id"],
-                    "onDelete": "set null",
-                    "onUpdate": "no action"
-                },
-                "host_trades_updated_by_id_users_id_fk": {
-                    "name": "host_trades_updated_by_id_users_id_fk",
-                    "tableFrom": "host_trades",
-                    "tableTo": "users",
-                    "columnsFrom": ["updated_by_id"],
-                    "columnsTo": ["id"],
-                    "onDelete": "set null",
-                    "onUpdate": "no action"
-                },
-                "host_trades_deleted_by_id_users_id_fk": {
-                    "name": "host_trades_deleted_by_id_users_id_fk",
-                    "tableFrom": "host_trades",
-                    "tableTo": "users",
-                    "columnsFrom": ["deleted_by_id"],
-                    "columnsTo": ["id"],
-                    "onDelete": "set null",
-                    "onUpdate": "no action"
-                }
-            },
-            "compositePrimaryKeys": {},
-            "uniqueConstraints": {
-                "host_trades_slug_unique": {
-                    "name": "host_trades_slug_unique",
-                    "nullsNotDistinct": false,
-                    "columns": ["slug"]
-                }
-            },
             "policies": {},
             "checkConstraints": {},
             "isRLSEnabled": false
@@ -17203,25 +16990,6 @@
             "schema": "public",
             "values": ["oficial", "blue", "mep", "ccl", "tarjeta", "standard"]
         },
-        "public.host_trade_category_enum": {
-            "name": "host_trade_category_enum",
-            "schema": "public",
-            "values": [
-                "CERRAJERIA",
-                "PLOMERIA",
-                "ELECTRICIDAD",
-                "GAS",
-                "CLIMATIZACION",
-                "LIMPIEZA",
-                "FLETES",
-                "VIDRIERIA",
-                "CARPINTERIA",
-                "PILETA_JARDIN",
-                "PLAGAS",
-                "INTERNET",
-                "ALBANILERIA"
-            ]
-        },
         "public.invoice_status_enum": {
             "name": "invoice_status_enum",
             "schema": "public",
@@ -17379,8 +17147,7 @@
                 "SYSTEM",
                 "ACCESS",
                 "MEDIA",
-                "MODERATION",
-                "HOST_TRADE"
+                "MODERATION"
             ]
         },
         "public.permission_effect_enum": {
@@ -18004,14 +17771,7 @@
                 "moderation.threshold.view",
                 "moderation.threshold.update",
                 "moderation.threshold.restore",
-                "moderation.threshold.hardDelete",
-                "hostTrade.view",
-                "hostTrade.create",
-                "hostTrade.update",
-                "hostTrade.delete",
-                "hostTrade.restore",
-                "hostTrade.hardDelete",
-                "hostTrade.viewAll"
+                "moderation.threshold.hardDelete"
             ]
         },
         "public.post_category_enum": {

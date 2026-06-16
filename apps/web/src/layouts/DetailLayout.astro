@@ -161,6 +161,10 @@ const resolvedDescription = description ?? 'Descubrí alojamientos en el Litoral
 		.detail-page__sidebar {
 			position: static;
 			order: 2;
+			/* Stacked full-width on mobile: drop the desktop sticky-scroll cap so
+			   the sidebar grows to its natural height instead of scrolling internally. */
+			max-height: none;
+			overflow-y: visible;
 		}
 
 		.detail-page__main {

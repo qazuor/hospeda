@@ -4,7 +4,7 @@ title: Soft-delete filtering in the service list() path — make BaseCrudService
 slug: list-soft-delete-filtering
 type: bugfix
 complexity: medium
-status: draft
+status: in-progress
 owner: qazuor
 created: 2026-06-15
 base: staging

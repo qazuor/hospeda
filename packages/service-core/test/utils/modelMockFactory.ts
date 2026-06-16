@@ -58,6 +58,10 @@ export function createModelMock(methods: string[] = []): StandardModelMock {
         findWithRelations: vi.fn(),
         findOneWithRelations: vi.fn(),
         getTableName: vi.fn().mockReturnValue('mock_table'),
+        // Mirror the real BaseModel surface: getTable() always exists. Default to an
+        // empty table (no `deletedAt` column) so the SPEC-230 soft-delete predicate is
+        // not injected unless a test explicitly provides a table with that column.
+        getTable: vi.fn().mockReturnValue({}),
         table: 'mock_table',
         entityName: 'mock_entity',
         getClient: () => ({}),

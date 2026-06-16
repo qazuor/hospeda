@@ -134,6 +134,7 @@ describe('GET /api/v1/protected/users/me/subscription (get user subscription)', 
                 const { subscription } = body;
 
                 if (subscription !== null && subscription !== undefined) {
+                    expect(subscription).toHaveProperty('id');
                     expect(subscription).toHaveProperty('planSlug');
                     expect(subscription).toHaveProperty('planName');
                     expect(subscription).toHaveProperty('status');
@@ -142,6 +143,7 @@ describe('GET /api/v1/protected/users/me/subscription (get user subscription)', 
                     expect(subscription).toHaveProperty('cancelAtPeriodEnd');
                     expect(subscription).toHaveProperty('trialEndsAt');
                     expect(subscription).toHaveProperty('monthlyPriceArs');
+                    expect(subscription).toHaveProperty('scheduledPlanChange');
                 }
             }
         } catch (error: unknown) {
