@@ -358,11 +358,15 @@
                 "window": {
                     "7d": "7d",
                     "30d": "30d"
+                },
+                "chart": {
+                    "ariaLabel": "Tendencia diaria de vistas"
                 }
             },
             "favorites": {
                 "title": "Favoritos",
-                "empty": "Sin favoritos aún"
+                "empty": "Sin favoritos aún",
+                "error": "Error al cargar favoritos"
             },
             "responseRate": {
                 "title": "Tiempo de respuesta",

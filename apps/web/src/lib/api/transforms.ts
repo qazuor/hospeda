@@ -1030,24 +1030,65 @@ export function transformAccommodationViews({
 }
 
 /**
- * Transforms raw API response into favorites breakdown data for the FavoritesWidget.
+ * Transforms raw favorites-breakdown API array into per-accommodation data for
+ * the FavoritesWidget.
  *
- * @param item - Raw API response from the host analytics favorites endpoint
+ * Crosses each `{accommodationId, slug, bookmarkCount}` wire item with the
+ * id→name map (falls back to slug when the name is not in the map), then sorts
+ * descending by bookmarkCount — mirroring `transformAccommodationViews`.
+ *
+ * @param favorites - Raw array from GET /accommodations/my/favorites-breakdown
+ * @param names - Map of accommodation id → display name
  * @returns Typed FavoritesBreakdownData for the FavoritesWidget component
  */
 export function transformFavoritesBreakdown({
-    item
+    favorites,
+    names
 }: {
-    readonly item: Record<string, unknown>;
+    readonly favorites: ReadonlyArray<Record<string, unknown>>;
+    readonly names: ReadonlyMap<string, string>;
 }): import('./types').FavoritesBreakdownData {
-    const rawCollections = item.collections as ReadonlyArray<Record<string, unknown>> | undefined;
+    const items = favorites
+        .map((entry) => {
+            const accommodationId = String(entry.accommodationId ?? '');
+            const slug = String(entry.slug ?? '');
+            return {
+                accommodationId,
+                name: names.get(accommodationId) ?? slug,
+                bookmarkCount: Number(entry.bookmarkCount ?? 0)
+            };
+        })
+        .sort((a, b) => b.bookmarkCount - a.bookmarkCount);
+    return { items };
+}
 
-    return {
-        collections: (rawCollections ?? []).map((entry) => ({
-            collection: String(entry.collection ?? ''),
-            count: Number(entry.count ?? 0)
-        }))
-    };
+/**
+ * Transforms the raw daily-series API payload into typed HostViewDailySeriesData
+ * for the ViewsWidget line chart.
+ *
+ * The server already gap-fills missing days and returns items in chronological
+ * order (oldest → newest), so this transform is a typed pass-through with
+ * defensive field extraction. Do NOT re-sort — preserve server order.
+ *
+ * @param series - Raw response from GET /views/accommodations/me/daily-series
+ * @returns Typed HostViewDailySeriesData for the ViewsWidget chart
+ */
+export function transformViewsDailySeries({
+    series
+}: {
+    readonly series: Record<string, unknown>;
+}): import('./types').HostViewDailySeriesData {
+    const rawWindow = series.window;
+    const window: '7d' | '30d' = rawWindow === '7d' ? '7d' : '30d';
+    const rawItems = Array.isArray(series.items) ? series.items : [];
+    const items = rawItems.map((entry: unknown) => {
+        const e = entry as Record<string, unknown>;
+        return {
+            date: String(e.date ?? ''),
+            total: Number(e.total ?? 0)
+        };
+    });
+    return { window, items };
 }
 
 /**

@@ -1,7 +1,12 @@
 /**
  * @file FavoritesWidget.client.tsx
- * @description React island showing favorites breakdown across collections
- * as a horizontal bar visualization.
+ * @description React island showing the host's accommodations ranked by
+ * bookmark count (favorites). Renders a top-6 horizontal bar list with each
+ * property's name and bookmark count. Uses no charting library — plain semantic
+ * HTML with CSS Module styling, mirroring ViewsWidget.
+ *
+ * Gated by the `view_advanced_stats` entitlement (mounted by AnalyticsSection
+ * only when the entitlement is present).
  *
  * @example
  * ```astro
@@ -31,7 +36,8 @@ export interface FavoritesWidgetProps {
 // ---------------------------------------------------------------------------
 
 /**
- * FavoritesWidget — horizontal bar breakdown of favorites per collection.
+ * FavoritesWidget — ranked horizontal bar list of the host's accommodations
+ * by bookmark count (top 6, sorted descending).
  *
  * @example
  * ```astro
@@ -48,12 +54,12 @@ export function FavoritesWidget({
 
     const totalFavorites = useMemo(() => {
         if (!data) return 0;
-        return data.collections.reduce((sum, item) => sum + item.count, 0);
+        return data.items.reduce((sum, item) => sum + item.bookmarkCount, 0);
     }, [data]);
 
     const maxCount = useMemo(() => {
-        if (!data || data.collections.length === 0) return 0;
-        return Math.max(...data.collections.map((item) => item.count));
+        if (!data || data.items.length === 0) return 0;
+        return Math.max(...data.items.map((item) => item.bookmarkCount));
     }, [data]);
 
     // ── Loading skeleton ────────────────────────────────────────────────
@@ -94,7 +100,7 @@ export function FavoritesWidget({
     }
 
     // ── Empty state ─────────────────────────────────────────────────────
-    if (!data || data.collections.length === 0) {
+    if (!data || data.items.length === 0) {
         return (
             <div className={styles.widget}>
                 <div className={styles.header}>
@@ -109,6 +115,11 @@ export function FavoritesWidget({
         );
     }
 
+    // ── Ready — ranked bar list (already sorted desc by transformFavoritesBreakdown) ─
+    // At this point data is guaranteed non-null (empty guard above catches undefined)
+    const readyData = data as FavoritesBreakdownData;
+    const topItems = readyData.items.slice(0, 6);
+
     return (
         <div className={styles.widget}>
             <div className={styles.header}>
@@ -118,14 +129,14 @@ export function FavoritesWidget({
                 <span className={styles.total}>{totalFavorites}</span>
             </div>
             <div className={styles.list}>
-                {data.collections.map((item) => {
-                    const pct = maxCount > 0 ? (item.count / maxCount) * 100 : 0;
+                {topItems.map((item) => {
+                    const pct = maxCount > 0 ? (item.bookmarkCount / maxCount) * 100 : 0;
                     return (
                         <div
-                            key={item.collection}
+                            key={item.accommodationId}
                             className={styles.row}
                         >
-                            <span className={styles.label}>{item.collection}</span>
+                            <span className={styles.label}>{item.name}</span>
                             <div className={styles.barTrack}>
                                 <div
                                     className={styles.barFill}
@@ -133,7 +144,7 @@ export function FavoritesWidget({
                                     aria-hidden="true"
                                 />
                             </div>
-                            <span className={styles.count}>{item.count}</span>
+                            <span className={styles.count}>{item.bookmarkCount}</span>
                         </div>
                     );
                 })}

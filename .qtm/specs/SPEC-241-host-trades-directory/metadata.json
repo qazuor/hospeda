@@ -1,0 +1,12 @@
+{
+    "specId": "SPEC-241",
+    "title": "Host trades/services directory",
+    "type": "feature",
+    "complexity": "low",
+    "status": "draft",
+    "created": "2026-06-15T00:00:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["host", "directory", "admin-curated", "web", "mi-cuenta", "trades"]
+}
