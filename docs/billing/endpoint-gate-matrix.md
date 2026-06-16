@@ -141,6 +141,7 @@
 | `POST /api/v1/protected/profile/set-password` | `profile/protected/set-password.ts` | none | - | n/a | Account setup; no plan gate |
 | `POST /api/v1/protected/profile/skip-set-password` | `profile/protected/skip-set-password.ts` | none | - | n/a | Account setup skip; no plan gate |
 | `GET /api/v1/protected/profile/status` | `profile/protected/status.ts` | none | - | n/a | Profile completion status read; auth-only sufficient |
+| `POST /api/v1/protected/profile/push-token` | `profile/protected/push-token.ts` | none | - | n/a | Push-token registration (SPEC-243 T-011); self-scoped to actor.id, auth-only sufficient, no plan gate |
 | **NEWSLETTER — PROTECTED** | | | | | |
 | `POST /api/v1/protected/newsletter/subscribe` | `newsletter/protected/subscribe.ts` | none | - | n/a | Newsletter subscription; no plan gate |
 | `DELETE /api/v1/protected/newsletter/unsubscribe` | `newsletter/protected/unsubscribe.ts` | none | - | n/a | Unsubscription always allowed |
