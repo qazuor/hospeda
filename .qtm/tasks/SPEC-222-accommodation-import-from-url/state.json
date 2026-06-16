@@ -191,39 +191,39 @@
             "id": "T-006",
             "title": "Register import env vars (registry + api env.ts + .env.example)",
             "description": "Register HOSPEDA_APIFY_TOKEN (secret), HOSPEDA_APIFY_AIRBNB_ACTOR, HOSPEDA_GOOGLE_PLACES_API_KEY (secret), HOSPEDA_MERCADOLIBRE_TOKEN (secret), HOSPEDA_IMPORT_FETCH_TIMEOUT_MS (8000), HOSPEDA_IMPORT_FETCH_MAX_BYTES (3000000), HOSPEDA_IMPORT_RATE_LIMIT_RPH (10), HOSPEDA_IMPORT_AI_MAX_CHARS (12000). Files: packages/config/src/env-registry.*, apps/api/src/utils/env.ts (Zod), apps/api/.env.example. Run pnpm env:check:registry. STOP + notify owner to set in Coolify. Tests: env:check:registry green.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-007", "T-016", "T-017", "T-018"],
             "subtasks": [
                 {
                     "title": "Registry entries with full metadata",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Zod validation in apps/api env.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": ".env.example placeholders",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "env:check:registry green + notify owner (Coolify)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["config", "env"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T22:40:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-15T23:20:00.000Z",
+                "completed": "2026-06-15T23:25:00.000Z"
             }
         },
         {
@@ -1047,9 +1047,9 @@
     ],
     "summary": {
         "total": 28,
-        "pending": 23,
+        "pending": 22,
         "inProgress": 0,
-        "completed": 5,
+        "completed": 6,
         "blocked": 0,
         "averageComplexity": 2.5
     }
