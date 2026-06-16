@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { queryClient } from '../src/lib/api/query-client';
 import { useSession } from '../src/lib/auth-client';
 import { resolveAuthGroup } from '../src/lib/auth/roles';
+import { usePushRegistration } from '../src/lib/push/use-push-registration';
 
 /**
  * Root layout for the Hospeda mobile app.
@@ -54,6 +55,11 @@ export default function RootLayout() {
     const { data, isPending } = useSession();
     const segments = useSegments();
     const router = useRouter();
+
+    // Register push token once the session is resolved and a user is present.
+    // Runs in the background — never blocks navigation or rendering.
+    const hasSession = !isPending && data !== null && data !== undefined;
+    usePushRegistration(hasSession);
 
     useEffect(() => {
         // Do nothing while session is still being restored from SecureStore.

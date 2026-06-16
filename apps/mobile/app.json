@@ -19,7 +19,7 @@
             "package": "com.hospeda.app"
         },
         "platforms": ["ios", "android"],
-        "plugins": ["expo-router", "expo-splash-screen"],
+        "plugins": ["expo-router", "expo-splash-screen", "expo-notifications"],
         "experiments": {
             "typedRoutes": true
         }
