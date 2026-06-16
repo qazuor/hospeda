@@ -725,39 +725,39 @@
             "id": "T-020",
             "title": "POST /api/v1/protected/accommodations/import-from-url route",
             "description": "createProtectedRoute; permission ACCOMMODATION_CREATE OR ACCOMMODATION_UPDATE_OWN (ACCOMMODATION_UPDATE_ANY for admin); server re-check legalConfirmed===true (reject otherwise); wire per-user rate limit {requests:10, windowMs:3_600_000} from HOSPEDA_IMPORT_RATE_LIMIT_RPH; apply accommodation_import AI quota/entitlement + cost ceiling when Strategy B runs. Thin handler → service. File: apps/api/src/routes/accommodation/protected/import-from-url.ts + register.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003", "T-005", "T-019"],
             "blocks": ["T-021", "T-022", "T-023", "T-026"],
             "subtasks": [
                 {
                     "title": "Route + perms + legalConfirmed recheck",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Explicit 10/h rate-limit middleware",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "AI quota/entitlement on Strategy B",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Register route",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T22:40:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T14:30:00.000Z",
+                "completed": "2026-06-16T15:05:00.000Z"
             }
         },
         {
@@ -1047,9 +1047,9 @@
     ],
     "summary": {
         "total": 28,
-        "pending": 9,
+        "pending": 8,
         "inProgress": 0,
-        "completed": 19,
+        "completed": 20,
         "blocked": 0,
         "averageComplexity": 2.5
     }
