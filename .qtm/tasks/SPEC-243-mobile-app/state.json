@@ -109,9 +109,9 @@
             "tags": ["auth", "ui"],
             "phase": "auth",
             "qualityGate": {
-                "lint": "passed",
-                "typecheck": "passed",
-                "tests": "passed"
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-15T00:00:00.000Z",
@@ -340,8 +340,8 @@
     "summary": {
         "total": 13,
         "pending": 3,
-        "inProgress": 1,
-        "completed": 9,
+        "inProgress": 0,
+        "completed": 10,
         "blocked": 0,
         "averageComplexity": 1.9
     }
