@@ -830,39 +830,39 @@
             "id": "T-023",
             "title": "Web: ImportFromUrl.client.tsx island + module.css",
             "description": "New island (apps/web/src/components/host/ImportFromUrl.client.tsx) + ImportFromUrl.module.css (CSS Modules, no Tailwind): legal confirmation checkbox that DISABLES the Importar button until ticked (AC-1.1), URL input, Importar button, loading/error states. Calls POST import-from-url. Validates request with AccommodationImportRequestSchema.safeParse. Component test: button disabled until checkbox; submit calls endpoint.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003", "T-020"],
             "blocks": ["T-024", "T-025"],
             "subtasks": [
                 {
                     "title": "Island markup + CSS module",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Legal checkbox gates button (AC-1.1)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Fetch + loading/error states",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Component test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T22:40:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T15:35:00.000Z",
+                "completed": "2026-06-16T15:45:00.000Z"
             }
         },
         {
@@ -1047,9 +1047,9 @@
     ],
     "summary": {
         "total": 28,
-        "pending": 6,
+        "pending": 5,
         "inProgress": 0,
-        "completed": 22,
+        "completed": 23,
         "blocked": 0,
         "averageComplexity": 2.5
     }
