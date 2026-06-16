@@ -432,7 +432,14 @@
                 "emailSubject": "Cancelamento de assinatura",
                 "body": "Para cancelar sua assinatura, envie um e-mail para info@hospeda.com e um agente irá processá-la em breve. Seu plano continuará ativo até o final do período atual.",
                 "contactSupport": "Contatar suporte",
-                "confirm": "Sim, cancelar assinatura"
+                "confirm": "Sim, cancelar assinatura",
+                "description": "Ao cancelar sua assinatura você mantém o acesso ao seu plano até o final do período atual. Nenhuma cobrança adicional será feita.",
+                "reasonLabel": "Motivo do cancelamento (opcional)",
+                "reasonPlaceholder": "Conte-nos por que você está cancelando para que possamos melhorar...",
+                "successTitle": "Assinatura cancelada",
+                "successBody": "Sua assinatura foi cancelada. Você ainda tem acesso até {date}.",
+                "flagOffFallback": "O cancelamento online não está disponível no momento. Por favor, entre em contato com o suporte para cancelar sua assinatura.",
+                "cancelError": "Não foi possível cancelar a assinatura. Tente novamente."
             }
         }
     },

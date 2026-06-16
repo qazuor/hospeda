@@ -5,10 +5,11 @@
  * Covers:
  * - Loading state renders correctly
  * - Resolved subscription renders plan name, status, billing date
- * - Cancel modal opens on button click and shows support contact instructions
- * - Cancel modal exposes a mailto link to support (self-cancel API pending; SPEC-147)
- * - HOST role shows admin escalation button
- * - USER role hides admin escalation button
+ * - Cancel modal: opens, closes (button + Escape), confirm step UI
+ * - Cancel modal: calls API on confirm → success step renders access-until date
+ * - Cancel modal: 404 response (flag off) → degrades to email-support path
+ * - Cancel modal: 5xx response → retryable error state
+ * - HOST role shows admin escalation button only for SUPER_ADMIN
  * - Empty state when no subscription
  * - Error state when fetch fails
  * - Invoice download action
@@ -30,8 +31,6 @@ vi.mock('../../../src/components/account/SubscriptionDashboard.module.css', () =
 }));
 
 // Mock @repo/icons — return simple span elements for each icon.
-// PlayIcon and PowerOffIcon were added in commit 87b0cf75f
-// ("host self-serve subscription pause/resume, SPEC-143 #29").
 vi.mock('@repo/icons', () => ({
     CheckIcon: () => <span data-testid="icon-check" />,
     ArrowRightIcon: () => <span data-testid="icon-arrow-right" />,
@@ -56,9 +55,9 @@ vi.mock('@/lib/env', () => ({
 // Mock the API endpoints
 const mockGetSubscription = vi.fn();
 const mockListInvoices = vi.fn();
-// cancelSubscription was removed from the user dashboard — self-cancel is
-// pending (SPEC-147). The mock stays so we can assert it is NEVER called.
 const mockCancelSubscription = vi.fn();
+const mockPauseSubscription = vi.fn();
+const mockResumeSubscription = vi.fn();
 
 vi.mock('../../../src/lib/api/endpoints-protected', () => ({
     userApi: {
@@ -66,7 +65,9 @@ vi.mock('../../../src/lib/api/endpoints-protected', () => ({
     },
     billingApi: {
         listInvoices: () => mockListInvoices(),
-        cancelSubscription: () => mockCancelSubscription()
+        cancelSubscription: (...args: unknown[]) => mockCancelSubscription(...args),
+        pauseSubscription: () => mockPauseSubscription(),
+        resumeSubscription: () => mockResumeSubscription()
     }
 }));
 
@@ -77,7 +78,9 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
     },
     billingApi: {
         listInvoices: () => mockListInvoices(),
-        cancelSubscription: () => mockCancelSubscription()
+        cancelSubscription: (...args: unknown[]) => mockCancelSubscription(...args),
+        pauseSubscription: () => mockPauseSubscription(),
+        resumeSubscription: () => mockResumeSubscription()
     }
 }));
 
@@ -99,6 +102,7 @@ const ADMIN_ROLE: SubscriptionDashboardUser = { id: 'user-3', role: 'ADMIN' };
 const SUPER_ADMIN_ROLE: SubscriptionDashboardUser = { id: 'user-4', role: 'SUPER_ADMIN' };
 
 const ACTIVE_SUBSCRIPTION = {
+    id: 'sub-uuid-1',
     planSlug: 'pro',
     planName: 'Plan Pro',
     status: 'active' as const,
@@ -135,6 +139,14 @@ const MOCK_INVOICE = {
     currency: 'ARS',
     status: 'paid' as const,
     pdfUrl: 'https://example.com/invoice-1.pdf'
+};
+
+/** API response returned by a successful cancelSubscription call */
+const CANCEL_SUCCESS_RESPONSE = {
+    subscriptionId: 'sub-uuid-1',
+    cancelAtPeriodEnd: true as const,
+    canceledAt: new Date('2026-04-15T10:00:00Z'),
+    accessUntil: new Date('2026-05-01T00:00:00Z')
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -184,11 +196,43 @@ async function waitForLoaded() {
     });
 }
 
+/** Open the cancel modal assuming subscription is already loaded */
+async function openCancelModal() {
+    await waitFor(() => {
+        expect(screen.getByRole('button', { name: /cancelar suscripción/i })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: /cancelar suscripción/i }));
+    await waitFor(() => {
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+    });
+}
+
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
 beforeEach(() => {
     vi.clearAllMocks();
-    mockCancelSubscription.mockResolvedValue({ ok: true, data: { success: true } });
+    mockCancelSubscription.mockResolvedValue({
+        ok: true,
+        data: CANCEL_SUCCESS_RESPONSE
+    });
+    mockPauseSubscription.mockResolvedValue({
+        ok: true,
+        data: {
+            success: true,
+            subscriptionId: 'sub-uuid-1',
+            status: 'paused',
+            accommodationsUpdated: 0
+        }
+    });
+    mockResumeSubscription.mockResolvedValue({
+        ok: true,
+        data: {
+            success: true,
+            subscriptionId: 'sub-uuid-1',
+            status: 'active',
+            accommodationsUpdated: 0
+        }
+    });
     vi.spyOn(window, 'open').mockImplementation(() => null);
 });
 
@@ -220,8 +264,6 @@ describe('SubscriptionDashboard — resolved subscription', () => {
         mockSubscriptionSuccess();
         renderDashboard();
         await waitFor(() => {
-            // The status text is derived from t() with a fallback of 'Active'
-            // Since translations are not fully loaded in test, we look for the badge element
             const badge = document.querySelector('[class*="badge"]');
             expect(badge).toBeInTheDocument();
         });
@@ -280,43 +322,41 @@ describe('SubscriptionDashboard — resolved subscription', () => {
     });
 });
 
-describe('SubscriptionDashboard — cancel modal', () => {
+describe('SubscriptionDashboard — cancel modal: open / close', () => {
     it('opens the confirmation modal when cancel button is clicked', async () => {
         mockSubscriptionSuccess();
         renderDashboard();
-
-        await waitFor(() => {
-            expect(
-                screen.getByRole('button', { name: /cancelar suscripción/i })
-            ).toBeInTheDocument();
-        });
-
-        fireEvent.click(screen.getByRole('button', { name: /cancelar suscripción/i }));
-
-        await waitFor(() => {
-            expect(screen.getByRole('dialog')).toBeInTheDocument();
-        });
+        await openCancelModal();
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
     });
 
-    it('closes the modal when the close button is clicked', async () => {
+    it('modal shows description text in confirm step', async () => {
         mockSubscriptionSuccess();
         renderDashboard();
+        await openCancelModal();
+        // The confirm-step description key is cancelModal.description
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+        // The confirm button must be present
+        expect(
+            screen.getByRole('button', { name: /sí, cancelar suscripción/i })
+        ).toBeInTheDocument();
+    });
 
-        await waitFor(() => {
-            expect(
-                screen.getByRole('button', { name: /cancelar suscripción/i })
-            ).toBeInTheDocument();
-        });
+    it('modal shows an optional reason textarea in confirm step', async () => {
+        mockSubscriptionSuccess();
+        renderDashboard();
+        await openCancelModal();
+        expect(screen.getByRole('textbox')).toBeInTheDocument();
+    });
 
-        fireEvent.click(screen.getByRole('button', { name: /cancelar suscripción/i }));
+    it('closes the modal when the cancel (dismiss) button is clicked', async () => {
+        mockSubscriptionSuccess();
+        renderDashboard();
+        await openCancelModal();
 
-        await waitFor(() => {
-            expect(screen.getByRole('dialog')).toBeInTheDocument();
-        });
-
-        // The modal's secondary button is "Cerrar" (t('common.close', 'Cerrar')).
-        const closeButton = screen.getByRole('button', { name: /cerrar/i });
-        fireEvent.click(closeButton);
+        // "Cancelar" is t('common.cancel')
+        const cancelButton = screen.getByRole('button', { name: /^cancelar$/i });
+        fireEvent.click(cancelButton);
 
         await waitFor(() => {
             expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
@@ -326,18 +366,7 @@ describe('SubscriptionDashboard — cancel modal', () => {
     it('closes the modal on Escape key', async () => {
         mockSubscriptionSuccess();
         renderDashboard();
-
-        await waitFor(() => {
-            expect(
-                screen.getByRole('button', { name: /cancelar suscripción/i })
-            ).toBeInTheDocument();
-        });
-
-        fireEvent.click(screen.getByRole('button', { name: /cancelar suscripción/i }));
-
-        await waitFor(() => {
-            expect(screen.getByRole('dialog')).toBeInTheDocument();
-        });
+        await openCancelModal();
 
         fireEvent.keyDown(document, { key: 'Escape' });
 
@@ -345,55 +374,159 @@ describe('SubscriptionDashboard — cancel modal', () => {
             expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
         });
     });
+});
 
-    it('renders a mailto link to support inside the modal', async () => {
+describe('SubscriptionDashboard — cancel modal: API success path', () => {
+    it('calls cancelSubscription with the subscription id on confirm', async () => {
         mockSubscriptionSuccess();
         renderDashboard();
+        await openCancelModal();
 
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /sí, cancelar suscripción/i }));
+        });
+
+        await waitFor(() => {
+            expect(mockCancelSubscription).toHaveBeenCalledWith(
+                expect.objectContaining({ subscriptionId: 'sub-uuid-1' })
+            );
+        });
+    });
+
+    it('forwards the typed reason to the API call', async () => {
+        mockSubscriptionSuccess();
+        renderDashboard();
+        await openCancelModal();
+
+        const textarea = screen.getByRole('textbox');
+        fireEvent.change(textarea, { target: { value: 'Demasiado caro' } });
+
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /sí, cancelar suscripción/i }));
+        });
+
+        await waitFor(() => {
+            expect(mockCancelSubscription).toHaveBeenCalledWith(
+                expect.objectContaining({ reason: 'Demasiado caro' })
+            );
+        });
+    });
+
+    it('shows success step after a successful API cancel', async () => {
+        mockSubscriptionSuccess();
+        renderDashboard();
+        await openCancelModal();
+
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /sí, cancelar suscripción/i }));
+        });
+
+        await waitFor(() => {
+            // The confirm button must be gone — we are on the success step
+            expect(
+                screen.queryByRole('button', { name: /sí, cancelar suscripción/i })
+            ).not.toBeInTheDocument();
+        });
+
+        // A close button is still available
+        expect(screen.getByRole('button', { name: /cerrar/i })).toBeInTheDocument();
+    });
+
+    it('re-fetches subscription data after successful cancel', async () => {
+        mockSubscriptionSuccess();
+        renderDashboard();
+        await openCancelModal();
+
+        const callsBefore = mockGetSubscription.mock.calls.length;
+
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /sí, cancelar suscripción/i }));
+        });
+
+        await waitFor(() => {
+            expect(mockGetSubscription.mock.calls.length).toBeGreaterThan(callsBefore);
+        });
+    });
+});
+
+describe('SubscriptionDashboard — cancel modal: 404 graceful degradation', () => {
+    it('shows the flag-off fallback copy when API returns 404', async () => {
+        mockCancelSubscription.mockResolvedValue({
+            ok: false,
+            error: { status: 404, message: 'Not Found' }
+        });
+
+        mockSubscriptionSuccess();
+        renderDashboard();
+        await openCancelModal();
+
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /sí, cancelar suscripción/i }));
+        });
+
+        // Should NOT show scary error — instead shows the flag-off support copy
         await waitFor(() => {
             expect(
-                screen.getByRole('button', { name: /cancelar suscripción/i })
-            ).toBeInTheDocument();
+                screen.queryByRole('button', { name: /sí, cancelar suscripción/i })
+            ).not.toBeInTheDocument();
         });
 
-        fireEvent.click(screen.getByRole('button', { name: /cancelar suscripción/i }));
-
-        await waitFor(() => {
-            expect(screen.getByRole('dialog')).toBeInTheDocument();
-        });
-
+        // The mailto link must appear (degrade to email support)
         const supportLink = screen.getByRole('link', { name: /soporte/i });
         expect(supportLink.getAttribute('href')).toMatch(/^mailto:info@hospeda\.com\?subject=/);
     });
 
-    it('does not call the cancel API when the modal opens (self-cancel pending; SPEC-147)', async () => {
+    it('does not show an error alert on 404 — uses fallback copy instead', async () => {
+        mockCancelSubscription.mockResolvedValue({
+            ok: false,
+            error: { status: 404, message: 'Not Found' }
+        });
+
         mockSubscriptionSuccess();
         renderDashboard();
+        await openCancelModal();
 
-        await waitFor(() => {
-            expect(
-                screen.getByRole('button', { name: /cancelar suscripción/i })
-            ).toBeInTheDocument();
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /sí, cancelar suscripción/i }));
         });
 
-        fireEvent.click(screen.getByRole('button', { name: /cancelar suscripción/i }));
-
         await waitFor(() => {
-            expect(screen.getByRole('dialog')).toBeInTheDocument();
+            // No role="alert" should appear for a 404 (it's not an error, it's degradation)
+            const alertEl = document.querySelector('[role="alert"]');
+            expect(alertEl).not.toBeInTheDocument();
+        });
+    });
+});
+
+describe('SubscriptionDashboard — cancel modal: non-404 error path', () => {
+    it('shows a retryable error message when API returns 500', async () => {
+        mockCancelSubscription.mockResolvedValue({
+            ok: false,
+            error: { status: 500, message: 'Internal Server Error' }
         });
 
-        // The dashboard should NOT call the protected cancel endpoint — that
-        // route does not exist (legacy DELETE /protected/billing/subscriptions/current).
-        // Self-cancel is tracked under SPEC-147.
-        expect(mockCancelSubscription).not.toHaveBeenCalled();
+        mockSubscriptionSuccess();
+        renderDashboard();
+        await openCancelModal();
+
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /sí, cancelar suscripción/i }));
+        });
+
+        await waitFor(() => {
+            expect(screen.getByRole('alert')).toBeInTheDocument();
+        });
+
+        // Confirm button must still be available (retry path)
+        expect(
+            screen.getByRole('button', { name: /sí, cancelar suscripción/i })
+        ).toBeInTheDocument();
     });
 });
 
 describe('SubscriptionDashboard — role-conditional admin button', () => {
     // The admin escalation link points at admin /billing/settings, guarded by
-    // BILLING_READ_ALL — granted to SUPER_ADMIN only (SPEC-164). Every other
-    // role (HOST, ADMIN, CLIENT_MANAGER, EDITOR, SPONSOR, USER) would be bounced
-    // to /auth/forbidden, so the link must be hidden for them.
+    // BILLING_READ_ALL — granted to SUPER_ADMIN only (SPEC-164).
     it('hides admin button for HOST role', async () => {
         mockSubscriptionSuccess();
         renderDashboard(HOST_ROLE);

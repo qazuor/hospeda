@@ -432,7 +432,14 @@
                 "emailSubject": "Subscription cancellation",
                 "body": "To cancel your subscription, email us at info@hospeda.com and an agent will process it promptly. Your plan will remain active until the end of the current period.",
                 "contactSupport": "Contact support",
-                "confirm": "Yes, cancel subscription"
+                "confirm": "Yes, cancel subscription",
+                "description": "By cancelling your subscription you keep access to your plan until the end of the current period. No further charges will be made.",
+                "reasonLabel": "Reason for cancellation (optional)",
+                "reasonPlaceholder": "Tell us why you're cancelling so we can improve...",
+                "successTitle": "Subscription cancelled",
+                "successBody": "Your subscription has been cancelled. You still have access until {date}.",
+                "flagOffFallback": "Online cancellation is not available at this time. Please contact support to cancel your subscription.",
+                "cancelError": "Could not cancel the subscription. Please try again."
             }
         }
     },

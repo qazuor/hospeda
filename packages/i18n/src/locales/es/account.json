@@ -432,7 +432,14 @@
                 "emailSubject": "Cancelación de suscripción",
                 "body": "Para cancelar tu suscripción, escribinos a info@hospeda.com y un agente la procesará a la brevedad. Tu plan seguirá activo hasta el final del período actual.",
                 "contactSupport": "Escribir a soporte",
-                "confirm": "Sí, cancelar suscripción"
+                "confirm": "Sí, cancelar suscripción",
+                "description": "Al cancelar tu suscripción mantenés el acceso a tu plan hasta el final del período actual. No se realizarán más cobros.",
+                "reasonLabel": "Motivo de cancelación (opcional)",
+                "reasonPlaceholder": "Contanos por qué cancelás para poder mejorar...",
+                "successTitle": "Suscripción cancelada",
+                "successBody": "Tu suscripción fue cancelada. Seguís teniendo acceso hasta el {date}.",
+                "flagOffFallback": "La cancelación en línea no está disponible en este momento. Por favor, contactá a soporte para cancelar tu suscripción.",
+                "cancelError": "No se pudo cancelar la suscripción. Intentá de nuevo."
             }
         }
     },

@@ -200,33 +200,52 @@ function EmptyState({ locale }: { readonly locale: SupportedLocale }) {
 /** Support email shown in the cancel-instructions modal. Matches footer.contactEmail. */
 const SUPPORT_EMAIL = 'info@hospeda.com';
 
+/** Possible UI states for the cancel modal flow. */
+type CancelModalStep = 'confirm' | 'success' | 'flag_off';
+
 /**
- * Cancel-instructions modal.
+ * Cancel confirmation modal (SPEC-147 / SPEC-203 T-006).
  *
- * User self-cancel via API is not yet implemented (tracked under SPEC-147),
- * so this modal directs the user to email support instead. Once the
- * self-cancel endpoint ships the modal can revert to a confirm-and-call flow.
+ * Calls the soft-cancel API (`POST /subscriptions/:id/cancel`). On success
+ * shows a confirmation with the access-until date. On 404 (feature flag off)
+ * degrades gracefully to the email-support path. On other errors shows a
+ * retryable error state.
  */
 function CancelConfirmModal({
     locale,
-    onDismiss
+    subscriptionId,
+    accessUntilFallback,
+    onDismiss,
+    onCancelled
 }: {
     readonly locale: SupportedLocale;
+    readonly subscriptionId: string;
+    /** currentPeriodEnd from the subscription — used in the success copy if
+     *  the API accessUntil is not yet available. */
+    readonly accessUntilFallback: string | null;
     readonly onDismiss: () => void;
+    /** Called after a successful API cancel so the parent can refresh data. */
+    readonly onCancelled: () => void;
 }) {
     const { t } = createTranslations(locale);
 
-    // Close on backdrop click
+    const [step, setStep] = useState<CancelModalStep>('confirm');
+    const [reason, setReason] = useState('');
+    const [isCancelling, setIsCancelling] = useState(false);
+    const [cancelError, setCancelError] = useState<string | null>(null);
+    const [accessUntil, setAccessUntil] = useState<string | null>(null);
+
+    // Close on backdrop click — only when not mid-flight
     function handleBackdropClick(e: React.MouseEvent<HTMLDivElement>) {
-        if (e.target === e.currentTarget) {
+        if (e.target === e.currentTarget && !isCancelling) {
             onDismiss();
         }
     }
 
-    // Close on Escape key
+    // Close on Escape key — only when not mid-flight
     useEffect(() => {
         function handleKeyDown(e: KeyboardEvent) {
-            if (e.key === 'Escape') {
+            if (e.key === 'Escape' && !isCancelling) {
                 onDismiss();
             }
         }
@@ -234,7 +253,48 @@ function CancelConfirmModal({
         return () => {
             document.removeEventListener('keydown', handleKeyDown);
         };
-    }, [onDismiss]);
+    }, [onDismiss, isCancelling]);
+
+    async function handleConfirm() {
+        setIsCancelling(true);
+        setCancelError(null);
+
+        try {
+            const result = await billingApi.cancelSubscription({
+                subscriptionId,
+                reason: reason.trim() || undefined
+            });
+
+            if (!result.ok) {
+                // 404 means the feature flag HOSPEDA_USER_CANCEL_ENABLED is OFF —
+                // degrade gracefully to the email-support path.
+                if (result.error.status === 404) {
+                    setStep('flag_off');
+                    return;
+                }
+                // Other errors (5xx, network) — show a retryable error.
+                setCancelError(
+                    t(
+                        'account.pages.subscription.cancelModal.cancelError',
+                        'No se pudo cancelar la suscripción. Intentá de nuevo.'
+                    )
+                );
+                return;
+            }
+
+            // Success path — record the access-until date and switch to success step.
+            const until = result.data.accessUntil
+                ? formatDate({ date: result.data.accessUntil.toString(), locale })
+                : accessUntilFallback
+                  ? formatDate({ date: accessUntilFallback, locale })
+                  : null;
+            setAccessUntil(until);
+            setStep('success');
+            onCancelled();
+        } finally {
+            setIsCancelling(false);
+        }
+    }
 
     const subject = encodeURIComponent(
         t('account.pages.subscription.cancelModal.emailSubject', 'Cancelación de suscripción')
@@ -258,30 +318,134 @@ function CancelConfirmModal({
                 >
                     {t('account.pages.subscription.cancelModal.title', 'Cancelar suscripción')}
                 </h2>
-                <p className={styles.modalBody}>
-                    {t(
-                        'account.pages.subscription.cancelModal.body',
-                        `Para cancelar tu suscripción, escribinos a ${SUPPORT_EMAIL} y un agente la procesará a la brevedad. Tu plan seguirá activo hasta el final del período actual.`
-                    )}
-                </p>
-                <div className={styles.modalActions}>
-                    <button
-                        type="button"
-                        className={styles.btnSecondary}
-                        onClick={onDismiss}
-                    >
-                        {t('common.close', 'Cerrar')}
-                    </button>
-                    <a
-                        href={mailtoHref}
-                        className={styles.btnDanger}
-                    >
-                        {t(
-                            'account.pages.subscription.cancelModal.contactSupport',
-                            'Escribir a soporte'
+
+                {/* ── confirm step ── */}
+                {step === 'confirm' && (
+                    <>
+                        <p className={styles.modalBody}>
+                            {t(
+                                'account.pages.subscription.cancelModal.description',
+                                'Al cancelar tu suscripción mantenés el acceso a tu plan hasta el final del período actual. No se realizarán más cobros.'
+                            )}
+                        </p>
+
+                        <div className={styles.modalField}>
+                            <label
+                                htmlFor="cancel-reason"
+                                className={styles.modalLabel}
+                            >
+                                {t(
+                                    'account.pages.subscription.cancelModal.reasonLabel',
+                                    'Motivo de cancelación (opcional)'
+                                )}
+                            </label>
+                            <textarea
+                                id="cancel-reason"
+                                className={styles.modalTextarea}
+                                rows={3}
+                                maxLength={500}
+                                value={reason}
+                                onChange={(e) => setReason(e.target.value)}
+                                placeholder={t(
+                                    'account.pages.subscription.cancelModal.reasonPlaceholder',
+                                    'Contanos por qué cancelás para poder mejorar...'
+                                )}
+                                disabled={isCancelling}
+                            />
+                        </div>
+
+                        {cancelError && (
+                            <p
+                                className={styles.modalError}
+                                role="alert"
+                                aria-live="polite"
+                            >
+                                {cancelError}
+                            </p>
                         )}
-                    </a>
-                </div>
+
+                        <div className={styles.modalActions}>
+                            <button
+                                type="button"
+                                className={styles.btnSecondary}
+                                onClick={onDismiss}
+                                disabled={isCancelling}
+                            >
+                                {t('common.cancel', 'Cancelar')}
+                            </button>
+                            <button
+                                type="button"
+                                className={styles.btnDanger}
+                                onClick={() => void handleConfirm()}
+                                disabled={isCancelling}
+                                aria-busy={isCancelling}
+                            >
+                                {isCancelling
+                                    ? t('common.loading', 'Cargando...')
+                                    : t(
+                                          'account.pages.subscription.cancelModal.confirm',
+                                          'Sí, cancelar suscripción'
+                                      )}
+                            </button>
+                        </div>
+                    </>
+                )}
+
+                {/* ── success step ── */}
+                {step === 'success' && (
+                    <>
+                        <p className={styles.modalBody}>
+                            {accessUntil
+                                ? t(
+                                      'account.pages.subscription.cancelModal.successBody',
+                                      'Tu suscripción fue cancelada. Seguís teniendo acceso hasta el {date}.'
+                                  ).replace('{date}', accessUntil)
+                                : t(
+                                      'account.pages.subscription.cancelModal.successTitle',
+                                      'Suscripción cancelada'
+                                  )}
+                        </p>
+                        <div className={styles.modalActions}>
+                            <button
+                                type="button"
+                                className={styles.btnSecondary}
+                                onClick={onDismiss}
+                            >
+                                {t('common.close', 'Cerrar')}
+                            </button>
+                        </div>
+                    </>
+                )}
+
+                {/* ── flag_off step: feature flag disabled — degrade to email ── */}
+                {step === 'flag_off' && (
+                    <>
+                        <p className={styles.modalBody}>
+                            {t(
+                                'account.pages.subscription.cancelModal.flagOffFallback',
+                                'La cancelación en línea no está disponible en este momento. Por favor, contactá a soporte para cancelar tu suscripción.'
+                            )}
+                        </p>
+                        <div className={styles.modalActions}>
+                            <button
+                                type="button"
+                                className={styles.btnSecondary}
+                                onClick={onDismiss}
+                            >
+                                {t('common.close', 'Cerrar')}
+                            </button>
+                            <a
+                                href={mailtoHref}
+                                className={styles.btnDanger}
+                            >
+                                {t(
+                                    'account.pages.subscription.cancelModal.contactSupport',
+                                    'Escribir a soporte'
+                                )}
+                            </a>
+                        </div>
+                    </>
+                )}
             </dialog>
         </div>
     );
@@ -759,12 +923,17 @@ export function SubscriptionDashboard({ locale, user }: SubscriptionDashboardPro
                 </div>
             </section>
 
-            {/* ── Cancel instructions modal (self-cancel pending; SPEC-147) ── */}
+            {/* ── Cancel confirmation modal (SPEC-147 / SPEC-203 T-006) ── */}
             {showCancelModal && (
                 <CancelConfirmModal
                     locale={locale}
+                    subscriptionId={subscription.id}
+                    accessUntilFallback={subscription.currentPeriodEnd}
                     onDismiss={() => {
                         setShowCancelModal(false);
+                    }}
+                    onCancelled={() => {
+                        void fetchData();
                     }}
                 />
             )}

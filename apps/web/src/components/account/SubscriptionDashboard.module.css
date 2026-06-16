@@ -383,6 +383,50 @@
     flex-wrap: wrap;
 }
 
+.modalField {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 8px);
+}
+
+.modalLabel {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--core-foreground);
+}
+
+.modalTextarea {
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    color: var(--core-foreground);
+    background-color: var(--core-background);
+    border: 1px solid var(--border, oklch(0.8 0 0));
+    border-radius: var(--radius-sm, 8px);
+    padding: var(--space-3, 12px);
+    resize: vertical;
+    width: 100%;
+    line-height: 1.5;
+    transition: border-color 0.15s;
+}
+
+.modalTextarea:focus {
+    outline: none;
+    border-color: var(--core-primary);
+}
+
+.modalTextarea:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.modalError {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--color-danger, oklch(0.55 0.2 27));
+    margin: 0;
+}
+
 /* ── Loading state ──────────────────────────────────────────────────────────── */
 
 .loadingContainer {
