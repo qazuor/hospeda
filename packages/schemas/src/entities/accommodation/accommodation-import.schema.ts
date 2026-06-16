@@ -439,6 +439,12 @@ export const AccommodationImportResponseSchema = z.object({
         })
         .optional(),
     /**
+     * Catalog amenity UUIDs resolved from the scraped amenity names
+     * (SPEC-222 AC-9.3). Advisory: the create/edit form pre-selects these so
+     * the host confirms before saving. Never applied automatically.
+     */
+    resolvedAmenityIds: z.array(z.string().uuid()).optional(),
+    /**
      * Amenity strings found on the page that could not be resolved to a
      * known amenity slug. The host can manually map or ignore these.
      */

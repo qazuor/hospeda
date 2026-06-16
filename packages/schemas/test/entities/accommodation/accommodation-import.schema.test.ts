@@ -361,6 +361,10 @@ describe('AccommodationImportResponseSchema', () => {
                     { id: '6ba7b810-9dad-41d1-80b4-00c04fd430c8', name: 'Uruguay' }
                 ]
             },
+            resolvedAmenityIds: [
+                '7c9e6679-7425-40de-944b-e07fc1f90ae7',
+                '550e8400-e29b-41d4-a716-446655440000'
+            ],
             unresolvedAmenities: ['BBQ area', 'private jetty'],
             mediaHints: {
                 imageUrls: ['https://example.com/img1.jpg', 'https://example.com/img2.jpg']
@@ -369,9 +373,21 @@ describe('AccommodationImportResponseSchema', () => {
         expect(result.success).toBe(true);
         if (result.success) {
             expect(result.data.destinationHint?.candidates).toHaveLength(2);
+            expect(result.data.resolvedAmenityIds).toHaveLength(2);
             expect(result.data.unresolvedAmenities).toEqual(['BBQ area', 'private jetty']);
             expect(result.data.mediaHints?.imageUrls).toHaveLength(2);
         }
+    });
+
+    it('rejects resolvedAmenityIds containing a non-UUID', () => {
+        const result = AccommodationImportResponseSchema.safeParse({
+            draft: {},
+            source: 'generic',
+            methodsUsed: [],
+            partial: true,
+            resolvedAmenityIds: ['not-a-uuid']
+        });
+        expect(result.success).toBe(false);
     });
 
     it('rejects destinationHint.candidates[].id that is not a UUID', () => {
