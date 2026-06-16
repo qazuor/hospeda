@@ -5,6 +5,7 @@ import { AuthButton } from '../../src/components/auth/AuthButton';
 import { TextField } from '../../src/components/auth/TextField';
 import { theme } from '../../src/design';
 import { signIn } from '../../src/lib/auth-client';
+import { mapSignInError } from '../../src/lib/auth/auth-errors';
 import { getFieldError, signInFormSchema } from '../../src/lib/auth/auth-form-schemas';
 import { appDefaultLocale, getTranslation } from '../../src/lib/i18n';
 
@@ -80,14 +81,20 @@ export default function SignInScreen() {
 
         setLoading(true);
         try {
-            await signIn.email({
+            // Better Auth client methods RESOLVE with { data, error } — they do
+            // NOT throw on an API-level failure (invalid credentials, etc.). The
+            // catch below only fires on a transport/network rejection.
+            const { error } = await signIn.email({
                 email: result.data.email,
                 password: result.data.password
             });
+            if (error) {
+                setApiError(t(mapSignInError(error)));
+                return;
+            }
             // T-005 will navigate to the appropriate tab navigator here.
-        } catch (err: unknown) {
-            const errorKey = mapSignInError(err);
-            setApiError(t(errorKey));
+        } catch {
+            setApiError(t('auth-ui.signIn.errors.networkError'));
         } finally {
             setLoading(false);
         }
@@ -169,31 +176,6 @@ export default function SignInScreen() {
             </ScrollView>
         </KeyboardAvoidingView>
     );
-}
-
-// ---------------------------------------------------------------------------
-// Error mapping
-// ---------------------------------------------------------------------------
-
-/**
- * Maps a Better Auth sign-in error to a param-free i18n key.
- *
- * Better Auth error objects include a `code` string or a `status` number.
- * We map known codes to the pre-existing `auth-ui.signIn.errors.*` keys.
- * Anything unrecognized falls back to `unknownError`.
- */
-function mapSignInError(err: unknown): string {
-    if (err instanceof Error) {
-        const msg = err.message.toLowerCase();
-        if (msg.includes('invalid email')) return 'auth-ui.signIn.errors.invalidEmail';
-        if (msg.includes('invalid') || msg.includes('credentials') || msg.includes('password')) {
-            return 'auth-ui.signIn.errors.invalidCredentials';
-        }
-        if (msg.includes('network') || msg.includes('fetch') || msg.includes('connection')) {
-            return 'auth-ui.signIn.errors.networkError';
-        }
-    }
-    return 'auth-ui.signIn.errors.unknownError';
 }
 
 // ---------------------------------------------------------------------------

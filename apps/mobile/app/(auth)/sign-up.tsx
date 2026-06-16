@@ -5,6 +5,7 @@ import { AuthButton } from '../../src/components/auth/AuthButton';
 import { TextField } from '../../src/components/auth/TextField';
 import { theme } from '../../src/design';
 import { signUp } from '../../src/lib/auth-client';
+import { mapSignUpError } from '../../src/lib/auth/auth-errors';
 import { getFieldError, signUpFormSchema } from '../../src/lib/auth/auth-form-schemas';
 import { appDefaultLocale, getTranslation } from '../../src/lib/i18n';
 
@@ -94,15 +95,21 @@ export default function SignUpScreen() {
 
         setLoading(true);
         try {
-            await signUp.email({
+            // Better Auth client methods RESOLVE with { data, error } — they do
+            // NOT throw on an API-level failure (user exists, etc.). The catch
+            // below only fires on a transport/network rejection.
+            const { error } = await signUp.email({
                 email: result.data.email,
                 password: result.data.password,
                 name: result.data.firstName
             });
+            if (error) {
+                setApiError(t(mapSignUpError(error)));
+                return;
+            }
             // T-005 will navigate to the appropriate tab navigator here.
-        } catch (err: unknown) {
-            const errorKey = mapSignUpError(err);
-            setApiError(t(errorKey));
+        } catch {
+            setApiError(t('auth-ui.signUp.errors.networkError'));
         } finally {
             setLoading(false);
         }
@@ -212,32 +219,6 @@ export default function SignUpScreen() {
             </ScrollView>
         </KeyboardAvoidingView>
     );
-}
-
-// ---------------------------------------------------------------------------
-// Error mapping
-// ---------------------------------------------------------------------------
-
-/**
- * Maps a Better Auth sign-up error to a param-free i18n key.
- *
- * Checks error message content for known patterns and falls back to
- * `unknownError`. All returned keys live in `auth-ui.signUp.errors.*`.
- */
-function mapSignUpError(err: unknown): string {
-    if (err instanceof Error) {
-        const msg = err.message.toLowerCase();
-        if (msg.includes('already') || msg.includes('exists') || msg.includes('duplicate')) {
-            return 'auth-ui.signUp.errors.emailAlreadyExists';
-        }
-        if (msg.includes('weak') || msg.includes('password')) {
-            return 'auth-ui.signUp.errors.weakPassword';
-        }
-        if (msg.includes('network') || msg.includes('fetch') || msg.includes('connection')) {
-            return 'auth-ui.signUp.errors.networkError';
-        }
-    }
-    return 'auth-ui.signUp.errors.unknownError';
 }
 
 // ---------------------------------------------------------------------------
