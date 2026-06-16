@@ -600,109 +600,109 @@
             "id": "T-017",
             "title": "Create admin list page for host-trades",
             "description": "Create apps/admin/src/routes/platform/host-trades/index.tsx: TanStack Query data fetch, paginated table (page+pageSize), filters (category, destination, isActive, search), Shadcn UI components, i18n category labels. Nav placement under Plataforma > Directorio de oficios alongside Destinos.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-011"],
             "blocks": ["T-019"],
             "subtasks": [
                 {
                     "title": "TanStack Query list hook + paginated table",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Filters (category/destination/isActive/search)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Register route + nav under Plataforma",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "tanstack", "ui"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T23:39:47.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T15:11:01.000Z",
+                "completed": "2026-06-16T15:42:23.000Z"
             }
         },
         {
             "id": "T-018",
             "title": "Create admin create/edit form for host-trades",
             "description": "Create apps/admin/src/routes/platform/host-trades/new.tsx and $id.tsx (view/edit): TanStack Form + HostTradeAdminSchema.safeParse(). Fields: name, category (select i18n labels), contact, benefit (textarea), destinationId (select/search from destinations), is24h (checkbox), scheduleText (textarea optional), isActive (checkbox). Slug auto-generated from name client-side, editable. Use createAdminRoute typing.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-011"],
             "blocks": ["T-019"],
             "subtasks": [
                 {
                     "title": "new.tsx create form (TanStack Form + safeParse)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "$id.tsx view/edit form",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Slug auto-from-name (editable) + destination select",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "tanstack", "forms"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T23:39:47.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T15:11:01.000Z",
+                "completed": "2026-06-16T15:42:23.000Z"
             }
         },
         {
             "id": "T-019",
             "title": "Write admin entity tests",
             "description": "Write tests for the admin host-trades entity: TanStack Query mocks for the list page, form submit success/validation-error handling for create/edit, and error-state rendering.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-017", "T-018"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "List page query-mock tests",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Form submit + validation-error tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "testing"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T23:39:47.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T15:11:01.000Z",
+                "completed": "2026-06-16T15:42:23.000Z"
             }
         }
     ],
     "summary": {
         "total": 19,
-        "pending": 3,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 16,
+        "completed": 19,
         "blocked": 0,
         "averageComplexity": 1.6
     }
