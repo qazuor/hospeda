@@ -16,6 +16,7 @@ import { protectedGetOwnAccommodationByIdRoute } from './getById';
 import { getFaqsRoute } from './getFaqs';
 import { hostFavoritesBreakdownRoute } from './hostFavoritesBreakdown';
 import { hostMarketComparisonRoute } from './hostMarketComparison';
+import { protectedImportFromUrlRoute } from './import-from-url';
 import { protectedListOwnAccommodationsRoute } from './list';
 import { protectedPatchAccommodationRoute } from './patch';
 import { removeFaqRoute } from './removeFaq';
@@ -55,6 +56,9 @@ app.route('/', protectedCreateAccommodationRoute);
 
 // POST /draft - Create draft accommodation with minimum required fields
 app.route('/', protectedCreateAccommodationDraftRoute);
+
+// POST /import-from-url - Import accommodation data from an external listing URL
+app.route('/', protectedImportFromUrlRoute);
 
 // GET /:id/contact - Resolved contact info (auth required, NO ownership)
 app.route('/', protectedGetContactRoute);
