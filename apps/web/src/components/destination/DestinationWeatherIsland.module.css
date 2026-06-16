@@ -1,0 +1,206 @@
+/* DestinationWeatherIsland.module.css — live weather display island */
+
+/* ── Root ── */
+
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4, 1rem);
+}
+
+/* ── Skeleton ── */
+
+.skeleton {
+    height: 80px;
+    border-radius: var(--radius-md, 10px);
+    background: linear-gradient(
+        90deg,
+        var(--core-foreground-a05) 25%,
+        var(--core-foreground-a08) 50%,
+        var(--core-foreground-a05) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* ── Unavailable ── */
+
+.unavailable {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+    margin: 0;
+    padding: var(--space-3, 0.75rem) 0;
+}
+
+/* ── Current conditions ── */
+
+.current {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4, 1rem);
+    padding: var(--space-4, 1rem);
+    background-color: var(--core-background);
+    border-radius: var(--radius-md, 10px);
+    border: 1px solid var(--border, var(--core-foreground-a15));
+}
+
+.currentIcon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--brand-accent);
+    flex-shrink: 0;
+}
+
+.currentInfo {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.25rem);
+    flex: 1;
+    min-width: 0;
+}
+
+.currentTemp {
+    font-family: var(--font-heading);
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--core-foreground);
+    line-height: 1;
+    margin: 0;
+}
+
+.currentCondition {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+    margin: 0;
+}
+
+.currentMeta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2, 0.5rem) var(--space-4, 1rem);
+    margin-top: var(--space-1, 0.25rem);
+}
+
+.currentMetaItem {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1, 0.25rem);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+}
+
+.currentMetaLabel {
+    color: var(--core-muted-foreground);
+}
+
+/* ── Forecast strip ── */
+
+.forecastSection {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+}
+
+.forecastTitle {
+    font-family: var(--font-heading);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--core-muted-foreground);
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.forecastStrip {
+    display: flex;
+    gap: var(--space-2, 0.5rem);
+    overflow-x: auto;
+    margin: 0;
+    padding: 0 0 var(--space-2, 0.5rem) 0;
+    list-style: none;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+}
+
+.forecastStrip::-webkit-scrollbar {
+    height: 4px;
+}
+
+.forecastStrip::-webkit-scrollbar-track {
+    background: var(--core-foreground-a05);
+    border-radius: var(--radius-pill, 9999px);
+}
+
+.forecastStrip::-webkit-scrollbar-thumb {
+    background: var(--core-foreground-a15);
+    border-radius: var(--radius-pill, 9999px);
+}
+
+.forecastDay {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-1, 0.25rem);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    background-color: var(--core-background);
+    border: 1px solid var(--border, var(--core-foreground-a15));
+    border-radius: var(--radius-md, 10px);
+    min-width: 4.5rem;
+    flex-shrink: 0;
+}
+
+.forecastDate {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--core-muted-foreground);
+    text-align: center;
+    white-space: nowrap;
+}
+
+.forecastIcon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--brand-accent);
+}
+
+.forecastTemps {
+    display: flex;
+    gap: var(--space-1, 0.25rem);
+    font-family: var(--font-heading);
+    font-size: 0.8125rem;
+    white-space: nowrap;
+}
+
+.forecastMax {
+    font-weight: 700;
+    color: var(--core-foreground);
+}
+
+.forecastMin {
+    color: var(--core-muted-foreground);
+}
+
+.forecastPrecip {
+    font-family: var(--font-sans);
+    font-size: 0.6875rem;
+    color: var(--brand-primary);
+}
+
+/* ── Reduced motion ── */
+
+@media (prefers-reduced-motion: reduce) {
+    .skeleton {
+        animation: none;
+    }
+}

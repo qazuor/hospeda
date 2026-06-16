@@ -1,0 +1,239 @@
+---
+/**
+ * @file DestinationClimateCard.astro
+ * @description Sidebar card showing seasonal climate data (SSR) and the live
+ * weather island (client:idle). Renders climate info from destination data;
+ * if climate is null, renders only the weather island.
+ */
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { DestinationWeatherIsland } from './DestinationWeatherIsland.client';
+
+interface SeasonData {
+    readonly avgTempMinC?: number;
+    readonly avgTempMaxC?: number;
+    readonly rainfallMm?: number;
+}
+
+interface ClimateInput {
+    readonly bestSeason?: string;
+    readonly bestMonths?: string;
+    readonly seasons?: {
+        readonly spring?: SeasonData;
+        readonly summer?: SeasonData;
+        readonly autumn?: SeasonData;
+        readonly winter?: SeasonData;
+    };
+    readonly note?: Record<string, string>;
+}
+
+interface Props {
+    readonly locale: SupportedLocale;
+    readonly destinationId: string;
+    readonly apiUrl: string;
+    readonly climate: ClimateInput | null;
+}
+
+const { locale, destinationId, apiUrl, climate } = Astro.props;
+const { t } = createTranslations(locale);
+
+type SeasonKey = 'spring' | 'summer' | 'autumn' | 'winter';
+const seasonKeys: ReadonlyArray<SeasonKey> = ['spring', 'summer', 'autumn', 'winter'];
+
+const presentSeasons: ReadonlyArray<{ key: SeasonKey; data: SeasonData }> =
+    climate?.seasons
+        ? seasonKeys.flatMap((key) => {
+              const data = climate.seasons?.[key];
+              return data ? [{ key, data }] : [];
+          })
+        : [];
+
+const note = climate?.note
+    ? (climate.note[locale] ?? climate.note['es'] ?? null)
+    : null;
+---
+
+<section
+    class="dest-climate-card"
+    aria-labelledby="dest-climate-card-title"
+>
+    <h2 class="dest-climate-card__title" id="dest-climate-card-title">
+        {t('destination.climate.title', 'Clima')}
+    </h2>
+
+    {climate && (
+        <div class="dest-climate-card__static">
+            {climate.bestSeason && (
+                <p class="dest-climate-card__best-season">
+                    <span class="dest-climate-card__label">
+                        {t('destination.climate.bestSeason', 'Mejor época para visitar')}:
+                    </span>
+                    {' '}
+                    <strong>{t(`destination.climate.seasons.${climate.bestSeason}`, climate.bestSeason)}</strong>
+                </p>
+            )}
+
+            {climate.bestMonths && (
+                <p class="dest-climate-card__best-months">
+                    <span class="dest-climate-card__label">
+                        {t('destination.climate.bestMonths', 'Meses recomendados')}:
+                    </span>
+                    {' '}
+                    {climate.bestMonths}
+                </p>
+            )}
+
+            {presentSeasons.length > 0 && (
+                <div class="dest-climate-card__seasons">
+                    {presentSeasons.map(({ key, data }) => (
+                        <div class="dest-climate-card__season">
+                            <h3 class="dest-climate-card__season-name">
+                                {t(`destination.climate.seasons.${key}`, key)}
+                            </h3>
+                            <div class="dest-climate-card__season-stats">
+                                {data.avgTempMinC !== undefined && (
+                                    <span class="dest-climate-card__stat">
+                                        <span class="dest-climate-card__stat-label">
+                                            {t('destination.climate.fields.minTemp', 'Mín.')}
+                                        </span>
+                                        {Math.round(data.avgTempMinC)}{t('destination.climate.units.celsius', '°C')}
+                                    </span>
+                                )}
+                                {data.avgTempMaxC !== undefined && (
+                                    <span class="dest-climate-card__stat">
+                                        <span class="dest-climate-card__stat-label">
+                                            {t('destination.climate.fields.maxTemp', 'Máx.')}
+                                        </span>
+                                        {Math.round(data.avgTempMaxC)}{t('destination.climate.units.celsius', '°C')}
+                                    </span>
+                                )}
+                                {data.rainfallMm !== undefined && (
+                                    <span class="dest-climate-card__stat">
+                                        <span class="dest-climate-card__stat-label">
+                                            {t('destination.climate.fields.rainfall', 'Precipitaciones')}
+                                        </span>
+                                        {Math.round(data.rainfallMm)}{t('destination.climate.units.mm', 'mm')}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {note && (
+                <p class="dest-climate-card__note">{note}</p>
+            )}
+
+            <p class="dest-climate-card__approximate">
+                {t('destination.climate.approximate', 'Valores aproximados')}
+            </p>
+        </div>
+    )}
+
+    <!-- Live weather island: fetches current + 16-day forecast client-side -->
+    <DestinationWeatherIsland
+        client:idle
+        locale={locale}
+        destinationId={destinationId}
+        apiUrl={apiUrl}
+    />
+</section>
+
+<style>
+    .dest-climate-card {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4, 1rem);
+        padding: var(--space-5, 1.25rem);
+        background-color: var(--core-card);
+        border: 1px solid var(--border, var(--core-foreground-a15));
+        border-radius: var(--radius-card, 24px);
+    }
+
+    .dest-climate-card__title {
+        font-family: var(--font-heading);
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--core-foreground);
+        margin: 0;
+    }
+
+    .dest-climate-card__static {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3, 0.75rem);
+    }
+
+    .dest-climate-card__best-season,
+    .dest-climate-card__best-months {
+        margin: 0;
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        color: var(--core-foreground);
+    }
+
+    .dest-climate-card__label {
+        color: var(--core-muted-foreground);
+    }
+
+    .dest-climate-card__seasons {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: var(--space-2, 0.5rem);
+    }
+
+    .dest-climate-card__season {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1, 0.25rem);
+        padding: var(--space-3, 0.75rem);
+        background-color: var(--core-background);
+        border-radius: var(--radius-md, 10px);
+        border: 1px solid var(--border, var(--core-foreground-a15));
+    }
+
+    .dest-climate-card__season-name {
+        font-family: var(--font-heading);
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: var(--brand-primary);
+        margin: 0;
+        text-transform: capitalize;
+    }
+
+    .dest-climate-card__season-stats {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1, 0.25rem);
+    }
+
+    .dest-climate-card__stat {
+        display: flex;
+        gap: var(--space-1, 0.25rem);
+        font-family: var(--font-sans);
+        font-size: 0.8125rem;
+        color: var(--core-foreground);
+    }
+
+    .dest-climate-card__stat-label {
+        color: var(--core-muted-foreground);
+    }
+
+    .dest-climate-card__note {
+        margin: 0;
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        font-style: italic;
+        color: var(--core-muted-foreground);
+        line-height: 1.5;
+    }
+
+    .dest-climate-card__approximate {
+        margin: 0;
+        font-family: var(--font-sans);
+        font-size: 0.75rem;
+        color: var(--core-muted-foreground);
+        opacity: 0.7;
+    }
+</style>
