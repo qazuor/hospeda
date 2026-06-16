@@ -31,7 +31,7 @@ This ADR records the seven Sub-0 micro-decisions that the spec left open.
 |---|----------|--------|
 | 1 | Styling | **`StyleSheet.create`** (RN standard). Not NativeWind. |
 | 2 | Icons | **`phosphor-react-native`** (visual parity with the web). |
-| 3 | API client transport | **Deferred to the Better Auth Expo spike (T-003).** |
+| 3 | API client transport | **RESOLVED (T-003): `@better-fetch/fetch` via `@better-auth/expo` `expoClient`, cookies in `expo-secure-store`.** |
 | 4 | Map library | **Out of Sub-0 scope** — decided in Sub-1 (T-026). |
 | 5 | Locale loading in Metro | **Eager** import of `es/en/pt`; validate bundle size in T-002. |
 | 6 | Push notification channels | **Single channel** in v1; per-category prefs in Sub-4. |
@@ -112,6 +112,31 @@ This ADR records the seven Sub-0 micro-decisions that the spec left open.
   lazy-by-locale needed). Future optimization (not now): excluding ~20 admin-only i18n
   namespaces (`admin-*`, `tags`, `revalidation`, …) mobile never uses would save
   ~350–500 KB without adding lazy-load complexity.
+
+## T-003 auth spike (transport decision #3 resolved)
+
+The Better Auth server (`apps/api`, `better-auth@1.4.18`) is **cookie-only** — no
+`bearer()` or `expo()` plugin. React Native cannot manage browser cookies, so the spike
+revealed a SERVER change was required, not just a client. Owner chose the official
+`@better-auth/expo` plugin path:
+
+- **Server** (`apps/api/src/lib/auth.ts`): added the `expo()` plugin (pure Node, pulls no
+  `expo-*` deps into the API build) and `'hospeda://'` to `trustedOrigins`. Adversarially
+  reviewed (opus, against the plugin's compiled source): purely additive, no web/admin auth
+  regression, no CSRF/origin-spoof vector (the `onRequest` hook no-ops when an `origin`
+  header is present, and any synthesised origin is still validated against `trustedOrigins`).
+- **Mobile** (`apps/mobile/src/lib/auth-client.ts`): `createAuthClient` + `expoClient({ scheme:
+  'hospeda', storagePrefix: 'hospeda', storage: SecureStore })`. Transport = the plugin's
+  `@better-fetch/fetch`; session cookies persisted in `expo-secure-store` (Keychain/Keystore).
+- **Versions**: `@better-auth/expo@1.4.18` (peerDep `better-auth@1.4.18` — exact match, no
+  monorepo Better Auth bump). Known non-blocking mismatch: `expo-network` peerDep `^8.0.7`
+  vs SDK 56's `56.0.5` — the plugin imports it dynamically with a `.catch(() => online=true)`
+  fallback, so it is safe.
+- **UNVERIFIED (env limit)**: the headless CI has no simulator, so the live flow (sign-in →
+  SecureStore persist → restore on cold launch → refresh → sign-out → OAuth) is NOT verified
+  here and MUST be run on a device by the owner before T-004 is considered validated. Full
+  detail + server-side follow-ups (OAuth redirect URIs, CORS-vs-`expo-origin` middleware
+  order): `apps/mobile/docs/auth-spike.md`.
 
 ## Alternatives Considered
 
