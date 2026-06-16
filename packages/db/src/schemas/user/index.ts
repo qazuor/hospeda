@@ -7,3 +7,4 @@ export * from './user_bookmark.dbschema.ts';
 export * from './user_bookmark_collection.dbschema.ts';
 export * from './user_identity.dbschema.ts';
 export * from './verification.dbschema.ts';
+export * from './user_push_tokens.dbschema.ts';

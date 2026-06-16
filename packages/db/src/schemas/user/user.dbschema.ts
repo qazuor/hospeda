@@ -40,6 +40,7 @@ import { sessions } from './session.dbschema.ts';
 import { userBookmarks } from './user_bookmark.dbschema.ts';
 import { userBookmarkCollections } from './user_bookmark_collection.dbschema.ts';
 import { userAuthIdentities } from './user_identity.dbschema.ts';
+import { userPushTokens } from './user_push_tokens.dbschema.ts';
 
 export const users = pgTable(
     'users',
@@ -184,6 +185,7 @@ export const usersRelations = relations(users, ({ many }) => ({
     bookmarks: many(userBookmarks),
     collections: many(userBookmarkCollections),
     authIdentities: many(userAuthIdentities),
+    pushTokens: many(userPushTokens),
     updatedAccommodations: many(accommodations),
     deletedAccommodations: many(accommodations),
     updatedDestinations: many(destinations),
