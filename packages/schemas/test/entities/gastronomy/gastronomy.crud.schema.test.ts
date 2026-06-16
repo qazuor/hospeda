@@ -115,7 +115,8 @@ describe('GastronomyUpdateInputSchema (admin update)', () => {
         expect(() => GastronomyUpdateInputSchema.parse(data)).toThrow(ZodError);
     });
 
-    it('should reject invalid type enum on update', () => {
+    it('should reject an invalid type value on update (enum validation enforced on entity schema)', () => {
+        // GastronomyUpdateInputSchema.type is derived from GastronomyTypeEnumSchema — invalid values are rejected.
         const data = { type: 'TAQUERIA' };
         expect(() => GastronomyUpdateInputSchema.parse(data)).toThrow(ZodError);
     });

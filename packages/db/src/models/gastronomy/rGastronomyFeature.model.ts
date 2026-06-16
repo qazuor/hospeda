@@ -1,3 +1,4 @@
+import type { GastronomyFeatureRelation } from '@repo/schemas';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { rGastronomyFeature } from '../../schemas/gastronomy/r_gastronomy_feature.dbschema.ts';
 
@@ -5,7 +6,7 @@ import { rGastronomyFeature } from '../../schemas/gastronomy/r_gastronomy_featur
  * RGastronomyFeatureModel — DB access for gastronomy-feature junction (SPEC-239).
  * Mirrors RAccommodationFeatureModel: thin BaseModelImpl wrapper.
  */
-export class RGastronomyFeatureModel extends BaseModelImpl<typeof rGastronomyFeature.$inferSelect> {
+export class RGastronomyFeatureModel extends BaseModelImpl<GastronomyFeatureRelation> {
     protected table = rGastronomyFeature;
     public entityName = 'rGastronomyFeature';
 

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { BaseAuditFields } from '../../../common/audit.schema.js';
 import { CommerceRatingSchema } from '../../../common/commerce-rating.schema.js';
+import { UserIdSchema } from '../../../common/id.schema.js';
 import { BaseLifecycleFields } from '../../../common/lifecycle.schema.js';
 import { BaseModerationFields } from '../../../common/moderation.schema.js';
 
@@ -83,14 +84,23 @@ export const GastronomyReviewSchema = z.object({
     reviewerName: z.string().max(100).nullish(),
 
     /**
-     * Whether this review has been verified (e.g., via a confirmed visit).
+     * UUID of the user who last performed a moderation action.
+     * Nullable until a moderator acts on the review.
+     * Mirrors the `moderated_by_id` column in `gastronomy_reviews`.
      */
-    isVerified: z.boolean().default(false),
+    moderatedById: UserIdSchema.nullish(),
 
     /**
-     * Timestamp of the reviewer's visit (optional, for "visited on" display).
+     * Timestamp of the last moderation action.
+     * Nullable until the first moderation action is performed.
      */
-    visitedAt: z.date().nullish(),
+    moderatedAt: z.coerce.date().nullish(),
+
+    /**
+     * Free-text reason provided by the moderator.
+     * Nullable; expected for REJECTED decisions by convention.
+     */
+    moderationReason: z.string().nullish(),
 
     // Lifecycle, moderation, and audit
     ...BaseLifecycleFields,
@@ -132,8 +142,7 @@ export const GastronomyReviewCreateInputSchema = z.object({
         .min(10, { message: 'zodError.gastronomy.review.content.min' })
         .max(2000, { message: 'zodError.gastronomy.review.content.max' })
         .optional(),
-    reviewerName: z.string().max(100).optional(),
-    visitedAt: z.date().optional()
+    reviewerName: z.string().max(100).optional()
 });
 
 /** TypeScript type for {@link GastronomyReviewCreateInputSchema}. */

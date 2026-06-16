@@ -76,3 +76,14 @@ export const AccommodationAmenityRelationSchema = z.object({
         .optional()
 });
 export type AccommodationAmenityRelation = z.infer<typeof AccommodationAmenityRelationSchema>;
+
+/**
+ * Gastronomy-Amenity Relation Schema
+ * Represents the many-to-many relationship between gastronomy listings and amenities.
+ * Simpler than the accommodation variant: no pricing or optional-cost fields.
+ */
+export const GastronomyAmenityRelationSchema = z.object({
+    gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    amenityId: AmenityIdSchema
+});
+export type GastronomyAmenityRelation = z.infer<typeof GastronomyAmenityRelationSchema>;

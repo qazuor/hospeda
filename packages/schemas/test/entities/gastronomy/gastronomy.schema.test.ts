@@ -94,7 +94,8 @@ describe('GastronomySchema', () => {
             expect(() => GastronomySchema.parse(data)).toThrow(ZodError);
         });
 
-        it('should reject invalid type enum value', () => {
+        it('should reject an invalid type value (enum validation on entity schema)', () => {
+            // GastronomySchema.type is GastronomyTypeEnumSchema — invalid values are rejected.
             const data = { ...createMinimalGastronomy(), type: 'PIZZERIA' };
             expect(() => GastronomySchema.parse(data)).toThrow(ZodError);
         });

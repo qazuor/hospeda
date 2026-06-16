@@ -1,3 +1,4 @@
+import type { Gastronomy } from '@repo/schemas';
 import { and, count, desc, eq, isNull } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { gastronomies } from '../../schemas/gastronomy/gastronomy.dbschema.ts';
@@ -27,7 +28,7 @@ interface GastronomySearchInput {
  * and findWithRelations() overrides. Expand with domain-specific query methods
  * as the service layer grows.
  */
-export class GastronomyModel extends BaseModelImpl<typeof gastronomies.$inferSelect> {
+export class GastronomyModel extends BaseModelImpl<Gastronomy> {
     protected table = gastronomies;
     public entityName = 'gastronomies';
 
@@ -56,7 +57,7 @@ export class GastronomyModel extends BaseModelImpl<typeof gastronomies.$inferSel
     async search(
         params: GastronomySearchInput,
         tx?: DrizzleClient
-    ): Promise<{ items: (typeof gastronomies.$inferSelect)[]; total: number }> {
+    ): Promise<{ items: Gastronomy[]; total: number }> {
         const db = this.getClient(tx);
         const page = params.page ?? 1;
         const pageSize = params.pageSize ?? 10;
@@ -106,8 +107,10 @@ export class GastronomyModel extends BaseModelImpl<typeof gastronomies.$inferSel
             ]);
 
             const result = {
-                // DRIZZLE-LIMITATION: select() returns branded Drizzle types; entity type from @repo/schemas uses unbranded domain types.
-                items: items as (typeof gastronomies.$inferSelect)[],
+                // DRIZZLE-LIMITATION: select() returns branded Drizzle types; entity type
+                // from @repo/schemas uses unbranded domain types. BaseModelImpl casts
+                // consistently with the same pattern (see base.model.ts `as T[]`).
+                items: items as unknown as Gastronomy[],
                 total: Number(totalResult[0]?.count ?? 0)
             };
             logQuery(this.entityName, 'search', ctx, { count: result.total });

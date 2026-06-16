@@ -17,7 +17,6 @@ const validReviewBase = () => ({
     // DB columns: title (nullable), content (nullable)
     title: 'Excellent visit',
     content: 'Excellent food and service! Would definitely come back.',
-    isVerified: false,
     lifecycleState: 'ACTIVE',
     moderationState: 'PENDING',
     createdAt: new Date(),
@@ -48,12 +47,6 @@ describe('GastronomyReviewSchema', () => {
     it('should validate a guest review with null userId', () => {
         const data = { ...validReviewBase(), userId: null, reviewerName: 'Anonymous Guest' };
         expect(() => GastronomyReviewSchema.parse(data)).not.toThrow();
-    });
-
-    it('should default isVerified to false', () => {
-        const { isVerified: _iv, ...data } = validReviewBase();
-        const result = GastronomyReviewSchema.parse(data);
-        expect(result.isVerified).toBe(false);
     });
 
     it('should reject overallRating below 1', () => {
@@ -92,10 +85,12 @@ describe('GastronomyReviewSchema', () => {
         expect(() => GastronomyReviewSchema.parse(data)).toThrow(ZodError);
     });
 
-    it('should reject invalid rating breakdown (value out of range)', () => {
+    it('should reject a rating with an out-of-range dimension (CommerceRatingSchema enforced on entity schema)', () => {
+        // GastronomyReviewSchema.rating is CommerceRatingSchema.optional() — invalid dimensions
+        // are rejected directly on the entity schema (food max is 5).
         const data = {
             ...validReviewBase(),
-            rating: { food: 6, service: 4, ambiance: 3, value: 4 } // food = 6 is invalid
+            rating: { food: 6, service: 4, ambiance: 3, value: 4 }
         };
         expect(() => GastronomyReviewSchema.parse(data)).toThrow(ZodError);
     });
@@ -117,8 +112,7 @@ describe('GastronomyReviewCreateInputSchema', () => {
             rating: { food: 4, service: 4, ambiance: 4, value: 3 },
             title: 'Great dinner',
             content: 'Great dining experience!',
-            reviewerName: 'Juan',
-            visitedAt: new Date()
+            reviewerName: 'Juan'
         };
         expect(() => GastronomyReviewCreateInputSchema.parse(data)).not.toThrow();
     });

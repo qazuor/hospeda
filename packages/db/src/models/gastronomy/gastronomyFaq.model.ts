@@ -1,3 +1,4 @@
+import type { GastronomyFaq } from '@repo/schemas';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { gastronomyFaqs } from '../../schemas/gastronomy/gastronomy_faq.dbschema.ts';
 
@@ -7,7 +8,7 @@ import { gastronomyFaqs } from '../../schemas/gastronomy/gastronomy_faq.dbschema
  * Custom ordering (display_order ASC NULLS LAST, created_at ASC) is handled
  * at the caller level (e.g. via db.query.gastronomyFaqs.findMany with orderBy).
  */
-export class GastronomyFaqModel extends BaseModelImpl<typeof gastronomyFaqs.$inferSelect> {
+export class GastronomyFaqModel extends BaseModelImpl<GastronomyFaq> {
     protected table = gastronomyFaqs;
     public entityName = 'gastronomyFaqs';
 
