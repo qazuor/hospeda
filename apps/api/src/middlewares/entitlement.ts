@@ -26,6 +26,7 @@ import {
     isSubscriptionLive
 } from '@repo/billing';
 import { ServiceErrorCode } from '@repo/schemas';
+import { isAccommodationSubscription } from '@repo/service-core';
 import { RoleEnum, ServiceError } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import type { Context, MiddlewareHandler } from 'hono';
@@ -433,9 +434,15 @@ async function loadEntitlements(
             return buildDefaultEntitlementsResult();
         }
 
-        // Find active subscription (there should only be one)
+        // Find active accommodation subscription (there should only be one).
+        // SPEC-239 T-034: exclude commerce-domain subscriptions so a customer
+        // with BOTH an accommodation sub and a commerce sub always resolves
+        // accommodation entitlements from the correct sub. Treats null/undefined
+        // productDomain as 'accommodation' (legacy rows and the column default).
         const activeSubscription = subscriptions.find(
-            (sub: { status: string }) => sub.status === 'active' || sub.status === 'trialing'
+            (sub: { status: string }) =>
+                (sub.status === 'active' || sub.status === 'trialing') &&
+                isAccommodationSubscription(sub)
         );
 
         if (!activeSubscription) {
