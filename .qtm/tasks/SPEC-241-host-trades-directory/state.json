@@ -347,152 +347,152 @@
             "id": "T-010",
             "title": "Create HostTradeService (BaseCrudService) + listForHost + slug dedup + tests",
             "description": "Create packages/service-core/src/services/hostTrade/host-trade.service.ts extending BaseCrudService<HostTrade>. Admin ops: adminList (respects includeDeleted), adminGetById, adminCreate (HOST_TRADE_CREATE), adminUpdate (HOST_TRADE_UPDATE), adminPatch, adminDelete (HOST_TRADE_DELETE), adminRestore (HOST_TRADE_RESTORE), adminHardDelete (HOST_TRADE_HARD_DELETE). Host op: listForHost(actor) resolves the actor's accommodation destination IDs and delegates to model.findForHost, requires HOST_TRADE_VIEW. ON create/update de-duplicate the slug (column is globally UNIQUE): auto-generated colliding slugs must be suffixed incrementally (-2, -3, ...) before insert. Permission checks via PermissionEnum only. Tests: unit tests for every op including the slug-collision case and permission denials.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002", "T-003", "T-008"],
             "blocks": ["T-011", "T-012"],
             "subtasks": [
                 {
                     "title": "Scaffold service extending BaseCrudService",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement admin CRUD ops with PermissionEnum checks",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement listForHost (resolve destinations + model)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Slug de-duplication on create/update (-2/-3 suffix)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests (ops, slug collision, permission denials)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "business-logic", "testing"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T23:39:47.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T13:02:23.000Z",
+                "completed": "2026-06-16T13:51:50.000Z"
             }
         },
         {
             "id": "T-011",
             "title": "Create admin API routes for host-trades",
             "description": "Create apps/api/src/routes/host-trade/admin/ routes using createAdminRoute/createAdminListRoute: GET list (paginated page+pageSize, filters destinationId/category/isActive/is24h/search/includeDeleted), GET :id, POST create, PUT :id, PATCH :id, DELETE :id (soft), POST :id/restore, DELETE :id/hard. Thin handlers delegating to HostTradeService + ResponseFactory. Register adminHostTradeRoutes at /api/v1/admin/host-trades in apps/api/src/routes/index.ts. Tests: route integration tests with mocked actor + permission guards.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002", "T-010"],
             "blocks": ["T-013", "T-017", "T-018"],
             "subtasks": [
                 {
                     "title": "list/getById routes",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "create/update/patch routes",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "delete/restore/hardDelete routes",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Register adminHostTradeRoutes in routes/index.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Route integration tests (auth/permission guards)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "hono", "admin"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T23:39:47.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T13:52:20.000Z",
+                "completed": "2026-06-16T14:20:00.000Z"
             }
         },
         {
             "id": "T-012",
             "title": "Create protected host route GET /protected/host-trades + tests",
             "description": "Create apps/api/src/routes/host-trade/protected/list.ts: GET /api/v1/protected/host-trades, permission HOST_TRADE_VIEW, no query params (destinations resolved server-side). Handler: getActorFromContext -> resolve distinct accommodation destination IDs for the owner -> hostTradeService.listForHost(actor) -> array of HostTradePublicSchema. Register protectedHostTradeRoutes in apps/api/src/routes/index.ts. Tests: API integration tests for destination resolution, 200 with filtered data, empty [] for host without accommodations, 401 unauthenticated, 403 without HOST_TRADE_VIEW.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002", "T-010"],
             "blocks": ["T-013", "T-014"],
             "subtasks": [
                 {
                     "title": "Implement protected list route + destination resolution",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Register route in routes/index.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Integration tests (200/empty/401/403)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "hono", "protected", "testing"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T23:39:47.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T13:52:20.000Z",
+                "completed": "2026-06-16T14:20:00.000Z"
             }
         },
         {
             "id": "T-013",
             "title": "Add endpoint-gate-matrix rows for host-trade routes",
             "description": "Add matrix rows to docs/billing/endpoint-gate-matrix.md for all new routes: 'none' entitlement gate for the host-facing protected list (HOST_TRADE_VIEW permission only), and HOST_TRADE_* permissions for each admin route.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-011", "T-012"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Document protected list gate (none + HOST_TRADE_VIEW)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Document admin routes gates (HOST_TRADE_*)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T23:39:47.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T13:52:20.000Z",
+                "completed": "2026-06-16T14:20:00.000Z"
             }
         },
         {
@@ -700,9 +700,9 @@
     ],
     "summary": {
         "total": 19,
-        "pending": 10,
+        "pending": 6,
         "inProgress": 0,
-        "completed": 9,
+        "completed": 13,
         "blocked": 0,
         "averageComplexity": 1.6
     }
