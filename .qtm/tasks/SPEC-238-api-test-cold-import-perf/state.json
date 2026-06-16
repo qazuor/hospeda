@@ -39,7 +39,7 @@
             "id": "T-002",
             "title": "Inventory real @repo/service-core exports consumed via the global mock spread",
             "description": "The global mock in apps/api/test/setup.ts (~L225) does `const actual = await importOriginal()` then `...actual`, forcing the real service-core (200+ files +db +schemas) to cold-import once per test file. To drop importOriginal safely, first enumerate everything the suite consumes from @repo/service-core that is NOT already overridden by the dedicated mock files (content-services, accommodation-services, destination-services, event-services, user-services, exchange-rate-services, billing-services, advertising-services, marketplace-services). Grep all apps/api test + src for `from '@repo/service-core'` imports and classify each named import as: service class (already mocked), enum, constant, pure function, type-only. Produce the exact list of enums/constants/pure-fns that `...actual` currently supplies. Tests: none (analysis); output feeds T-003.",
-            "status": "pending",
+            "status": "cancelled",
             "complexity": 3,
             "blockedBy": ["T-001"],
             "blocks": ["T-003"],
@@ -62,15 +62,16 @@
             },
             "timestamps": {
                 "created": "2026-06-16T00:08:58Z",
-                "started": null,
+                "started": "2026-06-16T01:24:58Z",
                 "completed": null
-            }
+            },
+            "cancelReason": "Deferred per 2026-06-16 re-scope: service-core ...actual lever not cost-effective for P3 (Sentry mock alone exceeds the ~9% goal 2x; ~58 symbols / ~50 files, AC#3 risk)."
         },
         {
             "id": "T-003",
             "title": "Author service-core-extras mock with explicit enums/constants/pure-fns",
             "description": "Create apps/api/test/helpers/mocks/service-core-extras.ts exporting the real-surface items inventoried in T-002, sourced from canonical origins per the B2 technique: enums re-exported from @repo/schemas (SSOT), ServiceError from the existing test/helpers/mocks/service-error.ts stub, and any constants/pure functions stubbed faithfully (mocked behavior must match real contracts — AC#3, do not mask bugs). Keep it lean — only what the suite actually uses. Do NOT cherry-pick the deleted SPEC-188 d6c023179 file (stale against current service-core). Tests: this file is exercised indirectly by the whole suite via T-004; add a small focused assertion only if a pure-fn stub has non-trivial logic.",
-            "status": "pending",
+            "status": "cancelled",
             "complexity": 3,
             "blockedBy": ["T-002"],
             "blocks": ["T-004"],
@@ -93,15 +94,16 @@
             },
             "timestamps": {
                 "created": "2026-06-16T00:08:58Z",
-                "started": null,
+                "started": "2026-06-16T01:24:58Z",
                 "completed": null
-            }
+            },
+            "cancelReason": "Deferred per 2026-06-16 re-scope: service-core ...actual lever not cost-effective for P3 (Sentry mock alone exceeds the ~9% goal 2x; ~58 symbols / ~50 files, AC#3 risk)."
         },
         {
             "id": "T-004",
             "title": "Drop importOriginal/...actual from global service-core mock; wire extras; repair fallout",
             "description": "In apps/api/test/setup.ts, remove `const actual = await importOriginal()` and the `...actual` spread from the @repo/service-core vi.mock factory; replace with explicit exports from service-core-extras.ts (T-003) plus the existing dedicated service-class mocks. Run the api unit suite and iterate: any failure of the form `X is not a function`/`undefined` means a real export the suite needs is missing — add it to extras (loop until green). This is the main ~80% cold-import trim. Keep the local importOriginal mocks in the ~42 tests that intentionally load real service logic untouched (handled by T-006). Tests: full apps/api unit suite must be green.",
-            "status": "pending",
+            "status": "cancelled",
             "complexity": 3,
             "blockedBy": ["T-003"],
             "blocks": ["T-006"],
@@ -124,9 +126,10 @@
             },
             "timestamps": {
                 "created": "2026-06-16T00:08:58Z",
-                "started": null,
+                "started": "2026-06-16T01:24:58Z",
                 "completed": null
-            }
+            },
+            "cancelReason": "Deferred per 2026-06-16 re-scope: service-core ...actual lever not cost-effective for P3 (Sentry mock alone exceeds the ~9% goal 2x; ~58 symbols / ~50 files, AC#3 risk)."
         },
         {
             "id": "T-005",
@@ -163,7 +166,7 @@
             "id": "T-006",
             "title": "Audit tests with local importOriginal of service-core still load real logic",
             "description": "After the global spread is gone (T-004), confirm the ~42 tests that intentionally use a LOCAL importOriginal of @repo/service-core (billing-settings, promo-code, addon-expiration, etc. — the real-service-logic tests) still resolve the real module and pass. The global mock change must not break their per-file override. Add a short note/comment documenting the two-tier pattern (global = stubbed, local importOriginal = real) so future contributors don't reintroduce the global ...actual. Tests: re-run those specific suites; all green.",
-            "status": "pending",
+            "status": "cancelled",
             "complexity": 2,
             "blockedBy": ["T-004"],
             "blocks": ["T-007"],
@@ -186,133 +189,135 @@
             },
             "timestamps": {
                 "created": "2026-06-16T00:08:58Z",
-                "started": null,
+                "started": "2026-06-16T01:24:58Z",
                 "completed": null
-            }
+            },
+            "cancelReason": "Deferred per 2026-06-16 re-scope: service-core ...actual lever not cost-effective for P3 (Sentry mock alone exceeds the ~9% goal 2x; ~58 symbols / ~50 files, AC#3 risk)."
         },
         {
             "id": "T-007",
             "title": "Full suite green + measure post-change delta vs baseline",
             "description": "Run the complete apps/api unit suite green, then re-measure collect + wall time (3 clean runs, median) the same way as T-001 and compute the local delta. Record before/after in the spec docs. Flag clearly that the authoritative ~9% number (AC#1) is the self-hosted CI runner measurement, not this local proxy. AC#4: confirm no new flakiness across the 3 runs. Tests: entire apps/api unit suite passes.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-005", "T-006"],
             "blocks": ["T-008", "T-009"],
             "subtasks": [
                 {
                     "title": "3 clean green runs, record median collect + wall",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Compute + document local delta, note CI is authoritative",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["perf", "measurement", "tests"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-16T00:08:58Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T01:24:58Z",
+                "completed": "2026-06-16T01:24:58Z"
             }
         },
         {
             "id": "T-008",
             "title": "Verify machine-safety invariant (concurrency / peak memory unchanged)",
             "description": "Spec AC#2 (SPEC-188 invariant). Confirm the change does not raise total concurrency or peak memory: poolOptions.forks.maxForks stays at 3, no new parallelism introduced, and CI override (if any in ci.yml/turbo.json) is unchanged or only reduces load. The cold-import trim should LOWER per-fork memory, never raise it. Document the invariant check. Tests: none (config/observation).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-007"],
             "blocks": ["T-010"],
             "subtasks": [
                 {
                     "title": "Confirm maxForks unchanged + no new concurrency",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["perf", "machine-safety", "config"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-16T00:08:58Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T01:24:58Z",
+                "completed": "2026-06-16T01:24:58Z"
             }
         },
         {
             "id": "T-009",
             "title": "Document the technique in docs/guides/test-performance.md",
             "description": "Update (or create) docs/guides/test-performance.md describing the apps/api cold-import trim: the two-tier service-core mock (global stub vs local importOriginal for real-logic tests), the Sentry mock, the shared vitest config, and the local-vs-CI measurement caveat. Reference SPEC-238 and its origin in SPEC-188 B2. Tests: none (docs).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-007"],
             "blocks": ["T-010"],
             "subtasks": [
                 {
                     "title": "Write/extend test-performance.md",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-16T00:08:58Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T01:24:58Z",
+                "completed": "2026-06-16T01:24:58Z"
             }
         },
         {
             "id": "T-010",
             "title": "Update AC checkboxes + close-out governance (indexes, CSV)",
             "description": "Tick the spec.md acceptance-criteria boxes that are satisfied locally; leave AC#1 (~9% on self-hosted runner) explicitly marked as 'pending CI confirmation' with a note. Keep specs/index.json + tasks/index.json + specs-prioritization.csv in sync per the project index-sync rules (status reflects in-progress during work, done only after merge). Prepare the PR description noting that CI is the authoritative perf gate and listing the local delta. Tests: none (governance).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-008", "T-009"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Tick satisfied AC boxes, annotate AC#1 as CI-pending",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Sync both indexes + CSV; draft PR description",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["governance", "docs", "index-sync"],
             "phase": "cleanup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-16T00:08:58Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T01:24:58Z",
+                "completed": "2026-06-16T01:24:58Z"
             }
         }
     ],
     "summary": {
         "total": 10,
-        "pending": 8,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 2,
+        "completed": 6,
         "blocked": 0,
-        "averageComplexity": 2.0
+        "averageComplexity": 2.0,
+        "cancelled": 4
     }
 }
