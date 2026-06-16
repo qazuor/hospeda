@@ -608,8 +608,8 @@
         {
             "specId": "SPEC-238",
             "title": "Reduce apps/api per-file test cold-import overhead (~9% suite speedup)",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "in-progress",
+            "progress": "0/10",
             "path": "SPEC-238-api-test-cold-import-perf"
         },
         {

@@ -1,0 +1,206 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-238",
+    "title": "Reduce apps/api per-file test cold-import overhead (~9% suite speedup)",
+    "created": "2026-06-16T00:08:58Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Measure local baseline (collect + wall time) for apps/api unit suite",
+            "description": "Spec AC#1. Establish a before number to compare against. Run the apps/api unit suite (vitest.config.ts, excludes e2e/integration) 3 consecutive clean times and record median collect time and wall time. Note that this is a LOCAL proxy only — the spec's ~9% target must be re-validated on the self-hosted runner in CI (the dev machine is not the measurement environment). Capture results in the spec dir (e.g. docs/baseline.md) so T-007 can compute the delta. No source changes. Tests: none (measurement task).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-005"],
+            "subtasks": [
+                { "title": "Run api suite x3, record collect + wall time", "completed": false },
+                {
+                    "title": "Write baseline numbers + machine note to spec docs",
+                    "completed": false
+                }
+            ],
+            "tags": ["perf", "measurement", "baseline"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-16T00:08:58Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-002",
+            "title": "Inventory real @repo/service-core exports consumed via the global mock spread",
+            "description": "The global mock in apps/api/test/setup.ts (~L225) does `const actual = await importOriginal()` then `...actual`, forcing the real service-core (200+ files +db +schemas) to cold-import once per test file. To drop importOriginal safely, first enumerate everything the suite consumes from @repo/service-core that is NOT already overridden by the dedicated mock files (content-services, accommodation-services, destination-services, event-services, user-services, exchange-rate-services, billing-services, advertising-services, marketplace-services). Grep all apps/api test + src for `from '@repo/service-core'` imports and classify each named import as: service class (already mocked), enum, constant, pure function, type-only. Produce the exact list of enums/constants/pure-fns that `...actual` currently supplies. Tests: none (analysis); output feeds T-003.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-003"],
+            "subtasks": [
+                {
+                    "title": "Grep + classify all @repo/service-core named imports across api",
+                    "completed": false
+                },
+                {
+                    "title": "List enums/constants/pure-fns supplied only by ...actual",
+                    "completed": false
+                }
+            ],
+            "tags": ["analysis", "service-core", "mock"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-16T00:08:58Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-003",
+            "title": "Author service-core-extras mock with explicit enums/constants/pure-fns",
+            "description": "Create apps/api/test/helpers/mocks/service-core-extras.ts exporting the real-surface items inventoried in T-002, sourced from canonical origins per the B2 technique: enums re-exported from @repo/schemas (SSOT), ServiceError from the existing test/helpers/mocks/service-error.ts stub, and any constants/pure functions stubbed faithfully (mocked behavior must match real contracts — AC#3, do not mask bugs). Keep it lean — only what the suite actually uses. Do NOT cherry-pick the deleted SPEC-188 d6c023179 file (stale against current service-core). Tests: this file is exercised indirectly by the whole suite via T-004; add a small focused assertion only if a pure-fn stub has non-trivial logic.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-004"],
+            "subtasks": [
+                { "title": "Re-export enums from @repo/schemas", "completed": false },
+                { "title": "Stub constants/pure-fns matching real contracts", "completed": false }
+            ],
+            "tags": ["service-core", "mock", "schemas"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-16T00:08:58Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-004",
+            "title": "Drop importOriginal/...actual from global service-core mock; wire extras; repair fallout",
+            "description": "In apps/api/test/setup.ts, remove `const actual = await importOriginal()` and the `...actual` spread from the @repo/service-core vi.mock factory; replace with explicit exports from service-core-extras.ts (T-003) plus the existing dedicated service-class mocks. Run the api unit suite and iterate: any failure of the form `X is not a function`/`undefined` means a real export the suite needs is missing — add it to extras (loop until green). This is the main ~80% cold-import trim. Keep the local importOriginal mocks in the ~42 tests that intentionally load real service logic untouched (handled by T-006). Tests: full apps/api unit suite must be green.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-006"],
+            "subtasks": [
+                { "title": "Remove importOriginal + ...actual, wire extras", "completed": false },
+                {
+                    "title": "Iterate suite to green, backfilling missing exports",
+                    "completed": false
+                }
+            ],
+            "tags": ["service-core", "mock", "setup", "core-lever"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-16T00:08:58Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-005",
+            "title": "Mock Sentry (@sentry/node + @sentry/profiling-node) in test setup",
+            "description": "Add a global vi.mock for @sentry/node and @sentry/profiling-node in apps/api/test/setup.ts to prevent the native .node addon load + init cost per test file (B2 technique step 2). Stub the methods the app actually calls at init/request time (init, captureException, captureMessage, setUser, withScope, startSpan/startInactiveSpan, getCurrentScope, etc. — verify against apps/api Sentry usage). Independent of T-002..T-004 (can run in parallel). Tests: api suite must stay green; spot-check any test that asserts on Sentry capture still works with the mock.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-007"],
+            "subtasks": [
+                {
+                    "title": "vi.mock @sentry/node + profiling-node with used methods",
+                    "completed": false
+                },
+                { "title": "Verify no test relied on real Sentry behavior", "completed": false }
+            ],
+            "tags": ["sentry", "mock", "setup"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-16T00:08:58Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-006",
+            "title": "Audit tests with local importOriginal of service-core still load real logic",
+            "description": "After the global spread is gone (T-004), confirm the ~42 tests that intentionally use a LOCAL importOriginal of @repo/service-core (billing-settings, promo-code, addon-expiration, etc. — the real-service-logic tests) still resolve the real module and pass. The global mock change must not break their per-file override. Add a short note/comment documenting the two-tier pattern (global = stubbed, local importOriginal = real) so future contributors don't reintroduce the global ...actual. Tests: re-run those specific suites; all green.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-007"],
+            "subtasks": [
+                {
+                    "title": "Run real-logic (local importOriginal) tests, confirm green",
+                    "completed": false
+                },
+                { "title": "Document two-tier mock pattern", "completed": false }
+            ],
+            "tags": ["service-core", "audit", "tests"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-16T00:08:58Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-007",
+            "title": "Full suite green + measure post-change delta vs baseline",
+            "description": "Run the complete apps/api unit suite green, then re-measure collect + wall time (3 clean runs, median) the same way as T-001 and compute the local delta. Record before/after in the spec docs. Flag clearly that the authoritative ~9% number (AC#1) is the self-hosted CI runner measurement, not this local proxy. AC#4: confirm no new flakiness across the 3 runs. Tests: entire apps/api unit suite passes.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-005", "T-006"],
+            "blocks": ["T-008", "T-009"],
+            "subtasks": [
+                { "title": "3 clean green runs, record median collect + wall", "completed": false },
+                {
+                    "title": "Compute + document local delta, note CI is authoritative",
+                    "completed": false
+                }
+            ],
+            "tags": ["perf", "measurement", "tests"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-16T00:08:58Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-008",
+            "title": "Verify machine-safety invariant (concurrency / peak memory unchanged)",
+            "description": "Spec AC#2 (SPEC-188 invariant). Confirm the change does not raise total concurrency or peak memory: poolOptions.forks.maxForks stays at 3, no new parallelism introduced, and CI override (if any in ci.yml/turbo.json) is unchanged or only reduces load. The cold-import trim should LOWER per-fork memory, never raise it. Document the invariant check. Tests: none (config/observation).",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-010"],
+            "subtasks": [
+                { "title": "Confirm maxForks unchanged + no new concurrency", "completed": false }
+            ],
+            "tags": ["perf", "machine-safety", "config"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-16T00:08:58Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-009",
+            "title": "Document the technique in docs/guides/test-performance.md",
+            "description": "Update (or create) docs/guides/test-performance.md describing the apps/api cold-import trim: the two-tier service-core mock (global stub vs local importOriginal for real-logic tests), the Sentry mock, the shared vitest config, and the local-vs-CI measurement caveat. Reference SPEC-238 and its origin in SPEC-188 B2. Tests: none (docs).",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-010"],
+            "subtasks": [{ "title": "Write/extend test-performance.md", "completed": false }],
+            "tags": ["docs"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-16T00:08:58Z", "started": null, "completed": null }
+        },
+        {
+            "id": "T-010",
+            "title": "Update AC checkboxes + close-out governance (indexes, CSV)",
+            "description": "Tick the spec.md acceptance-criteria boxes that are satisfied locally; leave AC#1 (~9% on self-hosted runner) explicitly marked as 'pending CI confirmation' with a note. Keep specs/index.json + tasks/index.json + specs-prioritization.csv in sync per the project index-sync rules (status reflects in-progress during work, done only after merge). Prepare the PR description noting that CI is the authoritative perf gate and listing the local delta. Tests: none (governance).",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-008", "T-009"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Tick satisfied AC boxes, annotate AC#1 as CI-pending",
+                    "completed": false
+                },
+                { "title": "Sync both indexes + CSV; draft PR description", "completed": false }
+            ],
+            "tags": ["governance", "docs", "index-sync"],
+            "phase": "cleanup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": { "created": "2026-06-16T00:08:58Z", "started": null, "completed": null }
+        }
+    ],
+    "summary": {
+        "total": 10,
+        "pending": 10,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 2.0
+    }
+}
