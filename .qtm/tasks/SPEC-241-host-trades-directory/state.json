@@ -1,0 +1,709 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-241",
+    "title": "Host trades/services directory (24h emergency trades for hosts)",
+    "created": "2026-06-15T23:39:47.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add HostTradeCategoryEnum to @repo/schemas enums",
+            "description": "Create packages/schemas/src/enums/host-trade-category.enum.ts with the TypeScript enum HostTradeCategoryEnum (13 values: CERRAJERIA, PLOMERIA, ELECTRICIDAD, GAS, CLIMATIZACION, LIMPIEZA, FLETES, VIDRIERIA, CARPINTERIA, PILETA_JARDIN, PLAGAS, INTERNET, ALBANILERIA) and its Zod enum schema. Re-export from packages/schemas/src/enums/index.ts. Tests: assert enum value count and SCREAMING_SNAKE_CASE values in a vitest spec.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-003", "T-005"],
+            "subtasks": [
+                {
+                    "title": "Create host-trade-category.enum.ts (TS enum + Zod schema)",
+                    "completed": true
+                },
+                {
+                    "title": "Re-export from enums/index.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Add vitest enum test",
+                    "completed": true
+                }
+            ],
+            "tags": ["schemas", "enum"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:39:47.000Z",
+                "started": "2026-06-15T23:48:09.000Z",
+                "completed": "2026-06-15T23:49:52.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Add HOST_TRADE_* values to PermissionEnum + PermissionCategoryEnum",
+            "description": "In packages/schemas/src/enums/permission.enum.ts add HOST_TRADE_VIEW, HOST_TRADE_CREATE, HOST_TRADE_UPDATE, HOST_TRADE_DELETE, HOST_TRADE_RESTORE, HOST_TRADE_HARD_DELETE, HOST_TRADE_VIEW_ALL following the <entity>.<action> value convention, and add HOST_TRADE to PermissionCategoryEnum. PermissionPgEnum picks these up automatically via enumToTuple. Tests: assert the new permission values exist and the category is present.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-010", "T-011", "T-012"],
+            "subtasks": [
+                {
+                    "title": "Add 7 HOST_TRADE_* values to PermissionEnum",
+                    "completed": true
+                },
+                {
+                    "title": "Add HOST_TRADE to PermissionCategoryEnum",
+                    "completed": true
+                },
+                {
+                    "title": "Add/extend permission enum test",
+                    "completed": true
+                }
+            ],
+            "tags": ["schemas", "permissions", "auth"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:39:47.000Z",
+                "started": "2026-06-15T23:51:07.000Z",
+                "completed": "2026-06-15T23:52:11.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Create entities/host-trade schema files + tests",
+            "description": "Create packages/schemas/src/entities/host-trade/: host-trade.schema.ts (HostTradeSchema + type HostTrade), host-trade.crud.schema.ts (CreateHostTradeSchema with optional slug, UpdateHostTradeSchema all-optional), host-trade.query.schema.ts, host-trade.admin-search.schema.ts (extends AdminSearchBaseSchema with destinationId/category/isActive/is24h), host-trade.http.schema.ts (HostTradePublicSchema strips audit internals, HostTradeAdminSchema full shape, admin request/response schemas), index.ts re-exporting all. Tests: vitest schema specs covering valid/invalid parse, required-field enforcement, public-shape stripping.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-006", "T-010"],
+            "subtasks": [
+                {
+                    "title": "host-trade.schema.ts + type HostTrade",
+                    "completed": true
+                },
+                {
+                    "title": "host-trade.crud.schema.ts (create/update)",
+                    "completed": true
+                },
+                {
+                    "title": "host-trade.query.schema.ts + admin-search.schema.ts",
+                    "completed": true
+                },
+                {
+                    "title": "host-trade.http.schema.ts (public + admin shapes)",
+                    "completed": true
+                },
+                {
+                    "title": "index.ts re-exports + vitest schema tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["schemas", "zod"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:39:47.000Z",
+                "started": "2026-06-15T23:57:28.000Z",
+                "completed": "2026-06-16T00:07:31.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Create i18n locale files host-trades.json (es/en/pt)",
+            "description": "Create packages/i18n/src/locales/{es,en,pt}/host-trades.json with all keys from the spec: page.title, page.subtitle, filter.all, emptyState.noAccommodations, emptyState.noTrades, card.is24h, card.benefit, card.contact, and categories.* for all 13 categories. Ensure key parity across the three locales (i18n parity test should pass).",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-014", "T-015"],
+            "subtasks": [
+                {
+                    "title": "es/host-trades.json",
+                    "completed": true
+                },
+                {
+                    "title": "en/host-trades.json",
+                    "completed": true
+                },
+                {
+                    "title": "pt/host-trades.json",
+                    "completed": true
+                },
+                {
+                    "title": "Verify locale key parity test passes",
+                    "completed": true
+                }
+            ],
+            "tags": ["i18n"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:39:47.000Z",
+                "started": "2026-06-15T23:53:23.000Z",
+                "completed": "2026-06-15T23:56:51.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Add HostTradeCategoryPgEnum to enums.dbschema.ts",
+            "description": "In packages/db/src/schemas/enums.dbschema.ts add HostTradeCategoryPgEnum = pgEnum('host_trade_category_enum', enumToTuple(HostTradeCategoryEnum)). PermissionPgEnum already wraps the new permission values via enumToTuple (no manual change needed once T-002 is done).",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-006"],
+            "subtasks": [
+                {
+                    "title": "Add HostTradeCategoryPgEnum via pgEnum + enumToTuple",
+                    "completed": false
+                },
+                {
+                    "title": "Confirm PermissionPgEnum auto-includes new perms",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "enum"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:39:47.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Create host_trade.dbschema.ts table + relations",
+            "description": "Create packages/db/src/schemas/host-trade/host_trade.dbschema.ts defining the hostTrades Drizzle table (table name host_trades) with all columns from the domain model (id, slug UNIQUE, name, category via HostTradeCategoryPgEnum, contact, benefit, destinationId FK ON DELETE RESTRICT, is24h default false, scheduleText nullable, isActive default true, audit + soft-delete columns). Relations: one(destinations), one(users createdBy/updatedBy/deletedBy). Add packages/db/src/schemas/host-trade/index.ts and update packages/db/src/schemas/index.ts.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-005", "T-003"],
+            "blocks": ["T-007", "T-008"],
+            "subtasks": [
+                {
+                    "title": "Define hostTrades table columns",
+                    "completed": false
+                },
+                {
+                    "title": "Define relations (destinations, users)",
+                    "completed": false
+                },
+                {
+                    "title": "Add schema index.ts + update schemas/index.ts",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "drizzle", "schema"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:39:47.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Generate and verify migration",
+            "description": "Run pnpm db:generate to produce the host_trades migration .sql, review it (table + enum creation, FK constraints, unique slug index), commit it. Verify with pnpm db:migrate locally. No extras (no triggers/matviews) required.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-006"],
+            "blocks": ["T-008", "T-009"],
+            "subtasks": [
+                {
+                    "title": "Run pnpm db:generate",
+                    "completed": false
+                },
+                {
+                    "title": "Review generated SQL (enum, table, FKs, unique slug)",
+                    "completed": false
+                },
+                {
+                    "title": "Verify pnpm db:migrate applies cleanly",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "migration"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:39:47.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Create HostTradeModel with findForHost + integration tests",
+            "description": "Create packages/db/src/models/hostTrade/host-trade.model.ts extending BaseModel<HostTrade>. Custom method findForHost(destinationIds: string[]): returns active, non-deleted trades where destinationId IN (destinationIds) ordered by category ASC, name ASC. Update packages/db/src/models/index.ts. Tests: integration tests for findForHost (filtering, ordering, empty input, soft-delete exclusion).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-006", "T-007"],
+            "blocks": ["T-009", "T-010"],
+            "subtasks": [
+                {
+                    "title": "HostTradeModel extends BaseModel",
+                    "completed": false
+                },
+                {
+                    "title": "findForHost(destinationIds) ordered query",
+                    "completed": false
+                },
+                {
+                    "title": "Update models/index.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Integration tests (filter/order/empty/soft-delete)",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "model", "testing"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:39:47.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Add example seed data for host_trades",
+            "description": "Add packages/seed/src/data/hostTrade/*.json (>=2 trades per seeded destination across several categories: CERRAJERIA, PLOMERIA, ELECTRICIDAD, GAS, CLIMATIZACION at minimum; mixed is24h true/false; some with scheduleText). Register filenames under a 'hostTrades' array in packages/seed/src/manifest-example.json. Create packages/seed/src/example/hostTrades.seed.ts loader and wire it into packages/seed/src/example/index.ts AFTER destinations and users (FK order: destinationId -> destinations, createdById -> users). Add the seed schema entry under packages/seed/src/schemas/ if the package validates rows. Verify with pnpm db:fresh-dev that the directory is non-empty for a seeded host.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-007", "T-008"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Author *.json trade rows across destinations/categories",
+                    "completed": false
+                },
+                {
+                    "title": "Register filenames in manifest-example.json",
+                    "completed": false
+                },
+                {
+                    "title": "Create example/hostTrades.seed.ts loader",
+                    "completed": false
+                },
+                {
+                    "title": "Wire into example/index.ts after destinations+users",
+                    "completed": false
+                },
+                {
+                    "title": "Add seed schema entry if package validates rows",
+                    "completed": false
+                },
+                {
+                    "title": "Verify pnpm db:fresh-dev populates directory",
+                    "completed": false
+                }
+            ],
+            "tags": ["seed", "data"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:39:47.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Create HostTradeService (BaseCrudService) + listForHost + slug dedup + tests",
+            "description": "Create packages/service-core/src/services/hostTrade/host-trade.service.ts extending BaseCrudService<HostTrade>. Admin ops: adminList (respects includeDeleted), adminGetById, adminCreate (HOST_TRADE_CREATE), adminUpdate (HOST_TRADE_UPDATE), adminPatch, adminDelete (HOST_TRADE_DELETE), adminRestore (HOST_TRADE_RESTORE), adminHardDelete (HOST_TRADE_HARD_DELETE). Host op: listForHost(actor) resolves the actor's accommodation destination IDs and delegates to model.findForHost, requires HOST_TRADE_VIEW. ON create/update de-duplicate the slug (column is globally UNIQUE): auto-generated colliding slugs must be suffixed incrementally (-2, -3, ...) before insert. Permission checks via PermissionEnum only. Tests: unit tests for every op including the slug-collision case and permission denials.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-002", "T-003", "T-008"],
+            "blocks": ["T-011", "T-012"],
+            "subtasks": [
+                {
+                    "title": "Scaffold service extending BaseCrudService",
+                    "completed": false
+                },
+                {
+                    "title": "Implement admin CRUD ops with PermissionEnum checks",
+                    "completed": false
+                },
+                {
+                    "title": "Implement listForHost (resolve destinations + model)",
+                    "completed": false
+                },
+                {
+                    "title": "Slug de-duplication on create/update (-2/-3 suffix)",
+                    "completed": false
+                },
+                {
+                    "title": "Unit tests (ops, slug collision, permission denials)",
+                    "completed": false
+                }
+            ],
+            "tags": ["service-core", "business-logic", "testing"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:39:47.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Create admin API routes for host-trades",
+            "description": "Create apps/api/src/routes/host-trade/admin/ routes using createAdminRoute/createAdminListRoute: GET list (paginated page+pageSize, filters destinationId/category/isActive/is24h/search/includeDeleted), GET :id, POST create, PUT :id, PATCH :id, DELETE :id (soft), POST :id/restore, DELETE :id/hard. Thin handlers delegating to HostTradeService + ResponseFactory. Register adminHostTradeRoutes at /api/v1/admin/host-trades in apps/api/src/routes/index.ts. Tests: route integration tests with mocked actor + permission guards.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-002", "T-010"],
+            "blocks": ["T-013", "T-017", "T-018"],
+            "subtasks": [
+                {
+                    "title": "list/getById routes",
+                    "completed": false
+                },
+                {
+                    "title": "create/update/patch routes",
+                    "completed": false
+                },
+                {
+                    "title": "delete/restore/hardDelete routes",
+                    "completed": false
+                },
+                {
+                    "title": "Register adminHostTradeRoutes in routes/index.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Route integration tests (auth/permission guards)",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "hono", "admin"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:39:47.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Create protected host route GET /protected/host-trades + tests",
+            "description": "Create apps/api/src/routes/host-trade/protected/list.ts: GET /api/v1/protected/host-trades, permission HOST_TRADE_VIEW, no query params (destinations resolved server-side). Handler: getActorFromContext -> resolve distinct accommodation destination IDs for the owner -> hostTradeService.listForHost(actor) -> array of HostTradePublicSchema. Register protectedHostTradeRoutes in apps/api/src/routes/index.ts. Tests: API integration tests for destination resolution, 200 with filtered data, empty [] for host without accommodations, 401 unauthenticated, 403 without HOST_TRADE_VIEW.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-002", "T-010"],
+            "blocks": ["T-013", "T-014"],
+            "subtasks": [
+                {
+                    "title": "Implement protected list route + destination resolution",
+                    "completed": false
+                },
+                {
+                    "title": "Register route in routes/index.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Integration tests (200/empty/401/403)",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "hono", "protected", "testing"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:39:47.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Add endpoint-gate-matrix rows for host-trade routes",
+            "description": "Add matrix rows to docs/billing/endpoint-gate-matrix.md for all new routes: 'none' entitlement gate for the host-facing protected list (HOST_TRADE_VIEW permission only), and HOST_TRADE_* permissions for each admin route.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-011", "T-012"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Document protected list gate (none + HOST_TRADE_VIEW)",
+                    "completed": false
+                },
+                {
+                    "title": "Document admin routes gates (HOST_TRADE_*)",
+                    "completed": false
+                }
+            ],
+            "tags": ["docs"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:39:47.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Create Astro page directorio-proveedores (SSR + empty states)",
+            "description": "Create apps/web/src/pages/[lang]/mi-cuenta/directorio-proveedores/index.astro: SSR session check (redirect to login if unauthenticated), internal fetch of GET /api/v1/protected/host-trades with session cookie, pass trades array (or empty) to the React island. Handle two empty states (no accommodations vs no trades for destinations). Tourist/non-host -> access-denied state. Follows existing /mi-cuenta sub-page pattern.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-004", "T-012"],
+            "blocks": ["T-015"],
+            "subtasks": [
+                {
+                    "title": "SSR auth check + login redirect",
+                    "completed": false
+                },
+                {
+                    "title": "Fetch protected endpoint with session cookie",
+                    "completed": false
+                },
+                {
+                    "title": "Pass data to island + handle empty/denied states",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "astro"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:39:47.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Create TradesDirectory React island + TradeCard (CSS Modules)",
+            "description": "Create apps/web TradesDirectory.client.tsx (client:idle): category filter bar (pill buttons, i18n labels, 'Todos' resets, client-side filtering, empty state per selected category) + card grid. TradeCard shows name, category badge (i18n), contact link (generic 'Contactar', tel:/wa.me as applicable), benefit text, is24h badge, scheduleText. Styling via TradesDirectory.module.css + TradeCard.module.css + design tokens (no Tailwind). i18n via createTranslations.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-004", "T-014"],
+            "blocks": ["T-016"],
+            "subtasks": [
+                {
+                    "title": "Category filter bar (pills, client-side filter, Todos reset)",
+                    "completed": false
+                },
+                {
+                    "title": "TradeCard component (badge, contact, benefit, is24h, schedule)",
+                    "completed": false
+                },
+                {
+                    "title": "CSS Modules + design tokens, i18n labels",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "react", "ui"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:39:47.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Component tests for TradesDirectory + TradeCard",
+            "description": "Write vitest + testing-library component tests for TradesDirectory (category filtering behavior, 'Todos' reset, empty state per category) and TradeCard (renders all fields, is24h badge conditional, scheduleText conditional, contact link).",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-015"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "TradesDirectory filter/reset/empty tests",
+                    "completed": false
+                },
+                {
+                    "title": "TradeCard field-render + conditional tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "testing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:39:47.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Create admin list page for host-trades",
+            "description": "Create apps/admin/src/routes/platform/host-trades/index.tsx: TanStack Query data fetch, paginated table (page+pageSize), filters (category, destination, isActive, search), Shadcn UI components, i18n category labels. Nav placement under Plataforma > Directorio de oficios alongside Destinos.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-011"],
+            "blocks": ["T-019"],
+            "subtasks": [
+                {
+                    "title": "TanStack Query list hook + paginated table",
+                    "completed": false
+                },
+                {
+                    "title": "Filters (category/destination/isActive/search)",
+                    "completed": false
+                },
+                {
+                    "title": "Register route + nav under Plataforma",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin", "tanstack", "ui"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:39:47.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Create admin create/edit form for host-trades",
+            "description": "Create apps/admin/src/routes/platform/host-trades/new.tsx and $id.tsx (view/edit): TanStack Form + HostTradeAdminSchema.safeParse(). Fields: name, category (select i18n labels), contact, benefit (textarea), destinationId (select/search from destinations), is24h (checkbox), scheduleText (textarea optional), isActive (checkbox). Slug auto-generated from name client-side, editable. Use createAdminRoute typing.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-011"],
+            "blocks": ["T-019"],
+            "subtasks": [
+                {
+                    "title": "new.tsx create form (TanStack Form + safeParse)",
+                    "completed": false
+                },
+                {
+                    "title": "$id.tsx view/edit form",
+                    "completed": false
+                },
+                {
+                    "title": "Slug auto-from-name (editable) + destination select",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin", "tanstack", "forms"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:39:47.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Write admin entity tests",
+            "description": "Write tests for the admin host-trades entity: TanStack Query mocks for the list page, form submit success/validation-error handling for create/edit, and error-state rendering.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-017", "T-018"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "List page query-mock tests",
+                    "completed": false
+                },
+                {
+                    "title": "Form submit + validation-error tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin", "testing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:39:47.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 19,
+        "pending": 15,
+        "inProgress": 0,
+        "completed": 4,
+        "blocked": 0,
+        "averageComplexity": 1.6
+    }
+}

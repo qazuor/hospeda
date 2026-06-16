@@ -31,7 +31,7 @@
             "title": "Host trades/services directory (24h emergency trades for hosts)",
             "type": "feature",
             "complexity": "low",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-241-host-trades-directory",
             "created": "2026-06-15T00:00:00.000Z",
             "base": "staging",
