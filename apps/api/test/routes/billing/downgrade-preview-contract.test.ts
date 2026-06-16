@@ -566,15 +566,16 @@ describe('GET /api/v1/protected/billing/subscriptions/downgrade-preview', () => 
             expect(data.promotions.cap).toBe(0);
             expect(data.promotions.excessCount).toBe(1);
             expect(data.promotions.items).toHaveLength(1);
-            expect(data.promotions.items[0].keepByDefault).toBe(false);
+            expect(data.promotions.items[0]?.keepByDefault).toBe(false);
 
             // Photo overflow
             expect(data.photos).toHaveLength(1);
-            expect(data.photos[0].excessCount).toBe(2);
-            expect(data.photos[0].overflowPhotoUrls).toHaveLength(2);
+            const firstPhoto = data.photos[0];
+            expect(firstPhoto?.excessCount).toBe(2);
+            expect(firstPhoto?.overflowPhotoUrls).toHaveLength(2);
 
             // Each overflow URL must be a valid URL string
-            for (const url of data.photos[0].overflowPhotoUrls) {
+            for (const url of firstPhoto?.overflowPhotoUrls ?? []) {
                 expect(() => new URL(url)).not.toThrow();
             }
         });
