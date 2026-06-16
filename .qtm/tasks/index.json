@@ -44,7 +44,7 @@
             "path": "SPEC-236-coverage-ratchet-up",
             "archived": true,
             "archivedAt": "2026-06-15",
-            "archiveNote": "9 per-package PRs merged to staging. All logic packages raised to/past target + floors ratcheted in lockstep. service-core floored at 85 (real 88); icons/billing/schemas/notifications/seed/feedback back to 90 default."
+            "archiveNote": "10 PRs merged to staging. All logic packages raised to/past target + floors ratcheted in lockstep. service-core floored at 88 (real 90.25); icons/billing/schemas/notifications/seed/feedback back to 90 default."
         },
         {
             "specId": "SPEC-230",
