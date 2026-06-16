@@ -565,6 +565,9 @@ importers:
       sanitize-html:
         specifier: ^2.17.0
         version: 2.17.0
+      undici:
+        specifier: '>=7.24.0 <8'
+        version: 7.27.2
       zod:
         specifier: ^4.0.8
         version: 4.3.6
@@ -15182,7 +15185,7 @@ snapshots:
       std-env: 3.10.0
       test-exclude: 7.0.1
       tinyrainbow: 2.0.0
-      vitest: 3.2.6(@types/debug@4.1.13)(@types/node@25.9.3)(@vitest/ui@3.2.6)(esbuild@0.28.1)(jiti@2.6.1)(jsdom@26.0.0)(msw@2.14.6(@types/node@25.9.3)(typescript@5.9.3))(terser@5.43.1)(tsx@4.22.4)(yaml@2.9.0)
+      vitest: 3.2.6(@types/debug@4.1.13)(@types/node@25.9.3)(@vitest/ui@3.2.6)(esbuild@0.28.1)(jiti@2.6.1)(jsdom@26.0.0)(msw@2.14.6(@types/node@25.9.3)(typescript@5.7.2))(terser@5.43.1)(tsx@4.22.4)(yaml@2.9.0)
     transitivePeerDependencies:
       - supports-color
 
@@ -15241,7 +15244,7 @@ snapshots:
       sirv: 3.0.1
       tinyglobby: 0.2.16
       tinyrainbow: 2.0.0
-      vitest: 3.2.6(@types/debug@4.1.13)(@types/node@25.9.3)(@vitest/ui@3.2.6)(esbuild@0.28.1)(jiti@2.6.1)(jsdom@26.0.0)(msw@2.14.6(@types/node@25.9.3)(typescript@5.9.3))(terser@5.43.1)(tsx@4.22.4)(yaml@2.9.0)
+      vitest: 3.2.6(@types/debug@4.1.13)(@types/node@25.9.3)(@vitest/ui@3.2.6)(esbuild@0.28.1)(jiti@2.6.1)(jsdom@26.0.0)(msw@2.14.6(@types/node@25.9.3)(typescript@5.7.2))(terser@5.43.1)(tsx@4.22.4)(yaml@2.9.0)
 
   '@vitest/utils@3.2.6':
     dependencies:
