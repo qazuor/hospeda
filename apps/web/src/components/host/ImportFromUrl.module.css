@@ -1,0 +1,36 @@
+/**
+ * Styles for the ImportFromUrl host island (SPEC-222 T-023).
+ * Tokenized: all values reference CSS custom properties from global.css.
+ */
+
+.importFromUrl {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.legalRow {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+    font-family: var(--font-sans);
+    font-size: var(--text-body, 1rem);
+    color: var(--core-foreground);
+}
+
+.legalRow input {
+    margin-top: 0.2em;
+    flex-shrink: 0;
+}
+
+.legalRow label {
+    cursor: pointer;
+}
+
+/* Informational notice (e.g. AI extraction skipped for plan/quota reasons).
+   Reuses the banner layout but in a neutral/info tone, not an error tone. */
+.notice {
+    background-color: var(--palette-info-100, var(--surface-warm));
+    border-color: var(--palette-info-400, var(--brand-primary));
+    color: var(--core-foreground);
+}
