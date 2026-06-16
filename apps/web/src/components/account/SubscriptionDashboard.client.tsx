@@ -10,6 +10,7 @@
 import { translateApiError } from '@/lib/api-errors';
 import { billingApi, userApi } from '@/lib/api/endpoints-protected';
 import type { InvoiceItem, SubscriptionData } from '@/lib/api/endpoints-protected';
+import type { PublicPlanData } from '@/lib/billing/fetch-plans';
 import { getAdminUrl } from '@/lib/env';
 import { formatDate } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -18,6 +19,7 @@ import { buildUrl } from '@/lib/urls';
 import { addToast } from '@/store/toast-store';
 import { ArrowRightIcon, CancelIcon, DownloadIcon, PlayIcon, PowerOffIcon } from '@repo/icons';
 import { useCallback, useEffect, useState } from 'react';
+import { PlanChangeFlow } from './PlanChangeFlow.client';
 import styles from './SubscriptionDashboard.module.css';
 
 // ---------------------------------------------------------------------------
@@ -58,6 +60,12 @@ export interface SubscriptionDashboardProps {
     readonly locale: SupportedLocale;
     /** Authenticated user — id is used for subscription fetches, role for escalation */
     readonly user: SubscriptionDashboardUser;
+    /**
+     * Available billing plans passed from the Astro page (fetched server-side).
+     * When provided, enables the "Change plan" flow (T-005/007/008/009).
+     * When absent, the legacy plain anchor to the pricing page is shown.
+     */
+    readonly plans?: readonly PublicPlanData[];
 }
 
 // ---------------------------------------------------------------------------
@@ -555,7 +563,7 @@ function PauseConfirmModal({
  *
  * @param props - {@link SubscriptionDashboardProps}
  */
-export function SubscriptionDashboard({ locale, user }: SubscriptionDashboardProps) {
+export function SubscriptionDashboard({ locale, user, plans }: SubscriptionDashboardProps) {
     const { t } = createTranslations(locale);
 
     // ── State ──────────────────────────────────────────────────────────────
@@ -565,6 +573,7 @@ export function SubscriptionDashboard({ locale, user }: SubscriptionDashboardPro
     const [fetchError, setFetchError] = useState<string | null>(null);
     const [showCancelModal, setShowCancelModal] = useState(false);
     const [showPauseModal, setShowPauseModal] = useState(false);
+    const [showPlanChangeFlow, setShowPlanChangeFlow] = useState(false);
     const [isPausing, setIsPausing] = useState(false);
     const [isDownloading, setIsDownloading] = useState(false);
 
@@ -827,17 +836,38 @@ export function SubscriptionDashboard({ locale, user }: SubscriptionDashboardPro
                     </div>
                 )}
 
-                <a
-                    href={plansHref}
-                    className={styles.upgradeLink}
-                >
-                    <ArrowRightIcon
-                        size={16}
-                        weight="regular"
-                        aria-hidden="true"
-                    />
-                    {t('account.pages.subscription.upgradeLink', 'Ver planes disponibles')}
-                </a>
+                {plans && plans.length > 0 ? (
+                    <button
+                        type="button"
+                        className={styles.upgradeLink}
+                        onClick={() => {
+                            setShowPlanChangeFlow(true);
+                        }}
+                        aria-label={t(
+                            'account.pages.subscription.changePlanAriaLabel',
+                            'Cambiar plan de suscripción'
+                        )}
+                    >
+                        <ArrowRightIcon
+                            size={16}
+                            weight="regular"
+                            aria-hidden="true"
+                        />
+                        {t('account.pages.subscription.changePlanButton', 'Cambiar plan')}
+                    </button>
+                ) : (
+                    <a
+                        href={plansHref}
+                        className={styles.upgradeLink}
+                    >
+                        <ArrowRightIcon
+                            size={16}
+                            weight="regular"
+                            aria-hidden="true"
+                        />
+                        {t('account.pages.subscription.upgradeLink', 'Ver planes disponibles')}
+                    </a>
+                )}
             </section>
 
             {/* ── Features card — rendered only when plan features are available ── */}
@@ -981,6 +1011,21 @@ export function SubscriptionDashboard({ locale, user }: SubscriptionDashboardPro
                     onConfirm={() => void handlePause()}
                     onDismiss={() => {
                         if (!isPausing) setShowPauseModal(false);
+                    }}
+                />
+            )}
+
+            {/* ── Plan-change flow modal (SPEC-203 T-005/T-007/T-008/T-009) ── */}
+            {showPlanChangeFlow && plans && plans.length > 0 && subscription && (
+                <PlanChangeFlow
+                    plans={plans}
+                    currentPlanSlug={subscription.planSlug}
+                    locale={locale}
+                    onChanged={() => {
+                        void fetchData();
+                    }}
+                    onDismiss={() => {
+                        setShowPlanChangeFlow(false);
                     }}
                 />
             )}
