@@ -267,7 +267,7 @@
             "id": "T-011",
             "title": "Push notification setup: expo-notifications init, getExpoPushTokenAsync, new POST /protected/profile/push-token API endpoint",
             "description": "Initialize expo-notifications (single channel v1, ADR-033 decision 6). On first authenticated launch call getExpoPushTokenAsync() and POST the token to a NEW endpoint POST /api/v1/protected/profile/push-token (small API addition). Foreground notifications shown in-app; background follows OS behavior. Register EXPO_PUBLIC_API_URL + EXPO_PUBLIC_APP_ENV env vars.",
-            "status": "completed",
+            "status": "in_progress",
             "complexity": 3,
             "blockedBy": ["T-004"],
             "blocks": [],
@@ -296,10 +296,9 @@
             },
             "timestamps": {
                 "created": "2026-06-15T00:00:00.000Z",
-                "started": "2026-06-16T00:00:00.000Z",
-                "completed": "2026-06-16T00:00:00.000Z"
+                "started": "2026-06-16T00:00:00.000Z"
             },
-            "note": "API side complete: user_push_tokens table + UserPushTokenModel.upsertByToken + UserService.registerPushToken + POST /api/v1/protected/profile/push-token (rate-limited 20/min) + migration 0015_sticky_timeslip.sql. 10 tests (6 service + 4 handler) all green. Drift guard: EXIT 0. Mobile-side expo-notifications init + getExpoPushTokenAsync + receipt handling are DEVICE-GATED (owner must run on simulator/device with push entitlement)."
+            "note": "BACKEND DONE (commits aee536b71 + matrix fix): user_push_tokens table (UNIQUE(token)) + UserPushTokenModel.upsertByToken + UserService.registerPushToken + POST /api/v1/protected/profile/push-token (rate-limited 20/min) + migration 0015_sticky_timeslip.sql + endpoint-gate-matrix row (CI guard the agent missed — fixed). 10 tests (6 service + 4 handler) + gate-matrix guard 798 green, drift EXIT 0. MOBILE SIDE STILL TODO (writable headless, build-verified; only the live push receipt is device-gated): expo-notifications install + app.json plugin + getExpoPushTokenAsync + POST via apiFetch on authed launch + foreground receipt handler. OWNER must apply migration 0015 on staging/prod (hops db-migrate)."
         },
         {
             "id": "T-012",
@@ -349,7 +348,7 @@
         "total": 13,
         "pending": 1,
         "inProgress": 1,
-        "completed": 12,
+        "completed": 11,
         "blocked": 0,
         "averageComplexity": 1.9
     }
