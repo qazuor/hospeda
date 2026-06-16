@@ -39,7 +39,7 @@
             "id": "T-002",
             "title": "Generate and apply structural migration for the new destination columns",
             "description": "Run `pnpm db:generate` to produce the migration adding `climate` + `weather_current`, commit the generated file under packages/db/src/migrations/, then `pnpm db:migrate` + `pnpm db:apply-extras`. Verify the drift guard passes (db:generate clean afterwards). Test: migration applies on a fresh DB without error; drift guard green.",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": ["T-006", "T-007"],
@@ -67,7 +67,7 @@
             "timestamps": {
                 "created": "2026-06-15T22:30:00.000Z",
                 "started": "2026-06-15T23:10:00.000Z",
-                "completed": null
+                "completed": "2026-06-16T02:00:00.000Z"
             }
         },
         {
@@ -171,7 +171,7 @@
             "id": "T-006",
             "title": "Include climate in destination service CRUD and remove silent-drop logic",
             "description": "In packages/service-core destination.service.ts: include `climate` in create/update/read mapping. Remove the silent-drop logic for the dead climate/bestSeason filters (~L330-344). Test: service create/update round-trips climate; reading returns it; unit tests in service-core test dir.",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-005", "T-002"],
             "blocks": ["T-016", "T-019", "T-021"],
@@ -199,7 +199,7 @@
             "timestamps": {
                 "created": "2026-06-15T22:30:00.000Z",
                 "started": "2026-06-15T23:10:00.000Z",
-                "completed": null
+                "completed": "2026-06-16T02:00:00.000Z"
             }
         },
         {
@@ -443,7 +443,7 @@
             "id": "T-014",
             "title": "Integration test for the public weather endpoint",
             "description": "apps/api integration test: cached destination returns current+forecast; destination without cache returns neutral 200; unknown id returns 404. Seed/mocked DB. Asserts response matches the public-tier schema (no leakage).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-013"],
             "blocks": [],
@@ -470,8 +470,8 @@
             },
             "timestamps": {
                 "created": "2026-06-15T22:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T02:00:00.000Z",
+                "completed": "2026-06-16T02:00:00.000Z"
             }
         },
         {
@@ -931,9 +931,9 @@
     ],
     "summary": {
         "total": 28,
-        "pending": 1,
-        "inProgress": 2,
-        "completed": 25,
+        "pending": 0,
+        "inProgress": 0,
+        "completed": 28,
         "blocked": 0,
         "averageComplexity": 2.3
     }
