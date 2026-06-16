@@ -39,7 +39,11 @@ import {
     publicEventOrganizerRoutes
 } from './event-organizer';
 import { adminFeatureRoutes, protectedFeatureRoutes, publicFeatureRoutes } from './feature';
-import { protectedGastronomyRoutes, publicGastronomyRoutes } from './gastronomy';
+import {
+    adminGastronomyRoutes,
+    protectedGastronomyRoutes,
+    publicGastronomyRoutes
+} from './gastronomy';
 import { protectedHostRoutes } from './host';
 import { protectedHostOnboardingRoutes } from './host-onboarding';
 import { adminHostTradeRoutes, protectedHostTradeRoutes } from './host-trade';
@@ -329,6 +333,8 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
         // Core entities
         app.route('/api/v1/admin/accommodations', adminAccommodationRoutes);
+        // Commerce listings: gastronomy (SPEC-239 T-045 / T-046)
+        app.route('/api/v1/admin/gastronomies', adminGastronomyRoutes);
         app.route('/api/v1/admin/destinations', adminDestinationRoutes);
         app.route('/api/v1/admin/events', adminEventRoutes);
 
