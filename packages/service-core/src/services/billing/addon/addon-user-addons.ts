@@ -12,6 +12,7 @@ import type { QueryContext } from '@repo/db';
 import { billingAddonPurchases } from '@repo/db/schemas';
 import { and, eq, isNull } from 'drizzle-orm';
 import { z } from 'zod';
+import { isAccommodationSubscription } from '../subscription/subscription-product-domain.js';
 import { AddonCatalogService } from './addon-catalog.service.js';
 import type { ServiceResult, UserAddon } from './addon.types.js';
 import { addonAdjustmentsArraySchema } from './addon.types.js';
@@ -177,8 +178,12 @@ async function parseMetadataAddons({
 }): Promise<readonly UserAddon[]> {
     const result: UserAddon[] = [];
 
+    // SPEC-239 T-034: filter to accommodation-domain subscriptions only.
+    // Treats null/undefined productDomain as 'accommodation' (legacy rows).
     const activeSubscription = subscriptions.find(
-        (sub) => sub.status === 'active' || sub.status === 'trialing'
+        (sub) =>
+            (sub.status === 'active' || sub.status === 'trialing') &&
+            isAccommodationSubscription(sub)
     );
 
     if (!activeSubscription) {

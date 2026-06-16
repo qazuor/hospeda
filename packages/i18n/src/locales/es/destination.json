@@ -220,5 +220,53 @@
             "services": "Servicios e infraestructura",
             "experienceSafety": "Experiencia y seguridad"
         }
+    },
+    "climate": {
+        "title": "Clima",
+        "seasonsTitle": "Clima por estación",
+        "bestSeason": "Mejor época para visitar",
+        "bestMonths": "Meses recomendados",
+        "approximate": "Valores aproximados",
+        "seasons": {
+            "spring": "Primavera",
+            "summer": "Verano",
+            "autumn": "Otoño",
+            "winter": "Invierno"
+        },
+        "fields": {
+            "avgTemp": "Temperatura promedio",
+            "minTemp": "Mín.",
+            "maxTemp": "Máx.",
+            "rainfall": "Precipitaciones"
+        },
+        "units": {
+            "celsius": "°C",
+            "mm": "mm"
+        }
+    },
+    "weather": {
+        "title": "Tiempo actual",
+        "feelsLike": "Sensación térmica",
+        "humidity": "Humedad",
+        "wind": "Viento",
+        "forecast": "Pronóstico a 16 días",
+        "unavailable": "Clima no disponible por el momento",
+        "conditions": {
+            "clear": "Despejado",
+            "mainlyClear": "Mayormente despejado",
+            "partlyCloudy": "Parcialmente nublado",
+            "overcast": "Nublado",
+            "fog": "Niebla",
+            "drizzle": "Llovizna",
+            "rain": "Lluvia",
+            "freezingRain": "Lluvia helada",
+            "snow": "Nieve",
+            "snowGrains": "Granos de nieve",
+            "rainShowers": "Chubascos",
+            "snowShowers": "Chubascos de nieve",
+            "thunderstorm": "Tormenta",
+            "thunderstormHail": "Tormenta con granizo",
+            "unknown": "No disponible"
+        }
     }
 }

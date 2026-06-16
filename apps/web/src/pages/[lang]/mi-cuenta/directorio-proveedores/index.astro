@@ -1,0 +1,260 @@
+---
+/**
+ * @file mi-cuenta/directorio-proveedores/index.astro
+ * @description Host trades directory page — lists admin-curated local service
+ * providers (tradespeople) that are useful to the authenticated host.
+ *
+ * Auth protection: middleware protects /mi-cuenta/* automatically; this page
+ * adds a safety-net guard as per the propiedades pattern.
+ *
+ * Data: fetched server-side by forwarding the session cookie to:
+ *   - GET /api/v1/protected/host-trades  (primary — owner-scoped trades)
+ *   - GET /api/v1/protected/accommodations  (secondary — only when trades is
+ *     empty, to disambiguate "no accommodations" vs "no trades yet")
+ *
+ * Empty-state disambiguation (AC-3.1/3.2):
+ *   - trades.length > 0  → render TradesDirectory island
+ *   - trades.length === 0 AND accommodations.length === 0
+ *                        → emptyState.noAccommodations
+ *   - trades.length === 0 AND accommodations.length > 0
+ *                        → emptyState.noTrades
+ *
+ * @route    /[lang]/mi-cuenta/directorio-proveedores/
+ * @rendering SSR (prerender = false — requires authenticated user)
+ */
+
+import type { HostTradePublic } from '@repo/schemas';
+import type { Accommodation } from '@repo/schemas';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildLoginRedirect } from '@/lib/middleware-helpers';
+import { getApiUrl } from '@/lib/env';
+import { webLogger as logger } from '@/lib/logger';
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import EmptyState from '@/components/shared/feedback/EmptyState.astro';
+import { TradesDirectory } from '@/components/host/host-trades/TradesDirectory.client';
+import { BuildingIcon } from '@repo/icons';
+
+export const prerender = false;
+
+// ---------------------------------------------------------------------------
+// Locale — injected by middleware, always a valid SupportedLocale.
+// ---------------------------------------------------------------------------
+
+const locale = Astro.locals.locale as SupportedLocale;
+
+// ---------------------------------------------------------------------------
+// Auth guard: middleware protects /mi-cuenta/* automatically, but this is the
+// safety net for any SSR edge case where middleware did not run.
+// ---------------------------------------------------------------------------
+
+const user = Astro.locals.user;
+if (!user) {
+    return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname }));
+}
+
+// ---------------------------------------------------------------------------
+// Server-side fetch: list trades visible to this host.
+// The protected endpoint filters by owner's accommodations server-side.
+// Session cookie is forwarded to authenticate the request.
+// ---------------------------------------------------------------------------
+
+let trades: readonly HostTradePublic[] = [];
+let fetchError = false;
+
+/** Resolved empty-state variant — only meaningful when trades is empty */
+let emptyVariant: 'noAccommodations' | 'noTrades' = 'noTrades';
+
+try {
+    const apiUrl = getApiUrl();
+    const cookieHeader = Astro.request.headers.get('cookie');
+
+    if (cookieHeader) {
+        const headers = {
+            cookie: cookieHeader,
+            Accept: 'application/json'
+        };
+
+        // Primary fetch: host trades
+        const tradesResponse = await fetch(`${apiUrl}/api/v1/protected/host-trades`, { headers });
+
+        if (tradesResponse.ok) {
+            const body = (await tradesResponse.json()) as {
+                success?: boolean;
+                data?: readonly HostTradePublic[];
+            };
+            trades = body.data ?? [];
+        } else {
+            fetchError = true;
+            logger.error('[directorio-proveedores] Trades API responded with status', tradesResponse.status);
+        }
+
+        // Secondary fetch (AC-3.1/3.2): only when trades is empty, to
+        // distinguish "host has no accommodations" from "no trades for host's area".
+        if (!fetchError && trades.length === 0) {
+            try {
+                const accomResponse = await fetch(
+                    `${apiUrl}/api/v1/protected/accommodations?pageSize=1`,
+                    { headers }
+                );
+
+                if (accomResponse.ok) {
+                    const accomBody = (await accomResponse.json()) as {
+                        data?: { items?: readonly Accommodation[] };
+                    };
+                    const hasAccommodations = (accomBody.data?.items?.length ?? 0) > 0;
+                    emptyVariant = hasAccommodations ? 'noTrades' : 'noAccommodations';
+                }
+                // If secondary fetch fails we default to 'noTrades' (non-critical)
+            } catch (secondaryErr) {
+                logger.error(
+                    '[directorio-proveedores] Secondary accommodations fetch failed',
+                    secondaryErr instanceof Error ? secondaryErr.message : String(secondaryErr)
+                );
+                // Keep emptyVariant = 'noTrades' as safe default
+            }
+        }
+    }
+} catch (err) {
+    fetchError = true;
+    logger.error(
+        '[directorio-proveedores] Failed to fetch host trades',
+        err instanceof Error ? err.message : String(err)
+    );
+}
+
+// ---------------------------------------------------------------------------
+// i18n
+// ---------------------------------------------------------------------------
+
+const { t } = createTranslations(locale);
+
+const title = t('host-trades.page.title', 'Directorio de proveedores');
+const subtitle = t('host-trades.page.subtitle', 'Proveedores locales de confianza para tu alojamiento');
+
+const isEmpty = trades.length === 0;
+---
+
+<AccountLayout
+    locale={locale}
+    title={title}
+    description={subtitle}
+    activeSection="directorio-proveedores"
+>
+    <!-- Page header -->
+    <div class="trades-page__header">
+        <div class="trades-page__heading">
+            <h2 class="trades-page__title">{title}</h2>
+            <p class="trades-page__subtitle">{subtitle}</p>
+        </div>
+    </div>
+
+    {fetchError ? (
+        <!-- Error state -->
+        <div class="trades-page__error" role="alert">
+            <p class="trades-page__error-title">
+                {t('host.properties.empty.fetchError', 'No se pudo cargar la lista. Intentá recargar la página.')}
+            </p>
+            <a href={Astro.url.pathname} class="trades-page__retry-btn">
+                {t('host.properties.error.retry', 'Reintentar')}
+            </a>
+        </div>
+    ) : !isEmpty ? (
+        <!-- Trades island — hydrates when browser is idle (content is below the fold) -->
+        <TradesDirectory
+            client:idle
+            trades={trades as HostTradePublic[]}
+            locale={locale}
+        />
+    ) : (
+        <!-- Empty state: disambiguated by secondary accommodations fetch -->
+        <EmptyState
+            locale={locale}
+            variant="empty"
+            message={t(`host-trades.emptyState.${emptyVariant}`, '')}
+            tone="warm"
+        >
+            <BuildingIcon size={56} weight="duotone" />
+        </EmptyState>
+    )}
+</AccountLayout>
+
+<style>
+    /* ── Page header ── */
+    .trades-page__header {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4, 1rem);
+        margin-bottom: var(--space-8, 2rem);
+    }
+
+    @media (min-width: 640px) {
+        .trades-page__header {
+            flex-direction: row;
+            align-items: flex-start;
+            justify-content: space-between;
+        }
+    }
+
+    .trades-page__heading {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .trades-page__title {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: clamp(1.5rem, 3vw, 2rem);
+        color: var(--core-foreground);
+        margin: 0;
+    }
+
+    .trades-page__subtitle {
+        font-family: var(--font-sans);
+        font-size: var(--text-body-sm, 0.9375rem);
+        color: var(--core-muted-foreground);
+        margin: 0;
+    }
+
+    /* ── Error state ── */
+    .trades-page__error {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--space-4, 1rem);
+        padding: var(--space-12, 3rem) var(--space-8, 2rem);
+        background-color: var(--core-card);
+        border: 1px solid oklch(0.85 0.05 25 / 0.4);
+        border-radius: var(--radius-card, 24px);
+        text-align: center;
+    }
+
+    .trades-page__error-title {
+        font-family: var(--font-sans);
+        font-size: var(--text-body, 1rem);
+        color: oklch(0.55 0.22 25);
+        margin: 0;
+    }
+
+    .trades-page__retry-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        padding: 0.625rem 1.25rem;
+        border-radius: var(--radius-pill, 9999px);
+        background-color: var(--brand-primary);
+        color: var(--primary-foreground, #ffffff);
+        font-family: var(--font-sans);
+        font-weight: 600;
+        font-size: 0.9375rem;
+        text-decoration: none;
+        white-space: nowrap;
+        transition: opacity 150ms ease-out;
+    }
+
+    .trades-page__retry-btn:hover {
+        opacity: 0.88;
+    }
+</style>

@@ -85,7 +85,13 @@ const ALLOWLIST = Object.freeze({
     'src/components/ShareButtons.module.css': 1,
     'src/components/shared/cards/EventCardFeatured.astro': 3,
     'src/components/account/CollectionCard.tsx': 3,
-    'src/components/account/SubscriptionDashboard.module.css': 2,
+    // SPEC-203: subtle primary/accent tints + a modal overlay on the plan-management
+    // surface. No precomputed alpha tokens exist (only --ring-a50), so these follow
+    // the same theme-adaptive oklch(from var(--token) ...) residual pattern as the
+    // other allowlisted account components.
+    'src/components/account/SubscriptionDashboard.module.css': 4,
+    'src/components/account/PlanChangeFlow.module.css': 1,
+    'src/components/account/PlanPicker.module.css': 4,
     // 500 error page: SVG fill uses `oklch(from ${destructiveColor} ...)` where
     // destructiveColor is interpolated in the Astro frontmatter at runtime.
     'src/pages/500.astro': 1

@@ -145,6 +145,14 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         description: 'Refresh ARS / USD / EUR exchange rates from upstream APIs.'
     },
     {
+        name: 'destination-weather-fetch',
+        displayName: 'Clima de destinos',
+        category: 'content',
+        schedule: '0 */12 * * *',
+        description:
+            'Refresh cached Open-Meteo weather (current + 16-day forecast) for published destinations with coordinates.'
+    },
+    {
         name: 'finalize-cancelled-subs',
         displayName: 'Finalizar suscripciones canceladas',
         category: 'billing',

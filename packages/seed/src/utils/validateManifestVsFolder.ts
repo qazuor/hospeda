@@ -32,7 +32,8 @@ const ENTITY_FOLDER_MAP: Record<string, string> = {
     sponsorshipPackages: 'sponsorshipPackage',
     rolePermissions: 'rolePermission',
     exchangeRates: 'exchangeRate',
-    exchangeRateConfig: 'exchangeRateConfig'
+    exchangeRateConfig: 'exchangeRateConfig',
+    hostTrades: 'hostTrade'
 };
 
 /**

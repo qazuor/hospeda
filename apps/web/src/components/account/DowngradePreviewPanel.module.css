@@ -1,0 +1,292 @@
+/* DowngradePreviewPanel.module.css */
+/* Scoped styles for the downgrade preview step of the plan-change flow. */
+/* Uses CSS custom properties (no Tailwind — web app convention). */
+
+.root {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5, 20px);
+    width: 100%;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.title {
+    font-family: var(--font-heading);
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--core-foreground);
+    margin: 0;
+}
+
+.intro {
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    color: var(--core-muted-foreground);
+    margin: 0;
+    line-height: 1.6;
+}
+
+/* ── Sections ──────────────────────────────────────────────────────────────── */
+
+.section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 12px);
+    padding: var(--space-4, 16px);
+    background-color: var(--core-card);
+    border: 1px solid var(--border, oklch(0.8 0 0));
+    border-radius: var(--radius-sm, 8px);
+}
+
+.sectionTitle {
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--core-foreground);
+    margin: 0;
+}
+
+.sectionHint {
+    font-family: var(--font-sans);
+    font-size: 0.82rem;
+    color: var(--core-muted-foreground);
+    margin: 0;
+    line-height: 1.5;
+}
+
+/* ── Over-cap warning ──────────────────────────────────────────────────────── */
+
+.overCapWarning {
+    font-family: var(--font-sans);
+    font-size: 0.82rem;
+    color: var(--destructive, oklch(0.55 0.22 25));
+    background-color: var(--destructive-a05);
+    border: 1px solid var(--destructive-a25);
+    border-radius: var(--radius-sm, 4px);
+    padding: var(--space-2, 8px) var(--space-3, 12px);
+    margin: 0;
+}
+
+/* ── Item list ─────────────────────────────────────────────────────────────── */
+
+.itemList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 8px);
+}
+
+.itemRow {
+    display: flex;
+    align-items: center;
+}
+
+.itemLabel {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 8px);
+    cursor: pointer;
+    width: 100%;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-foreground);
+}
+
+.itemCheckbox {
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+    accent-color: var(--primary, oklch(0.5 0.18 260));
+    cursor: pointer;
+}
+
+.itemCheckbox:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.itemName {
+    flex: 1;
+    line-height: 1.4;
+}
+
+.itemDefaultBadge {
+    display: inline-flex;
+    align-items: center;
+    padding: 1px var(--space-2, 8px);
+    border-radius: var(--radius-pill, 9999px);
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background-color: var(--brand-accent-a12);
+    color: var(--brand-accent, oklch(0.7 0.16 60));
+    border: 1px solid var(--brand-accent-a25);
+    flex-shrink: 0;
+}
+
+/* ── Photo sections ────────────────────────────────────────────────────────── */
+
+.photoAccommodation {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 8px);
+    padding: var(--space-3, 12px);
+    background-color: var(--core-background);
+    border-radius: var(--radius-sm, 4px);
+    border: 1px solid var(--border, oklch(0.8 0 0));
+}
+
+.photoAccName {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--core-foreground);
+    margin: 0;
+}
+
+.photoCountLabel {
+    font-weight: 400;
+    color: var(--core-muted-foreground);
+    font-size: 0.8rem;
+}
+
+.photoList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 4px);
+}
+
+.photoRow {
+    display: flex;
+    align-items: center;
+}
+
+.photoUrl {
+    font-size: 0.8rem;
+    color: var(--core-muted-foreground);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 300px;
+}
+
+/* ── Grandfather flags ─────────────────────────────────────────────────────── */
+
+.grandfatherRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3, 12px);
+    flex-wrap: wrap;
+    padding: var(--space-2, 8px) 0;
+    border-bottom: 1px solid var(--border, oklch(0.8 0 0));
+}
+
+.grandfatherRow:last-child {
+    border-bottom: none;
+}
+
+.grandfatherFlags {
+    display: flex;
+    gap: var(--space-2, 8px);
+    flex-wrap: wrap;
+}
+
+.grandfatherFlag {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px var(--space-2, 8px);
+    border-radius: var(--radius-pill, 9999px);
+    font-size: 0.72rem;
+    font-weight: 600;
+    background-color: var(--core-muted-foreground-a12);
+    color: var(--core-muted-foreground);
+    border: 1px solid var(--core-muted-foreground-a25);
+}
+
+/* ── Actions ───────────────────────────────────────────────────────────────── */
+
+.actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3, 12px);
+    padding-top: var(--space-3, 12px);
+    border-top: 1px solid var(--border, oklch(0.8 0 0));
+    flex-wrap: wrap;
+}
+
+.btnBack {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--space-2, 8px) var(--space-5, 20px);
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--core-muted-foreground);
+    background-color: transparent;
+    border: 1px solid var(--border, oklch(0.8 0 0));
+    border-radius: var(--radius-button, 8px);
+    cursor: pointer;
+    transition: border-color var(--duration-normal, 0.4s) ease, color var(--duration-normal, 0.4s)
+        ease;
+    min-height: 40px;
+}
+
+.btnBack:hover:not(:disabled) {
+    border-color: var(--core-foreground);
+    color: var(--core-foreground);
+}
+
+.btnBack:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btnBack:focus-visible {
+    outline: 2px solid var(--brand-accent);
+    outline-offset: 2px;
+}
+
+.btnConfirm {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--space-2, 8px) var(--space-5, 20px);
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: white;
+    background-color: var(--primary, oklch(0.5 0.18 260));
+    border: none;
+    border-radius: var(--radius-button, 8px);
+    cursor: pointer;
+    transition: opacity var(--duration-normal, 0.4s) ease;
+    min-height: 40px;
+}
+
+.btnConfirm:hover:not(:disabled) {
+    opacity: 0.85;
+}
+
+.btnConfirm:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btnConfirm:focus-visible {
+    outline: 2px solid var(--brand-accent);
+    outline-offset: 2px;
+}

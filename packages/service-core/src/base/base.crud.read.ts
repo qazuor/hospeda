@@ -271,7 +271,25 @@ export abstract class BaseCrudRead<
                 }
 
                 const relationsToUse = processedOptions.relations ?? this.getDefaultListRelations();
-                const whereClause = processedOptions.where ?? {};
+
+                // Soft-delete filtering (SPEC-230): by default exclude rows whose
+                // deletedAt is non-null, mirroring the adminList() path below. Only
+                // inject when the table has a deletedAt column, the caller did not opt
+                // in via includeDeleted, and the caller did not already specify
+                // deletedAt explicitly (explicit caller intent wins).
+                const whereClause: Record<string, unknown> = { ...(processedOptions.where ?? {}) };
+                // TYPE-WORKAROUND: Drizzle table reference object structurally matches Record<string, unknown> for dynamic column lookup; runtime safe via 'in' check. Guard against a missing table reference so the 'in' operator never receives undefined.
+                const listTableRecord = (this.model.getTable() ?? {}) as unknown as Record<
+                    string,
+                    unknown
+                >;
+                if (
+                    !processedOptions.includeDeleted &&
+                    'deletedAt' in listTableRecord &&
+                    !('deletedAt' in whereClause)
+                ) {
+                    whereClause.deletedAt = null;
+                }
 
                 const search = processedOptions.search;
                 let searchCondition: SQL | undefined;

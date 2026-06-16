@@ -1,5 +1,7 @@
 // Export all entity schemas
 export * from './accommodation/index.js';
+export * from './gastronomy/index.js';
+export * from './commerce-lead/index.js';
 export * from './ai/index.js';
 export * from './appLogEntry/index.js';
 export * from './conversation/index.js';
@@ -17,6 +19,7 @@ export * from './eventLocation/index.js';
 export * from './eventOrganizer/index.js';
 export * from './exchangeRate/index.js';
 export * from './feature/index.js';
+export * from './host-trade/index.js';
 export * from './newsletter/index.js';
 export * from './ownerPromotion/index.js';
 export * from './permission/index.js';

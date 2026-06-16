@@ -1,0 +1,14 @@
+{
+    "$schema": "../../../schemas/hostTrade.schema.json",
+    "id": "012-hostTrade-concordia-albanileria",
+    "name": "Albañilería y Reformas Concordia",
+    "slug": "albanileria-y-reformas-concordia",
+    "category": "ALBANILERIA",
+    "contact": "+54 9 3454 123456",
+    "benefit": "Presupuesto gratuito. 10% de descuento en reparaciones menores para alojamientos registrados en Hospeda.",
+    "destinationId": "003-destination-concordia",
+    "is24h": false,
+    "scheduleText": "Lunes a Viernes 7:00–17:00",
+    "isActive": true,
+    "createdById": "super-admin-user"
+}

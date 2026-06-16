@@ -1,0 +1,14 @@
+{
+    "$schema": "../../../schemas/hostTrade.schema.json",
+    "id": "017-hostTrade-federacion-pileta",
+    "name": "Piletas y Jardines del Litoral",
+    "slug": "piletas-y-jardines-del-litoral",
+    "category": "PILETA_JARDIN",
+    "contact": "+54 9 3456 345678",
+    "benefit": "Mantenimiento mensual de pileta con 20% de descuento para alojamientos registrados en Hospeda. Productos incluidos.",
+    "destinationId": "004-destination-federacion",
+    "is24h": false,
+    "scheduleText": "Martes, Jueves y Sábados 8:00–14:00",
+    "isActive": true,
+    "createdById": "super-admin-user"
+}

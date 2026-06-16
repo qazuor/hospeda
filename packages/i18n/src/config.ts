@@ -74,7 +74,9 @@ export const namespaces = [
     // Content moderation (SPEC-195)
     'content-moderation',
     // AI Natural-Language Search (SPEC-199)
-    'aiSearch'
+    'aiSearch',
+    // Host trades directory (SPEC-241)
+    'host-trades'
 ] as const;
 
 export type Namespace = (typeof namespaces)[number];
@@ -156,6 +158,7 @@ import faqEs from './locales/es/faq.json';
 import fieldsEs from './locales/es/fields.json';
 import footerEs from './locales/es/footer.json';
 import homeEs from './locales/es/home.json';
+import hostTradesEs from './locales/es/host-trades.json';
 import hostEs from './locales/es/host.json';
 import mapsEs from './locales/es/maps.json';
 import navEs from './locales/es/nav.json';
@@ -209,6 +212,7 @@ import faqEn from './locales/en/faq.json';
 import fieldsEn from './locales/en/fields.json';
 import footerEn from './locales/en/footer.json';
 import homeEn from './locales/en/home.json';
+import hostTradesEn from './locales/en/host-trades.json';
 import hostEn from './locales/en/host.json';
 import mapsEn from './locales/en/maps.json';
 import navEn from './locales/en/nav.json';
@@ -262,6 +266,7 @@ import faqPt from './locales/pt/faq.json';
 import fieldsPt from './locales/pt/fields.json';
 import footerPt from './locales/pt/footer.json';
 import homePt from './locales/pt/home.json';
+import hostTradesPt from './locales/pt/host-trades.json';
 import hostPt from './locales/pt/host.json';
 import mapsPt from './locales/pt/maps.json';
 import navPt from './locales/pt/nav.json';
@@ -305,6 +310,7 @@ const rawTranslations = {
         footer: footerEs,
         home: homeEs,
         host: hostEs,
+        'host-trades': hostTradesEs,
         nav: navEs,
         newsletter: newsletterEs,
         owners: ownersEs,
@@ -358,6 +364,7 @@ const rawTranslations = {
         footer: footerEn,
         home: homeEn,
         host: hostEn,
+        'host-trades': hostTradesEn,
         nav: navEn,
         newsletter: newsletterEn,
         owners: ownersEn,
@@ -411,6 +418,7 @@ const rawTranslations = {
         footer: footerPt,
         home: homePt,
         host: hostPt,
+        'host-trades': hostTradesPt,
         nav: navPt,
         newsletter: newsletterPt,
         owners: ownersPt,

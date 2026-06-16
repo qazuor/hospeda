@@ -10,6 +10,7 @@ import { seedEntityTagAssignments } from './entityTagAssignments.seed.js';
 import { seedEventLocations } from './eventLocations.seed.js';
 import { seedEventOrganizers } from './eventOrganizers.seed.js';
 import { seedEvents } from './events.seed.js';
+import { seedHostTrades } from './hostTrades.seed.js';
 import { seedPostSponsors } from './postSponsors.seed.js';
 import { seedPostSponsorships } from './postSponsorships.seed.js';
 import { seedPostTagAssignments } from './postTagAssignments.seed.js';
@@ -81,6 +82,7 @@ export async function runExampleSeeds(context: SeedContext): Promise<void> {
         await seedPostSponsorships(context);
         await seedDestinationReviews(context);
         await seedAccommodationReviews(context);
+        await seedHostTrades(context);
         await seedUserBookmarkCollections(context);
         await seedBookmarks(context);
         context.actor = oldContextActor;

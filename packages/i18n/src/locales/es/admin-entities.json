@@ -90,6 +90,11 @@
             "singular": "Registro",
             "plural": "Registros de aplicación",
             "description": "Registros de eventos WARN y ERROR emitidos por los servicios del sistema"
+        },
+        "hostTrade": {
+            "singular": "Oficio",
+            "plural": "Oficios",
+            "description": "Directorio de proveedores de servicios para anfitriones"
         }
     },
     "columns": {
@@ -182,6 +187,11 @@
         "banExpires": "Baneo Expira",
         "avatar": "Avatar",
         "views30d": "Vistas (30d)",
+        "contact": "Contacto",
+        "is24h": "Disponible 24h",
+        "active": "Activo",
+        "benefit": "Beneficio",
+        "scheduleText": "Horario",
         "appLog": {
             "loggedAt": "Fecha/Hora",
             "level": "Nivel",

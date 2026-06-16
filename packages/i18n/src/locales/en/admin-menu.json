@@ -75,6 +75,10 @@
         "activity": "Activity",
         "edit": "Edit"
     },
+    "platform": {
+        "title": "Platform",
+        "hostTrades": "Trades Directory"
+    },
     "sponsors": "Sponsors",
     "analytics": {
         "title": "Analytics",

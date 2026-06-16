@@ -9,7 +9,11 @@ import type {
     AccommodationImportResponse,
     AccommodationReviewListItem,
     DestinationReviewListItem,
+    DowngradePreview,
+    KeepSelections,
+    PlanChangeResponse,
     UserBookmark,
+    UserCancelSubscriptionResponse,
     UserProtected,
     UserPublic
 } from '@repo/schemas';
@@ -196,6 +200,8 @@ type SubscriptionStatus = 'active' | 'trial' | 'cancelled' | 'expired' | 'past_d
 
 /** Subscription data returned by the protected subscription endpoint */
 export interface SubscriptionData {
+    /** Subscription id — required to call the cancel/plan-change endpoints. */
+    readonly id: string;
     readonly planSlug: string;
     readonly planName: string;
     readonly status: SubscriptionStatus;
@@ -212,6 +218,35 @@ export interface SubscriptionData {
     } | null;
     readonly gracePeriodDaysRemaining?: number | null;
     readonly gracePeriodExpiresAt?: string | null;
+    /**
+     * Pending scheduled plan change (downgrade), if any.
+     *
+     * Present when the host scheduled a downgrade via `billingApi.changePlan` and
+     * it has not yet been applied. The backend (`GET /protected/users/me/subscription`)
+     * returns this field (null when no pending change). The UI treats a null/absent
+     * value as "no scheduled change" and skips the banner render.
+     *
+     * Field names match the `QZPayScheduledPlanChange` shape stored by QZPay:
+     * `newPlanId` is the target plan ID and `effectiveAt` is an ISO 8601 datetime
+     * for when the change will be applied (typically `currentPeriodEnd`).
+     */
+    readonly scheduledPlanChange?: {
+        readonly newPlanId: string;
+        readonly effectiveAt: string;
+    } | null;
+    /**
+     * Restriction preview computed at downgrade-schedule time (SPEC-167 / SPEC-203).
+     *
+     * Populated by `billingApi.changePlan` in the `status === 'scheduled'` response
+     * branch (`PlanChangeAppliedResponse.restrictionPreview`). The UI should persist
+     * this alongside the scheduled-change state so the dashboard can render the
+     * "here is what gets restricted" notice without an extra API call.
+     *
+     * The backend does not return this on the subscription endpoint — this field
+     * exists so the UI layer can attach the preview after a changePlan call and
+     * display it in the downgrade-scheduled banner.
+     */
+    readonly restrictionPreview?: DowngradePreview | null;
 }
 
 /** Protected user API endpoints */
@@ -406,45 +441,113 @@ export const billingApi = {
     /**
      * Request a plan change for the authenticated user's subscription.
      *
-     * @param params - Target plan ID and billing interval
-     * @returns Whether the plan change was accepted
+     * For upgrades, the response may have `status === 'pending_payment'` with a
+     * `checkoutUrl` the client must redirect to (SPEC-141 D7).
+     * For downgrades, the response will have `status === 'scheduled'` and may
+     * include a `restrictionPreview` so the UI can render a "what gets restricted"
+     * notice (SPEC-167 / SPEC-203).
+     *
+     * An idempotency key is sent automatically on every call so that network-level
+     * retries are safe (the server deduplicates by key). Each logical user action
+     * should result in a fresh `changePlan` call (a new UUID is generated per call).
+     *
+     * @param params - Target plan ID, billing interval, and optional keep selections
+     * @returns Discriminated-union response: active | scheduled | pending_payment
      *
      * @example
      * ```ts
      * const result = await billingApi.changePlan({ newPlanId: 'plan-uuid', billingInterval: 'monthly' });
+     * if (result.ok && result.data.status === 'scheduled') {
+     *   console.log(result.data.restrictionPreview);
+     * }
      * ```
      */
     changePlan({
         newPlanId,
-        billingInterval
+        billingInterval,
+        keepSelections
     }: {
         readonly newPlanId: string;
         readonly billingInterval: string;
-    }): Promise<ApiResult<{ readonly success: boolean }>> {
+        readonly keepSelections?: KeepSelections;
+    }): Promise<ApiResult<PlanChangeResponse>> {
         return apiClient.postProtected({
             path: `${PROTECTED}/billing/subscriptions/change-plan`,
-            body: { newPlanId, billingInterval }
+            body:
+                keepSelections !== undefined
+                    ? { newPlanId, billingInterval, keepSelections }
+                    : { newPlanId, billingInterval },
+            headers: { 'X-Idempotency-Key': crypto.randomUUID() }
         });
     },
 
     /**
-     * Cancel the authenticated user's current subscription.
+     * Soft-cancel the authenticated user's current subscription (SPEC-147).
      *
-     * @param params - Subscription ID to cancel
-     * @returns Whether the cancellation succeeded
+     * Sets `cancelAtPeriodEnd = true` on the subscription. The user retains
+     * full access to their plan entitlements until `accessUntil` (the current
+     * period end). The subscription status remains `active`; the finalization
+     * cron flips it to `cancelled` after the period ends.
+     *
+     * This calls `POST /subscriptions/:id/cancel` (the SPEC-147 soft-cancel
+     * endpoint), NOT `DELETE /subscriptions/:id` (the hard-cancel / QZPay
+     * internal endpoint that is not exposed to end users).
+     *
+     * @param params - Subscription ID and optional free-text cancellation reason
+     * @returns Soft-cancel confirmation with accessUntil date
      *
      * @example
      * ```ts
-     * const result = await billingApi.cancelSubscription({ subscriptionId: 'sub-uuid' });
+     * const result = await billingApi.cancelSubscription({ subscriptionId: 'sub-uuid', reason: 'Too expensive' });
+     * if (result.ok) console.log('Access until:', result.data.accessUntil);
      * ```
      */
     cancelSubscription({
-        subscriptionId
+        subscriptionId,
+        reason
     }: {
         readonly subscriptionId: string;
-    }): Promise<ApiResult<{ readonly success: boolean }>> {
-        return apiClient.delete({
-            path: `${PROTECTED}/billing/subscriptions/${subscriptionId}`
+        readonly reason?: string;
+    }): Promise<ApiResult<UserCancelSubscriptionResponse>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/billing/subscriptions/${subscriptionId}/cancel`,
+            body: { reason }
+        });
+    },
+
+    /**
+     * Preview the restrictions that would apply if the host downgrades to a given plan.
+     *
+     * Returns a structured excess report covering:
+     * - `accommodations` — active accommodations over the target plan cap.
+     * - `promotions` — active promotions over the target plan cap.
+     * - `photos` — per-accommodation gallery overflow entries.
+     * - `grandfatherFlags` — informational flags for rich/video content that
+     *   becomes read-only under the target plan (no data is removed).
+     * - `hasExcess` — convenience flag; `true` when any dimension has excess.
+     *
+     * The host can use this preview to decide which items to keep active by
+     * passing explicit `keepSelections` to `billingApi.changePlan`.
+     *
+     * @param params - Billing catalog slug of the plan to preview downgrading to
+     * @returns Structured excess preview for the given target plan
+     *
+     * @example
+     * ```ts
+     * const result = await billingApi.previewDowngrade({ targetPlan: 'owner-basico' });
+     * if (result.ok && result.data.hasExcess) {
+     *   console.log('Accommodations to restrict:', result.data.accommodations.excessCount);
+     * }
+     * ```
+     */
+    previewDowngrade({
+        targetPlan
+    }: {
+        readonly targetPlan: string;
+    }): Promise<ApiResult<DowngradePreview>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/billing/subscriptions/downgrade-preview`,
+            params: { targetPlan }
         });
     },
 
