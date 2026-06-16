@@ -26,18 +26,22 @@
             "id": "T-002",
             "title": "Configure Metro + Biome for monorepo internal packages (@repo/schemas, @repo/i18n)",
             "description": "Make Metro resolve internal workspace packages (@repo/schemas, @repo/i18n) — path aliases / symlink resolution in metro.config.js as needed. Confirm eager locale-JSON import bundle size is acceptable (ADR-033 decision 5); fall back to lazy-by-locale only if size is unacceptable.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": ["T-003"],
             "subtasks": [
-                { "title": "Metro resolves @repo/schemas + @repo/i18n", "completed": false },
-                { "title": "Measure eager locale bundle size; document result", "completed": false }
+                { "title": "Metro resolves @repo/schemas + @repo/i18n", "completed": true },
+                { "title": "Measure eager locale bundle size; document result", "completed": true }
             ],
             "tags": ["scaffold", "metro", "i18n"],
             "phase": "scaffold",
-            "qualityGate": { "lint": "pending", "typecheck": "pending", "tests": "pending" },
-            "timestamps": { "created": "2026-06-15T00:00:00.000Z" }
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-06-15T00:00:00.000Z",
+                "started": "2026-06-15T00:00:00.000Z",
+                "completed": "2026-06-15T00:00:00.000Z"
+            }
         },
         {
             "id": "T-003",
@@ -220,9 +224,9 @@
     ],
     "summary": {
         "total": 13,
-        "pending": 12,
+        "pending": 11,
         "inProgress": 0,
-        "completed": 1,
+        "completed": 2,
         "blocked": 0,
         "averageComplexity": 1.9
     }
