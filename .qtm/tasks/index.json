@@ -608,9 +608,12 @@
         {
             "specId": "SPEC-238",
             "title": "Reduce apps/api per-file test cold-import overhead (~9% suite speedup)",
-            "status": "draft",
-            "progress": "0/0",
-            "path": "SPEC-238-api-test-cold-import-perf"
+            "status": "completed",
+            "progress": "10/10",
+            "path": "SPEC-238-api-test-cold-import-perf",
+            "archived": true,
+            "archivedAt": "2026-06-16T01:29:32Z",
+            "archiveNote": "Shipped Sentry mock (PR #1685, -18% local, beats ~9% 2x); service-core ...actual lever deferred (4 tasks cancelled): ~58 symbols/~50 files, no subpath exports, AC#3 risk, not worth it for P3. CI runner re-measure authoritative."
         },
         {
             "specId": "SPEC-198",

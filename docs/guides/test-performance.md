@@ -77,6 +77,37 @@ See SPEC-188 spec.md §3 for full analysis and the Track B plan.
 
 ---
 
+## SPEC-238 — apps/api Sentry mock (2026-06-16)
+
+SPEC-238 extracted the "B2" cold-import lever from SPEC-188. The shared vitest
+config (above) already shipped; the remaining win came from mocking Sentry.
+
+`@sentry/node` loads a native `.node` addon and `@sentry/profiling-node` pulls
+`nodeProfilingIntegration`; both were paid once per test file during collect.
+A global `vi.mock` for both lives in `apps/api/test/setup.ts`. `startSpan`
+executes its callback so span-wrapped logic still runs; `isEnabled` returns
+`false` to mirror the uninitialized test env. Tests asserting on Sentry calls
+override it per-file.
+
+| Metric  | BEFORE (no mock) | AFTER (mock) | Δ      |
+|---------|------------------|--------------|--------|
+| Wall    | 742.4s           | 607.1s       | −18.2% |
+| collect | 1914.6s          | 1526.3s      | −20.3% |
+
+(2 clean consecutive local runs, 385 files / 6648 tests, identical pass/skip
+counts. Local proxy — the authoritative number is the self-hosted CI runner.)
+
+### Deferred: the service-core `...actual` lever
+
+The global `vi.mock('@repo/service-core')` still calls `importOriginal()` and
+spreads `...actual`, cold-importing the real package per file. Dropping it would
+require re-supplying ~58 real value symbols (21 service classes, 32 functions,
+4 consts, 1 enum) across ~50 test files via local `importOriginal`, because
+`@repo/service-core` exposes no subpath exports (helpers can't be imported
+cheaply, and stubbing them would mask real contracts — AC#3). Since the Sentry
+mock already beats the ~9% goal 2×, this lever is deferred as not cost-effective
+for a P3. Re-open if CI shows the Sentry mock underperforms on the runner.
+
 ## Env Knobs Reference
 
 | Var | Default | Where set | Effect |
