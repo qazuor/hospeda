@@ -558,53 +558,61 @@ describe('BaseCommerceListingService — recomputeRating', () => {
 // ---------------------------------------------------------------------------
 
 describe('BaseCommerceListingService — _executeAdminSearch owner-scoping', () => {
-    it('should NOT override ownerId when actor holds COMMERCE_VIEW_ALL', async () => {
+    // Extracts the merged `where` passed to whichever list method the base
+    // invoked (findAll or findAllWithRelations) — unconditional, no guard.
+    const mergedWhereOf = (model: ReturnType<typeof makeModel>): Record<string, unknown> => {
+        // findAllWithRelations(relations, mergedWhere, ...) → where is arg[1];
+        // findAll(mergedWhere, ...) → where is arg[0].
+        const fwr = (model.findAllWithRelations as Mock).mock.calls[0];
+        if (fwr) {
+            return (fwr[1] ?? {}) as Record<string, unknown>;
+        }
+        const fa = (model.findAll as Mock).mock.calls[0];
+        if (fa) {
+            return (fa[0] ?? {}) as Record<string, unknown>;
+        }
+        throw new Error('neither findAll nor findAllWithRelations was called');
+    };
+
+    it('does NOT force ownerId when actor holds the VIEW_ALL permission', async () => {
         const { svc, model } = makeService();
-        model.findAll.mockResolvedValue({ items: [], total: 0 });
 
         const adminActor = makeActor([PermissionEnum.COMMERCE_VIEW_ALL], OWNER_ID);
-        const params: AdminSearchExecuteParams<Record<string, unknown>> = {
+        await svc._executeAdminSearch({
             where: {},
             entityFilters: { ownerId: 'another-user-id' },
             pagination: { page: 1, pageSize: 10 },
             sort: { sortBy: 'createdAt', sortOrder: 'desc' },
             actor: adminActor
-        };
+        });
 
-        await svc._executeAdminSearch(params);
-
-        // model.findAll should be called (the exact merge of where+entityFilters)
-        // We verify that 'ownerId' is NOT forced to actor.id
-        const callArgs = (model.findAll as Mock).mock.calls[0] ?? [];
-        const whereArg = callArgs[0] as Record<string, unknown> | undefined;
-        if (whereArg !== undefined) {
-            expect(whereArg.ownerId).not.toBe(adminActor.id);
-        }
+        // VIEW_ALL → unscoped: the caller-supplied ownerId is preserved, NOT
+        // overwritten with the actor's id.
+        expect(mergedWhereOf(model).ownerId).toBe('another-user-id');
     });
 
-    it('should force ownerId=actor.id when actor lacks COMMERCE_VIEW_ALL', async () => {
+    it('forces ownerId=actor.id when actor holds only the owner-scoped permission', async () => {
         const { svc, model } = makeService();
-        model.findAll.mockResolvedValue({ items: [], total: 0 });
 
-        // Actor with no VIEW_ALL — only VIEW_OWN scenario (no special perm here)
-        const limitedActor = makeActor([], OWNER_ID);
-        const params: AdminSearchExecuteParams<Record<string, unknown>> = {
+        // Until a dedicated COMMERCE_*_VIEW_OWN enum value exists, override the
+        // owner-scoped permission to a distinct value so the scoping predicate
+        // (!hasViewAll && hasViewOwn) actually engages and can be asserted.
+        Object.defineProperty(svc, '_viewOwnPermission', {
+            get: () => PermissionEnum.COMMERCE_SCHEDULE_EDIT_OWN,
+            configurable: true
+        });
+
+        const ownerActor = makeActor([PermissionEnum.COMMERCE_SCHEDULE_EDIT_OWN], OWNER_ID);
+        await svc._executeAdminSearch({
             where: {},
             entityFilters: {},
             pagination: { page: 1, pageSize: 10 },
             sort: { sortBy: 'createdAt', sortOrder: 'desc' },
-            actor: limitedActor
-        };
+            actor: ownerActor
+        });
 
-        await svc._executeAdminSearch(params);
-
-        // The scoped params should have ownerId forced to actor.id
-        // (validated via the findAll call receiving the merged filters)
-        const callArgs = (model.findAll as Mock).mock.calls[0] ?? [];
-        const whereArg = callArgs[0] as Record<string, unknown> | undefined;
-        if (whereArg !== undefined) {
-            expect(whereArg.ownerId).toBe(limitedActor.id);
-        }
+        // VIEW_OWN only → scoped: ownerId is forced to the actor's id.
+        expect(mergedWhereOf(model).ownerId).toBe(ownerActor.id);
     });
 });
 

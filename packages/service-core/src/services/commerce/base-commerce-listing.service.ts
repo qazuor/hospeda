@@ -205,6 +205,20 @@ export abstract class BaseCommerceListingService<
         return PermissionEnum.COMMERCE_VIEW_ALL;
     }
 
+    /**
+     * The VIEW_OWN permission that grants owner-scoped listing access.
+     *
+     * Defaults to {@link _viewAllPermission} so that, until a dedicated
+     * owner-scoped permission exists, the owner-scoping predicate is a safe
+     * no-op (an actor only reaches `_executeAdminSearch` after the admin-list
+     * gate has already required VIEW_ALL). Override in subclasses once a
+     * dedicated `COMMERCE_*_VIEW_OWN` permission is introduced — the scoping
+     * predicate then becomes correct by construction with no further changes.
+     */
+    protected get _viewOwnPermission(): PermissionEnum {
+        return this._viewAllPermission;
+    }
+
     // -----------------------------------------------------------------------
     // Public-tier projections — override in subclasses when needed
     // -----------------------------------------------------------------------
@@ -480,12 +494,14 @@ export abstract class BaseCommerceListingService<
         params: AdminSearchExecuteParams<Record<string, unknown>>
     ): Promise<PaginatedListOutput<TEntity>> {
         // Force owner-scoping for actors that hold VIEW_OWN but NOT VIEW_ALL.
-        // Currently COMMERCE_VIEW_ALL is the only gate; this logic is forward-
-        // compatible when per-entity VIEW_OWN perms are added — subclasses
-        // can override `_viewAllPermission` to return the entity-specific perm.
+        // Correct by construction: an actor with the all-listings permission is
+        // never scoped; one that only holds the owner-scoped permission is forced
+        // to its own `ownerId`. Until a dedicated owner-scoped permission exists
+        // `_viewOwnPermission` defaults to `_viewAllPermission`, making this a safe
+        // no-op (the admin-list gate already requires VIEW_ALL upstream).
         const ownerScoped =
             !hasPermission(params.actor, this._viewAllPermission) &&
-            hasPermission(params.actor, PermissionEnum.COMMERCE_VIEW_ALL);
+            hasPermission(params.actor, this._viewOwnPermission);
 
         const scopedParams: AdminSearchExecuteParams<Record<string, unknown>> = ownerScoped
             ? {
