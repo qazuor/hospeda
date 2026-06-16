@@ -13,8 +13,11 @@
  * inserted verbatim into the path:
  *
  * ```
- * https://api.apify.com/v2/acts/<owner>/<actor-name>/run-sync-get-dataset-items?token=…
+ * https://api.apify.com/v2/acts/<owner>/<actor-name>/run-sync-get-dataset-items
  * ```
+ *
+ * The API token is sent in an `Authorization: Bearer` header, never as a query
+ * parameter, so it cannot leak through access logs, proxies, or error traces.
  *
  * The `~` tilde alternative form (`owner~actor-name`) is also accepted by the
  * Apify API and avoids any encoding ambiguity, but verbatim slash insertion
@@ -59,9 +62,10 @@ export interface RunApifyActorInput {
 /**
  * Runs an Apify actor synchronously and returns the full dataset items array.
  *
- * Calls `POST https://api.apify.com/v2/acts/{actor}/run-sync-get-dataset-items?token={token}`
- * where `{actor}` is the raw slug (slash preserved as path separator).  The
- * request body is `actorInput` serialised as JSON.
+ * Calls `POST https://api.apify.com/v2/acts/{actor}/run-sync-get-dataset-items`
+ * where `{actor}` is the raw slug (slash preserved as path separator) and the
+ * token travels in an `Authorization: Bearer` header.  The request body is
+ * `actorInput` serialised as JSON.  Returns `[]` for a malformed actor slug.
  *
  * The `run-sync-get-dataset-items` endpoint blocks until the actor run
  * finishes and streams back the dataset as a top-level JSON array, so the
@@ -87,14 +91,30 @@ export interface RunApifyActorInput {
  * // items: unknown[]  — each element is one dataset record
  * ```
  */
+/**
+ * Apify actor slug shape: `owner/actor-name`, each part limited to safe slug
+ * characters. Validated before path interpolation as defence-in-depth — even
+ * though `actor` is operator-controlled (env var), this prevents a malformed
+ * value from altering the request path or injecting query/path segments.
+ */
+const APIFY_ACTOR_SLUG_RE = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
+
 export async function runApifyActor(input: RunApifyActorInput): Promise<unknown[]> {
     const { token, actor, actorInput, timeoutMs } = input;
+
+    // Defence-in-depth: reject any actor slug that is not a clean owner/name
+    // pair before interpolating it into the request path.
+    if (!APIFY_ACTOR_SLUG_RE.test(actor)) {
+        return [];
+    }
 
     // Build the URL.  The actor slug (e.g. "apify/airbnb-scraper") contains a
     // literal "/" that acts as a path separator in the Apify REST API — it is
     // NOT percent-encoded.  Constructing the string directly gives the correct
     // two-segment path /v2/acts/owner/actor-name/run-sync-get-dataset-items.
-    const url = `https://api.apify.com/v2/acts/${actor}/run-sync-get-dataset-items?token=${token}`;
+    // The token is sent as an Authorization header (NOT a query param) so it
+    // never leaks into logs, proxies, or error messages.
+    const url = `https://api.apify.com/v2/acts/${actor}/run-sync-get-dataset-items`;
 
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -102,7 +122,10 @@ export async function runApifyActor(input: RunApifyActorInput): Promise<unknown[
     try {
         const response = await fetch(url, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`
+            },
             body: JSON.stringify(actorInput),
             signal: controller.signal
         });

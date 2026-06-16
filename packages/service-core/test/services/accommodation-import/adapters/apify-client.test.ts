@@ -130,7 +130,7 @@ describe('runApifyActor', () => {
             expect(calledUrl).not.toContain('%2F');
         });
 
-        it('should include the token as a query parameter', async () => {
+        it('should send the token as an Authorization header, never in the URL', async () => {
             // Arrange
             const mockFetch = mockFetchOk([]);
             vi.stubGlobal('fetch', mockFetch);
@@ -138,9 +138,26 @@ describe('runApifyActor', () => {
             // Act
             await runApifyActor(makeInput({ token: 'my-secret-token' }));
 
-            // Assert
+            // Assert — token rides in the header, not the query string (no leak)
             const calledUrl = mockFetch.mock.calls[0]?.[0] as string;
-            expect(calledUrl).toContain('token=my-secret-token');
+            expect(calledUrl).not.toContain('my-secret-token');
+            expect(calledUrl).not.toContain('token=');
+            const init = mockFetch.mock.calls[0]?.[1] as RequestInit;
+            const headers = init.headers as Record<string, string>;
+            expect(headers.Authorization).toBe('Bearer my-secret-token');
+        });
+
+        it('should return [] for a malformed actor slug without calling fetch', async () => {
+            // Arrange
+            const mockFetch = mockFetchOk([]);
+            vi.stubGlobal('fetch', mockFetch);
+
+            // Act — no owner/name shape
+            const result = await runApifyActor(makeInput({ actor: 'not-a-valid-slug' }));
+
+            // Assert
+            expect(result).toEqual([]);
+            expect(mockFetch).not.toHaveBeenCalled();
         });
 
         it('should send the actor input as a JSON POST body', async () => {
