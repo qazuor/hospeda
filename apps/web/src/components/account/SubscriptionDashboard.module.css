@@ -494,6 +494,36 @@
     max-width: 360px;
 }
 
+/* ── Scheduled plan-change banner ──────────────────────────────────────────── */
+
+.scheduledChangeBanner {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-3, 12px);
+    padding: var(--space-4, 16px);
+    background-color: var(--brand-accent-a12, oklch(from var(--brand-accent, oklch(0.7 0.16 60)) l c h / 0.12));
+    border: 1px solid var(--brand-accent-a30, oklch(from var(--brand-accent, oklch(0.7 0.16 60)) l c h / 0.30));
+    border-radius: var(--radius-sm, 8px);
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    color: var(--core-foreground);
+    line-height: 1.5;
+}
+
+.scheduledChangeBannerTitle {
+    font-weight: 600;
+    color: var(--brand-accent, oklch(0.7 0.16 60));
+    margin: 0 0 var(--space-1, 4px);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.scheduledChangeBannerBody {
+    margin: 0;
+    color: var(--core-foreground);
+}
+
 /* ── Error state ───────────────────────────────────────────────────────────── */
 
 .errorContainer {

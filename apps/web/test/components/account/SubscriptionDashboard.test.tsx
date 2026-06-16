@@ -141,6 +141,19 @@ const MOCK_INVOICE = {
     pdfUrl: 'https://example.com/invoice-1.pdf'
 };
 
+const SUBSCRIPTION_WITH_SCHEDULED_CHANGE = {
+    ...ACTIVE_SUBSCRIPTION,
+    scheduledPlanChange: {
+        newPlanId: 'basic',
+        effectiveAt: '2026-05-01T00:00:00Z'
+    }
+};
+
+const SUBSCRIPTION_WITHOUT_SCHEDULED_CHANGE = {
+    ...ACTIVE_SUBSCRIPTION,
+    scheduledPlanChange: null
+};
+
 /** API response returned by a successful cancelSubscription call */
 const CANCEL_SUCCESS_RESPONSE = {
     subscriptionId: 'sub-uuid-1',
@@ -714,5 +727,75 @@ describe('SubscriptionDashboard — invoice download', () => {
         await waitFor(() => {
             expect(mockAddToast).toHaveBeenCalledWith(expect.objectContaining({ type: 'info' }));
         });
+    });
+});
+
+describe('SubscriptionDashboard — scheduled plan-change banner (T-004)', () => {
+    it('renders the scheduled-change banner when scheduledPlanChange is set', async () => {
+        mockGetSubscription.mockResolvedValue({
+            ok: true,
+            data: { subscription: SUBSCRIPTION_WITH_SCHEDULED_CHANGE }
+        });
+        mockListInvoices.mockResolvedValue({
+            ok: true,
+            data: { items: [], pagination: { page: 1, pageSize: 1, total: 0, totalPages: 0 } }
+        });
+
+        renderDashboard();
+
+        await waitFor(() => {
+            expect(
+                screen.getByRole('note', { name: /cambio de plan programado/i })
+            ).toBeInTheDocument();
+        });
+    });
+
+    it('banner body includes the plan id and formatted date', async () => {
+        mockGetSubscription.mockResolvedValue({
+            ok: true,
+            data: { subscription: SUBSCRIPTION_WITH_SCHEDULED_CHANGE }
+        });
+        mockListInvoices.mockResolvedValue({
+            ok: true,
+            data: { items: [], pagination: { page: 1, pageSize: 1, total: 0, totalPages: 0 } }
+        });
+
+        renderDashboard();
+
+        await waitFor(() => {
+            const banner = screen.getByRole('note', { name: /cambio de plan programado/i });
+            // Should mention the plan id
+            expect(banner).toHaveTextContent('basic');
+        });
+    });
+
+    it('does not render the banner when scheduledPlanChange is null', async () => {
+        mockGetSubscription.mockResolvedValue({
+            ok: true,
+            data: { subscription: SUBSCRIPTION_WITHOUT_SCHEDULED_CHANGE }
+        });
+        mockListInvoices.mockResolvedValue({
+            ok: true,
+            data: { items: [], pagination: { page: 1, pageSize: 1, total: 0, totalPages: 0 } }
+        });
+
+        renderDashboard();
+
+        await waitForLoaded();
+
+        expect(
+            screen.queryByRole('note', { name: /cambio de plan programado/i })
+        ).not.toBeInTheDocument();
+    });
+
+    it('does not render the banner when scheduledPlanChange field is absent', async () => {
+        mockSubscriptionSuccess(ACTIVE_SUBSCRIPTION);
+        renderDashboard();
+
+        await waitForLoaded();
+
+        expect(
+            screen.queryByRole('note', { name: /cambio de plan programado/i })
+        ).not.toBeInTheDocument();
     });
 });

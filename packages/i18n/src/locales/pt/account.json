@@ -440,6 +440,10 @@
                 "successBody": "Sua assinatura foi cancelada. Você ainda tem acesso até {date}.",
                 "flagOffFallback": "O cancelamento online não está disponível no momento. Por favor, entre em contato com o suporte para cancelar sua assinatura.",
                 "cancelError": "Não foi possível cancelar a assinatura. Tente novamente."
+            },
+            "scheduledChange": {
+                "title": "Mudança de plano agendada",
+                "body": "Seu plano mudará para {plan} em {date}."
             }
         }
     },

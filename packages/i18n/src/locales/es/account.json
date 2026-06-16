@@ -440,6 +440,10 @@
                 "successBody": "Tu suscripción fue cancelada. Seguís teniendo acceso hasta el {date}.",
                 "flagOffFallback": "La cancelación en línea no está disponible en este momento. Por favor, contactá a soporte para cancelar tu suscripción.",
                 "cancelError": "No se pudo cancelar la suscripción. Intentá de nuevo."
+            },
+            "scheduledChange": {
+                "title": "Cambio de plan programado",
+                "body": "Tu plan cambiará a {plan} el {date}."
             }
         }
     },

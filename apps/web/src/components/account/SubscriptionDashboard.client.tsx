@@ -792,6 +792,41 @@ export function SubscriptionDashboard({ locale, user }: SubscriptionDashboardPro
                     </div>
                 </div>
 
+                {/* ── Scheduled plan-change banner (T-004) ── */}
+                {subscription.scheduledPlanChange && (
+                    <div
+                        className={styles.scheduledChangeBanner}
+                        role="note"
+                        aria-label={t(
+                            'account.pages.subscription.scheduledChange.title',
+                            'Cambio de plan programado'
+                        )}
+                    >
+                        <div>
+                            <p className={styles.scheduledChangeBannerTitle}>
+                                {t(
+                                    'account.pages.subscription.scheduledChange.title',
+                                    'Cambio de plan programado'
+                                )}
+                            </p>
+                            <p className={styles.scheduledChangeBannerBody}>
+                                {t(
+                                    'account.pages.subscription.scheduledChange.body',
+                                    'Tu plan cambiará a {plan} el {date}.'
+                                )
+                                    .replace('{plan}', subscription.scheduledPlanChange.newPlanId)
+                                    .replace(
+                                        '{date}',
+                                        formatDate({
+                                            date: subscription.scheduledPlanChange.effectiveAt,
+                                            locale
+                                        })
+                                    )}
+                            </p>
+                        </div>
+                    </div>
+                )}
+
                 <a
                     href={plansHref}
                     className={styles.upgradeLink}

@@ -440,6 +440,10 @@
                 "successBody": "Your subscription has been cancelled. You still have access until {date}.",
                 "flagOffFallback": "Online cancellation is not available at this time. Please contact support to cancel your subscription.",
                 "cancelError": "Could not cancel the subscription. Please try again."
+            },
+            "scheduledChange": {
+                "title": "Scheduled plan change",
+                "body": "Your plan will change to {plan} on {date}."
             }
         }
     },
