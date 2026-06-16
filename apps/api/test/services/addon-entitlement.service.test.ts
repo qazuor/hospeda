@@ -31,7 +31,12 @@ vi.mock('@repo/service-core', () => ({
     PlanService: vi.fn().mockImplementation(() => ({
         getById: mockPlanGetById,
         getBySlug: mockPlanGetBySlug
-    }))
+    })),
+    // SPEC-239 T-034: isAccommodationSubscription filters out commerce-domain
+    // subscriptions. All test stubs here are accommodation subs (no productDomain),
+    // so this should always return true — matching the real function's no-op behaviour
+    // on legacy/null productDomain rows.
+    isAccommodationSubscription: () => true
 }));
 
 // ─── Addon stubs matching the shapes the service expects from AddonCatalogService ──

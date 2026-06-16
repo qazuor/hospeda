@@ -36,7 +36,10 @@ vi.mock('@repo/service-core', () => ({
     PlanService: vi.fn().mockImplementation(() => ({
         getById: mockPlanGetById,
         getBySlug: mockPlanGetBySlug
-    }))
+    })),
+    // SPEC-239 T-034: all test subscriptions here are accommodation-domain
+    // (no productDomain set), so this should always return true.
+    isAccommodationSubscription: () => true
 }));
 
 // Plan reads are now DB-backed via PlanService (SPEC-192 T-025 cutover)
