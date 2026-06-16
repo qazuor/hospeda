@@ -80,6 +80,23 @@ This ADR records the seven Sub-0 micro-decisions that the spec left open.
 - (~) `@repo/icons` is banned in `apps/mobile`; a lint guard (T-008) enforces this since
   importing the DOM phosphor build crashes in RN.
 
+## Implementation notes (T-001 scaffold)
+
+- **Expo SDK 56** is the scaffolded version: `expo ~56.0.2`, `react-native 0.85.3`,
+  `react 19.2.3`, `expo-router ~56.2.11` (Expo libraries now track the SDK number).
+  All `expo-*` deps must be installed via `expo install` / `expo install --fix`, never
+  hand-pinned — a hand-typed mix of SDK-52 and SDK-56 versions passes `tsc` on a
+  placeholder but breaks at runtime.
+- **React override bumped monorepo-wide**: root `pnpm.overrides` `react`/`react-dom`
+  `19.1.1 → 19.2.3` and `@types/react` `19.1.10 → 19.2.17` (required by SDK 56).
+  Verified safe: `apps/admin` and `apps/web` typecheck clean (React 19.2.x is a
+  backward-compatible patch).
+- **TypeScript 6.0.3 in `apps/mobile` only** (accepted 2026-06-15): Expo SDK 56 pulls
+  TS 6.0.3 via `expo install --fix`; the rest of the monorepo stays on 5.7.2, isolated
+  per workspace. `apps/mobile/tsconfig.json` needs `"ignoreDeprecations": "6.0"` because
+  TS 6.0 deprecated `baseUrl`. **Follow-up**: align the whole monorepo to a single TS
+  major in a dedicated chore (out of SPEC-243 scope) so mobile stops diverging.
+
 ## Alternatives Considered
 
 - **NativeWind for styling** — rejected for v1 due to Babel-plugin + SDK-lag risk on a
