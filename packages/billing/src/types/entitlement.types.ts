@@ -71,7 +71,13 @@ export enum EntitlementKey {
      * to auto-translate accommodation, destination, event, and post content
      * to English and Portuguese.
      */
-    AI_TRANSLATE = 'ai_translate'
+    AI_TRANSLATE = 'ai_translate',
+    /**
+     * Allows the user to use the AI-powered accommodation import feature
+     * to extract structured listing data from an external URL and pre-fill
+     * the accommodation creation form.
+     */
+    AI_ACCOMMODATION_IMPORT = 'ai_accommodation_import'
 }
 
 /**

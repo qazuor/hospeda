@@ -65,7 +65,8 @@ export const AI_ENTITLEMENT_BY_FEATURE: Readonly<Record<AiFeature, EntitlementKe
     chat: EntitlementKey.AI_CHAT,
     search: EntitlementKey.AI_SEARCH,
     support: EntitlementKey.AI_SUPPORT,
-    translate: EntitlementKey.AI_TRANSLATE
+    translate: EntitlementKey.AI_TRANSLATE,
+    accommodation_import: EntitlementKey.AI_ACCOMMODATION_IMPORT
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -84,7 +85,8 @@ export const AI_LIMIT_BY_FEATURE: Readonly<Record<AiFeature, LimitKey>> = {
     chat: LimitKey.MAX_AI_CHAT_PER_MONTH,
     search: LimitKey.MAX_AI_SEARCH_PER_MONTH,
     support: LimitKey.MAX_AI_SUPPORT_PER_MONTH,
-    translate: LimitKey.MAX_AI_TRANSLATE_PER_MONTH
+    translate: LimitKey.MAX_AI_TRANSLATE_PER_MONTH,
+    accommodation_import: LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH
 } as const;
 
 // ---------------------------------------------------------------------------

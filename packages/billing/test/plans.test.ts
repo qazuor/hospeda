@@ -236,7 +236,9 @@ describe('Plan Configuration', () => {
                 LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH,
                 LimitKey.MAX_AI_CHAT_PER_MONTH,
                 LimitKey.MAX_AI_SEARCH_PER_MONTH,
-                LimitKey.MAX_AI_SUPPORT_PER_MONTH
+                LimitKey.MAX_AI_SUPPORT_PER_MONTH,
+                LimitKey.MAX_AI_TRANSLATE_PER_MONTH,
+                LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH
             ] as const;
             for (const plan of ALL_PLANS) {
                 for (const key of aiLimitKeys) {
