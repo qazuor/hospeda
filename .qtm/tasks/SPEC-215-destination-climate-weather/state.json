@@ -641,7 +641,7 @@
             "id": "T-020",
             "title": "Web WMO code to icon (@repo/icons) + i18n label mapping",
             "description": "In apps/web, a mapping from WMO weather_code / internal condition to a @repo/icons icon + an i18n label key (used by the live badge and forecast strip). Shares the condition enum from @repo/schemas. Test: unit test asserting each condition resolves an icon + label key, with fallback.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-004"],
             "blocks": ["T-022"],
@@ -664,15 +664,15 @@
             },
             "timestamps": {
                 "created": "2026-06-15T22:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T01:00:00.000Z",
+                "completed": "2026-06-16T01:00:00.000Z"
             }
         },
         {
             "id": "T-021",
             "title": "Build DestinationClimateCard.astro (seasonal SSR)",
             "description": "apps/web DestinationClimateCard.astro: SSR-render seasonal climate from destination.climate (best season, best months, per-season temp range + rainfall, optional note) in the active locale. CSS Modules (no Tailwind). Renders nothing/neutral when climate is null. Test: covered by web component/source tests + visual via T-027 path; assert it reads destination.climate.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-006", "T-024"],
             "blocks": ["T-023"],
@@ -699,15 +699,15 @@
             },
             "timestamps": {
                 "created": "2026-06-15T22:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T01:00:00.000Z",
+                "completed": "2026-06-16T01:00:00.000Z"
             }
         },
         {
             "id": "T-022",
             "title": "Build DestinationWeatherLive.client.tsx island (current badge + 16-day forecast)",
             "description": "apps/web React island (client:idle/client:visible) that fetches GET /public/destinations/:id/weather and renders the live current-conditions badge AND the 16-day daily forecast strip (per-day icon + min/max + precip). Graceful degradation to a neutral 'no disponible' state on error/empty/no-coords; never blocks render. Uses T-020 mapping. CSS Modules. Test: covered in T-027.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-013", "T-020", "T-025"],
             "blocks": ["T-023", "T-027"],
@@ -734,15 +734,15 @@
             },
             "timestamps": {
                 "created": "2026-06-15T22:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T01:00:00.000Z",
+                "completed": "2026-06-16T01:00:00.000Z"
             }
         },
         {
             "id": "T-023",
             "title": "Wire climate card into destination sidebar and remove placeholder",
             "description": "Replace DestinationClimatePlaceholder.astro usage in the destination detail sidebar (3rd card) with DestinationClimateCard.astro embedding the weather island; delete the placeholder component. Test: source test asserts the placeholder is gone and the card is mounted.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-021", "T-022"],
             "blocks": ["T-028"],
@@ -765,15 +765,15 @@
             },
             "timestamps": {
                 "created": "2026-06-15T22:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T01:00:00.000Z",
+                "completed": "2026-06-16T01:00:00.000Z"
             }
         },
         {
             "id": "T-024",
             "title": "Complete i18n climate/season keys (es/en/pt)",
             "description": "Extend packages/i18n/src/locales/{es,en,pt}/destination.json with the climate keys: best season, best months, season names, per-field labels (avg temp, rainfall) and units. Reuse existing partial keys. Test: i18n parity test (all three locales same keys) green.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-021"],
@@ -796,15 +796,15 @@
             },
             "timestamps": {
                 "created": "2026-06-15T22:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T01:00:00.000Z",
+                "completed": "2026-06-16T01:00:00.000Z"
             }
         },
         {
             "id": "T-025",
             "title": "Add i18n WMO weather condition labels (es/en/pt)",
             "description": "Add localized labels for each internal weather condition (mapped from WMO codes) plus a generic fallback label, used by the live badge + forecast strip. Test: i18n parity + every WeatherConditionEnum value has a label in all locales.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-022"],
@@ -827,8 +827,8 @@
             },
             "timestamps": {
                 "created": "2026-06-15T22:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T01:00:00.000Z",
+                "completed": "2026-06-16T01:00:00.000Z"
             }
         },
         {
@@ -931,9 +931,9 @@
     ],
     "summary": {
         "total": 28,
-        "pending": 15,
+        "pending": 9,
         "inProgress": 2,
-        "completed": 11,
+        "completed": 17,
         "blocked": 0,
         "averageComplexity": 2.3
     }
