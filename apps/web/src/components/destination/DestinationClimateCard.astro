@@ -5,6 +5,7 @@
  * weather island (client:idle). Renders climate info from destination data;
  * if climate is null, renders only the weather island.
  */
+import { DropIcon, ThermometerIcon } from '@repo/icons';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { DestinationWeatherIsland } from './DestinationWeatherIsland.client';
@@ -91,25 +92,23 @@ const note = climate?.note
                                 {t(`destinations.climate.seasons.${key}`, key)}
                             </h3>
                             <div class="dest-climate-card__season-stats">
-                                {data.avgTempMinC !== undefined && (
+                                {(data.avgTempMinC !== undefined || data.avgTempMaxC !== undefined) && (
                                     <span class="dest-climate-card__stat">
-                                        <span class="dest-climate-card__stat-label">
+                                        <ThermometerIcon size={14} weight="regular" aria-hidden="true" />
+                                        <span class="sr-only">
                                             {t('destinations.climate.fields.minTemp', 'Mín.')}
-                                        </span>
-                                        {Math.round(data.avgTempMinC)}{t('destinations.climate.units.celsius', '°C')}
-                                    </span>
-                                )}
-                                {data.avgTempMaxC !== undefined && (
-                                    <span class="dest-climate-card__stat">
-                                        <span class="dest-climate-card__stat-label">
+                                            {' / '}
                                             {t('destinations.climate.fields.maxTemp', 'Máx.')}
                                         </span>
-                                        {Math.round(data.avgTempMaxC)}{t('destinations.climate.units.celsius', '°C')}
+                                        {data.avgTempMinC !== undefined ? Math.round(data.avgTempMinC) : '—'}°
+                                        {' / '}
+                                        {data.avgTempMaxC !== undefined ? Math.round(data.avgTempMaxC) : '—'}{t('destinations.climate.units.celsius', '°C')}
                                     </span>
                                 )}
                                 {data.rainfallMm !== undefined && (
                                     <span class="dest-climate-card__stat">
-                                        <span class="dest-climate-card__stat-label">
+                                        <DropIcon size={14} weight="regular" aria-hidden="true" />
+                                        <span class="sr-only">
                                             {t('destinations.climate.fields.rainfall', 'Precipitaciones')}
                                         </span>
                                         {Math.round(data.rainfallMm)}{t('destinations.climate.units.mm', 'mm')}
@@ -187,7 +186,8 @@ const note = climate?.note
         display: flex;
         flex-direction: column;
         gap: var(--space-1, 0.25rem);
-        padding: var(--space-3, 0.75rem);
+        min-width: 0;
+        padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
         background-color: var(--core-background);
         border-radius: var(--radius-md, 10px);
         border: 1px solid var(--border, var(--core-foreground-a15));
@@ -206,18 +206,17 @@ const note = climate?.note
         display: flex;
         flex-direction: column;
         gap: var(--space-1, 0.25rem);
+        min-width: 0;
     }
 
     .dest-climate-card__stat {
-        display: flex;
+        display: inline-flex;
+        align-items: center;
         gap: var(--space-1, 0.25rem);
+        white-space: nowrap;
         font-family: var(--font-sans);
         font-size: 0.8125rem;
         color: var(--core-foreground);
-    }
-
-    .dest-climate-card__stat-label {
-        color: var(--core-muted-foreground);
     }
 
     .dest-climate-card__note {
