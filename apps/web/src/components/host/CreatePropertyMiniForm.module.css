@@ -33,7 +33,7 @@
 }
 
 .importToggle:hover {
-    background-color: oklch(from var(--brand-primary) l c h / 0.06);
+    background-color: var(--brand-primary-a10);
 }
 
 .importToggleIcon {
@@ -48,7 +48,7 @@
 
 .importBody {
     padding: var(--space-4, 1rem);
-    border-top: 1px solid oklch(from var(--brand-primary) l c h / 0.25);
+    border-top: 1px solid var(--brand-primary-a20);
 }
 
 /* ---------------------------------------------------------------------------
@@ -61,7 +61,7 @@
     gap: var(--space-2, 0.5rem);
     padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
     margin-bottom: var(--space-4, 1rem);
-    background-color: oklch(from var(--brand-accent) l c h / 0.08);
+    background-color: var(--brand-accent-a10);
     border-left: 3px solid var(--brand-accent);
     border-radius: 0 var(--radius-md) var(--radius-md) 0;
     font-family: var(--font-sans);
@@ -90,8 +90,8 @@
     align-items: center;
     gap: var(--space-1, 0.25rem);
     padding: 2px var(--space-2, 0.5rem);
-    background-color: oklch(from var(--brand-primary) l c h / 0.1);
-    border: 1px solid oklch(from var(--brand-primary) l c h / 0.3);
+    background-color: var(--brand-primary-a10);
+    border: 1px solid var(--brand-primary-a30);
     border-radius: var(--radius-pill, 9999px);
     font-family: var(--font-sans);
     font-size: 0.75rem;
