@@ -12,6 +12,7 @@ import {
     EventCategoryEnum,
     ExchangeRateSourceEnum,
     ExchangeRateTypeEnum,
+    HostTradeCategoryEnum,
     InvoiceStatusEnum,
     LifecycleStatusEnum,
     MessageSenderTypeEnum,
@@ -79,6 +80,11 @@ export const ProductTypePgEnum = pgEnum('product_type_enum', enumToTuple(Product
 export const EntityTypePgEnum = pgEnum('entity_type_enum', enumToTuple(EntityTypeEnum));
 
 export const EventCategoryPgEnum = pgEnum('event_category_enum', enumToTuple(EventCategoryEnum));
+
+export const HostTradeCategoryPgEnum = pgEnum(
+    'host_trade_category_enum',
+    enumToTuple(HostTradeCategoryEnum)
+);
 
 export const ExchangeRateSourcePgEnum = pgEnum(
     'exchange_rate_source_enum',
