@@ -235,11 +235,35 @@ export interface ImportContext {
         readonly apifyToken?: string | undefined;
         /** Apify actor ID for the Airbnb listing extractor. */
         readonly apifyAirbnbActor?: string | undefined;
+        /** Apify actor ID for the Booking.com listing extractor (block/empty fallback). */
+        readonly apifyBookingActor?: string | undefined;
         /** Google Places API key for the Google Maps adapter. */
         readonly googlePlacesApiKey?: string | undefined;
         /** MercadoLibre OAuth token for the MercadoLibre adapter. */
         readonly mercadoLibreToken?: string | undefined;
     };
+
+    /**
+     * Optional AI extraction port (SPEC-222 Strategy B).
+     *
+     * Dependency-injected by the route layer (`apps/api`), which owns the
+     * configured `@repo/ai-core` engine, credentials, and cost ceiling. The
+     * generic adapter calls this ONLY when structured extraction yields too
+     * few fields, passing the page text already stripped to `ctx.aiMaxChars`.
+     *
+     * Keeping it as a port means `@repo/service-core` never imports the
+     * apps/api AI factory — the adapter stays decoupled and unit-testable.
+     *
+     * When absent (AI feature disabled/unconfigured) the adapter skips
+     * Strategy B and returns whatever the structured extraction produced.
+     *
+     * The implementation returns a {@link RawExtraction} whose candidate
+     * fields are tagged `source: 'ai'`, or `null` when the model produced
+     * nothing usable. It MUST NOT return review/rating data (SPEC-222).
+     */
+    readonly aiExtract?:
+        | ((input: { text: string; locale?: string | undefined }) => Promise<RawExtraction | null>)
+        | undefined;
 }
 
 // ---------------------------------------------------------------------------
