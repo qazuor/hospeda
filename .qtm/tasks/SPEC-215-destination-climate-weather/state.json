@@ -206,7 +206,7 @@
             "id": "T-007",
             "title": "Add weather cache read/write to the destination/weather service",
             "description": "Add service methods to read `weather_current` for one destination and to upsert the cache payload ({ current, daily[16], fetchedAt }). Result<T> typed returns. Used by the public endpoint (T-013) and the cron job (T-010). Test: unit tests for read (hit/miss) and upsert.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-004", "T-002"],
             "blocks": ["T-010", "T-013"],
@@ -233,8 +233,8 @@
             },
             "timestamps": {
                 "created": "2026-06-15T22:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T00:15:00.000Z",
+                "completed": "2026-06-16T00:15:00.000Z"
             }
         },
         {
@@ -311,7 +311,7 @@
             "id": "T-010",
             "title": "Implement destination-weather-fetch cron job",
             "description": "apps/api/src/cron/jobs/destination-weather-fetch.job.ts following the exchange-rate-fetch pattern: fetch current + 16-day forecast for all published destinations with coordinates, upsert cache via T-007. Advisory lock (new key), withTransaction, dryRun support, throttle/batch, tolerate per-destination failure (serve last cache). Test: dry-run test in T-012.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-007", "T-009"],
             "blocks": ["T-011", "T-012"],
@@ -338,15 +338,15 @@
             },
             "timestamps": {
                 "created": "2026-06-15T22:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T00:15:00.000Z",
+                "completed": "2026-06-16T00:15:00.000Z"
             }
         },
         {
             "id": "T-011",
             "title": "Register weather cron in schedules manifest and registry (12h)",
             "description": "Add the job to apps/api/src/cron/schedules.manifest.ts with a 12h schedule + displayName + category, register in registry.ts, and add the new advisory-lock key. Decision 7: interval is 12h. Test: manifest/registry wiring covered by existing cron registration tests if present; otherwise a small unit assertion.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-010"],
             "blocks": ["T-028"],
@@ -369,15 +369,15 @@
             },
             "timestamps": {
                 "created": "2026-06-15T22:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T00:15:00.000Z",
+                "completed": "2026-06-16T00:15:00.000Z"
             }
         },
         {
             "id": "T-012",
             "title": "Cron dry-run test for destination-weather-fetch",
             "description": "Test the job in dryRun mode: asserts it enumerates destinations, calls the (mocked) Open-Meteo client, and does NOT write when dryRun=true; writes when dryRun=false. Mocked client + DB. Test file under apps/api cron test dir.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-010"],
             "blocks": [],
@@ -400,15 +400,15 @@
             },
             "timestamps": {
                 "created": "2026-06-15T22:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T00:15:00.000Z",
+                "completed": "2026-06-16T00:15:00.000Z"
             }
         },
         {
             "id": "T-013",
             "title": "Add public GET /api/v1/public/destinations/:id/weather endpoint",
             "description": "Thin public route (no auth) returning the cached current conditions + 16-day forecast for one destination via T-007. Typed response shape; concrete public-tier output schema. Degrades to neutral empty payload when no cache/coords (never 500). Test: integration test in T-014.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-007"],
             "blocks": ["T-014", "T-022", "T-027"],
@@ -435,8 +435,8 @@
             },
             "timestamps": {
                 "created": "2026-06-15T22:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T00:15:00.000Z",
+                "completed": "2026-06-16T00:15:00.000Z"
             }
         },
         {
@@ -931,9 +931,9 @@
     ],
     "summary": {
         "total": 28,
-        "pending": 20,
+        "pending": 15,
         "inProgress": 2,
-        "completed": 6,
+        "completed": 11,
         "blocked": 0,
         "averageComplexity": 2.3
     }
