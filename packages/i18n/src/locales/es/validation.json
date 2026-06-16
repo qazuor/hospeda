@@ -3390,6 +3390,16 @@
         "entityType": {
             "invalid": "El tipo de entidad no es válido para el registro de vistas"
         },
+        "hostDailySeries": {
+            "date": {
+                "invalid": "La fecha debe tener el formato YYYY-MM-DD"
+            },
+            "total": {
+                "integer": "El total de visitas debe ser un número entero",
+                "nonnegative": "El total de visitas no puede ser negativo",
+                "required": "El total de visitas es obligatorio"
+            }
+        },
         "id": {
             "invalidUuid": "El ID debe ser un UUID válido",
             "required": "El ID es obligatorio"

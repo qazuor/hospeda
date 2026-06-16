@@ -439,9 +439,12 @@
         {
             "specId": "SPEC-207",
             "title": "Host Analytics & KPIs — Business Dashboard in Web",
-            "status": "in-progress",
-            "progress": "0/1",
+            "status": "completed",
+            "progress": "1/1",
             "path": "SPEC-207-host-analytics-kpis",
+            "archived": true,
+            "archivedAt": "2026-06-15T00:00:00.000Z",
+            "archiveNote": "Merged to staging via PR #1678. Follow-up fix/SPEC-207-i18n-hostdailyseries adds the i18n keys that landed after the merge commit.",
             "tags": ["host-migration", "phase-3"]
         },
         {
