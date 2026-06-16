@@ -97,6 +97,22 @@ This ADR records the seven Sub-0 micro-decisions that the spec left open.
   TS 6.0 deprecated `baseUrl`. **Follow-up**: align the whole monorepo to a single TS
   major in a dedicated chore (out of SPEC-243 scope) so mobile stops diverging.
 
+## T-002 verification (Metro resolution + locale bundle)
+
+- **Metro resolution**: `@repo/i18n` exposes `main: ./src/index.ts` and resolves from
+  source (Metro's `babel-preset-expo` embeds `babel-plugin-module-resolver`, which DOES
+  read tsconfig `paths`). `@repo/schemas` exposes `dist/index.js` (its `src` uses `.js`
+  ESM import specifiers Metro can't resolve from source), so it must be BUILT
+  (`turbo build --filter=@repo/schemas`) and `@repo/schemas` was removed from the mobile
+  tsconfig `paths` so Metro uses `main` resolution. `metro.config.js` stays minimal — SDK
+  56 auto-configures monorepo watchFolders/nodeModulesPaths; no manual config needed.
+- **Eager locale bundle (decision #5 resolved)**: `expo export --platform ios` bundles
+  1316 modules → **4.9 MB** Hermes bytecode with all three locales (es/en/pt) loaded
+  eagerly. That is within the normal 4–8 MB RN range, so **eager loading stays** (no
+  lazy-by-locale needed). Future optimization (not now): excluding ~20 admin-only i18n
+  namespaces (`admin-*`, `tags`, `revalidation`, …) mobile never uses would save
+  ~350–500 KB without adding lazy-load complexity.
+
 ## Alternatives Considered
 
 - **NativeWind for styling** — rejected for v1 due to Babel-plugin + SDK-lag risk on a
