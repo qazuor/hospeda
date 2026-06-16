@@ -241,8 +241,8 @@
     border: 1px solid var(--border, oklch(0.8 0 0));
     border-radius: var(--radius-button, 8px);
     cursor: pointer;
-    transition: border-color var(--duration-normal, 0.4s) ease,
-        color var(--duration-normal, 0.4s) ease;
+    transition: border-color var(--duration-normal, 0.4s) ease, color var(--duration-normal, 0.4s)
+        ease;
     min-height: 40px;
 }
 

@@ -412,7 +412,7 @@
 
 .modalTextarea:focus {
     outline: none;
-    border-color: var(--core-primary);
+    border-color: var(--brand-primary);
 }
 
 .modalTextarea:disabled {
@@ -501,8 +501,12 @@
     align-items: flex-start;
     gap: var(--space-3, 12px);
     padding: var(--space-4, 16px);
-    background-color: var(--brand-accent-a12, oklch(from var(--brand-accent, oklch(0.7 0.16 60)) l c h / 0.12));
-    border: 1px solid var(--brand-accent-a30, oklch(from var(--brand-accent, oklch(0.7 0.16 60)) l c h / 0.30));
+    background-color: var(
+        --brand-accent-a12,
+        oklch(from var(--brand-accent, oklch(0.7 0.16 60)) l c h / 0.12)
+    );
+    border: 1px solid
+        var(--brand-accent-a30, oklch(from var(--brand-accent, oklch(0.7 0.16 60)) l c h / 0.3));
     border-radius: var(--radius-sm, 8px);
     font-family: var(--font-sans);
     font-size: 0.9rem;
