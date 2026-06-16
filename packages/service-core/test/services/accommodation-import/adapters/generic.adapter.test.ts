@@ -199,9 +199,18 @@ describe('GenericAdapter', () => {
             }
         });
 
-        it('should return false for an http URL', () => {
+        it('should return true for an http URL (catch-all; blocked later by safeExternalFetch)', () => {
             // Arrange
             const url = new URL('http://example.com/listing/123');
+            // Act
+            const result = adapter.supports(url);
+            // Assert
+            expect(result).toBe(true);
+        });
+
+        it('should return false for a non-web scheme', () => {
+            // Arrange
+            const url = new URL('ftp://example.com/listing/123');
             // Act
             const result = adapter.supports(url);
             // Assert

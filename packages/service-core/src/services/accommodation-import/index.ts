@@ -18,3 +18,4 @@ export * from './adapters/booking.adapter.js';
 export * from './adapters/airbnb.adapter.js';
 export * from './adapters/mercadolibre.adapter.js';
 export * from './adapters/google-places.adapter.js';
+export * from './accommodation-import.service.js';

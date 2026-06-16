@@ -208,20 +208,25 @@ export class GenericAdapter implements ImportSourceAdapter {
     readonly source = 'generic' as const;
 
     /**
-     * Returns `true` for any HTTPS URL. This adapter is the universal fallback
-     * and must only be registered last in the orchestrator's adapter list.
+     * Returns `true` for any HTTP(S) URL. This adapter is the universal fallback
+     * and must only be registered last in the orchestrator's adapter list, so it
+     * accepts any web URL the earlier platform adapters did not claim. The
+     * HTTPS-only network policy is enforced downstream by `safeExternalFetch`
+     * (a plain `http:` URL reaches `extract` but is blocked at fetch time and
+     * degrades to an empty extraction), so routing stays honest — the catch-all
+     * never reports "unsupported" for a URL it is the last resort for.
      *
      * @param url - The parsed URL of the listing to import.
-     * @returns `true` for any `https:` URL; `false` otherwise.
+     * @returns `true` for any `http:`/`https:` URL; `false` for other schemes.
      *
      * @example
      * ```ts
      * adapter.supports(new URL('https://example.com/listing/123')); // true
-     * adapter.supports(new URL('http://example.com/listing/123'));  // false
+     * adapter.supports(new URL('http://example.com/listing/123'));  // true (blocked later by safeExternalFetch)
      * ```
      */
     supports(url: URL): boolean {
-        return url.protocol === 'https:';
+        return url.protocol === 'https:' || url.protocol === 'http:';
     }
 
     /**
