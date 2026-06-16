@@ -42,7 +42,7 @@
         {
             "id": "T-002",
             "title": "Define AccommodationImportDraftSchema (per-field ImportedField)",
-            "description": "Per-field optional ImportedField schema mirroring fillable AccommodationSchema keys: name, summary, description, type (AccommodationTypeEnum — all 13 values), extraInfo {capacity,bedrooms,beds,bathrooms}, location {coordinates{lat,long as STRINGS}, street, number}, price {price,currency}, contactInfo {mobilePhone,website}, seo {title,description}. Exclude checkInTime/checkOutTime/houseRules/city/country (no model home). File: same accommodation-import.schema.ts. Tests: valid partial parses; lat/long coerced to string; unknown keys stripped.",
+            "description": "Per-field optional ImportedField schema mirroring fillable AccommodationSchema keys: name, summary, description, type (AccommodationTypeEnum \u2014 all 13 values), extraInfo {capacity,bedrooms,beds,bathrooms}, location {coordinates{lat,long as STRINGS}, street, number}, price {price,currency}, contactInfo {mobilePhone,website}, seo {title,description}. Exclude checkInTime/checkOutTime/houseRules/city/country (no model home). File: same accommodation-import.schema.ts. Tests: valid partial parses; lat/long coerced to string; unknown keys stripped.",
             "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001"],
@@ -116,23 +116,23 @@
         {
             "id": "T-004",
             "title": "Register 'accommodation_import' AI feature + default prompt",
-            "description": "Add 'accommodation_import' to AiFeatureSchema (packages/schemas/src/entities/ai/ai-provider.schema.ts) and a DEFAULT_PROMPTS['accommodation_import'] entry (packages/ai-core/src/engine/default-prompts.ts): JSON-only extraction prompt in es, enumerating all 13 AccommodationTypeEnum values for type mapping. Tests: AiFeatureSchema accepts the new value; DEFAULT_PROMPTS has the key.",
-            "status": "pending",
+            "description": "Add 'accommodation_import' to AiFeatureSchema (packages/schemas/src/entities/ai/ai-provider.schema.ts) and a DEFAULT_PROMPTS['accommodation_import'] entry (packages/ai-core/src/engine/default-prompts.ts): JSON-only extraction prompt in es, enumerating all 13 AccommodationTypeEnum values for type mapping. Tests: AiFeatureSchema accepts the new value; DEFAULT_PROMPTS has the key. [COUPLED with T-005: adding the AiFeature enum member breaks all Record<AiFeature> maps; landed together.]",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-019"],
             "subtasks": [
                 {
                     "title": "AiFeatureSchema value",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "DEFAULT_PROMPTS entry (es, 13 types)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["schemas", "ai-core"],
@@ -144,7 +144,7 @@
             },
             "timestamps": {
                 "created": "2026-06-15T22:40:00.000Z",
-                "started": null,
+                "started": "2026-06-15T23:05:00.000Z",
                 "completed": null
             }
         },
@@ -152,26 +152,26 @@
             "id": "T-005",
             "title": "Add AI entitlement + limit keys for accommodation_import",
             "description": "Add EntitlementKey.AI_ACCOMMODATION_IMPORT (packages/billing/src/types/entitlement.types.ts) and LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH (packages/billing/src/types/plan.types.ts). Because both enums are exhaustiveness-checked: add entries to LIMIT_METADATA (packages/billing/src/config/limits.config.ts) and RESOURCE_NAMES (apps/api/src/utils/limit-check.ts). Add plan-limit defaults + entitlement seed. Tests: limits config compiles (Record exhaustive); seed includes key.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-019", "T-020"],
             "subtasks": [
                 {
                     "title": "EntitlementKey + LimitKey",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "LIMIT_METADATA + RESOURCE_NAMES entries",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Plan defaults + entitlement seed",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["billing", "seed"],
@@ -183,7 +183,7 @@
             },
             "timestamps": {
                 "created": "2026-06-15T22:40:00.000Z",
-                "started": null,
+                "started": "2026-06-15T23:08:00.000Z",
                 "completed": null
             }
         },
@@ -299,7 +299,7 @@
         {
             "id": "T-009",
             "title": "ImportSourceAdapter interface + RawExtraction + detectSource",
-            "description": "Define ImportSourceAdapter { source; supports(url): boolean; extract(url, ctx): Promise<RawExtraction> }, RawExtraction (loose candidate bag + per-field source tags, pre-validation), ImportContext, and detectSource(url): ImportSource (normalize hostname → source). Files: packages/service-core/src/services/accommodation-import/ (new module). Tests: detectSource maps known hosts; unknown → 'generic'.",
+            "description": "Define ImportSourceAdapter { source; supports(url): boolean; extract(url, ctx): Promise<RawExtraction> }, RawExtraction (loose candidate bag + per-field source tags, pre-validation), ImportContext, and detectSource(url): ImportSource (normalize hostname \u2192 source). Files: packages/service-core/src/services/accommodation-import/ (new module). Tests: detectSource maps known hosts; unknown \u2192 'generic'.",
             "status": "pending",
             "complexity": 2,
             "blockedBy": [],
@@ -408,7 +408,7 @@
         {
             "id": "T-012",
             "title": "Amenity resolution (catalog name/slug search)",
-            "description": "resolveAmenities(names: string[]): { amenityIds: string[], unresolved: string[] } using AmenityModel catalog lookup (name->>'es' ILIKE via safeIlike, or unique slug). Resolved → UUIDs; unresolved → advisory list (never applied). Files: accommodation-import/resolvers/amenities.ts. Tests: known names resolve to UUIDs (mocked model); unknown → unresolved; no free strings leak.",
+            "description": "resolveAmenities(names: string[]): { amenityIds: string[], unresolved: string[] } using AmenityModel catalog lookup (name->>'es' ILIKE via safeIlike, or unique slug). Resolved \u2192 UUIDs; unresolved \u2192 advisory list (never applied). Files: accommodation-import/resolvers/amenities.ts. Tests: known names resolve to UUIDs (mocked model); unknown \u2192 unresolved; no free strings leak.",
             "status": "pending",
             "complexity": 2,
             "blockedBy": ["T-009"],
@@ -443,7 +443,7 @@
         {
             "id": "T-013",
             "title": "destinationHint resolution (destination search, never auto-set FK)",
-            "description": "buildDestinationHint(locality?, country?): { scrapedLocality?, candidates: {id,name}[] } via destination search (name scope). NEVER set destinationId — even a single exact match returns a candidate for the host to confirm. Files: accommodation-import/resolvers/destination.ts. Tests: locality → candidates; no match → empty candidates; FK never populated.",
+            "description": "buildDestinationHint(locality?, country?): { scrapedLocality?, candidates: {id,name}[] } via destination search (name scope). NEVER set destinationId \u2014 even a single exact match returns a candidate for the host to confirm. Files: accommodation-import/resolvers/destination.ts. Tests: locality \u2192 candidates; no match \u2192 empty candidates; FK never populated.",
             "status": "pending",
             "complexity": 2,
             "blockedBy": ["T-009"],
@@ -477,7 +477,7 @@
         },
         {
             "id": "T-014",
-            "title": "GenericAdapter (fetch + JSON-LD → AI Strategy B)",
+            "title": "GenericAdapter (fetch + JSON-LD \u2192 AI Strategy B)",
             "description": "safeExternalFetch the URL, run JSON-LD/OG/meta extractors; if fewer than N useful fields (default 2, HOSPEDA configurable), strip HTML to text (max HOSPEDA_IMPORT_AI_MAX_CHARS) and call ai-core generateObject({feature:'accommodation_import'}, AccommodationImportDraftSchema); AI fields get lowest confidence. If AI disabled/unconfigured, return structured partial. Tests: JSON-LD-rich page no AI; sparse page triggers AI (mocked); AI-off path.",
             "status": "pending",
             "complexity": 3,
@@ -516,8 +516,8 @@
         },
         {
             "id": "T-015",
-            "title": "BookingAdapter (fetch + JSON-LD Hotel → Apify fallback)",
-            "description": "safeExternalFetch Booking URL, parse JSON-LD @type Hotel (strip aggregateRating/review); on block/empty → Apify fallback (shared Apify client). Realistic headers. Tests: JSON-LD fixture maps name/address/geo/images (NO rating); blocked → Apify path (mocked); empty → degraded.",
+            "title": "BookingAdapter (fetch + JSON-LD Hotel \u2192 Apify fallback)",
+            "description": "safeExternalFetch Booking URL, parse JSON-LD @type Hotel (strip aggregateRating/review); on block/empty \u2192 Apify fallback (shared Apify client). Realistic headers. Tests: JSON-LD fixture maps name/address/geo/images (NO rating); blocked \u2192 Apify path (mocked); empty \u2192 degraded.",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-007", "T-010"],
@@ -556,7 +556,7 @@
         {
             "id": "T-016",
             "title": "AirbnbAdapter (Apify actor REST) + credential degradation",
-            "description": "Call Apify run-sync-get-dataset-items (POST api.apify.com/v2/acts/<actor>/...?token) with {mode:'listing', urls:[url]} using native fetch; map dataset item; MUST strip reviews/reviewsCount/rating/ratingBreakdown (AC-9.1). Provider abstracted (actor from HOSPEDA_APIFY_AIRBNB_ACTOR). US-11: if HOSPEDA_APIFY_TOKEN unset → return source:'none' + message, never throw. Tests: mapping (mocked dataset, NO rating); missing token → degraded; actor error → degraded.",
+            "description": "Call Apify run-sync-get-dataset-items (POST api.apify.com/v2/acts/<actor>/...?token) with {mode:'listing', urls:[url]} using native fetch; map dataset item; MUST strip reviews/reviewsCount/rating/ratingBreakdown (AC-9.1). Provider abstracted (actor from HOSPEDA_APIFY_AIRBNB_ACTOR). US-11: if HOSPEDA_APIFY_TOKEN unset \u2192 return source:'none' + message, never throw. Tests: mapping (mocked dataset, NO rating); missing token \u2192 degraded; actor error \u2192 degraded.",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-006", "T-009"],
@@ -595,7 +595,7 @@
         {
             "id": "T-017",
             "title": "MercadoLibreAdapter (OAuth /items/{id}) + credential degradation",
-            "description": "Parse item ID from URL; call api.mercadolibre.com/items/{id} with OAuth app token (ML is no longer anonymous — needs HOSPEDA_MERCADOLIBRE_TOKEN, confirm client-credentials vs full OAuth with a live call at impl). Map title/description/location/attributes(bedrooms/bathrooms/area)/photos. US-11: token unset → source:'none'. Tests: mapping (mocked JSON); token unset → degraded; bad URL → degraded.",
+            "description": "Parse item ID from URL; call api.mercadolibre.com/items/{id} with OAuth app token (ML is no longer anonymous \u2014 needs HOSPEDA_MERCADOLIBRE_TOKEN, confirm client-credentials vs full OAuth with a live call at impl). Map title/description/location/attributes(bedrooms/bathrooms/area)/photos. US-11: token unset \u2192 source:'none'. Tests: mapping (mocked JSON); token unset \u2192 degraded; bad URL \u2192 degraded.",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-006", "T-009"],
@@ -634,7 +634,7 @@
         {
             "id": "T-018",
             "title": "GooglePlacesAdapter (Place Details New) + credential degradation",
-            "description": "Extract Place ID from URL; call Places API (New) Place Details with HOSPEDA_GOOGLE_PLACES_API_KEY; map name/address/coords/phone/website/type/photos. US-11: key unset → source:'none'. Tests: mapping (mocked); key unset → degraded; no place id → degraded.",
+            "description": "Extract Place ID from URL; call Places API (New) Place Details with HOSPEDA_GOOGLE_PLACES_API_KEY; map name/address/coords/phone/website/type/photos. US-11: key unset \u2192 source:'none'. Tests: mapping (mocked); key unset \u2192 degraded; no place id \u2192 degraded.",
             "status": "pending",
             "complexity": 2,
             "blockedBy": ["T-006", "T-009"],
@@ -673,7 +673,7 @@
         {
             "id": "T-019",
             "title": "accommodation-import.service.ts orchestration (stateless)",
-            "description": "Stateless service (NOT BaseCrudService, billing-style) returning Result<AccommodationImportResponse>. Steps: detectSource → pick adapter → adapter.extract → mapRawToDraft (confidence + Zod per-field) → resolveAmenities + buildDestinationHint → assemble response (source, methodsUsed, partial, message, hints). Graceful degradation: empty/blocked → partial empty draft + message + source:'none', never throws. Tests: full happy path (mocked adapter); empty → degraded; per-field validation drop; reviews never present.",
+            "description": "Stateless service (NOT BaseCrudService, billing-style) returning Result<AccommodationImportResponse>. Steps: detectSource \u2192 pick adapter \u2192 adapter.extract \u2192 mapRawToDraft (confidence + Zod per-field) \u2192 resolveAmenities + buildDestinationHint \u2192 assemble response (source, methodsUsed, partial, message, hints). Graceful degradation: empty/blocked \u2192 partial empty draft + message + source:'none', never throws. Tests: full happy path (mocked adapter); empty \u2192 degraded; per-field validation drop; reviews never present.",
             "status": "pending",
             "complexity": 3,
             "blockedBy": [
@@ -692,7 +692,7 @@
             "blocks": ["T-020", "T-027"],
             "subtasks": [
                 {
-                    "title": "Detect → adapter dispatch",
+                    "title": "Detect \u2192 adapter dispatch",
                     "completed": false
                 },
                 {
@@ -724,7 +724,7 @@
         {
             "id": "T-020",
             "title": "POST /api/v1/protected/accommodations/import-from-url route",
-            "description": "createProtectedRoute; permission ACCOMMODATION_CREATE OR ACCOMMODATION_UPDATE_OWN (ACCOMMODATION_UPDATE_ANY for admin); server re-check legalConfirmed===true (reject otherwise); wire per-user rate limit {requests:10, windowMs:3_600_000} from HOSPEDA_IMPORT_RATE_LIMIT_RPH; apply accommodation_import AI quota/entitlement + cost ceiling when Strategy B runs. Thin handler → service. File: apps/api/src/routes/accommodation/protected/import-from-url.ts + register.",
+            "description": "createProtectedRoute; permission ACCOMMODATION_CREATE OR ACCOMMODATION_UPDATE_OWN (ACCOMMODATION_UPDATE_ANY for admin); server re-check legalConfirmed===true (reject otherwise); wire per-user rate limit {requests:10, windowMs:3_600_000} from HOSPEDA_IMPORT_RATE_LIMIT_RPH; apply accommodation_import AI quota/entitlement + cost ceiling when Strategy B runs. Thin handler \u2192 service. File: apps/api/src/routes/accommodation/protected/import-from-url.ts + register.",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-003", "T-005", "T-019"],
@@ -763,7 +763,7 @@
         {
             "id": "T-021",
             "title": "Integration test for import endpoint",
-            "description": "Stub HTTP server serving a JSON-LD LodgingBusiness page → assert pre-filled draft with confidence/source. Mock Apify + AI. Cases: 200 partial draft; legalConfirmed false → rejected; rate-limit 429 with retryAfter; unauthorized → 401; reviews never in response. File: apps/api/test/routes/accommodation-import.integration.test.ts.",
+            "description": "Stub HTTP server serving a JSON-LD LodgingBusiness page \u2192 assert pre-filled draft with confidence/source. Mock Apify + AI. Cases: 200 partial draft; legalConfirmed false \u2192 rejected; rate-limit 429 with retryAfter; unauthorized \u2192 401; reviews never in response. File: apps/api/test/routes/accommodation-import.integration.test.ts.",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-020"],
@@ -903,7 +903,7 @@
         {
             "id": "T-025",
             "title": "Web: wire into CreatePropertyMiniForm + confidence badges + prefill",
-            "description": "Mount ImportFromUrl as a collapsible section in CreatePropertyMiniForm.client.tsx; on success pre-fill name/summary/type with per-field confidence badges + source + 'revisá y confirmá' notice (AC-1.2/1.3). destinationHint surfaced for picker; nothing auto-saved. Component test: prefill maps returned fields; badges render; no auto-save.",
+            "description": "Mount ImportFromUrl as a collapsible section in CreatePropertyMiniForm.client.tsx; on success pre-fill name/summary/type with per-field confidence badges + source + 'revis\u00e1 y confirm\u00e1' notice (AC-1.2/1.3). destinationHint surfaced for picker; nothing auto-saved. Component test: prefill maps returned fields; badges render; no auto-save.",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-023"],
@@ -942,7 +942,7 @@
         {
             "id": "T-026",
             "title": "Admin: import-from-url section in consolidated edit form",
-            "description": "New import-from-url.section.ts wired into accommodation-consolidated.config.ts (Tailwind). TanStack Query mutation → endpoint; legal checkbox gate; on success form.setFieldValue per returned field with confidence badges; request validated via AccommodationImportRequestSchema.safeParse. Admin component test: setFieldValue per field; no save; checkbox gate.",
+            "description": "New import-from-url.section.ts wired into accommodation-consolidated.config.ts (Tailwind). TanStack Query mutation \u2192 endpoint; legal checkbox gate; on success form.setFieldValue per returned field with confidence badges; request validated via AccommodationImportRequestSchema.safeParse. Admin component test: setFieldValue per field; no save; checkbox gate.",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-020"],
@@ -1047,8 +1047,8 @@
     ],
     "summary": {
         "total": 28,
-        "pending": 25,
-        "inProgress": 0,
+        "pending": 23,
+        "inProgress": 2,
         "completed": 3,
         "blocked": 0,
         "averageComplexity": 2.5
