@@ -147,18 +147,25 @@
             "id": "T-008",
             "title": "Integrate phosphor-react-native (per ADR-033) + add lint rule banning @repo/icons in apps/mobile",
             "description": "Icon library is LOCKED to phosphor-react-native in ADR-033 (decision 2). Integrate it and add a Biome/lint guard that bans importing @repo/icons (DOM phosphor SVG, crashes in RN) anywhere in apps/mobile.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-001"],
             "blocks": [],
             "subtasks": [
-                { "title": "Integrate phosphor-react-native", "completed": false },
-                { "title": "Lint rule banning @repo/icons in apps/mobile", "completed": false }
+                {
+                    "title": "Integrate phosphor-react-native (subpath imports — barrel would add 6MB)",
+                    "completed": true
+                },
+                { "title": "Lint rule banning @repo/icons in apps/mobile", "completed": true }
             ],
             "tags": ["icons", "lint", "adr-033"],
             "phase": "design",
-            "qualityGate": { "lint": "pending", "typecheck": "pending", "tests": "pending" },
-            "timestamps": { "created": "2026-06-15T00:00:00.000Z" }
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-06-15T00:00:00.000Z",
+                "started": "2026-06-16T00:00:00.000Z",
+                "completed": "2026-06-16T00:00:00.000Z"
+            }
         },
         {
             "id": "T-009",
@@ -240,9 +247,9 @@
     ],
     "summary": {
         "total": 13,
-        "pending": 8,
+        "pending": 7,
         "inProgress": 0,
-        "completed": 5,
+        "completed": 6,
         "blocked": 0,
         "averageComplexity": 1.9
     }
