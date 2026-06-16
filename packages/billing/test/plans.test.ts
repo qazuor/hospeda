@@ -199,12 +199,18 @@ describe('Plan Configuration', () => {
         });
 
         it('every plan with an AI gate should have the matching AI limit and vice versa', () => {
-            // ai_support is ungranted on all plans (SPEC-200 pending) — only
-            // the three active keys are checked here.
+            // ai_support is ungranted on all plans (SPEC-200 pending). The other
+            // active AI gates (text_improve, chat, search, translate,
+            // accommodation_import) must each be co-present with their limit.
             const aiGateToLimit: ReadonlyArray<readonly [EntitlementKey, LimitKey]> = [
                 [EntitlementKey.AI_TEXT_IMPROVE, LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH],
                 [EntitlementKey.AI_CHAT, LimitKey.MAX_AI_CHAT_PER_MONTH],
-                [EntitlementKey.AI_SEARCH, LimitKey.MAX_AI_SEARCH_PER_MONTH]
+                [EntitlementKey.AI_SEARCH, LimitKey.MAX_AI_SEARCH_PER_MONTH],
+                [EntitlementKey.AI_TRANSLATE, LimitKey.MAX_AI_TRANSLATE_PER_MONTH],
+                [
+                    EntitlementKey.AI_ACCOMMODATION_IMPORT,
+                    LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH
+                ]
             ] as const;
 
             for (const plan of ALL_PLANS) {
