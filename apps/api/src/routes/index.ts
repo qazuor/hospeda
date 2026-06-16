@@ -22,6 +22,7 @@ import {
     publicAttractionRoutes
 } from './attraction';
 import { adminCommentRoutes, protectedCommentRoutes } from './comment';
+import { adminCommerceRoutes, publicCommerceRoutes } from './commerce';
 import {
     adminDestinationRoutes,
     protectedDestinationRoutes,
@@ -130,6 +131,7 @@ import { adminWebhookRouter } from './webhooks/admin';
 import { protectedWhatsNewRoutes } from './whats-new';
 
 import { ApiInfoSchema } from '@repo/schemas';
+import { mustChangePasswordGate } from '../middlewares/must-change-password';
 import { pastDueGraceMiddleware } from '../middlewares/past-due-grace.middleware';
 import { createSimpleRoute } from '../utils/route-factory';
 import {
@@ -190,6 +192,8 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/public/accommodations', publicAccommodationRoutes);
         // Commerce listings: gastronomy (SPEC-239 T-042)
         app.route('/api/v1/public/gastronomies', publicGastronomyRoutes);
+        // Commerce lead intake — public acquisition form (SPEC-239 T-047 US-1)
+        app.route('/api/v1/public/commerce', publicCommerceRoutes);
         app.route('/api/v1/public/destinations', publicDestinationRoutes);
         app.route('/api/v1/public/events', publicEventRoutes);
 
@@ -258,6 +262,13 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Exempt paths (payment-methods, checkout, reactivate) are handled
         // inside the middleware itself.
         app.use('/api/v1/protected/*', pastDueGraceMiddleware());
+
+        // SPEC-239 T-041: Force-password-change gate on ALL protected routes.
+        // Commerce owner accounts are provisioned with mustChangePassword=true.
+        // Any protected request from such a user returns 403 PASSWORD_CHANGE_REQUIRED
+        // until they change their password via /api/v1/protected/auth/change-password.
+        // The exempt path list is maintained inside the middleware itself.
+        app.use('/api/v1/protected/*', mustChangePasswordGate());
 
         apiLogger.debug('🔗 Registering protected routes...');
 
@@ -335,6 +346,8 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/accommodations', adminAccommodationRoutes);
         // Commerce listings: gastronomy (SPEC-239 T-045 / T-046)
         app.route('/api/v1/admin/gastronomies', adminGastronomyRoutes);
+        // Commerce leads admin management (SPEC-239 T-047)
+        app.route('/api/v1/admin/commerce', adminCommerceRoutes);
         app.route('/api/v1/admin/destinations', adminDestinationRoutes);
         app.route('/api/v1/admin/events', adminEventRoutes);
 

@@ -187,6 +187,19 @@ export function getAuth(): ReturnType<typeof betterAuth> {
                 lifecycleState: {
                     type: 'string',
                     required: false
+                },
+                /**
+                 * SPEC-239 T-041: Force-password-change flag.
+                 * Set to true when a commerce owner account is provisioned so the
+                 * owner must choose a personal password on first login. Cleared by
+                 * the change-password endpoint once the new password is accepted.
+                 * Exposed here as an additionalField so the session user object
+                 * carries the flag; the mustChangePasswordGate middleware reads it
+                 * from `c.get('user')` without an extra DB round-trip per request.
+                 */
+                mustChangePassword: {
+                    type: 'boolean',
+                    required: false
                 }
             }
         },

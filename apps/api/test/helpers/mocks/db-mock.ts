@@ -659,6 +659,12 @@ export function createDbMock() {
         // helpers which accept a GastronomyModel instance and internally call a new
         // GastronomyFaqModel for FAQ CRUD). Expose both the class and singleton.
         GastronomyFaqModel: GenericMockModel,
-        gastronomyFaqModel: new GenericMockModel()
+        gastronomyFaqModel: new GenericMockModel(),
+
+        // SPEC-239 T-047: CommerceLeadModel — instantiated at module scope by
+        // CommerceLeadService when the commerce lead routes load. The GenericMockModel
+        // no-op stub is sufficient for route-level permission-gate tests (no real DB
+        // data needed; the service layer is exercised via mock actor headers).
+        CommerceLeadModel: GenericMockModel
     };
 }

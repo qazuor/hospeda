@@ -1,9 +1,10 @@
 /**
  * Change Password Endpoint
  * Allows authenticated users to change their password.
- * Also clears the passwordChangeRequired flag if set.
+ * Also clears the passwordChangeRequired flag and the mustChangePassword
+ * column (SPEC-239 T-041: commerce owner forced-password-change gate).
  */
-import { UserModel, accounts, getDb } from '@repo/db';
+import { UserModel, accounts, getDb, users } from '@repo/db';
 import { ChangePasswordInputSchema, ChangePasswordResponseSchema } from '@repo/schemas';
 import { withServiceTransaction } from '@repo/service-core';
 import { compare, hash } from 'bcryptjs';
@@ -66,10 +67,12 @@ export const changePasswordRoute = createSimpleRoute({
                 .set({ password: hashedPassword, updatedAt: new Date() })
                 .where(eq(accounts.id, account.id));
 
-            // 5. Clear passwordChangeRequired flag if set
+            // 5. Clear legacy passwordChangeRequired flag (adminInfo) + SPEC-239
+            //    mustChangePassword column so the commerce owner gate is lifted.
             try {
                 const userModel = new UserModel();
                 const dbUser = await userModel.findById(user.id, tx);
+
                 if (dbUser?.adminInfo?.passwordChangeRequired) {
                     await userModel.update(
                         { id: user.id },
@@ -77,9 +80,20 @@ export const changePasswordRoute = createSimpleRoute({
                         tx
                     );
                 }
+
+                // SPEC-239 T-041: unconditionally clear mustChangePassword column so
+                // the mustChangePasswordGate middleware stops blocking this user.
+                // We use a raw update on the users table because UserModel.update
+                // routes through the Zod update schema which may not expose this
+                // column. The `users` Drizzle table reference is imported at the
+                // top of this file from @repo/db.
+                await tx
+                    .update(users)
+                    .set({ mustChangePassword: false, updatedAt: new Date() })
+                    .where(eq(users.id, user.id));
             } catch (error) {
                 apiLogger.warn({
-                    message: 'Failed to clear passwordChangeRequired flag',
+                    message: 'Failed to clear passwordChangeRequired / mustChangePassword flags',
                     error
                 });
                 // Non-fatal: password update must still commit even if flag clear fails
