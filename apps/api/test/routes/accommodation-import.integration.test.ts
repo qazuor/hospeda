@@ -20,10 +20,16 @@
 import { PermissionEnum } from '@repo/schemas';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
+const { mockCapture } = vi.hoisted(() => ({ mockCapture: vi.fn() }));
+
 vi.mock('@repo/utils', async (importActual) => {
     const actual = await importActual<typeof import('@repo/utils')>();
     return { ...actual, safeExternalFetch: vi.fn() };
 });
+
+vi.mock('../../src/lib/posthog', () => ({
+    getPostHogClient: () => ({ capture: mockCapture })
+}));
 
 import { safeExternalFetch } from '@repo/utils';
 import { initApp } from '../../src/app.js';
@@ -142,6 +148,27 @@ describe('POST /api/v1/protected/accommodations/import-from-url', () => {
         expect(res.status).toBe(400);
         const body = await res.json();
         expect(body.success).toBe(false);
+    });
+
+    it('emits ephemeral PostHog started + completed events on a successful import', async () => {
+        // Arrange
+        mockFetch.mockResolvedValue(fetchSuccess(RICH_JSONLD_HTML));
+
+        // Act
+        await app.request(ENDPOINT, {
+            method: 'POST',
+            headers: authHeaders(),
+            body: JSON.stringify({ url: 'https://example.com/listing/1', legalConfirmed: true })
+        });
+
+        // Assert: started + completed, only the hostname is sent (never the full URL).
+        const events = mockCapture.mock.calls.map((call) => call[0].event);
+        expect(events).toContain('accommodation_import_started');
+        expect(events).toContain('accommodation_import_completed');
+        const startedCall = mockCapture.mock.calls.find(
+            (call) => call[0].event === 'accommodation_import_started'
+        );
+        expect(startedCall?.[0].properties.host).toBe('example.com');
     });
 
     it('returns 401 for an unauthenticated request', async () => {

@@ -62,6 +62,7 @@ import {
 } from '@repo/service-core';
 import type { Actor } from '@repo/service-core';
 import type { Context } from 'hono';
+import { getPostHogClient } from '../../../lib/posthog';
 import { AI_ENTITLEMENT_BY_FEATURE, AI_LIMIT_BY_FEATURE } from '../../../middlewares/ai-quota';
 import {
     entitlementMiddleware,
@@ -95,6 +96,18 @@ const DEFAULT_LOCALE: LanguageEnum = 'es';
 
 /** One hour, in milliseconds — the rate-limit window. */
 const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
+
+/**
+ * Extracts just the hostname from a URL for analytics, never the full URL
+ * (which may carry tokens/PII). Returns `'invalid'` when unparseable.
+ */
+function safeHostname(rawUrl: string): string {
+    try {
+        return new URL(rawUrl).hostname;
+    } catch {
+        return 'invalid';
+    }
+}
 
 /**
  * Zod-version-bridged parameter type for `AiService.generateObject`'s second
@@ -304,9 +317,35 @@ export const protectedImportFromUrlRoute = createProtectedRoute({
             aiExtract: buildImportAiExtract({ c: ctx, actor, gate })
         };
 
+        // Ephemeral, fire-and-forget analytics (no DB). No-op when PostHog is
+        // disabled. Only the hostname is sent — never the full URL (may carry
+        // tokens/PII).
+        const sourceHost = safeHostname(input.url);
+        getPostHogClient()?.capture({
+            distinctId: actor.id,
+            event: 'accommodation_import_started',
+            properties: { host: sourceHost }
+        });
+
         const service = new AccommodationImportService({ logger: apiLogger });
         const response = await service.importFromUrl({ url: input.url, locale, context }, actor);
+        const final = applyAiGateNotice(response, gate);
 
-        return applyAiGateNotice(response, gate);
+        getPostHogClient()?.capture({
+            distinctId: actor.id,
+            event:
+                final.source === 'none'
+                    ? 'accommodation_import_failed'
+                    : 'accommodation_import_completed',
+            properties: {
+                host: sourceHost,
+                source: final.source,
+                partial: final.partial,
+                methodsUsed: final.methodsUsed.length,
+                aiBlocked: gate.blockedReason
+            }
+        });
+
+        return final;
     }
 });
