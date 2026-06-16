@@ -584,7 +584,25 @@ export const ApiEnvBaseSchema = z.object({
     HOSPEDA_AI_VAULT_MASTER_KEY: z
         .string()
         .min(32, 'HOSPEDA_AI_VAULT_MASTER_KEY must be at least 32 characters')
-        .optional()
+        .optional(),
+
+    // Accommodation import (SPEC-222)
+    /** Apify API token for the Airbnb scraper actor and Booking.com fallback adapter */
+    HOSPEDA_APIFY_TOKEN: z.string().optional(),
+    /** Apify actor ID/slug for the Airbnb scraper (swappable without a code deploy) */
+    HOSPEDA_APIFY_AIRBNB_ACTOR: z.string().optional(),
+    /** Google Places API (New) key for the Google Maps import tier */
+    HOSPEDA_GOOGLE_PLACES_API_KEY: z.string().optional(),
+    /** MercadoLibre OAuth app access token for reading /items listings */
+    HOSPEDA_MERCADOLIBRE_TOKEN: z.string().optional(),
+    /** Timeout in milliseconds for the safeExternalFetch utility used in import adapters */
+    HOSPEDA_IMPORT_FETCH_TIMEOUT_MS: z.coerce.number().default(8000),
+    /** Maximum response body size in bytes for the safeExternalFetch utility used in import adapters */
+    HOSPEDA_IMPORT_FETCH_MAX_BYTES: z.coerce.number().default(3000000),
+    /** Per-user rate limit (requests per hour) for the accommodation import endpoint */
+    HOSPEDA_IMPORT_RATE_LIMIT_RPH: z.coerce.number().default(10),
+    /** Maximum characters of scraped page text sent to the AI Strategy B enrichment step */
+    HOSPEDA_IMPORT_AI_MAX_CHARS: z.coerce.number().default(12000)
 });
 
 /**

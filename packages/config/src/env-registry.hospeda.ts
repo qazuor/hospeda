@@ -1476,6 +1476,139 @@ export const HOSPEDA_ENV_VARS = [
         howToObtainEs:
             'Locale que se usa cuando no hay preferencia (ej: "es" para Argentina). Tiene que ser uno de HOSPEDA_SUPPORTED_LOCALES.'
     },
+    // -------------------------------------------------------------------------
+    // Accommodation import (SPEC-222)
+    // -------------------------------------------------------------------------
+    {
+        name: 'HOSPEDA_APIFY_TOKEN',
+        description:
+            'Apify API token used by the Airbnb scraper actor (and the Booking.com fallback adapter). Required to call any Apify actor run via the Apify REST API.',
+        descriptionEs:
+            'Token de la API de Apify que usan el actor scraper de Airbnb (y el adaptador de Booking.com como fallback). Necesario para ejecutar cualquier actor de Apify vía la REST API.',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'your-apify-api-token',
+        apps: ['api'],
+        category: 'integrations',
+        helpUrl: 'https://console.apify.com/settings/integrations',
+        howToObtain:
+            'Apify Console → Settings → Integrations → Personal API tokens → "Create new token". Copy the generated value (starts with "apify_api_"). Never commit this value.',
+        howToObtainEs:
+            'Consola de Apify → Settings → Integrations → Personal API tokens → "Create new token". Copiá el valor generado (empieza con "apify_api_"). Nunca lo commitees.'
+    },
+    {
+        name: 'HOSPEDA_APIFY_AIRBNB_ACTOR',
+        description:
+            'Apify actor ID or slug for the Airbnb scraper. Allows swapping the scraper provider without a code deploy (e.g. "tri_angle/airbnb-scraper").',
+        descriptionEs:
+            'ID o slug del actor de Apify para el scraper de Airbnb. Permite cambiar el proveedor del scraper sin redesplegar código (ej: "tri_angle/airbnb-scraper").',
+        type: 'string',
+        required: false,
+        secret: false,
+        defaultValue: 'tri_angle/airbnb-scraper',
+        exampleValue: 'tri_angle/airbnb-scraper',
+        apps: ['api'],
+        category: 'integrations',
+        helpUrl: 'https://console.apify.com/actors',
+        howToObtain:
+            'Find the actor on the Apify Store (https://apify.com/store) and copy its slug shown as "username/actor-name". The default "tri_angle/airbnb-scraper" works for Airbnb listings.',
+        howToObtainEs:
+            'Buscá el actor en el Apify Store (https://apify.com/store) y copiá su slug que aparece como "usuario/nombre-actor". El default "tri_angle/airbnb-scraper" funciona para listings de Airbnb.'
+    },
+    {
+        name: 'HOSPEDA_GOOGLE_PLACES_API_KEY',
+        description:
+            'Google Places API (New) key for the Google Maps import tier. Used to look up place details and extract accommodation metadata from Google Maps listings.',
+        descriptionEs:
+            'API key de la Google Places API (New) para el tier de importación desde Google Maps. Se usa para buscar detalles de lugares y extraer metadatos de alojamiento de listings en Google Maps.',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'your-google-places-api-key',
+        apps: ['api'],
+        category: 'integrations',
+        helpUrl: 'https://console.cloud.google.com/apis/credentials',
+        howToObtain:
+            'Google Cloud Console → APIs & Services → Credentials → "Create Credentials" → "API key". Then restrict the key to the "Places API (New)" under "API restrictions". Billing must be enabled on the project.',
+        howToObtainEs:
+            'Google Cloud Console → APIs & Services → Credentials → "Create Credentials" → "API key". Luego restringí la key a la "Places API (New)" en "API restrictions". El proyecto debe tener billing habilitado.'
+    },
+    {
+        name: 'HOSPEDA_MERCADOLIBRE_TOKEN',
+        description:
+            'MercadoLibre OAuth app access token for reading /items listings. Required because the ML /items endpoint no longer allows anonymous access.',
+        descriptionEs:
+            'Token de acceso OAuth de la app de MercadoLibre para leer listings de /items. Necesario porque el endpoint ML /items ya no permite acceso anónimo.',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'your-mercadolibre-access-token',
+        apps: ['api'],
+        category: 'integrations',
+        helpUrl: 'https://developers.mercadolibre.com.ar/devcenter',
+        howToObtain:
+            'MercadoLibre Developers → "Crear aplicación" → complete the form → copy the "Access Token" from the app credentials panel. Tokens expire; use the refresh-token flow to keep them valid.',
+        howToObtainEs:
+            'MercadoLibre Developers → "Crear aplicación" → completá el formulario → copiá el "Access Token" del panel de credenciales de la app. Los tokens expiran; usá el flujo de refresh-token para mantenerlos válidos.'
+    },
+    {
+        name: 'HOSPEDA_IMPORT_FETCH_TIMEOUT_MS',
+        description:
+            'Timeout in milliseconds for the safeExternalFetch utility used in accommodation import adapters. Requests that exceed this limit are aborted.',
+        descriptionEs:
+            'Timeout en milisegundos para el utilitario safeExternalFetch usado en los adaptadores de importación de alojamientos. Las solicitudes que superen este límite se abortan.',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '8000',
+        exampleValue: '8000',
+        apps: ['api'],
+        category: 'integrations'
+    },
+    {
+        name: 'HOSPEDA_IMPORT_FETCH_MAX_BYTES',
+        description:
+            'Maximum response body size in bytes for the safeExternalFetch utility used in accommodation import adapters. Responses exceeding this limit are rejected.',
+        descriptionEs:
+            'Tamaño máximo del cuerpo de respuesta en bytes para el utilitario safeExternalFetch usado en los adaptadores de importación de alojamientos. Las respuestas que superen este límite son rechazadas.',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '3000000',
+        exampleValue: '3000000',
+        apps: ['api'],
+        category: 'integrations'
+    },
+    {
+        name: 'HOSPEDA_IMPORT_RATE_LIMIT_RPH',
+        description:
+            'Per-user rate limit (requests per hour) for the accommodation import endpoint. Prevents abuse and excessive external API consumption.',
+        descriptionEs:
+            'Límite de tasa por usuario (solicitudes por hora) para el endpoint de importación de alojamientos. Previene abuso y consumo excesivo de APIs externas.',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '10',
+        exampleValue: '10',
+        apps: ['api'],
+        category: 'integrations'
+    },
+    {
+        name: 'HOSPEDA_IMPORT_AI_MAX_CHARS',
+        description:
+            'Maximum number of characters of scraped page text sent to the AI Strategy B enrichment step. Limits token consumption and cost.',
+        descriptionEs:
+            'Número máximo de caracteres del texto de la página scrapeada que se envían al paso de enriquecimiento por IA (Estrategia B). Limita el consumo de tokens y el costo.',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '12000',
+        exampleValue: '12000',
+        apps: ['api'],
+        category: 'integrations'
+    },
+
     {
         name: 'HOSPEDA_NOINDEX_HOSTS',
         description:
