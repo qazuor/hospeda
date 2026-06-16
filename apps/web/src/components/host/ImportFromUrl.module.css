@@ -42,7 +42,7 @@
     border: none;
     padding: 0;
     font-family: var(--font-sans);
-    font-size: var(--text-small, 0.875rem);
+    font-size: var(--text-sm, 0.875rem);
     color: var(--brand-primary);
     text-decoration: underline;
     cursor: pointer;
@@ -75,13 +75,13 @@
     flex-direction: column;
     gap: var(--space-1);
     font-family: var(--font-sans);
-    font-size: var(--text-small, 0.875rem);
+    font-size: var(--text-sm, 0.875rem);
     color: var(--core-muted-foreground);
 }
 
 .helpExample {
     font-family: var(--font-mono, monospace);
-    font-size: var(--text-small, 0.875rem);
+    font-size: var(--text-sm, 0.875rem);
     color: var(--core-foreground);
     word-break: break-all;
 }

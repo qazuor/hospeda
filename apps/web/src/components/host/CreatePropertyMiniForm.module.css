@@ -38,7 +38,7 @@
 
 .importToggleIcon {
     flex-shrink: 0;
-    font-size: var(--text-small, 0.875rem);
+    font-size: var(--text-sm, 0.875rem);
     transition: transform var(--duration-normal, 0.4s) ease;
 }
 
@@ -65,7 +65,7 @@
     border-left: 3px solid var(--brand-accent);
     border-radius: 0 var(--radius-md) var(--radius-md) 0;
     font-family: var(--font-sans);
-    font-size: var(--text-small, 0.875rem);
+    font-size: var(--text-sm, 0.875rem);
     color: var(--core-foreground);
 }
 
@@ -109,7 +109,7 @@
     background-color: var(--surface-warm);
     border-radius: var(--radius-md);
     font-family: var(--font-sans);
-    font-size: var(--text-small, 0.875rem);
+    font-size: var(--text-sm, 0.875rem);
     color: var(--core-muted-foreground);
 }
 
