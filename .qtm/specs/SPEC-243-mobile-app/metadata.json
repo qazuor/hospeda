@@ -1,0 +1,55 @@
+{
+    "specId": "SPEC-243",
+    "title": "Hospeda mobile app (React Native / Expo)",
+    "type": "epic",
+    "complexity": "high",
+    "status": "draft",
+    "created": "2026-06-15T00:00:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": [
+        "mobile",
+        "react-native",
+        "expo",
+        "native",
+        "tourist",
+        "host",
+        "push-notifications",
+        "qr-scan",
+        "geolocation"
+    ],
+    "subSpecs": [
+        {
+            "id": "SPEC-243-sub-0",
+            "name": "Foundation",
+            "status": "pending",
+            "dependsOn": []
+        },
+        {
+            "id": "SPEC-243-sub-1",
+            "name": "Tourist / Discovery",
+            "status": "pending",
+            "dependsOn": ["SPEC-243-sub-0", "SPEC-239", "SPEC-240"]
+        },
+        {
+            "id": "SPEC-243-sub-2",
+            "name": "Tourist / Tarjeta Hospeda",
+            "status": "pending",
+            "dependsOn": ["SPEC-243-sub-0", "SPEC-242"]
+        },
+        {
+            "id": "SPEC-243-sub-3",
+            "name": "Host / Management",
+            "status": "pending",
+            "dependsOn": ["SPEC-243-sub-0"]
+        },
+        {
+            "id": "SPEC-243-sub-4",
+            "name": "Account / Profile",
+            "status": "pending",
+            "dependsOn": ["SPEC-243-sub-0"]
+        }
+    ],
+    "dependsOn": ["SPEC-239", "SPEC-240", "SPEC-242"]
+}

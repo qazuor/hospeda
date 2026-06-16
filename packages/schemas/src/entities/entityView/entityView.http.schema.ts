@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { EntityViewCaptureInputSchema } from './entityView.crud.schema.js';
-import { EntityViewQuerySchema } from './entityView.query.schema.js';
+import { EntityViewQuerySchema, EntityViewWindowSchema } from './entityView.query.schema.js';
 
 /**
  * EntityView HTTP wire schemas (SPEC-159 §5).
@@ -164,3 +164,88 @@ export const EntityViewStatsListSchema = z.array(EntityViewStatsSchema);
 
 /** TypeScript type for the bare view-stats array, inferred from {@link EntityViewStatsListSchema}. */
 export type EntityViewStatsList = z.infer<typeof EntityViewStatsListSchema>;
+
+// ============================================================================
+// HOST DAILY SERIES (SPEC-207)
+// ============================================================================
+
+/**
+ * A single item in the per-host daily view-count series.
+ *
+ * `date` is a calendar date in `'YYYY-MM-DD'` format. `total` is the
+ * deduplicated visit count across ALL of the host's accommodations for that
+ * day (30-min bucket dedup — same semantics as the admin daily series).
+ *
+ * The service layer gap-fills missing days so the caller always receives
+ * exactly `window` items (7 or 30 dates) with no gaps.
+ *
+ * @example
+ * ```ts
+ * const item: HostViewDailySeriesItem = { date: '2026-06-05', total: 12 };
+ * ```
+ */
+export const HostViewDailySeriesItemSchema = z.object({
+    /**
+     * Calendar date in ISO `'YYYY-MM-DD'` format.
+     * Rejected if the string does not match `^\d{4}-\d{2}-\d{2}$`.
+     */
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, {
+        message: 'zodError.entityView.hostDailySeries.date.invalid'
+    }),
+
+    /**
+     * Deduplicated total visits across all owned accommodations for this day.
+     * Zero for gap-filled days with no views. Must be a non-negative integer.
+     */
+    total: z
+        .number({
+            message: 'zodError.entityView.hostDailySeries.total.required'
+        })
+        .int({ message: 'zodError.entityView.hostDailySeries.total.integer' })
+        .nonnegative({ message: 'zodError.entityView.hostDailySeries.total.nonnegative' })
+});
+
+/**
+ * TypeScript type for a single host daily-series item, inferred from
+ * {@link HostViewDailySeriesItemSchema}.
+ */
+export type HostViewDailySeriesItem = z.infer<typeof HostViewDailySeriesItemSchema>;
+
+/**
+ * Response envelope for `GET /api/v1/protected/views/accommodations/me/daily-series`.
+ *
+ * `window` echoes the requested rolling window ('7d' or '30d').
+ * `items` is a gap-filled array of exactly `windowDays` entries, one per
+ * calendar day, ordered from oldest to newest.
+ *
+ * @example
+ * ```ts
+ * const response: HostViewDailySeriesResponse = {
+ *   window: '30d',
+ *   items: [
+ *     { date: '2026-05-17', total: 3 },
+ *     { date: '2026-05-18', total: 0 },
+ *     // ... 28 more rows
+ *   ],
+ * };
+ * ```
+ */
+export const HostViewDailySeriesSchema = z.object({
+    /**
+     * Rolling window echoed from the request query param.
+     * Useful for the consumer to display the chart x-axis range.
+     */
+    window: EntityViewWindowSchema,
+
+    /**
+     * Gap-filled daily series, one entry per calendar day in the window.
+     * Always exactly 7 items for '7d' and 30 items for '30d'.
+     */
+    items: z.array(HostViewDailySeriesItemSchema)
+});
+
+/**
+ * TypeScript type for the host daily-series response, inferred from
+ * {@link HostViewDailySeriesSchema}.
+ */
+export type HostViewDailySeries = z.infer<typeof HostViewDailySeriesSchema>;

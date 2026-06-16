@@ -1,7 +1,8 @@
 /**
  * @file FavoritesWidget.test.tsx
- * @description TDD tests for FavoritesWidget — horizontal bar chart showing
- * favorites breakdown across collections.
+ * @description Tests for FavoritesWidget — per-accommodation ranked bar list
+ * showing bookmark counts (SPEC-207 redesign from "collections" to real backend
+ * shape: {accommodationId, name, bookmarkCount}[]).
  */
 
 import { render, screen } from '@testing-library/react';
@@ -9,11 +10,11 @@ import { describe, expect, it } from 'vitest';
 import { FavoritesWidget } from '../../../src/components/host/FavoritesWidget.client';
 
 const mockData = {
-    collections: [
-        { collection: 'Sin colección', count: 24 },
-        { collection: 'Playa', count: 12 },
-        { collection: 'Montaña', count: 8 },
-        { collection: 'Favoritos VIP', count: 3 }
+    items: [
+        { accommodationId: 'acc-1', name: 'Casa del Río', bookmarkCount: 24 },
+        { accommodationId: 'acc-2', name: 'Villa Paraíso', bookmarkCount: 12 },
+        { accommodationId: 'acc-3', name: 'Loft Centro', bookmarkCount: 8 },
+        { accommodationId: 'acc-4', name: 'Cabaña del Bosque', bookmarkCount: 3 }
     ]
 };
 
@@ -43,11 +44,11 @@ describe('FavoritesWidget', () => {
         expect(screen.getByText('Network error')).toBeInTheDocument();
     });
 
-    it('renders empty state when no collections', () => {
+    it('renders empty state when no items', () => {
         render(
             <FavoritesWidget
                 locale="es"
-                data={{ collections: [] }}
+                data={{ items: [] }}
                 isLoading={false}
                 error={null}
             />
@@ -55,7 +56,7 @@ describe('FavoritesWidget', () => {
         expect(screen.getByText(/Sin favoritos/i)).toBeInTheDocument();
     });
 
-    it('renders collection breakdown with counts', () => {
+    it('renders per-accommodation ranked list with names', () => {
         render(
             <FavoritesWidget
                 locale="es"
@@ -64,13 +65,13 @@ describe('FavoritesWidget', () => {
                 error={null}
             />
         );
-        expect(screen.getByText('Sin colección')).toBeInTheDocument();
-        expect(screen.getByText('Playa')).toBeInTheDocument();
-        expect(screen.getByText('Montaña')).toBeInTheDocument();
-        expect(screen.getByText('Favoritos VIP')).toBeInTheDocument();
+        expect(screen.getByText('Casa del Río')).toBeInTheDocument();
+        expect(screen.getByText('Villa Paraíso')).toBeInTheDocument();
+        expect(screen.getByText('Loft Centro')).toBeInTheDocument();
+        expect(screen.getByText('Cabaña del Bosque')).toBeInTheDocument();
     });
 
-    it('displays correct count for each collection', () => {
+    it('displays correct bookmark count for each accommodation', () => {
         render(
             <FavoritesWidget
                 locale="es"
@@ -85,7 +86,7 @@ describe('FavoritesWidget', () => {
         expect(screen.getByText('3')).toBeInTheDocument();
     });
 
-    it('shows total favorites count', () => {
+    it('shows total bookmark count in header', () => {
         render(
             <FavoritesWidget
                 locale="es"
@@ -96,5 +97,25 @@ describe('FavoritesWidget', () => {
         );
         // Total: 24+12+8+3 = 47
         expect(screen.getByText('47')).toBeInTheDocument();
+    });
+
+    it('falls back to slug as name when name resolves to slug (unnamed accommodation)', () => {
+        render(
+            <FavoritesWidget
+                locale="es"
+                data={{
+                    items: [
+                        {
+                            accommodationId: 'acc-unknown',
+                            name: 'casa-del-rio-slug',
+                            bookmarkCount: 5
+                        }
+                    ]
+                }}
+                isLoading={false}
+                error={null}
+            />
+        );
+        expect(screen.getByText('casa-del-rio-slug')).toBeInTheDocument();
     });
 });
