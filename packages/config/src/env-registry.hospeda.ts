@@ -1517,6 +1517,25 @@ export const HOSPEDA_ENV_VARS = [
             'Buscá el actor en el Apify Store (https://apify.com/store) y copiá su slug que aparece como "usuario/nombre-actor". El default "tri_angle/airbnb-scraper" funciona para listings de Airbnb.'
     },
     {
+        name: 'HOSPEDA_APIFY_BOOKING_ACTOR',
+        description:
+            'Apify actor ID or slug for the Booking.com scraper. Used as a fallback when the direct JSON-LD fetch is blocked or yields too few fields. Allows swapping the scraper provider without a code deploy (e.g. "voyager/booking-scraper").',
+        descriptionEs:
+            'ID o slug del actor de Apify para el scraper de Booking.com. Se usa como fallback cuando el fetch directo JSON-LD es bloqueado o produce pocos campos. Permite cambiar el proveedor del scraper sin redesplegar código (ej: "voyager/booking-scraper").',
+        type: 'string',
+        required: false,
+        secret: false,
+        defaultValue: 'voyager/booking-scraper',
+        exampleValue: 'voyager/booking-scraper',
+        apps: ['api'],
+        category: 'integrations',
+        helpUrl: 'https://console.apify.com/actors',
+        howToObtain:
+            'Find the actor on the Apify Store (https://apify.com/store) and copy its slug shown as "username/actor-name". The default "voyager/booking-scraper" works for Booking.com listings.',
+        howToObtainEs:
+            'Buscá el actor en el Apify Store (https://apify.com/store) y copiá su slug que aparece como "usuario/nombre-actor". El default "voyager/booking-scraper" funciona para listings de Booking.com.'
+    },
+    {
         name: 'HOSPEDA_GOOGLE_PLACES_API_KEY',
         description:
             'Google Places API (New) key for the Google Maps import tier. Used to look up place details and extract accommodation metadata from Google Maps listings.',

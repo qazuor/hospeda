@@ -591,6 +591,8 @@ export const ApiEnvBaseSchema = z.object({
     HOSPEDA_APIFY_TOKEN: z.string().optional(),
     /** Apify actor ID/slug for the Airbnb scraper (swappable without a code deploy) */
     HOSPEDA_APIFY_AIRBNB_ACTOR: z.string().optional(),
+    /** Apify actor ID/slug for the Booking.com scraper fallback (swappable without a code deploy) */
+    HOSPEDA_APIFY_BOOKING_ACTOR: z.string().optional(),
     /** Google Places API (New) key for the Google Maps import tier */
     HOSPEDA_GOOGLE_PLACES_API_KEY: z.string().optional(),
     /** MercadoLibre OAuth app access token for reading /items listings */
