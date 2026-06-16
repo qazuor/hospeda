@@ -267,15 +267,15 @@
             "id": "T-011",
             "title": "Push notification setup: expo-notifications init, getExpoPushTokenAsync, new POST /protected/profile/push-token API endpoint",
             "description": "Initialize expo-notifications (single channel v1, ADR-033 decision 6). On first authenticated launch call getExpoPushTokenAsync() and POST the token to a NEW endpoint POST /api/v1/protected/profile/push-token (small API addition). Foreground notifications shown in-app; background follows OS behavior. Register EXPO_PUBLIC_API_URL + EXPO_PUBLIC_APP_ENV env vars.",
-            "status": "in_progress",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-004"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "expo-notifications init + push token retrieval",
-                    "completed": false,
-                    "note": "DEVICE-PENDING: expo-notifications requires a real device/simulator with push entitlement. Mobile-side init and getExpoPushTokenAsync deferred to owner device run (T-011 spec note)."
+                    "completed": true,
+                    "note": "Code complete: setNotificationHandler + registerPushToken (permission request + getExpoPushTokenAsync + apiFetch POST), graceful-degrade (permission-denied / no-project-id / error never throws). Live token retrieval is device-gated (needs real device + eas init projectId)."
                 },
                 {
                     "title": "POST /protected/profile/push-token endpoint (API)",
@@ -283,8 +283,8 @@
                 },
                 {
                     "title": "Foreground/background receipt handling",
-                    "completed": false,
-                    "note": "DEVICE-PENDING: receipt handler wiring deferred to owner device run."
+                    "completed": true,
+                    "note": "Foreground handler configured (setNotificationHandler shouldShowBanner/List, SDK 56 shape); background follows OS behavior per ADR-033. Live receipt is device-gated."
                 }
             ],
             "tags": ["native", "push", "api"],
@@ -296,9 +296,10 @@
             },
             "timestamps": {
                 "created": "2026-06-15T00:00:00.000Z",
-                "started": "2026-06-16T00:00:00.000Z"
+                "started": "2026-06-16T00:00:00.000Z",
+                "completed": "2026-06-16T00:00:00.000Z"
             },
-            "note": "BACKEND DONE (commits aee536b71 + matrix fix): user_push_tokens table (UNIQUE(token)) + UserPushTokenModel.upsertByToken + UserService.registerPushToken + POST /api/v1/protected/profile/push-token (rate-limited 20/min) + migration 0015_sticky_timeslip.sql + endpoint-gate-matrix row (CI guard the agent missed — fixed). 10 tests (6 service + 4 handler) + gate-matrix guard 798 green, drift EXIT 0. MOBILE SIDE STILL TODO (writable headless, build-verified; only the live push receipt is device-gated): expo-notifications install + app.json plugin + getExpoPushTokenAsync + POST via apiFetch on authed launch + foreground receipt handler. OWNER must apply migration 0015 on staging/prod (hops db-migrate)."
+            "note": "DONE (backend + mobile). BACKEND: user_push_tokens table (UNIQUE(token), upsert reassigns userId) + UserPushTokenModel.upsertByToken + UserService.registerPushToken + POST /api/v1/protected/profile/push-token (rate-limited 20/min) + migration 0015_sticky_timeslip.sql + endpoint-gate-matrix row (SPEC-145 CI guard the backend agent missed — I fixed). MOBILE: expo-notifications ~56.0.18 + app.json plugin + src/lib/push/ (setNotificationHandler SDK56 shouldShowBanner/List + registerPushToken graceful-degrade never-throws + mapPlatform + usePushRegistration hook wired in root _layout when authed). Verified green: api (service 6 + handler 4 + gate-matrix 798), drift EXIT 0, mobile typecheck/lint/test(113)/build(ios+android) all 0. DEVICE-GATED (owner): live push receipt + real token need a device + `eas init` projectId (registerPushToken returns reason='no-project-id' until then). OWNER OPS: apply migration 0015 on staging/prod (hops db-migrate)."
         },
         {
             "id": "T-012",
@@ -347,8 +348,8 @@
     "summary": {
         "total": 13,
         "pending": 1,
-        "inProgress": 1,
-        "completed": 11,
+        "inProgress": 0,
+        "completed": 12,
         "blocked": 0,
         "averageComplexity": 1.9
     }
