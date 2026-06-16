@@ -1,7 +1,9 @@
 import type {
     AdminInfoType,
     BaseLocationType,
+    DestinationClimateInput,
     DestinationRatingInput,
+    DestinationWeatherCacheInput,
     I18nText,
     Media,
     Seo,
@@ -78,7 +80,12 @@ export const destinations = pgTable(
         deletedAt: timestamp('deleted_at', { withTimezone: true }),
         deletedById: uuid('deleted_by_id').references(() => users.id, { onDelete: 'set null' }),
         moderationState: ModerationStatusPgEnum('moderation_state').notNull().default('PENDING'),
-        rating: jsonb('rating').$type<DestinationRatingInput>()
+        rating: jsonb('rating').$type<DestinationRatingInput>(),
+        // SPEC-215: structured seasonal climate (seeded + admin-editable)
+        climate: jsonb('climate').$type<DestinationClimateInput>(),
+        // SPEC-215: cached live current conditions + 16-day daily forecast,
+        // refreshed by the destination-weather-fetch cron (12h)
+        weatherCurrent: jsonb('weather_current').$type<DestinationWeatherCacheInput>()
     },
     (table) => ({
         destinations_isFeatured_idx: index('destinations_isFeatured_idx').on(table.isFeatured),

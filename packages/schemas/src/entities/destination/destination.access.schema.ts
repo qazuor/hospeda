@@ -57,7 +57,12 @@ export const DestinationPublicSchema = DestinationSchema.pick({
     // Nested public data
     attractions: true,
     rating: true,
-    faqs: true
+    faqs: true,
+
+    // SPEC-215: seasonal climate (public-safe editorial content). The live
+    // weather badge uses the dedicated /weather endpoint, so weatherCurrent is
+    // intentionally NOT exposed here.
+    climate: true
 });
 
 export type DestinationPublic = z.infer<typeof DestinationPublicSchema>;
@@ -89,6 +94,9 @@ export const DestinationProtectedSchema = DestinationSchema.pick({
     attractions: true,
     rating: true,
     faqs: true,
+
+    // SPEC-215: seasonal climate (also surfaced to authenticated users)
+    climate: true,
 
     // Full hierarchy (authenticated users)
     parentDestinationId: true,
