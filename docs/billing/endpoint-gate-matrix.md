@@ -224,6 +224,8 @@
 | `PATCH /api/v1/protected/attractions/{id}` | `attraction/protected/patch.ts` | none | - | n/a | Auth + PermissionEnum-gated |
 | `PUT /api/v1/protected/attractions/{id}` | `attraction/protected/update.ts` | none | - | n/a | Auth + PermissionEnum-gated |
 | `DELETE /api/v1/protected/attractions/{id}` | `attraction/protected/softDelete.ts` | none | - | n/a | Auth + PermissionEnum-gated |
+| **HOST-TRADE — PROTECTED** | | | | | |
+| `GET /api/v1/protected/host-trades` | `host-trade/protected/list.ts` | none | - | n/a | Host perk, gated by HOST_TRADE_VIEW permission only — no billing entitlement |
 | **DESTINATION — PROTECTED** | | | | | |
 | `POST /api/v1/protected/destinations` | `destination/protected/create.ts` | none | - | n/a | Content contributor; auth + PermissionEnum-gated |
 | `PATCH /api/v1/protected/destinations/{id}` | `destination/protected/patch.ts` | none | - | n/a | Auth + PermissionEnum-gated |
@@ -361,6 +363,15 @@
 | `DELETE /api/v1/admin/attractions/{id}/hard` | `attraction/admin/hardDelete.ts` | none | - | n/a | Admin hard-delete; PermissionEnum-gated |
 | `POST /api/v1/admin/attractions/{id}/restore` | `attraction/admin/restore.ts` | none | - | n/a | Admin restore; PermissionEnum-gated |
 | `POST /api/v1/admin/attractions/batch` | `attraction/admin/batch.ts` | none | - | n/a | Admin batch; PermissionEnum-gated |
+| **HOST-TRADE — ADMIN** | | | | | |
+| `GET /api/v1/admin/host-trades` | `host-trade/admin/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
+| `POST /api/v1/admin/host-trades` | `host-trade/admin/create.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
+| `GET /api/v1/admin/host-trades/{id}` | `host-trade/admin/getById.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
+| `PUT /api/v1/admin/host-trades/{id}` | `host-trade/admin/update.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
+| `PATCH /api/v1/admin/host-trades/{id}` | `host-trade/admin/patch.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
+| `DELETE /api/v1/admin/host-trades/{id}` | `host-trade/admin/delete.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
+| `DELETE /api/v1/admin/host-trades/{id}/hard` | `host-trade/admin/hardDelete.ts` | none | - | n/a | Admin hard-delete; PermissionEnum-gated |
+| `POST /api/v1/admin/host-trades/{id}/restore` | `host-trade/admin/restore.ts` | none | - | n/a | Admin restore; PermissionEnum-gated |
 | **EVENT-LOCATION — ADMIN** | | | | | |
 | `GET /api/v1/admin/event-locations` | `event-location/admin/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
 | `POST /api/v1/admin/event-locations` | `event-location/admin/create.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
