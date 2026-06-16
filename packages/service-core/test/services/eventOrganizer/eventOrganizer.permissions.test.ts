@@ -1,6 +1,7 @@
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
+    checkCanAdminList,
     checkCanCreateEventOrganizer,
     checkCanDeleteEventOrganizer,
     checkCanUpdateEventOrganizer
@@ -78,5 +79,25 @@ describe('eventOrganizer permissions', () => {
     it('throws if actor is null', () => {
         // @ts-expect-error
         expect(() => checkCanCreateEventOrganizer(null)).toThrow();
+    });
+
+    describe('checkCanAdminList', () => {
+        it('should allow actor with EVENT_ORGANIZER_VIEW permission', () => {
+            const actor: Actor = {
+                id: 'eo-admin',
+                role: RoleEnum.ADMIN,
+                permissions: [PermissionEnum.EVENT_ORGANIZER_VIEW]
+            };
+            expect(() => checkCanAdminList(actor)).not.toThrow();
+        });
+
+        it('should throw FORBIDDEN when actor lacks EVENT_ORGANIZER_VIEW permission', () => {
+            expect(() => checkCanAdminList(actorWithoutPerm)).toThrow();
+        });
+
+        it('should throw FORBIDDEN when actor is null', () => {
+            // @ts-expect-error
+            expect(() => checkCanAdminList(null)).toThrow();
+        });
     });
 });

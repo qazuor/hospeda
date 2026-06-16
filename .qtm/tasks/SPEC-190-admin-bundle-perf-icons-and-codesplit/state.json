@@ -1,6 +1,6 @@
 {
     "version": "1.0",
-    "title": "Admin Bundle Perf \u2014 Icon Tree-Shaking & Entity-Chunk Code-Split",
+    "title": "Admin Bundle Perf — Icon Tree-Shaking & Entity-Chunk Code-Split",
     "specRef": "SPEC-190-admin-bundle-perf-icons-and-codesplit",
     "created": "2026-06-10T00:00:00.000Z",
     "summary": {
@@ -26,7 +26,7 @@
             "status": "completed",
             "phase": "phase-1-measurement",
             "complexity": 1,
-            "detail": "Run build:analyze on the UNCHANGED admin codebase. Record a machine-readable baseline snapshot (small table or report metadata) of at least: components-entity, vendor*, lib-utils, and any icon-related chunk \u2014 raw + gzip bytes. Commit the snapshot. The baseline must reflect ~401 KB raw for components-entity (NOT 4 MB). FR-1."
+            "detail": "Run build:analyze on the UNCHANGED admin codebase. Record a machine-readable baseline snapshot (small table or report metadata) of at least: components-entity, vendor*, lib-utils, and any icon-related chunk — raw + gzip bytes. Commit the snapshot. The baseline must reflect ~401 KB raw for components-entity (NOT 4 MB). FR-1."
         },
         {
             "id": "T-003",
@@ -34,7 +34,7 @@
             "status": "completed",
             "phase": "phase-2-icon-front",
             "complexity": 1,
-            "detail": "Add \"sideEffects\": false to packages/icons/package.json. Icon modules are pure component factories (SVG/React, no CSS or global side-effects \u2014 verified). This enables tree-shaking: consumers importing named icons no longer retain unused icon modules. Rebuild admin + web and verify no icon module is wrongly dropped. FR-2."
+            "detail": "Add \"sideEffects\": false to packages/icons/package.json. Icon modules are pure component factories (SVG/React, no CSS or global side-effects — verified). This enables tree-shaking: consumers importing named icons no longer retain unused icon modules. Rebuild admin + web and verify no icon module is wrongly dropped. FR-2."
         },
         {
             "id": "T-004",
@@ -78,11 +78,11 @@
         },
         {
             "id": "T-009",
-            "title": "Break entity-list \u2192 entity-form/fields edge (relocate DeleteConfirmDialog)",
+            "title": "Break entity-list → entity-form/fields edge (relocate DeleteConfirmDialog)",
             "status": "completed",
             "phase": "phase-3-field-split",
             "complexity": 2,
-            "detail": "Break the edge: entity-list/InlineStateSelectCell.tsx and entity-list/DeleteRowButton.tsx import DeleteConfirmDialog from entity-form/fields/DeleteConfirmDialog \u2014 this drags the form-field tree into entity-list. Relocate DeleteConfirmDialog to a neutral location (e.g. components/shared/ or components/common/). Update all import paths. Verify no true circular dependency exists. Confirm/break any cycle with the visualizer. FR-7."
+            "detail": "Break the edge: entity-list/InlineStateSelectCell.tsx and entity-list/DeleteRowButton.tsx import DeleteConfirmDialog from entity-form/fields/DeleteConfirmDialog — this drags the form-field tree into entity-list. Relocate DeleteConfirmDialog to a neutral location (e.g. components/shared/ or components/common/). Update all import paths. Verify no true circular dependency exists. Confirm/break any cycle with the visualizer. FR-7."
         },
         {
             "id": "T-010",
@@ -111,7 +111,7 @@
         {
             "id": "T-013",
             "title": "Final before/after table + correct false sideEffects doc claim",
-            "status": "pending",
+            "status": "completed",
             "phase": "phase-4-closeout",
             "complexity": 1,
             "detail": "Produce the final before/after table (from build:analyze) covering each front: sideEffects, resolver subpath + lazify, heavy-field lazy split, de-couple + manualChunks. Each row shows baseline raw/gzip vs after raw/gzip and the delta. Correct the false sideEffects: false claim in packages/icons/docs/guides/optimization.md (line 17). FR-9."
@@ -119,7 +119,7 @@
         {
             "id": "T-014",
             "title": "Manual admin smoke: every field type in CREATE + EDIT",
-            "status": "pending",
+            "status": "completed",
             "phase": "phase-4-closeout",
             "complexity": 1,
             "detail": "MANDATORY SMOKE: manually exercise every field type in the admin browser (superadmin) in both CREATE and EDIT modes: rich-text editing + markdown, coordinates map + Nominatim search, image upload/replace/delete, gallery add/reorder/delete, video gallery add/remove. Confirm lazy-loading + SSR hydration correctness. This is the production readiness gate."

@@ -27,7 +27,17 @@ export default defineConfig({
                 statements: 90
             },
             include: ['src/**/*.ts'],
-            exclude: ['src/**/*.test.ts', 'src/**/*.spec.ts', 'src/**/index.ts']
+            exclude: [
+                'src/**/*.test.ts',
+                'src/**/*.spec.ts',
+                'src/**/index.ts',
+                // Deterministic MercadoPago test-control stub (SPEC-217):
+                // only active under HOSPEDA_QZPAY_TEST_CONTROL_ENABLED and
+                // exercised by the apps/api E2E suite, not billing unit tests.
+                'src/adapters/mercadopago-stub.ts',
+                // Pure type/interface file — no runtime to cover.
+                'src/types/addon.types.ts'
+            ]
         }
     }
 });

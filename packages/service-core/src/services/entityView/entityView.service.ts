@@ -39,6 +39,7 @@ import {
     type AdminSummaryTotalsRow,
     type DailySeriesRow,
     type EntityViewModel,
+    type HostDailySeriesRow,
     entityViewModel
 } from '@repo/db';
 import type { AccommodationModel } from '@repo/db';
@@ -209,6 +210,19 @@ const GetAdminDailySeriesSchema = z.object({
     windowDays: z.number().int().positive()
 });
 
+/**
+ * Input schema for {@link EntityViewService.getDailySeriesForHostAccommodations}.
+ *
+ * Only `window` is accepted — `actor.id` is used to resolve owned accommodation
+ * IDs internally. Rejecting any caller-supplied owner/host ID prevents a host
+ * from peeking at another host's view counts. Mirrors
+ * {@link GetStatsForHostAccommodationsSchema}.
+ */
+const GetDailySeriesForHostAccommodationsSchema = z.object({
+    /** Rolling window. Defaults to '30d' when omitted from query params. */
+    window: EntityViewWindowSchema
+});
+
 // ---------------------------------------------------------------------------
 // Public input/output types
 // ---------------------------------------------------------------------------
@@ -326,6 +340,34 @@ export interface GetAdminDailySeriesInput {
     readonly actor: Actor;
     /** Rolling window in days. Fixed at 30 for V1. */
     readonly windowDays: number;
+}
+
+/**
+ * Input for {@link EntityViewService.getDailySeriesForHostAccommodations}.
+ *
+ * The actor's own accommodation IDs are resolved internally — no `ownerId`
+ * param is accepted to prevent cross-host peeking.
+ */
+export interface GetDailySeriesForHostAccommodationsInput {
+    /** Authenticated actor performing the request (must have ACCOMMODATION_VIEW_OWN). */
+    readonly actor: Actor;
+    /** Rolling window for the daily series ('7d' or '30d'). */
+    readonly window: EntityViewWindow;
+}
+
+/**
+ * The daily-series output item produced by
+ * {@link EntityViewService.getDailySeriesForHostAccommodations}.
+ *
+ * Each entry represents one calendar day in the requested window.
+ * `total` is the sum of deduplicated visits across all of the host's
+ * accommodations for that day. Gap-filled days have `total: 0`.
+ */
+export interface HostViewDailySeriesOutputItem {
+    /** Calendar date in 'YYYY-MM-DD' format. */
+    readonly date: string;
+    /** Deduplicated total visits across all owned accommodations for the day. */
+    readonly total: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -829,6 +871,78 @@ export class EntityViewService extends BaseService {
             }
         });
     }
+
+    // -------------------------------------------------------------------------
+    // SPEC-207: Per-host daily series (require ACCOMMODATION_VIEW_OWN permission)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Returns a gap-filled daily view-count series for all accommodations owned
+     * by the authenticated host over a rolling window (7 or 30 days).
+     *
+     * **Permission:** `ACCOMMODATION_VIEW_OWN`. `actor.id` is used to resolve
+     * owned IDs — no `ownerId` param is accepted (anti-peeking).
+     *
+     * **Aggregation:** totals are summed across ALL of the host's accommodations
+     * per day, producing a single series (NOT split by accommodation or entity
+     * type). This is the data shape expected by the web host-dashboard trend
+     * chart.
+     *
+     * **Gap-fill semantics:** For any calendar day absent from the model result
+     * (no views that day), the service emits `{ date, total: 0 }`. The date
+     * range is the last `windowDays` calendar days in UTC, matching the SQL
+     * `DATE_TRUNC('day', viewed_at)` bucketing. If the host owns zero
+     * accommodations, an all-zero gap-filled series is returned immediately
+     * without a model call.
+     *
+     * @param input - Actor + rolling window ('7d' or '30d').
+     * @returns Gap-filled array of exactly `windowDays` items ordered by date ASC.
+     *
+     * @example
+     * ```ts
+     * const result = await entityViewService.getDailySeriesForHostAccommodations({
+     *   actor,
+     *   window: '30d',
+     * });
+     * if (!result.error) {
+     *   // result.data.length === 30, dates are consecutive
+     * }
+     * ```
+     */
+    public async getDailySeriesForHostAccommodations(
+        input: GetDailySeriesForHostAccommodationsInput
+    ): Promise<ServiceOutput<HostViewDailySeriesOutputItem[]>> {
+        const { actor, ...params } = input;
+        return this.runWithLoggingAndValidation({
+            methodName: 'getDailySeriesForHostAccommodations',
+            input: { actor, ...params },
+            schema: GetDailySeriesForHostAccommodationsSchema,
+            execute: async (validated, validatedActor) => {
+                if (!hasPermission(validatedActor, PermissionEnum.ACCOMMODATION_VIEW_OWN)) {
+                    throw new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        'Permission denied: ACCOMMODATION_VIEW_OWN required to view accommodation daily series'
+                    );
+                }
+
+                const windowDays = WINDOW_DAYS[validated.window];
+                const ownedIds = await this.accommodationModel.findIdsByOwnerId(validatedActor.id);
+
+                // Zero-accommodation host: return a fully gap-filled all-zero series
+                // without making any model call for view data.
+                if (ownedIds.length === 0) {
+                    return gapFillHostDailySeries([], windowDays);
+                }
+
+                const modelRows = await this.model.getDailySeriesForEntityIds({
+                    windowDays,
+                    entityIds: ownedIds
+                });
+
+                return gapFillHostDailySeries(modelRows, windowDays);
+            }
+        });
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -923,6 +1037,49 @@ function gapFillDailySeries(
             const key = `${dateStr}|${entityType}`;
             result.push(rowMap.get(key) ?? { date: dateStr, entityType, total: 0 });
         }
+    }
+
+    return result;
+}
+
+/**
+ * Gap-fills a per-host daily series result so that every calendar day in the
+ * last `windowDays` days (UTC) has an entry, even if no views were recorded.
+ *
+ * The date range is generated in UTC to match the `DATE_TRUNC('day', viewed_at)`
+ * bucketing used by the model SQL query. "Today" is the current UTC date; the
+ * range includes `windowDays` dates: from `today - (windowDays - 1)` through
+ * `today` inclusive.
+ *
+ * Missing days are emitted as `{ date, total: 0 }`.
+ *
+ * @param modelRows - Rows returned by `getDailySeriesForEntityIds` (only days with data).
+ * @param windowDays - Number of calendar days in the window (7 or 30 for V1).
+ * @returns Gap-filled array of exactly `windowDays` items ordered by date ASC.
+ */
+function gapFillHostDailySeries(
+    modelRows: readonly HostDailySeriesRow[],
+    windowDays: number
+): HostViewDailySeriesOutputItem[] {
+    // Build a lookup keyed by 'YYYY-MM-DD' for O(1) access.
+    const rowMap = new Map<string, number>(modelRows.map((r) => [r.date, r.total]));
+
+    const nowUtc = new Date();
+    const todayUtc = new Date(
+        Date.UTC(nowUtc.getUTCFullYear(), nowUtc.getUTCMonth(), nowUtc.getUTCDate())
+    );
+
+    const result: HostViewDailySeriesOutputItem[] = [];
+
+    for (let dayOffset = windowDays - 1; dayOffset >= 0; dayOffset--) {
+        const dayMs = todayUtc.getTime() - dayOffset * 24 * 60 * 60 * 1000;
+        const d = new Date(dayMs);
+        const year = d.getUTCFullYear();
+        const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+        const day = String(d.getUTCDate()).padStart(2, '0');
+        const dateStr = `${year}-${month}-${day}`;
+
+        result.push({ date: dateStr, total: rowMap.get(dateStr) ?? 0 });
     }
 
     return result;

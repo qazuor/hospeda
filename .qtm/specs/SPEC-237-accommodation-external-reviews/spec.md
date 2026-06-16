@@ -1,5 +1,5 @@
 ---
-spec-id: SPEC-230
+spec-id: SPEC-237
 title: External-platform reviews & reputation on accommodation pages
 type: feature
 complexity: high
@@ -7,7 +7,7 @@ status: draft
 created: 2026-06-15T00:00:00Z
 ---
 
-# SPEC-230 — External-platform reviews & reputation on accommodation pages
+# SPEC-237 — External-platform reviews & reputation on accommodation pages
 
 ## Overview
 

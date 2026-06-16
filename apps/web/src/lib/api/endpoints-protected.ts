@@ -1341,9 +1341,8 @@ export const hostAnalyticsApi = {
      * in the ViewsWidget.
      *
      * @remarks
-     * The DAILY-SERIES variant (date-bucketed chart data) is still pending
-     * SPEC-207. This cumulative-aggregate endpoint is now used for the
-     * per-property ranked list widget.
+     * The daily-series variant (date-bucketed chart data) is implemented in
+     * `getViewsDailySeries` — wired as part of SPEC-207 Fase A.
      *
      * @param params - Time window: '7d' or '30d'
      * @returns Cumulative per-accommodation view counts for the window
@@ -1364,6 +1363,31 @@ export const hostAnalyticsApi = {
     },
 
     /**
+     * Get the gap-filled daily view-count series for all accommodations owned by
+     * the authenticated host over a rolling window.
+     *
+     * Returns exactly `windowDays` items (7 or 30), one per calendar day ordered
+     * oldest → newest. Days with no views have `total: 0` (gap-filled by the
+     * server). Gated by the same `view_basic_stats` entitlement as `getViews`.
+     *
+     * Use this to feed the line chart in the ViewsWidget (SPEC-207 Fase A).
+     *
+     * @param params - Time window: '7d' or '30d'
+     * @returns Daily series `{ window, items: { date, total }[] }`
+     */
+    getViewsDailySeries({ window: windowParam }: { readonly window: AnalyticsWindow }): Promise<
+        ApiResult<{
+            readonly window: '7d' | '30d';
+            readonly items: readonly { readonly date: string; readonly total: number }[];
+        }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/views/accommodations/me/daily-series`,
+            params: { window: windowParam }
+        });
+    },
+
+    /**
      * List the authenticated host's own accommodations (id + name only needed
      * for cross-referencing analytics by accommodation). Server-side filtered
      * by actor.id.
@@ -1378,28 +1402,34 @@ export const hostAnalyticsApi = {
     },
 
     /**
-     * Get favorites breakdown.
+     * Get favorites breakdown per accommodation.
      *
      * @remarks
-     * SPEC-207 (pending): "collections" do not exist in the bookmark model. The
-     * real backend endpoint (`/accommodations/my/favorites-breakdown`) returns
-     * favorites per accommodation (`{accommodationId, slug, bookmarkCount}[]`),
-     * not per collection. The FavoritesWidget needs a redesign to the
-     * per-accommodation shape before it can be mounted; deferred to SPEC-207.
+     * SPEC-207: wired to the real backend endpoint. Returns a raw array of
+     * `{accommodationId, slug, bookmarkCount}` items. The caller is responsible
+     * for crossing this with the accommodation names map and calling
+     * `transformFavoritesBreakdown`. Gated by the `view_advanced_stats`
+     * entitlement server-side.
      *
-     * @returns Bookmark counts (per-accommodation on the wire — return type
-     *   below is the legacy "collections" shape, to be reshaped in SPEC-207)
+     * @returns Raw per-accommodation bookmark counts array
+     *
+     * @example
+     * ```ts
+     * const result = await hostAnalyticsApi.getFavoritesBreakdown();
+     * if (result.ok) console.log(result.data[0].bookmarkCount);
+     * ```
      */
     getFavoritesBreakdown(): Promise<
-        ApiResult<{
-            readonly collections: readonly {
-                readonly collection: string;
-                readonly count: number;
-            }[];
-        }>
+        ApiResult<
+            readonly {
+                readonly accommodationId: string;
+                readonly slug: string;
+                readonly bookmarkCount: number;
+            }[]
+        >
     > {
         return apiClient.getProtected({
-            path: `${PROTECTED}/host/analytics/favorites`
+            path: `${PROTECTED}/accommodations/my/favorites-breakdown`
         });
     },
 

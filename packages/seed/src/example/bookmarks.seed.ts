@@ -1,4 +1,3 @@
-import path from 'node:path';
 import { EntityTypeEnum, PermissionEnum, RoleEnum } from '@repo/schemas';
 import { UserBookmarkService } from '@repo/service-core';
 import exampleManifest from '../manifest-example.json';
@@ -133,7 +132,7 @@ const getBookmarkInfo = (item: unknown, context: SeedContext) => {
 export const seedBookmarks = createSeedFactory({
     entityName: 'Bookmarks',
     serviceClass: UserBookmarkService,
-    folder: path.resolve('src/data/bookmark'),
+    folder: 'src/data/bookmark',
     files: exampleManifest.bookmarks,
     normalizer: bookmarkNormalizer,
     getEntityInfo: getBookmarkInfo,

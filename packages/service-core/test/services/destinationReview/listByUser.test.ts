@@ -124,4 +124,30 @@ describe('listByUser', () => {
             expect(reviewModel.findAll as Mock).not.toHaveBeenCalled();
         });
     });
+
+    describe('when actor filters by destinationId', () => {
+        it('should pass destinationId to the model query when provided', async () => {
+            // Arrange
+            const actor = createActor({ id: ownerId });
+            (reviewModel.findAll as Mock).mockResolvedValue({ items: [], total: 0 });
+
+            // Act
+            await service.listByUser(actor, {
+                userId: ownerId,
+                destinationId,
+                page: 1,
+                pageSize: 10,
+                sortBy: 'createdAt',
+                sortOrder: 'desc'
+            });
+
+            // Assert — destinationId must be included in the model filter
+            expect(reviewModel.findAll).toHaveBeenCalledWith(
+                expect.objectContaining({ userId: ownerId, destinationId }),
+                expect.any(Object),
+                undefined,
+                undefined
+            );
+        });
+    });
 });

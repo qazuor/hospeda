@@ -1,5 +1,11 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+// ESM equivalent of __dirname for this file
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const SEED_DATA_BASE = path.resolve(__dirname, '../data');
 
 /**
  * Entity name to folder path mapping
@@ -55,16 +61,16 @@ export async function validateManifestVsFolder(
     if (type === 'required') {
         // For required, some folders have specific subfolders
         if (entityName === 'users') {
-            folderPath = path.resolve(`src/data/${folderName}/required`);
+            folderPath = path.resolve(SEED_DATA_BASE, `${folderName}/required`);
         } else {
-            folderPath = path.resolve(`src/data/${folderName}`);
+            folderPath = path.resolve(SEED_DATA_BASE, folderName);
         }
     } else {
         // For example, some folders have specific subfolders
         if (entityName === 'users') {
-            folderPath = path.resolve(`src/data/${folderName}/example`);
+            folderPath = path.resolve(SEED_DATA_BASE, `${folderName}/example`);
         } else {
-            folderPath = path.resolve(`src/data/${folderName}`);
+            folderPath = path.resolve(SEED_DATA_BASE, folderName);
         }
     }
 

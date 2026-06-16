@@ -1,4 +1,3 @@
-import path from 'node:path';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { PostService } from '@repo/service-core';
 import exampleManifest from '../manifest-example.json';
@@ -150,7 +149,7 @@ const getPostInfo = (item: unknown) => {
 export const seedPosts = createSeedFactory({
     entityName: 'Posts',
     serviceClass: PostService,
-    folder: path.resolve('src/data/post'),
+    folder: 'src/data/post',
     files: exampleManifest.posts,
     normalizer: postNormalizer,
     getEntityInfo: getPostInfo,

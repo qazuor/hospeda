@@ -17,10 +17,10 @@ export default defineConfig({
             provider: 'v8',
             reporter: ['text', 'json', 'html'],
             thresholds: {
-                lines: 70,
-                functions: 70,
-                branches: 60,
-                statements: 70
+                lines: 90,
+                functions: 90,
+                branches: 85,
+                statements: 90
             },
             include: ['src/**/*.ts'],
             exclude: [
@@ -35,6 +35,7 @@ export default defineConfig({
                 // integration tests under `test/integration/`.
                 'src/example/**/*.seed.ts',
                 'src/required/**/*.seed.ts',
+                'src/test-users/**/*.seed.ts',
                 // DB-dependent utilities that cannot run without a live
                 // PostgreSQL connection. They're exercised through the
                 // seed integration suite (`pnpm db:seed`).
