@@ -335,144 +335,144 @@
             "id": "T-010",
             "title": "JSON-LD / OpenGraph / meta extraction helpers (no DOM dep)",
             "description": "Parse <script type=application/ld+json> blocks with bounded regex + JSON.parse (handle arrays/@graph); extract OpenGraph + targeted meta tags via regex. NO cheerio/jsdom. MUST strip review/rating fields (aggregateRating, review) at parse time. Files: service-core/src/services/accommodation-import/extractors/. Tests: fixture HTML (LodgingBusiness, Hotel) parse; malformed JSON-LD tolerated; rating fields absent from output.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-009"],
             "blocks": ["T-014", "T-015"],
             "subtasks": [
                 {
                     "title": "JSON-LD block parser (bounded regex)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "OG + meta regex extraction",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Strip rating/review fields",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Fixture-based unit tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T22:40:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T00:00:00.000Z",
+                "completed": "2026-06-16T00:10:00.000Z"
             }
         },
         {
             "id": "T-011",
             "title": "Confidence scoring constant + per-field Zod map/validate",
             "description": "Confidence band constant per FieldSource (official_api/jsonld 90-100, og/meta 60-75, text 40-55, ai 20-40). mapRawToDraft(raw): coerce + validate each candidate against AccommodationImportDraftSchema per field; drop fields that fail validation (never throw). Files: accommodation-import/mapping.ts. Tests: confidence assignment per source; invalid field dropped; lat/long string coercion.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002", "T-009"],
             "blocks": ["T-019"],
             "subtasks": [
                 {
                     "title": "Confidence band constant",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Per-field coerce + validate + drop-on-fail",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T22:40:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T00:00:00.000Z",
+                "completed": "2026-06-16T00:10:00.000Z"
             }
         },
         {
             "id": "T-012",
             "title": "Amenity resolution (catalog name/slug search)",
             "description": "resolveAmenities(names: string[]): { amenityIds: string[], unresolved: string[] } using AmenityModel catalog lookup (name->>'es' ILIKE via safeIlike, or unique slug). Resolved → UUIDs; unresolved → advisory list (never applied). Files: accommodation-import/resolvers/amenities.ts. Tests: known names resolve to UUIDs (mocked model); unknown → unresolved; no free strings leak.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-009"],
             "blocks": ["T-019"],
             "subtasks": [
                 {
                     "title": "Catalog lookup via safeIlike/slug",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Split resolved/unresolved",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests (mocked model)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T22:40:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T00:10:00.000Z",
+                "completed": "2026-06-16T00:20:00.000Z"
             }
         },
         {
             "id": "T-013",
             "title": "destinationHint resolution (destination search, never auto-set FK)",
             "description": "buildDestinationHint(locality?, country?): { scrapedLocality?, candidates: {id,name}[] } via destination search (name scope). NEVER set destinationId — even a single exact match returns a candidate for the host to confirm. Files: accommodation-import/resolvers/destination.ts. Tests: locality → candidates; no match → empty candidates; FK never populated.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-009"],
             "blocks": ["T-019"],
             "subtasks": [
                 {
                     "title": "Destination search by locality",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Return candidates, never FK",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T22:40:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T00:10:00.000Z",
+                "completed": "2026-06-16T00:20:00.000Z"
             }
         },
         {
@@ -1047,9 +1047,9 @@
     ],
     "summary": {
         "total": 28,
-        "pending": 19,
+        "pending": 15,
         "inProgress": 0,
-        "completed": 9,
+        "completed": 13,
         "blocked": 0,
         "averageComplexity": 2.5
     }
