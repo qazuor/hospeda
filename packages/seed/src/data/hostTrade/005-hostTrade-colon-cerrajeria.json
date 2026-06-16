@@ -1,0 +1,14 @@
+{
+    "$schema": "../../../schemas/hostTrade.schema.json",
+    "id": "005-hostTrade-colon-cerrajeria",
+    "name": "Cerrajería del Río Colón",
+    "slug": "cerrajeria-del-rio-colon",
+    "category": "CERRAJERIA",
+    "contact": "wa.me/5493447123456",
+    "benefit": "Apertura de puertas y duplicado de llaves con 15% de descuento para alojamientos Hospeda.",
+    "destinationId": "002-destination-colon",
+    "is24h": true,
+    "scheduleText": null,
+    "isActive": true,
+    "createdById": "super-admin-user"
+}

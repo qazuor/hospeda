@@ -75,6 +75,10 @@
         "activity": "Atividade",
         "edit": "Editar"
     },
+    "platform": {
+        "title": "Plataforma",
+        "hostTrades": "Diretório de Ofícios"
+    },
     "sponsors": "Patrocinadores",
     "analytics": {
         "title": "Análises",

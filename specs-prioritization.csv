@@ -91,6 +91,6 @@ rank|spec|name|avance|prioridad|estado|estado_manual|estado_real|descripcion|por
 90|SPEC-238|Reduce apps/api per-file test cold-import overhead (~9% suite speedup)|-|P3|done|backlog|index staging: status=draft archived=False|-|-|-|-|-|-|-|-
 91|SPEC-239|Commerce listing core (merchant-with-subscription) + Gastronomía|-|-|backlog|backlog|index staging: status=draft archived=False|-|-|-|-|-|-|SPEC-240, SPEC-242, SPEC-243|-
 92|SPEC-240|Experiencias y Servicios (tourism services & experiences)|-|-|blocked|backlog|index staging: status=draft archived=False|-|-|-|-|-|-|SPEC-239, SPEC-242, SPEC-243|-
-93|SPEC-241|Host trades/services directory (24h emergency trades for hosts)|-|-|backlog|backlog|index staging: status=draft archived=False|-|-|-|-|-|-|-|-
+93|SPEC-241|Host trades/services directory (24h emergency trades for hosts)|-|-|in progress|backlog|index staging: status=draft archived=False|-|-|-|-|-|-|-|-
 94|SPEC-242|Tarjeta Hospeda (benefits card for guests)|-|-|blocked|backlog|index staging: status=draft archived=False|-|-|-|-|-|-|SPEC-239, SPEC-240, SPEC-243|-
 95|SPEC-243|Hospeda mobile app (React Native / Expo)|-|-|blocked|backlog|index staging: status=draft archived=False|-|-|-|-|-|-|SPEC-239, SPEC-240, SPEC-242|-

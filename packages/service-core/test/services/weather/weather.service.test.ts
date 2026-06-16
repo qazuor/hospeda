@@ -51,11 +51,9 @@ describe('WeatherService.getCachedWeather', () => {
     });
 
     it('throws when the destination is not visible (error surfaced by getById)', async () => {
-        const getById = vi
-            .fn()
-            .mockResolvedValue({
-                error: { code: ServiceErrorCode.NOT_FOUND, message: 'not found' }
-            });
+        const getById = vi.fn().mockResolvedValue({
+            error: { code: ServiceErrorCode.NOT_FOUND, message: 'not found' }
+        });
         const service = makeService(getById);
 
         await expect(service.getCachedWeather(ACTOR, { destinationId: 'x' })).rejects.toThrow(

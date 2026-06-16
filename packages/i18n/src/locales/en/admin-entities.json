@@ -90,6 +90,11 @@
             "singular": "Log entry",
             "plural": "Application logs",
             "description": "WARN and ERROR events emitted by system services"
+        },
+        "hostTrade": {
+            "singular": "Trade",
+            "plural": "Trades",
+            "description": "Directory of service providers for hosts"
         }
     },
     "columns": {
@@ -182,6 +187,11 @@
         "banExpires": "Ban Expires",
         "avatar": "Avatar",
         "views30d": "Views (30d)",
+        "contact": "Contact",
+        "is24h": "Available 24h",
+        "active": "Active",
+        "benefit": "Benefit",
+        "scheduleText": "Schedule",
         "appLog": {
             "loggedAt": "Date/Time",
             "level": "Level",

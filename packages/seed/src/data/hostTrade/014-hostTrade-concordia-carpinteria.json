@@ -1,0 +1,14 @@
+{
+    "$schema": "../../../schemas/hostTrade.schema.json",
+    "id": "014-hostTrade-concordia-carpinteria",
+    "name": "Carpintería Artesanal Concordia",
+    "slug": "carpinteria-artesanal-concordia",
+    "category": "CARPINTERIA",
+    "contact": "+54 9 3454 345678",
+    "benefit": "Reparación de puertas, ventanas y muebles con 15% de descuento. Trabajos de calidad garantizada.",
+    "destinationId": "003-destination-concordia",
+    "is24h": false,
+    "scheduleText": "Lunes a Viernes 8:00–17:00",
+    "isActive": true,
+    "createdById": "super-admin-user"
+}

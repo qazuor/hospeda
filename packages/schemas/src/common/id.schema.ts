@@ -49,6 +49,9 @@ export type FeatureIdType = z.infer<typeof FeatureIdSchema>;
 export const AttractionIdSchema = BaseIdSchema;
 export type AttractionIdType = z.infer<typeof AttractionIdSchema>;
 
+export const HostTradeIdSchema = BaseIdSchema;
+export type HostTradeIdType = z.infer<typeof HostTradeIdSchema>;
+
 export const DestinationIdSchema = BaseIdSchema;
 export type DestinationIdType = z.infer<typeof DestinationIdSchema>;
 

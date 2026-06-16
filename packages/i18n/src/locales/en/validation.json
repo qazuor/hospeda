@@ -1691,6 +1691,9 @@
         },
         "newsletterContentType": {
             "invalid": "Newsletter content type is not valid"
+        },
+        "hostTradeCategory": {
+            "invalid": "[EN] La categoría de oficio seleccionada no es válida"
         }
     },
     "event": {
@@ -3457,6 +3460,20 @@
         },
         "window": {
             "invalid": "Time window must be 7d or 30d"
+        }
+    },
+    "hostTrade": {
+        "name": {
+            "min": "[EN] El nombre debe tener al menos {{min}} caracteres"
+        },
+        "slug": {
+            "min": "[EN] El slug debe tener al menos {{min}} caracteres"
+        },
+        "contact": {
+            "min": "[EN] El contacto debe tener al menos {{min}} caracteres"
+        },
+        "benefit": {
+            "min": "[EN] El beneficio debe tener al menos {{min}} caracteres"
         }
     }
 }

@@ -1,0 +1,33 @@
+{
+    "page": {
+        "title": "Service directory",
+        "subtitle": "Trusted local providers for your accommodation"
+    },
+    "filter": {
+        "all": "All"
+    },
+    "emptyState": {
+        "noAccommodations": "You need at least one registered accommodation to see this directory.",
+        "noTrades": "No providers available for your destinations yet."
+    },
+    "card": {
+        "is24h": "Available 24/7",
+        "benefit": "Host benefit",
+        "contact": "Contact"
+    },
+    "categories": {
+        "CERRAJERIA": "Locksmith",
+        "PLOMERIA": "Plumbing",
+        "ELECTRICIDAD": "Electrical",
+        "GAS": "Gas",
+        "CLIMATIZACION": "HVAC",
+        "LIMPIEZA": "Cleaning",
+        "FLETES": "Moving / Freight",
+        "VIDRIERIA": "Glazier",
+        "CARPINTERIA": "Carpentry",
+        "PILETA_JARDIN": "Pool & Garden",
+        "PLAGAS": "Pest control",
+        "INTERNET": "Internet / TV",
+        "ALBANILERIA": "Masonry"
+    }
+}

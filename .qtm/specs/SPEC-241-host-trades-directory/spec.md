@@ -3,7 +3,7 @@ spec-id: SPEC-241
 title: "Host trades/services directory (24h emergency trades for hosts)"
 type: feature
 complexity: low
-status: draft
+status: in-progress
 created: 2026-06-15T00:00:00Z
 tags: ["host", "directory", "admin-curated", "web", "mi-cuenta", "trades"]
 ---
@@ -171,8 +171,13 @@ THEN they see a list of active trades filtered by their accommodation destinatio
 - **AC-1.4** Each card shows: name, category badge (i18n label), contact
   (click-to-call/WhatsApp link), benefit text, is24h badge (if true), and
   scheduleText (if present).
-- **AC-1.5** Trades are ordered alphabetically by category, then by name within
-  the category (server default order).
+- **AC-1.5** The server returns a stable order: `name ASC` within each category
+  (the `category` column sorts by pg-enum declaration order, which is not
+  meaningful on its own). The **client island groups trades by category and
+  sorts the category groups alphabetically by their localized i18n label**, so
+  the visible order is alphabetical in the user's locale (es/en/pt). Decision
+  2026-06-15: ordering-by-localized-label is a client concern, not a server
+  `ORDER BY category::text` — the displayed labels differ per locale.
 
 ### US-2 — Host filters trades by category
 
@@ -396,6 +401,38 @@ Keys to cover (minimum set):
 }
 ```
 
+### Seed (`@repo/seed`, example data)
+
+Add example `host_trades` rows so the directory is populated out-of-the-box after
+`pnpm db:seed` / `pnpm db:fresh-dev`, mirroring how Destinos and other entities
+are seeded.
+
+Pattern (follows the existing example-seed convention):
+
+- **Data files**: `packages/seed/src/data/hostTrade/*.json` — one JSON per trade
+  row, numbered like the other entities (e.g.
+  `001-host-trade-cerrajeria-uruguay.json`). Provide a realistic spread:
+  **at least 2 trades per seeded destination across several categories**
+  (CERRAJERIA, PLOMERIA, ELECTRICIDAD, GAS, CLIMATIZACION at minimum), with a mix
+  of `is24h: true/false` and some with `scheduleText`, some without. Reference
+  existing seeded `destinationId`s (Concepción del Uruguay, Colón, Concordia,
+  Gualeguaychú, etc.) so the host-side geo-filter has data to match.
+- **Manifest**: add a `"hostTrades"` array listing those filenames to
+  `packages/seed/src/manifest-example.json`.
+- **Loader**: `packages/seed/src/example/hostTrades.seed.ts` — reads the data
+  files, validates against the seed schema, inserts via the model/service.
+  Register it in `packages/seed/src/example/index.ts` **after** destinations and
+  users (FK to `destinations`, `createdById` to `users`).
+- **Seed schema**: add the host-trade entry to `packages/seed/src/schemas/` if the
+  seed package validates rows against a per-entity schema (match the existing
+  convention there).
+- `createdById` / `updatedById` on seeded rows point to a seeded admin/super-admin
+  user; `isActive: true`, `deletedAt: null`.
+
+Acceptance: after `pnpm db:fresh-dev`, a seeded host with accommodations in a
+seeded destination sees a non-empty directory at
+`/mi-cuenta/directorio-proveedores`.
+
 ---
 
 ## Risks
@@ -454,12 +491,23 @@ Drizzle table definition and relations. Update schema `index.ts`. (complexity 2)
 `BaseModel` with `findForHost(destinationIds)` method. Update model `index.ts`.
 Write integration tests. (complexity 2)
 
+**T-008b** Add example seed data: `packages/seed/src/data/hostTrade/*.json`
+(≥2 trades per seeded destination across several categories, mixed `is24h` and
+`scheduleText`), register filenames in `manifest-example.json`, create the
+`example/hostTrades.seed.ts` loader and wire it into `example/index.ts` **after**
+destinations and users (FK order). Add the seed schema entry if the package
+validates rows. Verify with `pnpm db:fresh-dev` that the directory is non-empty
+for a seeded host. (complexity 2)
+
 ### Phase 3 — Service + API (complexity 2)
 
 **T-009** Create `packages/service-core/src/services/hostTrade/host-trade.service.ts`
 extending `BaseCrudService`. Implement `listForHost(actor)` (resolve destinations
-from actor's accommodations, delegate to model). Write unit tests for all
-operations. (complexity 2)
+from actor's accommodations, delegate to model). **On create/update, de-duplicate
+the slug**: the `slug` column is globally `UNIQUE`, so auto-generated slugs that
+collide (same provider name in different destinations) must be suffixed
+incrementally (`-2`, `-3`, …) before insert. Write unit tests for all operations,
+including the slug-collision case. (complexity 2)
 
 **T-010** Create admin API routes (`list`, `getById`, `create`, `update`, `patch`,
 `delete`, `restore`, `hardDelete`) in `apps/api/src/routes/host-trade/admin/`.

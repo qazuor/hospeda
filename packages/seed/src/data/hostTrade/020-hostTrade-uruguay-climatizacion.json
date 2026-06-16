@@ -1,0 +1,14 @@
+{
+    "$schema": "../../../schemas/hostTrade.schema.json",
+    "id": "020-hostTrade-uruguay-climatizacion",
+    "name": "FrigoTec Uruguay",
+    "slug": "frigotec-uruguay",
+    "category": "CLIMATIZACION",
+    "contact": "wa.me/5493442567891",
+    "benefit": "Carga de gas y limpieza de filtros con 20% de descuento para alojamientos registrados. Service preventivo incluido.",
+    "destinationId": "011-destination-concepcion-del-uruguay",
+    "is24h": false,
+    "scheduleText": "Lunes a Viernes 8:00–18:00",
+    "isActive": true,
+    "createdById": "super-admin-user"
+}

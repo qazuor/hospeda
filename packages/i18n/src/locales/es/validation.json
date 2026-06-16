@@ -1691,6 +1691,9 @@
         },
         "newsletterContentType": {
             "invalid": "El tipo de contenido del newsletter no es válido"
+        },
+        "hostTradeCategory": {
+            "invalid": "La categoría de oficio seleccionada no es válida"
         }
     },
     "event": {
@@ -3457,6 +3460,20 @@
         },
         "window": {
             "invalid": "La ventana de tiempo debe ser 7d o 30d"
+        }
+    },
+    "hostTrade": {
+        "name": {
+            "min": "El nombre debe tener al menos {{min}} caracteres"
+        },
+        "slug": {
+            "min": "El slug debe tener al menos {{min}} caracteres"
+        },
+        "contact": {
+            "min": "El contacto debe tener al menos {{min}} caracteres"
+        },
+        "benefit": {
+            "min": "El beneficio debe tener al menos {{min}} caracteres"
         }
     }
 }
