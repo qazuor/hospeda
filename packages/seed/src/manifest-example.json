@@ -396,5 +396,27 @@
     ],
     "userTags": [],
     "postTagAssignments": [],
-    "entityTagAssignments": []
+    "entityTagAssignments": [],
+    "hostTrades": [
+        "001-hostTrade-uruguay-cerrajeria.json",
+        "002-hostTrade-uruguay-plomeria.json",
+        "003-hostTrade-uruguay-electricidad.json",
+        "004-hostTrade-uruguay-gas.json",
+        "005-hostTrade-colon-cerrajeria.json",
+        "006-hostTrade-colon-plomeria.json",
+        "007-hostTrade-colon-climatizacion.json",
+        "008-hostTrade-colon-limpieza.json",
+        "009-hostTrade-gualeguaychu-electricidad.json",
+        "010-hostTrade-gualeguaychu-gas.json",
+        "011-hostTrade-gualeguaychu-plomeria.json",
+        "012-hostTrade-concordia-albanileria.json",
+        "013-hostTrade-concordia-fletes.json",
+        "014-hostTrade-concordia-carpinteria.json",
+        "015-hostTrade-federacion-plomeria.json",
+        "016-hostTrade-federacion-electricidad.json",
+        "017-hostTrade-federacion-pileta.json",
+        "018-hostTrade-chajari-cerrajeria.json",
+        "019-hostTrade-chajari-internet.json",
+        "020-hostTrade-uruguay-climatizacion.json"
+    ]
 }

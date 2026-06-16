@@ -67,6 +67,7 @@ export function getRoleLabel(role: RoleEnum): string {
         [RoleEnum.CLIENT_MANAGER]: 'Gestor de Clientes',
         [RoleEnum.EDITOR]: 'Editor',
         [RoleEnum.HOST]: 'Anfitrión',
+        [RoleEnum.COMMERCE_OWNER]: 'Dueño de Comercio',
         [RoleEnum.USER]: 'Usuario',
         [RoleEnum.SPONSOR]: 'Patrocinador',
         [RoleEnum.GUEST]: 'Invitado',

@@ -2,10 +2,29 @@
     "version": "1.0",
     "epics": [
         {
+            "specId": "SPEC-203",
+            "title": "Self-serve plan management UI (web)",
+            "status": "completed",
+            "progress": "11/11",
+            "path": "SPEC-203-web-plan-management-ui",
+            "parent": "SPEC-193",
+            "branch": "spec/SPEC-203-web-plan-management-ui",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-203-web-plan-management-ui",
+            "base": "staging",
+            "createdAt": "2026-06-15T00:00:00.000Z",
+            "tasksAtomizedAt": "2026-06-15T00:00:00.000Z",
+            "taskCount": 11,
+            "averageComplexity": 3.9,
+            "archived": true,
+            "archivedAt": "2026-06-16",
+            "archiveNote": "PR #1687 merged (10/11 UI + backend). T-011a mount-order routing regression test merged via PR #1697. T-011b (real-MP-sandbox staging smoke for the pending_payment upgrade branch) deferred as a post-merge operational check per owner sign-off 2026-06-16 (precedent SPEC-209 T-012) — not coverable by the local test-control stub. See specs/index.json archiveNote for detail.",
+            "note": "11 tasks across 4 phases (avg complexity 3.9). Backend endpoint T-002 in-progress. Critical path: T-001->T-002->T-003->T-005->T-007->T-008->T-009->T-010->T-011 (9 steps). Three parallel tracks after T-003: banner (T-004), plan-change flow (T-005..T-009), cancel (T-006). Converge at i18n (T-010) + smoke (T-011). Depends on SPEC-167 + SPEC-147."
+        },
+        {
             "specId": "SPEC-239",
             "title": "Commerce listing core (merchant-with-subscription) + Gastronomía",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "in-progress",
+            "progress": "0/64",
             "path": "SPEC-239-commerce-listings-core-gastronomy"
         },
         {
@@ -18,8 +37,8 @@
         {
             "specId": "SPEC-241",
             "title": "Host trades/services directory (24h emergency trades for hosts)",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "in-progress",
+            "progress": "19/19",
             "path": "SPEC-241-host-trades-directory"
         },
         {
@@ -44,14 +63,17 @@
             "path": "SPEC-236-coverage-ratchet-up",
             "archived": true,
             "archivedAt": "2026-06-15",
-            "archiveNote": "9 per-package PRs merged to staging. All logic packages raised to/past target + floors ratcheted in lockstep. service-core floored at 85 (real 88); icons/billing/schemas/notifications/seed/feedback back to 90 default."
+            "archiveNote": "10 PRs merged to staging. All logic packages raised to/past target + floors ratcheted in lockstep. service-core floored at 88 (real 90.25); icons/billing/schemas/notifications/seed/feedback back to 90 default."
         },
         {
             "specId": "SPEC-230",
             "title": "Soft-delete filtering in the service list() path — make BaseCrudService.list exclude soft-deleted rows by default so protected list endpoints stop returning deleted records",
-            "status": "draft",
+            "status": "completed",
             "progress": "0/0",
-            "path": "SPEC-230-list-soft-delete-filtering"
+            "path": "SPEC-230-list-soft-delete-filtering",
+            "archived": true,
+            "archivedAt": "2026-06-16",
+            "archiveNote": "PR #1680 merged to staging. list() excludes soft-deleted by default (+includeDeleted opt-in). Real-DB smoke PASS. Never atomized into formal tasks (direct fix), so progress stays 0/0."
         },
         {
             "specId": "SPEC-231",
@@ -550,9 +572,12 @@
         {
             "specId": "SPEC-215",
             "title": "Destination climate & live weather",
-            "status": "approved",
-            "progress": "0/0",
-            "path": "SPEC-215-destination-climate-weather"
+            "status": "completed",
+            "progress": "28/28",
+            "path": "SPEC-215-destination-climate-weather",
+            "archived": true,
+            "archivedAt": "2026-06-16",
+            "archiveNote": "Implementation merged to staging via PR #1690 (merge 69147a17c). PR #1573 had only carried the spec doc."
         },
         {
             "specId": "SPEC-216",
@@ -608,9 +633,12 @@
         {
             "specId": "SPEC-238",
             "title": "Reduce apps/api per-file test cold-import overhead (~9% suite speedup)",
-            "status": "draft",
-            "progress": "0/0",
-            "path": "SPEC-238-api-test-cold-import-perf"
+            "status": "completed",
+            "progress": "10/10",
+            "path": "SPEC-238-api-test-cold-import-perf",
+            "archived": true,
+            "archivedAt": "2026-06-16T01:29:32Z",
+            "archiveNote": "Shipped Sentry mock (PR #1685, -18% local, beats ~9% 2x); service-core ...actual lever deferred (4 tasks cancelled): ~58 symbols/~50 files, no subpath exports, AC#3 risk, not worth it for P3. CI runner re-measure authoritative."
         },
         {
             "specId": "SPEC-198",
@@ -631,6 +659,36 @@
             "archived": true,
             "archivedAt": "2026-06-07",
             "archiveNote": "DRIFT FIX (2026-06-15 cleanup): specs/index had completed+archived but tasks/index had NO entry. state.json shows 26/26 completed. Shipped via PR #1484, closed out #1485. Reconstructed entry."
+        },
+        {
+            "specId": "SPEC-174",
+            "title": "Admin Guided Welcome Tour (role-based, config-driven)",
+            "status": "completed",
+            "progress": "18/18",
+            "path": "SPEC-174-admin-welcome-tour",
+            "archived": true,
+            "archivedAt": "2026-06-04",
+            "archiveNote": "Restored 2026-06-15 (entry lost to stale-base edit). Completed + archived in June via feat #1451 / archive #1454. state.json shows 18/18 tasks completed."
+        },
+        {
+            "specId": "SPEC-175",
+            "title": "Admin What's New / Release Notes Dialog",
+            "status": "completed",
+            "progress": "20/20",
+            "path": "SPEC-175-admin-whats-new",
+            "archived": true,
+            "archivedAt": "2026-06-04",
+            "archiveNote": "Restored 2026-06-15 (entry lost to stale-base edit). Completed + archived in June via feat #1437 / archive #1440. state.json shows 20/20 tasks completed."
+        },
+        {
+            "specId": "SPEC-179",
+            "title": "Self-Hosted Runner for PR CI (GitHub Actions cost/quota reduction)",
+            "status": "completed",
+            "progress": "0/0",
+            "path": "SPEC-179-self-hosted-pr-ci-runner",
+            "archived": true,
+            "archivedAt": "2026-06-03",
+            "archiveNote": "Restored 2026-06-15 (entry lost to stale-base edit). Completed + archived in June via feat #1369 / archive #1415. Implemented without atomized tasks (progress shown as 0/0)."
         },
         {
             "specId": "SPEC-173",

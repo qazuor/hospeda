@@ -59,7 +59,10 @@ export enum PermissionCategoryEnum {
     SYSTEM = 'SYSTEM',
     ACCESS = 'ACCESS',
     MEDIA = 'MEDIA',
-    MODERATION = 'MODERATION'
+    MODERATION = 'MODERATION',
+    /** Commerce listings (gastronomy, experience). Added in SPEC-239. */
+    COMMERCE = 'COMMERCE',
+    HOST_TRADE = 'HOST_TRADE'
 }
 
 // PermissionEnum defines all possible built-in permissions for the Hospeda platform.
@@ -839,5 +842,34 @@ export enum PermissionEnum {
     MODERATION_THRESHOLD_VIEW = 'moderation.threshold.view', // Allows viewing moderation threshold configuration.
     MODERATION_THRESHOLD_UPDATE = 'moderation.threshold.update', // Allows updating moderation threshold values (pending/reject).
     MODERATION_THRESHOLD_RESTORE = 'moderation.threshold.restore', // Allows restoring a soft-deleted moderation threshold.
-    MODERATION_THRESHOLD_HARD_DELETE = 'moderation.threshold.hardDelete' // Allows permanently deleting a moderation threshold.
+    MODERATION_THRESHOLD_HARD_DELETE = 'moderation.threshold.hardDelete', // Allows permanently deleting a moderation threshold.
+
+    // COMMERCE: Owner-scoped section edit permissions (SPEC-239)
+    // These allow a COMMERCE_OWNER to edit specific sections of their own commerce listing.
+    COMMERCE_SCHEDULE_EDIT_OWN = 'commerce.schedule.editOwn', // Allows editing own commerce listing's opening hours / schedule.
+    COMMERCE_CONTACT_EDIT_OWN = 'commerce.contact.editOwn', // Allows editing own commerce listing's contact information.
+    COMMERCE_SOCIAL_EDIT_OWN = 'commerce.social.editOwn', // Allows editing own commerce listing's social network links.
+    COMMERCE_MEDIA_EDIT_OWN = 'commerce.media.editOwn', // Allows editing own commerce listing's media gallery.
+    COMMERCE_MENU_EDIT_OWN = 'commerce.menu.editOwn', // Allows editing own commerce listing's menu items.
+    COMMERCE_PRICE_RANGE_EDIT_OWN = 'commerce.priceRange.editOwn', // Allows editing own commerce listing's price range tier.
+    COMMERCE_RICH_DESCRIPTION_EDIT_OWN = 'commerce.richDescription.editOwn', // Allows editing own commerce listing's rich-text description.
+    COMMERCE_AMENITIES_EDIT_OWN = 'commerce.amenities.editOwn', // Allows editing own commerce listing's amenities.
+    COMMERCE_FEATURES_EDIT_OWN = 'commerce.features.editOwn', // Allows editing own commerce listing's features.
+    COMMERCE_FAQS_EDIT_OWN = 'commerce.faqs.editOwn', // Allows editing own commerce listing's FAQ entries.
+
+    // COMMERCE: Admin-level permissions (SPEC-239)
+    COMMERCE_CREATE = 'commerce.create', // Allows creating a new commerce listing.
+    COMMERCE_VIEW_ALL = 'commerce.viewAll', // Allows viewing all commerce listings (including private/draft).
+    COMMERCE_EDIT_ALL = 'commerce.editAll', // Allows editing any commerce listing regardless of ownership.
+    COMMERCE_DELETE = 'commerce.delete', // Allows soft-deleting any commerce listing.
+    COMMERCE_MODERATE_REVIEW = 'commerce.moderateReview', // Allows moderating reviews on commerce listings.
+
+    // HOST_TRADE: Admin-curated host trades/services directory (SPEC-241). Host-only read perk; admin-only CRUD.
+    HOST_TRADE_VIEW = 'hostTrade.view', // Allows an authenticated host to read active trade listings for their accommodation destinations.
+    HOST_TRADE_CREATE = 'hostTrade.create', // Admin: create a trade entry.
+    HOST_TRADE_UPDATE = 'hostTrade.update', // Admin: update a trade entry.
+    HOST_TRADE_DELETE = 'hostTrade.delete', // Admin: soft-delete a trade entry.
+    HOST_TRADE_RESTORE = 'hostTrade.restore', // Admin: restore a soft-deleted trade entry.
+    HOST_TRADE_HARD_DELETE = 'hostTrade.hardDelete', // Admin: permanently delete a trade entry.
+    HOST_TRADE_VIEW_ALL = 'hostTrade.viewAll' // Admin: list all trades including inactive/soft-deleted.
 }

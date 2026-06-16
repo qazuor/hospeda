@@ -6,7 +6,8 @@ import {
     canRemovePermission,
     canSetPermissions,
     canUpdateUser,
-    canViewUser
+    canViewUser,
+    checkCanAdminList
 } from '../../../src/services/user/user.permissions';
 import type { Actor } from '../../../src/types';
 import { ServiceError } from '../../../src/types';
@@ -294,5 +295,33 @@ describe('user permission helpers', () => {
         it('forbids undefined actor', () => {
             expect(() => canRemovePermission(undefined)).toThrowError(/Missing actor/);
         });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// checkCanAdminList (lines 114-121)
+// ---------------------------------------------------------------------------
+
+describe('checkCanAdminList', () => {
+    it('allows actor with USER_READ_ALL permission', () => {
+        const actor = {
+            id: 'u1',
+            role: RoleEnum.ADMIN,
+            permissions: [PermissionEnum.USER_READ_ALL]
+        } as Actor;
+        expect(() => checkCanAdminList(actor)).not.toThrow();
+    });
+
+    it('throws FORBIDDEN when actor lacks USER_READ_ALL', () => {
+        const actor = { id: 'u1', role: RoleEnum.ADMIN, permissions: [] } as unknown as Actor;
+        expect(() => checkCanAdminList(actor)).toThrow(ServiceError);
+        try {
+            checkCanAdminList(actor);
+        } catch (err) {
+            expect(err).toBeInstanceOf(ServiceError);
+            if (err instanceof ServiceError) {
+                expect(err.code).toBe(ServiceErrorCode.FORBIDDEN);
+            }
+        }
     });
 });

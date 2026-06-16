@@ -166,5 +166,27 @@
         "familyFriendly": "Apto famílias",
         "workFriendly": "Apto trabalho",
         "generalAppliances": "Eletrodomésticos"
+    },
+    "isActive": {
+        "label": "Ativo"
+    },
+    "is24h": {
+        "label": "Disponível 24h"
+    },
+    "hostTradeCategory": {
+        "label": "Categoria",
+        "cerrajeria": "Serralheiro",
+        "plomeria": "Encanamento",
+        "electricidad": "Elétrica",
+        "gas": "Gás",
+        "climatizacion": "Climatização",
+        "limpieza": "Limpeza",
+        "fletes": "Fretes / Mudanças",
+        "vidrieria": "Vidraçaria",
+        "carpinteria": "Carpintaria",
+        "piletaJardin": "Piscina / Jardim",
+        "plagas": "Pragas",
+        "internet": "Internet",
+        "albanileria": "Alvenaria"
     }
 }

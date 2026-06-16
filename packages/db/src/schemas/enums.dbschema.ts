@@ -12,6 +12,8 @@ import {
     EventCategoryEnum,
     ExchangeRateSourceEnum,
     ExchangeRateTypeEnum,
+    GastronomyTypeEnum,
+    HostTradeCategoryEnum,
     InvoiceStatusEnum,
     LifecycleStatusEnum,
     MessageSenderTypeEnum,
@@ -33,6 +35,7 @@ import {
     PostCategoryEnum,
     PreferredContactEnum,
     PriceCurrencyEnum,
+    PriceRangeEnum,
     ProductTypeEnum,
     RecurrenceTypeEnum,
     RefundStatusEnum,
@@ -79,6 +82,11 @@ export const ProductTypePgEnum = pgEnum('product_type_enum', enumToTuple(Product
 export const EntityTypePgEnum = pgEnum('entity_type_enum', enumToTuple(EntityTypeEnum));
 
 export const EventCategoryPgEnum = pgEnum('event_category_enum', enumToTuple(EventCategoryEnum));
+
+export const HostTradeCategoryPgEnum = pgEnum(
+    'host_trade_category_enum',
+    enumToTuple(HostTradeCategoryEnum)
+);
 
 export const ExchangeRateSourcePgEnum = pgEnum(
     'exchange_rate_source_enum',
@@ -218,3 +226,7 @@ export const NotificationRecipientSidePgEnum = pgEnum(
     'notification_recipient_side_enum',
     enumToTuple(NotificationRecipientSideEnum)
 );
+
+export const GastronomyTypePgEnum = pgEnum('gastronomy_type_enum', enumToTuple(GastronomyTypeEnum));
+
+export const PriceRangePgEnum = pgEnum('price_range_enum', enumToTuple(PriceRangeEnum));

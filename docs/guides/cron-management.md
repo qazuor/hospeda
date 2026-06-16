@@ -8,7 +8,7 @@ to trigger jobs manually.
 
 | Layer | Scheduler | Where the job code lives | What it does |
 |---|---|---|---|
-| **In-process (API)** | `node-cron` inside the running api container | `apps/api/src/cron/jobs/` | Application logic: trial expiry, dunning, addon expiry, notification fan-out, search-index refresh, conversation cleanup, etc. |
+| **In-process (API)** | `node-cron` inside the running api container | `apps/api/src/cron/jobs/` | Application logic: trial expiry, dunning, addon expiry, notification fan-out, search-index refresh, conversation cleanup, destination weather refresh, etc. |
 | **VPS host** | system `cron` on the Vultr host | `scripts/backup/`, `scripts/server-tools/` | Operational maintenance: nightly Postgres backup, weekly app restart. |
 
 Keep them separated mentally. In-process crons are part of the

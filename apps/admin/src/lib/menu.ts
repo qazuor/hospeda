@@ -231,6 +231,20 @@ export const menuTree: readonly MenuItem[] = [
         ]
     },
     {
+        titleKey: 'admin-menu.platform.title',
+        children: [
+            {
+                titleKey: 'admin-menu.platform.hostTrades',
+                to: '/platform/host-trades',
+                permission: [
+                    PermissionEnum.HOST_TRADE_VIEW_ALL,
+                    PermissionEnum.HOST_TRADE_CREATE,
+                    PermissionEnum.HOST_TRADE_UPDATE
+                ]
+            }
+        ]
+    },
+    {
         titleKey: 'admin-menu.sponsors',
         to: '/sponsors',
         permission: [PermissionEnum.POST_SPONSOR_MANAGE, PermissionEnum.POST_SPONSORSHIP_MANAGE]

@@ -20,6 +20,7 @@ All PostgreSQL advisory locks used in the Hospeda platform. Lock IDs must be uni
 | 43020 | `apps/api/src/cron/jobs/conversation-notification-dispatch.job.ts` | Prevent overlapping conversation notification dispatch (5-min cron) | `pg_try_advisory_xact_lock` (non-blocking) | SPEC-085 |
 | 43021 | `apps/api/src/cron/jobs/conversation-token-reminder.job.ts` | Prevent overlapping conversation token reminder dispatch (day15/day25, daily cron) | `pg_try_advisory_xact_lock` (non-blocking) | SPEC-085 |
 | 43022 | `apps/api/src/cron/jobs/conversation-token-cleanup.job.ts` | Prevent overlapping expired conversation access token cleanup (daily cron) | `pg_try_advisory_xact_lock` (non-blocking) | SPEC-085 |
+| 43031 | `apps/api/src/cron/jobs/destination-weather-fetch.job.ts` | Prevent overlapping destination weather fetch cron executions (12h cron) | `pg_try_advisory_xact_lock` (non-blocking) | SPEC-215 |
 
 ## Rules
 

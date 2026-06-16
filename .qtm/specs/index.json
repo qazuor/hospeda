@@ -6,7 +6,7 @@
             "title": "Commerce listing core (merchant-with-subscription) + Gastronomía",
             "type": "feature",
             "complexity": "high",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-239-commerce-listings-core-gastronomy",
             "created": "2026-06-15T00:00:00.000Z",
             "base": "staging",
@@ -31,7 +31,7 @@
             "title": "Host trades/services directory (24h emergency trades for hosts)",
             "type": "feature",
             "complexity": "low",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-241-host-trades-directory",
             "created": "2026-06-15T00:00:00.000Z",
             "base": "staging",
@@ -75,7 +75,7 @@
             "base": "staging",
             "archived": true,
             "archivedAt": "2026-06-15",
-            "archiveNote": "9 per-package PRs merged to staging (#1663/#1664/#1665/#1666/#1668/#1671/#1673/#1674/#1676). Logic packages raised to/past target: icons 56->100, billing 87->99, schemas 83->95, notifications 80->99, feedback 43->95, seed 75->97, service-core 78->88. Both threshold systems (per-package vitest.config + ci.yml coverage-check floors) ratcheted in lockstep; icons/billing/schemas/notifications/seed/feedback rejoined the 90 default, service-core floored at 85 (real 88). web/admin/api keep framework bars by design. Half the gaps were non-production code in the coverage denominator (test stubs, docs/examples instrumented by v8, pure types) fixed via excludes, not test-writing.",
+            "archiveNote": "10 PRs merged to staging (#1663/#1664/#1665/#1666/#1668/#1671/#1673/#1674/#1676/#1684 + closeout #1677). Logic packages raised to/past target: icons 56->100, billing 87->99, schemas 83->95, notifications 80->99, feedback 43->95, seed 75->97, service-core 78->90.25. Both threshold systems (per-package vitest.config + ci.yml coverage-check floors) ratcheted in lockstep; icons/billing/schemas/notifications/seed/feedback rejoined the 90 default, service-core floored at 88 (real 90.25 — kept special vs strict-90 for margin on a large package). web/admin/api keep framework bars by design. Half the gaps were non-production code in the coverage denominator (test stubs, docs/examples instrumented by v8, pure types) fixed via excludes, not test-writing.",
             "origin": "Surfaced after PR #1658 fixed the vitest sortSpecs crash that had masked the broken coverage gate; thresholds recalibrated to current floors as interim",
             "tags": ["ci", "coverage", "tests", "quality", "tech-debt"]
         },
@@ -83,11 +83,14 @@
             "specId": "SPEC-230",
             "title": "Soft-delete filtering in the service list() path — make BaseCrudService.list exclude soft-deleted rows by default so protected list endpoints stop returning deleted records",
             "type": "fix",
-            "status": "draft",
+            "status": "completed",
             "complexity": "medium",
             "path": "SPEC-230-list-soft-delete-filtering",
             "base": "staging",
-            "priority": "P2"
+            "priority": "P2",
+            "archived": true,
+            "archivedAt": "2026-06-16",
+            "archiveNote": "PR #1680 merged to staging. BaseCrudService.list() now injects deletedAt:null by default with an includeDeleted opt-in; protected list endpoints no longer return soft-deleted rows. Real-DB smoke PASS. Gotcha captured: forcing getTable() on every list() initially broke 47 tests with incomplete mocks (resolved)."
         },
         {
             "specId": "SPEC-231",
@@ -658,6 +661,48 @@
             "archivedAt": "2026-06-07"
         },
         {
+            "specId": "SPEC-174",
+            "title": "Admin Guided Welcome Tour (role-based, config-driven)",
+            "type": "feature",
+            "status": "completed",
+            "complexity": "high",
+            "path": "SPEC-174-admin-welcome-tour",
+            "base": "staging",
+            "priority": "P4",
+            "archived": true,
+            "archivedAt": "2026-06-04",
+            "completionRef": "PR #1451 merged to staging (archived in PR #1454)",
+            "archiveNote": "Index entry was lost to a stale-base edit; restored 2026-06-15. Spec was implemented and archived in June (feat #1451, archive #1454); frontmatter already completed."
+        },
+        {
+            "specId": "SPEC-175",
+            "title": "Admin What's New / Release Notes Dialog",
+            "type": "feature",
+            "status": "completed",
+            "complexity": "medium",
+            "path": "SPEC-175-admin-whats-new",
+            "base": "staging",
+            "priority": "P4",
+            "archived": true,
+            "archivedAt": "2026-06-04",
+            "completionRef": "PR #1437 merged to staging (archived in PR #1440)",
+            "archiveNote": "Index entry was lost to a stale-base edit; restored 2026-06-15. Spec was implemented and archived in June (feat #1437, archive #1440); frontmatter already completed."
+        },
+        {
+            "specId": "SPEC-179",
+            "title": "Self-Hosted Runner for PR CI (GitHub Actions cost/quota reduction)",
+            "type": "infra",
+            "status": "completed",
+            "complexity": "medium",
+            "path": "SPEC-179-self-hosted-pr-ci-runner",
+            "base": "staging",
+            "priority": "P3",
+            "archived": true,
+            "archivedAt": "2026-06-03",
+            "completionRef": "PR #1369 merged to staging (archived in PR #1415)",
+            "archiveNote": "Index entry was lost to a stale-base edit; restored 2026-06-15. Spec was implemented and archived in June (feat #1369, archive #1415); frontmatter already completed."
+        },
+        {
             "specId": "SPEC-173",
             "title": "AI Foundation Package (provider-agnostic @repo/ai-core)",
             "type": "feat",
@@ -988,14 +1033,17 @@
             "title": "Self-serve plan management UI (web)",
             "type": "feature",
             "complexity": "medium",
-            "status": "draft",
+            "status": "completed",
             "path": "SPEC-203-web-plan-management-ui",
             "parent": "SPEC-193",
             "created": "2026-06-06T00:00:00Z",
             "dependsOn": ["SPEC-167", "SPEC-147"],
             "firstAllocatedViaEngramProtocol": true,
             "tags": ["billing", "web", "ui", "plan-change", "cancellation"],
-            "note": "Spun off SPEC-167 realign D-4 (owner 2026-06-06); consumes 167 preview contract + 147 cancel API."
+            "note": "Spun off SPEC-167 realign D-4 (owner 2026-06-06); consumes 167 preview contract + 147 cancel API.",
+            "archived": true,
+            "archivedAt": "2026-06-16",
+            "archiveNote": "PR #1687 merged to staging (downgrade-preview endpoint, extended subscription endpoint, web billing client fixes, PlanPicker/DowngradePreviewPanel/PlanChangeFlow + cancel + scheduled-change banner, i18n es/en/pt, 76 tests). D-1: downgrade is PREVIEW-FIRST via a GET endpoint exposing computeDowngradeExcess. T-011a mount-order routing regression test added in PR #1697 (locks the downgrade-preview-before-qzpayWrapper fix). DEFERRED post-merge operational check (owner sign-off 2026-06-16, precedent SPEC-209 T-012): the T-011b real-MP-sandbox staging smoke for the pending_payment upgrade branch (POST change-plan returning a MercadoPago checkoutUrl) — not coverable by the local test-control stub; to be run against staging."
         },
         {
             "specId": "SPEC-204",
@@ -1147,11 +1195,14 @@
             "title": "Destination climate & live weather",
             "type": "feature",
             "complexity": "high",
-            "status": "approved",
+            "status": "completed",
             "path": "SPEC-215-destination-climate-weather",
             "created": "2026-06-10T22:05:00Z",
+            "base": "staging",
             "tags": ["destinations", "weather", "climate", "web", "admin", "cron"],
-            "archived": false
+            "archived": true,
+            "archivedAt": "2026-06-16",
+            "archiveNote": "28/28. Implementation delivered via PR #1690 (merge 69147a17c) to staging. PR #1573 had only merged the spec doc. Feature: seasonal climate (DB jsonb + seed + admin editor) + live Open-Meteo current weather/16-day forecast island in the destination sidebar. Final session fixed a stale i18n-namespace unit test, the climate season-stats overflow (icon-based compact layout), made seasons + forecast collapsible (card 879->525px), and removed the mobile sidebar internal scroll."
         },
         {
             "specId": "SPEC-216",
@@ -1351,16 +1402,17 @@
             "specId": "SPEC-238",
             "title": "Reduce apps/api per-file test cold-import overhead (~9% suite speedup)",
             "type": "improvement",
-            "status": "draft",
+            "status": "completed",
             "complexity": "medium",
             "path": "SPEC-238-api-test-cold-import-perf",
             "base": "staging",
             "priority": "P3",
             "created": "2026-06-15T00:00:00Z",
             "tags": ["ci", "testing", "vitest", "performance", "api", "infrastructure"],
-            "archived": false,
+            "archived": true,
             "note": "B2 lever extracted from SPEC-188 (~9% api test speedup via service-core mock + Sentry mock + shared vitest config). Reference impl on deleted branch spec/SPEC-188-vitest-test-performance (tip 9825dd9ff, perf commit d6c023179) was 1760 commits behind; re-implement fresh on staging, do NOT cherry-pick (stale service-core mock). Drafted 2026-06-15.",
-            "renumberNote": "Renumbered from SPEC-236 (collision with another agent already working SPEC-236) on 2026-06-15."
+            "renumberNote": "Renumbered from SPEC-236 (collision with another agent already working SPEC-236) on 2026-06-15.",
+            "archivedAt": "2026-06-16T01:29:32Z"
         }
     ]
 }

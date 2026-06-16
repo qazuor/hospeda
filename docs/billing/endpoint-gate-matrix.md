@@ -193,6 +193,7 @@
 | `POST /api/v1/protected/billing/addons/{slug}/purchase` | `billing/addons.ts` | none | - | n/a | Addon purchase; no entitlement gate (payment entry point) |
 | `GET /api/v1/protected/billing/addons/my` | `billing/addons.ts` | none | - | n/a | Own addon list; auth-only sufficient |
 | `POST /api/v1/protected/billing/addons/{id}/cancel` | `billing/addons.ts` | none | - | n/a | Cancel own addon; always allowed |
+| `GET /api/v1/protected/billing/subscriptions/downgrade-preview` | `billing/downgrade-preview.ts` | none | - | n/a | Read-only informational downgrade preview; no entitlement/limit gate |
 | `POST /api/v1/protected/billing/subscriptions/change-plan` | `billing/plan-change.ts` | none | - | n/a | Plan change initiation; no entitlement gate |
 | `POST /api/v1/protected/billing/subscriptions/{id}/cancel` | `billing/subscription-cancel.ts` | none | - | n/a | User self-service soft-cancel (SPEC-147); behind `HOSPEDA_USER_CANCEL_ENABLED` flag, ownership enforced server-side; no entitlement gate |
 | `GET /api/v1/protected/billing/promo-codes` | `billing/promo-codes.ts` | none | - | n/a | Promo-code self-management; PermissionEnum-gated |
@@ -225,6 +226,8 @@
 | `PATCH /api/v1/protected/attractions/{id}` | `attraction/protected/patch.ts` | none | - | n/a | Auth + PermissionEnum-gated |
 | `PUT /api/v1/protected/attractions/{id}` | `attraction/protected/update.ts` | none | - | n/a | Auth + PermissionEnum-gated |
 | `DELETE /api/v1/protected/attractions/{id}` | `attraction/protected/softDelete.ts` | none | - | n/a | Auth + PermissionEnum-gated |
+| **HOST-TRADE — PROTECTED** | | | | | |
+| `GET /api/v1/protected/host-trades` | `host-trade/protected/list.ts` | none | - | n/a | Host perk, gated by HOST_TRADE_VIEW permission only — no billing entitlement |
 | **DESTINATION — PROTECTED** | | | | | |
 | `POST /api/v1/protected/destinations` | `destination/protected/create.ts` | none | - | n/a | Content contributor; auth + PermissionEnum-gated |
 | `PATCH /api/v1/protected/destinations/{id}` | `destination/protected/patch.ts` | none | - | n/a | Auth + PermissionEnum-gated |
@@ -362,6 +365,15 @@
 | `DELETE /api/v1/admin/attractions/{id}/hard` | `attraction/admin/hardDelete.ts` | none | - | n/a | Admin hard-delete; PermissionEnum-gated |
 | `POST /api/v1/admin/attractions/{id}/restore` | `attraction/admin/restore.ts` | none | - | n/a | Admin restore; PermissionEnum-gated |
 | `POST /api/v1/admin/attractions/batch` | `attraction/admin/batch.ts` | none | - | n/a | Admin batch; PermissionEnum-gated |
+| **HOST-TRADE — ADMIN** | | | | | |
+| `GET /api/v1/admin/host-trades` | `host-trade/admin/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
+| `POST /api/v1/admin/host-trades` | `host-trade/admin/create.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
+| `GET /api/v1/admin/host-trades/{id}` | `host-trade/admin/getById.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
+| `PUT /api/v1/admin/host-trades/{id}` | `host-trade/admin/update.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
+| `PATCH /api/v1/admin/host-trades/{id}` | `host-trade/admin/patch.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
+| `DELETE /api/v1/admin/host-trades/{id}` | `host-trade/admin/delete.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
+| `DELETE /api/v1/admin/host-trades/{id}/hard` | `host-trade/admin/hardDelete.ts` | none | - | n/a | Admin hard-delete; PermissionEnum-gated |
+| `POST /api/v1/admin/host-trades/{id}/restore` | `host-trade/admin/restore.ts` | none | - | n/a | Admin restore; PermissionEnum-gated |
 | **EVENT-LOCATION — ADMIN** | | | | | |
 | `GET /api/v1/admin/event-locations` | `event-location/admin/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
 | `POST /api/v1/admin/event-locations` | `event-location/admin/create.ts` | none | - | n/a | Admin write; PermissionEnum-gated |

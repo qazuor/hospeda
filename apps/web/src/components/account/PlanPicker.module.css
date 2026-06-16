@@ -1,0 +1,255 @@
+/* PlanPicker.module.css */
+/* Scoped styles for the PlanPicker step of the plan-change flow. */
+/* Uses CSS custom properties from global.css (web app convention: no Tailwind). */
+
+.root {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5, 20px);
+    width: 100%;
+    max-width: 560px;
+    margin: 0 auto;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3, 12px);
+}
+
+.title {
+    font-family: var(--font-heading);
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--core-foreground);
+    margin: 0;
+}
+
+.closeBtn {
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    line-height: 1;
+    color: var(--core-muted-foreground);
+    cursor: pointer;
+    padding: var(--space-1, 4px);
+    border-radius: var(--radius-sm, 4px);
+    transition: color var(--duration-normal, 0.4s) ease;
+}
+
+.closeBtn:hover {
+    color: var(--core-foreground);
+}
+
+.closeBtn:focus-visible {
+    outline: 2px solid var(--brand-accent);
+    outline-offset: 2px;
+}
+
+.subtitle {
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    color: var(--core-muted-foreground);
+    margin: 0;
+}
+
+/* ── Plan list ─────────────────────────────────────────────────────────────── */
+
+.planList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 12px);
+}
+
+.planCard {
+    background-color: var(--core-card);
+    border: 1px solid var(--border, oklch(0.8 0 0));
+    border-radius: var(--radius-sm, 8px);
+    padding: var(--space-4, 16px);
+    transition: border-color var(--duration-normal, 0.4s) ease;
+}
+
+.planCard:hover {
+    border-color: var(
+        --brand-accent-a30,
+        oklch(from var(--brand-accent, oklch(0.7 0.16 60)) l c h / 0.3)
+    );
+}
+
+.planCardCurrent {
+    border-color: var(--primary, oklch(0.5 0.18 260));
+    background-color: oklch(from var(--primary, oklch(0.5 0.18 260)) l c h / 0.05);
+}
+
+.planCardInner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-4, 16px);
+    flex-wrap: wrap;
+}
+
+.planInfo {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 4px);
+}
+
+.planNameRow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 8px);
+    flex-wrap: wrap;
+}
+
+.planName {
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--core-foreground);
+}
+
+.planPrice {
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    color: var(--core-muted-foreground);
+    margin: 0;
+}
+
+.planPriceUnit {
+    font-size: 0.8rem;
+    margin-left: 2px;
+}
+
+/* ── Direction badges ──────────────────────────────────────────────────────── */
+
+.badgeCurrent {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px var(--space-2, 8px);
+    border-radius: var(--radius-pill, 9999px);
+    font-family: var(--font-sans);
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background-color: oklch(from var(--primary, oklch(0.5 0.18 260)) l c h / 0.12);
+    color: var(--primary, oklch(0.5 0.18 260));
+    border: 1px solid oklch(from var(--primary, oklch(0.5 0.18 260)) l c h / 0.3);
+}
+
+.badgeUpgrade {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px var(--space-2, 8px);
+    border-radius: var(--radius-pill, 9999px);
+    font-family: var(--font-sans);
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background-color: var(--success-a15);
+    color: var(--success, oklch(0.55 0.18 145));
+    border: 1px solid var(--success-a30);
+}
+
+.badgeDowngrade {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px var(--space-2, 8px);
+    border-radius: var(--radius-pill, 9999px);
+    font-family: var(--font-sans);
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    background-color: var(--brand-accent-a15);
+    color: var(--brand-accent, oklch(0.7 0.16 60));
+    border: 1px solid var(--brand-accent-a30);
+}
+
+/* ── Plan action buttons ───────────────────────────────────────────────────── */
+
+.planActions {
+    display: flex;
+    gap: var(--space-2, 8px);
+    flex-shrink: 0;
+}
+
+.btnSelect {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--space-2, 8px) var(--space-4, 16px);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--primary, oklch(0.5 0.18 260));
+    background-color: transparent;
+    border: 1px solid var(--primary, oklch(0.5 0.18 260));
+    border-radius: var(--radius-button, 8px);
+    cursor: pointer;
+    transition: background-color var(--duration-normal, 0.4s) ease, color
+        var(--duration-normal, 0.4s) ease;
+    white-space: nowrap;
+    min-height: 36px;
+}
+
+.btnSelect:hover {
+    background-color: var(--primary, oklch(0.5 0.18 260));
+    color: white;
+}
+
+.btnSelect:focus-visible {
+    outline: 2px solid var(--brand-accent);
+    outline-offset: 2px;
+}
+
+.btnSelectAnnual {
+    color: var(--success, oklch(0.55 0.18 145));
+    border-color: var(--success, oklch(0.55 0.18 145));
+}
+
+.btnSelectAnnual:hover {
+    background-color: var(--success, oklch(0.55 0.18 145));
+    color: white;
+}
+
+/* ── Footer ────────────────────────────────────────────────────────────────── */
+
+.footer {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: var(--space-2, 8px);
+    border-top: 1px solid var(--border, oklch(0.8 0 0));
+}
+
+.btnCancel {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--space-2, 8px) var(--space-5, 20px);
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--core-muted-foreground);
+    background-color: transparent;
+    border: 1px solid var(--border, oklch(0.8 0 0));
+    border-radius: var(--radius-button, 8px);
+    cursor: pointer;
+    transition: border-color var(--duration-normal, 0.4s) ease, color var(--duration-normal, 0.4s)
+        ease;
+    min-height: 40px;
+}
+
+.btnCancel:hover {
+    border-color: var(--core-foreground);
+    color: var(--core-foreground);
+}
+
+.btnCancel:focus-visible {
+    outline: 2px solid var(--brand-accent);
+    outline-offset: 2px;
+}
