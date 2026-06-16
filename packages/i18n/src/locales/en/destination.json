@@ -220,5 +220,52 @@
             "services": "Services & infrastructure",
             "experienceSafety": "Experience & safety"
         }
+    },
+    "climate": {
+        "title": "Climate",
+        "bestSeason": "Best season to visit",
+        "bestMonths": "Recommended months",
+        "approximate": "Approximate values",
+        "seasons": {
+            "spring": "Spring",
+            "summer": "Summer",
+            "autumn": "Autumn",
+            "winter": "Winter"
+        },
+        "fields": {
+            "avgTemp": "Average temperature",
+            "minTemp": "Min",
+            "maxTemp": "Max",
+            "rainfall": "Rainfall"
+        },
+        "units": {
+            "celsius": "°C",
+            "mm": "mm"
+        }
+    },
+    "weather": {
+        "title": "Current weather",
+        "feelsLike": "Feels like",
+        "humidity": "Humidity",
+        "wind": "Wind",
+        "forecast": "16-day forecast",
+        "unavailable": "Weather unavailable right now",
+        "conditions": {
+            "clear": "Clear",
+            "mainlyClear": "Mainly clear",
+            "partlyCloudy": "Partly cloudy",
+            "overcast": "Overcast",
+            "fog": "Fog",
+            "drizzle": "Drizzle",
+            "rain": "Rain",
+            "freezingRain": "Freezing rain",
+            "snow": "Snow",
+            "snowGrains": "Snow grains",
+            "rainShowers": "Rain showers",
+            "snowShowers": "Snow showers",
+            "thunderstorm": "Thunderstorm",
+            "thunderstormHail": "Thunderstorm with hail",
+            "unknown": "Unavailable"
+        }
     }
 }
