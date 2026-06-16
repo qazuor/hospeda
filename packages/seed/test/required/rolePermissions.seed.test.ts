@@ -388,3 +388,46 @@ describe('ROLE_PERMISSIONS — AI_SETTINGS_MANAGE is SUPER_ADMIN-only (SPEC-173 
         });
     }
 });
+
+// ---------------------------------------------------------------------------
+// SPEC-239 — Admin-tier commerce permissions granted to ADMIN and SUPER_ADMIN
+// ---------------------------------------------------------------------------
+// Literal permission values from packages/schemas/src/enums/permission.enum.ts.
+
+const COMMERCE_CREATE = 'commerce.create' as const;
+const COMMERCE_VIEW_ALL = 'commerce.viewAll' as const;
+const COMMERCE_EDIT_ALL = 'commerce.editAll' as const;
+const COMMERCE_DELETE = 'commerce.delete' as const;
+const COMMERCE_MODERATE_REVIEW = 'commerce.moderateReview' as const;
+
+const ADMIN_TIER_COMMERCE_PERMS = [
+    COMMERCE_CREATE,
+    COMMERCE_VIEW_ALL,
+    COMMERCE_EDIT_ALL,
+    COMMERCE_DELETE,
+    COMMERCE_MODERATE_REVIEW
+] as const;
+
+describe('ROLE_PERMISSIONS — Admin-tier commerce permissions (SPEC-239)', () => {
+    type RoleKey = keyof typeof ROLE_PERMISSIONS;
+    const superAdminPerms = ROLE_PERMISSIONS[
+        SUPER_ADMIN as unknown as RoleKey
+    ] as readonly string[];
+    const adminPerms = ROLE_PERMISSIONS[ADMIN as unknown as RoleKey] as readonly string[];
+
+    describe('SUPER_ADMIN holds all 5 admin commerce permissions', () => {
+        for (const perm of ADMIN_TIER_COMMERCE_PERMS) {
+            it(`grants "${perm}" to SUPER_ADMIN`, () => {
+                expect(superAdminPerms).toContain(perm);
+            });
+        }
+    });
+
+    describe('ADMIN holds all 5 admin commerce permissions', () => {
+        for (const perm of ADMIN_TIER_COMMERCE_PERMS) {
+            it(`grants "${perm}" to ADMIN`, () => {
+                expect(adminPerms).toContain(perm);
+            });
+        }
+    });
+});

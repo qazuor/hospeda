@@ -17,6 +17,7 @@ import type { QZPayBilling } from '@qazuor/qzpay-core';
 import type { DrizzleClient } from '@repo/db';
 import { sql, withTransaction } from '@repo/db';
 import { PlanService } from '../plan/plan.service.js';
+import { isAccommodationSubscription } from '../subscription/subscription-product-domain.js';
 import { AddonCatalogService } from './addon-catalog.service.js';
 import { ADDON_RECALC_SOURCE_ID } from './addon-lifecycle.constants.js';
 
@@ -248,8 +249,12 @@ export async function recalculateAddonLimitsForCustomer(
                 return skippedResult;
             }
 
+            // SPEC-239 T-034: filter to accommodation-domain subscriptions only.
+            // Treats null/undefined productDomain as 'accommodation' (legacy rows).
             const activeSubscription = subscriptions.find(
-                (sub: { status: string }) => sub.status === 'active' || sub.status === 'trialing'
+                (sub: { status: string }) =>
+                    (sub.status === 'active' || sub.status === 'trialing') &&
+                    isAccommodationSubscription(sub)
             );
 
             if (!activeSubscription) {

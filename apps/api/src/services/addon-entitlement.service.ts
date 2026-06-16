@@ -17,7 +17,7 @@ import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { type EntitlementKey, type LimitKey, isEntitlementKey, isLimitKey } from '@repo/billing';
 import { type DrizzleClient, getDb } from '@repo/db';
 import { billingAddonPurchases } from '@repo/db/schemas';
-import { AddonCatalogService, PlanService } from '@repo/service-core';
+import { AddonCatalogService, PlanService, isAccommodationSubscription } from '@repo/service-core';
 import type { ServiceResult } from '@repo/service-core';
 import { and, eq, isNull } from 'drizzle-orm';
 import { clearEntitlementCache } from '../middlewares/entitlement';
@@ -124,8 +124,12 @@ export class AddonEntitlementService {
                 };
             }
 
+            // SPEC-239 T-034: filter to accommodation-domain subscriptions only.
+            // Treats null/undefined productDomain as 'accommodation' (legacy rows).
             const activeSubscription = subscriptions.find(
-                (sub: { status: string }) => sub.status === 'active' || sub.status === 'trialing'
+                (sub: { status: string }) =>
+                    (sub.status === 'active' || sub.status === 'trialing') &&
+                    isAccommodationSubscription(sub)
             );
 
             if (!activeSubscription) {
@@ -379,8 +383,12 @@ export class AddonEntitlementService {
                 };
             }
 
+            // SPEC-239 T-034: filter to accommodation-domain subscriptions only.
+            // Treats null/undefined productDomain as 'accommodation' (legacy rows).
             const activeSubscription = subscriptions.find(
-                (sub: { status: string }) => sub.status === 'active' || sub.status === 'trialing'
+                (sub: { status: string }) =>
+                    (sub.status === 'active' || sub.status === 'trialing') &&
+                    isAccommodationSubscription(sub)
             );
 
             if (!activeSubscription) {
@@ -637,9 +645,12 @@ export class AddonEntitlementService {
             const subscriptions = await this.billing.subscriptions.getByCustomerId(customerId);
 
             if (subscriptions && subscriptions.length > 0) {
+                // SPEC-239 T-034: filter to accommodation-domain subscriptions only.
+                // Treats null/undefined productDomain as 'accommodation' (legacy rows).
                 const activeSubscription = subscriptions.find(
                     (sub: { status: string }) =>
-                        sub.status === 'active' || sub.status === 'trialing'
+                        (sub.status === 'active' || sub.status === 'trialing') &&
+                        isAccommodationSubscription(sub)
                 );
 
                 if (activeSubscription) {

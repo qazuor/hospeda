@@ -300,6 +300,14 @@
                 "entityId": {
                     "uuid": "O ID da entidade deve ser um UUID válido"
                 }
+            },
+            "gastronomy": {
+                "destinationId": {
+                    "uuid": "[PT] El destination id debe ser un UUID válido"
+                },
+                "ownerId": {
+                    "uuid": "[PT] El ID del propietario debe ser un UUID válido"
+                }
             }
         }
     },
@@ -1396,6 +1404,34 @@
                 "max": "O limite não pode ultrapassar {{max}} itens",
                 "min": "O limite deve ser pelo menos {{min}}"
             }
+        },
+        "commerceRating": {
+            "ambiance": {
+                "max": "[PT] El puntaje de ambiente no puede superar los {{max}}",
+                "min": "[PT] El puntaje de ambiente debe ser al menos {{min}}",
+                "required": "[PT] El puntaje de ambiente es obligatorio"
+            },
+            "food": {
+                "max": "[PT] El puntaje de comida no puede superar los {{max}}",
+                "min": "[PT] El puntaje de comida debe ser al menos {{min}}",
+                "required": "[PT] El puntaje de comida es obligatorio"
+            },
+            "service": {
+                "max": "[PT] El puntaje de servicio no puede superar los {{max}}",
+                "min": "[PT] El puntaje de servicio debe ser al menos {{min}}",
+                "required": "[PT] El puntaje de servicio es obligatorio"
+            },
+            "value": {
+                "max": "[PT] El puntaje de valor no puede superar los {{max}}",
+                "min": "[PT] El puntaje de valor debe ser al menos {{min}}",
+                "required": "[PT] El puntaje de valor es obligatorio"
+            }
+        },
+        "openingHours": {
+            "shift": {
+                "closeBeforeOpen": "[PT] La hora de cierre no puede ser anterior a la hora de apertura",
+                "invalidTime": "[PT] El formato de hora no es válido"
+            }
         }
     },
     "contact": {
@@ -1691,6 +1727,18 @@
         },
         "newsletterContentType": {
             "invalid": "O tipo de conteúdo do newsletter não é válido"
+        },
+        "commerceEntityType": {
+            "invalid": "[PT] El tipo de entidad comercial no es válido"
+        },
+        "gastronomyType": {
+            "invalid": "[PT] El tipo de gastronomía no es válido"
+        },
+        "priceRange": {
+            "invalid": "[PT] El rango de precios no es válido"
+        },
+        "productDomain": {
+            "invalid": "[PT] El dominio de producto no es válido"
         },
         "hostTradeCategory": {
             "invalid": "[PT] La categoría de oficio seleccionada no es válida"
@@ -3460,6 +3508,110 @@
         },
         "window": {
             "invalid": "A janela de tempo deve ser 7d ou 30d"
+        }
+    },
+    "commerce": {
+        "description": {
+            "max": "[PT] La descripción no puede superar los {{max}} caracteres",
+            "min": "[PT] La descripción debe tener al menos {{min}} caracteres",
+            "required": "[PT] La descripción es obligatoria"
+        },
+        "name": {
+            "max": "[PT] El nombre no puede superar los {{max}} caracteres",
+            "min": "[PT] El nombre debe tener al menos {{min}} caracteres",
+            "required": "[PT] El nombre es obligatorio"
+        },
+        "richDescription": {
+            "max": "[PT] La descripción enriquecida no puede superar los {{max}} caracteres"
+        },
+        "slug": {
+            "max": "[PT] El slug no puede superar los {{max}} caracteres",
+            "min": "[PT] El slug debe tener al menos {{min}} caracteres",
+            "required": "[PT] El slug es obligatorio"
+        },
+        "summary": {
+            "max": "[PT] El resumen no puede superar los {{max}} caracteres",
+            "min": "[PT] El resumen debe tener al menos {{min}} caracteres",
+            "required": "[PT] El resumen es obligatorio"
+        }
+    },
+    "commerceLead": {
+        "adminNote": {
+            "max": "[PT] La nota de administrador no puede superar los {{max}} caracteres"
+        },
+        "businessName": {
+            "max": "[PT] El nombre del negocio no puede superar los {{max}} caracteres",
+            "min": "[PT] El nombre del negocio debe tener al menos {{min}} caracteres"
+        },
+        "contactName": {
+            "max": "[PT] El nombre de contacto no puede superar los {{max}} caracteres",
+            "min": "[PT] El nombre de contacto debe tener al menos {{min}} caracteres"
+        },
+        "domain": {
+            "max": "[PT] El dominio no puede superar los {{max}} caracteres",
+            "required": "[PT] El dominio es obligatorio"
+        },
+        "email": {
+            "invalid": "[PT] El email no es válido",
+            "max": "[PT] El email no puede superar los {{max}} caracteres"
+        },
+        "message": {
+            "max": "[PT] El mensaje no puede superar los {{max}} caracteres",
+            "min": "[PT] El mensaje debe tener al menos {{min}} caracteres"
+        },
+        "phone": {
+            "max": "[PT] El teléfono no puede superar los {{max}} caracteres"
+        },
+        "status": {
+            "invalid": "[PT] El estado del lead no es válido"
+        }
+    },
+    "gastronomy": {
+        "amenityIds": {
+            "invalidUuid": "[PT] El ID de servicio debe ser un UUID válido"
+        },
+        "delete": {
+            "deletedAt": {
+                "invalidType": "[PT] La fecha de eliminación debe ser una fecha válida"
+            },
+            "force": {
+                "invalidType": "[PT] El valor de forzar debe ser un booleano"
+            },
+            "success": {
+                "required": "[PT] El resultado exitoso es obligatorio"
+            }
+        },
+        "featureIds": {
+            "invalidUuid": "[PT] El ID de característica debe ser un UUID válido"
+        },
+        "menuUrl": {
+            "httpsRequired": "[PT] La URL del menú debe usar HTTPS",
+            "invalid": "[PT] La URL del menú no es válida"
+        },
+        "review": {
+            "content": {
+                "max": "[PT] El contenido de la reseña no puede superar los {{max}} caracteres",
+                "min": "[PT] El contenido de la reseña debe tener al menos {{min}} caracteres"
+            },
+            "overallRating": {
+                "max": "[PT] La calificación general no puede superar {{max}}",
+                "min": "[PT] La calificación general debe ser al menos {{min}}",
+                "required": "[PT] La calificación general es obligatoria"
+            },
+            "title": {
+                "max": "[PT] El título de la reseña no puede superar los {{max}} caracteres",
+                "min": "[PT] El título de la reseña debe tener al menos {{min}} caracteres"
+            }
+        }
+    },
+    "gastronomyFeature": {
+        "comments": {
+            "max": "[PT] El comments no puede superar los {{max}} caracteres",
+            "min": "[PT] El comments debe tener al menos {{min}} caracteres"
+        },
+        "hostReWriteName": {
+            "max": "[PT] El host re write name no puede superar los {{max}} caracteres",
+            "min": "[PT] El host re write name debe tener al menos {{min}} caracteres"
         }
     },
     "hostTrade": {

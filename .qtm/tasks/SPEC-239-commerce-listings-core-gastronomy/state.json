@@ -1,0 +1,2344 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-239",
+    "title": "Commerce listing core (merchant-with-subscription) + Gastronomía",
+    "created": "2026-06-15T23:23:58.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add PriceRangeEnum and ProductDomainEnum core enums",
+            "description": "Create `packages/schemas/src/enums/price-range.enum.ts` (BUDGET|MID|HIGH|PREMIUM) + `.schema.ts`, and `packages/schemas/src/enums/product-domain.enum.ts` (accommodation|commerce) + `.schema.ts`. Mirror an existing enum file pair exactly. Export from the enums barrel. Tests: `packages/schemas/test/enums/price-range.test.ts` + `product-domain.test.ts` asserting each value parses and an invalid value rejects.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-008", "T-010", "T-021", "T-026"],
+            "subtasks": [
+                {
+                    "title": "Create price-range enum + schema",
+                    "completed": false
+                },
+                {
+                    "title": "Create product-domain enum + schema",
+                    "completed": false
+                },
+                {
+                    "title": "Export from enums barrel",
+                    "completed": false
+                },
+                {
+                    "title": "Write enum unit tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["schema", "enum", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Add CommerceEntityType core enum",
+            "description": "Create `packages/schemas/src/enums/commerce-entity-type.enum.ts` (gastronomy|experience) + `.schema.ts` used by the link table and admin shell discriminator. Export from barrel. Tests: `packages/schemas/test/enums/commerce-entity-type.test.ts` asserting both values parse and invalid rejects.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-022"],
+            "subtasks": [
+                {
+                    "title": "Create commerce-entity-type enum + schema",
+                    "completed": false
+                },
+                {
+                    "title": "Export from barrel",
+                    "completed": false
+                },
+                {
+                    "title": "Write unit test",
+                    "completed": false
+                }
+            ],
+            "tags": ["schema", "enum", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Add GastronomyTypeEnum gastro enum",
+            "description": "Create `packages/schemas/src/enums/gastronomy-type.enum.ts` (RESTAURANT, BAR, CAFE, PARRILLA, CERVECERIA, HELADERIA, PANADERIA, ROTISERIA, FOOD_TRUCK) + `.schema.ts`. Export from barrel. Tests: `packages/schemas/test/enums/gastronomy-type.test.ts` asserting each value parses and invalid rejects.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-010", "T-021"],
+            "subtasks": [
+                {
+                    "title": "Create gastronomy-type enum + schema",
+                    "completed": false
+                },
+                {
+                    "title": "Export from barrel",
+                    "completed": false
+                },
+                {
+                    "title": "Write unit test",
+                    "completed": false
+                }
+            ],
+            "tags": ["schema", "enum", "gastro"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Create OpeningHoursSchema core common schema",
+            "description": "Create `packages/schemas/src/common/opening-hours.schema.ts` exporting `OpeningHoursSchema` (timezone optional default America/Argentina/Buenos_Aires, days mon..sun each {closed bool, shifts:[{open HHmm, close HHmm}]}, notes, notesI18n) + `OpeningHoursFields` spread const. Export from common barrel. Tests: `packages/schemas/test/common/opening-hours.test.ts` covering valid week, closed day, multiple shifts, invalid HHmm rejection, and open>=close edge case.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-010"],
+            "subtasks": [
+                {
+                    "title": "Define HHmm + shift + day sub-schemas",
+                    "completed": false
+                },
+                {
+                    "title": "Compose OpeningHoursSchema + OpeningHoursFields",
+                    "completed": false
+                },
+                {
+                    "title": "Export from common barrel",
+                    "completed": false
+                },
+                {
+                    "title": "Write unit tests incl edge cases",
+                    "completed": false
+                }
+            ],
+            "tags": ["schema", "common", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Create CommerceRatingSchema core common schema",
+            "description": "Create `packages/schemas/src/common/commerce-rating.schema.ts` exporting `CommerceRatingSchema` ({food, service, ambiance, value} each 0-5). Export from common barrel. Tests: `packages/schemas/test/common/commerce-rating.test.ts` asserting valid breakdown, boundary 0 and 5 accepted, 6 and negative rejected.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-017", "T-019"],
+            "subtasks": [
+                {
+                    "title": "Define CommerceRatingSchema",
+                    "completed": false
+                },
+                {
+                    "title": "Export from common barrel",
+                    "completed": false
+                },
+                {
+                    "title": "Write unit test",
+                    "completed": false
+                }
+            ],
+            "tags": ["schema", "common", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Create CommerceIdentityFields core common schema",
+            "description": "Create `packages/schemas/src/common/commerce-identity.schema.ts` exporting `CommerceIdentityFields` spread const (name, slug, summary, description, richDescription + matching *I18n jsonb fields + translationMeta), mirroring accommodation identity shape. Export from common barrel. Tests: `packages/schemas/test/common/commerce-identity.test.ts` asserting a z.object spread of the fields parses a valid identity and rejects missing required name/slug.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-010"],
+            "subtasks": [
+                {
+                    "title": "Define CommerceIdentityFields spread const",
+                    "completed": false
+                },
+                {
+                    "title": "Export from common barrel",
+                    "completed": false
+                },
+                {
+                    "title": "Write spread-composition unit test",
+                    "completed": false
+                }
+            ],
+            "tags": ["schema", "common", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Add COMMERCE_OWNER role to RoleEnum",
+            "description": "Add `COMMERCE_OWNER` to `packages/schemas/src/enums/role.enum.ts` (+ its `.schema.ts` if separate). Do NOT overload HOST. Tests: extend `packages/schemas/test/enums/role.test.ts` (or create) asserting COMMERCE_OWNER parses and is distinct from HOST.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-009", "T-030"],
+            "subtasks": [
+                {
+                    "title": "Add COMMERCE_OWNER to RoleEnum",
+                    "completed": false
+                },
+                {
+                    "title": "Update role schema if separate",
+                    "completed": false
+                },
+                {
+                    "title": "Write/extend role enum test",
+                    "completed": false
+                }
+            ],
+            "tags": ["schema", "enum", "role", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Add COMMERCE_* permissions + category to PermissionEnum",
+            "description": "Add the granular `COMMERCE_*` permission constants (operational EDIT_OWN sections: schedule/contact/social/media/menu/priceRange/richDescription/amenities/features/faqs, plus admin COMMERCE_*_CREATE/VIEW_ALL/EDIT_ALL/DELETE/MODERATE_REVIEW) and a `COMMERCE` PermissionCategoryEnum value to `packages/schemas/src/enums/permission.enum.ts`. Tests: extend `packages/schemas/test/enums/permission.test.ts` asserting the new constants parse and the category exists.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-009", "T-030"],
+            "subtasks": [
+                {
+                    "title": "Add COMMERCE_* operational permission constants",
+                    "completed": false
+                },
+                {
+                    "title": "Add COMMERCE_* admin permission constants",
+                    "completed": false
+                },
+                {
+                    "title": "Add COMMERCE permission category",
+                    "completed": false
+                },
+                {
+                    "title": "Write/extend permission enum test",
+                    "completed": false
+                }
+            ],
+            "tags": ["schema", "enum", "permission", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Map COMMERCE_OWNER role to COMMERCE_* permissions in seed",
+            "description": "Add the COMMERCE_OWNER → COMMERCE_*_EDIT_OWN operational-only mapping (plus ACCESS_PANEL_ADMIN, BILLING_VIEW_OWN as appropriate) in `packages/seed/src/required/rolePermissions.seed.ts`. Do NOT grant identity/core or admin perms. Tests: `packages/seed/test/rolePermissions.test.ts` (or extend) asserting COMMERCE_OWNER has ONLY the operational set and lacks any identity/lifecycle/admin permission.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-007", "T-008"],
+            "blocks": ["T-040"],
+            "subtasks": [
+                {
+                    "title": "Add COMMERCE_OWNER permission mapping",
+                    "completed": false
+                },
+                {
+                    "title": "Assert operational-only scope",
+                    "completed": false
+                },
+                {
+                    "title": "Write/extend seed mapping test",
+                    "completed": false
+                }
+            ],
+            "tags": ["seed", "role", "permission", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Create GastronomySchema main entity schema",
+            "description": "Create `packages/schemas/src/entities/gastronomy/gastronomy.schema.ts` composing by spread: CommerceIdentityFields + gastro fields (type via GastronomyTypeEnum, priceRange, menuUrl https-validated nullable) + BaseContactFields + SocialNetworkFields + OpeningHoursFields + media + BaseReviewFields + Lifecycle/Moderation/Visibility/Seo/Admin/Tags/Audit + destinationId + ownerId + isFeatured. Tests: `packages/schemas/test/entities/gastronomy/gastronomy.schema.test.ts` asserting a full valid entity parses and required-field omissions reject.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-003", "T-004", "T-006"],
+            "blocks": ["T-011", "T-012", "T-013", "T-014", "T-015", "T-016", "T-017"],
+            "subtasks": [
+                {
+                    "title": "Spread-compose all field groups",
+                    "completed": false
+                },
+                {
+                    "title": "Add gastro-specific fields (type/priceRange/menuUrl)",
+                    "completed": false
+                },
+                {
+                    "title": "Export from gastronomy barrel",
+                    "completed": false
+                },
+                {
+                    "title": "Write full-entity parse test",
+                    "completed": false
+                }
+            ],
+            "tags": ["schema", "gastro", "entity"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Create gastronomy admin + operational CRUD schemas",
+            "description": "Create `packages/schemas/src/entities/gastronomy/gastronomy.crud.schema.ts`: admin Create (identity/core + ownerId/destinationId/type + optional amenityIds/featureIds), operational owner Update via `.pick()` (schedule/contact/social/media/menuUrl/priceRange/richDescription/amenityIds/featureIds ONLY — identity/core fields ABSENT so forged values rejected pre-service), plus Patch/Delete/Restore. Tests: `gastronomy.crud.schema.test.ts` asserting owner-update rejects a forged `name`/`slug`/`type` and admin-create requires identity fields.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-035", "T-042", "T-043"],
+            "subtasks": [
+                {
+                    "title": "Define admin create schema",
+                    "completed": false
+                },
+                {
+                    "title": "Define operational-only owner update (.pick)",
+                    "completed": false
+                },
+                {
+                    "title": "Define patch/delete/restore",
+                    "completed": false
+                },
+                {
+                    "title": "Test forged-field rejection on owner update",
+                    "completed": false
+                }
+            ],
+            "tags": ["schema", "gastro", "crud"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Create gastronomy HTTP schema with completeness check",
+            "description": "Create `packages/schemas/src/entities/gastronomy/gastronomy.http.schema.ts`: flat HTTP coercion + `httpToDomain*` converters with the compile-time completeness check (`Exclude<DomainFields, HttpConversionFields>` resolves to never). Tests: `gastronomy.http.schema.test.ts` asserting a flat HTTP payload coerces to the domain shape and the converter round-trips type/priceRange/openingHours.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-042"],
+            "subtasks": [
+                {
+                    "title": "Define flat HTTP coercion schema",
+                    "completed": false
+                },
+                {
+                    "title": "Implement httpToDomain converters",
+                    "completed": false
+                },
+                {
+                    "title": "Add compile-time completeness Exclude check",
+                    "completed": false
+                },
+                {
+                    "title": "Write coercion round-trip test",
+                    "completed": false
+                }
+            ],
+            "tags": ["schema", "gastro", "http"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Create gastronomy query + admin-search schemas",
+            "description": "Create `gastronomy.query.schema.ts` (GastronomySearchSchema: destination/type/priceRange/amenity/feature filters + list/summary/stats) and `gastronomy.admin-search.schema.ts` (AdminSearchBaseSchema.extend({type?, destinationId?, priceRange?, ownerId?, isFeatured?})). Tests: `gastronomy.query.schema.test.ts` asserting filter params parse, defaults apply, and unknown admin params reject.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-035", "T-043", "T-045"],
+            "subtasks": [
+                {
+                    "title": "Define GastronomySearchSchema",
+                    "completed": false
+                },
+                {
+                    "title": "Define admin-search extend schema",
+                    "completed": false
+                },
+                {
+                    "title": "Write filter/param tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["schema", "gastro", "query"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Create gastronomy three-tier access schemas",
+            "description": "Create `gastronomy.access.schema.ts` with GastronomyPublicSchema (omits adminInfo, private contactInfo, audit) / GastronomyProtectedSchema / GastronomyAdminSchema using `.pick()`/`.omit()` discipline mirroring accommodation. Tests: `gastronomy.access.schema.test.ts` asserting the public tier strips adminInfo/audit and the admin tier retains them.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-038", "T-042"],
+            "subtasks": [
+                {
+                    "title": "Define public-tier schema (strip sensitive)",
+                    "completed": false
+                },
+                {
+                    "title": "Define protected + admin tiers",
+                    "completed": false
+                },
+                {
+                    "title": "Write tier-stripping tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["schema", "gastro", "access"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Create gastronomy options/relations/batch schemas",
+            "description": "Create `gastronomy.options.schema.ts`, `gastronomy.relations.schema.ts`, `gastronomy.batch.schema.ts` mirroring accommodation's equivalents. Tests: `gastronomy.relations.schema.test.ts` asserting relation shapes (destination, owner, amenities, features) parse and batch I/O validates.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-045"],
+            "subtasks": [
+                {
+                    "title": "Define options schema",
+                    "completed": false
+                },
+                {
+                    "title": "Define relations schema",
+                    "completed": false
+                },
+                {
+                    "title": "Define batch schema",
+                    "completed": false
+                },
+                {
+                    "title": "Write relations/batch tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["schema", "gastro"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Create gastronomy FAQ subtype schema",
+            "description": "Create `packages/schemas/src/entities/gastronomy/subtypes/gastronomy.faq.schema.ts` as `BaseFaqSchema.extend({ id, gastronomyId })` plus Add/Update/Remove/List/Reorder I/O schemas (reorder uses display_order). Tests: `gastronomy.faq.schema.test.ts` asserting add requires question/answer and reorder accepts an ordered id list.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-037", "T-044"],
+            "subtasks": [
+                {
+                    "title": "Extend BaseFaqSchema with id/gastronomyId",
+                    "completed": false
+                },
+                {
+                    "title": "Define Add/Update/Remove/List/Reorder I/O",
+                    "completed": false
+                },
+                {
+                    "title": "Write faq schema tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["schema", "gastro", "faq"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Create gastronomy review subtype schema",
+            "description": "Create `packages/schemas/src/entities/gastronomy/subtypes/gastronomy.review.schema.ts` using `CommerceRatingSchema` for the rating breakdown plus Create/Update/Moderate/List I/O. Default moderationState PENDING. Tests: `gastronomy.review.schema.test.ts` asserting the rating breakdown validates and a create input omits moderation fields (server-controlled).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-010", "T-005"],
+            "blocks": ["T-039", "T-044"],
+            "subtasks": [
+                {
+                    "title": "Define review schema with CommerceRatingSchema",
+                    "completed": false
+                },
+                {
+                    "title": "Define create/update/moderate/list I/O",
+                    "completed": false
+                },
+                {
+                    "title": "Write review schema tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["schema", "gastro", "review"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Create CommerceLeadSchema core lead schema",
+            "description": "Create `packages/schemas/src/entities/commerce-lead/commerce-lead.schema.ts` + `commerce-lead.crud.schema.ts` exporting CommerceLeadSchema + CommerceLeadCreateInputSchema with a `domain` discriminator (default 'gastronomy'), fields businessName/contactName/email/phone/destinationId nullable/message + handledAt/handledById/audit. Tests: `commerce-lead.schema.test.ts` asserting create validates required fields, domain defaults to gastronomy, and email format enforced.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-023", "T-033", "T-047"],
+            "subtasks": [
+                {
+                    "title": "Define CommerceLeadSchema",
+                    "completed": false
+                },
+                {
+                    "title": "Define create input with domain discriminator",
+                    "completed": false
+                },
+                {
+                    "title": "Export from barrel",
+                    "completed": false
+                },
+                {
+                    "title": "Write lead schema tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["schema", "commerce-lead", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Add commerce schema env-registry entries",
+            "description": "Register `HOSPEDA_COMMERCE_LEAD_NOTIFY_EMAIL` and `HOSPEDA_COMMERCE_PLAN_ID` in `packages/config/src/env-registry.*.ts` with full metadata (description/type/required/secret/defaultValue/exampleValue/apps/category), add Zod validation in `apps/api/src/utils/env.ts`, and `.env.example` placeholders. Tests: run `pnpm env:check:registry` green. NOTE: after this task STOP and tell owner to set values in Coolify.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-047", "T-049"],
+            "subtasks": [
+                {
+                    "title": "Register both env vars in env-registry",
+                    "completed": false
+                },
+                {
+                    "title": "Add Zod validation in apps/api env.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Add .env.example placeholders",
+                    "completed": false
+                },
+                {
+                    "title": "Run env:check:registry green",
+                    "completed": false
+                }
+            ],
+            "tags": ["config", "env", "core"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Add users.must_change_password structural migration",
+            "description": "Add `must_change_password boolean NOT NULL DEFAULT false` to the users dbschema in `packages/db/src/schemas/` (structural carril). Run `pnpm db:generate`, commit the migration file. Tests: `packages/db/test/` schema test asserting the column default false and the migration drift guard is clean (db:generate produces no further diff).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-040", "T-041"],
+            "subtasks": [
+                {
+                    "title": "Add column to users dbschema",
+                    "completed": false
+                },
+                {
+                    "title": "Run db:generate + commit migration",
+                    "completed": false
+                },
+                {
+                    "title": "Assert no residual drift",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "migration", "auth", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Create gastronomies dbschema table",
+            "description": "Create `packages/db/src/schemas/gastronomy/gastronomy.dbschema.ts`: uuid PK defaultRandom, slug unique, identity text cols + *I18n jsonb, pg enums gastronomy_type/price_range + reused visibility/lifecycle/moderation, jsonb contact/social/openingHours/media/seo/admin, destinationId/ownerId FK onDelete restrict, is_featured, reviews_count int 0, average_rating numeric(3,2) mode number 0, soft delete deleted_at + audit, index set mirroring accommodation. Tests: `packages/db/test/gastronomy.dbschema.test.ts` asserting columns/enums/indexes present.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-003"],
+            "blocks": ["T-024", "T-025", "T-027", "T-035"],
+            "subtasks": [
+                {
+                    "title": "Define table cols + pg enums",
+                    "completed": false
+                },
+                {
+                    "title": "Add FKs (restrict) + index set",
+                    "completed": false
+                },
+                {
+                    "title": "Export from db barrel",
+                    "completed": false
+                },
+                {
+                    "title": "Write dbschema test",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "gastro", "schema"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Create commerce_listing_subscriptions link dbschema",
+            "description": "Create `packages/db/src/schemas/commerce/commerce_listing_subscriptions.dbschema.ts`: id, subscriptionId FK→billing_subscriptions, productDomain ('commerce'), entityType (CommerceEntityType), entityId uuid, status mirror, createdAt/updatedAt, UNIQUE(entityType, entityId), index entityId/status. Tests: `commerce_listing_subscriptions.dbschema.test.ts` asserting unique constraint + indexes.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-027", "T-032", "T-049"],
+            "subtasks": [
+                {
+                    "title": "Define link table cols + FK",
+                    "completed": false
+                },
+                {
+                    "title": "Add UNIQUE(entityType,entityId) + indexes",
+                    "completed": false
+                },
+                {
+                    "title": "Write dbschema test",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "commerce", "billing", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Create commerce_lead dbschema table",
+            "description": "Create `packages/db/src/schemas/commerce/commerce_lead.dbschema.ts`: id, domain, businessName, contactName, email, phone, destinationId nullable FK, message, handledAt, handledById FK, audit. Indexes: domain, handledAt. Tests: `commerce_lead.dbschema.test.ts` asserting columns + nullable destinationId.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-018"],
+            "blocks": ["T-027", "T-033"],
+            "subtasks": [
+                {
+                    "title": "Define lead table cols",
+                    "completed": false
+                },
+                {
+                    "title": "Add FKs + indexes",
+                    "completed": false
+                },
+                {
+                    "title": "Write dbschema test",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "commerce-lead", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Create gastronomy review + faq dbschemas",
+            "description": "Create `gastronomy_review.dbschema.ts` (FK gastronomy cascade, userId set-null, title/content nullable, rating jsonb, averageRating numeric, lifecycleState ACTIVE, moderationState default PENDING + moderatedBy/At/Reason, audit, adminInfo, UNIQUE(userId,gastronomyId), indexes) and `gastronomy_faq.dbschema.ts` (FK cascade, question/answer notNull, category nullable, display_order int nullable, lifecycleState ACTIVE, adminInfo, audit, indexes gastronomyId/category). Tests: dbschema tests asserting cascade, unique, default PENDING.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-021"],
+            "blocks": ["T-027"],
+            "subtasks": [
+                {
+                    "title": "Define gastronomy_review table",
+                    "completed": false
+                },
+                {
+                    "title": "Define gastronomy_faq table",
+                    "completed": false
+                },
+                {
+                    "title": "Add FKs/unique/indexes",
+                    "completed": false
+                },
+                {
+                    "title": "Write dbschema tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "gastro", "review", "faq"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Create gastronomy amenity/feature junction dbschemas",
+            "description": "Create `r_gastronomy_amenity.dbschema.ts` (composite PK (gastronomyId, amenityId), both FK cascade) + `r_gastronomy_feature.dbschema.ts` (composite PK (gastronomyId, featureId), FK cascade), reusing existing amenities/features catalogs. Tests: dbschema tests asserting composite PK + cascade FKs.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-021"],
+            "blocks": ["T-027", "T-036"],
+            "subtasks": [
+                {
+                    "title": "Define r_gastronomy_amenity junction",
+                    "completed": false
+                },
+                {
+                    "title": "Define r_gastronomy_feature junction",
+                    "completed": false
+                },
+                {
+                    "title": "Write junction dbschema tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "gastro", "junction"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Add billing_subscriptions.product_domain via extras carril",
+            "description": "Add `product_domain varchar(32) NOT NULL DEFAULT 'accommodation'` to `billing_subscriptions` via a hand-written idempotent migration in `packages/db/src/migrations/extras/` (`ALTER TABLE ... ADD COLUMN IF NOT EXISTS ...`) because the table is library-owned (@qazuor/qzpay-drizzle). Confirm carril at impl (micro-decision 1, default extras). Tests: `packages/db/test/extras/product-domain.test.ts` asserting column exists with default after db:apply-extras.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-027", "T-032", "T-034"],
+            "subtasks": [
+                {
+                    "title": "Confirm billing_subscriptions definition location",
+                    "completed": false
+                },
+                {
+                    "title": "Write idempotent extras ALTER migration",
+                    "completed": false
+                },
+                {
+                    "title": "Wire raw column read access",
+                    "completed": false
+                },
+                {
+                    "title": "Write extras apply test",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "billing", "extras", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Generate + apply gastronomy/commerce migrations",
+            "description": "Run `pnpm db:generate` for the structural new tables (gastronomies, gastronomy_review/faq, junctions, commerce_listing_subscriptions, commerce_lead), commit the migration, then `pnpm db:migrate` + `pnpm db:apply-extras` (product_domain). Tests: assert db:generate yields no residual drift and a smoke query against each new table succeeds in `packages/db/test/`.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-021", "T-022", "T-023", "T-024", "T-025", "T-026"],
+            "blocks": ["T-028"],
+            "subtasks": [
+                {
+                    "title": "Run db:generate + commit migration",
+                    "completed": false
+                },
+                {
+                    "title": "Run db:migrate + db:apply-extras",
+                    "completed": false
+                },
+                {
+                    "title": "Assert no residual drift + smoke query",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "migration"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Create gastronomy + commerce Drizzle models",
+            "description": "Create models extending BaseModel for gastronomy, gastronomy_review, gastronomy_faq, junctions, commerce_listing_subscriptions, commerce_lead under `packages/db/src/models/`. Soft delete by default. Tests: `packages/db/test/models/gastronomy.model.test.ts` covering findById/findAll/create/softDelete against a real test DB.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-027"],
+            "blocks": ["T-029", "T-032", "T-033", "T-035", "T-040"],
+            "subtasks": [
+                {
+                    "title": "Create gastronomy + review/faq models",
+                    "completed": false
+                },
+                {
+                    "title": "Create junction + commerce models",
+                    "completed": false
+                },
+                {
+                    "title": "Export from db models barrel",
+                    "completed": false
+                },
+                {
+                    "title": "Write model CRUD tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "model", "gastro", "commerce"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-029",
+            "title": "Implement BaseCommerceListingService skeleton + lifecycle hooks",
+            "description": "Create `packages/service-core/src/services/commerce/base-commerce-listing.service.ts` exporting `abstract class BaseCommerceListingService<Entity,Model,Create,Update,Search> extends BaseCrudService`. Implement shared lifecycle hooks: destination CITY validation, slug generation, junction id capture into hookState (pendingAmenityIds/pendingFeatureIds), public-tier projection. ZERO gastro-specific logic (AC-9.1). Tests: `packages/service-core/test/commerce/base-commerce-listing.service.test.ts` asserting slug gen + CITY validation + hookState capture.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-028"],
+            "blocks": ["T-031", "T-035"],
+            "subtasks": [
+                {
+                    "title": "Define abstract base class extends BaseCrudService",
+                    "completed": false
+                },
+                {
+                    "title": "Implement slug gen + destination CITY validation hooks",
+                    "completed": false
+                },
+                {
+                    "title": "Implement junction hookState capture",
+                    "completed": false
+                },
+                {
+                    "title": "Write base service unit tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["service", "commerce", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-030",
+            "title": "Implement generic commerce permissions module",
+            "description": "Create `packages/service-core/src/services/commerce/commerce.permissions.ts` exporting generic `checkCanEditOperational(actor, listing)`, `checkCanViewOwn`, `checkCanAdmin*` etc., all using `hasPermission(actor, PermissionEnum.COMMERCE_*)` — NEVER role checks. Tests: `commerce.permissions.test.ts` asserting an actor with only operational perms passes operational but fails identity/admin checks.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-007", "T-008"],
+            "blocks": ["T-035", "T-038"],
+            "subtasks": [
+                {
+                    "title": "Define generic checkCan* helpers",
+                    "completed": false
+                },
+                {
+                    "title": "Use PermissionEnum only (no role checks)",
+                    "completed": false
+                },
+                {
+                    "title": "Write permission helper tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["service", "commerce", "permission", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-031",
+            "title": "Implement generic commerce junction-sync helper",
+            "description": "Create `packages/service-core/src/services/commerce/commerce.junction-sync.ts` exporting generic `syncAmenityJunction`/`syncFeatureJunction` parametrized by junction table + catalog model, run inside withServiceTransaction (undefined=no-op, []=clear, [ids]=sync). Tests: `commerce.junction-sync.test.ts` asserting the three modes against a passed-in table.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-029"],
+            "blocks": ["T-036"],
+            "subtasks": [
+                {
+                    "title": "Define generic sync signature (table param)",
+                    "completed": false
+                },
+                {
+                    "title": "Implement undefined/empty/ids modes",
+                    "completed": false
+                },
+                {
+                    "title": "Write three-mode sync tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["service", "commerce", "junction", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-032",
+            "title": "Implement commerce-visibility reconciler",
+            "description": "Create `packages/service-core/src/services/commerce/commerce-visibility.ts`: given a subscription-status change for a listing (looked up via commerce_listing_subscriptions link), flip listing visibility/lifecycleState (active→PUBLIC/ACTIVE, otherwise hidden). INDEPENDENT of the entitlement engine (US-4 / AC-4.5). Tests: `commerce-visibility.test.ts` asserting active→visible and cancel/expire→hidden, data preserved.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-022", "T-026", "T-028"],
+            "blocks": ["T-049", "T-050"],
+            "subtasks": [
+                {
+                    "title": "Resolve listing via link table",
+                    "completed": false
+                },
+                {
+                    "title": "Flip visibility/lifecycle by sub status",
+                    "completed": false
+                },
+                {
+                    "title": "Keep independent of entitlement engine",
+                    "completed": false
+                },
+                {
+                    "title": "Write reconciler tests (active/cancel)",
+                    "completed": false
+                }
+            ],
+            "tags": ["service", "commerce", "billing", "visibility", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-033",
+            "title": "Implement commerce-lead service",
+            "description": "Create `packages/service-core/src/services/commerce/commerce-lead.service.ts` (BaseService/stateless-helper style): create lead + fire ops notification via @repo/notifications + admin list/mark-handled. Returns ServiceOutput<T>. Tests: `commerce-lead.service.test.ts` asserting create stores a lead, notification is invoked (mocked), and mark-handled sets handledAt/handledById.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-018", "T-023", "T-028"],
+            "blocks": ["T-047"],
+            "subtasks": [
+                {
+                    "title": "Implement create lead + notify",
+                    "completed": false
+                },
+                {
+                    "title": "Implement admin list + mark-handled",
+                    "completed": false
+                },
+                {
+                    "title": "Write lead service tests (mock notify)",
+                    "completed": false
+                }
+            ],
+            "tags": ["service", "commerce-lead", "notifications", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-034",
+            "title": "Add product_domain filter to accommodation entitlement reads",
+            "description": "Add `product_domain='accommodation'` filter to every accommodation-side subscription read: `loadEntitlements()`, accommodation start-paid/poll/webhook, and dunning paths touching accommodation entitlements (in `packages/billing`, `apps/api/src/routes/billing/`, crons). Do NOT refactor to multi-domain. Tests covered separately in T-051. Unit test here: assert the query builder includes the product_domain predicate in `packages/billing/test/`.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-026"],
+            "blocks": ["T-051"],
+            "subtasks": [
+                {
+                    "title": "Filter loadEntitlements by accommodation domain",
+                    "completed": false
+                },
+                {
+                    "title": "Filter start-paid/poll/webhook reads",
+                    "completed": false
+                },
+                {
+                    "title": "Filter dunning accommodation reads",
+                    "completed": false
+                },
+                {
+                    "title": "Unit-test the filter predicate",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "entitlements", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-035",
+            "title": "Implement GastronomyService extends BaseCommerceListingService",
+            "description": "Create `packages/service-core/src/services/gastronomy/gastronomy.service.ts` extending BaseCommerceListingService. Adds ONLY: gastro field handling (type/priceRange/menuUrl), its junction tables wiring, gastro search filters, forced owner-scoping in `_executeAdminSearch` for *_VIEW_OWN actors. Tests: `gastronomy.service.test.ts` covering create/update + forced owner scoping (non-owner→404).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-011", "T-013", "T-021", "T-028", "T-029", "T-030"],
+            "blocks": ["T-036", "T-037", "T-038", "T-039", "T-042", "T-045"],
+            "subtasks": [
+                {
+                    "title": "Extend base + wire gastro fields",
+                    "completed": false
+                },
+                {
+                    "title": "Add gastro search filters",
+                    "completed": false
+                },
+                {
+                    "title": "Forced owner-scoping in admin search",
+                    "completed": false
+                },
+                {
+                    "title": "Write service CRUD + scoping tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["service", "gastro"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": "2026-06-16T09:00:00.000Z",
+                "completed": "2026-06-16T11:20:00.000Z"
+            }
+        },
+        {
+            "id": "T-036",
+            "title": "Wire gastronomy junction sync + operational-only enforcement",
+            "description": "Wire `gastronomy.service.ts` to call the generic junction-sync with r_gastronomy_amenity/feature tables, and enforce operational-only owner updates (identity/core forged fields server-side rejected, complementing the schema absence). Tests: extend `gastronomy.service.test.ts` asserting amenity/feature sync (add/clear) and that an owner update touching `name`/`type` is rejected with a clear code.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-025", "T-031", "T-035"],
+            "blocks": ["T-043"],
+            "subtasks": [
+                {
+                    "title": "Wire gastro junction tables to generic sync",
+                    "completed": false
+                },
+                {
+                    "title": "Server-side reject forged identity/core fields",
+                    "completed": false
+                },
+                {
+                    "title": "Write junction-sync + forged-field tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["service", "gastro", "junction", "permission"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": "2026-06-16T09:00:00.000Z",
+                "completed": "2026-06-16T11:20:00.000Z"
+            }
+        },
+        {
+            "id": "T-037",
+            "title": "Implement gastronomy FAQ service helpers",
+            "description": "Create `packages/service-core/src/services/gastronomy/gastronomy.faq.ts` helpers: add (display_order max+1), update, remove, reorder (NULLS LAST read order), list. Owner-editable. Tests: `gastronomy.faq.test.ts` covering add ordering, reorder, and owner-scope enforcement.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-016", "T-035"],
+            "blocks": ["T-044"],
+            "subtasks": [
+                {
+                    "title": "Implement add/update/remove faq",
+                    "completed": false
+                },
+                {
+                    "title": "Implement reorder + NULLS LAST read",
+                    "completed": false
+                },
+                {
+                    "title": "Write faq helper tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["service", "gastro", "faq"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": "2026-06-16T09:00:00.000Z",
+                "completed": "2026-06-16T11:20:00.000Z"
+            }
+        },
+        {
+            "id": "T-038",
+            "title": "Implement gastronomy projections + permissions module",
+            "description": "Create `gastronomy.projections.ts` (public-tier projection / location privacy using the access schemas) and `gastronomy.permissions.ts` (thin, delegates to commerce permission helpers with gastronomy permission constants). Tests: `gastronomy.projections.test.ts` asserting public projection strips adminInfo/private contact; `gastronomy.permissions.test.ts` asserting delegation.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-014", "T-030", "T-035"],
+            "blocks": ["T-042"],
+            "subtasks": [
+                {
+                    "title": "Implement public-tier projection",
+                    "completed": false
+                },
+                {
+                    "title": "Implement thin permissions delegation",
+                    "completed": false
+                },
+                {
+                    "title": "Write projection + permission tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["service", "gastro", "projection", "permission"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": "2026-06-16T09:00:00.000Z",
+                "completed": "2026-06-16T11:20:00.000Z"
+            }
+        },
+        {
+            "id": "T-039",
+            "title": "Implement gastronomy review service + denormalized rating recompute",
+            "description": "Create `packages/service-core/src/services/gastronomy/gastronomy.review.ts`: create (→PENDING, UNIQUE userId/gastronomyId), moderate approve/reject, and recompute averageRating/reviewsCount from APPROVED rows only on approve/update/delete via service hooks. Tests: `gastronomy.review.test.ts` covering one-review-per-user, PENDING default, and rating recompute counting only approved.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-017", "T-035"],
+            "blocks": ["T-044", "T-046"],
+            "subtasks": [
+                {
+                    "title": "Implement create review (PENDING, unique)",
+                    "completed": false
+                },
+                {
+                    "title": "Implement moderate approve/reject",
+                    "completed": false
+                },
+                {
+                    "title": "Recompute denormalized rating from approved",
+                    "completed": false
+                },
+                {
+                    "title": "Write review + recompute tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["service", "gastro", "review", "moderation"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": "2026-06-16T09:00:00.000Z",
+                "completed": "2026-06-16T11:20:00.000Z"
+            }
+        },
+        {
+            "id": "T-040",
+            "title": "Implement commerce-owner-provisioning service",
+            "description": "Create `packages/service-core/src/services/commerce/commerce-owner-provisioning.service.ts`: create a COMMERCE_OWNER user with a temp password + `must_change_password=true` via Better Auth, email credentials via @repo/notifications (i18n). Tests: `commerce-owner-provisioning.service.test.ts` asserting user created with role+flag and credential email invoked (mocked).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-009", "T-020", "T-028"],
+            "blocks": ["T-048"],
+            "subtasks": [
+                {
+                    "title": "Create COMMERCE_OWNER user + temp password",
+                    "completed": false
+                },
+                {
+                    "title": "Set must_change_password=true",
+                    "completed": false
+                },
+                {
+                    "title": "Send credentials email (i18n)",
+                    "completed": false
+                },
+                {
+                    "title": "Write provisioning tests (mock email)",
+                    "completed": false
+                }
+            ],
+            "tags": ["service", "commerce", "auth", "notifications", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-041",
+            "title": "Implement must_change_password gate + change-password endpoint",
+            "description": "Build the force-password-change gate: validate Better Auth native support first; otherwise a session/route middleware (in apps/api protected router) that blocks every protected route except change-password while the flag is true, plus `POST /api/v1/protected/auth/change-password-required` that enforces the password policy and clears the flag (US-3). Tests: integration test in `apps/api/test/` asserting a flagged user hitting any protected route gets redirected/403 with a clear code (AC-3.4 regression), and clearing the flag unblocks.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-020"],
+            "blocks": ["T-052", "T-055"],
+            "subtasks": [
+                {
+                    "title": "Validate Better Auth native vs custom gate",
+                    "completed": false
+                },
+                {
+                    "title": "Implement protected-route gate middleware",
+                    "completed": false
+                },
+                {
+                    "title": "Implement change-password-required endpoint",
+                    "completed": false
+                },
+                {
+                    "title": "Write gate regression test (flagged→403)",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "auth", "core"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-042",
+            "title": "Implement gastronomy public API routes",
+            "description": "Create `apps/api/src/routes/gastronomy/public/` (one file per endpoint, index re-export) using createPublicRoute: list (visible only), :id, slug/:slug, destination/:destinationId, :id/reviews, :id/faqs, stats. Use GastronomyPublicSchema projection; hidden listings 404. Tests: `apps/api/test/gastronomy/public.test.ts` asserting visible-only filtering and 404 on hidden detail.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-011", "T-012", "T-014", "T-035", "T-038"],
+            "blocks": ["T-053", "T-054"],
+            "subtasks": [
+                {
+                    "title": "Create list + detail public routes",
+                    "completed": false
+                },
+                {
+                    "title": "Create slug/destination/reviews/faqs/stats routes",
+                    "completed": false
+                },
+                {
+                    "title": "Apply public projection + visibility filter",
+                    "completed": false
+                },
+                {
+                    "title": "Write public route integration tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "gastro", "public"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-043",
+            "title": "Implement gastronomy protected owner API routes",
+            "description": "Create `apps/api/src/routes/gastronomy/protected/` using createProtectedRoute: PATCH :id (owner operational-only update), GET :id (owner view). Forced owner scoping (non-owner→403/404). Tests: `apps/api/test/gastronomy/protected.test.ts` asserting owner can patch operational fields, forged identity field rejected, and non-owner gets 403/404.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-011", "T-013", "T-036"],
+            "blocks": ["T-054"],
+            "subtasks": [
+                {
+                    "title": "Create PATCH/GET owner routes",
+                    "completed": false
+                },
+                {
+                    "title": "Enforce owner scoping + operational-only",
+                    "completed": false
+                },
+                {
+                    "title": "Write protected route tests (forge + non-owner)",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "gastro", "protected"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-044",
+            "title": "Implement gastronomy protected FAQ + review API routes",
+            "description": "Create owner FAQ routes (POST/PUT/DELETE /:id/faqs[/:faqId], PUT /:id/faqs/reorder) and tourist review route (POST /:id/reviews → PENDING) under `apps/api/src/routes/gastronomy/protected/`. Tests: `apps/api/test/gastronomy/protected-faq-review.test.ts` asserting FAQ CRUD/reorder owner-scoped and one-review-per-user enforced.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-016", "T-017", "T-037", "T-039"],
+            "blocks": ["T-054"],
+            "subtasks": [
+                {
+                    "title": "Create owner FAQ CRUD + reorder routes",
+                    "completed": false
+                },
+                {
+                    "title": "Create tourist review create route",
+                    "completed": false
+                },
+                {
+                    "title": "Write faq/review route tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "gastro", "protected", "faq", "review"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-045",
+            "title": "Implement gastronomy admin CRUD API routes",
+            "description": "Create `apps/api/src/routes/gastronomy/admin/` using createAdminRoute/createAdminListRoute with requiredPermissions: list/create, GET/PUT/PATCH/DELETE :id, DELETE :id/hard, POST :id/restore, POST batch, GET options. AdminSearchBaseSchema params (page/pageSize). Tests: `apps/api/test/gastronomy/admin.test.ts` asserting permission gating and admin can edit identity/core fields.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-013", "T-015", "T-035"],
+            "blocks": ["T-046", "T-054", "T-059"],
+            "subtasks": [
+                {
+                    "title": "Create list/create/detail admin routes",
+                    "completed": false
+                },
+                {
+                    "title": "Create delete/hard/restore/batch/options routes",
+                    "completed": false
+                },
+                {
+                    "title": "Apply requiredPermissions gating",
+                    "completed": false
+                },
+                {
+                    "title": "Write admin route tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "gastro", "admin"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-046",
+            "title": "Implement gastronomy admin review + assign-owner routes",
+            "description": "Create admin review routes (GET reviews, GET/PUT/DELETE reviews/:id, POST reviews/:id/moderate) and `POST /api/v1/admin/gastronomies/:id/assign-owner` (set/replace COMMERCE_OWNER) under `apps/api/src/routes/gastronomy/admin/`. Tests: `apps/api/test/gastronomy/admin-review-owner.test.ts` asserting moderation flips state + rating recompute and assign-owner reassigns ownerId.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-039", "T-045"],
+            "blocks": ["T-054", "T-059"],
+            "subtasks": [
+                {
+                    "title": "Create admin review moderation routes",
+                    "completed": false
+                },
+                {
+                    "title": "Create assign-owner route",
+                    "completed": false
+                },
+                {
+                    "title": "Write admin review/owner tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "gastro", "admin", "review", "moderation"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-047",
+            "title": "Implement commerce lead public + admin API routes",
+            "description": "Create `apps/api/src/routes/commerce/` lead routes: public `POST /api/v1/public/commerce/leads` (createPublicRoute, honeypot/throttle spam guard, US-1) and admin `GET /api/v1/admin/commerce/leads` + `POST /…/leads/:id/handle` (createAdminRoute). Tests: `apps/api/test/commerce/leads.test.ts` asserting public intake validates+notifies (mocked) and admin can list/mark-handled.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-018", "T-019", "T-033"],
+            "blocks": ["T-054", "T-056", "T-058"],
+            "subtasks": [
+                {
+                    "title": "Create public lead intake route + spam guard",
+                    "completed": false
+                },
+                {
+                    "title": "Create admin lead list + handle routes",
+                    "completed": false
+                },
+                {
+                    "title": "Write lead route tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "commerce-lead", "public", "admin", "core"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-048",
+            "title": "Implement admin commerce start-subscription route",
+            "description": "Create `POST /api/v1/admin/commerce/listings/:entityType/:entityId/start-subscription` (createAdminRoute) reusing the start-paid MP preapproval machinery, setting product_domain='commerce' (micro-decision 2: new route, default). Tests: `apps/api/test/commerce/start-subscription.test.ts` asserting it provisions a commerce-domain subscription via the existing machinery (MP stubbed).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-040", "T-049"],
+            "blocks": ["T-050"],
+            "subtasks": [
+                {
+                    "title": "Create admin start-subscription route",
+                    "completed": false
+                },
+                {
+                    "title": "Reuse start-paid + set product_domain=commerce",
+                    "completed": false
+                },
+                {
+                    "title": "Write start-subscription test (MP stub)",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "commerce", "billing", "core"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-049",
+            "title": "Seed commerce plan + link-row creation on subscription start",
+            "description": "Seed one commerce plan (MP preapproval recurring) referenced by HOSPEDA_COMMERCE_PLAN_ID, and on commerce subscription start create a `commerce_listing_subscriptions` link row (UNIQUE per entity). Wire in `packages/seed/` + `packages/billing`. Tests: `packages/billing/test/commerce-plan.test.ts` asserting plan seeds and a link row is created with product_domain='commerce'.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-019", "T-022", "T-032"],
+            "blocks": ["T-048", "T-050"],
+            "subtasks": [
+                {
+                    "title": "Seed commerce plan",
+                    "completed": false
+                },
+                {
+                    "title": "Create link row on subscription start",
+                    "completed": false
+                },
+                {
+                    "title": "Write plan + link-row test",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "seed", "commerce", "core"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-050",
+            "title": "Wire webhook/cron to commerce-visibility reconciler",
+            "description": "Invoke the commerce-visibility reconciler from the existing MP webhook + dunning/finalize crons whenever a product_domain='commerce' subscription changes status (apps/api webhook + cron jobs). Tests: `apps/api/test/commerce/visibility-wiring.test.ts` asserting active→listing visible and cancel/dunning→listing hidden (integration, MP stub).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-032", "T-048", "T-049"],
+            "blocks": ["T-057"],
+            "subtasks": [
+                {
+                    "title": "Hook reconciler into MP webhook path",
+                    "completed": false
+                },
+                {
+                    "title": "Hook reconciler into dunning/finalize crons",
+                    "completed": false
+                },
+                {
+                    "title": "Write active→visible / cancel→hidden tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "billing", "cron", "visibility", "core"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-051",
+            "title": "Add entitlement-isolation regression test (host + commerce)",
+            "description": "HIGH-RISK gate (AC-4.4). Write a regression test in `packages/billing/test/` (or apps/api integration) asserting a customer with BOTH an accommodation sub AND a commerce sub resolves accommodation entitlements IDENTICALLY to a customer with only the accommodation sub. The commerce subscription must never enter loadEntitlements(). Tests: explicit assertion that entitlements are byte-equal across the two scenarios.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-034"],
+            "blocks": ["T-061"],
+            "subtasks": [
+                {
+                    "title": "Build host+commerce fixture customer",
+                    "completed": false
+                },
+                {
+                    "title": "Build accommodation-only fixture customer",
+                    "completed": false
+                },
+                {
+                    "title": "Assert entitlements identical (regression)",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "entitlements", "regression", "core", "testing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-052",
+            "title": "Add commerce i18n locale files (es/en/pt)",
+            "description": "Add `gastronomy.json` (GASTRO listing/detail copy) and `commerce.json` (CORE: lead form, credentials email, change-password copy, subscription/visibility states) under `@repo/i18n` for es/en/pt. Tests: i18n key-parity test asserting all three locales have identical key sets for both files.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-041"],
+            "blocks": ["T-053", "T-054", "T-055", "T-056"],
+            "subtasks": [
+                {
+                    "title": "Add gastronomy.json es/en/pt",
+                    "completed": false
+                },
+                {
+                    "title": "Add commerce.json es/en/pt",
+                    "completed": false
+                },
+                {
+                    "title": "Run key-parity test green",
+                    "completed": false
+                }
+            ],
+            "tags": ["i18n", "gastro", "commerce", "core"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-053",
+            "title": "Build /gastronomia listing page (web)",
+            "description": "Create `apps/web/src/pages/[lang]/gastronomia/index.astro` (SSR-fetches the public list endpoint, filters via querystring: destination/type/priceRange/amenity) + `GastronomyCard.astro`. CSS Modules / scoped <style> + design tokens, NO Tailwind. i18n via @repo/i18n. Tests: `apps/web/test/pages/gastronomia-index.test.ts` asserting the page renders cards and applies filters.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-042", "T-052"],
+            "blocks": ["T-058"],
+            "subtasks": [
+                {
+                    "title": "Create index.astro listing + filters",
+                    "completed": false
+                },
+                {
+                    "title": "Create GastronomyCard.astro",
+                    "completed": false
+                },
+                {
+                    "title": "Style with CSS Modules + tokens",
+                    "completed": false
+                },
+                {
+                    "title": "Write listing page component test",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "gastro", "astro"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-054",
+            "title": "Build /gastronomia detail page + blocks (web)",
+            "description": "Create `apps/web/src/pages/[lang]/gastronomia/[slug].astro` + detail blocks: `OpeningHours.astro` (today-highlighted), contact/social/menu/amenities/FAQs/reviews blocks reusing existing review/FAQ components where possible. 404 when hidden. CSS Modules + tokens, no Tailwind. Tests: `apps/web/test/pages/gastronomia-detail.test.ts` asserting detail renders all blocks and 404s on hidden.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-042", "T-043", "T-044", "T-045", "T-046", "T-047", "T-052"],
+            "blocks": ["T-058"],
+            "subtasks": [
+                {
+                    "title": "Create [slug].astro detail page",
+                    "completed": false
+                },
+                {
+                    "title": "Create OpeningHours + detail blocks",
+                    "completed": false
+                },
+                {
+                    "title": "Handle hidden→404",
+                    "completed": false
+                },
+                {
+                    "title": "Write detail page component test",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "gastro", "astro"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-055",
+            "title": "Build change-password-required screen (web)",
+            "description": "Create the CORE change-password-required screen in `apps/web/` shown when the session must_change_password flag is set, blocking other routes until done (native HTML form + small hook, web convention). Posts to the protected change-password endpoint. Tests: `apps/web/test/` asserting the screen renders when flag set and submitting clears the gate.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-041", "T-052"],
+            "blocks": ["T-058"],
+            "subtasks": [
+                {
+                    "title": "Create change-password screen + hook",
+                    "completed": false
+                },
+                {
+                    "title": "Block routes until flag cleared",
+                    "completed": false
+                },
+                {
+                    "title": "Write screen component test",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "auth", "core"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-056",
+            "title": "Build public lead form page (web)",
+            "description": "Create the CORE 'Publicá tu restaurante' lead form page/section in `apps/web/` (native HTML form + small hook + honeypot) posting to the public commerce lead endpoint. Generic copy reusable by SPEC-240. CSS Modules + tokens, i18n. Tests: `apps/web/test/` asserting the form validates required fields and submits to the lead endpoint.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-047", "T-052"],
+            "blocks": ["T-058"],
+            "subtasks": [
+                {
+                    "title": "Create lead form page + hook + honeypot",
+                    "completed": false
+                },
+                {
+                    "title": "Wire to public lead endpoint",
+                    "completed": false
+                },
+                {
+                    "title": "Write lead form component test",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "commerce-lead", "core"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-057",
+            "title": "Build generic commerce admin Entity shell config layer",
+            "description": "Create the CORE generic commerce Entity shell config in `apps/admin/` so gastronomy (and later experiencias) register list/view/edit/create by CONFIG, reusing the existing EntityView/EntityEdit shell family (AC-8.3). Identity/core sections admin-enabled; operational sections shared. Tests: `apps/admin/test/` asserting the shell renders from a config object without forking shell code.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-050"],
+            "blocks": ["T-059", "T-060"],
+            "subtasks": [
+                {
+                    "title": "Define commerce shell config contract",
+                    "completed": false
+                },
+                {
+                    "title": "Wire to existing EntityView/EntityEdit shells",
+                    "completed": false
+                },
+                {
+                    "title": "Write config-driven shell test",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin", "commerce", "shell", "core"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-058",
+            "title": "Build admin lead inbox + owner-provisioning UX",
+            "description": "Create the CORE lead inbox view (list + mark-handled) and the owner-provisioning UX inside the create flow (create/pick user → fields → send credentials) in `apps/admin/`. TanStack Query + Form, Tailwind, shadcn. Tests: `apps/admin/test/` asserting lead list renders + mark-handled mutates and the provisioning step creates/picks a user.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-047", "T-053", "T-054", "T-055", "T-056"],
+            "blocks": ["T-060"],
+            "subtasks": [
+                {
+                    "title": "Build lead inbox list + mark-handled",
+                    "completed": false
+                },
+                {
+                    "title": "Build owner-provisioning create step",
+                    "completed": false
+                },
+                {
+                    "title": "Write inbox + provisioning tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin", "commerce-lead", "provisioning", "core"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-059",
+            "title": "Build gastronomy admin routes (fields/filters)",
+            "description": "Create `apps/admin/src/routes/.../gastronomies/` declaring the shell config + gastro-specific fields (type/priceRange/menuUrl) and filters (destination/type/priceRange/featured/ownerId). TanStack Form + Zod from @repo/schemas, Tailwind, shadcn. Tests: `apps/admin/test/gastronomies.test.ts` asserting create/edit forms validate via the gastro schemas and filters apply.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-045", "T-046", "T-057"],
+            "blocks": ["T-060"],
+            "subtasks": [
+                {
+                    "title": "Declare gastronomy shell config",
+                    "completed": false
+                },
+                {
+                    "title": "Add gastro fields + filters",
+                    "completed": false
+                },
+                {
+                    "title": "Write admin gastronomy form/filter tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin", "gastro"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-060",
+            "title": "Write cross-layer E2E test for gastronomy flow",
+            "description": "Write an E2E/integration test spanning admin-create → owner provision → start subscription (MP stub) → active→visible → public listing/detail render → owner operational edit → review submit→moderate→rating recompute. Place in `apps/api/test/` or `apps/web/test/` integration suite. Asserts the full admin-sells lifecycle end-to-end.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-057", "T-058", "T-059"],
+            "blocks": ["T-061", "T-062"],
+            "subtasks": [
+                {
+                    "title": "Script admin-create→provision→subscribe→visible",
+                    "completed": false
+                },
+                {
+                    "title": "Script public render + owner edit + review",
+                    "completed": false
+                },
+                {
+                    "title": "Assert full lifecycle end-to-end",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "e2e", "gastro", "commerce"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-061",
+            "title": "Execute staging MP smoke for commerce subscription (SPEC-143)",
+            "description": "Per SPEC-143 billing rules, run the relevant staging-smoke sections for the commerce subscription surface against the MP sandbox (start-subscription → active webhook → visible, cancel → hidden). File the sign-off entry in the checklist and reference it. BINDING gate for the billing surface — cannot merge without it. NOTE: operational/owner action; depends on T-051 isolation + T-060 e2e passing.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-051", "T-060"],
+            "blocks": ["T-064"],
+            "subtasks": [
+                {
+                    "title": "Identify relevant smoke sections",
+                    "completed": false
+                },
+                {
+                    "title": "Run against MP sandbox on staging",
+                    "completed": false
+                },
+                {
+                    "title": "File sign-off entry + reference",
+                    "completed": false
+                }
+            ],
+            "tags": ["billing", "smoke", "staging", "core", "testing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-062",
+            "title": "Write core/gastro separation ADR + SPEC-240 reuse checklist",
+            "description": "Write the ADR (under `docs/decisions/`) covering: core/gastro separation, binary subscription + product_domain isolation rationale, admin-sells flow, COMMERCE_OWNER role. Include the SPEC-240 reuse checklist enumerating EXACTLY what Experiencias adds (confirming no CORE internals touched) — this is AC-9.2. No tests (docs).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-060"],
+            "blocks": ["T-063", "T-064"],
+            "subtasks": [
+                {
+                    "title": "Write ADR (separation + billing isolation + role)",
+                    "completed": false
+                },
+                {
+                    "title": "Write SPEC-240 reuse checklist",
+                    "completed": false
+                }
+            ],
+            "tags": ["docs", "adr", "core"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-063",
+            "title": "Add route-architecture + CLAUDE.md doc rows",
+            "description": "Add the new gastronomy/commerce endpoints to `apps/api/docs/route-architecture.md` (tier rows) and a billing quick-ref note in CLAUDE.md about product_domain isolation + commerce_listing_subscriptions. Update migrations guide for the product_domain extras carril note. No tests (docs).",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-062"],
+            "blocks": ["T-064"],
+            "subtasks": [
+                {
+                    "title": "Add route-architecture rows",
+                    "completed": false
+                },
+                {
+                    "title": "Add CLAUDE.md billing quick-ref note",
+                    "completed": false
+                },
+                {
+                    "title": "Add migrations guide extras note",
+                    "completed": false
+                }
+            ],
+            "tags": ["docs", "core"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-064",
+            "title": "Add endpoint-gate-matrix rows for commerce/gastronomy",
+            "description": "Add rows to the billing endpoint-gate-matrix (`docs/billing/endpoint-gate-matrix.md`) and the gate documentation for the new gastronomy/commerce endpoints (which require COMMERCE_* permissions, which are public, which are admin-gated). Final docs/cleanup pass. No tests (docs).",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-061", "T-062", "T-063"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add endpoint-gate-matrix rows",
+                    "completed": false
+                },
+                {
+                    "title": "Document permission/tier gates per endpoint",
+                    "completed": false
+                }
+            ],
+            "tags": ["docs", "cleanup", "core"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-15T23:23:58.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 64,
+        "pending": 64,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 2.4
+    }
+}

@@ -2,6 +2,19 @@
 
 // Core enums
 export * from './access-right-scope.enum.js';
+
+// Commerce enums (SPEC-239)
+export * from './commerce-entity-type.enum.js';
+export * from './commerce-entity-type.schema.js';
+
+export * from './gastronomy-type.enum.js';
+export * from './gastronomy-type.schema.js';
+
+export * from './price-range.enum.js';
+export * from './price-range.schema.js';
+
+export * from './product-domain.enum.js';
+export * from './product-domain.schema.js';
 export * from './access-right-scope.schema.js';
 
 export * from './accommodation-type.enum.js';

@@ -300,6 +300,14 @@
                 "entityId": {
                     "uuid": "El ID de la entidad debe ser un UUID válido"
                 }
+            },
+            "gastronomy": {
+                "destinationId": {
+                    "uuid": "El destination id debe ser un UUID válido"
+                },
+                "ownerId": {
+                    "uuid": "El ID del propietario debe ser un UUID válido"
+                }
             }
         }
     },
@@ -1396,6 +1404,34 @@
                 "max": "El límite no puede superar los {{max}} elementos",
                 "min": "El límite debe ser al menos {{min}}"
             }
+        },
+        "commerceRating": {
+            "ambiance": {
+                "max": "El puntaje de ambiente no puede superar los {{max}}",
+                "min": "El puntaje de ambiente debe ser al menos {{min}}",
+                "required": "El puntaje de ambiente es obligatorio"
+            },
+            "food": {
+                "max": "El puntaje de comida no puede superar los {{max}}",
+                "min": "El puntaje de comida debe ser al menos {{min}}",
+                "required": "El puntaje de comida es obligatorio"
+            },
+            "service": {
+                "max": "El puntaje de servicio no puede superar los {{max}}",
+                "min": "El puntaje de servicio debe ser al menos {{min}}",
+                "required": "El puntaje de servicio es obligatorio"
+            },
+            "value": {
+                "max": "El puntaje de valor no puede superar los {{max}}",
+                "min": "El puntaje de valor debe ser al menos {{min}}",
+                "required": "El puntaje de valor es obligatorio"
+            }
+        },
+        "openingHours": {
+            "shift": {
+                "closeBeforeOpen": "La hora de cierre no puede ser anterior a la hora de apertura",
+                "invalidTime": "El formato de hora no es válido"
+            }
         }
     },
     "contact": {
@@ -1691,6 +1727,18 @@
         },
         "newsletterContentType": {
             "invalid": "El tipo de contenido del newsletter no es válido"
+        },
+        "commerceEntityType": {
+            "invalid": "El tipo de entidad comercial no es válido"
+        },
+        "gastronomyType": {
+            "invalid": "El tipo de gastronomía no es válido"
+        },
+        "priceRange": {
+            "invalid": "El rango de precios no es válido"
+        },
+        "productDomain": {
+            "invalid": "El dominio de producto no es válido"
         },
         "hostTradeCategory": {
             "invalid": "La categoría de oficio seleccionada no es válida"
@@ -3460,6 +3508,110 @@
         },
         "window": {
             "invalid": "La ventana de tiempo debe ser 7d o 30d"
+        }
+    },
+    "commerce": {
+        "description": {
+            "max": "La descripción no puede superar los {{max}} caracteres",
+            "min": "La descripción debe tener al menos {{min}} caracteres",
+            "required": "La descripción es obligatoria"
+        },
+        "name": {
+            "max": "El nombre no puede superar los {{max}} caracteres",
+            "min": "El nombre debe tener al menos {{min}} caracteres",
+            "required": "El nombre es obligatorio"
+        },
+        "richDescription": {
+            "max": "La descripción enriquecida no puede superar los {{max}} caracteres"
+        },
+        "slug": {
+            "max": "El slug no puede superar los {{max}} caracteres",
+            "min": "El slug debe tener al menos {{min}} caracteres",
+            "required": "El slug es obligatorio"
+        },
+        "summary": {
+            "max": "El resumen no puede superar los {{max}} caracteres",
+            "min": "El resumen debe tener al menos {{min}} caracteres",
+            "required": "El resumen es obligatorio"
+        }
+    },
+    "commerceLead": {
+        "adminNote": {
+            "max": "La nota de administrador no puede superar los {{max}} caracteres"
+        },
+        "businessName": {
+            "max": "El nombre del negocio no puede superar los {{max}} caracteres",
+            "min": "El nombre del negocio debe tener al menos {{min}} caracteres"
+        },
+        "contactName": {
+            "max": "El nombre de contacto no puede superar los {{max}} caracteres",
+            "min": "El nombre de contacto debe tener al menos {{min}} caracteres"
+        },
+        "domain": {
+            "max": "El dominio no puede superar los {{max}} caracteres",
+            "required": "El dominio es obligatorio"
+        },
+        "email": {
+            "invalid": "El email no es válido",
+            "max": "El email no puede superar los {{max}} caracteres"
+        },
+        "message": {
+            "max": "El mensaje no puede superar los {{max}} caracteres",
+            "min": "El mensaje debe tener al menos {{min}} caracteres"
+        },
+        "phone": {
+            "max": "El teléfono no puede superar los {{max}} caracteres"
+        },
+        "status": {
+            "invalid": "El estado del lead no es válido"
+        }
+    },
+    "gastronomy": {
+        "amenityIds": {
+            "invalidUuid": "El ID de servicio debe ser un UUID válido"
+        },
+        "delete": {
+            "deletedAt": {
+                "invalidType": "La fecha de eliminación debe ser una fecha válida"
+            },
+            "force": {
+                "invalidType": "El valor de forzar debe ser un booleano"
+            },
+            "success": {
+                "required": "El resultado exitoso es obligatorio"
+            }
+        },
+        "featureIds": {
+            "invalidUuid": "El ID de característica debe ser un UUID válido"
+        },
+        "menuUrl": {
+            "httpsRequired": "La URL del menú debe usar HTTPS",
+            "invalid": "La URL del menú no es válida"
+        },
+        "review": {
+            "content": {
+                "max": "El contenido de la reseña no puede superar los {{max}} caracteres",
+                "min": "El contenido de la reseña debe tener al menos {{min}} caracteres"
+            },
+            "overallRating": {
+                "max": "La calificación general no puede superar {{max}}",
+                "min": "La calificación general debe ser al menos {{min}}",
+                "required": "La calificación general es obligatoria"
+            },
+            "title": {
+                "max": "El título de la reseña no puede superar los {{max}} caracteres",
+                "min": "El título de la reseña debe tener al menos {{min}} caracteres"
+            }
+        }
+    },
+    "gastronomyFeature": {
+        "comments": {
+            "max": "El comments no puede superar los {{max}} caracteres",
+            "min": "El comments debe tener al menos {{min}} caracteres"
+        },
+        "hostReWriteName": {
+            "max": "El host re write name no puede superar los {{max}} caracteres",
+            "min": "El host re write name debe tener al menos {{min}} caracteres"
         }
     },
     "hostTrade": {

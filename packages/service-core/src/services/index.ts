@@ -37,6 +37,8 @@ export * from './weather/index.js';
 export * from './userBookmark/userBookmark.service';
 export * from './userBookmarkCollection/userBookmarkCollection.service';
 export * from './billing';
+export * from './commerce';
+export * from './gastronomy';
 export * from './moderation';
 
 // HookState types for service consumers
@@ -51,3 +53,4 @@ export type { DestinationHookState } from './destination/destination.types';
 export type { DestinationReviewHookState } from './destinationReview/destinationReview.types';
 export type { EventHookState } from './event/event.types';
 export type { PostHookState } from './post/post.types';
+export type { CommerceListingHookState } from './commerce/commerce.types';

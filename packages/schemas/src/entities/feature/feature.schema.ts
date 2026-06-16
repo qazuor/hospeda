@@ -75,3 +75,24 @@ export const AccommodationFeatureRelationSchema = z.object({
  */
 export type Feature = z.infer<typeof FeatureSchema>;
 export type AccommodationFeatureRelation = z.infer<typeof AccommodationFeatureRelationSchema>;
+
+/**
+ * Gastronomy-Feature Relation Schema
+ * Represents the many-to-many relationship between gastronomy listings and features.
+ * Mirrors the accommodation variant with gastronomyId instead of accommodationId.
+ */
+export const GastronomyFeatureRelationSchema = z.object({
+    gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    featureId: FeatureIdSchema,
+    hostReWriteName: z
+        .string()
+        .min(3, { message: 'zodError.gastronomyFeature.hostReWriteName.min' })
+        .max(100, { message: 'zodError.gastronomyFeature.hostReWriteName.max' })
+        .optional(),
+    comments: z
+        .string()
+        .min(5, { message: 'zodError.gastronomyFeature.comments.min' })
+        .max(300, { message: 'zodError.gastronomyFeature.comments.max' })
+        .optional()
+});
+export type GastronomyFeatureRelation = z.infer<typeof GastronomyFeatureRelationSchema>;
