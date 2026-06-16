@@ -186,6 +186,10 @@ export function buildImportAiExtract(deps: {
         const startedAt = Date.now();
         try {
             const aiService = await createConfiguredAiService();
+            // TYPE-WORKAROUND: pnpm may resolve @repo/schemas and @repo/ai-core to
+            // different Zod patch versions, producing a nominal ZodType mismatch; the
+            // runtime schema is identical and the safeParse below enforces the contract
+            // (mirrors search-chat.ts).
             const outputSchema =
                 AccommodationImportAiOutputSchema as unknown as GenerateObjectSchema;
             const result = await aiService.generateObject(
