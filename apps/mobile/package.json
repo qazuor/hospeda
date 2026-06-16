@@ -21,6 +21,7 @@
         "@expo/metro-runtime": "~56.0.15",
         "@repo/i18n": "workspace:*",
         "@repo/schemas": "workspace:*",
+        "@tanstack/react-query": "5.59.20",
         "better-auth": "1.4.18",
         "expo": "~56.0.2",
         "expo-constants": "~56.0.18",
