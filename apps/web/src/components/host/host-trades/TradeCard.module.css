@@ -1,0 +1,136 @@
+/* TradeCard.module.css — host trade provider card */
+
+.card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.75rem);
+    padding: var(--space-5, 1.25rem);
+    background-color: var(--core-card);
+    border: 1px solid var(--border, var(--core-foreground-a15, oklch(0 0 0 / 0.08)));
+    border-radius: var(--radius-card, 24px);
+    box-shadow: var(--shadow-card);
+    transition: box-shadow var(--duration-normal, 0.4s) ease, transform var(--duration-normal, 0.4s)
+        ease;
+}
+
+.card:hover {
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-2px);
+}
+
+/* ── Card header: name + category badge ── */
+
+.cardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--space-3, 0.75rem);
+}
+
+.cardTitle {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--core-foreground);
+    line-height: 1.4;
+    flex: 1;
+}
+
+.categoryBadge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.625rem;
+    border-radius: var(--radius-pill, 9999px);
+    background-color: oklch(from var(--brand-primary) l c h / 0.12);
+    color: var(--brand-primary);
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* ── 24h badge ── */
+
+.badge24h {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    padding: 0.25rem 0.625rem;
+    border-radius: var(--radius-pill, 9999px);
+    background-color: oklch(from var(--brand-accent) l c h / 0.12);
+    color: var(--brand-accent);
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* ── Schedule text ── */
+
+.scheduleText {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+    line-height: 1.5;
+}
+
+/* ── Benefit row ── */
+
+.benefitRow {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    padding: var(--space-3, 0.75rem);
+    background-color: oklch(from var(--brand-tertiary) l c h / 0.08);
+    border-radius: var(--radius-md, 10px);
+    border: 1px solid oklch(from var(--brand-tertiary) l c h / 0.15);
+}
+
+.benefitLabel {
+    font-family: var(--font-sans);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--core-muted-foreground);
+}
+
+.benefitText {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-foreground);
+    line-height: 1.5;
+}
+
+/* ── Contact button ── */
+
+.contactButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    padding: 0.5rem 1.25rem;
+    margin-top: auto;
+    border-radius: var(--radius-pill, 9999px);
+    background-color: var(--brand-primary);
+    color: var(--primary-foreground, #ffffff);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: opacity var(--duration-fast, 0.2s) ease;
+}
+
+.contactButton:hover {
+    opacity: 0.88;
+}
+
+.contactButton:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
