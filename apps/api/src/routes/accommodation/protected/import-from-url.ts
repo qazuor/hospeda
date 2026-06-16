@@ -126,7 +126,7 @@ type GenerateObjectSchema = Parameters<AiService['generateObject']>[1];
  * @param deps - The Hono context, the authenticated actor, and the gate flag.
  * @returns The `aiExtract` port for {@link ImportContext}.
  */
-function buildImportAiExtract(deps: {
+export function buildImportAiExtract(deps: {
     c: Context;
     actor: Actor;
     gate: AiGateState;
@@ -243,6 +243,8 @@ export const protectedImportFromUrlRoute = createProtectedRoute({
     tags: ['Accommodations'],
     requestBody: AccommodationImportRequestSchema,
     responseSchema: AccommodationImportResponseSchema,
+    // Stateless read/extract — nothing is created, so respond 200 (not POST's default 201).
+    successStatusCode: 200,
     options: {
         middlewares: [
             // Load entitlements/limits/billingLoadFailed so the lazy AI gate can read them.
