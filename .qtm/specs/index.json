@@ -1030,7 +1030,7 @@
             "title": "Self-serve plan management UI (web)",
             "type": "feature",
             "complexity": "medium",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-203-web-plan-management-ui",
             "parent": "SPEC-193",
             "created": "2026-06-06T00:00:00Z",

@@ -2,6 +2,22 @@
     "version": "1.0",
     "epics": [
         {
+            "specId": "SPEC-203",
+            "title": "Self-serve plan management UI (web)",
+            "status": "in-progress",
+            "progress": "10/11",
+            "path": "SPEC-203-web-plan-management-ui",
+            "parent": "SPEC-193",
+            "branch": "spec/SPEC-203-web-plan-management-ui",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-203-web-plan-management-ui",
+            "base": "staging",
+            "createdAt": "2026-06-15T00:00:00.000Z",
+            "tasksAtomizedAt": "2026-06-15T00:00:00.000Z",
+            "taskCount": 11,
+            "averageComplexity": 3.9,
+            "note": "11 tasks across 4 phases (avg complexity 3.9). Backend endpoint T-002 in-progress. Critical path: T-001->T-002->T-003->T-005->T-007->T-008->T-009->T-010->T-011 (9 steps). Three parallel tracks after T-003: banner (T-004), plan-change flow (T-005..T-009), cancel (T-006). Converge at i18n (T-010) + smoke (T-011). Depends on SPEC-167 + SPEC-147."
+        },
+        {
             "specId": "SPEC-239",
             "title": "Commerce listing core (merchant-with-subscription) + Gastronomía",
             "status": "draft",
