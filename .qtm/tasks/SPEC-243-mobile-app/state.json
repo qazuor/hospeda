@@ -8,15 +8,19 @@
             "id": "T-001",
             "title": "Scaffold apps/mobile — Expo SDK init, pnpm workspace, TurboRepo pipeline tasks (lint/typecheck/test/build)",
             "description": "Create apps/mobile as an Expo managed-workflow app. Register it in the pnpm workspace and wire Turbo pipeline tasks: build (expo export), typecheck (tsc --noEmit), lint (@repo/biome-config), test (vitest + @testing-library/react-native). Expo Router renders a placeholder home screen.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-002", "T-006", "T-008", "T-012"],
             "subtasks": [],
             "tags": ["scaffold", "expo", "turborepo"],
             "phase": "scaffold",
-            "qualityGate": { "lint": "pending", "typecheck": "pending", "tests": "pending" },
-            "timestamps": { "created": "2026-06-15T00:00:00.000Z" }
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-06-15T00:00:00.000Z",
+                "started": "2026-06-15T00:00:00.000Z",
+                "completed": "2026-06-15T00:00:00.000Z"
+            }
         },
         {
             "id": "T-002",
@@ -216,9 +220,9 @@
     ],
     "summary": {
         "total": 13,
-        "pending": 13,
+        "pending": 12,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 1,
         "blocked": 0,
         "averageComplexity": 1.9
     }
