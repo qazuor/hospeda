@@ -18,6 +18,9 @@ import type { AccommodationImportResponse } from '@repo/schemas';
 import { useId, useState } from 'react';
 import styles from './ImportFromUrl.module.css';
 
+/** Platforms shown in the URL-acquisition help panel (US-7), in display order. */
+const HELP_PLATFORMS = ['airbnb', 'booking', 'mercadolibre', 'google'] as const;
+
 /** Props for the {@link ImportFromUrl} island. */
 export type ImportFromUrlProps = {
     /** Active UI locale (passed from Astro at hydration). */
@@ -44,6 +47,7 @@ export function ImportFromUrl({ locale, onImported }: ImportFromUrlProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [notice, setNotice] = useState<string | null>(null);
+    const [showHelp, setShowHelp] = useState(false);
 
     const submitDisabled = isSubmitting || !legalConfirmed;
 
@@ -131,6 +135,53 @@ export function ImportFromUrl({ locale, onImported }: ImportFromUrlProps) {
                         disabled={isSubmitting}
                     />
                 </div>
+
+                <button
+                    type="button"
+                    className={styles.helpToggle}
+                    onClick={() => setShowHelp((value) => !value)}
+                    aria-expanded={showHelp}
+                >
+                    {t('host.importFromUrl.help.toggle', '¿Cómo obtengo la URL del alojamiento?')}
+                </button>
+
+                {showHelp ? (
+                    <div className={styles.helpPanel}>
+                        <p className={styles.helpTitle}>
+                            {t(
+                                'host.importFromUrl.help.title',
+                                'Cómo copiar la URL según la plataforma'
+                            )}
+                        </p>
+                        <ul className={styles.helpList}>
+                            {HELP_PLATFORMS.map((platform) => (
+                                <li
+                                    key={platform}
+                                    className={styles.helpItem}
+                                >
+                                    <strong>
+                                        {t(
+                                            `host.importFromUrl.help.platforms.${platform}.name`,
+                                            platform
+                                        )}
+                                    </strong>
+                                    <span>
+                                        {t(
+                                            `host.importFromUrl.help.platforms.${platform}.steps`,
+                                            ''
+                                        )}
+                                    </span>
+                                    <code className={styles.helpExample}>
+                                        {t(
+                                            `host.importFromUrl.help.platforms.${platform}.example`,
+                                            ''
+                                        )}
+                                    </code>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                ) : null}
 
                 <div className={styles.legalRow}>
                     <input

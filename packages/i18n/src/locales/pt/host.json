@@ -1,4 +1,48 @@
 {
+    "importFromUrl": {
+        "fields": {
+            "url": "URL da acomodação",
+            "urlPlaceholder": "https://...",
+            "legalConfirm": "Confirmo que tenho permissão para importar estas informações."
+        },
+        "actions": {
+            "submit": "Importar",
+            "submitting": "Importando..."
+        },
+        "errors": {
+            "urlRequired": "Informe a URL da acomodação.",
+            "urlInvalid": "A URL não é válida.",
+            "legalRequired": "Você precisa confirmar o aviso legal.",
+            "submit": "Não foi possível importar a acomodação. Tente novamente.",
+            "network": "Não foi possível conectar ao servidor."
+        },
+        "help": {
+            "toggle": "Como obtenho a URL da acomodação?",
+            "title": "Como copiar a URL em cada plataforma",
+            "platforms": {
+                "airbnb": {
+                    "name": "Airbnb",
+                    "steps": "Abra o anúncio e copie o endereço completo da barra do navegador.",
+                    "example": "https://www.airbnb.com.br/rooms/12345678"
+                },
+                "booking": {
+                    "name": "Booking",
+                    "steps": "Abra a página da acomodação e copie o endereço do navegador, sem os filtros de data.",
+                    "example": "https://www.booking.com/hotel/ar/nome.pt-br.html"
+                },
+                "mercadolibre": {
+                    "name": "MercadoLibre",
+                    "steps": "Abra o anúncio do imóvel e copie o endereço do navegador.",
+                    "example": "https://inmueble.mercadolibre.com.ar/MLA-123456789"
+                },
+                "google": {
+                    "name": "Google Maps",
+                    "steps": "Encontre o local no Google Maps, abra o cartão dele e copie o endereço do navegador.",
+                    "example": "https://www.google.com/maps/place/..."
+                }
+            }
+        }
+    },
     "form": {
         "sections": {
             "datos-basicos": {

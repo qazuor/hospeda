@@ -5,6 +5,9 @@
  * calls the import endpoint with the validated request body.
  */
 
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -115,4 +118,67 @@ describe('ImportFromUrl', () => {
         // Assert
         expect(await screen.findByRole('status')).toHaveTextContent(/no está incluida en tu plan/i);
     });
+
+    it('toggles the URL-acquisition help panel (US-7)', () => {
+        // Arrange
+        render(<ImportFromUrl locale="es" />);
+        expect(screen.queryByText(/Cómo copiar la URL/i)).not.toBeInTheDocument();
+
+        // Act: open the help panel.
+        fireEvent.click(screen.getByRole('button', { name: /Cómo obtengo la URL/i }));
+
+        // Assert: title + the four platforms are listed.
+        expect(screen.getByText(/Cómo copiar la URL/i)).toBeInTheDocument();
+        expect(screen.getByText('airbnb')).toBeInTheDocument();
+        expect(screen.getByText('booking')).toBeInTheDocument();
+        expect(screen.getByText('mercadolibre')).toBeInTheDocument();
+        expect(screen.getByText('google')).toBeInTheDocument();
+    });
+});
+
+describe('ImportFromUrl i18n keys', () => {
+    const localesDir = resolve(
+        dirname(fileURLToPath(import.meta.url)),
+        '../../../../../packages/i18n/src/locales'
+    );
+
+    for (const locale of ['es', 'en', 'pt'] as const) {
+        it(`defines the importFromUrl.* keys in ${locale}/host.json`, () => {
+            // Arrange
+            const host = JSON.parse(
+                readFileSync(resolve(localesDir, locale, 'host.json'), 'utf8')
+            ) as Record<string, unknown>;
+
+            // Act
+            const block = host.importFromUrl as
+                | {
+                      fields?: Record<string, string>;
+                      actions?: Record<string, string>;
+                      errors?: Record<string, string>;
+                      help?: {
+                          toggle?: string;
+                          title?: string;
+                          platforms?: Record<
+                              string,
+                              { name?: string; steps?: string; example?: string }
+                          >;
+                      };
+                  }
+                | undefined;
+
+            // Assert
+            expect(block).toBeDefined();
+            expect(block?.fields?.url).toBeTruthy();
+            expect(block?.fields?.legalConfirm).toBeTruthy();
+            expect(block?.actions?.submit).toBeTruthy();
+            expect(block?.errors?.urlInvalid).toBeTruthy();
+            expect(block?.help?.toggle).toBeTruthy();
+            for (const platform of ['airbnb', 'booking', 'mercadolibre', 'google']) {
+                const entry = block?.help?.platforms?.[platform];
+                expect(entry?.name).toBeTruthy();
+                expect(entry?.steps).toBeTruthy();
+                expect(entry?.example).toBeTruthy();
+            }
+        });
+    }
 });
