@@ -8,21 +8,32 @@
             "id": "T-001",
             "title": "Measure local baseline (collect + wall time) for apps/api unit suite",
             "description": "Spec AC#1. Establish a before number to compare against. Run the apps/api unit suite (vitest.config.ts, excludes e2e/integration) 3 consecutive clean times and record median collect time and wall time. Note that this is a LOCAL proxy only — the spec's ~9% target must be re-validated on the self-hosted runner in CI (the dev machine is not the measurement environment). Capture results in the spec dir (e.g. docs/baseline.md) so T-007 can compute the delta. No source changes. Tests: none (measurement task).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-002", "T-005"],
             "subtasks": [
-                { "title": "Run api suite x3, record collect + wall time", "completed": false },
+                {
+                    "title": "Run api suite x3, record collect + wall time",
+                    "completed": true
+                },
                 {
                     "title": "Write baseline numbers + machine note to spec docs",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["perf", "measurement", "baseline"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-16T00:08:58Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-16T00:08:58Z",
+                "started": "2026-06-16T01:13:34Z",
+                "completed": "2026-06-16T01:13:34Z"
+            }
         },
         {
             "id": "T-002",
@@ -44,8 +55,16 @@
             ],
             "tags": ["analysis", "service-core", "mock"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-16T00:08:58Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-16T00:08:58Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-003",
@@ -56,13 +75,27 @@
             "blockedBy": ["T-002"],
             "blocks": ["T-004"],
             "subtasks": [
-                { "title": "Re-export enums from @repo/schemas", "completed": false },
-                { "title": "Stub constants/pure-fns matching real contracts", "completed": false }
+                {
+                    "title": "Re-export enums from @repo/schemas",
+                    "completed": false
+                },
+                {
+                    "title": "Stub constants/pure-fns matching real contracts",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "mock", "schemas"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-16T00:08:58Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-16T00:08:58Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-004",
@@ -73,7 +106,10 @@
             "blockedBy": ["T-003"],
             "blocks": ["T-006"],
             "subtasks": [
-                { "title": "Remove importOriginal + ...actual, wire extras", "completed": false },
+                {
+                    "title": "Remove importOriginal + ...actual, wire extras",
+                    "completed": false
+                },
                 {
                     "title": "Iterate suite to green, backfilling missing exports",
                     "completed": false
@@ -81,28 +117,47 @@
             ],
             "tags": ["service-core", "mock", "setup", "core-lever"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-16T00:08:58Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-16T00:08:58Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-005",
             "title": "Mock Sentry (@sentry/node + @sentry/profiling-node) in test setup",
             "description": "Add a global vi.mock for @sentry/node and @sentry/profiling-node in apps/api/test/setup.ts to prevent the native .node addon load + init cost per test file (B2 technique step 2). Stub the methods the app actually calls at init/request time (init, captureException, captureMessage, setUser, withScope, startSpan/startInactiveSpan, getCurrentScope, etc. — verify against apps/api Sentry usage). Independent of T-002..T-004 (can run in parallel). Tests: api suite must stay green; spot-check any test that asserts on Sentry capture still works with the mock.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": ["T-007"],
             "subtasks": [
                 {
                     "title": "vi.mock @sentry/node + profiling-node with used methods",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Verify no test relied on real Sentry behavior", "completed": false }
+                {
+                    "title": "Verify no test relied on real Sentry behavior",
+                    "completed": true
+                }
             ],
             "tags": ["sentry", "mock", "setup"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-16T00:08:58Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-16T00:08:58Z",
+                "started": "2026-06-16T01:13:34Z",
+                "completed": "2026-06-16T01:13:34Z"
+            }
         },
         {
             "id": "T-006",
@@ -117,12 +172,23 @@
                     "title": "Run real-logic (local importOriginal) tests, confirm green",
                     "completed": false
                 },
-                { "title": "Document two-tier mock pattern", "completed": false }
+                {
+                    "title": "Document two-tier mock pattern",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "audit", "tests"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-16T00:08:58Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-16T00:08:58Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-007",
@@ -133,7 +199,10 @@
             "blockedBy": ["T-005", "T-006"],
             "blocks": ["T-008", "T-009"],
             "subtasks": [
-                { "title": "3 clean green runs, record median collect + wall", "completed": false },
+                {
+                    "title": "3 clean green runs, record median collect + wall",
+                    "completed": false
+                },
                 {
                     "title": "Compute + document local delta, note CI is authoritative",
                     "completed": false
@@ -141,8 +210,16 @@
             ],
             "tags": ["perf", "measurement", "tests"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-16T00:08:58Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-16T00:08:58Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-008",
@@ -153,12 +230,23 @@
             "blockedBy": ["T-007"],
             "blocks": ["T-010"],
             "subtasks": [
-                { "title": "Confirm maxForks unchanged + no new concurrency", "completed": false }
+                {
+                    "title": "Confirm maxForks unchanged + no new concurrency",
+                    "completed": false
+                }
             ],
             "tags": ["perf", "machine-safety", "config"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-16T00:08:58Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-16T00:08:58Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-009",
@@ -168,11 +256,24 @@
             "complexity": 1,
             "blockedBy": ["T-007"],
             "blocks": ["T-010"],
-            "subtasks": [{ "title": "Write/extend test-performance.md", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Write/extend test-performance.md",
+                    "completed": false
+                }
+            ],
             "tags": ["docs"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-16T00:08:58Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-16T00:08:58Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-010",
@@ -187,19 +288,30 @@
                     "title": "Tick satisfied AC boxes, annotate AC#1 as CI-pending",
                     "completed": false
                 },
-                { "title": "Sync both indexes + CSV; draft PR description", "completed": false }
+                {
+                    "title": "Sync both indexes + CSV; draft PR description",
+                    "completed": false
+                }
             ],
             "tags": ["governance", "docs", "index-sync"],
             "phase": "cleanup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-16T00:08:58Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-16T00:08:58Z",
+                "started": null,
+                "completed": null
+            }
         }
     ],
     "summary": {
         "total": 10,
-        "pending": 10,
+        "pending": 8,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 2,
         "blocked": 0,
         "averageComplexity": 2.0
     }
