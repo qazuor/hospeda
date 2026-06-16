@@ -575,7 +575,7 @@
             "id": "T-018",
             "title": "Offline helper script to derive seasonal averages from Open-Meteo Climate API",
             "description": "Decision 6: build-time helper (NOT a runtime dependency) that, given a destination's coordinates, queries the Open-Meteo Climate API offline and emits DestinationClimateSchema-shaped seasonal averages (avg temp min/max, rainfall per season) to paste/merge into seed JSON. Documented usage. Test: a small unit test on the API-response -> climate-shape transform with a fixture.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003"],
             "blocks": ["T-019"],
@@ -602,15 +602,15 @@
             },
             "timestamps": {
                 "created": "2026-06-15T22:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T01:45:00.000Z",
+                "completed": "2026-06-16T01:45:00.000Z"
             }
         },
         {
             "id": "T-019",
             "title": "Populate climate in seed JSON for featured destinations",
             "description": "Using the T-018 helper output, add `climate` to packages/seed/src/data/destination/*.json for featured destinations (at minimum). Values labelled approximate. Test: seed validates against DestinationClimateSchema (extend existing seed validation test).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-018", "T-006"],
             "blocks": [],
@@ -633,8 +633,8 @@
             },
             "timestamps": {
                 "created": "2026-06-15T22:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T01:45:00.000Z",
+                "completed": "2026-06-16T01:45:00.000Z"
             }
         },
         {
@@ -901,7 +901,7 @@
             "id": "T-028",
             "title": "Document weather cron and climate admin field",
             "description": "Add the destination-weather-fetch cron (12h, no env/key) to the cron docs, and document the climate field in the destination admin doc. Note the offline seed helper (T-018) and Open-Meteo non-commercial usage. Docs-only.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-011", "T-016", "T-023"],
             "blocks": [],
@@ -924,16 +924,16 @@
             },
             "timestamps": {
                 "created": "2026-06-15T22:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T01:45:00.000Z",
+                "completed": "2026-06-16T01:45:00.000Z"
             }
         }
     ],
     "summary": {
         "total": 28,
-        "pending": 4,
+        "pending": 1,
         "inProgress": 2,
-        "completed": 22,
+        "completed": 25,
         "blocked": 0,
         "averageComplexity": 2.3
     }
