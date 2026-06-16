@@ -83,11 +83,14 @@
             "specId": "SPEC-230",
             "title": "Soft-delete filtering in the service list() path — make BaseCrudService.list exclude soft-deleted rows by default so protected list endpoints stop returning deleted records",
             "type": "fix",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": "medium",
             "path": "SPEC-230-list-soft-delete-filtering",
             "base": "staging",
-            "priority": "P2"
+            "priority": "P2",
+            "archived": true,
+            "archivedAt": "2026-06-16",
+            "archiveNote": "PR #1680 merged to staging. BaseCrudService.list() now injects deletedAt:null by default with an includeDeleted opt-in; protected list endpoints no longer return soft-deleted rows. Real-DB smoke PASS. Gotcha captured: forcing getTable() on every list() initially broke 47 tests with incomplete mocks (resolved)."
         },
         {
             "specId": "SPEC-231",
@@ -1030,14 +1033,17 @@
             "title": "Self-serve plan management UI (web)",
             "type": "feature",
             "complexity": "medium",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-203-web-plan-management-ui",
             "parent": "SPEC-193",
             "created": "2026-06-06T00:00:00Z",
             "dependsOn": ["SPEC-167", "SPEC-147"],
             "firstAllocatedViaEngramProtocol": true,
             "tags": ["billing", "web", "ui", "plan-change", "cancellation"],
-            "note": "Spun off SPEC-167 realign D-4 (owner 2026-06-06); consumes 167 preview contract + 147 cancel API."
+            "note": "Spun off SPEC-167 realign D-4 (owner 2026-06-06); consumes 167 preview contract + 147 cancel API.",
+            "archived": true,
+            "archivedAt": "2026-06-16",
+            "archiveNote": "PR #1687 merged to staging (downgrade-preview endpoint, extended subscription endpoint, web billing client fixes, PlanPicker/DowngradePreviewPanel/PlanChangeFlow + cancel + scheduled-change banner, i18n es/en/pt, 76 tests). D-1: downgrade is PREVIEW-FIRST via a GET endpoint exposing computeDowngradeExcess. T-011a mount-order routing regression test added in PR #1697 (locks the downgrade-preview-before-qzpayWrapper fix). DEFERRED post-merge operational check (owner sign-off 2026-06-16, precedent SPEC-209 T-012): the T-011b real-MP-sandbox staging smoke for the pending_payment upgrade branch (POST change-plan returning a MercadoPago checkoutUrl) — not coverable by the local test-control stub; to be run against staging."
         },
         {
             "specId": "SPEC-204",
