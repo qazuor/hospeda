@@ -18,11 +18,7 @@
             },
             "package": "com.hospeda.app"
         },
-        "web": {
-            "bundler": "metro",
-            "output": "static",
-            "favicon": "./assets/favicon.png"
-        },
+        "platforms": ["ios", "android"],
         "plugins": ["expo-router", "expo-splash-screen"],
         "experiments": {
             "typedRoutes": true
