@@ -478,7 +478,7 @@
             "id": "T-015",
             "title": "Create admin Climate section config for the destination edit form",
             "description": "apps/admin/src/features/destinations/config/sections/climate.consolidated.ts: TanStack Form section for bestSeason (enum select), bestMonths (text), per-season avgTempMin/Max + rainfall (number), note (i18n text). Validation via Zod from @repo/schemas (schema.safeParse in handler, NOT zodResolver). Tailwind. Test: component test in T-017.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-005"],
             "blocks": ["T-016"],
@@ -505,15 +505,15 @@
             },
             "timestamps": {
                 "created": "2026-06-15T22:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T01:30:00.000Z",
+                "completed": "2026-06-16T01:30:00.000Z"
             }
         },
         {
             "id": "T-016",
             "title": "Wire Climate section into the destination edit form",
             "description": "Mount the climate.consolidated section into apps/admin destinations $id_.edit.tsx so save persists `climate` through the service. Ensure load hydrates existing values. Test: form persistence asserted in T-017.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-015", "T-006"],
             "blocks": ["T-017", "T-028"],
@@ -536,15 +536,15 @@
             },
             "timestamps": {
                 "created": "2026-06-15T22:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T01:30:00.000Z",
+                "completed": "2026-06-16T01:30:00.000Z"
             }
         },
         {
             "id": "T-017",
             "title": "Admin Climate section component test",
             "description": "Component test: renders the section, edits fields, runs Zod validation (rejects bad temp), and asserts the submitted payload carries the climate object in the expected shape. testing-library + Vitest.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-016"],
             "blocks": [],
@@ -567,8 +567,8 @@
             },
             "timestamps": {
                 "created": "2026-06-15T22:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-16T01:30:00.000Z",
+                "completed": "2026-06-16T01:30:00.000Z"
             }
         },
         {
@@ -931,9 +931,9 @@
     ],
     "summary": {
         "total": 28,
-        "pending": 7,
+        "pending": 4,
         "inProgress": 2,
-        "completed": 19,
+        "completed": 22,
         "blocked": 0,
         "averageComplexity": 2.3
     }
