@@ -5,7 +5,7 @@
             "specId": "SPEC-203",
             "title": "Self-serve plan management UI (web)",
             "status": "in-progress",
-            "progress": "0/11",
+            "progress": "3/11",
             "path": "SPEC-203-web-plan-management-ui",
             "parent": "SPEC-193",
             "branch": "spec/SPEC-203-web-plan-management-ui",
