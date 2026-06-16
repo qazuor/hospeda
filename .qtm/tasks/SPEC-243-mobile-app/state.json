@@ -328,7 +328,7 @@
             "id": "T-013",
             "title": "Unit tests for API client (Zod parse, error handling), auth utilities, design token exports",
             "description": "Vitest unit tests: API client Zod parse + error handling paths, auth utility functions, design-token exports. AAA pattern, 90% coverage target on the new modules.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-009", "T-006"],
             "blocks": [],
@@ -336,20 +336,23 @@
             "tags": ["testing", "vitest"],
             "phase": "testing",
             "qualityGate": {
-                "lint": "pending",
-                "typecheck": "pending",
-                "tests": "pending"
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
-                "created": "2026-06-15T00:00:00.000Z"
-            }
+                "created": "2026-06-15T00:00:00.000Z",
+                "started": "2026-06-16T00:00:00.000Z",
+                "completed": "2026-06-16T00:00:00.000Z"
+            },
+            "note": "Coverage to 100% stmts on every new LOGIC module: src/design (colors/typography/spacing/radius/theme/index — 92 invariant tests: hex validity, monotonic scales, lineHeightFor, theme aggregation), src/lib/api (client/use-api-query/query-client error+edge paths — types.ts is interface-only=0%, expected), src/lib/auth (already 100%), src/lib/push (incl use-push-registration hook), src/lib/i18n (getTranslation fallback chain). 250 mobile tests total, typecheck/lint/build all 0. OUT OF SCOPE (per T-013 spec = API client/auth utils/design tokens): RN component render tests for screens (sign-in/sign-up/placeholders) + AuthButton/TextField + auth-client.ts config — need @testing-library/react-native (deferred; screens get real coverage in Sub-1+ when they have real content)."
         }
     ],
     "summary": {
         "total": 13,
-        "pending": 1,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 12,
+        "completed": 13,
         "blocked": 0,
         "averageComplexity": 1.9
     }
