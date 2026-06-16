@@ -1351,16 +1351,17 @@
             "specId": "SPEC-238",
             "title": "Reduce apps/api per-file test cold-import overhead (~9% suite speedup)",
             "type": "improvement",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": "medium",
             "path": "SPEC-238-api-test-cold-import-perf",
             "base": "staging",
             "priority": "P3",
             "created": "2026-06-15T00:00:00Z",
             "tags": ["ci", "testing", "vitest", "performance", "api", "infrastructure"],
-            "archived": false,
+            "archived": true,
             "note": "B2 lever extracted from SPEC-188 (~9% api test speedup via service-core mock + Sentry mock + shared vitest config). Reference impl on deleted branch spec/SPEC-188-vitest-test-performance (tip 9825dd9ff, perf commit d6c023179) was 1760 commits behind; re-implement fresh on staging, do NOT cherry-pick (stale service-core mock). Drafted 2026-06-15.",
-            "renumberNote": "Renumbered from SPEC-236 (collision with another agent already working SPEC-236) on 2026-06-15."
+            "renumberNote": "Renumbered from SPEC-236 (collision with another agent already working SPEC-236) on 2026-06-15.",
+            "archivedAt": "2026-06-16T01:29:32Z"
         }
     ]
 }
