@@ -10,7 +10,7 @@ exports[`ENV_REGISTRY > var count per category > should match expected distribut
   "cache": 2,
   "client-admin": 27,
   "client-web": 12,
-  "core": 4,
+  "core": 6,
   "cron": 3,
   "database": 5,
   "debugging": 1,
@@ -23,7 +23,7 @@ exports[`ENV_REGISTRY > var count per category > should match expected distribut
   "moderation": 5,
   "monitoring": 7,
   "newsletter": 7,
-  "system": 4,
+  "system": 6,
   "testing": 5,
 }
 `;

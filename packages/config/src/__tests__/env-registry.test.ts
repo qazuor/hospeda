@@ -77,8 +77,12 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * HOSPEDA_GOOGLE_PLACES_API_KEY, HOSPEDA_MERCADOLIBRE_TOKEN,
  * HOSPEDA_IMPORT_FETCH_TIMEOUT_MS, HOSPEDA_IMPORT_FETCH_MAX_BYTES,
  * HOSPEDA_IMPORT_RATE_LIMIT_RPH, HOSPEDA_IMPORT_AI_MAX_CHARS).
+ *
+ * 226 (2026-06-17, env-hardening): +4 new vars:
+ * - EXPO_PUBLIC_API_URL and EXPO_PUBLIC_APP_ENV (new MOBILE_ENV_VARS section, apps/mobile)
+ * - VERCEL and VERCEL_GIT_COMMIT_SHA (platform-injected, SYSTEM_ENV_VARS, already in schemas)
  */
-const EXPECTED_VAR_COUNT = 222;
+const EXPECTED_VAR_COUNT = 226;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;
@@ -189,7 +193,7 @@ describe('ENV_REGISTRY', () => {
         });
 
         it('should only reference valid app identifiers', () => {
-            const validApps = new Set(['api', 'web', 'admin', 'docker', 'seed']);
+            const validApps = new Set(['api', 'web', 'admin', 'mobile', 'docker', 'seed']);
 
             for (const entry of REGISTRY) {
                 for (const app of entry.apps) {
