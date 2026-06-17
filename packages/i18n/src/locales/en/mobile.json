@@ -6,9 +6,60 @@
         }
     },
     "host": {
-        "home": {
-            "title": "Host Home",
-            "subtitle": "Manage your accommodations"
+        "tabs": {
+            "home": "Home",
+            "accommodations": "Listings"
+        },
+        "dashboard": {
+            "title": "Host Dashboard",
+            "propertiesCard": "Properties",
+            "total": "Total",
+            "published": "Published",
+            "draft": "Drafts",
+            "archived": "Archived",
+            "conversationsCard": "Unread inquiries",
+            "planCard": "Current plan",
+            "planNull": "No active plan",
+            "planTrial": "Trial",
+            "planActive": "Active",
+            "planCancelled": "Cancelled",
+            "planExpired": "Expired",
+            "planPastDue": "Payment pending",
+            "loading": "Loading dashboard...",
+            "error": "Could not load the dashboard. Please try again.",
+            "retry": "Retry"
+        },
+        "accommodations": {
+            "listTitle": "My listings",
+            "lifecycleActive": "Active",
+            "lifecycleDraft": "Draft",
+            "lifecycleArchived": "Archived",
+            "loading": "Loading listings...",
+            "error": "Could not load listings. Please try again.",
+            "empty": "You don't have any listings yet.",
+            "retry": "Retry",
+            "edit": {
+                "title": "Edit listing",
+                "contact": "Contact information",
+                "phone": "Phone",
+                "email": "Email",
+                "website": "Website",
+                "social": "Social networks",
+                "twitter": "Twitter / X",
+                "facebook": "Facebook",
+                "instagram": "Instagram",
+                "linkedin": "LinkedIn",
+                "tiktok": "TikTok",
+                "youtube": "YouTube",
+                "summary": "Summary",
+                "summaryHint": "Between 10 and 300 characters",
+                "description": "Description",
+                "save": "Save changes",
+                "success": "Listing updated successfully.",
+                "error": "Could not save. Please try again.",
+                "loading": "Loading listing...",
+                "notFound": "Listing not found."
+            }
         }
     }
 }
