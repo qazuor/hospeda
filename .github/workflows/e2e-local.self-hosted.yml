@@ -89,6 +89,8 @@ jobs:
       HOSPEDA_SITE_URL: http://localhost:4321
       HOSPEDA_ADMIN_URL: http://localhost:3000
       HOSPEDA_REVALIDATION_SECRET: ci-placeholder-revalidation-secret-min-32-characters
+      PUBLIC_SENTRY_DSN: https://ci-placeholder.invalid
+      PUBLIC_POSTHOG_KEY: phc_ci_placeholder
       HOSPEDA_MAILER_HOST: localhost
       HOSPEDA_MAILER_PORT: '1025'
 

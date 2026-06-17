@@ -69,6 +69,11 @@ env:
   PUBLIC_ADMIN_URL: ${{ secrets.HOSPEDA_ADMIN_URL || 'https://example.invalid' }}
   HOSPEDA_ADMIN_URL: ${{ secrets.HOSPEDA_ADMIN_URL || 'https://example.invalid' }}
   HOSPEDA_REVALIDATION_SECRET: ${{ secrets.HOSPEDA_REVALIDATION_SECRET || 'ci-placeholder-revalidation-secret-min-32-characters' }}
+  # PUBLIC_SENTRY_DSN / PUBLIC_POSTHOG_KEY are required by the web app in
+  # production. The web build runs in production mode, so they must be present
+  # at build time. Placeholders are fine for CI (the bundle is never deployed).
+  PUBLIC_SENTRY_DSN: ${{ secrets.PUBLIC_SENTRY_DSN || 'https://ci-placeholder.invalid' }}
+  PUBLIC_POSTHOG_KEY: ${{ secrets.PUBLIC_POSTHOG_KEY || 'phc_ci_placeholder' }}
   # Tells the admin env guard (vite.config.ts + src/env.ts) to ACCEPT the
   # placeholder `.invalid` URLs above. It MUST be workflow-level (not just the
   # Build step): admin#build also runs in any job whose Turbo graph reaches it

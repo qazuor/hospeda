@@ -92,6 +92,8 @@ jobs:
       PUBLIC_API_URL: http://localhost:3001
       PUBLIC_SITE_URL: http://localhost:4321
       PUBLIC_ADMIN_URL: http://localhost:3000
+      PUBLIC_SENTRY_DSN: https://ci-placeholder.invalid
+      PUBLIC_POSTHOG_KEY: phc_ci_placeholder
       VITE_API_URL: http://localhost:3001
       VITE_SITE_URL: http://localhost:4321
       VITE_ADMIN_URL: http://localhost:3000
