@@ -26,8 +26,15 @@ describe('Admin gastronomy routes — SPEC-239 T-045 / T-046', () => {
     // Header factories
     // ──────────────────────────────────────────────────────────────────────────
 
+    // The global validation middleware requires a `user-agent` header
+    // (API_VALIDATION_REQUIRED_HEADERS defaults to ['user-agent']). Every
+    // request must carry it or it is rejected with 400 MISSING_REQUIRED_HEADER
+    // before the auth/permission gate runs.
+    const USER_AGENT = { 'user-agent': 'vitest' };
+
     /** Actor with COMMERCE_CREATE + admin-panel access */
     const headersWithCreate = {
+        ...USER_AGENT,
         'x-mock-actor-id': MOCK_USER_ID,
         'x-mock-actor-role': 'ADMIN',
         'x-mock-actor-permissions': JSON.stringify([
@@ -39,6 +46,7 @@ describe('Admin gastronomy routes — SPEC-239 T-045 / T-046', () => {
 
     /** Actor with COMMERCE_VIEW_ALL + admin-panel access */
     const headersWithViewAll = {
+        ...USER_AGENT,
         'x-mock-actor-id': MOCK_USER_ID,
         'x-mock-actor-role': 'ADMIN',
         'x-mock-actor-permissions': JSON.stringify(['access.panelAdmin', 'commerce.viewAll'])
@@ -46,6 +54,7 @@ describe('Admin gastronomy routes — SPEC-239 T-045 / T-046', () => {
 
     /** Actor with COMMERCE_MODERATE_REVIEW + admin-panel access */
     const headersWithModerate = {
+        ...USER_AGENT,
         'x-mock-actor-id': MOCK_USER_ID,
         'x-mock-actor-role': 'ADMIN',
         'x-mock-actor-permissions': JSON.stringify(['access.panelAdmin', 'commerce.moderateReview'])
@@ -53,6 +62,7 @@ describe('Admin gastronomy routes — SPEC-239 T-045 / T-046', () => {
 
     /** Actor with COMMERCE_EDIT_ALL + admin-panel access */
     const headersWithEditAll = {
+        ...USER_AGENT,
         'x-mock-actor-id': MOCK_USER_ID,
         'x-mock-actor-role': 'ADMIN',
         'x-mock-actor-permissions': JSON.stringify(['access.panelAdmin', 'commerce.editAll'])
@@ -60,13 +70,17 @@ describe('Admin gastronomy routes — SPEC-239 T-045 / T-046', () => {
 
     /** Actor with admin-panel access but NO commerce permissions */
     const headersNoCommercePerms = {
+        ...USER_AGENT,
         'x-mock-actor-id': MOCK_USER_ID,
         'x-mock-actor-role': 'ADMIN',
         'x-mock-actor-permissions': JSON.stringify(['access.panelAdmin'])
     };
 
-    /** Unauthenticated (no mock-actor headers) */
-    const noHeaders = {};
+    /** Unauthenticated (no mock-actor headers, but valid user-agent) */
+    const noHeaders = { ...USER_AGENT };
+
+    /** Body-only headers for unauthenticated POST requests */
+    const noAuthJsonHeaders = { ...USER_AGENT, 'Content-Type': 'application/json' };
 
     beforeAll(async () => {
         app = initApp();
@@ -111,7 +125,7 @@ describe('Admin gastronomy routes — SPEC-239 T-045 / T-046', () => {
         it('returns 401/403 when no auth headers are provided', async () => {
             const res = await app.request('/api/v1/admin/gastronomies', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: noAuthJsonHeaders,
                 body: validBody
             });
             expect([400, 401, 403]).toContain(res.status);
@@ -149,7 +163,7 @@ describe('Admin gastronomy routes — SPEC-239 T-045 / T-046', () => {
         it('returns 401/403 when no auth headers are provided', async () => {
             const res = await app.request(moderatePath, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: noAuthJsonHeaders,
                 body: validBody
             });
             expect([400, 401, 403]).toContain(res.status);
@@ -187,7 +201,7 @@ describe('Admin gastronomy routes — SPEC-239 T-045 / T-046', () => {
         it('returns 401/403 when no auth headers are provided', async () => {
             const res = await app.request(assignOwnerPath, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: noAuthJsonHeaders,
                 body: validBody
             });
             expect([400, 401, 403]).toContain(res.status);

@@ -97,6 +97,58 @@ class GenericMockModel {
     }
 }
 
+/**
+ * Column map for the `gastronomies` table (SPEC-239), keyed by the camelCase Drizzle
+ * property names → snake_case DB column names. Mirrors the `@repo/db/schemas` mock shape.
+ *
+ * `BaseCrudRead.adminList` validates the requested (or default) sort field against the
+ * model's `getTable()` via `hasOwnProperty`, and checks `'deletedAt' in table` to decide
+ * the soft-delete filter. A bare `{}` (as GenericMockModel returns) makes EVERY sort field —
+ * including the `createdAt` default — fail with VALIDATION_ERROR (400). Returning the real
+ * column set lets the admin list / options routes exercise the full handler path against the
+ * mocked DB, so route-level tests assert true gate + routing behaviour instead of a spurious
+ * 400 from the sort guard.
+ */
+const GASTRONOMY_TABLE_COLUMNS = {
+    id: 'id',
+    slug: 'slug',
+    name: 'name',
+    summary: 'summary',
+    description: 'description',
+    richDescription: 'rich_description',
+    type: 'type',
+    priceRange: 'price_range',
+    menuUrl: 'menu_url',
+    ownerId: 'owner_id',
+    destinationId: 'destination_id',
+    visibility: 'visibility',
+    lifecycleState: 'lifecycle_state',
+    moderationState: 'moderation_state',
+    isFeatured: 'is_featured',
+    reviewsCount: 'reviews_count',
+    averageRating: 'average_rating',
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+    createdById: 'created_by_id',
+    updatedById: 'updated_by_id',
+    deletedAt: 'deleted_at',
+    deletedById: 'deleted_by_id'
+} as const;
+
+/**
+ * Gastronomy model stub that exposes the real column set via `getTable()` so the
+ * (real) GastronomyService admin list/options/sort validation runs faithfully against
+ * the mocked DB. All data methods stay no-op (inherited from GenericMockModel).
+ */
+class GastronomyMockModel extends GenericMockModel {
+    override getTable() {
+        return GASTRONOMY_TABLE_COLUMNS;
+    }
+    override getTableName() {
+        return 'gastronomies';
+    }
+}
+
 export function createDbMock() {
     return {
         // Database client
@@ -650,7 +702,7 @@ export function createDbMock() {
         // scope (via service constructor or direct import). They are exported as singleton
         // instances (not classes) in @repo/db — mirror that here with GenericMockModel
         // instances so initApp() can construct all gastronomy routes without a real DB.
-        gastronomyModel: new GenericMockModel(),
+        gastronomyModel: new GastronomyMockModel(),
         gastronomyReviewModel: new GenericMockModel(),
         rGastronomyAmenityModel: new GenericMockModel(),
         rGastronomyFeatureModel: new GenericMockModel(),
