@@ -30,8 +30,8 @@
         {
             "specId": "SPEC-240",
             "title": "Experiencias y Servicios (tourism services & experiences)",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "in-progress",
+            "progress": "0/40",
             "path": "SPEC-240-experiences-services"
         },
         {
