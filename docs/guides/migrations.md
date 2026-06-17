@@ -222,6 +222,32 @@ HOSPEDA_TEST_URL="postgresql://user:pass@localhost:5432/hospeda_migration_test" 
 
 ---
 
+## Extras-carril example: `product_domain` columns (SPEC-239)
+
+The `billing_plans` and `billing_subscriptions` tables are owned by the
+`@qazuor/qzpay-drizzle` library and cannot be expressed in the Hospeda Drizzle TS
+schema. SPEC-239 needs `product_domain` columns on both tables to isolate commerce
+subscriptions from the accommodation entitlement engine.
+
+These columns ship via the extras carril:
+
+```
+packages/db/src/migrations/extras/017-billing-plans-product-domain.column.sql
+```
+
+The file is idempotent (`ALTER TABLE ... ADD COLUMN IF NOT EXISTS ...`) and is
+re-applied by `pnpm db:apply-extras` on every `hops db-migrate` run. There is no
+corresponding Drizzle-generated migration file for these columns; the drift guard
+does not flag them because they are not declared in the Hospeda TS schema.
+
+After any reset (`hops db-migrate --target=staging --reset`) run
+`pnpm db:apply-extras` to restore the columns before seeding, or use
+`hops db-migrate` which handles this automatically.
+
+See [`docs/decisions/ADR-035-commerce-core-gastronomy-separation.md`](../decisions/ADR-035-commerce-core-gastronomy-separation.md) for the full rationale.
+
+---
+
 ## Reference
 
 - [packages/db/CLAUDE.md](../../packages/db/CLAUDE.md) — DB package quick reference and agent protocol
