@@ -12,6 +12,8 @@ import {
     EventCategoryEnum,
     ExchangeRateSourceEnum,
     ExchangeRateTypeEnum,
+    ExperiencePriceUnitEnum,
+    ExperienceTypeEnum,
     GastronomyTypeEnum,
     HostTradeCategoryEnum,
     InvoiceStatusEnum,
@@ -230,3 +232,20 @@ export const NotificationRecipientSidePgEnum = pgEnum(
 export const GastronomyTypePgEnum = pgEnum('gastronomy_type_enum', enumToTuple(GastronomyTypeEnum));
 
 export const PriceRangePgEnum = pgEnum('price_range_enum', enumToTuple(PriceRangeEnum));
+
+/**
+ * PostgreSQL enum for experience sub-categories (SPEC-240).
+ * Values: CAR_RENTAL, BIKE_RENTAL, KAYAK_RENTAL, QUAD_RENTAL, TOUR_GUIDE,
+ * GUIDED_VISIT, EXCURSION, BOAT_TRIP, FISHING_CHARTER, BIRD_WATCHING,
+ * CULTURAL_TOUR, WINE_TASTING, OUTDOOR_ADVENTURE, OTHER.
+ */
+export const ExperienceTypePgEnum = pgEnum('experience_type_enum', enumToTuple(ExperienceTypeEnum));
+
+/**
+ * PostgreSQL enum for experience price units (SPEC-240).
+ * Values: per_day, per_hour, per_person, per_group.
+ */
+export const ExperiencePriceUnitPgEnum = pgEnum(
+    'experience_price_unit_enum',
+    enumToTuple(ExperiencePriceUnitEnum)
+);
