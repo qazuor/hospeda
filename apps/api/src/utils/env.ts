@@ -438,6 +438,14 @@ export const ApiEnvBaseSchema = z.object({
         .default('HOSPEDA'),
 
     /**
+     * Slug of the billing plan used to provision a commerce-listing subscription
+     * (SPEC-239 T-049). Resolved by slug against `billing_plans.name` via the
+     * same `resolvePlanBySlug` machinery the accommodation start-paid flow uses.
+     * Optional: the commerce start-subscription route 404s when unset or unknown.
+     */
+    HOSPEDA_COMMERCE_PLAN_ID: z.string().optional(),
+
+    /**
      * Extra trusted origins (CSV of full URLs). Applied to BOTH the
      * Hono CORS allow-list and the Better Auth `trustedOrigins` so
      * operators don't have to keep two lists in sync.
