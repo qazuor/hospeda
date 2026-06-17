@@ -1,0 +1,319 @@
+---
+/**
+ * @file gastronomia/[slug].astro
+ * @description Gastronomy detail page (SPEC-239 T-054).
+ * Fetches a single gastronomy listing by slug, fetches reviews + FAQs in
+ * parallel, and composes the detail block components.
+ *
+ * 404 is returned when:
+ * - The API returns !result.ok (listing not found or server error).
+ * - The listing's visibility is 'PRIVATE' or 'RESTRICTED' (not public).
+ *
+ * @route /{lang}/gastronomia/{slug}/
+ * @rendering SSR (on-demand)
+ */
+
+import DetailLayout from '@/layouts/DetailLayout.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import { ImageGallery } from '@/components/ImageGallery.client';
+import GastronomyDetailHeader from '@/components/gastronomy/GastronomyDetailHeader.astro';
+import GastronomyDescription from '@/components/gastronomy/GastronomyDescription.astro';
+import OpeningHoursSection from '@/components/gastronomy/OpeningHoursSection.astro';
+import GastronomyContactBlock from '@/components/gastronomy/GastronomyContactBlock.astro';
+import FaqAccordion from '@/components/accommodation/FaqAccordion.astro';
+import { gastronomyApi } from '@/lib/api/endpoints';
+import { toGastronomyDetailPageProps } from '@/lib/api/transforms';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import { renderPlain } from '@/lib/render-plain';
+import type { GastronomyReviewPublicItem } from '@/lib/api/endpoints';
+import type { DetailFaq, GastronomyOpeningHoursEntry } from '@/data/types';
+
+export const prerender = false;
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+const { slug } = Astro.params;
+
+if (!slug) return new Response(null, { status: 404 });
+
+// --- Fetch main record ---
+const result = await gastronomyApi.getBySlug({ slug });
+
+if (!result.ok) {
+    return new Response(null, { status: 404 });
+}
+
+const raw = result.data as unknown as Record<string, unknown>;
+
+// --- Visibility gate ---
+// Public pages only show listings with visibility === 'PUBLIC'.
+// 'PRIVATE' and 'RESTRICTED' listings return 404 to anonymous visitors.
+const visibility = raw.visibility as string | undefined;
+if (visibility && visibility !== 'PUBLIC') {
+    return new Response(null, { status: 404 });
+}
+
+const gastronomy = toGastronomyDetailPageProps({ item: raw, locale });
+
+// --- Parallel secondary fetches ---
+const [reviewsSettled, faqsSettled] = await Promise.allSettled([
+    gastronomyApi.getReviews({ id: gastronomy.id, page: 1, pageSize: 5 }),
+    gastronomyApi.getFaqs({ id: gastronomy.id })
+]);
+
+const reviewsResult =
+    reviewsSettled.status === 'fulfilled' ? reviewsSettled.value : null;
+const faqsResult =
+    faqsSettled.status === 'fulfilled' ? faqsSettled.value : null;
+
+const reviews: readonly GastronomyReviewPublicItem[] =
+    reviewsResult?.ok ? reviewsResult.data.items : [];
+const totalReviews: number =
+    reviewsResult?.ok ? reviewsResult.data.pagination.total : gastronomy.reviewsCount;
+
+// FAQs: prefer inline entity FAQs, fall back to standalone endpoint
+const faqs: readonly DetailFaq[] =
+    gastronomy.faqs.length > 0
+        ? gastronomy.faqs
+        : faqsResult?.ok && Array.isArray(faqsResult.data)
+          ? (faqsResult.data as Array<Record<string, unknown>>).map((faq) => ({
+                id: String(faq.id || ''),
+                question: String(faq.question || ''),
+                answer: String(faq.answer || ''),
+                category: faq.category ? String(faq.category) : null
+            }))
+          : [];
+
+// --- Gallery images ---
+const galleryImages = (() => {
+    const mediaObj = raw.media as
+        | { gallery?: Array<{ url?: string; caption?: string }> }
+        | undefined;
+    const gallery = mediaObj?.gallery ?? [];
+    if (gallery.length > 0) {
+        return gallery
+            .filter((g) => g.url)
+            .map((g) => ({
+                url: String(g.url),
+                alt: g.caption ?? gastronomy.name,
+                caption: g.caption
+            }));
+    }
+    if (gastronomy.featuredImage.url && !gastronomy.featuredImage.url.includes('placeholder')) {
+        return [
+            {
+                url: gastronomy.featuredImage.url,
+                alt: gastronomy.featuredImage.caption ?? gastronomy.name
+            }
+        ];
+    }
+    return [];
+})();
+
+const isAuthenticated = Boolean(Astro.locals.user);
+
+const descriptionText = renderPlain({ raw: gastronomy.description });
+
+const canonicalPath = buildUrl({ locale, path: `gastronomia/${gastronomy.slug}/` });
+
+// --- SEO ---
+const seoTitle = gastronomy.seo?.title ?? `${gastronomy.name} | Hospeda`;
+const seoDescription =
+    gastronomy.seo?.description ??
+    gastronomy.summary ??
+    t('gastronomy.listing.subtitle', 'Gastronomía en el Litoral Entrerriano');
+---
+
+<DetailLayout
+    locale={locale}
+    title={seoTitle}
+    description={seoDescription}
+    canonicalPath={canonicalPath}
+    showBreadcrumbs={true}
+    showSidebar={false}
+    ogImage={gastronomy.featuredImage.url}
+    ogType={t(`gastronomy.types.${gastronomy.type}`, gastronomy.type)}
+    ogSubtitle={gastronomy.destinationName}
+    ogRating={gastronomy.averageRating > 0 ? gastronomy.averageRating.toFixed(1) : undefined}
+>
+    <Breadcrumbs
+        slot="breadcrumbs"
+        locale={locale}
+        items={[
+            {
+                label: t('gastronomy.listing.title', 'Gastronomía'),
+                path: 'gastronomia/'
+            },
+            { label: gastronomy.name }
+        ]}
+    />
+
+    <div class="gastro-detail">
+        <!-- Gallery -->
+        {galleryImages.length > 0 && (
+            <div class="gastro-detail__gallery">
+                <ImageGallery
+                    client:load
+                    images={galleryImages}
+                    locale={locale}
+                    variant="detail"
+                />
+            </div>
+        )}
+
+        <!-- Header -->
+        <GastronomyDetailHeader gastronomy={gastronomy} locale={locale} />
+
+        <!-- Description -->
+        <GastronomyDescription
+            summary={gastronomy.summary}
+            descriptionText={descriptionText}
+            richDescription={gastronomy.richDescription}
+        />
+
+        <!-- Opening Hours (only when configured) -->
+        {gastronomy.openingHours && Object.keys(gastronomy.openingHours).length > 0 && (
+            <OpeningHoursSection
+                openingHours={gastronomy.openingHours as Record<string, GastronomyOpeningHoursEntry>}
+                locale={locale}
+            />
+        )}
+
+        <!-- Contact block (menu URL + social networks) -->
+        {(gastronomy.menuUrl || gastronomy.socialNetworks) && (
+            <GastronomyContactBlock
+                menuUrl={gastronomy.menuUrl}
+                socialNetworks={gastronomy.socialNetworks}
+                locale={locale}
+            />
+        )}
+
+        <!-- Reviews preview -->
+        {gastronomy.reviewsCount > 0 && (
+            <section class="gastro-detail__reviews">
+                <h2 class="gastro-detail__section-title">
+                    {t('gastronomy.detail.reviews.title', 'Reseñas')}
+                </h2>
+                {reviews.length === 0 ? (
+                    <p class="gastro-detail__reviews-empty">
+                        {t(
+                            'gastronomy.detail.reviews.empty',
+                            'Todavía no hay reseñas. ¡Sé el primero en opinar!'
+                        )}
+                    </p>
+                ) : (
+                    <ul class="gastro-detail__reviews-list">
+                        {reviews.slice(0, 3).map((review) => (
+                            <li class="gastro-detail__review-item">
+                                <p class="gastro-detail__review-author">
+                                    {review.user?.name ?? t('common.anonymous', 'Usuario')}
+                                </p>
+                                {review.averageRating != null && (
+                                    <span class="gastro-detail__review-rating">
+                                        ★ {review.averageRating.toFixed(1)}
+                                    </span>
+                                )}
+                                {review.content && (
+                                    <p class="gastro-detail__review-content">{review.content}</p>
+                                )}
+                            </li>
+                        ))}
+                        {totalReviews > 3 && (
+                            <p class="gastro-detail__reviews-more">
+                                {t('gastronomy.detail.reviews.more', '+ {n} reseñas más', { n: totalReviews - 3 })}
+                            </p>
+                        )}
+                    </ul>
+                )}
+            </section>
+        )}
+
+        <!-- FAQs -->
+        {faqs.length > 0 && (
+            <FaqAccordion faqs={faqs} lang={locale} />
+        )}
+    </div>
+</DetailLayout>
+
+<style>
+    .gastro-detail {
+        max-width: var(--container-max, 1350px);
+        margin: 0 auto;
+        padding: var(--space-6, 24px) var(--space-4, 16px);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-8, 32px);
+    }
+
+    .gastro-detail__gallery {
+        border-radius: var(--radius-card, 24px);
+        overflow: hidden;
+    }
+
+    .gastro-detail__section-title {
+        font-family: var(--font-heading);
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--core-foreground);
+        margin-bottom: var(--space-4, 16px);
+    }
+
+    /* Reviews */
+    .gastro-detail__reviews-empty {
+        font-family: var(--font-sans);
+        font-size: 0.95rem;
+        color: var(--core-muted-foreground);
+        font-style: italic;
+        margin: 0;
+    }
+
+    .gastro-detail__reviews-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4, 16px);
+    }
+
+    .gastro-detail__review-item {
+        padding: var(--space-4, 16px);
+        background-color: var(--core-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md, 12px);
+    }
+
+    .gastro-detail__review-author {
+        font-family: var(--font-sans);
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: var(--core-foreground);
+        margin: 0 0 4px;
+    }
+
+    .gastro-detail__review-rating {
+        font-family: var(--font-sans);
+        font-size: 0.85rem;
+        color: var(--rating-star);
+        font-weight: 500;
+    }
+
+    .gastro-detail__review-content {
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        line-height: 1.5;
+        color: var(--core-muted-foreground);
+        margin: 6px 0 0;
+    }
+
+    .gastro-detail__reviews-more {
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        color: var(--brand-primary);
+        font-weight: 500;
+        margin: 0;
+        padding: var(--space-2, 8px) 0;
+    }
+</style>

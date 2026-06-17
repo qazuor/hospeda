@@ -18,6 +18,7 @@ import { defineMiddleware } from 'astro:middleware';
 import { injectNonce } from '../integrations/csp-nonce-injector';
 import { getApiUrl, getNoindexHosts } from './lib/env';
 import {
+    buildChangePasswordRedirect,
     buildCspHeader,
     buildLocaleRedirect,
     buildLoginRedirect,
@@ -29,6 +30,7 @@ import {
     isAdminBypassUser,
     isAuthRoute,
     isBetaRoute,
+    isChangePasswordRoute,
     isProfileCompletionRequiredSessionOptionalRoute,
     isProfileCompletionRoute,
     isProtectedRoute,
@@ -179,6 +181,28 @@ export const onRequest = defineMiddleware(async (context, next) => {
         if (isProtectedRoute({ path }) && !user) {
             const loginUrl = buildLoginRedirect({ locale, currentUrl: path });
             return context.redirect(loginUrl);
+        }
+
+        // Step 7.2 (SPEC-239): Must-change-password gate.
+        //
+        // Commerce owners are provisioned with a server-generated password and
+        // the `mustChangePassword` flag set to true. Until they choose a personal
+        // password, ALL protected routes (except the change-password page itself
+        // and auth/signout) redirect to /mi-cuenta/cambiar-contrasena/.
+        //
+        // Whitelist:
+        //   - The cambiar-contrasena page itself (prevents redirect loop).
+        //   - Auth routes (signout must always work).
+        // Fail-open: if mustChangePassword is missing/false, pass through.
+        if (
+            user &&
+            user.mustChangePassword === true &&
+            isProtectedRoute({ path }) &&
+            !isChangePasswordRoute({ path }) &&
+            !isAuthRoute({ path })
+        ) {
+            const redirectUrl = buildChangePasswordRedirect({ locale });
+            return context.redirect(redirectUrl);
         }
 
         // Step 7.5 (SPEC-113): Profile completion + set-password guard.

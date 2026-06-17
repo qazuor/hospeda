@@ -13,6 +13,7 @@ import { ALLOWED_REMOTE_HOSTS } from './media';
 import {
     AUTH_SEGMENTS,
     BETA_PREFIX,
+    CHANGE_PASSWORD_SEGMENT,
     PROFILE_COMPLETION_BYPASS_ROLES,
     PROFILE_COMPLETION_REQUIRED_SESSION_OPTIONAL_SEGMENTS,
     PROFILE_COMPLETION_SEGMENT,
@@ -307,6 +308,15 @@ export interface SessionUser {
      * forever (BETA-32).
      */
     readonly image: string | null;
+    /**
+     * SPEC-239 T-041: Force-password-change flag.
+     * `true` when the user was provisioned with a server-generated password
+     * (commerce owner accounts) and must rotate it before using protected
+     * routes. Set as a Better Auth `additionalField` (`mustChangePassword`)
+     * on the user record and forwarded here via `get-session`.
+     * `false` (default) once the new password is saved.
+     */
+    readonly mustChangePassword: boolean;
 }
 
 /**
@@ -402,6 +412,12 @@ export async function parseSessionUser({
                         // Avatar URL (`users.image`), forwarded so SSR surfaces
                         // can render the avatar instead of initials (BETA-32).
                         image?: string;
+                        // SPEC-239 T-041: force-password-change flag.
+                        // Declared as a Better Auth `additionalField`
+                        // (`mustChangePassword`) in apps/api/src/lib/auth.ts.
+                        // Forwarded here so the web middleware can gate all
+                        // protected routes until the flag is cleared.
+                        mustChangePassword?: boolean;
                     };
                 };
 
@@ -414,7 +430,8 @@ export async function parseSessionUser({
                     name: data.user.name || '',
                     email: data.user.email,
                     role: data.user.role ?? null,
-                    image: typeof data.user.image === 'string' ? data.user.image : null
+                    image: typeof data.user.image === 'string' ? data.user.image : null,
+                    mustChangePassword: data.user.mustChangePassword === true
                 };
             } catch {
                 span?.setStatus({ code: 2, message: 'internal_error' });
@@ -770,4 +787,38 @@ export function parseNoindexHosts(raw: string | undefined): ReadonlyArray<string
         if (host.length > 0) seen.add(host);
     }
     return [...seen];
+}
+
+// ---------------------------------------------------------------------------
+// SPEC-239: Must-change-password guard helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Checks if the current URL path is the change-password form itself.
+ * This route is whitelisted in the guard so the form can actually be submitted.
+ *
+ * Matches: /{locale}/mi-cuenta/cambiar-contrasena/ (and any sub-paths)
+ *
+ * @param params - Object containing the URL path string
+ * @returns True if the path is the cambiar-contrasena route
+ */
+export function isChangePasswordRoute({ path }: { path: string }): boolean {
+    if (!path) return false;
+    const segments = path.replace(/^\//, '').split('/');
+    // /{locale}/mi-cuenta/cambiar-contrasena/...
+    return (
+        segments.length >= 3 &&
+        (PROTECTED_SEGMENTS as readonly string[]).includes(segments[1] ?? '') &&
+        segments[2] === CHANGE_PASSWORD_SEGMENT
+    );
+}
+
+/**
+ * Builds the redirect URL for the change-password form.
+ *
+ * @param params - Object with locale
+ * @returns Absolute path to `/{locale}/mi-cuenta/cambiar-contrasena/`
+ */
+export function buildChangePasswordRedirect({ locale }: { locale: SupportedLocale }): string {
+    return `/${locale}/mi-cuenta/${CHANGE_PASSWORD_SEGMENT}/`;
 }

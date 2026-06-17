@@ -78,7 +78,11 @@ export const namespaces = [
     // Host trades directory (SPEC-241)
     'host-trades',
     // Mobile app (SPEC-243)
-    'mobile'
+    'mobile',
+    // Gastronomy commerce listings (SPEC-239)
+    'gastronomy',
+    // Commerce shared (lead form, change-password, visibility — SPEC-239)
+    'commerce'
 ] as const;
 
 export type Namespace = (typeof namespaces)[number];
@@ -146,6 +150,7 @@ import benefitsEs from './locales/es/benefits.json';
 import billingEs from './locales/es/billing.json';
 import blogEs from './locales/es/blog.json';
 import commentsEs from './locales/es/comments.json';
+import commerceEs from './locales/es/commerce.json';
 import commonEs from './locales/es/common.json';
 import contactEs from './locales/es/contact.json';
 import contentModerationEs from './locales/es/content-moderation.json';
@@ -159,6 +164,7 @@ import exchangeRateEs from './locales/es/exchange-rate.json';
 import faqEs from './locales/es/faq.json';
 import fieldsEs from './locales/es/fields.json';
 import footerEs from './locales/es/footer.json';
+import gastronomyEs from './locales/es/gastronomy.json';
 import homeEs from './locales/es/home.json';
 import hostTradesEs from './locales/es/host-trades.json';
 import hostEs from './locales/es/host.json';
@@ -201,6 +207,7 @@ import benefitsEn from './locales/en/benefits.json';
 import billingEn from './locales/en/billing.json';
 import blogEn from './locales/en/blog.json';
 import commentsEn from './locales/en/comments.json';
+import commerceEn from './locales/en/commerce.json';
 import commonEn from './locales/en/common.json';
 import contactEn from './locales/en/contact.json';
 import contentModerationEn from './locales/en/content-moderation.json';
@@ -214,6 +221,7 @@ import exchangeRateEn from './locales/en/exchange-rate.json';
 import faqEn from './locales/en/faq.json';
 import fieldsEn from './locales/en/fields.json';
 import footerEn from './locales/en/footer.json';
+import gastronomyEn from './locales/en/gastronomy.json';
 import homeEn from './locales/en/home.json';
 import hostTradesEn from './locales/en/host-trades.json';
 import hostEn from './locales/en/host.json';
@@ -256,6 +264,7 @@ import benefitsPt from './locales/pt/benefits.json';
 import billingPt from './locales/pt/billing.json';
 import blogPt from './locales/pt/blog.json';
 import commentsPt from './locales/pt/comments.json';
+import commercePt from './locales/pt/commerce.json';
 import commonPt from './locales/pt/common.json';
 import contactPt from './locales/pt/contact.json';
 import contentModerationPt from './locales/pt/content-moderation.json';
@@ -269,6 +278,7 @@ import exchangeRatePt from './locales/pt/exchange-rate.json';
 import faqPt from './locales/pt/faq.json';
 import fieldsPt from './locales/pt/fields.json';
 import footerPt from './locales/pt/footer.json';
+import gastronomyPt from './locales/pt/gastronomy.json';
 import homePt from './locales/pt/home.json';
 import hostTradesPt from './locales/pt/host-trades.json';
 import hostPt from './locales/pt/host.json';
@@ -345,7 +355,9 @@ const rawTranslations = {
         tags: tagsEs,
         maps: mapsEs,
         'admin-whats-new': adminWhatsNewEs,
-        mobile: mobileEs
+        mobile: mobileEs,
+        gastronomy: gastronomyEs,
+        commerce: commerceEs
     },
     en: {
         about: aboutEn,
@@ -400,7 +412,9 @@ const rawTranslations = {
         tags: tagsEn,
         maps: mapsEn,
         'admin-whats-new': adminWhatsNewEn,
-        mobile: mobileEn
+        mobile: mobileEn,
+        gastronomy: gastronomyEn,
+        commerce: commerceEn
     },
     pt: {
         about: aboutPt,
@@ -455,7 +469,9 @@ const rawTranslations = {
         tags: tagsPt,
         maps: mapsPt,
         'admin-whats-new': adminWhatsNewPt,
-        mobile: mobilePt
+        mobile: mobilePt,
+        gastronomy: gastronomyPt,
+        commerce: commercePt
     }
 };
 

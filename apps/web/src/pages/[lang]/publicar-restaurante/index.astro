@@ -1,0 +1,110 @@
+---
+/**
+ * @file publicar-restaurante/index.astro
+ * @description Public "Publicá tu restaurante" lead form page (SPEC-239 T-056).
+ *
+ * A prospective merchant submits their interest via a lead form that posts to
+ * the public commerce-lead endpoint. The platform team reviews leads and
+ * provisions owners from the admin (SPEC-239 T-047/T-057) — there is NO plan
+ * selection or checkout on this public page. Copy is intentionally generic so
+ * SPEC-240 (other commerce domains) can reuse the same flow.
+ *
+ * @route     /[lang]/publicar-restaurante/
+ * @rendering SSR (on-demand, no prerender)
+ */
+
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import SEOHead from '@/components/seo/SEOHead.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import { destinationsApi } from '@/lib/api/endpoints';
+import {
+    CommerceLead,
+    type DestinationOption
+} from '@/components/gastronomy/CommerceLead.client';
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+
+const title = t('commerce.lead.title');
+const subtitle = t('commerce.lead.subtitle');
+
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
+
+const destinationsResult = await destinationsApi.list({
+    destinationType: 'CITY',
+    pageSize: 100
+});
+const destinations: ReadonlyArray<DestinationOption> = destinationsResult.ok
+    ? destinationsResult.data.items.map((item) => ({ id: item.id, name: item.name }))
+    : [];
+---
+
+<BaseLayout locale={locale} title={`${title} | Hospeda`} description={subtitle}>
+    <SEOHead
+        slot="head"
+        title={`${title} | Hospeda`}
+        description={subtitle}
+        locale={locale}
+        canonical={canonicalUrl}
+        noindex={false}
+    />
+
+    <Breadcrumbs locale={locale} items={[{ label: title }]} />
+
+    <section class="pub-rest__hero section">
+        <div class="pub-rest__container section__container">
+            <div class="pub-rest__header" data-reveal="up">
+                <h1 class="pub-rest__title">{title}</h1>
+                <p class="pub-rest__subtitle">{subtitle}</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="pub-rest__form section section--warm">
+        <div class="pub-rest__form-container section__container">
+            <CommerceLead client:load locale={locale} destinations={destinations} />
+        </div>
+    </section>
+</BaseLayout>
+
+<style>
+    .pub-rest__hero {
+        padding-block: var(--space-section, 120px);
+        background-color: var(--core-background);
+    }
+    .pub-rest__container {
+        max-width: var(--container-max, 1350px);
+        margin-inline: auto;
+        padding-inline: var(--space-5, 1.25rem);
+    }
+    .pub-rest__header {
+        text-align: center;
+        max-width: 700px;
+        margin-inline: auto;
+    }
+    .pub-rest__title {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: clamp(1.875rem, 5vw, 3rem);
+        color: var(--core-foreground);
+        margin: 0 0 var(--space-4, 1rem);
+        line-height: 1.15;
+    }
+    .pub-rest__subtitle {
+        font-family: var(--font-sans);
+        font-size: var(--text-body-lg, 1.0625rem);
+        color: var(--core-muted-foreground);
+        margin: 0;
+        line-height: 1.6;
+    }
+    .pub-rest__form {
+        padding-block: var(--space-section, 120px);
+    }
+    .pub-rest__form-container {
+        max-width: 720px;
+        margin-inline: auto;
+        padding-inline: var(--space-5, 1.25rem);
+    }
+</style>

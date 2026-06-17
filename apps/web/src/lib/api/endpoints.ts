@@ -7,10 +7,12 @@ import type {
     AccommodationSummary,
     AmenityPublic,
     AnnouncementItem,
+    CommerceLeadCreateInput,
     DestinationPublic,
     EventPublic,
     EventSummary,
     FeaturePublic,
+    GastronomyPublic,
     PostListItem,
     PostPublic,
     PostSummary
@@ -1212,5 +1214,115 @@ export const authApi = {
             path: `${BASE}/auth/reset-password/check`,
             params: { token }
         });
+    }
+};
+
+// --- Gastronomy (SPEC-239) ---
+
+/**
+ * Review item shape returned by GET /gastronomies/:id/reviews.
+ * The full shape is defined server-side (GastronomyReviewPublicSchema pick);
+ * the web client only needs the fields actually rendered in the review list.
+ */
+export interface GastronomyReviewPublicItem {
+    readonly id: string;
+    readonly title?: string | null;
+    readonly content?: string | null;
+    readonly averageRating?: number | null;
+    readonly rating?: Record<string, number> | null;
+    readonly user?: { readonly name: string | null; readonly image: string | null } | null;
+    readonly createdAt?: string | null;
+}
+
+/** Public gastronomy API endpoints (SPEC-239 T-042..T-044). */
+export const gastronomyApi = {
+    /**
+     * List gastronomy listings with pagination, search, sorting, and filters.
+     *
+     * GET /api/v1/public/gastronomies
+     */
+    list(params?: {
+        readonly page?: number;
+        readonly pageSize?: number;
+        readonly q?: string;
+        readonly destinationId?: string;
+        readonly type?: string;
+        readonly priceRange?: string;
+        readonly isFeatured?: boolean;
+        readonly minRating?: number;
+        readonly maxRating?: number;
+        readonly sortBy?: string;
+        readonly sortOrder?: 'asc' | 'desc';
+        readonly includeAmenities?: boolean;
+        readonly includeFeatures?: boolean;
+    }): Promise<ApiResult<PaginatedResponse<GastronomyPublic>>> {
+        return apiClient.getList({ path: `${BASE}/gastronomies`, params });
+    },
+
+    /**
+     * Get a single gastronomy listing by its URL slug.
+     *
+     * GET /api/v1/public/gastronomies/slug/:slug
+     */
+    getBySlug({ slug }: { readonly slug: string }): Promise<ApiResult<GastronomyPublic>> {
+        return apiClient.get({ path: `${BASE}/gastronomies/slug/${slug}` });
+    },
+
+    /**
+     * Get paginated reviews for a gastronomy listing (with user info).
+     *
+     * GET /api/v1/public/gastronomies/:id/reviews
+     */
+    getReviews({
+        id,
+        page,
+        pageSize
+    }: {
+        readonly id: string;
+        readonly page?: number;
+        readonly pageSize?: number;
+    }): Promise<ApiResult<PaginatedResponse<GastronomyReviewPublicItem>>> {
+        return apiClient.getList({
+            path: `${BASE}/gastronomies/${id}/reviews`,
+            params: { page, pageSize }
+        });
+    },
+
+    /**
+     * Get the FAQ list for a gastronomy listing.
+     *
+     * GET /api/v1/public/gastronomies/:id/faqs
+     */
+    getFaqs({ id }: { readonly id: string }): Promise<ApiResult<ReadonlyArray<unknown>>> {
+        return apiClient.get({ path: `${BASE}/gastronomies/${id}/faqs` });
+    }
+};
+
+// --- Commerce lead (SPEC-239 T-047) ---
+
+/**
+ * Commerce lead submission — wraps the honeypot field so the
+ * caller does not need to know the field name.
+ *
+ * The server silently returns 200 on honeypot rejection, so the
+ * success path is indistinguishable from a real submission to bots.
+ */
+export type CommerceLeadSubmitBody = CommerceLeadCreateInput & {
+    /** Honeypot field — must be sent as empty string by real users. */
+    readonly _hp?: string;
+};
+
+/** Public commerce lead API endpoints (SPEC-239 T-047). */
+export const commerceLeadApi = {
+    /**
+     * Submit a pre-onboarding commerce lead.
+     *
+     * POST /api/v1/public/commerce/leads
+     *
+     * Always include `_hp: ''` in the body — the server silently drops
+     * submissions where `_hp` is non-empty (honeypot spam guard).
+     */
+    submit(body: CommerceLeadSubmitBody): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.post({ path: `${BASE}/commerce/leads`, body });
     }
 };

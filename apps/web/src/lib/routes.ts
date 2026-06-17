@@ -32,7 +32,9 @@ export const SESSION_OPTIONAL_SEGMENTS = [
     'eventos',
     'publicaciones',
     'guest',
-    'publicar'
+    'publicar',
+    // Gastronomy public listing + detail (SPEC-239)
+    'gastronomia'
 ] as const;
 
 /**
@@ -74,6 +76,13 @@ export const PROFILE_COMPLETION_SEGMENT = 'completar-perfil' as const;
  * Whitelisted in the middleware guard so the user can submit or skip.
  */
 export const SET_PASSWORD_SEGMENT = 'agregar-contrasena' as const;
+
+/**
+ * Sub-path of the change-password form (under /{locale}/mi-cuenta/).
+ * Used by commerce owners who must rotate their password on first login (SPEC-239 T-041).
+ * Whitelisted in the middleware guard analogously to SET_PASSWORD_SEGMENT.
+ */
+export const CHANGE_PASSWORD_SEGMENT = 'cambiar-contrasena' as const;
 
 /**
  * Role values that skip the profile completion + set-password checks.

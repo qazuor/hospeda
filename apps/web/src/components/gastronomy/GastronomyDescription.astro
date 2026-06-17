@@ -1,0 +1,107 @@
+---
+/**
+ * @file GastronomyDescription.astro
+ * @description Plain description section for a gastronomy listing (SPEC-239 T-054).
+ *
+ * Uses the same render pattern as the accommodation Description component:
+ * - `richDescription` (markdown) is rendered via `renderContent` when present.
+ * - `description` (plain text) is rendered via `renderPlain` as an escaped fallback.
+ * - Text is emitted as plain child nodes (NOT via `set:html`) to avoid XSS.
+ *
+ * Mirrors apps/web/src/components/accommodation/Description.astro.
+ */
+
+import { renderContent } from '@/lib/render-content';
+import { renderPlain } from '@/lib/render-plain';
+
+interface Props {
+    /** Short summary shown above the full description with a warm accent border. */
+    readonly summary: string;
+    /** Plain-text description. Emitted as a text child (HTML-escaped). */
+    readonly descriptionText: string;
+    /**
+     * Optional rich-text (markdown) description. When present it supersedes
+     * `descriptionText` and is rendered to HTML via `renderContent`.
+     */
+    readonly richDescription?: string | null;
+}
+
+const { summary, descriptionText, richDescription } = Astro.props;
+
+// Render rich markdown to HTML only when the field is present and non-empty.
+const richHtml =
+    richDescription && richDescription.trim().length > 0
+        ? renderContent({ raw: richDescription, siteOrigin: '' })
+        : null;
+---
+
+{summary && (
+    <div class="gastro-desc__summary">
+        <p>{summary}</p>
+    </div>
+)}
+
+{richHtml ? (
+    <div class="gastro-desc__body gastro-desc__body--rich" set:html={richHtml} />
+) : (
+    descriptionText && (
+        <div class="gastro-desc__body">
+            <p>{descriptionText}</p>
+        </div>
+    )
+)}
+
+<style>
+    .gastro-desc__summary {
+        background-color: var(--surface-warm);
+        border-left: 4px solid var(--brand-accent);
+        border-radius: var(--radius-button, 8px);
+        padding: var(--space-4, 16px) var(--space-5, 20px);
+        margin-bottom: var(--space-5, 20px);
+    }
+
+    .gastro-desc__summary p {
+        font-family: var(--font-sans);
+        font-size: 1.1rem;
+        line-height: 1.6;
+        color: var(--core-foreground);
+        margin: 0;
+    }
+
+    .gastro-desc__body {
+        font-family: var(--font-sans);
+        font-size: 1rem;
+        line-height: 1.7;
+        color: var(--core-foreground);
+    }
+
+    .gastro-desc__body p {
+        margin-bottom: var(--space-3, 12px);
+    }
+
+    .gastro-desc__body p:last-child {
+        margin-bottom: 0;
+    }
+
+    /* Rich-text heading styles */
+    .gastro-desc__body--rich :global(h2),
+    .gastro-desc__body--rich :global(h3) {
+        font-family: var(--font-heading);
+        font-weight: 600;
+        color: var(--core-foreground);
+        margin-bottom: var(--space-2, 8px);
+    }
+
+    .gastro-desc__body--rich :global(strong) {
+        font-weight: 700;
+    }
+
+    .gastro-desc__body--rich :global(ul),
+    .gastro-desc__body--rich :global(ol) {
+        padding-left: var(--space-5, 20px);
+    }
+
+    .gastro-desc__body--rich :global(li) {
+        margin-bottom: var(--space-1, 4px);
+    }
+</style>

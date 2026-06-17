@@ -19,6 +19,10 @@ import type {
     DetailFaq,
     EventCardData,
     EventDetailData,
+    GastronomyCardData,
+    GastronomyDetailData,
+    GastronomyOpeningHoursEntry,
+    GastronomySocialNetworks,
     ReviewCardData
 } from '@/data/types';
 import { getInitialsFromName } from '../avatar-utils';
@@ -43,6 +47,8 @@ export type {
     EventCardData,
     EventDetailData,
     EventLocation,
+    GastronomyCardData,
+    GastronomyDetailData,
     ReviewCardData
 } from '@/data/types';
 
@@ -1789,4 +1795,159 @@ export function transformOwnerPromotionList({
     readonly items: ReadonlyArray<Record<string, unknown>>;
 }): ReadonlyArray<import('./types').OwnerPromotionData> {
     return items.map((item) => transformOwnerPromotion({ item }));
+}
+
+// ---------------------------------------------------------------------------
+// Gastronomy transforms (SPEC-239)
+// ---------------------------------------------------------------------------
+
+/**
+ * Normalize a raw `openingHours` value from the API into a typed map.
+ * Returns `null` when absent or in an unexpected shape.
+ */
+function normalizeOpeningHours(raw: unknown): Record<string, GastronomyOpeningHoursEntry> | null {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+    const obj = raw as Record<string, unknown>;
+    const result: Record<string, GastronomyOpeningHoursEntry> = {};
+    for (const [day, value] of Object.entries(obj)) {
+        if (!value || typeof value !== 'object' || Array.isArray(value)) continue;
+        const entry = value as Record<string, unknown>;
+        result[day] = {
+            isOpen: Boolean(entry.isOpen ?? entry.open),
+            open: entry.open ? String(entry.open) : undefined,
+            close: entry.close ? String(entry.close) : undefined,
+            open24h: entry.open24h ? Boolean(entry.open24h) : undefined
+        };
+    }
+    return Object.keys(result).length > 0 ? result : null;
+}
+
+/**
+ * Normalize a raw `socialNetworks` value from the API.
+ * Returns `null` when absent or empty.
+ */
+function normalizeSocialNetworks(raw: unknown): GastronomySocialNetworks | null {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+    const obj = raw as Record<string, unknown>;
+    return {
+        facebook: obj.facebook ? String(obj.facebook) : null,
+        instagram: obj.instagram ? String(obj.instagram) : null,
+        twitter: obj.twitter ? String(obj.twitter) : null,
+        youtube: obj.youtube ? String(obj.youtube) : null,
+        whatsapp: obj.whatsapp ? String(obj.whatsapp) : null,
+        tiktok: obj.tiktok ? String(obj.tiktok) : null,
+        website: obj.website ? String(obj.website) : null
+    };
+}
+
+/**
+ * Transforms a raw API gastronomy item to GastronomyCardData props.
+ *
+ * Maps the `GastronomyPublic` fields from the public list/detail API response
+ * to the clean `GastronomyCardData` interface consumed by card components.
+ * Components MUST NOT read raw API data directly.
+ *
+ * @param item - Raw gastronomy object from the API
+ * @param locale - Active locale for i18n field resolution
+ * @returns Typed GastronomyCardData for the card component
+ */
+export function toGastronomyCardProps({
+    item,
+    locale = 'es'
+}: { readonly item: Record<string, unknown>; readonly locale?: string }): GastronomyCardData {
+    const { featuredImage } = processEntityImages({
+        item,
+        entity: 'gastronomy',
+        id: String(item.id || ''),
+        extract: true,
+        fallback: '/images/placeholder-gastronomy.svg'
+    });
+
+    // Resolve destination name from API join (destinationId is the FK)
+    const destinationObj = item.destination as { name?: unknown; nameI18n?: unknown } | undefined;
+    const destinationName = destinationObj
+        ? resolveI18nText(
+              (destinationObj.nameI18n as I18nTextLike | string) ?? destinationObj.name ?? '',
+              locale
+          )
+        : '';
+
+    return {
+        id: String(item.id || ''),
+        slug: String(item.slug || ''),
+        name: resolveI18nText((item.nameI18n as I18nTextLike | string) ?? item.name, locale),
+        type: String(item.type || ''),
+        summary: resolveI18nText(
+            (item.summaryI18n as I18nTextLike | string) ?? item.summary ?? item.description,
+            locale
+        ),
+        featuredImage,
+        destinationId: String(item.destinationId || ''),
+        destinationName,
+        priceRange: item.priceRange != null ? String(item.priceRange) : null,
+        averageRating: Number(item.averageRating ?? 0),
+        reviewsCount: Number(item.reviewsCount ?? 0),
+        isFeatured: Boolean(item.isFeatured),
+        openingHours: normalizeOpeningHours(item.openingHours),
+        createdAt: item.createdAt ? String(item.createdAt) : null
+    };
+}
+
+/**
+ * Transforms a raw API gastronomy item to GastronomyDetailData props.
+ *
+ * Used on the gastronomy detail page where the full `GastronomyPublic` shape
+ * (including FAQs, social networks, SEO, and owner data) is available.
+ *
+ * @param item - Raw gastronomy object from the detail API endpoint
+ * @param locale - Active locale for i18n field resolution
+ * @returns Typed GastronomyDetailData for the detail page components
+ */
+export function toGastronomyDetailPageProps({
+    item,
+    locale = 'es'
+}: {
+    readonly item: Record<string, unknown>;
+    readonly locale?: string;
+}): GastronomyDetailData {
+    const cardProps = toGastronomyCardProps({ item, locale });
+
+    const seoObj = item.seo as Record<string, unknown> | undefined;
+    const ownerObj = item.owner as Record<string, unknown> | undefined;
+
+    const faqs: GastronomyDetailData['faqs'] = Array.isArray(item.faqs)
+        ? (item.faqs as Array<Record<string, unknown>>).map((faq) => ({
+              id: String(faq.id || ''),
+              question: String(faq.question || ''),
+              answer: String(faq.answer || ''),
+              category: faq.category ? String(faq.category) : null
+          }))
+        : [];
+
+    return {
+        ...cardProps,
+        description: resolveI18nText(
+            (item.descriptionI18n as I18nTextLike | string) ?? item.description ?? '',
+            locale
+        ),
+        richDescription: item.richDescription != null ? String(item.richDescription) : null,
+        menuUrl: item.menuUrl != null ? String(item.menuUrl) : null,
+        socialNetworks: normalizeSocialNetworks(item.socialNetworks),
+        seo: seoObj
+            ? {
+                  title: seoObj.title != null ? String(seoObj.title) : null,
+                  description: seoObj.description != null ? String(seoObj.description) : null
+              }
+            : null,
+        tags: Array.isArray(item.tags) ? item.tags.map(String) : [],
+        faqs,
+        owner: ownerObj
+            ? {
+                  id: String(ownerObj.id || ''),
+                  name: ownerObj.name != null ? String(ownerObj.name) : null,
+                  image: ownerObj.image != null ? String(ownerObj.image) : null,
+                  createdAt: ownerObj.createdAt != null ? String(ownerObj.createdAt) : null
+              }
+            : null
+    };
 }

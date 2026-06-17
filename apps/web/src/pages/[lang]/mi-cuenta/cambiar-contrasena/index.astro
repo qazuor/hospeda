@@ -1,0 +1,67 @@
+---
+/**
+ * @file cambiar-contrasena/index.astro
+ * @description Forced or voluntary change-password page (SPEC-239 T-055).
+ *
+ * Commerce owners provisioned with a server-generated password land here on
+ * first login (middleware gate redirects them automatically when
+ * `mustChangePassword = true`). Regular users can also reach this page
+ * voluntarily from their account settings.
+ *
+ * The middleware already protects /mi-cuenta/* (redirects unauthenticated
+ * visitors to sign-in), but we add a local safety net below.
+ *
+ * This route is whitelisted in the middleware must-change-password gate
+ * (CHANGE_PASSWORD_SEGMENT) so the page can actually be submitted.
+ *
+ * @route    /[lang]/mi-cuenta/cambiar-contrasena/
+ * @rendering SSR (prerender = false — requires authenticated user)
+ */
+
+import type { SupportedLocale } from '@/lib/i18n';
+import { createT } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import SEOHead from '@/components/seo/SEOHead.astro';
+import { ChangePasswordForm } from '@/components/auth/ChangePasswordForm.client';
+
+// Locale is injected and validated by middleware.
+const locale = Astro.locals.locale as SupportedLocale;
+
+// Auth safety net: middleware already redirects, but this guards against any
+// future config drift.
+const user = Astro.locals.user;
+if (!user) {
+    return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
+}
+
+const t = createT(locale);
+
+const title = t('commerce.changePassword.title', 'Cambiar contraseña');
+const description = t(
+    'commerce.changePassword.subtitle',
+    'Por seguridad, necesitás actualizar tu contraseña antes de continuar.'
+);
+
+const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
+---
+
+<BaseLayout
+    locale={locale}
+    title={`${title} | Hospeda`}
+    description={description}
+>
+    <SEOHead
+        slot="head"
+        title={`${title} | Hospeda`}
+        description={description}
+        locale={locale}
+        canonical={canonicalUrl}
+        noindex={true}
+    />
+
+    <ChangePasswordForm
+        client:load
+        locale={locale}
+    />
+</BaseLayout>

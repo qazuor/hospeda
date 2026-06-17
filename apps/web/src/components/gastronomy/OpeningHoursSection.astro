@@ -1,0 +1,194 @@
+---
+/**
+ * @file OpeningHoursSection.astro
+ * @description Renders a weekly opening-hours grid for a gastronomy listing
+ * (SPEC-239 T-054). Highlights today's row. Handles closed days, 24-hour days,
+ * and missing close times.
+ *
+ * The day-key ordering follows the Monday-first convention standard in the
+ * Spanish-speaking Argentina market (ISO week: Mon–Sun).
+ *
+ * All computation delegates to the pure `gastronomy-hours` helpers so both
+ * this component and the "open now" badge on the listing card share the same
+ * logic (single source of truth).
+ */
+
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import type { GastronomyOpeningHoursEntry } from '@/data/types';
+import { getTodayIndex, ORDERED_DAY_KEYS } from '@/lib/gastronomy-hours';
+
+interface Props {
+    /** Opening hours map keyed by lower-cased English day names. */
+    readonly openingHours: Record<string, GastronomyOpeningHoursEntry>;
+    readonly locale: SupportedLocale;
+}
+
+const { openingHours, locale } = Astro.props;
+const { t } = createTranslations(locale);
+
+/**
+ * Map API day keys to i18n keys so the labels respect the active locale.
+ * We don't have `gastronomy.detail.openingHours.days.*` keys in the JSON yet,
+ * so we fall back to hard-coded Spanish labels via t() with defaults.
+ * When the locale files add dedicated keys they'll be picked up automatically.
+ */
+const DAY_LABELS: Record<string, string> = {
+    monday: t('gastronomy.detail.openingHours.monday', 'Lunes'),
+    tuesday: t('gastronomy.detail.openingHours.tuesday', 'Martes'),
+    wednesday: t('gastronomy.detail.openingHours.wednesday', 'Miércoles'),
+    thursday: t('gastronomy.detail.openingHours.thursday', 'Jueves'),
+    friday: t('gastronomy.detail.openingHours.friday', 'Viernes'),
+    saturday: t('gastronomy.detail.openingHours.saturday', 'Sábado'),
+    sunday: t('gastronomy.detail.openingHours.sunday', 'Domingo')
+};
+
+/** Index 0–6 (Sun–Sat) for the current local day. */
+const todayDayIndex = getTodayIndex();
+
+/**
+ * The `ORDERED_DAY_KEYS` array uses Mon→Sun (indices 1–6, 0).
+ * Map each day-key to its `getDay()` value to compare against `todayDayIndex`.
+ */
+const DAY_KEY_TO_GETDAY: Record<string, number> = {
+    sunday: 0,
+    monday: 1,
+    tuesday: 2,
+    wednesday: 3,
+    thursday: 4,
+    friday: 5,
+    saturday: 6
+};
+
+const closedLabel = t('gastronomy.detail.openingHours.closed', 'Cerrado');
+const open24hLabel = t('gastronomy.detail.openingHours.open24h', 'Abierto las 24 horas');
+const todayLabel = t('gastronomy.detail.openingHours.today', 'Hoy');
+const sectionTitle = t('gastronomy.detail.openingHours.title', 'Horarios de atención');
+
+/**
+ * Build row data for each day in Mon→Sun order.
+ */
+const rows = ORDERED_DAY_KEYS.map((dayKey) => {
+    const entry: GastronomyOpeningHoursEntry | undefined = openingHours[dayKey];
+    const isToday = DAY_KEY_TO_GETDAY[dayKey] === todayDayIndex;
+    const label = DAY_LABELS[dayKey] ?? dayKey;
+
+    let hoursText: string;
+    if (!entry || !entry.isOpen) {
+        hoursText = closedLabel;
+    } else if (entry.open24h) {
+        hoursText = open24hLabel;
+    } else {
+        const open = entry.open ?? '';
+        const close = entry.close ?? '';
+        hoursText = close ? `${open} – ${close}` : open;
+    }
+
+    const isClosed = !entry || !entry.isOpen;
+
+    return { dayKey, label, hoursText, isToday, isClosed };
+});
+---
+
+<section class="opening-hours">
+    <h2 class="opening-hours__title">{sectionTitle}</h2>
+
+    <dl class="opening-hours__grid">
+        {rows.map(({ dayKey, label, hoursText, isToday, isClosed }) => (
+            <div
+                class={`opening-hours__row${isToday ? ' opening-hours__row--today' : ''}${isClosed ? ' opening-hours__row--closed' : ''}`}
+                data-day={dayKey}
+            >
+                <dt class="opening-hours__day">
+                    {label}
+                    {isToday && (
+                        <span class="opening-hours__today-badge">{todayLabel}</span>
+                    )}
+                </dt>
+                <dd class="opening-hours__time">{hoursText}</dd>
+            </div>
+        ))}
+    </dl>
+</section>
+
+<style>
+    .opening-hours {
+        margin-bottom: var(--space-6, 24px);
+    }
+
+    .opening-hours__title {
+        font-family: var(--font-heading);
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--core-foreground);
+        margin-bottom: var(--space-4, 16px);
+    }
+
+    .opening-hours__grid {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md, 12px);
+        overflow: hidden;
+    }
+
+    .opening-hours__row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 16px;
+        border-bottom: 1px solid var(--border);
+        background-color: var(--core-card);
+        transition: background-color 150ms ease-out;
+    }
+
+    .opening-hours__row:last-child {
+        border-bottom: none;
+    }
+
+    /* Highlight today's row */
+    .opening-hours__row--today {
+        background-color: var(--brand-accent-a08);
+        border-left: 3px solid var(--brand-accent);
+    }
+
+    /* Dim closed days */
+    .opening-hours__row--closed .opening-hours__time {
+        color: var(--core-muted-foreground);
+        font-style: italic;
+    }
+
+    .opening-hours__day {
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--core-foreground);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .opening-hours__today-badge {
+        display: inline-flex;
+        padding: 1px 8px;
+        border-radius: var(--radius-pill, 9999px);
+        background-color: var(--brand-accent);
+        color: white;
+        font-family: var(--font-sans);
+        font-size: 10px;
+        font-weight: 700;
+        line-height: 1.6;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .opening-hours__time {
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        font-weight: 400;
+        color: var(--core-foreground);
+        margin: 0;
+        text-align: right;
+    }
+</style>

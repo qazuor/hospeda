@@ -1,0 +1,43 @@
+{
+    "lead": {
+        "title": "Adicione seu negócio",
+        "subtitle": "Preencha o formulário e entraremos em contato para incluir seu estabelecimento na plataforma.",
+        "fields": {
+            "businessName": "Nome do negócio",
+            "contactName": "Seu nome",
+            "email": "Endereço de e-mail",
+            "phone": "Telefone (opcional)",
+            "destination": "Cidade / Destino (opcional)",
+            "message": "Conte-nos sobre seu negócio (opcional)"
+        },
+        "submit": "Enviar solicitação",
+        "submitting": "Enviando...",
+        "success": "Obrigado! Recebemos sua solicitação e entraremos em contato em breve.",
+        "error": "Ocorreu um erro ao enviar a solicitação. Por favor, tente novamente.",
+        "rateLimited": "Muitas tentativas. Por favor, aguarde alguns minutos antes de tentar novamente.",
+        "validation": {
+            "required": "Este campo é obrigatório.",
+            "email": "Por favor, insira um endereço de e-mail válido."
+        }
+    },
+    "changePassword": {
+        "title": "Alterar senha",
+        "subtitle": "Por segurança, você precisa atualizar sua senha antes de continuar.",
+        "fields": {
+            "currentPassword": "Senha atual",
+            "newPassword": "Nova senha",
+            "confirmNewPassword": "Confirme a nova senha"
+        },
+        "submit": "Alterar senha",
+        "submitting": "Salvando...",
+        "success": "Sua senha foi atualizada com sucesso.",
+        "error": "Ocorreu um erro ao atualizar a senha. Por favor, tente novamente.",
+        "mismatch": "As senhas não coincidem.",
+        "currentIncorrect": "A senha atual está incorreta."
+    },
+    "visibility": {
+        "active": "Ativo",
+        "hidden": "Oculto",
+        "pending": "Pendente"
+    }
+}

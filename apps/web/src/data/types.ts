@@ -810,3 +810,127 @@ export interface EventDetailData {
     /** Schema.org EventStatus value. */
     readonly eventStatus: 'EventScheduled' | 'EventCancelled' | 'EventRescheduled';
 }
+
+// ---------------------------------------------------------------------------
+// Gastronomy card and detail data (SPEC-239)
+// ---------------------------------------------------------------------------
+
+/**
+ * Opening hours entry for a single day of the week.
+ * Produced by the gastronomy transform when `openingHours` is present on the API response.
+ */
+export interface GastronomyOpeningHoursEntry {
+    /** Whether the establishment is open on this day. */
+    readonly isOpen: boolean;
+    /** Opening time string in HH:mm format, absent when closed. */
+    readonly open?: string;
+    /** Closing time string in HH:mm format, absent when closed or open 24 h. */
+    readonly close?: string;
+    /** Whether the establishment is open 24 hours on this day. */
+    readonly open24h?: boolean;
+}
+
+/**
+ * Social networks map for a gastronomy listing.
+ * Mirrors the `socialNetworks` field from the `GastronomyPublicSchema`.
+ */
+export interface GastronomySocialNetworks {
+    readonly facebook?: string | null;
+    readonly instagram?: string | null;
+    readonly twitter?: string | null;
+    readonly youtube?: string | null;
+    readonly whatsapp?: string | null;
+    readonly tiktok?: string | null;
+    readonly website?: string | null;
+}
+
+/**
+ * Props for the GastronomyCard component (SPEC-239).
+ *
+ * Produced by `toGastronomyCardProps()` in `transforms.ts` and consumed by
+ * the gastronomy card component. Used on the listing page and any featured
+ * gastronomy sections.
+ *
+ * @example
+ * ```ts
+ * const card: GastronomyCardData = {
+ *   id: 'abc-123',
+ *   slug: 'la-parrilla-de-juan',
+ *   name: 'La Parrilla de Juan',
+ *   type: 'PARRILLA',
+ *   summary: 'Las mejores carnes a la parrilla de la ciudad.',
+ *   featuredImage: { url: '/images/parrilla.jpg', caption: 'Vista del salón' },
+ *   destinationId: 'dest-uuid',
+ *   destinationName: 'Concepción del Uruguay',
+ *   priceRange: 'MID',
+ *   averageRating: 4.5,
+ *   reviewsCount: 28,
+ *   isFeatured: true,
+ *   openingHours: null,
+ * };
+ * ```
+ */
+export interface GastronomyCardData {
+    /** UUID identifier for the gastronomy listing. */
+    readonly id: string;
+    /** URL-safe slug used to build the detail page path. */
+    readonly slug: string;
+    /** Display name of the establishment. */
+    readonly name: string;
+    /** Gastronomy type enum value (e.g. `'RESTAURANT'`, `'PARRILLA'`). */
+    readonly type: string;
+    /** Short description shown on the card. */
+    readonly summary: string;
+    /**
+     * Featured image with URL and optional caption.
+     * Components should use `featuredImage.url` as `src` and prefer
+     * `featuredImage.caption ?? name` as `alt` text for accessibility.
+     */
+    readonly featuredImage: { readonly url: string; readonly caption?: string };
+    /** UUID of the destination where the establishment is located. */
+    readonly destinationId: string;
+    /** Human-readable name of the destination (derived from API join). */
+    readonly destinationName: string;
+    /** Price tier enum value (`'BUDGET'` | `'MID'` | `'HIGH'` | `'PREMIUM'`). Null when not set. */
+    readonly priceRange: string | null;
+    /** Average star rating (0–5). */
+    readonly averageRating: number;
+    /** Total number of reviews contributing to `averageRating`. */
+    readonly reviewsCount: number;
+    /** Whether this listing appears in featured/promoted slots. */
+    readonly isFeatured: boolean;
+    /** Structured opening hours by day. Null when not configured by the owner. */
+    readonly openingHours: Record<string, GastronomyOpeningHoursEntry> | null;
+    /** ISO 8601 creation date. Used to derive "new" badge (< 30 days). */
+    readonly createdAt?: string | null;
+}
+
+/**
+ * Typed data shape for the gastronomy detail page (SPEC-239).
+ * Produced by `toGastronomyDetailPageProps()` in `transforms.ts`.
+ *
+ * Extends `GastronomyCardData` with fields only needed for the full detail view.
+ */
+export interface GastronomyDetailData extends GastronomyCardData {
+    /** Full plain-text description of the establishment. */
+    readonly description: string;
+    /** Optional rich-text (markdown) description (entitlement-gated). */
+    readonly richDescription?: string | null;
+    /** External URL for the establishment's menu. Null when not provided. */
+    readonly menuUrl?: string | null;
+    /** Social network links provided by the owner. */
+    readonly socialNetworks: GastronomySocialNetworks | null;
+    /** SEO metadata fields. */
+    readonly seo: { readonly title: string | null; readonly description: string | null } | null;
+    /** Tag slugs associated with the listing. */
+    readonly tags?: readonly string[];
+    /** FAQ items configured by the owner. */
+    readonly faqs: readonly DetailFaq[];
+    /** Public owner data from the users table JOIN. */
+    readonly owner: {
+        readonly id: string;
+        readonly name: string | null;
+        readonly image: string | null;
+        readonly createdAt: string | null;
+    } | null;
+}
