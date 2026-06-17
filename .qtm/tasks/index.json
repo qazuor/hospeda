@@ -52,7 +52,7 @@
             "specId": "SPEC-243",
             "title": "Hospeda mobile app (React Native / Expo)",
             "status": "in-progress",
-            "progress": "16/20",
+            "progress": "25/26",
             "path": "SPEC-243-mobile-app"
         },
         {
@@ -706,6 +706,14 @@
             "status": "in-progress",
             "progress": "27/28",
             "path": "SPEC-222-accommodation-import-from-url",
+            "archived": false
+        },
+        {
+            "specId": "SPEC-244",
+            "title": "Test suite order-independence hardening",
+            "status": "draft",
+            "progress": "0/15",
+            "path": "SPEC-244-test-suite-order-independence",
             "archived": false
         }
     ],

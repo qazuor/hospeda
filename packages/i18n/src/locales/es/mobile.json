@@ -3,12 +3,18 @@
         "home": {
             "title": "Inicio turista",
             "subtitle": "Explorá alojamientos en la región"
+        },
+        "tabs": {
+            "home": "Inicio",
+            "profile": "Perfil"
         }
     },
     "host": {
         "tabs": {
             "home": "Inicio",
-            "accommodations": "Fichas"
+            "accommodations": "Fichas",
+            "conversations": "Consultas",
+            "profile": "Perfil"
         },
         "dashboard": {
             "title": "Panel de anfitrión",
@@ -27,7 +33,8 @@
             "planPastDue": "Pago pendiente",
             "loading": "Cargando panel...",
             "error": "No se pudo cargar el panel. Intentá de nuevo.",
-            "retry": "Reintentar"
+            "retry": "Reintentar",
+            "viewMetrics": "Ver métricas"
         },
         "accommodations": {
             "listTitle": "Mis fichas",
@@ -60,6 +67,82 @@
                 "loading": "Cargando ficha...",
                 "notFound": "Ficha no encontrada."
             }
+        },
+        "conversations": {
+            "title": "Consultas",
+            "loading": "Cargando consultas...",
+            "error": "No se pudieron cargar las consultas. Intentá de nuevo.",
+            "empty": "No tenés consultas aún.",
+            "retry": "Reintentar",
+            "guestUnknown": "Huésped",
+            "thread": {
+                "title": "Conversación",
+                "loading": "Cargando mensajes...",
+                "error": "No se pudo cargar la conversación. Intentá de nuevo.",
+                "empty": "No hay mensajes en esta conversación.",
+                "inputPlaceholder": "Escribí tu respuesta...",
+                "send": "Enviar",
+                "sendError": "No se pudo enviar el mensaje. Intentá de nuevo.",
+                "back": "Volver"
+            }
+        },
+        "metrics": {
+            "title": "Métricas de vistas",
+            "window7d": "Últimos 7 días",
+            "window30d": "Últimos 30 días",
+            "accommodationLabel": "Alojamiento",
+            "uniqueLabel": "Visitas únicas",
+            "totalLabel": "Visitas totales",
+            "empty": "Sin datos de vistas para este período.",
+            "error": "No se pudieron cargar las métricas. Intentá de nuevo.",
+            "loading": "Cargando métricas...",
+            "retry": "Reintentar"
+        }
+    },
+    "profile": {
+        "title": "Mi perfil",
+        "avatarLabel": "Foto de perfil",
+        "emailLabel": "Email",
+        "roleLabel": "Rol",
+        "sections": {
+            "personalInfo": "Información personal",
+            "location": "Ubicación"
+        },
+        "fields": {
+            "name": "Nombre completo",
+            "firstName": "Nombre",
+            "lastName": "Apellido",
+            "phone": "Teléfono móvil",
+            "city": "Ciudad",
+            "region": "Provincia / Región",
+            "country": "País"
+        },
+        "save": "Guardar cambios",
+        "saveSuccess": "Perfil actualizado correctamente.",
+        "saveError": "No se pudo guardar. Intentá de nuevo.",
+        "loading": "Cargando perfil...",
+        "loadError": "No se pudo cargar el perfil. Intentá de nuevo."
+    },
+    "settings": {
+        "title": "Configuración",
+        "notifications": {
+            "sectionTitle": "Notificaciones",
+            "enabled": "Notificaciones activas",
+            "allowPush": "Notificaciones push",
+            "allowEmails": "Notificaciones por email",
+            "allowSms": "Notificaciones por SMS"
+        },
+        "language": {
+            "sectionTitle": "Idioma",
+            "es": "Español",
+            "en": "English",
+            "pt": "Português"
+        },
+        "account": {
+            "sectionTitle": "Cuenta",
+            "signOut": "Cerrar sesión",
+            "deleteAccount": "Eliminar cuenta",
+            "deleteAccountComingSoon": "La eliminación de cuenta no está disponible aún."
         }
     }
 }

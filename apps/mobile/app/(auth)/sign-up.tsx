@@ -7,7 +7,8 @@ import { theme } from '../../src/design';
 import { signUp } from '../../src/lib/auth-client';
 import { mapSignUpError } from '../../src/lib/auth/auth-errors';
 import { getFieldError, signUpFormSchema } from '../../src/lib/auth/auth-form-schemas';
-import { appDefaultLocale, getTranslation } from '../../src/lib/i18n';
+import { getTranslation } from '../../src/lib/i18n';
+import { useLocale } from '../../src/lib/locale-context';
 
 /**
  * Sign-up screen for the Hospeda mobile app.
@@ -29,7 +30,7 @@ import { appDefaultLocale, getTranslation } from '../../src/lib/i18n';
  * All colors are sourced from design tokens — no hardcoded hex values.
  */
 export default function SignUpScreen() {
-    const locale = appDefaultLocale;
+    const { locale } = useLocale();
     const router = useRouter();
 
     // Form state

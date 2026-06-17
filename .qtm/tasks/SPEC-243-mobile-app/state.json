@@ -417,7 +417,7 @@
             "id": "T-043",
             "title": "Consultas list screen with unread badge",
             "description": "conversations/index.tsx (Consultas tab, PR-B). GET /api/v1/protected/conversations/owner + unread-count badge. Tap pushes thread.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-040"],
             "blocks": ["T-044"],
@@ -425,21 +425,21 @@
             "tags": ["conversations", "host", "list"],
             "phase": "host",
             "qualityGate": {
-                "lint": "pending",
-                "typecheck": "pending",
-                "tests": "pending"
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-17T06:35:39.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-17T07:39:57.000Z",
+                "completed": "2026-06-17T08:35:31.000Z"
             }
         },
         {
             "id": "T-044",
             "title": "Consulta thread screen + reply input",
             "description": "conversations/[id].tsx. GET /api/v1/protected/conversations/owner/:id (thread). Reply via POST /owner/:id/messages (CONVERSATION_REPLY_OWN). Invalidate on reply.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-043"],
             "blocks": ["T-046"],
@@ -447,21 +447,21 @@
             "tags": ["conversations", "host", "thread", "mutation"],
             "phase": "host",
             "qualityGate": {
-                "lint": "pending",
-                "typecheck": "pending",
-                "tests": "pending"
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-17T06:35:39.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-17T07:39:57.000Z",
+                "completed": "2026-06-17T08:35:31.000Z"
             }
         },
         {
             "id": "T-045",
             "title": "Metrics screen (basic)",
             "description": "metrics.tsx (pushed from dashboard, href:null). GET /api/v1/protected/views/accommodations/me?window=7d|30d + daily-series. Window toggle.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-040"],
             "blocks": [],
@@ -469,21 +469,21 @@
             "tags": ["metrics", "host", "views"],
             "phase": "host",
             "qualityGate": {
-                "lint": "pending",
-                "typecheck": "pending",
-                "tests": "pending"
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-17T06:35:39.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-17T09:17:08.000Z",
+                "completed": "2026-06-17T09:53:16.000Z"
             }
         },
         {
             "id": "T-046",
             "title": "Tests: dashboard hooks, ficha edit form validation, consulta reply",
             "description": "Vitest unit tests for dashboard/list/patch/reply hooks + ficha edit form validation. Follow client.test.ts pattern.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-042", "T-044"],
             "blocks": [],
@@ -491,23 +491,156 @@
             "tags": ["tests", "host"],
             "phase": "testing",
             "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-17T06:35:39.000Z",
+                "started": "2026-06-17T09:17:08.000Z",
+                "completed": "2026-06-17T09:53:16.000Z"
+            }
+        },
+        {
+            "id": "T-050",
+            "title": "Profile read/edit screen (name, phone, location)",
+            "description": "Shared ProfileScreen component (src/components/profile/). Read via useSession + GET /protected/users/:id; edit name (firstName/lastName/displayName), phone (contactInfo.mobilePhone), location via PATCH /protected/users/:id. Zod safeParse validation following accommodations/[id].tsx pattern. Rendered from (host)/profile.tsx and (tourist)/profile.tsx.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-055"],
+            "subtasks": [],
+            "tags": ["profile", "account", "mutation"],
+            "phase": "account",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-17T14:07:04.000Z",
+                "started": "2026-06-17T14:07:04.000Z",
+                "completed": "2026-06-17T15:04:19.000Z"
+            }
+        },
+        {
+            "id": "T-051",
+            "title": "Notification preferences screen (push channel toggles)",
+            "description": "Channel toggles (settings.notifications: enabled/allowPush/allowEmails/allowSms) via PATCH /protected/users/:id. Per-category prefs deferred (no endpoint; PreferenceService not HTTP-exposed). Owner decision: channel toggles only, no new backend.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-055"],
+            "subtasks": [],
+            "tags": ["notifications", "account", "settings"],
+            "phase": "account",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-17T14:07:04.000Z",
+                "started": "2026-06-17T14:07:04.000Z",
+                "completed": "2026-06-17T15:04:19.000Z"
+            }
+        },
+        {
+            "id": "T-052",
+            "title": "Language selector (es/en/pt) with expo-secure-store persistence + runtime i18n",
+            "description": "New LocaleContext (src/lib/locale-context.tsx): locale state + setLocale persisting to expo-secure-store (hospeda_locale). Wrap root layout. Replace hardcoded appDefaultLocale refs with useLocale(). Language selector in settings calls setLocale \u2192 immediate re-render (AC-A2.2). getTranslation already takes runtime locale param.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-055"],
+            "subtasks": [],
+            "tags": ["i18n", "account", "settings"],
+            "phase": "account",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-17T14:07:04.000Z",
+                "started": "2026-06-17T14:07:04.000Z",
+                "completed": "2026-06-17T15:04:19.000Z"
+            }
+        },
+        {
+            "id": "T-053",
+            "title": "Role-switcher (for users with multiple roles)",
+            "description": "CANCELLED \u2014 N/A. The user model is SINGLE-ROLE (users.role is a scalar enum; a user cannot hold multiple roles simultaneously). A real role-switcher would require a multi-role backend model, which is a separate spec out of Sub-4 scope. Owner decision (2026-06-17): skip. See backend scoping report.",
+            "status": "cancelled",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["roles", "account", "cancelled"],
+            "phase": "account",
+            "qualityGate": {
                 "lint": "pending",
                 "typecheck": "pending",
                 "tests": "pending"
             },
             "timestamps": {
-                "created": "2026-06-17T06:35:39.000Z",
+                "created": "2026-06-17T14:07:04.000Z",
                 "started": null,
                 "completed": null
+            }
+        },
+        {
+            "id": "T-054",
+            "title": "Sign-out + account deletion stub",
+            "description": "Sign-out already wired (authClient.signOut from Sub-0) \u2014 surface it in the profile/settings screen. Account deletion = stub (no self-service delete endpoint exists; admin-only). Stub screen/row, content deferred.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["auth", "account", "signout", "stub"],
+            "phase": "account",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-17T14:07:04.000Z",
+                "started": "2026-06-17T14:07:04.000Z",
+                "completed": "2026-06-17T15:04:19.000Z"
+            }
+        },
+        {
+            "id": "T-055",
+            "title": "Tests: profile update, language switch, role-switcher",
+            "description": "Vitest unit tests: usePatchUser hook (Zod parse + body), language switch (LocaleContext setLocale + persistence), notification toggle PATCH body. Role-switcher test N/A (T-053 cancelled). Follow src/lib/api/hooks/*.test.ts pattern.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-050", "T-052"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["tests", "account"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-17T14:07:04.000Z",
+                "started": "2026-06-17T14:07:04.000Z",
+                "completed": "2026-06-17T15:04:19.000Z"
             }
         }
     ],
     "summary": {
-        "total": 20,
+        "total": 26,
         "pending": 0,
         "inProgress": 0,
-        "completed": 16,
-        "blocked": 4,
-        "averageComplexity": 2.05
+        "completed": 25,
+        "blocked": 0,
+        "cancelled": 1,
+        "averageComplexity": 1.96
     }
 }

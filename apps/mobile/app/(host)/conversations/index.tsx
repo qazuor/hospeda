@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import {
     ActivityIndicator,
     FlatList,
+    RefreshControl,
     StyleSheet,
     Text,
     TouchableOpacity,
@@ -9,34 +10,38 @@ import {
 } from 'react-native';
 import type { ListRenderItemInfo } from 'react-native';
 import { theme } from '../../../src/design';
-import { useOwnAccommodations } from '../../../src/lib/api/hooks/use-own-accommodations';
-import type { OwnAccommodationsList } from '../../../src/lib/api/hooks/use-own-accommodations';
+import {
+    type OwnerConversationItem,
+    useOwnerConversations
+} from '../../../src/lib/api/hooks/use-owner-conversations';
 import { getTranslation } from '../../../src/lib/i18n';
 import { useLocale } from '../../../src/lib/locale-context';
 import { logger } from '../../../src/lib/logger';
 
-/** One item in the accommodations list (subset of AccommodationProtected). */
-type AccommodationListItem = OwnAccommodationsList['items'][number];
-
 /**
- * Host accommodations list screen (SPEC-243 T-041).
+ * Host conversations inbox screen (SPEC-243 T-043).
  *
- * Fetches GET /api/v1/protected/accommodations (page 1, pageSize 12).
- * Renders a FlatList of accommodation cards with name, destination city,
- * and lifecycle state badge.
+ * Fetches GET /api/v1/protected/conversations/owner (page 1, pageSize 20).
+ * Renders a FlatList of conversation rows, each showing:
+ * - Guest name (or fallback label when null)
+ * - Accommodation name
+ * - Latest message excerpt
+ * - Unread badge when unreadCount > 0 (AC-M3.1)
  *
- * Tapping a card navigates to ./[id] (detail + edit screen).
- *
+ * Tapping a row navigates to ./[id] (thread + reply screen).
  * Loading, error, and empty states are handled explicitly.
  *
  * Expo Router requires a **default export** for route files.
  * Styling uses StyleSheet.create at module scope (ADR-034).
  */
-export default function AccommodationsListScreen() {
+export default function ConversationsInboxScreen() {
     const { locale } = useLocale();
     const t = (key: string) => getTranslation(key, locale);
     const router = useRouter();
-    const { data, isLoading, error, refetch } = useOwnAccommodations({ page: 1, pageSize: 12 });
+    const { data, isLoading, isRefetching, error, refetch } = useOwnerConversations({
+        page: 1,
+        pageSize: 20
+    });
 
     if (isLoading) {
         return (
@@ -45,22 +50,22 @@ export default function AccommodationsListScreen() {
                     size="large"
                     color={theme.colors.river[500]}
                 />
-                <Text style={styles.loadingText}>{t('mobile.host.accommodations.loading')}</Text>
+                <Text style={styles.loadingText}>{t('mobile.host.conversations.loading')}</Text>
             </View>
         );
     }
 
     if (error) {
-        logger.warn('AccommodationsList fetch error', { error: String(error) });
+        logger.warn('ConversationsInbox fetch error', { error: String(error) });
         return (
             <View style={styles.centered}>
-                <Text style={styles.errorText}>{t('mobile.host.accommodations.error')}</Text>
+                <Text style={styles.errorText}>{t('mobile.host.conversations.error')}</Text>
                 <TouchableOpacity
                     style={styles.retryButton}
                     onPress={() => void refetch()}
                 >
                     <Text style={styles.retryButtonText}>
-                        {t('mobile.host.accommodations.retry')}
+                        {t('mobile.host.conversations.retry')}
                     </Text>
                 </TouchableOpacity>
             </View>
@@ -71,117 +76,100 @@ export default function AccommodationsListScreen() {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>{t('mobile.host.accommodations.listTitle')}</Text>
+            <Text style={styles.title}>{t('mobile.host.conversations.title')}</Text>
             <FlatList
                 data={items}
                 keyExtractor={(item) => item.id}
-                renderItem={({ item }: ListRenderItemInfo<AccommodationListItem>) => (
-                    <AccommodationCard
+                renderItem={({ item }: ListRenderItemInfo<OwnerConversationItem>) => (
+                    <ConversationRow
                         item={item}
-                        onPress={() => router.push(`/(host)/accommodations/${item.id}`)}
+                        onPress={() => router.push(`/(host)/conversations/${item.id}`)}
                         t={t}
                     />
                 )}
                 ListEmptyComponent={
                     <View style={styles.emptyContainer}>
-                        <Text style={styles.emptyText}>
-                            {t('mobile.host.accommodations.empty')}
-                        </Text>
+                        <Text style={styles.emptyText}>{t('mobile.host.conversations.empty')}</Text>
                     </View>
                 }
                 contentContainerStyle={styles.list}
                 showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={isRefetching || isLoading}
+                        onRefresh={() => void refetch()}
+                        colors={[theme.colors.river[500]]}
+                        tintColor={theme.colors.river[500]}
+                    />
+                }
             />
         </View>
     );
 }
 
 // ---------------------------------------------------------------------------
-// Card component
+// Row component
 // ---------------------------------------------------------------------------
 
-interface AccommodationCardProps {
-    item: AccommodationListItem;
+interface ConversationRowProps {
+    item: OwnerConversationItem;
     onPress: () => void;
     t: (key: string) => string;
 }
 
 /**
- * Renders a single accommodation summary card.
- * Shows: name, destination city (from cityDestination or destinationId), lifecycle badge.
+ * Renders a single inbox row.
+ *
+ * Shows: guest name, accommodation name, latest message preview, and an
+ * unread badge when unreadCount > 0 (AC-M3.1).
  */
-function AccommodationCard({ item, onPress, t }: AccommodationCardProps) {
-    const cityName = item.cityDestination?.name ?? null;
-    const lifecycleLabel = getLifecycleLabel(item.lifecycleState, t);
-    const lifecycleBadgeStyle = getLifecycleBadgeStyle(item.lifecycleState);
+function ConversationRow({ item, onPress, t }: ConversationRowProps) {
+    const guestLabel = item.guestName ?? t('mobile.host.conversations.guestUnknown');
+    const hasUnread = item.unreadCount > 0;
 
     return (
         <TouchableOpacity
-            style={styles.card}
+            style={styles.row}
             onPress={onPress}
             accessibilityRole="button"
-            accessibilityLabel={item.name}
+            accessibilityLabel={guestLabel}
         >
-            <View style={styles.cardContent}>
-                <View style={styles.cardLeft}>
-                    <Text
-                        style={styles.cardName}
-                        numberOfLines={2}
-                    >
-                        {item.name}
-                    </Text>
-                    {cityName ? (
+            <View style={styles.rowContent}>
+                <View style={styles.rowLeft}>
+                    <View style={styles.rowHeader}>
                         <Text
-                            style={styles.cardCity}
+                            style={[styles.guestName, hasUnread && styles.guestNameUnread]}
                             numberOfLines={1}
                         >
-                            {cityName}
+                            {guestLabel}
+                        </Text>
+                        {hasUnread ? (
+                            <View style={styles.unreadBadge}>
+                                <Text style={styles.unreadBadgeText}>{item.unreadCount}</Text>
+                            </View>
+                        ) : null}
+                    </View>
+                    {item.accommodationName ? (
+                        <Text
+                            style={styles.accommodationName}
+                            numberOfLines={1}
+                        >
+                            {item.accommodationName}
                         </Text>
                     ) : null}
-                </View>
-                <View style={[styles.lifecycleBadge, lifecycleBadgeStyle]}>
-                    <Text style={styles.lifecycleBadgeText}>{lifecycleLabel}</Text>
+                    {item.lastMessageExcerpt ? (
+                        <Text
+                            style={styles.excerpt}
+                            numberOfLines={2}
+                        >
+                            {item.lastMessageExcerpt}
+                        </Text>
+                    ) : null}
                 </View>
             </View>
         </TouchableOpacity>
     );
 }
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Returns the i18n label for a lifecycle state.
- */
-function getLifecycleLabel(state: string, t: (key: string) => string): string {
-    const map: Record<string, string> = {
-        ACTIVE: t('mobile.host.accommodations.lifecycleActive'),
-        DRAFT: t('mobile.host.accommodations.lifecycleDraft'),
-        ARCHIVED: t('mobile.host.accommodations.lifecycleArchived')
-    };
-    return map[state] ?? state;
-}
-
-/**
- * Returns style overrides for the lifecycle badge background.
- */
-function getLifecycleBadgeStyle(state: string): object {
-    switch (state) {
-        case 'ACTIVE':
-            return badgeActiveStyle;
-        case 'DRAFT':
-            return badgeDraftStyle;
-        case 'ARCHIVED':
-            return badgeArchivedStyle;
-        default:
-            return {};
-    }
-}
-
-const badgeActiveStyle = { backgroundColor: theme.colors.success[100] };
-const badgeDraftStyle = { backgroundColor: theme.colors.river[100] };
-const badgeArchivedStyle = { backgroundColor: theme.colors.neutral[200] };
 
 // ---------------------------------------------------------------------------
 // Styles — module scope (ADR-034)
@@ -239,7 +227,7 @@ const styles = StyleSheet.create({
         fontSize: theme.typography.semantic.body,
         color: theme.colors.neutral[400]
     },
-    card: {
+    row: {
         backgroundColor: theme.colors.neutral[50],
         borderRadius: theme.radius.semantic.card,
         borderWidth: 1,
@@ -247,34 +235,51 @@ const styles = StyleSheet.create({
         marginBottom: theme.spacing[3],
         padding: theme.spacing[4]
     },
-    cardContent: {
+    rowContent: {
         flexDirection: 'row',
-        alignItems: 'flex-start',
-        justifyContent: 'space-between',
-        gap: theme.spacing[3]
+        alignItems: 'flex-start'
     },
-    cardLeft: {
+    rowLeft: {
         flex: 1
     },
-    cardName: {
+    rowHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: theme.spacing[1]
+    },
+    guestName: {
+        flex: 1,
         fontSize: theme.typography.semantic.body,
         fontWeight: '600',
         color: theme.colors.neutral[700],
+        marginRight: theme.spacing[2]
+    },
+    guestNameUnread: {
+        color: theme.colors.river[700]
+    },
+    accommodationName: {
+        fontSize: theme.typography.semantic.bodySm,
+        color: theme.colors.neutral[500],
         marginBottom: theme.spacing[1]
     },
-    cardCity: {
+    excerpt: {
         fontSize: theme.typography.semantic.bodySm,
-        color: theme.colors.neutral[500]
+        color: theme.colors.neutral[400],
+        lineHeight: 18
     },
-    lifecycleBadge: {
+    unreadBadge: {
+        backgroundColor: theme.colors.river[500],
         borderRadius: theme.radius.semantic.pill,
-        paddingHorizontal: theme.spacing[3],
-        paddingVertical: theme.spacing[1],
-        alignSelf: 'flex-start'
+        minWidth: 20,
+        height: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: theme.spacing[2]
     },
-    lifecycleBadgeText: {
+    unreadBadgeText: {
+        color: theme.colors.semantic.textInverted,
         fontSize: theme.typography.semantic.caption,
-        fontWeight: '600',
-        color: theme.colors.neutral[700]
+        fontWeight: '700'
     }
 });

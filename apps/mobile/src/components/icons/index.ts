@@ -152,3 +152,7 @@ export { ShareNetwork as ShareIcon } from 'phosphor-react-native/src/icons/Share
 export { SlidersHorizontal as FiltersIcon } from 'phosphor-react-native/src/icons/SlidersHorizontal';
 // Host management
 export { Buildings as BuildingsIcon } from 'phosphor-react-native/src/icons/Buildings';
+// Conversations / inbox
+export { ChatCircle as ChatCircleIcon } from 'phosphor-react-native/src/icons/ChatCircle';
+// Metrics / analytics
+export { ChartBar as ChartBarIcon } from 'phosphor-react-native/src/icons/ChartBar';

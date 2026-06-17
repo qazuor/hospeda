@@ -1,22 +1,28 @@
 import { Tabs } from 'expo-router';
-import { BuildingsIcon, HouseIcon } from '../../src/components/icons';
+import { BuildingsIcon, ChatCircleIcon, HouseIcon, UserIcon } from '../../src/components/icons';
 import { theme } from '../../src/design';
-import { appDefaultLocale, getTranslation } from '../../src/lib/i18n';
+import { getTranslation } from '../../src/lib/i18n';
+import { useLocale } from '../../src/lib/locale-context';
 
 /**
- * Host group layout — Tabs navigator (SPEC-243 T-040).
+ * Host group layout — Tabs navigator (SPEC-243 T-040 / T-043 / T-050).
  *
- * Two tabs in this PR:
+ * Four tabs:
  * - Inicio (index) — host dashboard
  * - Fichas (accommodations) — host-scoped accommodation list
+ * - Consultas (conversations) — owner conversation inbox + thread
+ * - Perfil (profile) — account, settings, language, sign-out
  *
- * Tab labels come from `mobile.host.tabs.*` i18n keys.
- * Tab icons from the icons barrel (HouseIcon / BuildingsIcon).
+ * Tab labels come from `mobile.host.tabs.*` i18n keys resolved via the
+ * runtime locale from `useLocale()`.
+ * Tab icons from the icons barrel (HouseIcon / BuildingsIcon / ChatCircleIcon / UserIcon).
  *
- * Expo Router requires a **default export** for route files.
+ * Expo Router requires a **default export** for route files — this is the
+ * one legitimate exception to the named-export-only rule (see CLAUDE.md).
  */
 export default function HostLayout() {
-    const t = (key: string) => getTranslation(key, appDefaultLocale);
+    const { locale } = useLocale();
+    const t = (key: string) => getTranslation(key, locale);
 
     return (
         <Tabs
@@ -59,6 +65,37 @@ export default function HostLayout() {
                         />
                     )
                 }}
+            />
+            <Tabs.Screen
+                name="conversations"
+                options={{
+                    title: t('mobile.host.tabs.conversations'),
+                    tabBarIcon: ({ color, size }) => (
+                        <ChatCircleIcon
+                            color={color as string}
+                            size={size}
+                            weight="regular"
+                        />
+                    )
+                }}
+            />
+            <Tabs.Screen
+                name="profile"
+                options={{
+                    title: t('mobile.host.tabs.profile'),
+                    tabBarIcon: ({ color, size }) => (
+                        <UserIcon
+                            color={color as string}
+                            size={size}
+                            weight="regular"
+                        />
+                    )
+                }}
+            />
+            {/* Metrics screen — navigable via router.push but NOT a visible tab */}
+            <Tabs.Screen
+                name="metrics"
+                options={{ href: null }}
             />
         </Tabs>
     );

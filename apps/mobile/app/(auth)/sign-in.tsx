@@ -7,7 +7,8 @@ import { theme } from '../../src/design';
 import { signIn } from '../../src/lib/auth-client';
 import { mapSignInError } from '../../src/lib/auth/auth-errors';
 import { getFieldError, signInFormSchema } from '../../src/lib/auth/auth-form-schemas';
-import { appDefaultLocale, getTranslation } from '../../src/lib/i18n';
+import { getTranslation } from '../../src/lib/i18n';
+import { useLocale } from '../../src/lib/locale-context';
 
 /**
  * Sign-in screen for the Hospeda mobile app.
@@ -27,7 +28,7 @@ import { appDefaultLocale, getTranslation } from '../../src/lib/i18n';
  * All colors are sourced from design tokens — no hardcoded hex values.
  */
 export default function SignInScreen() {
-    const locale = appDefaultLocale;
+    const { locale } = useLocale();
     const router = useRouter();
 
     // Form state

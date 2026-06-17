@@ -2,7 +2,8 @@ import { StyleSheet, Text, View } from 'react-native';
 import { AuthButton } from '../../src/components/auth/AuthButton';
 import { theme } from '../../src/design';
 import { signOut } from '../../src/lib/auth-client';
-import { appDefaultLocale, getTranslation } from '../../src/lib/i18n';
+import { getTranslation } from '../../src/lib/i18n';
+import { useLocale } from '../../src/lib/locale-context';
 
 /**
  * Tourist home screen — placeholder for SPEC-243 T-005.
@@ -22,7 +23,7 @@ import { appDefaultLocale, getTranslation } from '../../src/lib/i18n';
  * Colors sourced from the mobile design system — no hardcoded hex values.
  */
 export default function TouristHomeScreen() {
-    const locale = appDefaultLocale;
+    const { locale } = useLocale();
     const t = (key: string) => getTranslation(key, locale);
 
     return (
