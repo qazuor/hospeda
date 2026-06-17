@@ -606,6 +606,40 @@
 | `GET /api/v1/admin/views/batch` | `views/admin/batch.ts` | none | - | n/a | admin-tier route; gated by ANALYTICS_VIEW permission, no billing gate needed |
 | `GET /api/v1/admin/views/top` | `views/admin/top.ts` | none | - | n/a | admin-tier route; gated by ANALYTICS_VIEW permission, no billing gate needed |
 | `GET /api/v1/admin/views/daily-series` | `views/admin/daily-series.ts` | none | - | n/a | admin-tier route; gated by ANALYTICS_VIEW permission, no billing gate needed |
+| **GASTRONOMY — PROTECTED** | | | | | |
+| `GET /api/v1/protected/gastronomies/{id}` | `gastronomy/protected/getById.ts` | none | - | n/a | Read own listing; auth + ownership check in handler (SPEC-239) |
+| `PATCH /api/v1/protected/gastronomies/{id}` | `gastronomy/protected/patch.ts` | none | - | n/a | Owner-scoped edit; auth + ownership check. Commerce-subscription gating deferred to SPEC-239 billing API (T-048+) |
+| `POST /api/v1/protected/gastronomies/{id}/faqs` | `gastronomy/protected/addFaq.ts` | none | - | n/a | Owner-scoped FAQ write; auth + ownership check (SPEC-239) |
+| `PUT /api/v1/protected/gastronomies/{id}/faqs/{faqId}` | `gastronomy/protected/updateFaq.ts` | none | - | n/a | Owner-scoped FAQ write; auth + ownership check (SPEC-239) |
+| `DELETE /api/v1/protected/gastronomies/{id}/faqs/{faqId}` | `gastronomy/protected/removeFaq.ts` | none | - | n/a | Deletion ungated; removing own FAQ always allowed (SPEC-239) |
+| `PUT /api/v1/protected/gastronomies/{id}/faqs/reorder` | `gastronomy/protected/reorderFaqs.ts` | none | - | n/a | Owner-scoped FAQ reorder; auth + ownership check (SPEC-239) |
+| `POST /api/v1/protected/gastronomies/{gastronomyId}/reviews` | `gastronomy/protected/createReview.ts` | none | - | n/a | Public-user review submission; auth-only, moderation enforced in service (SPEC-239) |
+| **GASTRONOMY — ADMIN** | | | | | |
+| `GET /api/v1/admin/gastronomies` | `gastronomy/admin/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated (COMMERCE_VIEW_ALL) |
+| `POST /api/v1/admin/gastronomies` | `gastronomy/admin/create.ts` | none | - | n/a | Admin write; PermissionEnum-gated (COMMERCE_CREATE) |
+| `GET /api/v1/admin/gastronomies/{id}` | `gastronomy/admin/getById.ts` | none | - | n/a | Admin read; PermissionEnum-gated (COMMERCE_VIEW_ALL) |
+| `PUT /api/v1/admin/gastronomies/{id}` | `gastronomy/admin/update.ts` | none | - | n/a | Admin write; PermissionEnum-gated (COMMERCE_EDIT_ALL) |
+| `PATCH /api/v1/admin/gastronomies/{id}` | `gastronomy/admin/patch.ts` | none | - | n/a | Admin write; PermissionEnum-gated (COMMERCE_EDIT_ALL) |
+| `DELETE /api/v1/admin/gastronomies/{id}` | `gastronomy/admin/delete.ts` | none | - | n/a | Admin soft-delete; PermissionEnum-gated (COMMERCE_DELETE) |
+| `DELETE /api/v1/admin/gastronomies/{id}/hard` | `gastronomy/admin/hardDelete.ts` | none | - | n/a | Admin hard-delete; PermissionEnum-gated (COMMERCE_DELETE) |
+| `POST /api/v1/admin/gastronomies/{id}/restore` | `gastronomy/admin/restore.ts` | none | - | n/a | Admin restore; PermissionEnum-gated (COMMERCE_EDIT_ALL) |
+| `POST /api/v1/admin/gastronomies/batch` | `gastronomy/admin/batch.ts` | none | - | n/a | Admin batch; PermissionEnum-gated (COMMERCE_VIEW_ALL) |
+| `GET /api/v1/admin/gastronomies/options` | `gastronomy/admin/options.ts` | none | - | n/a | Admin read; PermissionEnum-gated (ACCESS_PANEL_ADMIN) |
+| `GET /api/v1/admin/gastronomies/{id}/faqs` | `gastronomy/admin/getFaqs.ts` | none | - | n/a | Admin read; PermissionEnum-gated (COMMERCE_VIEW_ALL) |
+| `POST /api/v1/admin/gastronomies/{id}/faqs` | `gastronomy/admin/addFaq.ts` | none | - | n/a | Admin write; PermissionEnum-gated (COMMERCE_EDIT_ALL) |
+| `PUT /api/v1/admin/gastronomies/{id}/faqs/{faqId}` | `gastronomy/admin/updateFaq.ts` | none | - | n/a | Admin write; PermissionEnum-gated (COMMERCE_EDIT_ALL) |
+| `DELETE /api/v1/admin/gastronomies/{id}/faqs/{faqId}` | `gastronomy/admin/removeFaq.ts` | none | - | n/a | Admin write; PermissionEnum-gated (COMMERCE_EDIT_ALL) |
+| `PATCH /api/v1/admin/gastronomies/{id}/faqs/reorder` | `gastronomy/admin/reorderFaqs.ts` | none | - | n/a | Admin write; PermissionEnum-gated (COMMERCE_EDIT_ALL) |
+| `POST /api/v1/admin/gastronomies/{id}/assign-owner` | `gastronomy/admin/assignOwner.ts` | none | - | n/a | Admin owner-provisioning; PermissionEnum-gated (COMMERCE_EDIT_ALL) (SPEC-239 T-046) |
+| **GASTRONOMY REVIEWS — ADMIN** | | | | | |
+| `GET /api/v1/admin/gastronomies/reviews` | `gastronomy/reviews/admin/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated (COMMERCE_VIEW_ALL) |
+| `GET /api/v1/admin/gastronomies/reviews/{id}` | `gastronomy/reviews/admin/getById.ts` | none | - | n/a | Admin read; PermissionEnum-gated (COMMERCE_VIEW_ALL) |
+| `PUT /api/v1/admin/gastronomies/reviews/{id}` | `gastronomy/reviews/admin/update.ts` | none | - | n/a | Admin write; PermissionEnum-gated (COMMERCE_EDIT_ALL) |
+| `DELETE /api/v1/admin/gastronomies/reviews/{id}` | `gastronomy/reviews/admin/delete.ts` | none | - | n/a | Admin review removal; PermissionEnum-gated (COMMERCE_MODERATE_REVIEW) |
+| `POST /api/v1/admin/gastronomies/reviews/{id}/moderate` | `gastronomy/reviews/admin/moderate.ts` | none | - | n/a | Admin moderation; PermissionEnum-gated (COMMERCE_MODERATE_REVIEW) (SPEC-239 T-046) |
+| **COMMERCE LEADS — ADMIN** | | | | | |
+| `GET /api/v1/admin/commerce/leads` | `commerce/admin/list-leads.ts` | none | - | n/a | Admin read; PermissionEnum-gated (COMMERCE_VIEW_ALL) (SPEC-239 T-047) |
+| `POST /api/v1/admin/commerce/leads/{id}/handle` | `commerce/admin/mark-handled.ts` | none | - | n/a | Admin lead handling + owner-provisioning; PermissionEnum-gated (COMMERCE_EDIT_ALL) (SPEC-239 T-047) |
 
 ---
 
