@@ -47,7 +47,11 @@ const SPEC_096_REQUIRED_NAMESPACES = [
     'search',
     'contact',
     'ui',
-    'account'
+    'account',
+    // Gastronomy commerce listings (SPEC-239)
+    'gastronomy',
+    // Commerce shared — lead form, change-password, visibility (SPEC-239)
+    'commerce'
 ] as const;
 
 const STRICT_EXTRA = process.env.I18N_CHECK_STRICT_EXTRA === '1';

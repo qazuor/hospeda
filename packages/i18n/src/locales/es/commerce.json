@@ -1,0 +1,43 @@
+{
+    "lead": {
+        "title": "Sumá tu negocio",
+        "subtitle": "Completá el formulario y nos ponemos en contacto para incorporar tu establecimiento a la plataforma.",
+        "fields": {
+            "businessName": "Nombre del negocio",
+            "contactName": "Tu nombre",
+            "email": "Correo electrónico",
+            "phone": "Teléfono (opcional)",
+            "destination": "Ciudad / Destino (opcional)",
+            "message": "Contanos sobre tu negocio (opcional)"
+        },
+        "submit": "Enviar solicitud",
+        "submitting": "Enviando...",
+        "success": "¡Gracias! Recibimos tu solicitud y nos contactaremos a la brevedad.",
+        "error": "Ocurrió un error al enviar la solicitud. Por favor, intentá de nuevo.",
+        "rateLimited": "Demasiados intentos. Por favor, esperá unos minutos antes de volver a intentarlo.",
+        "validation": {
+            "required": "Este campo es obligatorio.",
+            "email": "Ingresá un correo electrónico válido."
+        }
+    },
+    "changePassword": {
+        "title": "Cambiar contraseña",
+        "subtitle": "Por seguridad, necesitás actualizar tu contraseña antes de continuar.",
+        "fields": {
+            "currentPassword": "Contraseña actual",
+            "newPassword": "Nueva contraseña",
+            "confirmNewPassword": "Confirmá la nueva contraseña"
+        },
+        "submit": "Cambiar contraseña",
+        "submitting": "Guardando...",
+        "success": "Tu contraseña fue actualizada correctamente.",
+        "error": "Ocurrió un error al actualizar la contraseña. Por favor, intentá de nuevo.",
+        "mismatch": "Las contraseñas no coinciden.",
+        "currentIncorrect": "La contraseña actual es incorrecta."
+    },
+    "visibility": {
+        "active": "Activo",
+        "hidden": "Oculto",
+        "pending": "Pendiente"
+    }
+}

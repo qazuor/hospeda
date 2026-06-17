@@ -1,0 +1,43 @@
+{
+    "lead": {
+        "title": "Add your business",
+        "subtitle": "Fill out the form and we'll get in touch to add your establishment to the platform.",
+        "fields": {
+            "businessName": "Business name",
+            "contactName": "Your name",
+            "email": "Email address",
+            "phone": "Phone (optional)",
+            "destination": "City / Destination (optional)",
+            "message": "Tell us about your business (optional)"
+        },
+        "submit": "Submit request",
+        "submitting": "Submitting...",
+        "success": "Thank you! We received your request and will be in touch shortly.",
+        "error": "An error occurred while submitting the request. Please try again.",
+        "rateLimited": "Too many attempts. Please wait a few minutes before trying again.",
+        "validation": {
+            "required": "This field is required.",
+            "email": "Please enter a valid email address."
+        }
+    },
+    "changePassword": {
+        "title": "Change password",
+        "subtitle": "For security reasons, you need to update your password before continuing.",
+        "fields": {
+            "currentPassword": "Current password",
+            "newPassword": "New password",
+            "confirmNewPassword": "Confirm new password"
+        },
+        "submit": "Change password",
+        "submitting": "Saving...",
+        "success": "Your password was updated successfully.",
+        "error": "An error occurred while updating the password. Please try again.",
+        "mismatch": "Passwords do not match.",
+        "currentIncorrect": "The current password is incorrect."
+    },
+    "visibility": {
+        "active": "Active",
+        "hidden": "Hidden",
+        "pending": "Pending"
+    }
+}

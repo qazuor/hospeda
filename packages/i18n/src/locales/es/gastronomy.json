@@ -1,0 +1,52 @@
+{
+    "listing": {
+        "title": "Gastronomía",
+        "subtitle": "Descubrí los mejores restaurantes, bares y sabores de la región",
+        "emptyState": "No se encontraron establecimientos gastronómicos con los filtros seleccionados.",
+        "errorBanner": "No se pudo cargar el listado de gastronomía. Intentá de nuevo más tarde.",
+        "results_one": "{{count}} establecimiento encontrado",
+        "results_other": "{{count}} establecimientos encontrados"
+    },
+    "card": {
+        "priceRange": {
+            "BUDGET": "Económico",
+            "MID": "Moderado",
+            "HIGH": "Elevado",
+            "PREMIUM": "Premium"
+        },
+        "openNow": "Abierto ahora",
+        "closedNow": "Cerrado ahora",
+        "featured": "Destacado"
+    },
+    "detail": {
+        "openingHours": {
+            "title": "Horarios de atención",
+            "closed": "Cerrado",
+            "open24h": "Abierto las 24 horas",
+            "today": "Hoy"
+        },
+        "menu": "Ver menú",
+        "reviews": {
+            "title": "Reseñas",
+            "empty": "Todavía no hay reseñas. ¡Sé el primero en opinar!"
+        },
+        "faqs": {
+            "title": "Preguntas frecuentes"
+        },
+        "social": "Redes sociales",
+        "amenities": {
+            "title": "Servicios y comodidades"
+        }
+    },
+    "types": {
+        "RESTAURANT": "Restaurante",
+        "BAR": "Bar",
+        "CAFE": "Café",
+        "PARRILLA": "Parrilla",
+        "CERVECERIA": "Cervecería",
+        "HELADERIA": "Heladería",
+        "PANADERIA": "Panadería",
+        "ROTISERIA": "Rotisería",
+        "FOOD_TRUCK": "Food Truck"
+    }
+}

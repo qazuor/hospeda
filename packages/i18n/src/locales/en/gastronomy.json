@@ -1,0 +1,52 @@
+{
+    "listing": {
+        "title": "Gastronomy",
+        "subtitle": "Discover the best restaurants, bars, and flavors of the region",
+        "emptyState": "No gastronomic establishments found with the selected filters.",
+        "errorBanner": "Could not load the gastronomy listings. Please try again later.",
+        "results_one": "{{count}} establishment found",
+        "results_other": "{{count}} establishments found"
+    },
+    "card": {
+        "priceRange": {
+            "BUDGET": "Budget",
+            "MID": "Moderate",
+            "HIGH": "Upscale",
+            "PREMIUM": "Premium"
+        },
+        "openNow": "Open now",
+        "closedNow": "Closed now",
+        "featured": "Featured"
+    },
+    "detail": {
+        "openingHours": {
+            "title": "Opening hours",
+            "closed": "Closed",
+            "open24h": "Open 24 hours",
+            "today": "Today"
+        },
+        "menu": "View menu",
+        "reviews": {
+            "title": "Reviews",
+            "empty": "No reviews yet. Be the first to share your experience!"
+        },
+        "faqs": {
+            "title": "Frequently asked questions"
+        },
+        "social": "Social networks",
+        "amenities": {
+            "title": "Services and amenities"
+        }
+    },
+    "types": {
+        "RESTAURANT": "Restaurant",
+        "BAR": "Bar",
+        "CAFE": "Café",
+        "PARRILLA": "Grill",
+        "CERVECERIA": "Brewery",
+        "HELADERIA": "Ice Cream Shop",
+        "PANADERIA": "Bakery",
+        "ROTISERIA": "Delicatessen",
+        "FOOD_TRUCK": "Food Truck"
+    }
+}
