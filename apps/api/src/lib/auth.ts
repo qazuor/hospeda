@@ -11,6 +11,7 @@
  * @module auth
  */
 
+import { expo } from '@better-auth/expo';
 import { and, asc, conversations, eq, getDb, isNull } from '@repo/db';
 import { accounts, sessions, users, verifications } from '@repo/db';
 import { createEmailClient, sendEmail } from '@repo/email';
@@ -446,7 +447,29 @@ export function getAuth(): ReturnType<typeof betterAuth> {
                     USER: noAdminRole,
                     GUEST: noAdminRole
                 }
-            })
+            }),
+            /**
+             * Expo plugin for React Native / Expo mobile client support (SPEC-243 T-003).
+             *
+             * What this adds (purely additive — no web/admin behavior changes):
+             * 1. A `/expo-authorization-proxy` GET endpoint for OAuth deep-link redirect.
+             * 2. An `onRequest` hook that runs on EVERY request but no-ops unless the
+             *    request has no `origin` header (native apps do not send one) AND has an
+             *    `expo-origin` header set by `expoClient`. Web/admin requests always carry
+             *    a real `origin`, so the hook returns immediately for them (one header read,
+             *    no mutation). For native requests it synthesises the missing `origin` from
+             *    `expo-origin`; the synthesised origin is STILL validated against
+             *    `trustedOrigins` downstream, so this is not a CSRF-bypass vector.
+             * 3. In development, automatically adds `"exp://"` to trustedOrigins (for
+             *    Expo Go's exp:// scheme). In production it adds nothing — the explicit
+             *    `hospeda://` entry in `parseTrustedOrigins()` covers native OAuth callbacks.
+             *
+             * The plugin does NOT import any expo-* packages into the Node build.
+             * Cookie and session behaviour for web and admin are completely unchanged.
+             *
+             * @see apps/mobile/docs/auth-spike.md — SPEC-243 T-003 auth spike doc
+             */
+            expo()
         ],
 
         advanced: {
@@ -721,7 +744,21 @@ export function getAuth(): ReturnType<typeof betterAuth> {
             }
         },
 
-        trustedOrigins: parseTrustedOrigins()
+        /**
+         * Trusted origins: web + admin from env (via parseTrustedOrigins()) plus
+         * the Expo deep-link scheme for the mobile app (SPEC-243 T-003).
+         *
+         * `hospeda://` is the URI scheme registered in `apps/mobile/app.json`
+         * (`expo.scheme = "hospeda"`). Better Auth must trust it so OAuth callbacks
+         * and magic-link redirects can deep-link back into the native app without
+         * being rejected by the origin check. The `expo()` plugin above also
+         * auto-adds `exp://` in development (Expo Go).
+         *
+         * NOTE: Better Auth matches non-http(s) origins by PREFIX (`startsWith`), so
+         * `hospeda://` trusts any `hospeda://...` deep link. http(s) origins (web/admin)
+         * are matched by EXACT origin, so this entry cannot widen their trust.
+         */
+        trustedOrigins: [...parseTrustedOrigins(), 'hospeda://']
     });
 
     return authInstance;

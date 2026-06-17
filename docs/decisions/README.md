@@ -35,6 +35,7 @@ This directory contains Architecture Decision Records for the Hospeda platform. 
 | [ADR-031](ADR-031-ai-core-foundation-architecture.md) | AI Foundation Architecture (`@repo/ai-core`) | Accepted |
 | [ADR-032](ADR-032-markdown-canonical-rich-text.md) | Markdown as Canonical Storage Format for Entity Rich Text | Accepted |
 | [ADR-033](ADR-033-accommodation-import-from-url.md) | Accommodation Import from URL (tiered strategy, provider abstraction, SSRF, legal posture) | Accepted |
+| [ADR-034](ADR-034-mobile-app-foundation.md) | Mobile App Foundation (Expo / React Native) | Accepted |
 
 ## Format
 

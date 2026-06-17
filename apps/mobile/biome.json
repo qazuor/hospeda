@@ -1,0 +1,23 @@
+{
+    "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
+    "extends": ["../../packages/biome-config/biome.json"],
+    "files": {
+        "ignore": [".expo/**", "node_modules/**", "dist/**"]
+    },
+    "linter": {
+        "rules": {
+            "nursery": {
+                "noRestrictedImports": {
+                    "level": "error",
+                    "options": {
+                        "paths": {
+                            "@repo/icons": "DOM-only phosphor SVG package. Use `phosphor-react-native` for icons in the mobile app (ADR-034). Importing `@repo/icons` in React Native crashes with DOM errors.",
+                            "@repo/auth-ui": "DOM React auth forms — not compatible with React Native. Implement native auth screens in apps/mobile/app/(auth)/.",
+                            "@repo/tailwind-config": "CSS/OKLCH tokens for web only. Use the mobile design system in apps/mobile/src/design/ (ADR-034)."
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

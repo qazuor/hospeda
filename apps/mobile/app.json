@@ -1,0 +1,27 @@
+{
+    "expo": {
+        "name": "Hospeda",
+        "slug": "hospeda-mobile",
+        "version": "1.0.0",
+        "orientation": "portrait",
+        "icon": "./assets/icon.png",
+        "scheme": "hospeda",
+        "userInterfaceStyle": "automatic",
+        "ios": {
+            "supportsTablet": false,
+            "bundleIdentifier": "com.hospeda.app"
+        },
+        "android": {
+            "adaptiveIcon": {
+                "foregroundImage": "./assets/adaptive-icon.png",
+                "backgroundColor": "#ffffff"
+            },
+            "package": "com.hospeda.app"
+        },
+        "platforms": ["ios", "android"],
+        "plugins": ["expo-router", "expo-splash-screen", "expo-notifications"],
+        "experiments": {
+            "typedRoutes": true
+        }
+    }
+}

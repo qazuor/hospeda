@@ -1,0 +1,359 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-243",
+    "title": "Hospeda mobile app (React Native / Expo) \u2014 Sub-0 Foundation",
+    "created": "2026-06-15T00:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Scaffold apps/mobile \u2014 Expo SDK init, pnpm workspace, TurboRepo pipeline tasks (lint/typecheck/test/build)",
+            "description": "Create apps/mobile as an Expo managed-workflow app. Register it in the pnpm workspace and wire Turbo pipeline tasks: build (expo export), typecheck (tsc --noEmit), lint (@repo/biome-config), test (vitest + @testing-library/react-native). Expo Router renders a placeholder home screen.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-006", "T-008", "T-012"],
+            "subtasks": [],
+            "tags": ["scaffold", "expo", "turborepo"],
+            "phase": "scaffold",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-15T00:00:00.000Z",
+                "started": "2026-06-15T00:00:00.000Z",
+                "completed": "2026-06-15T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Configure Metro + Biome for monorepo internal packages (@repo/schemas, @repo/i18n)",
+            "description": "Make Metro resolve internal workspace packages (@repo/schemas, @repo/i18n) \u2014 path aliases / symlink resolution in metro.config.js as needed. Confirm eager locale-JSON import bundle size is acceptable (ADR-034 decision 5); fall back to lazy-by-locale only if size is unacceptable.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-003"],
+            "subtasks": [
+                {
+                    "title": "Metro resolves @repo/schemas + @repo/i18n",
+                    "completed": true
+                },
+                {
+                    "title": "Measure eager locale bundle size; document result",
+                    "completed": true
+                }
+            ],
+            "tags": ["scaffold", "metro", "i18n"],
+            "phase": "scaffold",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-15T00:00:00.000Z",
+                "started": "2026-06-15T00:00:00.000Z",
+                "completed": "2026-06-15T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Auth spike: validate better-auth/expo + expo-secure-store session flow (sign-in, persist, refresh, sign-out)",
+            "description": "HIGHEST RISK TASK. Validate the better-auth/expo client adapter against the server BA config: cookie vs Bearer mode, secure-store token persistence (iOS + Android), session refresh on app resume, sign-out. Outcome also LOCKS the API client transport (ADR-034 decision 3): if better-auth/expo requires @better-fetch/fetch, adopt it; else native fetch. Document findings before T-004/T-009 commit. NOTE: headless env has no simulator/device \u2014 static integration + config + transport decision + bundle validation done here; live secure-store session flow requires manual device run by owner.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-004", "T-009"],
+            "subtasks": [
+                {
+                    "title": "Sign-in via better-auth/expo, token in expo-secure-store [DEVICE-PENDING: integration wired + bundles; live flow unverified headless]",
+                    "completed": false
+                },
+                {
+                    "title": "Session restore on cold launch + refresh on resume [DEVICE-PENDING: requires simulator/device]",
+                    "completed": false
+                },
+                {
+                    "title": "Sign-out clears secure store [DEVICE-PENDING: requires simulator/device]",
+                    "completed": false
+                },
+                {
+                    "title": "Decide transport (fetch vs @better-fetch/fetch), record in ADR-034",
+                    "completed": true
+                }
+            ],
+            "tags": ["auth", "spike", "risk"],
+            "phase": "auth",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-15T00:00:00.000Z",
+                "started": "2026-06-15T00:00:00.000Z",
+                "completed": "2026-06-16T00:00:00.000Z"
+            },
+            "note": "Static spike complete (server expo() plugin + mobile expoClient, transport resolved, opus adversarial review = SAFE no web/admin regression). Live device session flow (sign-in/persist/refresh/sign-out/OAuth) UNVERIFIED headless \u2014 owner must run on simulator/device before T-004. See apps/mobile/docs/auth-spike.md."
+        },
+        {
+            "id": "T-004",
+            "title": "Implement sign-in + sign-up screens (native RN) using the spiked auth client",
+            "description": "Native RN sign-in and sign-up screens under app/(auth)/. Email/password via Better Auth. Form validation with @repo/schemas Zod. Errors surfaced via i18n. Reuses the validated auth client from T-003.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-005", "T-011"],
+            "subtasks": [],
+            "tags": ["auth", "ui"],
+            "phase": "auth",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-15T00:00:00.000Z",
+                "started": "2026-06-16T00:00:00.000Z",
+                "completed": "2026-06-16T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Root layout: role-gated navigator (tourist vs host), session restore on cold launch",
+            "description": "app/_layout.tsx: on session load, read user.role and route to (tourist) or (host). Restore existing session from secure store on cold launch without re-login. Users with multiple roles see a role-switcher (Sub-4). Unauthenticated \u2192 (auth).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-004"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["auth", "navigation", "expo-router"],
+            "phase": "auth",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-15T00:00:00.000Z",
+                "started": "2026-06-16T00:00:00.000Z",
+                "completed": "2026-06-16T00:00:00.000Z"
+            },
+            "note": "Role-gated root layout: useSession() gate in app/_layout.tsx (effect-based useSegments + router.replace \u2014 handles cold-launch, post-sign-in, post-sign-out). Splash held until !isPending. Owner-locked mapping in src/lib/auth/roles.ts: host={HOST,ADMIN,SUPER_ADMIN}, everyone else authenticated (USER/EDITOR/CLIENT_MANAGER/SPONSOR/unknown)->tourist, no session->auth (DIVERGES from web isHostRole which includes EDITOR/CLIENT_MANAGER \u2014 documented). Placeholder (tourist)/(host) groups with Sign Out. role.role accessed via documented cast (BA client doesn't infer additionalFields). KNOWN LIMITATION: no group-level guard (a deep-link into the wrong group isn't bounced) \u2014 deferred to Sub-1 when real screens exist. 27 unit tests for roles.ts. Verified green: typecheck/lint(42 files)/test(98)/build(ios+android) exit 0. DEVICE-GATED (owner): live session-restore/redirect on simulator (T-003 gate)."
+        },
+        {
+            "id": "T-006",
+            "title": "Mobile design system: color tokens (JS objects from brand palette), typography, spacing, radius constants",
+            "description": "apps/mobile/src/design/: port the brand palette color values to JS token objects for RN StyleSheet (ADR-034 decision 1). Define typography scale, spacing scale, radius constants. Same color values as @repo/design-tokens but as JS objects (CSS/OKLCH tokens are not usable in RN).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-007", "T-013"],
+            "subtasks": [],
+            "tags": ["design", "tokens"],
+            "phase": "design",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-15T00:00:00.000Z",
+                "started": "2026-06-16T00:00:00.000Z",
+                "completed": "2026-06-16T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Wire styling strategy (StyleSheet.create per ADR-034) into the design-system layer",
+            "description": "Styling decision is LOCKED to StyleSheet.create in ADR-034 (decision 1) \u2014 NativeWind rejected for v1. This task wires the convention: a small StyleSheet helper/pattern over the T-006 tokens, plus a short usage note. No decision work remains here.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-006"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["design", "styling", "adr-033"],
+            "phase": "design",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-15T00:00:00.000Z",
+                "started": "2026-06-16T00:00:00.000Z",
+                "completed": "2026-06-16T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Integrate phosphor-react-native (per ADR-034) + add lint rule banning @repo/icons in apps/mobile",
+            "description": "Icon library is LOCKED to phosphor-react-native in ADR-034 (decision 2). Integrate it and add a Biome/lint guard that bans importing @repo/icons (DOM phosphor SVG, crashes in RN) anywhere in apps/mobile.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Integrate phosphor-react-native (subpath imports \u2014 barrel would add 6MB)",
+                    "completed": true
+                },
+                {
+                    "title": "Lint rule banning @repo/icons in apps/mobile",
+                    "completed": true
+                }
+            ],
+            "tags": ["icons", "lint", "adr-033"],
+            "phase": "design",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-15T00:00:00.000Z",
+                "started": "2026-06-16T00:00:00.000Z",
+                "completed": "2026-06-16T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "API client (src/lib/api/client.ts): typed fetch wrapper + Zod parse + auth header injection",
+            "description": "Typed API client initialized with baseUrl from expo-constants (EXPO_PUBLIC_API_URL). Attaches the BA session token (cookie or Bearer, per T-003 outcome). Every response parsed with the matching @repo/schemas schema before returning (fail-fast on drift). Only calls /public/* and /protected/* \u2014 never /admin/*.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-010", "T-013"],
+            "subtasks": [],
+            "tags": ["api", "client", "zod"],
+            "phase": "api",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-15T00:00:00.000Z",
+                "started": "2026-06-16T00:00:00.000Z",
+                "completed": "2026-06-16T00:00:00.000Z"
+            },
+            "note": "apiFetch RO-RO typed client (src/lib/api/): tier-guard (no admin), getCookie() reuse from T-003 auth-client, {success,data} envelope unwrap, Zod safeParse\u2192ApiSchemaError on drift, typed ApiError/ApiSchemaError. 21 real unit tests pass (verified)."
+        },
+        {
+            "id": "T-010",
+            "title": "TanStack Query setup: QueryClient in root layout, custom hooks pattern",
+            "description": "Initialize @tanstack/react-query QueryClient in the root layout (same version pinned in the monorepo / apps/admin). Establish the custom-hooks pattern for entity data fetching that Sub-1/3/4 will consume.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-009"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["api", "tanstack-query"],
+            "phase": "api",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-15T00:00:00.000Z",
+                "started": "2026-06-16T00:00:00.000Z",
+                "completed": "2026-06-16T00:00:00.000Z"
+            },
+            "note": "react-query 5.59.20 (matches admin). QueryClientProvider in root _layout (module singleton \u2014 RN has no SSR, unlike admin's per-request useState). useApiQuery/useApiMutation wrap apiFetch + pass QueryFunctionContext.signal for cancellation. shouldRetry predicate: no retry 4xx ApiError, retry network/5xx. 42 tests pass (21 client + 21 query)."
+        },
+        {
+            "id": "T-011",
+            "title": "Push notification setup: expo-notifications init, getExpoPushTokenAsync, new POST /protected/profile/push-token API endpoint",
+            "description": "Initialize expo-notifications (single channel v1, ADR-034 decision 6). On first authenticated launch call getExpoPushTokenAsync() and POST the token to a NEW endpoint POST /api/v1/protected/profile/push-token (small API addition). Foreground notifications shown in-app; background follows OS behavior. Register EXPO_PUBLIC_API_URL + EXPO_PUBLIC_APP_ENV env vars.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-004"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "expo-notifications init + push token retrieval",
+                    "completed": true,
+                    "note": "Code complete: setNotificationHandler + registerPushToken (permission request + getExpoPushTokenAsync + apiFetch POST), graceful-degrade (permission-denied / no-project-id / error never throws). Live token retrieval is device-gated (needs real device + eas init projectId)."
+                },
+                {
+                    "title": "POST /protected/profile/push-token endpoint (API)",
+                    "completed": true
+                },
+                {
+                    "title": "Foreground/background receipt handling",
+                    "completed": true,
+                    "note": "Foreground handler configured (setNotificationHandler shouldShowBanner/List, SDK 56 shape); background follows OS behavior per ADR-034. Live receipt is device-gated."
+                }
+            ],
+            "tags": ["native", "push", "api"],
+            "phase": "native",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-15T00:00:00.000Z",
+                "started": "2026-06-16T00:00:00.000Z",
+                "completed": "2026-06-16T00:00:00.000Z"
+            },
+            "note": "DONE (backend + mobile). BACKEND: user_push_tokens table (UNIQUE(token), upsert reassigns userId) + UserPushTokenModel.upsertByToken + UserService.registerPushToken + POST /api/v1/protected/profile/push-token (rate-limited 20/min) + migration 0015_sticky_timeslip.sql + endpoint-gate-matrix row (SPEC-145 CI guard the backend agent missed — I fixed). MOBILE: expo-notifications ~56.0.18 + app.json plugin + src/lib/push/ (setNotificationHandler SDK56 shouldShowBanner/List + registerPushToken graceful-degrade never-throws + mapPlatform + usePushRegistration hook wired in root _layout when authed). Verified green: api (service 6 + handler 4 + gate-matrix 798), drift EXIT 0, mobile typecheck/lint/test(113)/build(ios+android) all 0. DEVICE-GATED (owner): live push receipt + real token need a device + `eas init` projectId (registerPushToken returns reason='no-project-id' until then). OWNER OPS: apply migration 0015 on staging/prod (hops db-migrate)."
+        },
+        {
+            "id": "T-012",
+            "title": "CI: add apps/mobile to GitHub Actions (typecheck + lint + test); EAS Build setup skeleton (eas.json, app identifiers)",
+            "description": "Wire apps/mobile into the GitHub Actions pipeline (typecheck + lint + test). Add EAS Build skeleton (eas.json with development/preview/production profiles, Apple/Google app identifiers placeholders). EAS chosen in ADR-034 (decision 7). Flag owner to add EXPO_PUBLIC_API_URL to EAS Secrets per build profile.",
+            "status": "in_progress",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["ci", "eas"],
+            "phase": "ci",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-15T00:00:00.000Z",
+                "started": "2026-06-16T00:00:00.000Z",
+                "completed": "2026-06-16T00:00:00.000Z"
+            },
+            "note": "CI: mobile is already swept by GitHub Actions via Turbo globs \u2014 `pnpm lint/typecheck/test/build` schedule mobile#lint/typecheck/test/build (verified with turbo dry-run). No mobile-specific CI job added (same pattern as web/admin/api). FIX REQUIRED: `pnpm build` runs `expo export` with NO platform flag \u2192 defaulted to ALL platforms incl web \u2192 failed (no react-native-web). Set app.json `platforms: [ios, android]` (matches ADR-034 native-only intent) so the CI build job exports ios+android Hermes bundles to dist/ (5.2/6.4MB) and passes. EAS skeleton: apps/mobile/eas.json with development/preview/production profiles (appVersionSource remote, channels, EXPO_PUBLIC_APP_ENV per profile; staging/prod EXPO_PUBLIC_API_URL inlined \u2014 public, not secret). app identifiers com.hospeda.app already in app.json. Owner action items (eas init projectId, expo-dev-client, credentials) in apps/mobile/docs/eas-build.md. Verified green: typecheck/lint(26 files)/test(42)/build all exit 0."
+        },
+        {
+            "id": "T-013",
+            "title": "Unit tests for API client (Zod parse, error handling), auth utilities, design token exports",
+            "description": "Vitest unit tests: API client Zod parse + error handling paths, auth utility functions, design-token exports. AAA pattern, 90% coverage target on the new modules.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-009", "T-006"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "vitest"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-15T00:00:00.000Z",
+                "started": "2026-06-16T00:00:00.000Z",
+                "completed": "2026-06-16T00:00:00.000Z"
+            },
+            "note": "Coverage to 100% stmts on every new LOGIC module: src/design (colors/typography/spacing/radius/theme/index — 92 invariant tests: hex validity, monotonic scales, lineHeightFor, theme aggregation), src/lib/api (client/use-api-query/query-client error+edge paths — types.ts is interface-only=0%, expected), src/lib/auth (already 100%), src/lib/push (incl use-push-registration hook), src/lib/i18n (getTranslation fallback chain). 250 mobile tests total, typecheck/lint/build all 0. OUT OF SCOPE (per T-013 spec = API client/auth utils/design tokens): RN component render tests for screens (sign-in/sign-up/placeholders) + AuthButton/TextField + auth-client.ts config — need @testing-library/react-native (deferred; screens get real coverage in Sub-1+ when they have real content)."
+        }
+    ],
+    "summary": {
+        "total": 13,
+        "pending": 0,
+        "inProgress": 0,
+        "completed": 13,
+        "blocked": 0,
+        "averageComplexity": 1.9
+    }
+}
