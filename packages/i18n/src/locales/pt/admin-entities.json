@@ -826,5 +826,60 @@
                 "label": "Faixa de preço"
             }
         }
+    },
+    "commerceLeads": {
+        "page": {
+            "title": "Leads de comércio",
+            "empty": "Nenhum lead para exibir.",
+            "loadError": "Erro ao carregar leads. Tente novamente."
+        },
+        "filter": {
+            "label": "Status:",
+            "all": "Todos"
+        },
+        "status": {
+            "pending": "Pendente",
+            "reviewing": "Em revisão",
+            "approved": "Aprovado",
+            "rejected": "Rejeitado"
+        },
+        "columns": {
+            "businessName": "Negócio",
+            "contactName": "Contato",
+            "email": "Email",
+            "domain": "Domínio",
+            "status": "Status",
+            "createdAt": "Data",
+            "actions": "Ações"
+        },
+        "actions": {
+            "handle": "Resolver",
+            "provision": "Criar conta"
+        },
+        "handle": {
+            "title": "Resolver lead",
+            "decisionLabel": "Decisão",
+            "approve": "Aprovar",
+            "reject": "Rejeitar",
+            "noteLabel": "Nota (opcional)",
+            "notePlaceholder": "Comentário interno para a equipe...",
+            "submit": "Confirmar",
+            "submitting": "Salvando...",
+            "successApproved": "Lead aprovado com sucesso.",
+            "successRejected": "Lead rejeitado."
+        },
+        "provision": {
+            "title": "Criar conta de proprietário",
+            "description": "Uma conta COMMERCE_OWNER será criada para {{businessName}} ({{email}}). As credenciais temporárias serão enviadas por email.",
+            "confirm": "Criar conta",
+            "submitting": "Criando...",
+            "successMessage": "Conta criada para {{name}} ({{email}}). As credenciais foram enviadas por email.",
+            "error": "Erro ao criar conta. Tente novamente."
+        },
+        "pagination": {
+            "prev": "Anterior",
+            "next": "Próximo",
+            "info": "Página {{page}} de {{totalPages}} · {{total}} leads"
+        }
     }
 }

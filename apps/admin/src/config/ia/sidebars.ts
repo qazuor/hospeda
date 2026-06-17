@@ -201,6 +201,20 @@ const catalogoSidebar: SidebarInput = {
                 }
             ]
         },
+        { type: 'separator', id: 'sep-commerce-leads' },
+        // ── Leads de comercios (SPEC-239) ─────────────────────────────────
+        {
+            type: 'link',
+            id: 'commerce-leads',
+            label: {
+                es: 'Leads de comercios',
+                en: 'Commerce leads',
+                pt: 'Leads de comércio'
+            },
+            icon: 'MailIcon',
+            route: '/platform/commerce-leads',
+            permissions: ['COMMERCE_VIEW_ALL']
+        },
         { type: 'separator', id: 'sep-content-moderation' },
         // ── Content Moderation (SPEC-195) ─────────────────────────────────
         {
