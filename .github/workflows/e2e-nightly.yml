@@ -81,6 +81,7 @@ jobs:
       HOSPEDA_API_URL: http://localhost:3001
       HOSPEDA_SITE_URL: http://localhost:4321
       HOSPEDA_ADMIN_URL: http://localhost:3000
+      HOSPEDA_REVALIDATION_SECRET: ci-placeholder-revalidation-secret-min-32-characters
       HOSPEDA_MAILER_HOST: localhost
       HOSPEDA_MAILER_PORT: '1025'
 
