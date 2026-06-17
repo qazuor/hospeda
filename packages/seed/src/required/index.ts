@@ -11,6 +11,7 @@ import { seedBillingEntitlements } from './billingEntitlements.seed.js';
 import { seedBillingLimits } from './billingLimits.seed.js';
 import { seedBillingPlans } from './billingPlans.seed.js';
 import { seedBillingPromoCodes } from './billingPromoCodes.seed.js';
+import { seedCommercePlan } from './commercePlan.seed.js';
 import { seedContentModerationData } from './contentModeration.seed.js';
 import { seedDestinations } from './destinations.seed.js';
 import { seedExchangeRateConfig } from './exchangeRateConfig.seed.js';
@@ -140,6 +141,11 @@ export async function runRequiredSeeds(context: SeedContext): Promise<void> {
 
         // 12. Load billing plans (uses entitlements and limits)
         await seedBillingPlans(context);
+
+        // 12.1 Load the commerce-listing plan (SPEC-239 T-049). Separate from
+        //      ALL_PLANS so it stays excluded from accommodation plan lists;
+        //      stamps billing_plans.product_domain='commerce'.
+        await seedCommercePlan(context);
 
         // 13. Load billing add-ons (after plans, uses entitlements and limits)
         await seedBillingAddons(context);

@@ -455,6 +455,54 @@ export const TOURIST_VIP_PLAN: PlanDefinition = {
     limits: [...TOURIST_VIP_LIMITS]
 };
 
+// ─── COMMERCE PLAN (SPEC-239) ──────────────────────────────────
+
+/**
+ * Commerce-listing plan (SPEC-239 T-049).
+ *
+ * A single flat subscription that makes a commerce listing (gastronomy,
+ * experience, etc.) visible. It is **deliberately NOT part of {@link ALL_PLANS}**:
+ * the accommodation seed loop, the public/accommodation plan list, and the
+ * grant-matrix snapshot tests all operate on `ALL_PLANS` and must stay
+ * accommodation-only. This plan is seeded by its own helper
+ * (`seedCommercePlan`) which stamps `billing_plans.product_domain='commerce'`
+ * so the public plans endpoint and the web pricing pages exclude it.
+ *
+ * `category` is set to `'owner'` ONLY to satisfy the {@link PlanCategory} type
+ * (D-ISOLATION forbids widening `PlanCategory` to add `'commerce'`, which would
+ * ripple through every `Record<PlanCategory>` usage). The real domain
+ * discriminator is the `product_domain` column, not this field — nothing in the
+ * accommodation flow ever reads this plan because it is excluded from
+ * `ALL_PLANS` and filtered out by product_domain.
+ *
+ * NOTE (owner): `monthlyPriceArs` below is a PLACEHOLDER (ARS 5,000.00). The
+ * owner must confirm / override the real commerce-listing price via the admin
+ * UI (it is a commercial-layer field; the seed never overwrites it once set).
+ *
+ * `hasTrial=false`, `entitlements=[]`, `limits=[]`: commerce visibility is
+ * driven by the subscription status via the `commerce_listing_subscriptions`
+ * link table + the visibility reconciler, NOT by the billing entitlement engine.
+ */
+export const COMMERCE_LISTING_PLAN: PlanDefinition = {
+    slug: 'commerce-listing',
+    name: 'Commerce Listing',
+    description: 'Subscription that makes a commerce listing visible (SPEC-239).',
+    // See JSDoc: 'owner' only satisfies the PlanCategory type; product_domain is
+    // the real discriminator. Do NOT widen PlanCategory to add 'commerce'.
+    category: 'owner',
+    // PLACEHOLDER price — owner to confirm via admin UI (ARS 5,000.00 in cents).
+    monthlyPriceArs: 500000,
+    annualPriceArs: null,
+    monthlyPriceUsdRef: 5,
+    hasTrial: false,
+    trialDays: 0,
+    isDefault: false,
+    sortOrder: 1,
+    isActive: true,
+    entitlements: [],
+    limits: []
+};
+
 // ─── ALL PLANS ─────────────────────────────────────────────────
 
 /** All available plans in the system */
