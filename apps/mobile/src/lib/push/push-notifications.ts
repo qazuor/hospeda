@@ -31,6 +31,7 @@ import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
 import { apiFetch } from '../api/client';
+import { logger } from '../logger';
 
 // ---------------------------------------------------------------------------
 // Foreground notification handler (module-scope — runs once at import time)
@@ -128,7 +129,7 @@ export async function registerPushToken(): Promise<RegisterPushTokenResult> {
 
         // Step 2 — Bail out if permission was denied
         if (finalStatus !== 'granted') {
-            console.warn('[push] Notification permission denied.');
+            logger.warn('[push] Notification permission denied.');
             return { registered: false, reason: 'permission-denied' };
         }
 
@@ -142,7 +143,7 @@ export async function registerPushToken(): Promise<RegisterPushTokenResult> {
         if (!projectId) {
             // Owner must run `eas init` to populate extra.eas.projectId in app.json.
             // getExpoPushTokenAsync throws without it — we skip gracefully instead.
-            console.warn(
+            logger.warn(
                 '[push] EAS projectId not found in Constants.expoConfig.extra.eas.projectId. ' +
                     'Run `eas init` to configure it. Push token registration skipped.'
             );
@@ -165,7 +166,7 @@ export async function registerPushToken(): Promise<RegisterPushTokenResult> {
     } catch (error) {
         // Catch-all: network failure, token fetch failure, API error, etc.
         const message = error instanceof Error ? error.message : String(error);
-        console.warn('[push] Push token registration failed:', message);
+        logger.warn('[push] Push token registration failed:', message);
         return { registered: false, reason: message };
     }
 }
