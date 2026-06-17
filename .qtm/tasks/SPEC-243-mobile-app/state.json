@@ -417,7 +417,7 @@
             "id": "T-043",
             "title": "Consultas list screen with unread badge",
             "description": "conversations/index.tsx (Consultas tab, PR-B). GET /api/v1/protected/conversations/owner + unread-count badge. Tap pushes thread.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-040"],
             "blocks": ["T-044"],
@@ -425,21 +425,21 @@
             "tags": ["conversations", "host", "list"],
             "phase": "host",
             "qualityGate": {
-                "lint": "pending",
-                "typecheck": "pending",
-                "tests": "pending"
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-17T06:35:39.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-17T07:39:57.000Z",
+                "completed": "2026-06-17T08:35:31.000Z"
             }
         },
         {
             "id": "T-044",
             "title": "Consulta thread screen + reply input",
             "description": "conversations/[id].tsx. GET /api/v1/protected/conversations/owner/:id (thread). Reply via POST /owner/:id/messages (CONVERSATION_REPLY_OWN). Invalidate on reply.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-043"],
             "blocks": ["T-046"],
@@ -447,14 +447,14 @@
             "tags": ["conversations", "host", "thread", "mutation"],
             "phase": "host",
             "qualityGate": {
-                "lint": "pending",
-                "typecheck": "pending",
-                "tests": "pending"
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-17T06:35:39.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-17T07:39:57.000Z",
+                "completed": "2026-06-17T08:35:31.000Z"
             }
         },
         {
@@ -506,8 +506,8 @@
         "total": 20,
         "pending": 0,
         "inProgress": 0,
-        "completed": 16,
-        "blocked": 4,
+        "completed": 18,
+        "blocked": 2,
         "averageComplexity": 2.05
     }
 }
