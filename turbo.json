@@ -9,6 +9,7 @@
         "HOSPEDA_API_URL",
         "HOSPEDA_SITE_URL",
         "HOSPEDA_ADMIN_URL",
+        "HOSPEDA_REVALIDATION_SECRET",
         "VITE_API_URL",
         "VITE_SITE_URL",
         "VITE_ADMIN_URL",
