@@ -48,8 +48,10 @@ import {
     GastronomySearchSchema,
     type GastronomyUpdateInput,
     GastronomyUpdateInputSchema,
+    LifecycleStatusEnum,
     PermissionEnum,
-    ServiceErrorCode
+    ServiceErrorCode,
+    VisibilityEnum
 } from '@repo/schemas';
 import type {
     Actor,
@@ -226,8 +228,30 @@ export class GastronomyService extends BaseCommerceListingService<
         checkGastronomyCanRestore(actor, entity);
     }
 
-    protected _canView(actor: Actor, _entity: Gastronomy): void {
+    protected _canView(actor: Actor, entity: Gastronomy): void {
         checkGastronomyCanView(actor);
+
+        // Non-admin actors receive NOT_FOUND for soft-deleted listings.
+        if (
+            entity.deletedAt !== null &&
+            entity.deletedAt !== undefined &&
+            !hasPermission(actor, PermissionEnum.COMMERCE_VIEW_ALL)
+        ) {
+            throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Gastronomy not found');
+        }
+
+        // Non-admin / non-owner actors receive NOT_FOUND for non-ACTIVE or PRIVATE
+        // listings (mirrors AccommodationService._canView for public-read gating).
+        const isOwner = entity.ownerId === actor.id;
+        const isStaff = hasPermission(actor, PermissionEnum.COMMERCE_VIEW_ALL);
+        if (!isOwner && !isStaff) {
+            if (entity.lifecycleState !== LifecycleStatusEnum.ACTIVE) {
+                throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Gastronomy not found');
+            }
+            if (entity.visibility === VisibilityEnum.PRIVATE) {
+                throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Gastronomy not found');
+            }
+        }
     }
 
     protected _canList(actor: Actor): void {
@@ -539,8 +563,22 @@ export class GastronomyService extends BaseCommerceListingService<
             // 5. Delegate to base update() for junction sync + hook pipeline.
             //    Owner update schema is a strict subset of the full update schema,
             //    so casting is safe here.  Base update signature: update(actor, id, data, ctx?).
+            //
+            //    IMPORTANT: base update() runs _canUpdate (requires COMMERCE_EDIT_ALL).
+            //    updateOwn() already performed its own ownership + section-level checks
+            //    above, so we elevate the actor here to include COMMERCE_EDIT_ALL to
+            //    satisfy the base gate without requiring owners to hold that permission.
+            const elevatedActor: Actor = {
+                ...actor,
+                permissions: actor.permissions.includes(PermissionEnum.COMMERCE_EDIT_ALL)
+                    ? actor.permissions
+                    : ([
+                          ...actor.permissions,
+                          PermissionEnum.COMMERCE_EDIT_ALL
+                      ] as typeof actor.permissions)
+            };
             return this.update(
-                actor,
+                elevatedActor,
                 gastronomyId,
                 validated as GastronomyUpdateInput,
                 ctx as ServiceContext
