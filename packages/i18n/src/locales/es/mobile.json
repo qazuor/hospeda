@@ -28,7 +28,8 @@
             "planPastDue": "Pago pendiente",
             "loading": "Cargando panel...",
             "error": "No se pudo cargar el panel. Intentá de nuevo.",
-            "retry": "Reintentar"
+            "retry": "Reintentar",
+            "viewMetrics": "Ver métricas"
         },
         "accommodations": {
             "listTitle": "Mis fichas",
@@ -79,6 +80,18 @@
                 "sendError": "No se pudo enviar el mensaje. Intentá de nuevo.",
                 "back": "Volver"
             }
+        },
+        "metrics": {
+            "title": "Métricas de vistas",
+            "window7d": "Últimos 7 días",
+            "window30d": "Últimos 30 días",
+            "accommodationLabel": "Alojamiento",
+            "uniqueLabel": "Visitas únicas",
+            "totalLabel": "Visitas totales",
+            "empty": "Sin datos de vistas para este período.",
+            "error": "No se pudieron cargar las métricas. Intentá de nuevo.",
+            "loading": "Cargando métricas...",
+            "retry": "Reintentar"
         }
     }
 }

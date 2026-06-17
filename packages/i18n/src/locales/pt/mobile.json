@@ -28,7 +28,8 @@
             "planPastDue": "Pagamento pendente",
             "loading": "Carregando painel...",
             "error": "Não foi possível carregar o painel. Tente novamente.",
-            "retry": "Tentar novamente"
+            "retry": "Tentar novamente",
+            "viewMetrics": "Ver métricas"
         },
         "accommodations": {
             "listTitle": "Minhas fichas",
@@ -79,6 +80,18 @@
                 "sendError": "Não foi possível enviar a mensagem. Tente novamente.",
                 "back": "Voltar"
             }
+        },
+        "metrics": {
+            "title": "Métricas de visualizações",
+            "window7d": "Últimos 7 dias",
+            "window30d": "Últimos 30 dias",
+            "accommodationLabel": "Acomodação",
+            "uniqueLabel": "Visualizações únicas",
+            "totalLabel": "Total de visualizações",
+            "empty": "Sem dados de visualizações para este período.",
+            "error": "Não foi possível carregar as métricas. Tente novamente.",
+            "loading": "Carregando métricas...",
+            "retry": "Tentar novamente"
         }
     }
 }
