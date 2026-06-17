@@ -96,3 +96,24 @@ export const GastronomyFeatureRelationSchema = z.object({
         .optional()
 });
 export type GastronomyFeatureRelation = z.infer<typeof GastronomyFeatureRelationSchema>;
+
+/**
+ * Experience-Feature Relation Schema (SPEC-240)
+ * Represents the many-to-many relationship between experience listings and features.
+ * Mirrors GastronomyFeatureRelationSchema with experienceId instead of gastronomyId.
+ */
+export const ExperienceFeatureRelationSchema = z.object({
+    experienceId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    featureId: FeatureIdSchema,
+    hostReWriteName: z
+        .string()
+        .min(3, { message: 'zodError.experienceFeature.hostReWriteName.min' })
+        .max(100, { message: 'zodError.experienceFeature.hostReWriteName.max' })
+        .optional(),
+    comments: z
+        .string()
+        .min(5, { message: 'zodError.experienceFeature.comments.min' })
+        .max(300, { message: 'zodError.experienceFeature.comments.max' })
+        .optional()
+});
+export type ExperienceFeatureRelation = z.infer<typeof ExperienceFeatureRelationSchema>;

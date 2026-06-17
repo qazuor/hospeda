@@ -87,3 +87,14 @@ export const GastronomyAmenityRelationSchema = z.object({
     amenityId: AmenityIdSchema
 });
 export type GastronomyAmenityRelation = z.infer<typeof GastronomyAmenityRelationSchema>;
+
+/**
+ * Experience-Amenity Relation Schema (SPEC-240)
+ * Represents the many-to-many relationship between experience listings and amenities.
+ * Mirrors GastronomyAmenityRelationSchema: no pricing or optional-cost fields.
+ */
+export const ExperienceAmenityRelationSchema = z.object({
+    experienceId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    amenityId: AmenityIdSchema
+});
+export type ExperienceAmenityRelation = z.infer<typeof ExperienceAmenityRelationSchema>;
