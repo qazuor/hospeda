@@ -299,13 +299,13 @@
                 "started": "2026-06-16T00:00:00.000Z",
                 "completed": "2026-06-16T00:00:00.000Z"
             },
-            "note": "DONE (backend + mobile). BACKEND: user_push_tokens table (UNIQUE(token), upsert reassigns userId) + UserPushTokenModel.upsertByToken + UserService.registerPushToken + POST /api/v1/protected/profile/push-token (rate-limited 20/min) + migration 0015_sticky_timeslip.sql + endpoint-gate-matrix row (SPEC-145 CI guard the backend agent missed — I fixed). MOBILE: expo-notifications ~56.0.18 + app.json plugin + src/lib/push/ (setNotificationHandler SDK56 shouldShowBanner/List + registerPushToken graceful-degrade never-throws + mapPlatform + usePushRegistration hook wired in root _layout when authed). Verified green: api (service 6 + handler 4 + gate-matrix 798), drift EXIT 0, mobile typecheck/lint/test(113)/build(ios+android) all 0. DEVICE-GATED (owner): live push receipt + real token need a device + `eas init` projectId (registerPushToken returns reason='no-project-id' until then). OWNER OPS: apply migration 0015 on staging/prod (hops db-migrate)."
+            "note": "DONE (backend + mobile). BACKEND: user_push_tokens table (UNIQUE(token), upsert reassigns userId) + UserPushTokenModel.upsertByToken + UserService.registerPushToken + POST /api/v1/protected/profile/push-token (rate-limited 20/min) + migration 0015_sticky_timeslip.sql + endpoint-gate-matrix row (SPEC-145 CI guard the backend agent missed \u2014 I fixed). MOBILE: expo-notifications ~56.0.18 + app.json plugin + src/lib/push/ (setNotificationHandler SDK56 shouldShowBanner/List + registerPushToken graceful-degrade never-throws + mapPlatform + usePushRegistration hook wired in root _layout when authed). Verified green: api (service 6 + handler 4 + gate-matrix 798), drift EXIT 0, mobile typecheck/lint/test(113)/build(ios+android) all 0. DEVICE-GATED (owner): live push receipt + real token need a device + `eas init` projectId (registerPushToken returns reason='no-project-id' until then). OWNER OPS: apply migration 0015 on staging/prod (hops db-migrate)."
         },
         {
             "id": "T-012",
             "title": "CI: add apps/mobile to GitHub Actions (typecheck + lint + test); EAS Build setup skeleton (eas.json, app identifiers)",
             "description": "Wire apps/mobile into the GitHub Actions pipeline (typecheck + lint + test). Add EAS Build skeleton (eas.json with development/preview/production profiles, Apple/Google app identifiers placeholders). EAS chosen in ADR-034 (decision 7). Flag owner to add EXPO_PUBLIC_API_URL to EAS Secrets per build profile.",
-            "status": "in_progress",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": [],
@@ -345,15 +345,169 @@
                 "started": "2026-06-16T00:00:00.000Z",
                 "completed": "2026-06-16T00:00:00.000Z"
             },
-            "note": "Coverage to 100% stmts on every new LOGIC module: src/design (colors/typography/spacing/radius/theme/index — 92 invariant tests: hex validity, monotonic scales, lineHeightFor, theme aggregation), src/lib/api (client/use-api-query/query-client error+edge paths — types.ts is interface-only=0%, expected), src/lib/auth (already 100%), src/lib/push (incl use-push-registration hook), src/lib/i18n (getTranslation fallback chain). 250 mobile tests total, typecheck/lint/build all 0. OUT OF SCOPE (per T-013 spec = API client/auth utils/design tokens): RN component render tests for screens (sign-in/sign-up/placeholders) + AuthButton/TextField + auth-client.ts config — need @testing-library/react-native (deferred; screens get real coverage in Sub-1+ when they have real content)."
+            "note": "Coverage to 100% stmts on every new LOGIC module: src/design (colors/typography/spacing/radius/theme/index \u2014 92 invariant tests: hex validity, monotonic scales, lineHeightFor, theme aggregation), src/lib/api (client/use-api-query/query-client error+edge paths \u2014 types.ts is interface-only=0%, expected), src/lib/auth (already 100%), src/lib/push (incl use-push-registration hook), src/lib/i18n (getTranslation fallback chain). 250 mobile tests total, typecheck/lint/build all 0. OUT OF SCOPE (per T-013 spec = API client/auth utils/design tokens): RN component render tests for screens (sign-in/sign-up/placeholders) + AuthButton/TextField + auth-client.ts config \u2014 need @testing-library/react-native (deferred; screens get real coverage in Sub-1+ when they have real content)."
+        },
+        {
+            "id": "T-040",
+            "title": "Host dashboard screen: consultation count, fichas count, plan summary",
+            "description": "Build the host home/dashboard screen (Inicio tab). Fetch GET /api/v1/protected/host/dashboard (counts: total/published/draft/archived properties, unreadConversations, plan summary). Read-only summary cards. Convert (host)/_layout.tsx from Stack to Tabs (Inicio + Fichas tabs).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-041", "T-045"],
+            "subtasks": [],
+            "tags": ["dashboard", "host", "query"],
+            "phase": "host",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-17T06:35:39.000Z",
+                "started": "2026-06-17T06:35:39.000Z",
+                "completed": "2026-06-17T07:21:49.000Z"
+            }
+        },
+        {
+            "id": "T-041",
+            "title": "Fichas list screen (host-scoped accommodations)",
+            "description": "accommodations/index.tsx (Fichas tab, nested Stack). Fetch GET /api/v1/protected/accommodations (owner-scoped, paginated). Card per accommodation. Tap pushes detail/edit. Loading/error/empty states.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-040"],
+            "blocks": ["T-042"],
+            "subtasks": [],
+            "tags": ["accommodations", "host", "list"],
+            "phase": "host",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-17T06:35:39.000Z",
+                "started": "2026-06-17T06:35:39.000Z",
+                "completed": "2026-06-17T07:21:49.000Z"
+            }
+        },
+        {
+            "id": "T-042",
+            "title": "Ficha detail + operational-fields edit screen (PATCH via protected endpoint)",
+            "description": "accommodations/[id].tsx. Edit ONLY operational fields (contact, social, summary, description). PATCH /api/v1/protected/accommodations/:id (EDIT_ACCOMMODATION_INFO). CAVEAT: openingHours lives in extraInfo JSONB, not a flat HTTP field; defer schedule editor until mapper confirmed.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-041"],
+            "blocks": ["T-046"],
+            "subtasks": [],
+            "tags": ["accommodations", "host", "edit", "mutation"],
+            "phase": "host",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-17T06:35:39.000Z",
+                "started": "2026-06-17T06:35:39.000Z",
+                "completed": "2026-06-17T07:21:49.000Z"
+            }
+        },
+        {
+            "id": "T-043",
+            "title": "Consultas list screen with unread badge",
+            "description": "conversations/index.tsx (Consultas tab, PR-B). GET /api/v1/protected/conversations/owner + unread-count badge. Tap pushes thread.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-040"],
+            "blocks": ["T-044"],
+            "subtasks": [],
+            "tags": ["conversations", "host", "list"],
+            "phase": "host",
+            "qualityGate": {
+                "lint": "pending",
+                "typecheck": "pending",
+                "tests": "pending"
+            },
+            "timestamps": {
+                "created": "2026-06-17T06:35:39.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-044",
+            "title": "Consulta thread screen + reply input",
+            "description": "conversations/[id].tsx. GET /api/v1/protected/conversations/owner/:id (thread). Reply via POST /owner/:id/messages (CONVERSATION_REPLY_OWN). Invalidate on reply.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-043"],
+            "blocks": ["T-046"],
+            "subtasks": [],
+            "tags": ["conversations", "host", "thread", "mutation"],
+            "phase": "host",
+            "qualityGate": {
+                "lint": "pending",
+                "typecheck": "pending",
+                "tests": "pending"
+            },
+            "timestamps": {
+                "created": "2026-06-17T06:35:39.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-045",
+            "title": "Metrics screen (basic)",
+            "description": "metrics.tsx (pushed from dashboard, href:null). GET /api/v1/protected/views/accommodations/me?window=7d|30d + daily-series. Window toggle.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-040"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["metrics", "host", "views"],
+            "phase": "host",
+            "qualityGate": {
+                "lint": "pending",
+                "typecheck": "pending",
+                "tests": "pending"
+            },
+            "timestamps": {
+                "created": "2026-06-17T06:35:39.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-046",
+            "title": "Tests: dashboard hooks, ficha edit form validation, consulta reply",
+            "description": "Vitest unit tests for dashboard/list/patch/reply hooks + ficha edit form validation. Follow client.test.ts pattern.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-042", "T-044"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["tests", "host"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pending",
+                "typecheck": "pending",
+                "tests": "pending"
+            },
+            "timestamps": {
+                "created": "2026-06-17T06:35:39.000Z",
+                "started": null,
+                "completed": null
+            }
         }
     ],
     "summary": {
-        "total": 13,
+        "total": 20,
         "pending": 0,
         "inProgress": 0,
-        "completed": 13,
-        "blocked": 0,
-        "averageComplexity": 1.9
+        "completed": 16,
+        "blocked": 4,
+        "averageComplexity": 2.05
     }
 }
