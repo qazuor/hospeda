@@ -44,7 +44,14 @@ const KNOWN_GAPS_REGISTRY_NOT_IN_SCHEMA = new Set<string>([
     // Build-time only — consumed by @sentry/vite-plugin during the admin
     // build to upload source maps. Not read by the runtime, so it is
     // deliberately absent from AdminEnvSchema.
-    'SENTRY_AUTH_TOKEN'
+    'SENTRY_AUTH_TOKEN',
+
+    // Platform-injected by Vercel — the admin Vite build reads VERCEL_GIT_COMMIT_SHA
+    // to stamp the release identifier (vite.config.ts), but AdminEnvSchema validates
+    // only the runtime VITE_* bundle vars. Registered in SYSTEM_ENV_VARS with
+    // apps: ['api', 'web', 'admin'] so they appear in the admin .env.example.
+    'VERCEL',
+    'VERCEL_GIT_COMMIT_SHA'
 ]);
 
 /**

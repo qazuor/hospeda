@@ -29,7 +29,15 @@ const KNOWN_GAPS_REGISTRY_NOT_IN_SCHEMA = new Set<string>([
     // Build-time only — consumed by @sentry/astro during the web build to
     // upload source maps. Not read by the runtime, so it is deliberately
     // absent from serverEnvSchema.
-    'SENTRY_AUTH_TOKEN'
+    'SENTRY_AUTH_TOKEN',
+
+    // Platform-injected by Vercel — sentry.server.config.ts reads
+    // VERCEL_GIT_COMMIT_SHA to stamp the release identifier, but
+    // serverEnvBaseSchema validates only the server runtime vars. Registered
+    // in SYSTEM_ENV_VARS with apps: ['api', 'web', 'admin'] so they appear
+    // in the web .env.example for reference.
+    'VERCEL',
+    'VERCEL_GIT_COMMIT_SHA'
 ]);
 
 /**
