@@ -86,33 +86,14 @@
  * ```
  */
 
-import Constants from 'expo-constants';
 import type { ZodTypeAny } from 'zod';
 import { getCookie } from '../auth-client';
+import { API_BASE_URL } from '../env';
 import { ApiError, ApiSchemaError } from './errors';
 import type { ApiErrorEnvelope, ApiFetchInput, ApiFetchOutput, ApiSuccessEnvelope } from './types';
 
-// ---------------------------------------------------------------------------
-// Base URL resolution (mirrors auth-client.ts)
-// ---------------------------------------------------------------------------
-
-/**
- * Resolves the Hospeda API base URL from Expo Constants (set in `app.json`
- * `extra.apiUrl`) or the `EXPO_PUBLIC_API_URL` env var, with a fallback to
- * the local dev server.
- *
- * Mirrors the `apiBaseUrl` resolution in `@/lib/auth-client` so both the
- * auth client and the data client always target the same server.
- */
-const resolveBaseUrl = (): string => {
-    const fromConstants = (Constants.expoConfig?.extra as Record<string, string> | undefined)
-        ?.apiUrl;
-    const fromEnv = process.env.EXPO_PUBLIC_API_URL;
-    return (fromConstants ?? fromEnv ?? 'http://localhost:3001').replace(/\/$/, '');
-};
-
-// Evaluated once at module load time; stable for the app lifetime.
-const API_BASE_URL: string = resolveBaseUrl();
+// Base URL is resolved + validated centrally in `../env` so the auth client and
+// the data client always target the same server.
 
 // ---------------------------------------------------------------------------
 // Admin-tier guard
