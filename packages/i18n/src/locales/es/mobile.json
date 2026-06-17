@@ -8,7 +8,8 @@
     "host": {
         "tabs": {
             "home": "Inicio",
-            "accommodations": "Fichas"
+            "accommodations": "Fichas",
+            "conversations": "Consultas"
         },
         "dashboard": {
             "title": "Panel de anfitrión",
@@ -59,6 +60,24 @@
                 "error": "No se pudo guardar. Intentá de nuevo.",
                 "loading": "Cargando ficha...",
                 "notFound": "Ficha no encontrada."
+            }
+        },
+        "conversations": {
+            "title": "Consultas",
+            "loading": "Cargando consultas...",
+            "error": "No se pudieron cargar las consultas. Intentá de nuevo.",
+            "empty": "No tenés consultas aún.",
+            "retry": "Reintentar",
+            "guestUnknown": "Huésped",
+            "thread": {
+                "title": "Conversación",
+                "loading": "Cargando mensajes...",
+                "error": "No se pudo cargar la conversación. Intentá de nuevo.",
+                "empty": "No hay mensajes en esta conversación.",
+                "inputPlaceholder": "Escribí tu respuesta...",
+                "send": "Enviar",
+                "sendError": "No se pudo enviar el mensaje. Intentá de nuevo.",
+                "back": "Volver"
             }
         }
     }

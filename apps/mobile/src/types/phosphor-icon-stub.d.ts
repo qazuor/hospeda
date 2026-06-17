@@ -33,3 +33,4 @@ export const X: Icon;
 export const ShareNetwork: Icon;
 export const SlidersHorizontal: Icon;
 export const Buildings: Icon;
+export const ChatCircle: Icon;
