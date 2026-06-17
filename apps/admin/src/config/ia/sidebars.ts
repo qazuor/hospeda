@@ -169,6 +169,38 @@ const catalogoSidebar: SidebarInput = {
                 }
             ]
         },
+        { type: 'separator', id: 'sep-gastronomia' },
+        // ── Gastronomía ────────────────────────────────────────────────────
+        {
+            type: 'group',
+            id: 'gastronomia',
+            label: { es: 'Gastronomía', en: 'Gastronomy', pt: 'Gastronomia' },
+            icon: 'OffersIcon',
+            defaultOpen: false,
+            permissions: ['COMMERCE_VIEW_ALL', 'COMMERCE_CREATE'],
+            items: [
+                {
+                    type: 'link',
+                    id: 'gastronomy-list',
+                    label: { es: 'Listado', en: 'List', pt: 'Lista' },
+                    icon: 'ListIcon',
+                    route: '/gastronomies',
+                    permissions: ['COMMERCE_VIEW_ALL']
+                },
+                {
+                    type: 'link',
+                    id: 'gastronomy-new',
+                    label: {
+                        es: 'Nueva gastronomía',
+                        en: 'New gastronomy',
+                        pt: 'Nova gastronomia'
+                    },
+                    icon: 'AddIcon',
+                    route: '/gastronomies/new',
+                    permissions: ['COMMERCE_CREATE']
+                }
+            ]
+        },
         { type: 'separator', id: 'sep-content-moderation' },
         // ── Content Moderation (SPEC-195) ─────────────────────────────────
         {
