@@ -6,9 +6,60 @@
         }
     },
     "host": {
-        "home": {
-            "title": "Início anfitrião",
-            "subtitle": "Gerencie suas acomodações"
+        "tabs": {
+            "home": "Início",
+            "accommodations": "Fichas"
+        },
+        "dashboard": {
+            "title": "Painel do anfitrião",
+            "propertiesCard": "Propriedades",
+            "total": "Total",
+            "published": "Publicadas",
+            "draft": "Rascunhos",
+            "archived": "Arquivadas",
+            "conversationsCard": "Consultas não lidas",
+            "planCard": "Plano atual",
+            "planNull": "Sem plano ativo",
+            "planTrial": "Período de teste",
+            "planActive": "Ativo",
+            "planCancelled": "Cancelado",
+            "planExpired": "Expirado",
+            "planPastDue": "Pagamento pendente",
+            "loading": "Carregando painel...",
+            "error": "Não foi possível carregar o painel. Tente novamente.",
+            "retry": "Tentar novamente"
+        },
+        "accommodations": {
+            "listTitle": "Minhas fichas",
+            "lifecycleActive": "Ativa",
+            "lifecycleDraft": "Rascunho",
+            "lifecycleArchived": "Arquivada",
+            "loading": "Carregando fichas...",
+            "error": "Não foi possível carregar as fichas. Tente novamente.",
+            "empty": "Você ainda não tem fichas.",
+            "retry": "Tentar novamente",
+            "edit": {
+                "title": "Editar ficha",
+                "contact": "Informações de contato",
+                "phone": "Telefone",
+                "email": "E-mail",
+                "website": "Site",
+                "social": "Redes sociais",
+                "twitter": "Twitter / X",
+                "facebook": "Facebook",
+                "instagram": "Instagram",
+                "linkedin": "LinkedIn",
+                "tiktok": "TikTok",
+                "youtube": "YouTube",
+                "summary": "Resumo",
+                "summaryHint": "Entre 10 e 300 caracteres",
+                "description": "Descrição",
+                "save": "Salvar alterações",
+                "success": "Ficha atualizada com sucesso.",
+                "error": "Não foi possível salvar. Tente novamente.",
+                "loading": "Carregando ficha...",
+                "notFound": "Ficha não encontrada."
+            }
         }
     }
 }

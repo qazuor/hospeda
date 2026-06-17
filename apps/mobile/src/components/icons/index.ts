@@ -150,3 +150,5 @@ export { Warning as WarningIcon } from 'phosphor-react-native/src/icons/Warning'
 export { X as CloseIcon } from 'phosphor-react-native/src/icons/X';
 export { ShareNetwork as ShareIcon } from 'phosphor-react-native/src/icons/ShareNetwork';
 export { SlidersHorizontal as FiltersIcon } from 'phosphor-react-native/src/icons/SlidersHorizontal';
+// Host management
+export { Buildings as BuildingsIcon } from 'phosphor-react-native/src/icons/Buildings';

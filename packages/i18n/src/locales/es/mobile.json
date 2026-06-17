@@ -6,9 +6,60 @@
         }
     },
     "host": {
-        "home": {
-            "title": "Inicio anfitrión",
-            "subtitle": "Gestioná tus alojamientos"
+        "tabs": {
+            "home": "Inicio",
+            "accommodations": "Fichas"
+        },
+        "dashboard": {
+            "title": "Panel de anfitrión",
+            "propertiesCard": "Propiedades",
+            "total": "Total",
+            "published": "Publicadas",
+            "draft": "Borradores",
+            "archived": "Archivadas",
+            "conversationsCard": "Consultas sin leer",
+            "planCard": "Plan actual",
+            "planNull": "Sin plan activo",
+            "planTrial": "Prueba",
+            "planActive": "Activo",
+            "planCancelled": "Cancelado",
+            "planExpired": "Vencido",
+            "planPastDue": "Pago pendiente",
+            "loading": "Cargando panel...",
+            "error": "No se pudo cargar el panel. Intentá de nuevo.",
+            "retry": "Reintentar"
+        },
+        "accommodations": {
+            "listTitle": "Mis fichas",
+            "lifecycleActive": "Activa",
+            "lifecycleDraft": "Borrador",
+            "lifecycleArchived": "Archivada",
+            "loading": "Cargando fichas...",
+            "error": "No se pudieron cargar las fichas. Intentá de nuevo.",
+            "empty": "No tenés fichas aún.",
+            "retry": "Reintentar",
+            "edit": {
+                "title": "Editar ficha",
+                "contact": "Información de contacto",
+                "phone": "Teléfono",
+                "email": "Email",
+                "website": "Sitio web",
+                "social": "Redes sociales",
+                "twitter": "Twitter / X",
+                "facebook": "Facebook",
+                "instagram": "Instagram",
+                "linkedin": "LinkedIn",
+                "tiktok": "TikTok",
+                "youtube": "YouTube",
+                "summary": "Resumen",
+                "summaryHint": "Entre 10 y 300 caracteres",
+                "description": "Descripción",
+                "save": "Guardar cambios",
+                "success": "Ficha actualizada correctamente.",
+                "error": "No se pudo guardar. Intentá de nuevo.",
+                "loading": "Cargando ficha...",
+                "notFound": "Ficha no encontrada."
+            }
         }
     }
 }

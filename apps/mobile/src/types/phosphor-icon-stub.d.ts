@@ -32,3 +32,4 @@ export const Warning: Icon;
 export const X: Icon;
 export const ShareNetwork: Icon;
 export const SlidersHorizontal: Icon;
+export const Buildings: Icon;
