@@ -76,7 +76,9 @@ export const namespaces = [
     // AI Natural-Language Search (SPEC-199)
     'aiSearch',
     // Host trades directory (SPEC-241)
-    'host-trades'
+    'host-trades',
+    // Mobile app (SPEC-243)
+    'mobile'
 ] as const;
 
 export type Namespace = (typeof namespaces)[number];
@@ -161,6 +163,7 @@ import homeEs from './locales/es/home.json';
 import hostTradesEs from './locales/es/host-trades.json';
 import hostEs from './locales/es/host.json';
 import mapsEs from './locales/es/maps.json';
+import mobileEs from './locales/es/mobile.json';
 import navEs from './locales/es/nav.json';
 import newsletterEs from './locales/es/newsletter.json';
 import ownersEs from './locales/es/owners.json';
@@ -215,6 +218,7 @@ import homeEn from './locales/en/home.json';
 import hostTradesEn from './locales/en/host-trades.json';
 import hostEn from './locales/en/host.json';
 import mapsEn from './locales/en/maps.json';
+import mobileEn from './locales/en/mobile.json';
 import navEn from './locales/en/nav.json';
 import newsletterEn from './locales/en/newsletter.json';
 import ownersEn from './locales/en/owners.json';
@@ -269,6 +273,7 @@ import homePt from './locales/pt/home.json';
 import hostTradesPt from './locales/pt/host-trades.json';
 import hostPt from './locales/pt/host.json';
 import mapsPt from './locales/pt/maps.json';
+import mobilePt from './locales/pt/mobile.json';
 import navPt from './locales/pt/nav.json';
 import newsletterPt from './locales/pt/newsletter.json';
 import ownersPt from './locales/pt/owners.json';
@@ -339,7 +344,8 @@ const rawTranslations = {
         revalidation: revalidationEs,
         tags: tagsEs,
         maps: mapsEs,
-        'admin-whats-new': adminWhatsNewEs
+        'admin-whats-new': adminWhatsNewEs,
+        mobile: mobileEs
     },
     en: {
         about: aboutEn,
@@ -393,7 +399,8 @@ const rawTranslations = {
         revalidation: revalidationEn,
         tags: tagsEn,
         maps: mapsEn,
-        'admin-whats-new': adminWhatsNewEn
+        'admin-whats-new': adminWhatsNewEn,
+        mobile: mobileEn
     },
     pt: {
         about: aboutPt,
@@ -447,7 +454,8 @@ const rawTranslations = {
         revalidation: revalidationPt,
         tags: tagsPt,
         maps: mapsPt,
-        'admin-whats-new': adminWhatsNewPt
+        'admin-whats-new': adminWhatsNewPt,
+        mobile: mobilePt
     }
 };
 

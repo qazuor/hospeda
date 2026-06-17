@@ -1,0 +1,14 @@
+{
+    "tourist": {
+        "home": {
+            "title": "Tourist Home",
+            "subtitle": "Explore accommodations in the region"
+        }
+    },
+    "host": {
+        "home": {
+            "title": "Host Home",
+            "subtitle": "Manage your accommodations"
+        }
+    }
+}
