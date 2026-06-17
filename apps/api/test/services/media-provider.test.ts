@@ -101,6 +101,19 @@ describe('getMediaProvider()', () => {
         // validateApiEnv() does not call process.exit(1) before reaching the
         // media-provider branch being tested.
         process.env.HOSPEDA_AI_VAULT_MASTER_KEY = 'test-vault-master-key-0123456789abcd';
+        // Env hardening made these service credentials prod-required. Provide
+        // valid placeholders so validateApiEnv() reaches the media-provider
+        // branch under test. Cloudinary is deliberately left empty above — it
+        // stays optional (graceful degradation to a null provider).
+        process.env.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN = 'APP_USR-test-token';
+        process.env.HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET = 'test-webhook-secret';
+        process.env.HOSPEDA_EMAIL_API_KEY = 'test-email-api-key';
+        process.env.HOSPEDA_EMAIL_FROM_EMAIL = 'noreply@hospeda.com.ar';
+        process.env.HOSPEDA_SENTRY_DSN = 'https://test@sentry.io/1';
+        process.env.HOSPEDA_LINEAR_API_KEY = 'lin_api_test';
+        process.env.HOSPEDA_POSTHOG_KEY = 'phc_test';
+        process.env.HOSPEDA_APIFY_TOKEN = 'apify_api_test';
+        process.env.HOSPEDA_GOOGLE_PLACES_API_KEY = 'google-places-test';
 
         vi.resetModules();
         const envModule: EnvModule = await import('../../src/utils/env');
