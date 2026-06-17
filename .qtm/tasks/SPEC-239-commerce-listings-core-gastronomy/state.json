@@ -1,7 +1,7 @@
 {
     "version": "1.0",
     "specRef": "SPEC-239",
-    "title": "Commerce listing core (merchant-with-subscription) + Gastronom\u00eda",
+    "title": "Commerce listing core (merchant-with-subscription) + Gastronomía",
     "created": "2026-06-15T23:23:58.000Z",
     "tasks": [
         {
@@ -299,7 +299,7 @@
         {
             "id": "T-009",
             "title": "Map COMMERCE_OWNER role to COMMERCE_* permissions in seed",
-            "description": "Add the COMMERCE_OWNER \u2192 COMMERCE_*_EDIT_OWN operational-only mapping (plus ACCESS_PANEL_ADMIN, BILLING_VIEW_OWN as appropriate) in `packages/seed/src/required/rolePermissions.seed.ts`. Do NOT grant identity/core or admin perms. Tests: `packages/seed/test/rolePermissions.test.ts` (or extend) asserting COMMERCE_OWNER has ONLY the operational set and lacks any identity/lifecycle/admin permission.",
+            "description": "Add the COMMERCE_OWNER → COMMERCE_*_EDIT_OWN operational-only mapping (plus ACCESS_PANEL_ADMIN, BILLING_VIEW_OWN as appropriate) in `packages/seed/src/required/rolePermissions.seed.ts`. Do NOT grant identity/core or admin perms. Tests: `packages/seed/test/rolePermissions.test.ts` (or extend) asserting COMMERCE_OWNER has ONLY the operational set and lacks any identity/lifecycle/admin permission.",
             "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-007", "T-008"],
@@ -373,7 +373,7 @@
         {
             "id": "T-011",
             "title": "Create gastronomy admin + operational CRUD schemas",
-            "description": "Create `packages/schemas/src/entities/gastronomy/gastronomy.crud.schema.ts`: admin Create (identity/core + ownerId/destinationId/type + optional amenityIds/featureIds), operational owner Update via `.pick()` (schedule/contact/social/media/menuUrl/priceRange/richDescription/amenityIds/featureIds ONLY \u2014 identity/core fields ABSENT so forged values rejected pre-service), plus Patch/Delete/Restore. Tests: `gastronomy.crud.schema.test.ts` asserting owner-update rejects a forged `name`/`slug`/`type` and admin-create requires identity fields.",
+            "description": "Create `packages/schemas/src/entities/gastronomy/gastronomy.crud.schema.ts`: admin Create (identity/core + ownerId/destinationId/type + optional amenityIds/featureIds), operational owner Update via `.pick()` (schedule/contact/social/media/menuUrl/priceRange/richDescription/amenityIds/featureIds ONLY — identity/core fields ABSENT so forged values rejected pre-service), plus Patch/Delete/Restore. Tests: `gastronomy.crud.schema.test.ts` asserting owner-update rejects a forged `name`/`slug`/`type` and admin-create requires identity fields.",
             "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-010"],
@@ -782,7 +782,7 @@
         {
             "id": "T-022",
             "title": "Create commerce_listing_subscriptions link dbschema",
-            "description": "Create `packages/db/src/schemas/commerce/commerce_listing_subscriptions.dbschema.ts`: id, subscriptionId FK\u2192billing_subscriptions, productDomain ('commerce'), entityType (CommerceEntityType), entityId uuid, status mirror, createdAt/updatedAt, UNIQUE(entityType, entityId), index entityId/status. Tests: `commerce_listing_subscriptions.dbschema.test.ts` asserting unique constraint + indexes.",
+            "description": "Create `packages/db/src/schemas/commerce/commerce_listing_subscriptions.dbschema.ts`: id, subscriptionId FK→billing_subscriptions, productDomain ('commerce'), entityType (CommerceEntityType), entityId uuid, status mirror, createdAt/updatedAt, UNIQUE(entityType, entityId), index entityId/status. Tests: `commerce_listing_subscriptions.dbschema.test.ts` asserting unique constraint + indexes.",
             "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002"],
@@ -1078,7 +1078,7 @@
         {
             "id": "T-030",
             "title": "Implement generic commerce permissions module",
-            "description": "Create `packages/service-core/src/services/commerce/commerce.permissions.ts` exporting generic `checkCanEditOperational(actor, listing)`, `checkCanViewOwn`, `checkCanAdmin*` etc., all using `hasPermission(actor, PermissionEnum.COMMERCE_*)` \u2014 NEVER role checks. Tests: `commerce.permissions.test.ts` asserting an actor with only operational perms passes operational but fails identity/admin checks.",
+            "description": "Create `packages/service-core/src/services/commerce/commerce.permissions.ts` exporting generic `checkCanEditOperational(actor, listing)`, `checkCanViewOwn`, `checkCanAdmin*` etc., all using `hasPermission(actor, PermissionEnum.COMMERCE_*)` — NEVER role checks. Tests: `commerce.permissions.test.ts` asserting an actor with only operational perms passes operational but fails identity/admin checks.",
             "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-007", "T-008"],
@@ -1148,7 +1148,7 @@
         {
             "id": "T-032",
             "title": "Implement commerce-visibility reconciler",
-            "description": "Create `packages/service-core/src/services/commerce/commerce-visibility.ts`: given a subscription-status change for a listing (looked up via commerce_listing_subscriptions link), flip listing visibility/lifecycleState (active\u2192PUBLIC/ACTIVE, otherwise hidden). INDEPENDENT of the entitlement engine (US-4 / AC-4.5). Tests: `commerce-visibility.test.ts` asserting active\u2192visible and cancel/expire\u2192hidden, data preserved.",
+            "description": "Create `packages/service-core/src/services/commerce/commerce-visibility.ts`: given a subscription-status change for a listing (looked up via commerce_listing_subscriptions link), flip listing visibility/lifecycleState (active→PUBLIC/ACTIVE, otherwise hidden). INDEPENDENT of the entitlement engine (US-4 / AC-4.5). Tests: `commerce-visibility.test.ts` asserting active→visible and cancel/expire→hidden, data preserved.",
             "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-022", "T-026", "T-028"],
@@ -1261,7 +1261,7 @@
         {
             "id": "T-035",
             "title": "Implement GastronomyService extends BaseCommerceListingService",
-            "description": "Create `packages/service-core/src/services/gastronomy/gastronomy.service.ts` extending BaseCommerceListingService. Adds ONLY: gastro field handling (type/priceRange/menuUrl), its junction tables wiring, gastro search filters, forced owner-scoping in `_executeAdminSearch` for *_VIEW_OWN actors. Tests: `gastronomy.service.test.ts` covering create/update + forced owner scoping (non-owner\u2192404).",
+            "description": "Create `packages/service-core/src/services/gastronomy/gastronomy.service.ts` extending BaseCommerceListingService. Adds ONLY: gastro field handling (type/priceRange/menuUrl), its junction tables wiring, gastro search filters, forced owner-scoping in `_executeAdminSearch` for *_VIEW_OWN actors. Tests: `gastronomy.service.test.ts` covering create/update + forced owner scoping (non-owner→404).",
             "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-011", "T-013", "T-021", "T-028", "T-029", "T-030"],
@@ -1405,7 +1405,7 @@
         {
             "id": "T-039",
             "title": "Implement gastronomy review service + denormalized rating recompute",
-            "description": "Create `packages/service-core/src/services/gastronomy/gastronomy.review.ts`: create (\u2192PENDING, UNIQUE userId/gastronomyId), moderate approve/reject, and recompute averageRating/reviewsCount from APPROVED rows only on approve/update/delete via service hooks. Tests: `gastronomy.review.test.ts` covering one-review-per-user, PENDING default, and rating recompute counting only approved.",
+            "description": "Create `packages/service-core/src/services/gastronomy/gastronomy.review.ts`: create (→PENDING, UNIQUE userId/gastronomyId), moderate approve/reject, and recompute averageRating/reviewsCount from APPROVED rows only on approve/update/delete via service hooks. Tests: `gastronomy.review.test.ts` covering one-review-per-user, PENDING default, and rating recompute counting only approved.",
             "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-017", "T-035"],
@@ -1502,7 +1502,7 @@
                     "completed": false
                 },
                 {
-                    "title": "Write gate regression test (flagged\u2192403)",
+                    "title": "Write gate regression test (flagged→403)",
                     "completed": false
                 }
             ],
@@ -1561,7 +1561,7 @@
         {
             "id": "T-043",
             "title": "Implement gastronomy protected owner API routes",
-            "description": "Create `apps/api/src/routes/gastronomy/protected/` using createProtectedRoute: PATCH :id (owner operational-only update), GET :id (owner view). Forced owner scoping (non-owner\u2192403/404). Tests: `apps/api/test/gastronomy/protected.test.ts` asserting owner can patch operational fields, forged identity field rejected, and non-owner gets 403/404.",
+            "description": "Create `apps/api/src/routes/gastronomy/protected/` using createProtectedRoute: PATCH :id (owner operational-only update), GET :id (owner view). Forced owner scoping (non-owner→403/404). Tests: `apps/api/test/gastronomy/protected.test.ts` asserting owner can patch operational fields, forged identity field rejected, and non-owner gets 403/404.",
             "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-011", "T-013", "T-036"],
@@ -1596,7 +1596,7 @@
         {
             "id": "T-044",
             "title": "Implement gastronomy protected FAQ + review API routes",
-            "description": "Create owner FAQ routes (POST/PUT/DELETE /:id/faqs[/:faqId], PUT /:id/faqs/reorder) and tourist review route (POST /:id/reviews \u2192 PENDING) under `apps/api/src/routes/gastronomy/protected/`. Tests: `apps/api/test/gastronomy/protected-faq-review.test.ts` asserting FAQ CRUD/reorder owner-scoped and one-review-per-user enforced.",
+            "description": "Create owner FAQ routes (POST/PUT/DELETE /:id/faqs[/:faqId], PUT /:id/faqs/reorder) and tourist review route (POST /:id/reviews → PENDING) under `apps/api/src/routes/gastronomy/protected/`. Tests: `apps/api/test/gastronomy/protected-faq-review.test.ts` asserting FAQ CRUD/reorder owner-scoped and one-review-per-user enforced.",
             "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-016", "T-017", "T-037", "T-039"],
@@ -1705,7 +1705,7 @@
         {
             "id": "T-047",
             "title": "Implement commerce lead public + admin API routes",
-            "description": "Create `apps/api/src/routes/commerce/` lead routes: public `POST /api/v1/public/commerce/leads` (createPublicRoute, honeypot/throttle spam guard, US-1) and admin `GET /api/v1/admin/commerce/leads` + `POST /\u2026/leads/:id/handle` (createAdminRoute). Tests: `apps/api/test/commerce/leads.test.ts` asserting public intake validates+notifies (mocked) and admin can list/mark-handled.",
+            "description": "Create `apps/api/src/routes/commerce/` lead routes: public `POST /api/v1/public/commerce/leads` (createPublicRoute, honeypot/throttle spam guard, US-1) and admin `GET /api/v1/admin/commerce/leads` + `POST /…/leads/:id/handle` (createAdminRoute). Tests: `apps/api/test/commerce/leads.test.ts` asserting public intake validates+notifies (mocked) and admin can list/mark-handled.",
             "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-018", "T-019", "T-033"],
@@ -1810,7 +1810,7 @@
         {
             "id": "T-050",
             "title": "Wire webhook/cron to commerce-visibility reconciler",
-            "description": "Invoke the commerce-visibility reconciler from the existing MP webhook + dunning/finalize crons whenever a product_domain='commerce' subscription changes status (apps/api webhook + cron jobs). Tests: `apps/api/test/commerce/visibility-wiring.test.ts` asserting active\u2192listing visible and cancel/dunning\u2192listing hidden (integration, MP stub).",
+            "description": "Invoke the commerce-visibility reconciler from the existing MP webhook + dunning/finalize crons whenever a product_domain='commerce' subscription changes status (apps/api webhook + cron jobs). Tests: `apps/api/test/commerce/visibility-wiring.test.ts` asserting active→listing visible and cancel/dunning→listing hidden (integration, MP stub).",
             "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-032", "T-048", "T-049"],
@@ -1825,7 +1825,7 @@
                     "completed": false
                 },
                 {
-                    "title": "Write active\u2192visible / cancel\u2192hidden tests",
+                    "title": "Write active→visible / cancel→hidden tests",
                     "completed": false
                 }
             ],
@@ -1969,7 +1969,7 @@
                     "completed": false
                 },
                 {
-                    "title": "Handle hidden\u2192404",
+                    "title": "Handle hidden→404",
                     "completed": false
                 },
                 {
@@ -2028,7 +2028,7 @@
         {
             "id": "T-056",
             "title": "Build public lead form page (web)",
-            "description": "Create the CORE 'Public\u00e1 tu restaurante' lead form page/section in `apps/web/` (native HTML form + small hook + honeypot) posting to the public commerce lead endpoint. Generic copy reusable by SPEC-240. CSS Modules + tokens, i18n. Tests: `apps/web/test/` asserting the form validates required fields and submits to the lead endpoint.",
+            "description": "Create the CORE 'Publicá tu restaurante' lead form page/section in `apps/web/` (native HTML form + small hook + honeypot) posting to the public commerce lead endpoint. Generic copy reusable by SPEC-240. CSS Modules + tokens, i18n. Tests: `apps/web/test/` asserting the form validates required fields and submits to the lead endpoint.",
             "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-047", "T-052"],
@@ -2064,70 +2064,70 @@
             "id": "T-057",
             "title": "Build generic commerce admin Entity shell config layer",
             "description": "Create the CORE generic commerce Entity shell config in `apps/admin/` so gastronomy (and later experiencias) register list/view/edit/create by CONFIG, reusing the existing EntityView/EntityEdit shell family (AC-8.3). Identity/core sections admin-enabled; operational sections shared. Tests: `apps/admin/test/` asserting the shell renders from a config object without forking shell code.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-050"],
             "blocks": ["T-059", "T-060"],
             "subtasks": [
                 {
                     "title": "Define commerce shell config contract",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Wire to existing EntityView/EntityEdit shells",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write config-driven shell test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "commerce", "shell", "core"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T23:23:58.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-17T00:00:00.000Z",
+                "completed": "2026-06-17T00:00:00.000Z"
             }
         },
         {
             "id": "T-058",
             "title": "Build admin lead inbox + owner-provisioning UX",
-            "description": "Create the CORE lead inbox view (list + mark-handled) and the owner-provisioning UX inside the create flow (create/pick user \u2192 fields \u2192 send credentials) in `apps/admin/`. TanStack Query + Form, Tailwind, shadcn. Tests: `apps/admin/test/` asserting lead list renders + mark-handled mutates and the provisioning step creates/picks a user.",
-            "status": "pending",
+            "description": "Create the CORE lead inbox view (list + mark-handled) and the owner-provisioning UX inside the create flow (create/pick user → fields → send credentials) in `apps/admin/`. TanStack Query + Form, Tailwind, shadcn. Tests: `apps/admin/test/` asserting lead list renders + mark-handled mutates and the provisioning step creates/picks a user.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-047", "T-053", "T-054", "T-055", "T-056"],
             "blocks": ["T-060"],
             "subtasks": [
                 {
                     "title": "Build lead inbox list + mark-handled",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Build owner-provisioning create step",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write inbox + provisioning tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "commerce-lead", "provisioning", "core"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T23:23:58.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-17T00:00:00.000Z",
+                "completed": "2026-06-17T00:00:00.000Z"
             }
         },
         {
@@ -2168,14 +2168,14 @@
         {
             "id": "T-060",
             "title": "Write cross-layer E2E test for gastronomy flow",
-            "description": "Write an E2E/integration test spanning admin-create \u2192 owner provision \u2192 start subscription (MP stub) \u2192 active\u2192visible \u2192 public listing/detail render \u2192 owner operational edit \u2192 review submit\u2192moderate\u2192rating recompute. Place in `apps/api/test/` or `apps/web/test/` integration suite. Asserts the full admin-sells lifecycle end-to-end.",
+            "description": "Write an E2E/integration test spanning admin-create → owner provision → start subscription (MP stub) → active→visible → public listing/detail render → owner operational edit → review submit→moderate→rating recompute. Place in `apps/api/test/` or `apps/web/test/` integration suite. Asserts the full admin-sells lifecycle end-to-end.",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-057", "T-058", "T-059"],
             "blocks": ["T-061", "T-062"],
             "subtasks": [
                 {
-                    "title": "Script admin-create\u2192provision\u2192subscribe\u2192visible",
+                    "title": "Script admin-create→provision→subscribe→visible",
                     "completed": false
                 },
                 {
@@ -2203,7 +2203,7 @@
         {
             "id": "T-061",
             "title": "Execute staging MP smoke for commerce subscription (SPEC-143)",
-            "description": "Per SPEC-143 billing rules, run the relevant staging-smoke sections for the commerce subscription surface against the MP sandbox (start-subscription \u2192 active webhook \u2192 visible, cancel \u2192 hidden). File the sign-off entry in the checklist and reference it. BINDING gate for the billing surface \u2014 cannot merge without it. NOTE: operational/owner action; depends on T-051 isolation + T-060 e2e passing.",
+            "description": "Per SPEC-143 billing rules, run the relevant staging-smoke sections for the commerce subscription surface against the MP sandbox (start-subscription → active webhook → visible, cancel → hidden). File the sign-off entry in the checklist and reference it. BINDING gate for the billing surface — cannot merge without it. NOTE: operational/owner action; depends on T-051 isolation + T-060 e2e passing.",
             "status": "pending",
             "complexity": 2,
             "blockedBy": ["T-051", "T-060"],
@@ -2238,7 +2238,7 @@
         {
             "id": "T-062",
             "title": "Write core/gastro separation ADR + SPEC-240 reuse checklist",
-            "description": "Write the ADR (under `docs/decisions/`) covering: core/gastro separation, binary subscription + product_domain isolation rationale, admin-sells flow, COMMERCE_OWNER role. Include the SPEC-240 reuse checklist enumerating EXACTLY what Experiencias adds (confirming no CORE internals touched) \u2014 this is AC-9.2. No tests (docs).",
+            "description": "Write the ADR (under `docs/decisions/`) covering: core/gastro separation, binary subscription + product_domain isolation rationale, admin-sells flow, COMMERCE_OWNER role. Include the SPEC-240 reuse checklist enumerating EXACTLY what Experiencias adds (confirming no CORE internals touched) — this is AC-9.2. No tests (docs).",
             "status": "pending",
             "complexity": 2,
             "blockedBy": ["T-060"],
