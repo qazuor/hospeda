@@ -13,7 +13,7 @@ import { appDefaultLocale, getTranslation } from '../../src/lib/i18n';
  * 2. Provide a Sign out button so the auth gate can be exercised end-to-end
  *    on device (sign-out clears the session → root effect redirects to (auth)).
  *
- * Uses `auth-ui.signOut.button` i18n key (verified in es/auth-ui.json line 115).
+ * Uses `mobile.host.home.*` i18n keys and `auth-ui.signOut.button`.
  *
  * Expo Router requires a **default export** for route files — this is the
  * one legitimate exception to the named-export-only rule (see CLAUDE.md).
@@ -27,8 +27,8 @@ export default function HostHomeScreen() {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>Host Home</Text>
-            <Text style={styles.subtitle}>{t('auth-ui.userMenu.myAccommodations')}</Text>
+            <Text style={styles.title}>{t('mobile.host.home.title')}</Text>
+            <Text style={styles.subtitle}>{t('mobile.host.home.subtitle')}</Text>
             <AuthButton
                 label={t('auth-ui.signOut.button')}
                 onPress={() => signOut()}
