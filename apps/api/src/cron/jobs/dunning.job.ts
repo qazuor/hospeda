@@ -27,6 +27,7 @@ import { billingDunningAttempts, getDb, sql, withTransaction } from '@repo/db';
 import { getQZPayBilling } from '../../middlewares/billing.js';
 import { clearEntitlementCache } from '../../middlewares/entitlement.js';
 import { sendSubscriptionCancelledNotification } from '../../routes/webhooks/mercadopago/notifications.js';
+import { reconcileCommerceListingForSubscription } from '../../services/commerce-reconcile.service.js';
 import { loadBillingSettings } from '../../utils/billing-settings.js';
 import { apiLogger } from '../../utils/logger.js';
 import type { CronJobDefinition } from '../types.js';
@@ -258,6 +259,16 @@ export const dunningJob: CronJobDefinition = {
                         switch (event.type) {
                             case 'subscription.retry_succeeded':
                                 apiLogger.info(logData, 'Dunning: payment retry succeeded');
+
+                                // SPEC-239 T-050: a recovered payment re-activates the
+                                // subscription, so re-show any linked commerce listing
+                                // (active → PUBLIC). No-op for accommodation subs;
+                                // non-blocking.
+                                await reconcileCommerceListingForSubscription({
+                                    subscriptionId: event.subscriptionId,
+                                    subscriptionStatus: 'active',
+                                    source: 'dunning-cron'
+                                });
                                 break;
                             case 'subscription.canceled_nonpayment':
                                 apiLogger.warn(
@@ -316,6 +327,15 @@ export const dunningJob: CronJobDefinition = {
                                 // customer stops seeing paid-plan entitlements immediately,
                                 // rather than waiting for the 5-minute TTL to expire.
                                 clearEntitlementCache(event.customerId);
+
+                                // SPEC-239 T-050: hide any commerce listing linked to this
+                                // subscription (cancelled → PRIVATE). No-op for accommodation
+                                // subs; non-blocking (never breaks the cron).
+                                await reconcileCommerceListingForSubscription({
+                                    subscriptionId: event.subscriptionId,
+                                    subscriptionStatus: 'cancelled',
+                                    source: 'dunning-cron'
+                                });
                                 break;
                             case 'subscription.retry_failed':
                                 apiLogger.warn(logData, 'Dunning: payment retry failed');

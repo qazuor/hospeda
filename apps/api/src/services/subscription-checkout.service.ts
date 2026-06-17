@@ -26,7 +26,15 @@ import type {
     QZPaySubscriptionWithHelpers
 } from '@qazuor/qzpay-core';
 import { resolveFreeTrialExtensionPromo } from '@repo/billing';
-import { type DrizzleClient, billingSubscriptions, getDb } from '@repo/db';
+import {
+    type DrizzleClient,
+    billingSubscriptions,
+    commerceListingSubscriptions,
+    getDb,
+    sql,
+    withTransaction
+} from '@repo/db';
+import { ProductDomainEnum } from '@repo/schemas';
 import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger.js';
 
@@ -427,6 +435,160 @@ export async function initiatePaidMonthlySubscription(
         resourceType: 'subscription',
         planSlug,
         sourceLabel: 'start-paid-monthly'
+    });
+
+    return {
+        checkoutUrl,
+        localSubscriptionId: subscription.id,
+        expiresAt: new Date(Date.now() + PENDING_PROVIDER_TTL_MS).toISOString()
+    };
+}
+
+/**
+ * Input for {@link initiateCommerceMonthlySubscription} (SPEC-239 T-048).
+ *
+ * Mirrors {@link InitiatePaidMonthlySubscriptionInput} but adds the commerce
+ * entity coordinates so the function can stamp the new subscription as a
+ * commerce-domain sub (D3) and upsert the `commerce_listing_subscriptions`
+ * link row (D4). No promo support — commerce listings have no trial promos.
+ */
+export interface InitiateCommerceMonthlySubscriptionInput {
+    /** Hospeda billing customer ID (the qzpay customer ID of the listing owner). */
+    readonly customerId: string;
+    /** Plan slug — matched against `QZPayPlan.name` (the commerce plan slug). */
+    readonly planSlug: string;
+    /** Commerce entity discriminator (e.g. `'gastronomy'`). */
+    readonly entityType: string;
+    /** UUID of the commerce entity being subscribed (gastronomies.id, etc.). */
+    readonly entityId: string;
+    /** Resolved qzpay billing instance. */
+    readonly billing: QZPayBilling;
+    /** URL builders the route already resolved from env. */
+    readonly urls: {
+        readonly paymentMethodReturnUrl: string;
+        readonly notificationUrl: string;
+    };
+    /** Drizzle client override for tests. */
+    readonly db?: DrizzleClient;
+}
+
+/**
+ * Output shape for a commerce subscription initiation. Mirrors the
+ * accommodation monthly result so the route returns either uniformly.
+ */
+export interface InitiateCommerceMonthlySubscriptionResult {
+    readonly checkoutUrl: string;
+    readonly localSubscriptionId: string;
+    readonly expiresAt: string;
+}
+
+/**
+ * Initiate a monthly commerce-listing subscription (SPEC-239 T-048).
+ *
+ * Reuses the accommodation `mode: 'paid'` MP preapproval flow, then:
+ *   1. (D3) stamps `billing_subscriptions.product_domain = 'commerce'` via a raw
+ *      SQL UPDATE — the column is NOT in qzpay-core's TS schema (extras carril).
+ *   2. (D4) upserts the `commerce_listing_subscriptions` link row keyed on the
+ *      UNIQUE(entity_type, entity_id) constraint (one link per entity), so a
+ *      re-subscription overwrites `subscriptionId` + `status` rather than
+ *      inserting a duplicate.
+ *
+ * The link row is created with `status = subscription.status` (qzpay's
+ * `incomplete` until the preapproval webhook activates it). The visibility
+ * reconciler flips the listing to PUBLIC once the webhook/cron applies an
+ * active status.
+ *
+ * @throws SubscriptionCheckoutError When the plan or monthly price is missing,
+ *   or when the payment adapter returns no init point.
+ */
+export async function initiateCommerceMonthlySubscription(
+    input: InitiateCommerceMonthlySubscriptionInput
+): Promise<InitiateCommerceMonthlySubscriptionResult> {
+    const { customerId, planSlug, entityType, entityId, billing, urls } = input;
+
+    const plan = await resolvePlanBySlug(billing, planSlug);
+    if (!plan) {
+        throw new SubscriptionCheckoutError('PLAN_NOT_FOUND', `Plan '${planSlug}' not found`);
+    }
+
+    const monthlyPrice = findMonthlyPrice(plan.prices);
+    if (!monthlyPrice) {
+        throw new SubscriptionCheckoutError(
+            'NO_MONTHLY_PRICE',
+            `Plan '${planSlug}' has no active monthly price`
+        );
+    }
+
+    const subscription: QZPaySubscriptionWithHelpers = await billing.subscriptions.create({
+        customerId,
+        planId: plan.id,
+        priceId: monthlyPrice.id,
+        mode: 'paid',
+        billingInterval: 'monthly',
+        paymentMethodReturnUrl: urls.paymentMethodReturnUrl,
+        notificationUrl: urls.notificationUrl,
+        metadata: {
+            source: 'start-commerce-monthly',
+            createdBy: 'commerce-subscription-flow',
+            productDomain: ProductDomainEnum.COMMERCE,
+            entityType,
+            entityId
+        }
+    });
+
+    const checkoutUrl = subscription.providerInitPoint ?? subscription.providerSandboxInitPoint;
+    if (!checkoutUrl) {
+        throw new SubscriptionCheckoutError(
+            'MISSING_INIT_POINT',
+            'Payment provider did not return a checkout URL'
+        );
+    }
+
+    // D3 + D4 are wrapped in a single transaction so the commerce path can never
+    // end up with a billing_subscriptions row stamped 'commerce' but no link row
+    // (or vice versa). A partial write would leave the listing unrecoverable: it
+    // could never be reconciled to PUBLIC even after the owner pays.
+    await withTransaction(async (tx) => {
+        // D3: stamp product_domain='commerce' on the freshly-created subscription.
+        // (tx reuses a caller-provided boundary via input.db when present.)
+        // The column is not in QZPay's TS schema, so we set it with raw SQL.
+        await tx.execute(
+            sql`UPDATE billing_subscriptions SET product_domain = ${ProductDomainEnum.COMMERCE} WHERE id = ${subscription.id}`
+        );
+
+        // D4: upsert the commerce_listing_subscriptions link row (one per entity).
+        // On the UNIQUE(entity_type, entity_id) conflict, update subscriptionId +
+        // status so re-subscribing an entity reuses the same link row.
+        await tx
+            .insert(commerceListingSubscriptions)
+            .values({
+                subscriptionId: subscription.id,
+                productDomain: ProductDomainEnum.COMMERCE,
+                entityType,
+                entityId,
+                status: subscription.status
+            })
+            .onConflictDoUpdate({
+                target: [
+                    commerceListingSubscriptions.entityType,
+                    commerceListingSubscriptions.entityId
+                ],
+                set: {
+                    subscriptionId: subscription.id,
+                    status: subscription.status,
+                    updatedAt: new Date()
+                }
+            });
+    }, input.db);
+
+    // Polling fallback — same as the accommodation monthly flow.
+    await schedulePollingForSubscription({
+        billing,
+        subscriptionId: subscription.id,
+        providerResourceId: subscription.providerSubscriptionIds?.mercadopago ?? '',
+        resourceType: 'subscription',
+        planSlug,
+        sourceLabel: 'start-commerce-monthly'
     });
 
     return {

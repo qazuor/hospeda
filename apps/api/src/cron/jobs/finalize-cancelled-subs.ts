@@ -99,6 +99,7 @@ import { BILLING_EVENT_TYPES, validateSubscriptionStatusTransition } from '@repo
 import { getQZPayBilling } from '../../middlewares/billing.js';
 import { clearEntitlementCache } from '../../middlewares/entitlement.js';
 import { handleSubscriptionCancellationAddons } from '../../services/addon-lifecycle-cancellation.service.js';
+import { reconcileCommerceListingForSubscription } from '../../services/commerce-reconcile.service.js';
 import { sendNotification } from '../../utils/notification-helper.js';
 import type { CronJobDefinition, CronJobResult } from '../types.js';
 
@@ -512,6 +513,16 @@ async function finalizeOne(
         // Runs AFTER the transaction commits. Non-rollback-able cache side-effect —
         // must not run if the transaction above rolled back.
         clearEntitlementCache(customerId);
+
+        // ── Step 3b: Reconcile commerce listing visibility (SPEC-239 T-050) ──
+        // The sub was finalized to 'cancelled' → hide any linked commerce listing
+        // (cancelled → PRIVATE). No-op for accommodation subs; non-blocking so a
+        // reconcile failure never breaks the cron.
+        await reconcileCommerceListingForSubscription({
+            subscriptionId,
+            subscriptionStatus: 'cancelled',
+            source: 'finalize-cancelled-cron'
+        });
 
         logger.info('finalize-cancelled-subs: subscription finalized', {
             subscriptionId,
