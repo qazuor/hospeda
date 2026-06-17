@@ -97,6 +97,58 @@ class GenericMockModel {
     }
 }
 
+/**
+ * Column map for the `gastronomies` table (SPEC-239), keyed by the camelCase Drizzle
+ * property names → snake_case DB column names. Mirrors the `@repo/db/schemas` mock shape.
+ *
+ * `BaseCrudRead.adminList` validates the requested (or default) sort field against the
+ * model's `getTable()` via `hasOwnProperty`, and checks `'deletedAt' in table` to decide
+ * the soft-delete filter. A bare `{}` (as GenericMockModel returns) makes EVERY sort field —
+ * including the `createdAt` default — fail with VALIDATION_ERROR (400). Returning the real
+ * column set lets the admin list / options routes exercise the full handler path against the
+ * mocked DB, so route-level tests assert true gate + routing behaviour instead of a spurious
+ * 400 from the sort guard.
+ */
+const GASTRONOMY_TABLE_COLUMNS = {
+    id: 'id',
+    slug: 'slug',
+    name: 'name',
+    summary: 'summary',
+    description: 'description',
+    richDescription: 'rich_description',
+    type: 'type',
+    priceRange: 'price_range',
+    menuUrl: 'menu_url',
+    ownerId: 'owner_id',
+    destinationId: 'destination_id',
+    visibility: 'visibility',
+    lifecycleState: 'lifecycle_state',
+    moderationState: 'moderation_state',
+    isFeatured: 'is_featured',
+    reviewsCount: 'reviews_count',
+    averageRating: 'average_rating',
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+    createdById: 'created_by_id',
+    updatedById: 'updated_by_id',
+    deletedAt: 'deleted_at',
+    deletedById: 'deleted_by_id'
+} as const;
+
+/**
+ * Gastronomy model stub that exposes the real column set via `getTable()` so the
+ * (real) GastronomyService admin list/options/sort validation runs faithfully against
+ * the mocked DB. All data methods stay no-op (inherited from GenericMockModel).
+ */
+class GastronomyMockModel extends GenericMockModel {
+    override getTable() {
+        return GASTRONOMY_TABLE_COLUMNS;
+    }
+    override getTableName() {
+        return 'gastronomies';
+    }
+}
+
 export function createDbMock() {
     return {
         // Database client
@@ -643,6 +695,28 @@ export function createDbMock() {
             insertView: vi.fn().mockResolvedValue({ id: 'ev_mock_id' }),
             getStatsForEntities: vi.fn().mockResolvedValue([]),
             purgeOlderThan: vi.fn().mockResolvedValue(0)
-        }
+        },
+
+        // SPEC-239: Gastronomy singleton model instances. GastronomyService,
+        // GastronomyReviewService, and the standalone FAQ helpers access these at module
+        // scope (via service constructor or direct import). They are exported as singleton
+        // instances (not classes) in @repo/db — mirror that here with GenericMockModel
+        // instances so initApp() can construct all gastronomy routes without a real DB.
+        gastronomyModel: new GastronomyMockModel(),
+        gastronomyReviewModel: new GenericMockModel(),
+        rGastronomyAmenityModel: new GenericMockModel(),
+        rGastronomyFeatureModel: new GenericMockModel(),
+
+        // GastronomyFaqModel is also exported as a class (used by gastronomy.faq.ts
+        // helpers which accept a GastronomyModel instance and internally call a new
+        // GastronomyFaqModel for FAQ CRUD). Expose both the class and singleton.
+        GastronomyFaqModel: GenericMockModel,
+        gastronomyFaqModel: new GenericMockModel(),
+
+        // SPEC-239 T-047: CommerceLeadModel — instantiated at module scope by
+        // CommerceLeadService when the commerce lead routes load. The GenericMockModel
+        // no-op stub is sufficient for route-level permission-gate tests (no real DB
+        // data needed; the service layer is exercised via mock actor headers).
+        CommerceLeadModel: GenericMockModel
     };
 }
