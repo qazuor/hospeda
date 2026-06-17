@@ -23,7 +23,7 @@ export const serverEnvBaseSchema = z.object({
     HOSPEDA_BETTER_AUTH_URL: z.url().optional(),
     HOSPEDA_ADMIN_URL: z.url().optional(),
     PUBLIC_ADMIN_URL: z.url().optional(),
-    HOSPEDA_REVALIDATION_SECRET: z.string().min(32).optional(),
+    HOSPEDA_REVALIDATION_SECRET: z.string().min(32),
     PUBLIC_SENTRY_DSN: z.url().optional(),
     PUBLIC_SENTRY_RELEASE: z.string().optional(),
     /**
@@ -114,7 +114,32 @@ export const serverEnvSchema = serverEnvBaseSchema
     .refine((data) => data.HOSPEDA_SITE_URL || data.PUBLIC_SITE_URL, {
         message: 'Either HOSPEDA_SITE_URL or PUBLIC_SITE_URL must be set',
         path: ['SITE_URL']
-    });
+    })
+    // ADMIN_URL is always required (at least one of the HOSPEDA_/PUBLIC_ pair):
+    // getAdminUrlOrThrow() crashes pages (PropertyCard, publicar/nueva) when absent.
+    .refine((data) => data.HOSPEDA_ADMIN_URL || data.PUBLIC_ADMIN_URL, {
+        message: 'Either HOSPEDA_ADMIN_URL or PUBLIC_ADMIN_URL must be set',
+        path: ['ADMIN_URL']
+    })
+    // Production-only: monitoring/analytics must be configured in prod.
+    .refine(
+        (data) =>
+            data.NODE_ENV !== 'production' ||
+            (data.PUBLIC_SENTRY_DSN !== undefined && data.PUBLIC_SENTRY_DSN !== ''),
+        {
+            message: 'PUBLIC_SENTRY_DSN is required in production',
+            path: ['PUBLIC_SENTRY_DSN']
+        }
+    )
+    .refine(
+        (data) =>
+            data.NODE_ENV !== 'production' ||
+            (data.PUBLIC_POSTHOG_KEY !== undefined && data.PUBLIC_POSTHOG_KEY !== ''),
+        {
+            message: 'PUBLIC_POSTHOG_KEY is required in production',
+            path: ['PUBLIC_POSTHOG_KEY']
+        }
+    );
 
 /** Inferred TypeScript type for server environment variables. */
 export type ServerEnv = z.infer<typeof serverEnvSchema>;

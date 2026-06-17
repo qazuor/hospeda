@@ -60,7 +60,10 @@ export default defineConfig({
         // instead of the intended loading / success state the tests assert on.
         env: {
             PUBLIC_API_URL: 'http://localhost:3001',
-            PUBLIC_SITE_URL: 'http://localhost:4321'
+            PUBLIC_SITE_URL: 'http://localhost:4321',
+            // Now always-required by serverEnvSchema (env hardening).
+            HOSPEDA_REVALIDATION_SECRET: 'test-revalidation-secret-at-least-32-characters-long',
+            HOSPEDA_ADMIN_URL: 'http://localhost:3000'
         },
         pool: 'forks',
         poolOptions: {

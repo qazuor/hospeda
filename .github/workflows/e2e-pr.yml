@@ -86,11 +86,15 @@ jobs:
       HOSPEDA_API_URL: http://localhost:3001
       HOSPEDA_SITE_URL: http://localhost:4321
       HOSPEDA_ADMIN_URL: http://localhost:3000
+      HOSPEDA_REVALIDATION_SECRET: ci-placeholder-revalidation-secret-min-32-characters
+      HOSPEDA_NEWSLETTER_HMAC_SECRET: ci-placeholder-newsletter-hmac-secret-min-32-chars
       # Build-time + runtime vars for the web (PUBLIC_*) and admin (VITE_*) apps,
       # required by their env schemas when they actually boot under the webServer.
       PUBLIC_API_URL: http://localhost:3001
       PUBLIC_SITE_URL: http://localhost:4321
       PUBLIC_ADMIN_URL: http://localhost:3000
+      PUBLIC_SENTRY_DSN: https://ci-placeholder.invalid
+      PUBLIC_POSTHOG_KEY: phc_ci_placeholder
       VITE_API_URL: http://localhost:3001
       VITE_SITE_URL: http://localhost:4321
       VITE_ADMIN_URL: http://localhost:3000

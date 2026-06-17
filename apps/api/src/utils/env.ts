@@ -126,7 +126,7 @@ export const ApiEnvBaseSchema = z.object({
 
     // Trusted origins
     HOSPEDA_SITE_URL: z.string().url('Must be a valid URL for the web app'),
-    HOSPEDA_ADMIN_URL: z.string().url().optional(),
+    HOSPEDA_ADMIN_URL: z.string().url(),
 
     /**
      * Dev-only session-cookie domain override (SPEC-182). Set to
@@ -366,7 +366,7 @@ export const ApiEnvBaseSchema = z.object({
      */
     HOSPEDA_CRON_ADAPTER: z.enum(['manual', 'node-cron']).default('manual'),
     /** Shared secret for authenticating ISR revalidation requests from the API. Must be at least 32 characters. */
-    HOSPEDA_REVALIDATION_SECRET: z.string().min(32).optional(),
+    HOSPEDA_REVALIDATION_SECRET: z.string().min(32),
     /** Cron schedule for automatic page revalidation (default: every hour) */
     HOSPEDA_REVALIDATION_CRON_SCHEDULE: z.string().optional().default('0 * * * *'),
 
@@ -478,7 +478,7 @@ export const ApiEnvBaseSchema = z.object({
 
     // Newsletter (SPEC-101)
     /** HMAC-SHA256 secret for verification + unsubscribe tokens. Min 32 bytes. */
-    HOSPEDA_NEWSLETTER_HMAC_SECRET: z.string().min(32).optional(),
+    HOSPEDA_NEWSLETTER_HMAC_SECRET: z.string().min(32),
     /** Previous HMAC secret, accepted during the rotation window. */
     HOSPEDA_NEWSLETTER_HMAC_SECRET_PREV: z.string().min(32).optional(),
     /** Static secret Brevo echoes in X-Sib-Webhook-Token. Min 10 bytes. */
@@ -710,6 +710,46 @@ const ApiEnvSchema = ApiEnvBaseSchema.superRefine((data, ctx) => {
                     code: z.ZodIssueCode.custom,
                     path: ['API_CORS_ORIGINS'],
                     message: `CORS origin '${origin}' contains localhost, which is not allowed in production`
+                });
+            }
+        }
+    }
+    // Conditional: the OpenAI moderation key is required when the OpenAI provider
+    // is selected (all environments). With the 'stub'/'local' providers it is not
+    // needed, so it stays unset without aborting startup.
+    if (
+        data.HOSPEDA_MODERATION_PROVIDER === 'openai' &&
+        (!data.HOSPEDA_MODERATION_OPENAI_API_KEY ||
+            data.HOSPEDA_MODERATION_OPENAI_API_KEY.trim() === '')
+    ) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['HOSPEDA_MODERATION_OPENAI_API_KEY'],
+            message:
+                'HOSPEDA_MODERATION_OPENAI_API_KEY is required when HOSPEDA_MODERATION_PROVIDER=openai'
+        });
+    }
+    // Required only in production: external-service credentials whose absence would
+    // let the API boot but silently break the feature in prod. Fail loud at startup
+    // instead of degrading silently. Mirrors the REDIS_URL / AI_VAULT guards above.
+    if (data.NODE_ENV === 'production') {
+        const requiredInProd: ReadonlyArray<readonly [string, string | undefined]> = [
+            ['HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN', data.HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN],
+            ['HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET', data.HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET],
+            ['HOSPEDA_EMAIL_API_KEY', data.HOSPEDA_EMAIL_API_KEY],
+            ['HOSPEDA_EMAIL_FROM_EMAIL', data.HOSPEDA_EMAIL_FROM_EMAIL],
+            ['HOSPEDA_SENTRY_DSN', data.HOSPEDA_SENTRY_DSN],
+            ['HOSPEDA_LINEAR_API_KEY', data.HOSPEDA_LINEAR_API_KEY],
+            ['HOSPEDA_POSTHOG_KEY', data.HOSPEDA_POSTHOG_KEY],
+            ['HOSPEDA_APIFY_TOKEN', data.HOSPEDA_APIFY_TOKEN],
+            ['HOSPEDA_GOOGLE_PLACES_API_KEY', data.HOSPEDA_GOOGLE_PLACES_API_KEY]
+        ];
+        for (const [name, value] of requiredInProd) {
+            if (!value || value.trim() === '') {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: [name],
+                    message: `${name} is required in production`
                 });
             }
         }

@@ -12,10 +12,7 @@ if (dsn) {
         dsn,
         environment,
         release:
-            import.meta.env.PUBLIC_SENTRY_RELEASE ||
-            process.env.HOSPEDA_GIT_SHA ||
-            process.env.VERCEL_GIT_COMMIT_SHA ||
-            'development',
+            import.meta.env.PUBLIC_SENTRY_RELEASE || process.env.HOSPEDA_GIT_SHA || 'development',
 
         initialScope: {
             tags: {

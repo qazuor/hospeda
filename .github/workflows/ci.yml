@@ -63,6 +63,17 @@ env:
   VITE_BETTER_AUTH_URL: ${{ secrets.HOSPEDA_API_URL || 'https://example.invalid' }}/api/auth
   PUBLIC_API_URL: ${{ secrets.HOSPEDA_API_URL || 'https://example.invalid' }}
   PUBLIC_SITE_URL: ${{ secrets.HOSPEDA_SITE_URL || 'https://example.invalid' }}
+  # apps/web now requires ADMIN_URL (HOSPEDA_/PUBLIC_ pair) and
+  # HOSPEDA_REVALIDATION_SECRET (env hardening). The web build runs
+  # validateWebEnv() during prerender, so these must be present at build time.
+  PUBLIC_ADMIN_URL: ${{ secrets.HOSPEDA_ADMIN_URL || 'https://example.invalid' }}
+  HOSPEDA_ADMIN_URL: ${{ secrets.HOSPEDA_ADMIN_URL || 'https://example.invalid' }}
+  HOSPEDA_REVALIDATION_SECRET: ${{ secrets.HOSPEDA_REVALIDATION_SECRET || 'ci-placeholder-revalidation-secret-min-32-characters' }}
+  # PUBLIC_SENTRY_DSN / PUBLIC_POSTHOG_KEY are required by the web app in
+  # production. The web build runs in production mode, so they must be present
+  # at build time. Placeholders are fine for CI (the bundle is never deployed).
+  PUBLIC_SENTRY_DSN: ${{ secrets.PUBLIC_SENTRY_DSN || 'https://ci-placeholder.invalid' }}
+  PUBLIC_POSTHOG_KEY: ${{ secrets.PUBLIC_POSTHOG_KEY || 'phc_ci_placeholder' }}
   # Tells the admin env guard (vite.config.ts + src/env.ts) to ACCEPT the
   # placeholder `.invalid` URLs above. It MUST be workflow-level (not just the
   # Build step): admin#build also runs in any job whose Turbo graph reaches it
@@ -213,6 +224,8 @@ jobs:
           echo "OK: no admin-tier API calls in apps/web/src"
       - name: Env registry parity (SPEC-035)
         run: pnpm env:check:registry
+      - name: Env examples drift guard (SPEC-235)
+        run: pnpm env:check:examples
 
   # ------------------------------------------------------------------
   # Build all packages and apps. Required by typecheck and tests.

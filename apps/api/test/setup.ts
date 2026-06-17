@@ -34,6 +34,9 @@ process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
 process.env.HOSPEDA_EXCHANGE_RATE_API_KEY = 'test_exchange_rate_api_key';
 // Revalidation secret must be >= 32 chars
 process.env.HOSPEDA_REVALIDATION_SECRET = 'test_revalidation_secret_key_at_least_32_characters';
+// Newsletter HMAC secret (required, >= 32 chars, SPEC-101)
+process.env.HOSPEDA_NEWSLETTER_HMAC_SECRET =
+    'test-newsletter-hmac-secret-at-least-32-characters-long';
 // Trusted origins
 process.env.HOSPEDA_SITE_URL = 'http://localhost:4321';
 process.env.HOSPEDA_ADMIN_URL = 'http://localhost:3000';

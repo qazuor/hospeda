@@ -130,6 +130,7 @@ export const SYSTEM_ENV_VARS = [
         type: 'boolean',
         required: false,
         secret: false,
+        platformInjected: true,
         exampleValue: 'false',
         apps: ['api'],
         category: 'system',

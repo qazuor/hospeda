@@ -2,7 +2,7 @@ import { sentryEsbuildPlugin } from '@sentry/esbuild-plugin';
 import { defineConfig } from 'tsup';
 
 export default defineConfig({
-    entry: ['src/index.ts', 'src/vercel.ts'],
+    entry: ['src/index.ts'],
     outDir: 'dist',
     target: 'es2022',
     format: ['esm'],

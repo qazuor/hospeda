@@ -19,17 +19,11 @@
  */
 import { expoClient } from '@better-auth/expo/client';
 import { createAuthClient } from 'better-auth/react';
-import Constants from 'expo-constants';
 import * as SecureStore from 'expo-secure-store';
+import { API_BASE_URL } from './env';
 
-/**
- * Base URL of the Hospeda API, injected at build time via `EXPO_PUBLIC_API_URL`.
- * Defaults to the local dev server so the app typechecks without an env file.
- */
-const apiBaseUrl: string =
-    (Constants.expoConfig?.extra as Record<string, string> | undefined)?.apiUrl ??
-    process.env.EXPO_PUBLIC_API_URL ??
-    'http://localhost:3001';
+/** Base URL of the Hospeda API. Resolved + validated centrally in `./env`. */
+const apiBaseUrl: string = API_BASE_URL;
 
 /**
  * Better Auth client configured for Expo / React Native.

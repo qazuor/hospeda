@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { queryClient } from '../src/lib/api/query-client';
 import { useSession } from '../src/lib/auth-client';
 import { resolveAuthGroup } from '../src/lib/auth/roles';
+import { validateEnv } from '../src/lib/env';
 import { LocaleProvider } from '../src/lib/locale-context';
 import { usePushRegistration } from '../src/lib/push/use-push-registration';
 
@@ -50,6 +51,10 @@ import { usePushRegistration } from '../src/lib/push/use-push-registration';
  *
  * @module _layout
  */
+// Fail loud at startup on missing required env (e.g. EXPO_PUBLIC_API_URL in
+// production). No-op under NODE_ENV=test.
+validateEnv();
+
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
