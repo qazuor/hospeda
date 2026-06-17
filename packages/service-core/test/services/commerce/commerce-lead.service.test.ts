@@ -95,7 +95,6 @@ describe('CommerceLeadService', () => {
         it('should create a lead and return it', async () => {
             const service = makeService();
             // Patch the internal model
-            // biome-ignore lint/suspicious/noExplicitAny: accessing private model for testing
             (service as any)._model = makeLeadModel();
 
             const result = await service.createLead(guestActor, createInput);
@@ -109,7 +108,6 @@ describe('CommerceLeadService', () => {
         it('should call notifyNewLead when notifier is provided', async () => {
             const notifyNewLead = vi.fn().mockResolvedValue(undefined);
             const service = makeService({ notifyNewLead });
-            // biome-ignore lint/suspicious/noExplicitAny: accessing private model for testing
             (service as any)._model = makeLeadModel();
 
             await service.createLead(guestActor, createInput);
@@ -120,7 +118,6 @@ describe('CommerceLeadService', () => {
         it('should not throw when notifier fails (best-effort)', async () => {
             const notifyNewLead = vi.fn().mockRejectedValue(new Error('SMTP down'));
             const service = makeService({ notifyNewLead });
-            // biome-ignore lint/suspicious/noExplicitAny: accessing private model for testing
             (service as any)._model = makeLeadModel();
 
             // Should NOT throw even when notifier fails
@@ -131,7 +128,6 @@ describe('CommerceLeadService', () => {
 
         it('should skip notification when no notifier is configured', async () => {
             const service = makeService(null);
-            // biome-ignore lint/suspicious/noExplicitAny: accessing private model for testing
             (service as any)._model = makeLeadModel();
 
             // Should complete without error even without notifier
@@ -141,7 +137,6 @@ describe('CommerceLeadService', () => {
 
         it('should return VALIDATION_ERROR for invalid email', async () => {
             const service = makeService();
-            // biome-ignore lint/suspicious/noExplicitAny: accessing private model for testing
             (service as any)._model = makeLeadModel();
 
             const result = await service.createLead(guestActor, {
@@ -158,7 +153,6 @@ describe('CommerceLeadService', () => {
         it('should return leads for admin actor', async () => {
             const service = makeService();
             const model = makeLeadModel();
-            // biome-ignore lint/suspicious/noExplicitAny: accessing private model for testing
             (service as any)._model = model;
 
             const result = await service.listLeads(adminActor);
@@ -169,7 +163,6 @@ describe('CommerceLeadService', () => {
 
         it('should return FORBIDDEN for actor without COMMERCE_VIEW_ALL', async () => {
             const service = makeService();
-            // biome-ignore lint/suspicious/noExplicitAny: accessing private model for testing
             (service as any)._model = makeLeadModel();
 
             const result = await service.listLeads(guestActor);
@@ -181,7 +174,6 @@ describe('CommerceLeadService', () => {
         it('should pass status filter to model.findAll', async () => {
             const service = makeService();
             const model = makeLeadModel();
-            // biome-ignore lint/suspicious/noExplicitAny: accessing private model for testing
             (service as any)._model = model;
 
             await service.listLeads(adminActor, { status: 'pending' });
@@ -200,7 +192,6 @@ describe('CommerceLeadService', () => {
         it('should approve a lead for admin actor', async () => {
             const service = makeService();
             const model = makeLeadModel();
-            // biome-ignore lint/suspicious/noExplicitAny: accessing private model for testing
             (service as any)._model = model;
 
             const result = await service.markHandled(adminActor, {
@@ -216,7 +207,6 @@ describe('CommerceLeadService', () => {
 
         it('should return FORBIDDEN for actor without COMMERCE_EDIT_ALL', async () => {
             const service = makeService();
-            // biome-ignore lint/suspicious/noExplicitAny: accessing private model for testing
             (service as any)._model = makeLeadModel();
 
             const result = await service.markHandled(guestActor, {
@@ -232,7 +222,6 @@ describe('CommerceLeadService', () => {
             const service = makeService();
             const model = makeLeadModel();
             model.findById.mockResolvedValue(null);
-            // biome-ignore lint/suspicious/noExplicitAny: accessing private model for testing
             (service as any)._model = model;
 
             const result = await service.markHandled(adminActor, {
@@ -247,7 +236,6 @@ describe('CommerceLeadService', () => {
 
         it('should return VALIDATION_ERROR for non-UUID id', async () => {
             const service = makeService();
-            // biome-ignore lint/suspicious/noExplicitAny: accessing private model for testing
             (service as any)._model = makeLeadModel();
 
             const result = await service.markHandled(adminActor, {

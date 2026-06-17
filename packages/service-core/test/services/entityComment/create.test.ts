@@ -94,7 +94,6 @@ describe('EntityCommentService.create', () => {
 
     it('rejects an unsupported entityType without inserting (AC-3)', async () => {
         const result = await service.create(actor, {
-            // biome-ignore lint/suspicious/noExplicitAny: deliberately passing a disallowed entity type
             entityType: EntityTypeEnum.ACCOMMODATION as any,
             entityId: POST_ID,
             content: 'Not allowed here'

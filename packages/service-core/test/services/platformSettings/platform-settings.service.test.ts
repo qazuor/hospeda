@@ -126,7 +126,6 @@ describe('PlatformSettingsService', () => {
 
             const result = await service.get({
                 actor,
-                // biome-ignore lint/suspicious/noExplicitAny: testing invalid input
                 key: 'unknown.key' as any
             });
 
