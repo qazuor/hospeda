@@ -78,11 +78,10 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * HOSPEDA_IMPORT_FETCH_TIMEOUT_MS, HOSPEDA_IMPORT_FETCH_MAX_BYTES,
  * HOSPEDA_IMPORT_RATE_LIMIT_RPH, HOSPEDA_IMPORT_AI_MAX_CHARS).
  *
- * 226 (2026-06-17, env-hardening): +4 new vars:
+ * 224 (2026-06-17, env-hardening): +2 new vars:
  * - EXPO_PUBLIC_API_URL and EXPO_PUBLIC_APP_ENV (new MOBILE_ENV_VARS section, apps/mobile)
- * - VERCEL and VERCEL_GIT_COMMIT_SHA (platform-injected, SYSTEM_ENV_VARS, already in schemas)
  */
-const EXPECTED_VAR_COUNT = 226;
+const EXPECTED_VAR_COUNT = 224;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;

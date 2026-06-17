@@ -73,9 +73,9 @@ export interface EnvVarDefinition {
     readonly requiredWhen?: string;
 
     /**
-     * True when the value is injected by the platform/CI at runtime (e.g. `CI`,
-     * `VERCEL`, `VERCEL_GIT_COMMIT_SHA`) and must NOT be set manually. The
-     * `.env.example` generator emits these commented with a "do not set" note.
+     * True when the value is injected by the platform/CI at runtime (e.g. `CI`)
+     * and must NOT be set manually. The `.env.example` generator emits these
+     * commented with a "do not set" note.
      */
     readonly platformInjected?: boolean;
 

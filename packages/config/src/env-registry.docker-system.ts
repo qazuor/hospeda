@@ -139,42 +139,6 @@ export const SYSTEM_ENV_VARS = [
         howToObtainEs:
             'Lo setean automáticamente GitHub Actions y la mayoría de los runners de CI. NO lo seteés a mano. El código lo usa para apagar prompts interactivos en scripts.'
     },
-    {
-        name: 'VERCEL',
-        description:
-            'Set to "1" by the Vercel deployment platform. Present on all Vercel builds and preview/production deploys.',
-        descriptionEs:
-            'Lo pone en "1" la plataforma de despliegue Vercel. Presente en todos los builds y deploys de Vercel.',
-        type: 'string',
-        required: false,
-        secret: false,
-        platformInjected: true,
-        exampleValue: '1',
-        apps: ['api', 'web', 'admin'],
-        category: 'system',
-        howToObtain:
-            'Injected automatically by Vercel. Do NOT set manually. Legacy — this project now deploys on Coolify (VPS). Kept in the registry because some build scripts still read it.',
-        howToObtainEs:
-            'Lo inyecta Vercel automáticamente. NO lo seteés a mano. Legacy — este proyecto ahora deploya en Coolify (VPS). Se mantiene en el registry porque algunos scripts de build todavía lo leen.'
-    },
-    {
-        name: 'VERCEL_GIT_COMMIT_SHA',
-        description:
-            'Full git commit SHA injected by Vercel on each deployment. Used as a release identifier in Sentry and build metadata.',
-        descriptionEs:
-            'SHA completo del commit git que inyecta Vercel en cada deploy. Se usa como identificador de release en Sentry y metadatos de build.',
-        type: 'string',
-        required: false,
-        secret: false,
-        platformInjected: true,
-        exampleValue: 'abc123def456789012345678901234567890abcd',
-        apps: ['api', 'web', 'admin'],
-        category: 'system',
-        howToObtain:
-            'Injected automatically by Vercel. Do NOT set manually. Legacy — this project now deploys on Coolify (VPS) where HOSPEDA_COMMIT_SHA is the preferred equivalent.',
-        howToObtainEs:
-            'Lo inyecta Vercel automáticamente. NO lo seteés a mano. Legacy — este proyecto ahora deploya en Coolify (VPS) donde HOSPEDA_COMMIT_SHA es el equivalente preferido.'
-    },
     // SENTRY_ENVIRONMENT: Deferred.. use import.meta.env.MODE or NODE_ENV instead
     {
         name: 'TEST_DB_URL',

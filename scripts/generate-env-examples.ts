@@ -224,7 +224,7 @@ function generateContent(app: AppConfig): string {
 # Optional vars are commented out; uncomment and adjust as needed.
 # Production-only vars are commented with "(required in production)".
 # Conditional vars note when they become required.
-# Platform-injected vars (CI, VERCEL, etc.) are for reference only.
+# Platform-injected vars (e.g. CI) are for reference only.
 # SECRET vars contain sensitive credentials — never commit real values.
 # =============================================================================
 `;

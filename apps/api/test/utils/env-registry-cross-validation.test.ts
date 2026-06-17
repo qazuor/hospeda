@@ -43,16 +43,7 @@ const KNOWN_GAPS_REGISTRY_NOT_IN_SCHEMA = new Set<string>([
     // build to upload source maps. Not read by the runtime, so it is
     // deliberately absent from ApiEnvBaseSchema. Registered with apps: ['api']
     // so it shows up in the API .env.example for build-environment setup.
-    'SENTRY_AUTH_TOKEN',
-
-    // Platform-injected by Vercel — not read by the API runtime schema, but
-    // registered in SYSTEM_ENV_VARS with apps: ['api', 'web', 'admin'] so
-    // they appear in all relevant .env.example files for reference. The API
-    // uses HOSPEDA_COMMIT_SHA (Coolify-managed) as its canonical release
-    // identifier; VERCEL_GIT_COMMIT_SHA is a legacy alias kept for cross-
-    // environment portability.
-    'VERCEL',
-    'VERCEL_GIT_COMMIT_SHA'
+    'SENTRY_AUTH_TOKEN'
 ]);
 
 /**
