@@ -3627,5 +3627,15 @@
         "benefit": {
             "min": "El beneficio debe tener al menos {{min}} caracteres"
         }
+    },
+    "pushToken": {
+        "platform": {
+            "invalid": "La plataforma del dispositivo no es válida"
+        },
+        "token": {
+            "required": "El token de notificaciones es obligatorio",
+            "min": "El token de notificaciones debe tener al menos {{min}} caracteres",
+            "max": "El token de notificaciones no puede superar los {{max}} caracteres"
+        }
     }
 }
