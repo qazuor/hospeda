@@ -94,3 +94,4 @@ rank|spec|name|avance|prioridad|estado|estado_manual|estado_real|descripcion|por
 93|SPEC-241|Host trades/services directory (24h emergency trades for hosts)|-|-|in progress|backlog|index staging: status=draft archived=False|-|-|-|-|-|-|-|-
 94|SPEC-242|Tarjeta Hospeda (benefits card for guests)|-|-|blocked|backlog|index staging: status=draft archived=False|-|-|-|-|-|-|SPEC-239, SPEC-240, SPEC-243|-
 95|SPEC-243|Hospeda mobile app (React Native / Expo)|-|-|in progress|backlog|index staging: status=in-progress archived=False (Sub-0 Foundation active, no external deps)|-|-|-|-|-|-|SPEC-239, SPEC-240, SPEC-242|-
+96|SPEC-244|Test suite order-independence hardening|-|-|backlog|-|index staging: status=draft archived=False (follow-up of SPEC-222; test-infra hardening, no unmet hard deps)|-|-|-|-|-|-|SPEC-222, SPEC-238|-

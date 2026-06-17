@@ -1413,6 +1413,18 @@
             "note": "B2 lever extracted from SPEC-188 (~9% api test speedup via service-core mock + Sentry mock + shared vitest config). Reference impl on deleted branch spec/SPEC-188-vitest-test-performance (tip 9825dd9ff, perf commit d6c023179) was 1760 commits behind; re-implement fresh on staging, do NOT cherry-pick (stale service-core mock). Drafted 2026-06-15.",
             "renumberNote": "Renumbered from SPEC-236 (collision with another agent already working SPEC-236) on 2026-06-15.",
             "archivedAt": "2026-06-16T01:29:32Z"
+        },
+        {
+            "specId": "SPEC-244",
+            "title": "Test suite order-independence hardening",
+            "type": "improvement",
+            "status": "draft",
+            "complexity": "high",
+            "path": "SPEC-244-test-suite-order-independence",
+            "created": "2026-06-17T00:00:00Z",
+            "tags": ["ci", "testing", "vitest", "infrastructure", "api", "admin", "web", "packages"],
+            "archived": false,
+            "note": "Follow-up discovered during SPEC-222. apps/api vitest suite has systemic cross-file order-dependency: module-scoped global mocks in test/setup.ts (notably the PlanService mock) leak across files under pool:forks/maxForks:3 fork distribution. --sequence.shuffle fails 6-16 tests/order; CI is green only on the deterministic order. Audit + fix the whole monorepo (api/admin/web/packages) then add a shuffle CI guard. accommodation-import.integration.test.ts itself is NOT flaky (9/9 orders) and needs no change. Drafted 2026-06-17."
         }
     ]
 }
