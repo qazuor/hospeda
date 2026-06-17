@@ -78,7 +78,7 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * HOSPEDA_IMPORT_FETCH_TIMEOUT_MS, HOSPEDA_IMPORT_FETCH_MAX_BYTES,
  * HOSPEDA_IMPORT_RATE_LIMIT_RPH, HOSPEDA_IMPORT_AI_MAX_CHARS).
  */
-const EXPECTED_VAR_COUNT = 221;
+const EXPECTED_VAR_COUNT = 222;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;
