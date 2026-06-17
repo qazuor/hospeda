@@ -39,7 +39,7 @@ export const GastronomyQualityScore = React.memo(function GastronomyQualityScore
 }: GastronomyQualityScoreProps) {
     const { form } = useEntityFormContext();
 
-    // Cast to structural shape that matches what `useStore` accepts.
+    // TYPE-WORKAROUND: cast form to the structural { store } shape useStore accepts (TanStack Form generic gap).
     const formStore = (form as unknown as { readonly store: FormStore }).store;
     const values = useStore(formStore, (state) => (state as FormStoreState).values);
 

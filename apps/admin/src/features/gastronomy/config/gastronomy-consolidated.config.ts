@@ -87,6 +87,7 @@ function createGastronomySpecificSection(): ConsolidatedSectionConfig {
                     edit: [PermissionEnum.COMMERCE_EDIT_ALL]
                 },
                 typeConfig: {
+                    // TYPE-WORKAROUND: option constant is a readonly tuple; SelectFieldConfig expects a mutable array.
                     options: GASTRONOMY_TYPE_OPTIONS as unknown as {
                         value: string;
                         label: string;
@@ -106,6 +107,7 @@ function createGastronomySpecificSection(): ConsolidatedSectionConfig {
                     edit: [PermissionEnum.COMMERCE_EDIT_ALL]
                 },
                 typeConfig: {
+                    // TYPE-WORKAROUND: option constant is a readonly tuple; SelectFieldConfig expects a mutable array.
                     options: PRICE_RANGE_OPTIONS as unknown as {
                         value: string;
                         label: string;

@@ -102,6 +102,7 @@ export const gastronomyListConfig = createCommerceListConfig<GastronomyListItem>
             labelKey: 'admin-filters.gastronomyType.label' as const,
             type: 'select' as const,
             order: 10,
+            // TYPE-WORKAROUND: option constant is a readonly tuple; the filter config expects a mutable array.
             options: GASTRONOMY_TYPE_OPTIONS as unknown as { value: string; labelKey: string }[]
         },
         {
@@ -109,6 +110,7 @@ export const gastronomyListConfig = createCommerceListConfig<GastronomyListItem>
             labelKey: 'admin-filters.priceRange.label' as const,
             type: 'select' as const,
             order: 11,
+            // TYPE-WORKAROUND: option constant is a readonly tuple; the filter config expects a mutable array.
             options: PRICE_RANGE_OPTIONS as unknown as { value: string; labelKey: string }[]
         }
     ]

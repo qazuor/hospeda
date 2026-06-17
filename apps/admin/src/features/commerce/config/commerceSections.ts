@@ -270,7 +270,7 @@ export function createCommerceIdentitySection(): ConsolidatedSectionConfig {
                     edit: [PermissionEnum.COMMERCE_EDIT_ALL]
                 },
                 typeConfig: {
-                    // Cast needed: LIFECYCLE_OPTIONS is readonly tuple; SelectFieldConfig expects mutable array.
+                    // TYPE-WORKAROUND: LIFECYCLE_OPTIONS is a readonly tuple; SelectFieldConfig expects a mutable array.
                     options: LIFECYCLE_OPTIONS as unknown as { value: string; label: string }[]
                 }
             },
@@ -287,6 +287,7 @@ export function createCommerceIdentitySection(): ConsolidatedSectionConfig {
                     edit: [PermissionEnum.COMMERCE_MODERATE_REVIEW]
                 },
                 typeConfig: {
+                    // TYPE-WORKAROUND: MODERATION_OPTIONS is a readonly tuple; SelectFieldConfig expects a mutable array.
                     options: MODERATION_OPTIONS as unknown as { value: string; label: string }[]
                 }
             },

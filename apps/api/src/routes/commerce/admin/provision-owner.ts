@@ -122,6 +122,7 @@ export const adminProvisionOwnerRoute = createAdminRoute({
         // fields (`createdById`, `updatedById`) declared in CommerceLead schema
         // but absent from the actual table.  The provisioning service only uses
         // `id`, `email`, `contactName`, and `domain` — safe to cast.
+        // TYPE-WORKAROUND: DB select type omits audit fields declared in CommerceLead; service reads only id/email/contactName/domain.
         const result = await provisioningService.provisionCommerceOwner(actor, {
             lead: lead as unknown as CommerceLead
         });
