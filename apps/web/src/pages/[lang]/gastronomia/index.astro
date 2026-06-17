@@ -1,0 +1,263 @@
+---
+/**
+ * @file gastronomia/index.astro
+ * @description Gastronomy listing page (SPEC-239 T-053).
+ * SSR-fetches gastronomyApi.list with filters from the query string and renders
+ * a grid of GastronomyCard components with FilterSidebar, Pagination, EmptyState,
+ * and ErrorBanner following the same pattern as alojamientos/index.astro.
+ *
+ * @route /{lang}/gastronomia/
+ * @rendering SSR (on-demand)
+ */
+
+import ListingLayout from '@/layouts/ListingLayout.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
+import GastronomyCard from '@/components/gastronomy/GastronomyCard.astro';
+import EmptyState from '@/components/shared/feedback/EmptyState.astro';
+import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
+import Pagination from '@/components/shared/feedback/Pagination.astro';
+import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
+import type { FilterGroup } from '@/components/shared/filters/FilterSidebar.client';
+import { gastronomyApi, destinationsApi } from '@/lib/api/endpoints';
+import { toGastronomyCardProps } from '@/lib/api/transforms';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+
+const url = Astro.url;
+
+// --- Pagination ---
+const page = Math.max(1, Number(url.searchParams.get('page')) || 1);
+const pageSize = 20;
+
+// --- Filter params ---
+const q = url.searchParams.get('q') ?? undefined;
+const destinationId = url.searchParams.get('destinationId') ?? undefined;
+const type = url.searchParams.get('type') ?? undefined;
+const priceRange = url.searchParams.get('priceRange') ?? undefined;
+const isFeatured = url.searchParams.get('isFeatured') === 'true' ? true : undefined;
+const minRating = url.searchParams.get('minRating')
+    ? Number(url.searchParams.get('minRating'))
+    : undefined;
+
+// --- Fetch destinations (CITY) for filter dropdown ---
+const destinationsResult = await destinationsApi.list({ destinationType: 'CITY', pageSize: 100 });
+const destinations = destinationsResult.ok ? destinationsResult.data.items : [];
+
+// --- Fetch gastronomy listings ---
+const result = await gastronomyApi.list({
+    page,
+    pageSize,
+    q,
+    destinationId,
+    type,
+    priceRange,
+    isFeatured,
+    minRating,
+    sortBy: 'isFeatured',
+    sortOrder: 'desc'
+});
+
+const hasError = !result.ok;
+const items = result.ok ? result.data.items : [];
+const total = result.ok ? result.data.pagination.total : 0;
+const totalPages = result.ok ? result.data.pagination.totalPages : 0;
+
+// --- Transform to card props ---
+const cards = items.map((item) =>
+    toGastronomyCardProps({ item: item as unknown as Record<string, unknown>, locale })
+);
+
+// --- Gastronomy types for filter (from the confirmed enum) ---
+const GASTRONOMY_TYPES = [
+    'RESTAURANT',
+    'BAR',
+    'CAFE',
+    'PARRILLA',
+    'CERVECERIA',
+    'HELADERIA',
+    'PANADERIA',
+    'ROTISERIA',
+    'FOOD_TRUCK'
+] as const;
+
+const PRICE_RANGES = ['BUDGET', 'MID', 'HIGH', 'PREMIUM'] as const;
+
+// --- Filter groups ---
+const filterGroups: FilterGroup[] = [
+    {
+        id: 'q',
+        label: t('gastronomy.listing.search', 'Búsqueda por texto'),
+        type: 'search',
+        placeholder: t(
+            'gastronomy.listing.searchPlaceholder',
+            'Buscar por nombre o descripción...'
+        )
+    },
+    {
+        id: 'destinationId',
+        label: t('gastronomy.listing.destination', 'Destino'),
+        type: 'select-search',
+        options: destinations.map((d) => ({
+            value: d.id,
+            label: d.name,
+            featured: Boolean(d.isFeatured)
+        })),
+        maxVisible: 8
+    },
+    {
+        id: 'type',
+        label: t('gastronomy.listing.type', 'Tipo de establecimiento'),
+        type: 'checkbox',
+        options: GASTRONOMY_TYPES.map((value) => ({
+            value,
+            label: t(`gastronomy.types.${value}`, value)
+        }))
+    },
+    {
+        id: 'priceRange',
+        label: t('gastronomy.listing.priceRange', 'Rango de precio'),
+        type: 'checkbox',
+        options: PRICE_RANGES.map((value) => ({
+            value,
+            label: t(`gastronomy.card.priceRange.${value}`, value)
+        }))
+    },
+    {
+        id: 'isFeatured',
+        label: t('gastronomy.listing.featured', 'Solo destacados'),
+        type: 'toggle'
+    },
+    {
+        id: 'minRating',
+        label: t('gastronomy.listing.minRating', 'Calificación mínima'),
+        type: 'stars'
+    }
+];
+
+const sortOptions = [
+    { value: 'featured', label: t('gastronomy.listing.sort.featured', 'Destacados primero') },
+    {
+        value: 'ratingDesc',
+        label: t('gastronomy.listing.sort.ratingDesc', 'Mejor valorados')
+    },
+    { value: 'newest', label: t('gastronomy.listing.sort.newest', 'Recién agregados') },
+    { value: 'nameAsc', label: t('gastronomy.listing.sort.nameAsc', 'Nombre (A-Z)') }
+];
+
+// --- Build initial params for sidebar (avoids hydration flash) ---
+const initialParams: Record<string, string> = {};
+if (q) initialParams.q = q;
+if (destinationId) initialParams.destinationId = destinationId;
+if (type) initialParams.type = type;
+if (priceRange) initialParams.priceRange = priceRange;
+if (isFeatured) initialParams.isFeatured = 'true';
+if (minRating !== undefined) initialParams.minRating = String(minRating);
+initialParams.sortBy = 'featured';
+
+const baseUrl = buildUrl({ locale, path: 'gastronomia' });
+const canonicalPath = page > 1 ? `${baseUrl}page/${page}/` : baseUrl;
+---
+
+<ListingLayout
+    locale={locale}
+    title={t('gastronomy.listing.title', 'Gastronomía')}
+    description={t(
+        'gastronomy.listing.subtitle',
+        'Descubrí los mejores restaurantes, bares y sabores de la región'
+    )}
+    canonicalPath={canonicalPath}
+    showFilters={true}
+    filterPosition="left"
+    ogTagline={t('gastronomy.listing.subtitle', 'Descubrí los mejores sabores')}
+>
+    <Breadcrumbs
+        slot="breadcrumbs"
+        locale={locale}
+        items={[{ label: t('gastronomy.listing.title', 'Gastronomía') }]}
+    />
+
+    <ListingPageHeader
+        slot="page-header"
+        locale={locale}
+        tagline={t('gastronomy.listing.subtitle', 'Descubrí los mejores sabores')}
+        title={t('gastronomy.listing.title', 'Gastronomía')}
+        totalCount={total}
+    />
+
+    <FilterSidebar
+        slot="filters"
+        client:load
+        locale={locale}
+        filters={filterGroups}
+        sortOptions={sortOptions}
+        initialParams={initialParams}
+    />
+
+    {hasError && !result.ok && (
+        <ErrorBanner
+            locale={locale}
+            error={result.error}
+            entityName="gastronomía"
+        />
+    )}
+
+    {!hasError && cards.length === 0 && (
+        <EmptyState
+            locale={locale}
+            variant="no-results"
+            actionUrl={baseUrl}
+            message={t(
+                'gastronomy.listing.emptyState',
+                'No se encontraron establecimientos gastronómicos con los filtros seleccionados.'
+            )}
+        />
+    )}
+
+    {!hasError && cards.length > 0 && (
+        <div class="gastro-grid">
+            {cards.map((card, i) => (
+                <div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
+                    <GastronomyCard
+                        data={card}
+                        locale={locale}
+                        eager={i < 3}
+                    />
+                </div>
+            ))}
+        </div>
+    )}
+
+    {totalPages > 1 && (
+        <Pagination
+            slot="pagination"
+            currentPage={page}
+            totalPages={totalPages}
+            baseUrl={baseUrl.slice(0, -1)}
+            locale={locale}
+            searchParams={(() => {
+                const sp = new URLSearchParams(url.searchParams);
+                sp.delete('page');
+                return sp;
+            })()}
+        />
+    )}
+</ListingLayout>
+
+<style>
+    .gastro-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: var(--space-card-gap);
+    }
+
+    @media (max-width: 480px) {
+        .gastro-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>

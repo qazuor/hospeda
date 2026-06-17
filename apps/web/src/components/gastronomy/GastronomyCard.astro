@@ -1,0 +1,517 @@
+---
+/**
+ * @file GastronomyCard.astro
+ * @description Card component for a gastronomy listing (SPEC-239 T-053).
+ * Mirrors the AccommodationCard pattern: featured image, type + priceRange badges,
+ * rating stars + review count, destination name, and an optional "open now" badge
+ * derived from the openingHours map.
+ *
+ * Hydration: none — fully static Astro component.
+ */
+
+import { StarIcon, LocationIcon } from '@repo/icons';
+import { buildUrl } from '@/lib/urls';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import type { GastronomyCardData, GastronomyOpeningHoursEntry } from '@/data/types';
+import { computeOpenNowStatus } from '@/lib/gastronomy-hours';
+
+interface Props {
+    readonly data: GastronomyCardData;
+    readonly locale: SupportedLocale;
+    /**
+     * When true the card image renders with `loading="eager"` and
+     * `fetchpriority="high"` — set this on cards in the first visible row
+     * so the browser treats them as LCP candidates. Defaults to false.
+     */
+    readonly eager?: boolean;
+}
+
+const { data, locale, eager = false } = Astro.props;
+const { t } = createTranslations(locale);
+
+const detailUrl = buildUrl({ locale, path: `gastronomia/${data.slug}/` });
+
+/** Type label from i18n (e.g. 'RESTAURANT' → 'Restaurante'). */
+const typeLabel = t(`gastronomy.types.${data.type}`, data.type);
+
+/** Price range label from i18n (e.g. 'MID' → 'Moderado'). */
+const priceRangeLabel = data.priceRange
+    ? t(`gastronomy.card.priceRange.${data.priceRange}`, data.priceRange)
+    : null;
+
+const fullStars = Math.floor(data.averageRating);
+
+/** "Nuevo" badge: created less than 30 days ago. */
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+const isNew = data.createdAt
+    ? Date.now() - new Date(data.createdAt).getTime() < THIRTY_DAYS_MS
+    : false;
+
+/** Open-now status derived from openingHours (null → badge omitted). */
+const openNowStatus: boolean | null = data.openingHours
+    ? computeOpenNowStatus(data.openingHours as Record<string, GastronomyOpeningHoursEntry>)
+    : null;
+
+const featuredLabel = t('gastronomy.card.featured', 'Destacado');
+const openNowLabel = t('gastronomy.card.openNow', 'Abierto ahora');
+const closedNowLabel = t('gastronomy.card.closedNow', 'Cerrado ahora');
+---
+
+<article class="gastro-card">
+    <a href={detailUrl} class="gastro-card__link" aria-label={data.name}>
+        <!-- IMAGE AREA -->
+        <div class="gastro-card__image-area">
+            {data.featuredImage.url && !data.featuredImage.url.includes('placeholder') ? (
+                <img
+                    src={data.featuredImage.url}
+                    alt={data.featuredImage.caption ?? data.name}
+                    width="432"
+                    height="220"
+                    loading={eager ? 'eager' : 'lazy'}
+                    fetchpriority={eager ? 'high' : undefined}
+                    decoding="async"
+                    class="gastro-card__img"
+                    data-fallback="/assets/images/placeholder-gastronomy.svg"
+                    transition:name={`gastronomy-${data.slug}`}
+                />
+            ) : (
+                <img
+                    src={data.featuredImage.url || '/assets/images/placeholder-gastronomy.svg'}
+                    alt={data.featuredImage.caption ?? data.name}
+                    width="432"
+                    height="220"
+                    loading={eager ? 'eager' : 'lazy'}
+                    fetchpriority={eager ? 'high' : undefined}
+                    decoding="async"
+                    class="gastro-card__img"
+                    data-fallback="/assets/images/placeholder-gastronomy.svg"
+                    transition:name={`gastronomy-${data.slug}`}
+                />
+            )}
+
+            <!-- NEW corner badge -->
+            {isNew && (
+                <div class="gastro-card__status-corner" aria-hidden="true">
+                    <span class="gastro-card__status-text">
+                        {t('home.accommodations.badge.new', 'Nuevo')}
+                    </span>
+                </div>
+            )}
+
+            <!-- Featured badge -->
+            {data.isFeatured && (
+                <div class="gastro-card__featured-badge featured-badge">
+                    <StarIcon size={12} weight="fill" aria-hidden="true" />
+                    <span>{featuredLabel}</span>
+                </div>
+            )}
+
+            <!-- Open/closed badge (only when openingHours data is present) -->
+            {openNowStatus !== null && (
+                <div
+                    class={`gastro-card__open-badge gastro-card__open-badge--${openNowStatus ? 'open' : 'closed'}`}
+                >
+                    {openNowStatus ? openNowLabel : closedNowLabel}
+                </div>
+            )}
+
+            <!-- Wave separator -->
+            <div class="gastro-card__wave" aria-hidden="true">
+                <svg
+                    viewBox="0 0 432 40"
+                    preserveAspectRatio="none"
+                    fill="var(--core-card, white)"
+                >
+                    <path d="M0 40V22C72 8 144 0 216 6C288 12 360 24 432 22V40H0Z" />
+                </svg>
+            </div>
+        </div>
+
+        <!-- CONTENT AREA -->
+        <div class="gastro-card__content">
+            <!-- Type + Location row -->
+            <div class="gastro-card__category-row">
+                <span class="gastro-card__type-badge">{typeLabel}</span>
+                <div class="gastro-card__location-bar">
+                    <LocationIcon size={12} weight="fill" aria-hidden="true" />
+                    <span>{data.destinationName}</span>
+                </div>
+            </div>
+
+            <!-- Name -->
+            <h3 class="gastro-card__name">{data.name}</h3>
+
+            <!-- Summary -->
+            <p class="gastro-card__description">{data.summary}</p>
+
+            <!-- Stars + rating -->
+            {data.averageRating > 0 && (
+                <div class="gastro-card__stars">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                        <span
+                            class={
+                                i < fullStars
+                                    ? 'gastro-card__star--filled'
+                                    : 'gastro-card__star--empty'
+                            }
+                        >
+                            <StarIcon
+                                size={14}
+                                weight={i < fullStars ? 'fill' : 'regular'}
+                                aria-hidden="true"
+                            />
+                        </span>
+                    ))}
+                    <span class="gastro-card__rating-value">
+                        {data.averageRating.toFixed(1)}
+                    </span>
+                    {data.reviewsCount > 0 && (
+                        <span class="gastro-card__reviews-count">
+                            ({data.reviewsCount} {t('common.reviews', 'reseñas')})
+                        </span>
+                    )}
+                </div>
+            )}
+
+            <!-- Divider -->
+            <div class="gastro-card__divider" aria-hidden="true"></div>
+
+            <!-- Price range + CTA row -->
+            <div class="gastro-card__price-row">
+                {priceRangeLabel ? (
+                    <span class="gastro-card__price-range">{priceRangeLabel}</span>
+                ) : (
+                    <span></span>
+                )}
+                <span class="gastro-card__cta-btn">
+                    {t('common.readMore', 'Ver más')} →
+                </span>
+            </div>
+        </div>
+    </a>
+</article>
+
+<style>
+    .gastro-card {
+        background-color: var(--core-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md, 12px);
+        box-shadow: var(--shadow-card);
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        transition: box-shadow 200ms ease-out;
+    }
+
+    .gastro-card:hover {
+        box-shadow: var(--shadow-card-hover);
+    }
+
+    .gastro-card__link {
+        text-decoration: none;
+        color: inherit;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
+
+    .gastro-card__link:focus-visible {
+        outline: 2px solid var(--brand-primary);
+        outline-offset: 2px;
+        border-radius: var(--radius-md, 12px);
+    }
+
+    /* IMAGE AREA */
+    .gastro-card__image-area {
+        position: relative;
+        height: clamp(160px, 30vw, 220px);
+        overflow: hidden;
+        border-radius: var(--radius-md, 12px) var(--radius-md, 12px) 0 0;
+        background-color: var(--muted);
+    }
+
+    .gastro-card__img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 200ms ease-out;
+    }
+
+    .gastro-card:hover .gastro-card__img {
+        transform: scale(1.08);
+    }
+
+    /* Status corner (Nuevo) */
+    .gastro-card__status-corner {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 80px;
+        height: 80px;
+        overflow: hidden;
+    }
+
+    .gastro-card__status-corner::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 0;
+        height: 0;
+        border-top: 80px solid var(--hospeda-forest);
+        border-right: 80px solid transparent;
+    }
+
+    .gastro-card__status-text {
+        position: absolute;
+        top: 16px;
+        left: 4px;
+        transform: rotate(-45deg);
+        font-family: var(--font-sans);
+        font-weight: 700;
+        font-size: 14px;
+        line-height: 22.4px;
+        color: var(--primary-foreground);
+        white-space: nowrap;
+    }
+
+    /* Featured badge */
+    .gastro-card__featured-badge {
+        position: absolute;
+        bottom: 48px;
+        right: 12px;
+    }
+
+    /* Open/closed badge */
+    .gastro-card__open-badge {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        padding: 4px 10px;
+        border-radius: var(--radius-pill, 9999px);
+        font-family: var(--font-sans);
+        font-size: 11px;
+        font-weight: 600;
+        line-height: 1.4;
+    }
+
+    .gastro-card__open-badge--open {
+        background-color: var(--success-bg, oklch(0.93 0.09 145));
+        color: var(--success-foreground, oklch(0.35 0.12 145));
+    }
+
+    .gastro-card__open-badge--closed {
+        background-color: var(--error-bg, oklch(0.94 0.04 20));
+        color: var(--error-foreground, oklch(0.45 0.12 20));
+    }
+
+    /* Wave separator */
+    .gastro-card__wave {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 40px;
+        pointer-events: none;
+    }
+
+    .gastro-card__wave svg {
+        width: 100%;
+        height: 100%;
+        display: block;
+    }
+
+    /* CONTENT AREA */
+    .gastro-card__content {
+        background-color: var(--core-card);
+        padding: 0 16px 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        flex: 1;
+    }
+
+    /* Category + location row */
+    .gastro-card__category-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+    }
+
+    .gastro-card__type-badge {
+        flex-shrink: 0;
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 10px;
+        border-radius: var(--radius-pill, 9999px);
+        background-color: oklch(from var(--brand-primary) l c h / 0.12);
+        color: var(--brand-primary);
+        font-family: var(--font-sans);
+        font-size: 11px;
+        font-weight: 600;
+        line-height: 1.4;
+        white-space: nowrap;
+        border: 1px solid oklch(from var(--brand-primary) l c h / 0.25);
+    }
+
+    .gastro-card__location-bar {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        min-width: 0;
+        font-family: var(--font-sans);
+        font-weight: 500;
+        font-size: 12px;
+        line-height: 1.4;
+        color: var(--core-muted-foreground);
+    }
+
+    .gastro-card__location-bar > :global(svg) {
+        flex-shrink: 0;
+    }
+
+    .gastro-card__location-bar > span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        min-width: 0;
+    }
+
+    /* Name */
+    .gastro-card__name {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: clamp(1rem, 0.5vw + 0.875rem, 1.25rem);
+        line-height: clamp(1.375rem, 0.5vw + 1.25rem, 1.75rem);
+        color: var(--core-foreground);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        margin: 0;
+    }
+
+    /* Summary */
+    .gastro-card__description {
+        font-family: var(--font-sans);
+        font-weight: 400;
+        font-size: clamp(0.75rem, 0.2vw + 0.625rem, 0.8125rem);
+        line-height: 20.8px;
+        color: var(--core-muted-foreground);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        margin: 0;
+    }
+
+    /* Stars */
+    .gastro-card__stars {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .gastro-card__star--filled {
+        color: var(--rating-star);
+        display: inline-flex;
+    }
+
+    .gastro-card__star--empty {
+        color: var(--core-muted-foreground);
+        opacity: 0.4;
+        display: inline-flex;
+    }
+
+    .gastro-card__rating-value {
+        font-family: var(--font-sans);
+        font-weight: 700;
+        font-size: 13px;
+        line-height: 19.2px;
+        color: var(--core-foreground);
+        margin-left: 4px;
+    }
+
+    .gastro-card__reviews-count {
+        font-family: var(--font-sans);
+        font-weight: 400;
+        font-size: 12px;
+        line-height: 19.2px;
+        color: var(--core-muted-foreground);
+    }
+
+    /* Divider */
+    .gastro-card__divider {
+        height: 1px;
+        background-color: var(--border);
+        width: 100%;
+    }
+
+    /* Price range + CTA row */
+    .gastro-card__price-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-top: 4px;
+    }
+
+    .gastro-card__price-range {
+        font-family: var(--font-heading);
+        font-weight: 600;
+        font-size: 14px;
+        line-height: 1.4;
+        color: var(--brand-accent);
+    }
+
+    .gastro-card__cta-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        border-radius: 9999px;
+        font-family: var(--font-sans);
+        font-weight: 500;
+        font-size: 12px;
+        line-height: 19.2px;
+        color: var(--core-foreground);
+        background: linear-gradient(
+            135deg,
+            var(--brand-secondary) 0%,
+            var(--core-background) 100%
+        );
+        white-space: nowrap;
+        transition: opacity 200ms ease-out;
+    }
+
+    .gastro-card:hover .gastro-card__cta-btn {
+        opacity: 0.85;
+    }
+
+    /* Mobile adjustments */
+    @media (max-width: 767px) {
+        .gastro-card__image-area {
+            height: 200px;
+        }
+
+        .gastro-card__content {
+            gap: 6px;
+            padding-bottom: 12px;
+        }
+
+        .gastro-card__description {
+            -webkit-line-clamp: 3;
+        }
+
+        .gastro-card__reviews-count {
+            display: none;
+        }
+
+        .gastro-card__featured-badge {
+            bottom: 48px;
+            left: 12px;
+            right: auto;
+            top: auto;
+        }
+    }
+</style>

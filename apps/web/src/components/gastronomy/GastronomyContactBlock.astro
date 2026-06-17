@@ -1,0 +1,174 @@
+---
+/**
+ * @file GastronomyContactBlock.astro
+ * @description Social networks + menu URL block for a gastronomy listing
+ * (SPEC-239 T-054).
+ *
+ * IMPORTANT: The public GastronomyPublicSchema does NOT expose phone or email
+ * fields (contactInfo is not part of the public schema). Only `socialNetworks`
+ * and `menuUrl` are available publicly and rendered here.
+ */
+
+import type { GastronomySocialNetworks } from '@/data/types';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+    readonly socialNetworks: GastronomySocialNetworks | null;
+    readonly menuUrl?: string | null;
+    readonly locale: SupportedLocale;
+}
+
+const { socialNetworks, menuUrl, locale } = Astro.props;
+const { t } = createTranslations(locale);
+
+/** Only render if at least one piece of contact info is present. */
+const hasSocial =
+    socialNetworks &&
+    Object.values(socialNetworks).some((v) => Boolean(v));
+
+if (!hasSocial && !menuUrl) {
+    // Nothing to render — exit early
+    return;
+}
+
+interface SocialLink {
+    readonly key: keyof GastronomySocialNetworks;
+    readonly label: string;
+    readonly icon: string;
+}
+
+const SOCIAL_LINKS: readonly SocialLink[] = [
+    { key: 'website', label: 'Sitio web', icon: '🌐' },
+    { key: 'instagram', label: 'Instagram', icon: '📷' },
+    { key: 'facebook', label: 'Facebook', icon: '📘' },
+    { key: 'twitter', label: 'Twitter / X', icon: '🐦' },
+    { key: 'youtube', label: 'YouTube', icon: '▶️' },
+    { key: 'whatsapp', label: 'WhatsApp', icon: '💬' },
+    { key: 'tiktok', label: 'TikTok', icon: '🎵' }
+] as const;
+
+const menuLabel = t('gastronomy.detail.menu', 'Ver menú');
+const socialLabel = t('gastronomy.detail.social', 'Redes sociales');
+---
+
+<section class="gastro-contact">
+    {menuUrl && (
+        <div class="gastro-contact__menu">
+            <a
+                href={menuUrl}
+                class="gastro-contact__menu-btn"
+                target="_blank"
+                rel="noopener noreferrer"
+            >
+                {menuLabel} ↗
+            </a>
+        </div>
+    )}
+
+    {hasSocial && (
+        <div class="gastro-contact__social">
+            <h3 class="gastro-contact__social-title">{socialLabel}</h3>
+            <ul class="gastro-contact__social-list">
+                {SOCIAL_LINKS.map(({ key, label, icon }) => {
+                    const url = socialNetworks?.[key];
+                    if (!url) return null;
+                    return (
+                        <li class="gastro-contact__social-item">
+                            <a
+                                href={url}
+                                class="gastro-contact__social-link"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                aria-label={label}
+                            >
+                                <span aria-hidden="true">{icon}</span>
+                                <span>{label}</span>
+                            </a>
+                        </li>
+                    );
+                })}
+            </ul>
+        </div>
+    )}
+</section>
+
+<style>
+    .gastro-contact {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-5, 20px);
+        margin-bottom: var(--space-6, 24px);
+    }
+
+    /* Menu CTA button */
+    .gastro-contact__menu-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 10px 24px;
+        border-radius: var(--radius-button, 8px);
+        background-color: var(--brand-accent);
+        color: white;
+        font-family: var(--font-sans);
+        font-weight: 600;
+        font-size: 0.95rem;
+        text-decoration: none;
+        transition: opacity 200ms ease-out;
+    }
+
+    .gastro-contact__menu-btn:hover {
+        opacity: 0.85;
+    }
+
+    .gastro-contact__menu-btn:focus-visible {
+        outline: 2px solid var(--brand-primary);
+        outline-offset: 2px;
+    }
+
+    /* Social networks */
+    .gastro-contact__social-title {
+        font-family: var(--font-heading);
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--core-foreground);
+        margin-bottom: var(--space-3, 12px);
+    }
+
+    .gastro-contact__social-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .gastro-contact__social-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: var(--radius-pill, 9999px);
+        border: 1px solid var(--border);
+        background-color: var(--core-card);
+        color: var(--core-foreground);
+        font-family: var(--font-sans);
+        font-size: 0.85rem;
+        font-weight: 500;
+        text-decoration: none;
+        transition:
+            background-color 150ms ease-out,
+            border-color 150ms ease-out;
+    }
+
+    .gastro-contact__social-link:hover {
+        background-color: var(--surface-warm);
+        border-color: var(--brand-primary);
+    }
+
+    .gastro-contact__social-link:focus-visible {
+        outline: 2px solid var(--brand-primary);
+        outline-offset: 2px;
+    }
+</style>
