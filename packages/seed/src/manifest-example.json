@@ -397,6 +397,22 @@
     "userTags": [],
     "postTagAssignments": [],
     "entityTagAssignments": [],
+    "gastronomies": [
+        "001-gastronomy-uruguay-la-parrilla-del-puerto.json",
+        "002-gastronomy-colon-cafe-del-palacio.json",
+        "003-gastronomy-gualeguaychu-la-cerveceria-del-rio.json",
+        "004-gastronomy-concordia-heladeria-artesanal-luna.json",
+        "005-gastronomy-federacion-restaurant-termas.json",
+        "006-gastronomy-uruguay-bar-el-rinconcito.json"
+    ],
+    "gastronomyFaqs": [
+        "001-gastronomyFaq-la-parrilla-del-puerto.json",
+        "002-gastronomyFaq-cafe-del-palacio.json"
+    ],
+    "gastronomyReviews": [
+        "001-gastronomyReview-la-parrilla-del-puerto.json",
+        "002-gastronomyReview-cafe-del-palacio.json"
+    ],
     "hostTrades": [
         "001-hostTrade-uruguay-cerrajeria.json",
         "002-hostTrade-uruguay-plomeria.json",

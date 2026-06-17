@@ -1,0 +1,76 @@
+{
+    "id": "001-gastronomy-uruguay-la-parrilla-del-puerto",
+    "ownerId": "041-user-commerce-owner-julieta",
+    "destinationId": "011-destination-concepcion-del-uruguay",
+    "slug": "la-parrilla-del-puerto",
+    "name": "La Parrilla del Puerto",
+    "summary": "La mejor parrilla de Concepción del Uruguay, con carnes premium y vistas al río.",
+    "description": "Ubicada a metros del histórico Puerto Viejo de Concepción del Uruguay, La Parrilla del Puerto es el lugar preferido de locales y turistas para disfrutar de los mejores cortes de carne a las brasas. Con más de 15 años de trayectoria, nuestro equipo selecciona personalmente los mejores novillos entrerrianos para ofrecerte una experiencia gastronómica inigualable. El ambiente es cálido y familiar, con una extensa carta de vinos y la mejor provoleta de la región.",
+    "type": "PARRILLA",
+    "priceRange": "MID",
+    "menuUrl": "https://laparrilladelpu.com.ar/menu",
+    "visibility": "PUBLIC",
+    "lifecycleState": "ACTIVE",
+    "moderationState": "APPROVED",
+    "isFeatured": true,
+    "contactInfo": {
+        "personalEmail": "info@laparrilladelpu.com.ar",
+        "mobilePhone": "+54 9 3442 500001",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
+    },
+    "socialNetworks": {
+        "instagram": "https://instagram.com/laparrilladelpu",
+        "facebook": "https://facebook.com/laparrilladelpu"
+    },
+    "openingHours": {
+        "monday": { "open": "12:00", "close": "15:00" },
+        "tuesday": { "open": "12:00", "close": "15:00" },
+        "wednesday": { "open": "12:00", "close": "15:00" },
+        "thursday": {
+            "open": "12:00",
+            "close": "15:00",
+            "eveningOpen": "19:00",
+            "eveningClose": "23:00"
+        },
+        "friday": {
+            "open": "12:00",
+            "close": "15:00",
+            "eveningOpen": "19:00",
+            "eveningClose": "23:30"
+        },
+        "saturday": {
+            "open": "12:00",
+            "close": "16:00",
+            "eveningOpen": "19:30",
+            "eveningClose": "23:30"
+        },
+        "sunday": { "open": "12:00", "close": "16:00" }
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=800&h=600&fit=crop",
+            "alt": "Interior de La Parrilla del Puerto",
+            "moderationState": "APPROVED"
+        },
+        "gallery": [
+            {
+                "url": "https://images.unsplash.com/photo-1544025162-d76694265947?w=800&h=600&fit=crop",
+                "alt": "Parrilla con brasas",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1558030006-450675393462?w=800&h=600&fit=crop",
+                "alt": "Plato de asado",
+                "moderationState": "APPROVED"
+            }
+        ]
+    },
+    "seo": {
+        "metaTitle": "La Parrilla del Puerto - Concepción del Uruguay",
+        "metaDescription": "La mejor parrilla de Concepción del Uruguay. Carnes premium, provoleta legendaria y vistas al río. Abierto todos los días.",
+        "keywords": ["parrilla", "asado", "concepcion del uruguay", "carnes", "restaurante"]
+    },
+    "reviewsCount": 3,
+    "averageRating": 4.6
+}

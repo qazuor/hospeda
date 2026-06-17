@@ -1,0 +1,68 @@
+{
+    "id": "002-gastronomy-colon-cafe-del-palacio",
+    "ownerId": "041-user-commerce-owner-julieta",
+    "destinationId": "002-destination-colon",
+    "slug": "cafe-del-palacio-colon",
+    "name": "Café del Palacio",
+    "summary": "Café boutique con vista al Palacio San José y los mejores pasteles artesanales de Colón.",
+    "description": "En el corazón de la histórica Colón, el Café del Palacio ofrece una experiencia única combinando la calidez de los cafés de la vieja guardia con la creatividad de la repostería contemporánea. Nuestros baristas preparan el mejor café de especialidad de Entre Ríos, acompañado de medialunas, croissants y tortas elaboradas diariamente con ingredientes locales. La terraza con vista al antiguo palacio es el lugar perfecto para una tarde tranquila.",
+    "type": "CAFE",
+    "priceRange": "MID",
+    "menuUrl": null,
+    "visibility": "PUBLIC",
+    "lifecycleState": "ACTIVE",
+    "moderationState": "APPROVED",
+    "isFeatured": true,
+    "contactInfo": {
+        "personalEmail": "cafedelpalacio@gmail.com",
+        "mobilePhone": "+54 9 3447 500002",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
+    },
+    "socialNetworks": {
+        "instagram": "https://instagram.com/cafedelpalacio_colon",
+        "facebook": "https://facebook.com/cafedelpalaciocolon"
+    },
+    "openingHours": {
+        "monday": { "closed": true },
+        "tuesday": { "open": "08:00", "close": "20:00" },
+        "wednesday": { "open": "08:00", "close": "20:00" },
+        "thursday": { "open": "08:00", "close": "20:00" },
+        "friday": { "open": "08:00", "close": "22:00" },
+        "saturday": { "open": "09:00", "close": "22:00" },
+        "sunday": { "open": "09:00", "close": "18:00" }
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&h=600&fit=crop",
+            "alt": "Interior del Café del Palacio",
+            "moderationState": "APPROVED"
+        },
+        "gallery": [
+            {
+                "url": "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=800&h=600&fit=crop",
+                "alt": "Café de especialidad",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1464349153735-7db50ed83c84?w=800&h=600&fit=crop",
+                "alt": "Pasteles artesanales",
+                "moderationState": "APPROVED"
+            }
+        ]
+    },
+    "seo": {
+        "metaTitle": "Café del Palacio - Colón, Entre Ríos",
+        "metaDescription": "Café boutique en Colón con vista al Palacio San José. Los mejores pasteles artesanales y café de especialidad de Entre Ríos.",
+        "keywords": [
+            "cafe",
+            "colon",
+            "entre rios",
+            "cafe de especialidad",
+            "pasteles",
+            "reposteria"
+        ]
+    },
+    "reviewsCount": 2,
+    "averageRating": 4.8
+}

@@ -1,0 +1,47 @@
+{
+    "$gastronomyId": "001-gastronomy-uruguay-la-parrilla-del-puerto",
+    "reviews": [
+        {
+            "userId": "009-user-sofia-morales",
+            "title": "La mejor parrilla de la región",
+            "content": "Fuimos a celebrar el cumpleaños de mi marido y la experiencia fue increíble. El asado de tira era tierno y jugoso, la provoleta legendaria, y el servicio muy atento. Sin duda es el mejor restaurante de Concepción del Uruguay para carne.",
+            "rating": {
+                "food": 5,
+                "service": 5,
+                "ambiance": 4,
+                "value": 4
+            },
+            "averageRating": 4.5,
+            "overallRating": 5,
+            "moderationState": "APPROVED"
+        },
+        {
+            "userId": "004-user-ana-rodríguez",
+            "title": "Excelente pero hay que reservar",
+            "content": "La calidad de la carne es excepcional y los precios son muy razonables para lo que ofrecen. Los fines de semana se llena mucho. Recomiendo reservar con anticipación, especialmente en temporada alta. La vista al río es un plus increíble.",
+            "rating": {
+                "food": 5,
+                "service": 4,
+                "ambiance": 5,
+                "value": 5
+            },
+            "averageRating": 4.75,
+            "overallRating": 5,
+            "moderationState": "APPROVED"
+        },
+        {
+            "userId": "005-user-miguel-torres",
+            "title": "Parrilla auténtica entrerriana",
+            "content": "Ambiente familiar, carnes de primera calidad y servicio amable. El bife de chorizo que pedí estaba en su punto justo. Para los amantes de la carne, este lugar es imperdible en Concepción del Uruguay. Volvería sin dudas.",
+            "rating": {
+                "food": 5,
+                "service": 4,
+                "ambiance": 4,
+                "value": 4
+            },
+            "averageRating": 4.25,
+            "overallRating": 4,
+            "moderationState": "APPROVED"
+        }
+    ]
+}

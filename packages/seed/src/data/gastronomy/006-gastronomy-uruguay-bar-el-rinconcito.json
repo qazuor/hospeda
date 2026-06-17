@@ -1,0 +1,55 @@
+{
+    "id": "006-gastronomy-uruguay-bar-el-rinconcito",
+    "ownerId": "043-user-commerce-owner-valentina",
+    "destinationId": "011-destination-concepcion-del-uruguay",
+    "slug": "bar-el-rinconcito",
+    "name": "Bar El Rinconcito",
+    "summary": "Bar de barrio con ambiente bohemio, vinos naturales y picadas gourmet en Concepción del Uruguay.",
+    "description": "El Rinconcito es el bar de culto de Concepción del Uruguay. Instalado en una antigua casona con techos altos y paredes de ladrillo visto, ofrece una carta curada de vinos naturales, cervezas artesanales de pequeños productores y tragos creativos elaborados con hierbas regionales. Las picadas artesanales con chacinados locales, quesos de productores entrerrianos y conservas caseras complementan perfectamente cada trago. Los viernes y sábados hay música en vivo.",
+    "type": "BAR",
+    "priceRange": "MID",
+    "menuUrl": null,
+    "visibility": "PRIVATE",
+    "lifecycleState": "DRAFT",
+    "moderationState": "PENDING",
+    "isFeatured": false,
+    "contactInfo": {
+        "personalEmail": "barelrinconcito@hotmail.com",
+        "mobilePhone": "+54 9 3442 500006",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
+    },
+    "socialNetworks": {
+        "instagram": "https://instagram.com/barelrinconcito"
+    },
+    "openingHours": {
+        "monday": { "closed": true },
+        "tuesday": { "closed": true },
+        "wednesday": { "open": "19:00", "close": "01:00" },
+        "thursday": { "open": "19:00", "close": "01:00" },
+        "friday": { "open": "19:00", "close": "02:00" },
+        "saturday": { "open": "19:00", "close": "02:00" },
+        "sunday": { "closed": true }
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1572116469696-31de0f17cc34?w=800&h=600&fit=crop",
+            "alt": "Interior bohemio del Bar El Rinconcito",
+            "moderationState": "PENDING"
+        },
+        "gallery": []
+    },
+    "seo": {
+        "metaTitle": "Bar El Rinconcito - Concepción del Uruguay",
+        "metaDescription": "Bar bohemio con vinos naturales, cervezas artesanales y picadas gourmet en Concepción del Uruguay. Música en vivo los fines de semana.",
+        "keywords": [
+            "bar",
+            "vinos naturales",
+            "concepcion del uruguay",
+            "bohemio",
+            "musica en vivo"
+        ]
+    },
+    "reviewsCount": 0,
+    "averageRating": 0
+}

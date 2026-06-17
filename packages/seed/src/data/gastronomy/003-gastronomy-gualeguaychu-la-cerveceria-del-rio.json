@@ -1,0 +1,61 @@
+{
+    "id": "003-gastronomy-gualeguaychu-la-cerveceria-del-rio",
+    "ownerId": "042-user-commerce-owner-rodrigo",
+    "destinationId": "005-destination-gualeguaychu",
+    "slug": "la-cerveceria-del-rio",
+    "name": "La Cervecería del Río",
+    "summary": "Cervecería artesanal con producción propia y maridaje de tapas gourmet frente al Río Gualeguaychú.",
+    "description": "La Cervecería del Río es el punto de encuentro de los amantes de la cerveza artesanal en Gualeguaychú. Con un laboratorio de producción in situ, elaboramos más de 12 estilos de cerveza que van desde las clásicas pale ale hasta stouts robustas y IPAs aromáticas. Cada cerveza está pensada para acompañar nuestro menú de tapas gourmet: empanadas de cordero, tabla de quesos regionales, bruschettas y mucho más. La terraza sobre el río es el ambiente ideal para disfrutar el atardecer entrerriano.",
+    "type": "CERVECERIA",
+    "priceRange": "MID",
+    "menuUrl": "https://lacerveceridelrio.com.ar/carta",
+    "visibility": "PUBLIC",
+    "lifecycleState": "ACTIVE",
+    "moderationState": "APPROVED",
+    "isFeatured": false,
+    "contactInfo": {
+        "personalEmail": "hola@lacerveceridelrio.com.ar",
+        "mobilePhone": "+54 9 3446 500003",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
+    },
+    "socialNetworks": {
+        "instagram": "https://instagram.com/cerveceriadelrio_gchu",
+        "facebook": "https://facebook.com/lacerveceriadrio"
+    },
+    "openingHours": {
+        "monday": { "closed": true },
+        "tuesday": { "closed": true },
+        "wednesday": { "open": "18:00", "close": "01:00" },
+        "thursday": { "open": "18:00", "close": "01:00" },
+        "friday": { "open": "17:00", "close": "02:00" },
+        "saturday": { "open": "17:00", "close": "02:00" },
+        "sunday": { "open": "17:00", "close": "00:00" }
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=600&fit=crop",
+            "alt": "Interior de La Cervecería del Río",
+            "moderationState": "APPROVED"
+        },
+        "gallery": [
+            {
+                "url": "https://images.unsplash.com/photo-1532634896-26909d0d4b89?w=800&h=600&fit=crop",
+                "alt": "Tapas gourmet",
+                "moderationState": "APPROVED"
+            },
+            {
+                "url": "https://images.unsplash.com/photo-1559526324-593bc073d938?w=800&h=600&fit=crop",
+                "alt": "Cervezas artesanales en variedades",
+                "moderationState": "APPROVED"
+            }
+        ]
+    },
+    "seo": {
+        "metaTitle": "La Cervecería del Río - Gualeguaychú",
+        "metaDescription": "Cervecería artesanal con producción propia y tapas gourmet en Gualeguaychú. Más de 12 estilos de cerveza con vista al río.",
+        "keywords": ["cerveceria", "artesanal", "gualeguaychu", "tapas", "beer", "entre rios"]
+    },
+    "reviewsCount": 0,
+    "averageRating": 0
+}
