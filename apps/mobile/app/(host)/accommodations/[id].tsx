@@ -19,7 +19,8 @@ import {
     usePatchAccommodation
 } from '../../../src/lib/api/hooks/use-patch-accommodation';
 import type { AccommodationOperationalUpdate } from '../../../src/lib/api/hooks/use-patch-accommodation';
-import { appDefaultLocale, getTranslation } from '../../../src/lib/i18n';
+import { getTranslation } from '../../../src/lib/i18n';
+import { useLocale } from '../../../src/lib/locale-context';
 import { logger } from '../../../src/lib/logger';
 
 // ---------------------------------------------------------------------------
@@ -66,7 +67,8 @@ type FormErrors = Partial<Record<keyof FormFields, string>>;
 export default function AccommodationDetailScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const router = useRouter();
-    const t = (key: string) => getTranslation(key, appDefaultLocale);
+    const { locale } = useLocale();
+    const t = (key: string) => getTranslation(key, locale);
 
     const { data, isLoading, error } = useOwnAccommodation(id);
     const mutation = usePatchAccommodation();

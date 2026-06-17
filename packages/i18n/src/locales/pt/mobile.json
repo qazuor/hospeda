@@ -3,13 +3,18 @@
         "home": {
             "title": "Início turista",
             "subtitle": "Explore acomodações na região"
+        },
+        "tabs": {
+            "home": "Início",
+            "profile": "Perfil"
         }
     },
     "host": {
         "tabs": {
             "home": "Início",
             "accommodations": "Fichas",
-            "conversations": "Consultas"
+            "conversations": "Consultas",
+            "profile": "Perfil"
         },
         "dashboard": {
             "title": "Painel do anfitrião",
@@ -92,6 +97,52 @@
             "error": "Não foi possível carregar as métricas. Tente novamente.",
             "loading": "Carregando métricas...",
             "retry": "Tentar novamente"
+        }
+    },
+    "profile": {
+        "title": "Meu perfil",
+        "avatarLabel": "Foto de perfil",
+        "emailLabel": "E-mail",
+        "roleLabel": "Função",
+        "sections": {
+            "personalInfo": "Informações pessoais",
+            "location": "Localização"
+        },
+        "fields": {
+            "name": "Nome completo",
+            "firstName": "Nome",
+            "lastName": "Sobrenome",
+            "phone": "Celular",
+            "city": "Cidade",
+            "region": "Estado / Região",
+            "country": "País"
+        },
+        "save": "Salvar alterações",
+        "saveSuccess": "Perfil atualizado com sucesso.",
+        "saveError": "Não foi possível salvar. Tente novamente.",
+        "loading": "Carregando perfil...",
+        "loadError": "Não foi possível carregar o perfil. Tente novamente."
+    },
+    "settings": {
+        "title": "Configurações",
+        "notifications": {
+            "sectionTitle": "Notificações",
+            "enabled": "Notificações ativas",
+            "allowPush": "Notificações push",
+            "allowEmails": "Notificações por e-mail",
+            "allowSms": "Notificações por SMS"
+        },
+        "language": {
+            "sectionTitle": "Idioma",
+            "es": "Español",
+            "en": "English",
+            "pt": "Português"
+        },
+        "account": {
+            "sectionTitle": "Conta",
+            "signOut": "Sair",
+            "deleteAccount": "Excluir conta",
+            "deleteAccountComingSoon": "A exclusão de conta ainda não está disponível."
         }
     }
 }

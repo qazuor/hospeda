@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { queryClient } from '../src/lib/api/query-client';
 import { useSession } from '../src/lib/auth-client';
 import { resolveAuthGroup } from '../src/lib/auth/roles';
+import { LocaleProvider } from '../src/lib/locale-context';
 import { usePushRegistration } from '../src/lib/push/use-push-registration';
 
 /**
@@ -110,17 +111,19 @@ export default function RootLayout() {
     if (isPending) return null;
 
     return (
-        <QueryClientProvider client={queryClient}>
-            <Stack screenOptions={{ headerShown: false }}>
-                {/* Loading gate — root effect redirects away immediately */}
-                <Stack.Screen name="index" />
-                {/* Auth group: sign-in + sign-up */}
-                <Stack.Screen name="(auth)" />
-                {/* Tourist shell: logged-in users that are not host/admin */}
-                <Stack.Screen name="(tourist)" />
-                {/* Host shell: HOST, ADMIN, SUPER_ADMIN */}
-                <Stack.Screen name="(host)" />
-            </Stack>
-        </QueryClientProvider>
+        <LocaleProvider>
+            <QueryClientProvider client={queryClient}>
+                <Stack screenOptions={{ headerShown: false }}>
+                    {/* Loading gate — root effect redirects away immediately */}
+                    <Stack.Screen name="index" />
+                    {/* Auth group: sign-in + sign-up */}
+                    <Stack.Screen name="(auth)" />
+                    {/* Tourist shell: logged-in users that are not host/admin */}
+                    <Stack.Screen name="(tourist)" />
+                    {/* Host shell: HOST, ADMIN, SUPER_ADMIN */}
+                    <Stack.Screen name="(host)" />
+                </Stack>
+            </QueryClientProvider>
+        </LocaleProvider>
     );
 }

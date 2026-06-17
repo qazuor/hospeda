@@ -11,7 +11,8 @@ import { ChartBarIcon } from '../../src/components/icons';
 import { theme } from '../../src/design';
 import { useHostDashboard } from '../../src/lib/api/hooks/use-host-dashboard';
 import type { HostDashboard } from '../../src/lib/api/hooks/use-host-dashboard';
-import { appDefaultLocale, getTranslation } from '../../src/lib/i18n';
+import { getTranslation } from '../../src/lib/i18n';
+import { useLocale } from '../../src/lib/locale-context';
 import { logger } from '../../src/lib/logger';
 
 /**
@@ -28,7 +29,8 @@ import { logger } from '../../src/lib/logger';
  * Styling uses StyleSheet.create at module scope (ADR-034).
  */
 export default function HostDashboardScreen() {
-    const t = (key: string) => getTranslation(key, appDefaultLocale);
+    const { locale } = useLocale();
+    const t = (key: string) => getTranslation(key, locale);
     const router = useRouter();
     const { data, isLoading, error, refetch } = useHostDashboard();
 

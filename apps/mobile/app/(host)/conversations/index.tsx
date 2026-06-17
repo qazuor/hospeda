@@ -14,7 +14,8 @@ import {
     type OwnerConversationItem,
     useOwnerConversations
 } from '../../../src/lib/api/hooks/use-owner-conversations';
-import { appDefaultLocale, getTranslation } from '../../../src/lib/i18n';
+import { getTranslation } from '../../../src/lib/i18n';
+import { useLocale } from '../../../src/lib/locale-context';
 import { logger } from '../../../src/lib/logger';
 
 /**
@@ -34,7 +35,8 @@ import { logger } from '../../../src/lib/logger';
  * Styling uses StyleSheet.create at module scope (ADR-034).
  */
 export default function ConversationsInboxScreen() {
-    const t = (key: string) => getTranslation(key, appDefaultLocale);
+    const { locale } = useLocale();
+    const t = (key: string) => getTranslation(key, locale);
     const router = useRouter();
     const { data, isLoading, isRefetching, error, refetch } = useOwnerConversations({
         page: 1,
