@@ -28,7 +28,8 @@
             "planPastDue": "Payment pending",
             "loading": "Loading dashboard...",
             "error": "Could not load the dashboard. Please try again.",
-            "retry": "Retry"
+            "retry": "Retry",
+            "viewMetrics": "View metrics"
         },
         "accommodations": {
             "listTitle": "My listings",
@@ -79,6 +80,18 @@
                 "sendError": "Could not send the message. Please try again.",
                 "back": "Go back"
             }
+        },
+        "metrics": {
+            "title": "View Metrics",
+            "window7d": "Last 7 days",
+            "window30d": "Last 30 days",
+            "accommodationLabel": "Accommodation",
+            "uniqueLabel": "Unique views",
+            "totalLabel": "Total views",
+            "empty": "No view data for this period.",
+            "error": "Could not load metrics. Please try again.",
+            "loading": "Loading metrics...",
+            "retry": "Retry"
         }
     }
 }

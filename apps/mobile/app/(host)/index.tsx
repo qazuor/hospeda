@@ -1,3 +1,4 @@
+import { useRouter } from 'expo-router';
 import {
     ActivityIndicator,
     ScrollView,
@@ -6,6 +7,7 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
+import { ChartBarIcon } from '../../src/components/icons';
 import { theme } from '../../src/design';
 import { useHostDashboard } from '../../src/lib/api/hooks/use-host-dashboard';
 import type { HostDashboard } from '../../src/lib/api/hooks/use-host-dashboard';
@@ -27,6 +29,7 @@ import { logger } from '../../src/lib/logger';
  */
 export default function HostDashboardScreen() {
     const t = (key: string) => getTranslation(key, appDefaultLocale);
+    const router = useRouter();
     const { data, isLoading, error, refetch } = useHostDashboard();
 
     if (isLoading) {
@@ -87,6 +90,20 @@ export default function HostDashboardScreen() {
                     t={t}
                 />
             ) : null}
+
+            {/* Metrics navigation row (PR-C addition — deferred from T-040) */}
+            <TouchableOpacity
+                style={styles.metricsRow}
+                onPress={() => router.push('/(host)/metrics')}
+                accessibilityRole="button"
+            >
+                <ChartBarIcon
+                    color={theme.colors.river[500]}
+                    size={20}
+                    weight="regular"
+                />
+                <Text style={styles.metricsRowText}>{t('mobile.host.dashboard.viewMetrics')}</Text>
+            </TouchableOpacity>
         </ScrollView>
     );
 }
@@ -344,5 +361,22 @@ const styles = StyleSheet.create({
     mutedText: {
         fontSize: theme.typography.semantic.body,
         color: theme.colors.neutral[400]
+    },
+    // Metrics navigation row
+    metricsRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: theme.spacing[2],
+        backgroundColor: theme.colors.neutral[50],
+        borderRadius: theme.radius.semantic.card,
+        padding: theme.spacing[4],
+        marginBottom: theme.spacing[4],
+        borderWidth: 1,
+        borderColor: theme.colors.semantic.border
+    },
+    metricsRowText: {
+        fontSize: theme.typography.semantic.body,
+        fontWeight: '600',
+        color: theme.colors.river[600]
     }
 });

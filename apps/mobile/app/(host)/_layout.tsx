@@ -74,6 +74,11 @@ export default function HostLayout() {
                     )
                 }}
             />
+            {/* Metrics screen — navigable via router.push but NOT a visible tab */}
+            <Tabs.Screen
+                name="metrics"
+                options={{ href: null }}
+            />
         </Tabs>
     );
 }
