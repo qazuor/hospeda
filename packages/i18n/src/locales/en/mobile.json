@@ -8,7 +8,8 @@
     "host": {
         "tabs": {
             "home": "Home",
-            "accommodations": "Listings"
+            "accommodations": "Listings",
+            "conversations": "Inquiries"
         },
         "dashboard": {
             "title": "Host Dashboard",
@@ -59,6 +60,24 @@
                 "error": "Could not save. Please try again.",
                 "loading": "Loading listing...",
                 "notFound": "Listing not found."
+            }
+        },
+        "conversations": {
+            "title": "Inquiries",
+            "loading": "Loading inquiries...",
+            "error": "Could not load inquiries. Please try again.",
+            "empty": "You don't have any inquiries yet.",
+            "retry": "Retry",
+            "guestUnknown": "Guest",
+            "thread": {
+                "title": "Conversation",
+                "loading": "Loading messages...",
+                "error": "Could not load the conversation. Please try again.",
+                "empty": "No messages in this conversation.",
+                "inputPlaceholder": "Type your reply...",
+                "send": "Send",
+                "sendError": "Could not send the message. Please try again.",
+                "back": "Go back"
             }
         }
     }

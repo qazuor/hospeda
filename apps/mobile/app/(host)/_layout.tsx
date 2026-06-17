@@ -1,17 +1,18 @@
 import { Tabs } from 'expo-router';
-import { BuildingsIcon, HouseIcon } from '../../src/components/icons';
+import { BuildingsIcon, ChatCircleIcon, HouseIcon } from '../../src/components/icons';
 import { theme } from '../../src/design';
 import { appDefaultLocale, getTranslation } from '../../src/lib/i18n';
 
 /**
- * Host group layout — Tabs navigator (SPEC-243 T-040).
+ * Host group layout — Tabs navigator (SPEC-243 T-040 / T-043).
  *
- * Two tabs in this PR:
+ * Three tabs:
  * - Inicio (index) — host dashboard
  * - Fichas (accommodations) — host-scoped accommodation list
+ * - Consultas (conversations) — owner conversation inbox + thread
  *
  * Tab labels come from `mobile.host.tabs.*` i18n keys.
- * Tab icons from the icons barrel (HouseIcon / BuildingsIcon).
+ * Tab icons from the icons barrel (HouseIcon / BuildingsIcon / ChatCircleIcon).
  *
  * Expo Router requires a **default export** for route files.
  */
@@ -53,6 +54,19 @@ export default function HostLayout() {
                     title: t('mobile.host.tabs.accommodations'),
                     tabBarIcon: ({ color, size }) => (
                         <BuildingsIcon
+                            color={color as string}
+                            size={size}
+                            weight="regular"
+                        />
+                    )
+                }}
+            />
+            <Tabs.Screen
+                name="conversations"
+                options={{
+                    title: t('mobile.host.tabs.conversations'),
+                    tabBarIcon: ({ color, size }) => (
+                        <ChatCircleIcon
                             color={color as string}
                             size={size}
                             weight="regular"
