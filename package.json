@@ -19,6 +19,7 @@
         "dev": "turbo run dev",
         "dev:all": "./scripts/dev.sh",
         "dev:admin": "node scripts/dev-admin.js",
+        "dev:mobile": "pnpm --filter mobile dev",
         "lint": "turbo run lint --filter=!hospeda-landing",
         "format": "turbo run format --filter=!hospeda-landing",
         "clean": "turbo run clean",
