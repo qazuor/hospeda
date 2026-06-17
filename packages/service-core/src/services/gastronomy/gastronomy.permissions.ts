@@ -26,6 +26,7 @@ import {
     checkCanDeleteCommerce,
     checkCanEditAll,
     checkCanEditOwn,
+    checkCanEditOwnOrAll,
     checkCanModerateReview,
     checkCanViewAll
 } from '../commerce/commerce.permissions';
@@ -55,6 +56,26 @@ export function checkGastronomyCanCreate(actor: Actor, data: unknown): void {
  */
 export function checkGastronomyCanEditAll(actor: Actor, entity: unknown): void {
     checkCanEditAll(actor, entity);
+}
+
+/**
+ * Checks if the actor may update a gastronomy listing through the base update
+ * pipeline (the service `_canUpdate` gate).
+ *
+ * Delegates to {@link checkCanEditOwnOrAll}: accepts staff (`COMMERCE_EDIT_ALL`)
+ * OR the listing owner holding at least one operational `editOwn` permission.
+ * Owner edits still flow through `updateOwn`, which enforces per-section gating
+ * and an operational-only payload.
+ *
+ * @param actor - The actor performing the action.
+ * @param entity - The gastronomy entity being updated (must carry `ownerId`).
+ * @throws {ServiceError} FORBIDDEN when neither condition is met.
+ */
+export function checkGastronomyCanEditOwnOrAll(
+    actor: Actor,
+    entity: { ownerId?: string | null }
+): void {
+    checkCanEditOwnOrAll(actor, entity);
 }
 
 /**

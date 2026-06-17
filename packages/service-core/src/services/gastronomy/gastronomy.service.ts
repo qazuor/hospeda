@@ -74,6 +74,7 @@ import {
     checkGastronomyCanDelete,
     checkGastronomyCanEditAll,
     checkGastronomyCanEditOwn,
+    checkGastronomyCanEditOwnOrAll,
     checkGastronomyCanHardDelete,
     checkGastronomyCanRestore,
     checkGastronomyCanView
@@ -213,7 +214,7 @@ export class GastronomyService extends BaseCommerceListingService<
     }
 
     protected _canUpdate(actor: Actor, entity: Gastronomy): void {
-        checkGastronomyCanEditAll(actor, entity);
+        checkGastronomyCanEditOwnOrAll(actor, entity);
     }
 
     protected _canSoftDelete(actor: Actor, entity: Gastronomy): void {
@@ -564,21 +565,14 @@ export class GastronomyService extends BaseCommerceListingService<
             //    Owner update schema is a strict subset of the full update schema,
             //    so casting is safe here.  Base update signature: update(actor, id, data, ctx?).
             //
-            //    IMPORTANT: base update() runs _canUpdate (requires COMMERCE_EDIT_ALL).
-            //    updateOwn() already performed its own ownership + section-level checks
-            //    above, so we elevate the actor here to include COMMERCE_EDIT_ALL to
-            //    satisfy the base gate without requiring owners to hold that permission.
-            const elevatedActor: Actor = {
-                ...actor,
-                permissions: actor.permissions.includes(PermissionEnum.COMMERCE_EDIT_ALL)
-                    ? actor.permissions
-                    : ([
-                          ...actor.permissions,
-                          PermissionEnum.COMMERCE_EDIT_ALL
-                      ] as typeof actor.permissions)
-            };
+            //    Base update() runs _canUpdate, which is owner-aware
+            //    (checkGastronomyCanEditOwnOrAll: COMMERCE_EDIT_ALL OR owner + an
+            //    operational editOwn permission). updateOwn() already enforced ownership
+            //    and per-section gating above, and the payload was validated against the
+            //    owner schema (operational fields only), so the original actor passes the
+            //    base gate without any privilege elevation.
             return this.update(
-                elevatedActor,
+                actor,
                 gastronomyId,
                 validated as GastronomyUpdateInput,
                 ctx as ServiceContext
