@@ -697,6 +697,14 @@ export function createDbMock() {
             purgeOlderThan: vi.fn().mockResolvedValue(0)
         },
 
+        // SPEC-243 T-011: UserPushTokenModel singleton. Required so UserService can
+        // instantiate at module scope (pushTokenModel = userPushTokenModel) when the
+        // service-core barrel is loaded by any route/job that imports it. Returned as
+        // an instance (not a class) because userPushTokenModel is a singleton.
+        userPushTokenModel: {
+            upsertByToken: vi.fn().mockResolvedValue({ id: 'upt_mock_id' })
+        },
+
         // SPEC-239: Gastronomy singleton model instances. GastronomyService,
         // GastronomyReviewService, and the standalone FAQ helpers access these at module
         // scope (via service constructor or direct import). They are exported as singleton
