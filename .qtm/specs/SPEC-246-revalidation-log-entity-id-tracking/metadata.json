@@ -1,0 +1,12 @@
+{
+    "specId": "SPEC-246",
+    "title": "Revalidation log entity_id tracking + re-enable ACC-02 E2E",
+    "type": "bugfix",
+    "complexity": "medium",
+    "status": "draft",
+    "created": "2026-06-17T00:00:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["revalidation", "cache", "service-core", "e2e", "testing", "bug"]
+}

@@ -722,6 +722,13 @@
             "status": "draft",
             "progress": "0/0",
             "path": "SPEC-245-mobile-testing-infrastructure"
+        },
+        {
+            "specId": "SPEC-246",
+            "title": "Revalidation log entity_id tracking + re-enable ACC-02 E2E",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-246-revalidation-log-entity-id-tracking"
         }
     ],
     "standalone": {
