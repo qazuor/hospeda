@@ -213,6 +213,8 @@ jobs:
           echo "OK: no admin-tier API calls in apps/web/src"
       - name: Env registry parity (SPEC-035)
         run: pnpm env:check:registry
+      - name: Env examples drift guard (SPEC-235)
+        run: pnpm env:check:examples
 
   # ------------------------------------------------------------------
   # Build all packages and apps. Required by typecheck and tests.
