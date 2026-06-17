@@ -28,6 +28,7 @@
 
 import { SearchableSelect } from '@/components/form/SearchableSelect.client';
 import type { SelectableItem } from '@/components/form/SearchableSelect.client';
+import { ImportFromUrl } from '@/components/host/ImportFromUrl.client';
 import { getAccommodationTypeIcon } from '@/lib/accommodation-type-icons';
 import { translateApiError } from '@/lib/api-errors';
 import { destinationsApi } from '@/lib/api/endpoints';
@@ -38,8 +39,9 @@ import { webLogger } from '@/lib/logger';
 import { buildUrlWithParams } from '@/lib/urls';
 import { addToast } from '@/store/toast-store';
 import { AccommodationTypeEnum } from '@repo/schemas';
-import type { DestinationPublic } from '@repo/schemas';
+import type { AccommodationImportResponse, DestinationPublic, FieldSource } from '@repo/schemas';
 import { useCallback, useId, useMemo, useState } from 'react';
+import styles from './CreatePropertyMiniForm.module.css';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -73,6 +75,33 @@ type FieldErrors = Readonly<{
     type?: string;
     destinationId?: string;
 }>;
+
+/**
+ * Per-field import metadata stored when an import prefills the form.
+ * Used to render confidence badges next to each prefilled field.
+ */
+type FieldImportMeta = {
+    readonly confidence: number;
+    readonly source: FieldSource;
+};
+
+/**
+ * Import metadata for every field that was prefilled from an import response.
+ */
+type ImportMeta = Readonly<{
+    name?: FieldImportMeta;
+    summary?: FieldImportMeta;
+    type?: FieldImportMeta;
+}>;
+
+/**
+ * Destination hint carried from the import response.
+ * Surfaces next to the City picker as a non-binding informational hint.
+ */
+type DestinationHint = {
+    readonly scrapedLocality?: string;
+    readonly candidates: ReadonlyArray<{ readonly id: string; readonly name: string }>;
+};
 
 type OnboardingStartStatus = 'created' | 'resumed' | 'already_host';
 
@@ -151,6 +180,12 @@ export function CreatePropertyMiniForm({
     const [submitError, setSubmitError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // Import section state
+    const [importOpen, setImportOpen] = useState(false);
+    const [importMeta, setImportMeta] = useState<ImportMeta>({});
+    const [importedOnce, setImportedOnce] = useState(false);
+    const [destinationHint, setDestinationHint] = useState<DestinationHint | null>(null);
+
     // Items for the accommodation type picker. Memoized so the dropdown
     // doesn't re-allocate on every render. Each item carries the matching
     // icon resolved via the shared helper — same affordances the home page
@@ -163,6 +198,75 @@ export function CreatePropertyMiniForm({
                 icon: getAccommodationTypeIcon({ type: value })
             })),
         [t]
+    );
+
+    /**
+     * Called by the ImportFromUrl island after a successful import.
+     * Pre-fills form fields from the response draft without submitting anything.
+     * Per-field confidence badges are stored in `importMeta`.
+     */
+    const handleImported = useCallback(
+        (response: AccommodationImportResponse): void => {
+            const nextMeta: {
+                name?: FieldImportMeta;
+                summary?: FieldImportMeta;
+                type?: FieldImportMeta;
+            } = {};
+
+            if (typeof response.draft.name?.value === 'string') {
+                setName(response.draft.name.value);
+                nextMeta.name = {
+                    confidence: response.draft.name.confidence,
+                    source: response.draft.name.source
+                };
+            }
+
+            if (typeof response.draft.summary?.value === 'string') {
+                setSummary(response.draft.summary.value);
+                nextMeta.summary = {
+                    confidence: response.draft.summary.confidence,
+                    source: response.draft.summary.source
+                };
+            }
+
+            if (typeof response.draft.type?.value === 'string') {
+                const typeValue = response.draft.type.value;
+                // Reuse the already-computed typeItems to resolve the human label.
+                const matchedTypeItem = typeItems.find((item) => item.id === typeValue);
+                setTypeItem(
+                    matchedTypeItem ?? {
+                        id: typeValue,
+                        label: typeValue
+                    }
+                );
+                nextMeta.type = {
+                    confidence: response.draft.type.confidence,
+                    source: response.draft.type.source
+                };
+            }
+
+            setImportMeta(nextMeta);
+            setImportedOnce(true);
+
+            // Destination hint: surface when the response carries locality or candidates.
+            if (response.destinationHint) {
+                const hint = response.destinationHint;
+                const hasLocality = Boolean(hint.scrapedLocality);
+                const hasCandidates = hint.candidates.length > 0;
+                if (hasLocality || hasCandidates) {
+                    setDestinationHint({
+                        scrapedLocality: hint.scrapedLocality,
+                        candidates: hint.candidates
+                    });
+                }
+            }
+
+            webLogger.info('CreatePropertyMiniForm: prefilled from import', {
+                fieldsFilled: Object.keys(nextMeta)
+            });
+        },
+        // typeItems is a memoized array — safe dep; setters from useState are stable.
+        [typeItems]
     );
 
     // City picker uses async mode — hits the public destinations endpoint
@@ -398,20 +502,89 @@ export function CreatePropertyMiniForm({
             }}
             noValidate
         >
-            {/* Name */}
-            <div className="form-field">
-                <label
-                    className="form-label"
-                    htmlFor={nameId}
+            {/* Import from URL — collapsible section at the top of the form (T-025). */}
+            <div
+                className={styles.importSection}
+                data-testid="import-section"
+            >
+                <button
+                    type="button"
+                    className={styles.importToggle}
+                    aria-expanded={importOpen}
+                    onClick={() => setImportOpen((prev) => !prev)}
+                    data-testid="import-toggle"
                 >
-                    {t('host.miniForm.fields.name', 'Nombre del alojamiento')}
+                    {t('host.importFromUrl.prefill.sectionToggle', 'Importar desde una URL')}
                     <span
-                        className="form-required"
+                        className={`${styles.importToggleIcon} ${importOpen ? styles['importToggleIcon--open'] : ''}`}
                         aria-hidden="true"
                     >
-                        *
+                        ▼
                     </span>
-                </label>
+                </button>
+                {importOpen ? (
+                    <div className={styles.importBody}>
+                        <ImportFromUrl
+                            locale={locale}
+                            onImported={handleImported}
+                        />
+                    </div>
+                ) : null}
+            </div>
+
+            {/* Review notice — shown once after the first successful import (AC-1.2/1.3). */}
+            {importedOnce ? (
+                <output
+                    className={styles.reviewNotice}
+                    data-testid="import-review-notice"
+                >
+                    <span
+                        className={styles.reviewNoticeIcon}
+                        aria-hidden="true"
+                    >
+                        ℹ
+                    </span>
+                    <span>
+                        {t(
+                            'host.importFromUrl.prefill.reviewNotice',
+                            'Revisá y confirmá los datos importados antes de continuar.'
+                        )}
+                    </span>
+                </output>
+            ) : null}
+
+            {/* Name */}
+            <div className="form-field">
+                <div className={styles.fieldWithBadge}>
+                    <label
+                        className="form-label"
+                        htmlFor={nameId}
+                    >
+                        {t('host.miniForm.fields.name', 'Nombre del alojamiento')}
+                        <span
+                            className="form-required"
+                            aria-hidden="true"
+                        >
+                            *
+                        </span>
+                    </label>
+                    {importMeta.name ? (
+                        <span
+                            className={styles.confidenceBadge}
+                            data-testid="import-badge-name"
+                        >
+                            {t('host.importFromUrl.prefill.badge.imported', 'Importado')}
+                            <span aria-hidden="true">
+                                {t('host.importFromUrl.prefill.badge.separator', '·')}
+                            </span>
+                            {`${String(importMeta.name.confidence)}%`}
+                            <span aria-hidden="true">
+                                {t('host.importFromUrl.prefill.badge.separator', '·')}
+                            </span>
+                            {importMeta.name.source}
+                        </span>
+                    ) : null}
+                </div>
                 <input
                     id={nameId}
                     className="form-input"
@@ -436,6 +609,22 @@ export function CreatePropertyMiniForm({
 
             {/* Type — shared SearchableSelect in local mode (icon affordance per type). */}
             <div className="form-field">
+                {importMeta.type ? (
+                    <span
+                        className={styles.confidenceBadge}
+                        data-testid="import-badge-type"
+                    >
+                        {t('host.importFromUrl.prefill.badge.imported', 'Importado')}
+                        <span aria-hidden="true">
+                            {t('host.importFromUrl.prefill.badge.separator', '·')}
+                        </span>
+                        {`${String(importMeta.type.confidence)}%`}
+                        <span aria-hidden="true">
+                            {t('host.importFromUrl.prefill.badge.separator', '·')}
+                        </span>
+                        {importMeta.type.source}
+                    </span>
+                ) : null}
                 <SearchableSelect
                     locale={locale}
                     inputId={typeId}
@@ -488,22 +677,79 @@ export function CreatePropertyMiniForm({
                         </a>
                     }
                 />
+                {/* Destination hint — non-binding, advisory only (T-025). */}
+                {destinationHint ? (
+                    <div
+                        className={styles.destinationHint}
+                        data-testid="destination-hint"
+                    >
+                        <span className={styles.destinationHintLabel}>
+                            {t(
+                                'host.importFromUrl.prefill.destinationHint.label',
+                                'Sugerencia de destino'
+                            )}
+                        </span>
+                        {destinationHint.scrapedLocality ? (
+                            <span className={styles.destinationHintText}>
+                                {t(
+                                    'host.importFromUrl.prefill.destinationHint.locality',
+                                    `Se detectó la localidad: ${destinationHint.scrapedLocality}`
+                                ).replace('{{locality}}', destinationHint.scrapedLocality)}
+                            </span>
+                        ) : null}
+                        {destinationHint.candidates.length > 0 ? (
+                            <span className={styles.destinationHintText}>
+                                {t(
+                                    'host.importFromUrl.prefill.destinationHint.candidates',
+                                    `Destinos sugeridos: ${destinationHint.candidates.map((c) => c.name).join(', ')}`
+                                ).replace(
+                                    '{{names}}',
+                                    destinationHint.candidates.map((c) => c.name).join(', ')
+                                )}
+                            </span>
+                        ) : null}
+                        <span className={styles.destinationHintCallout}>
+                            {t(
+                                'host.importFromUrl.prefill.destinationHint.hint',
+                                'Elegí el destino manualmente en el campo Ciudad.'
+                            )}
+                        </span>
+                    </div>
+                ) : null}
             </div>
 
             {/* Summary */}
             <div className="form-field">
-                <label
-                    className="form-label"
-                    htmlFor={summaryId}
-                >
-                    {t('host.miniForm.fields.summary', 'Descripción corta')}
-                    <span
-                        className="form-required"
-                        aria-hidden="true"
+                <div className={styles.fieldWithBadge}>
+                    <label
+                        className="form-label"
+                        htmlFor={summaryId}
                     >
-                        *
-                    </span>
-                </label>
+                        {t('host.miniForm.fields.summary', 'Descripción corta')}
+                        <span
+                            className="form-required"
+                            aria-hidden="true"
+                        >
+                            *
+                        </span>
+                    </label>
+                    {importMeta.summary ? (
+                        <span
+                            className={styles.confidenceBadge}
+                            data-testid="import-badge-summary"
+                        >
+                            {t('host.importFromUrl.prefill.badge.imported', 'Importado')}
+                            <span aria-hidden="true">
+                                {t('host.importFromUrl.prefill.badge.separator', '·')}
+                            </span>
+                            {`${String(importMeta.summary.confidence)}%`}
+                            <span aria-hidden="true">
+                                {t('host.importFromUrl.prefill.badge.separator', '·')}
+                            </span>
+                            {importMeta.summary.source}
+                        </span>
+                    ) : null}
+                </div>
                 <textarea
                     id={summaryId}
                     className="form-textarea"

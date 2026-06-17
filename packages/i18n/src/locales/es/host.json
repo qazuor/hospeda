@@ -1,4 +1,63 @@
 {
+    "importFromUrl": {
+        "fields": {
+            "url": "URL del alojamiento",
+            "urlPlaceholder": "https://...",
+            "legalConfirm": "Confirmo que tengo permiso para importar esta información."
+        },
+        "actions": {
+            "submit": "Importar",
+            "submitting": "Importando..."
+        },
+        "errors": {
+            "urlRequired": "Ingresá la URL del alojamiento.",
+            "urlInvalid": "La URL no es válida.",
+            "legalRequired": "Debés confirmar el aviso legal.",
+            "submit": "No pudimos importar el alojamiento. Intentá de nuevo.",
+            "network": "No pudimos conectar con el servidor."
+        },
+        "prefill": {
+            "sectionToggle": "Importar desde una URL",
+            "reviewNotice": "Revisá y confirmá los datos importados antes de continuar.",
+            "badge": {
+                "imported": "Importado",
+                "confidence": "{{confidence}}%",
+                "separator": "·"
+            },
+            "destinationHint": {
+                "label": "Sugerencia de destino",
+                "locality": "Se detectó la localidad: {{locality}}",
+                "candidates": "Destinos sugeridos: {{names}}",
+                "hint": "Elegí el destino manualmente en el campo Ciudad."
+            }
+        },
+        "help": {
+            "toggle": "¿Cómo obtengo la URL del alojamiento?",
+            "title": "Cómo copiar la URL según la plataforma",
+            "platforms": {
+                "airbnb": {
+                    "name": "Airbnb",
+                    "steps": "Abrí la publicación del alojamiento y copiá la dirección completa desde la barra del navegador.",
+                    "example": "https://www.airbnb.com.ar/rooms/12345678"
+                },
+                "booking": {
+                    "name": "Booking",
+                    "steps": "Entrá a la página del alojamiento y copiá la dirección del navegador, sin los filtros de fecha.",
+                    "example": "https://www.booking.com/hotel/ar/nombre.es.html"
+                },
+                "mercadolibre": {
+                    "name": "MercadoLibre",
+                    "steps": "Abrí la publicación del inmueble y copiá la dirección del navegador.",
+                    "example": "https://inmueble.mercadolibre.com.ar/MLA-123456789"
+                },
+                "google": {
+                    "name": "Google Maps",
+                    "steps": "Buscá el lugar en Google Maps, abrí su ficha y copiá la dirección del navegador.",
+                    "example": "https://www.google.com/maps/place/..."
+                }
+            }
+        }
+    },
     "form": {
         "sections": {
             "datos-basicos": {

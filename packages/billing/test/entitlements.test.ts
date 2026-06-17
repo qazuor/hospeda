@@ -193,7 +193,7 @@ describe('Entitlement Configuration', () => {
             const accommodationCount = 7;
             const complexCount = 4;
             const touristCount = 12;
-            const aiCount = 5; // AI feature entitlements (SPEC-173 + SPEC-212 AI_TRANSLATE)
+            const aiCount = 6; // AI feature entitlements (SPEC-173 + SPEC-212 AI_TRANSLATE + SPEC-222 AI_ACCOMMODATION_IMPORT)
 
             // Act & Assert
             expect(ownerCount + accommodationCount + complexCount + touristCount + aiCount).toBe(
@@ -201,18 +201,19 @@ describe('Entitlement Configuration', () => {
             );
         });
 
-        it('should have 5 AI feature entitlements (SPEC-173 + SPEC-212)', () => {
+        it('should have 6 AI feature entitlements (SPEC-173 + SPEC-212 + SPEC-222)', () => {
             // Arrange
             const aiKeys: readonly EntitlementKey[] = [
                 EntitlementKey.AI_TEXT_IMPROVE,
                 EntitlementKey.AI_CHAT,
                 EntitlementKey.AI_SEARCH,
                 EntitlementKey.AI_SUPPORT,
-                EntitlementKey.AI_TRANSLATE
+                EntitlementKey.AI_TRANSLATE,
+                EntitlementKey.AI_ACCOMMODATION_IMPORT
             ] as const;
 
             // Act & Assert
-            expect(aiKeys).toHaveLength(5);
+            expect(aiKeys).toHaveLength(6);
             for (const key of aiKeys) {
                 expect(ENTITLEMENT_DEFINITIONS.find((e) => e.key === key)).toBeDefined();
             }

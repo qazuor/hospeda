@@ -1270,7 +1270,7 @@
             "title": "Accommodation import from URL",
             "type": "feature",
             "complexity": "high",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-222-accommodation-import-from-url",
             "created": "2026-06-13T12:00:00Z",
             "tags": ["accommodations", "import", "scraping", "ai", "web", "admin", "feature"],

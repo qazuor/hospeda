@@ -1,0 +1,87 @@
+/**
+ * Styles for the ImportFromUrl host island (SPEC-222 T-023).
+ * Tokenized: all values reference CSS custom properties from global.css.
+ */
+
+.importFromUrl {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.legalRow {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+    font-family: var(--font-sans);
+    font-size: var(--text-body, 1rem);
+    color: var(--core-foreground);
+}
+
+.legalRow input {
+    margin-top: 0.2em;
+    flex-shrink: 0;
+}
+
+.legalRow label {
+    cursor: pointer;
+}
+
+/* Informational notice (e.g. AI extraction skipped for plan/quota reasons).
+   Reuses the banner layout but in a neutral/info tone, not an error tone. */
+.notice {
+    background-color: var(--palette-info-100, var(--surface-warm));
+    border-color: var(--palette-info-400, var(--brand-primary));
+    color: var(--core-foreground);
+}
+
+/* URL-acquisition help (US-7): a text toggle that reveals per-platform steps. */
+.helpToggle {
+    align-self: flex-start;
+    background: none;
+    border: none;
+    padding: 0;
+    font-family: var(--font-sans);
+    font-size: var(--text-sm, 0.875rem);
+    color: var(--brand-primary);
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.helpPanel {
+    background-color: var(--surface-warm);
+    border-radius: var(--radius-md);
+    padding: var(--space-4);
+}
+
+.helpTitle {
+    margin: 0 0 var(--space-3);
+    font-family: var(--font-heading);
+    font-size: var(--text-body, 1rem);
+    color: var(--core-foreground);
+}
+
+.helpList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.helpItem {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm, 0.875rem);
+    color: var(--core-muted-foreground);
+}
+
+.helpExample {
+    font-family: var(--font-mono, monospace);
+    font-size: var(--text-sm, 0.875rem);
+    color: var(--core-foreground);
+    word-break: break-all;
+}
