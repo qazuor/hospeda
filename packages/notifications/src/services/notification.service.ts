@@ -12,6 +12,7 @@ import {
     AdminPaymentFailure,
     AdminSystemEvent,
     AiCostThresholdAlert,
+    CommerceOwnerCredentials,
     ContactSubmissionEmail,
     FeedbackReportEmail,
     PaymentFailure,
@@ -38,6 +39,7 @@ import type {
     AddonEventPayload,
     AdminNotificationPayload,
     AiCostThresholdAlertPayload,
+    CommerceOwnerCredentialsPayload,
     ContactSubmissionPayload,
     FeedbackReportPayload,
     NotificationPayload,
@@ -579,6 +581,15 @@ export class NotificationService {
                     accessUntil: p.accessUntil,
                     migrationHint: p.migrationHint,
                     baseUrl: this.deps.siteUrl
+                });
+            }
+
+            case 'commerce_owner_credentials': {
+                const p = payload as CommerceOwnerCredentialsPayload;
+                return CommerceOwnerCredentials({
+                    recipientName,
+                    temporaryPassword: p.temporaryPassword,
+                    changePasswordUrl: p.changePasswordUrl
                 });
             }
 
