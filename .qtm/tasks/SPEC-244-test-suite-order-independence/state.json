@@ -1,0 +1,529 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-244",
+    "title": "Test suite order-independence hardening",
+    "created": "2026-06-17T00:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Audit apps/api/test/setup.ts global mocks for cross-file leakage",
+            "description": "Inventory every module-scoped vi.mock(...) in apps/api/test/setup.ts (notably the vi.mock('@repo/service-core') block and its PlanService mock returning {name:'Básico',status:'active'} for getBySlug('owner-basico')). For each mock, determine whether it returns canned values that can leak across files / win over a file's local mock under fork distribution. Produce the definitive list of leaking mocks (Open Question Q2). NO code change in this task — audit + findings only. Output: a findings note enumerating each global mock + leak verdict.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-003"],
+            "subtasks": [
+                {
+                    "title": "Inventory all module-scoped vi.mock in api setup.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Classify each mock as leaking / non-leaking",
+                    "completed": false
+                },
+                {
+                    "title": "Confirm full offender list beyond PlanService (Q2)",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "audit", "vitest"],
+            "phase": "api",
+            "qualityGate": {
+                "lint": false,
+                "typecheck": false,
+                "tests": false
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Move leaking api global mocks to opt-in per-file helpers",
+            "description": "For each leaking global mock found in T-001 (default: PlanService), remove it from apps/api/test/setup.ts and provide a shared opt-in helper (e.g. mockPlanService(overrides)) that files import and call explicitly. Per-mock choose option 1 (move to opt-in, default) vs option 2 (make non-leaking via reset semantics) per the spec Approach (Q1). Test-infra only; NO product/source code change. Files: apps/api/test/setup.ts + new shared test helper module under apps/api/test/.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-004"],
+            "subtasks": [
+                {
+                    "title": "Remove/neutralize PlanService global mock",
+                    "completed": false
+                },
+                {
+                    "title": "Add shared opt-in mock helper(s)",
+                    "completed": false
+                },
+                {
+                    "title": "Apply per-mock remediation choice (Q1)",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "vitest", "setup"],
+            "phase": "api",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Wire opt-in mocks into files that relied on the ambient mock",
+            "description": "For every api test file that silently depended on the now-removed global mock, add the explicit opt-in helper call so it keeps its expected behavior. The deterministic (non-shuffle) baseline run flags files that lost their ambient mock immediately. Focus on the evidence-table victims that needed the global PlanService mock. Test-infra only.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-004"],
+            "subtasks": [
+                {
+                    "title": "Identify files that relied on the ambient mock",
+                    "completed": false
+                },
+                {
+                    "title": "Add explicit opt-in helper calls per file",
+                    "completed": false
+                },
+                {
+                    "title": "Deterministic baseline run stays green (AC-1.3)",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "vitest"],
+            "phase": "api",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Verify api suite order-independence across multiple shuffle seeds",
+            "description": "Run apps/api with vitest run --sequence.shuffle across the original diagnosis seeds (AC-1.1) AND at least 10 fresh random seeds (AC-1.2), plus the deterministic default order (AC-1.3). All must pass. If any seed surfaces a real product bug (test passed only due to leaked state), record it as a separate finding — do NOT fix product code here (non-goal). Output: seed list + green confirmation.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-002", "T-003"],
+            "blocks": ["T-005", "T-007", "T-009", "T-011", "T-013"],
+            "subtasks": [
+                {
+                    "title": "Diagnosis seeds pass (AC-1.1)",
+                    "completed": false
+                },
+                {
+                    "title": "10 fresh random seeds pass (AC-1.2)",
+                    "completed": false
+                },
+                {
+                    "title": "Deterministic baseline passes (AC-1.3)",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "vitest", "verification"],
+            "phase": "api",
+            "qualityGate": {
+                "lint": false,
+                "typecheck": false,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Audit apps/admin test suite under shuffle",
+            "description": "Run apps/admin with vitest run --sequence.shuffle across multiple seeds. Collect failing files; drill into the first failure to identify the leaked state (module-scoped global mock / shared singleton / DB / timers — may differ from the api mock pattern). Record outcome per AC-3.1 ('already order-independent (N seeds green)' OR 'leak in <file> → <X>'). No code change if already green.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-006"],
+            "subtasks": [
+                {
+                    "title": "Multi-seed shuffle run of admin suite",
+                    "completed": false
+                },
+                {
+                    "title": "Identify leak class if any",
+                    "completed": false
+                },
+                {
+                    "title": "Record audit outcome (AC-3.1)",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin", "audit", "vitest"],
+            "phase": "admin",
+            "qualityGate": {
+                "lint": false,
+                "typecheck": false,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Remediate admin leakage + verify multi-seed green",
+            "description": "If T-005 found leakage, apply the spec remediation (move global mocks to opt-in or make non-leaking; test-infra only) and re-run the admin suite under multiple shuffle seeds until green (AC-3.2), keeping the deterministic baseline green. If T-005 found no leak, this task is a no-op confirmation. Suites with no test files are noted N/A (AC-3.3).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-015"],
+            "subtasks": [
+                {
+                    "title": "Apply remediation if leak found",
+                    "completed": false
+                },
+                {
+                    "title": "Multi-seed shuffle green (AC-3.2)",
+                    "completed": false
+                },
+                {
+                    "title": "Deterministic baseline stays green",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin", "vitest"],
+            "phase": "admin",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Audit apps/web test suite under shuffle",
+            "description": "Run apps/web with vitest run --sequence.shuffle across multiple seeds. Note that web uses source-grep style tests + Astro islands; first confirm whether shuffle is meaningful here and whether its leakage class differs from the mock pattern (Open Question Q5). Collect failing files; identify leaked state. Record outcome per AC-3.1.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-008"],
+            "subtasks": [
+                {
+                    "title": "Confirm shuffle applicability for web (Q5)",
+                    "completed": false
+                },
+                {
+                    "title": "Multi-seed shuffle run of web suite",
+                    "completed": false
+                },
+                {
+                    "title": "Record audit outcome (AC-3.1)",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "audit", "vitest"],
+            "phase": "web",
+            "qualityGate": {
+                "lint": false,
+                "typecheck": false,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Remediate web leakage + verify multi-seed green",
+            "description": "If T-007 found leakage, apply the spec remediation (test-infra only) and re-run apps/web under multiple shuffle seeds until green (AC-3.2), keeping the deterministic baseline green. If no leak, no-op confirmation. Suites with no test files noted N/A (AC-3.3).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-015"],
+            "subtasks": [
+                {
+                    "title": "Apply remediation if leak found",
+                    "completed": false
+                },
+                {
+                    "title": "Multi-seed shuffle green (AC-3.2)",
+                    "completed": false
+                },
+                {
+                    "title": "Deterministic baseline stays green",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "vitest"],
+            "phase": "web",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Enumerate packages/* test suites + audit each under shuffle",
+            "description": "List every packages/* workspace that has tests (schemas, service-core, db, ai-core, billing, i18n, utils, etc.). Run each with vitest run --sequence.shuffle across multiple seeds. Collect failing files per package; identify leaked state (the global-mock-in-setup pattern is the prime suspect). Record per-package outcome per AC-3.1; packages with no tests noted N/A (AC-3.3).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-010"],
+            "subtasks": [
+                {
+                    "title": "Enumerate packages/* with test suites",
+                    "completed": false
+                },
+                {
+                    "title": "Multi-seed shuffle run per package",
+                    "completed": false
+                },
+                {
+                    "title": "Record per-package audit outcome (AC-3.1)",
+                    "completed": false
+                }
+            ],
+            "tags": ["packages", "audit", "vitest"],
+            "phase": "packages",
+            "qualityGate": {
+                "lint": false,
+                "typecheck": false,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Remediate packages/* leakage + verify multi-seed green",
+            "description": "For each packages/* suite where T-009 found leakage, apply the spec remediation (move global mocks to opt-in / make non-leaking; test-infra only) and re-run that package under multiple shuffle seeds until green (AC-3.2), keeping its deterministic baseline green. Packages with no leak are no-op confirmations.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-009"],
+            "blocks": ["T-015"],
+            "subtasks": [
+                {
+                    "title": "Apply remediation per affected package",
+                    "completed": false
+                },
+                {
+                    "title": "Multi-seed shuffle green per package (AC-3.2)",
+                    "completed": false
+                },
+                {
+                    "title": "Deterministic baselines stay green",
+                    "completed": false
+                }
+            ],
+            "tags": ["packages", "vitest"],
+            "phase": "packages",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Document the remediation pattern + diagnosis reproduction",
+            "description": "Write a short docs note (test infra guide) capturing: the global-mock-leakage mechanism, the reproduction command (vitest run --sequence.shuffle --sequence.seed=<N>), and the remediation pattern (move global mocks to opt-in per-file). Referenced from the CI guard failure message (AC-5.1, AC-5.2). Docs only.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                {
+                    "title": "Write mechanism + reproduction note",
+                    "completed": false
+                },
+                {
+                    "title": "Document remediation pattern (AC-5.2)",
+                    "completed": false
+                }
+            ],
+            "tags": ["docs"],
+            "phase": "packages",
+            "qualityGate": {
+                "lint": false,
+                "typecheck": false,
+                "tests": false
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Decide CI guard seed + scope strategy",
+            "description": "Resolve Open Questions Q3 (fixed seed set vs rotating random vs both) and Q4 (single shuffle job vs per-app matrix). Define: which suites are guarded, seed strategy, and whether it runs per-PR vs nightly. Output: a short decision recorded in the spec/docs. Decision-only task; no CI code yet.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-006", "T-008", "T-010"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                {
+                    "title": "Resolve Q3 seed strategy",
+                    "completed": false
+                },
+                {
+                    "title": "Resolve Q4 single-job vs matrix",
+                    "completed": false
+                },
+                {
+                    "title": "Record decision",
+                    "completed": false
+                }
+            ],
+            "tags": ["ci", "decision"],
+            "phase": "ci-guard",
+            "qualityGate": {
+                "lint": false,
+                "typecheck": false,
+                "tests": false
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Implement CI shuffle guard job",
+            "description": "Add a CI job/step that runs each guarded suite with vitest run --sequence.shuffle per the T-012 decision. Runs on PRs targeting staging and main (AC-4.2). Failure output names the failing file(s) and the seed for one-command local reproduction (AC-4.3). Added LAST, only after all suites are green under shuffle (AC-4.4) — so it never blocks in-flight remediation.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-004", "T-012"],
+            "blocks": ["T-014"],
+            "subtasks": [
+                {
+                    "title": "Add shuffle CI job/step (AC-4.1)",
+                    "completed": false
+                },
+                {
+                    "title": "Gate on PRs to staging + main (AC-4.2)",
+                    "completed": false
+                },
+                {
+                    "title": "Reproducible seed in failure output (AC-4.3)",
+                    "completed": false
+                }
+            ],
+            "tags": ["ci", "vitest"],
+            "phase": "ci-guard",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Validate guard catches a re-introduced order-dependency",
+            "description": "Prove the guard works: temporarily re-introduce a known leak (e.g. re-add the PlanService global mock) on a throwaway branch/commit and confirm the shuffle CI job fails with a named file + seed; then revert. Confirm green path on the clean tree. This is the acceptance of US-4 end-to-end.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-013", "T-011"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Re-introduce known leak on throwaway commit",
+                    "completed": false
+                },
+                {
+                    "title": "Confirm guard fails with named file + seed",
+                    "completed": false
+                },
+                {
+                    "title": "Revert + confirm clean tree green",
+                    "completed": false
+                }
+            ],
+            "tags": ["ci", "verification"],
+            "phase": "ci-guard",
+            "qualityGate": {
+                "lint": false,
+                "typecheck": false,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Full-monorepo shuffle regression sweep",
+            "description": "After all suites are remediated, run a final monorepo-wide sweep: every guarded suite under multiple fresh shuffle seeds plus the deterministic baseline, confirming no regressions introduced across phases. Records the final green matrix. Gate before considering the spec done.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-006", "T-008", "T-010"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "All suites multi-seed shuffle green",
+                    "completed": false
+                },
+                {
+                    "title": "All suites deterministic baseline green",
+                    "completed": false
+                },
+                {
+                    "title": "Record final green matrix",
+                    "completed": false
+                }
+            ],
+            "tags": ["verification", "vitest"],
+            "phase": "ci-guard",
+            "qualityGate": {
+                "lint": false,
+                "typecheck": false,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ]
+}

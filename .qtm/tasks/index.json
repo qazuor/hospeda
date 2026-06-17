@@ -707,6 +707,14 @@
             "progress": "27/28",
             "path": "SPEC-222-accommodation-import-from-url",
             "archived": false
+        },
+        {
+            "specId": "SPEC-244",
+            "title": "Test suite order-independence hardening",
+            "status": "draft",
+            "progress": "0/15",
+            "path": "SPEC-244-test-suite-order-independence",
+            "archived": false
         }
     ],
     "standalone": {
