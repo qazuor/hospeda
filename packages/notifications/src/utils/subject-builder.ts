@@ -49,7 +49,11 @@ const SUBJECT_PATTERNS: Record<NotificationType, string> = {
 
     // Plan retirement notification (SPEC-148)
     [NotificationType.PLAN_BEING_RETIRED]:
-        'Important: {planName} is being retired — your access continues until {accessUntil}'
+        'Important: {planName} is being retired — your access continues until {accessUntil}',
+
+    // Commerce owner credentials (SPEC-239 T-050)
+    [NotificationType.COMMERCE_OWNER_CREDENTIALS]:
+        'Tus credenciales de acceso a Hospeda — activá tu cuenta'
 };
 
 /**

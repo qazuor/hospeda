@@ -88,7 +88,8 @@ export enum EntityType {
     FEATURE = 'feature',
     AMENITY = 'amenity',
     TAG = 'tag',
-    HOST_TRADE = 'host-trade'
+    HOST_TRADE = 'host-trade',
+    GASTRONOMY = 'gastronomy'
 }
 
 export type EntityOption = {

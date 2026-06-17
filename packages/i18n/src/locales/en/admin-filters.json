@@ -188,5 +188,24 @@
         "plagas": "Pest control",
         "internet": "Internet",
         "albanileria": "Masonry"
+    },
+    "gastronomyType": {
+        "label": "Type",
+        "restaurant": "Restaurant",
+        "bar": "Bar",
+        "cafe": "Café",
+        "parrilla": "Grill / Parrilla",
+        "cerveceria": "Brewery",
+        "heladeria": "Ice Cream Shop",
+        "panaderia": "Bakery",
+        "rotiseria": "Rotisserie",
+        "foodTruck": "Food Truck"
+    },
+    "priceRange": {
+        "label": "Price range",
+        "budget": "Budget",
+        "mid": "Moderate",
+        "high": "High",
+        "premium": "Premium"
     }
 }

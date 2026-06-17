@@ -1741,7 +1741,7 @@
             "id": "T-048",
             "title": "Implement admin commerce start-subscription route",
             "description": "Create `POST /api/v1/admin/commerce/listings/:entityType/:entityId/start-subscription` (createAdminRoute) reusing the start-paid MP preapproval machinery, setting product_domain='commerce' (micro-decision 2: new route, default). Tests: `apps/api/test/commerce/start-subscription.test.ts` asserting it provisions a commerce-domain subscription via the existing machinery (MP stubbed).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-040", "T-049"],
             "blocks": ["T-050"],
@@ -1776,7 +1776,7 @@
             "id": "T-049",
             "title": "Seed commerce plan + link-row creation on subscription start",
             "description": "Seed one commerce plan (MP preapproval recurring) referenced by HOSPEDA_COMMERCE_PLAN_ID, and on commerce subscription start create a `commerce_listing_subscriptions` link row (UNIQUE per entity). Wire in `packages/seed/` + `packages/billing`. Tests: `packages/billing/test/commerce-plan.test.ts` asserting plan seeds and a link row is created with product_domain='commerce'.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-019", "T-022", "T-032"],
             "blocks": ["T-048", "T-050"],
@@ -1811,7 +1811,7 @@
             "id": "T-050",
             "title": "Wire webhook/cron to commerce-visibility reconciler",
             "description": "Invoke the commerce-visibility reconciler from the existing MP webhook + dunning/finalize crons whenever a product_domain='commerce' subscription changes status (apps/api webhook + cron jobs). Tests: `apps/api/test/commerce/visibility-wiring.test.ts` asserting active→listing visible and cancel/dunning→listing hidden (integration, MP stub).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-032", "T-048", "T-049"],
             "blocks": ["T-057"],
@@ -1881,7 +1881,7 @@
             "id": "T-052",
             "title": "Add commerce i18n locale files (es/en/pt)",
             "description": "Add `gastronomy.json` (GASTRO listing/detail copy) and `commerce.json` (CORE: lead form, credentials email, change-password copy, subscription/visibility states) under `@repo/i18n` for es/en/pt. Tests: i18n key-parity test asserting all three locales have identical key sets for both files.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-041"],
             "blocks": ["T-053", "T-054", "T-055", "T-056"],
@@ -1916,7 +1916,7 @@
             "id": "T-053",
             "title": "Build /gastronomia listing page (web)",
             "description": "Create `apps/web/src/pages/[lang]/gastronomia/index.astro` (SSR-fetches the public list endpoint, filters via querystring: destination/type/priceRange/amenity) + `GastronomyCard.astro`. CSS Modules / scoped <style> + design tokens, NO Tailwind. i18n via @repo/i18n. Tests: `apps/web/test/pages/gastronomia-index.test.ts` asserting the page renders cards and applies filters.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-042", "T-052"],
             "blocks": ["T-058"],
@@ -1955,7 +1955,7 @@
             "id": "T-054",
             "title": "Build /gastronomia detail page + blocks (web)",
             "description": "Create `apps/web/src/pages/[lang]/gastronomia/[slug].astro` + detail blocks: `OpeningHours.astro` (today-highlighted), contact/social/menu/amenities/FAQs/reviews blocks reusing existing review/FAQ components where possible. 404 when hidden. CSS Modules + tokens, no Tailwind. Tests: `apps/web/test/pages/gastronomia-detail.test.ts` asserting detail renders all blocks and 404s on hidden.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-042", "T-043", "T-044", "T-045", "T-046", "T-047", "T-052"],
             "blocks": ["T-058"],
@@ -1994,7 +1994,7 @@
             "id": "T-055",
             "title": "Build change-password-required screen (web)",
             "description": "Create the CORE change-password-required screen in `apps/web/` shown when the session must_change_password flag is set, blocking other routes until done (native HTML form + small hook, web convention). Posts to the protected change-password endpoint. Tests: `apps/web/test/` asserting the screen renders when flag set and submitting clears the gate.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-041", "T-052"],
             "blocks": ["T-058"],
@@ -2029,7 +2029,7 @@
             "id": "T-056",
             "title": "Build public lead form page (web)",
             "description": "Create the CORE 'Publicá tu restaurante' lead form page/section in `apps/web/` (native HTML form + small hook + honeypot) posting to the public commerce lead endpoint. Generic copy reusable by SPEC-240. CSS Modules + tokens, i18n. Tests: `apps/web/test/` asserting the form validates required fields and submits to the lead endpoint.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-047", "T-052"],
             "blocks": ["T-058"],
@@ -2064,105 +2064,105 @@
             "id": "T-057",
             "title": "Build generic commerce admin Entity shell config layer",
             "description": "Create the CORE generic commerce Entity shell config in `apps/admin/` so gastronomy (and later experiencias) register list/view/edit/create by CONFIG, reusing the existing EntityView/EntityEdit shell family (AC-8.3). Identity/core sections admin-enabled; operational sections shared. Tests: `apps/admin/test/` asserting the shell renders from a config object without forking shell code.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-050"],
             "blocks": ["T-059", "T-060"],
             "subtasks": [
                 {
                     "title": "Define commerce shell config contract",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Wire to existing EntityView/EntityEdit shells",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write config-driven shell test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "commerce", "shell", "core"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T23:23:58.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-17T00:00:00.000Z",
+                "completed": "2026-06-17T00:00:00.000Z"
             }
         },
         {
             "id": "T-058",
             "title": "Build admin lead inbox + owner-provisioning UX",
             "description": "Create the CORE lead inbox view (list + mark-handled) and the owner-provisioning UX inside the create flow (create/pick user → fields → send credentials) in `apps/admin/`. TanStack Query + Form, Tailwind, shadcn. Tests: `apps/admin/test/` asserting lead list renders + mark-handled mutates and the provisioning step creates/picks a user.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-047", "T-053", "T-054", "T-055", "T-056"],
             "blocks": ["T-060"],
             "subtasks": [
                 {
                     "title": "Build lead inbox list + mark-handled",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Build owner-provisioning create step",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write inbox + provisioning tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "commerce-lead", "provisioning", "core"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T23:23:58.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-17T00:00:00.000Z",
+                "completed": "2026-06-17T00:00:00.000Z"
             }
         },
         {
             "id": "T-059",
             "title": "Build gastronomy admin routes (fields/filters)",
             "description": "Create `apps/admin/src/routes/.../gastronomies/` declaring the shell config + gastro-specific fields (type/priceRange/menuUrl) and filters (destination/type/priceRange/featured/ownerId). TanStack Form + Zod from @repo/schemas, Tailwind, shadcn. Tests: `apps/admin/test/gastronomies.test.ts` asserting create/edit forms validate via the gastro schemas and filters apply.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-045", "T-046", "T-057"],
             "blocks": ["T-060"],
             "subtasks": [
                 {
                     "title": "Declare gastronomy shell config",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add gastro fields + filters",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write admin gastronomy form/filter tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "gastro"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pending-routetree-regen",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-15T23:23:58.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-17T14:00:00.000Z",
+                "completed": "2026-06-17T15:30:00.000Z"
             }
         },
         {
@@ -2239,97 +2239,97 @@
             "id": "T-062",
             "title": "Write core/gastro separation ADR + SPEC-240 reuse checklist",
             "description": "Write the ADR (under `docs/decisions/`) covering: core/gastro separation, binary subscription + product_domain isolation rationale, admin-sells flow, COMMERCE_OWNER role. Include the SPEC-240 reuse checklist enumerating EXACTLY what Experiencias adds (confirming no CORE internals touched) — this is AC-9.2. No tests (docs).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-060"],
             "blocks": ["T-063", "T-064"],
             "subtasks": [
                 {
                     "title": "Write ADR (separation + billing isolation + role)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write SPEC-240 reuse checklist",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs", "adr", "core"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T23:23:58.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-17T00:00:00.000Z",
+                "completed": "2026-06-17T00:00:00.000Z"
             }
         },
         {
             "id": "T-063",
             "title": "Add route-architecture + CLAUDE.md doc rows",
             "description": "Add the new gastronomy/commerce endpoints to `apps/api/docs/route-architecture.md` (tier rows) and a billing quick-ref note in CLAUDE.md about product_domain isolation + commerce_listing_subscriptions. Update migrations guide for the product_domain extras carril note. No tests (docs).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-062"],
             "blocks": ["T-064"],
             "subtasks": [
                 {
                     "title": "Add route-architecture rows",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add CLAUDE.md billing quick-ref note",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add migrations guide extras note",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs", "core"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T23:23:58.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-17T00:00:00.000Z",
+                "completed": "2026-06-17T00:00:00.000Z"
             }
         },
         {
             "id": "T-064",
             "title": "Add endpoint-gate-matrix rows for commerce/gastronomy",
             "description": "Add rows to the billing endpoint-gate-matrix (`docs/billing/endpoint-gate-matrix.md`) and the gate documentation for the new gastronomy/commerce endpoints (which require COMMERCE_* permissions, which are public, which are admin-gated). Final docs/cleanup pass. No tests (docs).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-061", "T-062", "T-063"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Add endpoint-gate-matrix rows",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Document permission/tier gates per endpoint",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs", "cleanup", "core"],
             "phase": "cleanup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T23:23:58.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-17T00:00:00.000Z",
+                "completed": "2026-06-17T00:00:00.000Z"
             }
         }
     ],

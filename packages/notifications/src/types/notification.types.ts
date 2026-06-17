@@ -66,7 +66,19 @@ export enum NotificationType {
      * confirms they keep access until `accessUntil` (current period_end), and
      * prompts them to resubscribe to another plan.
      */
-    PLAN_BEING_RETIRED = 'plan_being_retired'
+    PLAN_BEING_RETIRED = 'plan_being_retired',
+    /**
+     * SPEC-239 T-050 — credentials email sent to a newly provisioned
+     * COMMERCE_OWNER after an admin triggers the provision-owner action.
+     *
+     * Contains the owner's temporary password and a link to the
+     * change-password page so the owner can set their own password on
+     * first login.
+     *
+     * This is a TRANSACTIONAL notification: it is always sent, cannot be
+     * opted out of, and is required for the owner to access their account.
+     */
+    COMMERCE_OWNER_CREDENTIALS = 'commerce_owner_credentials'
 }
 
 /**
@@ -549,6 +561,50 @@ export interface PlanBeingRetiredPayload extends BaseNotificationPayload {
     readonly migrationHint: string;
 }
 
+/**
+ * Payload for the COMMERCE_OWNER_CREDENTIALS notification (SPEC-239 T-050).
+ *
+ * Sent to a newly provisioned commerce owner immediately after an admin
+ * triggers the provision-owner action.  Contains the temporary password
+ * and a link to the change-password page.
+ *
+ * **Security note**: `temporaryPassword` is included so the email body can
+ * display it to the recipient.  It MUST NOT be stored in the
+ * `billing_notification_log` metadata beyond what the transport already logs,
+ * and it MUST NOT appear in API responses.
+ *
+ * @example
+ * ```ts
+ * const payload: CommerceOwnerCredentialsPayload = {
+ *   type: NotificationType.COMMERCE_OWNER_CREDENTIALS,
+ *   recipientEmail: 'owner@mirestaurante.com',
+ *   recipientName: 'Juan Pérez',
+ *   userId: 'user-uuid',
+ *   leadId: 'lead-uuid',
+ *   temporaryPassword: 'abc123xyz456',
+ *   changePasswordUrl: 'https://hospeda.com.ar/mi-cuenta/cambiar-contrasena',
+ * };
+ * ```
+ */
+export interface CommerceOwnerCredentialsPayload extends BaseNotificationPayload {
+    readonly type: NotificationType.COMMERCE_OWNER_CREDENTIALS;
+    /**
+     * The server-generated temporary password to display in the email.
+     * NEVER store this in plain text beyond the email send.
+     */
+    readonly temporaryPassword: string;
+    /**
+     * UUID of the commerce lead that triggered this provisioning.
+     * Used for traceability in logs.
+     */
+    readonly leadId: string;
+    /**
+     * Full URL to the change-password page.
+     * Constructed from siteUrl + '/mi-cuenta/cambiar-contrasena'.
+     */
+    readonly changePasswordUrl: string;
+}
+
 /** Union of all notification payloads */
 export type NotificationPayload =
     | PurchaseConfirmationPayload
@@ -566,4 +622,5 @@ export type NotificationPayload =
     | AiCostThresholdAlertPayload
     | SubscriptionCancelConfirmedPayload
     | SubscriptionAccessEndingSoonPayload
-    | PlanBeingRetiredPayload;
+    | PlanBeingRetiredPayload
+    | CommerceOwnerCredentialsPayload;

@@ -188,5 +188,24 @@
         "plagas": "Plagas",
         "internet": "Internet",
         "albanileria": "Albañilería"
+    },
+    "gastronomyType": {
+        "label": "Tipo",
+        "restaurant": "Restaurante",
+        "bar": "Bar",
+        "cafe": "Café",
+        "parrilla": "Parrilla",
+        "cerveceria": "Cervecería",
+        "heladeria": "Heladería",
+        "panaderia": "Panadería",
+        "rotiseria": "Rotisería",
+        "foodTruck": "Food Truck"
+    },
+    "priceRange": {
+        "label": "Rango de precio",
+        "budget": "Económico",
+        "mid": "Moderado",
+        "high": "Elevado",
+        "premium": "Premium"
     }
 }

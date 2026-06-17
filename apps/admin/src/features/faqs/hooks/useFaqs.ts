@@ -17,7 +17,7 @@ import type { FaqReorderPayload } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 /** Supported entity types for FAQ management. */
-export type FaqEntityType = 'destinations' | 'accommodations';
+export type FaqEntityType = 'destinations' | 'accommodations' | 'gastronomies';
 
 /** Shape returned by the admin FAQs list endpoint. */
 export interface FaqItem {

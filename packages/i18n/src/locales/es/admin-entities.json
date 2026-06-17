@@ -95,6 +95,57 @@
             "singular": "Oficio",
             "plural": "Oficios",
             "description": "Directorio de proveedores de servicios para anfitriones"
+        },
+        "gastronomy": {
+            "singular": "Gastronomía",
+            "plural": "Gastronomías",
+            "description": "Gestiona restaurantes, bares, cafés y otros comercios gastronómicos"
+        }
+    },
+    "gastronomy": {
+        "tabs": {
+            "general": "General",
+            "faqs": "Preguntas Frecuentes",
+            "reviews": "Reseñas"
+        },
+        "columns": {
+            "priceRange": "Rango de Precios",
+            "type": "Tipo",
+            "menuUrl": "Menú Online"
+        },
+        "types": {
+            "RESTAURANT": "Restaurante",
+            "BAR": "Bar",
+            "CAFE": "Café",
+            "PARRILLA": "Parrilla",
+            "CERVECERIA": "Cervecería",
+            "HELADERIA": "Heladería",
+            "PANADERIA": "Panadería",
+            "ROTISERIA": "Rotisería",
+            "FOOD_TRUCK": "Food Truck"
+        },
+        "priceRanges": {
+            "BUDGET": "Económico ($)",
+            "MID": "Intermedio ($$)",
+            "HIGH": "Elevado ($$$)",
+            "PREMIUM": "Premium ($$$$)"
+        },
+        "reviews": {
+            "noPending": "No hay reseñas pendientes de moderación",
+            "anonymous": "Anónimo",
+            "approve": "Aprobar",
+            "reject": "Rechazar"
+        },
+        "assignOwner": {
+            "title": "Asignar propietario",
+            "button": "Asignar"
+        },
+        "create": {
+            "title": "Nueva Gastronomía",
+            "successTitle": "Gastronomía creada",
+            "successMessage": "La gastronomía se creó exitosamente",
+            "errorTitle": "Error al crear",
+            "errorMessage": "No pudimos crear la gastronomía. Probá de nuevo."
         }
     },
     "columns": {
@@ -764,7 +815,71 @@
             },
             "publishedAt": {
                 "label": "Fecha de publicación"
+            },
+            "cuisine": {
+                "label": "Tipo de establecimiento"
+            },
+            "operatingHours": {
+                "label": "Horarios de apertura"
+            },
+            "capacity": {
+                "label": "Rango de precios"
             }
+        }
+    },
+    "commerceLeads": {
+        "page": {
+            "title": "Leads de comercios",
+            "empty": "No hay leads para mostrar.",
+            "loadError": "Error al cargar los leads. Intentá de nuevo."
+        },
+        "filter": {
+            "label": "Estado:",
+            "all": "Todos"
+        },
+        "status": {
+            "pending": "Pendiente",
+            "reviewing": "En revisión",
+            "approved": "Aprobado",
+            "rejected": "Rechazado"
+        },
+        "columns": {
+            "businessName": "Negocio",
+            "contactName": "Contacto",
+            "email": "Email",
+            "domain": "Dominio",
+            "status": "Estado",
+            "createdAt": "Fecha",
+            "actions": "Acciones"
+        },
+        "actions": {
+            "handle": "Resolver",
+            "provision": "Crear cuenta"
+        },
+        "handle": {
+            "title": "Resolver lead",
+            "decisionLabel": "Decisión",
+            "approve": "Aprobar",
+            "reject": "Rechazar",
+            "noteLabel": "Nota (opcional)",
+            "notePlaceholder": "Comentario interno para el equipo...",
+            "submit": "Confirmar",
+            "submitting": "Guardando...",
+            "successApproved": "Lead aprobado exitosamente.",
+            "successRejected": "Lead rechazado."
+        },
+        "provision": {
+            "title": "Crear cuenta de propietario",
+            "description": "Se creará una cuenta COMMERCE_OWNER para {{businessName}} ({{email}}). Las credenciales temporales serán enviadas por email.",
+            "confirm": "Crear cuenta",
+            "submitting": "Creando...",
+            "successMessage": "Cuenta creada para {{name}} ({{email}}). Las credenciales fueron enviadas por email.",
+            "error": "Error al crear la cuenta. Intentá de nuevo."
+        },
+        "pagination": {
+            "prev": "Anterior",
+            "next": "Siguiente",
+            "info": "Página {{page}} de {{totalPages}} · {{total}} leads"
         }
     }
 }

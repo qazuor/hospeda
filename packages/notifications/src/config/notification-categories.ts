@@ -62,5 +62,8 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
     [NotificationType.SUBSCRIPTION_ACCESS_ENDING_SOON]: NotificationCategory.REMINDER,
 
     // Plan retirement notification (SPEC-148) — TRANSACTIONAL: admin-triggered, always sent
-    [NotificationType.PLAN_BEING_RETIRED]: NotificationCategory.TRANSACTIONAL
+    [NotificationType.PLAN_BEING_RETIRED]: NotificationCategory.TRANSACTIONAL,
+
+    // Commerce owner credentials (SPEC-239 T-050) — TRANSACTIONAL: required for first login
+    [NotificationType.COMMERCE_OWNER_CREDENTIALS]: NotificationCategory.TRANSACTIONAL
 };

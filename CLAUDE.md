@@ -162,6 +162,28 @@ past-due dunning grace (7 days, `past_due` status), cron-lag grace (6h, `active`
 
 For MP sandbox setup, webhook configuration, sandbox test-user creation, and rollback: see [`docs/migration/mercadopago-sandbox-runbook.md`](docs/migration/mercadopago-sandbox-runbook.md). For incident response: [`docs/billing/billing-runbooks.md`](docs/billing/billing-runbooks.md). For entitlement gate decisions: [`docs/billing/endpoint-gate-matrix.md`](docs/billing/endpoint-gate-matrix.md).
 
+#### Commerce subscription isolation (SPEC-239)
+
+Commerce listings use a **separate billing domain** that must never pollute the
+accommodation entitlement engine:
+
+- `billing_subscriptions.product_domain` — `'accommodation'` for host subscriptions,
+  `'commerce'` for commerce-listing subscriptions. `loadEntitlements()` filters to
+  `product_domain = 'accommodation'` only, so a user who is both a host and a
+  commerce owner retains correct accommodation entitlements regardless of their
+  commerce subscription state.
+- The commerce plan in `billing_plans` has `product_domain = 'commerce'` and is
+  intentionally kept OUT of `ALL_PLANS` so that `GET /api/v1/public/plans` does
+  not expose it to accommodation hosts.
+- `commerce_listing_subscriptions` — a link table (one row per listing, UNIQUE on
+  `(entity_type, entity_id)`) that ties an active commerce subscription to its
+  concrete listing. The commerce-visibility reconciler reads this table to decide
+  whether a listing is publicly visible.
+- The `product_domain` columns on `billing_plans` and `billing_subscriptions` ship
+  via the extras carril (`packages/db/src/migrations/extras/017-billing-plans-product-domain.column.sql`),
+  not via a Drizzle-generated migration. Re-applied by `pnpm db:apply-extras`.
+  See [`docs/decisions/ADR-035-commerce-core-gastronomy-separation.md`](docs/decisions/ADR-035-commerce-core-gastronomy-separation.md).
+
 ### Local testing for billing entitlements (SPEC-143)
 
 For entitlement gates, limit enforcement, route permission models, UI gates, and form persistence — work that has zero dependency on real MercadoPago — prefer **local-first** over staging redeploys.

@@ -188,5 +188,24 @@
         "plagas": "Pragas",
         "internet": "Internet",
         "albanileria": "Alvenaria"
+    },
+    "gastronomyType": {
+        "label": "Tipo",
+        "restaurant": "Restaurante",
+        "bar": "Bar",
+        "cafe": "Café",
+        "parrilla": "Churrasqueira",
+        "cerveceria": "Cervejaria",
+        "heladeria": "Sorveteria",
+        "panaderia": "Padaria",
+        "rotiseria": "Rotisseria",
+        "foodTruck": "Food Truck"
+    },
+    "priceRange": {
+        "label": "Faixa de preço",
+        "budget": "Econômico",
+        "mid": "Moderado",
+        "high": "Elevado",
+        "premium": "Premium"
     }
 }

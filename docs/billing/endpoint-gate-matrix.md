@@ -642,7 +642,71 @@
 | **COMMERCE LEADS — ADMIN** | | | | | |
 | `GET /api/v1/admin/commerce/leads` | `commerce/admin/list-leads.ts` | none | - | n/a | Admin read; PermissionEnum-gated (COMMERCE_VIEW_ALL) (SPEC-239 T-047) |
 | `POST /api/v1/admin/commerce/leads/{id}/handle` | `commerce/admin/mark-handled.ts` | none | - | n/a | Admin lead handling + owner-provisioning; PermissionEnum-gated (COMMERCE_EDIT_ALL) (SPEC-239 T-047) |
+| `POST /api/v1/admin/commerce/leads/{id}/provision-owner` | `commerce/admin/provision-owner.ts` | none | - | n/a | Admin commerce owner provisioning; PermissionEnum-gated (COMMERCE_EDIT_ALL) (SPEC-239 T-050) |
 | `POST /api/v1/admin/commerce/listings/{entityType}/{entityId}/start-subscription` | `commerce/admin/start-subscription.ts` | none | - | n/a | Admin commerce subscription provisioning; PermissionEnum-gated (COMMERCE_EDIT_ALL) (SPEC-239 T-048) |
+
+---
+
+## Commerce and Gastronomy Gate Model (SPEC-239)
+
+This section documents how the billing-gate model applies to the commerce and
+gastronomy routes introduced in SPEC-239. The per-route rows already exist in the
+main table above; this prose explains the three tiers of access control and how
+they relate to the `COMMERCE_OWNER` role.
+
+### Public endpoints — no gate
+
+Gastronomy public reads and the commerce lead-intake route require no authentication
+and carry no entitlement or billing gate:
+
+- `GET /api/v1/public/gastronomies` and its sub-paths (by ID, slug, destination,
+  FAQs, approved reviews) — read-only, cached, rate-limited.
+- `POST /api/v1/public/commerce/leads` — anonymous lead submission; spam-guarded
+  by a honeypot field and a 5 req/min rate limit, not by authentication.
+
+### Admin endpoints — `COMMERCE_*` PermissionEnum gates
+
+All admin gastronomy and commerce routes are gated by `PermissionEnum` values
+from the `COMMERCE_*` family. No entitlement or limit key from the accommodation
+billing engine applies here.
+
+| Permission | Covers |
+|------------|--------|
+| `COMMERCE_VIEW_ALL` | List, getById, batch, options, lead list, FAQ list, review list/getById |
+| `COMMERCE_CREATE` | Create a gastronomy listing |
+| `COMMERCE_EDIT_ALL` | Update, patch, restore, assign-owner, FAQ CRUD+reorder, lead handle, lead provision-owner, start-subscription |
+| `COMMERCE_DELETE` | Soft delete and hard delete |
+| `COMMERCE_MODERATE_REVIEW` | Review list, getById, delete, moderate (`approve`/`reject`) |
+
+`COMMERCE_EDIT_ALL` and `COMMERCE_MODERATE_REVIEW` are both required to update
+a review (`PUT /api/v1/admin/gastronomies/reviews/{id}`), mirroring the pattern
+used for accommodation reviews.
+
+### Owner-scoped protected endpoints — `COMMERCE_*_EDIT_OWN`
+
+`COMMERCE_OWNER` users access their own listing through the protected tier. Each
+owner-editable section is gated by a dedicated `_EDIT_OWN` permission that the
+service enforces internally. No route-level `requiredPermissions` is declared on
+these routes (the service performs the check after ownership is confirmed):
+
+- **Operational fields** (`PATCH /api/v1/protected/gastronomies/{id}`) — the
+  request schema (`GastronomyOwnerUpdateInputSchema`) silently strips identity and
+  lifecycle fields, so forged keys never reach the service.
+- **FAQ management** — `COMMERCE_FAQS_EDIT_OWN` gates add, update, and reorder;
+  removal is always allowed (consistent with the accommodation FAQ pattern).
+
+Review submission (`POST /api/v1/protected/gastronomies/{gastronomyId}/reviews`)
+requires authentication only — any logged-in user may submit a review; moderation
+is enforced server-side (reviews start in `PENDING`).
+
+Commerce-subscription gating on the owner-edit paths (restricting edits when no
+active subscription exists) is deferred to a follow-up spec. The current posture
+is: any authenticated `COMMERCE_OWNER` may edit operational fields regardless of
+subscription state.
+
+For the full rationale behind `COMMERCE_OWNER` as a separate role from `HOST` and
+the `product_domain` isolation, see
+[ADR-035](../decisions/ADR-035-commerce-core-gastronomy-separation.md).
 
 ---
 

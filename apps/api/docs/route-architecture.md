@@ -238,6 +238,9 @@ The following entities use the three-tier structure:
 | `post-sponsor` | no | no | yes (admin-only) |
 | `owner-promotion` | yes (legacy router) | no | yes |
 | `views` | yes (capture only) | yes (read own/all) | no |
+| `gastronomy` | yes | yes | yes |
+| `gastronomy/reviews` | yes (approved only) | yes (create) | yes (full moderation) |
+| `commerce` (leads + subscription) | yes (create-lead) | no | yes |
 
 ---
 
@@ -517,6 +520,103 @@ are never stored. See the privacy note in `docs/guides/view-tracking-privacy.md`
 
 All three read routes use `cacheTTL: 60`. Unique-visitor counts are **approximate** (cookieless
 dedup — see privacy note). The `window` query param is required (`7d` or `30d`).
+
+---
+
+## Gastronomy Routes (SPEC-239)
+
+Gastronomy listings follow the standard three-tier structure mounted at:
+
+- `/api/v1/public/gastronomies` — public reads, no auth
+- `/api/v1/protected/gastronomies` — owner-scoped edits, session required
+- `/api/v1/admin/gastronomies` — full CRUD, `PermissionEnum.COMMERCE_*`
+
+Reviews have their own admin sub-router mounted at
+`/api/v1/admin/gastronomies/reviews`.
+
+### Public tier
+
+| Method | Path | Notes |
+|--------|------|-------|
+| `GET` | `/api/v1/public/gastronomies` | Paginated list (filter by type, priceRange, destinationId, isFeatured, ownerId) |
+| `GET` | `/api/v1/public/gastronomies/{id}` | Get by UUID; 404 when not publicly visible |
+| `GET` | `/api/v1/public/gastronomies/slug/{slug}` | Get by URL slug; null when not found |
+| `GET` | `/api/v1/public/gastronomies/destination/{destinationId}` | Paginated list filtered by destination |
+| `GET` | `/api/v1/public/gastronomies/{gastronomyId}/faqs` | Ordered FAQ list (displayOrder ASC NULLS LAST) |
+| `GET` | `/api/v1/public/gastronomies/{gastronomyId}/reviews` | Paginated APPROVED-only reviews |
+
+### Protected tier (session required, owner-scoped)
+
+| Method | Path | Permission | Notes |
+|--------|------|-----------|-------|
+| `GET` | `/api/v1/protected/gastronomies/{id}` | Auth only | Returns `GastronomyProtectedSchema` (includes ownerId, contactInfo, audit fields) |
+| `PATCH` | `/api/v1/protected/gastronomies/{id}` | `COMMERCE_*_EDIT_OWN` (per-section, enforced in service) | Operational fields only; identity fields silently stripped by Zod |
+| `POST` | `/api/v1/protected/gastronomies/{id}/faqs` | `COMMERCE_FAQS_EDIT_OWN` | displayOrder auto-assigned as max+1 |
+| `PUT` | `/api/v1/protected/gastronomies/{id}/faqs/{faqId}` | `COMMERCE_FAQS_EDIT_OWN` | Update existing FAQ |
+| `DELETE` | `/api/v1/protected/gastronomies/{id}/faqs/{faqId}` | Auth only | Removal always allowed |
+| `PUT` | `/api/v1/protected/gastronomies/{id}/faqs/reorder` | `COMMERCE_FAQS_EDIT_OWN` | Bulk displayOrder update |
+| `POST` | `/api/v1/protected/gastronomies/{gastronomyId}/reviews` | Auth only | Review starts in PENDING state; one per user per listing enforced |
+
+### Admin tier
+
+| Method | Path | `requiredPermissions` | Notes |
+|--------|------|-----------------------|-------|
+| `GET` | `/api/v1/admin/gastronomies` | `COMMERCE_VIEW_ALL` | Paginated list with full admin details |
+| `POST` | `/api/v1/admin/gastronomies` | `COMMERCE_CREATE` | Create listing |
+| `GET` | `/api/v1/admin/gastronomies/options` | Panel access only | Lightweight `{id, label, slug, type, destination}` for relation selectors |
+| `POST` | `/api/v1/admin/gastronomies/batch` | `COMMERCE_VIEW_ALL` | Resolve multiple UUIDs to display labels |
+| `GET` | `/api/v1/admin/gastronomies/{id}` | `COMMERCE_VIEW_ALL` | Full admin details |
+| `PUT` | `/api/v1/admin/gastronomies/{id}` | `COMMERCE_EDIT_ALL` | Full update |
+| `PATCH` | `/api/v1/admin/gastronomies/{id}` | `COMMERCE_EDIT_ALL` | Partial update |
+| `DELETE` | `/api/v1/admin/gastronomies/{id}` | `COMMERCE_DELETE` | Soft delete |
+| `DELETE` | `/api/v1/admin/gastronomies/{id}/hard` | `COMMERCE_DELETE` | Permanent delete |
+| `POST` | `/api/v1/admin/gastronomies/{id}/restore` | `COMMERCE_EDIT_ALL` | Restore soft-deleted listing |
+| `POST` | `/api/v1/admin/gastronomies/{id}/assign-owner` | `COMMERCE_EDIT_ALL` | Set or replace the `COMMERCE_OWNER` |
+| `GET` | `/api/v1/admin/gastronomies/{id}/faqs` | `COMMERCE_VIEW_ALL` | All FAQs including drafts |
+| `POST` | `/api/v1/admin/gastronomies/{id}/faqs` | `COMMERCE_EDIT_ALL` | Add FAQ |
+| `PUT` | `/api/v1/admin/gastronomies/{id}/faqs/{faqId}` | `COMMERCE_EDIT_ALL` | Update FAQ |
+| `DELETE` | `/api/v1/admin/gastronomies/{id}/faqs/{faqId}` | `COMMERCE_EDIT_ALL` | Remove FAQ |
+| `PATCH` | `/api/v1/admin/gastronomies/{id}/faqs/reorder` | `COMMERCE_EDIT_ALL` | Bulk displayOrder update |
+
+### Gastronomy Reviews — Admin
+
+Reviews are mounted on a separate sub-router at `/api/v1/admin/gastronomies/reviews`.
+
+| Method | Path | `requiredPermissions` | Notes |
+|--------|------|-----------------------|-------|
+| `GET` | `/api/v1/admin/gastronomies/reviews` | `COMMERCE_MODERATE_REVIEW` | All reviews including PENDING and REJECTED |
+| `GET` | `/api/v1/admin/gastronomies/reviews/{id}` | `COMMERCE_MODERATE_REVIEW` | Full review with moderation fields |
+| `PUT` | `/api/v1/admin/gastronomies/reviews/{id}` | `COMMERCE_EDIT_ALL` + `COMMERCE_MODERATE_REVIEW` | Update review content |
+| `DELETE` | `/api/v1/admin/gastronomies/reviews/{id}` | `COMMERCE_MODERATE_REVIEW` | Soft delete |
+| `POST` | `/api/v1/admin/gastronomies/reviews/{id}/moderate` | `COMMERCE_MODERATE_REVIEW` | Approve or reject; triggers rating recompute |
+
+---
+
+## Commerce Routes (SPEC-239)
+
+Commerce routes handle lead intake and subscription provisioning for the
+admin-sells flow. They are mounted at:
+
+- `/api/v1/public/commerce` — unauthenticated lead submission
+- `/api/v1/admin/commerce` — lead inbox, owner provisioning, subscription start
+
+There is no protected commerce tier (merchants operate exclusively through the
+protected gastronomy tier once provisioned as `COMMERCE_OWNER`).
+
+### Public tier
+
+| Method | Path | Notes |
+|--------|------|-------|
+| `POST` | `/api/v1/public/commerce/leads` | Submit "Sumar mi negocio" lead form. No auth. Honeypot spam guard (`_hp` field). Rate-limited to 5 req/min per IP. Silent 200 on honeypot trigger. |
+
+### Admin tier
+
+| Method | Path | `requiredPermissions` | Notes |
+|--------|------|-----------------------|-------|
+| `GET` | `/api/v1/admin/commerce/leads` | `COMMERCE_VIEW_ALL` | Paginated lead list; filterable by `status` and `domain` |
+| `POST` | `/api/v1/admin/commerce/leads/:id/handle` | `COMMERCE_EDIT_ALL` | Approve or reject a lead; idempotent (overwrites previous decision) |
+| `POST` | `/api/v1/admin/commerce/leads/:id/provision-owner` | `COMMERCE_EDIT_ALL` | Create a `COMMERCE_OWNER` user from an approved lead; emails temp credentials; never returns the password |
+| `POST` | `/api/v1/admin/commerce/listings/:entityType/:entityId/start-subscription` | `COMMERCE_EDIT_ALL` | Provisions a MercadoPago preapproval recurring subscription for the listing. `entityType` is currently `gastronomy` only. Requires the listing to have an owner assigned first. |
 
 ---
 
