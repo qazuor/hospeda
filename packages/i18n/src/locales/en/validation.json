@@ -3627,5 +3627,15 @@
         "benefit": {
             "min": "[EN] El beneficio debe tener al menos {{min}} caracteres"
         }
+    },
+    "pushToken": {
+        "platform": {
+            "invalid": "Invalid device platform"
+        },
+        "token": {
+            "required": "The push token is required",
+            "min": "The push token must be at least {{min}} characters",
+            "max": "The push token must not exceed {{max}} characters"
+        }
     }
 }

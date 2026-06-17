@@ -26,7 +26,9 @@ export enum LimitKey {
     /** Maximum number of AI support interactions per month (-1 = unlimited) */
     MAX_AI_SUPPORT_PER_MONTH = 'max_ai_support_per_month',
     /** Maximum number of AI content translation requests per month (-1 = unlimited) */
-    MAX_AI_TRANSLATE_PER_MONTH = 'max_ai_translate_per_month'
+    MAX_AI_TRANSLATE_PER_MONTH = 'max_ai_translate_per_month',
+    /** Maximum number of AI accommodation import requests per month (-1 = unlimited) */
+    MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH = 'max_ai_accommodation_import_per_month'
 }
 
 /**

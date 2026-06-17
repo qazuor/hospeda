@@ -34,3 +34,6 @@ export * from './user.profile-completion.schema.js';
 
 // Tour progress body schema (SPEC-174)
 export * from './user.tour-progress.schema.js';
+
+// Push token registration (SPEC-243 T-011)
+export * from './user.push-token.schema.js';

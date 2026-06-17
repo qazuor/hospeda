@@ -71,8 +71,14 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * 212 (2026-06-09, SPEC-198): added HOSPEDA_AI_MODERATION_REQUIRED
  * (fail-loud startup gate for the AI moderation credential, moderation
  * category), bumping moderation from 4 to 5.
+ *
+ * 221 (2026-06-16, SPEC-222): added 9 accommodation-import env vars
+ * (HOSPEDA_APIFY_TOKEN, HOSPEDA_APIFY_AIRBNB_ACTOR, HOSPEDA_APIFY_BOOKING_ACTOR,
+ * HOSPEDA_GOOGLE_PLACES_API_KEY, HOSPEDA_MERCADOLIBRE_TOKEN,
+ * HOSPEDA_IMPORT_FETCH_TIMEOUT_MS, HOSPEDA_IMPORT_FETCH_MAX_BYTES,
+ * HOSPEDA_IMPORT_RATE_LIMIT_RPH, HOSPEDA_IMPORT_AI_MAX_CHARS).
  */
-const EXPECTED_VAR_COUNT = 212;
+const EXPECTED_VAR_COUNT = 221;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;

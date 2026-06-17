@@ -149,6 +149,7 @@ src/routes/<entity>/
     update.ts           # createProtectedRoute
     patch.ts            # createProtectedRoute
     softDelete.ts       # createProtectedRoute
+    import-from-url.ts  # createProtectedRoute (non-CRUD action: stateless URL import; OR-permission check + lazy AI quota — see docs/billing/endpoint-gate-matrix.md)
     ...
   admin/
     index.ts            # Assembles admin router and exports it

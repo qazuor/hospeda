@@ -1,0 +1,52 @@
+{
+    "name": "mobile",
+    "version": "0.1.0",
+    "private": true,
+    "main": "expo-router/entry",
+    "scripts": {
+        "dev": "expo start",
+        "android": "expo start --android",
+        "ios": "expo start --ios",
+        "build": "expo export",
+        "lint": "biome check .",
+        "format": "biome format --write .",
+        "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
+        "test": "vitest run --passWithNoTests",
+        "test:watch": "vitest --passWithNoTests",
+        "test:coverage": "vitest run --coverage --passWithNoTests",
+        "clean": "rm -rf node_modules dist .expo"
+    },
+    "dependencies": {
+        "@better-auth/expo": "1.4.18",
+        "@expo/metro-runtime": "~56.0.15",
+        "@repo/i18n": "workspace:*",
+        "@repo/schemas": "workspace:*",
+        "@tanstack/react-query": "5.59.20",
+        "better-auth": "1.4.18",
+        "expo": "~56.0.2",
+        "expo-constants": "~56.0.18",
+        "expo-linking": "~56.0.14",
+        "expo-network": "~56.0.5",
+        "expo-notifications": "~56.0.18",
+        "expo-router": "~56.2.11",
+        "expo-secure-store": "~56.0.4",
+        "expo-splash-screen": "~56.0.10",
+        "expo-status-bar": "~56.0.4",
+        "expo-web-browser": "~56.0.5",
+        "phosphor-react-native": "^3.0.6",
+        "react": "19.2.3",
+        "react-native": "0.85.3",
+        "react-native-safe-area-context": "^5.7.0",
+        "react-native-screens": "~4.25.2",
+        "react-native-svg": "15.15.4"
+    },
+    "devDependencies": {
+        "@biomejs/biome": "1.9.4",
+        "@repo/biome-config": "workspace:*",
+        "@repo/typescript-config": "workspace:*",
+        "@types/react": "19.2.17",
+        "@vitest/coverage-v8": "^3.2.4",
+        "typescript": "6.0.3",
+        "vitest": "3.2.6"
+    }
+}

@@ -184,7 +184,9 @@ const FS_EXCLUSIONS: ReadonlySet<string> = new Set([
     // Per-request prompt builder for search-chat (not a Hono route) — SPEC-212 T-003/T-006
     'ai/protected/search-chat.prompt.ts',
     // Best-effort conversation persistence helper for search-chat (not a Hono route) — SPEC-212 T-007
-    'ai/protected/search-chat.persistence.ts'
+    'ai/protected/search-chat.persistence.ts',
+    // Pure AI output schema + prompt builder + RawExtraction mapper for import-from-url (not a Hono route) — SPEC-222 T-020
+    'accommodation/protected/import-from-url.ai.ts'
 ]);
 
 /**

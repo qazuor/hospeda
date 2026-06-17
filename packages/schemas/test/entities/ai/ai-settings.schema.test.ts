@@ -66,6 +66,11 @@ const minimalSettingsValue = {
             ...validFeatureConfig,
             model: 'gemini-1.5-flash',
             primaryProvider: 'google' as const
+        },
+        accommodation_import: {
+            ...validFeatureConfig,
+            model: 'gpt-4o-mini',
+            primaryProvider: 'openai' as const
         }
     }
 };

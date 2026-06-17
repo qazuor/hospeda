@@ -7,6 +7,7 @@ import type {
     ConsolidatedEntityConfig,
     ConsolidatedSectionConfig
 } from '../types/consolidated-config.types';
+import { createImportFromUrlSection } from './import-from-url.section';
 import { createAmenitiesConsolidatedSection } from './sections/amenities.consolidated';
 import { createBasicInfoConsolidatedSection } from './sections/basic-info.consolidated';
 import { createContactInfoConsolidatedSection } from './sections/contact-info.consolidated';
@@ -60,6 +61,7 @@ export const createAccommodationConsolidatedConfig = (
 ): ConsolidatedEntityConfig => {
     const sections = [
         ...(entityId ? [createViewStatChipsSection(t, entityId)] : []),
+        createImportFromUrlSection(t),
         createBasicInfoConsolidatedSection(t, accommodationTypeOptions),
         createContactInfoConsolidatedSection(t),
         createLocationInfoConsolidatedSection(t),

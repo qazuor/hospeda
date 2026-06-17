@@ -1171,6 +1171,10 @@
         "zodError.publicStats.posts.nonnegative",
         "zodError.publicStats.recentReviewerAvatars.itemUrl",
         "zodError.publicStats.reviews.nonnegative",
+        "zodError.pushToken.platform.invalid",
+        "zodError.pushToken.token.max",
+        "zodError.pushToken.token.min",
+        "zodError.pushToken.token.required",
         "zodError.required",
         "zodError.response.success.invalidType",
         "zodError.result.assigned.invalidType",
@@ -1429,7 +1433,7 @@
         "zodError.validation.sanitization.failed",
         "zodError.validation.zod.failed"
     ],
-    "total": 1428,
+    "total": 1432,
     "byNamespace": {
         "accommodation": 50,
         "accommodationAmenity": 4,
@@ -1477,6 +1481,7 @@
         "postTags": 1,
         "priceRange": 13,
         "publicStats": 8,
+        "pushToken": 4,
         "required": 1,
         "response": 1,
         "result": 6,

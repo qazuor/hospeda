@@ -1,4 +1,63 @@
 {
+    "importFromUrl": {
+        "fields": {
+            "url": "Accommodation URL",
+            "urlPlaceholder": "https://...",
+            "legalConfirm": "I confirm I have permission to import this information."
+        },
+        "actions": {
+            "submit": "Import",
+            "submitting": "Importing..."
+        },
+        "errors": {
+            "urlRequired": "Enter the accommodation URL.",
+            "urlInvalid": "The URL is not valid.",
+            "legalRequired": "You must confirm the legal notice.",
+            "submit": "We couldn't import the accommodation. Please try again.",
+            "network": "We couldn't reach the server."
+        },
+        "prefill": {
+            "sectionToggle": "Import from a URL",
+            "reviewNotice": "Review and confirm the imported data before continuing.",
+            "badge": {
+                "imported": "Imported",
+                "confidence": "{{confidence}}%",
+                "separator": "·"
+            },
+            "destinationHint": {
+                "label": "Destination suggestion",
+                "locality": "Detected locality: {{locality}}",
+                "candidates": "Suggested destinations: {{names}}",
+                "hint": "Please select the destination manually in the City field."
+            }
+        },
+        "help": {
+            "toggle": "How do I get the accommodation URL?",
+            "title": "How to copy the URL on each platform",
+            "platforms": {
+                "airbnb": {
+                    "name": "Airbnb",
+                    "steps": "Open the listing and copy the full address from your browser's address bar.",
+                    "example": "https://www.airbnb.com/rooms/12345678"
+                },
+                "booking": {
+                    "name": "Booking",
+                    "steps": "Open the property page and copy the browser address, without the date filters.",
+                    "example": "https://www.booking.com/hotel/ar/name.html"
+                },
+                "mercadolibre": {
+                    "name": "MercadoLibre",
+                    "steps": "Open the listing and copy the browser address.",
+                    "example": "https://inmueble.mercadolibre.com.ar/MLA-123456789"
+                },
+                "google": {
+                    "name": "Google Maps",
+                    "steps": "Find the place on Google Maps, open its card and copy the browser address.",
+                    "example": "https://www.google.com/maps/place/..."
+                }
+            }
+        }
+    },
     "form": {
         "sections": {
             "datos-basicos": {

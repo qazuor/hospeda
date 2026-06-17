@@ -3,7 +3,7 @@ spec-id: SPEC-243
 title: "Hospeda mobile app (React Native / Expo)"
 type: epic
 complexity: high
-status: draft
+status: in-progress
 created: 2026-06-15T00:00:00Z
 tags: [mobile, react-native, expo, native, tourist, host, push-notifications, qr-scan, geolocation]
 ---
@@ -487,6 +487,12 @@ monorepo with `pnpm dev --filter=mobile` (or `pnpm cli dev:mobile`).
 ---
 
 ## Open micro-decisions
+
+> **RESOLVED (2026-06-15) in [ADR-034](../../../docs/decisions/ADR-034-mobile-app-foundation.md).**
+> Sub-0 locks: (1) `StyleSheet.create`, (2) `phosphor-react-native`, (3) transport
+> deferred to the auth spike (T-003), (4) map library deferred to Sub-1 (T-026),
+> (5) eager locale loading (validate size in T-002), (6) single push channel v1,
+> (7) EAS Build. The original analysis below is retained for context.
 
 1. **Styling strategy (NativeWind vs StyleSheet.create)** — Proposed default:
    `StyleSheet.create` (no extra build plugin risk). NativeWind if team already
