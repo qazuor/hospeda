@@ -95,6 +95,57 @@
             "singular": "Ofício",
             "plural": "Ofícios",
             "description": "Diretório de prestadores de serviço para anfitriões"
+        },
+        "gastronomy": {
+            "singular": "Gastronomia",
+            "plural": "Gastronomias",
+            "description": "Gerencie restaurantes, bares, cafés e outros estabelecimentos de alimentação"
+        }
+    },
+    "gastronomy": {
+        "tabs": {
+            "general": "Geral",
+            "faqs": "Perguntas Frequentes",
+            "reviews": "Avaliações"
+        },
+        "columns": {
+            "priceRange": "Faixa de Preço",
+            "type": "Tipo",
+            "menuUrl": "Cardápio Online"
+        },
+        "types": {
+            "RESTAURANT": "Restaurante",
+            "BAR": "Bar",
+            "CAFE": "Café",
+            "PARRILLA": "Parrilla",
+            "CERVECERIA": "Cervejaria",
+            "HELADERIA": "Sorveteria",
+            "PANADERIA": "Padaria",
+            "ROTISERIA": "Rotisseria",
+            "FOOD_TRUCK": "Food Truck"
+        },
+        "priceRanges": {
+            "BUDGET": "Econômico ($)",
+            "MID": "Médio ($$)",
+            "HIGH": "Alto ($$$)",
+            "PREMIUM": "Premium ($$$$)"
+        },
+        "reviews": {
+            "noPending": "Nenhuma avaliação pendente de moderação",
+            "anonymous": "Anônimo",
+            "approve": "Aprovar",
+            "reject": "Rejeitar"
+        },
+        "assignOwner": {
+            "title": "Atribuir proprietário",
+            "button": "Atribuir"
+        },
+        "create": {
+            "title": "Nova Gastronomia",
+            "successTitle": "Gastronomia criada",
+            "successMessage": "A gastronomia foi criada com sucesso",
+            "errorTitle": "Erro ao criar",
+            "errorMessage": "Não foi possível criar a gastronomia. Tente novamente."
         }
     },
     "columns": {
@@ -764,6 +815,15 @@
             },
             "publishedAt": {
                 "label": "Data de publicação"
+            },
+            "cuisine": {
+                "label": "Tipo de estabelecimento"
+            },
+            "operatingHours": {
+                "label": "Horários de funcionamento"
+            },
+            "capacity": {
+                "label": "Faixa de preço"
             }
         }
     }

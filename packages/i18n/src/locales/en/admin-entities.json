@@ -95,6 +95,57 @@
             "singular": "Trade",
             "plural": "Trades",
             "description": "Directory of service providers for hosts"
+        },
+        "gastronomy": {
+            "singular": "Gastronomy",
+            "plural": "Gastronomies",
+            "description": "Manage restaurants, bars, cafes and other food and beverage venues"
+        }
+    },
+    "gastronomy": {
+        "tabs": {
+            "general": "General",
+            "faqs": "FAQs",
+            "reviews": "Reviews"
+        },
+        "columns": {
+            "priceRange": "Price Range",
+            "type": "Type",
+            "menuUrl": "Online Menu"
+        },
+        "types": {
+            "RESTAURANT": "Restaurant",
+            "BAR": "Bar",
+            "CAFE": "Café",
+            "PARRILLA": "Parrilla",
+            "CERVECERIA": "Craft Brewery",
+            "HELADERIA": "Ice Cream Shop",
+            "PANADERIA": "Bakery",
+            "ROTISERIA": "Deli / Rotisserie",
+            "FOOD_TRUCK": "Food Truck"
+        },
+        "priceRanges": {
+            "BUDGET": "Budget ($)",
+            "MID": "Mid-range ($$)",
+            "HIGH": "High ($$$)",
+            "PREMIUM": "Premium ($$$$)"
+        },
+        "reviews": {
+            "noPending": "No reviews pending moderation",
+            "anonymous": "Anonymous",
+            "approve": "Approve",
+            "reject": "Reject"
+        },
+        "assignOwner": {
+            "title": "Assign owner",
+            "button": "Assign"
+        },
+        "create": {
+            "title": "New Gastronomy",
+            "successTitle": "Gastronomy created",
+            "successMessage": "The gastronomy was created successfully",
+            "errorTitle": "Error creating",
+            "errorMessage": "We could not create the gastronomy. Please try again."
         }
     },
     "columns": {
@@ -764,6 +815,15 @@
             },
             "publishedAt": {
                 "label": "Publish date"
+            },
+            "cuisine": {
+                "label": "Establishment type"
+            },
+            "operatingHours": {
+                "label": "Opening hours"
+            },
+            "capacity": {
+                "label": "Price range"
             }
         }
     }
