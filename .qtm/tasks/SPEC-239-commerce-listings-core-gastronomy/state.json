@@ -2239,97 +2239,97 @@
             "id": "T-062",
             "title": "Write core/gastro separation ADR + SPEC-240 reuse checklist",
             "description": "Write the ADR (under `docs/decisions/`) covering: core/gastro separation, binary subscription + product_domain isolation rationale, admin-sells flow, COMMERCE_OWNER role. Include the SPEC-240 reuse checklist enumerating EXACTLY what Experiencias adds (confirming no CORE internals touched) — this is AC-9.2. No tests (docs).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-060"],
             "blocks": ["T-063", "T-064"],
             "subtasks": [
                 {
                     "title": "Write ADR (separation + billing isolation + role)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write SPEC-240 reuse checklist",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs", "adr", "core"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T23:23:58.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-17T00:00:00.000Z",
+                "completed": "2026-06-17T00:00:00.000Z"
             }
         },
         {
             "id": "T-063",
             "title": "Add route-architecture + CLAUDE.md doc rows",
             "description": "Add the new gastronomy/commerce endpoints to `apps/api/docs/route-architecture.md` (tier rows) and a billing quick-ref note in CLAUDE.md about product_domain isolation + commerce_listing_subscriptions. Update migrations guide for the product_domain extras carril note. No tests (docs).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-062"],
             "blocks": ["T-064"],
             "subtasks": [
                 {
                     "title": "Add route-architecture rows",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add CLAUDE.md billing quick-ref note",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add migrations guide extras note",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs", "core"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T23:23:58.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-17T00:00:00.000Z",
+                "completed": "2026-06-17T00:00:00.000Z"
             }
         },
         {
             "id": "T-064",
             "title": "Add endpoint-gate-matrix rows for commerce/gastronomy",
             "description": "Add rows to the billing endpoint-gate-matrix (`docs/billing/endpoint-gate-matrix.md`) and the gate documentation for the new gastronomy/commerce endpoints (which require COMMERCE_* permissions, which are public, which are admin-gated). Final docs/cleanup pass. No tests (docs).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-061", "T-062", "T-063"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Add endpoint-gate-matrix rows",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Document permission/tier gates per endpoint",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs", "cleanup", "core"],
             "phase": "cleanup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-15T23:23:58.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-17T00:00:00.000Z",
+                "completed": "2026-06-17T00:00:00.000Z"
             }
         }
     ],
