@@ -2169,35 +2169,35 @@
             "id": "T-060",
             "title": "Write cross-layer E2E test for gastronomy flow",
             "description": "Write an E2E/integration test spanning admin-create → owner provision → start subscription (MP stub) → active→visible → public listing/detail render → owner operational edit → review submit→moderate→rating recompute. Place in `apps/api/test/` or `apps/web/test/` integration suite. Asserts the full admin-sells lifecycle end-to-end.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-057", "T-058", "T-059"],
             "blocks": ["T-061", "T-062"],
             "subtasks": [
                 {
                     "title": "Script admin-create→provision→subscribe→visible",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Script public render + owner edit + review",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Assert full lifecycle end-to-end",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "e2e", "gastro", "commerce"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-15T23:23:58.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-17T14:00:00.000Z",
+                "completed": "2026-06-17T21:00:00.000Z"
             }
         },
         {

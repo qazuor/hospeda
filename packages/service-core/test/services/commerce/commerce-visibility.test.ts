@@ -51,7 +51,7 @@ describe('reconcileCommerceListingVisibility', () => {
             expect(result.visibility).toBe(VisibilityEnum.PUBLIC);
             expect(result.lifecycleState).toBe(LifecycleStatusEnum.ACTIVE);
             expect(model.update).toHaveBeenCalledWith(
-                ENTITY_ID,
+                { id: ENTITY_ID },
                 { visibility: VisibilityEnum.PUBLIC, lifecycleState: LifecycleStatusEnum.ACTIVE },
                 undefined
             );
@@ -172,7 +172,7 @@ describe('reconcileCommerceListingVisibility', () => {
 
             expect(model.findById).toHaveBeenCalledWith(ENTITY_ID, fakeTx);
             expect(model.update).toHaveBeenCalledWith(
-                ENTITY_ID,
+                { id: ENTITY_ID },
                 expect.objectContaining({ visibility: VisibilityEnum.PUBLIC }),
                 fakeTx
             );

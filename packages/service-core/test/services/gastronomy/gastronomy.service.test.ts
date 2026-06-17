@@ -200,10 +200,12 @@ describe('GastronomyService.updateOwn', () => {
         expect(result.error).toBeUndefined();
     });
 
-    it('should return FORBIDDEN when owner actor lacks COMMERCE_EDIT_ALL (base update gate)', async () => {
-        // The per-section permission checks pass for the owner, but the base update()
-        // method always calls _canUpdate which requires COMMERCE_EDIT_ALL.
-        // This is the expected behavior — only staff can perform full CRUD via updateOwn.
+    it('should allow an owner with the section editOwn permission to update operational fields (US-5)', async () => {
+        // The owner holds COMMERCE_PRICE_RANGE_EDIT_OWN (an operational section
+        // permission) and owns the listing. updateOwn enforces per-section gating,
+        // then the base update()'s owner-aware _canUpdate (checkCanEditOwnOrAll)
+        // accepts the owner — no COMMERCE_EDIT_ALL is required. This is the core
+        // US-5 behavior: owners can edit operational fields on their own listing.
         const entity = makeGastronomyEntity();
         const service = makeService(entity);
         const result = await service.updateOwn(
@@ -211,9 +213,7 @@ describe('GastronomyService.updateOwn', () => {
             { priceRange: PriceRangeEnum.MID },
             ownerActor
         );
-        // Owner has COMMERCE_PRICE_RANGE_EDIT_OWN but NOT COMMERCE_EDIT_ALL;
-        // the base update() rejects with FORBIDDEN.
-        expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+        expect(result.error).toBeUndefined();
     });
 
     it('should return FORBIDDEN when owner lacks the specific section permission (per-section gate)', async () => {

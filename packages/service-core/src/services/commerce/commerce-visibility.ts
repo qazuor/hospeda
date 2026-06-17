@@ -68,6 +68,9 @@ export interface ReconcileCommerceListingVisibilityResult {
 /**
  * Minimal update-capable model for a commerce entity.
  * The concrete service injects its own model which must satisfy this interface.
+ *
+ * Note: `update` takes a `where` record (matching BaseModel.update signature),
+ * not a bare ID string.  Call with `{ id: entityId }` as the first argument.
  */
 export interface CommerceEntityModel {
     findById: (
@@ -75,7 +78,7 @@ export interface CommerceEntityModel {
         tx?: DrizzleClient
     ) => Promise<{ id: string; visibility: string; lifecycleState: string } | null>;
     update: (
-        id: string,
+        where: Record<string, unknown>,
         data: Partial<{ visibility: string; lifecycleState: string }>,
         tx?: DrizzleClient
     ) => Promise<unknown>;
@@ -161,8 +164,10 @@ export async function reconcileCommerceListingVisibility(
     }
 
     // Write the reconciled state.
+    // Pass `{ id: entityId }` as the where clause to match BaseModel.update's
+    // signature (Record<string, unknown>), not a bare string.
     await model.update(
-        entityId,
+        { id: entityId },
         { visibility: desiredVisibility, lifecycleState: desiredLifecycleState },
         tx
     );

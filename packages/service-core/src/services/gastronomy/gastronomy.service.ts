@@ -48,8 +48,10 @@ import {
     GastronomySearchSchema,
     type GastronomyUpdateInput,
     GastronomyUpdateInputSchema,
+    LifecycleStatusEnum,
     PermissionEnum,
-    ServiceErrorCode
+    ServiceErrorCode,
+    VisibilityEnum
 } from '@repo/schemas';
 import type {
     Actor,
@@ -72,6 +74,7 @@ import {
     checkGastronomyCanDelete,
     checkGastronomyCanEditAll,
     checkGastronomyCanEditOwn,
+    checkGastronomyCanEditOwnOrAll,
     checkGastronomyCanHardDelete,
     checkGastronomyCanRestore,
     checkGastronomyCanView
@@ -211,7 +214,7 @@ export class GastronomyService extends BaseCommerceListingService<
     }
 
     protected _canUpdate(actor: Actor, entity: Gastronomy): void {
-        checkGastronomyCanEditAll(actor, entity);
+        checkGastronomyCanEditOwnOrAll(actor, entity);
     }
 
     protected _canSoftDelete(actor: Actor, entity: Gastronomy): void {
@@ -226,8 +229,30 @@ export class GastronomyService extends BaseCommerceListingService<
         checkGastronomyCanRestore(actor, entity);
     }
 
-    protected _canView(actor: Actor, _entity: Gastronomy): void {
+    protected _canView(actor: Actor, entity: Gastronomy): void {
         checkGastronomyCanView(actor);
+
+        // Non-admin actors receive NOT_FOUND for soft-deleted listings.
+        if (
+            entity.deletedAt !== null &&
+            entity.deletedAt !== undefined &&
+            !hasPermission(actor, PermissionEnum.COMMERCE_VIEW_ALL)
+        ) {
+            throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Gastronomy not found');
+        }
+
+        // Non-admin / non-owner actors receive NOT_FOUND for non-ACTIVE or PRIVATE
+        // listings (mirrors AccommodationService._canView for public-read gating).
+        const isOwner = entity.ownerId === actor.id;
+        const isStaff = hasPermission(actor, PermissionEnum.COMMERCE_VIEW_ALL);
+        if (!isOwner && !isStaff) {
+            if (entity.lifecycleState !== LifecycleStatusEnum.ACTIVE) {
+                throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Gastronomy not found');
+            }
+            if (entity.visibility === VisibilityEnum.PRIVATE) {
+                throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Gastronomy not found');
+            }
+        }
     }
 
     protected _canList(actor: Actor): void {
@@ -539,6 +564,13 @@ export class GastronomyService extends BaseCommerceListingService<
             // 5. Delegate to base update() for junction sync + hook pipeline.
             //    Owner update schema is a strict subset of the full update schema,
             //    so casting is safe here.  Base update signature: update(actor, id, data, ctx?).
+            //
+            //    Base update() runs _canUpdate, which is owner-aware
+            //    (checkGastronomyCanEditOwnOrAll: COMMERCE_EDIT_ALL OR owner + an
+            //    operational editOwn permission). updateOwn() already enforced ownership
+            //    and per-section gating above, and the payload was validated against the
+            //    owner schema (operational fields only), so the original actor passes the
+            //    base gate without any privilege elevation.
             return this.update(
                 actor,
                 gastronomyId,
