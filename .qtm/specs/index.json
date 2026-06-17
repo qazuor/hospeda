@@ -1447,6 +1447,18 @@
             "origin": "Spun off from SPEC-243 (2026-06-17): mobile app shipped Sub-0/3/4 verified headless-only; this spec builds the full RN testing system (RNTL render tests, Android emulator, E2E, CI).",
             "dependsOn": ["SPEC-243"],
             "tags": ["mobile", "testing", "rntl", "e2e", "ci", "android", "expo"]
+        },
+        {
+            "specId": "SPEC-246",
+            "title": "Revalidation log entity_id tracking + re-enable ACC-02 E2E",
+            "type": "bugfix",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-246-revalidation-log-entity-id-tracking",
+            "created": "2026-06-17T00:00:00Z",
+            "base": "staging",
+            "origin": "Follow-up from env-hardening PR #1712: revalidation_log.entity_id never written; ACC-02 E2E re-skipped until fixed.",
+            "tags": ["revalidation", "cache", "service-core", "e2e", "testing", "bug"]
         }
     ]
 }
