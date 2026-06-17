@@ -715,6 +715,13 @@
             "progress": "0/15",
             "path": "SPEC-244-test-suite-order-independence",
             "archived": false
+        },
+        {
+            "specId": "SPEC-245",
+            "title": "Mobile Testing Infrastructure",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-245-mobile-testing-infrastructure"
         }
     ],
     "standalone": {
