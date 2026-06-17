@@ -44,9 +44,11 @@ vi.mock('@repo/db', () => ({
     // entityType='gastronomy', and the real reconciler drives findById/update.
     gastronomyModel: {
         findById: (id: string) => Promise.resolve(entityStore.get(id) ?? null),
-        update: (id: string, data: { visibility?: string; lifecycleState?: string }) => {
-            const cur = entityStore.get(id);
-            if (cur) entityStore.set(id, { ...cur, ...data });
+        // BaseModel.update signature: update(where, data, tx?). The reconciler
+        // passes `{ id: entityId }` as the where clause.
+        update: (where: { id: string }, data: { visibility?: string; lifecycleState?: string }) => {
+            const cur = entityStore.get(where.id);
+            if (cur) entityStore.set(where.id, { ...cur, ...data });
             return Promise.resolve(undefined);
         }
     }
