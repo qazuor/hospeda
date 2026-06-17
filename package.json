@@ -70,6 +70,8 @@
         "docs:check-links": "tsx scripts/check-links.ts",
         "docs:validate-examples": "tsx scripts/validate-examples.ts",
         "env:check:registry": "bash scripts/check-env-registry.sh",
+        "env:check:examples": "pnpm --filter @repo/config test packages/config/test/env-examples.guard.test.ts",
+        "gen:env-examples": "tsx scripts/generate-env-examples.ts",
         "cli": "tsx scripts/cli.ts",
         "test:cli": "vitest run --config scripts/cli/vitest.config.ts",
         "specs:board": "python3 scripts/render-specs-prioritization.py --serve"
