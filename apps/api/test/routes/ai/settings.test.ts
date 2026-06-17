@@ -159,6 +159,15 @@ const VALID_SETTINGS_BLOB = {
             fallbackChain: [],
             model: 'gpt-4o-mini',
             params: {}
+        },
+        // SPEC-222: the accommodation_import feature is part of the full write
+        // record — every AiFeature key must be present on a PUT.
+        accommodation_import: {
+            enabled: false,
+            primaryProvider: 'openai',
+            fallbackChain: [],
+            model: 'gpt-4o-mini',
+            params: {}
         }
     }
 };
