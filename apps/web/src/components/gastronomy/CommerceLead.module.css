@@ -131,11 +131,8 @@
     font-weight: 700;
     font-size: var(--text-button);
     cursor: pointer;
-    transition:
-        background-color var(--duration-fast) ease,
-        transform var(--duration-fast) ease,
-        box-shadow var(--duration-fast) ease,
-        opacity var(--duration-fast) ease;
+    transition: background-color var(--duration-fast) ease, transform var(--duration-fast) ease,
+        box-shadow var(--duration-fast) ease, opacity var(--duration-fast) ease;
     align-self: stretch;
     box-shadow: 0 4px 12px -4px var(--brand-accent-a50);
 }
