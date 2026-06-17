@@ -1422,9 +1422,31 @@
             "complexity": "high",
             "path": "SPEC-244-test-suite-order-independence",
             "created": "2026-06-17T00:00:00Z",
-            "tags": ["ci", "testing", "vitest", "infrastructure", "api", "admin", "web", "packages"],
+            "tags": [
+                "ci",
+                "testing",
+                "vitest",
+                "infrastructure",
+                "api",
+                "admin",
+                "web",
+                "packages"
+            ],
             "archived": false,
             "note": "Follow-up discovered during SPEC-222. apps/api vitest suite has systemic cross-file order-dependency: module-scoped global mocks in test/setup.ts (notably the PlanService mock) leak across files under pool:forks/maxForks:3 fork distribution. --sequence.shuffle fails 6-16 tests/order; CI is green only on the deterministic order. Audit + fix the whole monorepo (api/admin/web/packages) then add a shuffle CI guard. accommodation-import.integration.test.ts itself is NOT flaky (9/9 orders) and needs no change. Drafted 2026-06-17."
+        },
+        {
+            "specId": "SPEC-245",
+            "title": "Mobile Testing Infrastructure",
+            "type": "spec-full",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-245-mobile-testing-infrastructure",
+            "created": "2026-06-17T00:00:00.000Z",
+            "base": "staging",
+            "origin": "Spun off from SPEC-243 (2026-06-17): mobile app shipped Sub-0/3/4 verified headless-only; this spec builds the full RN testing system (RNTL render tests, Android emulator, E2E, CI).",
+            "dependsOn": ["SPEC-243"],
+            "tags": ["mobile", "testing", "rntl", "e2e", "ci", "android", "expo"]
         }
     ]
 }
