@@ -478,6 +478,24 @@ export const HOSPEDA_ENV_VARS = [
         howToObtainEs:
             'Texto libre, 1-11 caracteres ASCII en mayúsculas (letras, dígitos, espacios). MP rechaza valores más largos o con minúsculas / no-ASCII. Por defecto "HOSPEDA"; sobrescribilo solo si el feedback de homologación de MP lo pide.'
     },
+    {
+        name: 'HOSPEDA_COMMERCE_PLAN_ID',
+        description:
+            'Slug of the billing plan used to provision a commerce-listing subscription (SPEC-239 T-049). Resolved by slug against billing_plans.name via the same machinery as the accommodation start-paid flow.',
+        descriptionEs:
+            'Slug del plan de facturación usado para provisionar una suscripción de listing de comercio (SPEC-239 T-049). Se resuelve por slug contra billing_plans.name con la misma maquinaria que el flujo accommodation start-paid.',
+        type: 'string',
+        required: false,
+        secret: false,
+        defaultValue: '',
+        exampleValue: 'commerce-listing',
+        apps: ['api'],
+        category: 'billing',
+        howToObtain:
+            'The slug (billing_plans.name) of the commerce plan seeded by the billing-plans seed. Defaults to the seeded commerce slug. The commerce admin start-subscription route 404s when unset or unknown.',
+        howToObtainEs:
+            'El slug (billing_plans.name) del plan de comercio sembrado por el seed de billing-plans. Por defecto el slug de comercio sembrado. La ruta admin commerce start-subscription devuelve 404 cuando está vacío o es desconocido.'
+    },
 
     // -------------------------------------------------------------------------
     // AI / Credential Vault
