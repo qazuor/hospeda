@@ -13,7 +13,7 @@
  *   scale is ported; component-level spacing decisions happen at the screen /
  *   component level using these raw tokens.
  *
- * DO NOT import `@repo/tailwind-config` here (ADR-033).
+ * DO NOT import `@repo/tailwind-config` here (ADR-034).
  */
 
 // ============================================================================

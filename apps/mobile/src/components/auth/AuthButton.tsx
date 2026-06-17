@@ -2,7 +2,7 @@
  * @file AuthButton.tsx
  * @description Reusable primary button for auth form actions.
  *
- * Follows ADR-033: StyleSheet.create at module scope, design tokens only,
+ * Follows ADR-034: StyleSheet.create at module scope, design tokens only,
  * no hardcoded hex values.
  */
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity } from 'react-native';
@@ -67,7 +67,7 @@ export function AuthButton({ label, loading = false, disabled, style, ...rest }:
 }
 
 // ---------------------------------------------------------------------------
-// Styles — module scope (ADR-033)
+// Styles — module scope (ADR-034)
 // ---------------------------------------------------------------------------
 
 const styles = StyleSheet.create({

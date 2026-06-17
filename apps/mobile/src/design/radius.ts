@@ -22,7 +22,7 @@
  *   Per `packages/design-tokens/src/tokens/radius.ts`, organic radii are
  *   deprecated and must not be used in new code.
  *
- * DO NOT import `@repo/tailwind-config` here (ADR-033).
+ * DO NOT import `@repo/tailwind-config` here (ADR-034).
  */
 
 // ============================================================================

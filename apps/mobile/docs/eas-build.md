@@ -1,6 +1,6 @@
 # EAS Build — Setup Skeleton (SPEC-243 T-012)
 
-`apps/mobile` uses **EAS Build** (ADR-033 decision 7) for native compilation and
+`apps/mobile` uses **EAS Build** (ADR-034 decision 7) for native compilation and
 store distribution. This document covers the build-profile skeleton committed in
 `apps/mobile/eas.json` and the owner action items required before the first real build.
 

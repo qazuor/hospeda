@@ -13,7 +13,7 @@
  * - `theme` — aggregated object that combines all of the above plus helpers.
  * - `lineHeightFor` — helper to compute absolute RN line-height from a ratio.
  *
- * ## Forbidden imports (ADR-033)
+ * ## Forbidden imports (ADR-034)
  * Do NOT import from these packages anywhere in `apps/mobile`:
  * - `@repo/tailwind-config` — CSS-only, blocked by `biome.json`
  * - `@repo/icons` — DOM SVG package, crashes in React Native

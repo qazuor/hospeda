@@ -29,7 +29,7 @@
  *   - Hue: locked across all shades.
  *
  * DO NOT import `@repo/tailwind-config` here — it is a CSS-only package
- * banned in mobile by `apps/mobile/biome.json` (ADR-033).
+ * banned in mobile by `apps/mobile/biome.json` (ADR-034).
  */
 
 // ============================================================================

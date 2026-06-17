@@ -5,7 +5,7 @@
  * ## The StyleSheet.create convention for Hospeda mobile
  *
  * React Native styles are created with `StyleSheet.create`, NOT with
- * NativeWind or any CSS-in-JS library (ADR-033). The convention is:
+ * NativeWind or any CSS-in-JS library (ADR-034). The convention is:
  *
  * 1. Import tokens from the design barrel (`../design`).
  * 2. Define styles at module scope using `StyleSheet.create({...})`.
@@ -42,7 +42,7 @@
  * ### Rules
  * - `StyleSheet.create` must be called at module scope (not inside components),
  *   so RN can validate and cache styles at startup.
- * - Do NOT import `@repo/tailwind-config` or `@repo/icons` (ADR-033).
+ * - Do NOT import `@repo/tailwind-config` or `@repo/icons` (ADR-034).
  * - Do NOT use `oklch()`, `rgb()` strings, or CSS expressions — only hex or
  *   the numeric tokens exported from this module.
  * - For `fontWeight`, cast to the string literal union RN expects:

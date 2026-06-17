@@ -24,7 +24,7 @@
  * - `lineHeight` in RN is absolute pixels (not a unitless ratio). Line heights
  *   are computed as `Math.round(fontSize * ratio)` for each size.
  *
- * DO NOT import `@repo/tailwind-config` here (ADR-033).
+ * DO NOT import `@repo/tailwind-config` here (ADR-034).
  */
 
 // ============================================================================

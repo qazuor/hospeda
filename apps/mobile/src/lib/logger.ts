@@ -8,7 +8,7 @@
  * seam that a future RN-compatible logger can replace without touching any
  * call sites.
  *
- * ADR-033 note: `@repo/logger` is NOT Metro-safe. If RN logging needs to be
+ * ADR-034 note: `@repo/logger` is NOT Metro-safe. If RN logging needs to be
  * routed to a remote service (Sentry, Datadog, etc.), extend this module —
  * do not attempt to import `@repo/logger` directly in mobile.
  *

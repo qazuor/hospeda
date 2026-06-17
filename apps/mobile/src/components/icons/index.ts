@@ -4,7 +4,7 @@
  *
  * ## Why this file exists
  *
- * ADR-033 (decision #2) locks the mobile app to `phosphor-react-native` for
+ * ADR-034 (decision #2) locks the mobile app to `phosphor-react-native` for
  * all iconography. Importing `@repo/icons` is explicitly banned by the
  * `noRestrictedImports` rule in `apps/mobile/biome.json` — it uses DOM SVGs
  * that crash React Native's JS engine.

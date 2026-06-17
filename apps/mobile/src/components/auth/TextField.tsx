@@ -2,7 +2,7 @@
  * @file TextField.tsx
  * @description Reusable text input component for auth forms.
  *
- * Follows ADR-033: StyleSheet.create at module scope, design tokens only,
+ * Follows ADR-034: StyleSheet.create at module scope, design tokens only,
  * no hardcoded hex values.
  *
  * Named export (exception: route files use default exports per Expo Router).
@@ -63,7 +63,7 @@ export function TextField({ label, error, style, ...rest }: TextFieldProps) {
 }
 
 // ---------------------------------------------------------------------------
-// Styles — module scope (ADR-033)
+// Styles — module scope (ADR-034)
 // ---------------------------------------------------------------------------
 
 const styles = StyleSheet.create({

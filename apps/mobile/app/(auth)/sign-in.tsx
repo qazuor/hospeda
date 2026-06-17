@@ -23,7 +23,7 @@ import { appDefaultLocale, getTranslation } from '../../src/lib/i18n';
  * Expo Router requires a **default export** for route files — this is the
  * one legitimate exception to the named-export-only rule (see CLAUDE.md).
  *
- * Styling uses StyleSheet.create at module scope (ADR-033).
+ * Styling uses StyleSheet.create at module scope (ADR-034).
  * All colors are sourced from design tokens — no hardcoded hex values.
  */
 export default function SignInScreen() {
@@ -179,7 +179,7 @@ export default function SignInScreen() {
 }
 
 // ---------------------------------------------------------------------------
-// Styles — module scope (ADR-033)
+// Styles — module scope (ADR-034)
 // ---------------------------------------------------------------------------
 
 const styles = StyleSheet.create({

@@ -488,7 +488,7 @@ monorepo with `pnpm dev --filter=mobile` (or `pnpm cli dev:mobile`).
 
 ## Open micro-decisions
 
-> **RESOLVED (2026-06-15) in [ADR-033](../../../docs/decisions/ADR-033-mobile-app-foundation.md).**
+> **RESOLVED (2026-06-15) in [ADR-034](../../../docs/decisions/ADR-034-mobile-app-foundation.md).**
 > Sub-0 locks: (1) `StyleSheet.create`, (2) `phosphor-react-native`, (3) transport
 > deferred to the auth spike (T-003), (4) map library deferred to Sub-1 (T-026),
 > (5) eager locale loading (validate size in T-002), (6) single push channel v1,

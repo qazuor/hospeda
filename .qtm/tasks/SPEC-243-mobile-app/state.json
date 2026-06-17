@@ -29,7 +29,7 @@
         {
             "id": "T-002",
             "title": "Configure Metro + Biome for monorepo internal packages (@repo/schemas, @repo/i18n)",
-            "description": "Make Metro resolve internal workspace packages (@repo/schemas, @repo/i18n) \u2014 path aliases / symlink resolution in metro.config.js as needed. Confirm eager locale-JSON import bundle size is acceptable (ADR-033 decision 5); fall back to lazy-by-locale only if size is unacceptable.",
+            "description": "Make Metro resolve internal workspace packages (@repo/schemas, @repo/i18n) \u2014 path aliases / symlink resolution in metro.config.js as needed. Confirm eager locale-JSON import bundle size is acceptable (ADR-034 decision 5); fall back to lazy-by-locale only if size is unacceptable.",
             "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
@@ -60,7 +60,7 @@
         {
             "id": "T-003",
             "title": "Auth spike: validate better-auth/expo + expo-secure-store session flow (sign-in, persist, refresh, sign-out)",
-            "description": "HIGHEST RISK TASK. Validate the better-auth/expo client adapter against the server BA config: cookie vs Bearer mode, secure-store token persistence (iOS + Android), session refresh on app resume, sign-out. Outcome also LOCKS the API client transport (ADR-033 decision 3): if better-auth/expo requires @better-fetch/fetch, adopt it; else native fetch. Document findings before T-004/T-009 commit. NOTE: headless env has no simulator/device \u2014 static integration + config + transport decision + bundle validation done here; live secure-store session flow requires manual device run by owner.",
+            "description": "HIGHEST RISK TASK. Validate the better-auth/expo client adapter against the server BA config: cookie vs Bearer mode, secure-store token persistence (iOS + Android), session refresh on app resume, sign-out. Outcome also LOCKS the API client transport (ADR-034 decision 3): if better-auth/expo requires @better-fetch/fetch, adopt it; else native fetch. Document findings before T-004/T-009 commit. NOTE: headless env has no simulator/device \u2014 static integration + config + transport decision + bundle validation done here; live secure-store session flow requires manual device run by owner.",
             "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002"],
@@ -79,7 +79,7 @@
                     "completed": false
                 },
                 {
-                    "title": "Decide transport (fetch vs @better-fetch/fetch), record in ADR-033",
+                    "title": "Decide transport (fetch vs @better-fetch/fetch), record in ADR-034",
                     "completed": true
                 }
             ],
@@ -145,7 +145,7 @@
         {
             "id": "T-006",
             "title": "Mobile design system: color tokens (JS objects from brand palette), typography, spacing, radius constants",
-            "description": "apps/mobile/src/design/: port the brand palette color values to JS token objects for RN StyleSheet (ADR-033 decision 1). Define typography scale, spacing scale, radius constants. Same color values as @repo/design-tokens but as JS objects (CSS/OKLCH tokens are not usable in RN).",
+            "description": "apps/mobile/src/design/: port the brand palette color values to JS token objects for RN StyleSheet (ADR-034 decision 1). Define typography scale, spacing scale, radius constants. Same color values as @repo/design-tokens but as JS objects (CSS/OKLCH tokens are not usable in RN).",
             "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
@@ -166,8 +166,8 @@
         },
         {
             "id": "T-007",
-            "title": "Wire styling strategy (StyleSheet.create per ADR-033) into the design-system layer",
-            "description": "Styling decision is LOCKED to StyleSheet.create in ADR-033 (decision 1) \u2014 NativeWind rejected for v1. This task wires the convention: a small StyleSheet helper/pattern over the T-006 tokens, plus a short usage note. No decision work remains here.",
+            "title": "Wire styling strategy (StyleSheet.create per ADR-034) into the design-system layer",
+            "description": "Styling decision is LOCKED to StyleSheet.create in ADR-034 (decision 1) \u2014 NativeWind rejected for v1. This task wires the convention: a small StyleSheet helper/pattern over the T-006 tokens, plus a short usage note. No decision work remains here.",
             "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-006"],
@@ -188,8 +188,8 @@
         },
         {
             "id": "T-008",
-            "title": "Integrate phosphor-react-native (per ADR-033) + add lint rule banning @repo/icons in apps/mobile",
-            "description": "Icon library is LOCKED to phosphor-react-native in ADR-033 (decision 2). Integrate it and add a Biome/lint guard that bans importing @repo/icons (DOM phosphor SVG, crashes in RN) anywhere in apps/mobile.",
+            "title": "Integrate phosphor-react-native (per ADR-034) + add lint rule banning @repo/icons in apps/mobile",
+            "description": "Icon library is LOCKED to phosphor-react-native in ADR-034 (decision 2). Integrate it and add a Biome/lint guard that bans importing @repo/icons (DOM phosphor SVG, crashes in RN) anywhere in apps/mobile.",
             "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-001"],
@@ -266,7 +266,7 @@
         {
             "id": "T-011",
             "title": "Push notification setup: expo-notifications init, getExpoPushTokenAsync, new POST /protected/profile/push-token API endpoint",
-            "description": "Initialize expo-notifications (single channel v1, ADR-033 decision 6). On first authenticated launch call getExpoPushTokenAsync() and POST the token to a NEW endpoint POST /api/v1/protected/profile/push-token (small API addition). Foreground notifications shown in-app; background follows OS behavior. Register EXPO_PUBLIC_API_URL + EXPO_PUBLIC_APP_ENV env vars.",
+            "description": "Initialize expo-notifications (single channel v1, ADR-034 decision 6). On first authenticated launch call getExpoPushTokenAsync() and POST the token to a NEW endpoint POST /api/v1/protected/profile/push-token (small API addition). Foreground notifications shown in-app; background follows OS behavior. Register EXPO_PUBLIC_API_URL + EXPO_PUBLIC_APP_ENV env vars.",
             "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-004"],
@@ -284,7 +284,7 @@
                 {
                     "title": "Foreground/background receipt handling",
                     "completed": true,
-                    "note": "Foreground handler configured (setNotificationHandler shouldShowBanner/List, SDK 56 shape); background follows OS behavior per ADR-033. Live receipt is device-gated."
+                    "note": "Foreground handler configured (setNotificationHandler shouldShowBanner/List, SDK 56 shape); background follows OS behavior per ADR-034. Live receipt is device-gated."
                 }
             ],
             "tags": ["native", "push", "api"],
@@ -304,7 +304,7 @@
         {
             "id": "T-012",
             "title": "CI: add apps/mobile to GitHub Actions (typecheck + lint + test); EAS Build setup skeleton (eas.json, app identifiers)",
-            "description": "Wire apps/mobile into the GitHub Actions pipeline (typecheck + lint + test). Add EAS Build skeleton (eas.json with development/preview/production profiles, Apple/Google app identifiers placeholders). EAS chosen in ADR-033 (decision 7). Flag owner to add EXPO_PUBLIC_API_URL to EAS Secrets per build profile.",
+            "description": "Wire apps/mobile into the GitHub Actions pipeline (typecheck + lint + test). Add EAS Build skeleton (eas.json with development/preview/production profiles, Apple/Google app identifiers placeholders). EAS chosen in ADR-034 (decision 7). Flag owner to add EXPO_PUBLIC_API_URL to EAS Secrets per build profile.",
             "status": "in_progress",
             "complexity": 2,
             "blockedBy": ["T-001"],
@@ -322,7 +322,7 @@
                 "started": "2026-06-16T00:00:00.000Z",
                 "completed": "2026-06-16T00:00:00.000Z"
             },
-            "note": "CI: mobile is already swept by GitHub Actions via Turbo globs \u2014 `pnpm lint/typecheck/test/build` schedule mobile#lint/typecheck/test/build (verified with turbo dry-run). No mobile-specific CI job added (same pattern as web/admin/api). FIX REQUIRED: `pnpm build` runs `expo export` with NO platform flag \u2192 defaulted to ALL platforms incl web \u2192 failed (no react-native-web). Set app.json `platforms: [ios, android]` (matches ADR-033 native-only intent) so the CI build job exports ios+android Hermes bundles to dist/ (5.2/6.4MB) and passes. EAS skeleton: apps/mobile/eas.json with development/preview/production profiles (appVersionSource remote, channels, EXPO_PUBLIC_APP_ENV per profile; staging/prod EXPO_PUBLIC_API_URL inlined \u2014 public, not secret). app identifiers com.hospeda.app already in app.json. Owner action items (eas init projectId, expo-dev-client, credentials) in apps/mobile/docs/eas-build.md. Verified green: typecheck/lint(26 files)/test(42)/build all exit 0."
+            "note": "CI: mobile is already swept by GitHub Actions via Turbo globs \u2014 `pnpm lint/typecheck/test/build` schedule mobile#lint/typecheck/test/build (verified with turbo dry-run). No mobile-specific CI job added (same pattern as web/admin/api). FIX REQUIRED: `pnpm build` runs `expo export` with NO platform flag \u2192 defaulted to ALL platforms incl web \u2192 failed (no react-native-web). Set app.json `platforms: [ios, android]` (matches ADR-034 native-only intent) so the CI build job exports ios+android Hermes bundles to dist/ (5.2/6.4MB) and passes. EAS skeleton: apps/mobile/eas.json with development/preview/production profiles (appVersionSource remote, channels, EXPO_PUBLIC_APP_ENV per profile; staging/prod EXPO_PUBLIC_API_URL inlined \u2014 public, not secret). app identifiers com.hospeda.app already in app.json. Owner action items (eas init projectId, expo-dev-client, credentials) in apps/mobile/docs/eas-build.md. Verified green: typecheck/lint(26 files)/test(42)/build all exit 0."
         },
         {
             "id": "T-013",
