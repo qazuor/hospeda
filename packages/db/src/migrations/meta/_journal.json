@@ -134,6 +134,13 @@
             "when": 1781653674429,
             "tag": "0018_short_dexter_bennett",
             "breakpoints": true
+        },
+        {
+            "idx": 19,
+            "version": "7",
+            "when": 1781737151487,
+            "tag": "0019_thin_sway",
+            "breakpoints": true
         }
     ]
 }
