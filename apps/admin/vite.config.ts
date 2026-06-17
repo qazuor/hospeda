@@ -15,7 +15,7 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url));
 // directory.  loadEnv() reads the files synchronously so we can validate
 // before defineConfig() is evaluated.  The empty-string prefix loads ALL
 // variables regardless of prefix (VITE_*, HOSPEDA_*, etc.).
-// Platform env vars (Vercel) are already in process.env and take precedence
+// Platform/CI env vars are already in process.env and take precedence
 // because we only set keys that are not already defined.
 const rawEnv = loadEnv(process.env.NODE_ENV ?? 'development', __dirname, '');
 for (const [key, value] of Object.entries(rawEnv)) {
