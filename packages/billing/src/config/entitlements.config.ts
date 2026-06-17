@@ -231,5 +231,11 @@ export const ENTITLEMENT_DEFINITIONS: EntitlementDefinition[] = [
         name: 'AI content translation',
         description:
             'Access to AI-powered auto-translation of content entities (accommodations, destinations, events, posts) to English and Portuguese'
+    },
+    {
+        key: EntitlementKey.AI_ACCOMMODATION_IMPORT,
+        name: 'AI accommodation import',
+        description:
+            'Access to AI-powered accommodation import that extracts structured listing data from an external URL to pre-fill the creation form'
     }
 ];

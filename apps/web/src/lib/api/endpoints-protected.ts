@@ -6,6 +6,7 @@
  * The apiClient methods `getProtected` and `postProtected` handle this automatically.
  */
 import type {
+    AccommodationImportResponse,
     AccommodationReviewListItem,
     DestinationReviewListItem,
     DowngradePreview,
@@ -2413,5 +2414,42 @@ export const ownerPromotionApi = {
         readonly id: string;
     }): Promise<ApiResult<{ readonly success: boolean }>> {
         return apiClient.delete({ path: `${PROTECTED}/owner-promotions/${id}` });
+    }
+};
+
+// --- Accommodation Import from URL (Protected) ---
+
+/** Protected accommodation import-from-URL API endpoint (SPEC-222). */
+export const accommodationsImportApi = {
+    /**
+     * Import accommodation data from an external listing URL.
+     *
+     * The server extracts a per-field draft (with confidence + source) for the
+     * host to review before saving. Nothing is persisted. Reviews/ratings are
+     * never returned.
+     *
+     * @param body - The listing URL, optional locale, and the legal confirmation
+     *   (must be `true` — the host confirms they have the right to import).
+     * @returns The import response with the draft and hints, or an API error.
+     *
+     * @example
+     * ```ts
+     * const result = await accommodationsImportApi.importFromUrl({
+     *   url: 'https://www.airbnb.com.ar/rooms/123',
+     *   locale: 'es',
+     *   legalConfirmed: true
+     * });
+     * if (result.ok) prefillForm(result.data.draft);
+     * ```
+     */
+    importFromUrl(body: {
+        readonly url: string;
+        readonly locale?: string;
+        readonly legalConfirmed: true;
+    }): Promise<ApiResult<AccommodationImportResponse>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/accommodations/import-from-url`,
+            body
+        });
     }
 };

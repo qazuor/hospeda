@@ -1,4 +1,4 @@
-# ADR-033: Mobile App Foundation (Expo / React Native)
+# ADR-034: Mobile App Foundation (Expo / React Native)
 
 ## Status
 

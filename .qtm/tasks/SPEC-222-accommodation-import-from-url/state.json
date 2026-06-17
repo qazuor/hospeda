@@ -1,0 +1,1057 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-222",
+    "title": "Accommodation import from URL",
+    "created": "2026-06-15T22:40:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add ImportSource + FieldSource enums and ImportedField<T> helper to @repo/schemas",
+            "description": "Create ImportSource ('mercadolibre'|'google'|'booking'|'airbnb'|'generic'|'none') and FieldSource ('official_api'|'jsonld'|'opengraph'|'meta'|'text'|'ai') Zod enums, plus an importedField(schema) helper that wraps any schema as { value, confidence: number 0-100, source: FieldSource }. Files: packages/schemas/src/entities/accommodation/accommodation-import.schema.ts (new). Tests: unit test importedField() wrapping passes/fails confidence bounds; enums reject unknown values.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-003"],
+            "subtasks": [
+                {
+                    "title": "ImportSource enum + FieldSource enum",
+                    "completed": true
+                },
+                {
+                    "title": "importedField<T>() generic wrapper",
+                    "completed": true
+                },
+                {
+                    "title": "Unit tests for bounds + enum rejection",
+                    "completed": true
+                }
+            ],
+            "tags": ["schemas", "enums"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:40:00.000Z",
+                "started": "2026-06-15T22:45:00.000Z",
+                "completed": "2026-06-15T22:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Define AccommodationImportDraftSchema (per-field ImportedField)",
+            "description": "Per-field optional ImportedField schema mirroring fillable AccommodationSchema keys: name, summary, description, type (AccommodationTypeEnum — all 13 values), extraInfo {capacity,bedrooms,beds,bathrooms}, location {coordinates{lat,long as STRINGS}, street, number}, price {price,currency}, contactInfo {mobilePhone,website}, seo {title,description}. Exclude checkInTime/checkOutTime/houseRules/city/country (no model home). File: same accommodation-import.schema.ts. Tests: valid partial parses; lat/long coerced to string; unknown keys stripped.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-003", "T-011", "T-019"],
+            "subtasks": [
+                {
+                    "title": "Per-field ImportedField shape for each fillable key",
+                    "completed": true
+                },
+                {
+                    "title": "type uses AccommodationTypeEnum (13 values)",
+                    "completed": true
+                },
+                {
+                    "title": "Unit tests partial/coercion/strip",
+                    "completed": true
+                }
+            ],
+            "tags": ["schemas"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:40:00.000Z",
+                "started": "2026-06-15T22:50:00.000Z",
+                "completed": "2026-06-15T22:55:00.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Define AccommodationImportRequest/Response schemas",
+            "description": "AccommodationImportRequestSchema { url: string().url().max(2048), locale?: LanguageEnum, legalConfirmed: z.literal(true) }. AccommodationImportResponseSchema { draft: AccommodationImportDraftSchema, source: ImportSource, methodsUsed: FieldSource[], partial: boolean, message?, destinationHint?: {scrapedLocality?, candidates: {id,name}[]}, unresolvedAmenities?: string[], mediaHints?: {imageUrls: string[]} }. File: accommodation-import.schema.ts + export from package index. Tests: legalConfirmed false rejected; url>2048 rejected; response shape valid.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-019", "T-020", "T-023", "T-026"],
+            "subtasks": [
+                {
+                    "title": "Request schema with legalConfirmed literal(true)",
+                    "completed": true
+                },
+                {
+                    "title": "Response schema with hints",
+                    "completed": true
+                },
+                {
+                    "title": "Export from @repo/schemas index",
+                    "completed": true
+                },
+                {
+                    "title": "Unit tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["schemas"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:40:00.000Z",
+                "started": "2026-06-15T22:55:00.000Z",
+                "completed": "2026-06-15T23:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Register 'accommodation_import' AI feature + default prompt",
+            "description": "Add 'accommodation_import' to AiFeatureSchema (packages/schemas/src/entities/ai/ai-provider.schema.ts) and a DEFAULT_PROMPTS['accommodation_import'] entry (packages/ai-core/src/engine/default-prompts.ts): JSON-only extraction prompt in es, enumerating all 13 AccommodationTypeEnum values for type mapping. Tests: AiFeatureSchema accepts the new value; DEFAULT_PROMPTS has the key. [COUPLED with T-005: adding the AiFeature enum member breaks all Record<AiFeature> maps; landed together.]",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-019"],
+            "subtasks": [
+                {
+                    "title": "AiFeatureSchema value",
+                    "completed": true
+                },
+                {
+                    "title": "DEFAULT_PROMPTS entry (es, 13 types)",
+                    "completed": true
+                },
+                {
+                    "title": "Unit tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["schemas", "ai-core"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:40:00.000Z",
+                "started": "2026-06-15T23:05:00.000Z",
+                "completed": "2026-06-15T23:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Add AI entitlement + limit keys for accommodation_import",
+            "description": "Add EntitlementKey.AI_ACCOMMODATION_IMPORT (packages/billing/src/types/entitlement.types.ts) and LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH (packages/billing/src/types/plan.types.ts). Because both enums are exhaustiveness-checked: add entries to LIMIT_METADATA (packages/billing/src/config/limits.config.ts) and RESOURCE_NAMES (apps/api/src/utils/limit-check.ts). Add plan-limit defaults + entitlement seed. Tests: limits config compiles (Record exhaustive); seed includes key.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-019", "T-020"],
+            "subtasks": [
+                {
+                    "title": "EntitlementKey + LimitKey",
+                    "completed": true
+                },
+                {
+                    "title": "LIMIT_METADATA + RESOURCE_NAMES entries",
+                    "completed": true
+                },
+                {
+                    "title": "Plan defaults + entitlement seed",
+                    "completed": true
+                },
+                {
+                    "title": "Tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["billing", "seed"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:40:00.000Z",
+                "started": "2026-06-15T23:08:00.000Z",
+                "completed": "2026-06-15T23:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Register import env vars (registry + api env.ts + .env.example)",
+            "description": "Register HOSPEDA_APIFY_TOKEN (secret), HOSPEDA_APIFY_AIRBNB_ACTOR, HOSPEDA_GOOGLE_PLACES_API_KEY (secret), HOSPEDA_MERCADOLIBRE_TOKEN (secret), HOSPEDA_IMPORT_FETCH_TIMEOUT_MS (8000), HOSPEDA_IMPORT_FETCH_MAX_BYTES (3000000), HOSPEDA_IMPORT_RATE_LIMIT_RPH (10), HOSPEDA_IMPORT_AI_MAX_CHARS (12000). Files: packages/config/src/env-registry.*, apps/api/src/utils/env.ts (Zod), apps/api/.env.example. Run pnpm env:check:registry. STOP + notify owner to set in Coolify. Tests: env:check:registry green.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-007", "T-016", "T-017", "T-018"],
+            "subtasks": [
+                {
+                    "title": "Registry entries with full metadata",
+                    "completed": true
+                },
+                {
+                    "title": "Zod validation in apps/api env.ts",
+                    "completed": true
+                },
+                {
+                    "title": ".env.example placeholders",
+                    "completed": true
+                },
+                {
+                    "title": "env:check:registry green + notify owner (Coolify)",
+                    "completed": true
+                }
+            ],
+            "tags": ["config", "env"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:40:00.000Z",
+                "started": "2026-06-15T23:20:00.000Z",
+                "completed": "2026-06-15T23:25:00.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Implement safeExternalFetch SSRF-guarded fetch util",
+            "description": "New util (packages/utils/src/safe-fetch.ts): HTTPS-only; reject file://,ftp://,localhost,internal hostnames; DNS-resolve hostname and block private/loopback/link-local ranges (RFC-1918, 127.0.0.0/8, 169.254.0.0/16, ::1, fc00::/7) BEFORE connecting (anti DNS-rebind); cap redirects, enforce timeout (HOSPEDA_IMPORT_FETCH_TIMEOUT_MS) and max body size (HOSPEDA_IMPORT_FETCH_MAX_BYTES). RO-RO, typed error result. Export from @repo/utils.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-006"],
+            "blocks": ["T-008", "T-014", "T-015"],
+            "subtasks": [
+                {
+                    "title": "HTTPS + scheme/host rejects",
+                    "completed": true
+                },
+                {
+                    "title": "DNS resolve + private-range block",
+                    "completed": true
+                },
+                {
+                    "title": "redirect cap + timeout + max-bytes",
+                    "completed": true
+                }
+            ],
+            "tags": ["utils", "security"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:40:00.000Z",
+                "started": "2026-06-15T23:30:00.000Z",
+                "completed": "2026-06-15T23:45:00.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Unit tests for safeExternalFetch (SSRF matrix)",
+            "description": "AAA tests: reject file://, ftp://, http:// (non-https), localhost, 127.0.0.1, 10.x/172.16.x/192.168.x, 169.254.x, ::1, fc00::; DNS-rebind (hostname resolving to private IP) blocked; timeout enforced; response over max-bytes aborted. File: packages/utils/test/safe-fetch.test.ts. Mock DNS + fetch.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Scheme/host rejection cases",
+                    "completed": true
+                },
+                {
+                    "title": "Private-range + rebind cases",
+                    "completed": true
+                },
+                {
+                    "title": "timeout + max-bytes cases",
+                    "completed": true
+                }
+            ],
+            "tags": ["utils", "security", "testing"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:40:00.000Z",
+                "started": "2026-06-15T23:30:00.000Z",
+                "completed": "2026-06-15T23:45:00.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "ImportSourceAdapter interface + RawExtraction + detectSource",
+            "description": "Define ImportSourceAdapter { source; supports(url): boolean; extract(url, ctx): Promise<RawExtraction> }, RawExtraction (loose candidate bag + per-field source tags, pre-validation), ImportContext, and detectSource(url): ImportSource (normalize hostname → source). Files: packages/service-core/src/services/accommodation-import/ (new module). Tests: detectSource maps known hosts; unknown → 'generic'.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-010", "T-011", "T-014", "T-015", "T-016", "T-017", "T-018", "T-019"],
+            "subtasks": [
+                {
+                    "title": "Interface + RawExtraction + ImportContext types",
+                    "completed": true
+                },
+                {
+                    "title": "detectSource hostname normalization",
+                    "completed": true
+                },
+                {
+                    "title": "Unit tests for detection",
+                    "completed": true
+                }
+            ],
+            "tags": ["service-core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:40:00.000Z",
+                "started": "2026-06-15T23:30:00.000Z",
+                "completed": "2026-06-15T23:40:00.000Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "JSON-LD / OpenGraph / meta extraction helpers (no DOM dep)",
+            "description": "Parse <script type=application/ld+json> blocks with bounded regex + JSON.parse (handle arrays/@graph); extract OpenGraph + targeted meta tags via regex. NO cheerio/jsdom. MUST strip review/rating fields (aggregateRating, review) at parse time. Files: service-core/src/services/accommodation-import/extractors/. Tests: fixture HTML (LodgingBusiness, Hotel) parse; malformed JSON-LD tolerated; rating fields absent from output.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-009"],
+            "blocks": ["T-014", "T-015"],
+            "subtasks": [
+                {
+                    "title": "JSON-LD block parser (bounded regex)",
+                    "completed": true
+                },
+                {
+                    "title": "OG + meta regex extraction",
+                    "completed": true
+                },
+                {
+                    "title": "Strip rating/review fields",
+                    "completed": true
+                },
+                {
+                    "title": "Fixture-based unit tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["service-core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:40:00.000Z",
+                "started": "2026-06-16T00:00:00.000Z",
+                "completed": "2026-06-16T00:10:00.000Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Confidence scoring constant + per-field Zod map/validate",
+            "description": "Confidence band constant per FieldSource (official_api/jsonld 90-100, og/meta 60-75, text 40-55, ai 20-40). mapRawToDraft(raw): coerce + validate each candidate against AccommodationImportDraftSchema per field; drop fields that fail validation (never throw). Files: accommodation-import/mapping.ts. Tests: confidence assignment per source; invalid field dropped; lat/long string coercion.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-002", "T-009"],
+            "blocks": ["T-019"],
+            "subtasks": [
+                {
+                    "title": "Confidence band constant",
+                    "completed": true
+                },
+                {
+                    "title": "Per-field coerce + validate + drop-on-fail",
+                    "completed": true
+                },
+                {
+                    "title": "Unit tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["service-core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:40:00.000Z",
+                "started": "2026-06-16T00:00:00.000Z",
+                "completed": "2026-06-16T00:10:00.000Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Amenity resolution (catalog name/slug search)",
+            "description": "resolveAmenities(names: string[]): { amenityIds: string[], unresolved: string[] } using AmenityModel catalog lookup (name->>'es' ILIKE via safeIlike, or unique slug). Resolved → UUIDs; unresolved → advisory list (never applied). Files: accommodation-import/resolvers/amenities.ts. Tests: known names resolve to UUIDs (mocked model); unknown → unresolved; no free strings leak.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-009"],
+            "blocks": ["T-019"],
+            "subtasks": [
+                {
+                    "title": "Catalog lookup via safeIlike/slug",
+                    "completed": true
+                },
+                {
+                    "title": "Split resolved/unresolved",
+                    "completed": true
+                },
+                {
+                    "title": "Unit tests (mocked model)",
+                    "completed": true
+                }
+            ],
+            "tags": ["service-core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:40:00.000Z",
+                "started": "2026-06-16T00:10:00.000Z",
+                "completed": "2026-06-16T00:20:00.000Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "destinationHint resolution (destination search, never auto-set FK)",
+            "description": "buildDestinationHint(locality?, country?): { scrapedLocality?, candidates: {id,name}[] } via destination search (name scope). NEVER set destinationId — even a single exact match returns a candidate for the host to confirm. Files: accommodation-import/resolvers/destination.ts. Tests: locality → candidates; no match → empty candidates; FK never populated.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-009"],
+            "blocks": ["T-019"],
+            "subtasks": [
+                {
+                    "title": "Destination search by locality",
+                    "completed": true
+                },
+                {
+                    "title": "Return candidates, never FK",
+                    "completed": true
+                },
+                {
+                    "title": "Unit tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["service-core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:40:00.000Z",
+                "started": "2026-06-16T00:10:00.000Z",
+                "completed": "2026-06-16T00:20:00.000Z"
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "GenericAdapter (fetch + JSON-LD → AI Strategy B)",
+            "description": "safeExternalFetch the URL, run JSON-LD/OG/meta extractors; if fewer than N useful fields (default 2, HOSPEDA configurable), strip HTML to text (max HOSPEDA_IMPORT_AI_MAX_CHARS) and call ai-core generateObject({feature:'accommodation_import'}, AccommodationImportDraftSchema); AI fields get lowest confidence. If AI disabled/unconfigured, return structured partial. Tests: JSON-LD-rich page no AI; sparse page triggers AI (mocked); AI-off path.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-007", "T-010", "T-004"],
+            "blocks": ["T-019"],
+            "subtasks": [
+                {
+                    "title": "Fetch + structured extraction",
+                    "completed": true
+                },
+                {
+                    "title": "Strategy B AI fallback (threshold)",
+                    "completed": true
+                },
+                {
+                    "title": "AI-disabled graceful path",
+                    "completed": true
+                },
+                {
+                    "title": "Unit tests (mocked fetch/AI)",
+                    "completed": true
+                }
+            ],
+            "tags": ["service-core", "ai-core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:40:00.000Z",
+                "started": "2026-06-16T00:40:00.000Z",
+                "completed": "2026-06-16T00:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "BookingAdapter (fetch + JSON-LD Hotel → Apify fallback)",
+            "description": "safeExternalFetch Booking URL, parse JSON-LD @type Hotel (strip aggregateRating/review); on block/empty → Apify fallback (shared Apify client). Realistic headers. Tests: JSON-LD fixture maps name/address/geo/images (NO rating); blocked → Apify path (mocked); empty → degraded.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-007", "T-010"],
+            "blocks": ["T-019"],
+            "subtasks": [
+                {
+                    "title": "Direct fetch + Hotel JSON-LD map",
+                    "completed": true
+                },
+                {
+                    "title": "Strip rating/review (AC-9.1)",
+                    "completed": true
+                },
+                {
+                    "title": "Apify fallback on block/empty",
+                    "completed": true
+                },
+                {
+                    "title": "Unit tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["service-core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:40:00.000Z",
+                "started": "2026-06-16T00:50:00.000Z",
+                "completed": "2026-06-16T00:55:00.000Z"
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "AirbnbAdapter (Apify actor REST) + credential degradation",
+            "description": "Call Apify run-sync-get-dataset-items (POST api.apify.com/v2/acts/<actor>/...?token) with {mode:'listing', urls:[url]} using native fetch; map dataset item; MUST strip reviews/reviewsCount/rating/ratingBreakdown (AC-9.1). Provider abstracted (actor from HOSPEDA_APIFY_AIRBNB_ACTOR). US-11: if HOSPEDA_APIFY_TOKEN unset → return source:'none' + message, never throw. Tests: mapping (mocked dataset, NO rating); missing token → degraded; actor error → degraded.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-006", "T-009"],
+            "blocks": ["T-019"],
+            "subtasks": [
+                {
+                    "title": "Apify REST call + dataset mapping",
+                    "completed": true
+                },
+                {
+                    "title": "Strip review/rating fields",
+                    "completed": true
+                },
+                {
+                    "title": "Credential-less degradation (US-11)",
+                    "completed": true
+                },
+                {
+                    "title": "Unit tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["service-core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:40:00.000Z",
+                "started": "2026-06-16T00:40:00.000Z",
+                "completed": "2026-06-16T00:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "MercadoLibreAdapter (OAuth /items/{id}) + credential degradation",
+            "description": "Parse item ID from URL; call api.mercadolibre.com/items/{id} with OAuth app token (ML is no longer anonymous — needs HOSPEDA_MERCADOLIBRE_TOKEN, confirm client-credentials vs full OAuth with a live call at impl). Map title/description/location/attributes(bedrooms/bathrooms/area)/photos. US-11: token unset → source:'none'. Tests: mapping (mocked JSON); token unset → degraded; bad URL → degraded.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-006", "T-009"],
+            "blocks": ["T-019"],
+            "subtasks": [
+                {
+                    "title": "Item-ID parse + ML API call (OAuth)",
+                    "completed": true
+                },
+                {
+                    "title": "Attribute mapping",
+                    "completed": true
+                },
+                {
+                    "title": "Credential-less degradation (US-11)",
+                    "completed": true
+                },
+                {
+                    "title": "Unit tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["service-core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:40:00.000Z",
+                "started": "2026-06-16T00:30:00.000Z",
+                "completed": "2026-06-16T00:40:00.000Z"
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "GooglePlacesAdapter (Place Details New) + credential degradation",
+            "description": "Extract Place ID from URL; call Places API (New) Place Details with HOSPEDA_GOOGLE_PLACES_API_KEY; map name/address/coords/phone/website/type/photos. US-11: key unset → source:'none'. Tests: mapping (mocked); key unset → degraded; no place id → degraded.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-006", "T-009"],
+            "blocks": ["T-019"],
+            "subtasks": [
+                {
+                    "title": "Place-ID extraction + Place Details call",
+                    "completed": true
+                },
+                {
+                    "title": "Field mapping",
+                    "completed": true
+                },
+                {
+                    "title": "Credential-less degradation (US-11)",
+                    "completed": true
+                },
+                {
+                    "title": "Unit tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["service-core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:40:00.000Z",
+                "started": "2026-06-16T00:30:00.000Z",
+                "completed": "2026-06-16T00:40:00.000Z"
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "accommodation-import.service.ts orchestration (stateless)",
+            "description": "Stateless service (NOT BaseCrudService, billing-style) returning Result<AccommodationImportResponse>. Steps: detectSource → pick adapter → adapter.extract → mapRawToDraft (confidence + Zod per-field) → resolveAmenities + buildDestinationHint → assemble response (source, methodsUsed, partial, message, hints). Graceful degradation: empty/blocked → partial empty draft + message + source:'none', never throws. Tests: full happy path (mocked adapter); empty → degraded; per-field validation drop; reviews never present.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [
+                "T-003",
+                "T-004",
+                "T-005",
+                "T-011",
+                "T-012",
+                "T-013",
+                "T-014",
+                "T-015",
+                "T-016",
+                "T-017",
+                "T-018"
+            ],
+            "blocks": ["T-020", "T-027"],
+            "subtasks": [
+                {
+                    "title": "Detect → adapter dispatch",
+                    "completed": true
+                },
+                {
+                    "title": "Map + resolve + assemble response",
+                    "completed": true
+                },
+                {
+                    "title": "Graceful degradation (never throw)",
+                    "completed": true
+                },
+                {
+                    "title": "Orchestration unit tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["service-core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:40:00.000Z",
+                "started": "2026-06-16T01:00:00.000Z",
+                "completed": "2026-06-16T01:10:00.000Z"
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "POST /api/v1/protected/accommodations/import-from-url route",
+            "description": "createProtectedRoute; permission ACCOMMODATION_CREATE OR ACCOMMODATION_UPDATE_OWN (ACCOMMODATION_UPDATE_ANY for admin); server re-check legalConfirmed===true (reject otherwise); wire per-user rate limit {requests:10, windowMs:3_600_000} from HOSPEDA_IMPORT_RATE_LIMIT_RPH; apply accommodation_import AI quota/entitlement + cost ceiling when Strategy B runs. Thin handler → service. File: apps/api/src/routes/accommodation/protected/import-from-url.ts + register.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-005", "T-019"],
+            "blocks": ["T-021", "T-022", "T-023", "T-026"],
+            "subtasks": [
+                {
+                    "title": "Route + perms + legalConfirmed recheck",
+                    "completed": true
+                },
+                {
+                    "title": "Explicit 10/h rate-limit middleware",
+                    "completed": true
+                },
+                {
+                    "title": "AI quota/entitlement on Strategy B",
+                    "completed": true
+                },
+                {
+                    "title": "Register route",
+                    "completed": true
+                }
+            ],
+            "tags": ["api"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:40:00.000Z",
+                "started": "2026-06-16T14:30:00.000Z",
+                "completed": "2026-06-16T15:05:00.000Z"
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Integration test for import endpoint",
+            "description": "Stub HTTP server serving a JSON-LD LodgingBusiness page → assert pre-filled draft with confidence/source. Mock Apify + AI. Cases: 200 partial draft; legalConfirmed false → rejected; rate-limit 429 with retryAfter; unauthorized → 401; reviews never in response. File: apps/api/test/routes/accommodation-import.integration.test.ts.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-020"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Stub JSON-LD server path",
+                    "completed": true
+                },
+                {
+                    "title": "legalConfirmed reject + 429 + 401 cases",
+                    "completed": true
+                },
+                {
+                    "title": "Assert no reviews leak",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "testing"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:40:00.000Z",
+                "started": "2026-06-16T15:10:00.000Z",
+                "completed": "2026-06-16T15:25:00.000Z"
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Docs: route-architecture + endpoint-gate-matrix",
+            "description": "Add the import endpoint row to docs/billing/endpoint-gate-matrix.md (gate: AI quota on Strategy B) and update apps/api/docs/route-architecture.md with the new protected route. Docs-only.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-020"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "endpoint-gate-matrix row",
+                    "completed": true
+                },
+                {
+                    "title": "route-architecture update",
+                    "completed": true
+                }
+            ],
+            "tags": ["docs"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:40:00.000Z",
+                "started": "2026-06-16T15:30:00.000Z",
+                "completed": "2026-06-16T15:32:00.000Z"
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Web: ImportFromUrl.client.tsx island + module.css",
+            "description": "New island (apps/web/src/components/host/ImportFromUrl.client.tsx) + ImportFromUrl.module.css (CSS Modules, no Tailwind): legal confirmation checkbox that DISABLES the Importar button until ticked (AC-1.1), URL input, Importar button, loading/error states. Calls POST import-from-url. Validates request with AccommodationImportRequestSchema.safeParse. Component test: button disabled until checkbox; submit calls endpoint.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-020"],
+            "blocks": ["T-024", "T-025"],
+            "subtasks": [
+                {
+                    "title": "Island markup + CSS module",
+                    "completed": true
+                },
+                {
+                    "title": "Legal checkbox gates button (AC-1.1)",
+                    "completed": true
+                },
+                {
+                    "title": "Fetch + loading/error states",
+                    "completed": true
+                },
+                {
+                    "title": "Component test",
+                    "completed": true
+                }
+            ],
+            "tags": ["web"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:40:00.000Z",
+                "started": "2026-06-16T15:35:00.000Z",
+                "completed": "2026-06-16T15:45:00.000Z"
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Web: per-platform URL-acquisition help panel (US-7) + i18n",
+            "description": "Collapsible/inline help next to the URL input (AC-7.1): per-platform short steps to copy the listing URL (Airbnb, Booking, MercadoLibre, Google Maps) + example URL shapes (AC-7.2/7.3). All copy via @repo/i18n keys importFromUrl.* in es/en/pt. Tests: i18n keys exist in 3 locales; panel toggles.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-023"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Collapsible help panel per platform",
+                    "completed": true
+                },
+                {
+                    "title": "i18n keys es/en/pt",
+                    "completed": true
+                },
+                {
+                    "title": "Tests (keys + toggle)",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "i18n"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:40:00.000Z",
+                "started": "2026-06-16T15:46:00.000Z",
+                "completed": "2026-06-16T15:52:00.000Z"
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Web: wire into CreatePropertyMiniForm + confidence badges + prefill",
+            "description": "Mount ImportFromUrl as a collapsible section in CreatePropertyMiniForm.client.tsx; on success pre-fill name/summary/type with per-field confidence badges + source + 'revisá y confirmá' notice (AC-1.2/1.3). destinationHint surfaced for picker; nothing auto-saved. Component test: prefill maps returned fields; badges render; no auto-save.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-023"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Mount collapsible section",
+                    "completed": true
+                },
+                {
+                    "title": "Prefill + confidence badges + notice",
+                    "completed": true
+                },
+                {
+                    "title": "destinationHint surfaced (no auto-set)",
+                    "completed": true
+                },
+                {
+                    "title": "Component test",
+                    "completed": true
+                }
+            ],
+            "tags": ["web"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:40:00.000Z",
+                "started": "2026-06-16T15:55:00.000Z",
+                "completed": "2026-06-16T16:10:00.000Z"
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Admin: import-from-url section in consolidated edit form",
+            "description": "New import-from-url.section.ts wired into accommodation-consolidated.config.ts (Tailwind). TanStack Query mutation → endpoint; legal checkbox gate; on success form.setFieldValue per returned field with confidence badges; request validated via AccommodationImportRequestSchema.safeParse. Admin component test: setFieldValue per field; no save; checkbox gate. [REVIEW NOTE (T-004/005): apps/admin AiFeatureId union + FEATURE_LABELS + the 3 ALL_FEATURES arrays in routes/_authed/ai/{prompts,playground,settings}.tsx are hand-maintained and still 5-member; add accommodation_import here so the feature is manageable in the admin AI settings UI.]",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-020"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Section config + wire into consolidated",
+                    "completed": true
+                },
+                {
+                    "title": "TanStack mutation + form.setFieldValue",
+                    "completed": true
+                },
+                {
+                    "title": "Confidence badges + checkbox gate",
+                    "completed": true
+                },
+                {
+                    "title": "Admin component test",
+                    "completed": true
+                }
+            ],
+            "tags": ["admin"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:40:00.000Z",
+                "started": "2026-06-16T16:15:00.000Z",
+                "completed": "2026-06-16T16:35:00.000Z"
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "ADR: tiered import strategy + provider abstraction + SSRF + legal",
+            "description": "Write an ADR (docs/decisions/) documenting: source-aware tiered strategy, ImportSourceAdapter provider abstraction + Apify choice and swap path, safeExternalFetch SSRF approach, stateless decision (no audit table), reviews-excluded posture, legal/ToS posture. Docs-only.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-019"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Draft ADR sections",
+                    "completed": true
+                },
+                {
+                    "title": "Link from decisions README",
+                    "completed": true
+                }
+            ],
+            "tags": ["docs"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:40:00.000Z",
+                "started": "2026-06-16T16:40:00.000Z",
+                "completed": "2026-06-16T16:45:00.000Z"
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Polish: PostHog events + legal copy + smoke test",
+            "description": "Optional ephemeral fire-and-forget PostHog events (accommodation_import_started/completed/failed) via getPostHogClient (no DB). Legal notice copy review. Manual smoke: import against a real JSON-LD page + one live Apify call. Mark spec open micro-decisions resolved.",
+            "status": "in_progress",
+            "complexity": 2,
+            "blockedBy": ["T-020"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Ephemeral PostHog events (optional)",
+                    "completed": true
+                },
+                {
+                    "title": "Legal copy review",
+                    "completed": true
+                },
+                {
+                    "title": "Live smoke (JSON-LD + Apify)",
+                    "completed": false,
+                    "note": "BLOCKED on owner: needs Coolify credentials (Apify token+actors, Google Places key, ML OAuth). Each adapter degrades clean until then (US-11)."
+                }
+            ],
+            "tags": ["docs", "cleanup"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-15T22:40:00.000Z",
+                "started": "2026-06-16T16:50:00.000Z",
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 28,
+        "pending": 0,
+        "inProgress": 1,
+        "completed": 27,
+        "blocked": 0,
+        "averageComplexity": 2.5
+    }
+}

@@ -127,6 +127,13 @@ const VALID_SETTINGS_BLOB = {
             fallbackChain: [],
             model: 'gemini-1.5-flash',
             params: {}
+        },
+        accommodation_import: {
+            enabled: false,
+            primaryProvider: 'openai' as const,
+            fallbackChain: [],
+            model: 'gpt-4o-mini',
+            params: {}
         }
     }
 } as const;

@@ -12,3 +12,5 @@ export * from './currency';
 export * from './sentry';
 export * from './markdown-helpers';
 export * from './tiptap-renderer';
+export * from './safe-fetch-ip';
+export * from './safe-fetch';
