@@ -3,13 +3,18 @@
         "home": {
             "title": "Tourist Home",
             "subtitle": "Explore accommodations in the region"
+        },
+        "tabs": {
+            "home": "Home",
+            "profile": "Profile"
         }
     },
     "host": {
         "tabs": {
             "home": "Home",
             "accommodations": "Listings",
-            "conversations": "Inquiries"
+            "conversations": "Inquiries",
+            "profile": "Profile"
         },
         "dashboard": {
             "title": "Host Dashboard",
@@ -92,6 +97,52 @@
             "error": "Could not load metrics. Please try again.",
             "loading": "Loading metrics...",
             "retry": "Retry"
+        }
+    },
+    "profile": {
+        "title": "My profile",
+        "avatarLabel": "Profile picture",
+        "emailLabel": "Email",
+        "roleLabel": "Role",
+        "sections": {
+            "personalInfo": "Personal info",
+            "location": "Location"
+        },
+        "fields": {
+            "name": "Full name",
+            "firstName": "First name",
+            "lastName": "Last name",
+            "phone": "Mobile phone",
+            "city": "City",
+            "region": "Province / Region",
+            "country": "Country"
+        },
+        "save": "Save changes",
+        "saveSuccess": "Profile updated successfully.",
+        "saveError": "Could not save. Please try again.",
+        "loading": "Loading profile...",
+        "loadError": "Could not load profile. Please try again."
+    },
+    "settings": {
+        "title": "Settings",
+        "notifications": {
+            "sectionTitle": "Notifications",
+            "enabled": "Notifications active",
+            "allowPush": "Push notifications",
+            "allowEmails": "Email notifications",
+            "allowSms": "SMS notifications"
+        },
+        "language": {
+            "sectionTitle": "Language",
+            "es": "Español",
+            "en": "English",
+            "pt": "Português"
+        },
+        "account": {
+            "sectionTitle": "Account",
+            "signOut": "Sign out",
+            "deleteAccount": "Delete account",
+            "deleteAccountComingSoon": "Account deletion is not available yet."
         }
     }
 }
