@@ -8,152 +8,237 @@
             "id": "T-001",
             "title": "Add ExperienceTypePgEnum and ExperiencePriceUnitPgEnum to DB enums",
             "description": "Add `experience_type` (14 values incl OTHER) and `experience_price_unit` (per_day|per_hour|per_person|per_group) PG enums to packages/db/src/schemas/enums.dbschema.ts. Tests: extend the enum snapshot/unit test in packages/db/test verifying both enums export the expected value arrays.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-002", "T-008"],
             "subtasks": [
-                { "title": "ExperienceTypePgEnum (14 values)", "completed": false },
-                { "title": "ExperiencePriceUnitPgEnum (4 values)", "completed": false }
+                {
+                    "title": "ExperienceTypePgEnum (14 values)",
+                    "completed": false
+                },
+                {
+                    "title": "ExperiencePriceUnitPgEnum (4 values)",
+                    "completed": false
+                }
             ],
             "tags": ["database", "enum"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-17T00:00:00.000Z",
+                "completed": "2026-06-17T00:00:00.000Z"
             }
         },
         {
             "id": "T-002",
             "title": "Create ExperienceTypeEnumSchema and ExperiencePriceUnitEnumSchema",
             "description": "Add Zod enum schemas in packages/schemas/src/enums/ mirroring the PG enums (single source of truth, derive from the same const value arrays). Tests: unit test asserting parse success for valid values + rejection for unknown, and value parity with the DB enums.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-001"],
             "blocks": ["T-003"],
             "subtasks": [
-                { "title": "ExperienceTypeEnumSchema", "completed": false },
-                { "title": "ExperiencePriceUnitEnumSchema", "completed": false }
+                {
+                    "title": "ExperienceTypeEnumSchema",
+                    "completed": false
+                },
+                {
+                    "title": "ExperiencePriceUnitEnumSchema",
+                    "completed": false
+                }
             ],
             "tags": ["schema", "enum", "zod"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-17T00:00:00.000Z",
+                "completed": "2026-06-17T00:00:00.000Z"
             }
         },
         {
             "id": "T-003",
             "title": "Write experience.schema.ts (main entity, spreads BaseCommerceListingSchema)",
             "description": "Create packages/schemas/src/entities/experience/experience.schema.ts spreading SPEC-239 BaseCommerceListingSchema + entity fields: type, priceFrom (z.number().int().nonnegative()), priceUnit, isPriceOnRequest (default false). Add ExperienceIdSchema. Tests: unit tests for valid/invalid entity objects, default application, integer/non-negative price enforcement.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002"],
             "blocks": ["T-004", "T-005", "T-006", "T-007", "T-018"],
             "subtasks": [
-                { "title": "ExperienceIdSchema", "completed": false },
-                { "title": "Spread BaseCommerceListingSchema + entity fields", "completed": false },
-                { "title": "Unit tests", "completed": false }
+                {
+                    "title": "ExperienceIdSchema",
+                    "completed": false
+                },
+                {
+                    "title": "Spread BaseCommerceListingSchema + entity fields",
+                    "completed": false
+                },
+                {
+                    "title": "Unit tests",
+                    "completed": false
+                }
             ],
             "tags": ["schema", "zod"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-17T00:00:00.000Z",
+                "completed": "2026-06-17T00:00:00.000Z"
             }
         },
         {
             "id": "T-004",
             "title": "Write experience.crud.schema.ts (create/update/patch variants)",
             "description": "Create CreateExperienceSchema, UpdateExperienceSchema, PatchExperienceSchema mirroring accommodation.crud.schema.ts. Separate owner-editable (operational) vs admin-only (identity) field sets so the protected updateOwn route can validate against the operational subset. Tests: unit tests for each variant — required vs optional fields, operational vs admin field partitioning.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-003"],
             "blocks": ["T-017", "T-020", "T-021"],
             "subtasks": [
-                { "title": "Create/Update/Patch variants", "completed": false },
-                { "title": "Operational vs admin field split", "completed": false },
-                { "title": "Unit tests", "completed": false }
+                {
+                    "title": "Create/Update/Patch variants",
+                    "completed": false
+                },
+                {
+                    "title": "Operational vs admin field split",
+                    "completed": false
+                },
+                {
+                    "title": "Unit tests",
+                    "completed": false
+                }
             ],
             "tags": ["schema", "zod"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-17T00:00:00.000Z",
+                "completed": "2026-06-17T00:00:00.000Z"
             }
         },
         {
             "id": "T-005",
             "title": "Write experience.http.schema.ts (public/protected/admin response shapes)",
             "description": "Create public-tier and admin-tier HTTP request/response schemas mirroring accommodation.http.schema.ts. CRITICAL: public response schema must strip admin/internal fields (follow SPEC-210 public-tier discipline) so subscription-off internals never leak. Tests: unit tests asserting public shape excludes adminInfo/ownerId-sensitive fields, admin shape includes them.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003"],
             "blocks": ["T-019", "T-020", "T-021"],
             "subtasks": [
-                { "title": "Public-tier response schema (field-stripped)", "completed": false },
-                { "title": "Admin-tier response schema", "completed": false },
-                { "title": "Request body schemas per endpoint", "completed": false },
-                { "title": "Unit tests (leak guard)", "completed": false }
+                {
+                    "title": "Public-tier response schema (field-stripped)",
+                    "completed": false
+                },
+                {
+                    "title": "Admin-tier response schema",
+                    "completed": false
+                },
+                {
+                    "title": "Request body schemas per endpoint",
+                    "completed": false
+                },
+                {
+                    "title": "Unit tests (leak guard)",
+                    "completed": false
+                }
             ],
             "tags": ["schema", "http", "security"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-17T00:00:00.000Z",
+                "completed": "2026-06-17T00:00:00.000Z"
             }
         },
         {
             "id": "T-006",
             "title": "Write experience.query.schema.ts + experience.admin-search.schema.ts",
             "description": "Public list/filter query schema (type, destination, page, pageSize, sort) and admin-search schema (adds hasActiveSubscription, ownerId, lifecycleState, moderationState). Tests: unit tests for query coercion, pagination bounds, filter validation.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-003"],
             "blocks": ["T-019", "T-021"],
             "subtasks": [
-                { "title": "Public query schema", "completed": false },
-                { "title": "Admin-search schema", "completed": false },
-                { "title": "Unit tests", "completed": false }
+                {
+                    "title": "Public query schema",
+                    "completed": false
+                },
+                {
+                    "title": "Admin-search schema",
+                    "completed": false
+                },
+                {
+                    "title": "Unit tests",
+                    "completed": false
+                }
             ],
             "tags": ["schema", "zod"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-17T00:00:00.000Z",
+                "completed": "2026-06-17T00:00:00.000Z"
             }
         },
         {
             "id": "T-007",
             "title": "Write experience.relations.schema.ts",
             "description": "Relations schema with reviews, faqs, hours, amenities, features, destination — mirrors accommodation.relations.schema.ts and reuses SPEC-239 polymorphic sub-schemas where available. Tests: unit test composing a full relations object and asserting nested validation.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-003"],
             "blocks": ["T-019"],
             "subtasks": [
-                { "title": "Compose relations", "completed": false },
-                { "title": "Unit test", "completed": false }
+                {
+                    "title": "Compose relations",
+                    "completed": false
+                },
+                {
+                    "title": "Unit test",
+                    "completed": false
+                }
             ],
             "tags": ["schema", "zod"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-17T00:00:00.000Z",
+                "completed": "2026-06-17T00:00:00.000Z"
             }
         },
         {
@@ -165,12 +250,22 @@
             "blockedBy": ["T-001"],
             "blocks": ["T-009", "T-010", "T-011", "T-012", "T-013"],
             "subtasks": [
-                { "title": "Columns + types", "completed": false },
-                { "title": "Indexes incl hot-path composite", "completed": false }
+                {
+                    "title": "Columns + types",
+                    "completed": false
+                },
+                {
+                    "title": "Indexes incl hot-path composite",
+                    "completed": false
+                }
             ],
             "tags": ["database", "schema"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
                 "started": null,
@@ -185,10 +280,19 @@
             "complexity": 1,
             "blockedBy": ["T-008"],
             "blocks": ["T-013"],
-            "subtasks": [{ "title": "Table + unique constraint", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Table + unique constraint",
+                    "completed": false
+                }
+            ],
             "tags": ["database", "schema"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
                 "started": null,
@@ -203,10 +307,19 @@
             "complexity": 1,
             "blockedBy": ["T-008"],
             "blocks": ["T-013"],
-            "subtasks": [{ "title": "Table + displayOrder", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Table + displayOrder",
+                    "completed": false
+                }
+            ],
             "tags": ["database", "schema"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
                 "started": null,
@@ -221,10 +334,19 @@
             "complexity": 1,
             "blockedBy": ["T-008"],
             "blocks": ["T-013"],
-            "subtasks": [{ "title": "Table + shifts", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Table + shifts",
+                    "completed": false
+                }
+            ],
             "tags": ["database", "schema"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
                 "started": null,
@@ -240,12 +362,22 @@
             "blockedBy": ["T-008"],
             "blocks": ["T-013"],
             "subtasks": [
-                { "title": "r_experience_amenity", "completed": false },
-                { "title": "r_experience_feature", "completed": false }
+                {
+                    "title": "r_experience_amenity",
+                    "completed": false
+                },
+                {
+                    "title": "r_experience_feature",
+                    "completed": false
+                }
             ],
             "tags": ["database", "schema"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
                 "started": null,
@@ -261,14 +393,30 @@
             "blockedBy": ["T-008", "T-009", "T-010", "T-011", "T-012"],
             "blocks": ["T-014", "T-017"],
             "subtasks": [
-                { "title": "db:generate + review", "completed": false },
-                { "title": "Commit migration file", "completed": false },
-                { "title": "db:migrate + apply-extras", "completed": false },
-                { "title": "Drift guard clean", "completed": false }
+                {
+                    "title": "db:generate + review",
+                    "completed": false
+                },
+                {
+                    "title": "Commit migration file",
+                    "completed": false
+                },
+                {
+                    "title": "db:migrate + apply-extras",
+                    "completed": false
+                },
+                {
+                    "title": "Drift guard clean",
+                    "completed": false
+                }
             ],
             "tags": ["database", "migration"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
                 "started": null,
@@ -284,12 +432,22 @@
             "blockedBy": ["T-013"],
             "blocks": ["T-039"],
             "subtasks": [
-                { "title": "Seed records covering type/unit variety", "completed": false },
-                { "title": "Owner assignment", "completed": false }
+                {
+                    "title": "Seed records covering type/unit variety",
+                    "completed": false
+                },
+                {
+                    "title": "Owner assignment",
+                    "completed": false
+                }
             ],
             "tags": ["seed", "database"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
                 "started": null,
@@ -305,12 +463,22 @@
             "blockedBy": [],
             "blocks": ["T-017"],
             "subtasks": [
-                { "title": "PermissionEnum additions", "completed": false },
-                { "title": "Role assignment mapping", "completed": false }
+                {
+                    "title": "PermissionEnum additions",
+                    "completed": false
+                },
+                {
+                    "title": "Role assignment mapping",
+                    "completed": false
+                }
             ],
             "tags": ["service", "permissions", "security"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
                 "started": null,
@@ -326,13 +494,26 @@
             "blockedBy": [],
             "blocks": ["T-017"],
             "subtasks": [
-                { "title": "helpers (slug, price, label)", "completed": false },
-                { "title": "normalizers", "completed": false },
-                { "title": "Unit tests first (TDD)", "completed": false }
+                {
+                    "title": "helpers (slug, price, label)",
+                    "completed": false
+                },
+                {
+                    "title": "normalizers",
+                    "completed": false
+                },
+                {
+                    "title": "Unit tests first (TDD)",
+                    "completed": false
+                }
             ],
             "tags": ["service", "utils"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
                 "started": null,
@@ -348,13 +529,26 @@
             "blockedBy": ["T-004", "T-013", "T-015", "T-016", "T-018"],
             "blocks": ["T-019", "T-020", "T-021"],
             "subtasks": [
-                { "title": "Extend base + overrides", "completed": false },
-                { "title": "Owner-scoping guard tests", "completed": false },
-                { "title": "Subscription toggle hook tests", "completed": false }
+                {
+                    "title": "Extend base + overrides",
+                    "completed": false
+                },
+                {
+                    "title": "Owner-scoping guard tests",
+                    "completed": false
+                },
+                {
+                    "title": "Subscription toggle hook tests",
+                    "completed": false
+                }
             ],
             "tags": ["service", "business-logic"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
                 "started": null,
@@ -369,10 +563,19 @@
             "complexity": 1,
             "blockedBy": ["T-003"],
             "blocks": ["T-017"],
-            "subtasks": [{ "title": "Infer types from schemas", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Infer types from schemas",
+                    "completed": false
+                }
+            ],
             "tags": ["service", "types"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
                 "started": null,
@@ -388,13 +591,26 @@
             "blockedBy": ["T-017", "T-005", "T-006", "T-007"],
             "blocks": ["T-022", "T-026", "T-029"],
             "subtasks": [
-                { "title": "list + filters", "completed": false },
-                { "title": "getById + getBySlug (404 guard)", "completed": false },
-                { "title": "reviews list", "completed": false }
+                {
+                    "title": "list + filters",
+                    "completed": false
+                },
+                {
+                    "title": "getById + getBySlug (404 guard)",
+                    "completed": false
+                },
+                {
+                    "title": "reviews list",
+                    "completed": false
+                }
             ],
             "tags": ["api", "routes", "public"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
                 "started": null,
@@ -410,12 +626,22 @@
             "blockedBy": ["T-017", "T-004", "T-005"],
             "blocks": ["T-022"],
             "subtasks": [
-                { "title": "updateOwn (operational guard)", "completed": false },
-                { "title": "review create/delete", "completed": false }
+                {
+                    "title": "updateOwn (operational guard)",
+                    "completed": false
+                },
+                {
+                    "title": "review create/delete",
+                    "completed": false
+                }
             ],
             "tags": ["api", "routes", "protected", "security"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
                 "started": null,
@@ -431,13 +657,26 @@
             "blockedBy": ["T-017", "T-004", "T-005", "T-006"],
             "blocks": ["T-022", "T-031", "T-032", "T-033", "T-034", "T-035"],
             "subtasks": [
-                { "title": "CRUD + restore", "completed": false },
-                { "title": "toggle-subscription", "completed": false },
-                { "title": "FAQs + hours + reviews", "completed": false }
+                {
+                    "title": "CRUD + restore",
+                    "completed": false
+                },
+                {
+                    "title": "toggle-subscription",
+                    "completed": false
+                },
+                {
+                    "title": "FAQs + hours + reviews",
+                    "completed": false
+                }
             ],
             "tags": ["api", "routes", "admin"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
                 "started": null,
@@ -453,12 +692,22 @@
             "blockedBy": ["T-019", "T-020", "T-021"],
             "blocks": ["T-039"],
             "subtasks": [
-                { "title": "Integration sweep", "completed": false },
-                { "title": "endpoint-gate-matrix update", "completed": false }
+                {
+                    "title": "Integration sweep",
+                    "completed": false
+                },
+                {
+                    "title": "endpoint-gate-matrix update",
+                    "completed": false
+                }
             ],
             "tags": ["api", "testing"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
                 "started": null,
@@ -474,13 +723,26 @@
             "blockedBy": [],
             "blocks": ["T-024", "T-026", "T-027", "T-029"],
             "subtasks": [
-                { "title": "es (primary)", "completed": false },
-                { "title": "en + pt", "completed": false },
-                { "title": "Key-parity test", "completed": false }
+                {
+                    "title": "es (primary)",
+                    "completed": false
+                },
+                {
+                    "title": "en + pt",
+                    "completed": false
+                },
+                {
+                    "title": "Key-parity test",
+                    "completed": false
+                }
             ],
             "tags": ["i18n", "web"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
                 "started": null,
@@ -496,12 +758,22 @@
             "blockedBy": ["T-023"],
             "blocks": ["T-025", "T-026"],
             "subtasks": [
-                { "title": "ExperienceCard", "completed": false },
-                { "title": "ExperiencePriceTag", "completed": false }
+                {
+                    "title": "ExperienceCard",
+                    "completed": false
+                },
+                {
+                    "title": "ExperiencePriceTag",
+                    "completed": false
+                }
             ],
             "tags": ["web", "component"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
                 "started": null,
@@ -517,12 +789,22 @@
             "blockedBy": ["T-024"],
             "blocks": ["T-026"],
             "subtasks": [
-                { "title": "ExperienceGrid", "completed": false },
-                { "title": "ExperienceFilters island", "completed": false }
+                {
+                    "title": "ExperienceGrid",
+                    "completed": false
+                },
+                {
+                    "title": "ExperienceFilters island",
+                    "completed": false
+                }
             ],
             "tags": ["web", "component"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
                 "started": null,
@@ -538,12 +820,22 @@
             "blockedBy": ["T-019", "T-025", "T-023"],
             "blocks": ["T-030"],
             "subtasks": [
-                { "title": "SSR data fetch + render grid", "completed": false },
-                { "title": "Empty state + i18n", "completed": false }
+                {
+                    "title": "SSR data fetch + render grid",
+                    "completed": false
+                },
+                {
+                    "title": "Empty state + i18n",
+                    "completed": false
+                }
             ],
             "tags": ["web", "page", "ssr"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
                 "started": null,
@@ -559,13 +851,26 @@
             "blockedBy": ["T-023"],
             "blocks": ["T-029"],
             "subtasks": [
-                { "title": "Hero", "completed": false },
-                { "title": "Info", "completed": false },
-                { "title": "ContactCTA (WhatsApp)", "completed": false }
+                {
+                    "title": "Hero",
+                    "completed": false
+                },
+                {
+                    "title": "Info",
+                    "completed": false
+                },
+                {
+                    "title": "ContactCTA (WhatsApp)",
+                    "completed": false
+                }
             ],
             "tags": ["web", "component"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
                 "started": null,
@@ -581,12 +886,22 @@
             "blockedBy": ["T-023"],
             "blocks": ["T-029"],
             "subtasks": [
-                { "title": "FAQ accordion", "completed": false },
-                { "title": "Reviews island", "completed": false }
+                {
+                    "title": "FAQ accordion",
+                    "completed": false
+                },
+                {
+                    "title": "Reviews island",
+                    "completed": false
+                }
             ],
             "tags": ["web", "component"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
                 "started": null,
@@ -602,12 +917,22 @@
             "blockedBy": ["T-019", "T-027", "T-028"],
             "blocks": ["T-030"],
             "subtasks": [
-                { "title": "SSR fetch + 404 guard", "completed": false },
-                { "title": "Assemble detail sections", "completed": false }
+                {
+                    "title": "SSR fetch + 404 guard",
+                    "completed": false
+                },
+                {
+                    "title": "Assemble detail sections",
+                    "completed": false
+                }
             ],
             "tags": ["web", "page", "ssr"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
                 "started": null,
@@ -622,10 +947,19 @@
             "complexity": 2,
             "blockedBy": ["T-026", "T-029"],
             "blocks": ["T-039"],
-            "subtasks": [{ "title": "Component test sweep", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Component test sweep",
+                    "completed": false
+                }
+            ],
             "tags": ["web", "testing"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
                 "started": null,
@@ -640,10 +974,19 @@
             "complexity": 2,
             "blockedBy": ["T-021"],
             "blocks": ["T-039"],
-            "subtasks": [{ "title": "List + filters + pagination", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "List + filters + pagination",
+                    "completed": false
+                }
+            ],
             "tags": ["admin", "page"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
                 "started": null,
@@ -659,13 +1002,26 @@
             "blockedBy": ["T-021"],
             "blocks": ["T-039"],
             "subtasks": [
-                { "title": "Create form", "completed": false },
-                { "title": "Edit form + owner assign", "completed": false },
-                { "title": "Subscription toggle", "completed": false }
+                {
+                    "title": "Create form",
+                    "completed": false
+                },
+                {
+                    "title": "Edit form + owner assign",
+                    "completed": false
+                },
+                {
+                    "title": "Subscription toggle",
+                    "completed": false
+                }
             ],
             "tags": ["admin", "form"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
                 "started": null,
@@ -680,10 +1036,19 @@
             "complexity": 1,
             "blockedBy": ["T-021"],
             "blocks": ["T-039"],
-            "subtasks": [{ "title": "Detail view", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Detail view",
+                    "completed": false
+                }
+            ],
             "tags": ["admin", "page"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
                 "started": null,
@@ -698,10 +1063,19 @@
             "complexity": 2,
             "blockedBy": ["T-021"],
             "blocks": ["T-039"],
-            "subtasks": [{ "title": "Wire FaqManager", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Wire FaqManager",
+                    "completed": false
+                }
+            ],
             "tags": ["admin", "form"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
                 "started": null,
@@ -716,10 +1090,19 @@
             "complexity": 1,
             "blockedBy": ["T-021"],
             "blocks": ["T-039"],
-            "subtasks": [{ "title": "Moderation list + actions", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Moderation list + actions",
+                    "completed": false
+                }
+            ],
             "tags": ["admin", "page"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
                 "started": null,
@@ -735,12 +1118,22 @@
             "blockedBy": ["T-021", "T-032"],
             "blocks": ["T-039"],
             "subtasks": [
-                { "title": "Operational-only form", "completed": false },
-                { "title": "subscription-off warning", "completed": false }
+                {
+                    "title": "Operational-only form",
+                    "completed": false
+                },
+                {
+                    "title": "subscription-off warning",
+                    "completed": false
+                }
             ],
             "tags": ["admin", "form", "security"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
                 "started": null,
@@ -755,10 +1148,19 @@
             "complexity": 1,
             "blockedBy": ["T-021"],
             "blocks": ["T-040"],
-            "subtasks": [{ "title": "Doc update", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Doc update",
+                    "completed": false
+                }
+            ],
             "tags": ["docs"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
                 "started": null,
@@ -773,10 +1175,19 @@
             "complexity": 1,
             "blockedBy": ["T-021"],
             "blocks": ["T-040"],
-            "subtasks": [{ "title": "Matrix update", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Matrix update",
+                    "completed": false
+                }
+            ],
             "tags": ["docs"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
                 "started": null,
@@ -801,10 +1212,19 @@
                 "T-036"
             ],
             "blocks": ["T-040"],
-            "subtasks": [{ "title": "Full happy-path smoke", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Full happy-path smoke",
+                    "completed": false
+                }
+            ],
             "tags": ["testing", "e2e"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
                 "started": null,
@@ -819,10 +1239,19 @@
             "complexity": 1,
             "blockedBy": ["T-037", "T-038", "T-039"],
             "blocks": [],
-            "subtasks": [{ "title": "Index + CSV sync", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Index + CSV sync",
+                    "completed": false
+                }
+            ],
             "tags": ["docs", "governance"],
             "phase": "cleanup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
                 "started": null,
@@ -832,9 +1261,9 @@
     ],
     "summary": {
         "total": 40,
-        "pending": 40,
+        "pending": 33,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 7,
         "blocked": 0,
         "averageComplexity": 1.9
     }
