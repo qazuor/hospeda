@@ -461,7 +461,7 @@
             "id": "T-045",
             "title": "Metrics screen (basic)",
             "description": "metrics.tsx (pushed from dashboard, href:null). GET /api/v1/protected/views/accommodations/me?window=7d|30d + daily-series. Window toggle.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-040"],
             "blocks": [],
@@ -469,21 +469,21 @@
             "tags": ["metrics", "host", "views"],
             "phase": "host",
             "qualityGate": {
-                "lint": "pending",
-                "typecheck": "pending",
-                "tests": "pending"
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-17T06:35:39.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-17T09:17:08.000Z",
+                "completed": "2026-06-17T09:53:16.000Z"
             }
         },
         {
             "id": "T-046",
             "title": "Tests: dashboard hooks, ficha edit form validation, consulta reply",
             "description": "Vitest unit tests for dashboard/list/patch/reply hooks + ficha edit form validation. Follow client.test.ts pattern.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-042", "T-044"],
             "blocks": [],
@@ -491,14 +491,14 @@
             "tags": ["tests", "host"],
             "phase": "testing",
             "qualityGate": {
-                "lint": "pending",
-                "typecheck": "pending",
-                "tests": "pending"
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-17T06:35:39.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-17T09:17:08.000Z",
+                "completed": "2026-06-17T09:53:16.000Z"
             }
         }
     ],
@@ -506,8 +506,8 @@
         "total": 20,
         "pending": 0,
         "inProgress": 0,
-        "completed": 18,
-        "blocked": 2,
+        "completed": 20,
+        "blocked": 0,
         "averageComplexity": 2.05
     }
 }
