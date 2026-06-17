@@ -245,7 +245,7 @@
             "id": "T-008",
             "title": "Create experiences.dbschema.ts (main table)",
             "description": "Create packages/db/src/schemas/experience/experiences.dbschema.ts per spec domain model. Indexes: (slug), (destination_id), (owner_id), (type), (has_active_subscription, lifecycle_state). Reuse BaseCommerceListing column shape from SPEC-239. Tests: table introspection / column-presence unit test.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": ["T-009", "T-010", "T-011", "T-012", "T-013"],
@@ -262,21 +262,21 @@
             "tags": ["database", "schema"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-17T00:00:00.000Z",
+                "completed": "2026-06-17T00:00:00.000Z"
             }
         },
         {
             "id": "T-009",
             "title": "Create experience_reviews.dbschema.ts",
             "description": "Polymorphic-parallel review table (experienceId FK, userId FK, title, content, rating jsonb, averageRating numeric, lifecycleState, moderationState, audit). UNIQUE (experienceId, userId) for one-review-per-user. Tests: unique constraint + FK introspection test.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-008"],
             "blocks": ["T-013"],
@@ -289,21 +289,21 @@
             "tags": ["database", "schema"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-17T00:00:00.000Z",
+                "completed": "2026-06-17T00:00:00.000Z"
             }
         },
         {
             "id": "T-010",
             "title": "Create experience_faqs.dbschema.ts",
             "description": "FAQ table (experienceId FK, question, answer, category, displayOrder int, lifecycleState, audit). Tests: FK + displayOrder default introspection test.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-008"],
             "blocks": ["T-013"],
@@ -316,21 +316,21 @@
             "tags": ["database", "schema"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-17T00:00:00.000Z",
+                "completed": "2026-06-17T00:00:00.000Z"
             }
         },
         {
             "id": "T-011",
-            "title": "Create experience_hours.dbschema.ts",
-            "description": "Structured hours table (experienceId FK, dayOfWeek enum, openTime time, closeTime time, isClosed bool, shiftName text nullish). Reuse SPEC-239 OpeningHours pattern. Tests: FK + per-day rows introspection test.",
-            "status": "pending",
+            "title": "Opening hours as jsonb on experiences (gastronomy parity, no separate table)",
+            "description": "Resolved by parity with gastronomy: opening hours stored as an openingHours jsonb column on the experiences table (T-008), NOT a separate experience_hours table. The spec default (structured table) was overridden because the SPEC-239 core uses jsonb for all commerce listings.",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-008"],
             "blocks": ["T-013"],
@@ -343,21 +343,21 @@
             "tags": ["database", "schema"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-17T00:00:00.000Z",
+                "completed": "2026-06-17T00:00:00.000Z"
             }
         },
         {
             "id": "T-012",
             "title": "Create r_experience_amenity + r_experience_feature join tables",
             "description": "Two polymorphic join tables referencing existing amenities and features tables. Tests: FK introspection test for both joins.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-008"],
             "blocks": ["T-013"],
@@ -374,21 +374,21 @@
             "tags": ["database", "schema"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-17T00:00:00.000Z",
+                "completed": "2026-06-17T00:00:00.000Z"
             }
         },
         {
             "id": "T-013",
             "title": "Generate, review and apply migration",
             "description": "Run pnpm db:generate, review the generated migration file (enums + 6 tables + indexes), commit the migration, then pnpm db:migrate + pnpm db:apply-extras. Verify drift guard is clean (db:generate again yields no diff). No extras needed unless has_active_subscription becomes a DB trigger. Tests: migration applies cleanly against a fresh DB; drift guard green.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-008", "T-009", "T-010", "T-011", "T-012"],
             "blocks": ["T-014", "T-017"],
@@ -413,21 +413,21 @@
             "tags": ["database", "migration"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-17T00:00:00.000Z",
+                "completed": "2026-06-17T00:00:00.000Z"
             }
         },
         {
             "id": "T-014",
             "title": "Add experiences seed data (3-5 entries)",
-            "description": "Add seed entries in packages/seed covering different types/units/destinations + at least one isPriceOnRequest and one with hasActiveSubscription=true, plus a COMMERCE_OWNER owner. Tests: seed runs without error; seeded rows count assertion.",
-            "status": "pending",
+            "description": "Add seed entries in packages/seed covering different types/units/destinations + at least one isPriceOnRequest and one with hasActiveSubscription=true, plus a COMMERCE_OWNER owner. Tests: seed runs without error; seeded rows count assertion. BLOCKED: worktree dev DB template (hospeda_template) is stale (pre-SPEC-239, no gastronomies tables), so a full db:seed fails. Needs a DB strategy decision (rebuild template / db:push branch schema) before seeding.",
+            "status": "blocked",
             "complexity": 2,
             "blockedBy": ["T-013"],
             "blocks": ["T-039"],
@@ -1261,10 +1261,10 @@
     ],
     "summary": {
         "total": 40,
-        "pending": 33,
+        "pending": 26,
         "inProgress": 0,
-        "completed": 7,
-        "blocked": 0,
+        "completed": 13,
+        "blocked": 1,
         "averageComplexity": 1.9
     }
 }
