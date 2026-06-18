@@ -406,3 +406,45 @@ describe('ExperienceReviewService._executeSearch force-filter', () => {
         });
     });
 });
+
+// ---------------------------------------------------------------------------
+// B-1 regression: _recomputeListingRating must use IDENTITY dimension mapping
+// ---------------------------------------------------------------------------
+
+describe('ExperienceReviewService._recomputeListingRating — rating math (B-1 regression)', () => {
+    it('should pass food/service/ambiance/value identity mapping to recomputeRating', async () => {
+        // Two all-5 reviews. With CORRECT mapping: averageRating = (5+5+5+5)/4 = 5.0.
+        // With the old broken mapping (guide/overall → undefined→0): (5+0+0+5)/4 = 2.5.
+        const allFiveReview = makeReview({
+            moderationState: ModerationStatusEnum.APPROVED,
+            rating: { food: 5, service: 5, ambiance: 5, value: 5 }
+        });
+
+        const service = makeService();
+        // Override findAll to return two all-5 approved reviews.
+        (service as AnyService).model.findAll.mockResolvedValue({
+            items: [
+                allFiveReview,
+                { ...allFiveReview, id: '00000000-0000-4000-a000-00000000000f' }
+            ],
+            total: 2
+        });
+
+        const recomputeSpy = vi.spyOn(
+            (service as AnyService)._experienceService,
+            'recomputeRating'
+        );
+
+        await (service as AnyService)._recomputeListingRating(EXPERIENCE_ID, {});
+
+        expect(recomputeSpy).toHaveBeenCalledTimes(1);
+        const passedRows = recomputeSpy.mock.calls[0]?.[1] as Array<Record<string, number | null>>;
+        // Each row must have the IDENTITY mapping: food→food, service→service, etc.
+        for (const row of passedRows) {
+            expect(row.food).toBe(5);
+            expect(row.service).toBe(5);
+            expect(row.ambiance).toBe(5);
+            expect(row.value).toBe(5);
+        }
+    });
+});

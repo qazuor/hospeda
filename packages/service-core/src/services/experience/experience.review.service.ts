@@ -523,9 +523,9 @@ export class ExperienceReviewService extends BaseCrudService<
      *
      * Called after create, moderation decision, and soft-delete.
      *
-     * Experience reviews use the CommerceRatingSchema breakdown (service, value,
-     * guide, overall) — different dimensions from gastronomy (food, service,
-     * ambiance, value) but the recompute helper is generic across all dimensions.
+     * Experience reviews use the CommerceRatingSchema breakdown (food / service /
+     * ambiance / value) — identical to gastronomy. The identity mapping below
+     * passes each dimension through unchanged.
      *
      * @param experienceId - UUID of the listing to refresh.
      * @param ctx - Service context (carries the active transaction).
@@ -547,15 +547,14 @@ export class ExperienceReviewService extends BaseCrudService<
             );
 
             // Extract the rating breakdown from each APPROVED review row.
-            // Experience reviews use CommerceRatingSchema: service/value/guide/overall.
-            // Map to the base recomputeRating interface using available dimensions.
+            // Experience reviews use CommerceRatingSchema: food/service/ambiance/value.
             const ratingRows = approvedReviews.map((r) => {
                 const raw = r as Record<string, unknown>;
                 const rating = raw.rating as Record<string, number | null> | null | undefined;
                 return {
-                    food: rating?.service ?? null,
-                    service: rating?.guide ?? null,
-                    ambiance: rating?.overall ?? null,
+                    food: rating?.food ?? null,
+                    service: rating?.service ?? null,
+                    ambiance: rating?.ambiance ?? null,
                     value: rating?.value ?? null
                 };
             });
