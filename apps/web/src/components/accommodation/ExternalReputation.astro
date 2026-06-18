@@ -60,14 +60,13 @@ function hasValidSnippets(item: ExternalReputationPlatformItem): boolean {
 }
 
 /**
- * Determines if a platform item is Google but the snippets were stripped
- * (TTL expired or fetch never happened) while showReviews was intended.
- * We detect this by: platform=GOOGLE, no snippets (or empty), and the item
- * is present (meaning at least showLink OR showReviews was true at DB level —
- * the public schema already filters out fully-hidden platforms).
+ * Determines if a platform item should show the "snippets temporarily unavailable"
+ * note. Uses the explicit `snippetsTtlExpired` flag set by buildExternalReputationBlock
+ * rather than inferring from missing snippets — prevents showing the note when the
+ * owner intentionally disabled reviews (showReviews=false) (FIX L5).
  */
 function isGoogleTtlExpired(item: ExternalReputationPlatformItem): boolean {
-    return item.platform === 'GOOGLE' && (!item.snippets || item.snippets.length === 0);
+    return item.snippetsTtlExpired === true;
 }
 ---
 

@@ -624,8 +624,12 @@ export const ApiEnvBaseSchema = z.object({
     /**
      * Per-accommodation rate limit for the manual snippet refresh endpoint.
      * Format: "N/S" — N refreshes per S seconds. Default "1/600" (1 per 10 min).
+     * A malformed value (not matching N/S) fails fast at boot (FIX L2).
      */
-    HOSPEDA_EXTREP_REFRESH_RATE_LIMIT: z.string().default('1/600'),
+    HOSPEDA_EXTREP_REFRESH_RATE_LIMIT: z
+        .string()
+        .regex(/^\d+\/\d+$/, 'must be in N/S format e.g. 1/600')
+        .default('1/600'),
     /**
      * Cron expression for the background job that refreshes stale Google Places snippets.
      * Default "0 2 * * 1" runs every Monday at 02:00 UTC.

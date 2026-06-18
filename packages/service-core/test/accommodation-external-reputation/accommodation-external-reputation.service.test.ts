@@ -21,6 +21,25 @@ import type { Actor, ServiceConfig } from '../../src/types/index.js';
 import { ServiceError } from '../../src/types/index.js';
 
 // ---------------------------------------------------------------------------
+// Mock @repo/db — withTransaction must be transparent in unit tests so that
+// disableReputation (which uses withTransaction for atomicity, FIX L6) works
+// with the vitest model mocks without a real DB connection.
+// ---------------------------------------------------------------------------
+
+vi.mock('@repo/db', async (importOriginal) => {
+    const original = await importOriginal<typeof import('@repo/db')>();
+    return {
+        ...original,
+        // Make withTransaction execute the callback directly, reusing an existingTx
+        // when provided (same semantics as the real implementation in unit tests).
+        withTransaction: vi.fn(
+            async (callback: (tx: undefined) => Promise<unknown>, existingTx?: undefined) =>
+                callback(existingTx)
+        )
+    };
+});
+
+// ---------------------------------------------------------------------------
 // Mock adapter factory
 // ---------------------------------------------------------------------------
 
@@ -418,6 +437,40 @@ describe('AccommodationExternalReputationService', () => {
             expect(result.error).toBeUndefined();
             expect(result.data?.failed).toHaveLength(1);
             expect(result.data?.succeeded).toHaveLength(0);
+        });
+
+        it('should include windowSeconds in rate-limit error details (L1 regression)', async () => {
+            // Arrange — rate limit window set to 3600s; simulate recent fetch
+            process.env.HOSPEDA_EXTREP_REFRESH_RATE_LIMIT = '1/3600';
+
+            const recentFetch = new Date(Date.now() - 60_000); // 1 minute ago — within window
+            const accommodationModel = makeAccommodationModel();
+            const listingModel = makeListingModel();
+            const reputationModel = makeReputationModel({
+                findAll: vi.fn().mockResolvedValue({
+                    items: [
+                        makeReputation(REP_GOOGLE_ID, ExternalPlatformEnum.GOOGLE, LIST_GOOGLE_ID, {
+                            aggregateFetchedAt: recentFetch
+                        })
+                    ],
+                    total: 1
+                })
+            });
+            const svc = new AccommodationExternalReputationService(ctx, {
+                listingModel: listingModel as never,
+                reputationModel: reputationModel as never,
+                accommodationModel: accommodationModel as never
+            });
+
+            // Act
+            const result = await svc.refresh(ACC_ID, makeOwnerActor());
+
+            // Assert — error details must carry windowSeconds so the route can set Retry-After
+            expect(result.error?.code).toBe(ServiceErrorCode.QUOTA_EXCEEDED);
+            expect(result.error?.details).toMatchObject({
+                reason: 'RATE_LIMIT_ERROR',
+                windowSeconds: 3600
+            });
         });
 
         it('should return NOT_FOUND when the accommodation is soft-deleted (assertOwnershipOrAdmin lines 126-130)', async () => {
@@ -873,6 +926,40 @@ describe('AccommodationExternalReputationService', () => {
 
             expect(result.data?.disabled).toBe(1); // only the active one
             expect(listingModel.update).toHaveBeenCalledTimes(1);
+        });
+
+        it('should roll back all updates when a mid-loop update throws (L6 regression — transaction atomicity)', async () => {
+            // Arrange — two active listings; the second update throws.
+            // withTransaction is mocked to pass-through in unit tests, so we verify
+            // the service surfaces an error rather than returning a partial count.
+            const accommodationModel = makeAccommodationModel();
+            const listing1 = makeListing(LIST_GOOGLE_ID, ExternalPlatformEnum.GOOGLE);
+            const listing2 = makeListing(LIST_BOOKING_ID, ExternalPlatformEnum.BOOKING);
+            let callCount = 0;
+            const listingModel = makeListingModel({
+                findByAccommodation: vi.fn().mockResolvedValue([listing1, listing2]),
+                update: vi.fn().mockImplementation(() => {
+                    callCount++;
+                    if (callCount === 2) {
+                        return Promise.reject(new Error('DB write failed on second update'));
+                    }
+                    return Promise.resolve(listing1);
+                })
+            });
+            const reputationModel = makeReputationModel();
+            const svc = new AccommodationExternalReputationService(ctx, {
+                listingModel: listingModel as never,
+                reputationModel: reputationModel as never,
+                accommodationModel: accommodationModel as never
+            });
+
+            // Act
+            const result = await svc.disableReputation(ACC_ID, makeAdminActor());
+
+            // Assert — a typed error is returned, NOT a partial success
+            expect(result.data).toBeUndefined();
+            expect(result.error).toBeDefined();
+            expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
         });
     });
 });

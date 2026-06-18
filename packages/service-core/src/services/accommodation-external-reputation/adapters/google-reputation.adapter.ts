@@ -266,10 +266,14 @@ export class GoogleReputationAdapter implements ReputationAdapter {
         }
 
         // Step 2: Place ID resolution — prefer externalId, fall back to URL
-        const placeId = listing.externalId ?? resolveGooglePlaceId(listing.url);
-        if (!placeId) {
+        const rawPlaceId = listing.externalId ?? resolveGooglePlaceId(listing.url);
+        if (!rawPlaceId || rawPlaceId.trim() === '') {
             return emptyReputationResult();
         }
+
+        // FIX L3: encode the Place ID so an owner-supplied externalId containing
+        // URL metacharacters (/, ?, &, etc.) cannot inject query/path segments.
+        const placeId = encodeURIComponent(rawPlaceId);
 
         // Step 3: Places API (New) Place Details call
         let apiResponse: PlacesReputationApiResponse;

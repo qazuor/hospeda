@@ -1085,4 +1085,63 @@ describe('Environment Configuration', () => {
             expect(result.success).toBe(true);
         });
     });
+
+    // ---------------------------------------------------------------------------
+    // SPEC-237 — HOSPEDA_EXTREP_REFRESH_RATE_LIMIT format validation (FIX L2)
+    // ---------------------------------------------------------------------------
+
+    describe('HOSPEDA_EXTREP_REFRESH_RATE_LIMIT format validation (L2 regression)', () => {
+        it('should accept valid N/S format values', async () => {
+            const { ApiEnvBaseSchema } = await import('../../src/utils/env');
+
+            const validValues = ['1/600', '5/3600', '10/60', '100/86400'];
+            for (const value of validValues) {
+                const result =
+                    ApiEnvBaseSchema.shape.HOSPEDA_EXTREP_REFRESH_RATE_LIMIT.safeParse(value);
+                expect(result.success).toBe(true);
+            }
+        });
+
+        it('should reject malformed value (dash separator instead of slash)', async () => {
+            // Arrange
+            const { ApiEnvBaseSchema } = await import('../../src/utils/env');
+
+            // Act — '1-600' must fail parse so the API fails fast at boot instead
+            // of silently disabling rate limiting (FIX L2 regression target)
+            const result =
+                ApiEnvBaseSchema.shape.HOSPEDA_EXTREP_REFRESH_RATE_LIMIT.safeParse('1-600');
+
+            // Assert
+            expect(result.success).toBe(false);
+        });
+
+        it('should reject malformed value (letters)', async () => {
+            const { ApiEnvBaseSchema } = await import('../../src/utils/env');
+
+            const result =
+                ApiEnvBaseSchema.shape.HOSPEDA_EXTREP_REFRESH_RATE_LIMIT.safeParse('one/600');
+
+            expect(result.success).toBe(false);
+        });
+
+        it('should reject malformed value (empty string)', async () => {
+            const { ApiEnvBaseSchema } = await import('../../src/utils/env');
+
+            const result = ApiEnvBaseSchema.shape.HOSPEDA_EXTREP_REFRESH_RATE_LIMIT.safeParse('');
+
+            expect(result.success).toBe(false);
+        });
+
+        it('should use default 1/600 when not provided', async () => {
+            // Arrange — minimal env without HOSPEDA_EXTREP_REFRESH_RATE_LIMIT
+            process.env = createValidTestEnv();
+
+            // Act
+            const envModule = await import('../../src/utils/env');
+            envModule.validateApiEnv();
+
+            // Assert
+            expect(envModule.env.HOSPEDA_EXTREP_REFRESH_RATE_LIMIT).toBe('1/600');
+        });
+    });
 });

@@ -17,6 +17,7 @@ import type {
     AccommodationExternalReputationModel,
     AccommodationModel
 } from '@repo/db';
+import { withTransaction } from '@repo/db';
 import type { AccommodationExternalListing } from '@repo/schemas';
 import {
     type ExternalPlatformEnum,
@@ -262,7 +263,10 @@ export class AccommodationExternalReputationService {
                         error: {
                             code: ServiceErrorCode.QUOTA_EXCEEDED,
                             message: `Reputation refresh is rate-limited: at most ${rateLimit.maxRequests} refresh(es) per ${rateLimit.windowSeconds}s per accommodation`,
-                            details: { reason: 'RATE_LIMIT_ERROR' }
+                            details: {
+                                reason: 'RATE_LIMIT_ERROR',
+                                windowSeconds: rateLimit.windowSeconds
+                            }
                         }
                     };
                 }
@@ -484,22 +488,28 @@ export class AccommodationExternalReputationService {
                 };
             }
 
-            const listings = await this.listingModel.findByAccommodation(accommodationId, ctx?.tx);
+            // FIX L6: wrap the update loop in a transaction so the takedown is
+            // all-or-nothing. A mid-loop failure rolls back all partial updates.
+            const listingModelRef = this.listingModel;
+            const disabled = await withTransaction(async (tx) => {
+                const listings = await listingModelRef.findByAccommodation(accommodationId, tx);
 
-            let disabled = 0;
-            for (const listing of listings) {
-                if (listing.deletedAt != null) continue;
-                await this.listingModel.update(
-                    { id: listing.id },
-                    {
-                        showLink: false,
-                        showReviews: false,
-                        updatedById: actor.id
-                    } as unknown as Partial<AccommodationExternalListing>,
-                    ctx?.tx
-                );
-                disabled++;
-            }
+                let count = 0;
+                for (const listing of listings) {
+                    if (listing.deletedAt != null) continue;
+                    await listingModelRef.update(
+                        { id: listing.id },
+                        {
+                            showLink: false,
+                            showReviews: false,
+                            updatedById: actor.id
+                        } as unknown as Partial<AccommodationExternalListing>,
+                        tx
+                    );
+                    count++;
+                }
+                return count;
+            }, ctx?.tx);
 
             return { data: { disabled } };
         } catch (err) {

@@ -415,4 +415,68 @@ describe('GoogleReputationAdapter', () => {
             expect(result.rating).toBe(4.7);
         });
     });
+
+    describe('Place ID URL encoding (L3 regression)', () => {
+        it('should percent-encode metacharacters in externalId so they cannot inject path/query segments', async () => {
+            // Arrange — externalId contains URL metacharacters an owner might supply
+            const adapter = new GoogleReputationAdapter({ googlePlacesApiKey: 'AIza-test' });
+            const maliciousId = 'ChIJ?x=1&evil=true';
+            const listing = makeGoogleListing({
+                externalId: maliciousId,
+                url: 'https://www.google.com/maps'
+            });
+
+            mockFetch.mockResolvedValueOnce(
+                new Response(JSON.stringify(makePlacesResponse()), { status: 200 })
+            );
+
+            await adapter.fetch(listing);
+
+            // Assert — the outbound URL must have no raw '?' or '&' injected
+            const calledUrl = (mockFetch.mock.calls[0] as [string])[0];
+            // The injected query characters must be percent-encoded in the path
+            expect(calledUrl).not.toContain('?x=1');
+            expect(calledUrl).not.toContain('&evil=true');
+            // But the encoded form must appear in the URL
+            expect(calledUrl).toContain(encodeURIComponent(maliciousId));
+        });
+
+        it('should percent-encode path traversal in externalId', async () => {
+            // Arrange — externalId contains path traversal characters
+            const adapter = new GoogleReputationAdapter({ googlePlacesApiKey: 'AIza-test' });
+            const traversalId = 'ChIJ/../foo';
+            const listing = makeGoogleListing({
+                externalId: traversalId,
+                url: 'https://www.google.com/maps'
+            });
+
+            mockFetch.mockResolvedValueOnce(
+                new Response(JSON.stringify(makePlacesResponse()), { status: 200 })
+            );
+
+            await adapter.fetch(listing);
+
+            const calledUrl = (mockFetch.mock.calls[0] as [string])[0];
+            // '/' must be percent-encoded so path is not traversed
+            expect(calledUrl).not.toMatch(/ChIJ\/\.\./);
+            expect(calledUrl).toContain(encodeURIComponent(traversalId));
+        });
+
+        it('should return empty result for whitespace-only externalId without fetching', async () => {
+            // Arrange
+            const adapter = new GoogleReputationAdapter({ googlePlacesApiKey: 'AIza-test' });
+            const listing = makeGoogleListing({
+                externalId: '   ',
+                url: 'https://www.google.com/maps' // no ChIJ token
+            });
+
+            // Act
+            const result = await adapter.fetch(listing);
+
+            // Assert — whitespace-only ID should fall through to resolveGooglePlaceId
+            // which returns null for this URL → emptyReputationResult returned, no fetch
+            expect(mockFetch).not.toHaveBeenCalled();
+            expect(result.rating).toBeNull();
+        });
+    });
 });
