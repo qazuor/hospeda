@@ -1,0 +1,123 @@
+{
+    "id": "004-gastronomy-concordia-heladeria-artesanal-luna",
+    "ownerId": "042-user-commerce-owner-rodrigo",
+    "destinationId": "003-destination-concordia",
+    "slug": "heladeria-artesanal-luna",
+    "name": "Heladería Artesanal Luna",
+    "summary": "Helados artesanales con recetas italianas y frutas frescas de temporada de Concordia.",
+    "description": "Heladería Artesanal Luna es una propuesta familiar con más de 20 años de historia en Concordia. Elaboramos nuestros helados siguiendo recetas italianas transmitidas de generación en generación, utilizando frutas frescas de temporada cultivadas en la región citrícola más importante de Argentina. Encontrarás más de 40 sabores rotativos: desde el clásico dulce de leche granizado hasta sorprendentes creaciones como limón-jengibre o mango-maracuyá. Ofrecemos también opción vegana y sin TACC.",
+    "type": "HELADERIA",
+    "priceRange": "BUDGET",
+    "menuUrl": null,
+    "visibility": "PUBLIC",
+    "lifecycleState": "ACTIVE",
+    "moderationState": "APPROVED",
+    "isFeatured": false,
+    "contactInfo": {
+        "personalEmail": "heladerialuna.concordia@gmail.com",
+        "mobilePhone": "+54 9 3454 500004",
+        "preferredEmail": "HOME",
+        "preferredPhone": "MOBILE"
+    },
+    "socialNetworks": {
+        "instagram": "https://instagram.com/heladerialuna.concordia",
+        "facebook": "https://facebook.com/heladerialunaconordia"
+    },
+    "openingHours": {
+        "timezone": "America/Argentina/Buenos_Aires",
+        "days": {
+            "mon": {
+                "closed": false,
+                "shifts": [
+                    {
+                        "open": "14:00",
+                        "close": "22:00"
+                    }
+                ]
+            },
+            "tue": {
+                "closed": false,
+                "shifts": [
+                    {
+                        "open": "14:00",
+                        "close": "22:00"
+                    }
+                ]
+            },
+            "wed": {
+                "closed": false,
+                "shifts": [
+                    {
+                        "open": "14:00",
+                        "close": "22:00"
+                    }
+                ]
+            },
+            "thu": {
+                "closed": false,
+                "shifts": [
+                    {
+                        "open": "14:00",
+                        "close": "23:00"
+                    }
+                ]
+            },
+            "fri": {
+                "closed": false,
+                "shifts": [
+                    {
+                        "open": "14:00",
+                        "close": "23:30"
+                    }
+                ]
+            },
+            "sat": {
+                "closed": false,
+                "shifts": [
+                    {
+                        "open": "13:00",
+                        "close": "23:30"
+                    }
+                ]
+            },
+            "sun": {
+                "closed": false,
+                "shifts": [
+                    {
+                        "open": "13:00",
+                        "close": "22:00"
+                    }
+                ]
+            }
+        }
+    },
+    "media": {
+        "featuredImage": {
+            "url": "https://images.unsplash.com/photo-1501443762994-82bd5dace89a?w=800&h=600&fit=crop",
+            "alt": "Helados artesanales coloridos",
+            "moderationState": "APPROVED"
+        },
+        "gallery": [
+            {
+                "url": "https://images.unsplash.com/photo-1488900128323-21503983a07e?w=800&h=600&fit=crop",
+                "alt": "Variedad de sabores de helados",
+                "moderationState": "APPROVED"
+            }
+        ]
+    },
+    "seo": {
+        "metaTitle": "Heladería Artesanal Luna - Concordia, Entre Ríos",
+        "metaDescription": "Helados artesanales italianos con frutas frescas de temporada en Concordia. Más de 40 sabores, opciones veganas y sin TACC.",
+        "keywords": [
+            "heladeria",
+            "artesanal",
+            "concordia",
+            "entre rios",
+            "gelato",
+            "sin tacc",
+            "vegano"
+        ]
+    },
+    "reviewsCount": 0,
+    "averageRating": 0
+}

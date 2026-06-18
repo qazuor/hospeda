@@ -33,7 +33,10 @@ const ENTITY_FOLDER_MAP: Record<string, string> = {
     rolePermissions: 'rolePermission',
     exchangeRates: 'exchangeRate',
     exchangeRateConfig: 'exchangeRateConfig',
-    hostTrades: 'hostTrade'
+    hostTrades: 'hostTrade',
+    gastronomies: 'gastronomy',
+    gastronomyFaqs: 'gastronomy/faqs',
+    gastronomyReviews: 'gastronomy/reviews'
 };
 
 /**

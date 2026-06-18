@@ -356,8 +356,16 @@ export class GastronomyService extends BaseCommerceListingService<
             ...scalarFilters
         } = params;
 
+        // Public search MUST only surface listings with an active subscription
+        // (AC-6.2 / AC-4.3): force visibility=PUBLIC + lifecycleState=ACTIVE AFTER
+        // the caller's scalar filters so no query param can widen the result set.
         const result = await this.model.findAll(
-            { ...scalarFilters, deletedAt: null },
+            {
+                ...scalarFilters,
+                deletedAt: null,
+                visibility: VisibilityEnum.PUBLIC,
+                lifecycleState: LifecycleStatusEnum.ACTIVE
+            },
             { page, pageSize },
             undefined,
             ctx?.tx
@@ -392,8 +400,15 @@ export class GastronomyService extends BaseCommerceListingService<
             ...scalarFilters
         } = params;
 
+        // Mirror _executeSearch: count only publicly-visible (active-subscription)
+        // listings so pagination totals match the filtered result set (AC-6.2).
         const count = await this.model.count(
-            { ...scalarFilters, deletedAt: null },
+            {
+                ...scalarFilters,
+                deletedAt: null,
+                visibility: VisibilityEnum.PUBLIC,
+                lifecycleState: LifecycleStatusEnum.ACTIVE
+            },
             { tx: ctx?.tx }
         );
         return { count };
