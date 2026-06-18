@@ -100,7 +100,7 @@ export type ExperienceAdminCreateOutput = z.infer<typeof ExperienceAdminCreateOu
  * - `contactInfo`     — contact details (gated by `commerce.contact.editOwn`)
  * - `socialNetworks`  — social links (gated by `commerce.social.editOwn`)
  * - `media`           — featured image, gallery, videos (gated by `commerce.media.editOwn`)
- * - `isPriceOnRequest`— price-on-request toggle (gated by `commerce.pricing.editOwn`)
+ * - `isPriceOnRequest`— price-on-request toggle (gated by `COMMERCE_PRICE_RANGE_EDIT_OWN`)
  * - `richDescription` — rich-text description (gated by `commerce.richDescription.editOwn`)
  * - `amenityIds`      — junction sync (gated by `commerce.amenities.editOwn`)
  * - `featureIds`      — junction sync (gated by `commerce.features.editOwn`)
