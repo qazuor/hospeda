@@ -97,3 +97,4 @@ rank|spec|name|avance|prioridad|estado|estado_manual|estado_real|descripcion|por
 96|SPEC-246|Revalidation log entity_id tracking + re-enable ACC-02 E2E|-|P3|backlog|backlog|index staging: status=draft archived=False|-|-|-|-|-|-|-|-
 96|SPEC-244|Test suite order-independence hardening|-|-|backlog|-|index staging: status=draft archived=False (follow-up of SPEC-222; test-infra hardening, no unmet hard deps)|-|-|-|-|-|-|SPEC-222, SPEC-238|-
 97|SPEC-245|Mobile Testing Infrastructure|-|-|backlog|backlog|index staging: status=draft archived=False (SPEC-243 Sub-0/3/4 merged so the app exists to test; dep practically satisfied)|-|-|-|-|-|-|SPEC-243|-
+98|SPEC-247|Paridad config Claude Code/OpenCode|10/47|-|in progress|-|index staging: status=in-progress archived=False (tooling/infra; no hard dependency on another spec)|-|-|-|-|-|-|-|-

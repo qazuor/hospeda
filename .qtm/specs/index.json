@@ -1459,6 +1459,14 @@
             "base": "staging",
             "origin": "Follow-up from env-hardening PR #1712: revalidation_log.entity_id never written; ACC-02 E2E re-skipped until fixed.",
             "tags": ["revalidation", "cache", "service-core", "e2e", "testing", "bug"]
+        },
+        {
+            "specId": "SPEC-247",
+            "title": "Claude Code ↔ OpenCode Configuration Parity (central qz-ai-environment repo + symlinks)",
+            "type": "infrastructure",
+            "complexity": "high",
+            "status": "in-progress",
+            "path": "SPEC-247-claude-opencode-config-parity"
         }
     ]
 }

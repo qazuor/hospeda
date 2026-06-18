@@ -1,0 +1,24 @@
+{
+    "specId": "SPEC-247",
+    "title": "Claude Code ↔ OpenCode Configuration Parity (central qz-ai-environment repo + symlinks)",
+    "type": "infrastructure",
+    "complexity": "high",
+    "status": "in-progress",
+    "created": "2026-06-18T09:19:58Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": [
+        "tooling",
+        "opencode",
+        "claude-code",
+        "config",
+        "symlinks",
+        "dotfiles",
+        "plugins",
+        "mcp",
+        "task-master",
+        "engram",
+        "orchestration"
+    ]
+}

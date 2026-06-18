@@ -1,0 +1,1473 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-247",
+    "title": "Claude Code ↔ OpenCode Configuration Parity (central qz-ai-environment repo + symlinks)",
+    "created": "2026-06-18T09:19:58Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Init qz-ai-environment git repo and base layout",
+            "description": "Create ~/qz-ai-environment (git init) with shared/{rules,skills,docs}, claude/, opencode/, scripts/, README.md stub. Test: validate.sh layout check asserts base dirs exist.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-003", "T-004", "T-007", "T-009", "T-012", "T-014", "T-017"],
+            "subtasks": [
+                {
+                    "title": "git init",
+                    "completed": false
+                },
+                {
+                    "title": "create dirs",
+                    "completed": false
+                },
+                {
+                    "title": "README stub",
+                    "completed": false
+                }
+            ],
+            "tags": ["setup", "repo"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": "2026-06-18T09:55:28Z",
+                "completed": "2026-06-18T09:55:28Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Write bootstrap-symlinks.sh (backup + idempotent)",
+            "description": "scripts/bootstrap-symlinks.sh links ~/.claude and ~/.config/opencode entries into the central repo. MUST back up any real file with a timestamp BEFORE replacing it, print the backup path, and be idempotent. Test: re-run is a no-op; backup created when a real file is present (AC-1.2, AC-1.3).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-034"],
+            "subtasks": [
+                {
+                    "title": "granular linking",
+                    "completed": false
+                },
+                {
+                    "title": "timestamped backup-before-link",
+                    "completed": false
+                },
+                {
+                    "title": "idempotency guard",
+                    "completed": false
+                }
+            ],
+            "tags": ["setup", "symlinks"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": "2026-06-18T09:58:03Z",
+                "completed": "2026-06-18T09:58:03Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Write validate.sh symlink-integrity check",
+            "description": "scripts/validate.sh resolves every bootstrap symlink and exits non-zero listing broken/missing targets. Test: inject a broken link → non-zero + name printed (AC-1.4).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-034"],
+            "subtasks": [
+                {
+                    "title": "enumerate expected links",
+                    "completed": false
+                },
+                {
+                    "title": "fail loudly on broken target",
+                    "completed": false
+                }
+            ],
+            "tags": ["setup", "validation"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": "2026-06-18T09:58:03Z",
+                "completed": "2026-06-18T09:58:03Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Extract tool-agnostic rules into shared/rules",
+            "description": "Move the format-agnostic engineering rules (body of global + project CLAUDE.md) into shared/rules/ as the single source. Test: parity assertion that shared/rules is referenced by both wrappers.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-005"],
+            "subtasks": [
+                {
+                    "title": "split shared vs tool-specific text",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "rules"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": "2026-06-18T10:04:21Z",
+                "completed": "2026-06-18T10:04:21Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Wrapper AGENTS.md/CLAUDE.md via native include (OQ-3)",
+            "description": "AGENTS.md = OpenCode preamble + instructions[] globbing shared/rules/*.md; CLAUDE.md = Claude preamble + @shared/rules imports. NO generator, NO duplication of the rule body. Test: OpenCode loads rules; both wrappers reference shared/rules (AC-2.1, AC-2.3).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-006", "T-030"],
+            "subtasks": [
+                {
+                    "title": "instructions[] globs",
+                    "completed": false
+                },
+                {
+                    "title": "@import in CLAUDE.md",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "rules"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": "2026-06-18T10:04:21Z",
+                "completed": "2026-06-18T10:04:21Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Port Gentleman persona into OpenCode",
+            "description": "Capture the Gentleman output-style (Spanish voseo chat, English code/artifacts) in AGENTS.md or the default agent prompt. Test: persona section present and reflected in a sample reply (AC-2.2).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "translate output-style to AGENTS.md",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "persona"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": "2026-06-18T10:13:42Z",
+                "completed": "2026-06-18T10:13:42Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Translate MCP servers into opencode.json mcp{}",
+            "description": "Translate the ~27 Claude MCP servers into the mcp{} block (local/remote, command, enabled). Test: opencode.json schema-valid; each server declared; auth servers (vercel, neon, mercadopago, socket) non-blocking (AC-4.1, AC-4.2).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-008", "T-011", "T-022", "T-030"],
+            "subtasks": [
+                {
+                    "title": "map each server",
+                    "completed": false
+                },
+                {
+                    "title": "mark auth servers non-blocking",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "mcp"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": "2026-06-18T10:13:42Z",
+                "completed": "2026-06-18T10:13:42Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Map per-agent tool scoping in opencode.json",
+            "description": "Express per-agent tool enable/disable (tools{}/agent{}) mirroring Claude agent tool restrictions. Test: restricted-tool agent reflected in config (AC-4.3).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "tools{} globs",
+                    "completed": false
+                },
+                {
+                    "title": "agent{} overrides",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "mcp", "agents"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Translate permissions into OpenCode permission{}",
+            "description": "Map Claude allow/deny/ask sets into OpenCode permission{} (edit, bash, skill, webfetch). Test: equivalent rules apply (AC-5.1).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-010", "T-011", "T-015", "T-030"],
+            "subtasks": [
+                {
+                    "title": "map allow/deny/ask",
+                    "completed": false
+                },
+                {
+                    "title": "skill permission globs",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "permissions"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": "2026-06-18T10:13:42Z",
+                "completed": "2026-06-18T10:13:42Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Enforce branch protection (no push main/staging)",
+            "description": "Express the deny of git push to main/staging in OpenCode (permission rule or plugin). Test: push to main/staging blocked (AC-5.2).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-009"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "deny rule or guard plugin",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "permissions", "git"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": "2026-06-18T10:17:55Z",
+                "completed": "2026-06-18T10:17:55Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Schema-validate opencode.json in validate.sh",
+            "description": "Validate opencode.json against https://opencode.ai/config.json in validate.sh. Test: invalid opencode.json makes validate.sh fail (won't-start guard).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-007", "T-009"],
+            "blocks": ["T-031"],
+            "subtasks": [
+                {
+                    "title": "fetch/cache schema",
+                    "completed": false
+                },
+                {
+                    "title": "validate + fail on error",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "validation"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": "2026-06-18T10:17:55Z",
+                "completed": "2026-06-18T10:17:55Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Write gen-agents.sh generator (reusable)",
+            "description": "Reusable generator that turns a neutral agent source into per-tool frontmatter (used by central user-global agents AND hospeda F6). Test: a sample agent produces valid Claude + OpenCode frontmatter.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                {
+                    "title": "parse neutral source",
+                    "completed": false
+                },
+                {
+                    "title": "emit OpenCode agent md",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "agents", "generator"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Migrate user-global agents (jd-*) to central",
+            "description": "Migrate the 3 user-global jd-* agents (jd-fix-agent, jd-judge-a, jd-judge-b) to central claude/agents + opencode/agent. Hospeda project agents are F6. Test: each loads in both tools (AC-3.1).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-012"],
+            "blocks": ["T-016", "T-025"],
+            "subtasks": [
+                {
+                    "title": "run generator",
+                    "completed": false
+                },
+                {
+                    "title": "spot-fix divergences",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "agents"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Migrate user-global command (handoff) to central",
+            "description": "Migrate the user-global handoff command to central claude/commands + opencode/command. Hospeda project commands are F6. Test: command resolves args in both tools (AC-3.2).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-016", "T-023"],
+            "subtasks": [
+                {
+                    "title": "translate frontmatter",
+                    "completed": false
+                },
+                {
+                    "title": "map arg placeholders",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "commands"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Wire user-global skills to central",
+            "description": "Wire any user-global ~/.claude skills into central shared/skills + both tools. (Most skills are hospeda project-level -> F6.) Test: each user-global skill listed with permission (AC-3.3).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-009"],
+            "blocks": ["T-016"],
+            "subtasks": [
+                {
+                    "title": "link shared/skills",
+                    "completed": false
+                },
+                {
+                    "title": "permission.skill globs",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "skills"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Write parity-check.sh",
+            "description": "scripts/parity-check.sh asserts every Claude agent/command/skill has an OpenCode peer and flags divergent-pair drift. Test: removing a peer fails listing the gap (AC-3.4, drift mitigation).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-013", "T-014", "T-015"],
+            "blocks": ["T-031"],
+            "subtasks": [
+                {
+                    "title": "enumerate claude vs opencode sets",
+                    "completed": false
+                },
+                {
+                    "title": "report missing peers",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "validation", "parity"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Plugin scaffolding + fail-safe wrapper + test harness",
+            "description": "Set up opencode/plugin/ with a shared fail-safe wrapper (catch+log non-security; security fails closed) + bun/vitest harness. Test: a throwing plugin does not abort the tool call (AC-6.6).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-018", "T-019", "T-020", "T-021", "T-026"],
+            "subtasks": [
+                {
+                    "title": "plugin loader convention",
+                    "completed": false
+                },
+                {
+                    "title": "fail-safe wrapper",
+                    "completed": false
+                },
+                {
+                    "title": "test harness",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "plugins"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "validate-bash plugin (tool.execute.before)",
+            "description": "Reimplement validate-bash as a tool.execute.before plugin blocking forbidden paths (.env, node_modules, build/, dist/, .git/, secrets). Security: fail closed. Test: blocked path rejected (AC-6.1).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-032"],
+            "subtasks": [
+                {
+                    "title": "port block patterns",
+                    "completed": false
+                },
+                {
+                    "title": "unit test blocked + allowed",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "plugins", "security"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "rtk rewrite plugin (tool.execute.before)",
+            "description": "Reimplement rtk token-economy rewrite as a tool.execute.before plugin; must NOT rewrite git log (and other exclusions). Test: rewrite applied; git log untouched (AC-6.2).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-032"],
+            "subtasks": [
+                {
+                    "title": "invoke rtk rewrite",
+                    "completed": false
+                },
+                {
+                    "title": "exclusion list",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "plugins", "rtk"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Session/tab title plugin (session.created)",
+            "description": "Reimplement session/tab titles as a plugin on session.created (+TUI events) deriving 'SPEC-NNN slug' from the git branch. Test: title derived from branch (AC-6.3).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-032"],
+            "subtasks": [
+                {
+                    "title": "reuse spec-title parsing",
+                    "completed": false
+                },
+                {
+                    "title": "set title via TUI event",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "plugins", "ux"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "remember plugin (message/idle → .remember)",
+            "description": "Reimplement remember passive history capture as a plugin on message.updated/session.idle, appending to .remember/. Test: history appended (AC-6.5).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-032"],
+            "subtasks": [
+                {
+                    "title": "subscribe to message events",
+                    "completed": false
+                },
+                {
+                    "title": "append to history buffer",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "plugins", "remember"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "engram: run `engram setup opencode` + verify (OQ-1)",
+            "description": "Run `engram setup opencode` (installs official engram.ts + MCP entry + statusline). Confirm shared server :7437 and DB ~/.engram/engram.db. Do NOT centralize engram.ts (third-party). Test: mem_search from OpenCode returns shared history; autosave fires on compaction; graceful degrade if server down (AC-6.4).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-038"],
+            "subtasks": [
+                {
+                    "title": "run engram setup opencode",
+                    "completed": false
+                },
+                {
+                    "title": "verify shared DB + MCP + autosave",
+                    "completed": false
+                },
+                {
+                    "title": "document engram.ts as non-centralized",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "plugins", "engram"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Port /spec and /task-master:* as OpenCode commands",
+            "description": "Expose task-master slash commands as OpenCode commands invoking the same bash scripts (resolve-paths, scan-spec-numbers, etc.). Test: a ported command invokes the scripts correctly (AC-7.1).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-014"],
+            "blocks": ["T-024"],
+            "subtasks": [
+                {
+                    "title": "command wrappers",
+                    "completed": false
+                },
+                {
+                    "title": "argument passthrough",
+                    "completed": false
+                }
+            ],
+            "tags": ["integration", "task-master"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Verify SDD flow end-to-end from OpenCode",
+            "description": "Create a throwaway spec from OpenCode and confirm allocation + index-sync + artifacts match Claude Code output. Test: artifacts equal those from Claude flow (AC-7.2).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-023"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "run /spec from OpenCode",
+                    "completed": false
+                },
+                {
+                    "title": "diff artifacts",
+                    "completed": false
+                }
+            ],
+            "tags": ["integration", "task-master"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Port task-master subagents to OpenCode agents",
+            "description": "Port spec-writer, task-planner, tech-analyzer subagents to OpenCode agents. Test: OpenCode delegates to each equivalent (AC-7.3).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-013"],
+            "blocks": ["T-026"],
+            "subtasks": [
+                {
+                    "title": "translate subagent prompts",
+                    "completed": false
+                }
+            ],
+            "tags": ["integration", "task-master", "agents"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Spike: OpenCode programmatic subagent/tool API",
+            "description": "Determine whether an OpenCode plugin/custom-tool can SPAWN and COORDINATE subagents programmatically (the prerequisite for a Workflow-style runner). Produce a design decision: full runner vs constrained fallback. Resolves AC-8.1; de-risks the orchestration build.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-017", "T-025"],
+            "blocks": ["T-027"],
+            "subtasks": [
+                {
+                    "title": "inspect OpenCode plugin/agent API",
+                    "completed": false
+                },
+                {
+                    "title": "choose runner design",
+                    "completed": false
+                }
+            ],
+            "tags": ["integration", "orchestration", "spike"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Implement orchestration runner core (agent/parallel/pipeline)",
+            "description": "Implement the runner core per the T-026 design: deterministic primitives agent(), parallel() (barrier), pipeline() (no-barrier multi-stage) over OpenCode subagents. Test: each primitive runs a trivial multi-agent case (AC-8.2).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-026"],
+            "blocks": ["T-028"],
+            "subtasks": [
+                {
+                    "title": "agent() spawn",
+                    "completed": false
+                },
+                {
+                    "title": "parallel() barrier",
+                    "completed": false
+                },
+                {
+                    "title": "pipeline() stages",
+                    "completed": false
+                }
+            ],
+            "tags": ["integration", "orchestration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Implement advanced orchestration patterns",
+            "description": "Add loop-until, adversarial-verify (multi-judge majority vote), and schema-validated structured output to the runner. Test: each pattern works on a sample (AC-8.3).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-027"],
+            "blocks": ["T-029", "T-033"],
+            "subtasks": [
+                {
+                    "title": "loop-until",
+                    "completed": false
+                },
+                {
+                    "title": "adversarial-verify vote",
+                    "completed": false
+                },
+                {
+                    "title": "structured output schema",
+                    "completed": false
+                }
+            ],
+            "tags": ["integration", "orchestration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-029",
+            "title": "Worked orchestration example + parity-gap doc",
+            "description": "Write one end-to-end orchestration example using the runner, and a parity-gap doc stating where it diverges from the Claude Code Workflow tool (token-budget caching, deterministic vs model-driven spawn). Test: the example runs end-to-end (AC-8.4, AC-8.5).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-028"],
+            "blocks": ["T-035"],
+            "subtasks": [
+                {
+                    "title": "worked example",
+                    "completed": false
+                },
+                {
+                    "title": "parity-gap statement",
+                    "completed": false
+                }
+            ],
+            "tags": ["integration", "orchestration", "docs"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-030",
+            "title": "F0 smoke: OpenCode boots with rules+MCP+permissions",
+            "description": "Smoke test that OpenCode launches and loads rules, MCP servers, and permissions from central config. Test: boot + sanity command succeeds (AC-2.1, AC-4.1, AC-5.1).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-005", "T-007", "T-009"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "launch + load check",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "smoke"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-031",
+            "title": "Wire validate.sh CI-style gate",
+            "description": "Combine symlink-integrity + opencode.json schema validation + parity-check into one validate.sh gate runnable pre-commit. Test: passes on good state, fails on each injected fault.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-011", "T-016"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "compose checks",
+                    "completed": false
+                },
+                {
+                    "title": "non-zero on any failure",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "validation"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-032",
+            "title": "Plugin unit-test suite green",
+            "description": "Ensure plugin unit tests (validate-bash, rtk, titles, remember, engram-extra-autosave) pass under bun/vitest. The official engram.ts is third-party (its own tests). Test: suite green; blocked/allowed/degraded paths covered.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-018", "T-019", "T-020", "T-021", "T-038"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "run suite",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "plugins"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-033",
+            "title": "Orchestration runner tests",
+            "description": "Unit/integration tests for the orchestration runner: primitives (agent/parallel/pipeline) + advanced patterns (loop-until, verify-vote, structured output). Test: suite green (AC-8.4).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-028"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "primitive tests",
+                    "completed": false
+                },
+                {
+                    "title": "pattern tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "orchestration"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-034",
+            "title": "README: layout, bootstrap, validation, edit flows",
+            "description": "Document central repo layout, bootstrap usage, validation, and edit-shared vs edit-divergent workflows so a future session reproduces it.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-002", "T-003"],
+            "blocks": ["T-036"],
+            "subtasks": [
+                {
+                    "title": "layout + bootstrap docs",
+                    "completed": false
+                },
+                {
+                    "title": "edit-shared vs edit-divergent flows",
+                    "completed": false
+                }
+            ],
+            "tags": ["docs"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-035",
+            "title": "Rollback runbook + parity-gap notes",
+            "description": "Write the cutover rollback runbook (restore backup) and consolidated parity-gap notes (Workflow runner divergences, rtk integrity absence). Supports AC-9.3.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-029"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "rollback steps",
+                    "completed": false
+                },
+                {
+                    "title": "parity gaps",
+                    "completed": false
+                }
+            ],
+            "tags": ["docs", "runbook"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-036",
+            "title": "Cutover: backup ~/.claude and convert to symlinks",
+            "description": "Final cutover (F5): back up ~/.claude, then convert its entries to symlinks into the central repo. Prereq: all validation green. Test: backup exists before any link replaces a file (AC-9.2).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-034"],
+            "blocks": ["T-037"],
+            "subtasks": [
+                {
+                    "title": "full backup of ~/.claude",
+                    "completed": false
+                },
+                {
+                    "title": "run bootstrap for claude entries",
+                    "completed": false
+                }
+            ],
+            "tags": ["cleanup", "cutover"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-037",
+            "title": "Post-cutover smoke for Claude Code",
+            "description": "After cutover, verify Claude Code still loads rules, runs a command, and a hook fires; if broken, apply the rollback runbook. Test: post-cutover smoke passes (AC-9.2, AC-9.3).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-036"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "rules + command + hook smoke",
+                    "completed": false
+                }
+            ],
+            "tags": ["cleanup", "smoke"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-038",
+            "title": "engram extra-autosave plugin (frequent saves, ours)",
+            "description": "Replicate the custom Claude `engram-autosave.sh` behavior in OpenCode as a SEPARATE owned plugin (NOT modifying the third-party engram.ts): on session.idle (throttled — only after N new messages or X minutes) and on session end, extract learnings from the transcript with a cheap model and POST to engram's :7437/observations/passive. Fail-safe: degrade silently if engram is down; anti-recursion guard so the extractor model call doesn't re-trigger. This plugin IS centralized (ours). Test: throttled idle triggers a save; session-end triggers a save; engram-down degrades without crashing (extends AC-6.4 / new AC-6.7).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-017", "T-022"],
+            "blocks": ["T-032"],
+            "subtasks": [
+                {
+                    "title": "session.idle throttle logic",
+                    "completed": false
+                },
+                {
+                    "title": "transcript extract + POST",
+                    "completed": false
+                },
+                {
+                    "title": "fail-safe + anti-recursion guard",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "plugins", "engram"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-039",
+            "title": "Hospeda: scaffold .ai/ neutral source + generator skeleton",
+            "description": "In the HOSPEDA repo (own branch off staging), create .ai/{rules,skills,agents,commands} neutral source and scripts/gen-ai-config.sh skeleton that will emit .claude/ and .opencode/. Reuses the central gen-agents approach (T-012). Test: skeleton runs and reports planned outputs (AC-10.1).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-040", "T-041", "T-042", "T-043"],
+            "subtasks": [
+                {
+                    "title": ".ai/ layout",
+                    "completed": false
+                },
+                {
+                    "title": "generator skeleton",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "hospeda", "generator"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-040",
+            "title": "Hospeda: agents .ai/agents -> generate .claude + .opencode",
+            "description": "Move the 20 hospeda agents into .ai/agents (canonical) and generate per-tool .claude/agents and .opencode/agent as real committed files. Test: each agent present and well-formed for both tools (AC-10.4).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-039"],
+            "blocks": ["T-045"],
+            "subtasks": [
+                {
+                    "title": "canonicalize agents",
+                    "completed": false
+                },
+                {
+                    "title": "generate both tools",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "hospeda", "agents"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-041",
+            "title": "Hospeda: commands .ai/commands -> generate .claude + .opencode",
+            "description": "Move the 18 hospeda commands into .ai/commands and generate per-tool command files ($ARGUMENTS/$1..n for OpenCode). Test: a command with args resolves in both tools (AC-10.4).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-039"],
+            "blocks": ["T-045"],
+            "subtasks": [
+                {
+                    "title": "canonicalize commands",
+                    "completed": false
+                },
+                {
+                    "title": "generate both tools",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "hospeda", "commands"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-042",
+            "title": "Hospeda: skills .ai/skills shared by both tools",
+            "description": "Move the 34 hospeda skills into .ai/skills (same format both tools) and wire Claude skills dir + OpenCode skill config via relative in-repo paths (no per-tool duplication). Test: each skill listed in both tools (AC-10.3).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-039"],
+            "blocks": ["T-044"],
+            "subtasks": [
+                {
+                    "title": "move skills to .ai",
+                    "completed": false
+                },
+                {
+                    "title": "wire both tools",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "hospeda", "skills"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-043",
+            "title": "Hospeda: rules .ai/rules + per-tool wrappers",
+            "description": "Put the hospeda project rule body in .ai/rules; generate/keep CLAUDE.md (@import) and add AGENTS.md (OpenCode) including it via relative paths. Test: both tools load hospeda project rules (AC-10.1, AC-10.3).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-039"],
+            "blocks": ["T-044"],
+            "subtasks": [
+                {
+                    "title": ".ai/rules body",
+                    "completed": false
+                },
+                {
+                    "title": "per-tool wrappers",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "hospeda", "rules"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-044",
+            "title": "Hospeda: .opencode/opencode.json project config",
+            "description": "Create hospeda .opencode/opencode.json: instructions -> .ai/rules (relative), skill config, protected-branches deny (from T-010 template), any project MCP. Test: opencode.json valid + branch-protection deny present (AC-10.1).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-042", "T-043"],
+            "blocks": ["T-046"],
+            "subtasks": [
+                {
+                    "title": "instructions + skills",
+                    "completed": false
+                },
+                {
+                    "title": "protected-branches deny",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "hospeda", "config"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-045",
+            "title": "Hospeda: generator idempotency + drift check",
+            "description": "Make gen-ai-config.sh idempotent (re-run = no diff) and add a drift check that fails if .claude/.opencode were hand-edited (regenerate-and-compare). Wire into CI/pre-commit doc. Test: no-change re-run is clean; hand edit fails the check (AC-10.5).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-040", "T-041"],
+            "blocks": ["T-046"],
+            "subtasks": [
+                {
+                    "title": "idempotent generation",
+                    "completed": false
+                },
+                {
+                    "title": "drift check",
+                    "completed": false
+                }
+            ],
+            "tags": ["core", "hospeda", "generator"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-046",
+            "title": "Hospeda: generator tests + parity check",
+            "description": "Tests for gen-ai-config.sh + a parity check that every .ai source has both tool outputs and a future-tool target is one addition. Test: suite green; parity passes (AC-10.2, AC-10.6).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-044", "T-045"],
+            "blocks": ["T-047"],
+            "subtasks": [
+                {
+                    "title": "generator tests",
+                    "completed": false
+                },
+                {
+                    "title": "parity check",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "hospeda"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-047",
+            "title": "Hospeda: AI-config README (.ai/ + generator + add-a-tool)",
+            "description": "Document how .ai/ + the generator work, how to edit config, and how to add a new tool target. Test: README covers edit + add-tool flows (AC-10.6).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-046"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "how it works",
+                    "completed": false
+                },
+                {
+                    "title": "add-a-tool guide",
+                    "completed": false
+                }
+            ],
+            "tags": ["docs", "hospeda"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T09:19:58Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 47,
+        "pending": 37,
+        "inProgress": 0,
+        "completed": 10,
+        "blocked": 0,
+        "averageComplexity": 2.4
+    }
+}

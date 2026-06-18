@@ -729,6 +729,13 @@
             "status": "draft",
             "progress": "0/0",
             "path": "SPEC-246-revalidation-log-entity-id-tracking"
+        },
+        {
+            "specId": "SPEC-247",
+            "title": "Claude Code ↔ OpenCode Configuration Parity (central qz-ai-environment repo + symlinks)",
+            "status": "in-progress",
+            "progress": "10/47",
+            "path": "SPEC-247-claude-opencode-config-parity"
         }
     ],
     "standalone": {
