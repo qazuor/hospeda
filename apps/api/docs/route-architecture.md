@@ -240,6 +240,8 @@ The following entities use the three-tier structure:
 | `views` | yes (capture only) | yes (read own/all) | no |
 | `gastronomy` | yes | yes | yes |
 | `gastronomy/reviews` | yes (approved only) | yes (create) | yes (full moderation) |
+| `experience` | yes | yes | yes |
+| `experience/reviews` | yes (approved only) | yes (create) | yes (full moderation) |
 | `commerce` (leads + subscription) | yes (create-lead) | no | yes |
 
 ---
@@ -589,6 +591,76 @@ Reviews are mounted on a separate sub-router at `/api/v1/admin/gastronomies/revi
 | `PUT` | `/api/v1/admin/gastronomies/reviews/{id}` | `COMMERCE_EDIT_ALL` + `COMMERCE_MODERATE_REVIEW` | Update review content |
 | `DELETE` | `/api/v1/admin/gastronomies/reviews/{id}` | `COMMERCE_MODERATE_REVIEW` | Soft delete |
 | `POST` | `/api/v1/admin/gastronomies/reviews/{id}/moderate` | `COMMERCE_MODERATE_REVIEW` | Approve or reject; triggers rating recompute |
+
+---
+
+## Experience Routes (SPEC-240)
+
+Experience listings follow the standard three-tier structure mounted at:
+
+- `/api/v1/public/experiences` — public reads, no auth
+- `/api/v1/protected/experiences` — owner-scoped edits, session required
+- `/api/v1/admin/experiences` — full CRUD, `PermissionEnum.COMMERCE_*`
+
+Reviews have their own admin sub-router mounted at
+`/api/v1/admin/experiences/reviews`.
+
+### Public tier
+
+| Method | Path | Notes |
+|--------|------|-------|
+| `GET` | `/api/v1/public/experiences` | Paginated list (filter by type, destinationId, isFeatured, ownerId) |
+| `GET` | `/api/v1/public/experiences/{id}` | Get by UUID; 404 when not publicly visible |
+| `GET` | `/api/v1/public/experiences/slug/{slug}` | Get by URL slug; null when not found |
+| `GET` | `/api/v1/public/experiences/destination/{destinationId}` | Paginated list filtered by destination |
+| `GET` | `/api/v1/public/experiences/{experienceId}/faqs` | Ordered FAQ list (displayOrder ASC NULLS LAST) |
+| `GET` | `/api/v1/public/experiences/{experienceId}/reviews` | Paginated APPROVED-only reviews |
+
+### Protected tier (session required, owner-scoped)
+
+| Method | Path | Permission | Notes |
+|--------|------|-----------|-------|
+| `GET` | `/api/v1/protected/experiences/{id}` | Auth only | Returns `ExperienceProtectedSchema` (includes ownerId, contactInfo, audit fields) |
+| `PATCH` | `/api/v1/protected/experiences/{id}` | `COMMERCE_*_EDIT_OWN` (per-section, enforced in service) | Operational fields only; identity fields silently stripped by Zod |
+| `POST` | `/api/v1/protected/experiences/{id}/faqs` | `COMMERCE_FAQS_EDIT_OWN` | displayOrder auto-assigned as max+1 |
+| `PUT` | `/api/v1/protected/experiences/{id}/faqs/{faqId}` | `COMMERCE_FAQS_EDIT_OWN` | Update existing FAQ |
+| `DELETE` | `/api/v1/protected/experiences/{id}/faqs/{faqId}` | Auth only | Removal always allowed |
+| `PUT` | `/api/v1/protected/experiences/{id}/faqs/reorder` | `COMMERCE_FAQS_EDIT_OWN` | Bulk displayOrder update |
+| `POST` | `/api/v1/protected/experiences/{experienceId}/reviews` | Auth only | Review starts in PENDING state; one per user per listing enforced |
+
+### Admin tier
+
+| Method | Path | `requiredPermissions` | Notes |
+|--------|------|-----------------------|-------|
+| `GET` | `/api/v1/admin/experiences` | `COMMERCE_VIEW_ALL` | Paginated list with full admin details |
+| `POST` | `/api/v1/admin/experiences` | `COMMERCE_CREATE` | Create listing |
+| `GET` | `/api/v1/admin/experiences/options` | Panel access only | Lightweight `{id, label, slug, type, destination}` for relation selectors |
+| `POST` | `/api/v1/admin/experiences/batch` | `COMMERCE_VIEW_ALL` | Resolve multiple UUIDs to display labels |
+| `GET` | `/api/v1/admin/experiences/{id}` | `COMMERCE_VIEW_ALL` | Full admin details |
+| `PUT` | `/api/v1/admin/experiences/{id}` | `COMMERCE_EDIT_ALL` | Full update |
+| `PATCH` | `/api/v1/admin/experiences/{id}` | `COMMERCE_EDIT_ALL` | Partial update |
+| `DELETE` | `/api/v1/admin/experiences/{id}` | `COMMERCE_DELETE` | Soft delete |
+| `DELETE` | `/api/v1/admin/experiences/{id}/hard` | `COMMERCE_DELETE` | Permanent delete |
+| `POST` | `/api/v1/admin/experiences/{id}/restore` | `COMMERCE_EDIT_ALL` | Restore soft-deleted listing |
+| `POST` | `/api/v1/admin/experiences/{id}/toggle-subscription` | `COMMERCE_EDIT_ALL` | Toggle MercadoPago subscription active/inactive |
+| `POST` | `/api/v1/admin/experiences/{id}/assign-owner` | `COMMERCE_EDIT_ALL` | Set or replace the `COMMERCE_OWNER` |
+| `GET` | `/api/v1/admin/experiences/{id}/faqs` | `COMMERCE_VIEW_ALL` | All FAQs including drafts |
+| `POST` | `/api/v1/admin/experiences/{id}/faqs` | `COMMERCE_EDIT_ALL` | Add FAQ |
+| `PUT` | `/api/v1/admin/experiences/{id}/faqs/{faqId}` | `COMMERCE_EDIT_ALL` | Update FAQ |
+| `DELETE` | `/api/v1/admin/experiences/{id}/faqs/{faqId}` | `COMMERCE_EDIT_ALL` | Remove FAQ |
+| `PATCH` | `/api/v1/admin/experiences/{id}/faqs/reorder` | `COMMERCE_EDIT_ALL` | Bulk displayOrder update |
+
+### Experience Reviews — Admin
+
+Reviews are mounted on a separate sub-router at `/api/v1/admin/experiences/reviews`.
+
+| Method | Path | `requiredPermissions` | Notes |
+|--------|------|-----------------------|-------|
+| `GET` | `/api/v1/admin/experiences/reviews` | `COMMERCE_MODERATE_REVIEW` | All reviews including PENDING and REJECTED |
+| `GET` | `/api/v1/admin/experiences/reviews/{id}` | `COMMERCE_MODERATE_REVIEW` | Full review with moderation fields |
+| `PUT` | `/api/v1/admin/experiences/reviews/{id}` | `COMMERCE_EDIT_ALL` + `COMMERCE_MODERATE_REVIEW` | Update review content |
+| `DELETE` | `/api/v1/admin/experiences/reviews/{id}` | `COMMERCE_MODERATE_REVIEW` | Soft delete |
+| `POST` | `/api/v1/admin/experiences/reviews/{id}/moderate` | `COMMERCE_MODERATE_REVIEW` | Approve or reject; triggers rating recompute |
 
 ---
 

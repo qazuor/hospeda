@@ -8,9 +8,12 @@ import { dbLogger } from './utils/logger.ts';
 
 /**
  * Combined schema including both Hospeda application schemas
- * and QZPay billing schemas for complete database access
+ * and QZPay billing schemas for complete database access.
+ *
+ * The explicit type annotation prevents TS7056 ("inferred type exceeds the
+ * maximum length the compiler will serialize") as the combined schema grows.
  */
-const schema = {
+const schema: typeof hospedaSchema & typeof qzpaySchema = {
     ...hospedaSchema,
     ...qzpaySchema
 };

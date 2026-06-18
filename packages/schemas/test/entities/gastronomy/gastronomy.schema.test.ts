@@ -37,6 +37,13 @@ describe('GastronomySchema', () => {
             expect(() => GastronomySchema.parse(data)).not.toThrow();
         });
 
+        it('should accept openingHours: null (M-2 regression — .nullish() fix)', () => {
+            // OpeningHoursFields uses .nullish() so Drizzle/pg can return null for
+            // unset JSONB columns. A bare .optional() would reject null here.
+            const data = { ...createMinimalGastronomy(), openingHours: null };
+            expect(() => GastronomySchema.parse(data)).not.toThrow();
+        });
+
         it('should accept a valid HTTPS menuUrl', () => {
             const data = { ...createMinimalGastronomy(), menuUrl: 'https://example.com/menu' };
             expect(() => GastronomySchema.parse(data)).not.toThrow();

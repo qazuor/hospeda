@@ -103,5 +103,6 @@
         "blockedUnverifiedCta": "Ir a mi cuenta",
         "authedEmailLabel": "Te suscribís con el email de tu cuenta",
         "configureLink": "Configurar"
-    }
+    },
+    "experiences": "Experiencias"
 }

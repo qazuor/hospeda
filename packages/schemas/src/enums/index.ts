@@ -13,6 +13,13 @@ export * from './gastronomy-type.schema.js';
 export * from './price-range.enum.js';
 export * from './price-range.schema.js';
 
+// Experience enums (SPEC-240)
+export * from './experience-type.enum.js';
+export * from './experience-type.schema.js';
+
+export * from './experience-price-unit.enum.js';
+export * from './experience-price-unit.schema.js';
+
 export * from './product-domain.enum.js';
 export * from './product-domain.schema.js';
 export * from './access-right-scope.schema.js';

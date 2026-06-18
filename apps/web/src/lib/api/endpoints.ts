@@ -1298,6 +1298,85 @@ export const gastronomyApi = {
     }
 };
 
+// --- Experiences (SPEC-240) ---
+
+/**
+ * Review item shape returned by GET /experiences/:id/reviews.
+ * The web client only needs the fields actually rendered in the review list.
+ */
+export interface ExperienceReviewPublicItem {
+    readonly id: string;
+    readonly title?: string | null;
+    readonly content?: string | null;
+    readonly averageRating?: number | null;
+    readonly rating?: Record<string, number> | null;
+    readonly user?: { readonly name: string | null; readonly image: string | null } | null;
+    readonly createdAt?: string | null;
+}
+
+/** Public experience API endpoints (SPEC-240 T-019). */
+export const experiencesApi = {
+    /**
+     * List experience listings with pagination, search, sorting, and filters.
+     *
+     * GET /api/v1/public/experiences
+     */
+    list(params?: {
+        readonly page?: number;
+        readonly pageSize?: number;
+        readonly q?: string;
+        readonly destinationId?: string;
+        readonly type?: string;
+        readonly isFeatured?: boolean;
+        readonly minRating?: number;
+        readonly maxRating?: number;
+        readonly sortBy?: string;
+        readonly sortOrder?: 'asc' | 'desc';
+        readonly includeAmenities?: boolean;
+        readonly includeFeatures?: boolean;
+    }): Promise<ApiResult<PaginatedResponse<Record<string, unknown>>>> {
+        return apiClient.getList({ path: `${BASE}/experiences`, params });
+    },
+
+    /**
+     * Get a single experience listing by its URL slug.
+     *
+     * GET /api/v1/public/experiences/slug/:slug
+     */
+    getBySlug({ slug }: { readonly slug: string }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.get({ path: `${BASE}/experiences/slug/${slug}` });
+    },
+
+    /**
+     * Get paginated reviews for an experience listing (with user info).
+     *
+     * GET /api/v1/public/experiences/:id/reviews
+     */
+    getReviews({
+        id,
+        page,
+        pageSize
+    }: {
+        readonly id: string;
+        readonly page?: number;
+        readonly pageSize?: number;
+    }): Promise<ApiResult<PaginatedResponse<ExperienceReviewPublicItem>>> {
+        return apiClient.getList({
+            path: `${BASE}/experiences/${id}/reviews`,
+            params: { page, pageSize }
+        });
+    },
+
+    /**
+     * Get the FAQ list for an experience listing.
+     *
+     * GET /api/v1/public/experiences/:id/faqs
+     */
+    getFaqs({ id }: { readonly id: string }): Promise<ApiResult<ReadonlyArray<unknown>>> {
+        return apiClient.get({ path: `${BASE}/experiences/${id}/faqs` });
+    }
+};
+
 // --- Commerce lead (SPEC-239 T-047) ---
 
 /**

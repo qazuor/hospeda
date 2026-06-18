@@ -19,7 +19,13 @@
  * @module services/commerce-reconcile.service
  */
 
-import { commerceListingSubscriptions, eq, gastronomyModel, getDb } from '@repo/db';
+import {
+    commerceListingSubscriptions,
+    eq,
+    experienceModel,
+    gastronomyModel,
+    getDb
+} from '@repo/db';
 import { type CommerceEntityModel, reconcileCommerceListingVisibility } from '@repo/service-core';
 import { apiLogger } from '../utils/logger.js';
 
@@ -40,6 +46,9 @@ export function resolveCommerceEntityModel(entityType: string): CommerceEntityMo
             // entity is a superset of { id, visibility, lifecycleState }), but the
             // generic Gastronomy model type is wider than the narrow reconciler shape.
             return gastronomyModel as unknown as CommerceEntityModel;
+        case 'experience':
+            // TYPE-WORKAROUND: same structural compatibility as gastronomy above.
+            return experienceModel as unknown as CommerceEntityModel;
         default:
             throw new Error(
                 `resolveCommerceEntityModel: no commerce entity model for entityType '${entityType}'`

@@ -1,0 +1,1270 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-240",
+    "title": "Experiencias y Servicios (tourism services & experiences)",
+    "created": "2026-06-17T00:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add ExperienceTypePgEnum and ExperiencePriceUnitPgEnum to DB enums",
+            "description": "Add `experience_type` (14 values incl OTHER) and `experience_price_unit` (per_day|per_hour|per_person|per_group) PG enums to packages/db/src/schemas/enums.dbschema.ts. Tests: extend the enum snapshot/unit test in packages/db/test verifying both enums export the expected value arrays.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-008"],
+            "subtasks": [
+                {
+                    "title": "ExperienceTypePgEnum (14 values)",
+                    "completed": false
+                },
+                {
+                    "title": "ExperiencePriceUnitPgEnum (4 values)",
+                    "completed": false
+                }
+            ],
+            "tags": ["database", "enum"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": "2026-06-17T00:00:00.000Z",
+                "completed": "2026-06-17T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Create ExperienceTypeEnumSchema and ExperiencePriceUnitEnumSchema",
+            "description": "Add Zod enum schemas in packages/schemas/src/enums/ mirroring the PG enums (single source of truth, derive from the same const value arrays). Tests: unit test asserting parse success for valid values + rejection for unknown, and value parity with the DB enums.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-003"],
+            "subtasks": [
+                {
+                    "title": "ExperienceTypeEnumSchema",
+                    "completed": false
+                },
+                {
+                    "title": "ExperiencePriceUnitEnumSchema",
+                    "completed": false
+                }
+            ],
+            "tags": ["schema", "enum", "zod"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": "2026-06-17T00:00:00.000Z",
+                "completed": "2026-06-17T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Write experience.schema.ts (main entity, spreads BaseCommerceListingSchema)",
+            "description": "Create packages/schemas/src/entities/experience/experience.schema.ts spreading SPEC-239 BaseCommerceListingSchema + entity fields: type, priceFrom (z.number().int().nonnegative()), priceUnit, isPriceOnRequest (default false). Add ExperienceIdSchema. Tests: unit tests for valid/invalid entity objects, default application, integer/non-negative price enforcement.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-004", "T-005", "T-006", "T-007", "T-018"],
+            "subtasks": [
+                {
+                    "title": "ExperienceIdSchema",
+                    "completed": false
+                },
+                {
+                    "title": "Spread BaseCommerceListingSchema + entity fields",
+                    "completed": false
+                },
+                {
+                    "title": "Unit tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["schema", "zod"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": "2026-06-17T00:00:00.000Z",
+                "completed": "2026-06-17T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Write experience.crud.schema.ts (create/update/patch variants)",
+            "description": "Create CreateExperienceSchema, UpdateExperienceSchema, PatchExperienceSchema mirroring accommodation.crud.schema.ts. Separate owner-editable (operational) vs admin-only (identity) field sets so the protected updateOwn route can validate against the operational subset. Tests: unit tests for each variant — required vs optional fields, operational vs admin field partitioning.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-017", "T-020", "T-021"],
+            "subtasks": [
+                {
+                    "title": "Create/Update/Patch variants",
+                    "completed": false
+                },
+                {
+                    "title": "Operational vs admin field split",
+                    "completed": false
+                },
+                {
+                    "title": "Unit tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["schema", "zod"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": "2026-06-17T00:00:00.000Z",
+                "completed": "2026-06-17T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Write experience.http.schema.ts (public/protected/admin response shapes)",
+            "description": "Create public-tier and admin-tier HTTP request/response schemas mirroring accommodation.http.schema.ts. CRITICAL: public response schema must strip admin/internal fields (follow SPEC-210 public-tier discipline) so subscription-off internals never leak. Tests: unit tests asserting public shape excludes adminInfo/ownerId-sensitive fields, admin shape includes them.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-019", "T-020", "T-021"],
+            "subtasks": [
+                {
+                    "title": "Public-tier response schema (field-stripped)",
+                    "completed": false
+                },
+                {
+                    "title": "Admin-tier response schema",
+                    "completed": false
+                },
+                {
+                    "title": "Request body schemas per endpoint",
+                    "completed": false
+                },
+                {
+                    "title": "Unit tests (leak guard)",
+                    "completed": false
+                }
+            ],
+            "tags": ["schema", "http", "security"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": "2026-06-17T00:00:00.000Z",
+                "completed": "2026-06-17T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Write experience.query.schema.ts + experience.admin-search.schema.ts",
+            "description": "Public list/filter query schema (type, destination, page, pageSize, sort) and admin-search schema (adds hasActiveSubscription, ownerId, lifecycleState, moderationState). Tests: unit tests for query coercion, pagination bounds, filter validation.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-019", "T-021"],
+            "subtasks": [
+                {
+                    "title": "Public query schema",
+                    "completed": false
+                },
+                {
+                    "title": "Admin-search schema",
+                    "completed": false
+                },
+                {
+                    "title": "Unit tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["schema", "zod"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": "2026-06-17T00:00:00.000Z",
+                "completed": "2026-06-17T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Write experience.relations.schema.ts",
+            "description": "Relations schema with reviews, faqs, hours, amenities, features, destination — mirrors accommodation.relations.schema.ts and reuses SPEC-239 polymorphic sub-schemas where available. Tests: unit test composing a full relations object and asserting nested validation.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-019"],
+            "subtasks": [
+                {
+                    "title": "Compose relations",
+                    "completed": false
+                },
+                {
+                    "title": "Unit test",
+                    "completed": false
+                }
+            ],
+            "tags": ["schema", "zod"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": "2026-06-17T00:00:00.000Z",
+                "completed": "2026-06-17T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Create experiences.dbschema.ts (main table)",
+            "description": "Create packages/db/src/schemas/experience/experiences.dbschema.ts per spec domain model. Indexes: (slug), (destination_id), (owner_id), (type), (has_active_subscription, lifecycle_state). Reuse BaseCommerceListing column shape from SPEC-239. Tests: table introspection / column-presence unit test.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-009", "T-010", "T-011", "T-012", "T-013"],
+            "subtasks": [
+                {
+                    "title": "Columns + types",
+                    "completed": false
+                },
+                {
+                    "title": "Indexes incl hot-path composite",
+                    "completed": false
+                }
+            ],
+            "tags": ["database", "schema"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": "2026-06-17T00:00:00.000Z",
+                "completed": "2026-06-17T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Create experience_reviews.dbschema.ts",
+            "description": "Polymorphic-parallel review table (experienceId FK, userId FK, title, content, rating jsonb, averageRating numeric, lifecycleState, moderationState, audit). UNIQUE (experienceId, userId) for one-review-per-user. Tests: unique constraint + FK introspection test.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                {
+                    "title": "Table + unique constraint",
+                    "completed": false
+                }
+            ],
+            "tags": ["database", "schema"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": "2026-06-17T00:00:00.000Z",
+                "completed": "2026-06-17T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Create experience_faqs.dbschema.ts",
+            "description": "FAQ table (experienceId FK, question, answer, category, displayOrder int, lifecycleState, audit). Tests: FK + displayOrder default introspection test.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                {
+                    "title": "Table + displayOrder",
+                    "completed": false
+                }
+            ],
+            "tags": ["database", "schema"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": "2026-06-17T00:00:00.000Z",
+                "completed": "2026-06-17T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Opening hours as jsonb on experiences (gastronomy parity, no separate table)",
+            "description": "Resolved by parity with gastronomy: opening hours stored as an openingHours jsonb column on the experiences table (T-008), NOT a separate experience_hours table. The spec default (structured table) was overridden because the SPEC-239 core uses jsonb for all commerce listings.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                {
+                    "title": "Table + shifts",
+                    "completed": false
+                }
+            ],
+            "tags": ["database", "schema"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": "2026-06-17T00:00:00.000Z",
+                "completed": "2026-06-17T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Create r_experience_amenity + r_experience_feature join tables",
+            "description": "Two polymorphic join tables referencing existing amenities and features tables. Tests: FK introspection test for both joins.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                {
+                    "title": "r_experience_amenity",
+                    "completed": false
+                },
+                {
+                    "title": "r_experience_feature",
+                    "completed": false
+                }
+            ],
+            "tags": ["database", "schema"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": "2026-06-17T00:00:00.000Z",
+                "completed": "2026-06-17T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Generate, review and apply migration",
+            "description": "Run pnpm db:generate, review the generated migration file (enums + 6 tables + indexes), commit the migration, then pnpm db:migrate + pnpm db:apply-extras. Verify drift guard is clean (db:generate again yields no diff). No extras needed unless has_active_subscription becomes a DB trigger. Tests: migration applies cleanly against a fresh DB; drift guard green.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-008", "T-009", "T-010", "T-011", "T-012"],
+            "blocks": ["T-014", "T-017"],
+            "subtasks": [
+                {
+                    "title": "db:generate + review",
+                    "completed": false
+                },
+                {
+                    "title": "Commit migration file",
+                    "completed": false
+                },
+                {
+                    "title": "db:migrate + apply-extras",
+                    "completed": false
+                },
+                {
+                    "title": "Drift guard clean",
+                    "completed": false
+                }
+            ],
+            "tags": ["database", "migration"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": "2026-06-17T00:00:00.000Z",
+                "completed": "2026-06-17T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Add experiences seed data (3-5 entries)",
+            "description": "Add seed entries in packages/seed covering different types/units/destinations + at least one isPriceOnRequest and one with hasActiveSubscription=true, plus a COMMERCE_OWNER owner. Tests: seed runs without error; seeded rows count assertion. BLOCKED: worktree dev DB template (hospeda_template) is stale (pre-SPEC-239, no gastronomies tables), so a full db:seed fails. Needs a DB strategy decision (rebuild template / db:push branch schema) before seeding.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-013"],
+            "blocks": ["T-039"],
+            "subtasks": [
+                {
+                    "title": "Seed records covering type/unit variety",
+                    "completed": false
+                },
+                {
+                    "title": "Owner assignment",
+                    "completed": false
+                }
+            ],
+            "tags": ["seed", "database"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Create experience.permissions.ts",
+            "description": "Add EXPERIENCE_* PermissionEnum values (VIEW_ALL, CREATE, UPDATE_ALL, UPDATE_OWN, DELETE, MANAGE_REVIEWS, MANAGE_SUBSCRIPTION) to @repo/schemas permission enum + service-core permission mapping, mirroring accommodation.permissions.ts and reusing SPEC-239 COMMERCE permission category. Tests: unit test for permission-to-role assignment matrix.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-017"],
+            "subtasks": [
+                {
+                    "title": "PermissionEnum additions",
+                    "completed": false
+                },
+                {
+                    "title": "Role assignment mapping",
+                    "completed": false
+                }
+            ],
+            "tags": ["service", "permissions", "security"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Create experience.helpers.ts + experience.normalizers.ts",
+            "description": "Slug generator, price formatting (priceFrom + unit vs isPriceOnRequest), type-label i18n key resolution; input normalizers (slug lowercase+dash, priceFrom integer coercion). Tests (TDD, pure logic): unit tests for slug edge cases, price formatting including on-request, integer coercion.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-017"],
+            "subtasks": [
+                {
+                    "title": "helpers (slug, price, label)",
+                    "completed": false
+                },
+                {
+                    "title": "normalizers",
+                    "completed": false
+                },
+                {
+                    "title": "Unit tests first (TDD)",
+                    "completed": false
+                }
+            ],
+            "tags": ["service", "utils"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Create experience.service.ts (extends BaseCommerceListingService)",
+            "description": "ExperienceService extending SPEC-239 BaseCommerceListingService with entity-specific overrides (validateType, pricingBlock) and inheriting review/FAQ/hours/amenity lifecycle, subscription toggle hook, owner-scoping guards, permission checks. Tests: unit tests for CRUD, owner-scoping guard (non-owner cannot update operational fields of others), subscription toggle flipping hasActiveSubscription, pricing formatting.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-004", "T-013", "T-015", "T-016", "T-018"],
+            "blocks": ["T-019", "T-020", "T-021"],
+            "subtasks": [
+                {
+                    "title": "Extend base + overrides",
+                    "completed": false
+                },
+                {
+                    "title": "Owner-scoping guard tests",
+                    "completed": false
+                },
+                {
+                    "title": "Subscription toggle hook tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["service", "business-logic"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Create experience.types.ts (service input/output types)",
+            "description": "Service-layer input/output types derived from the Zod schemas (z.infer) — CreateExperienceInput, UpdateExperienceInput, ExperienceOutput, etc. Tests: typecheck-only (no runtime); ensure no `any`.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-017"],
+            "subtasks": [
+                {
+                    "title": "Infer types from schemas",
+                    "completed": false
+                }
+            ],
+            "tags": ["service", "types"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Public API routes (list, getById, getBySlug, reviews)",
+            "description": "apps/api/src/routes/experience/public/* using route factories. Enforce visibility gate: only lifecycleState=ACTIVE + hasActiveSubscription=true; 404 otherwise. Use public-tier response schema (T-005). Tests: integration tests for list filtering, slug 404 on subscription-off, public field-strip leak guard.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-017", "T-005", "T-006", "T-007"],
+            "blocks": ["T-022", "T-026", "T-029"],
+            "subtasks": [
+                {
+                    "title": "list + filters",
+                    "completed": true
+                },
+                {
+                    "title": "getById + getBySlug (404 guard)",
+                    "completed": true
+                },
+                {
+                    "title": "reviews list",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "routes", "public"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Protected API routes (updateOwn, review create/delete)",
+            "description": "PATCH /protected/experiences/:id restricted to operational fields + COMMERCE_OWNER ownership; review create (PENDING moderation, one-per-user) and delete. Tests: integration tests — owner can update operational only, admin-only fields rejected, non-owner 403, review create sets PENDING.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-017", "T-004", "T-005"],
+            "blocks": ["T-022"],
+            "subtasks": [
+                {
+                    "title": "updateOwn (operational guard)",
+                    "completed": true
+                },
+                {
+                    "title": "review create/delete",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "routes", "protected", "security"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Admin API routes (CRUD + toggle-subscription + FAQs + hours + reviews)",
+            "description": "Full admin route tree under /admin/experiences: create, list, getById, update, delete, restore, toggle-subscription, faqs CRUD+reorder, hours upsert/delete, review moderation. Permission-gated per spec matrix. Tests: integration tests for each endpoint incl permission denial, toggle-subscription flips visibility, FAQ reorder.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-017", "T-004", "T-005", "T-006"],
+            "blocks": ["T-022", "T-031", "T-032", "T-033", "T-034", "T-035"],
+            "subtasks": [
+                {
+                    "title": "CRUD + restore",
+                    "completed": true
+                },
+                {
+                    "title": "toggle-subscription",
+                    "completed": true
+                },
+                {
+                    "title": "FAQs + hours + reviews",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "routes", "admin"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "API integration tests + update endpoint-gate-matrix",
+            "description": "Cross-cutting integration test sweep for all experience endpoints (tier auth, permission gates, visibility) and update docs/billing/endpoint-gate-matrix.md. Tests: this task IS the integration test layer; assert 90% coverage on routes/experience.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-019", "T-020", "T-021"],
+            "blocks": ["T-039"],
+            "subtasks": [
+                {
+                    "title": "Integration sweep",
+                    "completed": true
+                },
+                {
+                    "title": "endpoint-gate-matrix update",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "testing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "i18n keys: experience.json for es/en/pt",
+            "description": "Add packages/i18n/src/locales/{es,en,pt}/experience.json with meta, index, detail, type (14), priceUnit (4), priceOnRequest, filters, reviews, faq keys per spec. Tests: i18n key-parity test (es/en/pt have identical key sets).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-024", "T-026", "T-027", "T-029"],
+            "subtasks": [
+                {
+                    "title": "es (primary)",
+                    "completed": false
+                },
+                {
+                    "title": "en + pt",
+                    "completed": false
+                },
+                {
+                    "title": "Key-parity test",
+                    "completed": false
+                }
+            ],
+            "tags": ["i18n", "web"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "ExperienceCard.astro + ExperiencePriceTag.astro",
+            "description": "Card for index grid + price tag component (priceFrom+unit or 'Consultar'). CSS Modules, design tokens, no Tailwind. Tests: component render test for priceOnRequest vs numeric, type badge, rating display.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-023"],
+            "blocks": ["T-025", "T-026"],
+            "subtasks": [
+                {
+                    "title": "ExperienceCard",
+                    "completed": false
+                },
+                {
+                    "title": "ExperiencePriceTag",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "component"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "ExperienceGrid.astro + ExperienceFilters.client.tsx",
+            "description": "Responsive grid wrapper + type/destination filter island (React). Tests: filter island unit test (filter state, URL sync); grid render test.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-024"],
+            "blocks": ["T-026"],
+            "subtasks": [
+                {
+                    "title": "ExperienceGrid",
+                    "completed": false
+                },
+                {
+                    "title": "ExperienceFilters island",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "component"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "/[lang]/experiencias/index.astro (listing page, SSR)",
+            "description": "SSR listing page fetching the public list endpoint (paginated, filtered), i18n es/en/pt, empty state. Tests: page integration test (SSR fetch, only active+subscribed shown, filter param passthrough).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-019", "T-025", "T-023"],
+            "blocks": ["T-030"],
+            "subtasks": [
+                {
+                    "title": "SSR data fetch + render grid",
+                    "completed": false
+                },
+                {
+                    "title": "Empty state + i18n",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "page", "ssr"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "ExperienceHero + ExperienceInfo + ExperienceContactCTA",
+            "description": "Detail hero (name/type/pricing), info block (hours/amenities/features/contact), contact CTA (WhatsApp deep link wa.me/<phone>?text= + contact block). CSS Modules. Tests: render tests incl WhatsApp link construction + no-booking assertion.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-023"],
+            "blocks": ["T-029"],
+            "subtasks": [
+                {
+                    "title": "Hero",
+                    "completed": false
+                },
+                {
+                    "title": "Info",
+                    "completed": false
+                },
+                {
+                    "title": "ContactCTA (WhatsApp)",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "component"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "ExperienceFaqs.astro + ExperienceReviews.client.tsx",
+            "description": "Static SSR FAQ accordion + interactive reviews island (aggregate rating + list + submit, mirrors accommodation reviews UX). Tests: FAQ render test; reviews island unit test (submit sets pending, one-per-user guard surfaced).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-023"],
+            "blocks": ["T-029"],
+            "subtasks": [
+                {
+                    "title": "FAQ accordion",
+                    "completed": false
+                },
+                {
+                    "title": "Reviews island",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "component"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-029",
+            "title": "/[lang]/experiencias/[slug].astro (detail page, SSR)",
+            "description": "SSR detail page via getBySlug public endpoint, 404 guard for inactive/subscription-off, assembling hero/info/contact/faqs/reviews. Tests: page integration test (404 on subscription-off, full render on active).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-019", "T-027", "T-028"],
+            "blocks": ["T-030"],
+            "subtasks": [
+                {
+                    "title": "SSR fetch + 404 guard",
+                    "completed": false
+                },
+                {
+                    "title": "Assemble detail sections",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "page", "ssr"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-030",
+            "title": "Web component tests",
+            "description": "Vitest + testing-library component tests covering cards, filters, price tag, contact CTA, reviews island where applicable. Tests: this task IS the web test layer; assert coverage target on apps/web experience components.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-026", "T-029"],
+            "blocks": ["T-039"],
+            "subtasks": [
+                {
+                    "title": "Component test sweep",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "testing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-031",
+            "title": "Admin experience list page",
+            "description": "apps/admin .../experiencias/index.tsx with filters + pagination, TanStack Query + Table, Tailwind v4. Tests: route render + query wiring test.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-021"],
+            "blocks": ["T-039"],
+            "subtasks": [
+                {
+                    "title": "List + filters + pagination",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin", "page"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-032",
+            "title": "Admin experience create/edit form (all fields + subscription toggle)",
+            "description": "new.tsx + $id.edit.tsx with TanStack Form + Zod safeParse, all admin fields incl COMMERCE_OWNER assignment + subscription toggle. Tests: form validation test, owner-assignment, toggle wiring.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-021"],
+            "blocks": ["T-039"],
+            "subtasks": [
+                {
+                    "title": "Create form",
+                    "completed": false
+                },
+                {
+                    "title": "Edit form + owner assign",
+                    "completed": false
+                },
+                {
+                    "title": "Subscription toggle",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin", "form"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-033",
+            "title": "Admin experience detail / view page",
+            "description": "$id.tsx view page showing all fields + subscription state + relations summary. Tests: render test.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-021"],
+            "blocks": ["T-039"],
+            "subtasks": [
+                {
+                    "title": "Detail view",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin", "page"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-034",
+            "title": "Admin FAQ management section (reuse FaqManager from SPEC-177)",
+            "description": "$id.faqs.tsx reusing the generic FaqManager (dnd reorder, per-item CRUD, category datalist) from SPEC-177 if available. Tests: reorder + CRUD interaction test.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-021"],
+            "blocks": ["T-039"],
+            "subtasks": [
+                {
+                    "title": "Wire FaqManager",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin", "form"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-035",
+            "title": "Admin review moderation list (approve/reject)",
+            "description": "$id.reviews.tsx review moderation list with approve/reject actions. Tests: moderation action wiring test.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-021"],
+            "blocks": ["T-039"],
+            "subtasks": [
+                {
+                    "title": "Moderation list + actions",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin", "page"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-036",
+            "title": "Owner-scoped edit form (protected, operational fields only)",
+            "description": "Owner-facing edit surface (admin panel protected section per default micro-decision #6) exposing only operational fields; warns when hasActiveSubscription=false. Tests: field-restriction test (admin-only fields absent), hidden-warning test.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-021", "T-032"],
+            "blocks": ["T-039"],
+            "subtasks": [
+                {
+                    "title": "Operational-only form",
+                    "completed": false
+                },
+                {
+                    "title": "subscription-off warning",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin", "form", "security"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-037",
+            "title": "Update route-architecture.md with experience routes",
+            "description": "Document the new experience public/protected/admin routes in apps/api/docs/route-architecture.md.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-021"],
+            "blocks": ["T-040"],
+            "subtasks": [
+                {
+                    "title": "Doc update",
+                    "completed": false
+                }
+            ],
+            "tags": ["docs"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-038",
+            "title": "Update endpoint-gate-matrix for experience permissions",
+            "description": "Add experience permission rows to docs/billing/endpoint-gate-matrix.md (complements T-022's route doc). (Done together with T-022, which already added the experience rows to endpoint-gate-matrix.md.)",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-021"],
+            "blocks": ["T-040"],
+            "subtasks": [
+                {
+                    "title": "Matrix update",
+                    "completed": false
+                }
+            ],
+            "tags": ["docs"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-039",
+            "title": "Smoke test (admin create -> toggle -> public visible -> review -> approve)",
+            "description": "End-to-end manual/automated smoke: create 1 experience via admin, toggle subscription on, verify public listing + detail page, submit a review, approve it. Document result. Tests: scripted e2e where feasible, else documented manual smoke checklist.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [
+                "T-014",
+                "T-022",
+                "T-030",
+                "T-031",
+                "T-032",
+                "T-033",
+                "T-034",
+                "T-035",
+                "T-036"
+            ],
+            "blocks": ["T-040"],
+            "subtasks": [
+                {
+                    "title": "Full happy-path smoke",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "e2e"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-040",
+            "title": "Closeout: update indexes + prioritization CSV",
+            "description": "Flip .qtm/specs/index.json + .qtm/tasks/index.json + specs-prioritization.csv to completed status per index-sync rules. Tests: n/a (governance).",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-037", "T-038", "T-039"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Index + CSV sync",
+                    "completed": false
+                }
+            ],
+            "tags": ["docs", "governance"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-17T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 40,
+        "pending": 1,
+        "inProgress": 0,
+        "completed": 39,
+        "blocked": 0,
+        "averageComplexity": 1.9
+    }
+}

@@ -39,6 +39,11 @@ import {
     protectedEventOrganizerRoutes,
     publicEventOrganizerRoutes
 } from './event-organizer';
+import {
+    adminExperienceRoutes,
+    protectedExperienceRoutes,
+    publicExperienceRoutes
+} from './experience';
 import { adminFeatureRoutes, protectedFeatureRoutes, publicFeatureRoutes } from './feature';
 import {
     adminGastronomyRoutes,
@@ -192,6 +197,8 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/public/accommodations', publicAccommodationRoutes);
         // Commerce listings: gastronomy (SPEC-239 T-042)
         app.route('/api/v1/public/gastronomies', publicGastronomyRoutes);
+        // Commerce listings: experience (SPEC-240 T-019)
+        app.route('/api/v1/public/experiences', publicExperienceRoutes);
         // Commerce lead intake — public acquisition form (SPEC-239 T-047 US-1)
         app.route('/api/v1/public/commerce', publicCommerceRoutes);
         app.route('/api/v1/public/destinations', publicDestinationRoutes);
@@ -285,6 +292,8 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/protected/accommodations', protectedAccommodationRoutes);
         // Commerce listings: gastronomy (SPEC-239 T-043 / T-044)
         app.route('/api/v1/protected/gastronomies', protectedGastronomyRoutes);
+        // Commerce listings: experience (SPEC-240 T-020)
+        app.route('/api/v1/protected/experiences', protectedExperienceRoutes);
         app.route('/api/v1/protected/host', protectedHostRoutes);
         app.route('/api/v1/protected/host-trades', protectedHostTradeRoutes);
         app.route('/api/v1/protected/host-onboarding', protectedHostOnboardingRoutes);
@@ -346,6 +355,8 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/accommodations', adminAccommodationRoutes);
         // Commerce listings: gastronomy (SPEC-239 T-045 / T-046)
         app.route('/api/v1/admin/gastronomies', adminGastronomyRoutes);
+        // Commerce listings: experience (SPEC-240 T-021)
+        app.route('/api/v1/admin/experiences', adminExperienceRoutes);
         // Commerce leads admin management (SPEC-239 T-047)
         app.route('/api/v1/admin/commerce', adminCommerceRoutes);
         app.route('/api/v1/admin/destinations', adminDestinationRoutes);

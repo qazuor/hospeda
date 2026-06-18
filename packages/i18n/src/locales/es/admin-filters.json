@@ -207,5 +207,22 @@
         "mid": "Moderado",
         "high": "Elevado",
         "premium": "Premium"
+    },
+    "experienceType": {
+        "label": "Tipo de experiencia",
+        "carRental": "Alquiler de autos",
+        "bikeRental": "Alquiler de bicicletas",
+        "kayakRental": "Alquiler de kayak",
+        "quadRental": "Alquiler de cuadriciclos",
+        "tourGuide": "Guía turístico",
+        "guidedVisit": "Visita guiada",
+        "excursion": "Excursión",
+        "boatTrip": "Paseo en lancha",
+        "fishingCharter": "Pesca deportiva",
+        "birdWatching": "Avistamiento de aves",
+        "culturalTour": "Tour cultural",
+        "wineTasting": "Degustación de vinos",
+        "outdoorAdventure": "Aventura al aire libre",
+        "other": "Otro"
     }
 }

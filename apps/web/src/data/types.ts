@@ -934,3 +934,149 @@ export interface GastronomyDetailData extends GastronomyCardData {
         readonly createdAt: string | null;
     } | null;
 }
+
+// ---------------------------------------------------------------------------
+// Experience card and detail data (SPEC-240)
+// ---------------------------------------------------------------------------
+
+/**
+ * Opening hours entry for a single day of the week.
+ * Shared shape with GastronomyOpeningHoursEntry — experience uses the same
+ * structured hours sub-system from the SPEC-239 commerce-listing core.
+ */
+export interface ExperienceOpeningHoursEntry {
+    /** Whether the experience is available on this day. */
+    readonly isOpen: boolean;
+    /** Opening time string in HH:mm format, absent when closed. */
+    readonly open?: string;
+    /** Closing time string in HH:mm format, absent when closed or open 24 h. */
+    readonly close?: string;
+    /** Whether available 24 hours on this day. */
+    readonly open24h?: boolean;
+}
+
+/**
+ * Social networks map for an experience listing.
+ * Mirrors GastronomySocialNetworks — same fields from the commerce-listing core.
+ */
+export interface ExperienceSocialNetworks {
+    readonly facebook?: string | null;
+    readonly instagram?: string | null;
+    readonly twitter?: string | null;
+    readonly youtube?: string | null;
+    readonly whatsapp?: string | null;
+    readonly tiktok?: string | null;
+    readonly website?: string | null;
+}
+
+/**
+ * Contact info subset exposed on the public experience schema (SPEC-240).
+ * Only `whatsapp` is surfaced publicly (for the CTA deep link).
+ * Email / phone are intentionally withheld from the public tier.
+ */
+export interface ExperienceContactInfo {
+    readonly whatsapp?: string | null;
+}
+
+/**
+ * Props for the ExperienceCard component (SPEC-240).
+ *
+ * Produced by `toExperienceCardProps()` in `transforms.ts` and consumed by
+ * the experience card component. Used on the listing page and any featured
+ * experience sections.
+ *
+ * @example
+ * ```ts
+ * const card: ExperienceCardData = {
+ *   id: 'abc-123',
+ *   slug: 'kayak-rio-uruguay',
+ *   name: 'Kayak en el Río Uruguay',
+ *   type: 'KAYAK_RENTAL',
+ *   summary: 'Alquiler de kayaks para recorrer el río.',
+ *   featuredImage: { url: '/images/kayak.jpg', caption: 'Vista del río' },
+ *   destinationId: 'dest-uuid',
+ *   destinationName: 'Concepción del Uruguay',
+ *   priceFrom: 150000,
+ *   priceUnit: 'per_hour',
+ *   isPriceOnRequest: false,
+ *   averageRating: 4.8,
+ *   reviewsCount: 12,
+ *   isFeatured: true,
+ *   openingHours: null,
+ * };
+ * ```
+ */
+export interface ExperienceCardData {
+    /** UUID identifier for the experience listing. */
+    readonly id: string;
+    /** URL-safe slug used to build the detail page path. */
+    readonly slug: string;
+    /** Display name of the experience. */
+    readonly name: string;
+    /** Experience type enum value (e.g. `'KAYAK_RENTAL'`, `'EXCURSION'`). */
+    readonly type: string;
+    /** Short description shown on the card. */
+    readonly summary: string;
+    /**
+     * Featured image with URL and optional caption.
+     * Components should use `featuredImage.url` as `src` and prefer
+     * `featuredImage.caption ?? name` as `alt` text for accessibility.
+     */
+    readonly featuredImage: { readonly url: string; readonly caption?: string };
+    /** UUID of the destination where the experience is based. */
+    readonly destinationId: string;
+    /** Human-readable name of the destination (derived from API join). */
+    readonly destinationName: string;
+    /**
+     * Base price in centavos (integer). Divide by 100 for display.
+     * Zero when `isPriceOnRequest` is true (price stored as 0 per the spec decision).
+     */
+    readonly priceFrom: number;
+    /** Billing unit for the price (per_day | per_hour | per_person | per_group). */
+    readonly priceUnit: string;
+    /**
+     * When true the UI shows "Consultar precio" instead of the numeric price.
+     * The stored `priceFrom` value is ignored on display.
+     */
+    readonly isPriceOnRequest: boolean;
+    /** Average star rating (0-5). */
+    readonly averageRating: number;
+    /** Total number of reviews contributing to `averageRating`. */
+    readonly reviewsCount: number;
+    /** Whether this listing appears in featured/promoted slots. */
+    readonly isFeatured: boolean;
+    /** Structured opening hours by day. Null when not configured by the owner. */
+    readonly openingHours: Record<string, ExperienceOpeningHoursEntry> | null;
+    /** ISO 8601 creation date. Used to derive "new" badge (< 30 days). */
+    readonly createdAt?: string | null;
+}
+
+/**
+ * Typed data shape for the experience detail page (SPEC-240).
+ * Produced by `toExperienceDetailPageProps()` in `transforms.ts`.
+ *
+ * Extends `ExperienceCardData` with fields only needed for the full detail view.
+ */
+export interface ExperienceDetailData extends ExperienceCardData {
+    /** Full plain-text description of the experience. */
+    readonly description: string;
+    /** Optional rich-text (markdown) description (entitlement-gated). */
+    readonly richDescription?: string | null;
+    /** Public WhatsApp and optional social contact info. */
+    readonly contactInfo: ExperienceContactInfo | null;
+    /** Social network links provided by the owner. */
+    readonly socialNetworks: ExperienceSocialNetworks | null;
+    /** SEO metadata fields. */
+    readonly seo: { readonly title: string | null; readonly description: string | null } | null;
+    /** Tag slugs associated with the listing. */
+    readonly tags?: readonly string[];
+    /** FAQ items configured by the owner. */
+    readonly faqs: readonly DetailFaq[];
+    /** Public owner data from the users table JOIN. */
+    readonly owner: {
+        readonly id: string;
+        readonly name: string | null;
+        readonly image: string | null;
+        readonly createdAt: string | null;
+    } | null;
+}
