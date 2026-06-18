@@ -1235,7 +1235,7 @@
             "id": "T-040",
             "title": "Closeout: update indexes + prioritization CSV",
             "description": "Flip .qtm/specs/index.json + .qtm/tasks/index.json + specs-prioritization.csv to completed status per index-sync rules. Tests: n/a (governance).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-037", "T-038", "T-039"],
             "blocks": [],
@@ -1248,22 +1248,22 @@
             "tags": ["docs", "governance"],
             "phase": "cleanup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
             }
         }
     ],
     "summary": {
         "total": 40,
-        "pending": 1,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 39,
+        "completed": 40,
         "blocked": 0,
         "averageComplexity": 1.9
     }
