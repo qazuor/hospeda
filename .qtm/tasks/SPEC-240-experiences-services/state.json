@@ -1144,7 +1144,7 @@
             "id": "T-037",
             "title": "Update route-architecture.md with experience routes",
             "description": "Document the new experience public/protected/admin routes in apps/api/docs/route-architecture.md.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-021"],
             "blocks": ["T-040"],
@@ -1157,21 +1157,21 @@
             "tags": ["docs"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
             }
         },
         {
             "id": "T-038",
             "title": "Update endpoint-gate-matrix for experience permissions",
-            "description": "Add experience permission rows to docs/billing/endpoint-gate-matrix.md (complements T-022's route doc).",
-            "status": "pending",
+            "description": "Add experience permission rows to docs/billing/endpoint-gate-matrix.md (complements T-022's route doc). (Done together with T-022, which already added the experience rows to endpoint-gate-matrix.md.)",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-021"],
             "blocks": ["T-040"],
@@ -1184,14 +1184,14 @@
             "tags": ["docs"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
             }
         },
         {
@@ -1261,9 +1261,9 @@
     ],
     "summary": {
         "total": 40,
-        "pending": 4,
+        "pending": 2,
         "inProgress": 0,
-        "completed": 35,
+        "completed": 37,
         "blocked": 1,
         "averageComplexity": 1.9
     }
