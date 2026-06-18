@@ -205,6 +205,10 @@ export class AccommodationExternalReputationService {
      * accommodation is within the window, a `QUOTA_EXCEEDED` error is returned
      * immediately with reason `RATE_LIMIT_ERROR`.
      *
+     * Set `bypassRateLimit: true` to skip the per-accommodation rate-limit check.
+     * This is intended exclusively for cron/system callers that already throttle
+     * the batch at the job level (e.g. the `refresh-external-reputation` weekly job).
+     *
      * **Partial failure (AC-2.3)**: one platform erroring writes
      * `fetchStatus='error'` for that row and continues to the next platform.
      * The returned {@link RefreshResult} distinguishes `succeeded` from `failed`.
@@ -213,12 +217,16 @@ export class AccommodationExternalReputationService {
      * @param actor - The actor requesting the refresh. Must own the accommodation
      *   or hold `ACCOMMODATION_UPDATE_ANY`.
      * @param ctx - Optional service context (transaction).
+     * @param options - Optional call options.
+     * @param options.bypassRateLimit - When `true`, skips the per-accommodation
+     *   rate-limit check. Defaults to `false`. For system/cron callers only.
      * @returns A discriminated ServiceOutput with {@link RefreshResult} on success.
      */
     async refresh(
         accommodationId: string,
         actor: Actor,
-        ctx?: ServiceContext
+        ctx?: ServiceContext,
+        options?: { bypassRateLimit?: boolean }
     ): Promise<ServiceOutput<RefreshResult>> {
         try {
             await assertCanUpdateAccommodation(
@@ -232,7 +240,7 @@ export class AccommodationExternalReputationService {
             const rateLimitRaw = process.env.HOSPEDA_EXTREP_REFRESH_RATE_LIMIT ?? '1/600';
             const rateLimit = parseRateLimit(rateLimitRaw);
 
-            if (rateLimit) {
+            if (rateLimit && !options?.bypassRateLimit) {
                 // Find the most recent aggregateFetchedAt across all reputation rows for this accommodation.
                 const { items: existingReps } = await this.reputationModel.findAll(
                     { accommodationId },

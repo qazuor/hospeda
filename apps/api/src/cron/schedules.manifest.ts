@@ -231,5 +231,13 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         category: 'system',
         schedule: '0 */1 * * *',
         description: 'Retry failed outbound webhook deliveries.'
+    },
+    {
+        name: 'refresh-external-reputation',
+        displayName: 'Refresco de reputación externa',
+        category: 'content',
+        schedule: '0 2 * * 1',
+        description:
+            'Weekly refresh of cached external platform reputation data (ratings, review counts, Google snippets) for accommodations with enabled external listings.'
     }
 ];
