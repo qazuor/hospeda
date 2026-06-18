@@ -1660,6 +1660,64 @@ export const HOSPEDA_ENV_VARS = [
         category: 'integrations'
     },
 
+    // -------------------------------------------------------------------------
+    // External reputation / review aggregation (SPEC-237)
+    // -------------------------------------------------------------------------
+    {
+        name: 'HOSPEDA_EXTREP_GOOGLE_SNIPPET_TTL_DAYS',
+        description:
+            'How many days a cached Google Places snippet (rating + review count) is considered fresh before the background refresh cron re-fetches it. Lower values mean more API quota usage; higher values risk stale data.',
+        descriptionEs:
+            'Cuántos días se considera fresco un snippet de Google Places cacheado (rating + conteo de reseñas) antes de que el cron de actualización lo vuelva a buscar. Valores más bajos implican mayor consumo de cuota de API; valores más altos pueden traer datos desactualizados.',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '30',
+        exampleValue: '30',
+        apps: ['api'],
+        category: 'integrations',
+        howToObtain:
+            'Number of days between Google Places snippet refreshes per accommodation. Default 30. Lower to keep ratings fresher (more quota); raise to reduce API calls.',
+        howToObtainEs:
+            'Cantidad de días entre actualizaciones del snippet de Google Places por alojamiento. Por defecto 30. Bajalo para tener ratings más frescos (más cuota); subilo para reducir llamadas a la API.'
+    },
+    {
+        name: 'HOSPEDA_EXTREP_REFRESH_RATE_LIMIT',
+        description:
+            'Per-accommodation rate limit for the manual snippet refresh endpoint, expressed as "N/S" where N is the number of allowed refreshes and S is the window in seconds. Default "1/600" allows one refresh per accommodation every 10 minutes.',
+        descriptionEs:
+            'Límite de tasa por alojamiento para el endpoint de refresco manual de snippet, expresado como "N/S" donde N es la cantidad de refrescos permitidos y S es la ventana en segundos. Por defecto "1/600" permite un refresco por alojamiento cada 10 minutos.',
+        type: 'string',
+        required: false,
+        secret: false,
+        defaultValue: '1/600',
+        exampleValue: '1/600',
+        apps: ['api'],
+        category: 'integrations',
+        howToObtain:
+            'Rate-limit string in "N/S" format (N refreshes per S seconds per accommodation). Default "1/600" (1 refresh per 10 min). Lower the window to allow faster re-fetches; raise it to protect Google Places API quota.',
+        howToObtainEs:
+            'String de rate-limit en formato "N/S" (N refrescos por S segundos por alojamiento). Por defecto "1/600" (1 refresco cada 10 min). Bajá la ventana para permitir refrescos más rápidos; subila para proteger la cuota de la API de Google Places.'
+    },
+    {
+        name: 'HOSPEDA_EXTREP_CRON_SCHEDULE',
+        description:
+            'Cron expression for the background job that refreshes stale Google Places snippets across all accommodations. Default "0 2 * * 1" runs every Monday at 02:00 UTC.',
+        descriptionEs:
+            'Expresión cron para el job en segundo plano que actualiza los snippets de Google Places desactualizados en todos los alojamientos. Por defecto "0 2 * * 1" corre todos los lunes a las 02:00 UTC.',
+        type: 'string',
+        required: false,
+        secret: false,
+        defaultValue: '0 2 * * 1',
+        exampleValue: '0 2 * * 1',
+        apps: ['api'],
+        category: 'integrations',
+        howToObtain:
+            'Standard 5-field cron expression for the external-reputation snippet refresh job. Default "0 2 * * 1" (weekly, Monday 02:00 UTC). Adjust frequency based on Google Places quota and accommodation count.',
+        howToObtainEs:
+            'Expresión cron estándar de 5 campos para el job de actualización de snippets de reputación externa. Por defecto "0 2 * * 1" (semanal, lunes 02:00 UTC). Ajustá la frecuencia según la cuota de Google Places y la cantidad de alojamientos.'
+    },
+
     {
         name: 'HOSPEDA_NOINDEX_HOSTS',
         description:
