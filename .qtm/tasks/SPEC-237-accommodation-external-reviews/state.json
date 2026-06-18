@@ -391,7 +391,7 @@
             "id": "T-010",
             "title": "Add endpoint-gate-matrix rows for all SPEC-237 routes",
             "description": "Add rows to docs/billing/endpoint-gate-matrix.md for:\n- GET /public/accommodations/:id/external-reputation \u2014 public, no auth, no entitlement gate.\n- POST /protected/accommodations/:id/external-reputation/refresh \u2014 ACCOMMODATION_UPDATE_OWN, no billing gate (feature available to all hosts with a listing).\n- GET/POST/PATCH/DELETE /protected/accommodations/:id/external-listings \u2014 ACCOMMODATION_UPDATE_OWN, no billing gate.\n- PATCH /protected/accommodations/:id/external-reputation/master-toggle \u2014 ACCOMMODATION_UPDATE_OWN, no billing gate.\n- POST /admin/accommodations/:id/external-reputation/disable \u2014 ACCOMMODATION_UPDATE_ANY, admin only.\n\nKey files:\n- docs/billing/endpoint-gate-matrix.md (updated)",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-008", "T-009"],
             "blocks": [],
@@ -412,14 +412,14 @@
             "tags": ["docs", "billing"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-18T10:25:00.000Z",
+                "completed": "2026-06-18T10:25:00.000Z"
             }
         },
         {
@@ -590,7 +590,7 @@
             "id": "T-015",
             "title": "Write ADR + update docs (route architecture, legal rationale, smoke checklist)",
             "description": "Documentation tasks:\n\n1. ADR docs/decisions/ADR-036-external-reputation-separate-entity.md (or next available number):\n   - Why external reputation is a separate entity (not extending accommodation_reviews: userId NOT NULL FK, no source/isExternal field, incompatible schema).\n   - Why Google-only for review snippets (official API + display rules vs. ToS/copyright for Booking/Airbnb).\n   - Google TTL + degrade strategy (30-day caching window).\n   - Aggregate-only legal posture for non-Google (factual numbers + link vs. copyrighted review text).\n   - Provider abstraction shared with SPEC-222 (safeExternalFetch, apify-client, adapter pattern).\n   - Stateful-with-cron design (separate from SPEC-222 which is stateless import).\n   - Master toggle as additive column on accommodations (SSR join-free).\n   - Verified flag out of MVP.\n\n2. Update docs/guides/route-architecture.md (or apps/api/docs/route-architecture.md):\n   - Add section for /public/accommodations/:id/external-reputation, /protected/accommodations/:id/external-*, /admin/accommodations/:id/external-reputation/disable.\n\n3. Add a smoke-checklist entry to the relevant checklist doc:\n   - Manual smoke: one Google Places fetch (real API key in staging) returning rating + snippets.\n   - Manual smoke: one Booking/Airbnb aggregate fetch via Apify returning rating + reviewsCount with NO text.\n   - Owner refresh button (rate-limit enforcement on second click within window).\n   - Public detail page shows the external block with attribution.\n\nKey files:\n- docs/decisions/ADR-036-external-reputation-separate-entity.md (new)\n- docs/guides/route-architecture.md or apps/api/docs/route-architecture.md (updated)\n- .qtm/specs/SPEC-143-billing-testing-coverage/docs/staging-smoke-checklist.md or equivalent (updated with external-reputation smoke section)",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-009", "T-011"],
             "blocks": [],
@@ -611,22 +611,22 @@
             "tags": ["docs", "adr"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-18T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-18T10:25:00.000Z",
+                "completed": "2026-06-18T10:25:00.000Z"
             }
         }
     ],
     "summary": {
         "total": 15,
-        "pending": 2,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 13,
+        "completed": 15,
         "blocked": 0,
         "averageComplexity": 2.07
     }
