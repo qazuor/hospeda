@@ -177,6 +177,43 @@ describe('parseAggregateRatingFromPage', () => {
         expect(result).not.toBeNull();
         expect(result!.ratingValue).toBe(4.1);
     });
+
+    it('should parse aggregateRating when the LD+JSON block is a top-level array of nodes', () => {
+        // Exercises lines 97-103 of generic-reputation.adapter.ts:
+        // `searchForAggregateRating` receives an Array → iterates items.
+        const jsonLdArray = [
+            { '@type': 'WebSite', name: 'Some Platform' },
+            {
+                '@type': 'LodgingBusiness',
+                name: 'Generic Hotel',
+                aggregateRating: { ratingValue: 4.6, reviewCount: 310 }
+            }
+        ];
+        const html = `<html><body>
+            <script type="application/ld+json">${JSON.stringify(jsonLdArray)}</script>
+        </body></html>`;
+
+        const result = parseAggregateRatingFromPage(html);
+
+        expect(result).not.toBeNull();
+        expect(result!.ratingValue).toBe(4.6);
+        expect(result!.reviewCount).toBe(310);
+    });
+
+    it('should return null when the LD+JSON array contains no aggregateRating node', () => {
+        // Exercises the Array branch that falls through to `return null` at line 102.
+        const jsonLdArray = [
+            { '@type': 'WebSite', name: 'Some Platform' },
+            { '@type': 'BreadcrumbList', itemListElement: [] }
+        ];
+        const html = `<html><body>
+            <script type="application/ld+json">${JSON.stringify(jsonLdArray)}</script>
+        </body></html>`;
+
+        const result = parseAggregateRatingFromPage(html);
+
+        expect(result).toBeNull();
+    });
 });
 
 // ---------------------------------------------------------------------------
