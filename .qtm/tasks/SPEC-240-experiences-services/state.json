@@ -718,7 +718,7 @@
             "id": "T-023",
             "title": "i18n keys: experience.json for es/en/pt",
             "description": "Add packages/i18n/src/locales/{es,en,pt}/experience.json with meta, index, detail, type (14), priceUnit (4), priceOnRequest, filters, reviews, faq keys per spec. Tests: i18n key-parity test (es/en/pt have identical key sets).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-024", "T-026", "T-027", "T-029"],
@@ -739,21 +739,21 @@
             "tags": ["i18n", "web"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
             }
         },
         {
             "id": "T-024",
             "title": "ExperienceCard.astro + ExperiencePriceTag.astro",
             "description": "Card for index grid + price tag component (priceFrom+unit or 'Consultar'). CSS Modules, design tokens, no Tailwind. Tests: component render test for priceOnRequest vs numeric, type badge, rating display.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-023"],
             "blocks": ["T-025", "T-026"],
@@ -770,21 +770,21 @@
             "tags": ["web", "component"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
             }
         },
         {
             "id": "T-025",
             "title": "ExperienceGrid.astro + ExperienceFilters.client.tsx",
             "description": "Responsive grid wrapper + type/destination filter island (React). Tests: filter island unit test (filter state, URL sync); grid render test.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-024"],
             "blocks": ["T-026"],
@@ -801,21 +801,21 @@
             "tags": ["web", "component"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
             }
         },
         {
             "id": "T-026",
             "title": "/[lang]/experiencias/index.astro (listing page, SSR)",
             "description": "SSR listing page fetching the public list endpoint (paginated, filtered), i18n es/en/pt, empty state. Tests: page integration test (SSR fetch, only active+subscribed shown, filter param passthrough).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-019", "T-025", "T-023"],
             "blocks": ["T-030"],
@@ -832,21 +832,21 @@
             "tags": ["web", "page", "ssr"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
             }
         },
         {
             "id": "T-027",
             "title": "ExperienceHero + ExperienceInfo + ExperienceContactCTA",
             "description": "Detail hero (name/type/pricing), info block (hours/amenities/features/contact), contact CTA (WhatsApp deep link wa.me/<phone>?text= + contact block). CSS Modules. Tests: render tests incl WhatsApp link construction + no-booking assertion.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-023"],
             "blocks": ["T-029"],
@@ -867,21 +867,21 @@
             "tags": ["web", "component"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
             }
         },
         {
             "id": "T-028",
             "title": "ExperienceFaqs.astro + ExperienceReviews.client.tsx",
             "description": "Static SSR FAQ accordion + interactive reviews island (aggregate rating + list + submit, mirrors accommodation reviews UX). Tests: FAQ render test; reviews island unit test (submit sets pending, one-per-user guard surfaced).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-023"],
             "blocks": ["T-029"],
@@ -898,21 +898,21 @@
             "tags": ["web", "component"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
             }
         },
         {
             "id": "T-029",
             "title": "/[lang]/experiencias/[slug].astro (detail page, SSR)",
             "description": "SSR detail page via getBySlug public endpoint, 404 guard for inactive/subscription-off, assembling hero/info/contact/faqs/reviews. Tests: page integration test (404 on subscription-off, full render on active).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-019", "T-027", "T-028"],
             "blocks": ["T-030"],
@@ -929,21 +929,21 @@
             "tags": ["web", "page", "ssr"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
             }
         },
         {
             "id": "T-030",
             "title": "Web component tests",
             "description": "Vitest + testing-library component tests covering cards, filters, price tag, contact CTA, reviews island where applicable. Tests: this task IS the web test layer; assert coverage target on apps/web experience components.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-026", "T-029"],
             "blocks": ["T-039"],
@@ -956,14 +956,14 @@
             "tags": ["web", "testing"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
             }
         },
         {
@@ -1261,9 +1261,9 @@
     ],
     "summary": {
         "total": 40,
-        "pending": 18,
+        "pending": 10,
         "inProgress": 0,
-        "completed": 21,
+        "completed": 29,
         "blocked": 1,
         "averageComplexity": 1.9
     }
