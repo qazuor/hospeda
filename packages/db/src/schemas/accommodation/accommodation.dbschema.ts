@@ -20,6 +20,7 @@ import {
     timestamp,
     uuid
 } from 'drizzle-orm/pg-core';
+import { accommodationExternalListings } from '../accommodation-external/accommodation_external_listings.dbschema.ts';
 import { destinations } from '../destination/destination.dbschema.ts';
 import {
     AccommodationTypePgEnum,
@@ -67,6 +68,13 @@ export const accommodations = pgTable(
         location: jsonb('location').$type<AccommodationLocationType>(),
         media: jsonb('media').$type<Media>(),
         isFeatured: boolean('is_featured').notNull().default(false),
+        /**
+         * SPEC-237: master toggle — when false the public detail page hides all
+         * external reputation blocks (links + review snippets) regardless of
+         * individual listing showLink / showReviews settings. Defaults to false
+         * so that the feature ships dark and the host opts in explicitly.
+         */
+        showExternalReputation: boolean('show_external_reputation').notNull().default(false),
         // Denormalized flag (SPEC-143 #29): true when the owner's subscription is
         // paused WITH service suspension. Public reads filter it out and the
         // accommodation write path rejects edits while true. Canonical source is
@@ -171,5 +179,6 @@ export const accommodationsRelations = relations(accommodations, ({ one, many })
     reviews: many(accommodationReviews),
     faqs: many(accommodationFaqs),
     iaData: many(accommodationIaData),
-    tags: many(rEntityTag)
+    tags: many(rEntityTag),
+    externalListings: many(accommodationExternalListings)
 }));
