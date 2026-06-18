@@ -397,6 +397,8 @@
     "userTags": [],
     "postTagAssignments": [],
     "entityTagAssignments": [],
+    "accommodationExternalListings": [],
+    "accommodationExternalReputation": [],
     "gastronomies": [
         "001-gastronomy-uruguay-la-parrilla-del-puerto.json",
         "002-gastronomy-colon-cafe-del-palacio.json",

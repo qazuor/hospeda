@@ -2,6 +2,8 @@ import { STATUS_ICONS } from '../utils/icons.js';
 import { logger } from '../utils/logger.js';
 import type { SeedContext } from '../utils/seedContext.js';
 import { summaryTracker } from '../utils/summaryTracker.js';
+import { seedAccommodationExternalListings } from './accommodationExternalListings.seed.js';
+import { seedAccommodationExternalReputation } from './accommodationExternalReputation.seed.js';
 import { seedAccommodationReviews } from './accommodationReviews.seed.js';
 import { seedAccommodations } from './accommodations.seed.js';
 import { seedBookmarks } from './bookmarks.seed.js';
@@ -83,6 +85,8 @@ export async function runExampleSeeds(context: SeedContext): Promise<void> {
         await seedPostSponsorships(context);
         await seedDestinationReviews(context);
         await seedAccommodationReviews(context);
+        await seedAccommodationExternalListings();
+        await seedAccommodationExternalReputation();
         await seedHostTrades(context);
         context.actor = oldContextActor;
         await seedGastronomies(context);
