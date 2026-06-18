@@ -168,6 +168,7 @@ export class AccommodationExternalListingService {
                     ...parsed.data,
                     verified: false,
                     createdById: actor.id,
+                    // TYPE-WORKAROUND: BaseModel.create inferred type omits the audit fields.
                     updatedById: actor.id
                 } as unknown as Partial<AccommodationExternalListing>,
                 ctx?.tx
@@ -263,6 +264,8 @@ export class AccommodationExternalListingService {
 
             const updated = await this.listingModel.update(
                 { id },
+                // TYPE-WORKAROUND: BaseModel.update's inferred update-input type omits the
+                // audit field `updatedById`, so the merged payload needs a cast.
                 {
                     ...parsed.data,
                     updatedById: actor.id
@@ -387,6 +390,9 @@ export class AccommodationExternalListingService {
             );
             assertCanUpdateAccommodation(actor, ownerId);
 
+            // TYPE-WORKAROUND: the additive `showExternalReputation` column and the audit
+            // field `updatedById` are not surfaced by the accommodation model's inferred
+            // update-input type, so the master-toggle payload needs a cast.
             await this.accommodationModel.update(
                 { id: accommodationId },
                 { showExternalReputation: value, updatedById: actor.id } as unknown as Parameters<

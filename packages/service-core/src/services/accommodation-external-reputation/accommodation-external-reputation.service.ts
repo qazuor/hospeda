@@ -502,6 +502,7 @@ export class AccommodationExternalReputationService {
                         {
                             showLink: false,
                             showReviews: false,
+                            // TYPE-WORKAROUND: BaseModel.update inferred type omits the updatedById audit field.
                             updatedById: actor.id
                         } as unknown as Partial<AccommodationExternalListing>,
                         tx
