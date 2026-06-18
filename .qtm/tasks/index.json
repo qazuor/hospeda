@@ -30,9 +30,12 @@
         {
             "specId": "SPEC-240",
             "title": "Experiencias y Servicios (tourism services & experiences)",
-            "status": "draft",
-            "progress": "0/0",
-            "path": "SPEC-240-experiences-services"
+            "status": "completed",
+            "progress": "40/40",
+            "path": "SPEC-240-experiences-services",
+            "archived": true,
+            "archivedAt": "2026-06-18T00:00:00.000Z",
+            "archiveNote": "SPEC-240 Experiencias shipped via PR #1722 (merge d4e523a77)."
         },
         {
             "specId": "SPEC-241",

@@ -19,7 +19,7 @@
 
 import { PermissionEnum, StartPaidSubscriptionResponseSchema } from '@repo/schemas';
 import type { StartPaidSubscriptionResponse } from '@repo/schemas';
-import { GastronomyService } from '@repo/service-core';
+import { ExperienceService, GastronomyService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
@@ -34,11 +34,11 @@ import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
 
 /**
- * Supported commerce entity types. Today only gastronomy is wired; the enum is
- * the single sanctioned set so an unknown entityType is rejected at the schema
- * boundary (400) rather than reaching the service.
+ * Supported commerce entity types. `gastronomy` and `experience` are both wired;
+ * the enum is the single sanctioned set so an unknown entityType is rejected at
+ * the schema boundary (400) rather than reaching the service.
  */
-const CommerceEntityTypeSchema = z.enum(['gastronomy']);
+const CommerceEntityTypeSchema = z.enum(['gastronomy', 'experience']);
 type CommerceEntityType = z.infer<typeof CommerceEntityTypeSchema>;
 
 /** Path params for the start-subscription endpoint. */
@@ -48,6 +48,7 @@ const StartSubscriptionParamsSchema = {
 };
 
 const gastronomyService = new GastronomyService({ logger: apiLogger });
+const experienceService = new ExperienceService({ logger: apiLogger });
 
 /**
  * Webhook destination for the MP preapproval. Mirrors the accommodation flow.
@@ -82,6 +83,23 @@ async function resolveListingOwnerId(
 
     if (entityType === 'gastronomy') {
         const result = await gastronomyService.getById(actor, entityId);
+        if (result.error) {
+            throw new HTTPException(404, {
+                message: `Commerce listing not found: ${entityType}/${entityId}`
+            });
+        }
+        const ownerId = (result.data as { ownerId?: string } | null)?.ownerId;
+        if (!ownerId) {
+            throw new HTTPException(422, {
+                message:
+                    'Commerce listing has no owner assigned. Assign an owner before starting a subscription.'
+            });
+        }
+        return ownerId;
+    }
+
+    if (entityType === 'experience') {
+        const result = await experienceService.getById(actor, entityId);
         if (result.error) {
             throw new HTTPException(404, {
                 message: `Commerce listing not found: ${entityType}/${entityId}`

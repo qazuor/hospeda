@@ -171,6 +171,11 @@ export type OpeningHours = z.infer<typeof OpeningHoursSchema>;
  * ```
  */
 export const OpeningHoursFields = {
-    /** Weekly operating hours for this commerce listing. */
-    openingHours: OpeningHoursSchema.optional()
+    /**
+     * Weekly operating hours for this commerce listing.
+     * Uses `.nullish()` (not just `.optional()`) because Drizzle/pg returns
+     * `null` for unset JSONB columns — Zod `.optional()` only accepts `undefined`.
+     * SPEC-240: discovered via smoke test (T-039) when public endpoint returned 500.
+     */
+    openingHours: OpeningHoursSchema.nullish()
 } as const;

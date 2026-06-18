@@ -149,6 +149,53 @@ class GastronomyMockModel extends GenericMockModel {
     }
 }
 
+/**
+ * Column map for the `experiences` table (SPEC-240), mirroring GASTRONOMY_TABLE_COLUMNS
+ * with experience-specific additions. Needed so ExperienceService admin list/sort
+ * validation runs faithfully against the mocked DB.
+ */
+const EXPERIENCE_TABLE_COLUMNS = {
+    id: 'id',
+    slug: 'slug',
+    name: 'name',
+    summary: 'summary',
+    description: 'description',
+    richDescription: 'rich_description',
+    type: 'type',
+    priceFrom: 'price_from',
+    priceUnit: 'price_unit',
+    isPriceOnRequest: 'is_price_on_request',
+    ownerId: 'owner_id',
+    destinationId: 'destination_id',
+    visibility: 'visibility',
+    lifecycleState: 'lifecycle_state',
+    moderationState: 'moderation_state',
+    isFeatured: 'is_featured',
+    hasActiveSubscription: 'has_active_subscription',
+    reviewsCount: 'reviews_count',
+    averageRating: 'average_rating',
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+    createdById: 'created_by_id',
+    updatedById: 'updated_by_id',
+    deletedAt: 'deleted_at',
+    deletedById: 'deleted_by_id'
+} as const;
+
+/**
+ * Experience model stub (SPEC-240). Mirrors GastronomyMockModel so that
+ * ExperienceService admin list/options/sort validation runs faithfully against
+ * the mocked DB. Registered in createDbMock() as `experienceModel`.
+ */
+class ExperienceMockModel extends GenericMockModel {
+    override getTable() {
+        return EXPERIENCE_TABLE_COLUMNS;
+    }
+    override getTableName() {
+        return 'experiences';
+    }
+}
+
 export function createDbMock() {
     return {
         // Database client
@@ -727,6 +774,22 @@ export function createDbMock() {
         // CommerceLeadService when the commerce lead routes load. The GenericMockModel
         // no-op stub is sufficient for route-level permission-gate tests (no real DB
         // data needed; the service layer is exercised via mock actor headers).
-        CommerceLeadModel: GenericMockModel
+        CommerceLeadModel: GenericMockModel,
+
+        // SPEC-240: Experience singleton model instances. ExperienceService,
+        // ExperienceReviewService, and the standalone FAQ helpers access these at module
+        // scope (via service constructor or direct import). They are exported as singleton
+        // instances (not classes) in @repo/db — mirror that here so initApp() can
+        // construct all experience routes without a real DB.
+        experienceModel: new ExperienceMockModel(),
+        experienceReviewModel: new GenericMockModel(),
+        rExperienceAmenityModel: new GenericMockModel(),
+        rExperienceFeatureModel: new GenericMockModel(),
+
+        // ExperienceFaqModel is also exported as a class (used by experience.faq.ts
+        // helpers which accept an ExperienceModel instance and internally call a new
+        // ExperienceFaqModel for FAQ CRUD). Expose both the class and singleton.
+        ExperienceFaqModel: GenericMockModel,
+        experienceFaqModel: new GenericMockModel()
     };
 }

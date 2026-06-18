@@ -100,6 +100,35 @@
             "singular": "Gastronomia",
             "plural": "Gastronomias",
             "description": "Gerencie restaurantes, bares, cafés e outros estabelecimentos de alimentação"
+        },
+        "experience": {
+            "singular": "Experiência",
+            "plural": "Experiências",
+            "description": "Gerencie atividades turísticas, excursões e aluguéis de equipamentos"
+        }
+    },
+    "experience": {
+        "tabs": {
+            "general": "Geral",
+            "faqs": "Perguntas Frequentes",
+            "reviews": "Avaliações"
+        },
+        "reviews": {
+            "noPending": "Nenhuma avaliação pendente de moderação",
+            "anonymous": "Anônimo",
+            "approve": "Aprovar",
+            "reject": "Rejeitar"
+        },
+        "assignOwner": {
+            "title": "Atribuir proprietário",
+            "button": "Atribuir"
+        },
+        "create": {
+            "title": "Nova Experiência",
+            "successTitle": "Experiência criada",
+            "successMessage": "A experiência foi criada com sucesso",
+            "errorTitle": "Erro ao criar",
+            "errorMessage": "Não foi possível criar a experiência. Tente novamente."
         }
     },
     "gastronomy": {

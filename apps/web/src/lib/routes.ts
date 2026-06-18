@@ -34,7 +34,9 @@ export const SESSION_OPTIONAL_SEGMENTS = [
     'guest',
     'publicar',
     // Gastronomy public listing + detail (SPEC-239)
-    'gastronomia'
+    'gastronomia',
+    // Experiences & services public listing + detail (SPEC-240)
+    'experiencias'
 ] as const;
 
 /**

@@ -84,7 +84,9 @@ export const namespaces = [
     // Commerce shared (lead form, change-password, visibility — SPEC-239)
     'commerce',
     // External reputation from third-party platforms (SPEC-237)
-    'external-reputation'
+    'external-reputation',
+    // Experiences & Services commerce listings (SPEC-240)
+    'experience'
 ] as const;
 
 export type Namespace = (typeof namespaces)[number];
@@ -163,6 +165,7 @@ import destinationEs from './locales/es/destination.json';
 import errorEs from './locales/es/error.json';
 import eventEs from './locales/es/event.json';
 import exchangeRateEs from './locales/es/exchange-rate.json';
+import experienceEs from './locales/es/experience.json';
 import externalReputationEs from './locales/es/external-reputation.json';
 import faqEs from './locales/es/faq.json';
 import fieldsEs from './locales/es/fields.json';
@@ -221,6 +224,7 @@ import destinationEn from './locales/en/destination.json';
 import errorEn from './locales/en/error.json';
 import eventEn from './locales/en/event.json';
 import exchangeRateEn from './locales/en/exchange-rate.json';
+import experienceEn from './locales/en/experience.json';
 import externalReputationEn from './locales/en/external-reputation.json';
 import faqEn from './locales/en/faq.json';
 import fieldsEn from './locales/en/fields.json';
@@ -279,6 +283,7 @@ import destinationPt from './locales/pt/destination.json';
 import errorPt from './locales/pt/error.json';
 import eventPt from './locales/pt/event.json';
 import exchangeRatePt from './locales/pt/exchange-rate.json';
+import experiencePt from './locales/pt/experience.json';
 import externalReputationPt from './locales/pt/external-reputation.json';
 import faqPt from './locales/pt/faq.json';
 import fieldsPt from './locales/pt/fields.json';
@@ -363,7 +368,8 @@ const rawTranslations = {
         'admin-whats-new': adminWhatsNewEs,
         mobile: mobileEs,
         gastronomy: gastronomyEs,
-        commerce: commerceEs
+        commerce: commerceEs,
+        experience: experienceEs
     },
     en: {
         about: aboutEn,
@@ -421,7 +427,8 @@ const rawTranslations = {
         'admin-whats-new': adminWhatsNewEn,
         mobile: mobileEn,
         gastronomy: gastronomyEn,
-        commerce: commerceEn
+        commerce: commerceEn,
+        experience: experienceEn
     },
     pt: {
         about: aboutPt,
@@ -479,7 +486,8 @@ const rawTranslations = {
         'admin-whats-new': adminWhatsNewPt,
         mobile: mobilePt,
         gastronomy: gastronomyPt,
-        commerce: commercePt
+        commerce: commercePt,
+        experience: experiencePt
     }
 };
 

@@ -1,0 +1,137 @@
+---
+/**
+ * @file ExperienceFaqs.astro
+ * @description Static SSR FAQ accordion for experience detail pages (SPEC-240 T-028).
+ * Uses native `<details>/<summary>` elements — zero JavaScript.
+ * Groups FAQs by category. Mirrors the FaqAccordion pattern from accommodation.
+ *
+ * Renders nothing when `faqs` is empty (early return).
+ *
+ * Hydration: none — fully static Astro component.
+ */
+
+import type { DetailFaq } from '@/data/types';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+    readonly faqs: readonly DetailFaq[];
+    readonly locale: SupportedLocale;
+}
+
+const { faqs, locale } = Astro.props;
+const { t } = createTranslations(locale);
+
+if (faqs.length === 0) return;
+
+// Group by category. Null category → "General", placed last.
+const generalLabel = 'General';
+const groups = new Map<string, DetailFaq[]>();
+
+for (const faq of faqs) {
+    const cat = faq.category ?? generalLabel;
+    const arr = groups.get(cat) ?? [];
+    arr.push(faq);
+    groups.set(cat, arr);
+}
+
+// Move "General" to the end
+const sortedGroups = [...groups.entries()].sort((a, b) => {
+    if (a[0] === generalLabel) return 1;
+    if (b[0] === generalLabel) return -1;
+    return a[0].localeCompare(b[0]);
+});
+---
+
+<section class="exp-faqs">
+    <h2 class="exp-faqs__title">{t('experience.faq.heading', 'Preguntas frecuentes')}</h2>
+
+    {sortedGroups.map(([category, items]) => (
+        <div class="exp-faqs__group">
+            {sortedGroups.length > 1 && (
+                <h3 class="exp-faqs__group-heading">{category}</h3>
+            )}
+            {items.map((faq) => (
+                <details class="exp-faqs__item">
+                    <summary class="exp-faqs__question">{faq.question}</summary>
+                    <p class="exp-faqs__answer">{faq.answer}</p>
+                </details>
+            ))}
+        </div>
+    ))}
+</section>
+
+<style>
+    .exp-faqs {
+        margin-bottom: var(--space-6, 24px);
+    }
+
+    .exp-faqs__title {
+        font-family: var(--font-heading);
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--core-foreground);
+        margin-bottom: var(--space-4, 16px);
+    }
+
+    .exp-faqs__group {
+        margin-bottom: var(--space-4, 16px);
+    }
+
+    .exp-faqs__group-heading {
+        font-family: var(--font-heading);
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--core-muted-foreground);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: var(--space-2, 8px);
+    }
+
+    .exp-faqs__item {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md, 12px);
+        margin-bottom: var(--space-2, 8px);
+        background-color: var(--core-card);
+        overflow: hidden;
+    }
+
+    .exp-faqs__question {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: var(--space-4, 16px) var(--space-5, 20px);
+        font-family: var(--font-sans);
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--core-foreground);
+        cursor: pointer;
+        list-style: none;
+    }
+
+    .exp-faqs__question::-webkit-details-marker {
+        display: none;
+    }
+
+    .exp-faqs__question::after {
+        content: '+';
+        font-size: 1.2rem;
+        color: var(--brand-primary);
+        flex-shrink: 0;
+        margin-left: var(--space-3, 12px);
+        transition: transform 200ms ease-out;
+    }
+
+    .exp-faqs__item[open] .exp-faqs__question::after {
+        transform: rotate(45deg);
+    }
+
+    .exp-faqs__answer {
+        padding: 0 var(--space-5, 20px) var(--space-4, 16px);
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        line-height: 1.6;
+        color: var(--core-muted-foreground);
+        margin: 0;
+    }
+</style>

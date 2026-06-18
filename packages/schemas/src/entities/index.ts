@@ -2,6 +2,7 @@
 export * from './accommodation/index.js';
 export * from './accommodation-external/index.js';
 export * from './gastronomy/index.js';
+export * from './experience/index.js';
 export * from './commerce-lead/index.js';
 export * from './ai/index.js';
 export * from './appLogEntry/index.js';

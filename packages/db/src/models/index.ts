@@ -7,6 +7,7 @@ export * from './content-moderation/index.ts';
 export * from './billing/index.ts';
 export * from './cron/index.ts';
 export * from './destination/index.ts';
+export * from './experience/index.ts';
 export * from './gastronomy/index.ts';
 export * from './entity-comment/index.ts';
 export * from './entity-view/index.ts';

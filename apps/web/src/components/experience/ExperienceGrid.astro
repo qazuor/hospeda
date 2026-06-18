@@ -1,0 +1,30 @@
+---
+/**
+ * @file ExperienceGrid.astro
+ * @description Responsive grid wrapper for experience listing cards (SPEC-240 T-025).
+ * Accepts a slot so the parent page can inject ExperienceCard children.
+ *
+ * Mirrors the inline `.gastro-grid` grid used in the gastronomia index page,
+ * extracted into its own component so tests can target it and the page stays lean.
+ *
+ * Hydration: none — fully static Astro component.
+ */
+---
+
+<div class="exp-grid">
+    <slot />
+</div>
+
+<style>
+    .exp-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: var(--space-card-gap);
+    }
+
+    @media (max-width: 480px) {
+        .exp-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
