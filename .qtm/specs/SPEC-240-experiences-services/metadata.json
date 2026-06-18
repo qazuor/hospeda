@@ -3,10 +3,10 @@
     "title": "Experiencias y Servicios (tourism services & experiences)",
     "type": "feature",
     "complexity": "medium",
-    "status": "in-progress",
+    "status": "completed",
     "created": "2026-06-15T00:00:00Z",
     "approved": "2026-06-17T00:00:00.000Z",
-    "completed": null,
+    "completed": "2026-06-18T00:00:00.000Z",
     "planFileRef": null,
     "dependsOn": ["SPEC-239"],
     "tags": ["experiences", "services", "commerce", "subscription", "tourism", "web", "public"]

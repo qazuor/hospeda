@@ -18,13 +18,15 @@
             "title": "Experiencias y Servicios (tourism services & experiences)",
             "type": "feature",
             "complexity": "medium",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-240-experiences-services",
             "created": "2026-06-15T00:00:00.000Z",
             "base": "staging",
             "origin": "Design session 'panel 1.1' (2026-06-15): reuses the SPEC-239 commerce core",
             "dependsOn": ["SPEC-239"],
-            "tags": ["experiences", "services", "commerce", "subscription", "web", "admin"]
+            "tags": ["experiences", "services", "commerce", "subscription", "web", "admin"],
+            "archived": true,
+            "archivedAt": "2026-06-18T00:00:00.000Z"
         },
         {
             "specId": "SPEC-241",
