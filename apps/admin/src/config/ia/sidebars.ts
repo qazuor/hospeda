@@ -201,6 +201,38 @@ const catalogoSidebar: SidebarInput = {
                 }
             ]
         },
+        { type: 'separator', id: 'sep-experiencias' },
+        // ── Experiencias (SPEC-240) ────────────────────────────────────────
+        {
+            type: 'group',
+            id: 'experiencias',
+            label: { es: 'Experiencias', en: 'Experiences', pt: 'Experiências' },
+            icon: 'OffersIcon',
+            defaultOpen: false,
+            permissions: ['COMMERCE_VIEW_ALL', 'COMMERCE_CREATE'],
+            items: [
+                {
+                    type: 'link',
+                    id: 'experience-list',
+                    label: { es: 'Listado', en: 'List', pt: 'Lista' },
+                    icon: 'ListIcon',
+                    route: '/experiences',
+                    permissions: ['COMMERCE_VIEW_ALL']
+                },
+                {
+                    type: 'link',
+                    id: 'experience-new',
+                    label: {
+                        es: 'Nueva experiencia',
+                        en: 'New experience',
+                        pt: 'Nova experiência'
+                    },
+                    icon: 'AddIcon',
+                    route: '/experiences/new',
+                    permissions: ['COMMERCE_CREATE']
+                }
+            ]
+        },
         { type: 'separator', id: 'sep-commerce-leads' },
         // ── Leads de comercios (SPEC-239) ─────────────────────────────────
         {
