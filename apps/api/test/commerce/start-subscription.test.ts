@@ -67,8 +67,21 @@ describe('POST /api/v1/admin/commerce/listings/:entityType/:entityId/start-subsc
             `/api/v1/admin/commerce/listings/unknown/${MOCK_ENTITY_ID}/start-subscription`,
             { method: 'POST', headers: headersWithEditAll }
         );
-        // z.enum(['gastronomy']) rejects 'unknown' → 400 (or 404 no-match), never 200.
+        // z.enum(['gastronomy', 'experience']) rejects 'unknown' → 400 (or 404 no-match), never 200.
         expect(res.status).not.toBe(200);
         expect(res.status).not.toBe(201);
+    });
+
+    // H-1 regression: experience arm is wired and accepted by the schema enum.
+    it('passes the gate for entityType=experience with COMMERCE_EDIT_ALL (H-1 regression)', async () => {
+        const res = await app.request(
+            `/api/v1/admin/commerce/listings/experience/${MOCK_ENTITY_ID}/start-subscription`,
+            { method: 'POST', headers: headersWithEditAll }
+        );
+        // Gate passes (not 403); downstream errors (503 billing unconfigured or
+        // 404 listing not found) are acceptable — the key assertion is the route
+        // accepts 'experience' as a valid entityType.
+        expect(res.status).not.toBe(403);
+        expect(res.status).not.toBe(404);
     });
 });

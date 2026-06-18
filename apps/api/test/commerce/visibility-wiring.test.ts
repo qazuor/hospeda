@@ -51,6 +51,15 @@ vi.mock('@repo/db', () => ({
             if (cur) entityStore.set(where.id, { ...cur, ...data });
             return Promise.resolve(undefined);
         }
+    },
+    // Real-shaped fake model for experience — mirrors the gastronomy stub above.
+    experienceModel: {
+        findById: (id: string) => Promise.resolve(entityStore.get(id) ?? null),
+        update: (where: { id: string }, data: { visibility?: string; lifecycleState?: string }) => {
+            const cur = entityStore.get(where.id);
+            if (cur) entityStore.set(where.id, { ...cur, ...data });
+            return Promise.resolve(undefined);
+        }
     }
 }));
 
@@ -135,5 +144,61 @@ describe('reconcileCommerceListingForSubscription (SPEC-239 T-050)', () => {
                 source: 'mp-webhook'
             })
         ).resolves.toBeUndefined();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// H-1 regression: experience entity arm is wired in resolveCommerceEntityModel
+// ---------------------------------------------------------------------------
+
+describe('reconcileCommerceListingForSubscription — experience entity (H-1 regression)', () => {
+    beforeEach(() => {
+        linkRows.length = 0;
+        entityStore.clear();
+        dbSelect.mockClear();
+        dbUpdate.mockClear();
+        updateSet.mockClear();
+    });
+
+    it('flips a linked experience listing PUBLIC + ACTIVE on an active subscription', async () => {
+        linkRows.push({ entityType: 'experience', entityId: ENTITY_ID });
+        entityStore.set(ENTITY_ID, {
+            id: ENTITY_ID,
+            visibility: 'PRIVATE',
+            lifecycleState: 'INACTIVE'
+        });
+
+        await reconcileCommerceListingForSubscription({
+            subscriptionId: SUB_ID,
+            subscriptionStatus: 'active',
+            source: 'mp-webhook'
+        });
+
+        expect(entityStore.get(ENTITY_ID)).toEqual({
+            id: ENTITY_ID,
+            visibility: 'PUBLIC',
+            lifecycleState: 'ACTIVE'
+        });
+    });
+
+    it('hides a linked experience listing PRIVATE + INACTIVE on a cancelled subscription', async () => {
+        linkRows.push({ entityType: 'experience', entityId: ENTITY_ID });
+        entityStore.set(ENTITY_ID, {
+            id: ENTITY_ID,
+            visibility: 'PUBLIC',
+            lifecycleState: 'ACTIVE'
+        });
+
+        await reconcileCommerceListingForSubscription({
+            subscriptionId: SUB_ID,
+            subscriptionStatus: 'cancelled',
+            source: 'dunning-cron'
+        });
+
+        expect(entityStore.get(ENTITY_ID)).toEqual({
+            id: ENTITY_ID,
+            visibility: 'PRIVATE',
+            lifecycleState: 'INACTIVE'
+        });
     });
 });
