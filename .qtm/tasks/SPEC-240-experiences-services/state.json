@@ -970,7 +970,7 @@
             "id": "T-031",
             "title": "Admin experience list page",
             "description": "apps/admin .../experiencias/index.tsx with filters + pagination, TanStack Query + Table, Tailwind v4. Tests: route render + query wiring test.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-021"],
             "blocks": ["T-039"],
@@ -983,21 +983,21 @@
             "tags": ["admin", "page"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
             }
         },
         {
             "id": "T-032",
             "title": "Admin experience create/edit form (all fields + subscription toggle)",
             "description": "new.tsx + $id.edit.tsx with TanStack Form + Zod safeParse, all admin fields incl COMMERCE_OWNER assignment + subscription toggle. Tests: form validation test, owner-assignment, toggle wiring.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-021"],
             "blocks": ["T-039"],
@@ -1018,21 +1018,21 @@
             "tags": ["admin", "form"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
             }
         },
         {
             "id": "T-033",
             "title": "Admin experience detail / view page",
             "description": "$id.tsx view page showing all fields + subscription state + relations summary. Tests: render test.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-021"],
             "blocks": ["T-039"],
@@ -1045,21 +1045,21 @@
             "tags": ["admin", "page"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
             }
         },
         {
             "id": "T-034",
             "title": "Admin FAQ management section (reuse FaqManager from SPEC-177)",
             "description": "$id.faqs.tsx reusing the generic FaqManager (dnd reorder, per-item CRUD, category datalist) from SPEC-177 if available. Tests: reorder + CRUD interaction test.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-021"],
             "blocks": ["T-039"],
@@ -1072,21 +1072,21 @@
             "tags": ["admin", "form"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
             }
         },
         {
             "id": "T-035",
             "title": "Admin review moderation list (approve/reject)",
             "description": "$id.reviews.tsx review moderation list with approve/reject actions. Tests: moderation action wiring test.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-021"],
             "blocks": ["T-039"],
@@ -1099,21 +1099,21 @@
             "tags": ["admin", "page"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
             }
         },
         {
             "id": "T-036",
             "title": "Owner-scoped edit form (protected, operational fields only)",
             "description": "Owner-facing edit surface (admin panel protected section per default micro-decision #6) exposing only operational fields; warns when hasActiveSubscription=false. Tests: field-restriction test (admin-only fields absent), hidden-warning test.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-021", "T-032"],
             "blocks": ["T-039"],
@@ -1130,14 +1130,14 @@
             "tags": ["admin", "form", "security"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
             }
         },
         {
@@ -1261,9 +1261,9 @@
     ],
     "summary": {
         "total": 40,
-        "pending": 10,
+        "pending": 4,
         "inProgress": 0,
-        "completed": 29,
+        "completed": 35,
         "blocked": 1,
         "averageComplexity": 1.9
     }
