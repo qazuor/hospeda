@@ -40,6 +40,7 @@ export * from './userBookmarkCollection/userBookmarkCollection.service';
 export * from './billing';
 export * from './commerce';
 export * from './gastronomy';
+export * from './experience';
 export * from './moderation';
 
 // HookState types for service consumers
@@ -55,3 +56,4 @@ export type { DestinationReviewHookState } from './destinationReview/destination
 export type { EventHookState } from './event/event.types';
 export type { PostHookState } from './post/post.types';
 export type { CommerceListingHookState } from './commerce/commerce.types';
+export type { ExperienceHookState } from './experience/experience.types';
