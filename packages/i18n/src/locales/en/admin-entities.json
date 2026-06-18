@@ -100,6 +100,35 @@
             "singular": "Gastronomy",
             "plural": "Gastronomies",
             "description": "Manage restaurants, bars, cafes and other food and beverage venues"
+        },
+        "experience": {
+            "singular": "Experience",
+            "plural": "Experiences",
+            "description": "Manage tourism activities, excursions and equipment rentals"
+        }
+    },
+    "experience": {
+        "tabs": {
+            "general": "General",
+            "faqs": "FAQs",
+            "reviews": "Reviews"
+        },
+        "reviews": {
+            "noPending": "No reviews pending moderation",
+            "anonymous": "Anonymous",
+            "approve": "Approve",
+            "reject": "Reject"
+        },
+        "assignOwner": {
+            "title": "Assign owner",
+            "button": "Assign"
+        },
+        "create": {
+            "title": "New Experience",
+            "successTitle": "Experience created",
+            "successMessage": "The experience was created successfully",
+            "errorTitle": "Error creating",
+            "errorMessage": "We could not create the experience. Please try again."
         }
     },
     "gastronomy": {
