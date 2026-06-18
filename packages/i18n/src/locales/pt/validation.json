@@ -308,6 +308,14 @@
                 "ownerId": {
                     "uuid": "[PT] El ID del propietario debe ser un UUID válido"
                 }
+            },
+            "experience": {
+                "destinationId": {
+                    "uuid": "[PT] El destination id debe ser un UUID válido"
+                },
+                "ownerId": {
+                    "uuid": "[PT] El ID del propietario debe ser un UUID válido"
+                }
             }
         }
     },
@@ -1742,6 +1750,12 @@
         },
         "hostTradeCategory": {
             "invalid": "[PT] La categoría de oficio seleccionada no es válida"
+        },
+        "experienceType": {
+            "invalid": "[PT] El tipo de experiencia no es válido"
+        },
+        "experiencePriceUnit": {
+            "invalid": "[PT] La unidad de precio de la experiencia no es válida"
         }
     },
     "event": {
@@ -3605,6 +3619,53 @@
         }
     },
     "gastronomyFeature": {
+        "comments": {
+            "max": "[PT] El comments no puede superar los {{max}} caracteres",
+            "min": "[PT] El comments debe tener al menos {{min}} caracteres"
+        },
+        "hostReWriteName": {
+            "max": "[PT] El host re write name no puede superar los {{max}} caracteres",
+            "min": "[PT] El host re write name debe tener al menos {{min}} caracteres"
+        }
+    },
+    "experience": {
+        "amenityIds": {
+            "invalidUuid": "[PT] El ID de servicio debe ser un UUID válido"
+        },
+        "delete": {
+            "deletedAt": {
+                "invalidType": "[PT] La fecha de eliminación debe ser una fecha válida"
+            },
+            "force": {
+                "invalidType": "[PT] El valor de forzar debe ser un booleano"
+            },
+            "success": {
+                "required": "[PT] El resultado exitoso es obligatorio"
+            }
+        },
+        "featureIds": {
+            "invalidUuid": "[PT] El ID de característica debe ser un UUID válido"
+        },
+        "priceFrom": {
+            "nonnegative": "[PT] El precio debe ser mayor o igual a 0"
+        },
+        "review": {
+            "content": {
+                "max": "[PT] El contenido de la reseña no puede superar los {{max}} caracteres",
+                "min": "[PT] El contenido de la reseña debe tener al menos {{min}} caracteres"
+            },
+            "overallRating": {
+                "max": "[PT] La calificación general no puede superar {{max}}",
+                "min": "[PT] La calificación general debe ser al menos {{min}}",
+                "required": "[PT] La calificación general es obligatoria"
+            },
+            "title": {
+                "max": "[PT] El título de la reseña no puede superar los {{max}} caracteres",
+                "min": "[PT] El título de la reseña debe tener al menos {{min}} caracteres"
+            }
+        }
+    },
+    "experienceFeature": {
         "comments": {
             "max": "[PT] El comments no puede superar los {{max}} caracteres",
             "min": "[PT] El comments debe tener al menos {{min}} caracteres"
