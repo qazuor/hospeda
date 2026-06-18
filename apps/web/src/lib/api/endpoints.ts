@@ -11,6 +11,7 @@ import type {
     DestinationPublic,
     EventPublic,
     EventSummary,
+    ExternalReputationBlock,
     FeaturePublic,
     GastronomyPublic,
     PostListItem,
@@ -281,6 +282,28 @@ export const accommodationsApi = {
             path: `${BASE}/accommodations/${id}/reviews`,
             params: { page, pageSize }
         });
+    },
+
+    /**
+     * Get the external reputation block for an accommodation.
+     *
+     * Hits GET /api/v1/public/accommodations/:id/external-reputation.
+     * Returns a validated {@link ExternalReputationBlock} with per-platform
+     * items (links, aggregate rating, Google snippets when TTL valid).
+     * Gracefully returns an empty block on non-2xx responses.
+     *
+     * @param params - Accommodation ID
+     * @returns External reputation block
+     *
+     * @example
+     * ```ts
+     * const result = await accommodationsApi.getExternalReputation({ id: 'acc-uuid' });
+     * ```
+     */
+    getExternalReputation({
+        id
+    }: { readonly id: string }): Promise<ApiResult<ExternalReputationBlock>> {
+        return apiClient.get({ path: `${BASE}/accommodations/${id}/external-reputation` });
     }
 };
 

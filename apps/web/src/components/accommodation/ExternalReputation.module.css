@@ -1,0 +1,165 @@
+/* ExternalReputation.module.css
+ * Styles for the "Reputación en otras plataformas" section on the
+ * accommodation detail page.
+ * Uses design tokens only — no Tailwind utility classes (web-app convention).
+ */
+
+.section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6, 24px);
+}
+
+.title {
+    font-family: var(--font-heading);
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--core-foreground);
+    margin: 0;
+}
+
+.subtitle {
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    color: var(--core-muted-foreground);
+    margin: 0;
+    margin-top: calc(-1 * var(--space-4, 16px));
+}
+
+/* Grid of platform cards */
+.platforms {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4, 16px);
+}
+
+/* Individual platform card */
+.platformCard {
+    padding: var(--space-5, 20px);
+    border: 1px solid var(--border, oklch(0.9 0 0));
+    border-radius: var(--radius-button, 8px);
+    background-color: var(--card);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4, 16px);
+}
+
+/* Platform header */
+.platformHeader {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 8px);
+}
+
+.platformName {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--core-foreground);
+}
+
+/* Aggregate badge */
+.aggregateBadge {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-3, 12px);
+}
+
+.ratingBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1, 4px);
+    background-color: var(--surface-warm, var(--muted));
+    border-radius: var(--radius-button, 8px);
+    padding: var(--space-1, 4px) var(--space-2, 8px);
+}
+
+.ratingValue {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 1rem;
+    color: var(--core-foreground);
+    font-variant-numeric: tabular-nums;
+}
+
+.ratingLabel {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    color: var(--core-muted-foreground);
+}
+
+.reviewCount {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+}
+
+/* AC-4.5: source attribution label */
+.sourceAttribution {
+    font-family: var(--font-sans);
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--core-muted-foreground);
+    margin-left: auto;
+}
+
+.noData {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+    font-style: italic;
+    margin: 0;
+}
+
+/* Deep link CTA */
+.deepLink {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1, 4px);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--brand-primary);
+    text-decoration: none;
+    transition: color 0.2s ease, text-decoration 0.2s ease;
+    align-self: flex-start;
+}
+
+.deepLink:hover {
+    text-decoration: underline;
+    color: var(--brand-primary-hover, var(--brand-primary));
+}
+
+/* TTL expired subtle note */
+.ttlNote {
+    font-family: var(--font-sans);
+    font-size: 0.8rem;
+    color: var(--core-muted-foreground);
+    font-style: italic;
+    margin: 0;
+    padding: var(--space-2, 8px) var(--space-3, 12px);
+    border-left: 3px solid var(--border, oklch(0.9 0 0));
+}
+
+/* AC-5.1: "why only Google" explainer — always rendered */
+.googleOnlyNote {
+    font-family: var(--font-sans);
+    font-size: 0.8rem;
+    color: var(--core-muted-foreground);
+    font-style: italic;
+    margin: 0;
+    padding: var(--space-3, 12px) var(--space-4, 16px);
+    border-left: 3px solid var(--border, oklch(0.9 0 0));
+    border-radius: 0 var(--radius-button, 8px) var(--radius-button, 8px) 0;
+    background-color: var(--muted, oklch(0.97 0 0 / 0.5));
+}
+
+@media (min-width: 640px) {
+    .platforms {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: var(--space-4, 16px);
+    }
+}

@@ -21,6 +21,7 @@ import { renderPlain } from '@/lib/render-plain';
 import AmenitiesGrid from '@/components/accommodation/AmenitiesGrid.astro';
 import FeaturesGrid from '@/components/accommodation/FeaturesGrid.astro';
 import ReviewPreview from '@/components/accommodation/ReviewPreview.astro';
+import ExternalReputation from '@/components/accommodation/ExternalReputation.astro';
 import { ReviewsModal } from '@/components/accommodation/ReviewsModal.client';
 import { ReviewSidebarCard } from '@/components/accommodation/ReviewSidebarCard.client';
 import FaqAccordion from '@/components/accommodation/FaqAccordion.astro';
@@ -140,13 +141,14 @@ const accommodationDeletedAt = rawAccommodation.deletedAt
     : null;
 
 // --- Parallel secondary fetches with graceful degradation ---
-const [similarResult, ownerPropsResult, postsResult, eventsResult, reviewsResult] =
+const [similarResult, ownerPropsResult, postsResult, eventsResult, reviewsResult, externalReputationResult] =
     await Promise.allSettled([
         accommodationsApi.getSimilar({ id: accommodation.id, limit: 6 }),
         accommodationsApi.listByOwner({ userId: accommodation.owner.id, pageSize: 7 }),
         postsApi.list({ destinationId: accommodation.destination.id, pageSize: 4 }),
         eventsApi.list({ destinationId: accommodation.destination.id, pageSize: 6 }),
-        accommodationsApi.getReviews({ id: accommodation.id, page: 1, pageSize: 100 })
+        accommodationsApi.getReviews({ id: accommodation.id, page: 1, pageSize: 100 }),
+        accommodationsApi.getExternalReputation({ id: accommodation.id })
     ]);
 
 /** Safely extract array from a settled API result. */
@@ -209,6 +211,16 @@ const ratingBreakdown = (() => {
 // Posts and events: pass raw items for lightweight cards
 const postItems = extractItems(postsResult);
 const eventItems = extractItems(eventsResult).slice(0, 6);
+
+// External reputation: graceful degradation — empty block when fetch fails or endpoint missing.
+const externalReputationData = (() => {
+    if (externalReputationResult.status === 'rejected') return { items: [] };
+    const val = externalReputationResult.value as { ok?: boolean; data?: unknown };
+    if (!val?.ok || !val.data) return { items: [] };
+    const d = val.data as { items?: unknown[] };
+    if (Array.isArray(d.items)) return d as { items: unknown[] };
+    return { items: [] };
+})();
 
 // --- Auth ---
 const userId = Astro.locals.user?.id ?? null;
@@ -494,6 +506,15 @@ const faqSections = accommodation.faqs.map((faq) => ({
                 locale={locale}
             />
         </ReviewPreview>
+
+        {/* AC-4.4: external reputation block is isolated — does NOT touch
+            averageRating / reviewsCount from internal reviews */}
+        {externalReputationData.items.length > 0 && (
+            <ExternalReputation
+                reputationData={externalReputationData as import('@repo/schemas').ExternalReputationBlock}
+                locale={locale}
+            />
+        )}
 
         <FaqAccordion faqs={accommodation.faqs} lang={locale} />
         <LocationSection

@@ -1,0 +1,153 @@
+---
+/**
+ * @file ExternalReputation.astro
+ * @description "Reputación en otras plataformas" block rendered on the
+ * accommodation detail page. Sibling to ReviewPreview, placed after it.
+ *
+ * Accepts an {@link ExternalReputationBlock} from the public API and renders:
+ * - A deep link per platform (when showLink is true) — labeled with i18n key.
+ * - An aggregate badge (star rating + review count) per platform (AC-4.5:
+ *   always labeled with source platform name).
+ * - For Google with valid TTL snippets: mounts ExternalReviews.client island.
+ * - For Google with expired TTL: a subtle note (i18n ttlExpired).
+ * - A "why only Google" explainer at the bottom (AC-5.1, always rendered).
+ *
+ * Renders NOTHING when the block is empty (items array empty).
+ */
+
+import { ExternalLinkIcon, StarIcon } from '@repo/icons';
+import { ExternalReviews } from './ExternalReviews.client';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import type { ExternalReputationBlock, ExternalReputationPlatformItem } from '@repo/schemas';
+import styles from './ExternalReputation.module.css';
+
+interface Props {
+    /**
+     * External reputation block from GET /api/v1/public/accommodations/:id/external-reputation.
+     * Render nothing when items is empty.
+     */
+    readonly reputationData: ExternalReputationBlock;
+    /** Active locale for i18n. */
+    readonly locale: string;
+}
+
+const { reputationData, locale } = Astro.props;
+const { t } = createTranslations(locale as SupportedLocale);
+
+// Nothing to render when all platforms are hidden.
+const { items } = reputationData;
+if (items.length === 0) {
+    return;
+}
+
+/**
+ * Returns the i18n-translated platform name for a given platform key.
+ */
+function platformLabel(platform: ExternalReputationPlatformItem['platform']): string {
+    const key = `external-reputation.platform.${platform.toLowerCase()}` as const;
+    return t(key as Parameters<typeof t>[0], platform);
+}
+
+/**
+ * Determines if a platform item has Google snippets that are still valid.
+ * The public schema only includes snippets when TTL is valid at build time
+ * (buildExternalReputationBlock strips them). An empty/null array means either
+ * not Google, no snippets fetched, or TTL expired.
+ */
+function hasValidSnippets(item: ExternalReputationPlatformItem): boolean {
+    return item.platform === 'GOOGLE' && Array.isArray(item.snippets) && item.snippets.length > 0;
+}
+
+/**
+ * Determines if a platform item is Google but the snippets were stripped
+ * (TTL expired or fetch never happened) while showReviews was intended.
+ * We detect this by: platform=GOOGLE, no snippets (or empty), and the item
+ * is present (meaning at least showLink OR showReviews was true at DB level —
+ * the public schema already filters out fully-hidden platforms).
+ */
+function isGoogleTtlExpired(item: ExternalReputationPlatformItem): boolean {
+    return item.platform === 'GOOGLE' && (!item.snippets || item.snippets.length === 0);
+}
+---
+
+<section class={styles.section}>
+    <h2 class={styles.title}>{t('external-reputation.section.title', 'Reputación en otras plataformas')}</h2>
+    <p class={styles.subtitle}>{t('external-reputation.section.subtitle', 'Opiniones de viajeros verificados en los principales sitios de alojamiento')}</p>
+
+    <div class={styles.platforms}>
+        {items.map((item) => (
+            <div class={styles.platformCard}>
+                {/* Platform header: icon + name */}
+                <div class={styles.platformHeader}>
+                    <span class={styles.platformName}>{platformLabel(item.platform)}</span>
+                </div>
+
+                {/* Aggregate badge: star rating + review count (AC-4.5: labeled with source) */}
+                {(item.rating != null || item.reviewsCount != null) ? (
+                    <div class={styles.aggregateBadge}>
+                        {item.rating != null && (
+                            <span class={styles.ratingBadge}>
+                                <StarIcon size="xs" weight="fill" color="var(--brand-accent)" aria-hidden="true" />
+                                <strong class={styles.ratingValue}>{item.rating.toFixed(1)}</strong>
+                                <span class={styles.ratingLabel}>{t('external-reputation.aggregate.rating', 'Puntuación promedio')}</span>
+                            </span>
+                        )}
+                        {item.reviewsCount != null && (
+                            <span class={styles.reviewCount}>
+                                {t('external-reputation.aggregate.reviewsCount', '{{count}} reseñas', { count: item.reviewsCount })}
+                            </span>
+                        )}
+                        {/* AC-4.5: source attribution label */}
+                        <span class={styles.sourceAttribution}>{platformLabel(item.platform)}</span>
+                    </div>
+                ) : (
+                    <p class={styles.noData}>{t('external-reputation.aggregate.noData', 'Sin datos disponibles')}</p>
+                )}
+
+                {/* Deep link (shown when showLink was true in the DB row) */}
+                {item.deepLink && (
+                    <a
+                        href={item.deepLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        class={styles.deepLink}
+                    >
+                        <ExternalLinkIcon size="sm" aria-hidden="true" />
+                        <span>
+                            {t('external-reputation.link.cta', 'Mirá nuestro alojamiento en {{platform}} →', {
+                                platform: platformLabel(item.platform)
+                            })}
+                        </span>
+                    </a>
+                )}
+
+                {/* Google snippets island — only when TTL is valid */}
+                {hasValidSnippets(item) && (
+                    <ExternalReviews
+                        client:visible
+                        snippets={item.snippets!}
+                        locale={locale as SupportedLocale}
+                    />
+                )}
+
+                {/* TTL expired note — Google only, when snippets were stripped */}
+                {isGoogleTtlExpired(item) && (
+                    <p class={styles.ttlNote}>
+                        {t('external-reputation.snippets.ttlExpired', 'Las reseñas de texto no están disponibles temporalmente; mostrando solo el puntaje')}
+                    </p>
+                )}
+            </div>
+        ))}
+    </div>
+
+    {/* AC-5.1: "why only Google" explainer — always shown */}
+    <p class={styles.googleOnlyNote}>
+        {t('external-reputation.snippets.googleOnly', 'Solo Google muestra el texto completo de las reseñas porque ofrece una API oficial. Las demás plataformas muestran el puntaje agregado y un enlace directo por razones legales.')}
+    </p>
+</section>
+
+<style>
+    /* Inline scoped style importing the module is NOT used here —
+       the CSS module is imported in the frontmatter above via `import styles`. */
+</style>
