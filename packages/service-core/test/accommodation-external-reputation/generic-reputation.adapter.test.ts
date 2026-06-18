@@ -340,5 +340,54 @@ describe('GenericReputationAdapter', () => {
                 snippets: null
             });
         });
+
+        it('should return null for rating when ratingValue is NaN (non-parseable string)', async () => {
+            // Exercises the `Number.isFinite(rating)` guard in extractAggregateValues
+            const html = `<html><body>
+                <script type="application/ld+json">
+                    {"@type":"Hotel","aggregateRating":{"ratingValue":"not-a-number","reviewCount":50}}
+                </script>
+            </body></html>`;
+
+            const adapter = new GenericReputationAdapter();
+            const listing = makeGenericListing();
+
+            mockSafeExternalFetch.mockResolvedValueOnce({
+                ok: true,
+                status: 200,
+                body: html,
+                finalUrl: listing.url
+            });
+
+            const result = await adapter.fetch(listing);
+
+            expect(result.rating).toBeNull();
+            // reviewsCount should still be parsed
+            expect(result.reviewsCount).toBe(50);
+        });
+
+        it('should return null for reviewsCount when it is NaN (non-parseable string)', async () => {
+            // Exercises the `Number.isFinite(reviewsCount)` guard in extractAggregateValues
+            const html = `<html><body>
+                <script type="application/ld+json">
+                    {"@type":"Hotel","aggregateRating":{"ratingValue":4.2,"reviewCount":"many"}}
+                </script>
+            </body></html>`;
+
+            const adapter = new GenericReputationAdapter();
+            const listing = makeGenericListing();
+
+            mockSafeExternalFetch.mockResolvedValueOnce({
+                ok: true,
+                status: 200,
+                body: html,
+                finalUrl: listing.url
+            });
+
+            const result = await adapter.fetch(listing);
+
+            expect(result.rating).toBe(4.2);
+            expect(result.reviewsCount).toBeNull();
+        });
     });
 });

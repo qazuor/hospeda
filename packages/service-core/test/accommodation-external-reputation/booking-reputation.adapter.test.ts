@@ -287,4 +287,72 @@ describe('BookingReputationAdapter', () => {
             });
         });
     });
+
+    describe('JSON-LD array-level parsing', () => {
+        it('should parse aggregateRating when the JSON-LD block is an array of schema.org nodes', async () => {
+            // The Booking.com `findAggregateRating` helper recurses into arrays at
+            // the top level — exercise that branch with a JSON-LD block that is
+            // itself an array rather than a single object.
+            const adapter = new BookingReputationAdapter({});
+            const listing = makeBookingListing();
+
+            const jsonLdArray = [
+                { '@type': 'WebSite', name: 'Booking.com' },
+                {
+                    '@type': 'Hotel',
+                    name: 'Test Hotel',
+                    aggregateRating: {
+                        '@type': 'AggregateRating',
+                        ratingValue: 7.8,
+                        reviewCount: 320
+                    }
+                }
+            ];
+
+            const html = `<!DOCTYPE html><html><body>
+                <script type="application/ld+json">${JSON.stringify(jsonLdArray)}</script>
+            </body></html>`;
+
+            mockSafeExternalFetch.mockResolvedValueOnce({
+                ok: true,
+                status: 200,
+                body: html,
+                finalUrl: listing.url
+            });
+
+            const result = await adapter.fetch(listing);
+
+            expect(result.rating).toBe(7.8);
+            expect(result.reviewsCount).toBe(320);
+            expect(result.snippets).toBeNull();
+        });
+
+        it('should parse aggregateRating from ratingCount when reviewCount is absent', async () => {
+            const adapter = new BookingReputationAdapter({});
+            const listing = makeBookingListing();
+
+            const jsonLd = {
+                '@type': 'Hotel',
+                aggregateRating: {
+                    ratingValue: 8.0,
+                    ratingCount: 150
+                    // intentionally no reviewCount
+                }
+            };
+
+            const html = `<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>`;
+
+            mockSafeExternalFetch.mockResolvedValueOnce({
+                ok: true,
+                status: 200,
+                body: html,
+                finalUrl: listing.url
+            });
+
+            const result = await adapter.fetch(listing);
+
+            expect(result.rating).toBe(8.0);
+            expect(result.reviewsCount).toBe(150);
+        });
+    });
 });
