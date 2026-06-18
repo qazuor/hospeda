@@ -24,13 +24,72 @@
         "facebook": "https://facebook.com/heladerialunaconordia"
     },
     "openingHours": {
-        "monday": { "open": "14:00", "close": "22:00" },
-        "tuesday": { "open": "14:00", "close": "22:00" },
-        "wednesday": { "open": "14:00", "close": "22:00" },
-        "thursday": { "open": "14:00", "close": "23:00" },
-        "friday": { "open": "14:00", "close": "23:30" },
-        "saturday": { "open": "13:00", "close": "23:30" },
-        "sunday": { "open": "13:00", "close": "22:00" }
+        "timezone": "America/Argentina/Buenos_Aires",
+        "days": {
+            "mon": {
+                "closed": false,
+                "shifts": [
+                    {
+                        "open": "14:00",
+                        "close": "22:00"
+                    }
+                ]
+            },
+            "tue": {
+                "closed": false,
+                "shifts": [
+                    {
+                        "open": "14:00",
+                        "close": "22:00"
+                    }
+                ]
+            },
+            "wed": {
+                "closed": false,
+                "shifts": [
+                    {
+                        "open": "14:00",
+                        "close": "22:00"
+                    }
+                ]
+            },
+            "thu": {
+                "closed": false,
+                "shifts": [
+                    {
+                        "open": "14:00",
+                        "close": "23:00"
+                    }
+                ]
+            },
+            "fri": {
+                "closed": false,
+                "shifts": [
+                    {
+                        "open": "14:00",
+                        "close": "23:30"
+                    }
+                ]
+            },
+            "sat": {
+                "closed": false,
+                "shifts": [
+                    {
+                        "open": "13:00",
+                        "close": "23:30"
+                    }
+                ]
+            },
+            "sun": {
+                "closed": false,
+                "shifts": [
+                    {
+                        "open": "13:00",
+                        "close": "22:00"
+                    }
+                ]
+            }
+        }
     },
     "media": {
         "featuredImage": {

@@ -23,13 +23,57 @@
         "instagram": "https://instagram.com/barelrinconcito"
     },
     "openingHours": {
-        "monday": { "closed": true },
-        "tuesday": { "closed": true },
-        "wednesday": { "open": "19:00", "close": "01:00" },
-        "thursday": { "open": "19:00", "close": "01:00" },
-        "friday": { "open": "19:00", "close": "02:00" },
-        "saturday": { "open": "19:00", "close": "02:00" },
-        "sunday": { "closed": true }
+        "timezone": "America/Argentina/Buenos_Aires",
+        "days": {
+            "mon": {
+                "closed": true,
+                "shifts": []
+            },
+            "tue": {
+                "closed": true,
+                "shifts": []
+            },
+            "wed": {
+                "closed": false,
+                "shifts": [
+                    {
+                        "open": "19:00",
+                        "close": "23:59"
+                    }
+                ]
+            },
+            "thu": {
+                "closed": false,
+                "shifts": [
+                    {
+                        "open": "19:00",
+                        "close": "23:59"
+                    }
+                ]
+            },
+            "fri": {
+                "closed": false,
+                "shifts": [
+                    {
+                        "open": "19:00",
+                        "close": "23:59"
+                    }
+                ]
+            },
+            "sat": {
+                "closed": false,
+                "shifts": [
+                    {
+                        "open": "19:00",
+                        "close": "23:59"
+                    }
+                ]
+            },
+            "sun": {
+                "closed": true,
+                "shifts": []
+            }
+        }
     },
     "media": {
         "featuredImage": {

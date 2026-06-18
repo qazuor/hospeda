@@ -24,47 +24,99 @@
         "facebook": "https://facebook.com/termasfederacionrestaurant"
     },
     "openingHours": {
-        "monday": {
-            "open": "12:00",
-            "close": "15:30",
-            "eveningOpen": "19:30",
-            "eveningClose": "23:00"
-        },
-        "tuesday": {
-            "open": "12:00",
-            "close": "15:30",
-            "eveningOpen": "19:30",
-            "eveningClose": "23:00"
-        },
-        "wednesday": {
-            "open": "12:00",
-            "close": "15:30",
-            "eveningOpen": "19:30",
-            "eveningClose": "23:00"
-        },
-        "thursday": {
-            "open": "12:00",
-            "close": "15:30",
-            "eveningOpen": "19:30",
-            "eveningClose": "23:00"
-        },
-        "friday": {
-            "open": "12:00",
-            "close": "16:00",
-            "eveningOpen": "19:00",
-            "eveningClose": "23:30"
-        },
-        "saturday": {
-            "open": "12:00",
-            "close": "16:00",
-            "eveningOpen": "19:00",
-            "eveningClose": "00:00"
-        },
-        "sunday": {
-            "open": "12:00",
-            "close": "16:00",
-            "eveningOpen": "19:00",
-            "eveningClose": "23:00"
+        "timezone": "America/Argentina/Buenos_Aires",
+        "days": {
+            "mon": {
+                "closed": false,
+                "shifts": [
+                    {
+                        "open": "12:00",
+                        "close": "15:30"
+                    },
+                    {
+                        "open": "19:30",
+                        "close": "23:00"
+                    }
+                ]
+            },
+            "tue": {
+                "closed": false,
+                "shifts": [
+                    {
+                        "open": "12:00",
+                        "close": "15:30"
+                    },
+                    {
+                        "open": "19:30",
+                        "close": "23:00"
+                    }
+                ]
+            },
+            "wed": {
+                "closed": false,
+                "shifts": [
+                    {
+                        "open": "12:00",
+                        "close": "15:30"
+                    },
+                    {
+                        "open": "19:30",
+                        "close": "23:00"
+                    }
+                ]
+            },
+            "thu": {
+                "closed": false,
+                "shifts": [
+                    {
+                        "open": "12:00",
+                        "close": "15:30"
+                    },
+                    {
+                        "open": "19:30",
+                        "close": "23:00"
+                    }
+                ]
+            },
+            "fri": {
+                "closed": false,
+                "shifts": [
+                    {
+                        "open": "12:00",
+                        "close": "16:00"
+                    },
+                    {
+                        "open": "19:00",
+                        "close": "23:30"
+                    }
+                ]
+            },
+            "sat": {
+                "closed": false,
+                "shifts": [
+                    {
+                        "open": "12:00",
+                        "close": "16:00"
+                    },
+                    {
+                        "open": "19:00",
+                        "close": "23:59"
+                    }
+                ]
+            },
+            "sun": {
+                "closed": false,
+                "shifts": [
+                    {
+                        "open": "12:00",
+                        "close": "16:00"
+                    },
+                    {
+                        "open": "19:00",
+                        "close": "23:00"
+                    }
+                ]
+            }
         }
     },
     "media": {

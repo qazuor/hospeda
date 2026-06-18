@@ -24,13 +24,62 @@
         "facebook": "https://facebook.com/lacerveceriadrio"
     },
     "openingHours": {
-        "monday": { "closed": true },
-        "tuesday": { "closed": true },
-        "wednesday": { "open": "18:00", "close": "01:00" },
-        "thursday": { "open": "18:00", "close": "01:00" },
-        "friday": { "open": "17:00", "close": "02:00" },
-        "saturday": { "open": "17:00", "close": "02:00" },
-        "sunday": { "open": "17:00", "close": "00:00" }
+        "timezone": "America/Argentina/Buenos_Aires",
+        "days": {
+            "mon": {
+                "closed": true,
+                "shifts": []
+            },
+            "tue": {
+                "closed": true,
+                "shifts": []
+            },
+            "wed": {
+                "closed": false,
+                "shifts": [
+                    {
+                        "open": "18:00",
+                        "close": "23:59"
+                    }
+                ]
+            },
+            "thu": {
+                "closed": false,
+                "shifts": [
+                    {
+                        "open": "18:00",
+                        "close": "23:59"
+                    }
+                ]
+            },
+            "fri": {
+                "closed": false,
+                "shifts": [
+                    {
+                        "open": "17:00",
+                        "close": "23:59"
+                    }
+                ]
+            },
+            "sat": {
+                "closed": false,
+                "shifts": [
+                    {
+                        "open": "17:00",
+                        "close": "23:59"
+                    }
+                ]
+            },
+            "sun": {
+                "closed": false,
+                "shifts": [
+                    {
+                        "open": "17:00",
+                        "close": "23:59"
+                    }
+                ]
+            }
+        }
     },
     "media": {
         "featuredImage": {
