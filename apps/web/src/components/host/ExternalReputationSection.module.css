@@ -128,7 +128,7 @@
     white-space: nowrap;
 }
 
-.inlineToggle input[type='checkbox'] {
+.inlineToggle input[type="checkbox"] {
     accent-color: var(--brand-primary);
     cursor: pointer;
 }
@@ -224,7 +224,7 @@ select.addFormSelect {
     cursor: pointer;
 }
 
-.addFormCheckbox input[type='checkbox'] {
+.addFormCheckbox input[type="checkbox"] {
     accent-color: var(--brand-primary);
     cursor: pointer;
 }

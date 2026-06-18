@@ -73,10 +73,9 @@ export function ExternalReviews({ snippets, locale }: Props) {
                 className={styles.list}
                 aria-label="Google Reviews"
             >
-                {visible.map((snippet, idx) => (
-                    // biome-ignore lint/suspicious/noArrayIndexKey: snippets have no stable id
+                {visible.map((snippet) => (
                     <li
-                        key={idx}
+                        key={`${snippet.author}:${(snippet.text ?? '').slice(0, 32)}`}
                         className={styles.card}
                     >
                         <div className={styles.cardHeader}>

@@ -129,7 +129,7 @@
 
 .deepLink:hover {
     text-decoration: underline;
-    color: var(--brand-primary-hover, var(--brand-primary));
+    color: color-mix(in srgb, var(--brand-primary) 90%, black);
 }
 
 /* TTL expired subtle note */
