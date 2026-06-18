@@ -19,6 +19,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { useCallback, useState } from 'react';
 import styles from './AccommodationEditor.module.css';
+import { ExternalReputationSection } from './ExternalReputationSection.client';
 import { ActionBar } from './editor/ActionBar.client';
 import { AmenitiesSection } from './editor/AmenitiesSection.client';
 import { BasicInfoSection } from './editor/BasicInfoSection.client';
@@ -486,6 +487,11 @@ export function AccommodationEditor({
                     translations={translationData}
                 />
             )}
+
+            <ExternalReputationSection
+                locale={locale}
+                accommodationId={accommodationId}
+            />
 
             {submitSuccess && (
                 <output className={styles.submitSuccess}>
