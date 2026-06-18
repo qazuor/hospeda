@@ -323,3 +323,33 @@ describe('GastronomyService.ENTITY_NAME', () => {
         expect(GastronomyService.ENTITY_NAME).toBe('gastronomy');
     });
 });
+
+// ---------------------------------------------------------------------------
+// Public search/count visibility filter (AC-6.2 / AC-4.3 regression)
+// A hidden (PRIVATE/non-ACTIVE) listing must never surface on the public list.
+// ---------------------------------------------------------------------------
+
+describe('GastronomyService public search visibility filter (AC-6.2)', () => {
+    it('forces visibility=PUBLIC + lifecycleState=ACTIVE on public search (no hidden-listing leak)', async () => {
+        const service = makeService(makeGastronomyEntity());
+        const model = (service as AnyService).model;
+        await service.search(otherUserActor, { page: 1, pageSize: 10 });
+        expect(model.findAll).toHaveBeenCalled();
+        expect(model.findAll.mock.calls[0][0]).toMatchObject({
+            deletedAt: null,
+            visibility: VisibilityEnum.PUBLIC,
+            lifecycleState: LifecycleStatusEnum.ACTIVE
+        });
+    });
+
+    it('forces the same visibility filter on the public count', async () => {
+        const service = makeService(makeGastronomyEntity());
+        const model = (service as AnyService).model;
+        await service.count(otherUserActor, { page: 1, pageSize: 10 });
+        expect(model.count).toHaveBeenCalled();
+        expect(model.count.mock.calls[0][0]).toMatchObject({
+            visibility: VisibilityEnum.PUBLIC,
+            lifecycleState: LifecycleStatusEnum.ACTIVE
+        });
+    });
+});
