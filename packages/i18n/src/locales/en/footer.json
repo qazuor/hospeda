@@ -39,6 +39,7 @@
     "subscribeShort": "Subscribe",
     "publications": "Blog",
     "events": "Events",
+    "gastronomy": "Gastronomy",
     "accommodations": "Accommodations",
     "proprietors": "Property Owners",
     "tourists": "Tourists",
@@ -103,6 +104,5 @@
         "authedEmailLabel": "You'll subscribe with your account email",
         "configureLink": "Configure"
     },
-    "gastronomy": "Gastronomy",
     "experiences": "Experiences"
 }

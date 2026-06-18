@@ -56,7 +56,10 @@
                 "HOSPEDA_API_URL": "http://localhost:{api}",
                 "HOSPEDA_SITE_URL": "http://localhost:{web}",
                 "HOSPEDA_ADMIN_URL": "http://localhost:{admin}",
-                "PUBLIC_ADMIN_URL": "http://localhost:{admin}"
+                "PUBLIC_ADMIN_URL": "http://localhost:{admin}",
+                "PUBLIC_API_URL": "http://localhost:{api}",
+                "PUBLIC_SITE_URL": "http://localhost:{web}",
+                "HOSPEDA_BETTER_AUTH_URL": "http://localhost:{api}/api/auth"
             }
         },
         {

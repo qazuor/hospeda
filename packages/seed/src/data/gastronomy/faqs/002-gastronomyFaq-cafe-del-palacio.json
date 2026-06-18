@@ -1,0 +1,17 @@
+{
+    "$gastronomyId": "002-gastronomy-colon-cafe-del-palacio",
+    "faqs": [
+        {
+            "question": "¿Tienen opciones sin gluten?",
+            "answer": "Sí, contamos con una selección de tortas y galletas sin TACC elaboradas en nuestro taller. Por favor consulte al personal para identificarlas en la vitrina. No somos una cocina 100% libre de gluten, por lo que pueden existir trazas.",
+            "category": "Dietas especiales",
+            "displayOrder": 1
+        },
+        {
+            "question": "¿Ofrecen desayunos?",
+            "answer": "¡Por supuesto! Servimos desayunos desde las 8:00 hasta las 11:30 de martes a domingo. El desayuno incluye café o té, medialunas o tostadas con manteca y mermelada artesanal.",
+            "category": "Servicios",
+            "displayOrder": 2
+        }
+    ]
+}

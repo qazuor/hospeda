@@ -1,0 +1,23 @@
+{
+    "$gastronomyId": "001-gastronomy-uruguay-la-parrilla-del-puerto",
+    "faqs": [
+        {
+            "question": "¿Hacen reservas?",
+            "answer": "Sí, aceptamos reservas para grupos de más de 4 personas. Para grupos de hasta 4 personas recomendamos llegar en los horarios de apertura. Las reservas se pueden hacer por WhatsApp al +54 9 3442 500001.",
+            "category": "Reservas",
+            "displayOrder": 1
+        },
+        {
+            "question": "¿Tienen menú para niños?",
+            "answer": "Sí, contamos con un menú infantil especial con milanesas, hamburguesas y costillitas de cerdo en porciones más pequeñas, acompañadas de papas fritas y una bebida.",
+            "category": "Carta",
+            "displayOrder": 2
+        },
+        {
+            "question": "¿Cuentan con estacionamiento?",
+            "answer": "No contamos con estacionamiento propio, pero hay varios espacios disponibles en la zona. El estacionamiento más cercano está a media cuadra sobre la calle Almirante Brown.",
+            "category": "Servicios",
+            "displayOrder": 3
+        }
+    ]
+}

@@ -3,6 +3,7 @@
     "accommodations": "Acomodações",
     "destinations": "Destinos",
     "events": "Eventos",
+    "gastronomy": "Gastronomia",
     "blog": "Blog",
     "search": "Busca",
     "contact": "Contato",
@@ -43,6 +44,5 @@
     "breadcrumb": {
         "home": "Início"
     },
-    "gastronomy": "Gastronomia",
     "experiences": "Experiências"
 }
