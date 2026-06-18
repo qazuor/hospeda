@@ -1,0 +1,88 @@
+{
+    "meta": {
+        "title": "Experiências e Serviços",
+        "description": "Descubra as melhores experiências e serviços turísticos da região: aluguéis, excursões, guias e muito mais"
+    },
+    "listing": {
+        "title": "Experiências",
+        "subtitle": "Descubra as melhores experiências e serviços turísticos do Litoral Entrerriano",
+        "emptyState": "Nenhuma experiência encontrada com os filtros selecionados.",
+        "errorBanner": "Não foi possível carregar a lista de experiências. Tente novamente mais tarde.",
+        "results_one": "{{count}} experiência encontrada",
+        "results_other": "{{count}} experiências encontradas",
+        "search": "Busca por texto",
+        "searchPlaceholder": "Buscar por nome ou descrição...",
+        "destination": "Destino",
+        "type": "Tipo de experiência",
+        "featured": "Apenas destaques",
+        "minRating": "Avaliação mínima",
+        "sort": {
+            "featured": "Destaques primeiro",
+            "ratingDesc": "Melhor avaliadas",
+            "newest": "Recém adicionadas",
+            "nameAsc": "Nome (A-Z)"
+        }
+    },
+    "card": {
+        "featured": "Destaque"
+    },
+    "detail": {
+        "contact": "Contato",
+        "whatsapp": "Consultar via WhatsApp",
+        "hours": "Horário de funcionamento",
+        "openingHours": {
+            "title": "Horário de funcionamento",
+            "closed": "Fechado",
+            "open24h": "Aberto 24 horas",
+            "today": "Hoje",
+            "monday": "Segunda-feira",
+            "tuesday": "Terça-feira",
+            "wednesday": "Quarta-feira",
+            "thursday": "Quinta-feira",
+            "friday": "Sexta-feira",
+            "saturday": "Sábado",
+            "sunday": "Domingo"
+        },
+        "social": "Redes sociais",
+        "amenities": {
+            "title": "Serviços e comodidades"
+        }
+    },
+    "type": {
+        "CAR_RENTAL": "Aluguel de carros",
+        "BIKE_RENTAL": "Aluguel de bicicletas",
+        "KAYAK_RENTAL": "Aluguel de caiaque",
+        "QUAD_RENTAL": "Aluguel de quadriciclo",
+        "TOUR_GUIDE": "Guia turístico",
+        "GUIDED_VISIT": "Visita guiada",
+        "EXCURSION": "Excursão",
+        "BOAT_TRIP": "Passeio de barco",
+        "FISHING_CHARTER": "Pesca esportiva",
+        "BIRD_WATCHING": "Observação de aves",
+        "CULTURAL_TOUR": "Tour cultural",
+        "WINE_TASTING": "Degustação de vinhos",
+        "OUTDOOR_ADVENTURE": "Aventura ao ar livre",
+        "OTHER": "Outro"
+    },
+    "priceUnit": {
+        "per_day": "por dia",
+        "per_hour": "por hora",
+        "per_person": "por pessoa",
+        "per_group": "por grupo"
+    },
+    "priceOnRequest": "Consultar preço",
+    "priceFrom": "A partir de",
+    "filters": {
+        "type": "Tipo",
+        "destination": "Destino"
+    },
+    "reviews": {
+        "title": "Avaliações",
+        "submit": "Deixar avaliação",
+        "empty": "Ainda não há avaliações. Seja o primeiro a comentar!",
+        "more": "+ {{n}} avaliações"
+    },
+    "faq": {
+        "heading": "Perguntas frequentes"
+    }
+}
