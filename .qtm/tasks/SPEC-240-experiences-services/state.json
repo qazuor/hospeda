@@ -458,7 +458,7 @@
             "id": "T-015",
             "title": "Create experience.permissions.ts",
             "description": "Add EXPERIENCE_* PermissionEnum values (VIEW_ALL, CREATE, UPDATE_ALL, UPDATE_OWN, DELETE, MANAGE_REVIEWS, MANAGE_SUBSCRIPTION) to @repo/schemas permission enum + service-core permission mapping, mirroring accommodation.permissions.ts and reusing SPEC-239 COMMERCE permission category. Tests: unit test for permission-to-role assignment matrix.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-017"],
@@ -475,21 +475,21 @@
             "tags": ["service", "permissions", "security"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
             }
         },
         {
             "id": "T-016",
             "title": "Create experience.helpers.ts + experience.normalizers.ts",
             "description": "Slug generator, price formatting (priceFrom + unit vs isPriceOnRequest), type-label i18n key resolution; input normalizers (slug lowercase+dash, priceFrom integer coercion). Tests (TDD, pure logic): unit tests for slug edge cases, price formatting including on-request, integer coercion.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-017"],
@@ -510,21 +510,21 @@
             "tags": ["service", "utils"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
             }
         },
         {
             "id": "T-017",
             "title": "Create experience.service.ts (extends BaseCommerceListingService)",
             "description": "ExperienceService extending SPEC-239 BaseCommerceListingService with entity-specific overrides (validateType, pricingBlock) and inheriting review/FAQ/hours/amenity lifecycle, subscription toggle hook, owner-scoping guards, permission checks. Tests: unit tests for CRUD, owner-scoping guard (non-owner cannot update operational fields of others), subscription toggle flipping hasActiveSubscription, pricing formatting.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-004", "T-013", "T-015", "T-016", "T-018"],
             "blocks": ["T-019", "T-020", "T-021"],
@@ -545,21 +545,21 @@
             "tags": ["service", "business-logic"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
             }
         },
         {
             "id": "T-018",
             "title": "Create experience.types.ts (service input/output types)",
             "description": "Service-layer input/output types derived from the Zod schemas (z.infer) — CreateExperienceInput, UpdateExperienceInput, ExperienceOutput, etc. Tests: typecheck-only (no runtime); ensure no `any`.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-003"],
             "blocks": ["T-017"],
@@ -572,14 +572,14 @@
             "tags": ["service", "types"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
             }
         },
         {
@@ -1261,9 +1261,9 @@
     ],
     "summary": {
         "total": 40,
-        "pending": 26,
+        "pending": 22,
         "inProgress": 0,
-        "completed": 13,
+        "completed": 17,
         "blocked": 1,
         "averageComplexity": 1.9
     }
