@@ -1756,6 +1756,9 @@
         },
         "experiencePriceUnit": {
             "invalid": "La unidad de precio de la experiencia no es válida"
+        },
+        "externalPlatform": {
+            "invalid": "La plataforma externa no es válida"
         }
     },
     "event": {
@@ -3697,6 +3700,16 @@
             "required": "El token de notificaciones es obligatorio",
             "min": "El token de notificaciones debe tener al menos {{min}} caracteres",
             "max": "El token de notificaciones no puede superar los {{max}} caracteres"
+        }
+    },
+    "accommodationExternalListing": {
+        "url": {
+            "invalidUrl": "La URL no es válida"
+        }
+    },
+    "accommodationExternalReputation": {
+        "fetchStatus": {
+            "invalid": "El estado de obtención no es válido"
         }
     }
 }

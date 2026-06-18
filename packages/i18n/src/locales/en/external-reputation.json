@@ -1,0 +1,43 @@
+{
+    "section": {
+        "title": "Reputation on other platforms",
+        "subtitle": "Reviews from verified travellers on the main accommodation sites"
+    },
+    "platform": {
+        "google": "Google",
+        "booking": "Booking.com",
+        "airbnb": "Airbnb",
+        "other": "Other platform"
+    },
+    "link": {
+        "cta": "See our accommodation on {{platform}} →"
+    },
+    "aggregate": {
+        "rating": "Average score",
+        "reviewsCount": "{{count}} reviews",
+        "noData": "No data available"
+    },
+    "snippets": {
+        "googleOnly": "Only Google displays full review text because it provides an official API. Other platforms show the aggregate score and a direct link for legal reasons.",
+        "ttlExpired": "Text reviews are temporarily unavailable; showing score only",
+        "byAuthor": "By {{author}}",
+        "on": "on {{platform}}"
+    },
+    "ownerConfig": {
+        "title": "External reputation settings",
+        "addListing": "Add platform link",
+        "showLink": "Show link to platform",
+        "showReviews": "Show text reviews",
+        "masterToggle": "Show external reputation section",
+        "refresh": "Refresh reviews",
+        "lastUpdated": "Last updated: {{date}}",
+        "rateLimitHit": "You can refresh again in {{minutes}} minutes",
+        "googleOnlyExplainer": "Review text is only available for Google. Other platforms display the score and a link.",
+        "verifiedHint": "The link has been verified and corresponds to this accommodation"
+    },
+    "errors": {
+        "fetchFailed": "Could not load external reviews. Please try again later.",
+        "notFound": "No reputation data found for this platform.",
+        "blocked": "Access to this platform's data has been temporarily blocked."
+    }
+}

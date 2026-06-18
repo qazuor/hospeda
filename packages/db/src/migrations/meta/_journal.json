@@ -141,6 +141,13 @@
             "when": 1781737151487,
             "tag": "0019_thin_sway",
             "breakpoints": true
+        },
+        {
+            "idx": 20,
+            "version": "7",
+            "when": 1781792830240,
+            "tag": "0020_old_jack_power",
+            "breakpoints": true
         }
     ]
 }

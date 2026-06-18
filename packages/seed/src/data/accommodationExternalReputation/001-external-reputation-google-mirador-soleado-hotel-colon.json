@@ -1,0 +1,37 @@
+{
+    "accommodationSeedId": "006-accommodation-colon-hotel-mirador-soleado-hotel-colon",
+    "platform": "GOOGLE",
+    "rating": 4.6,
+    "reviewsCount": 312,
+    "deepLink": "https://maps.google.com/?cid=1234567890123456789#reviews",
+    "fetchStatus": "ok",
+    "snippets": [
+        {
+            "author": "Laura Fernández",
+            "text": "Excelente atención y ubicación inmejorable en Colón. Las habitaciones son amplias y muy limpias. El desayuno buffet sorprendió gratamente. Volveremos sin dudas.",
+            "rating": 5,
+            "timeIso": "2025-10-15T09:32:00Z",
+            "authorUrl": "https://www.google.com/maps/contrib/100000000000000001",
+            "profilePhoto": "https://lh3.googleusercontent.com/a/seed-laura-fernandez",
+            "relativeTime": "hace 2 meses"
+        },
+        {
+            "author": "Martín Sánchez",
+            "text": "Muy buen hotel para visitar las Termas de Colón. El personal es muy amable. La piscina en el rooftop es el punto fuerte. Recomendado para familias.",
+            "rating": 4,
+            "timeIso": "2025-09-28T14:10:00Z",
+            "authorUrl": "https://www.google.com/maps/contrib/100000000000000002",
+            "profilePhoto": "https://lh3.googleusercontent.com/a/seed-martin-sanchez",
+            "relativeTime": "hace 3 meses"
+        },
+        {
+            "author": "Valeria Gómez",
+            "text": "Muy buena relación precio/calidad. Habitación limpia, cómoda y con buena vista. El único detalle fue el ruido del tráfico por la noche, pero en general todo muy bien.",
+            "rating": 4,
+            "timeIso": "2025-08-05T18:47:00Z",
+            "authorUrl": "https://www.google.com/maps/contrib/100000000000000003",
+            "profilePhoto": "https://lh3.googleusercontent.com/a/seed-valeria-gomez",
+            "relativeTime": "hace 4 meses"
+        }
+    ]
+}

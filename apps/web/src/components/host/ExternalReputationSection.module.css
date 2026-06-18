@@ -1,0 +1,304 @@
+/* ExternalReputationSection.module.css — SPEC-237 T-013 */
+
+.section {
+    border: none;
+    padding: 0;
+    margin: 0 0 var(--space-5, 2rem);
+}
+
+.sectionTitle {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 1.125rem;
+    color: var(--core-foreground);
+    margin-bottom: var(--space-4, 1.5rem);
+    padding-bottom: var(--space-2, 0.5rem);
+    border-bottom: 1px solid var(--border);
+}
+
+/* Google-only explainer — always visible */
+.explainer {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+    background-color: var(--brand-primary-a15, oklch(0.96 0.02 245 / 0.15));
+    border-left: 3px solid var(--brand-primary);
+    padding: var(--space-2, 0.5rem) var(--space-3, 1rem);
+    border-radius: var(--radius-sm, 6px);
+    margin-bottom: var(--space-4, 1.5rem);
+}
+
+/* Master toggle row */
+.masterToggleRow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3, 1rem);
+    margin-bottom: var(--space-4, 1.5rem);
+}
+
+.toggleLabel {
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 0.9375rem;
+    color: var(--core-foreground);
+    cursor: pointer;
+}
+
+.toggleInput {
+    width: 1.125rem;
+    height: 1.125rem;
+    cursor: pointer;
+    accent-color: var(--brand-primary);
+}
+
+/* Error / loading banners */
+.errorBanner {
+    padding: 0.625rem 0.875rem;
+    border-radius: var(--radius-md, 10px);
+    background-color: oklch(0.96 0.02 25);
+    color: oklch(0.45 0.2 25);
+    border: 1px solid oklch(0.88 0.06 25);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    margin-bottom: var(--space-3, 1rem);
+}
+
+.loadingHint {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+    margin-bottom: var(--space-3, 1rem);
+}
+
+.emptyState {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+    margin-bottom: var(--space-4, 1.5rem);
+    font-style: italic;
+}
+
+/* Listing list */
+.listingList {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 var(--space-4, 1.5rem);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+}
+
+.listingRow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3, 1rem);
+    padding: var(--space-2, 0.5rem) var(--space-3, 1rem);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 10px);
+    background-color: var(--core-card);
+    flex-wrap: wrap;
+}
+
+.listingPlatform {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--core-foreground);
+    min-width: 80px;
+}
+
+.listingUrl {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.inlineToggle {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1, 0.25rem);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-foreground);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.inlineToggle input[type="checkbox"] {
+    accent-color: var(--brand-primary);
+    cursor: pointer;
+}
+
+.removeButton {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm, 6px);
+    color: oklch(0.55 0.22 25);
+    cursor: pointer;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    line-height: 1;
+    transition: background-color 150ms ease-out;
+}
+
+.removeButton:hover {
+    background-color: oklch(0.96 0.02 25);
+}
+
+/* Add form */
+.addForm {
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-md, 10px);
+    padding: var(--space-3, 1rem);
+    margin-bottom: var(--space-4, 1.5rem);
+    background-color: var(--core-card);
+}
+
+.addFormTitle {
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 0.9375rem;
+    color: var(--core-foreground);
+    margin: 0 0 var(--space-3, 1rem);
+}
+
+.addFormRow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    margin-bottom: var(--space-3, 1rem);
+}
+
+.addFormLabel {
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 0.8125rem;
+    color: var(--core-foreground);
+    min-width: 80px;
+}
+
+.addFormSelect,
+.addFormInput {
+    flex: 1;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 10px);
+    background-color: var(--core-background, #fff);
+    color: var(--core-foreground);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    transition: border-color 150ms ease-out;
+    box-sizing: border-box;
+}
+
+.addFormSelect:focus,
+.addFormInput:focus {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 1px;
+    border-color: var(--brand-primary);
+}
+
+select.addFormSelect {
+    appearance: auto;
+}
+
+.addFormCheckboxRow {
+    display: flex;
+    gap: var(--space-4, 1.5rem);
+    margin-bottom: var(--space-3, 1rem);
+    flex-wrap: wrap;
+}
+
+.addFormCheckbox {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1, 0.25rem);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-foreground);
+    cursor: pointer;
+}
+
+.addFormCheckbox input[type="checkbox"] {
+    accent-color: var(--brand-primary);
+    cursor: pointer;
+}
+
+.addButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 1.25rem;
+    border: none;
+    border-radius: var(--radius-pill, 9999px);
+    background-color: var(--brand-primary);
+    color: #fff;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: opacity 150ms ease-out;
+}
+
+.addButton:hover {
+    opacity: 0.9;
+}
+
+.addButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Refresh row */
+.refreshRow {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3, 1rem);
+    flex-wrap: wrap;
+}
+
+.refreshButton {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 1.25rem;
+    border: 1px solid var(--brand-primary);
+    border-radius: var(--radius-pill, 9999px);
+    background-color: transparent;
+    color: var(--brand-primary);
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: background-color 150ms ease-out, color 150ms ease-out;
+}
+
+.refreshButton:hover {
+    background-color: var(--brand-primary);
+    color: #fff;
+}
+
+.refreshButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.lastUpdated {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+}
+
+.rateLimitMsg {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: oklch(0.55 0.15 45);
+    background-color: oklch(0.98 0.03 45);
+    border: 1px solid oklch(0.88 0.08 45);
+    padding: 0.375rem 0.75rem;
+    border-radius: var(--radius-sm, 6px);
+}

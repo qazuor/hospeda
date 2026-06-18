@@ -54,6 +54,13 @@
 | `DELETE /api/v1/protected/accommodations/{id}/faqs/{faqId}` | `accommodation/protected/removeFaq.ts` | none | - | n/a | Deletion ungated; removing own content is always allowed |
 | `GET /api/v1/protected/accommodations/my/favorites-breakdown` | `accommodation/protected/hostFavoritesBreakdown.ts` | gate | `view_advanced_stats` | wired | requireEntitlement(VIEW_ADVANCED_STATS) middleware wired (SPEC-145 T-006) |
 | `GET /api/v1/protected/accommodations/my/market-comparison` | `accommodation/protected/hostMarketComparison.ts` | gate | `view_advanced_stats` | wired | requireEntitlement(VIEW_ADVANCED_STATS) middleware wired (SPEC-145 T-006) |
+| **EXTERNAL REPUTATION — PROTECTED (SPEC-237)** | | | | | |
+| `GET /api/v1/protected/accommodations/{id}/external-listings` | `accommodation-external-reputation/protected/listListings.ts` | none | - | n/a | Owner read of own external-listing configs; ACCOMMODATION_UPDATE_OWN, no billing gate (feature available to any host with a listing). NOTE: the matching public read GET /api/v1/public/accommodations/{id}/external-reputation is intentionally out of this matrix (public tier, no gate by definition) |
+| `POST /api/v1/protected/accommodations/{id}/external-listings` | `accommodation-external-reputation/protected/addListing.ts` | none | - | n/a | Owner adds an external-listing config; ACCOMMODATION_UPDATE_OWN, no billing gate |
+| `PATCH /api/v1/protected/accommodations/{id}/external-listings/{listingId}` | `accommodation-external-reputation/protected/updateListing.ts` | none | - | n/a | Owner updates URL/toggles; ACCOMMODATION_UPDATE_OWN, no billing gate |
+| `DELETE /api/v1/protected/accommodations/{id}/external-listings/{listingId}` | `accommodation-external-reputation/protected/removeListing.ts` | none | - | n/a | Owner removes own external-listing config; ACCOMMODATION_UPDATE_OWN, no billing gate |
+| `PATCH /api/v1/protected/accommodations/{id}/external-reputation/master-toggle` | `accommodation-external-reputation/protected/masterToggle.ts` | none | - | n/a | Owner flips show_external_reputation; ACCOMMODATION_UPDATE_OWN, no billing gate |
+| `POST /api/v1/protected/accommodations/{id}/external-reputation/refresh` | `accommodation-external-reputation/protected/refresh.ts` | none | - | n/a | Owner-triggered reputation refresh; ACCOMMODATION_UPDATE_OWN, no billing gate; per-accommodation rate-limit → 429 + Retry-After (QUOTA_EXCEEDED) |
 | **ACCOMMODATION REVIEWS — PROTECTED** | | | | | |
 | `POST /api/v1/protected/accommodations/{id}/reviews` | `accommodation/reviews/protected/create.ts` | gate | `write_reviews` | wired | requireEntitlement(WRITE_REVIEWS) middleware wired (SPEC-145 T-005). **Owner decision 2026-06-05:** ALL host-tier plans (owner-basico, owner-pro, owner-complex) intentionally lack WRITE_REVIEWS — hosts must not review competitors (conflict-of-interest policy). Hosts keep RESPOND_REVIEWS only. |
 | **DESTINATION REVIEWS — PROTECTED** | | | | | |
@@ -288,6 +295,8 @@
 | `PUT /api/v1/admin/accommodations/{id}/faqs/{faqId}` | `accommodation/admin/updateFaq.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
 | `DELETE /api/v1/admin/accommodations/{id}/faqs/{faqId}` | `accommodation/admin/removeFaq.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
 | `POST /api/v1/admin/accommodations/{id}/faqs/reorder` | `accommodation/admin/reorderFaqs.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
+| **EXTERNAL REPUTATION — ADMIN (SPEC-237)** | | | | | |
+| `POST /api/v1/admin/accommodations/{id}/external-reputation/disable` | `accommodation-external-reputation/admin/disable-reputation.ts` | none | - | n/a | Admin soft-takedown (showLink=false + showReviews=false on all listings); gated by adminAuthMiddleware([ACCOMMODATION_UPDATE_ANY]); staff bypass entitlements so no billing gate |
 | **ACCOMMODATION REVIEWS — ADMIN** | | | | | |
 | `GET /api/v1/admin/accommodations/{id}/reviews` | `accommodation/reviews/admin/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
 | `GET /api/v1/admin/accommodations/{id}/reviews/{reviewId}` | `accommodation/reviews/admin/getById.ts` | none | - | n/a | Admin read; PermissionEnum-gated |

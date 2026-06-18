@@ -71,6 +71,9 @@ import { adminOwnerPromotionRoutes, protectedOwnerPromotionRoutes } from './owne
 // ─── Entities with admin-only or specialized tiers ──────────────────────────
 import { adminPostSponsorRoutes } from './postSponsor';
 
+import { adminExternalReputationRoutes } from './accommodation-external-reputation/admin/index.js';
+import { protectedExternalReputationRoutes } from './accommodation-external-reputation/protected/index.js';
+import { publicExternalReputationRoutes } from './accommodation-external-reputation/public/index.js';
 import {
     adminAiCredentialsRoutes,
     adminAiPromptsRoutes,
@@ -195,6 +198,11 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
         // Core entities
         app.route('/api/v1/public/accommodations', publicAccommodationRoutes);
+
+        // External reputation public block (SPEC-237 T-009)
+        // Mounted at /api/v1/public/accommodations so routes resolve as:
+        //   GET /api/v1/public/accommodations/:id/external-reputation
+        app.route('/api/v1/public/accommodations', publicExternalReputationRoutes);
         // Commerce listings: gastronomy (SPEC-239 T-042)
         app.route('/api/v1/public/gastronomies', publicGastronomyRoutes);
         // Commerce listings: experience (SPEC-240 T-019)
@@ -290,6 +298,15 @@ export const setupRoutes = (app: AppOpenAPI) => {
             protectedUserBookmarkCollectionRoutes
         );
         app.route('/api/v1/protected/accommodations', protectedAccommodationRoutes);
+
+        // External reputation owner CRUD + refresh (SPEC-237 T-008)
+        // Mounted at /api/v1/protected/accommodations so that routes resolve as:
+        //   GET/POST /api/v1/protected/accommodations/:id/external-listings
+        //   PATCH    /api/v1/protected/accommodations/:id/external-listings/:listingId
+        //   DELETE   /api/v1/protected/accommodations/:id/external-listings/:listingId
+        //   PATCH    /api/v1/protected/accommodations/:id/external-reputation/master-toggle
+        //   POST     /api/v1/protected/accommodations/:id/external-reputation/refresh
+        app.route('/api/v1/protected/accommodations', protectedExternalReputationRoutes);
         // Commerce listings: gastronomy (SPEC-239 T-043 / T-044)
         app.route('/api/v1/protected/gastronomies', protectedGastronomyRoutes);
         // Commerce listings: experience (SPEC-240 T-020)
@@ -353,6 +370,11 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
         // Core entities
         app.route('/api/v1/admin/accommodations', adminAccommodationRoutes);
+
+        // External reputation admin disable (SPEC-237 T-009)
+        // Mounted at /api/v1/admin/accommodations so routes resolve as:
+        //   POST /api/v1/admin/accommodations/:id/external-reputation/disable
+        app.route('/api/v1/admin/accommodations', adminExternalReputationRoutes);
         // Commerce listings: gastronomy (SPEC-239 T-045 / T-046)
         app.route('/api/v1/admin/gastronomies', adminGastronomyRoutes);
         // Commerce listings: experience (SPEC-240 T-021)

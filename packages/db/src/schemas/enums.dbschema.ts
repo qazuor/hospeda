@@ -14,6 +14,7 @@ import {
     ExchangeRateTypeEnum,
     ExperiencePriceUnitEnum,
     ExperienceTypeEnum,
+    ExternalPlatformEnum,
     GastronomyTypeEnum,
     HostTradeCategoryEnum,
     InvoiceStatusEnum,
@@ -232,6 +233,24 @@ export const NotificationRecipientSidePgEnum = pgEnum(
 export const GastronomyTypePgEnum = pgEnum('gastronomy_type_enum', enumToTuple(GastronomyTypeEnum));
 
 export const PriceRangePgEnum = pgEnum('price_range_enum', enumToTuple(PriceRangeEnum));
+
+export const ExternalPlatformPgEnum = pgEnum(
+    'external_platform_enum',
+    enumToTuple(ExternalPlatformEnum)
+);
+
+/**
+ * Fetch status for external reputation data.
+ * Defined as a literal tuple (not backed by a TypeScript enum) because
+ * these values are internal to the DB layer and do not need Zod nativeEnum.
+ * Matches ExternalFetchStatusSchema in @repo/schemas.
+ */
+export const ExternalReputationFetchStatusPgEnum = pgEnum('external_reputation_fetch_status_enum', [
+    'ok',
+    'blocked',
+    'not_found',
+    'error'
+]);
 
 /**
  * PostgreSQL enum for experience sub-categories (SPEC-240).

@@ -80,8 +80,15 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  *
  * 224 (2026-06-17, env-hardening): +2 new vars:
  * - EXPO_PUBLIC_API_URL and EXPO_PUBLIC_APP_ENV (new MOBILE_ENV_VARS section, apps/mobile)
+ *
+ * 227 (SPEC-237): +3 external reputation vars:
+ * - HOSPEDA_EXTREP_GOOGLE_SNIPPET_TTL_DAYS (number, default 30)
+ * - HOSPEDA_EXTREP_REFRESH_RATE_LIMIT (string, default '1/600')
+ * - HOSPEDA_EXTREP_CRON_SCHEDULE (string, default '0 2 * * 1')
+ * (HOSPEDA_GOOGLE_PLACES_API_KEY and HOSPEDA_APIFY_TOKEN were already
+ * registered by SPEC-222 — not duplicated.)
  */
-const EXPECTED_VAR_COUNT = 224;
+const EXPECTED_VAR_COUNT = 227;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;

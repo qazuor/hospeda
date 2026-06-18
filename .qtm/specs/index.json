@@ -1346,7 +1346,7 @@
             "title": "External-platform reviews & reputation on accommodation pages",
             "type": "feature",
             "complexity": "high",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-237-accommodation-external-reviews",
             "base": "staging",
             "created": "2026-06-15T00:00:00Z",

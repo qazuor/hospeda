@@ -1,4 +1,5 @@
 export * from './accommodation/accommodation.service';
+export * from './accommodation-external-reputation/index.js';
 export * from './accommodation-import/index.js';
 export * from './appLog/index.js';
 export * from './conversation/index.js';

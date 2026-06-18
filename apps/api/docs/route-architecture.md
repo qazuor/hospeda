@@ -243,6 +243,8 @@ The following entities use the three-tier structure:
 | `experience` | yes | yes | yes |
 | `experience/reviews` | yes (approved only) | yes (create) | yes (full moderation) |
 | `commerce` (leads + subscription) | yes (create-lead) | no | yes |
+| `accommodation/external-listings` | no | yes (owner CRUD) | no |
+| `accommodation/external-reputation` | yes (GET cached block) | yes (master-toggle, refresh) | yes (force-disable) |
 
 ---
 
@@ -689,6 +691,54 @@ protected gastronomy tier once provisioned as `COMMERCE_OWNER`).
 | `POST` | `/api/v1/admin/commerce/leads/:id/handle` | `COMMERCE_EDIT_ALL` | Approve or reject a lead; idempotent (overwrites previous decision) |
 | `POST` | `/api/v1/admin/commerce/leads/:id/provision-owner` | `COMMERCE_EDIT_ALL` | Create a `COMMERCE_OWNER` user from an approved lead; emails temp credentials; never returns the password |
 | `POST` | `/api/v1/admin/commerce/listings/:entityType/:entityId/start-subscription` | `COMMERCE_EDIT_ALL` | Provisions a MercadoPago preapproval recurring subscription for the listing. `entityType` is currently `gastronomy` only. Requires the listing to have an owner assigned first. |
+
+---
+
+## External Reputation Routes (SPEC-237)
+
+Routes for displaying and managing external-platform reputation data
+(Google Places review snippets, Booking/Airbnb aggregate ratings) on
+accommodation detail pages. Mounted under the accommodation URL namespace.
+
+Key invariant: these routes operate on a **separate cached entity**
+(`accommodation_external_reputation`) and must never affect
+`accommodations.averageRating`. See
+[ADR-036](../../../docs/decisions/ADR-036-external-reputation-separate-entity.md)
+for the full design rationale.
+
+### Public tier
+
+| Method | Path | Notes |
+|--------|------|-------|
+| `GET` | `/api/v1/public/accommodations/:id/external-reputation` | Returns the cached reputation block for all enabled platforms. No auth. Google snippets are included only when `snippetsFetchedAt` is within the 30-day TTL; they are stripped (aggregate-only) once expired. Never returns snippet text for Booking/Airbnb/generic. |
+
+### Protected tier (session required)
+
+| Method | Path | `requiredPermissions` | Notes |
+|--------|------|-----------------------|-------|
+| `GET` | `/api/v1/protected/accommodations/:id/external-listings` | `ACCOMMODATION_UPDATE_OWN` | List all external listing registrations for the actor's accommodation. |
+| `POST` | `/api/v1/protected/accommodations/:id/external-listings` | `ACCOMMODATION_UPDATE_OWN` | Register a new external platform link (URL, platform, per-listing display flags). |
+| `PATCH` | `/api/v1/protected/accommodations/:id/external-listings/:listingId` | `ACCOMMODATION_UPDATE_OWN` | Update display flags (`showReviews`, `showLink`, `showRating`) on an existing listing. |
+| `DELETE` | `/api/v1/protected/accommodations/:id/external-listings/:listingId` | `ACCOMMODATION_UPDATE_OWN` | Remove an external listing registration; cascades to its reputation cache row. |
+| `PATCH` | `/api/v1/protected/accommodations/:id/external-reputation/master-toggle` | `ACCOMMODATION_UPDATE_OWN` | Set `show_external_reputation` on the accommodation row. When `false`, the public detail page hides the entire external reputation block. |
+| `POST` | `/api/v1/protected/accommodations/:id/external-reputation/refresh` | `ACCOMMODATION_UPDATE_OWN` | Trigger an on-demand reputation refresh. Rate-limited per owner to prevent quota abuse — returns **429** with a `Retry-After` header when the window has not elapsed. |
+
+### Admin tier
+
+| Method | Path | `requiredPermissions` | Notes |
+|--------|------|-----------------------|-------|
+| `POST` | `/api/v1/admin/accommodations/:id/external-reputation/disable` | `ACCOMMODATION_UPDATE_ANY` | Force `show_external_reputation = false` for any accommodation. Admin override — bypasses owner ownership check. |
+
+### Environment variables required
+
+The following env vars must be set in Coolify for the external reputation feature
+to function on staging and production:
+
+| Variable | Purpose |
+|----------|---------|
+| `HOSPEDA_GOOGLE_PLACES_API_KEY` | Google Places API (New) key for fetching ratings and review snippets. |
+| `HOSPEDA_APIFY_TOKEN` | Apify API token used by Booking/Airbnb/generic scrapers. |
+| `HOSPEDA_EXTREP_CRON_SCHEDULE` | Cron expression for the weekly refresh job. Defaults to `0 2 * * 1` (Monday 02:00 UTC). |
 
 ---
 

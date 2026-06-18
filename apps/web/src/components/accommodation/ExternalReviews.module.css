@@ -1,0 +1,143 @@
+/* ExternalReviews.module.css
+ * Styles for the Google review snippets island.
+ * Uses design tokens only — no Tailwind utility classes (web-app convention).
+ */
+
+.container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4, 16px);
+}
+
+.list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 12px);
+}
+
+.card {
+    padding: var(--space-4, 16px);
+    border: 1px solid var(--border, oklch(0.9 0 0));
+    border-radius: var(--radius-button, 8px);
+    background-color: var(--surface-warm, var(--card));
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 8px);
+}
+
+.cardHeader {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3, 12px);
+}
+
+.avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    background-color: var(--brand-primary);
+}
+
+.avatarFallback {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: var(--brand-primary);
+    color: var(--primary-foreground);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+}
+
+.meta {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+}
+
+.authorLink {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--brand-primary);
+    text-decoration: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.authorLink:hover {
+    text-decoration: underline;
+}
+
+.author {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--core-foreground);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.relativeTime {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    color: var(--core-muted-foreground);
+}
+
+.starRating {
+    display: flex;
+    align-items: center;
+    gap: 1px;
+    flex-shrink: 0;
+    margin-left: auto;
+}
+
+.text {
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+    line-height: 1.6;
+    color: var(--core-foreground);
+    margin: 0;
+}
+
+.sourceLabel {
+    font-family: var(--font-sans);
+    font-size: 0.7rem;
+    color: var(--core-muted-foreground);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+/* Google attribution — ToS requirement */
+.attribution {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.attributionLink {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1, 4px);
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--core-muted-foreground);
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.attributionLink:hover {
+    color: var(--core-foreground);
+}

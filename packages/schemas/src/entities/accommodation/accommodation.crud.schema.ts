@@ -53,7 +53,9 @@ export const AccommodationCreateInputSchema = AccommodationSchema.omit({
     // Server-managed (SPEC-143 #29): only the pause/resume flow flips this.
     ownerSuspended: true,
     // Server-managed (SPEC-167 §3): only the downgrade-restriction flow flips this.
-    planRestricted: true
+    planRestricted: true,
+    // Server-managed (SPEC-237): only the owner's master-toggle endpoint flips this.
+    showExternalReputation: true
 }).extend({
     slug: z
         .string()
@@ -142,7 +144,9 @@ export const AccommodationUpdateInputSchema = z
                 // Server-managed (SPEC-143 #29): only the pause/resume flow flips this.
                 ownerSuspended: true,
                 // Server-managed (SPEC-167 §3): only the downgrade-restriction flow flips this.
-                planRestricted: true
+                planRestricted: true,
+                // Server-managed (SPEC-237): only the owner's master-toggle endpoint flips this.
+                showExternalReputation: true
             }).shape
         )
     )

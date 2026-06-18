@@ -612,7 +612,29 @@ export const ApiEnvBaseSchema = z.object({
     /** Per-user rate limit (requests per hour) for the accommodation import endpoint */
     HOSPEDA_IMPORT_RATE_LIMIT_RPH: z.coerce.number().default(10),
     /** Maximum characters of scraped page text sent to the AI Strategy B enrichment step */
-    HOSPEDA_IMPORT_AI_MAX_CHARS: z.coerce.number().default(12000)
+    HOSPEDA_IMPORT_AI_MAX_CHARS: z.coerce.number().default(12000),
+
+    // External reputation / review aggregation (SPEC-237)
+    /**
+     * How many days a Google Places snippet is considered fresh before the background
+     * cron re-fetches it. Lower values keep ratings current at the cost of more API quota.
+     * Default 30.
+     */
+    HOSPEDA_EXTREP_GOOGLE_SNIPPET_TTL_DAYS: z.coerce.number().int().min(1).default(30),
+    /**
+     * Per-accommodation rate limit for the manual snippet refresh endpoint.
+     * Format: "N/S" — N refreshes per S seconds. Default "1/600" (1 per 10 min).
+     * A malformed value (not matching N/S) fails fast at boot (FIX L2).
+     */
+    HOSPEDA_EXTREP_REFRESH_RATE_LIMIT: z
+        .string()
+        .regex(/^\d+\/\d+$/, 'must be in N/S format e.g. 1/600')
+        .default('1/600'),
+    /**
+     * Cron expression for the background job that refreshes stale Google Places snippets.
+     * Default "0 2 * * 1" runs every Monday at 02:00 UTC.
+     */
+    HOSPEDA_EXTREP_CRON_SCHEDULE: z.string().default('0 2 * * 1')
 });
 
 /**

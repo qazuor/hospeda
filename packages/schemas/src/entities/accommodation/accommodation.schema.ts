@@ -155,6 +155,20 @@ export const AccommodationSchema = z.object({
      */
     planRestricted: z.boolean().default(false),
 
+    /**
+     * Master visibility toggle for the external reputation block (SPEC-237).
+     *
+     * When `false`, the public detail page hides all external reputation blocks
+     * regardless of individual listing `showLink` / `showReviews` flags.
+     * When `true`, individual platform listing flags govern visibility.
+     *
+     * NOT NULL DEFAULT false in the DB — matches the same semantics as
+     * `ownerSuspended` and `planRestricted`.
+     * Owner-managed via the protected `PATCH /:id/external-reputation/master-toggle`
+     * endpoint; defaults to false (hidden) until the owner opts in.
+     */
+    showExternalReputation: z.boolean().default(false),
+
     // Optional related data
     iaData: z.array(AccommodationIaDataSchema).optional(),
     faqs: z.array(BaseFaqSchema).optional(),
