@@ -586,115 +586,115 @@
             "id": "T-019",
             "title": "Public API routes (list, getById, getBySlug, reviews)",
             "description": "apps/api/src/routes/experience/public/* using route factories. Enforce visibility gate: only lifecycleState=ACTIVE + hasActiveSubscription=true; 404 otherwise. Use public-tier response schema (T-005). Tests: integration tests for list filtering, slug 404 on subscription-off, public field-strip leak guard.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-017", "T-005", "T-006", "T-007"],
             "blocks": ["T-022", "T-026", "T-029"],
             "subtasks": [
                 {
                     "title": "list + filters",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "getById + getBySlug (404 guard)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "reviews list",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "routes", "public"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
             }
         },
         {
             "id": "T-020",
             "title": "Protected API routes (updateOwn, review create/delete)",
             "description": "PATCH /protected/experiences/:id restricted to operational fields + COMMERCE_OWNER ownership; review create (PENDING moderation, one-per-user) and delete. Tests: integration tests — owner can update operational only, admin-only fields rejected, non-owner 403, review create sets PENDING.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-017", "T-004", "T-005"],
             "blocks": ["T-022"],
             "subtasks": [
                 {
                     "title": "updateOwn (operational guard)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "review create/delete",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "routes", "protected", "security"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
             }
         },
         {
             "id": "T-021",
             "title": "Admin API routes (CRUD + toggle-subscription + FAQs + hours + reviews)",
             "description": "Full admin route tree under /admin/experiences: create, list, getById, update, delete, restore, toggle-subscription, faqs CRUD+reorder, hours upsert/delete, review moderation. Permission-gated per spec matrix. Tests: integration tests for each endpoint incl permission denial, toggle-subscription flips visibility, FAQ reorder.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-017", "T-004", "T-005", "T-006"],
             "blocks": ["T-022", "T-031", "T-032", "T-033", "T-034", "T-035"],
             "subtasks": [
                 {
                     "title": "CRUD + restore",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "toggle-subscription",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "FAQs + hours + reviews",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "routes", "admin"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
             }
         },
         {
             "id": "T-022",
             "title": "API integration tests + update endpoint-gate-matrix",
             "description": "Cross-cutting integration test sweep for all experience endpoints (tier auth, permission gates, visibility) and update docs/billing/endpoint-gate-matrix.md. Tests: this task IS the integration test layer; assert 90% coverage on routes/experience.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-019", "T-020", "T-021"],
             "blocks": ["T-039"],
             "subtasks": [
                 {
                     "title": "Integration sweep",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "endpoint-gate-matrix update",
@@ -704,14 +704,14 @@
             "tags": ["api", "testing"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
             }
         },
         {
