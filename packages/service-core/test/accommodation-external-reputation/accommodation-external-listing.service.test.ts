@@ -2,10 +2,12 @@
  * Unit tests for AccommodationExternalListingService (SPEC-237 T-007)
  *
  * Covers:
- * - add: happy path, permission denial (non-owner), duplicate-platform VALIDATION_ERROR
- * - update: happy path, NOT_FOUND, permission denial
- * - remove: happy path, NOT_FOUND, permission denial
- * - setMasterToggle: happy path, permission denial
+ * - add: happy path, permission denial (non-owner), duplicate-platform VALIDATION_ERROR,
+ *   schema-fail VALIDATION_ERROR, INTERNAL_ERROR for null create result
+ * - update: happy path, NOT_FOUND (findById), FORBIDDEN, INTERNAL_ERROR (model.update throws),
+ *   VALIDATION_ERROR (schema-fail), NOT_FOUND (model.update returns null)
+ * - remove: happy path, NOT_FOUND, FORBIDDEN, INTERNAL_ERROR (softDelete throws)
+ * - setMasterToggle: happy path, admin, FORBIDDEN, VALIDATION_ERROR, INTERNAL_ERROR
  */
 
 import {
@@ -234,6 +236,84 @@ describe('AccommodationExternalListingService', () => {
             expect(result.data).toBeUndefined();
             expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
         });
+
+        it('should return NOT_FOUND when the accommodation is soft-deleted (resolveAccommodationOwnerId)', async () => {
+            // Exercises lines 81-85: resolveAccommodationOwnerId throws NOT_FOUND when
+            // accommodation.deletedAt is not null. The ServiceError propagates through add()'s
+            // catch block at line 187 and is returned as the ServiceError code.
+            const listingModel = makeListingModel();
+            const accommodationModel = makeAccommodationModel({
+                findById: vi
+                    .fn()
+                    .mockResolvedValue({ ...makeAccommodation(), deletedAt: new Date() })
+            });
+            const svc = new AccommodationExternalListingService(
+                ctx,
+                listingModel as never,
+                accommodationModel as never
+            );
+
+            const result = await svc.add(makeOwnerActor(), {
+                accommodationId: ACC_ID,
+                platform: ExternalPlatformEnum.GOOGLE,
+                url: 'https://maps.google.com/?cid=12345',
+                showLink: false,
+                showReviews: false
+            });
+
+            expect(result.data).toBeUndefined();
+            expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+        });
+
+        it('should return INTERNAL_ERROR when model.create returns null', async () => {
+            // Exercises the `!row` defensive guard after create (lines 177-183).
+            const listingModel = makeListingModel({
+                create: vi.fn().mockResolvedValue(null)
+            });
+            const accommodationModel = makeAccommodationModel();
+            const svc = new AccommodationExternalListingService(
+                ctx,
+                listingModel as never,
+                accommodationModel as never
+            );
+
+            const result = await svc.add(makeOwnerActor(), {
+                accommodationId: ACC_ID,
+                platform: ExternalPlatformEnum.GOOGLE,
+                url: 'https://maps.google.com/?cid=12345',
+                showLink: false,
+                showReviews: false
+            });
+
+            expect(result.data).toBeUndefined();
+            expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
+        });
+
+        it('should return INTERNAL_ERROR when create throws an unrecognized (non-unique) error', async () => {
+            // Exercises the final fallthrough (non-ServiceError, non-unique/duplicate/conflict)
+            // — lines 205-211.
+            const listingModel = makeListingModel({
+                create: vi.fn().mockRejectedValue(new Error('disk full'))
+            });
+            const accommodationModel = makeAccommodationModel();
+            const svc = new AccommodationExternalListingService(
+                ctx,
+                listingModel as never,
+                accommodationModel as never
+            );
+
+            const result = await svc.add(makeOwnerActor(), {
+                accommodationId: ACC_ID,
+                platform: ExternalPlatformEnum.GOOGLE,
+                url: 'https://maps.google.com/?cid=12345',
+                showLink: false,
+                showReviews: false
+            });
+
+            expect(result.data).toBeUndefined();
+            expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
+            expect(result.error?.message).toContain('disk full');
+        });
     });
 
     // -------------------------------------------------------------------------
@@ -313,6 +393,43 @@ describe('AccommodationExternalListingService', () => {
             expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
             expect(result.error?.message).toContain('Connection pool exhausted');
         });
+
+        it('should return VALIDATION_ERROR when update input fails the schema', async () => {
+            // Exercises lines 238-244: the schema validation path in update().
+            const listingModel = makeListingModel();
+            const accommodationModel = makeAccommodationModel();
+            const svc = new AccommodationExternalListingService(
+                ctx,
+                listingModel as never,
+                accommodationModel as never
+            );
+
+            // externalId must be string or null — passing a number fails validation
+            const result = await svc.update(makeOwnerActor(), LIST_ID, {
+                externalId: 99999 as never
+            });
+
+            expect(result.data).toBeUndefined();
+            expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+        });
+
+        it('should return NOT_FOUND when model.update returns null (row vanished after findById)', async () => {
+            // Exercises lines 274-280: the defensive NOT_FOUND guard after update().
+            const listingModel = makeListingModel({
+                update: vi.fn().mockResolvedValue(null)
+            });
+            const accommodationModel = makeAccommodationModel();
+            const svc = new AccommodationExternalListingService(
+                ctx,
+                listingModel as never,
+                accommodationModel as never
+            );
+
+            const result = await svc.update(makeOwnerActor(), LIST_ID, { showLink: false });
+
+            expect(result.data).toBeUndefined();
+            expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+        });
     });
 
     // -------------------------------------------------------------------------
@@ -382,6 +499,27 @@ describe('AccommodationExternalListingService', () => {
             expect(result.data).toBeUndefined();
             expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
             expect(result.error?.message).toContain('DB connection lost');
+        });
+
+        it('should return INTERNAL_ERROR when softDelete throws a non-Error value (String branch)', async () => {
+            // Exercises the `String(err)` branch in `err instanceof Error ? ... : String(err)`.
+            // Throwing a non-Error value (string) exercises the false branch of the ternary.
+            const listingModel = makeListingModel({
+                // eslint-disable-next-line @typescript-eslint/no-throw-literal, @typescript-eslint/prefer-promise-reject-errors
+                softDelete: vi.fn().mockRejectedValue('plain string error')
+            });
+            const accommodationModel = makeAccommodationModel();
+            const svc = new AccommodationExternalListingService(
+                ctx,
+                listingModel as never,
+                accommodationModel as never
+            );
+
+            const result = await svc.remove(makeOwnerActor(), LIST_ID);
+
+            expect(result.data).toBeUndefined();
+            expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
+            expect(result.error?.message).toContain('plain string error');
         });
     });
 

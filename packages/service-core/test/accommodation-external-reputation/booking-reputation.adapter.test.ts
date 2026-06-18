@@ -355,4 +355,124 @@ describe('BookingReputationAdapter', () => {
             expect(result.reviewsCount).toBe(150);
         });
     });
+
+    describe('@graph loop fallthrough — no aggregateRating found', () => {
+        it('should return null when @graph array has items but none have aggregateRating (line 129)', async () => {
+            // Exercises line 129: the `}` after the @graph loop when loop completes without
+            // finding aggregateRating → falls through to line 131 (array check) → line 139 (null).
+            const adapter = new BookingReputationAdapter({});
+            const listing = makeBookingListing();
+
+            const jsonLdWithEmptyGraph = {
+                '@type': 'WebSite',
+                '@graph': [
+                    { '@type': 'BreadcrumbList', itemListElement: [] },
+                    { '@type': 'Person', name: 'Author' }
+                    // No aggregateRating in any @graph node
+                ]
+            };
+
+            const html = `<script type="application/ld+json">${JSON.stringify(jsonLdWithEmptyGraph)}</script>`;
+
+            mockSafeExternalFetch.mockResolvedValueOnce({
+                ok: true,
+                status: 200,
+                body: html,
+                finalUrl: listing.url
+            });
+
+            const result = await adapter.fetch(listing);
+
+            // No aggregateRating found → all null
+            expect(result.rating).toBeNull();
+            expect(result.reviewsCount).toBeNull();
+        });
+
+        it('should return null when ratingValue and reviewCount are both undefined (line 158, 166)', async () => {
+            // Exercises the `ratingRaw !== undefined` false branch (→ null) and
+            // `countRaw !== undefined` false branch (→ null) in extractFromAggregateRating.
+            const adapter = new BookingReputationAdapter({});
+            const listing = makeBookingListing();
+
+            const jsonLd = {
+                '@type': 'Hotel',
+                aggregateRating: {
+                    // Neither ratingValue nor reviewCount present
+                    bestRating: 10
+                }
+            };
+
+            const html = `<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>`;
+
+            mockSafeExternalFetch.mockResolvedValueOnce({
+                ok: true,
+                status: 200,
+                body: html,
+                finalUrl: listing.url
+            });
+
+            const result = await adapter.fetch(listing);
+
+            expect(result.rating).toBeNull();
+            expect(result.reviewsCount).toBeNull();
+        });
+    });
+
+    describe('extractFromAggregateRating — string-typed ratingValue / reviewCount', () => {
+        it('should parse string-typed ratingValue via parseFloat (lines 157-158)', async () => {
+            // Exercises the `typeof ratingRaw !== 'number'` branch in extractFromAggregateRating.
+            const adapter = new BookingReputationAdapter({});
+            const listing = makeBookingListing();
+
+            const jsonLd = {
+                '@type': 'Hotel',
+                aggregateRating: {
+                    ratingValue: '9.4', // string, not number
+                    reviewCount: 512
+                }
+            };
+
+            const html = `<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>`;
+
+            mockSafeExternalFetch.mockResolvedValueOnce({
+                ok: true,
+                status: 200,
+                body: html,
+                finalUrl: listing.url
+            });
+
+            const result = await adapter.fetch(listing);
+
+            expect(result.rating).toBe(9.4);
+            expect(result.reviewsCount).toBe(512);
+        });
+
+        it('should parse string-typed reviewCount via parseInt (lines 165-166)', async () => {
+            // Exercises the `typeof countRaw !== 'number'` branch in extractFromAggregateRating.
+            const adapter = new BookingReputationAdapter({});
+            const listing = makeBookingListing();
+
+            const jsonLd = {
+                '@type': 'Hotel',
+                aggregateRating: {
+                    ratingValue: 8.2,
+                    reviewCount: '1024' // string, not number
+                }
+            };
+
+            const html = `<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>`;
+
+            mockSafeExternalFetch.mockResolvedValueOnce({
+                ok: true,
+                status: 200,
+                body: html,
+                finalUrl: listing.url
+            });
+
+            const result = await adapter.fetch(listing);
+
+            expect(result.rating).toBe(8.2);
+            expect(result.reviewsCount).toBe(1024);
+        });
+    });
 });
