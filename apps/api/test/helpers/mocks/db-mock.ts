@@ -654,6 +654,8 @@ export function createDbMock() {
         // initApp() build the whole app (previously initApp threw on the first missing model,
         // so NO route test could collect).
         AccessTokenModel: GenericMockModel,
+        AccommodationExternalListingModel: GenericMockModel,
+        AccommodationExternalReputationModel: GenericMockModel,
         AccommodationFaqModel: GenericMockModel,
         AccommodationIaDataModel: GenericMockModel,
         AccommodationReviewModel: GenericMockModel,
