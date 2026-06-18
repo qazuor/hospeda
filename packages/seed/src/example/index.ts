@@ -10,6 +10,7 @@ import { seedEntityTagAssignments } from './entityTagAssignments.seed.js';
 import { seedEventLocations } from './eventLocations.seed.js';
 import { seedEventOrganizers } from './eventOrganizers.seed.js';
 import { seedEvents } from './events.seed.js';
+import { seedExperiences } from './experiences.seed.js';
 import { seedHostTrades } from './hostTrades.seed.js';
 import { seedPostSponsors } from './postSponsors.seed.js';
 import { seedPostSponsorships } from './postSponsorships.seed.js';
@@ -55,8 +56,10 @@ import { seedUsers } from './users.seed.js';
  * // 4. Events
  * // 5. Posts (with sponsors/sponsorships)
  * // 6. Reviews
- * // 7. Bookmarks and tags
- * // 8. Tag relations (connecting tags to entities)
+ * // 7. Host trades
+ * // 8. Experiences (commerce listings — SPEC-240)
+ * // 9. Bookmarks and tags
+ * // 10. Tag relations (connecting tags to entities)
  * ```
  *
  * @throws {Error} When seeding fails and continueOnError is false
@@ -83,6 +86,9 @@ export async function runExampleSeeds(context: SeedContext): Promise<void> {
         await seedDestinationReviews(context);
         await seedAccommodationReviews(context);
         await seedHostTrades(context);
+        // SPEC-240 T-014 — experience commerce listing seed data
+        await seedExperiences(context);
+        context.actor = oldContextActor;
         await seedUserBookmarkCollections(context);
         await seedBookmarks(context);
         context.actor = oldContextActor;
