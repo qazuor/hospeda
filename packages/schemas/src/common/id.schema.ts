@@ -210,3 +210,14 @@ export type TouristServiceIdType = z.infer<typeof TouristServiceIdSchema>;
 
 export const UserBookmarkCollectionIdSchema = BaseIdSchema;
 export type UserBookmarkCollectionIdType = z.infer<typeof UserBookmarkCollectionIdSchema>;
+
+// === Accommodation External IDs (SPEC-237) ===
+export const AccommodationExternalListingIdSchema = BaseIdSchema;
+export type AccommodationExternalListingIdType = z.infer<
+    typeof AccommodationExternalListingIdSchema
+>;
+
+export const AccommodationExternalReputationIdSchema = BaseIdSchema;
+export type AccommodationExternalReputationIdType = z.infer<
+    typeof AccommodationExternalReputationIdSchema
+>;

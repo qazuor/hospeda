@@ -153,3 +153,6 @@ export * from './tag-type.schema.js';
 
 export * from './visibility.enum.js';
 export * from './visibility.schema.js';
+
+export * from './external-platform.enum.js';
+export * from './external-platform.schema.js';
