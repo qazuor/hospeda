@@ -82,7 +82,9 @@ export const namespaces = [
     // Gastronomy commerce listings (SPEC-239)
     'gastronomy',
     // Commerce shared (lead form, change-password, visibility — SPEC-239)
-    'commerce'
+    'commerce',
+    // External reputation from third-party platforms (SPEC-237)
+    'external-reputation'
 ] as const;
 
 export type Namespace = (typeof namespaces)[number];
@@ -161,6 +163,7 @@ import destinationEs from './locales/es/destination.json';
 import errorEs from './locales/es/error.json';
 import eventEs from './locales/es/event.json';
 import exchangeRateEs from './locales/es/exchange-rate.json';
+import externalReputationEs from './locales/es/external-reputation.json';
 import faqEs from './locales/es/faq.json';
 import fieldsEs from './locales/es/fields.json';
 import footerEs from './locales/es/footer.json';
@@ -218,6 +221,7 @@ import destinationEn from './locales/en/destination.json';
 import errorEn from './locales/en/error.json';
 import eventEn from './locales/en/event.json';
 import exchangeRateEn from './locales/en/exchange-rate.json';
+import externalReputationEn from './locales/en/external-reputation.json';
 import faqEn from './locales/en/faq.json';
 import fieldsEn from './locales/en/fields.json';
 import footerEn from './locales/en/footer.json';
@@ -275,6 +279,7 @@ import destinationPt from './locales/pt/destination.json';
 import errorPt from './locales/pt/error.json';
 import eventPt from './locales/pt/event.json';
 import exchangeRatePt from './locales/pt/exchange-rate.json';
+import externalReputationPt from './locales/pt/external-reputation.json';
 import faqPt from './locales/pt/faq.json';
 import fieldsPt from './locales/pt/fields.json';
 import footerPt from './locales/pt/footer.json';
@@ -321,6 +326,7 @@ const rawTranslations = {
         error: errorEs,
         events: eventEs,
         'exchange-rate': exchangeRateEs,
+        'external-reputation': externalReputationEs,
         faq: faqEs,
         footer: footerEs,
         home: homeEs,
@@ -378,6 +384,7 @@ const rawTranslations = {
         error: errorEn,
         events: eventEn,
         'exchange-rate': exchangeRateEn,
+        'external-reputation': externalReputationEn,
         faq: faqEn,
         footer: footerEn,
         home: homeEn,
@@ -435,6 +442,7 @@ const rawTranslations = {
         error: errorPt,
         events: eventPt,
         'exchange-rate': exchangeRatePt,
+        'external-reputation': externalReputationPt,
         faq: faqPt,
         footer: footerPt,
         home: homePt,
