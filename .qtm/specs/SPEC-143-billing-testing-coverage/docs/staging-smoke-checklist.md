@@ -1251,6 +1251,185 @@ read-through.
 
 ---
 
+---
+
+## External Reputation (SPEC-237)
+
+Covers the external-platform reputation block on accommodation detail pages:
+Google Places review snippets, Booking/Airbnb aggregate ratings, the owner
+refresh rate-limit, and the public display invariant that internal
+`averageRating` is never affected.
+
+**Run where**: staging (`https://staging.hospeda.com.ar` /
+`https://staging-api.hospeda.com.ar`).
+
+**Prerequisites**:
+
+- `HOSPEDA_GOOGLE_PLACES_API_KEY` set in Coolify for `hospeda-api-staging`.
+- `HOSPEDA_APIFY_TOKEN` set in Coolify for `hospeda-api-staging`.
+- A test accommodation with at least one published listing and a valid Google
+  Maps URL registered as an external listing (admin panel → Accommodations →
+  External Listings tab, or via `POST /api/v1/protected/accommodations/:id/external-listings`).
+- A second test accommodation with a Booking.com external listing registered.
+- Access to `hops psql --target=staging` for post-step state inspection.
+
+---
+
+### EXT-1 — Google Places fetch: rating + snippets + attribution
+
+**Pre-conditions**:
+
+- The test accommodation has a Google external listing registered with
+  `showReviews=true` and a real Google Place ID resolvable from its URL.
+- `snippetsFetchedAt` is `null` or older than 30 days in
+  `accommodation_external_reputation` (to ensure a fresh fetch).
+
+**Steps**:
+
+1. Trigger a manual refresh:
+
+   ```bash
+   curl -X POST https://staging-api.hospeda.com.ar/api/v1/protected/accommodations/<id>/external-reputation/refresh \
+     -H "Cookie: <owner-session>"
+   ```
+
+   Confirm **HTTP 201**.
+2. Inspect the DB row:
+
+   ```sql
+   SELECT rating, reviews_count, snippets, snippets_fetched_at, fetch_status
+   FROM accommodation_external_reputation
+   WHERE accommodation_id = '<id>' AND platform = 'google';
+   ```
+
+   Expect: `fetch_status = 'ok'`, `rating` is not null, `reviews_count > 0`,
+   `snippets` is a non-empty JSON array (at least 1 entry), `snippets_fetched_at`
+   is recent.
+3. Load the accommodation detail page on staging.
+4. Confirm the external reputation block is visible (requires
+   `show_external_reputation = true` on the accommodation row).
+5. Confirm each Google review snippet shows author name, relative date, and
+   review text.
+6. Confirm the "Powered by Google" attribution link (`attributionUrl`) is rendered
+   next to the Google section.
+
+**Expected**: `rating` + at least one snippet with attribution visible on the
+detail page. Internal `averageRating` on the page header is unchanged (verify
+against the DB value before/after the refresh).
+
+**Run log**: (date / executor / PR / result / notes)
+
+---
+
+### EXT-2 — Booking.com aggregate fetch: rating + count, no snippet text
+
+**Pre-conditions**:
+
+- The test accommodation has a Booking.com external listing registered with
+  `showRating=true` and a real Booking.com listing URL.
+
+**Steps**:
+
+1. Trigger a manual refresh:
+
+   ```bash
+   curl -X POST https://staging-api.hospeda.com.ar/api/v1/protected/accommodations/<id>/external-reputation/refresh \
+     -H "Cookie: <owner-session>"
+   ```
+
+   Confirm **HTTP 201**.
+2. Inspect the DB row:
+
+   ```sql
+   SELECT rating, reviews_count, snippets, fetch_status
+   FROM accommodation_external_reputation
+   WHERE accommodation_id = '<id>' AND platform = 'booking';
+   ```
+
+   Expect: `fetch_status = 'ok'`, `rating` is not null, `reviews_count > 0`,
+   **`snippets` IS NULL** (legal guard — booking adapter must never populate text).
+3. Call the public endpoint:
+
+   ```bash
+   curl https://staging-api.hospeda.com.ar/api/v1/public/accommodations/<id>/external-reputation
+   ```
+
+   Inspect the response body. Confirm the Booking section contains `rating` and
+   `reviewsCount` and **does not contain a `snippets` key** (or `snippets` is
+   `null`).
+4. Load the detail page on staging. Confirm the Booking section shows the numeric
+   rating + review count + deep link but no review text.
+
+**Expected**: Aggregate data visible; no review text present anywhere in the
+response or UI. This is the legal guard: aggregate numbers are factual, review
+text is copyrighted.
+
+**Run log**: (date / executor / PR / result / notes)
+
+---
+
+### EXT-3 — Owner refresh rate-limit enforced on second call
+
+**Pre-conditions**: Any accommodation with at least one external listing registered.
+
+**Steps**:
+
+1. Send the first refresh request (should succeed):
+
+   ```bash
+   curl -X POST https://staging-api.hospeda.com.ar/api/v1/protected/accommodations/<id>/external-reputation/refresh \
+     -H "Cookie: <owner-session>"
+   ```
+
+   Confirm **HTTP 201**.
+2. Immediately send a second refresh request (within the rate-limit window):
+
+   ```bash
+   curl -i -X POST https://staging-api.hospeda.com.ar/api/v1/protected/accommodations/<id>/external-reputation/refresh \
+     -H "Cookie: <owner-session>"
+   ```
+
+3. Confirm **HTTP 429**. Inspect the response body for a `retryAfter` field (or
+   equivalent message indicating when the next refresh is allowed).
+4. In the admin UI or accommodation edit page, confirm the "Refresh" button is
+   disabled / shows a "try again in X minutes" message.
+
+**Expected**: 429 on the second call within the window; `Retry-After` header
+present; UI shows the retry message to the owner.
+
+**Run log**: (date / executor / PR / result / notes)
+
+---
+
+### EXT-4 — Public detail page: external block display + internal rating unchanged
+
+**Pre-conditions**:
+
+- The test accommodation has `show_external_reputation = true`.
+- At least one platform has a cached reputation row with `fetch_status = 'ok'`.
+- The internal `averageRating` value is noted before the test.
+
+**Steps**:
+
+1. Load the accommodation public detail page in a browser (no auth).
+2. Confirm the external reputation block is rendered (platform logo, rating, count,
+   deep link per enabled platform).
+3. Confirm each platform section shows only the data appropriate to its legal tier:
+   - Google: rating + review count + up to 5 snippet entries with author + date +
+     text + "Powered by Google" attribution.
+   - Booking / Airbnb / generic: rating + review count + deep link only (no text).
+4. Confirm the page's accommodation rating (the internal `averageRating` sourced
+   from `accommodation_reviews`) is identical to the value noted in pre-conditions.
+5. Toggle `show_external_reputation = false` via the owner or admin UI.
+6. Reload the detail page. Confirm the external block is no longer rendered.
+
+**Expected**: External block visible when enabled, hidden when disabled. Internal
+rating is unaffected by any external data present in the DB.
+
+**Run log**: (date / executor / PR / result / notes)
+
+---
+
 ## Sign-off block
 
 After completing the sections relevant to the PR, file a sign-off entry:
