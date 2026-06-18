@@ -1261,9 +1261,9 @@
     ],
     "summary": {
         "total": 40,
-        "pending": 22,
+        "pending": 18,
         "inProgress": 0,
-        "completed": 17,
+        "completed": 21,
         "blocked": 1,
         "averageComplexity": 1.9
     }
