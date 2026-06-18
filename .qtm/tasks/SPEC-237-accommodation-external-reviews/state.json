@@ -1,0 +1,633 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-237",
+    "title": "External-platform reviews & reputation on accommodation pages",
+    "created": "2026-06-18T00:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add ExternalPlatformEnum + schemas for external-listing and external-reputation entities",
+            "description": "Create packages/schemas/src/enums/external-platform.enum.ts with ExternalPlatformEnum (GOOGLE | BOOKING | AIRBNB | OTHER) and its Zod schema. Re-export from packages/schemas/src/enums/index.ts.\n\nCreate packages/schemas/src/entities/accommodation-external/ with:\n- accommodation-external-listing.schema.ts: AccommodationExternalListingSchema (id, accommodationId, platform, url, externalId nullish, showLink bool default false, showReviews bool default false, verified bool default false, + audit/lifecycle fields), CreateAccommodationExternalListingSchema, UpdateAccommodationExternalListingSchema.\n- accommodation-external-reputation.schema.ts: AccommodationExternalReputationSchema (id, accommodationId, platform, listingId FK, rating numeric nullish, reviewsCount int nullish, deepLink nullish, snippets jsonb nullish [array of {author, text, rating, timeIso, authorUrl, profilePhoto, relativeTime}], snippetsFetchedAt timestamptz nullish, aggregateFetchedAt timestamptz nullish, fetchStatus enum 'ok'|'blocked'|'not_found'|'error', fetchMessage nullish, + createdAt/updatedAt).\n- accommodation-external.public.schema.ts: ExternalReputationBlockSchema for the public detail page (toggle-filtered shape — only the fields the UI shows, per-platform items with showLink/showReviews applied, TTL-degraded snippets).\n- index.ts re-exporting all.\n\nKey files:\n- packages/schemas/src/enums/external-platform.enum.ts (new)\n- packages/schemas/src/entities/accommodation-external/*.schema.ts (new)\n- packages/schemas/src/enums/index.ts (updated)\n- packages/schemas/src/entities/index.ts (updated)\n\nTests: vitest schema tests covering valid/invalid parse, required-field enforcement, public shape strips snippets for non-Google platforms.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-003"],
+            "subtasks": [
+                {
+                    "title": "Create ExternalPlatformEnum + Zod schema; re-export from enums/index.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Create accommodation-external-listing.schema.ts + CRUD schemas",
+                    "completed": false
+                },
+                {
+                    "title": "Create accommodation-external-reputation.schema.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Create accommodation-external.public.schema.ts (display shape)",
+                    "completed": false
+                },
+                {
+                    "title": "index.ts + entities/index.ts re-exports + vitest schema tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["schemas", "enum", "zod"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Register env vars for external reputation (registry + app env.ts + .env.example)",
+            "description": "Register all new env vars in packages/config/src/env-registry.*.ts with full metadata:\n- HOSPEDA_GOOGLE_PLACES_API_KEY (secret; shared with SPEC-222 — verify it is not already registered; if so, skip)\n- HOSPEDA_APIFY_TOKEN (secret; shared with SPEC-222 — same check)\n- HOSPEDA_EXTREP_GOOGLE_SNIPPET_TTL_DAYS (integer, default 30)\n- HOSPEDA_EXTREP_REFRESH_RATE_LIMIT (string, default e.g. '1/600' meaning 1 per accommodation per 600 seconds)\n- HOSPEDA_EXTREP_CRON_SCHEDULE (string, default weekly cron expression '0 2 * * 1')\n\nAdd Zod validation for each in apps/api/src/utils/env.ts (ApiEnvBaseSchema or extension). Update apps/api/.env.example with safe placeholder values.\n\nKey files:\n- packages/config/src/env-registry.*.ts (updated)\n- apps/api/src/utils/env.ts (updated)\n- apps/api/.env.example (updated)\n\nAfter writing: STOP and note in progress.md that owner must set HOSPEDA_GOOGLE_PLACES_API_KEY, HOSPEDA_APIFY_TOKEN in Coolify for api (staging + prod) before the refresh endpoint will function.\n\nTests: pnpm env:check:registry must pass (CI gate).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-006", "T-007"],
+            "subtasks": [
+                {
+                    "title": "Check if HOSPEDA_GOOGLE_PLACES_API_KEY + HOSPEDA_APIFY_TOKEN already exist in registry (SPEC-222 may have added them)",
+                    "completed": false
+                },
+                {
+                    "title": "Register HOSPEDA_EXTREP_* vars in config registry",
+                    "completed": false
+                },
+                {
+                    "title": "Add Zod validation in apps/api/src/utils/env.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Update apps/api/.env.example with placeholders",
+                    "completed": false
+                },
+                {
+                    "title": "Verify pnpm env:check:registry passes",
+                    "completed": false
+                }
+            ],
+            "tags": ["config", "env"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Add i18n keys for external reputation (es/en/pt)",
+            "description": "Create packages/i18n/src/locales/{es,en,pt}/external-reputation.json with all UI keys needed by the spec:\n- section.title ('Reputación en otras plataformas' / translations)\n- section.subtitle\n- platform.google / platform.booking / platform.airbnb / platform.other\n- link.cta (e.g. 'Mirá nuestro alojamiento en {platform} →')\n- aggregate.rating / aggregate.reviewsCount / aggregate.noData\n- snippets.googleOnly (explainer: 'Solo Google muestra reseñas completas porque provee una API oficial...')\n- snippets.ttlExpired ('Las reseñas de texto no están disponibles temporalmente; mostrando solo el puntaje')\n- snippets.byAuthor / snippets.on (date prefix)\n- ownerConfig.title / ownerConfig.addListing / ownerConfig.showLink / ownerConfig.showReviews\n- ownerConfig.masterToggle / ownerConfig.refresh / ownerConfig.lastUpdated\n- ownerConfig.rateLimitHit ('Podés actualizar nuevamente en {minutes} minutos')\n- ownerConfig.googleOnlyExplainer (same rationale as public note but for owner config panel)\n- ownerConfig.verifiedHint\n- errors.fetchFailed / errors.notFound / errors.blocked\n\nEnsure key parity across all three locales (i18n parity test must pass).\n\nKey files:\n- packages/i18n/src/locales/es/external-reputation.json (new)\n- packages/i18n/src/locales/en/external-reputation.json (new)\n- packages/i18n/src/locales/pt/external-reputation.json (new)",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-011", "T-012"],
+            "subtasks": [
+                {
+                    "title": "es/external-reputation.json",
+                    "completed": false
+                },
+                {
+                    "title": "en/external-reputation.json",
+                    "completed": false
+                },
+                {
+                    "title": "pt/external-reputation.json",
+                    "completed": false
+                },
+                {
+                    "title": "Verify locale key parity test passes",
+                    "completed": false
+                }
+            ],
+            "tags": ["i18n"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Add ExternalPlatformPgEnum to DB enums + create two new DB schema tables + models",
+            "description": "Part A — Enums:\nIn packages/db/src/schemas/enums.dbschema.ts add:\n- ExternalPlatformPgEnum = pgEnum('external_platform_enum', enumToTuple(ExternalPlatformEnum))\n- ExternalReputationFetchStatusPgEnum = pgEnum('external_reputation_fetch_status_enum', enumToTuple(['ok','blocked','not_found','error']))\n\nPart B — Tables:\nCreate packages/db/src/schemas/accommodation-external/:\n- accommodation_external_listings.dbschema.ts: accommodationExternalListings table (id uuid PK, accommodationId FK → accommodations, platform ExternalPlatformPgEnum, url text NOT NULL, externalId text nullable, showLink boolean default false, showReviews boolean default false, verified boolean default false, + BaseAuditFields + BaseLifecycleFields). UNIQUE constraint on (accommodationId, platform).\n- accommodation_external_reputation.dbschema.ts: accommodationExternalReputation table (id uuid PK, accommodationId FK → accommodations, platform ExternalPlatformPgEnum, listingId FK → accommodation_external_listings, rating numeric(3,2) nullable, reviewsCount integer nullable, deepLink text nullable, snippets jsonb nullable, snippetsFetchedAt timestamptz nullable, aggregateFetchedAt timestamptz nullable, fetchStatus ExternalReputationFetchStatusPgEnum default 'ok', fetchMessage text nullable, createdAt timestamptz, updatedAt timestamptz). UNIQUE on (accommodationId, platform).\n- index.ts + update packages/db/src/schemas/index.ts.\n\nPart C — Master toggle column:\nAdd showExternalReputation boolean NOT NULL DEFAULT false additive column to the accommodations table in packages/db/src/schemas/accommodation/accommodation.dbschema.ts.\n\nPart D — Models:\nCreate packages/db/src/models/accommodationExternal/:\n- accommodation-external-listing.model.ts: AccommodationExternalListingModel extending BaseModel (soft delete). Custom method findByAccommodation(accommodationId).\n- accommodation-external-reputation.model.ts: AccommodationExternalReputationModel extending BaseModel. Custom method upsertReputation(data) (INSERT ... ON CONFLICT (accommodationId, platform) DO UPDATE SET ...) and findForDisplay(accommodationId) (returns rows where platform matches listings with showReviews=true or showLink=true).\n- index.ts + update packages/db/src/models/index.ts.\n\nKey files:\n- packages/db/src/schemas/enums.dbschema.ts (updated)\n- packages/db/src/schemas/accommodation-external/*.dbschema.ts (new)\n- packages/db/src/schemas/accommodation/accommodation.dbschema.ts (updated — additive column)\n- packages/db/src/models/accommodationExternal/*.model.ts (new)\n\nTests: model integration tests for findByAccommodation, upsertReputation (idempotency), findForDisplay (toggle filtering).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-005"],
+            "subtasks": [
+                {
+                    "title": "Add ExternalPlatformPgEnum + FetchStatusPgEnum to enums.dbschema.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Create accommodation_external_listings table + UNIQUE constraint",
+                    "completed": false
+                },
+                {
+                    "title": "Create accommodation_external_reputation table + UNIQUE constraint",
+                    "completed": false
+                },
+                {
+                    "title": "Add showExternalReputation column to accommodations table",
+                    "completed": false
+                },
+                {
+                    "title": "Create AccommodationExternalListingModel + AccommodationExternalReputationModel",
+                    "completed": false
+                },
+                {
+                    "title": "Integration tests (findByAccommodation, upsertReputation idempotency, findForDisplay)",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "drizzle", "schema", "model"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Generate, review, and apply DB migration for the two new tables + master-toggle column",
+            "description": "Run pnpm db:generate to produce the structural migration SQL. Review the generated SQL:\n- Two new tables (accommodation_external_listings, accommodation_external_reputation) with FK constraints, UNIQUE constraints, PG enums.\n- Additive boolean column showExternalReputation DEFAULT false on accommodations (safe — existing rows get false, no data loss).\n\nCommit the migration file. Verify pnpm db:migrate applies cleanly locally.\n\nNo extras carril needed for this task (no triggers or partial indexes required for MVP — the UNIQUE constraints are standard and go into the structural migration).\n\nKey files:\n- packages/db/src/migrations/<timestamp>_external_reputation.sql (new, generated)\n- packages/db/src/migrations/meta/_journal.json (updated by generate)\n\nTests: confirm pnpm db:migrate runs without error locally; confirm pnpm db:generate afterward produces no drift (schema matches migration).",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-006", "T-007"],
+            "subtasks": [
+                {
+                    "title": "Run pnpm db:generate and review generated SQL",
+                    "completed": false
+                },
+                {
+                    "title": "Commit migration file + journal update",
+                    "completed": false
+                },
+                {
+                    "title": "Verify pnpm db:migrate applies cleanly; confirm no drift",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "migration"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Build reputation fetch adapters (Google snippets + aggregate-only for Booking/Airbnb/generic)",
+            "description": "Create packages/service-core/src/services/accommodation-external-reputation/adapters/ with a separate adapter per platform, following the ImportSourceAdapter pattern from SPEC-222.\n\nIMPORTANT: The existing google-places.adapter.ts at packages/service-core/src/services/accommodation-import/adapters/google-places.adapter.ts EXPLICITLY EXCLUDES rating/reviews from its field mask (SPEC-222 policy). Do NOT modify that adapter. Create a NEW dedicated adapter for reputation fetching.\n\n- google-reputation.adapter.ts: Uses Places API (New) Place Details. Resolves placeId from the Maps URL (can reuse extractPlaceId helper from the import adapter if exported). Fetches with field mask INCLUDING 'rating,userRatingsTotal,reviews' (up to 5 review snippets). Maps to ReputationFetchResult { rating, reviewsCount, deepLink, snippets: [{author, text, rating, timeIso, authorUrl, profilePhoto, relativeTime}] }. Includes Google attribution URL in result.\n- booking-reputation.adapter.ts: Uses safeExternalFetch (from @repo/utils) to fetch the Booking.com listing page, parses JSON-LD aggregateRating. Falls back to Apify actor via the existing apify-client.ts (reuse). Strips ALL review text — maps only rating, reviewsCount, deepLink. Test asserts no 'text' or 'snippet' field in output.\n- airbnb-reputation.adapter.ts: Uses Apify actor via the existing apify-client.ts. Maps only rating, reviewsCount, deepLink. Test asserts no 'text' or 'snippet' field in output.\n- generic-reputation.adapter.ts: safeExternalFetch + JSON-LD aggregateRating parser. Maps only rating, reviewsCount, deepLink.\n- adapter.types.ts: ReputationFetchResult type, ReputationAdapter interface.\n- index.ts: adapter factory getReputationAdapter(platform).\n\nKey files:\n- packages/service-core/src/services/accommodation-external-reputation/adapters/*.ts (new)\n\nTests:\n- google-reputation.adapter.test.ts: mock Places API response; assert snippets mapped correctly; assert TTL anchor set.\n- booking-reputation.adapter.test.ts + airbnb-reputation.adapter.test.ts: assert NO text/snippet fields in output (AC-7.1 legal guard).\n- generic-reputation.adapter.test.ts: JSON-LD parse + safeExternalFetch mock.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-002", "T-005"],
+            "blocks": ["T-007"],
+            "subtasks": [
+                {
+                    "title": "Define ReputationFetchResult type + ReputationAdapter interface",
+                    "completed": false
+                },
+                {
+                    "title": "google-reputation.adapter.ts (Places API + snippets + placeId resolve)",
+                    "completed": false
+                },
+                {
+                    "title": "booking-reputation.adapter.ts (safeExternalFetch JSON-LD + Apify fallback; aggregate-only)",
+                    "completed": false
+                },
+                {
+                    "title": "airbnb-reputation.adapter.ts (Apify; aggregate-only)",
+                    "completed": false
+                },
+                {
+                    "title": "generic-reputation.adapter.ts (safeExternalFetch + JSON-LD)",
+                    "completed": false
+                },
+                {
+                    "title": "Adapter factory getReputationAdapter(platform)",
+                    "completed": false
+                },
+                {
+                    "title": "Unit tests incl. AC-7.1 legal guard (no text leaks for non-Google)",
+                    "completed": false
+                }
+            ],
+            "tags": ["service-core", "adapters", "google-places", "apify", "ssrf"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Create AccommodationExternalListingService + AccommodationExternalReputationService",
+            "description": "Two services in packages/service-core/src/services/accommodation-external-reputation/:\n\naccommodation-external-listing.service.ts:\n- Owner CRUD for listing config: add(actor, data), update(actor, id, data), remove(actor, id).\n- Permission check: ACCOMMODATION_UPDATE_OWN for all ops (verify actor owns the accommodation).\n- Unique (accommodationId, platform) constraint violations → typed VALIDATION_ERROR.\n- setMasterToggle(actor, accommodationId, value: boolean): updates accommodations.showExternalReputation.\n- Tests: unit tests for add/update/remove/setMasterToggle, permission denials, duplicate platform error.\n\naccommodation-external-reputation.service.ts (stateless-helper style, NOT BaseCrudService):\n- refresh(accommodationId, actor): iterates enabled listings (showReviews=true), calls getReputationAdapter(platform).fetch(listing), calls model.upsertReputation. Rate-limited check via env HOSPEDA_EXTREP_REFRESH_RATE_LIMIT (checked against aggregateFetchedAt; returns typed RATE_LIMIT_ERROR). Partial failure: a platform error → writes fetchStatus='error', continues others (AC-2.3). Returns RefreshResult { succeeded: string[], failed: Array<{platform, error}> }.\n- listForDisplay(accommodationId): returns toggle-filtered, TTL-degraded data. Checks accommodations.showExternalReputation (master toggle). For each platform checks showLink/showReviews flags. For Google: if now - snippetsFetchedAt > TTL_DAYS → strips snippets from result (AC-7.2 degrade).\n- disableReputation(accommodationId, actor): admin-only soft-disable. Sets all listings showLink=false + showReviews=false for the accommodation (minimal admin takedown per micro-decision 2). Requires ACCOMMODATION_UPDATE_ANY.\n\nKey files:\n- packages/service-core/src/services/accommodation-external-reputation/accommodation-external-listing.service.ts (new)\n- packages/service-core/src/services/accommodation-external-reputation/accommodation-external-reputation.service.ts (new)\n\nTests: unit tests for refresh (partial failure, rate limit, full success), listForDisplay (master-toggle off, TTL degrade, per-platform toggle filtering), disableReputation permission check.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-005", "T-006"],
+            "blocks": ["T-008", "T-009"],
+            "subtasks": [
+                {
+                    "title": "AccommodationExternalListingService (add/update/remove/setMasterToggle + permission checks)",
+                    "completed": false
+                },
+                {
+                    "title": "refresh() with rate-limit check, adapter dispatch, upsert, partial-failure handling",
+                    "completed": false
+                },
+                {
+                    "title": "listForDisplay() with master-toggle, per-platform toggle, TTL degrade",
+                    "completed": false
+                },
+                {
+                    "title": "disableReputation() admin takedown (ACCOMMODATION_UPDATE_ANY)",
+                    "completed": false
+                },
+                {
+                    "title": "Unit tests for all ops, rate-limit, TTL, partial-failure, permission denials",
+                    "completed": false
+                }
+            ],
+            "tags": ["service-core", "business-logic", "testing"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Create owner listing-config CRUD endpoints + owner refresh endpoint",
+            "description": "Create apps/api/src/routes/accommodation-external-reputation/protected/ routes:\n\nListing-config CRUD (thin handlers delegating to AccommodationExternalListingService):\n- GET  /api/v1/protected/accommodations/:id/external-listings — list all configs for this accommodation.\n- POST /api/v1/protected/accommodations/:id/external-listings — add listing config.\n- PATCH /api/v1/protected/accommodations/:id/external-listings/:listingId — update URL/toggles.\n- DELETE /api/v1/protected/accommodations/:id/external-listings/:listingId — remove listing.\n- PATCH /api/v1/protected/accommodations/:id/external-reputation/master-toggle — setMasterToggle.\n\nRefresh endpoint:\n- POST /api/v1/protected/accommodations/:id/external-reputation/refresh — triggers refresh(). Permission: ACCOMMODATION_UPDATE_OWN. Returns 429 with retry-after hint when rate-limited (AC-2.1). Returns RefreshResult shape.\n\nRegister all routes in apps/api/src/routes/index.ts.\n\nUse ResponseFactory for consistent responses. Import request/response schemas from @repo/schemas.\n\nKey files:\n- apps/api/src/routes/accommodation-external-reputation/protected/*.ts (new)\n- apps/api/src/routes/index.ts (updated)\n\nTests: API integration tests — 200/201 happy paths, 401 unauthenticated, 403 non-owner, 429 rate-limit on refresh, 409 duplicate platform on POST.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-010", "T-012"],
+            "subtasks": [
+                {
+                    "title": "GET/POST/PATCH/DELETE listing-config routes",
+                    "completed": false
+                },
+                {
+                    "title": "PATCH master-toggle route",
+                    "completed": false
+                },
+                {
+                    "title": "POST refresh route (rate-limit → 429 + retry hint)",
+                    "completed": false
+                },
+                {
+                    "title": "Register routes in routes/index.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Integration tests (200/201/401/403/409/429)",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "hono", "protected", "testing"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Create public endpoint GET /public/accommodations/:id/external-reputation + admin disable endpoint",
+            "description": "Public endpoint:\n- GET /api/v1/public/accommodations/:id/external-reputation — calls listForDisplay(accommodationId). Returns ExternalReputationBlockSchema shape (toggle-filtered, TTL-degraded). Returns empty block (not 404) if master toggle is off. Short server-side cache (e.g. 5 min via Cache-Control). No auth required.\n\nAdmin endpoint (minimal takedown per micro-decision 2):\n- POST /api/v1/admin/accommodations/:id/external-reputation/disable — calls disableReputation(). Permission: ACCOMMODATION_UPDATE_ANY. Disables showLink=false + showReviews=false for all listings of this accommodation. No destructive purge (data stays). Returns 200 { disabled: true }.\n\nRegister in apps/api/src/routes/index.ts.\n\nKey files:\n- apps/api/src/routes/accommodation-external-reputation/public/get-external-reputation.ts (new)\n- apps/api/src/routes/accommodation-external-reputation/admin/disable-reputation.ts (new)\n- apps/api/src/routes/index.ts (updated)\n\nTests: public route — 200 with data (master toggle on), 200 with empty block (toggle off), no auth required. Admin route — 200 with ACCOMMODATION_UPDATE_ANY, 403 without, 404 for unknown accommodation.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-010", "T-011"],
+            "subtasks": [
+                {
+                    "title": "Public GET /public/accommodations/:id/external-reputation (toggle-filtered, cached)",
+                    "completed": false
+                },
+                {
+                    "title": "Admin POST /admin/accommodations/:id/external-reputation/disable",
+                    "completed": false
+                },
+                {
+                    "title": "Register routes in routes/index.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Integration tests (public 200/empty, admin 200/403/404)",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "hono", "public", "admin", "testing"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Add endpoint-gate-matrix rows for all SPEC-237 routes",
+            "description": "Add rows to docs/billing/endpoint-gate-matrix.md for:\n- GET /public/accommodations/:id/external-reputation — public, no auth, no entitlement gate.\n- POST /protected/accommodations/:id/external-reputation/refresh — ACCOMMODATION_UPDATE_OWN, no billing gate (feature available to all hosts with a listing).\n- GET/POST/PATCH/DELETE /protected/accommodations/:id/external-listings — ACCOMMODATION_UPDATE_OWN, no billing gate.\n- PATCH /protected/accommodations/:id/external-reputation/master-toggle — ACCOMMODATION_UPDATE_OWN, no billing gate.\n- POST /admin/accommodations/:id/external-reputation/disable — ACCOMMODATION_UPDATE_ANY, admin only.\n\nKey files:\n- docs/billing/endpoint-gate-matrix.md (updated)",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-008", "T-009"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add public endpoint row (no auth, no gate)",
+                    "completed": false
+                },
+                {
+                    "title": "Add protected endpoint rows (ACCOMMODATION_UPDATE_OWN, no billing gate)",
+                    "completed": false
+                },
+                {
+                    "title": "Add admin endpoint row (ACCOMMODATION_UPDATE_ANY)",
+                    "completed": false
+                }
+            ],
+            "tags": ["docs", "billing"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Create refresh-external-reputation cron job",
+            "description": "Create apps/api/src/cron/jobs/refresh-external-reputation.job.ts following the existing cron job pattern (e.g. destination-weather-fetch.job.ts for reference).\n\nSchedule: HOSPEDA_EXTREP_CRON_SCHEDULE env var (default '0 2 * * 1' = weekly Monday 2am).\n\nLogic:\n1. Query all accommodation_external_listings WHERE (showReviews=true OR showLink=true) AND deletedAt IS NULL, grouped by accommodationId.\n2. For each accommodation: call reputationService.refresh(accommodationId, systemActor). Log result. On error: log and continue (do not abort entire batch).\n3. Google TTL awareness: prioritize listings where snippetsFetchedAt is null OR (now - snippetsFetchedAt) > (TTL_DAYS - 5) days, so Google snippets are refreshed before expiry window closes.\n4. Respect rate limiting: cron actor bypasses the per-owner button rate limit (use a separate cron-actor path or a bypassRateLimit flag in refresh()).\n\nRegister job in apps/api/src/cron/jobs/index.ts with displayName and category for the cron run history (SPEC-161 pattern).\n\nKey files:\n- apps/api/src/cron/jobs/refresh-external-reputation.job.ts (new)\n- apps/api/src/cron/jobs/index.ts (updated)\n\nTests: unit test with mocked service — assert all enabled listings refreshed, Google TTL-priority ordering respected, partial error logged and not thrown.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-007", "T-003"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Implement refresh-external-reputation.job.ts (schedule + batch logic + TTL priority)",
+                    "completed": false
+                },
+                {
+                    "title": "Register in cron/jobs/index.ts with displayName + category",
+                    "completed": false
+                },
+                {
+                    "title": "Unit tests (mocked service, partial-error resilience, TTL priority)",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "cron", "testing"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Create ExternalReputation.astro + ExternalReviews.client.tsx public detail page block",
+            "description": "Add the 'Reputación en otras plataformas' sibling block to the accommodation detail page.\n\nSSR component apps/web/src/components/accommodation/ExternalReputation.astro:\n- Receives reputationData (ExternalReputationBlockSchema) as prop from the detail page.\n- Renders nothing if reputationData.platforms is empty (master toggle off or no enabled platforms).\n- Per platform with showLink: renders labeled deep link with platform name ('Mirá nuestro alojamiento en Airbnb →') and platform logo/icon.\n- Per platform with showReviews: renders aggregate badge (star rating + review count) with platform attribution.\n- For Google only: if snippets present and TTL valid, renders an ExternalReviews.client.tsx island (client:visible). If TTL expired shows a subtle 'Texto temporalmente no disponible' note.\n- Renders the 'why only Google' explainer (AC-5.1) as a subtle note/tooltip below the block.\n- Styling: CSS Modules (ExternalReputation.module.css) + design tokens (var(--space-N), var(--core-foreground), etc.), no Tailwind. i18n via createTranslations(locale) using keys from T-003.\n- Attribution: every platform item labeled with source name (AC-4.5).\n\nIsland apps/web/src/components/accommodation/ExternalReviews.client.tsx:\n- Renders up to 5 Google review snippets: author name, relative time, star rating, review text, link to author profile.\n- Google attribution logo + 'Powered by Google' link per Places display rules.\n- client:visible directive.\n\nWire into apps/web/src/pages/[lang]/alojamientos/[slug].astro:\n- SSR fetch GET /api/v1/public/accommodations/:id/external-reputation (alongside existing reviews fetch).\n- Pass result to ExternalReputation.astro as sibling block (after internal reviews block).\n- Do NOT touch averageRating/reviewsCount computation (AC-4.4).\n\nKey files:\n- apps/web/src/components/accommodation/ExternalReputation.astro (new)\n- apps/web/src/components/accommodation/ExternalReputation.module.css (new)\n- apps/web/src/components/accommodation/ExternalReviews.client.tsx (new)\n- apps/web/src/pages/[lang]/alojamientos/[slug].astro (updated — add SSR fetch + component)\n\nTests: component tests for ExternalReputation (empty when no data, shows link, shows badge, hides snippets on TTL expire, explainer always shown).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-009"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "ExternalReputation.astro (per-platform links/badges, explainer, TTL note)",
+                    "completed": false
+                },
+                {
+                    "title": "ExternalReputation.module.css + design token usage",
+                    "completed": false
+                },
+                {
+                    "title": "ExternalReviews.client.tsx (Google snippets + attribution, client:visible)",
+                    "completed": false
+                },
+                {
+                    "title": "Wire SSR fetch + component into [slug].astro",
+                    "completed": false
+                },
+                {
+                    "title": "Component tests (empty/links/badges/TTL-degrade/explainer)",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "astro", "react", "ui", "i18n"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Create owner config UI section in AccommodationEditor for external listings",
+            "description": "Add an 'External reputation' section to the existing AccommodationEditor.client.tsx at apps/web/src/components/host/AccommodationEditor.client.tsx.\n\nSection contains (per micro-decision 3 — web host UI only, no admin config UI):\n1. Master toggle (showExternalReputation on/off) — calls PATCH /protected/accommodations/:id/external-reputation/master-toggle.\n2. Add listing form: platform select (google/booking/airbnb/other), URL input, showLink checkbox, showReviews checkbox. Submits POST /protected/accommodations/:id/external-listings.\n3. Per-listing row: shows platform, URL (truncated), showLink/showReviews toggles (PATCH /protected/accommodations/:id/external-listings/:listingId), remove button (DELETE).\n4. 'Actualizar reputación externa' button — calls POST /protected/accommodations/:id/external-reputation/refresh. Shows last-updated timestamp from aggregateFetchedAt. On 429: shows rate-limit message ('Podés actualizar en X minutos') from i18n key ownerConfig.rateLimitHit with minutes computed from Retry-After header.\n5. Google-only explainer note (ownerConfig.googleOnlyExplainer i18n key) — always visible, not hidden behind a toggle.\n\nAll API calls use existing fetch/apiClient patterns from AccommodationEditor. Styling: existing CSS Modules + design tokens (no Tailwind). i18n via createTranslations(locale) with keys from T-003.\n\nKey files:\n- apps/web/src/components/host/AccommodationEditor.client.tsx (updated — new section)\n- apps/web/src/components/host/AccommodationEditor.module.css (updated — section styles)\n\nTests: component tests for the external-listings section (add/toggle/remove/refresh, rate-limit message, empty state, explainer always present).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-008"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Master toggle widget (PATCH master-toggle endpoint)",
+                    "completed": false
+                },
+                {
+                    "title": "Add listing form (platform select, URL, showLink/showReviews checkboxes)",
+                    "completed": false
+                },
+                {
+                    "title": "Per-listing rows with toggle + remove (PATCH/DELETE endpoints)",
+                    "completed": false
+                },
+                {
+                    "title": "Refresh button + last-updated display + 429 rate-limit message",
+                    "completed": false
+                },
+                {
+                    "title": "Google-only explainer note (always visible)",
+                    "completed": false
+                },
+                {
+                    "title": "Component tests (add/toggle/remove/refresh/rate-limit/explainer)",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "react", "ui", "host", "i18n"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Add seed data for external listings + reputation examples",
+            "description": "Add example seed data so the dev environment shows the feature in action:\n\n- packages/seed/src/data/accommodationExternalListing/*.json: at least 2 rows — one Google listing (with externalId/placeId), one Airbnb or Booking listing — for at least one seeded accommodation. Set showLink=true, showReviews=true. Set showExternalReputation=true on the corresponding accommodation.\n- packages/seed/src/data/accommodationExternalReputation/*.json: matching reputation rows with sample data (rating, reviewsCount, deepLink, snippets for the Google row with synthetic review text for testing purposes only, aggregateFetchedAt set to now). fetchStatus='ok'.\n\nWire seeders after accommodations are seeded (FK order). Register in seed manifest.\n\nKey files:\n- packages/seed/src/data/accommodationExternalListing/*.json (new)\n- packages/seed/src/data/accommodationExternalReputation/*.json (new)\n- packages/seed/src/example/accommodationExternalListings.seed.ts (new)\n- packages/seed/src/example/accommodationExternalReputation.seed.ts (new)\n- packages/seed/src/example/index.ts (updated)\n\nTests: verify pnpm db:fresh-dev seeds the data; the public detail page for that accommodation shows the external reputation block.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-005"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Author accommodation_external_listing JSON rows (Google + one other)",
+                    "completed": false
+                },
+                {
+                    "title": "Author accommodation_external_reputation JSON rows (with sample snippets for Google)",
+                    "completed": false
+                },
+                {
+                    "title": "Create seed loaders + wire into example/index.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Verify pnpm db:fresh-dev populates tables",
+                    "completed": false
+                }
+            ],
+            "tags": ["seed", "data"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Write ADR + update docs (route architecture, legal rationale, smoke checklist)",
+            "description": "Documentation tasks:\n\n1. ADR docs/decisions/ADR-036-external-reputation-separate-entity.md (or next available number):\n   - Why external reputation is a separate entity (not extending accommodation_reviews: userId NOT NULL FK, no source/isExternal field, incompatible schema).\n   - Why Google-only for review snippets (official API + display rules vs. ToS/copyright for Booking/Airbnb).\n   - Google TTL + degrade strategy (30-day caching window).\n   - Aggregate-only legal posture for non-Google (factual numbers + link vs. copyrighted review text).\n   - Provider abstraction shared with SPEC-222 (safeExternalFetch, apify-client, adapter pattern).\n   - Stateful-with-cron design (separate from SPEC-222 which is stateless import).\n   - Master toggle as additive column on accommodations (SSR join-free).\n   - Verified flag out of MVP.\n\n2. Update docs/guides/route-architecture.md (or apps/api/docs/route-architecture.md):\n   - Add section for /public/accommodations/:id/external-reputation, /protected/accommodations/:id/external-*, /admin/accommodations/:id/external-reputation/disable.\n\n3. Add a smoke-checklist entry to the relevant checklist doc:\n   - Manual smoke: one Google Places fetch (real API key in staging) returning rating + snippets.\n   - Manual smoke: one Booking/Airbnb aggregate fetch via Apify returning rating + reviewsCount with NO text.\n   - Owner refresh button (rate-limit enforcement on second click within window).\n   - Public detail page shows the external block with attribution.\n\nKey files:\n- docs/decisions/ADR-036-external-reputation-separate-entity.md (new)\n- docs/guides/route-architecture.md or apps/api/docs/route-architecture.md (updated)\n- .qtm/specs/SPEC-143-billing-testing-coverage/docs/staging-smoke-checklist.md or equivalent (updated with external-reputation smoke section)",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-009", "T-011"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Write ADR-036 (separate entity, Google-only, TTL, legal, shared infra, cron, master toggle)",
+                    "completed": false
+                },
+                {
+                    "title": "Update route-architecture docs with new endpoints",
+                    "completed": false
+                },
+                {
+                    "title": "Add external-reputation smoke checklist entries",
+                    "completed": false
+                }
+            ],
+            "tags": ["docs", "adr"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-18T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 15,
+        "pending": 15,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 2.07
+    }
+}

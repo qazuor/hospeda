@@ -3,7 +3,7 @@ spec-id: SPEC-237
 title: External-platform reviews & reputation on accommodation pages
 type: feature
 complexity: high
-status: draft
+status: in-progress
 created: 2026-06-15T00:00:00Z
 ---
 
@@ -378,12 +378,21 @@ Google-only-text + TTL, aggregate-only legal posture, provider abstraction share
 w/ SPEC-222, stateful-with-cron). Legal copy review. Smoke: one Google fetch +
 one aggregate fetch.
 
-## Open micro-decisions (defaults applied — flag if you disagree)
+## Resolved micro-decisions (confirmed with owner, 2026-06-18)
 
-1. **Master toggle location**: additive `accommodations.show_external_reputation`
-   column (default) vs a separate settings row. Default: column (SSR-friendly).
-2. **Admin takedown (US-6.2)**: keep a minimal admin disable/purge for legal/abuse
-   (default: keep) vs drop entirely.
-3. **Owner config surface**: web host UI vs admin panel vs both. Default: follow
-   wherever the owner edits the accommodation today (confirm at impl).
-4. **`verified` ownership check**: out of MVP (advisory flag only), revisit later.
+1. **Master toggle location** → **additive `accommodations.show_external_reputation`
+   column** (default `false`, opt-in). Chosen for SSR-friendliness: the public
+   detail page reads it without a join. A settings row was rejected (needless join
+   on every public render).
+2. **Admin takedown (US-6.2)** → **kept, but minimal**: a soft **disable** only
+   (admin-only), not an elaborate purge. Covers the real legal/abuse escape hatch
+   (a platform demands removal) without owner-facing surface. Scope: disable flag,
+   no destructive purge workflow.
+3. **Owner config surface** → **web host UI only** (`apps/web` —
+   `[lang]/mi-cuenta/propiedades/[id]/editar` + `AccommodationEditor.client.tsx`),
+   consuming the `/protected/` endpoints. This is where the host already manages
+   their property (promotions, reviews, etc.). NOT duplicated in the admin panel;
+   admin only carries the takedown disable from decision 2.
+4. **`verified` ownership check** → **out of MVP** (advisory flag in DB, not
+   validated). Authorization basis is the owner opt-in (registering their own
+   listing). Revisit later.

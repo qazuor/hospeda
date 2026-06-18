@@ -729,6 +729,22 @@
             "status": "draft",
             "progress": "0/0",
             "path": "SPEC-246-revalidation-log-entity-id-tracking"
+        },
+        {
+            "specId": "SPEC-237",
+            "title": "External-platform reviews & reputation on accommodation pages",
+            "status": "in-progress",
+            "progress": "0/15",
+            "path": "SPEC-237-accommodation-external-reviews",
+            "branch": "spec/SPEC-237-accommodation-external-reviews",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-237-accommodation-external-reviews",
+            "base": "staging",
+            "createdAt": "2026-06-18T00:00:00.000Z",
+            "tasksAtomizedAt": "2026-06-18T00:00:00.000Z",
+            "taskCount": 15,
+            "averageComplexity": 2.07,
+            "archived": false,
+            "note": "15 tasks across setup/core/integration/docs phases (avg complexity 2.07). Critical path: T-001→T-004→T-005→T-006→T-007→T-008→T-009→T-015 (8 steps). T-002 (env) and T-003 (i18n) have float and run in parallel with early critical-path tasks. safeExternalFetch already exists in @repo/utils; apify-client already in SPEC-222 adapters; google-places import adapter MUST NOT be modified (new google-reputation.adapter.ts needed). SPEC-222 google/apify env vars may already be registered — verify before re-registering."
         }
     ],
     "standalone": {
