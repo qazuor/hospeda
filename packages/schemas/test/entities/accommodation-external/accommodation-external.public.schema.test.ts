@@ -360,6 +360,74 @@ describe('buildExternalReputationBlock', () => {
             expect(block.items[0]?.snippets).toHaveLength(1);
         });
 
+        it('should NOT set snippetsTtlExpired when Google item has showReviews=false (L5 regression)', () => {
+            // Arrange — owner intentionally disabled reviews; the UI must NOT show the TTL note
+            const sources = [
+                buildSource({
+                    platform: ExternalPlatformEnum.GOOGLE,
+                    showLink: true,
+                    showReviews: false,
+                    snippets: null,
+                    snippetsFetchedAt: null
+                })
+            ];
+
+            // Act
+            const block = buildExternalReputationBlock(sources, SNIPPETS_TTL_MS);
+
+            // Assert — snippetsTtlExpired must be absent/falsy (deliberate opt-out, not TTL)
+            expect(block.items).toHaveLength(1);
+            expect(block.items[0]?.snippetsTtlExpired).toBeFalsy();
+        });
+
+        it('should set snippetsTtlExpired=true when Google item has showReviews=true but TTL expired (L5 regression)', () => {
+            // Arrange — owner WANTED reviews but the cached fetch is stale
+            const sources = [
+                buildSource({
+                    platform: ExternalPlatformEnum.GOOGLE,
+                    showLink: true,
+                    showReviews: true,
+                    snippets: [SNIPPET],
+                    snippetsFetchedAt: staleFetchedAt() // expired
+                })
+            ];
+
+            // Act
+            const block = buildExternalReputationBlock(sources, SNIPPETS_TTL_MS);
+
+            // Assert — snippetsTtlExpired must be true so the UI shows the "unavailable" note
+            expect(block.items).toHaveLength(1);
+            expect(block.items[0]?.snippetsTtlExpired).toBe(true);
+            expect(block.items[0]?.snippets).toBeNull();
+        });
+
+        it('should skip invalid items and keep valid ones without throwing (M2 regression)', () => {
+            // Arrange — one invalid item (rating out of range) + one valid Google item
+            const invalidSource: ExternalReputationSource = {
+                ...buildSource({ platform: ExternalPlatformEnum.BOOKING }),
+                // Override rating to something that will pass buildSource then fail parse via a bad cast.
+                // We inject a too-high rating by manipulating the number after building.
+                rating: 999 // max allowed is 10 — this should fail ExternalReputationPlatformItemSchema
+            };
+            const validSource = buildSource({
+                platform: ExternalPlatformEnum.GOOGLE,
+                showReviews: true,
+                snippets: [SNIPPET],
+                snippetsFetchedAt: freshFetchedAt()
+            });
+            const sources = [invalidSource, validSource];
+
+            // Act — must NOT throw even though BOOKING item has invalid rating
+            let block: ReturnType<typeof buildExternalReputationBlock>;
+            expect(() => {
+                block = buildExternalReputationBlock(sources, SNIPPETS_TTL_MS);
+            }).not.toThrow();
+
+            // Assert — valid Google item is present; invalid BOOKING item is absent
+            expect(block!.items).toHaveLength(1);
+            expect(block!.items[0]?.platform).toBe(ExternalPlatformEnum.GOOGLE);
+        });
+
         it('should gracefully handle unknown platform strings (skip the row)', () => {
             // Arrange
             const sources = [

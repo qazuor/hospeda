@@ -1,5 +1,5 @@
 import type { AccommodationExternalReputation } from '@repo/schemas';
-import { and, eq, or } from 'drizzle-orm';
+import { and, eq, isNull, or } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { accommodationExternalListings } from '../../schemas/accommodation-external/accommodation_external_listings.dbschema.ts';
 import {
@@ -111,15 +111,17 @@ export class AccommodationExternalReputationModel extends BaseModelImpl<Accommod
      * Returns cached reputation rows for an accommodation that are eligible
      * to be shown on the public detail page.
      *
-     * A reputation row is "eligible for display" when its associated listing
-     * has at least one of the following flags set to true:
-     *   - `showReviews` — the host wants to surface review snippets
-     *   - `showLink`    — the host wants to surface a link to the platform
+     * A reputation row is "eligible for display" when its associated listing:
+     *   1. Has NOT been soft-deleted (`deletedAt IS NULL`).
+     *   2. Has at least one of the following flags set to true:
+     *      - `showReviews` — the host wants to surface review snippets
+     *      - `showLink`    — the host wants to surface a link to the platform
      *
      * Listings where BOTH flags are false are considered private (used by
-     * the fetcher internally but hidden from guests). This query joins
-     * accommodation_external_reputation with accommodation_external_listings
-     * on `listingId` to apply that filter.
+     * the fetcher internally but hidden from guests). Soft-deleted listings
+     * are excluded as a defense-in-depth measure even when `showLink` is true.
+     * This query joins accommodation_external_reputation with
+     * accommodation_external_listings on `listingId` to apply both filters.
      *
      * @param accommodationId - UUID of the accommodation to query.
      * @param tx - Optional transaction client.
@@ -145,6 +147,7 @@ export class AccommodationExternalReputationModel extends BaseModelImpl<Accommod
                 .where(
                     and(
                         eq(accommodationExternalReputation.accommodationId, accommodationId),
+                        isNull(accommodationExternalListings.deletedAt),
                         or(
                             eq(accommodationExternalListings.showReviews, true),
                             eq(accommodationExternalListings.showLink, true)

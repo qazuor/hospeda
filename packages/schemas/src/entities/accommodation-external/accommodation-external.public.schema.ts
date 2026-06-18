@@ -26,6 +26,12 @@ export const SNIPPETS_TTL_MS = 7 * 24 * 60 * 60 * 1000;
  * - `showLink` controls whether the `url` / `deepLink` is surfaced.
  * - `showReviews` controls whether `snippets` are surfaced.
  * - Snippets are ONLY included for Google and ONLY when not TTL-expired.
+ * - `snippetsTtlExpired` is `true` only when the owner intended to show
+ *   snippets (showReviews=true, platform=GOOGLE) but the cached fetch is
+ *   beyond the TTL window. It is intentionally absent/false when the owner
+ *   set showReviews=false — that is a deliberate choice, not a TTL issue.
+ *   The UI renders the "temporarily unavailable" note based on this flag,
+ *   not by inferring from missing snippets (FIX L5).
  */
 export const ExternalReputationPlatformItemSchema = z.object({
     /** Platform identifier so the UI can render the correct badge/logo. */
@@ -48,7 +54,15 @@ export const ExternalReputationPlatformItemSchema = z.object({
      * Review snippets. Populated only for GOOGLE and only when the last
      * successful snippet fetch is within the TTL window.
      */
-    snippets: z.array(ExternalReviewSnippetSchema).nullish()
+    snippets: z.array(ExternalReviewSnippetSchema).nullish(),
+    /**
+     * Set to `true` when platform=GOOGLE, the owner has showReviews=true,
+     * and the cached snippet fetch has exceeded the TTL window so snippets
+     * were stripped. Absent (undefined) in all other cases — in particular,
+     * when the owner intentionally set showReviews=false this will NOT be
+     * set (FIX L5: prevents misleading "TTL expired" note for deliberate opt-out).
+     */
+    snippetsTtlExpired: z.boolean().optional()
 });
 export type ExternalReputationPlatformItem = z.infer<typeof ExternalReputationPlatformItemSchema>;
 
@@ -152,24 +166,38 @@ export function buildExternalReputationBlock(
 
         // Rule 4: snippets only for GOOGLE + showReviews + within TTL
         let snippets: ExternalReputationPlatformItem['snippets'] = null;
-        if (
-            src.showReviews &&
-            platform === 'GOOGLE' &&
-            src.snippetsFetchedAt !== null &&
-            src.snippetsFetchedAt !== undefined
-        ) {
-            const fetchedAt =
-                src.snippetsFetchedAt instanceof Date
-                    ? src.snippetsFetchedAt.getTime()
-                    : new Date(src.snippetsFetchedAt).getTime();
+        // FIX L5: track whether snippets were stripped due to TTL expiry vs. a
+        // deliberate opt-out (showReviews=false). Only set true when the owner
+        // intended to show reviews but the cached data is stale.
+        let snippetsTtlExpired: boolean | undefined;
 
-            if (!Number.isNaN(fetchedAt) && now - fetchedAt <= ttlMs) {
-                const parsed = z.array(ExternalReviewSnippetSchema).safeParse(src.snippets ?? []);
-                if (parsed.success) {
-                    snippets = parsed.data;
+        if (src.showReviews && platform === 'GOOGLE') {
+            if (src.snippetsFetchedAt !== null && src.snippetsFetchedAt !== undefined) {
+                const fetchedAt =
+                    src.snippetsFetchedAt instanceof Date
+                        ? src.snippetsFetchedAt.getTime()
+                        : new Date(src.snippetsFetchedAt).getTime();
+
+                if (!Number.isNaN(fetchedAt) && now - fetchedAt <= ttlMs) {
+                    const parsed = z
+                        .array(ExternalReviewSnippetSchema)
+                        .safeParse(src.snippets ?? []);
+                    if (parsed.success) {
+                        snippets = parsed.data;
+                    }
+                } else {
+                    // TTL expired (or date was invalid) — owner WANTED to show snippets but
+                    // the cache is stale. Signal the UI to render the "temporarily unavailable" note.
+                    snippetsTtlExpired = true;
                 }
             }
+            // If snippetsFetchedAt is null, snippets were never fetched — treat as
+            // expired (pending first fetch) rather than deliberate opt-out.
+            else {
+                snippetsTtlExpired = true;
+            }
         }
+        // When showReviews=false, snippetsTtlExpired remains undefined (no note shown).
 
         // Parse numeric rating defensively (DB may return string from NUMERIC column)
         const ratingRaw = src.rating;
@@ -178,17 +206,23 @@ export function buildExternalReputationBlock(
                 ? null
                 : Number.parseFloat(String(ratingRaw));
 
-        items.push(
-            ExternalReputationPlatformItemSchema.parse({
-                platform,
-                url,
-                deepLink,
-                rating: Number.isNaN(rating ?? Number.NaN) ? null : rating,
-                reviewsCount: src.reviewsCount ?? null,
-                snippets
-            })
-        );
+        const itemResult = ExternalReputationPlatformItemSchema.safeParse({
+            platform,
+            url,
+            deepLink,
+            rating: Number.isNaN(rating ?? Number.NaN) ? null : rating,
+            reviewsCount: src.reviewsCount ?? null,
+            snippets,
+            snippetsTtlExpired
+        });
+
+        // Skip malformed items rather than throwing — one bad row must NOT
+        // wipe valid platforms (e.g. a valid Google entry) from the page (M2).
+        if (itemResult.success) {
+            items.push(itemResult.data);
+        }
     }
 
-    return ExternalReputationBlockSchema.parse({ items });
+    const blockResult = ExternalReputationBlockSchema.safeParse({ items });
+    return blockResult.success ? blockResult.data : { items: [] };
 }

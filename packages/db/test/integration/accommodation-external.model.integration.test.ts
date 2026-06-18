@@ -399,6 +399,40 @@ describe('AccommodationExternalReputationModel.findForDisplay', () => {
         });
     });
 
+    it('does not return soft-deleted listing rows even when showLink=true (M1 regression)', async () => {
+        await withTestTransaction(async (tx) => {
+            // Arrange
+            const user = testData.user();
+            const dest = testData.destination();
+            await tx.insert(users).values(user);
+            await tx.insert(destinations).values(dest);
+
+            const accommodation = accommodationFixture(user.id, dest.id);
+            await tx.insert(accommodations).values(accommodation);
+
+            // Soft-deleted listing with showLink=true — must NOT appear
+            const deletedListing = listingFixture(accommodation.id, 'GOOGLE', {
+                showLink: true,
+                deletedAt: new Date()
+            });
+            await tx.insert(accommodationExternalListings).values(deletedListing);
+
+            const rep = reputationFixture(accommodation.id, 'GOOGLE', deletedListing.id, {
+                rating: 4.9,
+                reviewsCount: 300
+            });
+            await tx.insert(accommodationExternalReputation).values(rep);
+
+            // Act
+            const results = await reputationModel.findForDisplay(accommodation.id, tx);
+
+            // Assert — soft-deleted listing must be invisible regardless of showLink
+            expect(results).toHaveLength(0);
+            const resultIds = results.map((r) => r.id);
+            expect(resultIds).not.toContain(rep.id);
+        });
+    });
+
     it('does not return display rows for a different accommodation', async () => {
         await withTestTransaction(async (tx) => {
             const user = testData.user();

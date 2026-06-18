@@ -42,11 +42,14 @@ export const accommodationExternalReputation = pgTable(
             .notNull()
             .references(() => accommodationExternalListings.id, { onDelete: 'cascade' }),
         /**
-         * Overall numeric rating as returned by the platform (e.g. 4.7 on 1-5).
-         * Stored as NUMERIC(3,2) — max value 9.99 covers all common scales.
+         * Overall numeric rating as returned by the platform (e.g. 4.7 on 1-5 or
+         * 8.7 on a 1-10 scale such as Booking.com).
+         * Stored as NUMERIC(4,2) — max value 99.99 safely covers all common scales
+         * including Booking's 1–10 range (widened from NUMERIC(3,2) which overflowed
+         * at 10.00 — FIX L4).
          * Drizzle mode:'number' ensures the value is a JS number at runtime.
          */
-        rating: numeric('rating', { precision: 3, scale: 2, mode: 'number' }),
+        rating: numeric('rating', { precision: 4, scale: 2, mode: 'number' }),
         /** Total number of reviews as returned by the platform. */
         reviewsCount: integer('reviews_count'),
         /**

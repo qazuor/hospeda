@@ -23,7 +23,7 @@ CREATE TABLE "accommodation_external_reputation" (
 	"accommodation_id" uuid NOT NULL,
 	"platform" "external_platform_enum" NOT NULL,
 	"listing_id" uuid NOT NULL,
-	"rating" numeric(3, 2),
+	"rating" numeric(4, 2),
 	"reviews_count" integer,
 	"deep_link" text,
 	"snippets" jsonb,
