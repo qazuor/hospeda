@@ -1,0 +1,204 @@
+---
+/**
+ * @file ExperienceInfo.astro
+ * @description Info block for an experience detail page (SPEC-240 T-027).
+ * Renders opening hours, social networks, amenities/features, and contact info.
+ * Mirrors GastronomyDescription + OpeningHoursSection pattern.
+ */
+
+import { renderContent } from '@/lib/render-content';
+import { renderPlain } from '@/lib/render-plain';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import type { ExperienceDetailData, ExperienceOpeningHoursEntry } from '@/data/types';
+import OpeningHoursSection from '@/components/gastronomy/OpeningHoursSection.astro';
+import type { GastronomyOpeningHoursEntry } from '@/data/types';
+
+interface Props {
+    readonly experience: ExperienceDetailData;
+    readonly locale: SupportedLocale;
+}
+
+const { experience, locale } = Astro.props;
+const { t } = createTranslations(locale);
+
+// Render rich markdown to HTML only when the field is present and non-empty.
+const richHtml =
+    experience.richDescription && experience.richDescription.trim().length > 0
+        ? renderContent({ raw: experience.richDescription, siteOrigin: '' })
+        : null;
+
+const descriptionText = renderPlain({ raw: experience.description });
+
+// Opening hours: experience hours use the same shape as gastronomy.
+// We cast safely since both OpeningHoursEntry interfaces are structurally identical.
+const openingHours =
+    experience.openingHours && Object.keys(experience.openingHours).length > 0
+        ? (experience.openingHours as Record<string, GastronomyOpeningHoursEntry>)
+        : null;
+---
+
+<!-- Summary -->
+{experience.summary && (
+    <div class="exp-info__summary">
+        <p>{experience.summary}</p>
+    </div>
+)}
+
+<!-- Description -->
+{richHtml ? (
+    <div class="exp-info__body exp-info__body--rich" set:html={richHtml} />
+) : (
+    descriptionText && (
+        <div class="exp-info__body">
+            <p>{descriptionText}</p>
+        </div>
+    )
+)}
+
+<!-- Opening Hours -->
+{openingHours && (
+    <OpeningHoursSection
+        openingHours={openingHours}
+        locale={locale}
+    />
+)}
+
+<!-- Social networks (when not surfaced via ContactCTA) -->
+{experience.socialNetworks && Object.values(experience.socialNetworks).some(Boolean) && (
+    <section class="exp-info__social">
+        <h3 class="exp-info__social-title">{t('experience.detail.social', 'Redes sociales')}</h3>
+        <ul class="exp-info__social-list">
+            {[
+                { key: 'website', label: 'Sitio web', icon: '🌐' },
+                { key: 'instagram', label: 'Instagram', icon: '📷' },
+                { key: 'facebook', label: 'Facebook', icon: '📘' },
+                { key: 'twitter', label: 'Twitter / X', icon: '🐦' },
+                { key: 'youtube', label: 'YouTube', icon: '▶️' },
+                { key: 'tiktok', label: 'TikTok', icon: '🎵' }
+            ].map(({ key, label, icon }) => {
+                const url = experience.socialNetworks?.[key as keyof typeof experience.socialNetworks];
+                if (!url) return null;
+                return (
+                    <li class="exp-info__social-item">
+                        <a
+                            href={url}
+                            class="exp-info__social-link"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label={label}
+                        >
+                            <span aria-hidden="true">{icon}</span>
+                            <span>{label}</span>
+                        </a>
+                    </li>
+                );
+            })}
+        </ul>
+    </section>
+)}
+
+<style>
+    .exp-info__summary {
+        background-color: var(--surface-warm);
+        border-left: 4px solid var(--brand-accent);
+        border-radius: var(--radius-button, 8px);
+        padding: var(--space-4, 16px) var(--space-5, 20px);
+        margin-bottom: var(--space-5, 20px);
+    }
+
+    .exp-info__summary p {
+        font-family: var(--font-sans);
+        font-size: 1.1rem;
+        line-height: 1.6;
+        color: var(--core-foreground);
+        margin: 0;
+    }
+
+    .exp-info__body {
+        font-family: var(--font-sans);
+        font-size: 1rem;
+        line-height: 1.7;
+        color: var(--core-foreground);
+    }
+
+    .exp-info__body p {
+        margin-bottom: var(--space-3, 12px);
+    }
+
+    .exp-info__body p:last-child {
+        margin-bottom: 0;
+    }
+
+    /* Rich-text heading styles */
+    .exp-info__body--rich :global(h2),
+    .exp-info__body--rich :global(h3) {
+        font-family: var(--font-heading);
+        font-weight: 600;
+        color: var(--core-foreground);
+        margin-bottom: var(--space-2, 8px);
+    }
+
+    .exp-info__body--rich :global(strong) {
+        font-weight: 700;
+    }
+
+    .exp-info__body--rich :global(ul),
+    .exp-info__body--rich :global(ol) {
+        padding-left: var(--space-5, 20px);
+    }
+
+    .exp-info__body--rich :global(li) {
+        margin-bottom: var(--space-1, 4px);
+    }
+
+    /* Social networks */
+    .exp-info__social {
+        margin-top: var(--space-6, 24px);
+    }
+
+    .exp-info__social-title {
+        font-family: var(--font-heading);
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--core-foreground);
+        margin-bottom: var(--space-3, 12px);
+    }
+
+    .exp-info__social-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+
+    .exp-info__social-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: var(--radius-pill, 9999px);
+        border: 1px solid var(--border);
+        background-color: var(--core-card);
+        color: var(--core-foreground);
+        font-family: var(--font-sans);
+        font-size: 0.85rem;
+        font-weight: 500;
+        text-decoration: none;
+        transition:
+            background-color 150ms ease-out,
+            border-color 150ms ease-out;
+    }
+
+    .exp-info__social-link:hover {
+        background-color: var(--surface-warm);
+        border-color: var(--brand-primary);
+    }
+
+    .exp-info__social-link:focus-visible {
+        outline: 2px solid var(--brand-primary);
+        outline-offset: 2px;
+    }
+</style>

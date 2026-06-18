@@ -19,6 +19,11 @@ import type {
     DetailFaq,
     EventCardData,
     EventDetailData,
+    ExperienceCardData,
+    ExperienceContactInfo,
+    ExperienceDetailData,
+    ExperienceOpeningHoursEntry,
+    ExperienceSocialNetworks,
     GastronomyCardData,
     GastronomyDetailData,
     GastronomyOpeningHoursEntry,
@@ -47,6 +52,8 @@ export type {
     EventCardData,
     EventDetailData,
     EventLocation,
+    ExperienceCardData,
+    ExperienceDetailData,
     GastronomyCardData,
     GastronomyDetailData,
     ReviewCardData
@@ -1933,6 +1940,172 @@ export function toGastronomyDetailPageProps({
         richDescription: item.richDescription != null ? String(item.richDescription) : null,
         menuUrl: item.menuUrl != null ? String(item.menuUrl) : null,
         socialNetworks: normalizeSocialNetworks(item.socialNetworks),
+        seo: seoObj
+            ? {
+                  title: seoObj.title != null ? String(seoObj.title) : null,
+                  description: seoObj.description != null ? String(seoObj.description) : null
+              }
+            : null,
+        tags: Array.isArray(item.tags) ? item.tags.map(String) : [],
+        faqs,
+        owner: ownerObj
+            ? {
+                  id: String(ownerObj.id || ''),
+                  name: ownerObj.name != null ? String(ownerObj.name) : null,
+                  image: ownerObj.image != null ? String(ownerObj.image) : null,
+                  createdAt: ownerObj.createdAt != null ? String(ownerObj.createdAt) : null
+              }
+            : null
+    };
+}
+
+// ---------------------------------------------------------------------------
+// Experience transforms (SPEC-240)
+// ---------------------------------------------------------------------------
+
+/**
+ * Normalize a raw `openingHours` value for experience listings.
+ * Returns null when absent or empty. Mirrors normalizeOpeningHours for gastronomy.
+ */
+function normalizeExperienceOpeningHours(
+    raw: unknown
+): Record<string, ExperienceOpeningHoursEntry> | null {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+    const obj = raw as Record<string, unknown>;
+    const result: Record<string, ExperienceOpeningHoursEntry> = {};
+    for (const [day, value] of Object.entries(obj)) {
+        if (!value || typeof value !== 'object' || Array.isArray(value)) continue;
+        const entry = value as Record<string, unknown>;
+        result[day] = {
+            isOpen: Boolean(entry.isOpen ?? entry.open),
+            open: entry.open ? String(entry.open) : undefined,
+            close: entry.close ? String(entry.close) : undefined,
+            open24h: entry.open24h ? Boolean(entry.open24h) : undefined
+        };
+    }
+    return Object.keys(result).length > 0 ? result : null;
+}
+
+/**
+ * Normalize a raw `socialNetworks` value for experience listings.
+ * Returns null when absent or empty.
+ */
+function normalizeExperienceSocialNetworks(raw: unknown): ExperienceSocialNetworks | null {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+    const obj = raw as Record<string, unknown>;
+    return {
+        facebook: obj.facebook ? String(obj.facebook) : null,
+        instagram: obj.instagram ? String(obj.instagram) : null,
+        twitter: obj.twitter ? String(obj.twitter) : null,
+        youtube: obj.youtube ? String(obj.youtube) : null,
+        whatsapp: obj.whatsapp ? String(obj.whatsapp) : null,
+        tiktok: obj.tiktok ? String(obj.tiktok) : null,
+        website: obj.website ? String(obj.website) : null
+    };
+}
+
+/**
+ * Normalize public contact info for experience listings.
+ * Only `whatsapp` is surfaced publicly (for the CTA deep link).
+ */
+function normalizeExperienceContactInfo(raw: unknown): ExperienceContactInfo | null {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+    const obj = raw as Record<string, unknown>;
+    const whatsapp = obj.whatsapp ? String(obj.whatsapp) : null;
+    if (!whatsapp) return null;
+    return { whatsapp };
+}
+
+/**
+ * Transforms a raw API experience item to ExperienceCardData props.
+ *
+ * @param item - Raw experience object from the API
+ * @param locale - Active locale for i18n field resolution
+ * @returns Typed ExperienceCardData for the card component
+ */
+export function toExperienceCardProps({
+    item,
+    locale = 'es'
+}: { readonly item: Record<string, unknown>; readonly locale?: string }): ExperienceCardData {
+    const { featuredImage } = processEntityImages({
+        item,
+        entity: 'experience',
+        id: String(item.id || ''),
+        extract: true,
+        fallback: '/images/placeholder-experience.svg'
+    });
+
+    const destinationObj = item.destination as { name?: unknown; nameI18n?: unknown } | undefined;
+    const destinationName = destinationObj
+        ? resolveI18nText(
+              (destinationObj.nameI18n as I18nTextLike | string) ?? destinationObj.name ?? '',
+              locale
+          )
+        : '';
+
+    return {
+        id: String(item.id || ''),
+        slug: String(item.slug || ''),
+        name: resolveI18nText((item.nameI18n as I18nTextLike | string) ?? item.name, locale),
+        type: String(item.type || ''),
+        summary: resolveI18nText(
+            (item.summaryI18n as I18nTextLike | string) ?? item.summary ?? item.description,
+            locale
+        ),
+        featuredImage,
+        destinationId: String(item.destinationId || ''),
+        destinationName,
+        priceFrom: Number(item.priceFrom ?? 0),
+        priceUnit: String(item.priceUnit || 'per_day'),
+        isPriceOnRequest: Boolean(item.isPriceOnRequest),
+        averageRating: Number(item.averageRating ?? 0),
+        reviewsCount: Number(item.reviewsCount ?? 0),
+        isFeatured: Boolean(item.isFeatured),
+        openingHours: normalizeExperienceOpeningHours(item.openingHours),
+        createdAt: item.createdAt ? String(item.createdAt) : null
+    };
+}
+
+/**
+ * Transforms a raw API experience item to ExperienceDetailData props.
+ *
+ * Used on the experience detail page where the full public schema shape
+ * (including FAQs, social networks, contact info, SEO, and owner data) is available.
+ *
+ * @param item - Raw experience object from the detail API endpoint
+ * @param locale - Active locale for i18n field resolution
+ * @returns Typed ExperienceDetailData for the detail page components
+ */
+export function toExperienceDetailPageProps({
+    item,
+    locale = 'es'
+}: {
+    readonly item: Record<string, unknown>;
+    readonly locale?: string;
+}): ExperienceDetailData {
+    const cardProps = toExperienceCardProps({ item, locale });
+
+    const seoObj = item.seo as Record<string, unknown> | undefined;
+    const ownerObj = item.owner as Record<string, unknown> | undefined;
+
+    const faqs: ExperienceDetailData['faqs'] = Array.isArray(item.faqs)
+        ? (item.faqs as Array<Record<string, unknown>>).map((faq) => ({
+              id: String(faq.id || ''),
+              question: String(faq.question || ''),
+              answer: String(faq.answer || ''),
+              category: faq.category ? String(faq.category) : null
+          }))
+        : [];
+
+    return {
+        ...cardProps,
+        description: resolveI18nText(
+            (item.descriptionI18n as I18nTextLike | string) ?? item.description ?? '',
+            locale
+        ),
+        richDescription: item.richDescription != null ? String(item.richDescription) : null,
+        contactInfo: normalizeExperienceContactInfo(item.contactInfo),
+        socialNetworks: normalizeExperienceSocialNetworks(item.socialNetworks),
         seo: seoObj
             ? {
                   title: seoObj.title != null ? String(seoObj.title) : null,

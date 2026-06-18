@@ -1,0 +1,211 @@
+---
+/**
+ * @file experiencias/[slug].astro
+ * @description Experience detail page (SPEC-240 T-029).
+ * Fetches a single experience listing by slug, fetches reviews + FAQs in
+ * parallel, and composes the detail block components.
+ *
+ * 404 is returned when:
+ * - The API returns !result.ok (listing not found or server error).
+ * - The listing's visibility is 'PRIVATE' or 'RESTRICTED' (not public).
+ *
+ * @route /{lang}/experiencias/{slug}/
+ * @rendering SSR (on-demand)
+ */
+
+import DetailLayout from '@/layouts/DetailLayout.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import { ImageGallery } from '@/components/ImageGallery.client';
+import ExperienceHero from '@/components/experience/ExperienceHero.astro';
+import ExperienceInfo from '@/components/experience/ExperienceInfo.astro';
+import ExperienceContactCTA from '@/components/experience/ExperienceContactCTA.astro';
+import ExperienceFaqs from '@/components/experience/ExperienceFaqs.astro';
+import { ExperienceReviews } from '@/components/experience/ExperienceReviews.client';
+import { experiencesApi } from '@/lib/api/endpoints';
+import { toExperienceDetailPageProps } from '@/lib/api/transforms';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import type { ExperienceReviewPublicItem } from '@/lib/api/endpoints';
+import type { DetailFaq } from '@/data/types';
+
+export const prerender = false;
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+const { slug } = Astro.params;
+
+if (!slug) return new Response(null, { status: 404 });
+
+// --- Fetch main record ---
+const result = await experiencesApi.getBySlug({ slug });
+
+if (!result.ok) {
+    return new Response(null, { status: 404 });
+}
+
+const raw = result.data as unknown as Record<string, unknown>;
+
+// --- Visibility gate ---
+// Public pages only show listings with visibility === 'PUBLIC'.
+// 'PRIVATE' and 'RESTRICTED' listings return 404 to anonymous visitors.
+const visibility = raw.visibility as string | undefined;
+if (visibility && visibility !== 'PUBLIC') {
+    return new Response(null, { status: 404 });
+}
+
+const experience = toExperienceDetailPageProps({ item: raw, locale });
+
+// --- Parallel secondary fetches ---
+const [reviewsSettled, faqsSettled] = await Promise.allSettled([
+    experiencesApi.getReviews({ id: experience.id, page: 1, pageSize: 5 }),
+    experiencesApi.getFaqs({ id: experience.id })
+]);
+
+const reviewsResult =
+    reviewsSettled.status === 'fulfilled' ? reviewsSettled.value : null;
+const faqsResult =
+    faqsSettled.status === 'fulfilled' ? faqsSettled.value : null;
+
+const reviews: readonly ExperienceReviewPublicItem[] =
+    reviewsResult?.ok ? reviewsResult.data.items : [];
+const totalReviews: number =
+    reviewsResult?.ok ? reviewsResult.data.pagination.total : experience.reviewsCount;
+
+// FAQs: prefer inline entity FAQs, fall back to standalone endpoint
+const faqs: readonly DetailFaq[] =
+    experience.faqs.length > 0
+        ? experience.faqs
+        : faqsResult?.ok && Array.isArray(faqsResult.data)
+          ? (faqsResult.data as Array<Record<string, unknown>>).map((faq) => ({
+                id: String(faq.id || ''),
+                question: String(faq.question || ''),
+                answer: String(faq.answer || ''),
+                category: faq.category ? String(faq.category) : null
+            }))
+          : [];
+
+// --- Gallery images ---
+const galleryImages = (() => {
+    const mediaObj = raw.media as
+        | { gallery?: Array<{ url?: string; caption?: string }> }
+        | undefined;
+    const gallery = mediaObj?.gallery ?? [];
+    if (gallery.length > 0) {
+        return gallery
+            .filter((g) => g.url)
+            .map((g) => ({
+                url: String(g.url),
+                alt: g.caption ?? experience.name,
+                caption: g.caption
+            }));
+    }
+    if (
+        experience.featuredImage.url &&
+        !experience.featuredImage.url.includes('placeholder')
+    ) {
+        return [
+            {
+                url: experience.featuredImage.url,
+                alt: experience.featuredImage.caption ?? experience.name
+            }
+        ];
+    }
+    return [];
+})();
+
+const isAuthenticated = Boolean(Astro.locals.user);
+
+const canonicalPath = buildUrl({ locale, path: `experiencias/${experience.slug}/` });
+
+// --- SEO ---
+const seoTitle = experience.seo?.title ?? `${experience.name} | Hospeda`;
+const seoDescription =
+    experience.seo?.description ??
+    experience.summary ??
+    t('experience.listing.subtitle', 'Experiencias y servicios en el Litoral Entrerriano');
+---
+
+<DetailLayout
+    locale={locale}
+    title={seoTitle}
+    description={seoDescription}
+    canonicalPath={canonicalPath}
+    showBreadcrumbs={true}
+    showSidebar={false}
+    ogImage={experience.featuredImage.url}
+    ogType={t(`experience.type.${experience.type}`, experience.type)}
+    ogSubtitle={experience.destinationName}
+    ogRating={experience.averageRating > 0 ? experience.averageRating.toFixed(1) : undefined}
+>
+    <Breadcrumbs
+        slot="breadcrumbs"
+        locale={locale}
+        items={[
+            {
+                label: t('experience.listing.title', 'Experiencias'),
+                path: 'experiencias/'
+            },
+            { label: experience.name }
+        ]}
+    />
+
+    <div class="exp-detail">
+        <!-- Gallery -->
+        {galleryImages.length > 0 && (
+            <div class="exp-detail__gallery">
+                <ImageGallery
+                    client:load
+                    images={galleryImages}
+                    locale={locale}
+                    variant="detail"
+                />
+            </div>
+        )}
+
+        <!-- Hero: name, type badge, pricing, rating -->
+        <ExperienceHero experience={experience} locale={locale} />
+
+        <!-- Description, opening hours, social networks -->
+        <ExperienceInfo experience={experience} locale={locale} />
+
+        <!-- WhatsApp contact CTA -->
+        <ExperienceContactCTA
+            contactInfo={experience.contactInfo}
+            experienceName={experience.name}
+            locale={locale}
+        />
+
+        <!-- Reviews (interactive island) -->
+        <ExperienceReviews
+            client:visible
+            experienceId={experience.id}
+            initialReviews={reviews}
+            totalReviews={totalReviews}
+            averageRating={experience.averageRating}
+            locale={locale}
+            isAuthenticated={isAuthenticated}
+        />
+
+        <!-- FAQs (static SSR accordion) -->
+        {faqs.length > 0 && (
+            <ExperienceFaqs faqs={faqs} locale={locale} />
+        )}
+    </div>
+</DetailLayout>
+
+<style>
+    .exp-detail {
+        max-width: var(--container-max, 1350px);
+        margin: 0 auto;
+        padding: var(--space-6, 24px) var(--space-4, 16px);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-8, 32px);
+    }
+
+    .exp-detail__gallery {
+        border-radius: var(--radius-card, 24px);
+        overflow: hidden;
+    }
+</style>

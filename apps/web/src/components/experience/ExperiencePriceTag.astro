@@ -1,0 +1,103 @@
+---
+/**
+ * @file ExperiencePriceTag.astro
+ * @description Price tag component for experience listings (SPEC-240 T-024).
+ *
+ * Renders the price display based on the experience pricing model:
+ * - When `isPriceOnRequest` is true → shows the i18n "Consultar precio" label.
+ * - When false and `priceFrom > 0` → shows "Desde $X.XXX <unit>" formatted.
+ * - When false and `priceFrom === 0` → shows the on-request label as fallback.
+ *
+ * `priceFrom` is stored in centavos (integer). Divide by 100 for display.
+ *
+ * Hydration: none — fully static Astro component.
+ */
+
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+    /** Base price in centavos (integer). Zero when isPriceOnRequest is true. */
+    readonly priceFrom: number;
+    /** Billing unit for the price (per_day | per_hour | per_person | per_group). */
+    readonly priceUnit: string;
+    /** When true the UI shows "Consultar precio" instead of the numeric price. */
+    readonly isPriceOnRequest: boolean;
+    readonly locale: SupportedLocale;
+    /** Optional CSS class applied to the root element. */
+    readonly class?: string;
+}
+
+const { priceFrom, priceUnit, isPriceOnRequest, locale, class: className } = Astro.props;
+const { t } = createTranslations(locale);
+
+const showOnRequest = isPriceOnRequest || priceFrom === 0;
+
+/**
+ * Format centavos to ARS currency string (e.g. 150000 → "$1.500").
+ * Uses Intl.NumberFormat with Argentine Spanish locale and no decimal places
+ * since prices end in 00 centavos in practice.
+ */
+const formattedPrice = showOnRequest
+    ? ''
+    : new Intl.NumberFormat('es-AR', {
+          style: 'currency',
+          currency: 'ARS',
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0
+      }).format(priceFrom / 100);
+
+const unitLabel = showOnRequest ? '' : t(`experience.priceUnit.${priceUnit}`, priceUnit);
+const fromLabel = showOnRequest ? '' : t('experience.priceFrom', 'Desde');
+const onRequestLabel = t('experience.priceOnRequest', 'Consultar precio');
+---
+
+<span class:list={['exp-price-tag', className]}>
+    {showOnRequest ? (
+        <span class="exp-price-tag__on-request">{onRequestLabel}</span>
+    ) : (
+        <>
+            <span class="exp-price-tag__from">{fromLabel}</span>
+            <span class="exp-price-tag__amount">{formattedPrice}</span>
+            <span class="exp-price-tag__unit">{unitLabel}</span>
+        </>
+    )}
+</span>
+
+<style>
+    .exp-price-tag {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 4px;
+        font-family: var(--font-sans);
+    }
+
+    .exp-price-tag__on-request {
+        font-family: var(--font-sans);
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--core-muted-foreground);
+        font-style: italic;
+    }
+
+    .exp-price-tag__from {
+        font-family: var(--font-sans);
+        font-size: 0.75rem;
+        font-weight: 400;
+        color: var(--core-muted-foreground);
+    }
+
+    .exp-price-tag__amount {
+        font-family: var(--font-heading);
+        font-size: 1rem;
+        font-weight: 700;
+        color: var(--brand-accent);
+    }
+
+    .exp-price-tag__unit {
+        font-family: var(--font-sans);
+        font-size: 0.75rem;
+        font-weight: 400;
+        color: var(--core-muted-foreground);
+    }
+</style>
