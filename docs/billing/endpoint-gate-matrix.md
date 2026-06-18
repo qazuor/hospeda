@@ -639,6 +639,44 @@
 | `PUT /api/v1/admin/gastronomies/reviews/{id}` | `gastronomy/reviews/admin/update.ts` | none | - | n/a | Admin write; PermissionEnum-gated (COMMERCE_EDIT_ALL) |
 | `DELETE /api/v1/admin/gastronomies/reviews/{id}` | `gastronomy/reviews/admin/delete.ts` | none | - | n/a | Admin review removal; PermissionEnum-gated (COMMERCE_MODERATE_REVIEW) |
 | `POST /api/v1/admin/gastronomies/reviews/{id}/moderate` | `gastronomy/reviews/admin/moderate.ts` | none | - | n/a | Admin moderation; PermissionEnum-gated (COMMERCE_MODERATE_REVIEW) (SPEC-239 T-046) |
+| **EXPERIENCES — PUBLIC** | | | | | |
+| `GET /api/v1/public/experiences` | `experience/public/list.ts` | none | - | n/a | Public listing search/filter; no auth, no billing gate (SPEC-240 T-019) |
+| `GET /api/v1/public/experiences/{id}` | `experience/public/getById.ts` | none | - | n/a | Public experience detail; `hasActiveSubscription=false` returns null (SPEC-240 T-019) |
+| `GET /api/v1/public/experiences/slug/{slug}` | `experience/public/getBySlug.ts` | none | - | n/a | Public experience by slug; same subscription-gate as getById (SPEC-240 T-019) |
+| `GET /api/v1/public/experiences/destination/{destinationId}` | `experience/public/getByDestination.ts` | none | - | n/a | Public experiences by destination; no auth, no billing gate (SPEC-240 T-019) |
+| `GET /api/v1/public/experiences/{id}/faqs` | `experience/public/getFaqs.ts` | none | - | n/a | Public FAQ read; no auth, no billing gate (SPEC-240 T-019) |
+| `GET /api/v1/public/experiences/{id}/reviews` | `experience/public/getReviews.ts` | none | - | n/a | Public approved-review list; no auth, no billing gate (SPEC-240 T-019) |
+| **EXPERIENCES — PROTECTED** | | | | | |
+| `GET /api/v1/protected/experiences/{id}` | `experience/protected/getById.ts` | none | - | n/a | Read own listing; auth + ownership check in handler (SPEC-240 T-020) |
+| `PATCH /api/v1/protected/experiences/{id}` | `experience/protected/patch.ts` | none | - | n/a | Owner-scoped edit; auth + ownership check. Commerce-subscription gating deferred (SPEC-240 T-020) |
+| `POST /api/v1/protected/experiences/{id}/faqs` | `experience/protected/addFaq.ts` | none | - | n/a | Owner-scoped FAQ write; auth + ownership check (SPEC-240 T-020) |
+| `PUT /api/v1/protected/experiences/{id}/faqs/{faqId}` | `experience/protected/updateFaq.ts` | none | - | n/a | Owner-scoped FAQ write; auth + ownership check (SPEC-240 T-020) |
+| `DELETE /api/v1/protected/experiences/{id}/faqs/{faqId}` | `experience/protected/removeFaq.ts` | none | - | n/a | Deletion ungated; removing own FAQ always allowed (SPEC-240 T-020) |
+| `PUT /api/v1/protected/experiences/{id}/faqs/reorder` | `experience/protected/reorderFaqs.ts` | none | - | n/a | Owner-scoped FAQ reorder; auth + ownership check (SPEC-240 T-020) |
+| `POST /api/v1/protected/experiences/{experienceId}/reviews` | `experience/protected/createReview.ts` | none | - | n/a | Public-user review submission; auth-only, moderation enforced in service (SPEC-240 T-020) |
+| **EXPERIENCES — ADMIN** | | | | | |
+| `GET /api/v1/admin/experiences` | `experience/admin/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated (COMMERCE_VIEW_ALL) (SPEC-240 T-021) |
+| `POST /api/v1/admin/experiences` | `experience/admin/create.ts` | none | - | n/a | Admin write; PermissionEnum-gated (COMMERCE_CREATE) (SPEC-240 T-021) |
+| `GET /api/v1/admin/experiences/{id}` | `experience/admin/getById.ts` | none | - | n/a | Admin read; PermissionEnum-gated (COMMERCE_VIEW_ALL) (SPEC-240 T-021) |
+| `PUT /api/v1/admin/experiences/{id}` | `experience/admin/update.ts` | none | - | n/a | Admin write; PermissionEnum-gated (COMMERCE_EDIT_ALL) (SPEC-240 T-021) |
+| `PATCH /api/v1/admin/experiences/{id}` | `experience/admin/patch.ts` | none | - | n/a | Admin write; PermissionEnum-gated (COMMERCE_EDIT_ALL) (SPEC-240 T-021) |
+| `DELETE /api/v1/admin/experiences/{id}` | `experience/admin/delete.ts` | none | - | n/a | Admin soft-delete; PermissionEnum-gated (COMMERCE_DELETE) (SPEC-240 T-021) |
+| `DELETE /api/v1/admin/experiences/{id}/hard` | `experience/admin/hardDelete.ts` | none | - | n/a | Admin hard-delete; PermissionEnum-gated (COMMERCE_DELETE) (SPEC-240 T-021) |
+| `POST /api/v1/admin/experiences/{id}/restore` | `experience/admin/restore.ts` | none | - | n/a | Admin restore; PermissionEnum-gated (COMMERCE_EDIT_ALL) (SPEC-240 T-021) |
+| `POST /api/v1/admin/experiences/batch` | `experience/admin/batch.ts` | none | - | n/a | Admin batch; PermissionEnum-gated (COMMERCE_VIEW_ALL) (SPEC-240 T-021) |
+| `GET /api/v1/admin/experiences/options` | `experience/admin/options.ts` | none | - | n/a | Admin read; PermissionEnum-gated (ACCESS_PANEL_ADMIN) (SPEC-240 T-021) |
+| `GET /api/v1/admin/experiences/{id}/faqs` | `experience/admin/getFaqs.ts` | none | - | n/a | Admin read; PermissionEnum-gated (COMMERCE_VIEW_ALL) (SPEC-240 T-021) |
+| `POST /api/v1/admin/experiences/{id}/faqs` | `experience/admin/addFaq.ts` | none | - | n/a | Admin write; PermissionEnum-gated (COMMERCE_EDIT_ALL) (SPEC-240 T-021) |
+| `PUT /api/v1/admin/experiences/{id}/faqs/{faqId}` | `experience/admin/updateFaq.ts` | none | - | n/a | Admin write; PermissionEnum-gated (COMMERCE_EDIT_ALL) (SPEC-240 T-021) |
+| `DELETE /api/v1/admin/experiences/{id}/faqs/{faqId}` | `experience/admin/removeFaq.ts` | none | - | n/a | Admin write; PermissionEnum-gated (COMMERCE_EDIT_ALL) (SPEC-240 T-021) |
+| `PATCH /api/v1/admin/experiences/{id}/faqs/reorder` | `experience/admin/reorderFaqs.ts` | none | - | n/a | Admin write; PermissionEnum-gated (COMMERCE_EDIT_ALL) (SPEC-240 T-021) |
+| `POST /api/v1/admin/experiences/{id}/assign-owner` | `experience/admin/assignOwner.ts` | none | - | n/a | Admin owner-provisioning; PermissionEnum-gated (COMMERCE_EDIT_ALL) (SPEC-240 T-021) |
+| **EXPERIENCE REVIEWS — ADMIN** | | | | | |
+| `GET /api/v1/admin/experiences/reviews` | `experience/reviews/admin/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated (COMMERCE_VIEW_ALL) (SPEC-240 T-021) |
+| `GET /api/v1/admin/experiences/reviews/{id}` | `experience/reviews/admin/getById.ts` | none | - | n/a | Admin read; PermissionEnum-gated (COMMERCE_VIEW_ALL) (SPEC-240 T-021) |
+| `PUT /api/v1/admin/experiences/reviews/{id}` | `experience/reviews/admin/update.ts` | none | - | n/a | Admin write; PermissionEnum-gated (COMMERCE_EDIT_ALL) (SPEC-240 T-021) |
+| `DELETE /api/v1/admin/experiences/reviews/{id}` | `experience/reviews/admin/delete.ts` | none | - | n/a | Admin review removal; PermissionEnum-gated (COMMERCE_MODERATE_REVIEW) (SPEC-240 T-021) |
+| `POST /api/v1/admin/experiences/reviews/{id}/moderate` | `experience/reviews/admin/moderate.ts` | none | - | n/a | Admin moderation; PermissionEnum-gated (COMMERCE_MODERATE_REVIEW) (SPEC-240 T-021) |
 | **COMMERCE LEADS — ADMIN** | | | | | |
 | `GET /api/v1/admin/commerce/leads` | `commerce/admin/list-leads.ts` | none | - | n/a | Admin read; PermissionEnum-gated (COMMERCE_VIEW_ALL) (SPEC-239 T-047) |
 | `POST /api/v1/admin/commerce/leads/{id}/handle` | `commerce/admin/mark-handled.ts` | none | - | n/a | Admin lead handling + owner-provisioning; PermissionEnum-gated (COMMERCE_EDIT_ALL) (SPEC-239 T-047) |
@@ -707,6 +745,63 @@ subscription state.
 For the full rationale behind `COMMERCE_OWNER` as a separate role from `HOST` and
 the `product_domain` isolation, see
 [ADR-035](../decisions/ADR-035-commerce-core-gastronomy-separation.md).
+
+---
+
+## Experiences and Services Gate Model (SPEC-240)
+
+This section documents how the billing-gate model applies to the experience routes
+introduced in SPEC-240. Experience routes share the same `COMMERCE_*` permission
+family as gastronomy routes (SPEC-239). The per-route rows exist in the main table
+above; this prose explains the three tiers.
+
+### Public endpoints — no gate
+
+Experience public reads require no authentication and carry no billing gate:
+
+- `GET /api/v1/public/experiences` and its sub-paths (by ID, slug, destination,
+  FAQs, approved reviews) — read-only, no auth required.
+- The detail endpoint (`getById`, `getBySlug`) applies a visibility gate at the
+  service layer: if `hasActiveSubscription=false`, the handler returns `null`
+  (listings without an active commerce subscription are not publicly visible).
+
+### Admin endpoints — `COMMERCE_*` PermissionEnum gates
+
+All admin experience routes use the same `COMMERCE_*` permission family as
+gastronomy. No entitlement or limit key from the accommodation billing engine
+applies here.
+
+| Permission | Covers |
+|------------|--------|
+| `COMMERCE_VIEW_ALL` | List, getById, batch, options, FAQ list, review list/getById |
+| `COMMERCE_CREATE` | Create an experience listing |
+| `COMMERCE_EDIT_ALL` | Update, patch, restore, assign-owner, FAQ CRUD+reorder |
+| `COMMERCE_DELETE` | Soft delete and hard delete |
+| `COMMERCE_MODERATE_REVIEW` | Review delete and moderate (`approve`/`reject`) |
+
+`COMMERCE_EDIT_ALL` and `COMMERCE_MODERATE_REVIEW` are both required to update
+a review (`PUT /api/v1/admin/experiences/reviews/{id}`), mirroring the pattern
+used for accommodation and gastronomy reviews.
+
+### Owner-scoped protected endpoints — `COMMERCE_*_EDIT_OWN`
+
+`COMMERCE_OWNER` users access their own experience listing through the protected
+tier. No route-level `requiredPermissions` is declared; the service performs the
+check after ownership is confirmed:
+
+- **Operational fields** (`PATCH /api/v1/protected/experiences/{id}`) — the
+  request schema (`ExperienceOwnerUpdateInputSchema`) strips identity and
+  lifecycle fields before passing to the service.
+- **FAQ management** — `COMMERCE_FAQS_EDIT_OWN` gates add, update, and reorder;
+  removal is always allowed.
+
+Review submission (`POST /api/v1/protected/experiences/{experienceId}/reviews`)
+requires authentication only — any logged-in user may submit a review; moderation
+is enforced server-side (reviews start in `PENDING`).
+
+Commerce-subscription gating on the owner-edit paths is deferred (same posture
+as gastronomy): any authenticated `COMMERCE_OWNER` may edit operational fields
+regardless of subscription state.
 
 ---
 
