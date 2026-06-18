@@ -427,7 +427,7 @@
             "id": "T-014",
             "title": "Add experiences seed data (3-5 entries)",
             "description": "Add seed entries in packages/seed covering different types/units/destinations + at least one isPriceOnRequest and one with hasActiveSubscription=true, plus a COMMERCE_OWNER owner. Tests: seed runs without error; seeded rows count assertion. BLOCKED: worktree dev DB template (hospeda_template) is stale (pre-SPEC-239, no gastronomies tables), so a full db:seed fails. Needs a DB strategy decision (rebuild template / db:push branch schema) before seeding.",
-            "status": "blocked",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-013"],
             "blocks": ["T-039"],
@@ -444,14 +444,14 @@
             "tags": ["seed", "database"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
             }
         },
         {
@@ -1198,7 +1198,7 @@
             "id": "T-039",
             "title": "Smoke test (admin create -> toggle -> public visible -> review -> approve)",
             "description": "End-to-end manual/automated smoke: create 1 experience via admin, toggle subscription on, verify public listing + detail page, submit a review, approve it. Document result. Tests: scripted e2e where feasible, else documented manual smoke checklist.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [
                 "T-014",
@@ -1221,14 +1221,14 @@
             "tags": ["testing", "e2e"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-17T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-18T00:00:00.000Z",
+                "completed": "2026-06-18T00:00:00.000Z"
             }
         },
         {
@@ -1261,10 +1261,10 @@
     ],
     "summary": {
         "total": 40,
-        "pending": 2,
+        "pending": 1,
         "inProgress": 0,
-        "completed": 37,
-        "blocked": 1,
+        "completed": 39,
+        "blocked": 0,
         "averageComplexity": 1.9
     }
 }
