@@ -378,11 +378,7 @@ export class AccommodationExternalReputationService {
             const accommodation = await this.accommodationModel.findById(accommodationId, ctx?.tx);
 
             // Master toggle: if off, return empty block immediately.
-            // TYPE-WORKAROUND: showExternalReputation is in the DB schema (SPEC-237) but not
-            // yet in the Zod Accommodation type (pending schema update). Cast to access it safely.
-            const showToggle = (accommodation as unknown as Record<string, unknown>)
-                ?.showExternalReputation;
-            if (!showToggle) {
+            if (!accommodation?.showExternalReputation) {
                 return { data: { items: [] } };
             }
 

@@ -777,6 +777,31 @@ describe('AccommodationExternalReputationService', () => {
             expect(result.error?.message).toContain('DB write failure');
         });
 
+        it('should pass ctx.tx to model calls when a ServiceContext is provided', async () => {
+            // Exercises the `ctx?.tx` "truthy" branch on lines 473/483/495 — when a
+            // real ServiceContext is provided, `ctx?.tx` accesses `.tx` (undefined here
+            // since no transaction is active, but the truthy ctx path IS taken).
+            const accommodationModel = makeAccommodationModel();
+            const activeListing = makeListing(LIST_GOOGLE_ID, ExternalPlatformEnum.GOOGLE);
+            const listingModel = makeListingModel({
+                findByAccommodation: vi.fn().mockResolvedValue([activeListing])
+            });
+            const reputationModel = makeReputationModel();
+            const svc = new AccommodationExternalReputationService(ctx, {
+                listingModel: listingModel as never,
+                reputationModel: reputationModel as never,
+                accommodationModel: accommodationModel as never
+            });
+
+            // Pass an explicit (empty) ServiceContext — ctx is truthy, ctx.tx is undefined
+            const explicitCtx = {};
+            const result = await svc.disableReputation(ACC_ID, makeAdminActor(), explicitCtx);
+
+            expect(result.error).toBeUndefined();
+            expect(result.data?.disabled).toBe(1);
+            expect(accommodationModel.findById).toHaveBeenCalled();
+        });
+
         it('should return INTERNAL_ERROR when listingModel.update throws a non-Error value (String branch)', async () => {
             // Exercises the `String(err)` false branch of
             // `err instanceof Error ? err.message : String(err)` in disableReputation.

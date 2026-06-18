@@ -606,5 +606,26 @@ describe('AccommodationExternalListingService', () => {
             expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
             expect(result.error?.message).toContain('Unexpected DB error');
         });
+
+        it('should return INTERNAL_ERROR when the accommodationModel.update throws a non-Error value (String branch)', async () => {
+            // Exercises the `String(err)` false branch of the ternary at line 406:
+            // `err instanceof Error ? err.message : String(err)`
+            const listingModel = makeListingModel();
+            const accommodationModel = makeAccommodationModel({
+                // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
+                update: vi.fn().mockRejectedValue('toggle string error')
+            });
+            const svc = new AccommodationExternalListingService(
+                ctx,
+                listingModel as never,
+                accommodationModel as never
+            );
+
+            const result = await svc.setMasterToggle(makeOwnerActor(), ACC_ID, true);
+
+            expect(result.data).toBeUndefined();
+            expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
+            expect(result.error?.message).toContain('toggle string error');
+        });
     });
 });
