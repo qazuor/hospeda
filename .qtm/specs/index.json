@@ -33,12 +33,15 @@
             "title": "Host trades/services directory (24h emergency trades for hosts)",
             "type": "feature",
             "complexity": "low",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-241-host-trades-directory",
             "created": "2026-06-15T00:00:00.000Z",
             "base": "staging",
             "origin": "Design session 'panel 1.1' (2026-06-15): admin-curated private directory, perk for hosts; decoupled from the Tarjeta",
-            "tags": ["hosts", "directory", "admin", "perk", "web"]
+            "tags": ["hosts", "directory", "admin", "perk", "web"],
+            "archived": true,
+            "archivedAt": "2026-06-19",
+            "archiveNote": "19/19. Implementation merged to staging (PR #1714) + smoke follow-up fixes (PR #1726, merge 2026-06-19). Staging-readiness smoke validated host-trades CRUD, restore endpoint (HTTP 500 schema mismatch fixed + 15-route sweep), admin filters/WhatsApp. Closeout deferred until #1726 merged."
         },
         {
             "specId": "SPEC-242",
