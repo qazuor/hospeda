@@ -197,11 +197,15 @@
                 "viewOnSite": "Ver en el sitio",
                 "unpublishConfirm": "¿Despublicar esta propiedad? Dejará de aparecer en el sitio.",
                 "confirmYes": "Sí, despublicar",
-                "confirmNo": "Cancelar"
+                "confirmNo": "Cancelar",
+                "delete": "Eliminar",
+                "deleteConfirm": "¿Eliminar esta propiedad? Se quitará de tu listado y del sitio.",
+                "deleteYes": "Sí, eliminar"
             },
             "pricePerNight": "por noche",
             "unpublishSuccess": "Propiedad despublicada",
             "unpublishError": "No se pudo despublicar. Intentá de nuevo.",
+            "deleteError": "No se pudo eliminar. Intentá de nuevo.",
             "priceOnRequest": "Precio a consultar"
         },
         "editor": {

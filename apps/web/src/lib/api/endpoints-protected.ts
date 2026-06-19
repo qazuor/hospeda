@@ -1884,6 +1884,26 @@ export const accommodationEditApi = {
     },
 
     /**
+     * Soft-delete an accommodation.
+     * Calls `DELETE /protected/accommodations/:id`, which enforces ownership
+     * (or `ACCOMMODATION_DELETE_ANY`). The accommodation is soft-deleted, so it
+     * disappears from the owner's listings and the public site (SPEC-230 filters
+     * soft-deleted rows out of every protected list).
+     *
+     * @param params - Accommodation ID to delete
+     * @returns The delete result
+     *
+     * @example
+     * ```ts
+     * const result = await accommodationEditApi.softDelete({ id: 'acc-uuid' });
+     * if (result.ok) console.log('Accommodation deleted');
+     * ```
+     */
+    softDelete({ id }: { readonly id: string }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.delete({ path: `${PROTECTED}/accommodations/${id}` });
+    },
+
+    /**
      * Fetch all active amenities for the editor's checkbox group.
      * Uses the public amenities endpoint (no auth required).
      *
