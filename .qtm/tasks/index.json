@@ -40,9 +40,11 @@
         {
             "specId": "SPEC-241",
             "title": "Host trades/services directory (24h emergency trades for hosts)",
-            "status": "in-progress",
+            "status": "completed",
             "progress": "19/19",
-            "path": "SPEC-241-host-trades-directory"
+            "path": "SPEC-241-host-trades-directory",
+            "archived": true,
+            "archivedAt": "2026-06-19"
         },
         {
             "specId": "SPEC-242",
