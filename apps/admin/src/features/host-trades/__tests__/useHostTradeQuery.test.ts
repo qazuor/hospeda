@@ -61,10 +61,10 @@ afterEach(() => {
 // useHostTradeQuery
 // ---------------------------------------------------------------------------
 
-describe('useHostTradeQuery — unwraps { data: { hostTrade: { ... } } }', () => {
-    it('returns the host-trade entity from the nested envelope', async () => {
+describe('useHostTradeQuery — returns the entity from the { data } envelope', () => {
+    it('returns the host-trade entity from the data envelope', async () => {
         mockedFetchApi.mockResolvedValue({
-            data: { success: true, data: { hostTrade: MOCK_HOST_TRADE } },
+            data: { success: true, data: MOCK_HOST_TRADE },
             status: 200
         });
 
@@ -96,7 +96,7 @@ describe('useHostTradeQuery — unwraps { data: { hostTrade: { ... } } }', () =>
 describe('useCreateHostTradeMutation — valid submit calls API and returns entity', () => {
     it('calls POST /api/v1/admin/host-trades and returns the created entity', async () => {
         mockedFetchApi.mockResolvedValue({
-            data: { success: true, data: { hostTrade: MOCK_HOST_TRADE } },
+            data: { success: true, data: MOCK_HOST_TRADE },
             status: 201
         });
 
@@ -130,7 +130,7 @@ describe('useUpdateHostTradeMutation — submits PATCH and returns updated entit
     it('calls PATCH /api/v1/admin/host-trades/:id and returns the updated entity', async () => {
         const updated = { ...MOCK_HOST_TRADE, name: 'Plomero García' };
         mockedFetchApi.mockResolvedValue({
-            data: { success: true, data: { hostTrade: updated } },
+            data: { success: true, data: updated },
             status: 200
         });
 

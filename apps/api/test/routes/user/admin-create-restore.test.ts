@@ -30,10 +30,11 @@ const { capturedHandlers } = vi.hoisted(() => ({
     >()
 }));
 
-const { auditLogSpy, mockCreate, mockRestore } = vi.hoisted(() => ({
+const { auditLogSpy, mockCreate, mockRestore, mockGetById } = vi.hoisted(() => ({
     auditLogSpy: vi.fn(),
     mockCreate: vi.fn(),
-    mockRestore: vi.fn()
+    mockRestore: vi.fn(),
+    mockGetById: vi.fn()
 }));
 
 // ---------------------------------------------------------------------------
@@ -74,7 +75,8 @@ vi.mock('../../../src/utils/actor', () => ({
 vi.mock('@repo/service-core', () => ({
     UserService: vi.fn(() => ({
         create: mockCreate,
-        restore: mockRestore
+        restore: mockRestore,
+        getById: mockGetById
     })),
     ServiceError: class ServiceError extends Error {
         constructor(
@@ -273,6 +275,14 @@ describe('Admin user create and restore routes - audit log [SPEC-026 GAP-009]', 
     // -------------------------------------------------------------------------
 
     describe('adminRestoreUserRoute handler', () => {
+        // The restore route re-fetches the entity via getById after a successful
+        // restore (SPEC-241 restore-500 fix); provide a default so the handler
+        // completes. The audit log under test derives from actor/params, not this
+        // result.
+        beforeEach(() => {
+            mockGetById.mockResolvedValue({ data: CREATED_USER, error: undefined });
+        });
+
         it('should emit USER_ADMIN_MUTATION audit log with restore operation on success', async () => {
             // Arrange
             mockRestore.mockResolvedValue({ data: CREATED_USER, error: undefined });
