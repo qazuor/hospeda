@@ -23,7 +23,15 @@ export const serverEnvBaseSchema = z.object({
     HOSPEDA_BETTER_AUTH_URL: z.url().optional(),
     HOSPEDA_ADMIN_URL: z.url().optional(),
     PUBLIC_ADMIN_URL: z.url().optional(),
-    HOSPEDA_REVALIDATION_SECRET: z.string().min(32),
+    // Optional in the base schema so that ubiquitous server accessors (getApiUrl,
+    // getSiteUrl, …) do not throw when it is absent. It is only consumed by the
+    // Cloudflare cache-revalidation endpoint, which has no effect in local dev
+    // (no CDN to purge). Required in production via the `.refine` below — mirrors
+    // the PUBLIC_SENTRY_DSN / PUBLIC_POSTHOG_KEY production-only pattern. This is
+    // the FU-1 fix: under `astro dev` the Vite SSR module-runner runs with an
+    // isolated process.env that never receives this server-only var, so making it
+    // hard-required broke every web write flow that calls getApiUrl().
+    HOSPEDA_REVALIDATION_SECRET: z.string().min(32).optional(),
     PUBLIC_SENTRY_DSN: z.url().optional(),
     PUBLIC_SENTRY_RELEASE: z.string().optional(),
     /**
@@ -138,6 +146,19 @@ export const serverEnvSchema = serverEnvBaseSchema
         {
             message: 'PUBLIC_POSTHOG_KEY is required in production',
             path: ['PUBLIC_POSTHOG_KEY']
+        }
+    )
+    // Required in production: the cache-revalidation endpoint authenticates with
+    // this shared secret. Optional in dev/test (no CDN to purge) so getApiUrl()
+    // and friends never throw when the Vite SSR module-runner lacks it (FU-1).
+    .refine(
+        (data) =>
+            data.NODE_ENV !== 'production' ||
+            (typeof data.HOSPEDA_REVALIDATION_SECRET === 'string' &&
+                data.HOSPEDA_REVALIDATION_SECRET.length >= 32),
+        {
+            message: 'HOSPEDA_REVALIDATION_SECRET is required in production',
+            path: ['HOSPEDA_REVALIDATION_SECRET']
         }
     );
 
