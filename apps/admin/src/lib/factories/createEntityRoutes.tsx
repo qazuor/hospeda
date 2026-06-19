@@ -20,6 +20,7 @@
 
 import { Button } from '@/components/ui-wrapped';
 import { useTranslations } from '@/hooks/use-translations';
+import type { TranslationKey } from '@repo/i18n';
 import { LoaderIcon, PreviousIcon } from '@repo/icons';
 import type { ReactNode } from 'react';
 
@@ -63,7 +64,8 @@ export function createErrorComponent(displayName: string): (props: { error: Erro
             <div className={ERROR_STYLES.container}>
                 <div className={ERROR_STYLES.content}>
                     <h2 className={ERROR_STYLES.title}>
-                        {t('admin-common.errors.errorLoadingPage')} {displayName}
+                        {t('admin-common.errors.errorLoadingPage')}{' '}
+                        {displayName.includes('.') ? t(displayName as TranslationKey) : displayName}
                     </h2>
                     <p className={ERROR_STYLES.message}>
                         {error.message || 'An unexpected error occurred'}

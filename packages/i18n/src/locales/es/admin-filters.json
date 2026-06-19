@@ -24,6 +24,9 @@
         "town": "Pueblo",
         "neighborhood": "Barrio"
     },
+    "destination": {
+        "label": "Destino"
+    },
     "accommodationType": {
         "label": "Tipo",
         "apartment": "Departamento",

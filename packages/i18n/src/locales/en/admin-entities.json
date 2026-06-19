@@ -910,5 +910,14 @@
             "next": "Next",
             "info": "Page {{page}} of {{totalPages}} · {{total}} leads"
         }
+    },
+    "hostTrade": {
+        "create": {
+            "title": "New Trade",
+            "successTitle": "Trade created",
+            "successMessage": "The trade was created successfully",
+            "errorTitle": "Error creating trade",
+            "errorMessage": "We could not create the trade. Please try again."
+        }
     }
 }

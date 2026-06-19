@@ -26,6 +26,7 @@ import {
 	BuildingIcon,
 	DashboardIcon,
 	MegaphoneIcon,
+	WrenchIcon,
 } from '@repo/icons';
 import type { ComponentType } from 'react';
 import type { IconProps } from '@repo/icons';
@@ -116,6 +117,12 @@ const navGroups: ReadonlyArray<NavGroup> = [
 							label: t('account.nav.promotions', 'Mis promociones'),
 							path: 'mi-cuenta/promociones',
 							Icon: MegaphoneIcon
+						},
+						{
+							section: 'directorio-proveedores',
+							label: t('account.nav.tradeDirectory', 'Directorio de proveedores'),
+							path: 'mi-cuenta/directorio-proveedores',
+							Icon: WrenchIcon
 						},
 					],
 				} as NavGroup,

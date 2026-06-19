@@ -948,6 +948,15 @@ const plataformaSidebar: SidebarInput = {
                 }
             ]
         },
+        { type: 'separator', id: 'sep-host-trades' },
+        {
+            type: 'link',
+            id: 'host-trades',
+            label: { es: 'Oficios / Proveedores', en: 'Host Trades', pt: 'Ofícios / Fornecedores' },
+            icon: 'OffersIcon',
+            route: '/platform/host-trades',
+            permissions: ['HOST_TRADE_VIEW_ALL']
+        },
         { type: 'separator', id: 'sep-ai' },
         // ── Inteligencia Artificial ────────────────────────────────────────
         {

@@ -10,6 +10,12 @@
 /* ── Category filter pill bar ── */
 
 .filterBar {
+    /* Reset fieldset browser defaults so no visible box wraps the pills */
+    border: 0;
+    padding: 0;
+    margin: 0;
+    min-inline-size: 0;
+    /* Layout */
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-2, 0.5rem);
@@ -76,9 +82,22 @@
 /* ── Trade cards grid: 1 col → 2 col → 3 col ── */
 
 .grid {
+    /* Reset list defaults — no bullets, no browser margin/padding */
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    /* Grid layout */
     display: grid;
     grid-template-columns: 1fr;
+    align-items: stretch;
     gap: var(--space-card-gap, 1.875rem);
+}
+
+/* Grid cell — stretches to the full row height so the card inside can fill it */
+.gridItem {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 @media (min-width: 640px) {

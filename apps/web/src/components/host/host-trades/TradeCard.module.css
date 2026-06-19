@@ -3,6 +3,8 @@
 .card {
     display: flex;
     flex-direction: column;
+    /* Fill the grid cell so all cards in a row share the same height */
+    height: 100%;
     gap: var(--space-3, 0.75rem);
     padding: var(--space-5, 1.25rem);
     background-color: var(--core-card);
@@ -82,6 +84,8 @@
 .benefitRow {
     display: flex;
     flex-direction: column;
+    /* Grow to fill remaining card space, pushing the contact button to the bottom */
+    flex: 1;
     gap: 0.25rem;
     padding: var(--space-3, 0.75rem);
     background-color: var(--core-foreground-a08);

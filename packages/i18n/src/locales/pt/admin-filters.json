@@ -24,6 +24,9 @@
         "town": "Vila",
         "neighborhood": "Bairro"
     },
+    "destination": {
+        "label": "Destino"
+    },
     "accommodationType": {
         "label": "Tipo",
         "apartment": "Apartamento",

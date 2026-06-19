@@ -10,6 +10,11 @@
         "noAccommodations": "You need at least one registered accommodation to see this directory.",
         "noTrades": "No providers available for your destinations yet."
     },
+    "accessDenied": {
+        "title": "This section is exclusive to hosts",
+        "message": "You need an active host plan to access the service provider directory.",
+        "cta": "View subscription plans"
+    },
     "card": {
         "is24h": "Available 24/7",
         "benefit": "Host benefit",

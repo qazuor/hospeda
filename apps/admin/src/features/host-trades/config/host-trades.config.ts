@@ -24,6 +24,14 @@ export const hostTradesConfig: EntityConfig<HostTradeListItem> = {
     filterBarConfig: {
         filters: [
             {
+                paramKey: 'destinationId',
+                labelKey: 'admin-filters.destination.label',
+                type: 'text',
+                order: 0,
+                debounceMs: 400,
+                maxLength: 36
+            },
+            {
                 paramKey: 'category',
                 labelKey: 'admin-filters.hostTradeCategory.label',
                 type: 'select',

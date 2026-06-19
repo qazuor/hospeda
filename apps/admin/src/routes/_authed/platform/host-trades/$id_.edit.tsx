@@ -12,7 +12,7 @@ import { createFileRoute } from '@tanstack/react-router';
 export const Route = createFileRoute('/_authed/platform/host-trades/$id_/edit')({
     component: HostTradeEditPage,
     loader: async ({ params }) => ({ hostTradeId: params.id }),
-    errorComponent: createErrorComponent('HostTrade'),
+    errorComponent: createErrorComponent('admin-entities.entities.hostTrade.singular'),
     pendingComponent: createPendingComponent()
 });
 

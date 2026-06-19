@@ -168,7 +168,10 @@ export function TradesDirectory({ trades, locale }: TradesDirectoryProps): JSX.E
                     aria-label={t('host-trades.page.title', 'Directorio de proveedores')}
                 >
                     {visibleTrades.map((trade) => (
-                        <li key={trade.id}>
+                        <li
+                            key={trade.id}
+                            className={styles.gridItem}
+                        >
                             <TradeCard
                                 trade={trade}
                                 locale={locale}

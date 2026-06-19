@@ -356,5 +356,10 @@
             "LIMIT_REACHED": "Limite mensal de traduções atingido. Aguarde o próximo mês.",
             "default": "Erro ao traduzir. Tente novamente."
         }
+    },
+    "validationError": {
+        "field": {
+            "invalidType": "Tipo de dado inválido para este campo"
+        }
     }
 }

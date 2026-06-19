@@ -10,7 +10,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/platform/host-trades/new')({
     component: HostTradeCreatePage,
-    errorComponent: createErrorComponent('HostTrade'),
+    errorComponent: createErrorComponent('admin-entities.entities.hostTrade.singular'),
     pendingComponent: createPendingComponent()
 });
 
@@ -33,17 +33,17 @@ function HostTradeCreatePage() {
 
     const createConfig: EntityCreateConfig = {
         entityType: 'hostTrade',
-        title: 'Nuevo Oficio',
+        title: t('admin-entities.hostTrade.create.title'),
         description: t('admin-entities.entities.hostTrade.description'),
         entityName,
         entityNamePlural,
         basePath: '/platform/host-trades',
         submitLabel: t('admin-entities.form.title.create').replace('{entity}', entityName),
         savingLabel: t('admin-entities.messages.saving'),
-        successToastTitle: 'Oficio creado',
-        successToastMessage: 'El oficio se creó exitosamente',
-        errorToastTitle: 'Error al crear el oficio',
-        errorMessage: 'No pudimos crear el oficio. Probá de nuevo.'
+        successToastTitle: t('admin-entities.hostTrade.create.successTitle'),
+        successToastMessage: t('admin-entities.hostTrade.create.successMessage'),
+        errorToastTitle: t('admin-entities.hostTrade.create.errorTitle'),
+        errorMessage: t('admin-entities.hostTrade.create.errorMessage')
     };
 
     return (

@@ -356,5 +356,10 @@
             "LIMIT_REACHED": "Monthly translation limit reached. Wait for next month.",
             "default": "Translation error. Please try again."
         }
+    },
+    "validationError": {
+        "field": {
+            "invalidType": "Invalid data type for this field"
+        }
     }
 }
