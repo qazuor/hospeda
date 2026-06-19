@@ -82,8 +82,12 @@ describe('DestinationConsolidatedConfig — Climate section (SPEC-215)', () => {
             // Both are SELECTs over the twelve month keys.
             expect(from?.type).toBe(FieldTypeEnum.SELECT);
             expect(to?.type).toBe(FieldTypeEnum.SELECT);
-            expect(from?.typeConfig?.options).toHaveLength(12);
-            expect(to?.typeConfig?.options).toHaveLength(12);
+            const fromOptions = (from?.typeConfig as { options?: { value: string }[] } | undefined)
+                ?.options;
+            const toOptions = (to?.typeConfig as { options?: { value: string }[] } | undefined)
+                ?.options;
+            expect(fromOptions).toHaveLength(12);
+            expect(toOptions).toHaveLength(12);
         });
 
         it('registers all four season temperature fields (min + max per season)', () => {
