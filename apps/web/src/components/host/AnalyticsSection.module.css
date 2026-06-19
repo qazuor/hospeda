@@ -21,23 +21,21 @@
     gap: var(--space-card-gap, 1.875rem);
 }
 
+/*
+ * Layout (SPEC-207 polish): the Views widget is the tallest and richest card
+ * (line chart + per-property ranking), so it spans the full width as a banner
+ * — the wide time-series reads better — and the four smaller cards (response
+ * rate, inquiries, market, favorites) sit below in a balanced 2x2 grid. This
+ * avoids the previous 3-column layout where Views stretched its row and left
+ * the short cards beside it with large empty space.
+ */
 @media (min-width: 640px) {
     .analyticsGrid {
         grid-template-columns: repeat(2, 1fr);
     }
-}
 
-@media (min-width: 900px) {
-    .analyticsGrid {
-        grid-template-columns: repeat(3, 1fr);
-    }
-}
-
-/* Last row (inquiry + market) spans full width on 2-col, 2-col on 3-col */
-@media (min-width: 640px) and (max-width: 899px) {
-    .analyticsGrid > :nth-child(4),
-    .analyticsGrid > :nth-child(5) {
-        grid-column: span 1;
+    .analyticsGrid > :first-child {
+        grid-column: 1 / -1;
     }
 }
 

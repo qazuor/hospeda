@@ -8,6 +8,9 @@
     background-color: var(--core-card);
     border: 1px solid var(--border, var(--core-foreground-a15));
     border-radius: var(--radius-card, 24px);
+    /* Fill the grid cell so short content can center vertically instead of
+     * hugging the top and leaving empty space below (SPEC-207 layout polish). */
+    height: 100%;
 }
 
 .header {
@@ -29,7 +32,11 @@
 .content {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: var(--space-5, 1.25rem);
+    /* Grow into the cell height and center the donut + meta block so the card
+     * doesn't leave a large empty band below its short content. */
+    flex: 1;
 }
 
 /* ── Circular progress ── */

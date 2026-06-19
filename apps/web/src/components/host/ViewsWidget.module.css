@@ -37,6 +37,13 @@
     display: flex;
     gap: var(--space-1, 0.25rem);
     align-self: flex-start;
+    /* This is a <fieldset> (ARIA grouping for the window radios); strip the
+     * browser default groove border, margin and padding so only the pill
+     * buttons show. */
+    margin: 0;
+    padding: 0;
+    border: 0;
+    min-inline-size: 0;
 }
 
 .toggleBtn {
