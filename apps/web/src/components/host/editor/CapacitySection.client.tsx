@@ -44,7 +44,7 @@ export function CapacitySection({ locale, data, errors, onFieldChange }: Capacit
                         className={styles.fieldInput}
                         value={data.maxGuests ?? ''}
                         min={1}
-                        max={20}
+                        max={200}
                         onChange={(e) =>
                             onFieldChange(
                                 'maxGuests',
@@ -78,7 +78,7 @@ export function CapacitySection({ locale, data, errors, onFieldChange }: Capacit
                         className={styles.fieldInput}
                         value={data.bedrooms ?? ''}
                         min={0}
-                        max={10}
+                        max={100}
                         onChange={(e) =>
                             onFieldChange(
                                 'bedrooms',
@@ -112,7 +112,7 @@ export function CapacitySection({ locale, data, errors, onFieldChange }: Capacit
                         className={styles.fieldInput}
                         value={data.bathrooms ?? ''}
                         min={1}
-                        max={10}
+                        max={100}
                         onChange={(e) =>
                             onFieldChange(
                                 'bathrooms',

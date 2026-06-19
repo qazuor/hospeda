@@ -212,9 +212,13 @@ export const AccommodationCreateHttpSchema = z.object({
     longitude: z.coerce.number().min(-180).max(180),
 
     // Capacity
-    maxGuests: z.coerce.number().int().min(1).max(20),
-    bedrooms: z.coerce.number().int().min(0).max(10),
-    bathrooms: z.coerce.number().int().min(1).max(10),
+    // High technical ceilings so large accommodations (hotels, multi-unit
+    // complexes) are accepted. The domain schema imposes no max; these caps are
+    // anti-abuse guards, not product limits. Per-unit capacity modelling for
+    // hotels/complexes is tracked as a dedicated follow-up spec.
+    maxGuests: z.coerce.number().int().min(1).max(200),
+    bedrooms: z.coerce.number().int().min(0).max(100),
+    bathrooms: z.coerce.number().int().min(1).max(100),
 
     // Pricing
     basePrice: z.coerce.number().min(0),
