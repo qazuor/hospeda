@@ -1,5 +1,5 @@
 /**
- * Type-safe environment variable access for web2.
+ * Type-safe environment variable access for web.
  * Delegates to the validated env from `src/env.ts` instead of constructing
  * ad-hoc fallback chains with `import.meta.env`.
  *
@@ -33,7 +33,7 @@ export function getApiUrl(): string {
     const env = getEnv();
     const url = env.PUBLIC_API_URL ?? env.HOSPEDA_API_URL;
     if (!url) {
-        throw new Error('[web2] Neither PUBLIC_API_URL nor HOSPEDA_API_URL is configured');
+        throw new Error('[web] Neither PUBLIC_API_URL nor HOSPEDA_API_URL is configured');
     }
     return url.replace(/\/$/, '');
 }
@@ -48,7 +48,7 @@ export function getSiteUrl(): string {
     const env = getEnv();
     const url = env.PUBLIC_SITE_URL ?? env.HOSPEDA_SITE_URL;
     if (!url) {
-        throw new Error('[web2] Neither PUBLIC_SITE_URL nor HOSPEDA_SITE_URL is configured');
+        throw new Error('[web] Neither PUBLIC_SITE_URL nor HOSPEDA_SITE_URL is configured');
     }
     return url;
 }
@@ -90,7 +90,7 @@ export function getAdminUrl(): string | undefined {
 export function getAdminUrlOrThrow(): string {
     const url = getAdminUrl();
     if (!url) {
-        throw new Error('[web2] Neither PUBLIC_ADMIN_URL nor HOSPEDA_ADMIN_URL is configured');
+        throw new Error('[web] Neither PUBLIC_ADMIN_URL nor HOSPEDA_ADMIN_URL is configured');
     }
     return url;
 }

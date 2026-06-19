@@ -1,5 +1,5 @@
 /**
- * Frontend logger for the Hospeda web2 application.
+ * Frontend logger for the Hospeda web application.
  * Provides styled console output with category prefix for easy filtering.
  */
 
@@ -45,10 +45,10 @@ function createFrontendLogger(options: LoggerOptions) {
 }
 
 /**
- * Hospeda web2 logger instance.
+ * Hospeda web logger instance.
  */
 export const webLogger = createFrontendLogger({
-    category: 'HOSPEDA-WEB2',
+    category: 'HOSPEDA-WEB',
     bgColor: '#f97316',
     textColor: '#ffffff',
     enabled: isLoggingEnabled()

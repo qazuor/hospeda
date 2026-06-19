@@ -237,6 +237,59 @@ describe('GET /admin/host-trades', () => {
         const res = await app.request('/', { method: 'GET' });
         expect(res.status).toBe(403);
     });
+
+    /**
+     * Regression: SPEC-241 — before the fix, `_executeAdminSearch` in HostTradeService
+     * delegated to the base class WITHOUT passing entity-specific filters (category,
+     * destinationId, isActive, is24h), so `?category=PLOMERIA` was silently dropped
+     * and the full table was returned instead of the filtered subset.
+     *
+     * This test verifies that query parameters are forwarded to the service via
+     * `adminList()`, which the service is responsible for handing to `_executeAdminSearch`.
+     * The service mock captures whatever the route passes — if the route strips or ignores
+     * query params before calling adminList(), the mock call args will not contain them.
+     */
+    it('forwards ?category= filter to adminList() — regression SPEC-241', async () => {
+        const app = buildApp(ALL_PERMS);
+        const res = await app.request('/?category=PLOMERIA', { method: 'GET' });
+        expect(res.status).toBe(200);
+
+        // The route must have called adminList() with the category param
+        expect(mockAdminList).toHaveBeenCalledTimes(1);
+        const [_actor, queryArg] = mockAdminList.mock.calls[0] as [
+            unknown,
+            Record<string, unknown>
+        ];
+        expect(queryArg).toMatchObject({ category: 'PLOMERIA' });
+    });
+
+    it('forwards ?destinationId= filter to adminList() — regression SPEC-241', async () => {
+        const app = buildApp(ALL_PERMS);
+        const destId = '33333333-3333-4333-8333-333333333333';
+        const res = await app.request(`/?destinationId=${destId}`, { method: 'GET' });
+        expect(res.status).toBe(200);
+
+        expect(mockAdminList).toHaveBeenCalledTimes(1);
+        const [_actor, queryArg] = mockAdminList.mock.calls[0] as [
+            unknown,
+            Record<string, unknown>
+        ];
+        expect(queryArg).toMatchObject({ destinationId: destId });
+    });
+
+    it('forwards ?isActive=true filter to adminList() — regression SPEC-241', async () => {
+        const app = buildApp(ALL_PERMS);
+        const res = await app.request('/?isActive=true', { method: 'GET' });
+        expect(res.status).toBe(200);
+
+        expect(mockAdminList).toHaveBeenCalledTimes(1);
+        const [_actor, queryArg] = mockAdminList.mock.calls[0] as [
+            unknown,
+            Record<string, unknown>
+        ];
+        // queryBooleanParam() coerces "true" → boolean true before reaching the service
+        expect(queryArg).toMatchObject({ isActive: true });
+    });
 });
 
 // ---------------------------------------------------------------------------
@@ -393,6 +446,39 @@ describe('POST /admin/host-trades/:id/restore', () => {
         const app = buildApp([PermissionEnum.ACCESS_PANEL_ADMIN]);
         const res = await app.request(`/${MOCK_TRADE_ID}/restore`, { method: 'POST' });
         expect(res.status).toBe(403);
+    });
+
+    /**
+     * Regression: SPEC-241 — before the fix, the restore route returned the
+     * raw `restore()` service result ({count: N}), which does NOT satisfy
+     * HostTradeAdminSchema validation and caused a 500 on the real endpoint.
+     * The fix re-fetches the entity via `getById` after restoring and returns
+     * its body. This test pins the contract: `data` must be the entity object,
+     * NOT a count-shaped object.
+     */
+    it('returns the restored entity body (not {count}) — regression SPEC-241', async () => {
+        const app = buildApp(ALL_PERMS);
+        const res = await app.request(`/${MOCK_TRADE_ID}/restore`, { method: 'POST' });
+        expect(res.status).toBe(200);
+        const body = await res.json();
+
+        // Must be the entity shape, not { count: N }
+        expect(body.data).not.toHaveProperty('count');
+
+        // Entity fields from MOCK_TRADE must be present
+        expect(body.data.id).toBe(MOCK_TRADE_ID);
+        expect(body.data.name).toBe(MOCK_TRADE.name);
+        expect(body.data.category).toBe(MOCK_TRADE.category);
+        expect(body.data.slug).toBe(MOCK_TRADE.slug);
+    });
+
+    it('calls service.restore() then service.getById() — regression SPEC-241', async () => {
+        const app = buildApp(ALL_PERMS);
+        await app.request(`/${MOCK_TRADE_ID}/restore`, { method: 'POST' });
+
+        // Both service methods must be invoked in the correct order
+        expect(mockRestore).toHaveBeenCalledTimes(1);
+        expect(mockGetById).toHaveBeenCalledTimes(1);
     });
 });
 

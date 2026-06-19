@@ -17,7 +17,7 @@ if (dsn) {
         initialScope: {
             tags: {
                 project: 'hospeda',
-                app_type: 'web2'
+                app_type: 'web'
             }
         },
 

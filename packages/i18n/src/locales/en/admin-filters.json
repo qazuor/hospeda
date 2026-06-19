@@ -24,6 +24,9 @@
         "town": "Town",
         "neighborhood": "Neighborhood"
     },
+    "destination": {
+        "label": "Destination"
+    },
     "accommodationType": {
         "label": "Type",
         "apartment": "Apartment",

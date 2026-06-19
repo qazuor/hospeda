@@ -1,9 +1,9 @@
 /**
  * @file SignUp.client.tsx
- * @description Sign-up form React island for web2.
+ * @description Sign-up form React island for web.
  *
  * Standalone component — no dependency on @repo/auth-ui.
- * Calls auth-client.ts directly, styled with CSS Modules + web2 design tokens.
+ * Calls auth-client.ts directly, styled with CSS Modules + web design tokens.
  * Validates password length client-side before submitting.
  *
  * The `name` field has been intentionally removed (SPEC-113). Name collection

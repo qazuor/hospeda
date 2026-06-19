@@ -15,30 +15,30 @@ export const hostTradeQueryKeys = {
 
 /** Fetches a single host-trade entry by ID from the admin API. */
 async function fetchHostTrade(id: string): Promise<HostTrade> {
-    const result = await fetchApi<{ success: boolean; data: { hostTrade: HostTrade } }>({
+    const result = await fetchApi<{ success: boolean; data: HostTrade }>({
         path: `/api/v1/admin/host-trades/${id}`
     });
-    return result.data.data.hostTrade;
+    return result.data.data;
 }
 
 /** Creates a new host-trade entry via the admin API. */
 async function createHostTrade(data: CreateHostTrade): Promise<HostTrade> {
-    const result = await fetchApi<{ success: boolean; data: { hostTrade: HostTrade } }>({
+    const result = await fetchApi<{ success: boolean; data: HostTrade }>({
         path: '/api/v1/admin/host-trades',
         method: 'POST',
         body: data
     });
-    return result.data.data.hostTrade;
+    return result.data.data;
 }
 
 /** Partially updates an existing host-trade entry via the admin API. */
 async function updateHostTrade(id: string, data: UpdateHostTrade): Promise<HostTrade> {
-    const result = await fetchApi<{ success: boolean; data: { hostTrade: HostTrade } }>({
+    const result = await fetchApi<{ success: boolean; data: HostTrade }>({
         path: `/api/v1/admin/host-trades/${id}`,
         method: 'PATCH',
         body: data
     });
-    return result.data.data.hostTrade;
+    return result.data.data;
 }
 
 /** Soft-deletes a host-trade entry via the admin API. */
@@ -52,12 +52,12 @@ async function deleteHostTrade(id: string): Promise<boolean> {
 
 /** Restores a soft-deleted host-trade entry via the admin API. */
 async function restoreHostTrade(id: string): Promise<HostTrade> {
-    const result = await fetchApi<{ success: boolean; data: { hostTrade: HostTrade } }>({
+    const result = await fetchApi<{ success: boolean; data: HostTrade }>({
         path: `/api/v1/admin/host-trades/${id}/restore`,
         method: 'POST',
         body: {}
     });
-    return result.data.data.hostTrade;
+    return result.data.data;
 }
 
 /**

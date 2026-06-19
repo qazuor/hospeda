@@ -1,8 +1,8 @@
-# Hospeda Web2
+# Hospeda Web
 
 New public-facing website for the Hospeda tourism accommodation platform, targeting the Litoral Entrerriano region of Argentina. Built with Astro 5, React 19 islands, Tailwind CSS v4, and deployed on a self-hosted Coolify VPS behind Cloudflare.
 
-This app will eventually **replace `apps/web`** with a fresh design based on the TravHub reference template, featuring organic shapes, warm peach tones, Geologica + Roboto + Caveat typography, and a fully tokenized design system.
+This app (`apps/web`) is the public-facing web frontend, featuring a fresh design based on the TravHub reference template with organic shapes, warm peach tones, Geologica + Roboto + Caveat typography, and a fully tokenized design system.
 
 ## Quick Start
 
@@ -11,17 +11,17 @@ This app will eventually **replace `apps/web`** with a fresh design based on the
 pnpm install
 
 # Copy env file and adjust values
-cp apps/web2/.env.example apps/web2/.env.local
+cp apps/web/.env.example apps/web/.env.local
 # Edit .env.local with your values (see Environment section below)
 
-# Start dev server (port 4322)
-pnpm --filter hospeda-web2 dev
+# Start dev server (port 4321)
+pnpm --filter hospeda-web dev
 
 # Or start all apps
 pnpm dev
 ```
 
-The app runs at `http://localhost:4322`. Requires the API (`apps/api`) running on port 3001.
+The app runs at `http://localhost:4321`. Requires the API (`apps/api`) running on port 3001.
 
 ## Tech Stack
 

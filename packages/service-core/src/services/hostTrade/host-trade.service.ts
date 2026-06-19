@@ -18,6 +18,7 @@ import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type {
     Actor,
+    AdminSearchExecuteParams,
     PaginatedListOutput,
     ServiceConfig,
     ServiceContext,
@@ -304,15 +305,17 @@ export class HostTradeService extends BaseCrudService<
     /**
      * Executes the admin search query with admin-specific filters.
      *
-     * @param params - Combined where/pagination/ctx params from the base class.
+     * All entity-specific filter fields (`category`, `destinationId`, `isActive`,
+     * `is24h`) map directly to table column names, so they are merged into the
+     * `where` clause by the base implementation. Sorting, pagination, and text
+     * search are also forwarded to the base class, which handles them uniformly.
+     *
+     * @param params - Full admin search params assembled by the base `adminList` method.
      */
-    protected async _executeAdminSearch(params: {
-        where: Record<string, unknown>;
-        pagination: { page: number; pageSize: number };
-        ctx?: ServiceContext;
-    }): Promise<PaginatedListOutput<HostTrade>> {
-        const { where, pagination, ctx } = params;
-        return this.model.findAll(where, pagination, undefined, ctx?.tx);
+    protected override async _executeAdminSearch(
+        params: AdminSearchExecuteParams
+    ): Promise<PaginatedListOutput<HostTrade>> {
+        return super._executeAdminSearch(params);
     }
 
     // --- Custom methods ---

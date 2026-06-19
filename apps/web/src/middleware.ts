@@ -52,7 +52,7 @@ import {
 const NOINDEX_HOSTS = parseNoindexHosts(getNoindexHosts());
 
 /**
- * Main middleware handler for all requests in the web2 application.
+ * Main middleware handler for all requests in the web application.
  */
 export const onRequest = defineMiddleware(async (context, next) => {
     const path = context.url.pathname;

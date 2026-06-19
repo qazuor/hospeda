@@ -1,6 +1,6 @@
 /**
  * @file toast-store.ts
- * @description Global toast notification store for web2.
+ * @description Global toast notification store for web.
  *
  * Pub/sub store for managing toast notifications without external dependencies.
  * Module-level state with a subscriber pattern compatible with React's

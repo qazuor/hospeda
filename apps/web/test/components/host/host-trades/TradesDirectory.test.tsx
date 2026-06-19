@@ -428,8 +428,9 @@ describe('TradeCard — basic render', () => {
         expect(link.getAttribute('href')).toBe('https://wa.me/5491155555555');
     });
 
-    it('uses a bare wa.me URL as-is', () => {
-        // Arrange
+    it('prepends https:// to a bare wa.me/ path (regression: SPEC-241 fix)', () => {
+        // Arrange — bare "wa.me/..." without scheme was previously passed through
+        // unchanged, producing an invalid relative-URL href. The fix prepends https://.
         const tradeWithWa = makeTrade({ contact: 'wa.me/5491155555555' });
 
         // Act
@@ -440,9 +441,26 @@ describe('TradeCard — basic render', () => {
             />
         );
 
+        // Assert — must be a fully-qualified HTTPS URL, NOT a bare domain path
+        const link = screen.getByRole('link', { name: 'Contactar' });
+        expect(link.getAttribute('href')).toBe('https://wa.me/5491155555555');
+    });
+
+    it('prepends https:// to a bare wa.me? query-string path (regression: SPEC-241 fix)', () => {
+        // Arrange — wa.me?phone= variant also needs https:// prepended
+        const tradeWithWaQuery = makeTrade({ contact: 'wa.me?phone=5491155555555' });
+
+        // Act
+        render(
+            <TradeCard
+                trade={tradeWithWaQuery}
+                locale="es"
+            />
+        );
+
         // Assert
         const link = screen.getByRole('link', { name: 'Contactar' });
-        expect(link.getAttribute('href')).toBe('wa.me/5491155555555');
+        expect(link.getAttribute('href')).toBe('https://wa.me?phone=5491155555555');
     });
 });
 

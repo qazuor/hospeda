@@ -910,5 +910,14 @@
             "next": "Próximo",
             "info": "Página {{page}} de {{totalPages}} · {{total}} leads"
         }
+    },
+    "hostTrade": {
+        "create": {
+            "title": "Novo Ofício",
+            "successTitle": "Ofício criado",
+            "successMessage": "O ofício foi criado com sucesso",
+            "errorTitle": "Erro ao criar ofício",
+            "errorMessage": "Não foi possível criar o ofício. Tente novamente."
+        }
     }
 }

@@ -33,7 +33,7 @@ import { webLogger as logger } from '@/lib/logger';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import { TradesDirectory } from '@/components/host/host-trades/TradesDirectory.client';
-import { BuildingIcon } from '@repo/icons';
+import { BuildingIcon, LockIcon } from '@repo/icons';
 
 export const prerender = false;
 
@@ -61,6 +61,7 @@ if (!user) {
 
 let trades: readonly HostTradePublic[] = [];
 let fetchError = false;
+let accessDenied = false;
 
 /** Resolved empty-state variant — only meaningful when trades is empty */
 let emptyVariant: 'noAccommodations' | 'noTrades' = 'noTrades';
@@ -84,14 +85,17 @@ try {
                 data?: readonly HostTradePublic[];
             };
             trades = body.data ?? [];
+        } else if (tradesResponse.status === 403) {
+            accessDenied = true;
+            logger.warn('[directorio-proveedores] Trades API returned 403 — user lacks host entitlement');
         } else {
             fetchError = true;
             logger.error('[directorio-proveedores] Trades API responded with status', tradesResponse.status);
         }
 
-        // Secondary fetch (AC-3.1/3.2): only when trades is empty, to
-        // distinguish "host has no accommodations" from "no trades for host's area".
-        if (!fetchError && trades.length === 0) {
+        // Secondary fetch (AC-3.1/3.2): only when trades is empty (and no access issue),
+        // to distinguish "host has no accommodations" from "no trades for host's area".
+        if (!fetchError && !accessDenied && trades.length === 0) {
             try {
                 const accomResponse = await fetch(
                     `${apiUrl}/api/v1/protected/accommodations?pageSize=1`,
@@ -133,6 +137,10 @@ const title = t('host-trades.page.title', 'Directorio de proveedores');
 const subtitle = t('host-trades.page.subtitle', 'Proveedores locales de confianza para tu alojamiento');
 
 const isEmpty = trades.length === 0;
+
+const accessDeniedTitle = t('host-trades.accessDenied.title', 'Esta sección es exclusiva para anfitriones');
+const accessDeniedMessage = t('host-trades.accessDenied.message', 'Para acceder al directorio de proveedores necesitás un plan de anfitrión activo.');
+const accessDeniedCta = t('host-trades.accessDenied.cta', 'Ver planes de suscripción');
 ---
 
 <AccountLayout
@@ -149,8 +157,20 @@ const isEmpty = trades.length === 0;
         </div>
     </div>
 
-    {fetchError ? (
-        <!-- Error state -->
+    {accessDenied ? (
+        <!-- Access-denied state (AC-5.3): tourist or non-host user -->
+        <div class="trades-page__access-denied" role="alert">
+            <span class="trades-page__access-denied-icon" aria-hidden="true">
+                <LockIcon size={40} weight="duotone" />
+            </span>
+            <h3 class="trades-page__access-denied-heading">{accessDeniedTitle}</h3>
+            <p class="trades-page__access-denied-body">{accessDeniedMessage}</p>
+            <a href={`/${locale}/suscripcion`} class="trades-page__access-denied-cta">
+                {accessDeniedCta}
+            </a>
+        </div>
+    ) : fetchError ? (
+        <!-- Generic error state -->
         <div class="trades-page__error" role="alert">
             <p class="trades-page__error-title">
                 {t('host.properties.empty.fetchError', 'No se pudo cargar la lista. Intentá recargar la página.')}
@@ -215,6 +235,63 @@ const isEmpty = trades.length === 0;
         font-size: var(--text-body-sm, 0.9375rem);
         color: var(--core-muted-foreground);
         margin: 0;
+    }
+
+    /* ── Access-denied state ── */
+    .trades-page__access-denied {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--space-4, 1rem);
+        padding: var(--space-12, 3rem) var(--space-8, 2rem);
+        background-color: var(--core-card);
+        border: 1px solid var(--core-foreground-a08);
+        border-radius: var(--radius-card, 24px);
+        text-align: center;
+    }
+
+    .trades-page__access-denied-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--core-muted-foreground);
+    }
+
+    .trades-page__access-denied-heading {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: 1.25rem;
+        color: var(--core-foreground);
+        margin: 0;
+    }
+
+    .trades-page__access-denied-body {
+        font-family: var(--font-sans);
+        font-size: var(--text-body, 1rem);
+        color: var(--core-muted-foreground);
+        margin: 0;
+        max-width: 42ch;
+    }
+
+    .trades-page__access-denied-cta {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        padding: 0.625rem 1.25rem;
+        border-radius: var(--radius-pill, 9999px);
+        background-color: var(--brand-primary);
+        color: var(--primary-foreground, #ffffff);
+        font-family: var(--font-sans);
+        font-weight: 600;
+        font-size: 0.9375rem;
+        text-decoration: none;
+        white-space: nowrap;
+        transition: opacity 150ms ease-out;
+    }
+
+    .trades-page__access-denied-cta:hover {
+        opacity: 0.88;
     }
 
     /* ── Error state ── */

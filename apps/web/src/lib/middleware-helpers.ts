@@ -341,12 +341,12 @@ function getMiddlewareApiUrl(): string {
         const url = process.env.HOSPEDA_API_URL || process.env.PUBLIC_API_URL;
         if (!url) {
             throw new Error(
-                '[web2 middleware] Neither HOSPEDA_API_URL nor PUBLIC_API_URL is configured'
+                '[web middleware] Neither HOSPEDA_API_URL nor PUBLIC_API_URL is configured'
             );
         }
         return url.replace(/\/$/, '');
     }
-    throw new Error('[web2 middleware] process is not available to read API URL');
+    throw new Error('[web middleware] process is not available to read API URL');
 }
 
 /**

@@ -910,5 +910,14 @@
             "next": "Siguiente",
             "info": "Página {{page}} de {{totalPages}} · {{total}} leads"
         }
+    },
+    "hostTrade": {
+        "create": {
+            "title": "Nuevo Oficio",
+            "successTitle": "Oficio creado",
+            "successMessage": "El oficio se creó exitosamente",
+            "errorTitle": "Error al crear el oficio",
+            "errorMessage": "No pudimos crear el oficio. Probá de nuevo."
+        }
     }
 }

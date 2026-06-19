@@ -6,8 +6,10 @@
  * is24h badge (only when true), scheduleText (only when present).
  *
  * Contact href resolution:
- *   - URL-like strings (http://, https://, wa.me, tel:) → used as-is as href
- *   - Anything else (raw phone, digits) → `tel:<contact>`
+ *   - http:// / https:// URLs → pass through as-is
+ *   - Bare wa.me/... or wa.me?... (no scheme) → prepend https://
+ *   - tel: values → pass through as-is
+ *   - Anything else (raw phone number) → wrap in `tel:` (spaces/dashes stripped)
  *
  * Styling: CSS Modules + design tokens (no Tailwind).
  */
@@ -35,21 +37,35 @@ export interface TradeCardProps {
 
 /**
  * Resolves the contact string to a safe href.
- * - Already looks like a URL → use as-is.
- * - Raw phone / text → wrap in `tel:`.
+ *
+ * Rules (applied in order, first match wins):
+ * 1. Already has http:// or https:// scheme → pass through.
+ * 2. tel: value → pass through.
+ * 3. Bare wa.me/... or wa.me?... (no scheme) → prepend https://.
+ * 4. Anything else (raw phone, digits) → wrap in `tel:` with spaces/dashes stripped.
+ *
+ * Exported for unit testing.
  */
-function resolveContactHref(contact: string): string {
+export function resolveContactHref(contact: string): string {
     const trimmed = contact.trim();
-    if (
-        trimmed.startsWith('http://') ||
-        trimmed.startsWith('https://') ||
-        trimmed.startsWith('wa.me') ||
-        trimmed.startsWith('tel:')
-    ) {
+
+    // Already fully-qualified URL
+    if (trimmed.startsWith('https://') || trimmed.startsWith('http://')) {
         return trimmed;
     }
-    // Strip spaces and dashes for tel: links so dialers can handle them
-    return `tel:${trimmed.replace(/\s+/g, '')}`;
+
+    // Already a tel: link
+    if (trimmed.startsWith('tel:')) {
+        return trimmed;
+    }
+
+    // Bare wa.me path (e.g. "wa.me/5493442567890" or "wa.me?phone=...")
+    if (trimmed.startsWith('wa.me/') || trimmed.startsWith('wa.me?')) {
+        return `https://${trimmed}`;
+    }
+
+    // Fallback: treat as raw phone number
+    return `tel:${trimmed.replace(/[\s\-()]/g, '')}`;
 }
 
 // ---------------------------------------------------------------------------

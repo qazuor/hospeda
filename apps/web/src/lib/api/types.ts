@@ -1,5 +1,5 @@
 /**
- * Shared types for the web2 API client.
+ * Shared types for the web API client.
  * Maps to the standard response shapes from @repo/schemas.
  */
 

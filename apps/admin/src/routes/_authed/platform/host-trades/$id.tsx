@@ -14,7 +14,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router';
 export const Route = createFileRoute('/_authed/platform/host-trades/$id')({
     component: HostTradeViewPage,
     loader: async ({ params }) => ({ hostTradeId: params.id }),
-    errorComponent: createErrorComponent('HostTrade'),
+    errorComponent: createErrorComponent('admin-entities.entities.hostTrade.singular'),
     pendingComponent: createPendingComponent()
 });
 

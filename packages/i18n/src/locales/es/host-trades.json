@@ -10,6 +10,11 @@
         "noAccommodations": "Necesitás tener alojamientos registrados para ver este directorio.",
         "noTrades": "No hay proveedores disponibles para tus destinos por ahora."
     },
+    "accessDenied": {
+        "title": "Esta sección es exclusiva para anfitriones",
+        "message": "Para acceder al directorio de proveedores necesitás un plan de anfitrión activo.",
+        "cta": "Ver planes de suscripción"
+    },
     "card": {
         "is24h": "Disponible 24hs",
         "benefit": "Beneficio para hosts",
