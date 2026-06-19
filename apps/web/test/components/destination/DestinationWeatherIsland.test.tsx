@@ -106,4 +106,27 @@ describe('DestinationWeatherIsland (US-3 graceful degradation)', () => {
         await waitFor(() => expect(screen.getByText(/21°C/)).toBeInTheDocument());
         expect(screen.queryByText(UNAVAILABLE)).not.toBeInTheDocument();
     });
+
+    it('never renders a misleading "0mm" for sub-millimetre precipitation', async () => {
+        // A trace of rain (0.1–0.9mm) must read "<1mm", a dry day must show no
+        // precipitation line, and >=1mm rounds to whole millimetres. Math.round
+        // alone would print "0mm" for a 0.3mm trace — misleading and inconsistent.
+        const precipPayload = {
+            ...validPayload,
+            daily: [
+                { ...validPayload.daily[0], date: '2026-06-15', precipMm: 0 },
+                { ...validPayload.daily[0], date: '2026-06-16', precipMm: 0.3 },
+                { ...validPayload.daily[0], date: '2026-06-17', precipMm: 2.7 }
+            ]
+        };
+        (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
+            ok: true,
+            status: 200,
+            json: async () => ({ success: true, data: precipPayload })
+        });
+        renderIsland();
+        await waitFor(() => expect(screen.getByText('<1mm')).toBeInTheDocument());
+        expect(screen.queryByText('0mm')).not.toBeInTheDocument();
+        expect(screen.getByText('3mm')).toBeInTheDocument();
+    });
 });

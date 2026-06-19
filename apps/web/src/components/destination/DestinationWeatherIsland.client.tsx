@@ -252,7 +252,9 @@ export function DestinationWeatherIsland({
                                     </span>
                                     {day.precipMm !== undefined && day.precipMm > 0 && (
                                         <span className={styles.forecastPrecip}>
-                                            {Math.round(day.precipMm)}mm
+                                            {day.precipMm < 1
+                                                ? '<1mm'
+                                                : `${Math.round(day.precipMm)}mm`}
                                         </span>
                                     )}
                                 </li>

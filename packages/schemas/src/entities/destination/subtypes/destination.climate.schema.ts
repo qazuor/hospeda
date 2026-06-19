@@ -10,6 +10,40 @@ export const ClimateSeasonEnum = z.enum(['spring', 'summer', 'autumn', 'winter']
 export type ClimateSeason = z.infer<typeof ClimateSeasonEnum>;
 
 /**
+ * Calendar months, used as the endpoints of the recommended-months range.
+ *
+ * Stored as locale-independent keys so the UI can render localized month names
+ * (web + admin) instead of a hard-coded free-text label.
+ */
+export const ClimateMonthEnum = z.enum([
+    'jan',
+    'feb',
+    'mar',
+    'apr',
+    'may',
+    'jun',
+    'jul',
+    'aug',
+    'sep',
+    'oct',
+    'nov',
+    'dec'
+]);
+export type ClimateMonth = z.infer<typeof ClimateMonthEnum>;
+
+/**
+ * Recommended-months range to visit a destination.
+ *
+ * Both endpoints are inclusive month keys; the range may wrap the year boundary
+ * (e.g. `from: 'oct'`, `to: 'mar'`). Rendered as localized month names.
+ */
+export const DestinationBestMonthsSchema = z.object({
+    from: ClimateMonthEnum,
+    to: ClimateMonthEnum
+});
+export type DestinationBestMonths = z.infer<typeof DestinationBestMonthsSchema>;
+
+/**
  * Per-season climate averages.
  *
  * Temperatures are integer Celsius (may be negative). Rainfall is integer
@@ -45,11 +79,7 @@ export type DestinationSeasonClimate = z.infer<typeof DestinationSeasonClimateSc
  */
 export const DestinationClimateSchema = z.object({
     bestSeason: ClimateSeasonEnum,
-    bestMonths: z
-        .string()
-        .min(1, { message: 'zodError.destination.climate.bestMonths.min' })
-        .max(50, { message: 'zodError.destination.climate.bestMonths.max' })
-        .optional(),
+    bestMonths: DestinationBestMonthsSchema.optional(),
     seasons: z.object({
         spring: DestinationSeasonClimateSchema.optional(),
         summer: DestinationSeasonClimateSchema.optional(),

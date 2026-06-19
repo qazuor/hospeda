@@ -72,11 +72,22 @@ describe('DestinationConsolidatedConfig — Climate section (SPEC-215)', () => {
             expect(field).toBeDefined();
         });
 
-        it('registers climate.bestMonths field', () => {
+        it('registers climate.bestMonths range fields (from + to)', () => {
             const section = getClimateSection();
-            const field = section.fields.find((f) => f.id === 'climate.bestMonths');
+            const from = section.fields.find((f) => f.id === 'climate.bestMonths.from');
+            const to = section.fields.find((f) => f.id === 'climate.bestMonths.to');
 
-            expect(field).toBeDefined();
+            expect(from).toBeDefined();
+            expect(to).toBeDefined();
+            // Both are SELECTs over the twelve month keys.
+            expect(from?.type).toBe(FieldTypeEnum.SELECT);
+            expect(to?.type).toBe(FieldTypeEnum.SELECT);
+            const fromOptions = (from?.typeConfig as { options?: { value: string }[] } | undefined)
+                ?.options;
+            const toOptions = (to?.typeConfig as { options?: { value: string }[] } | undefined)
+                ?.options;
+            expect(fromOptions).toHaveLength(12);
+            expect(toOptions).toHaveLength(12);
         });
 
         it('registers all four season temperature fields (min + max per season)', () => {
@@ -221,7 +232,7 @@ describe('DestinationConsolidatedConfig — Climate section (SPEC-215)', () => {
             // Arrange
             const validClimate = {
                 bestSeason: 'summer',
-                bestMonths: 'Diciembre a Marzo',
+                bestMonths: { from: 'dec', to: 'mar' },
                 seasons: {
                     spring: { avgTempMinC: 12, avgTempMaxC: 24, rainfallMm: 80 },
                     summer: { avgTempMinC: 20, avgTempMaxC: 35 },
@@ -318,11 +329,11 @@ describe('DestinationConsolidatedConfig — Climate section (SPEC-215)', () => {
             expect(result.success).toBe(false);
         });
 
-        it('rejects bestMonths longer than 50 chars', () => {
+        it('rejects an unknown month key in bestMonths', () => {
             // Arrange
             const badPayload = {
                 bestSeason: 'autumn',
-                bestMonths: 'a'.repeat(51),
+                bestMonths: { from: 'sep', to: 'foo' },
                 seasons: {}
             };
 
@@ -337,7 +348,7 @@ describe('DestinationConsolidatedConfig — Climate section (SPEC-215)', () => {
             // Arrange
             const input = {
                 bestSeason: 'spring',
-                bestMonths: 'Octubre y Noviembre',
+                bestMonths: { from: 'oct', to: 'nov' },
                 seasons: {
                     spring: { avgTempMinC: 10, avgTempMaxC: 22 }
                 }
@@ -350,7 +361,7 @@ describe('DestinationConsolidatedConfig — Climate section (SPEC-215)', () => {
             expect(result.success).toBe(true);
             if (!result.success) return;
             expect(result.data.bestSeason).toBe('spring');
-            expect(result.data.bestMonths).toBe('Octubre y Noviembre');
+            expect(result.data.bestMonths).toEqual({ from: 'oct', to: 'nov' });
             expect(result.data.seasons.spring?.avgTempMinC).toBe(10);
             expect(result.data.seasons.spring?.avgTempMaxC).toBe(22);
             expect(result.data.note).toBeUndefined();

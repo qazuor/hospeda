@@ -73,7 +73,7 @@ const destId = String(dest.id || '');
 
 type ClimateInputForPage = {
 	readonly bestSeason?: string;
-	readonly bestMonths?: string;
+	readonly bestMonths?: { readonly from?: string; readonly to?: string };
 	readonly seasons?: Record<string, { avgTempMinC?: number; avgTempMaxC?: number; rainfallMm?: number } | undefined>;
 	readonly note?: Record<string, string>;
 };

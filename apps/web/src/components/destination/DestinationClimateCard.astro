@@ -18,7 +18,10 @@ interface SeasonData {
 
 interface ClimateInput {
     readonly bestSeason?: string;
-    readonly bestMonths?: string;
+    readonly bestMonths?: {
+        readonly from?: string;
+        readonly to?: string;
+    };
     readonly seasons?: {
         readonly spring?: SeasonData;
         readonly summer?: SeasonData;
@@ -52,6 +55,11 @@ const presentSeasons: ReadonlyArray<{ key: SeasonKey; data: SeasonData }> =
 const note = climate?.note
     ? (climate.note[locale] ?? climate.note['es'] ?? null)
     : null;
+
+const bestMonthsLabel =
+    climate?.bestMonths?.from && climate?.bestMonths?.to
+        ? `${t(`destinations.climate.months.${climate.bestMonths.from}`, climate.bestMonths.from)} – ${t(`destinations.climate.months.${climate.bestMonths.to}`, climate.bestMonths.to)}`
+        : null;
 ---
 
 <section
@@ -74,13 +82,13 @@ const note = climate?.note
                 </p>
             )}
 
-            {climate.bestMonths && (
+            {bestMonthsLabel && (
                 <p class="dest-climate-card__best-months">
                     <span class="dest-climate-card__label">
                         {t('destinations.climate.bestMonths', 'Meses recomendados')}:
                     </span>
                     {' '}
-                    {climate.bestMonths}
+                    {bestMonthsLabel}
                 </p>
             )}
 
