@@ -1110,7 +1110,7 @@
             "archived": true,
             "archivedAt": "2026-06-15T00:00:00.000Z",
             "tags": ["web", "host", "analytics", "kpis", "dashboard", "api", "metrics"],
-            "note": "DONE — merged to staging via PR #1678 (ee0192a35). Fase A (views daily-series chart) + Fase B (favorites redesign) + market-comparison VIEW_OWN fix; local browser smoke PASSED (host-pro/owner-pro, test-control + seeded data). Note: #1678 merged at commit 59071499f BEFORE the i18n keys for HostViewDailySeries landed, so a follow-up PR (fix/SPEC-207-i18n-hostdailyseries) adds the 4 missing zodError translations to keep the i18n guard green on staging. Security CI red on #1678 was vite advisories published 2026-06-15 (not from this work)."
+            "note": "DONE — merged to staging via PR #1678 (ee0192a35). Fase A (views daily-series chart) + Fase B (favorites redesign) + market-comparison VIEW_OWN fix; local browser smoke PASSED (host-pro/owner-pro, test-control + seeded data). Note: #1678 merged at commit 59071499f BEFORE the i18n keys for HostViewDailySeries landed, so a follow-up PR (fix/SPEC-207-i18n-hostdailyseries) adds the 4 missing zodError translations to keep the i18n guard green on staging. Security CI red on #1678 was vite advisories published 2026-06-15 (not from this work). Staging-readiness re-smoke 2026-06-19 PASSED (host-pro/owner-pro, test-control + seeded views): daily-series chart + 7d/30d toggle (300↔70), favorites bars, market table all verified; spec.md status aligned to completed; UI polish (Views banner + 2x2 grid + 7d/30d fieldset border fix) ships in fix/web-host-dashboard-grid-balance."
         },
         {
             "specId": "SPEC-208",
