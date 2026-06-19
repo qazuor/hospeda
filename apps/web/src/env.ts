@@ -175,7 +175,7 @@ export function validateWebEnv(): ServerEnv {
         const formatted = result.error.issues
             .map((issue) => `  - ${issue.path.join('.')}: ${issue.message}`)
             .join('\n');
-        throw new Error(`Invalid web2 app environment configuration:\n${formatted}`);
+        throw new Error(`Invalid web app environment configuration:\n${formatted}`);
     }
 
     return result.data;

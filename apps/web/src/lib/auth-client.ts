@@ -1,5 +1,5 @@
 /**
- * Better Auth browser client for the web2 application.
+ * Better Auth browser client for the web application.
  *
  * Provides authentication methods (signIn, signUp, signOut),
  * session management via React hooks, and password reset / email verification.
@@ -34,7 +34,7 @@ function getAuthBaseUrl(): string {
 }
 
 /**
- * Better Auth client instance configured for the Hospeda web2 app.
+ * Better Auth client instance configured for the Hospeda web app.
  */
 export const authClient = createAuthClient({
     baseURL: getAuthBaseUrl(),
@@ -54,7 +54,7 @@ export const signOut = authClient.signOut;
 export const useSession = authClient.useSession;
 
 // ---------------------------------------------------------------------------
-// Unified result type (matches ApiResult<T> used elsewhere in web2)
+// Unified result type (matches ApiResult<T> used elsewhere in web)
 // ---------------------------------------------------------------------------
 
 /**

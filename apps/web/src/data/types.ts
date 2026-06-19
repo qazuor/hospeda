@@ -1,9 +1,9 @@
 /**
  * @file types.ts
- * @description Shared TypeScript interfaces for web2 mock data and component props.
+ * @description Shared TypeScript interfaces for web mock data and component props.
  *
  * These interfaces mirror the real API transform shapes defined in
- * `apps/web/src/lib/api/transforms.ts` (and the future web2 equivalent).
+ * `apps/web/src/lib/api/transforms.ts` (and the future web equivalent).
  * They are used throughout the homepage and other static sections that
  * consume mock/seed data before the live API is wired up.
  *
