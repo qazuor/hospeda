@@ -29,12 +29,20 @@ export const adminRestoreEventLocationRoute = createAdminRoute({
     responseSchema: EventLocationAdminSchema,
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
-        const result = await eventLocationService.restore(actor, params.id as string);
+        const id = params.id as string;
 
-        if (result.error) {
-            throw new ServiceError(result.error.code, result.error.message);
+        const restoreResult = await eventLocationService.restore(actor, id);
+
+        if (restoreResult.error) {
+            throw new ServiceError(restoreResult.error.code, restoreResult.error.message);
         }
 
-        return result.data;
+        const fetchResult = await eventLocationService.getById(actor, id);
+
+        if (fetchResult.error) {
+            throw new ServiceError(fetchResult.error.code, fetchResult.error.message);
+        }
+
+        return fetchResult.data;
     }
 });

@@ -28,8 +28,12 @@ export const adminRestoreUserRoute = createAdminRoute({
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const id = params.id as string;
-        const result = await userService.restore(actor, id);
-        if (result.error) throw new ServiceError(result.error.code, result.error.message);
+
+        const restoreResult = await userService.restore(actor, id);
+
+        if (restoreResult.error) {
+            throw new ServiceError(restoreResult.error.code, restoreResult.error.message);
+        }
 
         // Audit log: admin restored a soft-deleted user account
         auditLog({
@@ -39,6 +43,12 @@ export const adminRestoreUserRoute = createAdminRoute({
             operation: 'restore'
         });
 
-        return result.data;
+        const fetchResult = await userService.getById(actor, id);
+
+        if (fetchResult.error) {
+            throw new ServiceError(fetchResult.error.code, fetchResult.error.message);
+        }
+
+        return fetchResult.data;
     }
 });
