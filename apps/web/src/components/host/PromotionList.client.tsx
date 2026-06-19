@@ -12,7 +12,7 @@
  * ```
  */
 
-import { ownerPromotionApi } from '@/lib/api/endpoints-protected';
+import { billingApi, ownerPromotionApi } from '@/lib/api/endpoints-protected';
 import { transformOwnerPromotionList } from '@/lib/api/transforms';
 import type { OwnerPromotionData, OwnerPromotionDiscountType } from '@/lib/api/types';
 import { formatDate } from '@/lib/format-utils';
@@ -21,6 +21,17 @@ import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { type JSX, useCallback, useEffect, useState } from 'react';
 import styles from './PromotionList.module.css';
+
+// ---------------------------------------------------------------------------
+// Constants
+// ---------------------------------------------------------------------------
+
+/**
+ * Client-safe entitlement literal matching the backend wire value. Kept as a
+ * plain string rather than imported from `@repo/billing` to avoid pulling
+ * server-only deps into the client bundle (same convention as AnalyticsSection).
+ */
+const ENTITLEMENT_CREATE_PROMOTIONS = 'create_promotions';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -33,7 +44,16 @@ export interface PromotionListProps {
 
 type ListState =
     | { readonly status: 'loading' }
-    | { readonly status: 'ready'; readonly items: ReadonlyArray<OwnerPromotionData> }
+    | {
+          readonly status: 'ready';
+          readonly items: ReadonlyArray<OwnerPromotionData>;
+          /**
+           * Whether the actor's plan includes the `create_promotions`
+           * entitlement. Gates the "new promotion" button so a host without it
+           * sees an upgrade prompt instead of a button that only fails on save.
+           */
+          readonly canCreate: boolean;
+      }
     | { readonly status: 'error'; readonly message: string };
 
 /** Per-row delete state machine */
@@ -118,7 +138,10 @@ export function PromotionList({ locale }: PromotionListProps): JSX.Element {
         setState({ status: 'loading' });
         setDeleteError(null);
         try {
-            const result = await ownerPromotionApi.list();
+            const [result, entitlementsResult] = await Promise.all([
+                ownerPromotionApi.list(),
+                billingApi.getEntitlements()
+            ]);
             if (!result.ok) {
                 setState({
                     status: 'error',
@@ -132,7 +155,13 @@ export function PromotionList({ locale }: PromotionListProps): JSX.Element {
             const items = transformOwnerPromotionList({
                 items: result.data.items as ReadonlyArray<Record<string, unknown>>
             });
-            setState({ status: 'ready', items });
+            // Fail-open: if the entitlement read fails, keep the create button
+            // enabled — the server still enforces the gate on save, so the worst
+            // case is the pre-existing save-time 403, never a wrongly-hidden button.
+            const canCreate =
+                !entitlementsResult.ok ||
+                entitlementsResult.data.entitlements.includes(ENTITLEMENT_CREATE_PROMOTIONS);
+            setState({ status: 'ready', items, canCreate });
         } catch {
             setState({
                 status: 'error',
@@ -225,8 +254,9 @@ export function PromotionList({ locale }: PromotionListProps): JSX.Element {
     }
 
     // ── Render: ready ─────────────────────────────────────────────────────
-    const { items } = state;
+    const { items, canCreate } = state;
     const freeNightLabel = t('host.promotions.discountTypes.free_night', 'Noche gratis');
+    const upgradeUrl = buildUrl({ locale, path: 'suscriptores/planes' });
 
     return (
         <div className={styles.container}>
@@ -235,13 +265,41 @@ export function PromotionList({ locale }: PromotionListProps): JSX.Element {
                 <h2 className={styles.title}>
                     {t('host.promotions.pageTitle', 'Mis promociones')}
                 </h2>
-                <a
-                    href={buildUrl({ locale, path: 'mi-cuenta/promociones/nueva' })}
-                    className={styles.createButton}
-                >
-                    {t('host.promotions.createButton', 'Nueva promoción')}
-                </a>
+                {canCreate ? (
+                    <a
+                        href={buildUrl({ locale, path: 'mi-cuenta/promociones/nueva' })}
+                        className={styles.createButton}
+                    >
+                        {t('host.promotions.createButton', 'Nueva promoción')}
+                    </a>
+                ) : null}
             </div>
+
+            {/* ── Upgrade banner (plan without create_promotions) ── */}
+            {!canCreate && (
+                <div className={styles.upgradeBanner}>
+                    <div className={styles.upgradeTextGroup}>
+                        <span className={styles.upgradeTitle}>
+                            {t(
+                                'host.promotions.errors.entitlementRequired',
+                                'Tu plan no incluye promociones.'
+                            )}
+                        </span>
+                        <span className={styles.upgradeHint}>
+                            {t(
+                                'host.promotions.errors.entitlementRequiredHint',
+                                'Mejorá tu plan para crear promociones.'
+                            )}
+                        </span>
+                    </div>
+                    <a
+                        href={upgradeUrl}
+                        className={styles.upgradeLink}
+                    >
+                        {t('host.promotions.actions.upgradePlan', 'Ver planes')}
+                    </a>
+                </div>
+            )}
 
             {/* ── Delete error banner ── */}
             {deleteError !== null && (
@@ -255,12 +313,17 @@ export function PromotionList({ locale }: PromotionListProps): JSX.Element {
 
             {/* ── Empty state ── */}
             {items.length === 0 ? (
-                <p className={styles.emptyText}>
-                    {t(
-                        'host.promotions.empty',
-                        'Todavía no tenés ninguna promoción. ¡Creá tu primera oferta!'
-                    )}
-                </p>
+                // When the plan can't create promotions the upgrade banner above
+                // already explains the state, so suppress the "create your first
+                // offer" CTA here to avoid a contradictory message.
+                canCreate ? (
+                    <p className={styles.emptyText}>
+                        {t(
+                            'host.promotions.empty',
+                            'Todavía no tenés ninguna promoción. ¡Creá tu primera oferta!'
+                        )}
+                    </p>
+                ) : null
             ) : (
                 <ul className={styles.list}>
                     {items.map((promo) => {
