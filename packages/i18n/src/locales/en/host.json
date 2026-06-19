@@ -197,11 +197,15 @@
                 "viewOnSite": "[TODO]",
                 "unpublishConfirm": "Unpublish this property? It will no longer appear on the site.",
                 "confirmYes": "Yes, unpublish",
-                "confirmNo": "Cancel"
+                "confirmNo": "Cancel",
+                "delete": "Delete",
+                "deleteConfirm": "Delete this property? It will be removed from your listings and the site.",
+                "deleteYes": "Yes, delete"
             },
             "pricePerNight": "[TODO]",
             "unpublishSuccess": "Property unpublished",
             "unpublishError": "Could not unpublish. Please try again.",
+            "deleteError": "Could not delete. Please try again.",
             "priceOnRequest": "Price on request"
         },
         "editor": {

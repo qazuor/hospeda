@@ -20,6 +20,7 @@ import { buildUrl } from '@/lib/urls';
 import type { SupportedLocale } from '@/lib/i18n';
 import type { Accommodation } from '@repo/schemas';
 import { LifecycleStatusEnum } from '@repo/schemas';
+import { DeleteButton } from './DeleteButton.client';
 import { UnpublishButton } from './UnpublishButton.client';
 
 /**
@@ -202,6 +203,19 @@ const isDraft = lifecycleState === LifecycleStatusEnum.DRAFT;
                     {t('host.properties.card.actions.publish', 'Publicar')}
                 </a>
             )}
+
+            <!-- Delete: always available (soft-delete via protected endpoint,
+                 React island with inline confirmation) -->
+            <DeleteButton
+                client:load
+                accommodationId={property.id}
+                locale={locale}
+                label={t('host.properties.card.actions.delete', 'Eliminar')}
+                confirmText={t('host.properties.card.actions.deleteConfirm', '¿Eliminar esta propiedad? Se quitará de tu listado y del sitio.')}
+                confirmYes={t('host.properties.card.actions.deleteYes', 'Sí, eliminar')}
+                confirmNo={t('host.properties.card.actions.confirmNo', 'Cancelar')}
+                errorText={t('host.properties.card.deleteError', 'No se pudo eliminar. Intentá de nuevo.')}
+            />
         </div>
     </div>
 </article>
