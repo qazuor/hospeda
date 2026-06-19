@@ -3,6 +3,28 @@ import { PermissionEnum } from '@repo/schemas';
 import type { ConsolidatedSectionConfig } from '../../types/consolidated-config.types';
 
 /**
+ * Month options for the recommended-months range selects.
+ *
+ * Values are the locale-independent `ClimateMonthEnum` keys; labels are the
+ * Spanish admin display names (admin section labels are ES, per this file's
+ * existing convention). The web frontend localizes month names from these keys.
+ */
+const MONTH_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
+    { value: 'jan', label: 'Enero' },
+    { value: 'feb', label: 'Febrero' },
+    { value: 'mar', label: 'Marzo' },
+    { value: 'apr', label: 'Abril' },
+    { value: 'may', label: 'Mayo' },
+    { value: 'jun', label: 'Junio' },
+    { value: 'jul', label: 'Julio' },
+    { value: 'aug', label: 'Agosto' },
+    { value: 'sep', label: 'Septiembre' },
+    { value: 'oct', label: 'Octubre' },
+    { value: 'nov', label: 'Noviembre' },
+    { value: 'dec', label: 'Diciembre' }
+];
+
+/**
  * Consolidated configuration for the Climate section of destination.
  *
  * Allows admins to set the seasonal climate data that the web frontend renders.
@@ -11,7 +33,7 @@ import type { ConsolidatedSectionConfig } from '../../types/consolidated-config.
  *
  * Field mapping mirrors `DestinationClimateSchema` from `@repo/schemas`:
  *   - bestSeason   → SELECT (ClimateSeasonEnum values)
- *   - bestMonths   → TEXT (free text, optional, max 50 chars)
+ *   - bestMonths   → SELECT pair from/to (ClimateMonthEnum values, optional)
  *   - seasons.*    → NUMBER groups per season (avgTempMinC, avgTempMaxC, rainfallMm)
  *   - note         → I18N_TEXT (optional localized note, es/en/pt)
  */
@@ -48,19 +70,33 @@ export const createClimateConsolidatedSection = (): ConsolidatedSectionConfig =>
             }
         },
         {
-            id: 'climate.bestMonths',
-            type: FieldTypeEnum.TEXT,
+            id: 'climate.bestMonths.from',
+            type: FieldTypeEnum.SELECT,
             required: false,
             modes: ['view', 'edit'],
-            label: 'Mejores meses',
-            description: 'Meses recomendados para visitar (texto libre, ej: "Diciembre a Marzo")',
-            placeholder: 'Ej: Diciembre a Marzo',
+            label: 'Mejores meses: desde',
+            description: 'Mes inicial del rango recomendado para visitar',
             permissions: {
                 view: [PermissionEnum.DESTINATION_VIEW_ALL],
                 edit: [PermissionEnum.DESTINATION_UPDATE]
             },
             typeConfig: {
-                maxLength: 50
+                options: [...MONTH_OPTIONS]
+            }
+        },
+        {
+            id: 'climate.bestMonths.to',
+            type: FieldTypeEnum.SELECT,
+            required: false,
+            modes: ['view', 'edit'],
+            label: 'Mejores meses: hasta',
+            description: 'Mes final del rango recomendado para visitar',
+            permissions: {
+                view: [PermissionEnum.DESTINATION_VIEW_ALL],
+                edit: [PermissionEnum.DESTINATION_UPDATE]
+            },
+            typeConfig: {
+                options: [...MONTH_OPTIONS]
             }
         },
 

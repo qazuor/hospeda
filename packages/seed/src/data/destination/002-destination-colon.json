@@ -213,7 +213,7 @@
     "lifecycleState": "ACTIVE",
     "climate": {
         "bestSeason": "spring",
-        "bestMonths": "Sep–Nov",
+        "bestMonths": { "from": "sep", "to": "nov" },
         "seasons": {
             "spring": {
                 "avgTempMinC": 13,

@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { DestinationUpdateInputSchema } from '../../../src/entities/destination/destination.crud.schema.js';
 import {
+    ClimateMonthEnum,
     ClimateSeasonEnum,
+    DestinationBestMonthsSchema,
     DestinationClimateSchema,
     DestinationSeasonClimateSchema
 } from '../../../src/entities/destination/subtypes/destination.climate.schema.js';
@@ -14,7 +16,7 @@ describe('DestinationClimateSchema', () => {
     it('accepts a full valid climate object', () => {
         const result = DestinationClimateSchema.safeParse({
             bestSeason: 'spring',
-            bestMonths: 'Oct–Mar',
+            bestMonths: { from: 'oct', to: 'mar' },
             seasons: {
                 spring: { avgTempMinC: 12, avgTempMaxC: 24, rainfallMm: 90 },
                 winter: { avgTempMinC: 4, avgTempMaxC: 14 }
@@ -63,6 +65,53 @@ describe('DestinationClimateSchema', () => {
 
     it('exposes exactly the four seasons in the enum', () => {
         expect(ClimateSeasonEnum.options).toEqual(['spring', 'summer', 'autumn', 'winter']);
+    });
+
+    it('accepts a structured bestMonths range and rejects the legacy free-text form', () => {
+        expect(
+            DestinationClimateSchema.safeParse({
+                bestSeason: 'spring',
+                bestMonths: { from: 'sep', to: 'nov' },
+                seasons: {}
+            }).success
+        ).toBe(true);
+        // The old free-text label ("Sep–Nov") must no longer validate.
+        expect(
+            DestinationClimateSchema.safeParse({
+                bestSeason: 'spring',
+                bestMonths: 'Sep–Nov',
+                seasons: {}
+            }).success
+        ).toBe(false);
+    });
+});
+
+describe('DestinationBestMonthsSchema (SPEC-215 i18n month range)', () => {
+    it('exposes the twelve calendar months as enum keys', () => {
+        expect(ClimateMonthEnum.options).toEqual([
+            'jan',
+            'feb',
+            'mar',
+            'apr',
+            'may',
+            'jun',
+            'jul',
+            'aug',
+            'sep',
+            'oct',
+            'nov',
+            'dec'
+        ]);
+    });
+
+    it('accepts a year-wrapping range and rejects unknown month keys', () => {
+        expect(DestinationBestMonthsSchema.safeParse({ from: 'oct', to: 'mar' }).success).toBe(
+            true
+        );
+        expect(DestinationBestMonthsSchema.safeParse({ from: 'sep', to: 'foo' }).success).toBe(
+            false
+        );
+        expect(DestinationBestMonthsSchema.safeParse({ from: 'sep' }).success).toBe(false);
     });
 });
 

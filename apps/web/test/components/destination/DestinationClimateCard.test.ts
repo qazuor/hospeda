@@ -63,6 +63,14 @@ describe('DestinationClimateCard.astro', () => {
             expect(src).toContain('destinationId={destinationId}');
             expect(src).toContain('apiUrl={apiUrl}');
         });
+
+        it('should render recommended months as a localized from–to range', () => {
+            // SPEC-215 follow-up: bestMonths is a structured month range resolved
+            // via i18n keys, not a free-text label. Both endpoints must localize.
+            expect(src).toContain('destinations.climate.months.');
+            expect(src).toContain('climate.bestMonths.from');
+            expect(src).toContain('climate.bestMonths.to');
+        });
     });
 
     describe('i18n', () => {
