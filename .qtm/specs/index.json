@@ -1466,6 +1466,18 @@
             "base": "staging",
             "origin": "Follow-up from env-hardening PR #1712: revalidation_log.entity_id never written; ACC-02 E2E re-skipped until fixed.",
             "tags": ["revalidation", "cache", "service-core", "e2e", "testing", "bug"]
+        },
+        {
+            "specId": "SPEC-248",
+            "title": "Multi-unit accommodation capacity model (hotels & complexes that rent per unit)",
+            "type": "feature",
+            "complexity": "high",
+            "status": "draft-exploration",
+            "path": "SPEC-248-multi-unit-accommodation-capacity",
+            "created": "2026-06-19T00:00:00Z",
+            "base": "staging",
+            "origin": "Surfaced during SPEC-217 write-gate smoke (2026-06-19): capacity cap blocked hotels; interim cap raised in PR #1733. Hotels/complexes (e.g. 10-cabin complex) rent per unit and need a real unit model, not a flat capacity triple. Owner to resolve product OQs before task generation.",
+            "tags": ["accommodation", "capacity", "product-design", "hotels", "schemas"]
         }
     ]
 }
