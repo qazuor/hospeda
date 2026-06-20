@@ -481,7 +481,7 @@
         {
             "id": "T-015",
             "title": "Editor: media gallery group",
-            "description": "Implement the media operational group reusing the web app's existing media handling patterns (upload/reorder/remove producing the media payload updateOwn expects). Wire to patch. Tests: component test — add/remove/reorder produces correct media array, submit persists.",
+            "description": "Implement the media operational group reusing the web app's existing media handling patterns (upload/reorder/remove producing the media payload updateOwn expects). Wire to patch. Tests: component test — add/remove/reorder produces correct media array, submit persists. ⚠ BLOCKER (found 2026-06-20): media upload does NOT support commerce — MediaEntityTypeSchema/GalleryEntityTypeSchema/ENTITY_GALLERY_CAPS/media update permissions are accommodation/destination/event/post only, no gastronomy|experience. Needs backend scope decision before building (add entityTypes + caps + perms) OR a remove/reorder-only editor with no new upload.",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-012"],
