@@ -706,6 +706,30 @@
             "noSponsorship": "No Sponsorship",
             "noSponsorshipDesc": "This post does not have a sponsor assigned yet.",
             "noteDescNoSponsor": "Sponsorship management features will be available in a future update. You will be able to assign sponsors, configure sponsorship types, and manage sponsorship periods."
+        },
+        "aiGenerate": {
+            "panelTitle": "Generate with AI",
+            "description": "Provide a topic and key points; AI will draft a post for you to review.",
+            "topicLabel": "Topic",
+            "topicPlaceholder": "E.g.: Carnival guide in Concepción del Uruguay",
+            "pointsLabel": "Key points",
+            "pointsPlaceholder": "Add a point to cover",
+            "pointsAdd": "Add point",
+            "pointsRemove": "Remove",
+            "categoryLabel": "Category",
+            "toneLabel": "Tone",
+            "toneFormal": "Formal",
+            "toneInformal": "Informal",
+            "toneNeutral": "Neutral",
+            "localeLabel": "Output language",
+            "generate": "Generate",
+            "generating": "Generating draft…",
+            "apply": "Apply draft",
+            "discard": "Discard",
+            "errorModeration": "The generated content did not pass moderation. Try rephrasing your points.",
+            "errorCeiling": "Cost limit reached. Please try again later.",
+            "errorExhausted": "The AI service is temporarily unavailable.",
+            "errorGeneric": "Could not generate the draft. Please try again."
         }
     },
     "events": {
