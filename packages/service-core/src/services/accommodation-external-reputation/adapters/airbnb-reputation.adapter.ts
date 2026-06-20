@@ -49,7 +49,20 @@ export interface AirbnbReputationCredentials {
  * them into the result.
  */
 interface AirbnbReputationItem {
-    readonly rating?: number | string | null;
+    /**
+     * `rating` may be a flat number (some actors) OR a nested object (the
+     * `tri_angle/airbnb-rooms-urls-scraper` returns
+     * `{ guestSatisfaction, reviewsCount, ... }`). Only the aggregate
+     * sub-fields are read — never any review text (AC-7.1).
+     */
+    readonly rating?:
+        | number
+        | string
+        | null
+        | {
+              readonly guestSatisfaction?: number | string | null;
+              readonly reviewsCount?: number | string | null;
+          };
     readonly starRating?: number | string | null;
     readonly guestSatisfactionOverall?: number | string | null;
     readonly reviewsCount?: number | string | null;
@@ -140,11 +153,27 @@ export class AirbnbReputationAdapter implements ReputationAdapter {
 
             const item = dataset[0] as AirbnbReputationItem;
 
+            // `rating` is either a flat number or a nested aggregate object
+            // (`tri_angle/airbnb-rooms-urls-scraper`). Pull the overall score and
+            // review count from whichever shape the configured actor returns.
+            const nestedRating =
+                item.rating !== null && typeof item.rating === 'object' ? item.rating : undefined;
+            const flatRating =
+                typeof item.rating === 'number' || typeof item.rating === 'string'
+                    ? item.rating
+                    : undefined;
+
             const rating = toNumber(
-                item.rating ?? item.starRating ?? item.guestSatisfactionOverall
+                nestedRating?.guestSatisfaction ??
+                    flatRating ??
+                    item.starRating ??
+                    item.guestSatisfactionOverall
             );
             const reviewsCount = toNumber(
-                item.reviewsCount ?? item.numberOfReviews ?? item.reviewCount
+                nestedRating?.reviewsCount ??
+                    item.reviewsCount ??
+                    item.numberOfReviews ??
+                    item.reviewCount
             );
             const deepLink = typeof item.url === 'string' && item.url ? item.url : listing.url;
 

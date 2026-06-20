@@ -188,6 +188,8 @@ interface BookingReputationItem {
     readonly guestRating?: number | string | null;
     readonly reviewsCount?: number | string | null;
     readonly numberOfReviews?: number | string | null;
+    /** `voyager/booking-scraper` returns the review count under `reviews`. */
+    readonly reviews?: number | string | null;
     readonly url?: string | null;
 }
 
@@ -298,7 +300,7 @@ export class BookingReputationAdapter implements ReputationAdapter {
             const item = dataset[0] as BookingReputationItem;
             return buildBookingResult({
                 rating: toNumber(item.rating ?? item.reviewScore ?? item.guestRating),
-                reviewsCount: toNumber(item.reviewsCount ?? item.numberOfReviews),
+                reviewsCount: toNumber(item.reviewsCount ?? item.numberOfReviews ?? item.reviews),
                 deepLink: typeof item.url === 'string' && item.url ? item.url : listing.url
             });
         } catch {

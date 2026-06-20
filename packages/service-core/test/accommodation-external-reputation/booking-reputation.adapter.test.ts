@@ -231,6 +231,31 @@ describe('BookingReputationAdapter', () => {
             expect(result.snippets).toBeNull();
         });
 
+        it('should read the review count from `reviews` (voyager/booking-scraper shape)', async () => {
+            // voyager/booking-scraper returns the count under `reviews`, not
+            // `reviewsCount`/`numberOfReviews`.
+            const adapter = new BookingReputationAdapter({
+                apifyToken: 'tok',
+                apifyBookingActor: 'voyager/booking-scraper'
+            });
+            const listing = makeBookingListing();
+
+            mockSafeExternalFetch.mockResolvedValueOnce({
+                ok: false,
+                status: 0,
+                error: 'blocked',
+                blocked: true
+            });
+
+            mockRunApifyActor.mockResolvedValueOnce([{ rating: 8.8, reviews: 422, stars: 4 }]);
+
+            const result = await adapter.fetch(listing);
+
+            expect(result.rating).toBe(8.8);
+            expect(result.reviewsCount).toBe(422);
+            expect(result.snippets).toBeNull();
+        });
+
         it('should return empty result when Apify returns empty dataset', async () => {
             const adapter = new BookingReputationAdapter({
                 apifyToken: 'tok',
