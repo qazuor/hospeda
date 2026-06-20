@@ -680,28 +680,29 @@
             "id": "T-021",
             "title": "Integration: owner edits reflected on the public ficha",
             "description": "Verify operational edits persisted via the owner editor surface on the public pages (/[lang]/gastronomia/[slug] and /[lang]/experiencias/[slug]), including any cache/revalidation path. Tests: integration — patch an operational field, assert it appears on the public detail response.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-013", "T-014"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Integration test gastronomy + experience ficha",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "commerce", "integration"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-06-20T18:15:00.000Z",
+                "completed": "2026-06-20T18:15:00.000Z"
+            },
+            "note": "Validated live (HTTP): owner PATCH priceRange -> reflected on public ficha by-slug. Servers wt-up against repaired worktree DB."
         },
         {
             "id": "T-022",
@@ -792,32 +793,33 @@
             "id": "T-025",
             "title": "E2E: owner edits gastronomy + experience operational fields [AC-1, AC-2]",
             "description": "E2E: a COMMERCE_OWNER logs into web, sees only their own listings (gastronomy + experience), opens each editor, edits an operational field group and persists, sees it reflected on the public ficha; a tourist/non-owner cannot reach the area or another owner's listing (redirect/404). Use Playwright with seeded gastro-owner-*@local.test.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-009", "T-013", "T-014", "T-015", "T-016"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "E2E owner edit flow (both verticals)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "E2E non-owner blocked",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "commerce", "e2e", "testing"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-06-20T18:15:00.000Z",
+                "completed": "2026-06-20T18:15:00.000Z"
+            },
+            "note": "Core flow validated LIVE via browser+HTTP for gastronomy: AC-1 (owner sees only own listings), editor renders read-only identity + all operational groups (incl. amenities/features after pageSize fix), AC-2 persist, AC-3 identity-strip, cross-owner isolation (404). Found+fixed pageSize bug live (0c16ede76). Experience UI run + the committed automated Playwright harness carried by SPEC-252 (web has no functional E2E harness yet)."
         },
         {
             "id": "T-026",

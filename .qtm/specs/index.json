@@ -1484,7 +1484,7 @@
             "title": "Commerce owner self-service web area (operational editing + force-password + credential email)",
             "type": "feature",
             "complexity": "medium",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-249-commerce-owner-self-service-web",
             "created": "2026-06-20T00:00:00.000Z",
             "base": "staging",
@@ -1498,7 +1498,9 @@
                 "auth",
                 "self-service",
                 "admin-sells"
-            ]
+            ],
+            "archived": true,
+            "archivedAt": "2026-06-20T18:15:00.000Z"
         }
     ]
 }

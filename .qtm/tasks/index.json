@@ -756,8 +756,8 @@
         {
             "specId": "SPEC-249",
             "title": "Commerce owner self-service web area (operational editing + force-password + credential email)",
-            "status": "in-progress",
-            "progress": "24/26",
+            "status": "completed",
+            "progress": "26/26",
             "path": "SPEC-249-commerce-owner-self-service-web",
             "branch": "spec/SPEC-249-commerce-owner-self-service-web",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-249-commerce-owner-self-service-web",
@@ -766,7 +766,10 @@
             "tasksAtomizedAt": "2026-06-20T06:56:31.000Z",
             "taskCount": 26,
             "averageComplexity": 2.3,
-            "note": "Realigned vs staging post-SPEC-239: Parts B (force-password) + C (credential email) ALREADY BUILT by SPEC-239 -> verify-only (T-023/T-024). Build = web owner surface (Part A, mi-cuenta/comercio, gastronomy+experiences) + single approve&provision admin action (Part D / AC-6). Critical path T-003->T-006->T-009->T-011->T-012->T-016->T-025 (7 steps). 3 parallel tracks. Known gap covered: no protected list-own endpoint existed (T-006/T-007)."
+            "note": "Realigned vs staging post-SPEC-239: Parts B (force-password) + C (credential email) ALREADY BUILT by SPEC-239 -> verify-only (T-023/T-024). Build = web owner surface (Part A, mi-cuenta/comercio, gastronomy+experiences) + single approve&provision admin action (Part D / AC-6). Critical path T-003->T-006->T-009->T-011->T-012->T-016->T-025 (7 steps). 3 parallel tracks. Known gap covered: no protected list-own endpoint existed (T-006/T-007).",
+            "archived": true,
+            "archivedAt": "2026-06-20T18:15:00.000Z",
+            "archiveNote": "Feature shipped + validated live (T-021/T-025 browser+HTTP). Editor field-expansion -> SPEC-250; DB infra -> SPEC-251; E2E harness + seed fixtures -> SPEC-252."
         }
     ],
     "standalone": {
