@@ -770,6 +770,27 @@
             "archived": true,
             "archivedAt": "2026-06-20T18:15:00.000Z",
             "archiveNote": "Feature shipped + validated live (T-021/T-025 browser+HTTP). Editor field-expansion -> SPEC-250; DB infra -> SPEC-251; E2E harness + seed fixtures -> SPEC-252."
+        },
+        {
+            "specId": "SPEC-250",
+            "title": "Commerce owner editor — extended fields + single COMMERCE_EDIT_OWN permission",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-250-commerce-owner-editor-extended-fields"
+        },
+        {
+            "specId": "SPEC-251",
+            "title": "Local DB dev/template refresh + worktree DB auto-heal correctness",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-251-local-db-dev-template-refresh"
+        },
+        {
+            "specId": "SPEC-252",
+            "title": "Web functional E2E (Playwright) harness + login fixtures + CI",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-252-web-e2e-playwright-harness"
         }
     ],
     "standalone": {
