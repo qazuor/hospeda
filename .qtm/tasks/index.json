@@ -757,7 +757,7 @@
             "specId": "SPEC-223",
             "title": "Create post from data with AI",
             "status": "in-progress",
-            "progress": "0/15",
+            "progress": "14/15",
             "path": "SPEC-223-ai-post-generation",
             "parent": null,
             "branch": "spec/SPEC-223-ai-post-generation",
@@ -770,7 +770,7 @@
             "archived": false,
             "archivedAt": null,
             "archiveNote": null,
-            "note": "15 suggested tasks T-001..T-015 across 4 phases (schema/engine, API route, admin UI, i18n). Tracked via spec.md task list."
+            "note": "Code-complete (T-001..T-014) + 2 integration blockers fixed (US-1 customRender wiring, US-5 prompt-editor feature list). Only T-015 manual admin smoke pending. Buffered generateObject (not SSE)."
         }
     ],
     "standalone": {
