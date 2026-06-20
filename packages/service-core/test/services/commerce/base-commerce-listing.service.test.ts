@@ -721,3 +721,36 @@ describe('BaseCommerceListingService — listOwn (owner-tier read)', () => {
         expect(model.findAll as Mock).not.toHaveBeenCalled();
     });
 });
+
+describe('BaseCommerceListingService — loadJunctionIds (junction read-back, SPEC-249)', () => {
+    it('returns the amenity and feature IDs for a listing, keyed by the entity FK', async () => {
+        const { svc, amenityJunction, featureJunction } = makeService();
+        (amenityJunction.findAll as Mock).mockResolvedValue({
+            items: [{ amenityId: 'amenity-1' }, { amenityId: 'amenity-2' }]
+        });
+        (featureJunction.findAll as Mock).mockResolvedValue({
+            items: [{ featureId: 'feature-1' }]
+        });
+
+        const result = await svc.loadJunctionIds('listing-1');
+
+        expect(result).toEqual({
+            amenityIds: ['amenity-1', 'amenity-2'],
+            featureIds: ['feature-1']
+        });
+        expect(amenityJunction.findAll as Mock).toHaveBeenCalledWith({
+            testCommerceId: 'listing-1'
+        });
+        expect(featureJunction.findAll as Mock).toHaveBeenCalledWith({
+            testCommerceId: 'listing-1'
+        });
+    });
+
+    it('returns empty arrays when the listing has no associations', async () => {
+        const { svc } = makeService();
+
+        const result = await svc.loadJunctionIds('listing-1');
+
+        expect(result).toEqual({ amenityIds: [], featureIds: [] });
+    });
+});

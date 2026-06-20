@@ -198,3 +198,24 @@
 .mediaFileInput {
     display: none;
 }
+
+.catalog {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.catalogGroup {
+    border: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.catalogGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+    gap: var(--space-2);
+}

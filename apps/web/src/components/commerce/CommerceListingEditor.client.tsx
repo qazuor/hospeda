@@ -15,12 +15,14 @@
  *   T-016 amenities / features
  */
 import { apiClient } from '@/lib/api/client';
+import type { AmenityData } from '@/lib/api/types';
 import type { CommerceListingDetail, CommerceVertical } from '@/lib/commerce/owner-listings';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { PriceRangeEnum } from '@repo/schemas';
 import type { Image, OpeningHours } from '@repo/schemas';
 import { type JSX, useCallback, useState } from 'react';
+import { AmenitiesFeaturesField } from './AmenitiesFeaturesField';
 import styles from './CommerceListingEditor.module.css';
 import { MediaField } from './MediaField';
 import { OpeningHoursField } from './OpeningHoursField';
@@ -34,6 +36,10 @@ export interface CommerceListingEditorProps {
     readonly locale: SupportedLocale;
     /** Current operational + identity values fetched from the protected getById. */
     readonly initialData: CommerceListingDetail;
+    /** Amenity catalog for the multi-select (fetched SSR from the public endpoint). */
+    readonly amenities?: readonly AmenityData[];
+    /** Feature catalog for the multi-select (fetched SSR from the public endpoint). */
+    readonly features?: readonly AmenityData[];
 }
 
 type SaveStatus =
@@ -95,7 +101,9 @@ export function CommerceListingEditor({
     vertical,
     listingId,
     locale,
-    initialData
+    initialData,
+    amenities = [],
+    features = []
 }: CommerceListingEditorProps): JSX.Element {
     const { t } = createTranslations(locale);
 
@@ -146,6 +154,12 @@ export function CommerceListingEditor({
         }
         return preserved;
     });
+    const [amenityIds, setAmenityIds] = useState<ReadonlySet<string>>(
+        () => new Set((data.amenityIds as string[] | undefined) ?? [])
+    );
+    const [featureIds, setFeatureIds] = useState<ReadonlySet<string>>(
+        () => new Set((data.featureIds as string[] | undefined) ?? [])
+    );
 
     const [dirty, setDirty] = useState<ReadonlySet<string>>(new Set());
     const [status, setStatus] = useState<SaveStatus>({ kind: 'idle' });
@@ -184,6 +198,38 @@ export function CommerceListingEditor({
         [markDirty]
     );
 
+    const toggleAmenity = useCallback(
+        (id: string) => {
+            setAmenityIds((prev) => {
+                const next = new Set(prev);
+                if (next.has(id)) {
+                    next.delete(id);
+                } else {
+                    next.add(id);
+                }
+                return next;
+            });
+            markDirty('amenityIds');
+        },
+        [markDirty]
+    );
+
+    const toggleFeature = useCallback(
+        (id: string) => {
+            setFeatureIds((prev) => {
+                const next = new Set(prev);
+                if (next.has(id)) {
+                    next.delete(id);
+                } else {
+                    next.add(id);
+                }
+                return next;
+            });
+            markDirty('featureIds');
+        },
+        [markDirty]
+    );
+
     /** Build the PATCH payload from the dirty field groups only. */
     const buildPayload = useCallback((): Record<string, unknown> => {
         const payload: Record<string, unknown> = {};
@@ -216,6 +262,12 @@ export function CommerceListingEditor({
                 gallery
             };
         }
+        if (dirty.has('amenityIds')) {
+            payload.amenityIds = [...amenityIds];
+        }
+        if (dirty.has('featureIds')) {
+            payload.featureIds = [...featureIds];
+        }
         if (dirty.has('priceRange')) {
             payload.priceRange = priceRange || null;
         }
@@ -237,7 +289,9 @@ export function CommerceListingEditor({
         isPriceOnRequest,
         featuredImage,
         gallery,
-        preservedMedia
+        preservedMedia,
+        amenityIds,
+        featureIds
     ]);
 
     const handleSubmit = useCallback(
@@ -367,6 +421,21 @@ export function CommerceListingEditor({
                     classes={styles}
                 />
             </section>
+
+            {(amenities.length > 0 || features.length > 0) && (
+                <section className={styles.section}>
+                    <AmenitiesFeaturesField
+                        amenities={amenities}
+                        features={features}
+                        selectedAmenityIds={amenityIds}
+                        selectedFeatureIds={featureIds}
+                        onToggleAmenity={toggleAmenity}
+                        onToggleFeature={toggleFeature}
+                        t={t}
+                        classes={styles}
+                    />
+                </section>
+            )}
 
             {vertical === 'gastronomy' ? (
                 <section className={styles.section}>

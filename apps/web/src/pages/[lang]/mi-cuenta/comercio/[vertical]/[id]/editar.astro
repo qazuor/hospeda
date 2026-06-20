@@ -10,11 +10,13 @@
  */
 import { CommerceListingEditor } from '@/components/commerce/CommerceListingEditor.client';
 import AccountLayout from '@/layouts/AccountLayout.astro';
+import { transformAmenityList } from '@/lib/api/transforms';
 import { isCommerceOwnerRole } from '@/lib/account-roles';
 import {
     type CommerceVertical,
     fetchOwnerListingDetail
 } from '@/lib/commerce/owner-listings';
+import { getApiUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -52,6 +54,28 @@ if (!detail || (!ownsListing && !isStaff)) {
     return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta/comercio' }));
 }
 
+// Amenity + feature catalogs for the multi-select (public, no auth needed).
+// Degrade cleanly: a failed catalog fetch hides the group rather than 500ing.
+const apiUrl = getApiUrl();
+let amenities: ReturnType<typeof transformAmenityList> = [];
+let features: ReturnType<typeof transformAmenityList> = [];
+try {
+    const [amenitiesRes, featuresRes] = await Promise.all([
+        fetch(`${apiUrl}/api/v1/public/amenities?pageSize=200`),
+        fetch(`${apiUrl}/api/v1/public/features?pageSize=200`)
+    ]);
+    if (amenitiesRes.ok) {
+        const body = (await amenitiesRes.json()) as { data?: { items?: Record<string, unknown>[] } };
+        amenities = transformAmenityList({ items: body.data?.items ?? [], locale });
+    }
+    if (featuresRes.ok) {
+        const body = (await featuresRes.json()) as { data?: { items?: Record<string, unknown>[] } };
+        features = transformAmenityList({ items: body.data?.items ?? [], locale });
+    }
+} catch {
+    // Catalog unavailable — the editor renders without the amenities/features group.
+}
+
 const title = t('commerce.owner.list.edit', 'Editar');
 const verticalLabel = t(`commerce.owner.list.badge.${vertical}`, vertical);
 const readOnlyNotice = t('commerce.owner.editor.readOnlyNotice', '');
@@ -73,6 +97,8 @@ const readOnlyNotice = t('commerce.owner.editor.readOnlyNotice', '');
         listingId={id}
         locale={locale}
         initialData={detail}
+        amenities={amenities}
+        features={features}
     />
 </AccountLayout>
 

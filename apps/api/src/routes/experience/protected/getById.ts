@@ -42,6 +42,15 @@ export const protectedGetExperienceByIdRoute = createProtectedRoute({
             throw new ServiceError(result.error.code, result.error.message);
         }
 
-        return result.data ?? null;
+        const entity = result.data;
+        if (!entity) {
+            return null;
+        }
+
+        // Seed the owner editor's amenity/feature multi-select: the protected
+        // schema carries these read-back IDs, which the entity projection does
+        // not include (junction relations live in separate tables).
+        const { amenityIds, featureIds } = await experienceService.loadJunctionIds(entity.id);
+        return { ...entity, amenityIds, featureIds };
     }
 });

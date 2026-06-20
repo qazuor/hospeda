@@ -220,6 +220,39 @@ export abstract class BaseCommerceListingService<
     }
 
     // -----------------------------------------------------------------------
+    // Junction read — current amenity/feature associations
+    // -----------------------------------------------------------------------
+
+    /**
+     * Reads the currently-associated amenity and feature IDs for a listing.
+     *
+     * The commerce read schemas (public/protected) do NOT carry the
+     * junction relations, so the owner editor needs this to seed its
+     * multi-select with the current selection. Returns plain ID arrays
+     * (symmetric with the `amenityIds` / `featureIds` write inputs).
+     *
+     * This is a standalone read (no transaction): it is meant to be called
+     * by single-entity read paths (e.g. the protected getById route) rather
+     * than on every getById, to avoid two extra queries on hot paths.
+     *
+     * @param entityId - The commerce listing ID.
+     * @returns `{ amenityIds, featureIds }` — sorted arrays of catalog UUIDs.
+     */
+    public async loadJunctionIds(
+        entityId: string
+    ): Promise<{ amenityIds: string[]; featureIds: string[] }> {
+        const fk = this._entityFkColumn;
+        const [amenityRows, featureRows] = await Promise.all([
+            this._amenityJunctionModel.findAll({ [fk]: entityId }),
+            this._featureJunctionModel.findAll({ [fk]: entityId })
+        ]);
+        return {
+            amenityIds: amenityRows.items.map((row) => row.amenityId as string),
+            featureIds: featureRows.items.map((row) => row.featureId as string)
+        };
+    }
+
+    // -----------------------------------------------------------------------
     // Public-tier projections — override in subclasses when needed
     // -----------------------------------------------------------------------
 

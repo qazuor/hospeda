@@ -239,6 +239,49 @@ describe('CommerceListingEditor', () => {
         vi.unstubAllGlobals();
     });
 
+    it('seeds amenity selection and PATCHes amenityIds/featureIds when toggled', async () => {
+        mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
+
+        render(
+            <CommerceListingEditor
+                vertical="gastronomy"
+                listingId="abc"
+                locale="es"
+                initialData={
+                    {
+                        id: 'abc',
+                        ownerId: 'owner-1',
+                        name: 'La Parrilla',
+                        slug: 'la-parrilla',
+                        amenityIds: ['a1']
+                    } as unknown as CommerceListingDetail
+                }
+                amenities={[
+                    { id: 'a1', name: 'Wifi', category: null },
+                    { id: 'a2', name: 'Terraza', category: null }
+                ]}
+                features={[{ id: 'f1', name: 'Pet friendly', category: null }]}
+            />
+        );
+
+        // a1 starts checked (seeded from initialData.amenityIds).
+        expect(screen.getByLabelText('Wifi')).toBeChecked();
+        expect(screen.getByLabelText('Terraza')).not.toBeChecked();
+
+        // Select a second amenity and a feature.
+        fireEvent.click(screen.getByLabelText('Terraza'));
+        fireEvent.click(screen.getByLabelText('Pet friendly'));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+        await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
+        const body = mockPatch.mock.calls[0]?.[0]?.body as {
+            amenityIds?: string[];
+            featureIds?: string[];
+        };
+        expect(body.amenityIds).toEqual(['a1', 'a2']);
+        expect(body.featureIds).toEqual(['f1']);
+    });
+
     it('removes a gallery image (best-effort delete) and PATCHes the trimmed gallery', async () => {
         mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
 
