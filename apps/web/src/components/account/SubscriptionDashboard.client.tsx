@@ -606,6 +606,25 @@ export function SubscriptionDashboard({ locale, user, plans }: SubscriptionDashb
         }
     }, []);
 
+    /**
+     * Silent background refresh — updates subscription data WITHOUT setting
+     * `isLoading=true`. Used after a successful cancel so the cancel modal's
+     * success step stays mounted (isLoading=true would unmount the whole
+     * dashboard and reset the modal's internal step state to 'confirm').
+     */
+    const refreshSilently = useCallback(async () => {
+        try {
+            const subResult = await userApi.getSubscription();
+            if (subResult.ok) {
+                setSubscription(subResult.data.subscription);
+            }
+            // Silently swallow errors — the visible data stays stale until the
+            // user navigates away or retries via the normal fetchData path.
+        } catch {
+            // Network errors are intentionally swallowed here.
+        }
+    }, []);
+
     useEffect(() => {
         void fetchData();
     }, [fetchData]);
@@ -823,7 +842,19 @@ export function SubscriptionDashboard({ locale, user, plans }: SubscriptionDashb
                                     'account.pages.subscription.scheduledChange.body',
                                     'Tu plan cambiará a {plan} el {date}.'
                                 )
-                                    .replace('{plan}', subscription.scheduledPlanChange.newPlanId)
+                                    .replace(
+                                        '{plan}',
+                                        // Resolve the raw plan ID to a human-readable name.
+                                        // Match by id (UUID) first, fall back to slug, then
+                                        // use the raw value when the plans list is absent.
+                                        (plans ?? []).find(
+                                            (p) =>
+                                                p.id ===
+                                                    subscription.scheduledPlanChange?.newPlanId ||
+                                                p.slug ===
+                                                    subscription.scheduledPlanChange?.newPlanId
+                                        )?.name ?? subscription.scheduledPlanChange.newPlanId
+                                    )
                                     .replace(
                                         '{date}',
                                         formatDate({
@@ -839,7 +870,7 @@ export function SubscriptionDashboard({ locale, user, plans }: SubscriptionDashb
                 {plans && plans.length > 0 ? (
                     <button
                         type="button"
-                        className={styles.upgradeLink}
+                        className={styles.btnSecondary}
                         onClick={() => {
                             setShowPlanChangeFlow(true);
                         }}
@@ -998,7 +1029,11 @@ export function SubscriptionDashboard({ locale, user, plans }: SubscriptionDashb
                         setShowCancelModal(false);
                     }}
                     onCancelled={() => {
-                        void fetchData();
+                        // Use silent refresh (no loading spinner) so the modal's
+                        // success step stays mounted and visible to the user.
+                        // fetchData() would set isLoading=true which unmounts the
+                        // entire dashboard and resets the modal step to 'confirm'.
+                        void refreshSilently();
                     }}
                 />
             )}

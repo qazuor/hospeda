@@ -104,17 +104,24 @@ export const getCorsConfig = () => {
         allowMethods: parseCommaSeparated(
             _safe.get('API_CORS_ALLOW_METHODS', 'GET,POST,PUT,DELETE,PATCH,OPTIONS')
         ),
-        allowHeaders: parseCommaSeparated(
-            _safe.get(
-                'API_CORS_ALLOW_HEADERS',
-                // X-Idempotency-Key is required by `idempotencyKeyMiddleware`
-                // (SPEC-143 T-143-60) on /billing/subscriptions/start-paid,
-                // /billing/addons/:slug/purchase, /billing/addons/:id/cancel.
-                // Browser preflight rejects the request when this header is
-                // not in the allowlist.
-                'Content-Type,Authorization,X-Requested-With,X-Idempotency-Key'
-            )
-        ),
+        allowHeaders: (() => {
+            // X-Idempotency-Key is required by `idempotencyKeyMiddleware`
+            // (SPEC-143 T-143-60) on /billing/subscriptions/start-paid,
+            // /billing/addons/:slug/purchase, /billing/addons/:id/cancel.
+            // Browser preflight rejects the request when this header is not
+            // in the allowlist. We defensively enforce it even when an env
+            // override omits it, to prevent a misconfigured deploy from
+            // silently breaking all billing mutations in the browser.
+            const parsed = parseCommaSeparated(
+                _safe.get(
+                    'API_CORS_ALLOW_HEADERS',
+                    'Content-Type,Authorization,X-Requested-With,X-Idempotency-Key'
+                )
+            );
+            const REQUIRED = 'X-Idempotency-Key';
+            const alreadyPresent = parsed.some((h) => h.toLowerCase() === REQUIRED.toLowerCase());
+            return alreadyPresent ? parsed : [...parsed, REQUIRED];
+        })(),
         exposeHeaders: parseCommaSeparated(
             _safe.get('API_CORS_EXPOSE_HEADERS', 'Content-Length,X-Request-ID')
         )
