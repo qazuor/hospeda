@@ -310,7 +310,8 @@
                 "close": "Fechar",
                 "loadMore": "Carregar mais",
                 "error": "Não foi possível carregar as avaliações",
-                "retry": "Tentar novamente"
+                "retry": "Tentar novamente",
+                "loading": "Carregando avaliações…"
             }
         },
         "owner": {

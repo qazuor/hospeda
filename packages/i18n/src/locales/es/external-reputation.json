@@ -33,7 +33,8 @@
         "lastUpdated": "Última actualización: {{date}}",
         "rateLimitHit": "Podés actualizar nuevamente en {{minutes}} minutos",
         "googleOnlyExplainer": "El texto de las reseñas solo está disponible para Google. Las demás plataformas muestran el puntaje y un enlace.",
-        "verifiedHint": "El enlace fue verificado y corresponde a este alojamiento"
+        "verifiedHint": "El enlace fue verificado y corresponde a este alojamiento",
+        "loading": "Cargando listados…"
     },
     "errors": {
         "fetchFailed": "No se pudieron cargar las reseñas externas. Intentá de nuevo más tarde.",

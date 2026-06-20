@@ -405,7 +405,8 @@
                 "close": "Cerrar",
                 "loadMore": "Cargar más",
                 "error": "No se pudieron cargar las opiniones",
-                "retry": "Reintentar"
+                "retry": "Reintentar",
+                "loading": "Cargando reseñas…"
             }
         },
         "owner": {

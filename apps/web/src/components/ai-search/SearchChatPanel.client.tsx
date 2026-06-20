@@ -506,14 +506,7 @@ export function SearchChatPanel({
                             : t('aiSearch.chat.send', 'Enviar mensaje')
                     }
                 >
-                    {chat.isStreaming ? (
-                        <Spinner
-                            size="sm"
-                            aria-hidden={true}
-                        />
-                    ) : (
-                        '↑'
-                    )}
+                    {chat.isStreaming ? <Spinner size="sm" /> : '↑'}
                 </button>
             </form>
         </section>

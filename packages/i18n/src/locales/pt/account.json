@@ -223,7 +223,7 @@
             "moveSuccess": "Movido para {{name}}",
             "moveSuccessUncollected": "Removido da coleção",
             "moveError": "Não foi possível mover o favorito",
-            "deleting": "Excluindo...",
+            "deleting": "Excluindo…",
             "deleteSuccess": "Coleção excluída com sucesso",
             "deleteError": "Não foi possível excluir a coleção. Tente novamente."
         },

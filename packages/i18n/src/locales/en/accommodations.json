@@ -310,7 +310,8 @@
                 "close": "Close",
                 "loadMore": "Load more",
                 "error": "Could not load reviews",
-                "retry": "Retry"
+                "retry": "Retry",
+                "loading": "Loading reviews…"
             }
         },
         "owner": {

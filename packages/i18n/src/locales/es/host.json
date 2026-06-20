@@ -309,7 +309,8 @@
                 "mapHint": "Arrastrá el pin para ajustar la ubicación exacta.",
                 "geolocationUnavailable": "La geolocalización no está disponible en este navegador.",
                 "geolocationDenied": "Permiso denegado. Podés escribir la dirección manualmente.",
-                "geolocationError": "No se pudo obtener la ubicación. Probá escribir la dirección."
+                "geolocationError": "No se pudo obtener la ubicación. Probá escribir la dirección.",
+                "searching": "Buscando…"
             },
             "translation": {
                 "sectionTitle": "Traducciones",

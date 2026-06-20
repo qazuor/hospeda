@@ -223,7 +223,7 @@
             "moveSuccess": "Moved to {{name}}",
             "moveSuccessUncollected": "Removed from collection",
             "moveError": "Could not move favorite",
-            "deleting": "Deleting...",
+            "deleting": "Deleting…",
             "deleteSuccess": "Collection deleted successfully",
             "deleteError": "Could not delete the collection. Please try again."
         },

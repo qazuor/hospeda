@@ -33,7 +33,8 @@
         "lastUpdated": "Última atualização: {{date}}",
         "rateLimitHit": "Você pode atualizar novamente em {{minutes}} minutos",
         "googleOnlyExplainer": "O texto das avaliações está disponível apenas para o Google. As outras plataformas exibem a pontuação e um link.",
-        "verifiedHint": "O link foi verificado e corresponde a esta hospedagem"
+        "verifiedHint": "O link foi verificado e corresponde a esta hospedagem",
+        "loading": "Carregando listagens…"
     },
     "errors": {
         "fetchFailed": "Não foi possível carregar as avaliações externas. Tente novamente mais tarde.",

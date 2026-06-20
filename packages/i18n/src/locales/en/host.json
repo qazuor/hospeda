@@ -309,7 +309,8 @@
                 "mapHint": "Drag the pin to adjust the exact location.",
                 "geolocationUnavailable": "Geolocation is not available in this browser.",
                 "geolocationDenied": "Permission denied. You can type the address manually.",
-                "geolocationError": "Could not get location. Try typing the address."
+                "geolocationError": "Could not get location. Try typing the address.",
+                "searching": "Searching…"
             },
             "translation": {
                 "sectionTitle": "Translations",
