@@ -359,7 +359,7 @@ Dashboard (`/admin/social`):
 - **Pattern**: Layered monorepo service — shared DB models + Zod schemas in packages, service business logic in `@repo/service-core`, thin Hono routes in `apps/api`, React admin UI in `apps/admin`. External integrations (Cloudinary, Make.com) are wrapped behind service calls.
 - **Components (new)**:
   - 17 DB tables in `packages/db/src/schemas/social/` domain.
-  - 10 new TS enums in `packages/schemas/src/enums/social-*.enum.ts`.
+  - 9 new TS enums in `packages/schemas/src/enums/social-*.enum.ts`.
   - ~12 Zod schema entity directories in `packages/schemas/src/entities/social/`.
   - ~10 service modules in `packages/service-core/src/services/social/` (8 catalog CRUD services + 2 non-CRUD pipeline services: `SocialDraftIngestionService` and `SocialPublishDispatchService`).
   - 1 new inbound API-key middleware in `apps/api/src/middlewares/api-key.ts`.
@@ -407,11 +407,11 @@ All new tables land in the `social` domain directory. Every table has the global
 
 **Migration strategy**:
 
-- Carril 1 (structural): All 17 tables + all 10 pgEnums via `pnpm db:generate` → produces migration file `0022_social_automation.sql`. Run with `pnpm db:migrate`.
+- Carril 1 (structural): All 17 tables + all 9 pgEnums via `pnpm db:generate` → produces migration file `0022_social_automation.sql`. Run with `pnpm db:migrate`.
 - Carril 2 (extras): `packages/db/src/migrations/extras/018-social-indexes.kind.sql` — adds: `CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_social_posts_status ON social_posts(status)`, `idx_social_posts_next_run_at ON social_posts(next_run_at) WHERE next_run_at IS NOT NULL`, `idx_social_post_targets_status ON social_post_targets(status)`, `idx_social_audit_log_entity ON social_audit_log(entity_type, entity_id)`, `idx_social_publish_logs_post ON social_publish_logs(social_post_id, created_at DESC)`. All idempotent.
 - Extras `019-social-set-updated-at.trigger.sql`: registers the `set_updated_at` trigger for all new tables that have `updated_at` (i.e., all except the append-only trio).
 
-**Enum files (10 new, one file each in `packages/schemas/src/enums/`):**
+**Enum files (9 new, one file each in `packages/schemas/src/enums/`):**
 
 - `social-platform.enum.ts` → `SocialPlatform { INSTAGRAM, FACEBOOK, X }`
 - `social-publish-format.enum.ts` → `SocialPublishFormat { FEED_POST, PHOTO_POST, TEXT_POST, IMAGE_POST, VIDEO_POST, REEL, STORY, CAROUSEL }`
@@ -796,7 +796,7 @@ No new npm packages are required. All functionality uses existing codebase depen
 
 **Internal packages affected:**
 
-- `packages/schemas` — 10 new enum files, ~12 entity schema directories, new permission/category enum entries.
+- `packages/schemas` — 9 new enum files, ~12 entity schema directories, new permission/category enum entries.
 - `packages/db` — 17 new table schema files in `social/` domain, 2 new extras migration files, new migration file `0022`.
 - `packages/service-core` — ~10 new service modules in `social/` subdirectory.
 - `packages/seed` — new `social*.seed.ts` files registered in `runRequiredSeeds`.
@@ -843,9 +843,9 @@ No new npm packages are required. All functionality uses existing codebase depen
 
 ### Phase 1: Data Model + Catalog
 
-1. [ ] Add 10 new TS enums + Zod schemas to `packages/schemas/src/enums/social-*.enum.ts` (one file per enum).
+1. [ ] Add 9 new TS enums + Zod schemas to `packages/schemas/src/enums/social-*.enum.ts` (one file per enum).
 2. [ ] Export all from `packages/schemas/src/enums/index.ts`.
-3. [ ] Register all 10 pgEnums in `packages/db/src/schemas/enums.dbschema.ts` using `enumToTuple`.
+3. [ ] Register all 9 pgEnums in `packages/db/src/schemas/enums.dbschema.ts` using `enumToTuple`.
 4. [ ] Add ~25 new `PermissionEnum` values + 9 `PermissionCategoryEnum` values to `packages/schemas/src/enums/permission.enum.ts`.
 5. [ ] Create the 17 table schema files in `packages/db/src/schemas/social/` (one file per table, with `relations()` block in each file).
 6. [ ] Export all table schemas from `packages/db/src/schemas/index.ts`.

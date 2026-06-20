@@ -163,3 +163,31 @@ export * from './visibility.schema.js';
 
 export * from './external-platform.enum.js';
 export * from './external-platform.schema.js';
+
+// Social media publish enums (SPEC-254)
+export * from './social-approval-status.enum.js';
+export * from './social-approval-status.schema.js';
+
+export * from './social-asset-source.enum.js';
+export * from './social-asset-source.schema.js';
+
+export * from './social-media-type.enum.js';
+export * from './social-media-type.schema.js';
+
+export * from './social-platform.enum.js';
+export * from './social-platform.schema.js';
+
+export * from './social-post-status.enum.js';
+export * from './social-post-status.schema.js';
+
+export * from './social-publish-format.enum.js';
+export * from './social-publish-format.schema.js';
+
+export * from './social-publish-result-status.enum.js';
+export * from './social-publish-result-status.schema.js';
+
+export * from './social-recurrence-type.enum.js';
+export * from './social-recurrence-type.schema.js';
+
+export * from './social-source.enum.js';
+export * from './social-source.schema.js';

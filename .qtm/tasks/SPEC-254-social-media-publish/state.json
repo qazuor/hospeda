@@ -43,7 +43,7 @@
             "id": "T-002",
             "title": "Export social enums from packages/schemas/src/enums/index.ts",
             "description": "Add barrel exports for all 10 new enum files and their schema files to `packages/schemas/src/enums/index.ts`. Follow the alphabetical ordering used for existing entries. Verify that importing `{ SocialPlatform, SocialPostStatus }` from `@repo/schemas` resolves correctly via `pnpm typecheck`.\n\nTest requirements:\n- No dedicated test file needed; covered by T-001 unit tests\n- Verify with `pnpm typecheck` in `packages/schemas`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-001"],
             "blocks": ["T-004", "T-005"],
@@ -56,14 +56,14 @@
             "tags": ["schemas", "enums"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": true,
+                "typecheck": true,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-20T00:00:00.000Z",
+                "completed": "2026-06-20T00:00:00.000Z"
             }
         },
         {
@@ -105,7 +105,7 @@
             "id": "T-004",
             "title": "Register 10 social pgEnums in packages/db/src/schemas/enums.dbschema.ts",
             "description": "For each of the 10 social TS enums, register a corresponding Drizzle pgEnum using `enumToTuple()` in `packages/db/src/schemas/enums.dbschema.ts`. Follow the pattern of existing pgEnums (e.g., `billingIntervalPgEnum`). Naming convention: `socialPlatformPgEnum`, `socialPublishFormatPgEnum`, etc. Export each from the same file. This file is referenced by DB table schema files.\n\nTest requirements:\n- No dedicated test; verified by `pnpm typecheck` in `packages/db`\n- The generated migration (T-008) will confirm pgEnums are valid",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002"],
             "blocks": ["T-005"],
@@ -122,14 +122,14 @@
             "tags": ["database", "enums"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": true,
+                "typecheck": true,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-20T00:00:00.000Z",
+                "completed": "2026-06-20T00:00:00.000Z"
             }
         },
         {
@@ -1911,9 +1911,9 @@
     ],
     "summary": {
         "total": 52,
-        "pending": 51,
+        "pending": 49,
         "inProgress": 0,
-        "completed": 1,
+        "completed": 3,
         "blocked": 0,
         "averageComplexity": 2.3
     }
