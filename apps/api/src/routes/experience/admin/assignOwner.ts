@@ -2,10 +2,9 @@
  * POST /api/v1/admin/experiences/:id/assign-owner
  * Set or replace the COMMERCE_OWNER of an experience listing — Admin endpoint.
  *
- * Uses `ExperienceService.update()` with `{ ownerId }` as the payload,
- * since no dedicated `setOwner` / `assignOwner` method exists on the service.
- * The PATCH body is intentionally narrow (only `ownerId`) to prevent forged
- * fields from reaching the update path.
+ * Uses the dedicated `ExperienceService.assignOwner()` action. The generic
+ * `update()` path intentionally omits `ownerId` (ownership is immutable there),
+ * so routing assignment through it silently dropped the change.
  */
 import { ExperienceAdminSchema, PermissionEnum } from '@repo/schemas';
 import { ExperienceService, ServiceError } from '@repo/service-core';
@@ -53,16 +52,9 @@ export const adminAssignExperienceOwnerRoute = createAdminRoute({
         const actor = getActorFromContext(ctx);
         const { ownerId } = AssignOwnerBodySchema.parse(body);
 
-        // Delegate to the generic update path — the service enforces COMMERCE_EDIT_ALL
-        // via `_canUpdate` → `checkExperienceCanEditAll`.
-        // TYPE-WORKAROUND: ExperienceUpdateInput omits ownerId (server-managed after
-        // creation via the generic PATCH path); we pass it explicitly here through the
-        // admin assign-owner action, which is the only sanctioned path to change ownership.
-        const result = await experienceService.update(
-            actor,
-            params.id as string,
-            { ownerId } as Parameters<typeof experienceService.update>[2]
-        );
+        // Dedicated ownership action: writes the owner FK directly. The generic
+        // update() path omits ownerId by design, so it cannot be used here.
+        const result = await experienceService.assignOwner(actor, params.id as string, ownerId);
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

@@ -610,6 +610,66 @@ export abstract class BaseCommerceListingService<
         }
     }
 
+    /**
+     * Assigns (or reassigns) the owner of a commerce listing.
+     *
+     * `ownerId` is intentionally excluded from the entity update schema
+     * (ownership is immutable through the generic `update()` path), so ownership
+     * changes must go through this dedicated action. Routing them through
+     * `update()` silently strips `ownerId` and the change is lost — this method
+     * writes the FK column directly instead.
+     *
+     * Staff-only: requires `COMMERCE_EDIT_ALL`. A listing owner cannot reassign
+     * their own listing away.
+     *
+     * @param actor - The actor performing the assignment.
+     * @param listingId - UUID of the commerce listing.
+     * @param ownerId - UUID of the user to set as owner.
+     * @param tx - Optional transaction client.
+     * @returns `ServiceOutput<TEntity>` with the updated listing, or an error.
+     */
+    public async assignOwner(
+        actor: Actor,
+        listingId: string,
+        ownerId: string,
+        tx?: DrizzleClient
+    ): Promise<ServiceOutput<TEntity>> {
+        try {
+            if (!hasPermission(actor, PermissionEnum.COMMERCE_EDIT_ALL)) {
+                return {
+                    error: new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        `Permission denied: ${PermissionEnum.COMMERCE_EDIT_ALL} required to assign a ${this.entityName} owner`
+                    )
+                };
+            }
+
+            const existing = await this.model.findById(listingId, tx);
+            if (!existing) {
+                return {
+                    error: new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `${this.entityName} ${listingId} not found`
+                    )
+                };
+            }
+
+            const updated = await this.model.update(
+                { id: listingId },
+                { ownerId, updatedById: actor.id } as unknown as Partial<TEntity>,
+                tx
+            );
+            return { data: updated as TEntity };
+        } catch (err) {
+            const error = new ServiceError(
+                ServiceErrorCode.INTERNAL_ERROR,
+                `Failed to assign owner for ${this.entityName} ${listingId}: ${err instanceof Error ? err.message : String(err)}`,
+                err
+            );
+            return { error };
+        }
+    }
+
     // -----------------------------------------------------------------------
     // Private helpers
     // -----------------------------------------------------------------------

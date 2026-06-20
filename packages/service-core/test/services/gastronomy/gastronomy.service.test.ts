@@ -353,3 +353,45 @@ describe('GastronomyService public search visibility filter (AC-6.2)', () => {
         });
     });
 });
+
+// ---------------------------------------------------------------------------
+// assignOwner — dedicated ownership action (regression: SPEC-239 assign-owner
+// was routed through update(), which omits ownerId, so it silently no-op'd)
+// ---------------------------------------------------------------------------
+
+describe('GastronomyService.assignOwner', () => {
+    it('writes the new ownerId via model.update for a staff actor', async () => {
+        const service = makeService(makeGastronomyEntity());
+        const model = (service as AnyService).model;
+
+        const result = await service.assignOwner(staffActor, ENTITY_ID, OTHER_USER);
+
+        expect(result.error).toBeUndefined();
+        expect(model.update).toHaveBeenCalledTimes(1);
+        // The update payload MUST carry ownerId (the bug was that it never did).
+        expect(model.update.mock.calls[0][1]).toMatchObject({ ownerId: OTHER_USER });
+        expect(result.data?.ownerId).toBe(OTHER_USER);
+    });
+
+    it('returns FORBIDDEN when the actor lacks COMMERCE_EDIT_ALL', async () => {
+        const service = makeService(makeGastronomyEntity());
+        const model = (service as AnyService).model;
+
+        const result = await service.assignOwner(ownerActor, ENTITY_ID, OTHER_USER);
+
+        expect(result.data).toBeUndefined();
+        expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+        expect(model.update).not.toHaveBeenCalled();
+    });
+
+    it('returns NOT_FOUND when the listing does not exist', async () => {
+        const service = makeService(null);
+        const model = (service as AnyService).model;
+
+        const result = await service.assignOwner(staffActor, ENTITY_ID, OTHER_USER);
+
+        expect(result.data).toBeUndefined();
+        expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+        expect(model.update).not.toHaveBeenCalled();
+    });
+});
