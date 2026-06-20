@@ -752,6 +752,22 @@
             "archivedAt": "2026-06-18T15:26:22Z",
             "completionRef": "PR #1724 (merge 487f46266)",
             "note": "15 tasks across setup/core/integration/docs phases (avg complexity 2.07). Critical path: T-001\u2192T-004\u2192T-005\u2192T-006\u2192T-007\u2192T-008\u2192T-009\u2192T-015 (8 steps). T-002 (env) and T-003 (i18n) have float and run in parallel with early critical-path tasks. safeExternalFetch already exists in @repo/utils; apify-client already in SPEC-222 adapters; google-places import adapter MUST NOT be modified (new google-reputation.adapter.ts needed). SPEC-222 google/apify env vars may already be registered \u2014 verify before re-registering."
+        },
+        {
+            "specId": "SPEC-250",
+            "title": "Asynchronous external reputation refresh (Apify async API + polling)",
+            "status": "draft",
+            "progress": "0/39",
+            "path": "SPEC-250-external-reputation-async-refresh",
+            "parent": "SPEC-237",
+            "branch": "spec/SPEC-250-external-reputation-async-refresh",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-250-external-reputation-async-refresh",
+            "base": "staging",
+            "createdAt": "2026-06-20T00:00:00.000Z",
+            "tasksAtomizedAt": "2026-06-20T00:00:00.000Z",
+            "taskCount": 39,
+            "averageComplexity": 1.79,
+            "note": "39 tasks across 5 phases (setup 4, core 16, integration 13, testing 4, docs 2). Critical path T-001->T-002->T-018->T-025->T-026->T-028->T-035->T-036 (8 hops). Apify async API + polling cron. NOT to be implemented yet (owner: generate only)."
         }
     ],
     "standalone": {
