@@ -656,6 +656,9 @@ export abstract class BaseCommerceListingService<
 
             const updated = await this.model.update(
                 { id: listingId },
+                // TYPE-WORKAROUND: `ownerId` / `updatedById` are concrete columns on
+                // every commerce listing table but are not provable members of the
+                // generic `TEntity`; the partial-update payload is structurally safe.
                 { ownerId, updatedById: actor.id } as unknown as Partial<TEntity>,
                 tx
             );
