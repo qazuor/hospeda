@@ -374,6 +374,69 @@ describe('ExperienceService search filter forwarding', () => {
 });
 
 // ---------------------------------------------------------------------------
+// Public search/count visibility filter (AC-6.2 / AC-4.3 regression)
+// A hidden (PRIVATE / non-ACTIVE) listing must never surface on the public list.
+// Before this fix the experience public list leaked DRAFT/PRIVATE/no-subscription
+// listings because _executeSearch only filtered deletedAt=null (gastronomy parity).
+// ---------------------------------------------------------------------------
+
+describe('ExperienceService public search visibility filter (AC-6.2)', () => {
+    it('forces visibility=PUBLIC + lifecycleState=ACTIVE on public search (no hidden-listing leak)', async () => {
+        const service = makeService(makeExperienceEntity());
+        const mockFindAll = (service as AnyService).model.findAll;
+
+        await (
+            service as unknown as { _executeSearch: (...args: unknown[]) => unknown }
+        )._executeSearch({ page: 1, pageSize: 10 }, otherUserActor, {});
+
+        expect(mockFindAll.mock.calls[0][0]).toMatchObject({
+            deletedAt: null,
+            visibility: VisibilityEnum.PUBLIC,
+            lifecycleState: LifecycleStatusEnum.ACTIVE
+        });
+    });
+
+    it('cannot be widened by a caller-supplied visibility/lifecycle param', async () => {
+        const service = makeService(makeExperienceEntity());
+        const mockFindAll = (service as AnyService).model.findAll;
+
+        await (
+            service as unknown as { _executeSearch: (...args: unknown[]) => unknown }
+        )._executeSearch(
+            {
+                visibility: VisibilityEnum.PRIVATE,
+                lifecycleState: LifecycleStatusEnum.DRAFT,
+                page: 1,
+                pageSize: 10
+            },
+            otherUserActor,
+            {}
+        );
+
+        // The forced gates are applied AFTER the spread, so they win.
+        expect(mockFindAll.mock.calls[0][0]).toMatchObject({
+            visibility: VisibilityEnum.PUBLIC,
+            lifecycleState: LifecycleStatusEnum.ACTIVE
+        });
+    });
+
+    it('forces the same visibility filter on the public count', async () => {
+        const service = makeService(makeExperienceEntity());
+        const mockCount = (service as AnyService).model.count;
+
+        await (
+            service as unknown as { _executeCount: (...args: unknown[]) => unknown }
+        )._executeCount({ page: 1, pageSize: 10 }, otherUserActor, {});
+
+        expect(mockCount.mock.calls[0][0]).toMatchObject({
+            deletedAt: null,
+            visibility: VisibilityEnum.PUBLIC,
+            lifecycleState: LifecycleStatusEnum.ACTIVE
+        });
+    });
+});
+
+// ---------------------------------------------------------------------------
 // _projectPublicEntity
 // ---------------------------------------------------------------------------
 

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ExperiencePriceUnitEnum } from '../../../enums/experience-price-unit.enum.js';
 import { ExperienceTypeEnum } from '../../../enums/experience-type.enum.js';
 import {
+    ExperienceAdminListItemSchema,
     ExperienceAdminSchema,
     ExperienceProtectedSchema,
     ExperiencePublicSchema
@@ -217,5 +218,52 @@ describe('ExperienceAdminSchema', () => {
         };
         const result = ExperienceAdminSchema.safeParse(raw);
         expect(result.success).toBe(true);
+    });
+});
+
+// ============================================================================
+// ExperienceAdminListItemSchema — eager-loaded relation summaries (bug #8)
+// Without these fields the admin grid can only render raw FK UUIDs in the
+// Destino / Propietario columns. Mirrors GastronomyAdminListItemSchema.
+// ============================================================================
+
+describe('ExperienceAdminListItemSchema', () => {
+    const buildAdminRow = (overrides: Record<string, unknown> = {}) => ({
+        ...buildPublicExperience(),
+        ownerId: VALID_UUID,
+        lifecycleState: 'ACTIVE',
+        moderationState: 'APPROVED',
+        ...overrides
+    });
+
+    it('parses the eager-loaded destination + owner relation summaries', () => {
+        const raw = buildAdminRow({
+            destination: { id: VALID_UUID, name: 'Colón', slug: 'colon' },
+            owner: {
+                id: VALID_UUID,
+                displayName: 'Seed Commerce Owner',
+                firstName: null,
+                lastName: null,
+                email: 'owner@example.com'
+            }
+        });
+        const result = ExperienceAdminListItemSchema.safeParse(raw);
+        expect(result.success).toBe(true);
+    });
+
+    it('allows the relation summaries to be absent (freshly admin-created listing)', () => {
+        const result = ExperienceAdminListItemSchema.safeParse(buildAdminRow());
+        expect(result.success).toBe(true);
+    });
+
+    it('retains the destination.name needed by the admin grid column', () => {
+        const raw = buildAdminRow({
+            destination: { id: VALID_UUID, name: 'Gualeguaychú', slug: 'gualeguaychu' }
+        });
+        const result = ExperienceAdminListItemSchema.safeParse(raw);
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.destination?.name).toBe('Gualeguaychú');
+        }
     });
 });

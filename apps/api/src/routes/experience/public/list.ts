@@ -1,12 +1,11 @@
 /**
  * Public experience list endpoint (T-019)
- * Returns a paginated list of experience listings with filtering and sorting.
+ * Returns a paginated list of visible experience listings with filtering and sorting.
  *
- * Visibility note: the service _executeSearch only filters deletedAt=null (non-deleted
- * listings). It does NOT apply lifecycleState=ACTIVE or visibility=PUBLIC at the search
- * layer — that is inherited SPEC-239 behaviour and tracked as a follow-up. Per-item
- * visibility gating is applied on the detail endpoint via _canView. The web client is
- * responsible for filtering displayed results by visibility state.
+ * Visibility contract: only listings with lifecycleState=ACTIVE AND visibility=PUBLIC
+ * are returned. The ExperienceService._executeSearch / _executeCount force these gates
+ * AFTER the caller's scalar filters (mirroring the gastronomy service), so no query
+ * param can widen the result set to non-active or private listings.
  */
 import {
     ExperiencePublicSchema,
