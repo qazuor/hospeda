@@ -74,9 +74,10 @@ export type ExternalReputationPlatformItem = z.infer<typeof ExternalReputationPl
  * The complete external reputation block embedded in the public accommodation
  * detail response.
  *
- * Contains one item per platform that has a verified listing with at least one
- * of showLink or showReviews enabled. Platforms that are entirely hidden (both
- * flags false) are omitted from the array.
+ * Contains one item per platform whose listing has at least one of showLink or
+ * showReviews enabled. Platforms that are entirely hidden (both flags false) are
+ * omitted from the array. (The `verified` flag is out of MVP scope and does not
+ * gate display — see buildExternalReputationBlock.)
  */
 export const ExternalReputationBlockSchema = z.object({
     /** Per-platform reputation items, in no guaranteed order. */
@@ -144,12 +145,15 @@ export function buildExternalReputationBlock(
     const items: ExternalReputationPlatformItem[] = [];
 
     for (const src of sources) {
-        // Rule 1: skip unverified listings
-        if (!src.verified) {
-            continue;
-        }
+        // Visibility is controlled by the owner's master toggle (enforced in
+        // listForDisplay) plus the per-listing showLink/showReviews flags below.
+        // The `verified` flag is OUT OF MVP SCOPE (SPEC-237 micro-decision #4):
+        // nothing in the system ever sets it true, so gating display on it made
+        // the block permanently empty (the feature never rendered). The field is
+        // kept on the source for a future admin-validation flow but must not gate
+        // display today.
 
-        // Rule 2: skip fully-hidden listings
+        // Skip fully-hidden listings (owner opted out of both link and reviews).
         if (!src.showLink && !src.showReviews) {
             continue;
         }
