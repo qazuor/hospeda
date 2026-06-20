@@ -155,10 +155,10 @@ describe('NewsletterPreferences — initial render', () => {
             />
         );
         // The i18n mock returns the fallback for account.newsletter.loading → 'Cargando…'
-        // Text is visible both in sr-only Spinner label and as adjacent text node
-        expect(screen.getAllByText('Cargando…').length).toBeGreaterThanOrEqual(1);
-        // Spinner renders a role="status" live region
-        expect(screen.getByRole('status')).toBeInTheDocument();
+        expect(screen.getByText('Cargando…')).toBeInTheDocument();
+        // The loading region announces via aria-busy (the Spinner is decorative
+        // to avoid a double announcement with the adjacent visible text).
+        expect(document.querySelector('[aria-busy="true"]')).toBeInTheDocument();
         // No ⏳ emoji
         expect(document.body.textContent).not.toContain('⏳');
     });

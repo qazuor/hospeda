@@ -234,16 +234,9 @@ export function DestinationReviewsModal({
                     )}
 
                     {loading && reviews.length > 0 && (
-                        <div
-                            className={styles.spinnerWrapper}
-                            aria-live="polite"
-                        >
-                            <Spinner
-                                label={t(
-                                    'destination.detail.reviews.modal.loading',
-                                    'Cargando reseñas…'
-                                )}
-                            />
+                        <div className={styles.spinnerWrapper}>
+                            {/* Decorative — the load-more button's aria-busy + changing label announce. */}
+                            <Spinner />
                         </div>
                     )}
 

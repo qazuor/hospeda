@@ -431,7 +431,7 @@ describe('CommentThreadIsland', () => {
     // ── T-014: inline spinner while submitting (SPEC-228) ─────────────────────
 
     describe('T-014 — inline Spinner while submitting (SPEC-228)', () => {
-        it('T-014: shows inline Spinner (role="status") while form is submitting', async () => {
+        it('T-014: submit button is aria-busy with a changing label while submitting', async () => {
             // Arrange: never-resolving fetch so we stay in submitting state
             vi.mocked(global.fetch).mockReturnValue(new Promise(() => {}));
 
@@ -442,9 +442,11 @@ describe('CommentThreadIsland', () => {
             });
             fireEvent.click(screen.getByRole('button', { name: /Comentar/i }));
 
-            // Assert: Spinner live region appears while submitting
+            // Assert: the button announces the in-progress state (the inline
+            // Spinner is decorative to avoid a double announcement).
             await waitFor(() => {
-                expect(screen.getByRole('status')).toBeInTheDocument();
+                const button = screen.getByRole('button', { name: /Enviando/i });
+                expect(button).toHaveAttribute('aria-busy', 'true');
             });
         });
 

@@ -302,12 +302,8 @@ export function CommentThreadIsland({
                     )}
 
                     <div className={styles.submitRow}>
-                        {isSubmitting && (
-                            <Spinner
-                                size="sm"
-                                label={t('comments.form.submitting', 'Enviando…')}
-                            />
-                        )}
+                        {/* Decorative — the button's aria-busy + changing label announce. */}
+                        {isSubmitting && <Spinner size="sm" />}
                         <button
                             type="submit"
                             className={styles.submit}
@@ -315,7 +311,7 @@ export function CommentThreadIsland({
                             aria-busy={isSubmitting}
                         >
                             {isSubmitting
-                                ? t('comments.form.submitting', 'Enviando...')
+                                ? t('comments.form.submitting', 'Enviando…')
                                 : t('comments.form.submit', 'Comentar')}
                         </button>
                     </div>

@@ -505,9 +505,11 @@ describe('DestinationReviewsModal — T-013 initial-load skeleton (SPEC-228)', (
         // Trigger second page fetch
         fireEvent.click(screen.getByRole('button', { name: 'Cargar más reseñas' }));
 
-        // Assert: spinner for pagination appears AND reviews from first page are still visible
+        // Assert: the load-more button label swaps to the loading text
+        // (the pagination Spinner is decorative); reviews stay visible and the
+        // initial-load skeleton (reviews.length === 0) must NOT appear.
         await waitFor(() => {
-            expect(screen.getByRole('status')).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: 'Cargando reseñas…' })).toBeInTheDocument();
         });
         expect(screen.getByText('Content 0')).toBeInTheDocument();
     });

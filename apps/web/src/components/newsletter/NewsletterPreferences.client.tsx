@@ -280,10 +280,8 @@ export function NewsletterPreferences({ locale, apiUrl }: NewsletterPreferencesP
                 aria-busy="true"
             >
                 <p className={styles.loading}>
-                    <Spinner
-                        size="sm"
-                        label={t('account.newsletter.loading', 'Cargando…')}
-                    />
+                    {/* Decorative — the visible text + the section's aria-busy already announce. */}
+                    <Spinner size="sm" />
                     {t('account.newsletter.loading', 'Cargando…')}
                 </p>
             </section>

@@ -349,10 +349,11 @@ describe('ReviewsModal — T-013 initial-load skeleton (SPEC-228)', () => {
         // Trigger second page fetch
         fireEvent.click(screen.getByRole('button', { name: 'Cargar más' }));
 
-        // Assert: spinner for pagination is shown but NO skeleton list
-        // (skeleton only appears when reviews.length === 0)
+        // Assert: the load-more button label swaps to the loading text
+        // (announcing pagination; the pagination Spinner is decorative). The
+        // initial-load skeleton (reviews.length === 0) must NOT appear here.
         await waitFor(() => {
-            expect(screen.getByRole('status')).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: 'Cargando reseñas…' })).toBeInTheDocument();
         });
 
         // Reviews from first page are still visible — skeleton would not cover them
