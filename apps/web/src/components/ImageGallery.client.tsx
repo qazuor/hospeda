@@ -298,7 +298,7 @@ function Lightbox({ images, initialIndex, onClose, t }: LightboxProps) {
                         key={current?.url}
                         src={current ? buildLightboxUrl(current.url) : undefined}
                         alt={current?.alt ?? ''}
-                        className={styles.lightboxImg}
+                        className={`${styles.lightboxImg} ${styles.lightboxImgFade}`}
                     />
                     {current?.caption && (
                         <figcaption className={styles.lightboxCaption}>
