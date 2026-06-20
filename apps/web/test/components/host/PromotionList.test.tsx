@@ -6,11 +6,12 @@
 
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock before any imports — vitest hoists vi.mock to top of file
 const mockOwnerPromotionList = vi.fn();
 const mockOwnerPromotionRemove = vi.fn();
+const mockGetEntitlements = vi.fn();
 
 vi.mock('@/lib/api/endpoints-protected', () => ({
     get ownerPromotionApi() {
@@ -18,11 +19,25 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
             list: mockOwnerPromotionList,
             remove: mockOwnerPromotionRemove
         };
+    },
+    get billingApi() {
+        return {
+            getEntitlements: mockGetEntitlements
+        };
     }
 }));
 
 // Import AFTER mock setup
 import { PromotionList } from '../../../src/components/host/PromotionList.client';
+
+beforeEach(() => {
+    // Default: actor's plan includes create_promotions, so the create button
+    // renders. Individual gate tests override this.
+    mockGetEntitlements.mockResolvedValue({
+        ok: true,
+        data: { entitlements: ['create_promotions'] }
+    });
+});
 
 afterEach(() => {
     vi.clearAllMocks();
@@ -257,5 +272,48 @@ describe('PromotionList', () => {
                 el.getAttribute('href')?.includes(`promociones/${mockPromo1.id}/editar`)
             );
         expect(editLinks.length).toBe(1);
+    });
+
+    // ---------------------------------------------------------------------------
+    // Entitlement gate (SPEC-205): create button is gated by `create_promotions`
+    // ---------------------------------------------------------------------------
+
+    it('hides the create button and shows an upgrade banner when the plan lacks create_promotions', async () => {
+        mockOwnerPromotionList.mockResolvedValue(makeListResponse([]));
+        mockGetEntitlements.mockResolvedValue({ ok: true, data: { entitlements: [] } });
+
+        render(<PromotionList locale="es" />);
+
+        // The upgrade banner is the ready-state signal when the plan lacks the
+        // entitlement (the empty-state create CTA is intentionally not shown).
+        await screen.findByText(/tu plan no incluye promociones/i);
+
+        // No create link
+        const createLinks = screen
+            .queryAllByRole('link')
+            .filter((el) => el.getAttribute('href')?.includes('promociones/nueva'));
+        expect(createLinks.length).toBe(0);
+
+        // Upgrade banner with a link to the plans page
+        const upgradeLinks = screen
+            .getAllByRole('link')
+            .filter((el) => el.getAttribute('href')?.includes('suscriptores/planes'));
+        expect(upgradeLinks.length).toBeGreaterThanOrEqual(1);
+    });
+
+    it('fails open: keeps the create button when the entitlement read fails', async () => {
+        mockOwnerPromotionList.mockResolvedValue(makeListResponse([]));
+        // Entitlement read fails → server still enforces on save, so the button stays.
+        mockGetEntitlements.mockResolvedValue({ ok: false, error: { message: 'boom' } });
+
+        render(<PromotionList locale="es" />);
+
+        await screen.findByText(/todavía no tenés ninguna promoción/i);
+
+        const createLinks = screen
+            .getAllByRole('link')
+            .filter((el) => el.getAttribute('href')?.includes('promociones/nueva'));
+        expect(createLinks.length).toBeGreaterThanOrEqual(1);
+        expect(screen.queryByText(/tu plan no incluye promociones/i)).not.toBeInTheDocument();
     });
 });
