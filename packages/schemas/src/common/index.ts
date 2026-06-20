@@ -24,6 +24,7 @@ export * from './entity-options.schema.js';
 
 // Commerce common schemas (SPEC-239)
 export * from './commerce-identity.schema.js';
+export * from './commerce-owner-listing.schema.js';
 export * from './commerce-rating.schema.js';
 export * from './opening-hours.schema.js';
 
