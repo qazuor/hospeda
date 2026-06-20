@@ -104,11 +104,10 @@
     margin: 0;
 }
 
-.spinner {
-    text-align: center;
+.spinnerWrapper {
+    display: flex;
+    justify-content: center;
     padding: 1rem;
-    color: var(--core-muted-foreground);
-    font-family: var(--font-sans);
 }
 
 .error {

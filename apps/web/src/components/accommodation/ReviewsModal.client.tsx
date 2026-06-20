@@ -1,11 +1,12 @@
-import { Dialog, DialogBody, DialogHeader } from '@/components/shared/ui/Dialog.client';
-import { GradientButton } from '@/components/ui/GradientButtonReact';
+import { Spinner } from '@/components/shared/feedback/Spinner';
 /**
  * @file ReviewsModal.client.tsx
  * @description Modal for browsing all paginated reviews. Cross-cutting modal
  * concerns (centering, scroll-lock, ESC, focus trap, click-outside) are
  * delegated to the shared `<Dialog>` component.
  */
+import { Dialog, DialogBody, DialogHeader } from '@/components/shared/ui/Dialog.client';
+import { GradientButton } from '@/components/ui/GradientButtonReact';
 import { accommodationsApi } from '@/lib/api/endpoints';
 import { getInitialsFromName } from '@/lib/avatar-utils';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -233,7 +234,19 @@ export function ReviewsModal({ accommodationId, reviewsCount, locale }: ReviewsM
                         );
                     })}
 
-                    {loading && <div className={styles.spinner}>...</div>}
+                    {loading && (
+                        <div
+                            className={styles.spinnerWrapper}
+                            aria-live="polite"
+                        >
+                            <Spinner
+                                label={t(
+                                    'accommodations.detail.reviewsDetail.modal.loading',
+                                    'Cargando reseñas…'
+                                )}
+                            />
+                        </div>
+                    )}
 
                     {error && !loading && (
                         <div className={styles.error}>
@@ -248,14 +261,26 @@ export function ReviewsModal({ accommodationId, reviewsCount, locale }: ReviewsM
                         </div>
                     )}
 
-                    {!loading && !error && hasMore && reviews.length > 0 && (
+                    {!error && hasMore && reviews.length > 0 && (
                         <GradientButton
                             as="button"
-                            label={t('accommodations.detail.reviewsDetail.modal.loadMore')}
+                            label={
+                                loading
+                                    ? t(
+                                          'accommodations.detail.reviewsDetail.modal.loading',
+                                          'Cargando reseñas…'
+                                      )
+                                    : t(
+                                          'accommodations.detail.reviewsDetail.modal.loadMore',
+                                          'Cargar más'
+                                      )
+                            }
                             variant="outline-primary"
                             size="sm"
                             shape="rounded"
                             className={styles.loadMoreBtn}
+                            disabled={loading}
+                            aria-busy={loading}
                             onClick={() => setPage((p) => p + 1)}
                         />
                     )}
