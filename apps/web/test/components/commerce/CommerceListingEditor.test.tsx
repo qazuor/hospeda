@@ -140,6 +140,44 @@ describe('CommerceListingEditor', () => {
     it('shows the price-on-request toggle for the experience vertical (no price select)', () => {
         renderEditor('experience');
         expect(screen.queryByLabelText('Rango de precios')).toBeNull();
-        expect(screen.getByRole('checkbox')).toBeInTheDocument();
+        expect(screen.getByLabelText('Precio a consultar')).toBeInTheDocument();
+    });
+
+    it('PATCHes the socialNetworks group when a social URL changes', async () => {
+        mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
+        renderEditor('gastronomy');
+
+        fireEvent.change(screen.getByLabelText('facebook'), {
+            target: { value: 'https://facebook.com/x' }
+        });
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+        await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
+        expect(mockPatch).toHaveBeenCalledWith({
+            path: '/api/v1/protected/gastronomies/abc',
+            body: {
+                socialNetworks: {
+                    facebook: 'https://facebook.com/x',
+                    instagram: undefined,
+                    twitter: undefined,
+                    tiktok: undefined,
+                    youtube: undefined
+                }
+            }
+        });
+    });
+
+    it('PATCHes openingHours when a day is toggled closed', async () => {
+        mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
+        renderEditor('gastronomy');
+
+        fireEvent.click(screen.getByLabelText('Lun cerrado'));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+        await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
+        const call = mockPatch.mock.calls[0]?.[0] as {
+            body: { openingHours?: { days?: Record<string, { closed: boolean }> } };
+        };
+        expect(call.body.openingHours?.days?.mon?.closed).toBe(true);
     });
 });

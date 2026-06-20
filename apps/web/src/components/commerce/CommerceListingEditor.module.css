@@ -57,6 +57,34 @@
     color: var(--core-foreground);
 }
 
+.days {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.day {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+    padding: var(--space-2) 0;
+    border-bottom: 1px solid var(--core-border);
+}
+
+.dayLabel {
+    min-width: 3rem;
+    font-weight: 600;
+    font-size: var(--text-body-sm, 0.9375rem);
+    color: var(--core-foreground);
+}
+
+.shift {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
 .actions {
     display: flex;
     align-items: center;

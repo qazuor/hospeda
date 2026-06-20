@@ -19,8 +19,10 @@ import type { CommerceListingDetail, CommerceVertical } from '@/lib/commerce/own
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { PriceRangeEnum } from '@repo/schemas';
+import type { OpeningHours } from '@repo/schemas';
 import { type JSX, useCallback, useState } from 'react';
 import styles from './CommerceListingEditor.module.css';
+import { OpeningHoursField } from './OpeningHoursField';
 
 export interface CommerceListingEditorProps {
     /** Which vertical this listing belongs to (drives the PATCH endpoint + price group). */
@@ -46,6 +48,23 @@ interface ContactValues {
     website: string;
 }
 
+/** Social URLs the owner edits (subset of SocialNetwork). */
+interface SocialValues {
+    facebook: string;
+    instagram: string;
+    twitter: string;
+    tiktok: string;
+    youtube: string;
+}
+
+const SOCIAL_KEYS: ReadonlyArray<keyof SocialValues> = [
+    'facebook',
+    'instagram',
+    'twitter',
+    'tiktok',
+    'youtube'
+];
+
 /** Resolve the owner PATCH endpoint for the given vertical. */
 function patchPathFor({
     vertical,
@@ -62,6 +81,11 @@ function strField(source: Record<string, unknown>, key: string): string {
     return typeof value === 'string' ? value : '';
 }
 
+/** Drop empty-string entries, mapping them to undefined for the payload. */
+function nonEmpty(value: string): string | undefined {
+    return value || undefined;
+}
+
 /**
  * Owner operational editor. Tracks which field groups changed and PATCHes ONLY
  * the dirty subset, so an owner who edits one section never re-submits the rest.
@@ -76,6 +100,7 @@ export function CommerceListingEditor({
 
     const data = initialData as unknown as Record<string, unknown>;
     const initialContact = (data.contactInfo ?? {}) as Record<string, unknown>;
+    const initialSocial = (data.socialNetworks ?? {}) as Record<string, unknown>;
 
     const [richDescription, setRichDescription] = useState<string>(
         strField(data, 'richDescription')
@@ -85,6 +110,16 @@ export function CommerceListingEditor({
         workEmail: strField(initialContact, 'workEmail'),
         website: strField(initialContact, 'website')
     });
+    const [social, setSocial] = useState<SocialValues>({
+        facebook: strField(initialSocial, 'facebook'),
+        instagram: strField(initialSocial, 'instagram'),
+        twitter: strField(initialSocial, 'twitter'),
+        tiktok: strField(initialSocial, 'tiktok'),
+        youtube: strField(initialSocial, 'youtube')
+    });
+    const [openingHours, setOpeningHours] = useState<OpeningHours | null>(
+        (data.openingHours as OpeningHours | null | undefined) ?? null
+    );
     const [priceRange, setPriceRange] = useState<string>(strField(data, 'priceRange'));
     const [menuUrl, setMenuUrl] = useState<string>(strField(data, 'menuUrl'));
     const [isPriceOnRequest, setIsPriceOnRequest] = useState<boolean>(
@@ -111,6 +146,14 @@ export function CommerceListingEditor({
         [markDirty]
     );
 
+    const updateSocial = useCallback(
+        (key: keyof SocialValues, val: string) => {
+            setSocial((prev) => ({ ...prev, [key]: val }));
+            markDirty('socialNetworks');
+        },
+        [markDirty]
+    );
+
     /** Build the PATCH payload from the dirty field groups only. */
     const buildPayload = useCallback((): Record<string, unknown> => {
         const payload: Record<string, unknown> = {};
@@ -119,10 +162,22 @@ export function CommerceListingEditor({
         }
         if (dirty.has('contactInfo')) {
             payload.contactInfo = {
-                mobilePhone: contact.mobilePhone || undefined,
-                workEmail: contact.workEmail || undefined,
-                website: contact.website || undefined
+                mobilePhone: nonEmpty(contact.mobilePhone),
+                workEmail: nonEmpty(contact.workEmail),
+                website: nonEmpty(contact.website)
             };
+        }
+        if (dirty.has('socialNetworks')) {
+            payload.socialNetworks = {
+                facebook: nonEmpty(social.facebook),
+                instagram: nonEmpty(social.instagram),
+                twitter: nonEmpty(social.twitter),
+                tiktok: nonEmpty(social.tiktok),
+                youtube: nonEmpty(social.youtube)
+            };
+        }
+        if (dirty.has('openingHours')) {
+            payload.openingHours = openingHours;
         }
         if (dirty.has('priceRange')) {
             payload.priceRange = priceRange || null;
@@ -134,7 +189,16 @@ export function CommerceListingEditor({
             payload.isPriceOnRequest = isPriceOnRequest;
         }
         return payload;
-    }, [dirty, richDescription, contact, priceRange, menuUrl, isPriceOnRequest]);
+    }, [
+        dirty,
+        richDescription,
+        contact,
+        social,
+        openingHours,
+        priceRange,
+        menuUrl,
+        isPriceOnRequest
+    ]);
 
     const handleSubmit = useCallback(
         async (event: React.FormEvent<HTMLFormElement>) => {
@@ -217,6 +281,37 @@ export function CommerceListingEditor({
                     onChange={(event) => updateContact({ website: event.target.value })}
                 />
             </fieldset>
+
+            <fieldset className={styles.section}>
+                <legend className={styles.label}>
+                    {t('commerce.owner.editor.sections.socialNetworks', 'Redes sociales')}
+                </legend>
+                {SOCIAL_KEYS.map((key) => (
+                    <input
+                        key={key}
+                        className={styles.input}
+                        type="url"
+                        aria-label={key}
+                        value={social[key]}
+                        placeholder={`https://${key}.com/...`}
+                        onChange={(event) => updateSocial(key, event.target.value)}
+                    />
+                ))}
+            </fieldset>
+
+            <section className={styles.section}>
+                <span className={styles.label}>
+                    {t('commerce.owner.editor.sections.openingHours', 'Horarios de atención')}
+                </span>
+                <OpeningHoursField
+                    value={openingHours}
+                    classes={styles}
+                    onChange={(next) => {
+                        setOpeningHours(next);
+                        markDirty('openingHours');
+                    }}
+                />
+            </section>
 
             {vertical === 'gastronomy' ? (
                 <section className={styles.section}>

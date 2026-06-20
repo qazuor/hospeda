@@ -447,35 +447,35 @@
             "id": "T-014",
             "title": "Editor: structured field groups (openingHours, socialNetworks)",
             "description": "Implement the structured operational groups: openingHours (per-day structured editor producing the JSON shape the updateOwn schema expects) and socialNetworks (labeled URL rows). Wire to patch. Tests: component tests — structured input round-trips to the correct JSON, invalid entries rejected.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-012"],
             "blocks": ["T-021", "T-025"],
             "subtasks": [
                 {
                     "title": "openingHours structured editor",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "socialNetworks rows",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Component tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "commerce", "core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-20T10:15:00.000Z",
+                "completed": "2026-06-20T10:30:00.000Z"
             }
         },
         {
@@ -853,9 +853,9 @@
     ],
     "summary": {
         "total": 26,
-        "pending": 13,
+        "pending": 12,
         "inProgress": 0,
-        "completed": 13,
+        "completed": 14,
         "blocked": 0,
         "averageComplexity": 2.3
     }
