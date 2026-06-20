@@ -11,6 +11,7 @@
  *  - Always-visible Google-only explainer note
  */
 
+import { Spinner } from '@/components/shared/feedback/Spinner';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { useCallback, useEffect, useState } from 'react';
@@ -357,7 +358,13 @@ export function ExternalReputationSection({
             )}
 
             {/* Loading state */}
-            {isLoadingData && !loadError && <p className={styles.loadingHint}>{'...'}</p>}
+            {isLoadingData && !loadError && (
+                <Spinner
+                    size="sm"
+                    label={t('externalReputation.ownerConfig.loading', 'Cargando listados…')}
+                    className={styles.loadingHint}
+                />
+            )}
 
             {/* Existing listings */}
             {!isLoadingData && listings.length === 0 && !loadError && (

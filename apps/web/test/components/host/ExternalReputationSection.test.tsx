@@ -32,6 +32,12 @@ vi.mock('@/components/host/ExternalReputationSection.module.css', () => ({
     })
 }));
 
+vi.mock('@/components/shared/feedback/Spinner.module.css', () => ({
+    default: new Proxy({} as Record<string, string>, {
+        get: (_target, prop) => String(prop)
+    })
+}));
+
 // ─── Fixtures ──────────────────────────────────────────────────────────────
 
 const ACC_ID = 'acc-uuid-123';
@@ -433,6 +439,32 @@ describe('ExternalReputationSection', () => {
                         (opts as RequestInit)?.method === 'POST'
                 );
                 expect(refreshCall).toBeDefined();
+            });
+        });
+    });
+
+    // ── SPEC-228 T-022: loading state uses Spinner, not '...' ───────────────
+
+    describe('Loading state (SPEC-228 T-022)', () => {
+        it('shows Spinner while loading (no raw "..." text)', () => {
+            // Never resolve — keeps loading state active
+            vi.mocked(global.fetch).mockReturnValue(new Promise(() => {}));
+            renderSection();
+
+            // The ellipsis literal must not appear in the DOM
+            expect(document.body.textContent).not.toContain('...');
+
+            // The Spinner (role="status") should be present
+            const spinner = screen.getByRole('status');
+            expect(spinner).toBeInTheDocument();
+        });
+
+        it('Spinner is removed once data loads', async () => {
+            vi.mocked(global.fetch).mockResolvedValue(makeListingsOkResponse([]));
+            renderSection();
+
+            await waitFor(() => {
+                expect(screen.queryByRole('status')).not.toBeInTheDocument();
             });
         });
     });
