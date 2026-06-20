@@ -482,31 +482,31 @@
             "id": "T-015",
             "title": "Editor: media gallery group",
             "description": "Enable commerce media editing end-to-end (scope EXTENDED 2026-06-20 by owner decision — backend support). Three phases: (15a SCHEMAS) add gastronomy+experience to MediaEntityTypeSchema + GalleryEntityTypeSchema + ENTITY_GALLERY_CAPS in packages/schemas/src/common/media-upload.schema.ts (+ tests); (15b API) add commerce entityTypes to the media upload-entity validation + ENTITY_UPDATE_PERMISSIONS (COMMERCE_MEDIA_EDIT_OWN) in apps/api/src/routes/media + ownership check (+ integration tests); (15c WEB) build the media editor group in CommerceListingEditor (featuredImage + gallery upload/reorder/remove, modeled on host PhotoSection but entityType=gastronomy|experience) producing the media payload updateOwn expects (+ component tests). Each phase must stay ≤3 complexity — split further when implementing.",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-012"],
             "blocks": ["T-025"],
             "subtasks": [
                 {
                     "title": "Media gallery group",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Component test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["schemas", "api", "web", "commerce", "media", "core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
                 "started": "2026-06-20T10:50:00.000Z",
-                "completed": null
+                "completed": "2026-06-20T13:40:00.000Z"
             }
         },
         {
