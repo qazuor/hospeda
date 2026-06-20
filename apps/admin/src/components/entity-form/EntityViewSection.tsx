@@ -407,6 +407,37 @@ const EntityViewSectionComponent = React.forwardRef<HTMLDivElement, EntityViewSe
                         />
                     );
 
+                case FieldTypeEnum.JSON: {
+                    // Structured object/array fields (e.g. commerce openingHours)
+                    // are shown read-only as pretty-printed JSON. Rendering the raw
+                    // object as a React child crashes ("Objects are not valid as a
+                    // React child"); stringifying is the safe, generic fallback.
+                    const jsonText =
+                        fieldValue == null
+                            ? ''
+                            : typeof fieldValue === 'string'
+                              ? fieldValue
+                              : JSON.stringify(fieldValue, null, 2);
+                    return wrap(
+                        <div className="space-y-1">
+                            {field.label && (
+                                <div className="font-medium text-muted-foreground text-sm">
+                                    {field.label}
+                                </div>
+                            )}
+                            {jsonText ? (
+                                <pre className="overflow-x-auto rounded bg-muted p-2 font-mono text-xs">
+                                    {jsonText}
+                                </pre>
+                            ) : (
+                                <div className="text-muted-foreground text-sm italic">
+                                    {t('admin-common.entityView.noValue')}
+                                </div>
+                            )}
+                        </div>
+                    );
+                }
+
                 default:
                     // Fallback for unknown field types — still respects grid span via `wrap()`
                     return wrap(
