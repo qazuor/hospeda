@@ -743,3 +743,39 @@ describe('buildChangePasswordRedirect', () => {
         expect(url.endsWith('/')).toBe(true);
     });
 });
+
+// ---------------------------------------------------------------------------
+// SPEC-249 T-020 / T-023 — commerce area is subject to the force-password gate
+// ---------------------------------------------------------------------------
+
+/**
+ * The web middleware redirects a `mustChangePassword` user away from any
+ * protected route that is NOT the change-password route itself (avoiding a
+ * redirect loop). These assertions verify that the commerce self-service area
+ * (`/[lang]/mi-cuenta/comercio/...`) falls inside that gated set — so a freshly
+ * provisioned COMMERCE_OWNER is forced through `cambiar-contrasena` before
+ * reaching it. The gate mechanism itself is reused from SPEC-239 (verify-only).
+ */
+describe('SPEC-249 — commerce area force-password gating (T-020 / T-023)', () => {
+    const commercePaths = [
+        '/es/mi-cuenta/comercio/',
+        '/es/mi-cuenta/comercio/gastronomy/abc-123/editar/',
+        '/en/mi-cuenta/comercio/experience/def-456/editar/'
+    ];
+
+    it('treats every commerce area path as a protected route (auth + gate apply)', () => {
+        for (const path of commercePaths) {
+            expect(isProtectedRoute({ path })).toBe(true);
+        }
+    });
+
+    it('does NOT treat commerce paths as the change-password route (so the gate redirects them)', () => {
+        for (const path of commercePaths) {
+            expect(isChangePasswordRoute({ path })).toBe(false);
+        }
+    });
+
+    it('exempts the change-password route itself (no redirect loop)', () => {
+        expect(isChangePasswordRoute({ path: '/es/mi-cuenta/cambiar-contrasena/' })).toBe(true);
+    });
+});
