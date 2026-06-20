@@ -51,6 +51,7 @@ export type AiProviderId = z.infer<typeof AiProviderIdSchema>;
  * - `support`              → `ai_support`
  * - `translate`            → `ai_translate`
  * - `accommodation_import` → `ai_accommodation_import`
+ * - `post_generate`        → n/a (admin-only; permission-gated via PermissionEnum.POST_CREATE)
  */
 export const AiFeatureSchema = z.enum([
     'text_improve',
@@ -58,7 +59,8 @@ export const AiFeatureSchema = z.enum([
     'search',
     'support',
     'translate',
-    'accommodation_import'
+    'accommodation_import',
+    'post_generate'
 ]);
 
 /** TypeScript type for a supported AI feature. */
