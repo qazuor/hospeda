@@ -138,7 +138,7 @@ export function ExternalReputationSection({
         } catch {
             setLoadError(
                 t(
-                    'externalReputation.errors.fetchFailed',
+                    'external-reputation.errors.fetchFailed',
                     'No se pudieron cargar las reseñas externas. Intentá de nuevo más tarde.'
                 )
             );
@@ -204,11 +204,11 @@ export function ExternalReputationSection({
                 };
                 setAddError(
                     errBody.error?.message ??
-                        t('externalReputation.errors.fetchFailed', 'Error al agregar el enlace.')
+                        t('external-reputation.errors.fetchFailed', 'Error al agregar el enlace.')
                 );
             }
         } catch {
-            setAddError(t('externalReputation.errors.fetchFailed', 'Error al agregar el enlace.'));
+            setAddError(t('external-reputation.errors.fetchFailed', 'Error al agregar el enlace.'));
         } finally {
             setIsAdding(false);
         }
@@ -281,7 +281,7 @@ export function ExternalReputationSection({
             } else {
                 setRefreshError(
                     t(
-                        'externalReputation.errors.fetchFailed',
+                        'external-reputation.errors.fetchFailed',
                         'No se pudo actualizar la reputación. Intentá de nuevo más tarde.'
                     )
                 );
@@ -289,7 +289,7 @@ export function ExternalReputationSection({
         } catch {
             setRefreshError(
                 t(
-                    'externalReputation.errors.fetchFailed',
+                    'external-reputation.errors.fetchFailed',
                     'No se pudo actualizar la reputación. Intentá de nuevo más tarde.'
                 )
             );
@@ -304,7 +304,10 @@ export function ExternalReputationSection({
 
     const platformLabel = useCallback(
         (platform: ExternalPlatform) =>
-            t(`externalReputation.platform.${platform.toLowerCase()}`, PLATFORM_FALLBACK[platform]),
+            t(
+                `external-reputation.platform.${platform.toLowerCase()}`,
+                PLATFORM_FALLBACK[platform]
+            ),
         [t]
     );
 
@@ -315,13 +318,13 @@ export function ExternalReputationSection({
     return (
         <fieldset className={styles.section}>
             <legend className={styles.sectionTitle}>
-                {t('externalReputation.ownerConfig.title', 'Configuración de reputación externa')}
+                {t('external-reputation.ownerConfig.title', 'Configuración de reputación externa')}
             </legend>
 
             {/* Always-visible Google-only explainer */}
             <p className={styles.explainer}>
                 {t(
-                    'externalReputation.ownerConfig.googleOnlyExplainer',
+                    'external-reputation.ownerConfig.googleOnlyExplainer',
                     'El texto de las reseñas solo está disponible para Google. Las demás plataformas muestran el puntaje y un enlace.'
                 )}
             </p>
@@ -333,7 +336,7 @@ export function ExternalReputationSection({
                     className={styles.toggleLabel}
                 >
                     {t(
-                        'externalReputation.ownerConfig.masterToggle',
+                        'external-reputation.ownerConfig.masterToggle',
                         'Mostrar sección de reputación externa'
                     )}
                 </label>
@@ -361,7 +364,7 @@ export function ExternalReputationSection({
             {isLoadingData && !loadError && (
                 <Spinner
                     size="sm"
-                    label={t('externalReputation.ownerConfig.loading', 'Cargando listados…')}
+                    label={t('external-reputation.ownerConfig.loading', 'Cargando listados…')}
                     className={styles.loadingHint}
                 />
             )}
@@ -372,14 +375,14 @@ export function ExternalReputationSection({
                     className={styles.emptyState}
                     data-testid="ext-rep-empty"
                 >
-                    {t('externalReputation.aggregate.noData', 'Sin datos disponibles')}
+                    {t('external-reputation.aggregate.noData', 'Sin datos disponibles')}
                 </p>
             )}
 
             {listings.length > 0 && (
                 <ul
                     className={styles.listingList}
-                    aria-label={t('externalReputation.ownerConfig.title', 'Plataformas')}
+                    aria-label={t('external-reputation.ownerConfig.title', 'Plataformas')}
                 >
                     {listings.map((listing) => (
                         <li
@@ -409,10 +412,13 @@ export function ExternalReputationSection({
                                             listing.showLink
                                         )
                                     }
-                                    aria-label={`${platformLabel(listing.platform)} - ${t('externalReputation.ownerConfig.showLink', 'Mostrar enlace a la plataforma')}`}
+                                    aria-label={`${platformLabel(listing.platform)} - ${t('external-reputation.ownerConfig.showLink', 'Mostrar enlace a la plataforma')}`}
                                 />
                                 <span>
-                                    {t('externalReputation.ownerConfig.showLink', 'Mostrar enlace')}
+                                    {t(
+                                        'external-reputation.ownerConfig.showLink',
+                                        'Mostrar enlace'
+                                    )}
                                 </span>
                             </label>
 
@@ -427,11 +433,11 @@ export function ExternalReputationSection({
                                             listing.showReviews
                                         )
                                     }
-                                    aria-label={`${platformLabel(listing.platform)} - ${t('externalReputation.ownerConfig.showReviews', 'Mostrar reseñas de texto')}`}
+                                    aria-label={`${platformLabel(listing.platform)} - ${t('external-reputation.ownerConfig.showReviews', 'Mostrar reseñas de texto')}`}
                                 />
                                 <span>
                                     {t(
-                                        'externalReputation.ownerConfig.showReviews',
+                                        'external-reputation.ownerConfig.showReviews',
                                         'Mostrar reseñas'
                                     )}
                                 </span>
@@ -453,7 +459,10 @@ export function ExternalReputationSection({
             {/* Add listing form */}
             <div className={styles.addForm}>
                 <p className={styles.addFormTitle}>
-                    {t('externalReputation.ownerConfig.addListing', 'Agregar enlace de plataforma')}
+                    {t(
+                        'external-reputation.ownerConfig.addListing',
+                        'Agregar enlace de plataforma'
+                    )}
                 </p>
 
                 <div className={styles.addFormRow}>
@@ -506,7 +515,7 @@ export function ExternalReputationSection({
                         />
                         <span>
                             {t(
-                                'externalReputation.ownerConfig.showLink',
+                                'external-reputation.ownerConfig.showLink',
                                 'Mostrar enlace a la plataforma'
                             )}
                         </span>
@@ -520,7 +529,7 @@ export function ExternalReputationSection({
                         />
                         <span>
                             {t(
-                                'externalReputation.ownerConfig.showReviews',
+                                'external-reputation.ownerConfig.showReviews',
                                 'Mostrar reseñas de texto'
                             )}
                         </span>
@@ -543,8 +552,8 @@ export function ExternalReputationSection({
                     disabled={isAdding || !addUrl.trim()}
                 >
                     {isAdding
-                        ? t('externalReputation.ownerConfig.addListing', 'Agregando...')
-                        : t('externalReputation.ownerConfig.addListing', 'Agregar')}
+                        ? t('external-reputation.ownerConfig.addListing', 'Agregando...')
+                        : t('external-reputation.ownerConfig.addListing', 'Agregar')}
                 </button>
             </div>
 
@@ -556,13 +565,13 @@ export function ExternalReputationSection({
                     onClick={() => void handleRefresh()}
                     disabled={isRefreshing}
                 >
-                    {t('externalReputation.ownerConfig.refresh', 'Actualizar reseñas')}
+                    {t('external-reputation.ownerConfig.refresh', 'Actualizar reseñas')}
                 </button>
 
                 {aggregateFetchedAt && !rateLimitMinutes && (
                     <span className={styles.lastUpdated}>
                         {t(
-                            'externalReputation.ownerConfig.lastUpdated',
+                            'external-reputation.ownerConfig.lastUpdated',
                             'Última actualización: {{date}}'
                         ).replace('{{date}}', new Date(aggregateFetchedAt).toLocaleString(locale))}
                     </span>
@@ -575,7 +584,7 @@ export function ExternalReputationSection({
                         data-testid="rate-limit-msg"
                     >
                         {t(
-                            'externalReputation.ownerConfig.rateLimitHit',
+                            'external-reputation.ownerConfig.rateLimitHit',
                             'Podés actualizar nuevamente en {{minutes}} minutos'
                         ).replace('{{minutes}}', String(rateLimitMinutes))}
                     </span>
