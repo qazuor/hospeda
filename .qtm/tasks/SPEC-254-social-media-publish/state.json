@@ -1,0 +1,1283 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-254",
+    "title": "Social Automation Backend",
+    "created": "2026-06-20T00:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Create 10 social TS enums in packages/schemas/src/enums/",
+            "description": "Create one file per enum, following the pattern of existing enum files (e.g., `billing-interval.enum.ts`):\n- `social-platform.enum.ts` → `SocialPlatform { INSTAGRAM, FACEBOOK, X }`\n- `social-publish-format.enum.ts` → `SocialPublishFormat { FEED_POST, PHOTO_POST, TEXT_POST, IMAGE_POST, VIDEO_POST, REEL, STORY, CAROUSEL }`\n- `social-media-type.enum.ts` → `SocialMediaType { IMAGE, VIDEO, NONE }`\n- `social-post-status.enum.ts` → `SocialPostStatus { DRAFT, NEEDS_REVIEW, APPROVED, SCHEDULED, READY_TO_PUBLISH, PUBLISHING, PUBLISHED, FAILED, PAUSED, ARCHIVED }`\n- `social-approval-status.enum.ts` → `SocialApprovalStatus { PENDING, APPROVED, REJECTED, CHANGES_REQUESTED }`\n- `social-source.enum.ts` → `SocialSource { CHATGPT, ADMIN, IMPORT, SYSTEM }`\n- `social-asset-source.enum.ts` → `SocialAssetSource { CHATGPT_FILE, CLOUDINARY, MANUAL_UPLOAD, EXTERNAL_URL }`\n- `social-publish-result-status.enum.ts` → `SocialPublishResultStatus { SUCCESS, FAILED, SKIPPED, RETRYING }`\n- `social-recurrence-type.enum.ts` → `SocialRecurrenceType { ONCE, WEEKLY, BIWEEKLY, MONTHLY }`\n- `social-ai-request-status.enum.ts` → `SocialAiRequestStatus { PENDING, PROCESSED, FAILED }` (for social_ai_requests.status)\nEach file exports the enum and a matching `z.nativeEnum()` schema in a co-located `social-<name>.schema.ts`. Use `as const` + JSDoc. All named exports.\n\nTest requirements:\n- Unit test file: `packages/schemas/src/enums/__tests__/social-enums.test.ts`\n- Assert each enum has the expected members (Object.keys check)\n- Assert each nativeEnum schema validates valid values and rejects invalid ones",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-003"],
+            "subtasks": [
+                { "title": "Create 10 enum files", "completed": false },
+                { "title": "Create 10 matching .schema.ts files", "completed": false },
+                { "title": "Write unit tests", "completed": false }
+            ],
+            "tags": ["schemas", "enums"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Export social enums from packages/schemas/src/enums/index.ts",
+            "description": "Add barrel exports for all 10 new enum files and their schema files to `packages/schemas/src/enums/index.ts`. Follow the alphabetical ordering used for existing entries. Verify that importing `{ SocialPlatform, SocialPostStatus }` from `@repo/schemas` resolves correctly via `pnpm typecheck`.\n\nTest requirements:\n- No dedicated test file needed; covered by T-001 unit tests\n- Verify with `pnpm typecheck` in `packages/schemas`",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-004", "T-005"],
+            "subtasks": [
+                { "title": "Add 20 barrel export lines to enums/index.ts", "completed": false }
+            ],
+            "tags": ["schemas", "enums"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Add 25 PermissionEnum + 9 PermissionCategoryEnum values for social domain",
+            "description": "Edit `packages/schemas/src/enums/permission.enum.ts` to append:\n- 9 new `PermissionCategoryEnum` values: `SOCIAL_POST`, `SOCIAL_HASHTAG`, `SOCIAL_CAMPAIGN`, `SOCIAL_BATCH`, `SOCIAL_AUDIENCE`, `SOCIAL_PLATFORM`, `SOCIAL_FOOTER`, `SOCIAL_SETTINGS`, `SOCIAL_AUDIT`\n- 25 new `PermissionEnum` values following the exact SCREAMING_SNAKE key + camelCase dot-value pattern, from `SOCIAL_POST_VIEW = 'socialPost.view'` through `SOCIAL_DISPATCH_MANAGE = 'socialDispatch.manage'` as listed in the spec. Add JSDoc comment per permission per the spec's risk mitigation note.\n\nTest requirements:\n- Unit test: `packages/schemas/src/enums/__tests__/permission.test.ts` (existing or new)\n- Assert new enum keys exist and their string values match expected dot-notation\n- Verify `pnpm typecheck` still passes (the enum is referenced in many places)",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-012", "T-016", "T-030", "T-039"],
+            "subtasks": [
+                { "title": "Add 9 PermissionCategoryEnum entries", "completed": false },
+                { "title": "Add 25 PermissionEnum entries with JSDoc", "completed": false },
+                { "title": "Verify no existing tests break", "completed": false }
+            ],
+            "tags": ["schemas", "permissions"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Register 10 social pgEnums in packages/db/src/schemas/enums.dbschema.ts",
+            "description": "For each of the 10 social TS enums, register a corresponding Drizzle pgEnum using `enumToTuple()` in `packages/db/src/schemas/enums.dbschema.ts`. Follow the pattern of existing pgEnums (e.g., `billingIntervalPgEnum`). Naming convention: `socialPlatformPgEnum`, `socialPublishFormatPgEnum`, etc. Export each from the same file. This file is referenced by DB table schema files.\n\nTest requirements:\n- No dedicated test; verified by `pnpm typecheck` in `packages/db`\n- The generated migration (T-008) will confirm pgEnums are valid",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-005"],
+            "subtasks": [
+                { "title": "Add 10 pgEnum registrations", "completed": false },
+                { "title": "Export each pgEnum", "completed": false }
+            ],
+            "tags": ["database", "enums"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Create DB table schemas for simple catalog tables (campaigns, batches, audiences, platforms, hashtag-sets, footers, assets)",
+            "description": "Create the following files in `packages/db/src/schemas/social/` (one file per table, each with a `relations()` block):\n- `social-campaigns.dbschema.ts` — name, slug UNIQUE, description, active, starts_at, ends_at, plus standard audit columns\n- `social-content-batches.dbschema.ts` — name, slug UNIQUE, description, active, starts_at, ends_at\n- `social-audiences.dbschema.ts` — name, slug UNIQUE, description, active\n- `social-platforms.dbschema.ts` — id UUID PK, platform socialPlatformPgEnum UNIQUE NOT NULL, label, enabled, notes (no plain enum PK per resolved decision #8 in spec)\n- `social-hashtag-sets.dbschema.ts` — name, slug, platform nullable, hashtags_text, priority, active, notes\n- `social-post-footers.dbschema.ts` — name, slug, content, platform nullable, active, is_default, priority, notes\n- `social-assets.dbschema.ts` — source socialAssetSourcePgEnum, cloudinary_url, cloudinary_public_id, original_url nullable, openai_file_ref nullable, mime_type nullable, media_type socialMediaTypePgEnum, width, height, duration_seconds nullable, alt_text, caption, metadata_json (append-only, NO soft-delete columns)\nAll files: id UUID PK defaultRandom(), created_at, updated_at, plus audit FK columns (created_by_id, updated_by_id, deleted_at, deleted_by_id) except social_assets (append-only).\n\nTest requirements:\n- No dedicated unit test; schema correctness verified by migration generation in T-008\n- `pnpm typecheck` in `packages/db`",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-006", "T-007", "T-008"],
+            "subtasks": [
+                { "title": "social-campaigns.dbschema.ts", "completed": false },
+                { "title": "social-content-batches.dbschema.ts", "completed": false },
+                { "title": "social-audiences.dbschema.ts", "completed": false },
+                { "title": "social-platforms.dbschema.ts", "completed": false },
+                { "title": "social-hashtag-sets.dbschema.ts", "completed": false },
+                { "title": "social-post-footers.dbschema.ts", "completed": false },
+                { "title": "social-assets.dbschema.ts", "completed": false }
+            ],
+            "tags": ["database", "schema"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Create DB table schemas for hashtags, platform-formats, and settings tables",
+            "description": "Create in `packages/db/src/schemas/social/`:\n- `social-hashtags.dbschema.ts` — hashtag, normalized_hashtag UNIQUE, category, platform nullable (socialPlatformPgEnum), audience_id FK→social_audiences nullable, priority, active, notes; plus standard audit columns\n- `social-platform-formats.dbschema.ts` — platform socialPlatformPgEnum, publish_format socialPublishFormatPgEnum, media_type socialMediaTypePgEnum, enabled, mvp_enabled, recommended_ratio nullable, recommended_size nullable, max_caption_length, requires_public_url bool, requires_media bool, make_channel_key nullable, notes; UNIQUE(platform, publish_format); plus standard audit columns\n- `social-settings.dbschema.ts` — key UNIQUE, value text, type text, active bool, description; plus standard audit columns\n\nTest requirements:\n- No dedicated unit test; schema correctness verified by migration generation in T-008\n- `pnpm typecheck` in `packages/db`",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-007", "T-008"],
+            "subtasks": [
+                { "title": "social-hashtags.dbschema.ts", "completed": false },
+                { "title": "social-platform-formats.dbschema.ts", "completed": false },
+                { "title": "social-settings.dbschema.ts", "completed": false }
+            ],
+            "tags": ["database", "schema"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Create DB table schemas for social_posts, social_post_targets, social_post_media, social_post_hashtags",
+            "description": "Create in `packages/db/src/schemas/social/`:\n- `social-posts.dbschema.ts` — all columns per spec data model: draft_id UNIQUE, title, slug, source, pillar, campaign_id FK, batch_id FK, batch_position nullable, audience_id FK, footer_id FK, base_hashtag_set_id FK, caption_base, final_caption, final_hashtags_text, status socialPostStatusPgEnum, approval_status socialApprovalStatusPgEnum, paused bool default false, retry_count int default 0, scheduled_at nullable, timezone, recurrence_type socialRecurrenceTypePgEnum default ONCE, recurrence_params_json nullable, next_run_at nullable, notes, internal_notes, gpt_hashtag_payload_json, metadata_json, approved_by_id FK nullable, approved_at nullable; plus standard audit columns\n- `social-post-targets.dbschema.ts` — social_post_id FK, platform, publish_format, media_type, platform_format_id FK, caption_override nullable, hashtags_override_text nullable, footer_override nullable, status socialPostStatusPgEnum (target-level), scheduled_at nullable, published_at nullable, external_post_id nullable, external_post_url nullable, make_scenario_key nullable, make_last_run_id nullable, make_payload_json nullable, last_error_message nullable, retry_count int default 0; plus standard audit columns\n- `social-post-media.dbschema.ts` — social_post_id FK, asset_id FK→social_assets, position int; UNIQUE(social_post_id, position)\n- `social-post-hashtags.dbschema.ts` — social_post_id FK, hashtag_id FK→social_hashtags, position int; UNIQUE(social_post_id, hashtag_id)\nAll include `relations()` block.\n\nTest requirements:\n- Schema correctness verified by T-008 migration generation\n- `pnpm typecheck`",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-005", "T-006"],
+            "blocks": ["T-008"],
+            "subtasks": [
+                { "title": "social-posts.dbschema.ts", "completed": false },
+                { "title": "social-post-targets.dbschema.ts", "completed": false },
+                { "title": "social-post-media.dbschema.ts", "completed": false },
+                { "title": "social-post-hashtags.dbschema.ts", "completed": false }
+            ],
+            "tags": ["database", "schema"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Create DB table schemas for append-only tables (social_ai_requests, social_publish_logs, social_audit_log)",
+            "description": "Create in `packages/db/src/schemas/social/`:\n- `social-ai-requests.dbschema.ts` — request_id UNIQUE, source socialSourcePgEnum, topic, user_idea, pillar, audience_id FK nullable→social_audiences, suggested_platforms_json, suggested_format, generated_caption_base, raw_request_json, raw_response_json, status socialAiRequestStatusPgEnum, error_message; created_at, updated_at only (NO soft-delete, NO updated_by/deleted_by per append-only spec)\n- `social-publish-logs.dbschema.ts` — social_post_id FK, social_post_target_id FK nullable, platform nullable, publish_format nullable, status socialPublishResultStatusPgEnum, message, request_payload_json, response_payload_json, external_post_id nullable, external_post_url nullable, make_run_id nullable; created_at only (append-only)\n- `social-audit-log.dbschema.ts` — actor_id UUID nullable, event_type text, entity_type text, entity_id text, old_value_json jsonb nullable, new_value_json jsonb nullable, metadata_json jsonb nullable; created_at only (append-only)\n\nTest requirements:\n- Schema correctness verified by migration generation\n- `pnpm typecheck`",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-009"],
+            "subtasks": [
+                { "title": "social-ai-requests.dbschema.ts", "completed": false },
+                { "title": "social-publish-logs.dbschema.ts", "completed": false },
+                { "title": "social-audit-log.dbschema.ts", "completed": false }
+            ],
+            "tags": ["database", "schema"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Export all 17 social table schemas from packages/db/src/schemas/index.ts",
+            "description": "Add barrel exports for all 17 new social table schema files to `packages/db/src/schemas/index.ts`. Also ensure the social domain directory has its own `index.ts` that re-exports all 17 files, and that file is imported from the root schema index. Follow the pattern of existing domains (e.g., `accommodation/`).\n\nTest requirements:\n- No dedicated test; verified by `pnpm typecheck` in `packages/db`",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-008"],
+            "blocks": ["T-010"],
+            "subtasks": [
+                {
+                    "title": "Create packages/db/src/schemas/social/index.ts with 17 exports",
+                    "completed": false
+                },
+                {
+                    "title": "Import social/index.ts in packages/db/src/schemas/index.ts",
+                    "completed": false
+                }
+            ],
+            "tags": ["database", "schema"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Generate migration file 0022_social_automation.sql via pnpm db:generate",
+            "description": "Run `pnpm db:generate` from the worktree root to produce `packages/db/src/migrations/0022_social_automation.sql`. Verify the output contains:\n- All 10 new pgEnum CREATE TYPE statements\n- All 17 CREATE TABLE statements\n- The correct FK references between tables\n- No unexpected drops or alterations to existing tables\n\nIf the generator creates an unexpected file number (e.g., `0023_...`), check that the previous migration was committed. Commit the generated SQL file as part of the PR.\n\nTest requirements:\n- Run `pnpm db:migrate` against a test/dev database; confirm 0 errors\n- Run `pnpm typecheck` in `packages/db` after migration",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-009"],
+            "blocks": ["T-011"],
+            "subtasks": [
+                { "title": "Run pnpm db:generate", "completed": false },
+                { "title": "Review generated SQL for correctness", "completed": false },
+                { "title": "Run pnpm db:migrate against dev DB to verify", "completed": false }
+            ],
+            "tags": ["database", "migration"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Write extras migrations 018-social-indexes and 019-social-set-updated-at-triggers",
+            "description": "Create two hand-written idempotent SQL files in `packages/db/src/migrations/extras/`:\n\n`018-social-indexes.kind.sql`:\n```sql\nCREATE INDEX CONCURRENTLY IF NOT EXISTS idx_social_posts_status ON social_posts(status);\nCREATE INDEX CONCURRENTLY IF NOT EXISTS idx_social_posts_next_run_at ON social_posts(next_run_at) WHERE next_run_at IS NOT NULL;\nCREATE INDEX CONCURRENTLY IF NOT EXISTS idx_social_post_targets_status ON social_post_targets(status);\nCREATE INDEX CONCURRENTLY IF NOT EXISTS idx_social_audit_log_entity ON social_audit_log(entity_type, entity_id);\nCREATE INDEX CONCURRENTLY IF NOT EXISTS idx_social_publish_logs_post ON social_publish_logs(social_post_id, created_at DESC);\n```\n\n`019-social-set-updated-at.trigger.sql`:\nFor each of the 14 tables with `updated_at` (all except the append-only trio: social_ai_requests, social_publish_logs, social_audit_log), register the `set_updated_at` trigger using `CREATE TRIGGER IF NOT EXISTS` following the pattern of existing extras files.\n\nRun `pnpm db:apply-extras` to verify both files are idempotent (can run twice without error).\n\nTest requirements:\n- Run `pnpm db:apply-extras` twice; no errors on second run\n- Verify indexes appear in `\\di+ social_*` in psql",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                { "title": "Write 018-social-indexes.kind.sql", "completed": false },
+                { "title": "Write 019-social-set-updated-at.trigger.sql", "completed": false },
+                { "title": "Run pnpm db:apply-extras and verify idempotency", "completed": false }
+            ],
+            "tags": ["database", "migration", "extras"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Register 25 social permissions in rolePermissions seed for ADMIN and SUPER_ADMIN",
+            "description": "Edit `packages/seed/src/required/rolePermissions.seed.ts` to add all 25 new `PermissionEnum` values from T-003 to both `ADMIN` and `SUPER_ADMIN` role permission lists. Follow the existing pattern: find the ADMIN block and SUPER_ADMIN block and append the new permissions.\n\nTest requirements:\n- Unit test (or extend existing): after seeding, query `role_permissions` table for ADMIN role and assert all 25 new permissions are present\n- File: `packages/seed/src/__tests__/role-permissions.test.ts` (create or extend)\n- Also verify no duplicate entries (unique constraint on role+permission)",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-015"],
+            "subtasks": [
+                { "title": "Add 25 permissions to ADMIN block", "completed": false },
+                { "title": "Add 25 permissions to SUPER_ADMIN block", "completed": false },
+                { "title": "Write/extend unit test for new permissions", "completed": false }
+            ],
+            "tags": ["seed", "permissions"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Create DB model files for all 17 social tables in packages/db/src/models/social/",
+            "description": "Create one BaseModelImpl-extending model file per table in `packages/db/src/models/social/`. Each model provides typed query methods (findById, findMany, create, update, softDelete) following the pattern of existing models (e.g., `packages/db/src/models/accommodation/`). The append-only tables (social_ai_requests, social_publish_logs, social_audit_log) only expose `create` and `findMany` — no update/softDelete.\n\nSplit into 3 atomic batches:\n- Batch A: simple catalog models (campaigns, batches, audiences, platforms, hashtag-sets, footers, hashtags, platform-formats, settings)\n- Batch B: social_posts + social_post_targets models\n- Batch C: join-table models (social_post_media, social_post_hashtags, social_assets) + append-only models (social_ai_requests, social_publish_logs, social_audit_log)\n\nAlso create `packages/db/src/models/social/index.ts` and export from `packages/db/src/models/index.ts`.\n\nTest requirements:\n- Unit tests for non-trivial query methods (soft delete excludes deleted_at records, findMany with filters)\n- File: `packages/db/src/models/social/__tests__/social-models.test.ts`",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-011"],
+            "blocks": ["T-014", "T-020"],
+            "subtasks": [
+                { "title": "Batch A: 9 simple catalog models", "completed": false },
+                {
+                    "title": "Batch B: social_posts + social_post_targets models",
+                    "completed": false
+                },
+                { "title": "Batch C: join-table + append-only models", "completed": false },
+                {
+                    "title": "Create model index and register in packages/db/src/models/index.ts",
+                    "completed": false
+                }
+            ],
+            "tags": ["database", "models"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Create Zod entity schema directories for all 17 social entities in packages/schemas/src/entities/social/",
+            "description": "For each of the 17 social tables, create a directory under `packages/schemas/src/entities/social/<entity>/` containing these files (following the existing entity schema pattern, e.g., `packages/schemas/src/entities/accommodation/`):\n- `<entity>.schema.ts` — base Zod shape mirroring the DB row\n- `<entity>.crud.schema.ts` — CreateSchema + UpdateSchema (partial)\n- `<entity>.query.schema.ts` — ListQuerySchema (page, pageSize, search, filters)\n- `<entity>.http.schema.ts` — HTTP request/response wrappers\n- `<entity>.access.schema.ts` — access-control shape\n- `index.ts` — re-exports all schemas\n\nKey schemas requiring extra fields:\n- `social-post.crud.schema.ts`: `CreateSocialDraftSchema` (the full GPT payload per the spec's API Design section), `UpdateSocialPostSchema` (partial, excludes state fields)\n- `social-post.http.schema.ts`: response envelope matching `GET /admin/social/posts/:id` nested structure\n\nAlso create `packages/schemas/src/entities/social/index.ts` and add it to the root `packages/schemas/src/entities/index.ts`.\n\nTest requirements:\n- Unit tests for complex schemas: `CreateSocialDraftSchema` (required fields, optional fields, nested targets array min 1)\n- File: `packages/schemas/src/entities/social/__tests__/social-schemas.test.ts`",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-002", "T-013"],
+            "blocks": ["T-015", "T-016", "T-028"],
+            "subtasks": [
+                { "title": "Create entity schema dirs for 9 catalog entities", "completed": false },
+                {
+                    "title": "Create entity schema dirs for social_posts + social_post_targets",
+                    "completed": false
+                },
+                {
+                    "title": "Create entity schema dirs for join-table + append-only entities",
+                    "completed": false
+                },
+                { "title": "Write unit tests for CreateSocialDraftSchema", "completed": false }
+            ],
+            "tags": ["schemas", "zod"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Create seed data files for all catalog entities (platforms, platform-formats, campaigns, batches, audiences, hashtag-sets, hashtags, footers, settings)",
+            "description": "Create seed files in `packages/seed/src/required/` using `createSeedFactory` + JSON fixture files in `packages/seed/src/data/social/`:\n- `social-platforms.seed.ts` + `social-platforms.data.json` (3 rows: INSTAGRAM, FACEBOOK, X)\n- `social-platform-formats.seed.ts` + `social-platform-formats.data.json` (13 rows per spec: INSTAGRAM×FEED_POST, INSTAGRAM×REEL, INSTAGRAM×STORY, INSTAGRAM×CAROUSEL, FACEBOOK×PHOTO_POST, FACEBOOK×VIDEO_POST, FACEBOOK×STORY, X×TEXT_POST, X×IMAGE_POST, X×VIDEO_POST, plus enabled/makeChannelKey/requiresMedia per each)\n- `social-campaigns.seed.ts` (at least 1 default row: `institucional-hospeda`)\n- `social-content-batches.seed.ts` (at least 1 default row: `hospeda-launch-2026-06`)\n- `social-audiences.seed.ts` (at least 1 row: `turistas`)\n- `social-hashtag-sets.seed.ts` (at least 1 row: `verano`)\n- `social-hashtags.seed.ts` (at least 2 sample hashtags)\n- `social-post-footers.seed.ts` (1 default row: `hospeda-default` with `is_default=true`)\n- `social-settings.seed.ts` (keys: `make_webhook_url`, `default_timezone`, `max_hashtags_per_platform_json`, `dispatch_cron_interval_minutes`)\n\nAll seed files must be idempotent (upsert by unique key). `social_platforms` is seed-only — no create endpoint per resolved decision #4.\n\nTest requirements:\n- Integration test: run all seeds against a test DB and assert expected row counts\n- File: `packages/seed/src/__tests__/social-seeds.test.ts`",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-012", "T-014"],
+            "blocks": ["T-016"],
+            "subtasks": [
+                { "title": "Create 9 seed files with JSON fixtures", "completed": false },
+                { "title": "Register all 9 seed files in runRequiredSeeds", "completed": false },
+                { "title": "Write seed integration tests", "completed": false }
+            ],
+            "tags": ["seed", "database"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Create catalog CRUD services for hashtag, hashtag-set, footer, campaign, batch, audience",
+            "description": "Create 6 service modules in `packages/service-core/src/services/social/`, each with:\n- `<entity>.service.ts` — extends BaseCrudService; implements list, getById, create, update, softDelete. Uses Result<T> return type.\n- `<entity>.permissions.ts` — maps CRUD operations to the relevant PermissionEnum values (from T-003)\n- `<entity>.normalizers.ts` — e.g., hashtag normalization: toLowerCase + ensure `#` prefix for `normalized_hashtag`\n\nSpecial behavior per entity:\n- HashtagService: normalize to lowercase + `#` prefix, check uniqueness of `normalized_hashtag`, return CONFLICT if duplicate\n- HashtagSetService: standard CRUD\n- FooterService: standard CRUD\n- CampaignService: standard CRUD\n- BatchService: standard CRUD\n- AudienceService: standard CRUD\n\nAll list methods use `safeIlike()` for search (never raw `ilike()`). All support `page`+`pageSize` pagination.\n\nTest requirements:\n- Unit tests for HashtagService: normalization (`#playa` → `#playa`, `playa` → `#playa`), uniqueness conflict, softDelete, list with search\n- Unit tests for other services: create, update, softDelete, list pagination\n- File: `packages/service-core/src/services/social/__tests__/catalog-services.test.ts`",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-014", "T-015"],
+            "blocks": ["T-017", "T-018", "T-030"],
+            "subtasks": [
+                { "title": "HashtagService + normalizer + permissions", "completed": false },
+                { "title": "HashtagSetService", "completed": false },
+                { "title": "FooterService + CampaignService + BatchService", "completed": false },
+                { "title": "AudienceService", "completed": false },
+                { "title": "Write unit tests", "completed": false }
+            ],
+            "tags": ["service-core", "catalog"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Create PlatformFormatService and SettingsService",
+            "description": "Create 2 service modules in `packages/service-core/src/services/social/`:\n\n`platform-format.service.ts`:\n- `list()` — returns all rows (active + inactive) ordered by platform ASC, publish_format ASC\n- `update(id, data)` — updates enabled, mvpEnabled, maxCaptionLength, makeChannelKey, notes, recommendedRatio, recommendedSize; checks how many active social_post_targets reference this format and returns warning count in the result if enabled is being set to false\n- Permissions: `SOCIAL_PLATFORM_FORMAT_VIEW` (list), `SOCIAL_PLATFORM_MANAGE` (update)\n\n`settings.service.ts`:\n- `listAll()` — returns all settings rows; masks `type = 'secret'` values as `'***'`\n- `getByKey(key)` — 404 if key not found\n- `update(key, value)` — 404 if key not found; logs audit event SETTING_UPDATED with old/new values (secrets redacted in log)\n- Permissions: `SOCIAL_SETTINGS_MANAGE`\n\nTest requirements:\n- Unit tests for SettingsService: secret masking on listAll, audit log call on update, 404 on unknown key\n- Unit tests for PlatformFormatService: update returns warning count when disabling a format with active targets\n- File: `packages/service-core/src/services/social/__tests__/platform-format-settings.test.ts`",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-016"],
+            "blocks": ["T-018", "T-030"],
+            "subtasks": [
+                { "title": "platform-format.service.ts", "completed": false },
+                { "title": "settings.service.ts with secret masking", "completed": false },
+                { "title": "Write unit tests", "completed": false }
+            ],
+            "tags": ["service-core", "catalog"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Wire catalog admin API routes for hashtags, hashtag-sets, footers, campaigns, batches, audiences",
+            "description": "Create route files in `apps/api/src/routes/admin/social/` for each of the 6 catalog entities:\n- `hashtags.route.ts`: GET /list, POST /create, GET /:id, PATCH /:id, DELETE /:id\n- `hashtag-sets.route.ts`: same 5 endpoints\n- `footers.route.ts`: same 5 endpoints\n- `campaigns.route.ts`: same 5 endpoints\n- `batches.route.ts`: same 5 endpoints\n- `audiences.route.ts`: same 5 endpoints\n\nEach route:\n- Uses `createAdminRoute` (or equivalent admin route factory)\n- Imports `requiredPermissions` from the service's `.permissions.ts`\n- Calls the corresponding service method\n- Returns `ResponseFactory` envelope\n- List endpoints: validate query params with Zod (page, pageSize, search)\n- POST: returns HTTP 201; PATCH/DELETE: HTTP 200\n\nRegister all 6 route files under the `/api/v1/admin/social` prefix in the API router.\n\nTest requirements:\n- Integration tests for each route file: 403 on missing permission, 201 on create, 409 on duplicate hashtag, 200 on list with search filter\n- Files: `apps/api/src/__tests__/routes/admin/social/catalog-routes.test.ts`",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-016", "T-017"],
+            "blocks": ["T-019", "T-030"],
+            "subtasks": [
+                { "title": "hashtags.route.ts + register", "completed": false },
+                { "title": "hashtag-sets.route.ts + footers.route.ts", "completed": false },
+                {
+                    "title": "campaigns.route.ts + batches.route.ts + audiences.route.ts",
+                    "completed": false
+                },
+                { "title": "Write integration tests", "completed": false }
+            ],
+            "tags": ["api", "routes", "catalog"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Wire platform-formats and settings admin API routes",
+            "description": "Create route files in `apps/api/src/routes/admin/social/`:\n\n`platform-formats.route.ts`:\n- `GET /` — permission `SOCIAL_PLATFORM_FORMAT_VIEW`, calls `PlatformFormatService.list()`\n- `PATCH /:id` — permission `SOCIAL_PLATFORM_MANAGE`, calls `PlatformFormatService.update()`, includes warnings in response if active targets reference the format\n\n`settings.route.ts`:\n- `GET /` — permission `SOCIAL_SETTINGS_MANAGE`, calls `SettingsService.listAll()` (secrets masked)\n- `PATCH /:key` — permission `SOCIAL_SETTINGS_MANAGE`, calls `SettingsService.update()`, 404 on unknown key\n\nRegister both under `/api/v1/admin/social`.\n\nTest requirements:\n- Integration tests: GET settings returns masked secrets, PATCH settings 404 on unknown key, PATCH platform-format warns on active targets\n- File: `apps/api/src/__tests__/routes/admin/social/platform-settings-routes.test.ts`",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-018"],
+            "blocks": ["T-020"],
+            "subtasks": [
+                { "title": "platform-formats.route.ts", "completed": false },
+                { "title": "settings.route.ts", "completed": false },
+                { "title": "Register routes and write integration tests", "completed": false }
+            ],
+            "tags": ["api", "routes", "catalog"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Build admin UI catalog pages: hashtags, footers, campaigns, batches, audiences",
+            "description": "Create TanStack Start route files in `apps/admin/src/routes/_authed/social/`:\n- `hashtags/index.tsx` — DataTable with columns: hashtag, category, platform, priority, active; filter bar (search, platform, active toggle); Create/Edit/Delete actions via modals; TanStack Query for data fetching; Shadcn DataTable component\n- `footers/index.tsx` — DataTable for footers\n- `campaigns/index.tsx` — DataTable for campaigns\n- `batches/index.tsx` — DataTable for batches\n- `audiences/index.tsx` — DataTable for audiences\n\nEach page:\n- Fetches data with TanStack Query (`useQuery`)\n- Create/Edit via modal with TanStack Form + Zod validation\n- Delete with confirmation dialog\n- Shows loading skeleton while fetching\n- Shows empty state per spec\n- Permission-gated action buttons (hide if user lacks the manage permission)\n- i18n: all labels via `@repo/i18n`; Spanish translations required\n\nTest requirements:\n- Component smoke tests with testing-library: table renders, empty state shows, permission-gated buttons hidden\n- File: `apps/admin/src/routes/_authed/social/__tests__/catalog-pages.test.tsx`",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-019"],
+            "blocks": ["T-021"],
+            "subtasks": [
+                { "title": "hashtags/index.tsx", "completed": false },
+                { "title": "footers/index.tsx", "completed": false },
+                {
+                    "title": "campaigns/index.tsx + batches/index.tsx + audiences/index.tsx",
+                    "completed": false
+                },
+                { "title": "Write component tests", "completed": false }
+            ],
+            "tags": ["admin-ui", "catalog"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Build admin UI pages for platform-formats and settings",
+            "description": "Create TanStack Start route files in `apps/admin/src/routes/_authed/social/`:\n- `platform-formats/index.tsx` — DataTable with columns: platform, publishFormat, mediaType, enabled, mvpEnabled, maxCaptionLength, makeChannelKey; Edit action (no delete, no create per resolved decision); shows warning in edit modal if disabling a format with active targets\n- `settings/index.tsx` — Key-value table with columns: key, type (badge), value (masked if secret), description; Edit action opens inline edit for value field only; no create/delete (all settings are seeded)\n\nBoth pages: TanStack Query, Shadcn DataTable, permission-gated, i18n labels, loading skeleton, error states.\n\nTest requirements:\n- Component test: settings page masks secret values in table display, platform-formats shows warning badge when edit would disable active-targets format\n- File: `apps/admin/src/routes/_authed/social/__tests__/platform-settings-pages.test.tsx`",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-020"],
+            "blocks": ["T-022"],
+            "subtasks": [
+                { "title": "platform-formats/index.tsx", "completed": false },
+                { "title": "settings/index.tsx with secret masking display", "completed": false },
+                { "title": "Write component tests", "completed": false }
+            ],
+            "tags": ["admin-ui", "catalog"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Add i18n translation keys for catalog UI (Phase 1)",
+            "description": "Add all i18n string keys needed by the Phase 1 admin UI pages (T-020, T-021) to `packages/i18n/src/locales/es/` (Spanish is required; EN + PT optional for this phase). Keys needed:\n- Section headings: `social.hashtags.title`, `social.footers.title`, etc.\n- Column headers for each DataTable\n- Action labels: `social.common.create`, `social.common.edit`, `social.common.delete`, `social.common.save`, etc.\n- Empty states: `social.hashtags.empty`, etc.\n- Form field labels and validation messages\n- Settings page: `social.settings.secretMasked`\n- Platform format page: `social.platformFormats.disableWarning`\n\nTest requirements:\n- No dedicated test; i18n completeness verified by `pnpm typecheck` (if i18n has TypeScript type checking) and by visual review of UI pages",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-020", "T-021"],
+            "blocks": ["T-040"],
+            "subtasks": [
+                { "title": "Add es locale keys for all Phase 1 pages", "completed": false }
+            ],
+            "tags": ["i18n", "admin-ui"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Add env vars HOSPEDA_AI_SOCIAL_KEY and HOSPEDA_OPERATOR_PIN_HASH",
+            "description": "Following the CLAUDE.md env-var workflow (all 5 steps):\n1. Register both vars in `packages/config/src/env-registry.*.ts` with metadata: type=secret, required=true, apps=['api'], category='social'\n2. Add Zod validation in `apps/api/src/utils/env.ts` (extend ApiEnvBaseSchema)\n3. Update `apps/api/.env.example` with safe placeholder values\n4. Document purpose in the API app's CLAUDE.md or env guide\n5. (Inform user to set in Coolify — do NOT block the task on this)\n\nFor `HOSPEDA_OPERATOR_PIN_HASH`: document that it stores `sha256(pin + secret_salt)` and the salt is `HOSPEDA_AI_SOCIAL_KEY` (or a separate salt var — clarify with owner). The raw PIN is never persisted per resolved decision #1.\n\nTest requirements:\n- Unit test: env schema validation rejects startup when `HOSPEDA_AI_SOCIAL_KEY` is missing\n- File: `apps/api/src/__tests__/env.test.ts` (extend existing)",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-024"],
+            "subtasks": [
+                { "title": "Register in config registry", "completed": false },
+                { "title": "Add to api/src/utils/env.ts", "completed": false },
+                { "title": "Update .env.example", "completed": false }
+            ],
+            "tags": ["config", "env", "security"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Create inbound API-key middleware factory (apps/api/src/middlewares/api-key.ts)",
+            "description": "Create `apps/api/src/middlewares/api-key.ts`. It exports a factory function:\n```ts\ncreateApiKeyMiddleware(config: { headerName: string; envVarKey: string; errorCode: string }): MiddlewareHandler\n```\nThe returned middleware:\n1. Reads `config.headerName` from the incoming request headers\n2. Reads `process.env[config.envVarKey]` for the expected value\n3. Compares using `crypto.timingSafeEqual(Buffer.from(incoming), Buffer.from(expected))`\n4. On mismatch: logs WARN with `{ event: 'api_key_mismatch', header: config.headerName }` (no key value in log), returns HTTP 401 `{ success: false, error: { code: config.errorCode, message: '...' } }`\n5. On match: injects synthetic actor `{ id: 'api-key', role: 'SYSTEM' }` into `c.set('actor', ...)` so downstream logging hooks work without crashing\n\nTest requirements:\n- Unit tests: valid key → passes through, invalid key → 401, missing header → 401, timingSafeEqual prevents timing attack (use fixed-time mock)\n- File: `apps/api/src/__tests__/middlewares/api-key.test.ts`",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-023"],
+            "blocks": ["T-025", "T-048"],
+            "subtasks": [
+                { "title": "Create api-key.ts middleware factory", "completed": false },
+                {
+                    "title": "Handle length-mismatch edge case (timingSafeEqual requires equal buffer length)",
+                    "completed": false
+                },
+                { "title": "Write unit tests", "completed": false }
+            ],
+            "tags": ["api", "middleware", "security"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Add createApiKeyRoute factory to route-factory-tiered.ts",
+            "description": "Add `createApiKeyRoute` to `apps/api/src/utils/route-factory-tiered.ts`. It mirrors `createAdminRoute` but:\n- Swaps `adminAuthMiddleware` for the `createApiKeyMiddleware` instance\n- Accepts `apiKeyConfig: { headerName: string; envVarKey: string; errorCode: string }` as a required option\n- Applies rate limiting appropriate for AI/external inbound routes\n\nExport the new factory alongside the existing ones. Existing factories must not be modified.\n\nTest requirements:\n- Unit test: route created with `createApiKeyRoute` rejects requests without the configured header\n- File: `apps/api/src/__tests__/utils/route-factory-tiered.test.ts` (extend)",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-024"],
+            "blocks": ["T-026", "T-027", "T-048", "T-049"],
+            "subtasks": [
+                { "title": "Add createApiKeyRoute factory function", "completed": false },
+                { "title": "Write unit tests", "completed": false }
+            ],
+            "tags": ["api", "route-factory"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Implement GET /api/v1/ai/social/catalog route and handler",
+            "description": "Create `apps/api/src/routes/ai/social/catalog.route.ts` using `createApiKeyRoute` with `{ headerName: 'x-hospeda-ai-key', envVarKey: 'HOSPEDA_AI_SOCIAL_KEY', errorCode: 'UNAUTHORIZED' }`.\n\nHandler logic:\n- Query all active catalog entities (hashtags, hashtagSets, footers, platformFormats, campaigns, batches, audiences) from the DB models\n- Fetch `social_settings` for defaults (timezone, campaignSlug, batchSlug, maxHashtagsPerPlatform)\n- Assemble response per the catalog response shape in the spec\n- Apply `active = true` filter to every collection (soft-deleted records excluded)\n- Register route under `/api/v1/ai/social/catalog`\n\nTest requirements:\n- Integration tests: valid key → 200 with catalog data, invalid key → 401, all returned records have active=true\n- File: `apps/api/src/__tests__/routes/ai/social/catalog.test.ts`",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-025", "T-013"],
+            "blocks": ["T-027"],
+            "subtasks": [
+                { "title": "Create catalog.route.ts", "completed": false },
+                {
+                    "title": "Implement handler with 8 parallel catalog queries",
+                    "completed": false
+                },
+                { "title": "Register route and write integration tests", "completed": false }
+            ],
+            "tags": ["api", "routes", "ai"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Create SocialImagePipelineService",
+            "description": "Create `packages/service-core/src/services/social/social-image-pipeline.service.ts`.\n\nInterface:\n```ts\npipelineUpload({ mode, imagePayload, postId, altText?, mimeType? }): Promise<ImagePipelineResult>\n```\n\nLogic:\n1. Detect mode: `public_url` → extract `url`; `openai_file_refs` → iterate array extracting each `downloadUrl`\n2. For each download URL: `fetch(url, { signal: AbortSignal.timeout(15_000) })` (15s timeout per resolved decision #2)\n3. Upload to Cloudinary via `getMediaProvider().upload(stream, { folder: 'social', resourceType: 'image' })`\n4. On success: create `social_assets` row (cloudinary_url, cloudinary_public_id, original_url, width, height from upload result)\n5. On failure (download timeout or Cloudinary error): log WARN; return `{ status: 'failed', warning: 'Media upload failed; manual upload required' }`; do NOT throw (draft creation continues per spec)\n6. Create `social_post_media` join row linking postId to the new asset\n\nAlso add `duration_seconds?: number` to `UploadResult` type in `packages/media/src/types.ts`.\n\nTest requirements:\n- Unit tests: public_url mode success, openai_file_refs mode (array), download timeout → warning returned, Cloudinary failure → warning returned, post-media row created on success\n- File: `packages/service-core/src/services/social/__tests__/social-image-pipeline.test.ts`",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-025", "T-013"],
+            "blocks": ["T-028"],
+            "subtasks": [
+                {
+                    "title": "Create service file with mode detection and download logic",
+                    "completed": false
+                },
+                {
+                    "title": "Implement Cloudinary upload + social_assets + social_post_media writes",
+                    "completed": false
+                },
+                { "title": "Add duration_seconds to UploadResult", "completed": false },
+                { "title": "Write unit tests (mock fetch + Cloudinary)", "completed": false }
+            ],
+            "tags": ["service-core", "media", "cloudinary"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Create SocialDraftIngestionService",
+            "description": "Create `packages/service-core/src/services/social/social-draft-ingestion.service.ts`.\n\nMethod: `ingestDraft(payload: CreateSocialDraftSchema, actorId: string): Promise<IngestDraftResult>`\n\nSteps:\n1. Validate `operator_pin`: hash the incoming pin using `sha256(pin + env.HOSPEDA_OPERATOR_PIN_HASH_SALT)` and compare with `timingSafeEqual` against `env.HOSPEDA_OPERATOR_PIN_HASH`. Return 403 on mismatch.\n2. Check `draft_id` uniqueness in `social_posts`; return 409 on conflict.\n3. Resolve slugs → IDs: campaign, batch, audience, footer, base_hashtag_set (log warnings for unresolved, do not block)\n4. Validate targets: for each `{platform, publishFormat}`, check an active `social_platform_formats` row exists. Collect invalid targets as warnings. If ALL targets invalid → return 422.\n5. Override: force `status = NEEDS_REVIEW`, `approval_status = PENDING`, `paused = false` regardless of what the payload specifies. Add warnings if payload tried to set state fields.\n6. Write `social_posts` row (DB transaction).\n7. Write `social_post_targets` rows for each valid target.\n8. Process `curatedHashtags`: look up each by `normalized_hashtag` in `social_hashtags`; create `social_post_hashtags` for found ones; add warnings for unresolved.\n9. Store `customHashtagSuggestions` verbatim in `social_posts.gpt_hashtag_payload_json` — do NOT add to `social_post_hashtags`.\n10. Write `social_ai_requests` row (append-only log).\n11. Trigger `SocialImagePipelineService.pipelineUpload()` if `image` is present. Collect media warnings.\n12. Return `{ postId, draftId, status, approvalStatus, targetsCreated, assetStatus, warnings }`.\n\nTest requirements:\n- Unit tests covering all 12 steps; focus on: operator_pin mismatch → 403, draft_id duplicate → 409, all-targets-invalid → 422, status override with warnings, unknown curatedHashtags → warnings not errors, image failure → draft still created\n- File: `packages/service-core/src/services/social/__tests__/social-draft-ingestion.test.ts`",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-027", "T-014"],
+            "blocks": ["T-029"],
+            "subtasks": [
+                {
+                    "title": "Implement steps 1-5 (validation, pin check, slug resolution, target validation, override)",
+                    "completed": false
+                },
+                {
+                    "title": "Implement steps 6-10 (DB writes in transaction, hashtag linkage)",
+                    "completed": false
+                },
+                { "title": "Implement steps 11-12 (image pipeline + return)", "completed": false },
+                { "title": "Write comprehensive unit tests", "completed": false }
+            ],
+            "tags": ["service-core", "ingestion", "gpt"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-029",
+            "title": "Implement POST /api/v1/ai/social/drafts route",
+            "description": "Create `apps/api/src/routes/ai/social/drafts.route.ts` using `createApiKeyRoute` with the AI social key config.\n\nHandler:\n1. Parse body with `CreateSocialDraftSchema` from `@repo/schemas` — return 422 on validation failure\n2. Call `SocialDraftIngestionService.ingestDraft(payload, 'api-key')`\n3. Map service result to HTTP response:\n   - Success → HTTP 201, `{ success: true, data: { postId, draftId, status, approvalStatus, targetsCreated, assetStatus, warnings } }`\n   - 403 pin mismatch → HTTP 403\n   - 409 conflict → HTTP 409\n   - 422 no valid targets → HTTP 422\n4. Register under `/api/v1/ai/social/drafts`\n\nTest requirements:\n- Integration tests: valid payload → 201, missing required fields → 422, duplicate draftId → 409, wrong pin → 403, no valid targets → 422\n- File: `apps/api/src/__tests__/routes/ai/social/drafts.test.ts`",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-028"],
+            "blocks": ["T-031"],
+            "subtasks": [
+                { "title": "Create drafts.route.ts", "completed": false },
+                { "title": "Wire validation and service call", "completed": false },
+                { "title": "Write integration tests", "completed": false }
+            ],
+            "tags": ["api", "routes", "ai", "gpt"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-030",
+            "title": "Implement GET /api/v1/admin/social/gpt-action-schema route",
+            "description": "Create `apps/api/src/routes/admin/social/gpt-action-schema.route.ts`.\n\nAuth: `createAdminRoute` with `requiredPermissions: [SOCIAL_SETTINGS_MANAGE]`.\n\nHandler generates programmatically (not hand-authored) an OpenAPI 3.1 JSON document containing exactly 2 paths:\n1. `GET /api/v1/ai/social/catalog` — operationId `getSocialCatalog`; request: no body, header `x-hospeda-ai-key`; response: catalog response schema derived from Zod schema\n2. `POST /api/v1/ai/social/drafts` — operationId `saveSocialDraft`; request body: `CreateSocialDraftSchema`; response: draft ingestion response schema\n\nUse `zod-to-json-schema` (if already in the project) or construct the OpenAPI shape manually from the Zod `.shape` property. Return `Content-Type: application/json`. Works in production (not guarded by NODE_ENV).\n\nRegister under `/api/v1/admin/social/gpt-action-schema`.\n\nTest requirements:\n- Unit test: response is valid JSON, contains exactly 2 paths with the specified operationIds\n- File: `apps/api/src/__tests__/routes/admin/social/gpt-action-schema.test.ts`",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-018", "T-029"],
+            "blocks": ["T-040"],
+            "subtasks": [
+                { "title": "Create gpt-action-schema.route.ts", "completed": false },
+                {
+                    "title": "Implement programmatic OpenAPI 3.1 generation from Zod schemas",
+                    "completed": false
+                },
+                { "title": "Write unit tests", "completed": false }
+            ],
+            "tags": ["api", "routes", "openapi"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-031",
+            "title": "Extend rate-limit middleware for AI inbound and Make callback routes",
+            "description": "Edit `apps/api/src/middlewares/rate-limit.ts` to extend `getEndpointType()` (or the per-route config mechanism) to recognize:\n- `/api/v1/ai/social/*` → endpoint type `'ai-inbound'` with a conservative rate limit (e.g., 60 req/hour per key)\n- `/api/v1/integrations/make/social/*` → endpoint type `'make-callback'` with a moderate limit (e.g., 300 req/hour)\n\nAlternatively, use the `customRateLimit` option on `createApiKeyRoute` if that pattern already exists. Do not break existing rate limit behavior for other routes.\n\nTest requirements:\n- Unit test: `getEndpointType()` returns correct type for new path patterns\n- File: `apps/api/src/__tests__/middlewares/rate-limit.test.ts` (extend)",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-029"],
+            "blocks": ["T-040"],
+            "subtasks": [
+                {
+                    "title": "Add ai-inbound and make-callback rate limit types",
+                    "completed": false
+                },
+                { "title": "Write unit tests", "completed": false }
+            ],
+            "tags": ["api", "middleware", "rate-limit"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-032",
+            "title": "Create SocialAuditLogService",
+            "description": "Create `packages/service-core/src/services/social/social-audit-log.service.ts`.\n\nSingle exported method:\n```ts\nlog(params: {\n  actorId: string | null;\n  eventType: string;\n  entityType: string;\n  entityId: string;\n  oldValue?: Record<string, unknown>;\n  newValue?: Record<string, unknown>;\n  metadata?: Record<string, unknown>;\n}): Promise<void>\n```\n\nWrites one row to `social_audit_log`. Must never throw — wrap in try/catch and log error with `@repo/logger` if the DB write fails (so an audit log failure never blocks a state transition).\n\nAlso export a const `SocialAuditEvent` object mapping all event type strings (POST_APPROVED, POST_REJECTED, POST_CHANGES_REQUESTED, POST_SCHEDULED, POST_RESCHEDULED, POST_MARKED_READY, POST_PAUSED, POST_UNPAUSED, POST_ARCHIVED, HASHTAG_PROMOTED, PLATFORM_FORMAT_UPDATED, SETTING_UPDATED, TARGET_PUBLISHED, TARGET_PUBLISH_FAILED, TARGET_DISPATCH_FAILED_EXHAUSTED) for type safety.\n\nTest requirements:\n- Unit tests: log() creates a row, log() swallows DB errors without rethrowing\n- File: `packages/service-core/src/services/social/__tests__/social-audit-log.test.ts`",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-013"],
+            "blocks": ["T-033"],
+            "subtasks": [
+                { "title": "Create service with log() method", "completed": false },
+                { "title": "Create SocialAuditEvent const", "completed": false },
+                { "title": "Write unit tests", "completed": false }
+            ],
+            "tags": ["service-core", "audit"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-033",
+            "title": "Create SocialPostService — core state-transition methods (approve, reject, requestChanges)",
+            "description": "Create `packages/service-core/src/services/social/social-post.service.ts` (non-CRUD, does not extend BaseCrudService).\n\nImplement first batch of methods:\n\n`approve(postId, actorId)`:\n- Load post; assert status === NEEDS_REVIEW → 422 if not\n- Assert at least 1 active target exists → 422 if not (zero active targets block)\n- Check if any target requires media (`requires_media = true` on platform_format): if post has no social_post_media rows → 422 MISSING_MEDIA\n- Set status=APPROVED, approval_status=APPROVED, approved_by_id=actorId, approved_at=now() (atomic DB update)\n- Call `SocialAuditLogService.log(POST_APPROVED, old/new values)`\n- Return `{ id, status, approvalStatus, approvedAt }`\n\n`reject(postId, actorId, reason)`:\n- Assert reason is non-empty → 422 if blank\n- Assert post is in NEEDS_REVIEW → 422 if not\n- Set approval_status=REJECTED, append reason to notes\n- Log POST_REJECTED\n\n`requestChanges(postId, actorId, feedback)`:\n- Assert feedback is non-empty → 422\n- Set approval_status=CHANGES_REQUESTED, append feedback to notes\n- Log POST_CHANGES_REQUESTED\n\nTest requirements:\n- Unit tests: approve succeeds, approve fails on wrong status, approve fails on missing media, reject requires reason, requestChanges requires feedback\n- File: `packages/service-core/src/services/social/__tests__/social-post-service-approve.test.ts`",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-032"],
+            "blocks": ["T-034"],
+            "subtasks": [
+                { "title": "Create social-post.service.ts skeleton", "completed": false },
+                { "title": "Implement approve() with media check", "completed": false },
+                { "title": "Implement reject() and requestChanges()", "completed": false },
+                { "title": "Write unit tests", "completed": false }
+            ],
+            "tags": ["service-core", "posts", "state-machine"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-034",
+            "title": "Extend SocialPostService — scheduling, markReady, pause, unpause, archive",
+            "description": "Add to `social-post.service.ts`:\n\n`schedule(postId, actorId, { scheduledAt, timezone, recurrenceType?, recurrenceParamsJson? })`:\n- Assert post is APPROVED or already SCHEDULED\n- Assert scheduledAt is in the future → 422 if past\n- If recurrenceType is WEEKLY, assert recurrenceParamsJson.weekday is valid SocialWeekday → 422 if missing\n- Set status=SCHEDULED, scheduled_at, timezone, next_run_at=scheduled_at, recurrence fields\n- Log POST_SCHEDULED (or POST_RESCHEDULED if was already SCHEDULED, with old/new scheduledAt)\n\n`markReady(postId, actorId)`:\n- Assert post is APPROVED\n- Set status=READY_TO_PUBLISH, next_run_at=now()\n- Log POST_MARKED_READY\n\n`pause(postId, actorId)`:\n- Assert status in (APPROVED, SCHEDULED, READY_TO_PUBLISH) and paused=false; else 422\n- Assert status not in (PUBLISHED, FAILED) → 422\n- Set paused=true; log POST_PAUSED\n\n`unpause(postId, actorId)`:\n- Assert paused=true → 422 if not paused\n- Set paused=false; log POST_UNPAUSED\n\n`archive(postId, actorId)`:\n- Assert status !== PUBLISHING → 422 if in PUBLISHING\n- Set status=ARCHIVED, deleted_at=now()\n- Log POST_ARCHIVED\n\nTest requirements:\n- Unit tests: schedule rejects past dates, schedule WEEKLY without weekday → 422, markReady requires APPROVED, pause rejects PUBLISHED/FAILED, archive blocks on PUBLISHING\n- File: `packages/service-core/src/services/social/__tests__/social-post-service-state.test.ts`",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-033"],
+            "blocks": ["T-035"],
+            "subtasks": [
+                { "title": "Implement schedule() and markReady()", "completed": false },
+                { "title": "Implement pause() and unpause()", "completed": false },
+                { "title": "Implement archive()", "completed": false },
+                { "title": "Write unit tests", "completed": false }
+            ],
+            "tags": ["service-core", "posts", "state-machine"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-035",
+            "title": "Extend SocialPostService — list, getDetail, updatePost, promoteHashtag",
+            "description": "Add remaining methods to `social-post.service.ts`:\n\n`listPosts(query)` — paginated list with filters (status, approvalStatus, platform, search, createdAtFrom/To, includeDeleted). Search uses `safeIlike()`. If includeDeleted=false (default), excludes deleted_at IS NOT NULL. Returns items with: id, title, slug, status, approvalStatus, paused, targets (platforms), thumbnailUrl (first media), scheduledAt, createdAt.\n\n`getPostDetail(postId)` — full post with nested targets, media (Cloudinary URLs), hashtags (resolved text), last 10 publishLogs, gptHashtagPayloadJson.\n\n`updatePost(postId, actorId, data)` — partial update of title, captionBase, finalCaption, finalHashtagsText, notes, internalNotes, footerId, campaignId, batchId, audienceId, batchPosition. Blocks update of state fields (status, approvalStatus, paused).\n\n`promoteHashtag(postId, actorId, { hashtag, category, platform?, audienceId?, priority? })`:\n- Assert post exists\n- Auto-prepend `#` if missing (add to warnings)\n- Normalize to lowercase\n- Upsert in `social_hashtags` (create if not exists by normalized_hashtag)\n- Upsert in `social_post_hashtags` (create if not exists for this post+hashtag)\n- Log HASHTAG_PROMOTED\n- Return `{ hashtagId, hashtag, isNew }`, HTTP 200 if existing, 201 if new\n\nTest requirements:\n- Unit tests: listPosts pagination and filter, includeDeleted=false excludes archived, updatePost blocks state fields, promoteHashtag idempotency (same hashtag twice → no duplicate), promoteHashtag auto-prepends #\n- File: `packages/service-core/src/services/social/__tests__/social-post-service-list.test.ts`",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-034"],
+            "blocks": ["T-036"],
+            "subtasks": [
+                { "title": "Implement listPosts() with filters and safeIlike", "completed": false },
+                { "title": "Implement getPostDetail() with nested data", "completed": false },
+                { "title": "Implement updatePost() blocking state fields", "completed": false },
+                { "title": "Implement promoteHashtag() with upsert logic", "completed": false },
+                { "title": "Write unit tests", "completed": false }
+            ],
+            "tags": ["service-core", "posts"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-036",
+            "title": "Implement state-transition admin API routes (approve, reject, request-changes, schedule, mark-ready, pause, unpause, archive, promote-hashtag)",
+            "description": "Create route files in `apps/api/src/routes/admin/social/posts/`:\n- `approve.route.ts` — POST /:id/approve, permission SOCIAL_POST_APPROVE\n- `reject.route.ts` — POST /:id/reject, body `{ reason: string }`, permission SOCIAL_POST_APPROVE\n- `request-changes.route.ts` — POST /:id/request-changes, body `{ feedback: string }`, permission SOCIAL_POST_APPROVE\n- `schedule.route.ts` — POST /:id/schedule, body `{ scheduledAt, timezone, recurrenceType?, recurrenceParamsJson? }`, permission SOCIAL_POST_SCHEDULE\n- `mark-ready.route.ts` — POST /:id/mark-ready, permission SOCIAL_POST_SCHEDULE\n- `pause.route.ts` — POST /:id/pause, permission SOCIAL_POST_PAUSE\n- `unpause.route.ts` — POST /:id/unpause, permission SOCIAL_POST_PAUSE\n- `archive.route.ts` — POST /:id/archive, permission SOCIAL_POST_ARCHIVE\n- `promote-hashtag.route.ts` — POST /:id/promote-hashtag, body `{ hashtag, category, platform?, audienceId?, priority? }`, permission SOCIAL_HASHTAG_MANAGE\n\nAll use `createAdminRoute`. All map service errors to correct HTTP status codes (422, 403, 404, 409). Register all under `/api/v1/admin/social/posts`.\n\nTest requirements:\n- Integration tests per route: permission gate, valid state transition succeeds, invalid state → 422, missing required body fields → 422\n- File: `apps/api/src/__tests__/routes/admin/social/post-transitions.test.ts`",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-035"],
+            "blocks": ["T-037"],
+            "subtasks": [
+                {
+                    "title": "approve.route.ts + reject.route.ts + request-changes.route.ts",
+                    "completed": false
+                },
+                { "title": "schedule.route.ts + mark-ready.route.ts", "completed": false },
+                {
+                    "title": "pause.route.ts + unpause.route.ts + archive.route.ts",
+                    "completed": false
+                },
+                { "title": "promote-hashtag.route.ts", "completed": false },
+                { "title": "Register all routes and write integration tests", "completed": false }
+            ],
+            "tags": ["api", "routes", "posts"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-037",
+            "title": "Implement admin post CRUD routes (list, detail, update)",
+            "description": "Create route files in `apps/api/src/routes/admin/social/posts/`:\n\n`list.route.ts` — GET /admin/social/posts:\n- Permission: SOCIAL_POST_VIEW\n- Query params: Zod-validated (status, approvalStatus, platform, search, createdAtFrom, createdAtTo, page, pageSize, includeDeleted)\n- `includeDeleted=true` additionally requires SOCIAL_POST_HARD_DELETE permission\n- Calls SocialPostService.listPosts()\n- Returns paginated envelope\n\n`detail.route.ts` — GET /admin/social/posts/:id:\n- Permission: SOCIAL_POST_VIEW\n- Calls SocialPostService.getPostDetail()\n- 404 if not found\n\n`update.route.ts` — PATCH /admin/social/posts/:id:\n- Permission: SOCIAL_POST_UPDATE\n- Body: UpdateSocialPostSchema (partial, no state fields)\n- Calls SocialPostService.updatePost()\n\nAlso implement dashboard, publish-logs, and audit-log query routes:\n\n`dashboard.route.ts` — GET /admin/social/dashboard:\n- Permission: SOCIAL_POST_VIEW\n- Queries KPIs, quickApprovalQueue (max 10, sorted createdAt ASC), recentFailures, makeWebhookConfigured (live check)\n\n`publish-logs.route.ts` — GET /admin/social/publish-logs, permission SOCIAL_PUBLISH_LOG_VIEW\n`audit-log.route.ts` — GET /admin/social/audit-log, permission SOCIAL_AUDIT_LOG_VIEW\n\nTest requirements:\n- Integration tests: list filters work, includeDeleted requires SOCIAL_POST_HARD_DELETE, detail 404, update blocks state fields, dashboard makeWebhookConfigured is live\n- File: `apps/api/src/__tests__/routes/admin/social/post-crud.test.ts`",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-036"],
+            "blocks": ["T-038", "T-039"],
+            "subtasks": [
+                {
+                    "title": "list.route.ts + detail.route.ts + update.route.ts",
+                    "completed": false
+                },
+                { "title": "dashboard.route.ts", "completed": false },
+                { "title": "publish-logs.route.ts + audit-log.route.ts", "completed": false },
+                { "title": "Write integration tests", "completed": false }
+            ],
+            "tags": ["api", "routes", "posts"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-038",
+            "title": "Write integration test: full draft → approve → schedule → mark-ready flow",
+            "description": "Write an integration test (using a test DB or in-memory mock) that exercises the complete editorial pipeline:\n1. Create a draft via `SocialDraftIngestionService.ingestDraft()` with valid payload\n2. Verify draft exists in DB with status=NEEDS_REVIEW, approvalStatus=PENDING\n3. Approve via `SocialPostService.approve()` — verify status=APPROVED\n4. Verify `social_audit_log` has POST_APPROVED row\n5. Schedule via `SocialPostService.schedule()` with a future date — verify status=SCHEDULED, next_run_at set\n6. Verify `social_audit_log` has POST_SCHEDULED row\n7. MarkReady via `SocialPostService.markReady()` — verify status=READY_TO_PUBLISH, next_run_at=~now\n8. Verify `social_audit_log` has POST_MARKED_READY row\n\nTest requirements:\n- This is an integration test that requires a real (test) DB\n- File: `packages/service-core/src/services/social/__tests__/integration/draft-approve-schedule.integration.test.ts`\n- Must run in CI without requiring external services",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-037"],
+            "blocks": ["T-040"],
+            "subtasks": [
+                { "title": "Set up integration test DB fixtures", "completed": false },
+                { "title": "Write 8-step integration test", "completed": false },
+                { "title": "Verify audit log at each step", "completed": false }
+            ],
+            "tags": ["testing", "integration"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-039",
+            "title": "Build admin UI post list page (/admin/social/posts)",
+            "description": "Create `apps/admin/src/routes/_authed/social/posts/index.tsx`.\n\nFeatures:\n- DataTable with columns: Thumbnail (small img), Title, Status badge (color-coded, text+color never color alone per accessibility), Approval Status badge, Platforms (icon row with aria-label), Scheduled At, Created At, Actions (Approve / View / Archive buttons)\n- Filter bar: Status multi-select, Approval Status multi-select, Platform multi-select, search by title, date range for created_at\n- Pagination: page + pageSize selectors\n- Clicking a row navigates to post detail page\n- TanStack Query with 30-second stale time (stale-while-revalidate per performance spec)\n- Loading: skeleton rows\n- Empty state: 'No social posts yet. Drafts submitted by the Custom GPT will appear here.'\n- Permission-gated action buttons (Approve hidden without SOCIAL_POST_APPROVE)\n- Optimistic approve: on Approve click, immediately remove from list pending confirmation\n\nTest requirements:\n- Component tests: table renders, filter bar interacts, empty state shows, permission-gated buttons hidden, status badges have both color and text label\n- File: `apps/admin/src/routes/_authed/social/__tests__/posts-list.test.tsx`",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-037"],
+            "blocks": ["T-040"],
+            "subtasks": [
+                {
+                    "title": "Create posts/index.tsx with DataTable + filter bar",
+                    "completed": false
+                },
+                {
+                    "title": "Status/approval badges with accessibility attributes",
+                    "completed": false
+                },
+                { "title": "Platform icon row with aria-label", "completed": false },
+                { "title": "Optimistic approve action", "completed": false },
+                { "title": "Write component tests", "completed": false }
+            ],
+            "tags": ["admin-ui", "posts"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-040",
+            "title": "Build admin UI post detail page (/admin/social/posts/$id)",
+            "description": "Create `apps/admin/src/routes/_authed/social/posts/$id.tsx`.\n\nFeatures:\n- Header: Title, status badge, approval badge, paused toggle\n- Tabs:\n  - Content: caption_base, final_caption, final_hashtags_text, gpt_hashtag_payload_json suggestions (each with 'Promote' button)\n  - Media: Cloudinary thumbnail grid (ordered by position)\n  - Targets: per-platform status list\n  - Logs: last 20 publish log entries\n  - Audit: audit log entries for this post\n- Action bar (sticky, permission-gated): Approve, Reject, Request Changes, Schedule, Mark Ready, Pause/Unpause, Archive. Each opens a confirmation dialog (with optional reason/feedback text input where applicable)\n- Promote Hashtag modal: form with hashtag, category, platform (optional), priority; calls promote-hashtag route\n- Keyboard navigation: Tab+Enter triggers focused action button\n- ARIA live regions for error/success messages\n- TanStack Query for all nested data\n\nTest requirements:\n- Component tests: action bar buttons shown/hidden per permission, confirmation dialog opens on click, promote-hashtag modal renders, accessibility: aria-labels on platform icons\n- File: `apps/admin/src/routes/_authed/social/__tests__/post-detail.test.tsx`",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-039"],
+            "blocks": ["T-041"],
+            "subtasks": [
+                { "title": "Create $id.tsx skeleton with tabs and header", "completed": false },
+                { "title": "Implement Content tab + Promote Hashtag modal", "completed": false },
+                { "title": "Implement Media, Targets, Logs, Audit tabs", "completed": false },
+                {
+                    "title": "Implement sticky action bar with confirmation dialogs",
+                    "completed": false
+                },
+                { "title": "Write component tests", "completed": false }
+            ],
+            "tags": ["admin-ui", "posts"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-041",
+            "title": "Build admin social dashboard page (/admin/social)",
+            "description": "Create `apps/admin/src/routes/_authed/social/index.tsx`.\n\nFeatures:\n- Top row KPIs (4 stat cards): Total Posts, Pending Review (with badge), Scheduled, Published Last 30 Days, Failed (action needed)\n- Quick Approval Queue: card list, max 10 items, sorted oldest first; each card: thumbnail, title, platform icons, created_at relative timestamp, Approve button. On Approve click: spinner + disabled state; remove on success; re-show with error badge on failure. Empty state: 'No posts pending review.'\n- Recent Failures table: last 5 FAILED targets, columns: post title, platform, last error, retry count, failedAt. Each row with 'Max retries reached — manual action required' label if retry_count >= 3.\n- System alert banner: if makeWebhookConfigured=false, show 'Make webhook URL is not configured' alert at top\n- TanStack Query, 30s stale time\n\nTest requirements:\n- Component tests: KPIs render with correct values, quick-approval queue optimistic update, system alert shows when webhook not configured\n- File: `apps/admin/src/routes/_authed/social/__tests__/dashboard.test.tsx`",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-040"],
+            "blocks": ["T-042"],
+            "subtasks": [
+                { "title": "Create social/index.tsx with KPI cards", "completed": false },
+                {
+                    "title": "Quick Approval Queue widget with optimistic update",
+                    "completed": false
+                },
+                { "title": "Recent Failures table", "completed": false },
+                { "title": "System alert for missing Make webhook", "completed": false },
+                { "title": "Write component tests", "completed": false }
+            ],
+            "tags": ["admin-ui", "dashboard"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-042",
+            "title": "Add i18n translation keys for Phase 3 admin UI (posts, dashboard)",
+            "description": "Add all i18n string keys needed by post list, post detail, and dashboard pages to `packages/i18n/src/locales/es/`:\n- Column headers for post list\n- Status/approval badge labels\n- Action button labels with post title (e.g., `social.posts.actions.approve.aria`: 'Aprobar post: {{title}}')\n- Confirmation dialog texts for each action\n- Tab labels for post detail\n- Dashboard KPI labels\n- Empty states: 'No social posts yet...', 'No posts pending review.', 'No publish history yet.', 'No audit events recorded.'\n- Error/warning messages\n- Quick approval queue labels\n- Failures table column headers\n- System alert text for missing Make webhook\n\nTest requirements:\n- No dedicated test; verified by TypeScript checking and visual review",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-041"],
+            "blocks": ["T-043"],
+            "subtasks": [
+                { "title": "Add es locale keys for posts list and detail", "completed": false },
+                { "title": "Add es locale keys for dashboard", "completed": false }
+            ],
+            "tags": ["i18n", "admin-ui"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-043",
+            "title": "Add env vars HOSPEDA_MAKE_API_KEY and HOSPEDA_MAKE_INBOUND_KEY",
+            "description": "Following the same 5-step env-var workflow as T-023:\n1. Register `HOSPEDA_MAKE_API_KEY` (outbound key to Make.com webhook) and `HOSPEDA_MAKE_INBOUND_KEY` (Make.com callback authentication) in `packages/config/src/env-registry.*.ts`\n2. Add Zod validation in `apps/api/src/utils/env.ts`\n3. Update `apps/api/.env.example` with placeholder values\n4. Document in API CLAUDE.md or env guide\n5. Inform user to set in Coolify\n\nTest requirements:\n- Extend env.test.ts to verify both new vars are validated\n- File: `apps/api/src/__tests__/env.test.ts` (extend existing)",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-044", "T-048"],
+            "subtasks": [
+                { "title": "Register in config registry", "completed": false },
+                { "title": "Add to env.ts Zod schema", "completed": false },
+                { "title": "Update .env.example", "completed": false }
+            ],
+            "tags": ["config", "env", "make"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-044",
+            "title": "Create SocialPublishDispatchService — findEligibleTargets and buildMakePayload",
+            "description": "Create `packages/service-core/src/services/social/social-publish-dispatch.service.ts`.\n\nImplement first two methods:\n\n`findEligibleTargets(): Promise<EligibleTarget[]>`:\nQuery `social_post_targets` joining `social_posts` where:\n- `social_posts.approval_status = APPROVED`\n- `social_posts.status = READY_TO_PUBLISH` OR (`social_posts.status = SCHEDULED` AND `social_posts.next_run_at <= now()`)\n- `social_posts.paused = false`\n- `social_post_targets.status` NOT IN (PUBLISHED, FAILED, PUBLISHING)\n- Parent post has at least 1 `social_post_media` row\nReturn fully-typed array with post + target data needed for dispatch.\n\n`buildMakePayload(target, post): MakeDispatchPayload`:\nBuild the outbound payload per spec:\n```ts\n{ targetId, postId, platform, publishFormat, makeChannelKey, captionFinal, hashtagsFinal, footerFinal, mediaUrls: [...], scheduledAt, timezone, callbackClaimUrl, callbackResultUrl }\n```\n`callbackClaimUrl` = `${env.HOSPEDA_API_URL}/api/v1/integrations/make/social/jobs/${target.id}/claim`\n`callbackResultUrl` = `${env.HOSPEDA_API_URL}/api/v1/integrations/make/social/jobs/${target.id}/result`\n\nTest requirements:\n- Unit tests: findEligibleTargets excludes paused posts, excludes posts with no media, excludes already-PUBLISHED targets, excludes PUBLISHING targets (optimistic lock)\n- Unit tests: buildMakePayload correctly assembles all payload fields including callback URLs\n- File: `packages/service-core/src/services/social/__tests__/dispatch-find-build.test.ts`",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-043", "T-013"],
+            "blocks": ["T-045"],
+            "subtasks": [
+                { "title": "Create dispatch service file", "completed": false },
+                {
+                    "title": "Implement findEligibleTargets() with all filter conditions",
+                    "completed": false
+                },
+                { "title": "Implement buildMakePayload()", "completed": false },
+                { "title": "Write unit tests", "completed": false }
+            ],
+            "tags": ["service-core", "dispatch", "make"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-045",
+            "title": "Implement SocialPublishDispatchService — dispatchTarget with retry logic",
+            "description": "Add to `social-publish-dispatch.service.ts`:\n\n`dispatchTarget(targetId: string): Promise<DispatchResult>`:\n1. Load target + parent post\n2. Set target.status = PUBLISHING (optimistic lock, atomic DB update)\n3. Read `make_webhook_url` from `social_settings` (NOT from env/cache — live read per spec)\n4. POST to webhook URL with `buildMakePayload()` result and header `x-make-apikey: env.HOSPEDA_MAKE_API_KEY`. Timeout: 30s.\n5. On HTTP 2xx: insert `social_publish_logs` row with status=RETRYING. Set post.status=PUBLISHING if not already. Return success.\n6. On failure (non-2xx or network error):\n   a. If target.retry_count < 3: increment retry_count, reset target.status=APPROVED (will be retried next cron run), insert publish_log with status=FAILED + error message. Return `{ retrying: true }`.\n   b. If target.retry_count >= 3: set target.status=FAILED, insert publish_log with status=FAILED, log audit event TARGET_DISPATCH_FAILED_EXHAUSTED. Call `cascadePostStatus(postId)`. Return `{ failed: true }`.\n\nTest requirements:\n- Unit tests: dispatch success → target PUBLISHING, log RETRYING; dispatch failure retry_count < 3 → target back to APPROVED, retry_count incremented; dispatch failure retry_count >= 3 → target FAILED, audit logged\n- File: `packages/service-core/src/services/social/__tests__/dispatch-target.test.ts`",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-044"],
+            "blocks": ["T-046"],
+            "subtasks": [
+                { "title": "Implement optimistic lock (set PUBLISHING) step", "completed": false },
+                { "title": "Implement outbound webhook POST with header", "completed": false },
+                {
+                    "title": "Implement success path (log RETRYING, set post PUBLISHING)",
+                    "completed": false
+                },
+                { "title": "Implement failure paths (retry vs exhausted)", "completed": false },
+                { "title": "Write unit tests", "completed": false }
+            ],
+            "tags": ["service-core", "dispatch", "make"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-046",
+            "title": "Implement SocialPublishDispatchService — cascadePostStatus and rearmRecurrence",
+            "description": "Add to `social-publish-dispatch.service.ts`:\n\n`cascadePostStatus(postId: string): Promise<void>`:\n- Load all targets for the post\n- If all targets are in terminal state (PUBLISHED, FAILED, SKIPPED):\n  - If at least 1 target is PUBLISHED → set post.status = PUBLISHED\n  - If ALL targets are FAILED or SKIPPED → set post.status = FAILED\n  - If status becomes PUBLISHED → call `rearmRecurrence(post)`\n  - If status becomes FAILED → set next_run_at = null (no rearm on failure per resolved decision)\n\n`rearmRecurrence(post): Promise<void>`:\n- If recurrence_type = ONCE → set next_run_at = null. Leave status = PUBLISHED.\n- If recurrence_type = WEEKLY → compute next occurrence (next weekday from recurrence_params_json.weekday at or after now() in post.timezone), set next_run_at, reset status = APPROVED\n- If recurrence_type = BIWEEKLY → next_run_at = now() + 14 days (adjusted to same weekday), reset status = APPROVED\n- If recurrence_type = MONTHLY → next_run_at = same day next month, reset status = APPROVED\n- When rearming: reset ALL targets to status=APPROVED AND retry_count=0 (resolved decision #3 — clean slate every cycle)\n\nTest requirements:\n- Unit tests: partial success (1 PUBLISHED + 1 FAILED) → post=PUBLISHED, ONCE → next_run_at null, WEEKLY → correct next Monday, MONTHLY → same day next month, rearm resets all target retry_count to 0\n- File: `packages/service-core/src/services/social/__tests__/dispatch-cascade-rearm.test.ts`",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-045"],
+            "blocks": ["T-047"],
+            "subtasks": [
+                {
+                    "title": "Implement cascadePostStatus() with terminal state detection",
+                    "completed": false
+                },
+                {
+                    "title": "Implement rearmRecurrence() for ONCE, WEEKLY, BIWEEKLY, MONTHLY",
+                    "completed": false
+                },
+                {
+                    "title": "Implement target reset (status=APPROVED, retry_count=0) on rearm",
+                    "completed": false
+                },
+                {
+                    "title": "Write unit tests for all recurrence types and cascade edge cases",
+                    "completed": false
+                }
+            ],
+            "tags": ["service-core", "dispatch", "recurrence"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-047",
+            "title": "Implement SocialPublishDispatchService — handleMakeCallbackClaim and handleMakeCallbackResult",
+            "description": "Add to `social-publish-dispatch.service.ts`:\n\n`handleMakeCallbackClaim(targetId: string, makeRunId: string): Promise<ClaimResult>`:\n- Load target; 404 if not found\n- If target.status = PUBLISHED → return 409 ALREADY_PUBLISHED\n- Set target.status = PUBLISHING, target.make_last_run_id = makeRunId, update make_payload_json\n- Return `{ targetId, status: 'PUBLISHING' }`\n\n`handleMakeCallbackResult(targetId: string, result: MakeResultPayload): Promise<ResultCallbackResult>`:\n- Load target; 404 if not found\n- If result.status = 'SUCCESS':\n  - Set target.status = PUBLISHED, published_at = now(), external_post_id, external_post_url\n  - Insert publish_log with status = SUCCESS\n  - Log audit event TARGET_PUBLISHED\n- If result.status = 'FAILED':\n  - Store last_error_message\n  - If target.retry_count < 3: reset target.status to pre-PUBLISHING state (READY_TO_PUBLISH or APPROVED), increment retry_count\n  - If retry_count >= 3: set target.status = FAILED\n  - Insert publish_log with status = FAILED\n  - Log audit event TARGET_PUBLISH_FAILED\n- Call `cascadePostStatus(target.social_post_id)` in both cases\n- Return final state\n\nTest requirements:\n- Unit tests: claim sets PUBLISHING, claim on PUBLISHED → 409, result SUCCESS cascades, result FAILED with retry_count < 3 → resets to pre-PUBLISHING, result FAILED with retry_count >= 3 → stays FAILED\n- File: `packages/service-core/src/services/social/__tests__/dispatch-callbacks.test.ts`",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-046"],
+            "blocks": ["T-048"],
+            "subtasks": [
+                { "title": "Implement handleMakeCallbackClaim()", "completed": false },
+                {
+                    "title": "Implement handleMakeCallbackResult() SUCCESS path",
+                    "completed": false
+                },
+                {
+                    "title": "Implement handleMakeCallbackResult() FAILED path with retry logic",
+                    "completed": false
+                },
+                { "title": "Write unit tests", "completed": false }
+            ],
+            "tags": ["service-core", "dispatch", "make-callback"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-048",
+            "title": "Implement Make callback routes (claim and result)",
+            "description": "Create route files in `apps/api/src/routes/integrations/make/social/`:\n\n`claim.route.ts` — POST /api/v1/integrations/make/social/jobs/:targetId/claim:\n- Use `createApiKeyRoute` with `{ headerName: 'x-hospeda-make-key', envVarKey: 'HOSPEDA_MAKE_INBOUND_KEY', errorCode: 'UNAUTHORIZED' }`\n- Body: `{ makeRunId: string }` (Zod-validated)\n- Calls `SocialPublishDispatchService.handleMakeCallbackClaim(targetId, makeRunId)`\n- Maps: 404 → HTTP 404, 409 ALREADY_PUBLISHED → HTTP 409, success → HTTP 200\n\n`result.route.ts` — POST /api/v1/integrations/make/social/jobs/:targetId/result:\n- Same Make key middleware\n- Body: `{ makeRunId, status: 'SUCCESS'|'FAILED', externalPostId?, externalPostUrl?, errorMessage? }` (Zod-validated, status is required)\n- Calls `SocialPublishDispatchService.handleMakeCallbackResult(targetId, result)`\n- Returns HTTP 200 with final state\n\nRegister both under `/api/v1/integrations/make/social`.\n\nTest requirements:\n- Integration tests: invalid Make key → 401, valid claim → 200, claim on published target → 409, valid result SUCCESS → 200 post status cascaded, result FAILED retry_count < 3 → 200 target reset\n- File: `apps/api/src/__tests__/routes/integrations/make/social/callbacks.test.ts`",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-047", "T-025", "T-043"],
+            "blocks": ["T-049"],
+            "subtasks": [
+                { "title": "Create claim.route.ts", "completed": false },
+                { "title": "Create result.route.ts", "completed": false },
+                { "title": "Register routes and write integration tests", "completed": false }
+            ],
+            "tags": ["api", "routes", "make", "callbacks"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-049",
+            "title": "Create social-publish-dispatch cron job",
+            "description": "Create `apps/api/src/cron/jobs/social-publish-dispatch.job.ts`.\n\nJob logic:\n1. Log start with `@repo/logger`\n2. Read `make_webhook_url` from `social_settings` (live read, not cached). If empty or placeholder: log WARN 'Make webhook URL not configured, skipping dispatch'; record in cron_runs with status=SKIPPED; return.\n3. Call `SocialPublishDispatchService.findEligibleTargets()`\n4. For each eligible target: call `SocialPublishDispatchService.dispatchTarget(target.id)` sequentially (not concurrent — to avoid race conditions with the DB optimistic lock)\n5. Log completion with count of dispatched/failed/skipped\n6. Write to `cron_runs` table with `jobName = 'social-publish-dispatch'`, `status` (COMPLETED/FAILED), `itemsProcessed` count\n\nSchedule: every 5 minutes by default; configurable via `social_settings.dispatch_cron_interval_minutes`.\n\nRegister the job in `apps/api/src/cron/jobs/index.ts`.\n\nTest requirements:\n- Unit tests: empty make_webhook_url → job skips, no eligible targets → 0 dispatched, dispatch error is caught per-target (one failure doesn't stop others)\n- File: `apps/api/src/__tests__/cron/social-publish-dispatch.test.ts`",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-048", "T-025"],
+            "blocks": ["T-050"],
+            "subtasks": [
+                { "title": "Create cron job file with live webhook URL check", "completed": false },
+                {
+                    "title": "Implement dispatch loop with per-target error isolation",
+                    "completed": false
+                },
+                { "title": "Register in cron/jobs/index.ts", "completed": false },
+                { "title": "Write unit tests", "completed": false }
+            ],
+            "tags": ["api", "cron", "dispatch"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-050",
+            "title": "Write integration test: full end-to-end GPT draft → approve → mark-ready → cron dispatch → Make claim → Make result → PUBLISHED",
+            "description": "Write a complete end-to-end integration test covering the full social automation pipeline:\n1. Ingest draft via SocialDraftIngestionService (with mocked Cloudinary upload)\n2. Approve via SocialPostService.approve()\n3. Mark ready via SocialPostService.markReady()\n4. Run findEligibleTargets() — verify target appears\n5. Dispatch target via SocialPublishDispatchService.dispatchTarget() (mock Make webhook HTTP call → return 200)\n6. Verify target.status = PUBLISHING, publish_log with RETRYING\n7. Simulate Make claim callback via handleMakeCallbackClaim()\n8. Simulate Make result SUCCESS callback via handleMakeCallbackResult()\n9. Verify: target.status = PUBLISHED, post.status = PUBLISHED, audit log has TARGET_PUBLISHED entry, next_run_at = null (ONCE recurrence)\n10. Verify: run with WEEKLY recurrence → post.status reset to APPROVED, next_run_at is next occurrence, all targets reset to APPROVED with retry_count=0\n\nTest requirements:\n- Full integration test with test DB\n- File: `packages/service-core/src/services/social/__tests__/integration/full-pipeline.integration.test.ts`\n- Mock external HTTP calls (Make webhook, Cloudinary) with vitest mocks",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-049"],
+            "blocks": ["T-051"],
+            "subtasks": [
+                {
+                    "title": "Steps 1-5: draft → approve → ready → eligible → dispatch",
+                    "completed": false
+                },
+                { "title": "Steps 6-9: ONCE recurrence verification", "completed": false },
+                { "title": "Step 10: WEEKLY recurrence rearm verification", "completed": false }
+            ],
+            "tags": ["testing", "integration", "e2e"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-051",
+            "title": "Write unit tests for dispatch cron edge cases (Phase 4 unit test coverage)",
+            "description": "Supplement T-049 with focused unit tests for the dispatch cron's edge cases that are hard to test in the integration test:\n- Cron runs while post is paused → target excluded from eligible set\n- Cron runs while target already in PUBLISHING → target excluded\n- Cron runs with a target where retry_count = 2 (one more retry left) → dispatches, failure → retry_count becomes 3 but target stays APPROVED\n- Cron runs with a target where retry_count = 3 → first check: this target should already be FAILED so excluded from eligible query\n- All targets complete with mixed PUBLISHED/FAILED → post=PUBLISHED (partial success per cascade rule)\n- All targets FAILED → post=FAILED, next_run_at=null (no rearm)\n\nTest requirements:\n- File: `packages/service-core/src/services/social/__tests__/dispatch-edge-cases.test.ts`",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-050"],
+            "blocks": ["T-052"],
+            "subtasks": [
+                {
+                    "title": "Write edge-case unit tests for paused, PUBLISHING lock, retry exhaustion",
+                    "completed": false
+                },
+                { "title": "Write edge-case tests for cascade mixed results", "completed": false }
+            ],
+            "tags": ["testing", "dispatch"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-052",
+            "title": "Add Sentry feature tag and final integration verification",
+            "description": "Final integration and cleanup tasks:\n1. Tag all social route errors with Sentry feature tag `{ feature: 'social-automation' }`. Find each social route file and add `Sentry.setTag('feature', 'social-automation')` in the error handler. Follow the existing Sentry tagging pattern from other routes.\n2. Verify `pnpm build:api` succeeds with all new routes registered\n3. Verify `pnpm typecheck` passes across all packages\n4. Run `pnpm lint` and fix any biome violations\n5. Run the full test suite (`pnpm test`) and verify all new tests pass\n\nTest requirements:\n- This task is itself a quality-gate task; no new test files\n- All tests from T-001 through T-051 must pass",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-051"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Add Sentry feature tags to all social routes", "completed": false },
+                { "title": "Run pnpm build:api + typecheck + lint + test", "completed": false }
+            ],
+            "tags": ["cleanup", "monitoring", "quality"],
+            "phase": "cleanup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 52,
+        "pending": 52,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 2.3
+    }
+}

@@ -1511,7 +1511,37 @@
             "base": "staging",
             "origin": "SPEC-237 staging-smoke follow-up (2026-06-20): manual refresh is synchronous+serial (~100s, Booking actor 73-120s). Owner chose polling not webhook. Decisions: separate run_status column, Booking JSON-LD fast-path stays inline, unified async refresh() shared by weekly cron, owner panel live status.",
             "dependsOn": ["SPEC-237"],
-            "tags": ["external-reputation", "apify", "cron", "async", "accommodation", "SPEC-237-followup"]
+            "tags": [
+                "external-reputation",
+                "apify",
+                "cron",
+                "async",
+                "accommodation",
+                "SPEC-237-followup"
+            ]
+        },
+        {
+            "specId": "SPEC-254",
+            "title": "Social Automation Backend",
+            "type": "feature",
+            "complexity": "high",
+            "status": "in-progress",
+            "path": "SPEC-254-social-media-publish",
+            "created": "2026-06-20T00:00:00.000Z",
+            "base": "staging",
+            "origin": "Design session 2026-06-20: replaces Airtable-based social automation (Custom GPT drafts -> backend -> admin review -> Make publish). Phases 1-4 core. Renumbered from SPEC-250. Follow-ups: SPEC-255 Airtable migration, SPEC-256 Custom-GPT-in-platform spike.",
+            "tags": [
+                "social",
+                "automation",
+                "api",
+                "admin",
+                "cron",
+                "make",
+                "gpt",
+                "cloudinary",
+                "backend",
+                "permissions"
+            ]
         }
     ]
 }
