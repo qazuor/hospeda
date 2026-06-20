@@ -132,31 +132,31 @@
             "id": "T-005",
             "title": "Add owner-scoped listOwn service method on ExperienceService",
             "description": "Mirror T-004 for ExperienceService (own experience listings, ownerId scoping, soft-delete excluded). Factor shared logic into BaseCommerceListingService if clean. Tests: unit tests symmetric to T-004.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-004"],
             "blocks": ["T-007"],
             "subtasks": [
                 {
                     "title": "listOwn on ExperienceService",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Ownership + soft-delete unit tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "commerce", "core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-20T07:58:00.000Z",
+                "completed": "2026-06-20T08:00:00.000Z"
             }
         },
         {
@@ -853,9 +853,9 @@
     ],
     "summary": {
         "total": 26,
-        "pending": 22,
+        "pending": 21,
         "inProgress": 0,
-        "completed": 4,
+        "completed": 5,
         "blocked": 0,
         "averageComplexity": 2.3
     }

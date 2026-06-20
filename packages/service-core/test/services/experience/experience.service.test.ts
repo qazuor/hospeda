@@ -477,3 +477,26 @@ describe('ExperienceService.ENTITY_NAME', () => {
         expect(ExperienceService.ENTITY_NAME).toBe('experience');
     });
 });
+
+// ---------------------------------------------------------------------------
+// listOwn — owner-tier read inherited from BaseCommerceListingService (SPEC-249 T-005)
+// ---------------------------------------------------------------------------
+
+describe('ExperienceService.listOwn', () => {
+    it("lists the owner's own non-deleted experience listings (hard-scoped to ownerId)", async () => {
+        const entity = makeExperienceEntity();
+        const service = makeService(entity);
+        const mockFindAll = (service as AnyService).model.findAll;
+
+        const result = await service.listOwn(ownerActor);
+
+        expect(result.error).toBeUndefined();
+        expect(result.data?.listings).toHaveLength(1);
+        expect(mockFindAll).toHaveBeenCalledWith(
+            { ownerId: OWNER_ID, deletedAt: null },
+            { page: 1, pageSize: 100 },
+            undefined,
+            undefined
+        );
+    });
+});
