@@ -8,8 +8,8 @@
  * Identity/core fields are rendered read-only by the hosting page, not here.
  *
  * Field-group coverage:
- *   T-012 mechanics + richDescription (this file)
- *   T-013 simple fields (contactInfo, menuUrl/priceRange or isPriceOnRequest)
+ *   T-012 mechanics + richDescription
+ *   T-013 simple fields (contactInfo, price group: menuUrl/priceRange | isPriceOnRequest)
  *   T-014 structured fields (openingHours, socialNetworks)
  *   T-015 media gallery
  *   T-016 amenities / features
@@ -18,6 +18,7 @@ import { apiClient } from '@/lib/api/client';
 import type { CommerceListingDetail, CommerceVertical } from '@/lib/commerce/owner-listings';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { PriceRangeEnum } from '@repo/schemas';
 import { type JSX, useCallback, useState } from 'react';
 import styles from './CommerceListingEditor.module.css';
 
@@ -38,6 +39,13 @@ type SaveStatus =
     | { readonly kind: 'success' }
     | { readonly kind: 'error'; readonly message: string };
 
+/** Subset of the contact JSONB block the owner edits in this surface. */
+interface ContactValues {
+    mobilePhone: string;
+    workEmail: string;
+    website: string;
+}
+
 /** Resolve the owner PATCH endpoint for the given vertical. */
 function patchPathFor({
     vertical,
@@ -46,6 +54,12 @@ function patchPathFor({
     return vertical === 'gastronomy'
         ? `/api/v1/protected/gastronomies/${listingId}`
         : `/api/v1/protected/experiences/${listingId}`;
+}
+
+/** Read a nullable string field from an unknown record as a form-friendly string. */
+function strField(source: Record<string, unknown>, key: string): string {
+    const value = source[key];
+    return typeof value === 'string' ? value : '';
 }
 
 /**
@@ -60,9 +74,23 @@ export function CommerceListingEditor({
 }: CommerceListingEditorProps): JSX.Element {
     const { t } = createTranslations(locale);
 
+    const data = initialData as unknown as Record<string, unknown>;
+    const initialContact = (data.contactInfo ?? {}) as Record<string, unknown>;
+
     const [richDescription, setRichDescription] = useState<string>(
-        initialData.richDescription ?? ''
+        strField(data, 'richDescription')
     );
+    const [contact, setContact] = useState<ContactValues>({
+        mobilePhone: strField(initialContact, 'mobilePhone'),
+        workEmail: strField(initialContact, 'workEmail'),
+        website: strField(initialContact, 'website')
+    });
+    const [priceRange, setPriceRange] = useState<string>(strField(data, 'priceRange'));
+    const [menuUrl, setMenuUrl] = useState<string>(strField(data, 'menuUrl'));
+    const [isPriceOnRequest, setIsPriceOnRequest] = useState<boolean>(
+        data.isPriceOnRequest === true
+    );
+
     const [dirty, setDirty] = useState<ReadonlySet<string>>(new Set());
     const [status, setStatus] = useState<SaveStatus>({ kind: 'idle' });
 
@@ -75,14 +103,38 @@ export function CommerceListingEditor({
         setStatus({ kind: 'idle' });
     }, []);
 
+    const updateContact = useCallback(
+        (patch: Partial<ContactValues>) => {
+            setContact((prev) => ({ ...prev, ...patch }));
+            markDirty('contactInfo');
+        },
+        [markDirty]
+    );
+
     /** Build the PATCH payload from the dirty field groups only. */
     const buildPayload = useCallback((): Record<string, unknown> => {
         const payload: Record<string, unknown> = {};
         if (dirty.has('richDescription')) {
             payload.richDescription = richDescription;
         }
+        if (dirty.has('contactInfo')) {
+            payload.contactInfo = {
+                mobilePhone: contact.mobilePhone || undefined,
+                workEmail: contact.workEmail || undefined,
+                website: contact.website || undefined
+            };
+        }
+        if (dirty.has('priceRange')) {
+            payload.priceRange = priceRange || null;
+        }
+        if (dirty.has('menuUrl')) {
+            payload.menuUrl = menuUrl || null;
+        }
+        if (dirty.has('isPriceOnRequest')) {
+            payload.isPriceOnRequest = isPriceOnRequest;
+        }
         return payload;
-    }, [dirty, richDescription]);
+    }, [dirty, richDescription, contact, priceRange, menuUrl, isPriceOnRequest]);
 
     const handleSubmit = useCallback(
         async (event: React.FormEvent<HTMLFormElement>) => {
@@ -137,6 +189,96 @@ export function CommerceListingEditor({
                     }}
                 />
             </section>
+
+            <fieldset className={styles.section}>
+                <legend className={styles.label}>
+                    {t('commerce.owner.editor.sections.contactInfo', 'Información de contacto')}
+                </legend>
+                <input
+                    className={styles.input}
+                    type="tel"
+                    aria-label={t('commerce.owner.editor.sections.contactInfo', 'Teléfono')}
+                    value={contact.mobilePhone}
+                    placeholder="+54..."
+                    onChange={(event) => updateContact({ mobilePhone: event.target.value })}
+                />
+                <input
+                    className={styles.input}
+                    type="email"
+                    aria-label="email"
+                    value={contact.workEmail}
+                    onChange={(event) => updateContact({ workEmail: event.target.value })}
+                />
+                <input
+                    className={styles.input}
+                    type="url"
+                    aria-label="website"
+                    value={contact.website}
+                    onChange={(event) => updateContact({ website: event.target.value })}
+                />
+            </fieldset>
+
+            {vertical === 'gastronomy' ? (
+                <section className={styles.section}>
+                    <label
+                        className={styles.label}
+                        htmlFor="ce-priceRange"
+                    >
+                        {t('commerce.owner.editor.sections.priceRange', 'Rango de precios')}
+                    </label>
+                    <select
+                        id="ce-priceRange"
+                        className={styles.input}
+                        value={priceRange}
+                        onChange={(event) => {
+                            setPriceRange(event.target.value);
+                            markDirty('priceRange');
+                        }}
+                    >
+                        <option value="">—</option>
+                        {Object.values(PriceRangeEnum).map((tier) => (
+                            <option
+                                key={tier}
+                                value={tier}
+                            >
+                                {tier}
+                            </option>
+                        ))}
+                    </select>
+
+                    <label
+                        className={styles.label}
+                        htmlFor="ce-menuUrl"
+                    >
+                        {t('commerce.owner.editor.sections.menuUrl', 'Enlace al menú')}
+                    </label>
+                    <input
+                        id="ce-menuUrl"
+                        className={styles.input}
+                        type="url"
+                        value={menuUrl}
+                        placeholder="https://..."
+                        onChange={(event) => {
+                            setMenuUrl(event.target.value);
+                            markDirty('menuUrl');
+                        }}
+                    />
+                </section>
+            ) : (
+                <section className={styles.section}>
+                    <label className={styles.checkbox}>
+                        <input
+                            type="checkbox"
+                            checked={isPriceOnRequest}
+                            onChange={(event) => {
+                                setIsPriceOnRequest(event.target.checked);
+                                markDirty('isPriceOnRequest');
+                            }}
+                        />
+                        {t('commerce.owner.editor.sections.priceRange', 'Precio a consultar')}
+                    </label>
+                </section>
+            )}
 
             <div className={styles.actions}>
                 <button

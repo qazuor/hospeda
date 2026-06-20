@@ -412,35 +412,35 @@
             "id": "T-013",
             "title": "Editor: simple field groups (menuUrl, priceRange, richDescription, contactInfo)",
             "description": "Implement the simple operational field groups in the editor island: menuUrl (url input), priceRange (select/enum), richDescription (textarea/rich), contactInfo (phone/email/website inputs). Wire each to the patch submit. Tests: component tests — edit + submit persists, validation errors shown.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-012"],
             "blocks": ["T-021", "T-025"],
             "subtasks": [
                 {
                     "title": "menuUrl + priceRange + richDescription",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "contactInfo group",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Component tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "commerce", "core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-20T09:50:00.000Z",
+                "completed": "2026-06-20T10:00:00.000Z"
             }
         },
         {
@@ -853,9 +853,9 @@
     ],
     "summary": {
         "total": 26,
-        "pending": 14,
+        "pending": 13,
         "inProgress": 0,
-        "completed": 12,
+        "completed": 13,
         "blocked": 0,
         "averageComplexity": 2.3
     }

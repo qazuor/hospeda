@@ -100,4 +100,46 @@ describe('CommerceListingEditor', () => {
 
         await screen.findByRole('alert');
     });
+
+    it('PATCHes only the priceRange field group when the price tier changes (gastronomy)', async () => {
+        mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
+        renderEditor('gastronomy');
+
+        fireEvent.change(screen.getByLabelText('Rango de precios'), { target: { value: 'MID' } });
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+        await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
+        expect(mockPatch).toHaveBeenCalledWith({
+            path: '/api/v1/protected/gastronomies/abc',
+            body: { priceRange: 'MID' }
+        });
+    });
+
+    it('PATCHes the contactInfo group when a contact field changes', async () => {
+        mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
+        renderEditor('gastronomy');
+
+        fireEvent.change(screen.getByLabelText('Teléfono'), {
+            target: { value: '+5491100000000' }
+        });
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+        await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
+        expect(mockPatch).toHaveBeenCalledWith({
+            path: '/api/v1/protected/gastronomies/abc',
+            body: {
+                contactInfo: {
+                    mobilePhone: '+5491100000000',
+                    workEmail: undefined,
+                    website: undefined
+                }
+            }
+        });
+    });
+
+    it('shows the price-on-request toggle for the experience vertical (no price select)', () => {
+        renderEditor('experience');
+        expect(screen.queryByLabelText('Rango de precios')).toBeNull();
+        expect(screen.getByRole('checkbox')).toBeInTheDocument();
+    });
 });
