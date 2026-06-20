@@ -618,6 +618,7 @@
 | `GET /api/v1/admin/views/top` | `views/admin/top.ts` | none | - | n/a | admin-tier route; gated by ANALYTICS_VIEW permission, no billing gate needed |
 | `GET /api/v1/admin/views/daily-series` | `views/admin/daily-series.ts` | none | - | n/a | admin-tier route; gated by ANALYTICS_VIEW permission, no billing gate needed |
 | **GASTRONOMY — PROTECTED** | | | | | |
+| `GET /api/v1/protected/gastronomies/mine` | `gastronomy/protected/listMine.ts` | none | - | n/a | Owner read of own listings; listOwn hard-scopes to ownerId = actor.id, no billing gate — read of own data (SPEC-249 T-006) |
 | `GET /api/v1/protected/gastronomies/{id}` | `gastronomy/protected/getById.ts` | none | - | n/a | Read own listing; auth + ownership check in handler (SPEC-239) |
 | `PATCH /api/v1/protected/gastronomies/{id}` | `gastronomy/protected/patch.ts` | none | - | n/a | Owner-scoped edit; auth + ownership check. Commerce-subscription gating deferred to SPEC-239 billing API (T-048+) |
 | `POST /api/v1/protected/gastronomies/{id}/faqs` | `gastronomy/protected/addFaq.ts` | none | - | n/a | Owner-scoped FAQ write; auth + ownership check (SPEC-239) |
@@ -656,6 +657,7 @@
 | `GET /api/v1/public/experiences/{id}/faqs` | `experience/public/getFaqs.ts` | none | - | n/a | Public FAQ read; no auth, no billing gate (SPEC-240 T-019) |
 | `GET /api/v1/public/experiences/{id}/reviews` | `experience/public/getReviews.ts` | none | - | n/a | Public approved-review list; no auth, no billing gate (SPEC-240 T-019) |
 | **EXPERIENCES — PROTECTED** | | | | | |
+| `GET /api/v1/protected/experiences/mine` | `experience/protected/listMine.ts` | none | - | n/a | Owner read of own listings; listOwn hard-scopes to ownerId = actor.id, no billing gate — read of own data (SPEC-249 T-007) |
 | `GET /api/v1/protected/experiences/{id}` | `experience/protected/getById.ts` | none | - | n/a | Read own listing; auth + ownership check in handler (SPEC-240 T-020) |
 | `PATCH /api/v1/protected/experiences/{id}` | `experience/protected/patch.ts` | none | - | n/a | Owner-scoped edit; auth + ownership check. Commerce-subscription gating deferred (SPEC-240 T-020) |
 | `POST /api/v1/protected/experiences/{id}/faqs` | `experience/protected/addFaq.ts` | none | - | n/a | Owner-scoped FAQ write; auth + ownership check (SPEC-240 T-020) |

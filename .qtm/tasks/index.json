@@ -757,7 +757,7 @@
             "specId": "SPEC-249",
             "title": "Commerce owner self-service web area (operational editing + force-password + credential email)",
             "status": "in-progress",
-            "progress": "7/26",
+            "progress": "8/26",
             "path": "SPEC-249-commerce-owner-self-service-web",
             "branch": "spec/SPEC-249-commerce-owner-self-service-web",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-249-commerce-owner-self-service-web",

@@ -233,31 +233,31 @@
             "id": "T-008",
             "title": "Add endpoint-gate-matrix rows for the new /mine endpoints (SPEC-145 guard)",
             "description": "Add rows to docs/billing/endpoint-gate-matrix.md for GET /gastronomy/protected/mine and GET /experience/protected/mine (CI guard rejects new routes without a matrix row). Note them in apps/api/docs/route-architecture.md. No tests (docs), but the CI matrix guard must pass.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-006", "T-007"],
             "blocks": ["T-026"],
             "subtasks": [
                 {
                     "title": "Two matrix rows",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "route-architecture note",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs", "api", "core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-20T08:18:00.000Z",
+                "completed": "2026-06-20T08:24:00.000Z"
             }
         },
         {
@@ -853,9 +853,9 @@
     ],
     "summary": {
         "total": 26,
-        "pending": 19,
+        "pending": 18,
         "inProgress": 0,
-        "completed": 7,
+        "completed": 8,
         "blocked": 0,
         "averageComplexity": 2.3
     }
