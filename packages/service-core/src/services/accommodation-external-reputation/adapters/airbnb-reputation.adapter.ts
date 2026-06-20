@@ -156,6 +156,9 @@ export class AirbnbReputationAdapter implements ReputationAdapter {
             // `rating` is either a flat number or a nested aggregate object
             // (`tri_angle/airbnb-rooms-urls-scraper`). Pull the overall score and
             // review count from whichever shape the configured actor returns.
+            // Expected score scale is 0-5: the public schema caps `rating` at 10,
+            // so an actor returning `guestSatisfaction` on a 0-100 scale would
+            // silently fail validation and drop the platform from the page.
             const nestedRating =
                 item.rating !== null && typeof item.rating === 'object' ? item.rating : undefined;
             const flatRating =

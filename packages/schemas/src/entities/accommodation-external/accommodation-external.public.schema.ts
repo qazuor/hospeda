@@ -120,10 +120,9 @@ export interface ExternalReputationSource {
  * response from raw DB rows.
  *
  * Filtering rules applied:
- * 1. Only verified listings are included.
- * 2. Listings where both `showLink` and `showReviews` are false are omitted.
- * 3. `url` and `deepLink` are only included when `showLink` is true.
- * 4. `snippets` are only included when `showReviews` is true AND the platform
+ * 1. Listings where both `showLink` and `showReviews` are false are omitted.
+ * 2. `url` and `deepLink` are only included when `showLink` is true.
+ * 3. `snippets` are only included when `showReviews` is true AND the platform
  *    is GOOGLE AND the `snippetsFetchedAt` timestamp is within `ttlMs`.
  *
  * @param sources - Raw DB rows joining listing + reputation data.
@@ -133,7 +132,7 @@ export interface ExternalReputationSource {
  * @example
  * ```ts
  * const block = buildExternalReputationBlock(dbRows);
- * // block.items contains only visible, verified platforms
+ * // block.items contains only visible platforms
  * ```
  */
 export function buildExternalReputationBlock(

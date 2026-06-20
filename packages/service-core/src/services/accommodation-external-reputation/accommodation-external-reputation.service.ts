@@ -381,8 +381,6 @@ export class AccommodationExternalReputationService {
      *    `HOSPEDA_EXTREP_GOOGLE_SNIPPET_TTL_DAYS` (default 30 d), snippets are
      *    stripped from the response (AC-7.2 degrade) but the aggregate
      *    (rating, reviewsCount) is still shown.
-     * 4. Unverified listings are excluded (handled by
-     *    {@link buildExternalReputationBlock}).
      *
      * @param accommodationId - UUID of the accommodation.
      * @param ctx - Optional service context.

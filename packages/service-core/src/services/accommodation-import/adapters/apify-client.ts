@@ -7,21 +7,18 @@
  * task) import this helper so the HTTP logic lives in exactly one place.
  *
  * **Actor slug encoding**: Apify actor IDs take the form `owner/actor-name`
- * (e.g. `apify/airbnb-scraper`).  The `/` separating owner from actor is a
- * meaningful path delimiter in the Apify API URL, NOT a segment separator that
- * should be percent-encoded.  The URL is therefore constructed with the slug
- * inserted verbatim into the path:
+ * (e.g. `apify/airbnb-scraper`).  The Apify REST API addresses an actor as a
+ * SINGLE path segment using the tilde form `owner~actor-name`; the raw slug
+ * with a literal `/` routes to a non-existent endpoint and returns HTTP 404.
+ * The configured `owner/actor` slug is therefore transformed to its tilde form
+ * before being inserted into the path:
  *
  * ```
- * https://api.apify.com/v2/acts/<owner>/<actor-name>/run-sync-get-dataset-items
+ * https://api.apify.com/v2/acts/<owner>~<actor-name>/run-sync-get-dataset-items
  * ```
  *
  * The API token is sent in an `Authorization: Bearer` header, never as a query
  * parameter, so it cannot leak through access logs, proxies, or error traces.
- *
- * The `~` tilde alternative form (`owner~actor-name`) is also accepted by the
- * Apify API and avoids any encoding ambiguity, but verbatim slash insertion
- * matches the official docs' canonical form and is used here.
  *
  * **Error policy**: All non-2xx responses and all `fetch` exceptions return an
  * empty array.  Callers must treat an empty result as a degraded extraction —
@@ -63,9 +60,10 @@ export interface RunApifyActorInput {
  * Runs an Apify actor synchronously and returns the full dataset items array.
  *
  * Calls `POST https://api.apify.com/v2/acts/{actor}/run-sync-get-dataset-items`
- * where `{actor}` is the raw slug (slash preserved as path separator) and the
- * token travels in an `Authorization: Bearer` header.  The request body is
- * `actorInput` serialised as JSON.  Returns `[]` for a malformed actor slug.
+ * where `{actor}` is the configured `owner/actor` slug transformed to its tilde
+ * form `owner~actor` (a literal slash 404s) and the token travels in an
+ * `Authorization: Bearer` header.  The request body is `actorInput` serialised
+ * as JSON.  Returns `[]` for a malformed actor slug.
  *
  * The `run-sync-get-dataset-items` endpoint blocks until the actor run
  * finishes and streams back the dataset as a top-level JSON array, so the
