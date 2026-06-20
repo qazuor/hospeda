@@ -373,39 +373,39 @@
             "id": "T-012",
             "title": "Build editor island scaffolding (native form, submit hook to protected patch)",
             "description": "Create CommerceListingEditor.client.tsx: native HTML form (NOT TanStack Form), section layout, dirty-state tracking, a small submit hook that PATCHes the correct protected endpoint per vertical (gastronomy|experience /protected/patch, credentials:'include'), success/error handling + i18n messages. Vanilla CSS / CSS Module. Tests: unit test the submit hook (correct URL/body per vertical, error surfaced).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-011"],
             "blocks": ["T-013", "T-014", "T-015", "T-016"],
             "subtasks": [
                 {
                     "title": "Island shell + section layout",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Submit hook to per-vertical patch",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Dirty-state + error/success handling",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Submit-hook unit test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "commerce", "core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-20T09:30:00.000Z",
+                "completed": "2026-06-20T09:45:00.000Z"
             }
         },
         {
@@ -853,9 +853,9 @@
     ],
     "summary": {
         "total": 26,
-        "pending": 15,
+        "pending": 14,
         "inProgress": 0,
-        "completed": 11,
+        "completed": 12,
         "blocked": 0,
         "averageComplexity": 2.3
     }
