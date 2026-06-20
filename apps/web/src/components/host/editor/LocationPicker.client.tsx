@@ -1,3 +1,4 @@
+import { Spinner } from '@/components/shared/feedback/Spinner';
 import { useGeocodingReverse, useGeocodingSearch } from '@/hooks/useGeocoding';
 /**
  * @file LocationPicker.client.tsx
@@ -223,11 +224,14 @@ export function LocationPicker({
                         autoComplete="off"
                     />
                     {isSearching && (
-                        <span
-                            className={styles.searchSpinner}
-                            aria-label="Buscando..."
-                        >
-                            ⏳
+                        <span className={styles.searchSpinner}>
+                            <Spinner
+                                size="sm"
+                                label={t(
+                                    'host.properties.editor.location.searching',
+                                    'Buscando...'
+                                )}
+                            />
                         </span>
                     )}
                 </div>
