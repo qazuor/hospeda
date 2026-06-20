@@ -1,5 +1,5 @@
 ---
-specId: SPEC-250
+specId: SPEC-253
 title: Commerce owner editor — extended fields + single COMMERCE_EDIT_OWN permission
 slug: commerce-owner-editor-extended-fields
 type: feature
@@ -19,7 +19,7 @@ tags:
   - i18n
 ---
 
-# SPEC-250 — Commerce owner editor: extended fields + single permission
+# SPEC-253 — Commerce owner editor: extended fields + single permission
 
 ## 1. Origin
 
