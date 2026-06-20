@@ -68,7 +68,18 @@
             "save": "Guardar cambios",
             "saving": "Guardando...",
             "success": "Cambios guardados.",
-            "error": "No se pudieron guardar los cambios. Probá de nuevo."
+            "error": "No se pudieron guardar los cambios. Probá de nuevo.",
+            "media": {
+                "featured": "Imagen principal",
+                "gallery": "Galería de fotos",
+                "add": "Agregar foto",
+                "remove": "Eliminar",
+                "uploadHint": "JPG, PNG o WebP — máx. 5MB",
+                "invalidType": "Solo se permiten archivos JPG, PNG o WebP",
+                "tooLarge": "El archivo no puede superar 5MB",
+                "uploadFailed": "Error al subir la imagen",
+                "capReached": "Límite de galería alcanzado (máx. {{cap}} fotos)"
+            }
         }
     }
 }

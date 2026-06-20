@@ -22,9 +22,28 @@ vi.mock('../../../src/lib/api/client', () => ({
     apiClient: { patch: vi.fn() }
 }));
 
+vi.mock('../../../src/lib/api/endpoints-protected', () => ({
+    protectedMediaApi: { deleteMedia: vi.fn().mockResolvedValue({ ok: true, data: {} }) }
+}));
+
+vi.mock('../../../src/lib/env', () => ({ getApiUrl: () => 'http://api.test' }));
+
+vi.mock('../../../src/lib/logger', () => ({ webLogger: { warn: vi.fn() } }));
+
 import { apiClient } from '../../../src/lib/api/client';
+import { protectedMediaApi } from '../../../src/lib/api/endpoints-protected';
 
 const mockPatch = vi.mocked(apiClient.patch);
+const mockDeleteMedia = vi.mocked(protectedMediaApi.deleteMedia);
+
+/** A Cloudinary-shaped image (ImageSchema-compatible) for media tests. */
+const galleryImage = {
+    url: 'http://cdn.test/g1.jpg',
+    publicId: 'commerce/g1',
+    width: 800,
+    height: 600,
+    moderationState: 'APPROVED' as const
+};
 
 const baseData = {
     id: 'abc',
@@ -48,6 +67,7 @@ function renderEditor(vertical: 'gastronomy' | 'experience') {
 describe('CommerceListingEditor', () => {
     beforeEach(() => {
         mockPatch.mockReset();
+        mockDeleteMedia.mockClear();
     });
 
     it('keeps the save button disabled until a field changes', () => {
@@ -179,5 +199,78 @@ describe('CommerceListingEditor', () => {
             body: { openingHours?: { days?: Record<string, { closed: boolean }> } };
         };
         expect(call.body.openingHours?.days?.mon?.closed).toBe(true);
+    });
+
+    it('uploads a featured image and PATCHes the media group on save', async () => {
+        const uploaded = {
+            url: 'http://cdn.test/featured.jpg',
+            publicId: 'commerce/featured',
+            width: 1024,
+            height: 768,
+            moderationState: 'APPROVED'
+        };
+        const fetchMock = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => ({ success: true, data: uploaded })
+        });
+        vi.stubGlobal('fetch', fetchMock);
+        mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
+
+        renderEditor('gastronomy');
+
+        const file = new File(['x'], 'featured.png', { type: 'image/png' });
+        fireEvent.change(screen.getByLabelText('Imagen principal'), {
+            target: { files: [file] }
+        });
+
+        await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+        expect(fetchMock.mock.calls[0]?.[0]).toBe(
+            'http://api.test/api/v1/protected/media/upload-entity'
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+        await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
+        expect(mockPatch).toHaveBeenCalledWith({
+            path: '/api/v1/protected/gastronomies/abc',
+            body: { media: { featuredImage: uploaded, gallery: [] } }
+        });
+
+        vi.unstubAllGlobals();
+    });
+
+    it('removes a gallery image (best-effort delete) and PATCHes the trimmed gallery', async () => {
+        mockPatch.mockResolvedValueOnce({ ok: true, data: {} });
+
+        render(
+            <CommerceListingEditor
+                vertical="gastronomy"
+                listingId="abc"
+                locale="es"
+                initialData={
+                    {
+                        id: 'abc',
+                        ownerId: 'owner-1',
+                        name: 'La Parrilla',
+                        slug: 'la-parrilla',
+                        media: { gallery: [galleryImage] }
+                    } as unknown as CommerceListingDetail
+                }
+            />
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: 'Eliminar' }));
+
+        await waitFor(() =>
+            expect(mockDeleteMedia).toHaveBeenCalledWith({ publicId: 'commerce/g1' })
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+
+        await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
+        expect(mockPatch).toHaveBeenCalledWith({
+            path: '/api/v1/protected/gastronomies/abc',
+            body: { media: { gallery: [] } }
+        });
     });
 });

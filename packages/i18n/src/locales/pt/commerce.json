@@ -68,7 +68,18 @@
             "save": "Salvar alterações",
             "saving": "Salvando...",
             "success": "Alterações salvas.",
-            "error": "Não foi possível salvar as alterações. Tente novamente."
+            "error": "Não foi possível salvar as alterações. Tente novamente.",
+            "media": {
+                "featured": "Imagem principal",
+                "gallery": "Galeria de fotos",
+                "add": "Adicionar foto",
+                "remove": "Remover",
+                "uploadHint": "JPG, PNG ou WebP — máx. 5MB",
+                "invalidType": "Apenas arquivos JPG, PNG ou WebP são permitidos",
+                "tooLarge": "O arquivo não pode exceder 5MB",
+                "uploadFailed": "Erro ao enviar a imagem",
+                "capReached": "Limite da galeria atingido (máx. {{cap}} fotos)"
+            }
         }
     }
 }

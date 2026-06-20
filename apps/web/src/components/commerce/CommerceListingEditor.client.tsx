@@ -19,9 +19,10 @@ import type { CommerceListingDetail, CommerceVertical } from '@/lib/commerce/own
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { PriceRangeEnum } from '@repo/schemas';
-import type { OpeningHours } from '@repo/schemas';
+import type { Image, OpeningHours } from '@repo/schemas';
 import { type JSX, useCallback, useState } from 'react';
 import styles from './CommerceListingEditor.module.css';
+import { MediaField } from './MediaField';
 import { OpeningHoursField } from './OpeningHoursField';
 
 export interface CommerceListingEditorProps {
@@ -101,6 +102,7 @@ export function CommerceListingEditor({
     const data = initialData as unknown as Record<string, unknown>;
     const initialContact = (data.contactInfo ?? {}) as Record<string, unknown>;
     const initialSocial = (data.socialNetworks ?? {}) as Record<string, unknown>;
+    const initialMedia = (data.media ?? {}) as Record<string, unknown>;
 
     const [richDescription, setRichDescription] = useState<string>(
         strField(data, 'richDescription')
@@ -125,6 +127,25 @@ export function CommerceListingEditor({
     const [isPriceOnRequest, setIsPriceOnRequest] = useState<boolean>(
         data.isPriceOnRequest === true
     );
+    const [featuredImage, setFeaturedImage] = useState<Image | null>(
+        (initialMedia.featuredImage as Image | undefined) ?? null
+    );
+    const [gallery, setGallery] = useState<readonly Image[]>(
+        (initialMedia.gallery as Image[] | undefined) ?? []
+    );
+    // Media JSONB is REPLACED wholesale on save (gastronomy/experience do not
+    // merge it), so preserve the owner-unmanaged sub-fields (videos,
+    // archivedGallery) and re-send them with every media patch.
+    const [preservedMedia] = useState<Record<string, unknown>>(() => {
+        const preserved: Record<string, unknown> = {};
+        if (Array.isArray(initialMedia.videos)) {
+            preserved.videos = initialMedia.videos;
+        }
+        if (Array.isArray(initialMedia.archivedGallery)) {
+            preserved.archivedGallery = initialMedia.archivedGallery;
+        }
+        return preserved;
+    });
 
     const [dirty, setDirty] = useState<ReadonlySet<string>>(new Set());
     const [status, setStatus] = useState<SaveStatus>({ kind: 'idle' });
@@ -154,6 +175,15 @@ export function CommerceListingEditor({
         [markDirty]
     );
 
+    const updateMedia = useCallback(
+        (next: { readonly featuredImage: Image | null; readonly gallery: readonly Image[] }) => {
+            setFeaturedImage(next.featuredImage);
+            setGallery(next.gallery);
+            markDirty('media');
+        },
+        [markDirty]
+    );
+
     /** Build the PATCH payload from the dirty field groups only. */
     const buildPayload = useCallback((): Record<string, unknown> => {
         const payload: Record<string, unknown> = {};
@@ -179,6 +209,13 @@ export function CommerceListingEditor({
         if (dirty.has('openingHours')) {
             payload.openingHours = openingHours;
         }
+        if (dirty.has('media')) {
+            payload.media = {
+                ...preservedMedia,
+                ...(featuredImage ? { featuredImage } : {}),
+                gallery
+            };
+        }
         if (dirty.has('priceRange')) {
             payload.priceRange = priceRange || null;
         }
@@ -197,7 +234,10 @@ export function CommerceListingEditor({
         openingHours,
         priceRange,
         menuUrl,
-        isPriceOnRequest
+        isPriceOnRequest,
+        featuredImage,
+        gallery,
+        preservedMedia
     ]);
 
     const handleSubmit = useCallback(
@@ -310,6 +350,21 @@ export function CommerceListingEditor({
                         setOpeningHours(next);
                         markDirty('openingHours');
                     }}
+                />
+            </section>
+
+            <section className={styles.section}>
+                <span className={styles.label}>
+                    {t('commerce.owner.editor.sections.media', 'Galería de fotos')}
+                </span>
+                <MediaField
+                    vertical={vertical}
+                    listingId={listingId}
+                    featuredImage={featuredImage}
+                    gallery={gallery}
+                    onChange={updateMedia}
+                    t={t}
+                    classes={styles}
                 />
             </section>
 
