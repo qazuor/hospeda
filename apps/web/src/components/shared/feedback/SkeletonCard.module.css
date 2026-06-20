@@ -12,16 +12,11 @@
 }
 
 .skeleton::after {
-    content: '';
+    content: "";
     position: absolute;
     inset: 0;
     transform: translateX(-100%);
-    background: linear-gradient(
-        90deg,
-        transparent,
-        var(--core-foreground-a05),
-        transparent
-    );
+    background: linear-gradient(90deg, transparent, var(--core-foreground-a05), transparent);
     animation: skeleton-shimmer 1.4s ease-in-out infinite;
 }
 
