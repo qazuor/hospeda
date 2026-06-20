@@ -40,7 +40,7 @@ describe('createCommerceOwnerCredentialsNotificationPort (SPEC-249 T-024, AC-5)'
         });
 
         expect(mockedSend).toHaveBeenCalledTimes(1);
-        const payload = mockedSend.mock.calls[0]?.[0] as Record<string, unknown>;
+        const payload = mockedSend.mock.calls[0]?.[0] as unknown as Record<string, unknown>;
         expect(payload.type).toBe(NotificationType.COMMERCE_OWNER_CREDENTIALS);
         expect(payload.recipientEmail).toBe('owner@example.com');
         expect(payload.recipientName).toBe('Lead Owner');

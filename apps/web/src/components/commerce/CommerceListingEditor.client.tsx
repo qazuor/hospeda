@@ -107,6 +107,7 @@ export function CommerceListingEditor({
 }: CommerceListingEditorProps): JSX.Element {
     const { t } = createTranslations(locale);
 
+    // TYPE-WORKAROUND: the detail is a gastronomy|experience union; we read heterogeneous operational fields by key, which the union type cannot express.
     const data = initialData as unknown as Record<string, unknown>;
     const initialContact = (data.contactInfo ?? {}) as Record<string, unknown>;
     const initialSocial = (data.socialNetworks ?? {}) as Record<string, unknown>;

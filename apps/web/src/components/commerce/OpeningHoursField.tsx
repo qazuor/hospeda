@@ -41,6 +41,7 @@ function withDay(value: OpeningHours | null, key: DayKey, schedule: DaySchedule)
     for (const { key: dayKey } of DAYS) {
         next[dayKey] = dayKey === key ? schedule : dayOf(value, dayKey);
     }
+    // TYPE-WORKAROUND: rebuilt OpeningHours from the day map; structurally valid but TS can't infer the schema-derived shape from the plain literal.
     return {
         timezone: value?.timezone ?? DEFAULT_TZ,
         days: next

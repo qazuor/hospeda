@@ -19,7 +19,7 @@
 .textarea {
     width: 100%;
     padding: var(--space-3);
-    border: 1px solid var(--core-border);
+    border: 1px solid var(--border);
     border-radius: var(--radius-md, 0.5rem);
     background: var(--core-background);
     color: var(--core-foreground);
@@ -29,14 +29,14 @@
 }
 
 .textarea:focus {
-    outline: 2px solid var(--palette-primary, var(--core-foreground));
+    outline: 2px solid var(--brand-primary, var(--core-foreground));
     outline-offset: 1px;
 }
 
 .input {
     width: 100%;
     padding: var(--space-2) var(--space-3);
-    border: 1px solid var(--core-border);
+    border: 1px solid var(--border);
     border-radius: var(--radius-md, 0.5rem);
     background: var(--core-background);
     color: var(--core-foreground);
@@ -45,7 +45,7 @@
 }
 
 .input:focus {
-    outline: 2px solid var(--palette-primary, var(--core-foreground));
+    outline: 2px solid var(--brand-primary, var(--core-foreground));
     outline-offset: 1px;
 }
 
@@ -69,7 +69,7 @@
     gap: var(--space-3);
     flex-wrap: wrap;
     padding: var(--space-2) 0;
-    border-bottom: 1px solid var(--core-border);
+    border-bottom: 1px solid var(--border);
 }
 
 .dayLabel {
@@ -96,8 +96,8 @@
     padding: var(--space-3) var(--space-5);
     border: none;
     border-radius: var(--radius-md, 0.5rem);
-    background: var(--palette-primary, var(--core-foreground));
-    color: var(--palette-primary-foreground, var(--core-background));
+    background: var(--brand-primary, var(--core-foreground));
+    color: var(--accent-foreground, var(--core-background));
     font-weight: 600;
     cursor: pointer;
 }
@@ -109,13 +109,13 @@
 
 .success {
     margin: 0;
-    color: var(--palette-success, #15803d);
+    color: var(--success, #15803d);
     font-size: var(--text-body-sm, 0.9375rem);
 }
 
 .error {
     margin: 0;
-    color: var(--palette-danger, #b91c1c);
+    color: var(--destructive, #b91c1c);
     font-size: var(--text-body-sm, 0.9375rem);
 }
 
@@ -143,7 +143,7 @@
     height: 8rem;
     border-radius: var(--radius-md, 0.5rem);
     overflow: hidden;
-    border: 1px solid var(--palette-border, var(--core-border));
+    border: 1px solid var(--border, var(--border));
 }
 
 .mediaImage {
@@ -177,7 +177,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border: 1px dashed var(--palette-border, var(--core-border));
+    border: 1px dashed var(--border, var(--border));
     border-radius: var(--radius-md, 0.5rem);
     background: transparent;
     color: var(--core-foreground);
@@ -191,7 +191,7 @@
 }
 
 .mediaHint {
-    color: var(--palette-muted-foreground, var(--core-muted-foreground));
+    color: var(--core-muted-foreground, var(--core-muted-foreground));
     font-size: var(--text-body-xs, 0.8125rem);
 }
 
