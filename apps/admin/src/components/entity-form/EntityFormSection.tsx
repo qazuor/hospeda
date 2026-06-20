@@ -666,7 +666,17 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
         //     doesn't misalign its neighbor). Mobile → 1 column (grid-cols-1).
         //   - Each field wrapper carries its own col-span class derived from field type.
         //   - TABS layout: fallback to stacked, no grid (nested sections handle their own layout).
+        //   - customRender: when defined, the function is called directly and its result
+        //     replaces the field-grid entirely (mirrors the view-path behaviour in
+        //     EntityViewContent). Sections WITHOUT customRender are unaffected (SPEC-223).
         const renderSectionContent = () => {
+            // Custom-render sections (e.g. ai-generate, stats-chips) bypass the field
+            // renderer entirely — call the function and return its output. This mirrors
+            // the identical branch in EntityViewContent.buildSectionBody (line ~96).
+            if (typeof config.customRender === 'function') {
+                return config.customRender();
+            }
+
             if (config.layout === 'TABS') {
                 // TABS: stacked layout — nested sections manage their own grid
                 return <div className="space-y-4">{visibleFields.map(renderField)}</div>;
@@ -712,8 +722,9 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
                 {/* Premium upsell — grouped at the bottom so editable fields stay clean. */}
                 <PremiumBlock items={premiumItems} />
 
-                {/* Section Footer Info */}
-                {visibleFields.length === 0 && (
+                {/* Section Footer Info — suppressed for customRender sections whose
+                    fields array is intentionally empty (e.g. ai-generate). */}
+                {visibleFields.length === 0 && !config.customRender && (
                     <div className="py-8 text-center text-muted-foreground text-sm">
                         {t('admin-common.entityForm.noAccessibleFields')}
                     </div>
