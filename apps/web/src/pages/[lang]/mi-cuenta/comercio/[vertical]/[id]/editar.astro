@@ -61,8 +61,8 @@ let amenities: ReturnType<typeof transformAmenityList> = [];
 let features: ReturnType<typeof transformAmenityList> = [];
 try {
     const [amenitiesRes, featuresRes] = await Promise.all([
-        fetch(`${apiUrl}/api/v1/public/amenities?pageSize=200`),
-        fetch(`${apiUrl}/api/v1/public/features?pageSize=200`)
+        fetch(`${apiUrl}/api/v1/public/amenities?pageSize=100`),
+        fetch(`${apiUrl}/api/v1/public/features?pageSize=100`)
     ]);
     if (amenitiesRes.ok) {
         const body = (await amenitiesRes.json()) as { data?: { items?: Record<string, unknown>[] } };
