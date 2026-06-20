@@ -13,7 +13,13 @@
 import { PermissionEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 
-export type MediaEntityType = 'accommodation' | 'destination' | 'event' | 'post';
+export type MediaEntityType =
+    | 'accommodation'
+    | 'destination'
+    | 'event'
+    | 'post'
+    | 'gastronomy'
+    | 'experience';
 
 /**
  * Maps each entity type to the set of permissions that allow modifying its media.
@@ -26,14 +32,20 @@ const ENTITY_UPDATE_PERMISSIONS: Record<MediaEntityType, readonly PermissionEnum
     ],
     destination: [PermissionEnum.DESTINATION_UPDATE],
     event: [PermissionEnum.EVENT_UPDATE],
-    post: [PermissionEnum.POST_UPDATE]
+    post: [PermissionEnum.POST_UPDATE],
+    gastronomy: [PermissionEnum.COMMERCE_MEDIA_EDIT_OWN, PermissionEnum.COMMERCE_EDIT_ALL],
+    experience: [PermissionEnum.COMMERCE_MEDIA_EDIT_OWN, PermissionEnum.COMMERCE_EDIT_ALL]
 };
 
 /**
  * Entity types whose update permission splits into OWN / ANY variants.
  * For these, when the actor only has the OWN variant, ownership must be verified.
  */
-const OWN_ANY_ENTITIES: ReadonlySet<MediaEntityType> = new Set(['accommodation']);
+const OWN_ANY_ENTITIES: ReadonlySet<MediaEntityType> = new Set([
+    'accommodation',
+    'gastronomy',
+    'experience'
+]);
 
 type EntityWithOwner = { ownerId?: string | null };
 
@@ -72,7 +84,11 @@ export const validateEntityMediaPermission = ({
 
     // For OWN/ANY entities: if actor has ANY variant, skip ownership check.
     const anyPermission =
-        entityType === 'accommodation' ? PermissionEnum.ACCOMMODATION_UPDATE_ANY : null;
+        entityType === 'accommodation'
+            ? PermissionEnum.ACCOMMODATION_UPDATE_ANY
+            : entityType === 'gastronomy' || entityType === 'experience'
+              ? PermissionEnum.COMMERCE_EDIT_ALL
+              : null;
 
     if (anyPermission && actor.permissions.includes(anyPermission)) {
         return { allowed: true };

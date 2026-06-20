@@ -40,6 +40,7 @@ export type CommerceLeadCreateInput = z.infer<typeof CommerceLeadCreateInputSche
  * - `handledAt` — timestamp the handling action
  * - `handledById` — record which admin acted
  * - `adminNote` — attach an internal note
+ * - `provisionedUserId` — link the provisioned COMMERCE_OWNER (SPEC-249 Part D)
  *
  * Applicant fields (businessName, email, etc.) are intentionally excluded —
  * the lead is an immutable record of the original submission.
@@ -49,7 +50,8 @@ export const CommerceLeadAdminUpdateInputSchema = z.object({
     status: CommerceLeadStatusEnum.optional(),
     handledAt: z.date().optional(),
     handledById: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }).optional(),
-    adminNote: z.string().max(1000, { message: 'zodError.commerceLead.adminNote.max' }).optional()
+    adminNote: z.string().max(1000, { message: 'zodError.commerceLead.adminNote.max' }).optional(),
+    provisionedUserId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }).optional()
 });
 
 /** TypeScript type for {@link CommerceLeadAdminUpdateInputSchema}. */

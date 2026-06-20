@@ -3528,6 +3528,11 @@
         }
     },
     "commerce": {
+        "ownerListing": {
+            "id": {
+                "invalid": "[EN] El identificador del comercio no es válido"
+            }
+        },
         "description": {
             "max": "[EN] La descripción no puede superar los {{max}} caracteres",
             "min": "[EN] La descripción debe tener al menos {{min}} caracteres",

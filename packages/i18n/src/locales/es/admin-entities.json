@@ -883,7 +883,19 @@
         },
         "actions": {
             "handle": "Resolver",
-            "provision": "Crear cuenta"
+            "provision": "Crear cuenta",
+            "approveProvision": "Aprobar y crear cuenta"
+        },
+        "approveProvision": {
+            "title": "Aprobar y crear cuenta de propietario",
+            "description": "Se aprobará el lead de {{businessName}} y se creará una cuenta COMMERCE_OWNER para {{email}} en un solo paso. Las credenciales temporales serán enviadas por email.",
+            "noteLabel": "Nota (opcional)",
+            "notePlaceholder": "Comentario interno para el equipo...",
+            "confirm": "Aprobar y crear cuenta",
+            "submitting": "Procesando...",
+            "successMessage": "Lead aprobado y cuenta creada para {{email}}. Las credenciales fueron enviadas por email.",
+            "alreadyProvisionedMessage": "El lead ya tenía una cuenta provisionada.",
+            "error": "Error al aprobar y crear la cuenta. Intentá de nuevo."
         },
         "handle": {
             "title": "Resolver lead",

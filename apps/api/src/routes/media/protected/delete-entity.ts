@@ -20,6 +20,8 @@ import {
     AccommodationService,
     DestinationService,
     EventService,
+    ExperienceService,
+    GastronomyService,
     PostService
 } from '@repo/service-core';
 import type { Context, MiddlewareHandler } from 'hono';
@@ -102,7 +104,9 @@ const PLURAL_TO_SINGULAR: Readonly<Record<string, MediaEntityType>> = {
     accommodations: 'accommodation',
     destinations: 'destination',
     events: 'event',
-    posts: 'post'
+    posts: 'post',
+    gastronomies: 'gastronomy',
+    experiences: 'experience'
 };
 
 /**
@@ -116,7 +120,7 @@ const parseEntityFromPublicId = (
     publicId: string
 ): { entityType: MediaEntityType; entityId: string } | null => {
     const match = publicId.match(
-        /^hospeda\/[^/]+\/(accommodations|destinations|events|posts)\/([^/]+)(\/|$)/
+        /^hospeda\/[^/]+\/(accommodations|destinations|events|posts|gastronomies|experiences)\/([^/]+)(\/|$)/
     );
     if (!match) return null;
 
@@ -134,7 +138,13 @@ const parseEntityFromPublicId = (
  */
 const resolveEntityService = (
     entityType: MediaEntityType
-): AccommodationService | DestinationService | EventService | PostService => {
+):
+    | AccommodationService
+    | DestinationService
+    | EventService
+    | PostService
+    | GastronomyService
+    | ExperienceService => {
     switch (entityType) {
         case 'accommodation':
             return new AccommodationService({ logger: apiLogger });
@@ -144,6 +154,10 @@ const resolveEntityService = (
             return new EventService({ logger: apiLogger });
         case 'post':
             return new PostService({ logger: apiLogger });
+        case 'gastronomy':
+            return new GastronomyService({ logger: apiLogger });
+        case 'experience':
+            return new ExperienceService({ logger: apiLogger });
     }
 };
 

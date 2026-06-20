@@ -18,6 +18,7 @@ tags: ["external-reputation", "apify", "cron", "async", "accommodation", "SPEC-2
 **Motivation**: The current `AccommodationExternalReputationService.refresh()` runs in a serial `for...of` loop calling `runApifyActor()` — which uses Apify's `run-sync-get-dataset-items` endpoint that blocks until the actor finishes. The Booking actor alone takes 73-120 s, and a 3-platform refresh hangs the HTTP connection for ~100 s. This causes timeouts, poor UX in the owner panel, and wastes API server resources. The weekly background cron shares the same code path (it just runs detached, so the hang is invisible there today — but it still means 3+ actors run serially rather than in parallel).
 
 **Success metrics**:
+
 - The `POST /api/v1/protected/accommodations/:id/external-reputation/refresh` endpoint returns p95 < 1 s (target) and never blocks > ~2 s even under adversarial conditions.
 - All 3 platforms resolve correctly and their data appears in the owner panel within the polling interval after the Apify run finishes (typically 2-5 min from enqueue).
 - The weekly cron continues to refresh all accommodations (same code path, no regression).
@@ -94,34 +95,40 @@ tags: ["external-reputation", "apify", "cron", "async", "accommodation", "SPEC-2
 ### UX Considerations
 
 **User flows**:
+
 1. Owner opens accommodation config panel → clicks "Refresh reputation" button → button immediately shows "Refreshing..." → panel shows per-platform state chips (`actualizando...` / rating badge with cached data).
 2. Panel polls GET status endpoint every ~10 s (only while at least one platform is `pending` or `running`).
 3. As each platform settles, chip updates inline: either the new rating/review count (ok) or a "falló" error badge.
 4. When all platforms are settled, polling stops.
 
 **Loading states**:
+
 - `pending` / `running`: show a spinner chip with text "actualizando..." and the previously cached rating (if any) in muted style to indicate it may be stale.
 - `idle` + `fetch_status = 'ok'`: show rating/review count normally.
 - `idle` + `fetch_status = 'error'` / `'blocked'` / `'not_found'`: show an error badge "falló" with the `fetch_message` as a tooltip.
 - Initial load before any refresh: unchanged from current behavior (shows cached data).
 
 **Edge cases**:
+
 - If the owner navigates away during a pending refresh, the run continues in the background. On return to the panel, the status reflects the current DB state.
 - If an accommodation has NO Apify platforms (e.g. Google only), the poll never fires for it and 202 is never returned — a 200 with inline data is the correct response.
 - If Apify token is missing from credentials at enqueue time, the run is NOT enqueued; `fetch_status = 'error'`, `fetch_message = 'Apify token not configured'`, endpoint still returns 200/202 for other platforms.
 
 **Error states**:
+
 - `run_status = 'idle'` + `fetch_status = 'error'`: displayed as "falló" with tooltip.
 - Network failure polling the status endpoint: silently retry next poll tick, do not show an error to the owner (transient).
 - If the status endpoint itself returns a 4xx/5xx: stop polling, show a generic "no se pudo obtener el estado" message.
 
 **Accessibility**:
+
 - Status chips must include `aria-live="polite"` so screen-reader users hear state transitions without focus change.
 - Spinner animation must respect `prefers-reduced-motion`.
 
 **Styling**: web app uses vanilla CSS / CSS Modules (`*.module.css`) co-located with the component. No Tailwind. All user-facing text via `@repo/i18n` locale keys.
 
 **i18n keys to add** (namespace `web` or `common`, confirm with existing convention):
+
 - `externalReputation.status.pending` → "Actualizando..."
 - `externalReputation.status.running` → "Procesando..."
 - `externalReputation.status.ok` → (not shown directly — rating renders as normal)
@@ -170,6 +177,7 @@ tags: ["external-reputation", "apify", "cron", "async", "accommodation", "SPEC-2
 | Tests | Create/modify | various `test/` directories |
 
 **Integration points**:
+
 - Apify REST API (async endpoints — see External API section below).
 - Existing `reputationModel.upsertReputation()` is the write path (unchanged interface, new fields added to payload).
 - `getReputationAdapterCredentials()` in `apps/api/src/utils/reputation-credentials.ts` — unchanged, still supplies `apifyToken`, `apifyBookingActor`, `apifyAirbnbActor` to the service.
@@ -299,6 +307,7 @@ These fields are additive (`.default()` or `.nullish()`). Historic parse fixture
 **File**: `apps/api/src/routes/accommodation-external-reputation/protected/refresh.ts`
 
 **Changes**:
+
 - Return HTTP **202** when at least one platform was enqueued asynchronously. Return **200** when all platforms resolved inline.
 - Response body changes:
 
@@ -388,10 +397,12 @@ mapDatasetItems?(items: unknown[], listing: AccommodationExternalListing): Reput
 `packages/service-core/src/services/accommodation-external-reputation/adapters/booking-reputation.adapter.ts`
 
 Current `fetch()` flow:
+
 1. Try `safeExternalFetch` + JSON-LD aggregate rating parse (fast, ~1 s).
 2. If that fails, fall back to `runApifyActor()` (blocks 73-120 s).
 
 New flow:
+
 - `fetch()` retains ONLY Phase 1 (JSON-LD fast path). If JSON-LD succeeds, returns result as before (still inline, `run_status='idle'`).
 - If JSON-LD fails/blocked, `fetch()` returns a sentinel: `{ rating: null, reviewsCount: null, deepLink: null, snippets: null, _needsApify: true }` — or the service simply checks if `startRun` is callable and JSON-LD result was null.
 
@@ -407,6 +418,7 @@ New flow:
 Current `fetch()`: always calls `runApifyActor()` (blocks).
 
 New flow:
+
 - `fetch()`: removed Apify call. Returns `emptyReputationResult()` (all null). The service will always go async for Airbnb.
 - `startRun(listing)`: POSTs to Apify async API for the Airbnb actor, returns `{ runId, datasetId }` or null.
 - `mapDatasetItems(items, listing)`: extracts `guestSatisfaction` (0-5 scale → rescale to 0-10 or keep raw, consistent with current mapping), `reviewsCount`. Returns `ReputationFetchResult`.
@@ -469,6 +481,7 @@ export async function startApifyRun(input: StartApifyRunInput): Promise<StartApi
 ```
 
 Apify API: `POST https://api.apify.com/v2/acts/{actor}/runs`
+
 - Request: JSON body = actorInput; headers: `Authorization: Bearer {token}`, `Content-Type: application/json`
 - Response (201): `{ data: { id: string, defaultDatasetId: string, status: string, ... } }`
 - Returns `{ runId: data.id, defaultDatasetId: data.defaultDatasetId }` on 201; `null` on any other status or fetch error.
@@ -497,6 +510,7 @@ export async function getApifyRunStatus(input: {
 ```
 
 Apify API: `GET https://api.apify.com/v2/actor-runs/{runId}`
+
 - Headers: `Authorization: Bearer {token}`
 - Response (200): `{ data: { id, status, defaultDatasetId, ... } }`
 - Returns `{ status: data.status, defaultDatasetId: data.defaultDatasetId }`.
@@ -517,14 +531,16 @@ export async function getApifyDatasetItems(input: {
 ```
 
 Apify API: `GET https://api.apify.com/v2/datasets/{datasetId}/items`
+
 - Headers: `Authorization: Bearer {token}`
 - Response (200): JSON array of dataset items.
 - Returns the array on 200; `[]` on failure.
 
-**External API verification note**: All three endpoint shapes were verified against the Apify REST API v2 reference at https://docs.apify.com/api/v2 on 2026-06-20. Key references:
-- Actor runs: https://docs.apify.com/api/v2#tag/Actor-runs/operation/act_runs_post (POST — starts run)
-- Run status: https://docs.apify.com/api/v2#tag/Actor-runs/operation/act_run_get (GET by runId)
-- Dataset items: https://docs.apify.com/api/v2#tag/Datasets/operation/dataset_items_get (GET items)
+**External API verification note**: All three endpoint shapes were verified against the Apify REST API v2 reference at <https://docs.apify.com/api/v2> on 2026-06-20. Key references:
+
+- Actor runs: <https://docs.apify.com/api/v2#tag/Actor-runs/operation/act_runs_post> (POST — starts run)
+- Run status: <https://docs.apify.com/api/v2#tag/Actor-runs/operation/act_run_get> (GET by runId)
+- Dataset items: <https://docs.apify.com/api/v2#tag/Datasets/operation/dataset_items_get> (GET items)
 
 ---
 
@@ -640,6 +656,7 @@ handler: async (ctx) => {
 ```
 
 **Model methods to add** on `AccommodationExternalReputationModel` (in `packages/db/src/...`):
+
 - `findPendingRuns(): Promise<PendingRunRow[]>` — SELECT rows WHERE `run_status IN ('pending','running')` AND `apify_run_id IS NOT NULL`. Join or sub-select to include the listing data needed by `mapDatasetItems`.
 - `updateRunStatus(id: string, status: 'running' | 'idle'): Promise<void>` — lightweight UPDATE for the status-only transition.
 - Existing `upsertReputation()` must accept the new columns in its payload type (additive — existing callers that don't pass the new fields get `undefined`, which leaves those columns unchanged or uses their DB default).
@@ -656,6 +673,7 @@ grep -rn "external-reputation\|externalReputation\|ExternalReputation" apps/web/
 ```
 
 **Changes needed**:
+
 - Add a `useReputationStatus` custom hook (native `fetch` + `setInterval`, stops when `allSettled = true`).
 - Pass `runStatus` to each platform's display chip component.
 - Render spinner / "actualizando..." when `runStatus IN ('pending', 'running')`.
@@ -724,6 +742,7 @@ The hook polls every 10 s when `enabled = true` and `allSettled = false`. Uses `
 ### Performance Considerations
 
 **Expected load**:
+
 - Owner refresh: sporadic, ~1-5 per minute at peak (owner-level trigger).
 - Polling cron: every 2 min, queries 1 table with a WHERE on an indexed column. In steady state (no active refreshes), the SELECT returns 0 rows and the cron exits in < 50 ms.
 - During an active owner refresh: ~2-10 rows in pending state. The poller makes 1 HTTP call per row to Apify (status check, ~200 ms each), all serial. Total tick: ~2 s for 10 rows. Well within the 60 s timeout.
@@ -731,11 +750,13 @@ The hook polls every 10 s when `enabled = true` and `allSettled = false`. Uses `
 **Bottlenecks**: Apify API rate limits apply to dataset item fetches. Apify's free/paid tiers allow many concurrent runs; the poller runs them serially (for simplicity), so there is no risk of exceeding per-second API limits.
 
 **Optimization**:
+
 - Index on `(run_status)` for the poller's WHERE clause (added in schema).
 - The poller does NOT run Apify actors — it only checks status and fetches dataset items after a run has already completed. Dataset items for reputation are small (1-10 review items max).
 - Poll interval is env-configurable (`HOSPEDA_EXTREP_POLL_SCHEDULE`) so it can be tuned without a deploy.
 
 **Monitoring**:
+
 - `CronJobResult.processed` / `errors` emitted to `cron_runs` table (existing observability via SPEC-161 cron run history).
 - Stuck rows (run_status='pending' for > timeout) are cleared by the timeout sweep; alerts can be set up on `fetch_status='error'` counts.
 
@@ -837,7 +858,7 @@ The hook polls every 10 s when `enabled = true` and `allSettled = false`. Uses `
 
 ---
 
-## Key Learnings:
+## Key Learnings
 
 1. The existing `runApifyActor()` uses the SYNC Apify endpoint (`run-sync-get-dataset-items`), which blocks the HTTP connection for the entire actor duration — this is the root cause of the ~100 s hang.
 2. The `fetch_status` and `run_status` columns serve fundamentally different concerns: `fetch_status` is the data quality signal (consumed by public block builder), while `run_status` is the async coordination signal (internal only). They must stay separate.

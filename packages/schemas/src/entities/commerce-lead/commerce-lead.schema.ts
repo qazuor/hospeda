@@ -130,6 +130,14 @@ export const CommerceLeadSchema = z.object({
      */
     adminNote: z.string().max(1000, { message: 'zodError.commerceLead.adminNote.max' }).nullish(),
 
+    /**
+     * ID of the COMMERCE_OWNER user provisioned from this lead (SPEC-249 Part D).
+     * Set once the "approve & provision" action creates the owner account; acts
+     * as the idempotency guard so re-approving never double-provisions. Null
+     * until the lead has been provisioned.
+     */
+    provisionedUserId: UserIdSchema.nullish(),
+
     // Audit fields (createdAt, updatedAt, deletedAt, createdById, updatedById, deletedById)
     ...BaseAuditFields,
 

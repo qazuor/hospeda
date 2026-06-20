@@ -30,7 +30,8 @@ const { experienceSvc, reviewSvc, faqHelpers } = vi.hoisted(() => {
         softDelete: vi.fn(),
         hardDelete: vi.fn(),
         restore: vi.fn(),
-        adminList: vi.fn()
+        adminList: vi.fn(),
+        loadJunctionIds: vi.fn().mockResolvedValue({ amenityIds: [], featureIds: [] })
     };
 
     const reviewSvc = {
@@ -68,7 +69,8 @@ vi.mock('@repo/service-core', async (importOriginal) => {
             softDelete: (...args: unknown[]) => experienceSvc.softDelete(...args),
             hardDelete: (...args: unknown[]) => experienceSvc.hardDelete(...args),
             restore: (...args: unknown[]) => experienceSvc.restore(...args),
-            adminList: (...args: unknown[]) => experienceSvc.adminList(...args)
+            adminList: (...args: unknown[]) => experienceSvc.adminList(...args),
+            loadJunctionIds: (...args: unknown[]) => experienceSvc.loadJunctionIds(...args)
         })),
         ExperienceReviewService: vi.fn().mockImplementation(() => ({
             listByExperience: (...args: unknown[]) => reviewSvc.listByExperience(...args),

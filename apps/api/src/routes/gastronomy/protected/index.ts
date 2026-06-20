@@ -12,6 +12,7 @@ import { createRouter } from '../../../utils/create-app';
 import { protectedAddGastronomyFaqRoute } from './addFaq';
 import { protectedCreateGastronomyReviewRoute } from './createReview';
 import { protectedGetGastronomyByIdRoute } from './getById';
+import { protectedListMyGastronomyRoute } from './listMine';
 import { protectedPatchGastronomyRoute } from './patch';
 import { protectedRemoveGastronomyFaqRoute } from './removeFaq';
 import { protectedReorderGastronomyFaqsRoute } from './reorderFaqs';
@@ -21,6 +22,10 @@ const app = createRouter();
 
 // PUT /{id}/faqs/reorder — Must be before /{id}/faqs/{faqId} (PUT).
 app.route('/', protectedReorderGastronomyFaqsRoute);
+
+// GET /mine — Owner's own listings. MUST be before /{id} so the literal
+// "mine" segment is not captured as an :id param.
+app.route('/', protectedListMyGastronomyRoute);
 
 // GET /{id} — Owner view (protected projection).
 app.route('/', protectedGetGastronomyByIdRoute);

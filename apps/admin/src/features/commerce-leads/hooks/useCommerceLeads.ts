@@ -55,6 +55,20 @@ export type ProvisionOwnerResult = {
     readonly name: string;
 };
 
+/** Payload for the combined approve-and-provision mutation (SPEC-249 Part D). */
+export type ApproveAndProvisionPayload = {
+    readonly id: string;
+    readonly adminNote?: string;
+};
+
+/** Response from the approve-and-provision endpoint. */
+export type ApproveAndProvisionResult = {
+    readonly lead: CommerceLead;
+    readonly userId: string;
+    /** `true` when a new owner account was created; `false` when already provisioned. */
+    readonly provisioned: boolean;
+};
+
 // ---------------------------------------------------------------------------
 // Query key factory
 // ---------------------------------------------------------------------------
@@ -128,6 +142,24 @@ async function provisionOwner(id: string): Promise<ProvisionOwnerResult> {
     return result.data.data;
 }
 
+/**
+ * Calls POST /admin/commerce/leads/:id/approve-and-provision.
+ * Approves the lead AND provisions its COMMERCE_OWNER account in one action.
+ * Idempotent server-side via `lead.provisionedUserId`. Returns
+ * `{lead, userId, provisioned}` — NEVER a password.
+ */
+async function approveAndProvision(
+    payload: ApproveAndProvisionPayload
+): Promise<ApproveAndProvisionResult> {
+    const { id, ...body } = payload;
+    const result = await fetchApi<{ success: boolean; data: ApproveAndProvisionResult }>({
+        path: `/api/v1/admin/commerce/leads/${id}/approve-and-provision`,
+        method: 'POST',
+        body
+    });
+    return result.data.data;
+}
+
 // ---------------------------------------------------------------------------
 // Hooks
 // ---------------------------------------------------------------------------
@@ -193,6 +225,28 @@ export const useProvisionOwnerMutation = () => {
 
     return useMutation({
         mutationFn: (id: string) => provisionOwner(id),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: commerceLeadKeys.lists() });
+        }
+    });
+};
+
+/**
+ * TanStack mutation hook — approve a lead AND provision its owner in one action
+ * (SPEC-249 Part D). Invalidates the leads list on success so the inbox
+ * reflects the new `status` / `provisionedUserId`.
+ *
+ * @example
+ * ```tsx
+ * const mutation = useApproveAndProvisionMutation();
+ * const result = await mutation.mutateAsync({ id: lead.id, adminNote: 'OK' });
+ * ```
+ */
+export const useApproveAndProvisionMutation = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (payload: ApproveAndProvisionPayload) => approveAndProvision(payload),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: commerceLeadKeys.lists() });
         }

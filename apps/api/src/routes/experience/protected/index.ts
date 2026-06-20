@@ -12,6 +12,7 @@ import { createRouter } from '../../../utils/create-app';
 import { protectedAddExperienceFaqRoute } from './addFaq';
 import { protectedCreateExperienceReviewRoute } from './createReview';
 import { protectedGetExperienceByIdRoute } from './getById';
+import { protectedListMyExperienceRoute } from './listMine';
 import { protectedPatchExperienceRoute } from './patch';
 import { protectedRemoveExperienceFaqRoute } from './removeFaq';
 import { protectedReorderExperienceFaqsRoute } from './reorderFaqs';
@@ -21,6 +22,10 @@ const app = createRouter();
 
 // PUT /{id}/faqs/reorder — Must be before /{id}/faqs/{faqId} (PUT).
 app.route('/', protectedReorderExperienceFaqsRoute);
+
+// GET /mine — Owner's own listings. MUST be before /{id} so the literal
+// "mine" segment is not captured as an :id param.
+app.route('/', protectedListMyExperienceRoute);
 
 // GET /{id} — Owner view (protected projection).
 app.route('/', protectedGetExperienceByIdRoute);
