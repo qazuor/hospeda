@@ -618,35 +618,35 @@
             "id": "T-019",
             "title": "Admin UI: surface 'Approve & provision' in the leads inbox",
             "description": "In apps/admin (TanStack/Tailwind) add the combined 'Approve & provision' action to the commerce-leads inbox: confirmation dialog, calls the T-018 endpoint via TanStack Query mutation, success/error toast, invalidates the leads list. Tests: component test for the action + mutation wiring (mocked).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-018"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Action + confirm dialog",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Mutation + toast + invalidation",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Component test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "commerce", "core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-20T17:40:00.000Z",
+                "completed": "2026-06-20T17:45:00.000Z"
             }
         },
         {
