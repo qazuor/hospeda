@@ -481,6 +481,7 @@
         "placeholder": "Type your question here…",
         "send": "Send",
         "sending": "Sending…",
+        "thinking": "Thinking…",
         "errorDefault": "Could not display the response. Please try again.",
         "atCapMessage": "You've reached the conversation limit.",
         "newConversation": "New conversation",

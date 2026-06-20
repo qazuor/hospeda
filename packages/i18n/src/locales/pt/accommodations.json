@@ -481,6 +481,7 @@
         "placeholder": "Digite sua pergunta aqui…",
         "send": "Enviar",
         "sending": "Enviando…",
+        "thinking": "Pensando…",
         "errorDefault": "Não foi possível exibir a resposta. Por favor, tente novamente.",
         "atCapMessage": "Você atingiu o limite desta conversa.",
         "newConversation": "Nova conversa",

@@ -7,6 +7,7 @@
  * @module AiChatWidget
  */
 
+import { Spinner } from '@/components/shared/feedback/Spinner';
 import { useAccommodationChat } from '@/hooks/useAccommodationChat';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -109,6 +110,12 @@ export function AiChatWidget({ accommodationId, locale, apiUrl }: AiChatWidgetPr
         setDraft('');
     }, [draft, chat]);
 
+    /**
+     * True while streaming has started but no assistant token has arrived yet.
+     * Mirrors the same pattern from SearchChatPanel.client.tsx.
+     */
+    const showThinking = chat.state.status === 'streaming' && !chat.state.currentAssistantContent;
+
     return (
         <>
             <AiChatFab
@@ -176,6 +183,22 @@ export function AiChatWidget({ accommodationId, locale, apiUrl }: AiChatWidgetPr
                                 {chat.state.currentAssistantContent}
                             </div>
                         )}
+                        {showThinking && (
+                            <output
+                                className={styles.thinking}
+                                aria-label={t('accommodations.aiChat.thinking', 'Pensando…')}
+                            >
+                                <span>{t('accommodations.aiChat.thinking', 'Pensando…')}</span>
+                                <span
+                                    className={styles.thinkingDots}
+                                    aria-hidden="true"
+                                >
+                                    <span className={styles.thinkingDot} />
+                                    <span className={styles.thinkingDot} />
+                                    <span className={styles.thinkingDot} />
+                                </span>
+                            </output>
+                        )}
                         {chat.state.showPriceDisclaimer && (
                             <div className={styles.priceNotice}>
                                 {t('accommodations.aiChat.priceDisclaimer')}
@@ -238,7 +261,7 @@ export function AiChatWidget({ accommodationId, locale, apiUrl }: AiChatWidgetPr
                                     : t('accommodations.aiChat.send')
                             }
                         >
-                            {chat.state.status === 'streaming' ? '⏳' : '↑'}
+                            {chat.state.status === 'streaming' ? <Spinner size="sm" /> : '↑'}
                         </button>
                     </form>
                 </div>
