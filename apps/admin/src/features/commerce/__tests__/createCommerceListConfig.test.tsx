@@ -326,11 +326,15 @@ describe('createCommerceOperationalSection', () => {
         expect(videos?.type).toBe(FieldTypeEnum.VIDEO_GALLERY);
     });
 
-    it('AC-5: contains openingHours field (TEXTAREA — no dedicated type yet)', () => {
+    it('AC-5: contains openingHours field (read-only JSON — structured object)', () => {
         const openingHours = section.fields.find((f) => f.id === 'openingHours');
         expect(openingHours).toBeDefined();
-        // TODO(SPEC-239): will change to a dedicated type when available
-        expect(openingHours?.type).toBe(FieldTypeEnum.TEXTAREA);
+        // openingHours is a structured object ({ timezone, days }). It is rendered
+        // read-only as JSON (a TEXTAREA fed it the raw object and crashed the admin
+        // view). View-only: the owner edits hours on the web, not the admin panel.
+        // TODO(SPEC-239): replace with a dedicated OPENING_HOURS widget when available.
+        expect(openingHours?.type).toBe(FieldTypeEnum.JSON);
+        expect(openingHours?.modes).toEqual(['view']);
     });
 
     it('AC-5: contains amenities and features multi-select fields', () => {
