@@ -8,22 +8,35 @@
             "id": "T-001",
             "title": "Create 10 social TS enums in packages/schemas/src/enums/",
             "description": "Create one file per enum, following the pattern of existing enum files (e.g., `billing-interval.enum.ts`):\n- `social-platform.enum.ts` → `SocialPlatform { INSTAGRAM, FACEBOOK, X }`\n- `social-publish-format.enum.ts` → `SocialPublishFormat { FEED_POST, PHOTO_POST, TEXT_POST, IMAGE_POST, VIDEO_POST, REEL, STORY, CAROUSEL }`\n- `social-media-type.enum.ts` → `SocialMediaType { IMAGE, VIDEO, NONE }`\n- `social-post-status.enum.ts` → `SocialPostStatus { DRAFT, NEEDS_REVIEW, APPROVED, SCHEDULED, READY_TO_PUBLISH, PUBLISHING, PUBLISHED, FAILED, PAUSED, ARCHIVED }`\n- `social-approval-status.enum.ts` → `SocialApprovalStatus { PENDING, APPROVED, REJECTED, CHANGES_REQUESTED }`\n- `social-source.enum.ts` → `SocialSource { CHATGPT, ADMIN, IMPORT, SYSTEM }`\n- `social-asset-source.enum.ts` → `SocialAssetSource { CHATGPT_FILE, CLOUDINARY, MANUAL_UPLOAD, EXTERNAL_URL }`\n- `social-publish-result-status.enum.ts` → `SocialPublishResultStatus { SUCCESS, FAILED, SKIPPED, RETRYING }`\n- `social-recurrence-type.enum.ts` → `SocialRecurrenceType { ONCE, WEEKLY, BIWEEKLY, MONTHLY }`\n- `social-ai-request-status.enum.ts` → `SocialAiRequestStatus { PENDING, PROCESSED, FAILED }` (for social_ai_requests.status)\nEach file exports the enum and a matching `z.nativeEnum()` schema in a co-located `social-<name>.schema.ts`. Use `as const` + JSDoc. All named exports.\n\nTest requirements:\n- Unit test file: `packages/schemas/src/enums/__tests__/social-enums.test.ts`\n- Assert each enum has the expected members (Object.keys check)\n- Assert each nativeEnum schema validates valid values and rejects invalid ones",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-002", "T-003"],
             "subtasks": [
-                { "title": "Create 10 enum files", "completed": false },
-                { "title": "Create 10 matching .schema.ts files", "completed": false },
-                { "title": "Write unit tests", "completed": false }
+                {
+                    "title": "Create 10 enum files",
+                    "completed": false
+                },
+                {
+                    "title": "Create 10 matching .schema.ts files",
+                    "completed": false
+                },
+                {
+                    "title": "Write unit tests",
+                    "completed": false
+                }
             ],
             "tags": ["schemas", "enums"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-20T00:00:00.000Z",
+                "completed": "2026-06-20T00:00:00.000Z"
             }
         },
         {
@@ -35,11 +48,18 @@
             "blockedBy": ["T-001"],
             "blocks": ["T-004", "T-005"],
             "subtasks": [
-                { "title": "Add 20 barrel export lines to enums/index.ts", "completed": false }
+                {
+                    "title": "Add 20 barrel export lines to enums/index.ts",
+                    "completed": false
+                }
             ],
             "tags": ["schemas", "enums"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -55,13 +75,26 @@
             "blockedBy": [],
             "blocks": ["T-012", "T-016", "T-030", "T-039"],
             "subtasks": [
-                { "title": "Add 9 PermissionCategoryEnum entries", "completed": false },
-                { "title": "Add 25 PermissionEnum entries with JSDoc", "completed": false },
-                { "title": "Verify no existing tests break", "completed": false }
+                {
+                    "title": "Add 9 PermissionCategoryEnum entries",
+                    "completed": false
+                },
+                {
+                    "title": "Add 25 PermissionEnum entries with JSDoc",
+                    "completed": false
+                },
+                {
+                    "title": "Verify no existing tests break",
+                    "completed": false
+                }
             ],
             "tags": ["schemas", "permissions"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -77,12 +110,22 @@
             "blockedBy": ["T-002"],
             "blocks": ["T-005"],
             "subtasks": [
-                { "title": "Add 10 pgEnum registrations", "completed": false },
-                { "title": "Export each pgEnum", "completed": false }
+                {
+                    "title": "Add 10 pgEnum registrations",
+                    "completed": false
+                },
+                {
+                    "title": "Export each pgEnum",
+                    "completed": false
+                }
             ],
             "tags": ["database", "enums"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -98,17 +141,42 @@
             "blockedBy": ["T-004"],
             "blocks": ["T-006", "T-007", "T-008"],
             "subtasks": [
-                { "title": "social-campaigns.dbschema.ts", "completed": false },
-                { "title": "social-content-batches.dbschema.ts", "completed": false },
-                { "title": "social-audiences.dbschema.ts", "completed": false },
-                { "title": "social-platforms.dbschema.ts", "completed": false },
-                { "title": "social-hashtag-sets.dbschema.ts", "completed": false },
-                { "title": "social-post-footers.dbschema.ts", "completed": false },
-                { "title": "social-assets.dbschema.ts", "completed": false }
+                {
+                    "title": "social-campaigns.dbschema.ts",
+                    "completed": false
+                },
+                {
+                    "title": "social-content-batches.dbschema.ts",
+                    "completed": false
+                },
+                {
+                    "title": "social-audiences.dbschema.ts",
+                    "completed": false
+                },
+                {
+                    "title": "social-platforms.dbschema.ts",
+                    "completed": false
+                },
+                {
+                    "title": "social-hashtag-sets.dbschema.ts",
+                    "completed": false
+                },
+                {
+                    "title": "social-post-footers.dbschema.ts",
+                    "completed": false
+                },
+                {
+                    "title": "social-assets.dbschema.ts",
+                    "completed": false
+                }
             ],
             "tags": ["database", "schema"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -124,13 +192,26 @@
             "blockedBy": ["T-005"],
             "blocks": ["T-007", "T-008"],
             "subtasks": [
-                { "title": "social-hashtags.dbschema.ts", "completed": false },
-                { "title": "social-platform-formats.dbschema.ts", "completed": false },
-                { "title": "social-settings.dbschema.ts", "completed": false }
+                {
+                    "title": "social-hashtags.dbschema.ts",
+                    "completed": false
+                },
+                {
+                    "title": "social-platform-formats.dbschema.ts",
+                    "completed": false
+                },
+                {
+                    "title": "social-settings.dbschema.ts",
+                    "completed": false
+                }
             ],
             "tags": ["database", "schema"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -146,14 +227,30 @@
             "blockedBy": ["T-005", "T-006"],
             "blocks": ["T-008"],
             "subtasks": [
-                { "title": "social-posts.dbschema.ts", "completed": false },
-                { "title": "social-post-targets.dbschema.ts", "completed": false },
-                { "title": "social-post-media.dbschema.ts", "completed": false },
-                { "title": "social-post-hashtags.dbschema.ts", "completed": false }
+                {
+                    "title": "social-posts.dbschema.ts",
+                    "completed": false
+                },
+                {
+                    "title": "social-post-targets.dbschema.ts",
+                    "completed": false
+                },
+                {
+                    "title": "social-post-media.dbschema.ts",
+                    "completed": false
+                },
+                {
+                    "title": "social-post-hashtags.dbschema.ts",
+                    "completed": false
+                }
             ],
             "tags": ["database", "schema"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -169,13 +266,26 @@
             "blockedBy": ["T-007"],
             "blocks": ["T-009"],
             "subtasks": [
-                { "title": "social-ai-requests.dbschema.ts", "completed": false },
-                { "title": "social-publish-logs.dbschema.ts", "completed": false },
-                { "title": "social-audit-log.dbschema.ts", "completed": false }
+                {
+                    "title": "social-ai-requests.dbschema.ts",
+                    "completed": false
+                },
+                {
+                    "title": "social-publish-logs.dbschema.ts",
+                    "completed": false
+                },
+                {
+                    "title": "social-audit-log.dbschema.ts",
+                    "completed": false
+                }
             ],
             "tags": ["database", "schema"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -202,7 +312,11 @@
             ],
             "tags": ["database", "schema"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -218,13 +332,26 @@
             "blockedBy": ["T-009"],
             "blocks": ["T-011"],
             "subtasks": [
-                { "title": "Run pnpm db:generate", "completed": false },
-                { "title": "Review generated SQL for correctness", "completed": false },
-                { "title": "Run pnpm db:migrate against dev DB to verify", "completed": false }
+                {
+                    "title": "Run pnpm db:generate",
+                    "completed": false
+                },
+                {
+                    "title": "Review generated SQL for correctness",
+                    "completed": false
+                },
+                {
+                    "title": "Run pnpm db:migrate against dev DB to verify",
+                    "completed": false
+                }
             ],
             "tags": ["database", "migration"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -240,13 +367,26 @@
             "blockedBy": ["T-010"],
             "blocks": ["T-013"],
             "subtasks": [
-                { "title": "Write 018-social-indexes.kind.sql", "completed": false },
-                { "title": "Write 019-social-set-updated-at.trigger.sql", "completed": false },
-                { "title": "Run pnpm db:apply-extras and verify idempotency", "completed": false }
+                {
+                    "title": "Write 018-social-indexes.kind.sql",
+                    "completed": false
+                },
+                {
+                    "title": "Write 019-social-set-updated-at.trigger.sql",
+                    "completed": false
+                },
+                {
+                    "title": "Run pnpm db:apply-extras and verify idempotency",
+                    "completed": false
+                }
             ],
             "tags": ["database", "migration", "extras"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -262,13 +402,26 @@
             "blockedBy": ["T-003"],
             "blocks": ["T-015"],
             "subtasks": [
-                { "title": "Add 25 permissions to ADMIN block", "completed": false },
-                { "title": "Add 25 permissions to SUPER_ADMIN block", "completed": false },
-                { "title": "Write/extend unit test for new permissions", "completed": false }
+                {
+                    "title": "Add 25 permissions to ADMIN block",
+                    "completed": false
+                },
+                {
+                    "title": "Add 25 permissions to SUPER_ADMIN block",
+                    "completed": false
+                },
+                {
+                    "title": "Write/extend unit test for new permissions",
+                    "completed": false
+                }
             ],
             "tags": ["seed", "permissions"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -284,12 +437,18 @@
             "blockedBy": ["T-011"],
             "blocks": ["T-014", "T-020"],
             "subtasks": [
-                { "title": "Batch A: 9 simple catalog models", "completed": false },
+                {
+                    "title": "Batch A: 9 simple catalog models",
+                    "completed": false
+                },
                 {
                     "title": "Batch B: social_posts + social_post_targets models",
                     "completed": false
                 },
-                { "title": "Batch C: join-table + append-only models", "completed": false },
+                {
+                    "title": "Batch C: join-table + append-only models",
+                    "completed": false
+                },
                 {
                     "title": "Create model index and register in packages/db/src/models/index.ts",
                     "completed": false
@@ -297,7 +456,11 @@
             ],
             "tags": ["database", "models"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -313,7 +476,10 @@
             "blockedBy": ["T-002", "T-013"],
             "blocks": ["T-015", "T-016", "T-028"],
             "subtasks": [
-                { "title": "Create entity schema dirs for 9 catalog entities", "completed": false },
+                {
+                    "title": "Create entity schema dirs for 9 catalog entities",
+                    "completed": false
+                },
                 {
                     "title": "Create entity schema dirs for social_posts + social_post_targets",
                     "completed": false
@@ -322,11 +488,18 @@
                     "title": "Create entity schema dirs for join-table + append-only entities",
                     "completed": false
                 },
-                { "title": "Write unit tests for CreateSocialDraftSchema", "completed": false }
+                {
+                    "title": "Write unit tests for CreateSocialDraftSchema",
+                    "completed": false
+                }
             ],
             "tags": ["schemas", "zod"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -342,13 +515,26 @@
             "blockedBy": ["T-012", "T-014"],
             "blocks": ["T-016"],
             "subtasks": [
-                { "title": "Create 9 seed files with JSON fixtures", "completed": false },
-                { "title": "Register all 9 seed files in runRequiredSeeds", "completed": false },
-                { "title": "Write seed integration tests", "completed": false }
+                {
+                    "title": "Create 9 seed files with JSON fixtures",
+                    "completed": false
+                },
+                {
+                    "title": "Register all 9 seed files in runRequiredSeeds",
+                    "completed": false
+                },
+                {
+                    "title": "Write seed integration tests",
+                    "completed": false
+                }
             ],
             "tags": ["seed", "database"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -364,15 +550,34 @@
             "blockedBy": ["T-014", "T-015"],
             "blocks": ["T-017", "T-018", "T-030"],
             "subtasks": [
-                { "title": "HashtagService + normalizer + permissions", "completed": false },
-                { "title": "HashtagSetService", "completed": false },
-                { "title": "FooterService + CampaignService + BatchService", "completed": false },
-                { "title": "AudienceService", "completed": false },
-                { "title": "Write unit tests", "completed": false }
+                {
+                    "title": "HashtagService + normalizer + permissions",
+                    "completed": false
+                },
+                {
+                    "title": "HashtagSetService",
+                    "completed": false
+                },
+                {
+                    "title": "FooterService + CampaignService + BatchService",
+                    "completed": false
+                },
+                {
+                    "title": "AudienceService",
+                    "completed": false
+                },
+                {
+                    "title": "Write unit tests",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "catalog"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -388,13 +593,26 @@
             "blockedBy": ["T-016"],
             "blocks": ["T-018", "T-030"],
             "subtasks": [
-                { "title": "platform-format.service.ts", "completed": false },
-                { "title": "settings.service.ts with secret masking", "completed": false },
-                { "title": "Write unit tests", "completed": false }
+                {
+                    "title": "platform-format.service.ts",
+                    "completed": false
+                },
+                {
+                    "title": "settings.service.ts with secret masking",
+                    "completed": false
+                },
+                {
+                    "title": "Write unit tests",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "catalog"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -410,17 +628,30 @@
             "blockedBy": ["T-016", "T-017"],
             "blocks": ["T-019", "T-030"],
             "subtasks": [
-                { "title": "hashtags.route.ts + register", "completed": false },
-                { "title": "hashtag-sets.route.ts + footers.route.ts", "completed": false },
+                {
+                    "title": "hashtags.route.ts + register",
+                    "completed": false
+                },
+                {
+                    "title": "hashtag-sets.route.ts + footers.route.ts",
+                    "completed": false
+                },
                 {
                     "title": "campaigns.route.ts + batches.route.ts + audiences.route.ts",
                     "completed": false
                 },
-                { "title": "Write integration tests", "completed": false }
+                {
+                    "title": "Write integration tests",
+                    "completed": false
+                }
             ],
             "tags": ["api", "routes", "catalog"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -436,13 +667,26 @@
             "blockedBy": ["T-018"],
             "blocks": ["T-020"],
             "subtasks": [
-                { "title": "platform-formats.route.ts", "completed": false },
-                { "title": "settings.route.ts", "completed": false },
-                { "title": "Register routes and write integration tests", "completed": false }
+                {
+                    "title": "platform-formats.route.ts",
+                    "completed": false
+                },
+                {
+                    "title": "settings.route.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Register routes and write integration tests",
+                    "completed": false
+                }
             ],
             "tags": ["api", "routes", "catalog"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -458,17 +702,30 @@
             "blockedBy": ["T-019"],
             "blocks": ["T-021"],
             "subtasks": [
-                { "title": "hashtags/index.tsx", "completed": false },
-                { "title": "footers/index.tsx", "completed": false },
+                {
+                    "title": "hashtags/index.tsx",
+                    "completed": false
+                },
+                {
+                    "title": "footers/index.tsx",
+                    "completed": false
+                },
                 {
                     "title": "campaigns/index.tsx + batches/index.tsx + audiences/index.tsx",
                     "completed": false
                 },
-                { "title": "Write component tests", "completed": false }
+                {
+                    "title": "Write component tests",
+                    "completed": false
+                }
             ],
             "tags": ["admin-ui", "catalog"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -484,13 +741,26 @@
             "blockedBy": ["T-020"],
             "blocks": ["T-022"],
             "subtasks": [
-                { "title": "platform-formats/index.tsx", "completed": false },
-                { "title": "settings/index.tsx with secret masking display", "completed": false },
-                { "title": "Write component tests", "completed": false }
+                {
+                    "title": "platform-formats/index.tsx",
+                    "completed": false
+                },
+                {
+                    "title": "settings/index.tsx with secret masking display",
+                    "completed": false
+                },
+                {
+                    "title": "Write component tests",
+                    "completed": false
+                }
             ],
             "tags": ["admin-ui", "catalog"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -506,11 +776,18 @@
             "blockedBy": ["T-020", "T-021"],
             "blocks": ["T-040"],
             "subtasks": [
-                { "title": "Add es locale keys for all Phase 1 pages", "completed": false }
+                {
+                    "title": "Add es locale keys for all Phase 1 pages",
+                    "completed": false
+                }
             ],
             "tags": ["i18n", "admin-ui"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -526,13 +803,26 @@
             "blockedBy": [],
             "blocks": ["T-024"],
             "subtasks": [
-                { "title": "Register in config registry", "completed": false },
-                { "title": "Add to api/src/utils/env.ts", "completed": false },
-                { "title": "Update .env.example", "completed": false }
+                {
+                    "title": "Register in config registry",
+                    "completed": false
+                },
+                {
+                    "title": "Add to api/src/utils/env.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Update .env.example",
+                    "completed": false
+                }
             ],
             "tags": ["config", "env", "security"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -548,16 +838,26 @@
             "blockedBy": ["T-023"],
             "blocks": ["T-025", "T-048"],
             "subtasks": [
-                { "title": "Create api-key.ts middleware factory", "completed": false },
+                {
+                    "title": "Create api-key.ts middleware factory",
+                    "completed": false
+                },
                 {
                     "title": "Handle length-mismatch edge case (timingSafeEqual requires equal buffer length)",
                     "completed": false
                 },
-                { "title": "Write unit tests", "completed": false }
+                {
+                    "title": "Write unit tests",
+                    "completed": false
+                }
             ],
             "tags": ["api", "middleware", "security"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -573,12 +873,22 @@
             "blockedBy": ["T-024"],
             "blocks": ["T-026", "T-027", "T-048", "T-049"],
             "subtasks": [
-                { "title": "Add createApiKeyRoute factory function", "completed": false },
-                { "title": "Write unit tests", "completed": false }
+                {
+                    "title": "Add createApiKeyRoute factory function",
+                    "completed": false
+                },
+                {
+                    "title": "Write unit tests",
+                    "completed": false
+                }
             ],
             "tags": ["api", "route-factory"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -594,16 +904,26 @@
             "blockedBy": ["T-025", "T-013"],
             "blocks": ["T-027"],
             "subtasks": [
-                { "title": "Create catalog.route.ts", "completed": false },
+                {
+                    "title": "Create catalog.route.ts",
+                    "completed": false
+                },
                 {
                     "title": "Implement handler with 8 parallel catalog queries",
                     "completed": false
                 },
-                { "title": "Register route and write integration tests", "completed": false }
+                {
+                    "title": "Register route and write integration tests",
+                    "completed": false
+                }
             ],
             "tags": ["api", "routes", "ai"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -627,12 +947,22 @@
                     "title": "Implement Cloudinary upload + social_assets + social_post_media writes",
                     "completed": false
                 },
-                { "title": "Add duration_seconds to UploadResult", "completed": false },
-                { "title": "Write unit tests (mock fetch + Cloudinary)", "completed": false }
+                {
+                    "title": "Add duration_seconds to UploadResult",
+                    "completed": false
+                },
+                {
+                    "title": "Write unit tests (mock fetch + Cloudinary)",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "media", "cloudinary"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -656,12 +986,22 @@
                     "title": "Implement steps 6-10 (DB writes in transaction, hashtag linkage)",
                     "completed": false
                 },
-                { "title": "Implement steps 11-12 (image pipeline + return)", "completed": false },
-                { "title": "Write comprehensive unit tests", "completed": false }
+                {
+                    "title": "Implement steps 11-12 (image pipeline + return)",
+                    "completed": false
+                },
+                {
+                    "title": "Write comprehensive unit tests",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "ingestion", "gpt"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -677,13 +1017,26 @@
             "blockedBy": ["T-028"],
             "blocks": ["T-031"],
             "subtasks": [
-                { "title": "Create drafts.route.ts", "completed": false },
-                { "title": "Wire validation and service call", "completed": false },
-                { "title": "Write integration tests", "completed": false }
+                {
+                    "title": "Create drafts.route.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Wire validation and service call",
+                    "completed": false
+                },
+                {
+                    "title": "Write integration tests",
+                    "completed": false
+                }
             ],
             "tags": ["api", "routes", "ai", "gpt"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -699,16 +1052,26 @@
             "blockedBy": ["T-018", "T-029"],
             "blocks": ["T-040"],
             "subtasks": [
-                { "title": "Create gpt-action-schema.route.ts", "completed": false },
+                {
+                    "title": "Create gpt-action-schema.route.ts",
+                    "completed": false
+                },
                 {
                     "title": "Implement programmatic OpenAPI 3.1 generation from Zod schemas",
                     "completed": false
                 },
-                { "title": "Write unit tests", "completed": false }
+                {
+                    "title": "Write unit tests",
+                    "completed": false
+                }
             ],
             "tags": ["api", "routes", "openapi"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -728,11 +1091,18 @@
                     "title": "Add ai-inbound and make-callback rate limit types",
                     "completed": false
                 },
-                { "title": "Write unit tests", "completed": false }
+                {
+                    "title": "Write unit tests",
+                    "completed": false
+                }
             ],
             "tags": ["api", "middleware", "rate-limit"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -748,13 +1118,26 @@
             "blockedBy": ["T-013"],
             "blocks": ["T-033"],
             "subtasks": [
-                { "title": "Create service with log() method", "completed": false },
-                { "title": "Create SocialAuditEvent const", "completed": false },
-                { "title": "Write unit tests", "completed": false }
+                {
+                    "title": "Create service with log() method",
+                    "completed": false
+                },
+                {
+                    "title": "Create SocialAuditEvent const",
+                    "completed": false
+                },
+                {
+                    "title": "Write unit tests",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "audit"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -770,14 +1153,30 @@
             "blockedBy": ["T-032"],
             "blocks": ["T-034"],
             "subtasks": [
-                { "title": "Create social-post.service.ts skeleton", "completed": false },
-                { "title": "Implement approve() with media check", "completed": false },
-                { "title": "Implement reject() and requestChanges()", "completed": false },
-                { "title": "Write unit tests", "completed": false }
+                {
+                    "title": "Create social-post.service.ts skeleton",
+                    "completed": false
+                },
+                {
+                    "title": "Implement approve() with media check",
+                    "completed": false
+                },
+                {
+                    "title": "Implement reject() and requestChanges()",
+                    "completed": false
+                },
+                {
+                    "title": "Write unit tests",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "posts", "state-machine"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -793,14 +1192,30 @@
             "blockedBy": ["T-033"],
             "blocks": ["T-035"],
             "subtasks": [
-                { "title": "Implement schedule() and markReady()", "completed": false },
-                { "title": "Implement pause() and unpause()", "completed": false },
-                { "title": "Implement archive()", "completed": false },
-                { "title": "Write unit tests", "completed": false }
+                {
+                    "title": "Implement schedule() and markReady()",
+                    "completed": false
+                },
+                {
+                    "title": "Implement pause() and unpause()",
+                    "completed": false
+                },
+                {
+                    "title": "Implement archive()",
+                    "completed": false
+                },
+                {
+                    "title": "Write unit tests",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "posts", "state-machine"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -816,15 +1231,34 @@
             "blockedBy": ["T-034"],
             "blocks": ["T-036"],
             "subtasks": [
-                { "title": "Implement listPosts() with filters and safeIlike", "completed": false },
-                { "title": "Implement getPostDetail() with nested data", "completed": false },
-                { "title": "Implement updatePost() blocking state fields", "completed": false },
-                { "title": "Implement promoteHashtag() with upsert logic", "completed": false },
-                { "title": "Write unit tests", "completed": false }
+                {
+                    "title": "Implement listPosts() with filters and safeIlike",
+                    "completed": false
+                },
+                {
+                    "title": "Implement getPostDetail() with nested data",
+                    "completed": false
+                },
+                {
+                    "title": "Implement updatePost() blocking state fields",
+                    "completed": false
+                },
+                {
+                    "title": "Implement promoteHashtag() with upsert logic",
+                    "completed": false
+                },
+                {
+                    "title": "Write unit tests",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "posts"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -844,17 +1278,30 @@
                     "title": "approve.route.ts + reject.route.ts + request-changes.route.ts",
                     "completed": false
                 },
-                { "title": "schedule.route.ts + mark-ready.route.ts", "completed": false },
+                {
+                    "title": "schedule.route.ts + mark-ready.route.ts",
+                    "completed": false
+                },
                 {
                     "title": "pause.route.ts + unpause.route.ts + archive.route.ts",
                     "completed": false
                 },
-                { "title": "promote-hashtag.route.ts", "completed": false },
-                { "title": "Register all routes and write integration tests", "completed": false }
+                {
+                    "title": "promote-hashtag.route.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Register all routes and write integration tests",
+                    "completed": false
+                }
             ],
             "tags": ["api", "routes", "posts"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -874,13 +1321,26 @@
                     "title": "list.route.ts + detail.route.ts + update.route.ts",
                     "completed": false
                 },
-                { "title": "dashboard.route.ts", "completed": false },
-                { "title": "publish-logs.route.ts + audit-log.route.ts", "completed": false },
-                { "title": "Write integration tests", "completed": false }
+                {
+                    "title": "dashboard.route.ts",
+                    "completed": false
+                },
+                {
+                    "title": "publish-logs.route.ts + audit-log.route.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Write integration tests",
+                    "completed": false
+                }
             ],
             "tags": ["api", "routes", "posts"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -896,13 +1356,26 @@
             "blockedBy": ["T-037"],
             "blocks": ["T-040"],
             "subtasks": [
-                { "title": "Set up integration test DB fixtures", "completed": false },
-                { "title": "Write 8-step integration test", "completed": false },
-                { "title": "Verify audit log at each step", "completed": false }
+                {
+                    "title": "Set up integration test DB fixtures",
+                    "completed": false
+                },
+                {
+                    "title": "Write 8-step integration test",
+                    "completed": false
+                },
+                {
+                    "title": "Verify audit log at each step",
+                    "completed": false
+                }
             ],
             "tags": ["testing", "integration"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -926,13 +1399,26 @@
                     "title": "Status/approval badges with accessibility attributes",
                     "completed": false
                 },
-                { "title": "Platform icon row with aria-label", "completed": false },
-                { "title": "Optimistic approve action", "completed": false },
-                { "title": "Write component tests", "completed": false }
+                {
+                    "title": "Platform icon row with aria-label",
+                    "completed": false
+                },
+                {
+                    "title": "Optimistic approve action",
+                    "completed": false
+                },
+                {
+                    "title": "Write component tests",
+                    "completed": false
+                }
             ],
             "tags": ["admin-ui", "posts"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -948,18 +1434,34 @@
             "blockedBy": ["T-039"],
             "blocks": ["T-041"],
             "subtasks": [
-                { "title": "Create $id.tsx skeleton with tabs and header", "completed": false },
-                { "title": "Implement Content tab + Promote Hashtag modal", "completed": false },
-                { "title": "Implement Media, Targets, Logs, Audit tabs", "completed": false },
+                {
+                    "title": "Create $id.tsx skeleton with tabs and header",
+                    "completed": false
+                },
+                {
+                    "title": "Implement Content tab + Promote Hashtag modal",
+                    "completed": false
+                },
+                {
+                    "title": "Implement Media, Targets, Logs, Audit tabs",
+                    "completed": false
+                },
                 {
                     "title": "Implement sticky action bar with confirmation dialogs",
                     "completed": false
                 },
-                { "title": "Write component tests", "completed": false }
+                {
+                    "title": "Write component tests",
+                    "completed": false
+                }
             ],
             "tags": ["admin-ui", "posts"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -975,18 +1477,34 @@
             "blockedBy": ["T-040"],
             "blocks": ["T-042"],
             "subtasks": [
-                { "title": "Create social/index.tsx with KPI cards", "completed": false },
+                {
+                    "title": "Create social/index.tsx with KPI cards",
+                    "completed": false
+                },
                 {
                     "title": "Quick Approval Queue widget with optimistic update",
                     "completed": false
                 },
-                { "title": "Recent Failures table", "completed": false },
-                { "title": "System alert for missing Make webhook", "completed": false },
-                { "title": "Write component tests", "completed": false }
+                {
+                    "title": "Recent Failures table",
+                    "completed": false
+                },
+                {
+                    "title": "System alert for missing Make webhook",
+                    "completed": false
+                },
+                {
+                    "title": "Write component tests",
+                    "completed": false
+                }
             ],
             "tags": ["admin-ui", "dashboard"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -1002,12 +1520,22 @@
             "blockedBy": ["T-041"],
             "blocks": ["T-043"],
             "subtasks": [
-                { "title": "Add es locale keys for posts list and detail", "completed": false },
-                { "title": "Add es locale keys for dashboard", "completed": false }
+                {
+                    "title": "Add es locale keys for posts list and detail",
+                    "completed": false
+                },
+                {
+                    "title": "Add es locale keys for dashboard",
+                    "completed": false
+                }
             ],
             "tags": ["i18n", "admin-ui"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -1023,13 +1551,26 @@
             "blockedBy": [],
             "blocks": ["T-044", "T-048"],
             "subtasks": [
-                { "title": "Register in config registry", "completed": false },
-                { "title": "Add to env.ts Zod schema", "completed": false },
-                { "title": "Update .env.example", "completed": false }
+                {
+                    "title": "Register in config registry",
+                    "completed": false
+                },
+                {
+                    "title": "Add to env.ts Zod schema",
+                    "completed": false
+                },
+                {
+                    "title": "Update .env.example",
+                    "completed": false
+                }
             ],
             "tags": ["config", "env", "make"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -1045,17 +1586,30 @@
             "blockedBy": ["T-043", "T-013"],
             "blocks": ["T-045"],
             "subtasks": [
-                { "title": "Create dispatch service file", "completed": false },
+                {
+                    "title": "Create dispatch service file",
+                    "completed": false
+                },
                 {
                     "title": "Implement findEligibleTargets() with all filter conditions",
                     "completed": false
                 },
-                { "title": "Implement buildMakePayload()", "completed": false },
-                { "title": "Write unit tests", "completed": false }
+                {
+                    "title": "Implement buildMakePayload()",
+                    "completed": false
+                },
+                {
+                    "title": "Write unit tests",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "dispatch", "make"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -1071,18 +1625,34 @@
             "blockedBy": ["T-044"],
             "blocks": ["T-046"],
             "subtasks": [
-                { "title": "Implement optimistic lock (set PUBLISHING) step", "completed": false },
-                { "title": "Implement outbound webhook POST with header", "completed": false },
+                {
+                    "title": "Implement optimistic lock (set PUBLISHING) step",
+                    "completed": false
+                },
+                {
+                    "title": "Implement outbound webhook POST with header",
+                    "completed": false
+                },
                 {
                     "title": "Implement success path (log RETRYING, set post PUBLISHING)",
                     "completed": false
                 },
-                { "title": "Implement failure paths (retry vs exhausted)", "completed": false },
-                { "title": "Write unit tests", "completed": false }
+                {
+                    "title": "Implement failure paths (retry vs exhausted)",
+                    "completed": false
+                },
+                {
+                    "title": "Write unit tests",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "dispatch", "make"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -1117,7 +1687,11 @@
             ],
             "tags": ["service-core", "dispatch", "recurrence"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -1133,7 +1707,10 @@
             "blockedBy": ["T-046"],
             "blocks": ["T-048"],
             "subtasks": [
-                { "title": "Implement handleMakeCallbackClaim()", "completed": false },
+                {
+                    "title": "Implement handleMakeCallbackClaim()",
+                    "completed": false
+                },
                 {
                     "title": "Implement handleMakeCallbackResult() SUCCESS path",
                     "completed": false
@@ -1142,11 +1719,18 @@
                     "title": "Implement handleMakeCallbackResult() FAILED path with retry logic",
                     "completed": false
                 },
-                { "title": "Write unit tests", "completed": false }
+                {
+                    "title": "Write unit tests",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "dispatch", "make-callback"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -1162,13 +1746,26 @@
             "blockedBy": ["T-047", "T-025", "T-043"],
             "blocks": ["T-049"],
             "subtasks": [
-                { "title": "Create claim.route.ts", "completed": false },
-                { "title": "Create result.route.ts", "completed": false },
-                { "title": "Register routes and write integration tests", "completed": false }
+                {
+                    "title": "Create claim.route.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Create result.route.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Register routes and write integration tests",
+                    "completed": false
+                }
             ],
             "tags": ["api", "routes", "make", "callbacks"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -1184,17 +1781,30 @@
             "blockedBy": ["T-048", "T-025"],
             "blocks": ["T-050"],
             "subtasks": [
-                { "title": "Create cron job file with live webhook URL check", "completed": false },
+                {
+                    "title": "Create cron job file with live webhook URL check",
+                    "completed": false
+                },
                 {
                     "title": "Implement dispatch loop with per-target error isolation",
                     "completed": false
                 },
-                { "title": "Register in cron/jobs/index.ts", "completed": false },
-                { "title": "Write unit tests", "completed": false }
+                {
+                    "title": "Register in cron/jobs/index.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Write unit tests",
+                    "completed": false
+                }
             ],
             "tags": ["api", "cron", "dispatch"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -1214,12 +1824,22 @@
                     "title": "Steps 1-5: draft → approve → ready → eligible → dispatch",
                     "completed": false
                 },
-                { "title": "Steps 6-9: ONCE recurrence verification", "completed": false },
-                { "title": "Step 10: WEEKLY recurrence rearm verification", "completed": false }
+                {
+                    "title": "Steps 6-9: ONCE recurrence verification",
+                    "completed": false
+                },
+                {
+                    "title": "Step 10: WEEKLY recurrence rearm verification",
+                    "completed": false
+                }
             ],
             "tags": ["testing", "integration", "e2e"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -1239,11 +1859,18 @@
                     "title": "Write edge-case unit tests for paused, PUBLISHING lock, retry exhaustion",
                     "completed": false
                 },
-                { "title": "Write edge-case tests for cascade mixed results", "completed": false }
+                {
+                    "title": "Write edge-case tests for cascade mixed results",
+                    "completed": false
+                }
             ],
             "tags": ["testing", "dispatch"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -1259,12 +1886,22 @@
             "blockedBy": ["T-051"],
             "blocks": [],
             "subtasks": [
-                { "title": "Add Sentry feature tags to all social routes", "completed": false },
-                { "title": "Run pnpm build:api + typecheck + lint + test", "completed": false }
+                {
+                    "title": "Add Sentry feature tags to all social routes",
+                    "completed": false
+                },
+                {
+                    "title": "Run pnpm build:api + typecheck + lint + test",
+                    "completed": false
+                }
             ],
             "tags": ["cleanup", "monitoring", "quality"],
             "phase": "cleanup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
                 "started": null,
@@ -1274,9 +1911,9 @@
     ],
     "summary": {
         "total": 52,
-        "pending": 52,
+        "pending": 51,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 1,
         "blocked": 0,
         "averageComplexity": 2.3
     }
