@@ -4,6 +4,7 @@
  * Supports both protected (authenticated) and public (anonymous token-based) endpoints.
  */
 
+import { Spinner } from '@/components/shared/feedback/Spinner';
 import { getApiUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -169,9 +170,17 @@ export function ConversationReply(props: ConversationReplyProps) {
             <button
                 type="submit"
                 disabled={isDisabled}
+                aria-busy={sending}
                 className={styles.submitButton}
             >
-                {sending ? '...' : t('conversations.thread.send')}
+                {sending ? (
+                    <span className={styles.loadingContent}>
+                        <Spinner size="sm" />
+                        <span>{t('conversations.thread.sending', 'Enviando…')}</span>
+                    </span>
+                ) : (
+                    t('conversations.thread.send')
+                )}
             </button>
         </form>
     );
