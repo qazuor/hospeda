@@ -769,14 +769,14 @@
             "note": "Realigned vs staging post-SPEC-239: Parts B (force-password) + C (credential email) ALREADY BUILT by SPEC-239 -> verify-only (T-023/T-024). Build = web owner surface (Part A, mi-cuenta/comercio, gastronomy+experiences) + single approve&provision admin action (Part D / AC-6). Critical path T-003->T-006->T-009->T-011->T-012->T-016->T-025 (7 steps). 3 parallel tracks. Known gap covered: no protected list-own endpoint existed (T-006/T-007).",
             "archived": true,
             "archivedAt": "2026-06-20T18:15:00.000Z",
-            "archiveNote": "Feature shipped + validated live (T-021/T-025 browser+HTTP). Editor field-expansion -> SPEC-250; DB infra -> SPEC-251; E2E harness + seed fixtures -> SPEC-252."
+            "archiveNote": "Feature shipped + validated live (T-021/T-025 browser+HTTP). Editor field-expansion -> SPEC-253; DB infra -> SPEC-251; E2E harness + seed fixtures -> SPEC-252."
         },
         {
-            "specId": "SPEC-250",
+            "specId": "SPEC-253",
             "title": "Commerce owner editor — extended fields + single COMMERCE_EDIT_OWN permission",
             "status": "draft",
             "progress": "0/0",
-            "path": "SPEC-250-commerce-owner-editor-extended-fields"
+            "path": "SPEC-253-commerce-owner-editor-extended-fields"
         },
         {
             "specId": "SPEC-251",

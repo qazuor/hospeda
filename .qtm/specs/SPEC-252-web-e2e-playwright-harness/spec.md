@@ -70,7 +70,7 @@ fixtures, and no CI wiring for functional E2E. Two seed gaps also blocked the ru
 
 ## 4. Out of scope
 
-- The extended-field editing E2E (SPEC-250 fields) — those specs add their own E2E on
+- The extended-field editing E2E (SPEC-253 fields) — those specs add their own E2E on
   top of this harness.
 - The DB lifecycle/template refresh — SPEC-251.
 
@@ -94,4 +94,4 @@ fixtures, and no CI wiring for functional E2E. Two seed gaps also blocked the ru
 ## 7. Dependencies
 
 - SPEC-249 (the commerce owner area under test) — done.
-- Coordinates with SPEC-251 (correct local DB) and SPEC-250 (adds field E2E later).
+- Coordinates with SPEC-251 (correct local DB) and SPEC-253 (adds field E2E later).

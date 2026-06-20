@@ -1503,7 +1503,7 @@
             "archivedAt": "2026-06-20T18:15:00.000Z"
         },
         {
-            "specId": "SPEC-250",
+            "specId": "SPEC-253",
             "title": "Commerce owner editor — extended fields + single COMMERCE_EDIT_OWN permission",
             "slug": "commerce-owner-editor-extended-fields",
             "type": "feature",
