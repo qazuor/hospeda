@@ -70,7 +70,7 @@
             "id": "T-003",
             "title": "Add 25 PermissionEnum + 9 PermissionCategoryEnum values for social domain",
             "description": "Edit `packages/schemas/src/enums/permission.enum.ts` to append:\n- 9 new `PermissionCategoryEnum` values: `SOCIAL_POST`, `SOCIAL_HASHTAG`, `SOCIAL_CAMPAIGN`, `SOCIAL_BATCH`, `SOCIAL_AUDIENCE`, `SOCIAL_PLATFORM`, `SOCIAL_FOOTER`, `SOCIAL_SETTINGS`, `SOCIAL_AUDIT`\n- 25 new `PermissionEnum` values following the exact SCREAMING_SNAKE key + camelCase dot-value pattern, from `SOCIAL_POST_VIEW = 'socialPost.view'` through `SOCIAL_DISPATCH_MANAGE = 'socialDispatch.manage'` as listed in the spec. Add JSDoc comment per permission per the spec's risk mitigation note.\n\nTest requirements:\n- Unit test: `packages/schemas/src/enums/__tests__/permission.test.ts` (existing or new)\n- Assert new enum keys exist and their string values match expected dot-notation\n- Verify `pnpm typecheck` still passes (the enum is referenced in many places)",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-012", "T-016", "T-030", "T-039"],
@@ -91,14 +91,14 @@
             "tags": ["schemas", "permissions"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-20T00:00:00.000Z",
+                "completed": "2026-06-20T00:00:00.000Z"
             }
         },
         {
@@ -397,7 +397,7 @@
             "id": "T-012",
             "title": "Register 25 social permissions in rolePermissions seed for ADMIN and SUPER_ADMIN",
             "description": "Edit `packages/seed/src/required/rolePermissions.seed.ts` to add all 25 new `PermissionEnum` values from T-003 to both `ADMIN` and `SUPER_ADMIN` role permission lists. Follow the existing pattern: find the ADMIN block and SUPER_ADMIN block and append the new permissions.\n\nTest requirements:\n- Unit test (or extend existing): after seeding, query `role_permissions` table for ADMIN role and assert all 25 new permissions are present\n- File: `packages/seed/src/__tests__/role-permissions.test.ts` (create or extend)\n- Also verify no duplicate entries (unique constraint on role+permission)",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-003"],
             "blocks": ["T-015"],
@@ -418,14 +418,14 @@
             "tags": ["seed", "permissions"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-20T00:00:00.000Z",
+                "completed": "2026-06-20T00:00:00.000Z"
             }
         },
         {
@@ -1911,9 +1911,9 @@
     ],
     "summary": {
         "total": 52,
-        "pending": 49,
+        "pending": 47,
         "inProgress": 0,
-        "completed": 3,
+        "completed": 5,
         "blocked": 0,
         "averageComplexity": 2.3
     }

@@ -1,6 +1,6 @@
 # SPEC-254: Social Automation Backend
 
-## Progress: 3/52 tasks (6%)
+## Progress: 5/52 tasks (10%)
 
 **Average Complexity:** 2.3/3 (max)
 **Critical Path:** T-001 -> T-002 -> T-004 -> T-005 -> T-006 -> T-007 -> T-008 -> T-009 -> T-010 -> T-011 -> T-013 -> T-014 -> T-016 -> T-017 -> T-018 -> T-019 -> T-027 -> T-028 -> T-029 -> T-032 -> T-033 -> T-034 -> T-035 -> T-036 -> T-037 -> T-044 -> T-045 -> T-046 -> T-047 -> T-048 -> T-049 -> T-050 -> T-051 -> T-052 (34 steps)
@@ -25,7 +25,7 @@
   - Blocked by: T-001
   - Blocks: T-004, T-005
 
-- [ ] **T-003** (complexity: 2) - Add 25 PermissionEnum + 9 PermissionCategoryEnum values for social domain
+- [x] **T-003** (complexity: 2) - Add 25 PermissionEnum + 9 PermissionCategoryEnum values for social domain
   - Edit permission.enum.ts; add JSDoc per value. Test: assert new enum keys exist.
   - Blocked by: none (parallel with T-001)
   - Blocks: T-012, T-016, T-030, T-039
@@ -70,7 +70,7 @@
   - Blocked by: T-010
   - Blocks: T-013
 
-- [ ] **T-012** (complexity: 1) - Register 25 social permissions in rolePermissions seed for ADMIN and SUPER_ADMIN
+- [x] **T-012** (complexity: 1) - Register 24 social permissions in rolePermissions seed for ADMIN and SUPER_ADMIN
   - Edit rolePermissions.seed.ts; test: assert all 25 new permissions exist for both roles.
   - Blocked by: T-003
   - Blocks: T-015

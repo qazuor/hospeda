@@ -84,3 +84,56 @@ describe('SPEC-169 AC-6 — role permission audit (broad grants)', () => {
         expect([...editorBroad].sort()).toEqual([...ALLOWED_BROAD_GRANTS[RoleEnum.EDITOR]!].sort());
     });
 });
+
+/** All 24 social permissions introduced by SPEC-254. */
+const SOCIAL_PERMISSIONS = [
+    PermissionEnum.SOCIAL_POST_VIEW,
+    PermissionEnum.SOCIAL_POST_CREATE,
+    PermissionEnum.SOCIAL_POST_UPDATE,
+    PermissionEnum.SOCIAL_POST_APPROVE,
+    PermissionEnum.SOCIAL_POST_SCHEDULE,
+    PermissionEnum.SOCIAL_POST_PAUSE,
+    PermissionEnum.SOCIAL_POST_ARCHIVE,
+    PermissionEnum.SOCIAL_POST_HARD_DELETE,
+    PermissionEnum.SOCIAL_POST_VIEW_LOGS,
+    PermissionEnum.SOCIAL_HASHTAG_VIEW,
+    PermissionEnum.SOCIAL_HASHTAG_MANAGE,
+    PermissionEnum.SOCIAL_HASHTAG_SET_MANAGE,
+    PermissionEnum.SOCIAL_FOOTER_MANAGE,
+    PermissionEnum.SOCIAL_CAMPAIGN_MANAGE,
+    PermissionEnum.SOCIAL_BATCH_MANAGE,
+    PermissionEnum.SOCIAL_AUDIENCE_MANAGE,
+    PermissionEnum.SOCIAL_PLATFORM_MANAGE,
+    PermissionEnum.SOCIAL_PLATFORM_FORMAT_VIEW,
+    PermissionEnum.SOCIAL_ASSET_VIEW,
+    PermissionEnum.SOCIAL_ASSET_MANAGE,
+    PermissionEnum.SOCIAL_SETTINGS_MANAGE,
+    PermissionEnum.SOCIAL_PUBLISH_LOG_VIEW,
+    PermissionEnum.SOCIAL_AUDIT_LOG_VIEW,
+    PermissionEnum.SOCIAL_DISPATCH_MANAGE
+] as const;
+
+describe('SPEC-254 — social media publish pipeline permissions', () => {
+    it('SUPER_ADMIN holds all 24 social permissions', () => {
+        const superAdminPerms = ROLE_PERMISSIONS[RoleEnum.SUPER_ADMIN];
+        for (const perm of SOCIAL_PERMISSIONS) {
+            expect(superAdminPerms, `SUPER_ADMIN missing ${perm}`).toContain(perm);
+        }
+        expect(SOCIAL_PERMISSIONS).toHaveLength(24);
+    });
+
+    it('ADMIN holds all 24 social permissions', () => {
+        const adminPerms = ROLE_PERMISSIONS[RoleEnum.ADMIN];
+        for (const perm of SOCIAL_PERMISSIONS) {
+            expect(adminPerms, `ADMIN missing ${perm}`).toContain(perm);
+        }
+    });
+
+    it('no non-staff role holds any social permission', () => {
+        const socialSet = new Set<PermissionEnum>(SOCIAL_PERMISSIONS);
+        for (const role of NON_STAFF_ROLES) {
+            const offending = (ROLE_PERMISSIONS[role] ?? []).filter((p) => socialSet.has(p));
+            expect(offending, `${role} should not hold social permissions`).toEqual([]);
+        }
+    });
+});
