@@ -258,6 +258,57 @@ describe('GastronomyService.updateOwn', () => {
 });
 
 // ---------------------------------------------------------------------------
+// updateOwn — AC-3 identity-field regression (SPEC-249 T-022)
+// ---------------------------------------------------------------------------
+
+describe('GastronomyService.updateOwn — AC-3 identity-field regression (SPEC-249 T-022)', () => {
+    it('strips ALL forged identity/core fields while persisting the operational change', async () => {
+        const entity = makeGastronomyEntity();
+        const service = makeService(entity);
+        const mockUpdate = (service as AnyService).model.update;
+
+        // Full forged identity/core set alongside one valid operational field.
+        // biome-ignore lint/suspicious/noExplicitAny: simulating a forged HTTP body
+        const forgedPayload: any = {
+            priceRange: PriceRangeEnum.MID, // valid operational field — must persist
+            name: 'FORGED_NAME',
+            slug: 'forged-slug',
+            type: GastronomyTypeEnum.CAFE,
+            destinationId: '00000000-0000-4000-a000-0000000000ff',
+            lifecycleState: LifecycleStatusEnum.ARCHIVED,
+            visibility: VisibilityEnum.PRIVATE,
+            moderationState: ModerationStatusEnum.REJECTED,
+            isFeatured: true,
+            ownerId: '00000000-0000-4000-a000-0000000000fe'
+        };
+
+        const result = await service.updateOwn(ENTITY_ID, forgedPayload, ownerActor);
+
+        expect(result.error).toBeUndefined();
+        // The base update MUST have been invoked (no silent skip).
+        expect(mockUpdate).toHaveBeenCalledTimes(1);
+        const updatePayload = (mockUpdate.mock.calls[0]?.[1] ?? {}) as Record<string, unknown>;
+
+        // The valid operational field persisted.
+        expect(updatePayload.priceRange).toBe(PriceRangeEnum.MID);
+        // Every forged identity/core field was stripped by the owner-update schema.
+        for (const forbidden of [
+            'name',
+            'slug',
+            'type',
+            'destinationId',
+            'lifecycleState',
+            'visibility',
+            'moderationState',
+            'isFeatured',
+            'ownerId'
+        ]) {
+            expect(updatePayload).not.toHaveProperty(forbidden);
+        }
+    });
+});
+
+// ---------------------------------------------------------------------------
 // _executeSearch (indirect — through search() public API with mocked model)
 // ---------------------------------------------------------------------------
 

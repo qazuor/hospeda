@@ -299,6 +299,63 @@ describe('ExperienceService.updateOwn — schema enforcement', () => {
 });
 
 // ---------------------------------------------------------------------------
+// updateOwn — AC-3 identity-field regression (SPEC-249 T-022)
+// ---------------------------------------------------------------------------
+
+describe('ExperienceService.updateOwn — AC-3 identity-field regression (SPEC-249 T-022)', () => {
+    it('strips ALL forged identity/core fields while persisting the operational change', async () => {
+        const entity = makeExperienceEntity();
+        const service = makeService(entity);
+        const mockUpdate = (service as AnyService).model.update;
+
+        // Full forged identity/core set alongside one valid operational field.
+        // biome-ignore lint/suspicious/noExplicitAny: simulating a forged HTTP body
+        const forgedPayload: any = {
+            isPriceOnRequest: true, // valid operational field — must persist
+            name: 'FORGED_NAME',
+            slug: 'forged-slug',
+            type: ExperienceTypeEnum.TOUR_GUIDE,
+            priceFrom: 9999999,
+            priceUnit: ExperiencePriceUnitEnum.PER_GROUP,
+            destinationId: '00000000-0000-4000-a000-0000000000ff',
+            lifecycleState: LifecycleStatusEnum.ARCHIVED,
+            visibility: VisibilityEnum.PRIVATE,
+            moderationState: ModerationStatusEnum.REJECTED,
+            isFeatured: true,
+            hasActiveSubscription: false,
+            ownerId: '00000000-0000-4000-a000-0000000000fe'
+        };
+
+        const result = await service.updateOwn(ENTITY_ID, forgedPayload, ownerActor);
+
+        expect(result.error).toBeUndefined();
+        // The base update MUST have been invoked (no silent skip).
+        expect(mockUpdate).toHaveBeenCalledTimes(1);
+        const updatePayload = (mockUpdate.mock.calls[0]?.[1] ?? {}) as Record<string, unknown>;
+
+        // The valid operational field persisted.
+        expect(updatePayload.isPriceOnRequest).toBe(true);
+        // Every forged identity/core field was stripped by the owner-update schema.
+        for (const forbidden of [
+            'name',
+            'slug',
+            'type',
+            'priceFrom',
+            'priceUnit',
+            'destinationId',
+            'lifecycleState',
+            'visibility',
+            'moderationState',
+            'isFeatured',
+            'hasActiveSubscription',
+            'ownerId'
+        ]) {
+            expect(updatePayload).not.toHaveProperty(forbidden);
+        }
+    });
+});
+
+// ---------------------------------------------------------------------------
 // _executeSearch
 // ---------------------------------------------------------------------------
 
