@@ -3,6 +3,11 @@
 /* Uses CSS custom properties from global.css (web app convention: no Tailwind). */
 
 .root {
+    /* Reset the native <dialog> UA `position: absolute`, which would pull this
+       element out of flow and collapse the parent modal to its min-height,
+       clipping the plan list (the parent has overflow: hidden). Same class of
+       fix as the cancel/pause modals in SubscriptionDashboard. */
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: var(--space-5, 20px);
