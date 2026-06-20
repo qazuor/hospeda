@@ -210,245 +210,245 @@
             "id": "T-006",
             "title": "A1 — Map sidebar loading indicator (isFetching)",
             "description": "HIGH. Wire useViewportSearch isFetching: in AccommodationsListingMap.client.tsx (~L146) destructure isFetching (hook returns it at useViewportSearch.ts:94, currently ignored) and pass to MapCardsSidebar.client.tsx (used ~L364). In MapCardsSidebar.client.tsx show a loading overlay (semi-transparent, centered <Spinner size='lg'/>) or skeleton cards when isFetching is true, replacing stale cards; overlay disappears when isFetching=false. Update both files in one change. Tests: component test asserting overlay/skeleton renders when isFetching prop true, hidden when false.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Destructure + thread isFetching prop through AccommodationsListingMap",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Loading overlay/skeleton in MapCardsSidebar when isFetching",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Component test for isFetching true/false",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "maps", "high", "phase-2"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-20T02:00:00.000Z",
+                "completed": "2026-06-20T02:00:00.000Z"
             }
         },
         {
             "id": "T-007",
             "title": "A2 — Eventos filter skeleton-swap",
             "description": "HIGH. In apps/web/src/pages/[lang]/eventos/index.astro port the html[data-filters-loading] skeleton-swap from alojamientos/index.astro (L848-L910): add a hidden <EventCardHorizontalSkeleton/> block (components/skeletons/EventCardHorizontalSkeleton.astro) alongside the event grid, toggled via the data-filters-loading CSS attribute. Verify against the alojamientos reference. Manual verification of filter navigation (Astro page, no unit test framework for .astro view logic — note in PR).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Add hidden EventCardHorizontalSkeleton block",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Wire html[data-filters-loading] CSS toggle",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify parity with alojamientos reference",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "eventos", "skeleton", "high", "phase-2"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-20T02:10:00.000Z",
+                "completed": "2026-06-20T02:10:00.000Z"
             }
         },
         {
             "id": "T-008",
             "title": "A3 — Publicaciones filter skeleton-swap",
             "description": "HIGH. In apps/web/src/pages/[lang]/publicaciones/index.astro add PostGridSkeleton.astro (components/skeletons/PostGridSkeleton.astro) alongside the post grid using the html[data-filters-loading] CSS pattern. The existing ArticleCardSkeleton.astro error-branch usage (L36 import / L365) stays — this task closes the filter-loading-path gap only. Manual verification of filter navigation (note in PR).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Add PostGridSkeleton block in filter-loading path",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Wire html[data-filters-loading] CSS toggle",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Leave ArticleCardSkeleton error branch intact",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "publicaciones", "skeleton", "high", "phase-2"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-20T02:10:00.000Z",
+                "completed": "2026-06-20T02:10:00.000Z"
             }
         },
         {
             "id": "T-009",
             "title": "A4 — AiChatWidget thinking indicator + ⏳ replacement",
             "description": "HIGH. apps/web/src/components/accommodation/AiChatWidget.tsx: replace ⏳ emoji on send button (~L241) with <Spinner size='sm'/> when streaming. Add showThinking state (mirror SearchChatPanel.client.tsx:217) true when chat.state.status==='streaming' and no reply token yet; render animated dots pattern from SearchChatPanel.client.tsx:292. i18n for any visible label. Tests: component test — spinner shown on send while streaming, thinking dots shown before first token.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Replace ⏳ on send button with Spinner when streaming",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add showThinking state + animated dots (mirror SearchChatPanel)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Component test for spinner + thinking indicator",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "ai-chat", "high", "phase-2"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-20T02:40:00.000Z",
+                "completed": "2026-06-20T02:40:00.000Z"
             }
         },
         {
             "id": "T-010",
             "title": "A5 — ReviewsModal + DestinationReviewsModal canonical spinner",
             "description": "HIGH. ReviewsModal.client.tsx (L236: replace <div className={styles.spinner}>...</div> with <Spinner/>). 'Cargar más' button: use LoadingButton or add aria-busy + label change during loading; button must NOT disappear while loading (L251 condition). Apply identical treatment to destination/DestinationReviewsModal.client.tsx. Tests: component test — Spinner replaces '...' on load, cargar-más stays mounted + aria-busy during loading.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001", "T-003"],
             "blocks": ["T-013"],
             "subtasks": [
                 {
                     "title": "ReviewsModal: Spinner + cargar-más aria-busy/label (no disappear)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "DestinationReviewsModal: same treatment",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Component tests for both modals",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "reviews", "high", "phase-2"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-20T02:40:00.000Z",
+                "completed": "2026-06-20T02:40:00.000Z"
             }
         },
         {
             "id": "T-011",
             "title": "A6 — ContactHost double-submit guard",
             "description": "HIGH. apps/web/src/components/accommodation/ContactHost.client.tsx: wrap 'Solicitar acceso' CTA (handleRequestAccess ~L280) with LoadingButton or add disabled+aria-busy for the async call duration to prevent double-submit. Verify handleSubmit form button and add aria-busy if missing. Tests: component test — button disabled+aria-busy during async, second click ignored while in flight.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001", "T-003"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Guard handleRequestAccess CTA (disabled + aria-busy)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add aria-busy on handleSubmit button if missing",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Component test for double-submit prevention",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "contact-host", "high", "phase-2"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-20T02:40:00.000Z",
+                "completed": "2026-06-20T02:40:00.000Z"
             }
         },
         {
             "id": "T-012",
             "title": "A7 — ConversationReply send button",
             "description": "HIGH. apps/web/src/components/account/ConversationReply.client.tsx (L174): replace {sending ? '...' : t('conversations.thread.send')} with <Spinner size='sm'/> or an i18n-keyed label. Add conversations.thread.sending key to packages/i18n/src/locales/{es,en,pt}/ (correct namespace). Add aria-busy={sending} on submit button. Tests: component test — no '...' string, aria-busy when sending, i18n label/spinner shown.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Replace '...' with Spinner or i18n sending label",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add conversations.thread.sending key in es/en/pt",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "aria-busy on submit + component test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "conversations", "i18n", "high", "phase-2"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-20T02:40:00.000Z",
+                "completed": "2026-06-20T02:40:00.000Z"
             }
         },
         {
@@ -798,9 +798,9 @@
     ],
     "summary": {
         "total": 22,
-        "pending": 17,
+        "pending": 10,
         "inProgress": 0,
-        "completed": 5,
+        "completed": 12,
         "blocked": 0,
         "averageComplexity": 2.1
     }
