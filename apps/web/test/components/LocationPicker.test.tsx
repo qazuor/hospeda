@@ -141,8 +141,9 @@ describe('LocationPicker', () => {
         expect(document.body.textContent).not.toContain('⏳');
         // Spinner renders a role="status" live region
         expect(screen.getByRole('status')).toBeInTheDocument();
-        // Label text is in a sr-only span inside the status role
-        expect(screen.getByText('Buscando...')).toBeInTheDocument();
+        // Label text is in a sr-only span inside the status role (resolved i18n
+        // value uses the ellipsis character).
+        expect(screen.getByText('Buscando…')).toBeInTheDocument();
     });
 
     it('does not show Spinner when isSearching is false', () => {

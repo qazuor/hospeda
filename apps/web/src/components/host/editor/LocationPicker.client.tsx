@@ -227,10 +227,7 @@ export function LocationPicker({
                         <span className={styles.searchSpinner}>
                             <Spinner
                                 size="sm"
-                                label={t(
-                                    'host.properties.editor.location.searching',
-                                    'Buscando...'
-                                )}
+                                label={t('host.properties.editor.location.searching', 'Buscando…')}
                             />
                         </span>
                     )}
