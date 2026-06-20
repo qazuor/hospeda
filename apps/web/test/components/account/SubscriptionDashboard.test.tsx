@@ -819,3 +819,223 @@ describe('SubscriptionDashboard — scheduled plan-change banner (T-004)', () =>
         ).not.toBeInTheDocument();
     });
 });
+
+// ─── FIX 2: scheduled-change banner shows plan NAME not UUID ──────────────────
+
+/** Plans fixture for banner name-resolution tests. */
+const MOCK_PLANS = [
+    {
+        id: 'a1dcba00-0494-4321-8765-abcdef012345',
+        slug: 'basic',
+        name: 'Plan Básico',
+        description: 'Basic plan',
+        category: 'owner',
+        monthlyPriceArs: 5000,
+        annualPriceArs: null,
+        monthlyPriceUsdRef: 5,
+        hasTrial: false,
+        trialDays: 0,
+        isDefault: false,
+        sortOrder: 1,
+        isActive: true,
+        entitlements: [] as readonly string[],
+        limits: {} as Readonly<Record<string, number>>,
+        createdAt: '2026-01-01T00:00:00Z',
+        updatedAt: '2026-01-01T00:00:00Z'
+    }
+] as const;
+
+const SUBSCRIPTION_WITH_UUID_SCHEDULED_CHANGE = {
+    ...ACTIVE_SUBSCRIPTION,
+    scheduledPlanChange: {
+        newPlanId: 'a1dcba00-0494-4321-8765-abcdef012345',
+        effectiveAt: '2026-05-01T00:00:00Z'
+    }
+};
+
+describe('SubscriptionDashboard — FIX 2: scheduled-change banner resolves plan name', () => {
+    it('shows the plan NAME (not UUID) when plans prop is provided and id matches', async () => {
+        mockGetSubscription.mockResolvedValue({
+            ok: true,
+            data: { subscription: SUBSCRIPTION_WITH_UUID_SCHEDULED_CHANGE }
+        });
+        mockListInvoices.mockResolvedValue({
+            ok: true,
+            data: { items: [], pagination: { page: 1, pageSize: 1, total: 0, totalPages: 0 } }
+        });
+
+        render(
+            <SubscriptionDashboard
+                locale="es"
+                user={USER_ROLE}
+                plans={MOCK_PLANS}
+            />
+        );
+
+        await waitFor(() => {
+            const banner = screen.getByRole('note', { name: /cambio de plan programado/i });
+            // Must show the human name, NOT the raw UUID
+            expect(banner).toHaveTextContent('Plan Básico');
+            expect(banner).not.toHaveTextContent('a1dcba00-0494-4321-8765-abcdef012345');
+        });
+    });
+
+    it('falls back to the raw plan id when plans prop is absent (no duplicate)', async () => {
+        mockGetSubscription.mockResolvedValue({
+            ok: true,
+            data: { subscription: SUBSCRIPTION_WITH_UUID_SCHEDULED_CHANGE }
+        });
+        mockListInvoices.mockResolvedValue({
+            ok: true,
+            data: { items: [], pagination: { page: 1, pageSize: 1, total: 0, totalPages: 0 } }
+        });
+
+        // No plans prop — falls back to raw newPlanId value
+        render(
+            <SubscriptionDashboard
+                locale="es"
+                user={USER_ROLE}
+            />
+        );
+
+        await waitFor(() => {
+            const banner = screen.getByRole('note', { name: /cambio de plan programado/i });
+            expect(banner).toHaveTextContent('a1dcba00-0494-4321-8765-abcdef012345');
+        });
+    });
+
+    it('resolves by slug when newPlanId matches plan slug', async () => {
+        const subWithSlugId = {
+            ...ACTIVE_SUBSCRIPTION,
+            scheduledPlanChange: {
+                newPlanId: 'basic',
+                effectiveAt: '2026-05-01T00:00:00Z'
+            }
+        };
+        mockGetSubscription.mockResolvedValue({
+            ok: true,
+            data: { subscription: subWithSlugId }
+        });
+        mockListInvoices.mockResolvedValue({
+            ok: true,
+            data: { items: [], pagination: { page: 1, pageSize: 1, total: 0, totalPages: 0 } }
+        });
+
+        render(
+            <SubscriptionDashboard
+                locale="es"
+                user={USER_ROLE}
+                plans={MOCK_PLANS}
+            />
+        );
+
+        await waitFor(() => {
+            const banner = screen.getByRole('note', { name: /cambio de plan programado/i });
+            expect(banner).toHaveTextContent('Plan Básico');
+        });
+    });
+});
+
+// ─── FIX 3: cancel success step persists after successful cancel ──────────────
+
+describe('SubscriptionDashboard — FIX 3: cancel success step survives background refresh', () => {
+    it('shows the success step and does NOT revert to confirm step during background refresh', async () => {
+        // First call: load subscription; second call (silent refresh): return updated data
+        mockGetSubscription
+            .mockResolvedValueOnce({ ok: true, data: { subscription: ACTIVE_SUBSCRIPTION } })
+            .mockResolvedValue({
+                ok: true,
+                data: {
+                    subscription: {
+                        ...ACTIVE_SUBSCRIPTION,
+                        status: 'cancelled' as const,
+                        cancelAtPeriodEnd: true
+                    }
+                }
+            });
+
+        renderDashboard();
+        await openCancelModal();
+
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /sí, cancelar suscripción/i }));
+        });
+
+        // The success step must be visible — the dialog must still be in the DOM
+        await waitFor(() => {
+            expect(screen.getByRole('dialog')).toBeInTheDocument();
+            // Confirm button gone → we are on the success step
+            expect(
+                screen.queryByRole('button', { name: /sí, cancelar suscripción/i })
+            ).not.toBeInTheDocument();
+        });
+
+        // Success step's close button must be present
+        expect(screen.getByRole('button', { name: /cerrar/i })).toBeInTheDocument();
+    });
+
+    it('silent refresh triggers a second getSubscription call after success', async () => {
+        mockGetSubscription
+            .mockResolvedValueOnce({ ok: true, data: { subscription: ACTIVE_SUBSCRIPTION } })
+            .mockResolvedValue({ ok: true, data: { subscription: ACTIVE_SUBSCRIPTION } });
+
+        renderDashboard();
+        await openCancelModal();
+
+        const callsBefore = mockGetSubscription.mock.calls.length;
+
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /sí, cancelar suscripción/i }));
+        });
+
+        await waitFor(() => {
+            expect(mockGetSubscription.mock.calls.length).toBeGreaterThan(callsBefore);
+        });
+
+        // Modal must still be mounted (not reset by a loading spinner)
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+    });
+});
+
+// ─── FIX 5: "Cambiar plan" button uses btnSecondary class ─────────────────────
+
+describe('SubscriptionDashboard — FIX 5: "Cambiar plan" button styling', () => {
+    it('renders "Cambiar plan" as a button (not a link) when plans are provided', async () => {
+        mockSubscriptionSuccess();
+
+        render(
+            <SubscriptionDashboard
+                locale="es"
+                user={USER_ROLE}
+                plans={MOCK_PLANS}
+            />
+        );
+
+        await waitFor(() => {
+            // Must be a button, not an anchor
+            expect(
+                screen.getByRole('button', { name: /cambiar plan de suscripción/i })
+            ).toBeInTheDocument();
+        });
+    });
+
+    it('"Cambiar plan" button has the btnSecondary CSS class (not upgradeLink)', async () => {
+        mockSubscriptionSuccess();
+
+        render(
+            <SubscriptionDashboard
+                locale="es"
+                user={USER_ROLE}
+                plans={MOCK_PLANS}
+            />
+        );
+
+        await waitFor(() => {
+            const btn = screen.getByRole('button', { name: /cambiar plan de suscripción/i });
+            // CSS modules proxy returns the class name as the string key.
+            // The mock maps class → 'className' so we check against 'btnSecondary'.
+            expect(btn.className).toContain('btnSecondary');
+            expect(btn.className).not.toContain('upgradeLink');
+        });
+    });
+});

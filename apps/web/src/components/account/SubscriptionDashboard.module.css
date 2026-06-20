@@ -349,6 +349,11 @@
 }
 
 .modal {
+    /* Reset the browser's <dialog> UA stylesheet (position:absolute; left:0;
+       margin:auto; etc.) so the element participates in the flex centering of
+       .modalBackdrop and does not pin itself to the left edge of the screen. */
+    position: relative;
+    margin: 0;
     background-color: var(--core-card);
     border: 1px solid var(--border, oklch(0.8 0 0));
     border-radius: var(--radius-card, 24px);
