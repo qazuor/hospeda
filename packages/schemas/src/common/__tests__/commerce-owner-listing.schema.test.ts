@@ -14,7 +14,6 @@ const gastronomyRow = {
     name: 'La Parrilla',
     slug: 'la-parrilla',
     type: 'restaurant',
-    hasActiveSubscription: true,
     isPublic: true
 };
 
@@ -24,7 +23,6 @@ const experienceRow = {
     name: 'Kayak al atardecer',
     slug: 'kayak-al-atardecer',
     type: 'tour',
-    hasActiveSubscription: false,
     isPublic: false
 };
 

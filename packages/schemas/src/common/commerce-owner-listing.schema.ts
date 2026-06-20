@@ -38,10 +38,16 @@ export const CommerceOwnerListingSummarySchema = z.object({
      */
     type: z.string(),
 
-    /** Whether the listing currently has an active commerce subscription. */
-    hasActiveSubscription: z.boolean(),
-
-    /** Whether the listing is currently publicly visible. */
+    /**
+     * Whether the listing is currently publicly visible.
+     *
+     * Derived from the entity `visibility` (PUBLIC vs anything else). Visibility
+     * is reconciler-driven from the commerce subscription (SPEC-239), so this is
+     * the single owner-facing signal of whether the ficha is live — the summary
+     * deliberately does NOT surface raw subscription/billing state (out of scope
+     * per SPEC-249 §4), and it stays consistent across both verticals (gastronomy
+     * has no `hasActiveSubscription` column; experiences does).
+     */
     isPublic: z.boolean()
 });
 
