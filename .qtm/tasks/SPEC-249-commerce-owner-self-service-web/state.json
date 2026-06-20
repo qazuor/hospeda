@@ -653,27 +653,27 @@
             "id": "T-020",
             "title": "Integration: mustChangePassword interplay with mi-cuenta/comercio",
             "description": "Verify end-to-end that a freshly provisioned COMMERCE_OWNER (mustChangePassword=true) hitting mi-cuenta/comercio is first forced through mi-cuenta/cambiar-contrasena by the existing web middleware gate, then can reach the commerce area after clearing the flag. Reuses the SPEC-239 gate — no new mechanism. Tests: integration/middleware test for the redirect order.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-009"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Integration test for gate→comercio order",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "auth", "integration"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-20T17:49:00.000Z",
+                "completed": "2026-06-20T17:52:00.000Z"
             }
         },
         {
@@ -738,54 +738,54 @@
             "id": "T-023",
             "title": "Smoke: force-password on first login [AC-4, verify-only]",
             "description": "Smoke/regression that a provisioned COMMERCE_OWNER with mustChangePassword=true is forced through mi-cuenta/cambiar-contrasena before any other authenticated action and the flag clears after a successful change. Mechanism already exists (SPEC-239) — this only asserts it, no rebuild.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-018"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Smoke test forced-change + flag clear",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["auth", "testing"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-20T17:49:00.000Z",
+                "completed": "2026-06-20T17:52:00.000Z"
             }
         },
         {
             "id": "T-024",
             "title": "Smoke: credential email on provisioning [AC-5, verify-only]",
             "description": "Smoke/regression asserting provisioning a commerce owner sends the CommerceOwnerCredentials email — assert against the notifications stub (type COMMERCE_OWNER_CREDENTIALS, recipient, changePasswordUrl present). Template + send path already exist (SPEC-239) — assert only.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-017"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Notifications-stub assertion test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["notifications", "testing"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-20T17:49:00.000Z",
+                "completed": "2026-06-20T17:52:00.000Z"
             }
         },
         {
