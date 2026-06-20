@@ -10,6 +10,7 @@
  * elements whose `data-destination-id` matches the `destinationId` prop.
  */
 
+import { SkeletonCardList } from '@/components/shared/feedback/SkeletonCard';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 import { Dialog, DialogBody, DialogHeader } from '@/components/shared/ui/Dialog.client';
 import { GradientButton } from '@/components/ui/GradientButtonReact';
@@ -213,7 +214,26 @@ export function DestinationReviewsModal({
                         </p>
                     )}
 
-                    {loading && (
+                    {loading && reviews.length === 0 && (
+                        <div
+                            className={styles.spinnerWrapper}
+                            aria-live="polite"
+                        >
+                            <Spinner
+                                label={t(
+                                    'destination.detail.reviews.modal.loading',
+                                    'Cargando reseñas…'
+                                )}
+                            />
+                            <SkeletonCardList
+                                count={3}
+                                cardHeight="5rem"
+                                gap="0.75rem"
+                            />
+                        </div>
+                    )}
+
+                    {loading && reviews.length > 0 && (
                         <div
                             className={styles.spinnerWrapper}
                             aria-live="polite"

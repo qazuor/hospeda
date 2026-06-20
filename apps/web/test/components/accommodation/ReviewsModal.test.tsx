@@ -44,6 +44,10 @@ vi.mock('@/components/shared/feedback/Spinner.module.css', () => ({
     default: new Proxy({}, { get: (_t, prop) => String(prop) })
 }));
 
+vi.mock('@/components/shared/feedback/SkeletonCard.module.css', () => ({
+    default: new Proxy({}, { get: (_t, prop) => String(prop) })
+}));
+
 vi.mock('@/components/shared/ui/Dialog.client', () => ({
     Dialog: ({
         isOpen,
@@ -279,6 +283,81 @@ describe('ReviewsModal — T-010 spinner and load-more (SPEC-228)', () => {
         });
 
         // Resolve so React can clean up after the test
+        resolveSecondPage({ ok: false, data: null });
+    });
+});
+
+// ─── T-013: initial-load skeleton (SPEC-228) ─────────────────────────────────
+
+describe('ReviewsModal — T-013 initial-load skeleton (SPEC-228)', () => {
+    afterEach(() => {
+        for (const el of document.querySelectorAll('[data-reviews-modal-trigger]')) {
+            el.remove();
+        }
+    });
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('T-013: shows skeleton stack on first load (no reviews yet)', async () => {
+        // Arrange: never-resolving promise to freeze in loading state
+        mockGetReviews.mockReturnValue(new Promise(() => {}));
+
+        // Act
+        renderModal();
+        dispatchTriggerClick('acc-123');
+
+        // Assert: spinner (role=status) AND aria-hidden skeleton present
+        await waitFor(() => {
+            expect(screen.getByRole('status')).toBeInTheDocument();
+        });
+        const skeletons = document.querySelectorAll('[aria-hidden="true"]');
+        expect(skeletons.length).toBeGreaterThan(0);
+    });
+
+    it('T-013: skeleton NOT shown when loading more pages (reviews already exist)', async () => {
+        // Arrange: first page loads, second page is deferred
+        const first10 = {
+            ok: true,
+            data: {
+                items: Array.from({ length: 10 }, (_, i) => ({
+                    id: `r${i}`,
+                    content: `Content ${i}`,
+                    averageRating: 4.0,
+                    user: { name: `User ${i}`, image: null },
+                    createdAt: '2024-01-01T00:00:00Z'
+                })),
+                pagination: { total: 25 }
+            }
+        };
+
+        let resolveSecondPage!: (value: unknown) => void;
+        const deferredSecond = new Promise((resolve) => {
+            resolveSecondPage = resolve;
+        });
+
+        mockGetReviews.mockResolvedValueOnce(first10).mockReturnValue(deferredSecond);
+
+        renderModal({ reviewsCount: 25 });
+        dispatchTriggerClick('acc-123');
+
+        // Wait for first page to load and "load more" to appear
+        await waitFor(() => {
+            expect(screen.getByRole('button', { name: 'Cargar más' })).toBeInTheDocument();
+        });
+
+        // Trigger second page fetch
+        fireEvent.click(screen.getByRole('button', { name: 'Cargar más' }));
+
+        // Assert: spinner for pagination is shown but NO skeleton list
+        // (skeleton only appears when reviews.length === 0)
+        await waitFor(() => {
+            expect(screen.getByRole('status')).toBeInTheDocument();
+        });
+
+        // Reviews from first page are still visible — skeleton would not cover them
+        expect(screen.getByText('Content 0')).toBeInTheDocument();
+
         resolveSecondPage({ ok: false, data: null });
     });
 });

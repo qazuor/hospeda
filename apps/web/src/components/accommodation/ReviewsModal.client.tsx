@@ -1,3 +1,4 @@
+import { SkeletonCardList } from '@/components/shared/feedback/SkeletonCard';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 /**
  * @file ReviewsModal.client.tsx
@@ -234,7 +235,26 @@ export function ReviewsModal({ accommodationId, reviewsCount, locale }: ReviewsM
                         );
                     })}
 
-                    {loading && (
+                    {loading && reviews.length === 0 && (
+                        <div
+                            className={styles.spinnerWrapper}
+                            aria-live="polite"
+                        >
+                            <Spinner
+                                label={t(
+                                    'accommodations.detail.reviewsDetail.modal.loading',
+                                    'Cargando reseñas…'
+                                )}
+                            />
+                            <SkeletonCardList
+                                count={3}
+                                cardHeight="5rem"
+                                gap="0.75rem"
+                            />
+                        </div>
+                    )}
+
+                    {loading && reviews.length > 0 && (
                         <div
                             className={styles.spinnerWrapper}
                             aria-live="polite"

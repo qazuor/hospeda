@@ -56,6 +56,10 @@ vi.mock('@/components/shared/feedback/Spinner.module.css', () => ({
     default: new Proxy({}, { get: (_t, prop) => String(prop) })
 }));
 
+vi.mock('@/components/shared/feedback/SkeletonCard.module.css', () => ({
+    default: new Proxy({}, { get: (_t, prop) => String(prop) })
+}));
+
 vi.mock('@/components/shared/ui/Dialog.client', () => ({
     Dialog: ({
         isOpen,
@@ -446,5 +450,65 @@ describe('DestinationReviewsModal — T-010 spinner and load-more (SPEC-228)', (
             const btn = screen.getByRole('button', { name: 'Cargando reseñas…' });
             expect(btn).toBeDisabled();
         });
+    });
+});
+
+// ─── T-013: initial-load skeleton (SPEC-228) ─────────────────────────────────
+
+describe('DestinationReviewsModal — T-013 initial-load skeleton (SPEC-228)', () => {
+    beforeEach(() => {
+        mockGetReviews.mockReset();
+    });
+
+    it('T-013: shows skeleton stack on first load (no reviews yet)', async () => {
+        // Arrange: never-resolving promise to freeze in loading state
+        mockGetReviews.mockReturnValue(new Promise(() => {}));
+
+        // Act
+        renderModal();
+        dispatchTriggerClick('dest-123');
+
+        // Assert: spinner (role=status) AND aria-hidden skeleton blocks present
+        await waitFor(() => {
+            expect(screen.getByRole('status')).toBeInTheDocument();
+        });
+        const skeletons = document.querySelectorAll('[aria-hidden="true"]');
+        expect(skeletons.length).toBeGreaterThan(0);
+    });
+
+    it('T-013: skeleton NOT shown when loading more pages (reviews already exist)', async () => {
+        // Arrange: first page loads, second page is deferred
+        const first10 = {
+            ok: true,
+            data: {
+                items: Array.from({ length: 10 }, (_, i) => ({
+                    id: `r${i}`,
+                    content: `Content ${i}`,
+                    averageRating: 4.0,
+                    user: { name: `User ${i}`, image: null },
+                    createdAt: '2024-01-01T00:00:00Z'
+                })),
+                pagination: { total: 25 }
+            }
+        };
+
+        mockGetReviews.mockResolvedValueOnce(first10).mockReturnValue(new Promise(() => {}));
+
+        renderModal({ reviewsCount: 25 });
+        dispatchTriggerClick('dest-123');
+
+        // Wait for load-more to appear
+        await waitFor(() => {
+            expect(screen.getByRole('button', { name: 'Cargar más reseñas' })).toBeInTheDocument();
+        });
+
+        // Trigger second page fetch
+        fireEvent.click(screen.getByRole('button', { name: 'Cargar más reseñas' }));
+
+        // Assert: spinner for pagination appears AND reviews from first page are still visible
+        await waitFor(() => {
+            expect(screen.getByRole('status')).toBeInTheDocument();
+        });
+        expect(screen.getByText('Content 0')).toBeInTheDocument();
     });
 });
