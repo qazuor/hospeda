@@ -15,9 +15,8 @@
 #   // loading-guard: ignore
 # Prefer the … character (U+2026) over a literal '...' where it is real copy.
 #
-# NOTE: this guard is wired into CI only once the Phase 2-4 migrations have
-# removed all pre-existing violations (SPEC-228 T-022). Until then it can be run
-# manually:  bash scripts/check-web-loading-patterns.sh
+# Wired into CI via the `check:web-loading` package script and the CI guards
+# step (SPEC-228 T-022). Run manually: bash scripts/check-web-loading-patterns.sh
 
 set -euo pipefail
 

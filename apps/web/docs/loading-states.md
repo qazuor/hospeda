@@ -104,10 +104,11 @@ These fail review (and the CI guard, see below):
 ## CI guard
 
 A grep-based CI check fails the build if a forbidden `'...'` loading label or an
-`⏳` emoji appears in `apps/web/src/components/**/*.tsx`. See
-`scripts/check-web-loading-patterns.sh`. If you hit a false positive on a
-legitimate ellipsis (e.g. truncation copy), prefer the `…` (U+2026) character or
-adjust the allowlist in the script with a comment explaining why.
+`⏳` emoji appears in `apps/web/src/components/**/*.tsx`. It runs in CI as part of
+the guards step (`pnpm check:web-loading` →
+`scripts/check-web-loading-patterns.sh`). If you hit a false positive on a
+legitimate ellipsis (e.g. truncation copy), prefer the `…` (U+2026) character, or
+add a trailing `// loading-guard: ignore` on the line with a reason.
 
 ## Reference implementations
 
