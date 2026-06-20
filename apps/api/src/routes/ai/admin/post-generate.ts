@@ -195,10 +195,15 @@ adminAiPostGenerateRoute.post('/', async (c) => {
         const mapped = mapAiEngineErrorToHttpStatus(error);
 
         if (mapped !== undefined) {
-            // Special-case: the spec requires MODERATION_FAILED (not MODERATION_BLOCKED)
-            // as the client-visible code for content-policy rejections (US-4 §422).
+            // Special-case mappings for client-visible error codes:
+            // - MODERATION_BLOCKED → MODERATION_FAILED (US-4 §422)
+            // - CEILING_HIT        → AI_CEILING_HIT    (US-7 §429; panel maps on this exact code)
             const clientCode =
-                mapped.code === 'MODERATION_BLOCKED' ? 'MODERATION_FAILED' : mapped.code;
+                mapped.code === 'MODERATION_BLOCKED'
+                    ? 'MODERATION_FAILED'
+                    : mapped.code === 'CEILING_HIT'
+                      ? 'AI_CEILING_HIT'
+                      : mapped.code;
 
             apiLogger.warn(
                 { code: clientCode, status: mapped.status },

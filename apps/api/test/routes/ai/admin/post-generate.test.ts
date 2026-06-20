@@ -494,7 +494,7 @@ describe('admin AI post-generate route (SPEC-223 T-008)', () => {
 
             const body = (await res.json()) as { success: boolean; error: { code: string } };
             expect(body.success).toBe(false);
-            expect(body.error.code).toBe('CEILING_HIT');
+            expect(body.error.code).toBe('AI_CEILING_HIT');
         });
 
         it('returns HTTP 502 when the engine is exhausted (all providers failed)', async () => {

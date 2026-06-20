@@ -1,4 +1,3 @@
-import { useEntityFormContext } from '@/components/entity-form/context/EntityFormContext';
 /**
  * @file AiPostGeneratePanel.tsx
  * @description AI post-generation panel for the post editor (SPEC-223 T-009).
@@ -11,6 +10,12 @@ import { useEntityFormContext } from '@/components/entity-form/context/EntityFor
  * post entity form (via `useEntityFormContext`). On a successful response it
  * calls `setFieldValue` directly on the parent form's title, summary, and
  * content fields — no `onDraftReady` callback is threaded through route files.
+ *
+ * ## Response envelope
+ *
+ * The API wraps its response in the project's standard envelope:
+ * - Success: `{ success: true, data: { title, summary, content } }`
+ * - Error:   `{ success: false, error: { code: string } }`
  *
  * ## Error handling
  *
@@ -27,6 +32,8 @@ import { useEntityFormContext } from '@/components/entity-form/context/EntityFor
  * "Descartar" buttons. "Aplicar" writes the draft into the form; "Descartar"
  * clears the local draft state without touching the form.
  */
+import { EntityFormContext } from '@/components/entity-form/context/EntityFormContext';
+import type { EntityFormContextValue } from '@/components/entity-form/context/EntityFormContext';
 import { Button } from '@/components/ui-wrapped/Button';
 import { useTranslations } from '@/hooks/use-translations';
 import { SparkleIcon } from '@repo/icons';
@@ -36,142 +43,28 @@ import {
     AiPostGenerateToneSchema,
     PostCategoryEnum
 } from '@repo/schemas';
-import { useCallback, useReducer, useRef } from 'react';
+import { useCallback, useContext, useReducer, useRef } from 'react';
+import { initialPanelState, panelReducer } from './ai-post-generate-panel.state';
+import {
+    AI_POST_GENERATE_ENDPOINT,
+    POST_CATEGORY_LABELS,
+    mapErrorKey
+} from './ai-post-generate-panel.utils';
 
 // ---------------------------------------------------------------------------
-// Constants
+// Context helper
 // ---------------------------------------------------------------------------
 
-/** Spanish labels for PostCategoryEnum — mirrors basic-info.consolidated.ts */
-const POST_CATEGORY_LABELS: Record<string, string> = {
-    EVENTS: 'Eventos',
-    CULTURE: 'Cultura',
-    GASTRONOMY: 'Gastronomía',
-    NATURE: 'Naturaleza',
-    TOURISM: 'Turismo',
-    GENERAL: 'General',
-    SPORT: 'Deporte',
-    CARNIVAL: 'Carnaval',
-    NIGHTLIFE: 'Vida Nocturna',
-    HISTORY: 'Historia',
-    TRADITIONS: 'Tradiciones',
-    WELLNESS: 'Bienestar',
-    FAMILY: 'Familia',
-    TIPS: 'Consejos',
-    ART: 'Arte',
-    BEACH: 'Playa',
-    RURAL: 'Rural',
-    FESTIVALS: 'Festivales'
-};
-
-const ENDPOINT = '/api/v1/admin/ai/post-generate';
-
-// ---------------------------------------------------------------------------
-// Panel state machine
-// ---------------------------------------------------------------------------
-
-type PanelStatus = 'idle' | 'generating' | 'draft-ready' | 'error';
-
-interface PanelState {
-    /** Current UI phase. */
-    status: PanelStatus;
-    /** Draft from a successful generation — only present in 'draft-ready'. */
-    draft: AiPostGenerateDraft | null;
-    /** Mapped error key (i18n suffix after `admin-pages.posts.aiGenerate.`). */
-    errorKey: string | null;
-    /** Inline validation errors for the panel form fields. */
-    validationErrors: Partial<Record<keyof AiPostGenerateRequest, string>>;
-    /** Currently entered topic text. */
-    topic: string;
-    /** Currently entered points list. */
-    points: string[];
-    /** Selected category (optional). */
-    category: string;
-    /** Selected tone. */
-    tone: string;
-    /** Selected locale. */
-    locale: string;
-}
-
-type PanelAction =
-    | { type: 'set_topic'; value: string }
-    | { type: 'add_point' }
-    | { type: 'update_point'; index: number; value: string }
-    | { type: 'remove_point'; index: number }
-    | { type: 'set_category'; value: string }
-    | { type: 'set_tone'; value: string }
-    | { type: 'set_locale'; value: string }
-    | { type: 'validation_errors'; errors: Partial<Record<keyof AiPostGenerateRequest, string>> }
-    | { type: 'generating' }
-    | { type: 'draft_ready'; draft: AiPostGenerateDraft }
-    | { type: 'error'; errorKey: string }
-    | { type: 'discard' };
-
-const initialState: PanelState = {
-    status: 'idle',
-    draft: null,
-    errorKey: null,
-    validationErrors: {},
-    topic: '',
-    points: [''],
-    category: '',
-    tone: 'neutral',
-    locale: 'es'
-};
-
-function panelReducer(state: PanelState, action: PanelAction): PanelState {
-    switch (action.type) {
-        case 'set_topic':
-            return { ...state, topic: action.value };
-        case 'add_point':
-            if (state.points.length >= 10) return state;
-            return { ...state, points: [...state.points, ''] };
-        case 'update_point': {
-            const updated = [...state.points];
-            updated[action.index] = action.value;
-            return { ...state, points: updated };
-        }
-        case 'remove_point': {
-            if (state.points.length <= 1) return state;
-            const filtered = state.points.filter((_, i) => i !== action.index);
-            return { ...state, points: filtered };
-        }
-        case 'set_category':
-            return { ...state, category: action.value };
-        case 'set_tone':
-            return { ...state, tone: action.value };
-        case 'set_locale':
-            return { ...state, locale: action.value };
-        case 'validation_errors':
-            return { ...state, validationErrors: action.errors, status: 'idle' };
-        case 'generating':
-            return {
-                ...state,
-                status: 'generating',
-                errorKey: null,
-                validationErrors: {},
-                draft: null
-            };
-        case 'draft_ready':
-            return { ...state, status: 'draft-ready', draft: action.draft, errorKey: null };
-        case 'error':
-            return { ...state, status: 'error', errorKey: action.errorKey, draft: null };
-        case 'discard':
-            return { ...state, status: 'idle', draft: null, errorKey: null };
-        default:
-            return state;
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Error code → i18n key suffix mapper
-// ---------------------------------------------------------------------------
-
-function mapErrorKey(status: number, code: string): string {
-    if (status === 422 || code === 'MODERATION_FAILED') return 'errorModeration';
-    if (status === 429 || code === 'AI_CEILING_HIT') return 'errorCeiling';
-    if (status === 503 || code === 'exhausted') return 'errorExhausted';
-    return 'errorGeneric';
+/**
+ * Returns the EntityFormContextValue if the component is mounted inside an
+ * EntityFormProvider, or `null` if it is not (e.g. standalone test usage).
+ *
+ * Using `useContext` directly (instead of the throwing `useEntityFormContext`
+ * hook) avoids the try/catch conditional-hook pattern and removes the need for
+ * an `any` annotation.
+ */
+function useEntityFormContextOptional(): EntityFormContextValue | null {
+    return useContext(EntityFormContext);
 }
 
 // ---------------------------------------------------------------------------
@@ -203,16 +96,9 @@ export interface AiPostGeneratePanelProps {
  */
 export function AiPostGeneratePanel({ onDraftReady }: AiPostGeneratePanelProps) {
     const { t } = useTranslations();
-    // biome-ignore lint/suspicious/noExplicitAny: context may be unavailable in test
-    let formContext: any = null;
-    try {
-        // eslint-disable-next-line react-hooks/rules-of-hooks
-        formContext = useEntityFormContext();
-    } catch {
-        // Not inside EntityFormProvider (e.g. standalone test) — use onDraftReady
-    }
+    const formContext = useEntityFormContextOptional();
 
-    const [state, dispatch] = useReducer(panelReducer, initialState);
+    const [state, dispatch] = useReducer(panelReducer, initialPanelState);
     const abortRef = useRef<AbortController | null>(null);
 
     // -----------------------------------------------------------------------
@@ -286,7 +172,7 @@ export function AiPostGeneratePanel({ onDraftReady }: AiPostGeneratePanelProps) 
         abortRef.current = new AbortController();
 
         try {
-            const res = await fetch(ENDPOINT, {
+            const res = await fetch(AI_POST_GENERATE_ENDPOINT, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',
@@ -297,12 +183,15 @@ export function AiPostGeneratePanel({ onDraftReady }: AiPostGeneratePanelProps) 
             const json = await res.json();
 
             if (!res.ok) {
-                const code = (json?.code as string) ?? '';
+                // API wraps errors as: { success: false, error: { code } }
+                const code = (json?.error?.code as string) ?? '';
                 dispatch({ type: 'error', errorKey: mapErrorKey(res.status, code) });
                 return;
             }
 
-            dispatch({ type: 'draft_ready', draft: json as AiPostGenerateDraft });
+            // API wraps success as: { success: true, data: { title, summary, content } }
+            const draft = (json?.data ?? json) as AiPostGenerateDraft;
+            dispatch({ type: 'draft_ready', draft });
         } catch (err) {
             if ((err as Error).name === 'AbortError') return;
             dispatch({ type: 'error', errorKey: 'errorGeneric' });

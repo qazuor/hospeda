@@ -16,61 +16,72 @@
  * ## Mocking strategy
  *
  * - `fetch` is mocked globally via `vi.stubGlobal`.
+ * - The success mock returns the REAL API envelope:
+ *   `{ success: true, data: VALID_DRAFT }` so that the test will break if the
+ *   panel ever stops reading `json.data`.
+ * - The error mock returns the REAL API envelope:
+ *   `{ success: false, error: { code: 'MODERATION_FAILED' } }` so that the
+ *   test will break if the panel ever stops reading `json.error.code`.
  * - `@/hooks/use-translations` is already mocked globally in test/setup.tsx
  *   (returns key as value) — no local re-mock needed.
  * - `@repo/icons` is mocked globally in test/setup.tsx — SparkleIcon renders
  *   as a span stub.
- * - `useEntityFormContext` is mocked locally so the component can be rendered
- *   without an EntityFormProvider wrapper.
+ * - `EntityFormContext` is mocked with a real React context so that
+ *   `useContext(EntityFormContext)` inside the panel returns the mock value.
+ *   Tests that exercise `setFieldValue` render inside the mock provider.
  */
 
 import type { AiPostGenerateDraft } from '@repo/schemas';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Mocks
 // ---------------------------------------------------------------------------
 
-// Mock useEntityFormContext so the panel does not require a real provider.
+/**
+ * We create a real React context here so that `useContext(EntityFormContext)`
+ * inside the panel component receives the correct mock value when the test
+ * wraps the tree with `MockFormProvider`.
+ *
+ * vi.mock is hoisted to the top of the file by Vitest, so the factory below
+ * runs before any imports. The exported `EntityFormContext` is this real
+ * context, and `useEntityFormContext` throws when called outside a provider
+ * (matching production behaviour, though the panel no longer calls it).
+ */
 const mockSetFieldValue = vi.fn();
-vi.mock('@/components/entity-form/context/EntityFormContext', () => ({
-    useEntityFormContext: () => ({
-        setFieldValue: mockSetFieldValue,
-        values: {},
-        errors: {},
-        dirtyFields: {},
-        mode: 'edit',
-        isLoading: false,
-        isSaving: false,
-        userPermissions: [],
-        config: { sections: [] },
-        form: {},
-        handleFieldBlur: vi.fn(),
-        handleFieldFocus: vi.fn(),
-        setMode: vi.fn(),
-        setActiveSection: vi.fn(),
-        save: vi.fn(),
-        saveAndPublish: vi.fn(),
-        discard: vi.fn(),
-        reset: vi.fn(),
-        validateField: vi.fn(),
-        validateForm: vi.fn(),
-        isFieldDirty: vi.fn(),
-        isSectionDirty: vi.fn(),
-        hasUnsavedChanges: vi.fn(),
-        setErrors: vi.fn()
-    })
-}));
+
+// We need a stable context reference across the mock boundary.
+// Because vi.mock factories run synchronously before module evaluation,
+// we declare the context inside the factory using React.createContext.
+vi.mock('@/components/entity-form/context/EntityFormContext', async () => {
+    const reactMod = await import('react');
+    const MockEntityFormContext = reactMod.createContext<{
+        setFieldValue: typeof mockSetFieldValue;
+    } | null>(null);
+
+    return {
+        EntityFormContext: MockEntityFormContext,
+        useEntityFormContext: () => {
+            const ctx = reactMod.useContext(MockEntityFormContext);
+            if (!ctx) {
+                throw new Error('useEntityFormContext must be used within an EntityFormProvider');
+            }
+            return ctx;
+        }
+    };
+});
 
 // Import SUT AFTER mocks are declared (vi.mock is hoisted)
+import { EntityFormContext } from '@/components/entity-form/context/EntityFormContext';
 import { AiPostGeneratePanel } from '../AiPostGeneratePanel';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Valid draft returned by the API. */
+/** Valid draft returned by the API (unwrapped inner payload). */
 const VALID_DRAFT: AiPostGenerateDraft = {
     title: 'Carnaval 2024: récord de asistencia en Concepción del Uruguay',
     summary:
@@ -79,9 +90,27 @@ const VALID_DRAFT: AiPostGenerateDraft = {
         '<p>El carnaval de Concepción del Uruguay 2024 fue declarado el más concurrido de la historia.</p>'
 };
 
-/** Renders the panel with an optional onDraftReady callback. */
+/** Wraps the panel inside a mock EntityFormContext provider so setFieldValue is available. */
+function WithFormContext({ children }: { children: ReactNode }) {
+    return (
+        <EntityFormContext.Provider value={{ setFieldValue: mockSetFieldValue } as never}>
+            {children}
+        </EntityFormContext.Provider>
+    );
+}
+
+/** Renders the panel standalone (no context). */
 function renderPanel(onDraftReady?: (draft: AiPostGenerateDraft) => void) {
     return render(<AiPostGeneratePanel onDraftReady={onDraftReady} />);
+}
+
+/** Renders the panel inside a mock EntityFormContext provider. */
+function renderPanelWithContext(onDraftReady?: (draft: AiPostGenerateDraft) => void) {
+    return render(
+        <WithFormContext>
+            <AiPostGeneratePanel onDraftReady={onDraftReady} />
+        </WithFormContext>
+    );
 }
 
 /** Fills the topic field and the first point input. */
@@ -132,9 +161,10 @@ describe('AiPostGeneratePanel', () => {
 
     // 2. Submit calls fetch with body matching AiPostGenerateRequestSchema
     it('calls fetch with a valid request body when topic and one point are filled', async () => {
+        // Success envelope — REAL API shape: { success: true, data: ... }
         fetchMock.mockResolvedValue({
             ok: true,
-            json: async () => VALID_DRAFT
+            json: async () => ({ success: true, data: VALID_DRAFT })
         });
 
         renderPanel();
@@ -156,9 +186,10 @@ describe('AiPostGeneratePanel', () => {
 
     // 3. Successful response triggers onDraftReady with the draft
     it('calls onDraftReady with the draft on a successful response', async () => {
+        // Success envelope — REAL API shape: { success: true, data: ... }
         fetchMock.mockResolvedValue({
             ok: true,
-            json: async () => VALID_DRAFT
+            json: async () => ({ success: true, data: VALID_DRAFT })
         });
 
         const onDraftReady = vi.fn();
@@ -166,10 +197,14 @@ describe('AiPostGeneratePanel', () => {
         fillForm('Carnaval 2024', 'Récord de asistencia');
         clickGenerate();
 
-        // Draft preview should appear
+        // Draft preview should appear with the actual draft fields populated
         await waitFor(() => {
             expect(screen.getByTestId('ai-post-draft-preview')).toBeInTheDocument();
         });
+
+        // Verify draft fields are visible in the preview (guards that json.data is read)
+        expect(screen.getByText(VALID_DRAFT.title)).toBeInTheDocument();
+        expect(screen.getByText(VALID_DRAFT.summary)).toBeInTheDocument();
 
         // Click apply
         fireEvent.click(screen.getByTestId('ai-post-apply'));
@@ -180,12 +215,14 @@ describe('AiPostGeneratePanel', () => {
 
     // 3b. When no onDraftReady, apply uses setFieldValue from context
     it('calls setFieldValue on context when onDraftReady is not provided', async () => {
+        // Success envelope — REAL API shape: { success: true, data: ... }
         fetchMock.mockResolvedValue({
             ok: true,
-            json: async () => VALID_DRAFT
+            json: async () => ({ success: true, data: VALID_DRAFT })
         });
 
-        renderPanel(); // no onDraftReady → uses formContext.setFieldValue
+        // Render inside context provider so formContext is non-null
+        renderPanelWithContext();
         fillForm('Carnaval 2024', 'Récord de asistencia');
         clickGenerate();
 
@@ -202,10 +239,14 @@ describe('AiPostGeneratePanel', () => {
 
     // 4. 422 MODERATION_FAILED shows error, does NOT populate form fields
     it('shows moderation error on 422 MODERATION_FAILED and does not populate fields', async () => {
+        // Error envelope — REAL API shape: { success: false, error: { code } }
         fetchMock.mockResolvedValue({
             ok: false,
             status: 422,
-            json: async () => ({ code: 'MODERATION_FAILED', message: 'Content blocked' })
+            json: async () => ({
+                success: false,
+                error: { code: 'MODERATION_FAILED', message: 'Content blocked' }
+            })
         });
 
         const onDraftReady = vi.fn();
