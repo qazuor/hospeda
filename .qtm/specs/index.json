@@ -1499,6 +1499,19 @@
                 "self-service",
                 "admin-sells"
             ]
+        },
+        {
+            "specId": "SPEC-250",
+            "title": "Asynchronous external reputation refresh (Apify async API + polling)",
+            "type": "improvement",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-250-external-reputation-async-refresh",
+            "created": "2026-06-20T00:00:00.000Z",
+            "base": "staging",
+            "origin": "SPEC-237 staging-smoke follow-up (2026-06-20): manual refresh is synchronous+serial (~100s, Booking actor 73-120s). Owner chose polling not webhook. Decisions: separate run_status column, Booking JSON-LD fast-path stays inline, unified async refresh() shared by weekly cron, owner panel live status.",
+            "dependsOn": ["SPEC-237"],
+            "tags": ["external-reputation", "apify", "cron", "async", "accommodation", "SPEC-237-followup"]
         }
     ]
 }
