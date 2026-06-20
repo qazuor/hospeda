@@ -143,8 +143,14 @@ The Booking adapter only uses this as a **fallback**: it first tries a direct
 SSRF-safe fetch + JSON-LD `aggregateRating` (no Apify cost). The actor runs only
 when the direct fetch is blocked. The adapter sends
 `{ startUrls: [{ url: <listing.url> }] }` and reads aggregate fields
-(`rating` / `reviewScore` / `guestRating`, `reviewsCount` / `numberOfReviews`)
-from the first dataset item. Review text is never read (AC-7.1).
+(`rating` / `reviewScore` / `guestRating`, and the count from
+`reviewsCount` / `numberOfReviews` / `reviews`) from the first dataset item.
+`voyager/booking-scraper` puts the count under `reviews`. Review text is never
+read (AC-7.1).
+
+> ⚠️ Real Booking actor runs block ~60-120s. The reputation refresh is currently
+> synchronous, so a slow Booking actor can exceed the request timeout. An async
+> refresh is the proper fix (follow-up).
 
 To discover/compare actors with your token:
 
@@ -155,12 +161,18 @@ curl -s "https://api.apify.com/v2/store?search=booking&limit=8" \
 
 ## 4. Apify Airbnb actor
 
-Set `HOSPEDA_APIFY_AIRBNB_ACTOR` to an Airbnb scraper actor slug. Recommended:
-**`tri_angle/airbnb-scraper`** — the most-used Airbnb actor on the Store,
-`PAY_PER_EVENT`. The adapter sends `{ startUrls: [{ url: <listing.url> }] }` and
-reads `rating` / `starRating` / `guestSatisfactionOverall` and
-`reviewsCount` / `numberOfReviews` / `reviewCount` from the first dataset item.
-Review text is never read (AC-7.1).
+Set `HOSPEDA_APIFY_AIRBNB_ACTOR` to **`tri_angle/airbnb-rooms-urls-scraper`**
+(`PAY_PER_EVENT`). The adapter sends `{ startUrls: [{ url: <listing.url> }] }`
+where the listing URL is a specific room page (`airbnb.com/rooms/<id>`).
+
+> ⚠️ Do **not** use `tri_angle/airbnb-scraper` here — that actor only accepts
+> location/search queries and FAILS on a room detail URL with
+> "This Actor cannot start with listing detail URLs."
+
+This actor returns the aggregate rating as a **nested object**
+(`rating: { guestSatisfaction, reviewsCount, ... }`); the adapter reads
+`rating.guestSatisfaction` + `rating.reviewsCount` (and falls back to flat
+fields for other actors). Review text is never read (AC-7.1).
 
 ### Cost / plan note
 
