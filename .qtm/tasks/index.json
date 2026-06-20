@@ -17,12 +17,12 @@
             "averageComplexity": 3.9,
             "archived": true,
             "archivedAt": "2026-06-16",
-            "archiveNote": "PR #1687 merged (10/11 UI + backend). T-011a mount-order routing regression test merged via PR #1697. T-011b (real-MP-sandbox staging smoke for the pending_payment upgrade branch) deferred as a post-merge operational check per owner sign-off 2026-06-16 (precedent SPEC-209 T-012) \u2014 not coverable by the local test-control stub. See specs/index.json archiveNote for detail.",
+            "archiveNote": "PR #1687 merged (10/11 UI + backend). T-011a mount-order routing regression test merged via PR #1697. T-011b (real-MP-sandbox staging smoke for the pending_payment upgrade branch) deferred as a post-merge operational check per owner sign-off 2026-06-16 (precedent SPEC-209 T-012) — not coverable by the local test-control stub. See specs/index.json archiveNote for detail.",
             "note": "11 tasks across 4 phases (avg complexity 3.9). Backend endpoint T-002 in-progress. Critical path: T-001->T-002->T-003->T-005->T-007->T-008->T-009->T-010->T-011 (9 steps). Three parallel tracks after T-003: banner (T-004), plan-change flow (T-005..T-009), cancel (T-006). Converge at i18n (T-010) + smoke (T-011). Depends on SPEC-167 + SPEC-147."
         },
         {
             "specId": "SPEC-239",
-            "title": "Commerce listing core (merchant-with-subscription) + Gastronom\u00eda",
+            "title": "Commerce listing core (merchant-with-subscription) + Gastronomía",
             "status": "in-progress",
             "progress": "0/64",
             "path": "SPEC-239-commerce-listings-core-gastronomy"
@@ -62,7 +62,7 @@
         },
         {
             "specId": "SPEC-236",
-            "title": "Coverage ratchet-up \u2014 restore per-package thresholds to the 90% target",
+            "title": "Coverage ratchet-up — restore per-package thresholds to the 90% target",
             "status": "completed",
             "progress": "3/3",
             "path": "SPEC-236-coverage-ratchet-up",
@@ -72,7 +72,7 @@
         },
         {
             "specId": "SPEC-230",
-            "title": "Soft-delete filtering in the service list() path \u2014 make BaseCrudService.list exclude soft-deleted rows by default so protected list endpoints stop returning deleted records",
+            "title": "Soft-delete filtering in the service list() path — make BaseCrudService.list exclude soft-deleted rows by default so protected list endpoints stop returning deleted records",
             "status": "completed",
             "progress": "0/0",
             "path": "SPEC-230-list-soft-delete-filtering",
@@ -103,31 +103,31 @@
         },
         {
             "specId": "SPEC-234",
-            "title": "TanStack Router family bump \u2014 unblock the production-minor-patch Dependabot group",
+            "title": "TanStack Router family bump — unblock the production-minor-patch Dependabot group",
             "status": "draft",
             "progress": "0/4",
             "path": "SPEC-234-tanstack-router-family-bump"
         },
         {
             "specId": "SPEC-229",
-            "title": "Accommodation partial-update data loss \u2014 partial JSONB objects + shallow-merge nested columns",
+            "title": "Accommodation partial-update data loss — partial JSONB objects + shallow-merge nested columns",
             "status": "completed",
             "progress": "4/4",
             "path": "SPEC-229-accommodation-partial-update-merge",
             "archived": true,
             "archivedAt": "2026-06-14",
-            "archiveNote": "PR #1632 merged to staging. Converter emits partial nested objects (no default injection) + extraInfo/contactInfo deep-partial in update schema + price/extraInfo/contactInfo/socialNetworks/location added to mergeableJsonbColumns. Adversarial review caught + fixed a null-merge column-corruption bug (col::jsonb || 'null' yields [x,null], not a clear) \u2014 guarded in buildMergeSetClause. Tests: schemas 4877, db 960, api patch-persistence 13.",
+            "archiveNote": "PR #1632 merged to staging. Converter emits partial nested objects (no default injection) + extraInfo/contactInfo deep-partial in update schema + price/extraInfo/contactInfo/socialNetworks/location added to mergeableJsonbColumns. Adversarial review caught + fixed a null-merge column-corruption bug (col::jsonb || 'null' yields [x,null], not a clear) — guarded in buildMergeSetClause. Tests: schemas 4877, db 960, api patch-persistence 13.",
             "note": "P1 fix. 3 coordinated changes: converter emits partial nested objects (no default injection); AccommodationUpdateInputSchema makes extraInfo+contactInfo inner fields optional; AccommodationModel.mergeableJsonbColumns gains price/extraInfo/contactInfo/socialNetworks/location. Regression tests in schemas+db+api."
         },
         {
             "specId": "SPEC-217",
-            "title": "Deterministic Billing for E2E \u2014 QZPay test-control wiring + date-aware publish gate",
+            "title": "Deterministic Billing for E2E — QZPay test-control wiring + date-aware publish gate",
             "status": "completed",
             "progress": "15/16",
             "path": "SPEC-217-qzpay-test-control-e2e-wiring",
             "archived": true,
             "archivedAt": "2026-06-13",
-            "archiveNote": "PR #1586 merged to staging (4f374036a); E2E P0 Suite green. Final 2 blockers closed: failNext scoped by ownerId (parallel-worker contamination) + publish() promotes PRIVATE->PUBLIC visibility (robust variant \u2014 never clobbers RESTRICTED or explicit caller visibility; adversarial review caught the unconditional-PUBLIC security regression). T-012 host-07d deferred; qzpay test-control hardening + deferred coverage tracked in SPEC-221.",
+            "archiveNote": "PR #1586 merged to staging (4f374036a); E2E P0 Suite green. Final 2 blockers closed: failNext scoped by ownerId (parallel-worker contamination) + publish() promotes PRIVATE->PUBLIC visibility (robust variant — never clobbers RESTRICTED or explicit caller visibility; adversarial review caught the unconditional-PUBLIC security regression). T-012 host-07d deferred; qzpay test-control hardening + deferred coverage tracked in SPEC-221.",
             "note": "15/16 (T-012 host-07d deferred to SPEC-221). Earlier blocker (Zod 4 .partial() not stripping .default()) fixed via stripShapeDefaults across 32 update/patch schemas. T-011 (host-07c) + T-013 (res-01) verified live. T-014/T-015 done. T-016 CI soak green."
         },
         {
@@ -139,12 +139,12 @@
             "base": "staging",
             "archived": true,
             "archivedAt": "2026-06-13",
-            "archiveNote": "PR #1602 merged (a909ef4eb). F-1 (scope delayNextQueue) + F-2 (extractScope extensibility) shipped. F-3 dropped as contrived prod code (no sync updateSubscription in publish; compensation already unit-tested) \u2014 legitimate debugging need moved to SPEC-227 (non-blocking observability + creation-time MP enrichment).",
+            "archiveNote": "PR #1602 merged (a909ef4eb). F-1 (scope delayNextQueue) + F-2 (extractScope extensibility) shipped. F-3 dropped as contrived prod code (no sync updateSubscription in publish; compensation already unit-tested) — legitimate debugging need moved to SPEC-227 (non-blocking observability + creation-time MP enrichment).",
             "note": "F-1 + F-2 DONE. F-3 (host-07d sync updateSubscription E2E) dropped; see SPEC-227."
         },
         {
             "specId": "SPEC-227",
-            "title": "Billing Subscription Observability \u2014 trial\u2194accommodation\u2194owner linkage logging + creation-time MP reference enrichment",
+            "title": "Billing Subscription Observability — trial↔accommodation↔owner linkage logging + creation-time MP reference enrichment",
             "status": "completed",
             "progress": "4/4",
             "path": "SPEC-227-billing-subscription-observability",
@@ -157,13 +157,13 @@
         },
         {
             "specId": "SPEC-220",
-            "title": "Staging\u2192Main Promotion Hardening \u2014 clear CodeQL security debt blocking the promotion",
+            "title": "Staging→Main Promotion Hardening — clear CodeQL security debt blocking the promotion",
             "status": "completed",
             "progress": "7/7",
             "path": "SPEC-220-staging-main-promotion-hardening",
             "archived": true,
             "archivedAt": "2026-06-14",
-            "archiveNote": "T-001..T-007 done (T-004 N/A \u2014 both findings fixed by code, no dismissals). T-006 live: advanced setup (GitHub codeql.yml on main + default setup disabled) + codeql-staging.yml nightly staging scan; staging\u2194main reconciled. Promo #1629 merged to main; #1618 unblocked SPEC-219 T-005."
+            "archiveNote": "T-001..T-007 done (T-004 N/A — both findings fixed by code, no dismissals). T-006 live: advanced setup (GitHub codeql.yml on main + default setup disabled) + codeql-staging.yml nightly staging scan; staging↔main reconciled. Promo #1629 merged to main; #1618 unblocked SPEC-219 T-005."
         },
         {
             "specId": "SPEC-211",
@@ -223,7 +223,7 @@
         },
         {
             "specId": "SPEC-188",
-            "title": "Vitest Test-Suite Performance \u2014 Cut Per-File Overhead Without Saturating the Machine",
+            "title": "Vitest Test-Suite Performance — Cut Per-File Overhead Without Saturating the Machine",
             "status": "completed",
             "progress": "9/21",
             "path": "SPEC-188-vitest-test-performance",
@@ -233,7 +233,7 @@
         },
         {
             "specId": "SPEC-180",
-            "title": "Sentry Observability Hardening \u2014 source maps, environments, and logger-driven capture",
+            "title": "Sentry Observability Hardening — source maps, environments, and logger-driven capture",
             "status": "approved",
             "progress": "0/14",
             "path": "SPEC-180-sentry-observability"
@@ -257,7 +257,7 @@
         },
         {
             "specId": "SPEC-185",
-            "title": "Admin Entity Lists v2 \u2014 filters, grid cards, host portfolio & tags migration",
+            "title": "Admin Entity Lists v2 — filters, grid cards, host portfolio & tags migration",
             "status": "completed",
             "progress": "17/17",
             "path": "SPEC-185-admin-entity-lists-v2",
@@ -269,7 +269,7 @@
         },
         {
             "specId": "SPEC-186",
-            "title": "Web Dynamic Image Grid \u2014 count-aware gallery layout, fixed-ratio cells & per-cell responsive images",
+            "title": "Web Dynamic Image Grid — count-aware gallery layout, fixed-ratio cells & per-cell responsive images",
             "status": "completed",
             "progress": "18/18",
             "path": "SPEC-186-web-dynamic-image-grid",
@@ -281,7 +281,7 @@
         },
         {
             "specId": "SPEC-187",
-            "title": "Rich Text Entity Descriptions \u2014 per-entity toolbars, plain-text accommodation.description, full richDescription backing, ratify canonical format & harden rendering",
+            "title": "Rich Text Entity Descriptions — per-entity toolbars, plain-text accommodation.description, full richDescription backing, ratify canonical format & harden rendering",
             "status": "completed",
             "progress": "25/25",
             "path": "SPEC-187-rich-text-entity-descriptions",
@@ -293,7 +293,7 @@
         },
         {
             "specId": "SPEC-189",
-            "title": "Optimize Seed & App Builds \u2014 run seed from src (no build) + decouple @repo/schemas from @repo/feedback",
+            "title": "Optimize Seed & App Builds — run seed from src (no build) + decouple @repo/schemas from @repo/feedback",
             "status": "completed",
             "progress": "12/12",
             "path": "SPEC-189-optimize-seed-and-app-builds",
@@ -307,7 +307,7 @@
         },
         {
             "specId": "SPEC-190",
-            "title": "Admin Bundle Perf \u2014 Icon Tree-Shaking & Entity-Chunk Code-Split",
+            "title": "Admin Bundle Perf — Icon Tree-Shaking & Entity-Chunk Code-Split",
             "status": "completed",
             "progress": "14/14",
             "path": "SPEC-190-admin-bundle-perf-icons-and-codesplit",
@@ -316,11 +316,11 @@
             "note": "Tests added, pending smoke",
             "archived": true,
             "archivedAt": "2026-06-15",
-            "archiveNote": "Admin bundle perf (icon tree-shaking + entity code-split). All 14 tasks done: code shipped via PR #1559; T-013 doc (final-report + sideEffects claim now true via T-003); T-014 browser smoke VERIFIED 2026-06-15 \u2014 all 3 lazy fields (tiptap rich-text, leaflet coordinates, media upload) render in admin edit, zero dynamic-chunk errors."
+            "archiveNote": "Admin bundle perf (icon tree-shaking + entity code-split). All 14 tasks done: code shipped via PR #1559; T-013 doc (final-report + sideEffects claim now true via T-003); T-014 browser smoke VERIFIED 2026-06-15 — all 3 lazy fields (tiptap rich-text, leaflet coordinates, media upload) render in admin edit, zero dynamic-chunk errors."
         },
         {
             "specId": "SPEC-191",
-            "title": "Web Contribution Pages & Banners \u2014 /colaborar hub, report link & recruitment banners",
+            "title": "Web Contribution Pages & Banners — /colaborar hub, report link & recruitment banners",
             "status": "completed",
             "progress": "16/16",
             "path": "SPEC-191-web-contribution-pages-and-banners",
@@ -332,7 +332,7 @@
         },
         {
             "specId": "SPEC-192",
-            "title": "Billing Catalog to DB \u2014 complete SPEC-168 by making the addon catalog & residual plan/promo reads DB-backed, and document the code-level structural boundary",
+            "title": "Billing Catalog to DB — complete SPEC-168 by making the addon catalog & residual plan/promo reads DB-backed, and document the code-level structural boundary",
             "status": "completed",
             "progress": "37/37",
             "path": "SPEC-192-billing-catalog-to-db",
@@ -377,11 +377,11 @@
         },
         {
             "specId": "SPEC-196",
-            "title": "Shared Config-as-Code Package \u2014 centralize curated content & catalog files",
+            "title": "Shared Config-as-Code Package — centralize curated content & catalog files",
             "status": "draft",
             "progress": "0/0",
             "path": "SPEC-196-shared-content-config-package",
-            "note": "Draft only \u2014 no tasks until activation; decisions D-1..D-6 pending owner workshop."
+            "note": "Draft only — no tasks until activation; decisions D-1..D-6 pending owner workshop."
         },
         {
             "specId": "SPEC-145",
@@ -443,7 +443,7 @@
         },
         {
             "specId": "SPEC-205",
-            "title": "Host Web Foundation \u2014 Dashboard, Navigation, Promotions & Funnel",
+            "title": "Host Web Foundation — Dashboard, Navigation, Promotions & Funnel",
             "status": "completed",
             "progress": "9/9",
             "path": "SPEC-205-host-web-foundation",
@@ -454,7 +454,7 @@
         },
         {
             "specId": "SPEC-206",
-            "title": "Host Conversations \u2014 Inbox, Threads, Replies & Archive in Web",
+            "title": "Host Conversations — Inbox, Threads, Replies & Archive in Web",
             "status": "completed",
             "progress": "1/1",
             "path": "SPEC-206-host-conversations",
@@ -465,7 +465,7 @@
         },
         {
             "specId": "SPEC-207",
-            "title": "Host Analytics & KPIs \u2014 Business Dashboard in Web",
+            "title": "Host Analytics & KPIs — Business Dashboard in Web",
             "status": "completed",
             "progress": "1/1",
             "path": "SPEC-207-host-analytics-kpis",
@@ -476,7 +476,7 @@
         },
         {
             "specId": "SPEC-208",
-            "title": "Web Accommodation Editor \u2014 Full Property Management in Web",
+            "title": "Web Accommodation Editor — Full Property Management in Web",
             "status": "completed",
             "progress": "1/1",
             "path": "SPEC-208-web-accommodation-editor",
@@ -510,11 +510,11 @@
             "archived": true,
             "note": "13 atomized tasks across setup/core/testing/docs phases (avg complexity 2.1). Investigate-first: T-001/T-004/T-007 start in parallel (no blockers). Critical path: T-004->T-006->T-009->T-010->T-011->T-012->T-013. Healthcheck (T-001..T-003), regression+guard tests (T-005..T-008), leak fix (T-009), staging validation (T-010..T-012), docs (T-013).",
             "archivedAt": "2026-06-10",
-            "archiveNote": "Code complete + merged to staging via PR #1538 (12/13 implemented). T-012 (staging RSS/heap validation) DEFERRED as a post-merge operational check (see .qtm/specs/SPEC-209-.../docs/memory-validation-procedure.md) \u2014 not a code gate. Prod build locally showed 0 QZPayBilling-init on SSR; manual Chrome smoke (T-010) passed."
+            "archiveNote": "Code complete + merged to staging via PR #1538 (12/13 implemented). T-012 (staging RSS/heap validation) DEFERRED as a post-merge operational check (see .qtm/specs/SPEC-209-.../docs/memory-validation-procedure.md) — not a code gate. Prod build locally showed 0 QZPayBilling-init on SSR; manual Chrome smoke (T-010) passed."
         },
         {
             "specId": "SPEC-210",
-            "title": "Public Response Tier Enforcement \u2014 make schema-tier serialization mandatory and fail-closed so public endpoints can never leak undeclared DB columns",
+            "title": "Public Response Tier Enforcement — make schema-tier serialization mandatory and fail-closed so public endpoints can never leak undeclared DB columns",
             "status": "draft",
             "progress": "0/13",
             "path": "SPEC-210-public-response-tier-enforcement",
@@ -552,7 +552,7 @@
             "archived": true,
             "archivedAt": "2026-06-10",
             "archiveNote": "Shipped via PR #1557 (merged to staging 2026-06-10); 21/21 tasks complete.",
-            "note": "Child B of SPEC-173. NL search: generateObject -> SearchIntentEntities -> AccommodationSearchHttp params, NO embeddings V1. All \u00a73 decisions resolved. spec-realign 2026-06-10: greenfield, foundation stable; slot set expanded (D-5: bedrooms/bathrooms/maxRating/featureSlugs). 21 atomic tasks generated. IN-PROGRESS."
+            "note": "Child B of SPEC-173. NL search: generateObject -> SearchIntentEntities -> AccommodationSearchHttp params, NO embeddings V1. All §3 decisions resolved. spec-realign 2026-06-10: greenfield, foundation stable; slot set expanded (D-5: bedrooms/bathrooms/maxRating/featureSlugs). 21 atomic tasks generated. IN-PROGRESS."
         },
         {
             "specId": "SPEC-213",
@@ -596,7 +596,7 @@
         },
         {
             "specId": "SPEC-218",
-            "title": "astro check in web CI \u2014 load the App.Locals augmentation, clean .astro type errors, gate typecheck",
+            "title": "astro check in web CI — load the App.Locals augmentation, clean .astro type errors, gate typecheck",
             "status": "completed",
             "progress": "10/10",
             "path": "SPEC-218-astro-check-web-typecheck",
@@ -751,7 +751,23 @@
             "archived": true,
             "archivedAt": "2026-06-18T15:26:22Z",
             "completionRef": "PR #1724 (merge 487f46266)",
-            "note": "15 tasks across setup/core/integration/docs phases (avg complexity 2.07). Critical path: T-001\u2192T-004\u2192T-005\u2192T-006\u2192T-007\u2192T-008\u2192T-009\u2192T-015 (8 steps). T-002 (env) and T-003 (i18n) have float and run in parallel with early critical-path tasks. safeExternalFetch already exists in @repo/utils; apify-client already in SPEC-222 adapters; google-places import adapter MUST NOT be modified (new google-reputation.adapter.ts needed). SPEC-222 google/apify env vars may already be registered \u2014 verify before re-registering."
+            "note": "15 tasks across setup/core/integration/docs phases (avg complexity 2.07). Critical path: T-001→T-004→T-005→T-006→T-007→T-008→T-009→T-015 (8 steps). T-002 (env) and T-003 (i18n) have float and run in parallel with early critical-path tasks. safeExternalFetch already exists in @repo/utils; apify-client already in SPEC-222 adapters; google-places import adapter MUST NOT be modified (new google-reputation.adapter.ts needed). SPEC-222 google/apify env vars may already be registered — verify before re-registering."
+        },
+        {
+            "specId": "SPEC-228",
+            "title": "Web loading-states consistency & coverage",
+            "status": "in-progress",
+            "progress": "5/22",
+            "path": "SPEC-228-web-loading-states-consistency",
+            "branch": "spec/SPEC-228-web-loading-states-consistency",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-228-web-loading-states-consistency",
+            "base": "staging",
+            "createdAt": "2026-06-20T00:00:00.000Z",
+            "tasksAtomizedAt": "2026-06-20T00:00:00.000Z",
+            "taskCount": 22,
+            "averageComplexity": 2.1,
+            "archived": false,
+            "note": "Canonical web loading toolkit (Spinner/SkeletonCard/LoadingButton + convention doc) then migrate audited sites by priority. 22 tasks, 4 phases. Critical path T-001->T-003->T-010->T-013->T-022. Foundation T-001/T-002 independent; Astro skeleton-swaps (T-007/T-008) need only T-002."
         }
     ],
     "standalone": {

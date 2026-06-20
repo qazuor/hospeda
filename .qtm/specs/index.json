@@ -1365,7 +1365,7 @@
             "title": "Web loading-states consistency & coverage",
             "type": "feature",
             "complexity": "high",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-228-web-loading-states-consistency",
             "created": "2026-06-13T12:00:00Z",
             "tags": [
