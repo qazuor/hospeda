@@ -113,7 +113,10 @@ describe('runApifyActor', () => {
     });
 
     describe('URL construction — actor slug encoding', () => {
-        it('should preserve the slash in an owner/actor-name slug in the request URL', async () => {
+        it('encodes owner/actor as the owner~actor single-segment form (Apify requires it)', async () => {
+            // Regression: the raw `owner/actor` slug routes to a non-existent
+            // Apify endpoint (HTTP 404). The REST API addresses an actor as a
+            // single path segment using the tilde form `owner~actor`.
             // Arrange
             const mockFetch = mockFetchOk([]);
             vi.stubGlobal('fetch', mockFetch);
@@ -124,9 +127,10 @@ describe('runApifyActor', () => {
             // Assert
             const calledUrl = mockFetch.mock.calls[0]?.[0] as string;
             expect(calledUrl).toContain(
-                '/v2/acts/dtrungtin/airbnb-scraper/run-sync-get-dataset-items'
+                '/v2/acts/dtrungtin~airbnb-scraper/run-sync-get-dataset-items'
             );
-            // The slash must NOT be percent-encoded
+            // The raw slash form must NOT be used, and nothing is percent-encoded.
+            expect(calledUrl).not.toContain('/v2/acts/dtrungtin/airbnb-scraper/');
             expect(calledUrl).not.toContain('%2F');
         });
 

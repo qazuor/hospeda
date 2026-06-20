@@ -108,13 +108,15 @@ export async function runApifyActor(input: RunApifyActorInput): Promise<unknown[
         return [];
     }
 
-    // Build the URL.  The actor slug (e.g. "apify/airbnb-scraper") contains a
-    // literal "/" that acts as a path separator in the Apify REST API — it is
-    // NOT percent-encoded.  Constructing the string directly gives the correct
-    // two-segment path /v2/acts/owner/actor-name/run-sync-get-dataset-items.
-    // The token is sent as an Authorization header (NOT a query param) so it
-    // never leaks into logs, proxies, or error messages.
-    const url = `https://api.apify.com/v2/acts/${actor}/run-sync-get-dataset-items`;
+    // Build the URL. The Apify REST API addresses an actor as a SINGLE path
+    // segment using the tilde form `owner~actor-name` — the raw `owner/actor`
+    // slug (with a literal "/") routes to a non-existent endpoint and returns
+    // HTTP 404, which this client would silently degrade to an empty result.
+    // The slug is validated above as a clean `owner/name` pair, so replacing the
+    // single "/" with "~" is safe. The token is sent as an Authorization header
+    // (NOT a query param) so it never leaks into logs, proxies, or error messages.
+    const actorPath = actor.replace('/', '~');
+    const url = `https://api.apify.com/v2/acts/${actorPath}/run-sync-get-dataset-items`;
 
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);

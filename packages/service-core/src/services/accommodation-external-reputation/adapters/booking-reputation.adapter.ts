@@ -286,7 +286,9 @@ export class BookingReputationAdapter implements ReputationAdapter {
                 token,
                 actor,
                 actorInput: { startUrls: [{ url: listing.url }] },
-                timeoutMs: 30_000
+                // Apify run-sync blocks until the scrape finishes; real Booking
+                // runs observed at ~60-90s, so 30s aborted before any result.
+                timeoutMs: 120_000
             });
 
             if (dataset.length === 0) {
