@@ -4,9 +4,14 @@
  * Fetches the current aggregate rating, review count, and up to 5 review
  * snippets from the Google Places API (New) Place Details endpoint.
  *
- * **Field mask**: requests `rating,userRatingsTotal,reviews` in addition to
+ * **Field mask**: requests `rating,userRatingCount,reviews` in addition to
  * the display/URL fields needed for `deepLink` construction.  This is the ONLY
  * adapter permitted to fetch and surface review snippets (AC-7.1).
+ *
+ * NOTE: the review-count field is `userRatingCount` (Places API **New**), NOT the
+ * legacy `userRatingsTotal`. Using the legacy name makes the API reject the whole
+ * request with HTTP 400 and the adapter degrades to an empty result — i.e. Google
+ * reputation silently never works. See the field-mask regression test.
  *
  * **Place ID resolution**: uses the same pattern as the SPEC-222 import adapter
  * but implemented here independently — the import adapter intentionally omits
@@ -81,7 +86,7 @@ interface PlacesReview {
  */
 interface PlacesReputationApiResponse {
     readonly rating?: number;
-    readonly userRatingsTotal?: number;
+    readonly userRatingCount?: number;
     readonly reviews?: readonly PlacesReview[];
     readonly googleMapsUri?: string;
     readonly displayName?: {
@@ -113,10 +118,10 @@ const PLACES_API_BASE = 'https://places.googleapis.com/v1/places';
  * Field mask for reputation fetching.
  *
  * UNLIKE the import adapter (SPEC-222) this mask INTENTIONALLY includes
- * `rating`, `userRatingsTotal`, and `reviews`.  This is the reputation adapter
+ * `rating`, `userRatingCount`, and `reviews`.  This is the reputation adapter
  * — fetching these fields is its sole purpose.
  */
-const REPUTATION_FIELD_MASK = 'rating,userRatingsTotal,reviews,googleMapsUri,displayName';
+const REPUTATION_FIELD_MASK = 'rating,userRatingCount,reviews,googleMapsUri,displayName';
 
 /**
  * Maximum number of review snippets to surface.  The Places API (New) returns
@@ -211,7 +216,7 @@ function mapReviewToSnippet(review: PlacesReview): ExternalReviewSnippet | null 
  *
  * Resolves the Place ID from the listing URL (or `listing.externalId`), calls
  * the Places API (New) Place Details endpoint with a field mask that includes
- * `rating`, `userRatingsTotal`, and `reviews`, then maps the response to a
+ * `rating`, `userRatingCount`, and `reviews`, then maps the response to a
  * {@link ReputationFetchResult} — the ONLY adapter allowed to populate
  * `snippets` (AC-7.1).
  *
@@ -246,7 +251,7 @@ export class GoogleReputationAdapter implements ReputationAdapter {
      * falls back to parsing `listing.url`.  If neither yields a Place ID,
      * returns {@link emptyReputationResult}.
      *
-     * **Step 3 — Places API call**: Fetches `rating`, `userRatingsTotal`,
+     * **Step 3 — Places API call**: Fetches `rating`, `userRatingCount`,
      * `reviews`, `googleMapsUri`, and `displayName` via the Place Details
      * endpoint.  Non-2xx responses and network errors degrade gracefully.
      *
@@ -339,7 +344,7 @@ function buildReputationResult(
     listingUrl: string
 ): ReputationFetchResult {
     const rating = typeof place.rating === 'number' ? place.rating : null;
-    const reviewsCount = typeof place.userRatingsTotal === 'number' ? place.userRatingsTotal : null;
+    const reviewsCount = typeof place.userRatingCount === 'number' ? place.userRatingCount : null;
 
     // deepLink: prefer the place-specific googleMapsUri; fall back to listing URL
     const deepLink = place.googleMapsUri ?? listingUrl;

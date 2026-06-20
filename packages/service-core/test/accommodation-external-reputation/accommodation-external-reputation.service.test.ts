@@ -718,7 +718,11 @@ describe('AccommodationExternalReputationService', () => {
             expect(result.data?.items).toHaveLength(0);
         });
 
-        it('should exclude unverified listings', async () => {
+        it('shows unverified listings when display toggles are enabled (verified is not a filter)', async () => {
+            // The out-of-MVP `verified` gate was removed in the SPEC-237 staging-smoke
+            // fix (nothing ever set it true, so the public block was always empty).
+            // Visibility is now governed by showLink/showReviews + the master toggle,
+            // NOT by `verified`. An unverified listing with showReviews=true is shown.
             const accommodationModel = makeAccommodationModel();
             const unverifiedListing = makeListing(LIST_GOOGLE_ID, ExternalPlatformEnum.GOOGLE, {
                 verified: false,
@@ -744,7 +748,8 @@ describe('AccommodationExternalReputationService', () => {
 
             const result = await svc.listForDisplay(ACC_ID);
 
-            expect(result.data?.items).toHaveLength(0);
+            expect(result.data?.items).toHaveLength(1);
+            expect(result.data?.items[0]?.platform).toBe(ExternalPlatformEnum.GOOGLE);
         });
     });
 
