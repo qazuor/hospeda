@@ -659,3 +659,65 @@ describe('BaseCommerceListingService — _projectPublicEntity (default no-op)', 
         expect(result.items ?? result).toBeDefined();
     });
 });
+
+// ---------------------------------------------------------------------------
+// Owner-tier read: listOwn (SPEC-249 T-004 / T-005)
+// ---------------------------------------------------------------------------
+
+describe('BaseCommerceListingService — listOwn (owner-tier read)', () => {
+    it("returns the actor's own listings, hard-scoped to ownerId + non-deleted", async () => {
+        const ownEntity = {
+            id: ENTITY_ID,
+            ownerId: OWNER_ID,
+            name: 'Mine',
+            slug: 'mine',
+            type: 'RESTAURANT'
+        } as unknown as TestEntity;
+        const { svc, model } = makeService(ownEntity);
+        const actor = makeActor([], OWNER_ID);
+
+        const result = await svc.listOwn(actor);
+
+        expect(result.error).toBeUndefined();
+        expect(result.data?.listings).toHaveLength(1);
+        expect(model.findAll as Mock).toHaveBeenCalledWith(
+            { ownerId: OWNER_ID, deletedAt: null },
+            { page: 1, pageSize: 100 },
+            undefined,
+            undefined
+        );
+    });
+
+    it('excludes soft-deleted rows via the deletedAt:null filter', async () => {
+        const { svc, model } = makeService();
+        const actor = makeActor([], OWNER_ID);
+
+        await svc.listOwn(actor);
+
+        expect(model.findAll as Mock).toHaveBeenCalledWith(
+            expect.objectContaining({ ownerId: OWNER_ID, deletedAt: null }),
+            expect.anything(),
+            undefined,
+            undefined
+        );
+    });
+
+    it('returns an empty list when the owner has no listings', async () => {
+        const { svc } = makeService(null);
+        const actor = makeActor([], OWNER_ID);
+
+        const result = await svc.listOwn(actor);
+
+        expect(result.error).toBeUndefined();
+        expect(result.data?.listings).toEqual([]);
+    });
+
+    it('forbids an actor with no id (never queries the model)', async () => {
+        const { svc, model } = makeService();
+        const result = await svc.listOwn({ id: '', role: RoleEnum.USER, permissions: [] } as Actor);
+
+        expect(result.data).toBeUndefined();
+        expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+        expect(model.findAll as Mock).not.toHaveBeenCalled();
+    });
+});

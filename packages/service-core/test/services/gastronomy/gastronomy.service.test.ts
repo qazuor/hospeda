@@ -395,3 +395,26 @@ describe('GastronomyService.assignOwner', () => {
         expect(model.update).not.toHaveBeenCalled();
     });
 });
+
+// ---------------------------------------------------------------------------
+// listOwn — owner-tier read inherited from BaseCommerceListingService (SPEC-249 T-004)
+// ---------------------------------------------------------------------------
+
+describe('GastronomyService.listOwn', () => {
+    it("lists the owner's own non-deleted gastronomy listings (hard-scoped to ownerId)", async () => {
+        const entity = makeGastronomyEntity();
+        const service = makeService(entity);
+        const mockFindAll = (service as AnyService).model.findAll;
+
+        const result = await service.listOwn(ownerActor);
+
+        expect(result.error).toBeUndefined();
+        expect(result.data?.listings).toHaveLength(1);
+        expect(mockFindAll).toHaveBeenCalledWith(
+            { ownerId: OWNER_ID, deletedAt: null },
+            { page: 1, pageSize: 100 },
+            undefined,
+            undefined
+        );
+    });
+});

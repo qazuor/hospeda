@@ -101,31 +101,31 @@
             "id": "T-004",
             "title": "Add owner-scoped listOwn service method on GastronomyService",
             "description": "In packages/service-core add a `listOwn`/owner-scoped search returning the actor's own gastronomy listings (filter ownerId = actor.id, soft-delete excluded). Reuse BaseCommerceListingService scoping (_executeAdminSearch ownerId pattern) but at the owner tier. Tests: unit tests — owner sees only their rows, deleted excluded, empty for a non-owner actor.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-005", "T-006"],
             "subtasks": [
                 {
                     "title": "listOwn on GastronomyService",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Ownership + soft-delete unit tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "commerce", "core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-20T07:35:00.000Z",
+                "completed": "2026-06-20T07:55:00.000Z"
             }
         },
         {
@@ -853,9 +853,9 @@
     ],
     "summary": {
         "total": 26,
-        "pending": 23,
+        "pending": 22,
         "inProgress": 0,
-        "completed": 3,
+        "completed": 4,
         "blocked": 0,
         "averageComplexity": 2.3
     }

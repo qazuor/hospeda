@@ -674,6 +674,59 @@ export abstract class BaseCommerceListingService<
     }
 
     // -----------------------------------------------------------------------
+    // Owner-tier read: listOwn
+    // -----------------------------------------------------------------------
+
+    /**
+     * Lists every non-deleted commerce listing owned by the given actor.
+     *
+     * Owner-tier read backing the web self-service area (SPEC-249). Ownership IS
+     * the gate: the query is hard-scoped to `ownerId = actor.id`, so an actor
+     * only ever sees their own listings regardless of role, and across any
+     * visibility / lifecycle state (owners manage hidden and draft listings too,
+     * unlike the public `_executeSearch` which forces PUBLIC + ACTIVE).
+     *
+     * A page size of 100 comfortably covers the admin-sells model, where an
+     * owner holds a handful of listings; pagination can move to the route layer
+     * if that assumption ever changes.
+     *
+     * @param actor - The authenticated actor whose listings to return.
+     * @param tx - Optional Drizzle transaction client.
+     * @returns `ServiceOutput<{ listings: TEntity[] }>` with the owner's listings.
+     */
+    public async listOwn(
+        actor: Actor,
+        tx?: DrizzleClient
+    ): Promise<ServiceOutput<{ listings: TEntity[] }>> {
+        try {
+            if (!actor?.id) {
+                return {
+                    error: new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        'listOwn requires an authenticated actor'
+                    )
+                };
+            }
+
+            const result = await this.model.findAll(
+                { ownerId: actor.id, deletedAt: null },
+                { page: 1, pageSize: 100 },
+                undefined,
+                tx
+            );
+
+            return { data: { listings: result.items as TEntity[] } };
+        } catch (err) {
+            const error = new ServiceError(
+                ServiceErrorCode.INTERNAL_ERROR,
+                `Failed to list own ${this.entityName} listings: ${err instanceof Error ? err.message : String(err)}`,
+                err
+            );
+            return { error };
+        }
+    }
+
+    // -----------------------------------------------------------------------
     // Private helpers
     // -----------------------------------------------------------------------
 
