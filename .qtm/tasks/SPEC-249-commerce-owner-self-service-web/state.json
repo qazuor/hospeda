@@ -513,35 +513,35 @@
             "id": "T-016",
             "title": "Editor: amenities/features multi-select groups",
             "description": "Implement amenityIds / featureIds multi-select groups: fetch the available amenities/features catalog, render selectable chips/list, persist the selected id arrays via patch. Tests: component test — selection round-trips to amenityIds/featureIds arrays.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-012"],
             "blocks": ["T-025", "T-026"],
             "subtasks": [
                 {
                     "title": "Fetch catalog + multi-select UI",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Persist id arrays",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Component test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "commerce", "core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-20T13:45:00.000Z",
+                "completed": "2026-06-20T14:05:00.000Z"
             }
         },
         {
