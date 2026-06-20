@@ -3,11 +3,18 @@
 /* Uses CSS custom properties from global.css (web app convention: no Tailwind). */
 
 .root {
-    /* Reset the native <dialog> UA `position: absolute`, which would pull this
-       element out of flow and collapse the parent modal to its min-height,
-       clipping the plan list (the parent has overflow: hidden). Same class of
-       fix as the cancel/pause modals in SubscriptionDashboard. */
+    /* This element is a native <dialog>. Reset the UA defaults that break the
+       layout when it is rendered inside the PlanChangeFlow modal:
+       - `position: absolute` pulls it out of flow, collapsing the parent modal
+         to its min-height and clipping the plan list (parent has overflow:hidden).
+       - the UA `border`/`background` draw a second box around the content inside
+         the parent modal.
+       Same class of fix as the cancel/pause modals in SubscriptionDashboard. */
     position: relative;
+    border: none;
+    background: transparent;
+    padding: 0;
+    color: inherit;
     display: flex;
     flex-direction: column;
     gap: var(--space-5, 20px);
