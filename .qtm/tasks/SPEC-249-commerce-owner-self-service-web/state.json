@@ -264,39 +264,39 @@
             "id": "T-009",
             "title": "Create mi-cuenta/comercio listing page (SSR, list of owned listings)",
             "description": "Create apps/web/src/pages/[lang]/mi-cuenta/comercio/index.astro. SSR: read Astro.locals.user, gate with isCommerceOwnerRole (else redirect to signin / mi-cuenta), fetch both /mine endpoints (fetch with credentials:'include'), merge gastronomy+experience into one list, render via AccountLayout with CSS Module. Empty state when no listings. Tests: smoke/component test for gating + list render (owner vs non-owner).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001", "T-002", "T-003", "T-006", "T-007"],
             "blocks": ["T-010", "T-011", "T-020", "T-025"],
             "subtasks": [
                 {
                     "title": "SSR page + role gate",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Fetch + merge both verticals",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "List UI + CSS module + empty state",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Gating/render test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "commerce", "core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-20T08:30:00.000Z",
+                "completed": "2026-06-20T08:45:00.000Z"
             }
         },
         {
@@ -853,9 +853,9 @@
     ],
     "summary": {
         "total": 26,
-        "pending": 18,
+        "pending": 17,
         "inProgress": 0,
-        "completed": 8,
+        "completed": 9,
         "blocked": 0,
         "averageComplexity": 2.3
     }
