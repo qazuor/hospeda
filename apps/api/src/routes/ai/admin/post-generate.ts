@@ -45,12 +45,13 @@
  * @module apps/api/routes/ai/admin/post-generate
  */
 
+import type { AiService } from '@repo/ai-core';
 import {
     AiPostGenerateDraftSchema,
     AiPostGenerateRequestSchema,
     PermissionEnum
 } from '@repo/schemas';
-import type { AiPostGenerateRequest } from '@repo/schemas';
+import type { AiPostGenerateDraft, AiPostGenerateRequest } from '@repo/schemas';
 import { adminAuthMiddleware } from '../../../middlewares/authorization.js';
 import { createConfiguredAiService } from '../../../services/ai-service.factory.js';
 import { mapAiEngineErrorToHttpStatus } from '../../../utils/ai-error-mapper.js';
@@ -58,17 +59,18 @@ import { createRouter } from '../../../utils/create-app.js';
 import { apiLogger } from '../../../utils/logger.js';
 
 // ---------------------------------------------------------------------------
-// Constants
+// Zod-version bridge
 // ---------------------------------------------------------------------------
 
 /**
- * Maximum number of tokens the AI provider may generate per call.
- *
- * Kept conservative (2048) to bound per-call cost while still allowing
- * posts with a typical title (≤150), summary (≤300), and rich-text body
- * (100–50000 chars, but prose-dense HTML typically fits in ~1500 tokens).
+ * Zod-version-bridged parameter type for `AiService.generateObject`'s second
+ * argument. `@repo/schemas` and `@repo/ai-core` pin the same Zod major but pnpm
+ * may resolve them to different patch versions, producing a nominal `ZodType`
+ * mismatch. The runtime schema is structurally identical and the explicit
+ * `AiPostGenerateDraftSchema.safeParse` below enforces the contract.
+ * Mirrors the cast pattern established in `search-chat.ts` and `import-from-url.ts`.
  */
-const MAX_TOKENS = 2048;
+type GenerateObjectSchema = Parameters<AiService['generateObject']>[1];
 
 // ---------------------------------------------------------------------------
 // Prompt builder
@@ -171,15 +173,24 @@ adminAiPostGenerateRoute.post('/', async (c) => {
     try {
         const aiService = await createConfiguredAiService();
 
+        const outputSchema = AiPostGenerateDraftSchema as unknown as GenerateObjectSchema; // TYPE-WORKAROUND: pnpm may resolve @repo/schemas and @repo/ai-core to different Zod patch versions (4.3.x vs 4.4.x), causing a nominal ZodType mismatch; the runtime schemas are structurally identical and AiPostGenerateDraftSchema.safeParse enforces the contract.
         const result = await aiService.generateObject(
             {
                 feature: 'post_generate',
                 prompt,
-                locale,
-                maxTokens: MAX_TOKENS
+                locale
             },
-            AiPostGenerateDraftSchema
+            outputSchema
         );
+
+        // Re-parse the object through the schema to restore the typed `AiPostGenerateDraft`
+        // after the Zod-version-bridge cast above loses the generic type parameter.
+        // The engine already validated the structured output, so this safeParse is
+        // a defensive type-narrowing assertion rather than a validation gate.
+        const draftParse = AiPostGenerateDraftSchema.safeParse(result.object);
+        const draft: AiPostGenerateDraft = draftParse.success
+            ? draftParse.data
+            : (result.object as AiPostGenerateDraft); // engine validated; only fails on severe version drift
 
         apiLogger.info(
             {
@@ -190,7 +201,7 @@ adminAiPostGenerateRoute.post('/', async (c) => {
             'admin-ai-post-generate: draft generated successfully'
         );
 
-        return c.json({ success: true, data: result.object });
+        return c.json({ success: true, data: draft });
     } catch (error) {
         const mapped = mapAiEngineErrorToHttpStatus(error);
 

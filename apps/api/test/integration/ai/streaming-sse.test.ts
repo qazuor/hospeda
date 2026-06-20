@@ -110,7 +110,8 @@ async function seedAiSettings(actorId: string): Promise<void> {
             search: stubFeatureConfig,
             support: stubFeatureConfig,
             translate: stubFeatureConfig,
-            accommodation_import: stubFeatureConfig
+            accommodation_import: stubFeatureConfig,
+            post_generate: stubFeatureConfig
         }
     };
 

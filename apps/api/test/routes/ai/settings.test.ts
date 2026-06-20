@@ -168,6 +168,15 @@ const VALID_SETTINGS_BLOB = {
             fallbackChain: [],
             model: 'gpt-4o-mini',
             params: {}
+        },
+        // SPEC-223: post_generate is an admin-tier feature that must also be
+        // present in the full write record (every AiFeature key is required on PUT).
+        post_generate: {
+            enabled: true,
+            primaryProvider: 'openai',
+            fallbackChain: [],
+            model: 'gpt-4o-mini',
+            params: {}
         }
     }
 };

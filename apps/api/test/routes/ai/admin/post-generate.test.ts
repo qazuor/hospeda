@@ -217,6 +217,7 @@ vi.mock('../../../../src/utils/create-app', () => {
 // Imports (after mocks are hoisted)
 // ---------------------------------------------------------------------------
 
+import { PostCategoryEnum } from '@repo/schemas';
 import {
     adminAiPostGenerateRoute,
     buildPostGeneratePrompt
@@ -293,7 +294,7 @@ describe('admin AI post-generate route (SPEC-223 T-008)', () => {
             const result = buildPostGeneratePrompt({
                 topic: 'Local food',
                 points: ['Traditional asado'],
-                category: 'GASTRONOMY',
+                category: PostCategoryEnum.GASTRONOMY,
                 locale: 'es'
             });
             expect(result).toMatch(/^Category: GASTRONOMY\. /);
@@ -334,7 +335,7 @@ describe('admin AI post-generate route (SPEC-223 T-008)', () => {
             const result = buildPostGeneratePrompt({
                 topic: 'Summer tourism in Concepción del Uruguay',
                 points: ['River beaches', 'Colonial center'],
-                category: 'TOURISM',
+                category: PostCategoryEnum.TOURISM,
                 tone: 'formal',
                 locale: 'es'
             });
