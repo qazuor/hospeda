@@ -8,6 +8,7 @@
  * Hydration directive: client:visible (lazy, below the fold).
  */
 
+import { Spinner } from '@/components/shared/feedback/Spinner';
 import { getApiUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -300,16 +301,24 @@ export function CommentThreadIsland({
                         </p>
                     )}
 
-                    <button
-                        type="submit"
-                        className={styles.submit}
-                        disabled={!canSubmit}
-                        aria-busy={isSubmitting}
-                    >
-                        {isSubmitting
-                            ? t('comments.form.submitting', 'Enviando...')
-                            : t('comments.form.submit', 'Comentar')}
-                    </button>
+                    <div className={styles.submitRow}>
+                        {isSubmitting && (
+                            <Spinner
+                                size="sm"
+                                label={t('comments.form.submitting', 'Enviando…')}
+                            />
+                        )}
+                        <button
+                            type="submit"
+                            className={styles.submit}
+                            disabled={!canSubmit}
+                            aria-busy={isSubmitting}
+                        >
+                            {isSubmitting
+                                ? t('comments.form.submitting', 'Enviando...')
+                                : t('comments.form.submit', 'Comentar')}
+                        </button>
+                    </div>
                 </form>
             ) : (
                 <p className={styles.loginCta}>

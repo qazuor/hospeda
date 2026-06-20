@@ -37,6 +37,12 @@ vi.mock('../../src/components/comments/CommentThreadIsland.module.css', () => ({
     })
 }));
 
+vi.mock('../../src/components/shared/feedback/Spinner.module.css', () => ({
+    default: new Proxy({} as Record<string, string>, {
+        get: (_target, prop) => String(prop)
+    })
+}));
+
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
 const COMMENT_A: CommentItem = {
@@ -419,6 +425,57 @@ describe('CommentThreadIsland', () => {
                 target: { value: 'Hello' }
             });
             expect(screen.getByText('5/2000')).toBeInTheDocument();
+        });
+    });
+
+    // ── T-014: inline spinner while submitting (SPEC-228) ─────────────────────
+
+    describe('T-014 — inline Spinner while submitting (SPEC-228)', () => {
+        it('T-014: shows inline Spinner (role="status") while form is submitting', async () => {
+            // Arrange: never-resolving fetch so we stay in submitting state
+            vi.mocked(global.fetch).mockReturnValue(new Promise(() => {}));
+
+            // Act
+            renderIsland({ isAuthenticated: true });
+            fireEvent.change(screen.getByRole('textbox'), {
+                target: { value: 'Comentario de prueba' }
+            });
+            fireEvent.click(screen.getByRole('button', { name: /Comentar/i }));
+
+            // Assert: Spinner live region appears while submitting
+            await waitFor(() => {
+                expect(screen.getByRole('status')).toBeInTheDocument();
+            });
+        });
+
+        it('T-014: Spinner disappears after successful submit', async () => {
+            vi.mocked(global.fetch).mockResolvedValueOnce({
+                ok: true,
+                status: 201,
+                headers: new Headers(),
+                json: async () => ({
+                    data: {
+                        id: 'new-c',
+                        content: 'Comentario de prueba',
+                        createdAt: '2026-06-01T00:00:00.000Z',
+                        author: { id: 'u1', displayName: 'Me' }
+                    }
+                })
+            } as Response);
+
+            renderIsland({ isAuthenticated: true });
+            fireEvent.change(screen.getByRole('textbox'), {
+                target: { value: 'Comentario de prueba' }
+            });
+            fireEvent.click(screen.getByRole('button', { name: /Comentar/i }));
+
+            // Wait for submit to complete
+            await waitFor(() => {
+                expect(screen.getByText('Comentario de prueba')).toBeInTheDocument();
+            });
+
+            // Spinner should be gone
+            expect(screen.queryByRole('status')).not.toBeInTheDocument();
         });
     });
 });
