@@ -21,8 +21,8 @@ import { AccommodationExternalReputationService, ServiceError } from '@repo/serv
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';
-import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
+import { getReputationAdapterCredentials } from '../../../utils/reputation-credentials';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
 const listingModel = new AccommodationExternalListingModel();
@@ -35,9 +35,7 @@ const reputationService = new AccommodationExternalReputationService(
         listingModel,
         reputationModel,
         accommodationModel,
-        adapterCredentials: {
-            googlePlacesApiKey: env.HOSPEDA_GOOGLE_PLACES_API_KEY
-        }
+        adapterCredentials: getReputationAdapterCredentials()
     }
 );
 

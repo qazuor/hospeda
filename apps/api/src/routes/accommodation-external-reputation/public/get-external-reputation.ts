@@ -22,8 +22,8 @@ import {
     type ServiceErrorCode
 } from '@repo/schemas';
 import { AccommodationExternalReputationService, ServiceError } from '@repo/service-core';
-import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
+import { getReputationAdapterCredentials } from '../../../utils/reputation-credentials';
 import { createPublicRoute } from '../../../utils/route-factory';
 
 const listingModel = new AccommodationExternalListingModel();
@@ -36,9 +36,7 @@ const reputationService = new AccommodationExternalReputationService(
         listingModel,
         reputationModel,
         accommodationModel,
-        adapterCredentials: {
-            googlePlacesApiKey: env.HOSPEDA_GOOGLE_PLACES_API_KEY
-        }
+        adapterCredentials: getReputationAdapterCredentials()
     }
 );
 

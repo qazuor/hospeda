@@ -26,6 +26,7 @@ import {
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { AccommodationExternalReputationService } from '@repo/service-core';
 import type { Actor } from '@repo/service-core';
+import { getReputationAdapterCredentials } from '../../utils/reputation-credentials.js';
 import type { CronJobDefinition } from '../types.js';
 import {
     getEnabledAccommodationIds,
@@ -151,7 +152,10 @@ export const refreshExternalReputationJob: CronJobDefinition = {
             {
                 listingModel: new AccommodationExternalListingModel(),
                 reputationModel: new AccommodationExternalReputationModel(),
-                accommodationModel: new AccommodationModel()
+                accommodationModel: new AccommodationModel(),
+                // Without these, the weekly cron ran every adapter with empty
+                // credentials → Google/Booking/Airbnb all degraded to no data.
+                adapterCredentials: getReputationAdapterCredentials()
             }
         );
 

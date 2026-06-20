@@ -173,7 +173,14 @@ export interface AccommodationExternalReputationServiceDeps {
  *   listingModel,
  *   reputationModel,
  *   accommodationModel,
- *   adapterCredentials: { googlePlacesApiKey: env.HOSPEDA_GOOGLE_PLACES_API_KEY },
+ *   // Pass the FULL credential set — Google key + Apify token + actor slugs.
+ *   // Omitting the Apify fields silently disables Booking fallback + Airbnb.
+ *   adapterCredentials: {
+ *     googlePlacesApiKey: env.HOSPEDA_GOOGLE_PLACES_API_KEY,
+ *     apifyToken: env.HOSPEDA_APIFY_TOKEN,
+ *     apifyBookingActor: env.HOSPEDA_APIFY_BOOKING_ACTOR,
+ *     apifyAirbnbActor: env.HOSPEDA_APIFY_AIRBNB_ACTOR,
+ *   },
  * });
  * const result = await svc.refresh(accommodationId, actor);
  * ```
