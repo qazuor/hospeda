@@ -39,5 +39,36 @@
         "active": "Activo",
         "hidden": "Oculto",
         "pending": "Pendiente"
+    },
+    "owner": {
+        "nav": "Mi comercio",
+        "list": {
+            "title": "Mi comercio",
+            "subtitle": "Gestioná la información de tus comercios publicados.",
+            "empty": "Todavía no tenés comercios asignados. Un administrador debe crear tu ficha.",
+            "edit": "Editar",
+            "badge": {
+                "gastronomy": "Gastronomía",
+                "experience": "Experiencia"
+            }
+        },
+        "editor": {
+            "readOnlyNotice": "El nombre, la categoría y la ubicación los gestiona el equipo de Hospeda. Vos podés editar la información operativa.",
+            "sections": {
+                "openingHours": "Horarios de atención",
+                "contactInfo": "Información de contacto",
+                "socialNetworks": "Redes sociales",
+                "media": "Galería de fotos",
+                "menuUrl": "Enlace al menú",
+                "priceRange": "Rango de precios",
+                "richDescription": "Descripción ampliada",
+                "amenities": "Servicios",
+                "features": "Características"
+            },
+            "save": "Guardar cambios",
+            "saving": "Guardando...",
+            "success": "Cambios guardados.",
+            "error": "No se pudieron guardar los cambios. Probá de nuevo."
+        }
     }
 }
