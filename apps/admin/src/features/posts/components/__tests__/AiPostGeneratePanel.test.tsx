@@ -1,0 +1,235 @@
+// @vitest-environment jsdom
+/**
+ * @file AiPostGeneratePanel.test.tsx
+ * @description Component tests for AiPostGeneratePanel (SPEC-223 T-013).
+ *
+ * Covers 4 cases:
+ *
+ *   1. Render shows panel title + topic field.
+ *   2. Filling topic + one point + submit calls fetch with a body that matches
+ *      the AiPostGenerateRequestSchema.
+ *   3. A successful mocked JSON response triggers onDraftReady with the
+ *      returned draft and populates the draft-ready UI.
+ *   4. A 422 MODERATION_FAILED response shows the moderation error and does
+ *      NOT populate any draft fields.
+ *
+ * ## Mocking strategy
+ *
+ * - `fetch` is mocked globally via `vi.stubGlobal`.
+ * - `@/hooks/use-translations` is already mocked globally in test/setup.tsx
+ *   (returns key as value) — no local re-mock needed.
+ * - `@repo/icons` is mocked globally in test/setup.tsx — SparkleIcon renders
+ *   as a span stub.
+ * - `useEntityFormContext` is mocked locally so the component can be rendered
+ *   without an EntityFormProvider wrapper.
+ */
+
+import type { AiPostGenerateDraft } from '@repo/schemas';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+// ---------------------------------------------------------------------------
+// Mocks
+// ---------------------------------------------------------------------------
+
+// Mock useEntityFormContext so the panel does not require a real provider.
+const mockSetFieldValue = vi.fn();
+vi.mock('@/components/entity-form/context/EntityFormContext', () => ({
+    useEntityFormContext: () => ({
+        setFieldValue: mockSetFieldValue,
+        values: {},
+        errors: {},
+        dirtyFields: {},
+        mode: 'edit',
+        isLoading: false,
+        isSaving: false,
+        userPermissions: [],
+        config: { sections: [] },
+        form: {},
+        handleFieldBlur: vi.fn(),
+        handleFieldFocus: vi.fn(),
+        setMode: vi.fn(),
+        setActiveSection: vi.fn(),
+        save: vi.fn(),
+        saveAndPublish: vi.fn(),
+        discard: vi.fn(),
+        reset: vi.fn(),
+        validateField: vi.fn(),
+        validateForm: vi.fn(),
+        isFieldDirty: vi.fn(),
+        isSectionDirty: vi.fn(),
+        hasUnsavedChanges: vi.fn(),
+        setErrors: vi.fn()
+    })
+}));
+
+// Import SUT AFTER mocks are declared (vi.mock is hoisted)
+import { AiPostGeneratePanel } from '../AiPostGeneratePanel';
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/** Valid draft returned by the API. */
+const VALID_DRAFT: AiPostGenerateDraft = {
+    title: 'Carnaval 2024: récord de asistencia en Concepción del Uruguay',
+    summary:
+        'El carnaval de este año superó todas las expectativas con un récord histórico de visitantes.',
+    content:
+        '<p>El carnaval de Concepción del Uruguay 2024 fue declarado el más concurrido de la historia.</p>'
+};
+
+/** Renders the panel with an optional onDraftReady callback. */
+function renderPanel(onDraftReady?: (draft: AiPostGenerateDraft) => void) {
+    return render(<AiPostGeneratePanel onDraftReady={onDraftReady} />);
+}
+
+/** Fills the topic field and the first point input. */
+function fillForm(topic: string, point: string) {
+    const topicInput = screen.getByTestId('ai-post-topic');
+    fireEvent.change(topicInput, { target: { value: topic } });
+
+    const pointInput = screen.getByTestId('ai-post-point-0');
+    fireEvent.change(pointInput, { target: { value: point } });
+}
+
+/** Clicks the generate button. */
+function clickGenerate() {
+    const btn = screen.getByTestId('ai-post-generate-btn');
+    fireEvent.click(btn);
+}
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+describe('AiPostGeneratePanel', () => {
+    let fetchMock: ReturnType<typeof vi.fn>;
+
+    beforeEach(() => {
+        fetchMock = vi.fn();
+        vi.stubGlobal('fetch', fetchMock);
+        mockSetFieldValue.mockClear();
+    });
+
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    // 1. Render shows panel title + topic field
+    it('renders panel title and topic field', () => {
+        renderPanel();
+
+        // Panel container is present
+        expect(screen.getByTestId('ai-post-generate-panel')).toBeInTheDocument();
+
+        // The panel title key is rendered (t() returns the key in test setup)
+        expect(screen.getByText('posts.aiGenerate.panelTitle')).toBeInTheDocument();
+
+        // Topic input is present
+        expect(screen.getByTestId('ai-post-topic')).toBeInTheDocument();
+    });
+
+    // 2. Submit calls fetch with body matching AiPostGenerateRequestSchema
+    it('calls fetch with a valid request body when topic and one point are filled', async () => {
+        fetchMock.mockResolvedValue({
+            ok: true,
+            json: async () => VALID_DRAFT
+        });
+
+        renderPanel();
+        fillForm('Carnaval 2024', 'Récord de asistencia');
+        clickGenerate();
+
+        await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+
+        const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
+        expect(url).toBe('/api/v1/admin/ai/post-generate');
+        expect(init.method).toBe('POST');
+        expect(init.credentials).toBe('include');
+
+        const body = JSON.parse(init.body as string) as Record<string, unknown>;
+        expect(body.topic).toBe('Carnaval 2024');
+        expect(Array.isArray(body.points)).toBe(true);
+        expect((body.points as string[])[0]).toBe('Récord de asistencia');
+    });
+
+    // 3. Successful response triggers onDraftReady with the draft
+    it('calls onDraftReady with the draft on a successful response', async () => {
+        fetchMock.mockResolvedValue({
+            ok: true,
+            json: async () => VALID_DRAFT
+        });
+
+        const onDraftReady = vi.fn();
+        renderPanel(onDraftReady);
+        fillForm('Carnaval 2024', 'Récord de asistencia');
+        clickGenerate();
+
+        // Draft preview should appear
+        await waitFor(() => {
+            expect(screen.getByTestId('ai-post-draft-preview')).toBeInTheDocument();
+        });
+
+        // Click apply
+        fireEvent.click(screen.getByTestId('ai-post-apply'));
+
+        expect(onDraftReady).toHaveBeenCalledTimes(1);
+        expect(onDraftReady).toHaveBeenCalledWith(VALID_DRAFT);
+    });
+
+    // 3b. When no onDraftReady, apply uses setFieldValue from context
+    it('calls setFieldValue on context when onDraftReady is not provided', async () => {
+        fetchMock.mockResolvedValue({
+            ok: true,
+            json: async () => VALID_DRAFT
+        });
+
+        renderPanel(); // no onDraftReady → uses formContext.setFieldValue
+        fillForm('Carnaval 2024', 'Récord de asistencia');
+        clickGenerate();
+
+        await waitFor(() => {
+            expect(screen.getByTestId('ai-post-draft-preview')).toBeInTheDocument();
+        });
+
+        fireEvent.click(screen.getByTestId('ai-post-apply'));
+
+        expect(mockSetFieldValue).toHaveBeenCalledWith('title', VALID_DRAFT.title);
+        expect(mockSetFieldValue).toHaveBeenCalledWith('summary', VALID_DRAFT.summary);
+        expect(mockSetFieldValue).toHaveBeenCalledWith('content', VALID_DRAFT.content);
+    });
+
+    // 4. 422 MODERATION_FAILED shows error, does NOT populate form fields
+    it('shows moderation error on 422 MODERATION_FAILED and does not populate fields', async () => {
+        fetchMock.mockResolvedValue({
+            ok: false,
+            status: 422,
+            json: async () => ({ code: 'MODERATION_FAILED', message: 'Content blocked' })
+        });
+
+        const onDraftReady = vi.fn();
+        renderPanel(onDraftReady);
+        fillForm('Carnaval 2024', 'Récord de asistencia');
+        clickGenerate();
+
+        // Error banner should appear
+        await waitFor(() => {
+            expect(screen.getByTestId('ai-post-error')).toBeInTheDocument();
+        });
+
+        // i18n key for moderation error
+        expect(screen.getByTestId('ai-post-error')).toHaveTextContent(
+            'posts.aiGenerate.errorModeration'
+        );
+
+        // Draft preview must NOT be shown
+        expect(screen.queryByTestId('ai-post-draft-preview')).not.toBeInTheDocument();
+
+        // onDraftReady must NOT have been called
+        expect(onDraftReady).not.toHaveBeenCalled();
+
+        // setFieldValue must NOT have been called
+        expect(mockSetFieldValue).not.toHaveBeenCalled();
+    });
+});
