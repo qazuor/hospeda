@@ -1478,6 +1478,27 @@
             "base": "staging",
             "origin": "Surfaced during SPEC-217 write-gate smoke (2026-06-19): capacity cap blocked hotels; interim cap raised in PR #1733. Hotels/complexes (e.g. 10-cabin complex) rent per unit and need a real unit model, not a flat capacity triple. Owner to resolve product OQs before task generation.",
             "tags": ["accommodation", "capacity", "product-design", "hotels", "schemas"]
+        },
+        {
+            "specId": "SPEC-249",
+            "title": "Commerce owner self-service web area (operational editing + force-password + credential email)",
+            "type": "feature",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-249-commerce-owner-self-service-web",
+            "created": "2026-06-20T00:00:00.000Z",
+            "base": "staging",
+            "origin": "SPEC-239 staging-readiness smoke (2026-06-20): admin-sells loop missing the consumer-facing owner web surface",
+            "dependsOn": ["SPEC-239"],
+            "tags": [
+                "commerce",
+                "gastronomy",
+                "web",
+                "owner",
+                "auth",
+                "self-service",
+                "admin-sells"
+            ]
         }
     ]
 }
