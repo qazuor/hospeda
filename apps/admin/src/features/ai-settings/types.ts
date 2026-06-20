@@ -25,7 +25,8 @@ export type AiFeatureId =
     | 'search'
     | 'support'
     | 'translate'
-    | 'accommodation_import';
+    | 'accommodation_import'
+    | 'post_generate';
 
 /** Optional inference parameters for a feature. */
 export interface AiModelParams {
@@ -146,7 +147,8 @@ export const FEATURE_LABELS: Record<AiFeatureId, string> = {
     search: 'Búsqueda',
     support: 'Soporte',
     translate: 'Traducción',
-    accommodation_import: 'Importar desde URL'
+    accommodation_import: 'Importar desde URL',
+    post_generate: 'Generar post'
 } as const;
 
 // ---------------------------------------------------------------------------
