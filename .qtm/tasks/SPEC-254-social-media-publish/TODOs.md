@@ -1,6 +1,6 @@
 # SPEC-254: Social Automation Backend
 
-## Progress: 5/52 tasks (10%)
+## Progress: 10/52 tasks (19%)
 
 **Average Complexity:** 2.3/3 (max)
 **Critical Path:** T-001 -> T-002 -> T-004 -> T-005 -> T-006 -> T-007 -> T-008 -> T-009 -> T-010 -> T-011 -> T-013 -> T-014 -> T-016 -> T-017 -> T-018 -> T-019 -> T-027 -> T-028 -> T-029 -> T-032 -> T-033 -> T-034 -> T-035 -> T-036 -> T-037 -> T-044 -> T-045 -> T-046 -> T-047 -> T-048 -> T-049 -> T-050 -> T-051 -> T-052 (34 steps)
@@ -35,27 +35,27 @@
   - Blocked by: T-002
   - Blocks: T-005
 
-- [ ] **T-005** (complexity: 3) - Create DB table schemas for simple catalog tables
+- [x] **T-005** (complexity: 3) - Create DB table schemas for simple catalog tables
   - 7 files: social-campaigns, social-content-batches, social-audiences, social-platforms, social-hashtag-sets, social-post-footers, social-assets.
   - Blocked by: T-004
   - Blocks: T-006, T-007, T-008
 
-- [ ] **T-006** (complexity: 2) - Create DB table schemas for hashtags, platform-formats, settings
+- [x] **T-006** (complexity: 2) - Create DB table schemas for hashtags, platform-formats, settings
   - 3 files: social-hashtags, social-platform-formats, social-settings.
   - Blocked by: T-005
   - Blocks: T-007, T-008
 
-- [ ] **T-007** (complexity: 3) - Create DB table schemas for social_posts, social_post_targets, social_post_media, social_post_hashtags
+- [x] **T-007** (complexity: 3) - Create DB table schemas for social_posts, social_post_targets, social_post_media, social_post_hashtags
   - 4 files with FKs and relations() blocks.
   - Blocked by: T-005, T-006
   - Blocks: T-008
 
-- [ ] **T-008** (complexity: 2) - Create DB table schemas for append-only tables
+- [x] **T-008** (complexity: 2) - Create DB table schemas for append-only tables
   - 3 files: social-ai-requests, social-publish-logs, social-audit-log (no soft-delete columns).
   - Blocked by: T-007
   - Blocks: T-009
 
-- [ ] **T-009** (complexity: 1) - Export all 17 social table schemas from packages/db/src/schemas/index.ts
+- [x] **T-009** (complexity: 1) - Export all 17 social table schemas from packages/db/src/schemas/index.ts
   - Create social/index.ts + import in root index.
   - Blocked by: T-008
   - Blocks: T-010

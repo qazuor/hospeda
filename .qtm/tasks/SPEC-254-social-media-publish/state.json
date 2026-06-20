@@ -136,7 +136,7 @@
             "id": "T-005",
             "title": "Create DB table schemas for simple catalog tables (campaigns, batches, audiences, platforms, hashtag-sets, footers, assets)",
             "description": "Create the following files in `packages/db/src/schemas/social/` (one file per table, each with a `relations()` block):\n- `social-campaigns.dbschema.ts` — name, slug UNIQUE, description, active, starts_at, ends_at, plus standard audit columns\n- `social-content-batches.dbschema.ts` — name, slug UNIQUE, description, active, starts_at, ends_at\n- `social-audiences.dbschema.ts` — name, slug UNIQUE, description, active\n- `social-platforms.dbschema.ts` — id UUID PK, platform socialPlatformPgEnum UNIQUE NOT NULL, label, enabled, notes (no plain enum PK per resolved decision #8 in spec)\n- `social-hashtag-sets.dbschema.ts` — name, slug, platform nullable, hashtags_text, priority, active, notes\n- `social-post-footers.dbschema.ts` — name, slug, content, platform nullable, active, is_default, priority, notes\n- `social-assets.dbschema.ts` — source socialAssetSourcePgEnum, cloudinary_url, cloudinary_public_id, original_url nullable, openai_file_ref nullable, mime_type nullable, media_type socialMediaTypePgEnum, width, height, duration_seconds nullable, alt_text, caption, metadata_json (append-only, NO soft-delete columns)\nAll files: id UUID PK defaultRandom(), created_at, updated_at, plus audit FK columns (created_by_id, updated_by_id, deleted_at, deleted_by_id) except social_assets (append-only).\n\nTest requirements:\n- No dedicated unit test; schema correctness verified by migration generation in T-008\n- `pnpm typecheck` in `packages/db`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-004"],
             "blocks": ["T-006", "T-007", "T-008"],
@@ -173,21 +173,21 @@
             "tags": ["database", "schema"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": true,
+                "typecheck": true,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-20T00:00:00.000Z",
+                "completed": "2026-06-20T00:00:00.000Z"
             }
         },
         {
             "id": "T-006",
             "title": "Create DB table schemas for hashtags, platform-formats, and settings tables",
             "description": "Create in `packages/db/src/schemas/social/`:\n- `social-hashtags.dbschema.ts` — hashtag, normalized_hashtag UNIQUE, category, platform nullable (socialPlatformPgEnum), audience_id FK→social_audiences nullable, priority, active, notes; plus standard audit columns\n- `social-platform-formats.dbschema.ts` — platform socialPlatformPgEnum, publish_format socialPublishFormatPgEnum, media_type socialMediaTypePgEnum, enabled, mvp_enabled, recommended_ratio nullable, recommended_size nullable, max_caption_length, requires_public_url bool, requires_media bool, make_channel_key nullable, notes; UNIQUE(platform, publish_format); plus standard audit columns\n- `social-settings.dbschema.ts` — key UNIQUE, value text, type text, active bool, description; plus standard audit columns\n\nTest requirements:\n- No dedicated unit test; schema correctness verified by migration generation in T-008\n- `pnpm typecheck` in `packages/db`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-005"],
             "blocks": ["T-007", "T-008"],
@@ -208,21 +208,21 @@
             "tags": ["database", "schema"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": true,
+                "typecheck": true,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-20T00:00:00.000Z",
+                "completed": "2026-06-20T00:00:00.000Z"
             }
         },
         {
             "id": "T-007",
             "title": "Create DB table schemas for social_posts, social_post_targets, social_post_media, social_post_hashtags",
             "description": "Create in `packages/db/src/schemas/social/`:\n- `social-posts.dbschema.ts` — all columns per spec data model: draft_id UNIQUE, title, slug, source, pillar, campaign_id FK, batch_id FK, batch_position nullable, audience_id FK, footer_id FK, base_hashtag_set_id FK, caption_base, final_caption, final_hashtags_text, status socialPostStatusPgEnum, approval_status socialApprovalStatusPgEnum, paused bool default false, retry_count int default 0, scheduled_at nullable, timezone, recurrence_type socialRecurrenceTypePgEnum default ONCE, recurrence_params_json nullable, next_run_at nullable, notes, internal_notes, gpt_hashtag_payload_json, metadata_json, approved_by_id FK nullable, approved_at nullable; plus standard audit columns\n- `social-post-targets.dbschema.ts` — social_post_id FK, platform, publish_format, media_type, platform_format_id FK, caption_override nullable, hashtags_override_text nullable, footer_override nullable, status socialPostStatusPgEnum (target-level), scheduled_at nullable, published_at nullable, external_post_id nullable, external_post_url nullable, make_scenario_key nullable, make_last_run_id nullable, make_payload_json nullable, last_error_message nullable, retry_count int default 0; plus standard audit columns\n- `social-post-media.dbschema.ts` — social_post_id FK, asset_id FK→social_assets, position int; UNIQUE(social_post_id, position)\n- `social-post-hashtags.dbschema.ts` — social_post_id FK, hashtag_id FK→social_hashtags, position int; UNIQUE(social_post_id, hashtag_id)\nAll include `relations()` block.\n\nTest requirements:\n- Schema correctness verified by T-008 migration generation\n- `pnpm typecheck`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-005", "T-006"],
             "blocks": ["T-008"],
@@ -247,21 +247,21 @@
             "tags": ["database", "schema"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": true,
+                "typecheck": true,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-20T00:00:00.000Z",
+                "completed": "2026-06-20T00:00:00.000Z"
             }
         },
         {
             "id": "T-008",
             "title": "Create DB table schemas for append-only tables (social_ai_requests, social_publish_logs, social_audit_log)",
             "description": "Create in `packages/db/src/schemas/social/`:\n- `social-ai-requests.dbschema.ts` — request_id UNIQUE, source socialSourcePgEnum, topic, user_idea, pillar, audience_id FK nullable→social_audiences, suggested_platforms_json, suggested_format, generated_caption_base, raw_request_json, raw_response_json, status socialAiRequestStatusPgEnum, error_message; created_at, updated_at only (NO soft-delete, NO updated_by/deleted_by per append-only spec)\n- `social-publish-logs.dbschema.ts` — social_post_id FK, social_post_target_id FK nullable, platform nullable, publish_format nullable, status socialPublishResultStatusPgEnum, message, request_payload_json, response_payload_json, external_post_id nullable, external_post_url nullable, make_run_id nullable; created_at only (append-only)\n- `social-audit-log.dbschema.ts` — actor_id UUID nullable, event_type text, entity_type text, entity_id text, old_value_json jsonb nullable, new_value_json jsonb nullable, metadata_json jsonb nullable; created_at only (append-only)\n\nTest requirements:\n- Schema correctness verified by migration generation\n- `pnpm typecheck`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-007"],
             "blocks": ["T-009"],
@@ -282,21 +282,21 @@
             "tags": ["database", "schema"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": true,
+                "typecheck": true,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-20T00:00:00.000Z",
+                "completed": "2026-06-20T00:00:00.000Z"
             }
         },
         {
             "id": "T-009",
             "title": "Export all 17 social table schemas from packages/db/src/schemas/index.ts",
             "description": "Add barrel exports for all 17 new social table schema files to `packages/db/src/schemas/index.ts`. Also ensure the social domain directory has its own `index.ts` that re-exports all 17 files, and that file is imported from the root schema index. Follow the pattern of existing domains (e.g., `accommodation/`).\n\nTest requirements:\n- No dedicated test; verified by `pnpm typecheck` in `packages/db`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-008"],
             "blocks": ["T-010"],
@@ -313,14 +313,14 @@
             "tags": ["database", "schema"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": true,
+                "typecheck": true,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-20T00:00:00.000Z",
+                "completed": "2026-06-20T00:00:00.000Z"
             }
         },
         {
@@ -1911,9 +1911,9 @@
     ],
     "summary": {
         "total": 52,
-        "pending": 47,
+        "pending": 42,
         "inProgress": 0,
-        "completed": 5,
+        "completed": 10,
         "blocked": 0,
         "averageComplexity": 2.3
     }
