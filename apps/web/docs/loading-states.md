@@ -65,9 +65,10 @@ components is **not** "two ad-hoc patterns". Pick by host element:
 
 ## Accessibility rules
 
-- **Spinner with a label** renders `role="status"` + `aria-label`, an implicit
-  polite live region — screen readers announce it. Pass a `label` whenever the
-  spinner is the *only* progress signal.
+- **Spinner with a label** renders `role="status"` (an implicit polite live
+  region) with the label as visually-hidden (`sr-only`) text content, so screen
+  readers announce it on mount. Pass a `label` whenever the spinner is the
+  *only* progress signal.
 - **Decorative spinner / skeleton** (when an adjacent live region already
   announces progress) is marked `aria-hidden` — `Spinner` without `label` and all
   `SkeletonCard`s are decorative by default.
@@ -95,8 +96,8 @@ These fail review (and the CI guard, see below):
 - `'...'` used as a loading label (breaks i18n, no animation, no a11y).
 - `⏳` (or any emoji) used as a loading indicator.
 - A new per-component spinner CSS class. Use `Spinner` instead.
-- A button that disappears while loading instead of staying mounted as disabled
-  - busy.
+- A button that disappears while loading instead of staying mounted as
+  disabled + busy.
 - Hardcoded loading strings (`"Enviando..."`, `"Cargando…"`) — route them
   through `t()`.
 
