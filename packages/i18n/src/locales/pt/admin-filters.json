@@ -93,6 +93,9 @@
     "includeDeleted": {
         "label": "Mostrar excluídos"
     },
+    "ownerId": {
+        "label": "Proprietário"
+    },
     "rangeMin": "Mín",
     "rangeMax": "Máx",
     "rangeFrom": "De",
