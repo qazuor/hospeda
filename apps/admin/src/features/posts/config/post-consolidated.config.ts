@@ -27,7 +27,7 @@ const createAiGenerateSection = (
     t: ReturnType<typeof useTranslations>['t']
 ): ConsolidatedSectionConfig => ({
     id: 'ai-generate',
-    title: t('posts.aiGenerate.panelTitle' as Parameters<typeof t>[0]),
+    title: t('admin-pages.posts.aiGenerate.panelTitle' as Parameters<typeof t>[0]),
     layout: LayoutTypeEnum.GRID,
     modes: ['create', 'edit'],
     fields: [],

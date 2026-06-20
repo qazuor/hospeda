@@ -124,7 +124,7 @@ describe('AiPostGeneratePanel', () => {
         expect(screen.getByTestId('ai-post-generate-panel')).toBeInTheDocument();
 
         // The panel title key is rendered (t() returns the key in test setup)
-        expect(screen.getByText('posts.aiGenerate.panelTitle')).toBeInTheDocument();
+        expect(screen.getByText('admin-pages.posts.aiGenerate.panelTitle')).toBeInTheDocument();
 
         // Topic input is present
         expect(screen.getByTestId('ai-post-topic')).toBeInTheDocument();

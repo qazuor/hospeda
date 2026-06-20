@@ -77,7 +77,7 @@ interface PanelState {
     status: PanelStatus;
     /** Draft from a successful generation — only present in 'draft-ready'. */
     draft: AiPostGenerateDraft | null;
-    /** Mapped error key (i18n suffix after `posts.aiGenerate.`). */
+    /** Mapped error key (i18n suffix after `admin-pages.posts.aiGenerate.`). */
     errorKey: string | null;
     /** Inline validation errors for the panel form fields. */
     validationErrors: Partial<Record<keyof AiPostGenerateRequest, string>>;
@@ -329,7 +329,8 @@ export function AiPostGeneratePanel({ onDraftReady }: AiPostGeneratePanelProps) 
     // Derived
     // -----------------------------------------------------------------------
     const isGenerating = state.status === 'generating';
-    const tKey = (suffix: string) => t(`posts.aiGenerate.${suffix}` as Parameters<typeof t>[0]);
+    const tKey = (suffix: string) =>
+        t(`admin-pages.posts.aiGenerate.${suffix}` as Parameters<typeof t>[0]);
 
     // -----------------------------------------------------------------------
     // Render
