@@ -101,14 +101,17 @@ export const useGastronomyPage = (entityId: string) => {
         canEdit,
 
         updateMutation: {
-            // TYPE-WORKAROUND: the commerce factory's useUpdate() mutateAsync
-            // expects `{ id, data }` structurally, but EntityPageBase expects
-            // `(values: Record<string, unknown>) => Promise<unknown>`.
-            // At runtime the entity form always passes `{ id, data }` — the
-            // cast is safe; brand mismatch only.
-            mutateAsync: updateMutationResult.mutateAsync as unknown as (
-                values: Record<string, unknown>
-            ) => Promise<unknown>,
+            // EntityPageBase.handleSave calls mutateAsync with the FLAT form
+            // payload (the field values), but the commerce factory's useUpdate()
+            // mutationFn expects `{ id, data }`. Bind the entity id here and wrap
+            // the payload — mirrors the host-trade `useUpdate*(id)` pattern.
+            // (Calling it directly silently no-ops: id/data come through
+            // undefined, the PATCH never fires, and the save looks dead.)
+            mutateAsync: (values: Record<string, unknown>) =>
+                updateMutationResult.mutateAsync({
+                    id: entityId,
+                    data: values as Parameters<typeof updateMutationResult.mutateAsync>[0]['data']
+                }),
             isLoading: updateMutationResult.isPending
         },
 

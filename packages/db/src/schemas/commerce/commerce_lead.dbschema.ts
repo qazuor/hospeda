@@ -39,10 +39,12 @@ export const commerceLeads = pgTable(
         /** Optional free-form message from the prospective owner. */
         message: text('message'),
         /**
-         * Lead handling status. Values: 'new' | 'contacted' | 'converted' | 'rejected'.
+         * Lead handling status. Values: 'pending' | 'reviewing' | 'approved' | 'rejected'
+         * (canonical workflow vocabulary defined by `CommerceLeadStatusEnum` in
+         * `@repo/schemas`; mirrored by the admin inbox filter, status badge, and i18n keys).
          * Stored as varchar (not enum) for flexibility.
          */
-        status: varchar('status', { length: 50 }).notNull().default('new'),
+        status: varchar('status', { length: 50 }).notNull().default('pending'),
         /** Timestamp when an admin first acted on this lead. */
         handledAt: timestamp('handled_at', { withTimezone: true }),
         /** Admin who acted on the lead. SET NULL if the admin account is deleted. */

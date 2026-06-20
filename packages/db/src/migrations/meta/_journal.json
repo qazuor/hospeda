@@ -148,6 +148,13 @@
             "when": 1781792830240,
             "tag": "0020_old_jack_power",
             "breakpoints": true
+        },
+        {
+            "idx": 21,
+            "version": "7",
+            "when": 1781924302333,
+            "tag": "0021_dry_emma_frost",
+            "breakpoints": true
         }
     ]
 }

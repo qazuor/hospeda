@@ -5,6 +5,7 @@ import {
     SectionAccordionItem
 } from '@/components/entity-form/accordion/SectionAccordion';
 import type { SectionConfig } from '@/components/entity-form/types/section-config.types';
+import { ENTITY_EDIT_FORM_ID } from '@/components/entity-header/EntityPageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui-wrapped/Card';
 import { useToast } from '@/components/ui/ToastProvider';
 import { Badge } from '@/components/ui/badge';
@@ -292,6 +293,12 @@ export const EntityEditContent = ({
             )}
 
             <form
+                // The sticky-header "Guardar" button is rendered outside this form
+                // (it lives in EntityPageHeader). It associates with this form via
+                // the HTML `form` attribute using this shared id — see
+                // ENTITY_EDIT_FORM_ID. Without the matching id the save button is
+                // inert.
+                id={ENTITY_EDIT_FORM_ID}
                 onSubmit={(e) => {
                     e.preventDefault();
                     handleSave();

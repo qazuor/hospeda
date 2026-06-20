@@ -480,15 +480,18 @@ export abstract class BaseCommerceListingService<
      * `actor.id`, preventing the "drop the filter to list everything" bypass.
      *
      * After scoping, delegates to `super._executeAdminSearch` for the actual
-     * query.  Public projections (`_projectPublicEntityList`) are applied to the
-     * result before returning.
+     * query. The admin tier returns FULL entities (including `ownerId` and
+     * `adminInfo`): the public-tier projection (`_projectPublicEntityList`) is
+     * applied ONLY on the public search path (`_executeSearch`), never here.
+     * Stripping `ownerId` from the admin payload makes every row fail the admin
+     * response schema (which requires `ownerId`) and 500s the admin list.
      *
      * Subclasses that need entity-specific extra conditions (e.g., JSONB
      * price-range filters) should override this method, apply their conditions,
      * and call `super._executeAdminSearch(scopedParams)`.
      *
      * @param params - Assembled admin search parameters from `adminList`.
-     * @returns Paginated list of matching entities with projections applied.
+     * @returns Paginated list of matching entities with full admin-tier fields.
      */
     protected override async _executeAdminSearch(
         params: AdminSearchExecuteParams<Record<string, unknown>>
@@ -510,14 +513,10 @@ export abstract class BaseCommerceListingService<
               }
             : params;
 
-        const result = await super._executeAdminSearch(scopedParams);
-
-        if (!result?.items) return result;
-
-        return {
-            ...result,
-            items: this._projectPublicEntityList(result.items)
-        };
+        // No public projection here — the admin tier intentionally exposes
+        // ownerId / adminInfo (see method doc). Projection lives on the public
+        // search path only.
+        return super._executeAdminSearch(scopedParams);
     }
 
     // -----------------------------------------------------------------------
@@ -605,6 +604,69 @@ export abstract class BaseCommerceListingService<
             const error = new ServiceError(
                 ServiceErrorCode.INTERNAL_ERROR,
                 `Failed to recompute rating for ${this.entityName} ${listingId}: ${err instanceof Error ? err.message : String(err)}`,
+                err
+            );
+            return { error };
+        }
+    }
+
+    /**
+     * Assigns (or reassigns) the owner of a commerce listing.
+     *
+     * `ownerId` is intentionally excluded from the entity update schema
+     * (ownership is immutable through the generic `update()` path), so ownership
+     * changes must go through this dedicated action. Routing them through
+     * `update()` silently strips `ownerId` and the change is lost — this method
+     * writes the FK column directly instead.
+     *
+     * Staff-only: requires `COMMERCE_EDIT_ALL`. A listing owner cannot reassign
+     * their own listing away.
+     *
+     * @param actor - The actor performing the assignment.
+     * @param listingId - UUID of the commerce listing.
+     * @param ownerId - UUID of the user to set as owner.
+     * @param tx - Optional transaction client.
+     * @returns `ServiceOutput<TEntity>` with the updated listing, or an error.
+     */
+    public async assignOwner(
+        actor: Actor,
+        listingId: string,
+        ownerId: string,
+        tx?: DrizzleClient
+    ): Promise<ServiceOutput<TEntity>> {
+        try {
+            if (!hasPermission(actor, PermissionEnum.COMMERCE_EDIT_ALL)) {
+                return {
+                    error: new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        `Permission denied: ${PermissionEnum.COMMERCE_EDIT_ALL} required to assign a ${this.entityName} owner`
+                    )
+                };
+            }
+
+            const existing = await this.model.findById(listingId, tx);
+            if (!existing) {
+                return {
+                    error: new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `${this.entityName} ${listingId} not found`
+                    )
+                };
+            }
+
+            const updated = await this.model.update(
+                { id: listingId },
+                // TYPE-WORKAROUND: `ownerId` / `updatedById` are concrete columns on
+                // every commerce listing table but are not provable members of the
+                // generic `TEntity`; the partial-update payload is structurally safe.
+                { ownerId, updatedById: actor.id } as unknown as Partial<TEntity>,
+                tx
+            );
+            return { data: updated as TEntity };
+        } catch (err) {
+            const error = new ServiceError(
+                ServiceErrorCode.INTERNAL_ERROR,
+                `Failed to assign owner for ${this.entityName} ${listingId}: ${err instanceof Error ? err.message : String(err)}`,
                 err
             );
             return { error };

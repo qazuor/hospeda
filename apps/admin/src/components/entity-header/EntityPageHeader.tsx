@@ -220,6 +220,19 @@ function ViewActions({ actions }: { readonly actions: ViewModeActions }) {
 }
 
 /**
+ * DOM id of the entity edit `<form>` (rendered by `EntityEditContent`).
+ *
+ * The "Guardar" button lives in this sticky header, which is a SIBLING of the
+ * form (and, for tabbed entities, the form is nested several levels down inside
+ * a `TabsContent`). A bare `type="submit"` button only submits a form it is a
+ * DOM descendant of, so the button must associate with the form explicitly via
+ * the HTML `form="<id>"` attribute. Without it the button is inert and saving
+ * silently does nothing (no request, no toast). Both the header button and the
+ * form reference this shared id.
+ */
+export const ENTITY_EDIT_FORM_ID = 'entity-edit-form';
+
+/**
  * Action buttons for edit mode: Cancelar + (dirty indicator) + Guardar.
  */
 function EditActions({ actions }: { readonly actions: EditModeActions }) {
@@ -244,6 +257,13 @@ function EditActions({ actions }: { readonly actions: EditModeActions }) {
                 <span className="hidden sm:inline">Cancelar</span>
             </Button>
             <Button
+                // Default save path is native form submission: `type="submit"` +
+                // `form={ENTITY_EDIT_FORM_ID}` associates this out-of-form button
+                // with the edit form so a click triggers its onSubmit → save().
+                // `onClick` remains an optional override for consumers that wire a
+                // direct handler instead of relying on the form.
+                type="submit"
+                form={ENTITY_EDIT_FORM_ID}
                 variant="default"
                 size="sm"
                 onClick={actions.onSave}
