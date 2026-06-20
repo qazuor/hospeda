@@ -11,6 +11,7 @@
  * Hydration: caller must use `client:load`.
  */
 
+import { LoadingButton } from '@/components/shared/feedback/LoadingButton';
 import { userBookmarkCollectionsApi } from '@/lib/api/endpoints-protected';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
@@ -115,6 +116,7 @@ export function CollectionDetailActions({
 
     const editLabel = t('account.favorites.collections.edit', 'Editar');
     const deleteLabel = t('account.favorites.collections.delete', 'Borrar');
+    const deletingLabel = t('account.favorites.collections.deleting', 'Borrando...');
 
     return (
         <div className={styles.actions}>
@@ -129,17 +131,20 @@ export function CollectionDetailActions({
                 {editLabel}
             </button>
 
-            <button
-                type="button"
+            <LoadingButton
                 className={`${styles.btn} ${styles.deleteBtn}`}
                 onClick={() => void handleDelete()}
-                disabled={isDeleting}
-                aria-label={t('account.favorites.collections.delete', 'Borrar colección')}
-                aria-busy={isDeleting}
+                loading={isDeleting}
+                loadingLabel={deletingLabel}
+                aria-label={
+                    isDeleting
+                        ? deletingLabel
+                        : t('account.favorites.collections.delete', 'Borrar colección')
+                }
                 data-testid="collection-actions-delete"
             >
                 {deleteLabel}
-            </button>
+            </LoadingButton>
 
             <CreateEditCollectionModal
                 isOpen={isEditModalOpen}

@@ -28,6 +28,12 @@ vi.mock('../../../src/components/newsletter/NewsletterPreferences.module.css', (
     })
 }));
 
+vi.mock('../../../src/components/shared/feedback/Spinner.module.css', () => ({
+    default: new Proxy({} as Record<string, string>, {
+        get: (_target, prop) => String(prop)
+    })
+}));
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -136,7 +142,7 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('NewsletterPreferences — initial render', () => {
-    it('shows a loading state before the status request resolves', () => {
+    it('shows a Spinner and loading text before the status request resolves (SPEC-228 T-019)', () => {
         // fetch never resolves → still in loading
         vi.stubGlobal(
             'fetch',
@@ -148,7 +154,13 @@ describe('NewsletterPreferences — initial render', () => {
                 apiUrl={API_URL}
             />
         );
-        expect(screen.getByText('Cargando…')).toBeInTheDocument();
+        // The i18n mock returns the fallback for account.newsletter.loading → 'Cargando…'
+        // Text is visible both in sr-only Spinner label and as adjacent text node
+        expect(screen.getAllByText('Cargando…').length).toBeGreaterThanOrEqual(1);
+        // Spinner renders a role="status" live region
+        expect(screen.getByRole('status')).toBeInTheDocument();
+        // No ⏳ emoji
+        expect(document.body.textContent).not.toContain('⏳');
     });
 
     it('renders the error state when the status fetch returns 5xx', async () => {

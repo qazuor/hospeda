@@ -223,6 +223,7 @@
             "moveSuccess": "Moved to {{name}}",
             "moveSuccessUncollected": "Removed from collection",
             "moveError": "Could not move favorite",
+            "deleting": "Deleting...",
             "deleteSuccess": "Collection deleted successfully",
             "deleteError": "Could not delete the collection. Please try again."
         },
@@ -493,6 +494,7 @@
     },
     "newsletter": {
         "title": "Newsletter",
+        "loading": "Loading preferences…",
         "statusLabel": "Status",
         "statusActive": "Active",
         "statusPending": "Pending verification",
