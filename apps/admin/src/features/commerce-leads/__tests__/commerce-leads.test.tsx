@@ -341,3 +341,58 @@ describe('CommerceLeadInbox — provision owner', () => {
         });
     });
 });
+
+// ---------------------------------------------------------------------------
+// Tests: combined approve & provision action (SPEC-249 Part D)
+// ---------------------------------------------------------------------------
+
+describe('CommerceLeadInbox — approve & provision', () => {
+    it('calls the approve-and-provision endpoint when user confirms (pending lead)', async () => {
+        mockedFetchApi
+            // List query
+            .mockResolvedValueOnce(MOCK_PAGE_RESPONSE)
+            // Approve-and-provision POST
+            .mockResolvedValueOnce({
+                data: {
+                    success: true,
+                    data: {
+                        lead: { ...MOCK_LEAD_PENDING, status: 'approved' },
+                        userId: 'user-uuid-009',
+                        provisioned: true
+                    }
+                },
+                status: 201
+            })
+            // Re-fetch after invalidation
+            .mockResolvedValueOnce(MOCK_PAGE_RESPONSE);
+
+        renderInbox();
+
+        await waitFor(() => {
+            expect(screen.getByText('La Parrilla del Sur')).toBeInTheDocument();
+        });
+
+        // The combined action is shown only for not-yet-handled (pending) leads.
+        fireEvent.click(screen.getByText('admin-entities.commerceLeads.actions.approveProvision'));
+
+        await waitFor(() => {
+            expect(
+                screen.getByText('admin-entities.commerceLeads.approveProvision.title')
+            ).toBeInTheDocument();
+        });
+
+        fireEvent.click(screen.getByText('admin-entities.commerceLeads.approveProvision.confirm'));
+
+        await waitFor(() => {
+            expect(mockedFetchApi).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    path: `/api/v1/admin/commerce/leads/${MOCK_LEAD_PENDING.id}/approve-and-provision`,
+                    method: 'POST'
+                })
+            );
+            expect(mockAddToast).toHaveBeenCalledWith(
+                expect.objectContaining({ variant: 'success' })
+            );
+        });
+    });
+});
