@@ -54,7 +54,9 @@ function makeGoogleListing(
 function makePlacesResponse(overrides: Record<string, unknown> = {}): unknown {
     return {
         rating: 4.7,
-        userRatingsTotal: 312,
+        // Places API (New) review-count field. NOT the legacy `userRatingsTotal`,
+        // which the New API rejects with HTTP 400 (see field-mask regression test).
+        userRatingCount: 312,
         googleMapsUri: 'https://maps.google.com/?cid=12345',
         displayName: { text: 'Test Hotel' },
         reviews: [
@@ -167,6 +169,26 @@ describe('GoogleReputationAdapter', () => {
 
             expect(result.rating).toBe(4.7);
             expect(result.reviewsCount).toBe(312);
+        });
+
+        it('requests the Places API (New) review-count field `userRatingCount`, not the legacy `userRatingsTotal`', async () => {
+            // Regression: the field mask previously used `userRatingsTotal` (a
+            // legacy Places API name). The New API rejects an unknown field-mask
+            // path with HTTP 400, so the adapter degraded to an empty result and
+            // Google reputation silently never worked against the real API.
+            const adapter = new GoogleReputationAdapter({ googlePlacesApiKey: 'AIza-test' });
+            const listing = makeGoogleListing({ externalId: 'ChIJN1t_tDeuEmsRUsoyG83frY4' });
+
+            mockFetch.mockResolvedValueOnce(
+                new Response(JSON.stringify(makePlacesResponse()), { status: 200 })
+            );
+
+            await adapter.fetch(listing);
+
+            const init = mockFetch.mock.calls[0]?.[1] as RequestInit | undefined;
+            const fieldMask = (init?.headers as Record<string, string>)['X-Goog-FieldMask'];
+            expect(fieldMask).toContain('userRatingCount');
+            expect(fieldMask).not.toContain('userRatingsTotal');
         });
 
         it('should set deepLink to googleMapsUri from the response', async () => {

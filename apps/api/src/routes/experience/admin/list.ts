@@ -2,7 +2,7 @@
  * Admin experience list endpoint
  * Returns all experience listings with full admin access.
  */
-import { ExperienceAdminSchema, ExperienceAdminSearchSchema } from '@repo/schemas';
+import { ExperienceAdminListItemSchema, ExperienceAdminSearchSchema } from '@repo/schemas';
 import { ExperienceService, ServiceError } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -27,7 +27,11 @@ export const adminListExperiencesRoute = createAdminListRoute({
     description: 'Returns a paginated list of experience listings with full admin details',
     tags: ['Experience'],
     requestQuery: ExperienceAdminSearchSchema.omit({ page: true, pageSize: true }).shape,
-    responseSchema: ExperienceAdminSchema,
+    // Use the admin LIST schema, which keeps the eager-loaded `owner` and
+    // `destination` relation summaries (adminList loads them via the relations
+    // query). The base admin schema strips them, so the grid could only show raw
+    // FK UUIDs in the Destino / Propietario columns. Mirrors the gastronomy route.
+    responseSchema: ExperienceAdminListItemSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});

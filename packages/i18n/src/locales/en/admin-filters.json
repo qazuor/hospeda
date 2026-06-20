@@ -93,6 +93,9 @@
     "includeDeleted": {
         "label": "Show deleted"
     },
+    "ownerId": {
+        "label": "Owner"
+    },
     "rangeMin": "Min",
     "rangeMax": "Max",
     "rangeFrom": "From",

@@ -173,7 +173,14 @@ export interface AccommodationExternalReputationServiceDeps {
  *   listingModel,
  *   reputationModel,
  *   accommodationModel,
- *   adapterCredentials: { googlePlacesApiKey: env.HOSPEDA_GOOGLE_PLACES_API_KEY },
+ *   // Pass the FULL credential set — Google key + Apify token + actor slugs.
+ *   // Omitting the Apify fields silently disables Booking fallback + Airbnb.
+ *   adapterCredentials: {
+ *     googlePlacesApiKey: env.HOSPEDA_GOOGLE_PLACES_API_KEY,
+ *     apifyToken: env.HOSPEDA_APIFY_TOKEN,
+ *     apifyBookingActor: env.HOSPEDA_APIFY_BOOKING_ACTOR,
+ *     apifyAirbnbActor: env.HOSPEDA_APIFY_AIRBNB_ACTOR,
+ *   },
  * });
  * const result = await svc.refresh(accommodationId, actor);
  * ```
@@ -374,8 +381,6 @@ export class AccommodationExternalReputationService {
      *    `HOSPEDA_EXTREP_GOOGLE_SNIPPET_TTL_DAYS` (default 30 d), snippets are
      *    stripped from the response (AC-7.2 degrade) but the aggregate
      *    (rating, reviewsCount) is still shown.
-     * 4. Unverified listings are excluded (handled by
-     *    {@link buildExternalReputationBlock}).
      *
      * @param accommodationId - UUID of the accommodation.
      * @param ctx - Optional service context.

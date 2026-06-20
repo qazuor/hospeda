@@ -119,7 +119,9 @@ const isAuthenticated = Boolean(Astro.locals.user);
 const canonicalPath = buildUrl({ locale, path: `experiencias/${experience.slug}/` });
 
 // --- SEO ---
-const seoTitle = experience.seo?.title ?? `${experience.name} | Hospeda`;
+// SEOHead (via DetailLayout) already appends " | Hospeda", so the fallback is the
+// bare name — appending it here too produced a duplicated "… | Hospeda | Hospeda".
+const seoTitle = experience.seo?.title ?? experience.name;
 const seoDescription =
     experience.seo?.description ??
     experience.summary ??

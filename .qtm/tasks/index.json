@@ -791,6 +791,22 @@
             "status": "draft",
             "progress": "0/0",
             "path": "SPEC-252-web-e2e-playwright-harness"
+        },
+        {
+            "specId": "SPEC-250",
+            "title": "Asynchronous external reputation refresh (Apify async API + polling)",
+            "status": "draft",
+            "progress": "0/39",
+            "path": "SPEC-250-external-reputation-async-refresh",
+            "parent": "SPEC-237",
+            "branch": "spec/SPEC-250-external-reputation-async-refresh",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-250-external-reputation-async-refresh",
+            "base": "staging",
+            "createdAt": "2026-06-20T00:00:00.000Z",
+            "tasksAtomizedAt": "2026-06-20T00:00:00.000Z",
+            "taskCount": 39,
+            "averageComplexity": 1.79,
+            "note": "39 tasks across 5 phases (setup 4, core 16, integration 13, testing 4, docs 2). Critical path T-001->T-002->T-018->T-025->T-026->T-028->T-035->T-036 (8 hops). Apify async API + polling cron. NOT to be implemented yet (owner: generate only)."
         }
     ],
     "standalone": {
