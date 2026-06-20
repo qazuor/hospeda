@@ -198,35 +198,35 @@
             "id": "T-007",
             "title": "Add protected GET /experience/protected/mine endpoint",
             "description": "Mirror T-006 for experiences via T-005. Tests: integration symmetric to T-006.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-003", "T-005"],
             "blocks": ["T-008", "T-009"],
             "subtasks": [
                 {
                     "title": "Route file under experience/protected",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Register in protected/index.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Integration test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "commerce", "core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-20T08:12:00.000Z",
+                "completed": "2026-06-20T08:16:00.000Z"
             }
         },
         {
@@ -853,9 +853,9 @@
     ],
     "summary": {
         "total": 26,
-        "pending": 20,
+        "pending": 19,
         "inProgress": 0,
-        "completed": 6,
+        "completed": 7,
         "blocked": 0,
         "averageComplexity": 2.3
     }
