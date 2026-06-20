@@ -8,21 +8,31 @@
             "id": "T-001",
             "title": "Add isCommerceOwnerRole helper + commerce nav gating to account-roles",
             "description": "In apps/web/src/lib/account-roles.ts add `isCommerceOwnerRole(role)` (true for COMMERCE_OWNER, plus admin/superadmin as today's host helper does) and a commerce-nav constant. Mirror the existing isHostRole / ROLES_WITH_ACCOMMODATIONS_NAV pattern. Tests: unit test in apps/web test/ asserting true for COMMERCE_OWNER + admin roles, false for tourist/host-only/null.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-009", "T-010", "T-011"],
             "subtasks": [
-                { "title": "Add isCommerceOwnerRole + nav constant", "completed": false },
-                { "title": "Unit test for the helper", "completed": false }
+                {
+                    "title": "Add isCommerceOwnerRole + nav constant",
+                    "completed": true
+                },
+                {
+                    "title": "Unit test for the helper",
+                    "completed": true
+                }
             ],
             "tags": ["web", "auth", "setup"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-20T07:05:00.000Z",
+                "completed": "2026-06-20T07:06:30.000Z"
             }
         },
         {
@@ -34,12 +44,22 @@
             "blockedBy": [],
             "blocks": ["T-009", "T-011"],
             "subtasks": [
-                { "title": "Add keys to es/en/pt catalogs", "completed": false },
-                { "title": "Catalog completeness test", "completed": false }
+                {
+                    "title": "Add keys to es/en/pt catalogs",
+                    "completed": false
+                },
+                {
+                    "title": "Catalog completeness test",
+                    "completed": false
+                }
             ],
             "tags": ["i18n", "web", "setup"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
                 "started": null,
@@ -55,12 +75,22 @@
             "blockedBy": [],
             "blocks": ["T-006", "T-007", "T-009"],
             "subtasks": [
-                { "title": "OwnerListingSummary + list-response schema", "completed": false },
-                { "title": "Unit test for schema", "completed": false }
+                {
+                    "title": "OwnerListingSummary + list-response schema",
+                    "completed": false
+                },
+                {
+                    "title": "Unit test for schema",
+                    "completed": false
+                }
             ],
             "tags": ["schemas", "setup"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
                 "started": null,
@@ -76,12 +106,22 @@
             "blockedBy": [],
             "blocks": ["T-005", "T-006"],
             "subtasks": [
-                { "title": "listOwn on GastronomyService", "completed": false },
-                { "title": "Ownership + soft-delete unit tests", "completed": false }
+                {
+                    "title": "listOwn on GastronomyService",
+                    "completed": false
+                },
+                {
+                    "title": "Ownership + soft-delete unit tests",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "commerce", "core"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
                 "started": null,
@@ -97,12 +137,22 @@
             "blockedBy": ["T-004"],
             "blocks": ["T-007"],
             "subtasks": [
-                { "title": "listOwn on ExperienceService", "completed": false },
-                { "title": "Ownership + soft-delete unit tests", "completed": false }
+                {
+                    "title": "listOwn on ExperienceService",
+                    "completed": false
+                },
+                {
+                    "title": "Ownership + soft-delete unit tests",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "commerce", "core"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
                 "started": null,
@@ -118,13 +168,26 @@
             "blockedBy": ["T-003", "T-004"],
             "blocks": ["T-008", "T-009"],
             "subtasks": [
-                { "title": "Route file under gastronomy/protected", "completed": false },
-                { "title": "Register in protected/index.ts", "completed": false },
-                { "title": "Integration test", "completed": false }
+                {
+                    "title": "Route file under gastronomy/protected",
+                    "completed": false
+                },
+                {
+                    "title": "Register in protected/index.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Integration test",
+                    "completed": false
+                }
             ],
             "tags": ["api", "commerce", "core"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
                 "started": null,
@@ -140,13 +203,26 @@
             "blockedBy": ["T-003", "T-005"],
             "blocks": ["T-008", "T-009"],
             "subtasks": [
-                { "title": "Route file under experience/protected", "completed": false },
-                { "title": "Register in protected/index.ts", "completed": false },
-                { "title": "Integration test", "completed": false }
+                {
+                    "title": "Route file under experience/protected",
+                    "completed": false
+                },
+                {
+                    "title": "Register in protected/index.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Integration test",
+                    "completed": false
+                }
             ],
             "tags": ["api", "commerce", "core"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
                 "started": null,
@@ -162,12 +238,22 @@
             "blockedBy": ["T-006", "T-007"],
             "blocks": ["T-026"],
             "subtasks": [
-                { "title": "Two matrix rows", "completed": false },
-                { "title": "route-architecture note", "completed": false }
+                {
+                    "title": "Two matrix rows",
+                    "completed": false
+                },
+                {
+                    "title": "route-architecture note",
+                    "completed": false
+                }
             ],
             "tags": ["docs", "api", "core"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
                 "started": null,
@@ -183,14 +269,30 @@
             "blockedBy": ["T-001", "T-002", "T-003", "T-006", "T-007"],
             "blocks": ["T-010", "T-011", "T-020", "T-025"],
             "subtasks": [
-                { "title": "SSR page + role gate", "completed": false },
-                { "title": "Fetch + merge both verticals", "completed": false },
-                { "title": "List UI + CSS module + empty state", "completed": false },
-                { "title": "Gating/render test", "completed": false }
+                {
+                    "title": "SSR page + role gate",
+                    "completed": false
+                },
+                {
+                    "title": "Fetch + merge both verticals",
+                    "completed": false
+                },
+                {
+                    "title": "List UI + CSS module + empty state",
+                    "completed": false
+                },
+                {
+                    "title": "Gating/render test",
+                    "completed": false
+                }
             ],
             "tags": ["web", "commerce", "core"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
                 "started": null,
@@ -206,12 +308,22 @@
             "blockedBy": ["T-001", "T-009"],
             "blocks": [],
             "subtasks": [
-                { "title": "Gated nav entry", "completed": false },
-                { "title": "Visibility test", "completed": false }
+                {
+                    "title": "Gated nav entry",
+                    "completed": false
+                },
+                {
+                    "title": "Visibility test",
+                    "completed": false
+                }
             ],
             "tags": ["web", "core"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
                 "started": null,
@@ -227,14 +339,30 @@
             "blockedBy": ["T-001", "T-002", "T-009"],
             "blocks": ["T-012"],
             "subtasks": [
-                { "title": "SSR route + ownership 404", "completed": false },
-                { "title": "Read-only identity block", "completed": false },
-                { "title": "Mount editor island", "completed": false },
-                { "title": "Ownership smoke test", "completed": false }
+                {
+                    "title": "SSR route + ownership 404",
+                    "completed": false
+                },
+                {
+                    "title": "Read-only identity block",
+                    "completed": false
+                },
+                {
+                    "title": "Mount editor island",
+                    "completed": false
+                },
+                {
+                    "title": "Ownership smoke test",
+                    "completed": false
+                }
             ],
             "tags": ["web", "commerce", "core"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
                 "started": null,
@@ -250,14 +378,30 @@
             "blockedBy": ["T-011"],
             "blocks": ["T-013", "T-014", "T-015", "T-016"],
             "subtasks": [
-                { "title": "Island shell + section layout", "completed": false },
-                { "title": "Submit hook to per-vertical patch", "completed": false },
-                { "title": "Dirty-state + error/success handling", "completed": false },
-                { "title": "Submit-hook unit test", "completed": false }
+                {
+                    "title": "Island shell + section layout",
+                    "completed": false
+                },
+                {
+                    "title": "Submit hook to per-vertical patch",
+                    "completed": false
+                },
+                {
+                    "title": "Dirty-state + error/success handling",
+                    "completed": false
+                },
+                {
+                    "title": "Submit-hook unit test",
+                    "completed": false
+                }
             ],
             "tags": ["web", "commerce", "core"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
                 "started": null,
@@ -273,13 +417,26 @@
             "blockedBy": ["T-012"],
             "blocks": ["T-021", "T-025"],
             "subtasks": [
-                { "title": "menuUrl + priceRange + richDescription", "completed": false },
-                { "title": "contactInfo group", "completed": false },
-                { "title": "Component tests", "completed": false }
+                {
+                    "title": "menuUrl + priceRange + richDescription",
+                    "completed": false
+                },
+                {
+                    "title": "contactInfo group",
+                    "completed": false
+                },
+                {
+                    "title": "Component tests",
+                    "completed": false
+                }
             ],
             "tags": ["web", "commerce", "core"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
                 "started": null,
@@ -295,13 +452,26 @@
             "blockedBy": ["T-012"],
             "blocks": ["T-021", "T-025"],
             "subtasks": [
-                { "title": "openingHours structured editor", "completed": false },
-                { "title": "socialNetworks rows", "completed": false },
-                { "title": "Component tests", "completed": false }
+                {
+                    "title": "openingHours structured editor",
+                    "completed": false
+                },
+                {
+                    "title": "socialNetworks rows",
+                    "completed": false
+                },
+                {
+                    "title": "Component tests",
+                    "completed": false
+                }
             ],
             "tags": ["web", "commerce", "core"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
                 "started": null,
@@ -317,12 +487,22 @@
             "blockedBy": ["T-012"],
             "blocks": ["T-025"],
             "subtasks": [
-                { "title": "Media gallery group", "completed": false },
-                { "title": "Component test", "completed": false }
+                {
+                    "title": "Media gallery group",
+                    "completed": false
+                },
+                {
+                    "title": "Component test",
+                    "completed": false
+                }
             ],
             "tags": ["web", "commerce", "core"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
                 "started": null,
@@ -338,13 +518,26 @@
             "blockedBy": ["T-012"],
             "blocks": ["T-025", "T-026"],
             "subtasks": [
-                { "title": "Fetch catalog + multi-select UI", "completed": false },
-                { "title": "Persist id arrays", "completed": false },
-                { "title": "Component test", "completed": false }
+                {
+                    "title": "Fetch catalog + multi-select UI",
+                    "completed": false
+                },
+                {
+                    "title": "Persist id arrays",
+                    "completed": false
+                },
+                {
+                    "title": "Component test",
+                    "completed": false
+                }
             ],
             "tags": ["web", "commerce", "core"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
                 "started": null,
@@ -360,13 +553,26 @@
             "blockedBy": [],
             "blocks": ["T-018", "T-024"],
             "subtasks": [
-                { "title": "Orchestration method", "completed": false },
-                { "title": "Double-provision guard", "completed": false },
-                { "title": "Unit tests (approve/reject/idempotent)", "completed": false }
+                {
+                    "title": "Orchestration method",
+                    "completed": false
+                },
+                {
+                    "title": "Double-provision guard",
+                    "completed": false
+                },
+                {
+                    "title": "Unit tests (approve/reject/idempotent)",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "commerce", "core"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
                 "started": null,
@@ -382,13 +588,26 @@
             "blockedBy": ["T-017"],
             "blocks": ["T-019", "T-023", "T-026"],
             "subtasks": [
-                { "title": "Route wiring to orchestration", "completed": false },
-                { "title": "Permission + matrix row if new route", "completed": false },
-                { "title": "Integration test", "completed": false }
+                {
+                    "title": "Route wiring to orchestration",
+                    "completed": false
+                },
+                {
+                    "title": "Permission + matrix row if new route",
+                    "completed": false
+                },
+                {
+                    "title": "Integration test",
+                    "completed": false
+                }
             ],
             "tags": ["api", "commerce", "core"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
                 "started": null,
@@ -404,13 +623,26 @@
             "blockedBy": ["T-018"],
             "blocks": [],
             "subtasks": [
-                { "title": "Action + confirm dialog", "completed": false },
-                { "title": "Mutation + toast + invalidation", "completed": false },
-                { "title": "Component test", "completed": false }
+                {
+                    "title": "Action + confirm dialog",
+                    "completed": false
+                },
+                {
+                    "title": "Mutation + toast + invalidation",
+                    "completed": false
+                },
+                {
+                    "title": "Component test",
+                    "completed": false
+                }
             ],
             "tags": ["admin", "commerce", "core"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
                 "started": null,
@@ -426,11 +658,18 @@
             "blockedBy": ["T-009"],
             "blocks": [],
             "subtasks": [
-                { "title": "Integration test for gate→comercio order", "completed": false }
+                {
+                    "title": "Integration test for gate→comercio order",
+                    "completed": false
+                }
             ],
             "tags": ["web", "auth", "integration"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
                 "started": null,
@@ -446,11 +685,18 @@
             "blockedBy": ["T-013", "T-014"],
             "blocks": [],
             "subtasks": [
-                { "title": "Integration test gastronomy + experience ficha", "completed": false }
+                {
+                    "title": "Integration test gastronomy + experience ficha",
+                    "completed": false
+                }
             ],
             "tags": ["web", "commerce", "integration"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
                 "started": null,
@@ -466,12 +712,22 @@
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
-                { "title": "Gastronomy identity-strip regression", "completed": false },
-                { "title": "Experience identity-strip regression", "completed": false }
+                {
+                    "title": "Gastronomy identity-strip regression",
+                    "completed": false
+                },
+                {
+                    "title": "Experience identity-strip regression",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "commerce", "testing"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
                 "started": null,
@@ -486,10 +742,19 @@
             "complexity": 2,
             "blockedBy": ["T-018"],
             "blocks": [],
-            "subtasks": [{ "title": "Smoke test forced-change + flag clear", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Smoke test forced-change + flag clear",
+                    "completed": false
+                }
+            ],
             "tags": ["auth", "testing"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
                 "started": null,
@@ -504,10 +769,19 @@
             "complexity": 2,
             "blockedBy": ["T-017"],
             "blocks": [],
-            "subtasks": [{ "title": "Notifications-stub assertion test", "completed": false }],
+            "subtasks": [
+                {
+                    "title": "Notifications-stub assertion test",
+                    "completed": false
+                }
+            ],
             "tags": ["notifications", "testing"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
                 "started": null,
@@ -523,12 +797,22 @@
             "blockedBy": ["T-009", "T-013", "T-014", "T-015", "T-016"],
             "blocks": [],
             "subtasks": [
-                { "title": "E2E owner edit flow (both verticals)", "completed": false },
-                { "title": "E2E non-owner blocked", "completed": false }
+                {
+                    "title": "E2E owner edit flow (both verticals)",
+                    "completed": false
+                },
+                {
+                    "title": "E2E non-owner blocked",
+                    "completed": false
+                }
             ],
             "tags": ["web", "commerce", "e2e", "testing"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
                 "started": null,
@@ -544,12 +828,22 @@
             "blockedBy": ["T-008", "T-016", "T-018"],
             "blocks": [],
             "subtasks": [
-                { "title": "Owner self-service guide", "completed": false },
-                { "title": "apps/web CLAUDE.md note", "completed": false }
+                {
+                    "title": "Owner self-service guide",
+                    "completed": false
+                },
+                {
+                    "title": "apps/web CLAUDE.md note",
+                    "completed": false
+                }
             ],
             "tags": ["docs"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
                 "started": null,
@@ -559,9 +853,9 @@
     ],
     "summary": {
         "total": 26,
-        "pending": 26,
+        "pending": 25,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 1,
         "blocked": 0,
         "averageComplexity": 2.3
     }
