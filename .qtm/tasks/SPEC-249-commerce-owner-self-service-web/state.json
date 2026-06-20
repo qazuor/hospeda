@@ -303,31 +303,31 @@
             "id": "T-010",
             "title": "Add 'Mi comercio' nav entry to the mi-cuenta shell",
             "description": "Add the commerce subsection entry to the mi-cuenta sidebar/dashboard, gated by isCommerceOwnerRole (T-001) so only commerce owners see it. Tests: render test showing the entry appears for COMMERCE_OWNER and is hidden for tourist/host-only.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-001", "T-009"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Gated nav entry",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Visibility test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-20T08:48:00.000Z",
+                "completed": "2026-06-20T08:55:00.000Z"
             }
         },
         {
@@ -853,9 +853,9 @@
     ],
     "summary": {
         "total": 26,
-        "pending": 17,
+        "pending": 16,
         "inProgress": 0,
-        "completed": 9,
+        "completed": 10,
         "blocked": 0,
         "averageComplexity": 2.3
     }
