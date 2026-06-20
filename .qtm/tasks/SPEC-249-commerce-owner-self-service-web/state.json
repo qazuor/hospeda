@@ -583,35 +583,35 @@
             "id": "T-018",
             "title": "API: single approve-and-provision admin action",
             "description": "Wire a single admin action calling T-017 — extend apps/api/src/routes/commerce/admin/mark-handled.ts (e.g. an optional provision flag when status='approved') or add a dedicated route. Requires COMMERCE_EDIT_ALL. Add an endpoint-gate-matrix row if a new route is created. Tests: integration — POST approve+provision creates the owner user and triggers the credential email (stub), reject path unaffected.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-017"],
             "blocks": ["T-019", "T-023", "T-026"],
             "subtasks": [
                 {
                     "title": "Route wiring to orchestration",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Permission + matrix row if new route",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Integration test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "commerce", "core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-20T17:35:00.000Z",
+                "completed": "2026-06-20T17:40:00.000Z"
             }
         },
         {
