@@ -49,6 +49,15 @@ export const commerceLeads = pgTable(
         handledAt: timestamp('handled_at', { withTimezone: true }),
         /** Admin who acted on the lead. SET NULL if the admin account is deleted. */
         handledById: uuid('handled_by_id').references(() => users.id, { onDelete: 'set null' }),
+        /**
+         * COMMERCE_OWNER user provisioned from this lead (SPEC-249 Part D).
+         * Set once the "approve & provision" action creates the owner account;
+         * used as the idempotency guard so re-approving never double-provisions.
+         * SET NULL if the provisioned user account is later deleted.
+         */
+        provisionedUserId: uuid('provisioned_user_id').references(() => users.id, {
+            onDelete: 'set null'
+        }),
         /** Internal admin note about the lead disposition. */
         adminNote: text('admin_note'),
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
@@ -70,7 +79,13 @@ export const commerceLeadsRelations = relations(commerceLeads, ({ one }) => ({
     }),
     handledBy: one(users, {
         fields: [commerceLeads.handledById],
-        references: [users.id]
+        references: [users.id],
+        relationName: 'commerceLeadHandledBy'
+    }),
+    provisionedUser: one(users, {
+        fields: [commerceLeads.provisionedUserId],
+        references: [users.id],
+        relationName: 'commerceLeadProvisionedUser'
     })
 }));
 
