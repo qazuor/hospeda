@@ -7,7 +7,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { apiClient } from '../../api/client';
-import { fetchOwnerCommerceListings } from '../owner-listings';
+import { fetchOwnerCommerceListings, fetchOwnerListingDetail } from '../owner-listings';
 
 vi.mock('../../api/client', () => ({
     apiClient: { getProtected: vi.fn() }
@@ -65,5 +65,47 @@ describe('fetchOwnerCommerceListings', () => {
         const result = await fetchOwnerCommerceListings({ cookieHeader: 'session=x' });
 
         expect(result).toEqual([]);
+    });
+});
+
+describe('fetchOwnerListingDetail', () => {
+    const detail = { id: 'abc', ownerId: 'owner-1', name: 'La Parrilla', slug: 'la-parrilla' };
+
+    it('fetches gastronomy detail from the gastronomies path', async () => {
+        mockGetProtected.mockResolvedValueOnce({ ok: true, data: detail });
+
+        const result = await fetchOwnerListingDetail({
+            vertical: 'gastronomy',
+            id: 'abc',
+            cookieHeader: 'session=x'
+        });
+
+        expect(result).toEqual(detail);
+        expect(mockGetProtected).toHaveBeenCalledWith({
+            path: '/api/v1/protected/gastronomies/abc',
+            cookieHeader: 'session=x'
+        });
+    });
+
+    it('fetches experience detail from the experiences path', async () => {
+        mockGetProtected.mockResolvedValueOnce({ ok: true, data: detail });
+
+        await fetchOwnerListingDetail({ vertical: 'experience', id: 'xyz' });
+
+        expect(mockGetProtected).toHaveBeenCalledWith({
+            path: '/api/v1/protected/experiences/xyz',
+            cookieHeader: undefined
+        });
+    });
+
+    it('returns null when the request fails', async () => {
+        mockGetProtected.mockResolvedValueOnce({
+            ok: false,
+            error: { status: 404, message: 'not found' }
+        });
+
+        const result = await fetchOwnerListingDetail({ vertical: 'gastronomy', id: 'abc' });
+
+        expect(result).toBeNull();
     });
 });

@@ -1,0 +1,120 @@
+---
+/**
+ * @file mi-cuenta/comercio/[vertical]/[id]/editar.astro
+ * @description Operational editor for one commerce listing owned by the
+ * authenticated COMMERCE_OWNER (SPEC-249 Part A). Shows identity/core fields
+ * read-only and mounts the editor island for the operational fields.
+ *
+ * @route     /[lang]/mi-cuenta/comercio/[vertical]/[id]/editar/
+ * @rendering SSR (prerender = false — authenticated, owner-scoped data)
+ */
+import { CommerceListingEditor } from '@/components/commerce/CommerceListingEditor.client';
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import { isCommerceOwnerRole } from '@/lib/account-roles';
+import {
+    type CommerceVertical,
+    fetchOwnerListingDetail
+} from '@/lib/commerce/owner-listings';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+
+export const prerender = false;
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+
+const user = Astro.locals.user;
+if (!user) {
+    return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
+}
+if (!isCommerceOwnerRole(user.role)) {
+    return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta' }));
+}
+
+const verticalParam = Astro.params.vertical;
+const id = Astro.params.id;
+const isVertical = verticalParam === 'gastronomy' || verticalParam === 'experience';
+if (!isVertical || !id) {
+    return new Response(null, { status: 404 });
+}
+const vertical = verticalParam as CommerceVertical;
+
+const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
+const detail = await fetchOwnerListingDetail({ vertical, id, cookieHeader });
+
+// Defensive UX gate: the protected getById does not enforce ownership, so a
+// non-owner (and non-staff) is bounced back to their listing index. The write
+// path (updateOwn) is the hard gate.
+const isStaff = user.role === 'ADMIN' || user.role === 'SUPER_ADMIN';
+const ownsListing = detail !== null && detail.ownerId === user.id;
+if (!detail || (!ownsListing && !isStaff)) {
+    return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta/comercio' }));
+}
+
+const title = t('commerce.owner.list.edit', 'Editar');
+const verticalLabel = t(`commerce.owner.list.badge.${vertical}`, vertical);
+const readOnlyNotice = t('commerce.owner.editor.readOnlyNotice', '');
+---
+
+<AccountLayout locale={locale} title={`${title}: ${detail.name}`} activeSection="comercio">
+    <div class="ce-identity">
+        <div class="ce-identity__head">
+            <h2 class="ce-identity__name">{detail.name}</h2>
+            <span class="ce-identity__badge">{verticalLabel}</span>
+        </div>
+        <p class="ce-identity__slug"><code>{detail.slug}</code></p>
+        {readOnlyNotice && <p class="ce-identity__notice">{readOnlyNotice}</p>}
+    </div>
+
+    <CommerceListingEditor
+        client:load
+        vertical={vertical}
+        listingId={id}
+        locale={locale}
+        initialData={detail}
+    />
+</AccountLayout>
+
+<style>
+    .ce-identity {
+        margin-bottom: var(--space-6);
+        padding-bottom: var(--space-4);
+        border-bottom: 1px solid var(--core-border);
+    }
+
+    .ce-identity__head {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        flex-wrap: wrap;
+    }
+
+    .ce-identity__name {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: clamp(1.5rem, 3vw, 2rem);
+        color: var(--core-foreground);
+        margin: 0;
+    }
+
+    .ce-identity__badge {
+        font-size: var(--text-caption, 0.75rem);
+        padding: 0.125rem 0.5rem;
+        border-radius: var(--radius-full, 999px);
+        background: var(--core-muted, rgba(0, 0, 0, 0.06));
+        color: var(--core-muted-foreground);
+    }
+
+    .ce-identity__slug {
+        margin: 0.25rem 0 0;
+        font-size: var(--text-caption, 0.75rem);
+        color: var(--core-muted-foreground);
+    }
+
+    .ce-identity__notice {
+        margin: var(--space-3) 0 0;
+        font-size: var(--text-body-sm, 0.9375rem);
+        color: var(--core-muted-foreground);
+    }
+</style>
