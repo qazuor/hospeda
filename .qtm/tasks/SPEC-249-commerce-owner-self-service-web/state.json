@@ -707,31 +707,31 @@
             "id": "T-022",
             "title": "Regression: updateOwn rejects/strips identity fields (both verticals) [AC-3]",
             "description": "Regression test asserting that a forged identity/core field (name, slug, type, destinationId, lifecycle/visibility/moderation/featured) in an owner updateOwn submit is rejected or stripped server-side, for BOTH GastronomyService and ExperienceService. Asserts persisted row identity unchanged.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Gastronomy identity-strip regression",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Experience identity-strip regression",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "commerce", "testing"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-20T06:56:31.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-20T17:46:00.000Z",
+                "completed": "2026-06-20T17:49:00.000Z"
             }
         },
         {
