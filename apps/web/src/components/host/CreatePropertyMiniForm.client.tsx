@@ -246,7 +246,11 @@ export function CreatePropertyMiniForm({
             }
 
             setImportMeta(nextMeta);
-            setImportedOnce(true);
+            // Only surface the "review the imported data" notice when at least one
+            // field was actually pre-filled. A source:'none' / blocked-site response
+            // returns an empty draft, so showing the notice then is misleading
+            // (it invites the host to review data that does not exist).
+            setImportedOnce(Object.keys(nextMeta).length > 0);
 
             // Destination hint: surface when the response carries locality or candidates.
             if (response.destinationHint) {

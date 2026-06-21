@@ -583,6 +583,219 @@ describe('GooglePlacesAdapter', () => {
     });
 
     // -----------------------------------------------------------------------
+    // extract() — Text Search fallback (ftid hex / 0xHEX:0xHEX URLs)
+    // -----------------------------------------------------------------------
+    describe('extract() — Text Search fallback (ftid hex token)', () => {
+        /**
+         * Returns the URL that reproduces the confirmed SPEC-222 live gap:
+         * a canonical Google Maps URL resolved from maps.app.goo.gl/dCaudGsZ8r9fKvWk9.
+         * The `data=` segment contains `!1s0x95afd9ca9cad4719:0x3a7ad3d3dd8a4428` (ftid
+         * hex pair) — NO ChIJ token — so extractPlaceId() returns null and the adapter
+         * must fall through to Text Search.
+         */
+        function makeFtidUrl(): URL {
+            return new URL(
+                'https://www.google.com/maps/place/Cheroga+Casa+Quinta/@-32.4878131,-58.3626093,732m/data=!3m2!1e3!4b1!4m6!3m5!1s0x95afd9ca9cad4719:0x3a7ad3d3dd8a4428!8m2!3d-32.4878177!4d-58.3600344!16s%2Fg%2F11f6p8d3ql'
+            );
+        }
+
+        /** A Places API Text Search response containing a single place. */
+        function makeTextSearchResponse() {
+            return {
+                places: [
+                    {
+                        displayName: { text: 'Cheroga Casa Quinta', languageCode: 'es' },
+                        formattedAddress: 'Hernandarias, Entre Ríos, Argentina',
+                        location: { latitude: -32.4878177, longitude: -58.3600344 },
+                        internationalPhoneNumber: '+54 343 442-0000',
+                        websiteUri: 'https://cheroga.com.ar',
+                        types: ['lodging', 'point_of_interest', 'establishment'],
+                        addressComponents: [
+                            {
+                                longText: 'Hernandarias',
+                                shortText: 'Hernandarias',
+                                types: ['locality', 'political'],
+                                languageCode: 'es'
+                            },
+                            {
+                                longText: 'Argentina',
+                                shortText: 'AR',
+                                types: ['country', 'political'],
+                                languageCode: 'es'
+                            }
+                        ]
+                    }
+                ]
+            };
+        }
+
+        it('should call Text Search (POST :searchText) when the URL has an ftid hex token and no ChIJ Place ID', async () => {
+            // Arrange
+            const mockFetch = mockFetchOk(makeTextSearchResponse());
+            vi.stubGlobal('fetch', mockFetch);
+            const url = makeFtidUrl();
+            const ctx = makeCtx();
+
+            // Act
+            await adapter.extract(url, ctx);
+
+            // Assert — exactly one fetch call, to the Text Search endpoint
+            expect(mockFetch).toHaveBeenCalledOnce();
+            const [calledUrl, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+            expect(calledUrl).toBe('https://places.googleapis.com/v1/places:searchText');
+            expect((init as { method?: string }).method).toBe('POST');
+        });
+
+        it('should send textQuery with the decoded place name from the URL path', async () => {
+            // Arrange
+            const mockFetch = mockFetchOk(makeTextSearchResponse());
+            vi.stubGlobal('fetch', mockFetch);
+            const url = makeFtidUrl();
+            const ctx = makeCtx();
+
+            // Act
+            await adapter.extract(url, ctx);
+
+            // Assert — body contains textQuery = "Cheroga Casa Quinta"
+            const [, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+            const body = JSON.parse((init as { body?: string }).body ?? '{}') as Record<
+                string,
+                unknown
+            >;
+            expect(body.textQuery).toBe('Cheroga Casa Quinta');
+        });
+
+        it('should include a locationBias circle using the @lat,lng coordinates from the URL', async () => {
+            // Arrange
+            const mockFetch = mockFetchOk(makeTextSearchResponse());
+            vi.stubGlobal('fetch', mockFetch);
+            const url = makeFtidUrl();
+            const ctx = makeCtx();
+
+            // Act
+            await adapter.extract(url, ctx);
+
+            // Assert — locationBias circle centred on @-32.4878131,-58.3626093
+            const [, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+            const body = JSON.parse((init as { body?: string }).body ?? '{}') as Record<
+                string,
+                unknown
+            >;
+            const bias = (body.locationBias as { circle?: { center?: unknown; radius?: number } })
+                ?.circle;
+            expect(bias).toBeDefined();
+            expect(bias?.center).toStrictEqual({
+                latitude: -32.4878131,
+                longitude: -58.3626093
+            });
+            expect(bias?.radius).toBe(500);
+        });
+
+        it('should use the places.* field mask prefix in X-Goog-FieldMask for Text Search', async () => {
+            // Arrange
+            const mockFetch = mockFetchOk(makeTextSearchResponse());
+            vi.stubGlobal('fetch', mockFetch);
+            const url = makeFtidUrl();
+            const ctx = makeCtx();
+
+            // Act
+            await adapter.extract(url, ctx);
+
+            // Assert — Text Search mask uses `places.` prefix
+            const [, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+            const headers = init?.headers as Record<string, string>;
+            const fieldMask = headers['X-Goog-FieldMask'] ?? '';
+            expect(fieldMask).toContain('places.displayName');
+            expect(fieldMask).not.toContain('places.reviews');
+            expect(fieldMask).not.toContain('places.rating');
+        });
+
+        it('should map the first Text Search result into a populated RawExtraction', async () => {
+            // Arrange
+            const mockFetch = mockFetchOk(makeTextSearchResponse());
+            vi.stubGlobal('fetch', mockFetch);
+            const url = makeFtidUrl();
+            const ctx = makeCtx();
+
+            // Act
+            const result = await adapter.extract(url, ctx);
+
+            // Assert — draft is populated from places[0], not empty
+            expect(result.sourcePlatform).toBe('google');
+            expect(result.name).toStrictEqual({
+                value: 'Cheroga Casa Quinta',
+                source: 'official_api'
+            });
+            expect(result.location?.coordinates).toStrictEqual({
+                value: { lat: '-32.4878177', long: '-58.3600344' },
+                source: 'official_api'
+            });
+            expect(result.scrapedLocality).toBe('Hernandarias');
+            expect(result.scrapedCountry).toBe('Argentina');
+        });
+
+        it('should degrade to empty extraction when Text Search returns no results', async () => {
+            // Arrange — empty places array
+            const mockFetch = mockFetchOk({ places: [] });
+            vi.stubGlobal('fetch', mockFetch);
+            const url = makeFtidUrl();
+            const ctx = makeCtx();
+
+            // Act
+            const result = await adapter.extract(url, ctx);
+
+            // Assert — graceful degradation, no throw
+            expect(result).toStrictEqual({ sourcePlatform: 'google' });
+        });
+
+        it('should degrade to empty extraction when Text Search returns a non-2xx response', async () => {
+            // Arrange
+            vi.stubGlobal('fetch', mockFetchError(403));
+            const url = makeFtidUrl();
+            const ctx = makeCtx();
+
+            // Act
+            const result = await adapter.extract(url, ctx);
+
+            // Assert
+            expect(result).toStrictEqual({ sourcePlatform: 'google' });
+        });
+
+        it('should degrade to empty extraction when Text Search fetch throws (network error)', async () => {
+            // Arrange
+            vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Connection refused')));
+            const url = makeFtidUrl();
+            const ctx = makeCtx();
+
+            // Act
+            const result = await adapter.extract(url, ctx);
+
+            // Assert
+            expect(result).toStrictEqual({ sourcePlatform: 'google' });
+        });
+
+        it('should still use Place Details (not Text Search) for a ChIJ URL — Path A unchanged', async () => {
+            // Arrange — URL with a ChIJ Place ID embedded in the data segment
+            const placeId = 'ChIJN1t_tDeuEmsRUsoyG83frY4';
+            const mockFetch = mockFetchOk(makePlacesResponse());
+            vi.stubGlobal('fetch', mockFetch);
+            const url = new URL(
+                `https://www.google.com/maps/place/Hotel/@-32.48,-58.23,17z/data=!3m1!4b1!4m5!3m4!1s${placeId}!8m2!3d-32.48!4d-58.23`
+            );
+            const ctx = makeCtx();
+
+            // Act
+            await adapter.extract(url, ctx);
+
+            // Assert — Place Details GET call, not POST :searchText
+            expect(mockFetch).toHaveBeenCalledOnce();
+            const [calledUrl, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+            expect(calledUrl).toBe(`https://places.googleapis.com/v1/places/${placeId}`);
+            expect((init as { method?: string }).method).toBe('GET');
+        });
+    });
+
+    // -----------------------------------------------------------------------
     // extract() — partial / sparse API responses
     // -----------------------------------------------------------------------
     describe('extract() — partial API responses', () => {
