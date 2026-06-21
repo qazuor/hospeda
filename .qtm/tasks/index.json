@@ -782,7 +782,7 @@
             "specId": "SPEC-251",
             "title": "Local DB dev/template refresh + worktree DB auto-heal correctness",
             "status": "in-progress",
-            "progress": "0/3",
+            "progress": "1/3",
             "path": "SPEC-251-local-db-dev-template-refresh"
         },
         {
