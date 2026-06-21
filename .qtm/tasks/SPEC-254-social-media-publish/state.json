@@ -798,7 +798,7 @@
             "id": "T-023",
             "title": "Add env vars HOSPEDA_AI_SOCIAL_KEY and HOSPEDA_OPERATOR_PIN_HASH",
             "description": "Following the CLAUDE.md env-var workflow (all 5 steps):\n1. Register both vars in `packages/config/src/env-registry.*.ts` with metadata: type=secret, required=true, apps=['api'], category='social'\n2. Add Zod validation in `apps/api/src/utils/env.ts` (extend ApiEnvBaseSchema)\n3. Update `apps/api/.env.example` with safe placeholder values\n4. Document purpose in the API app's CLAUDE.md or env guide\n5. (Inform user to set in Coolify — do NOT block the task on this)\n\nFor `HOSPEDA_OPERATOR_PIN_HASH`: document that it stores `sha256(pin + secret_salt)` and the salt is `HOSPEDA_AI_SOCIAL_KEY` (or a separate salt var — clarify with owner). The raw PIN is never persisted per resolved decision #1.\n\nTest requirements:\n- Unit test: env schema validation rejects startup when `HOSPEDA_AI_SOCIAL_KEY` is missing\n- File: `apps/api/src/__tests__/env.test.ts` (extend existing)",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-024"],
@@ -819,14 +819,14 @@
             "tags": ["config", "env", "security"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-20T00:00:00.000Z",
+                "completed": "2026-06-20T00:00:00.000Z"
             }
         },
         {
@@ -1546,7 +1546,7 @@
             "id": "T-043",
             "title": "Add env vars HOSPEDA_MAKE_API_KEY and HOSPEDA_MAKE_INBOUND_KEY",
             "description": "Following the same 5-step env-var workflow as T-023:\n1. Register `HOSPEDA_MAKE_API_KEY` (outbound key to Make.com webhook) and `HOSPEDA_MAKE_INBOUND_KEY` (Make.com callback authentication) in `packages/config/src/env-registry.*.ts`\n2. Add Zod validation in `apps/api/src/utils/env.ts`\n3. Update `apps/api/.env.example` with placeholder values\n4. Document in API CLAUDE.md or env guide\n5. Inform user to set in Coolify\n\nTest requirements:\n- Extend env.test.ts to verify both new vars are validated\n- File: `apps/api/src/__tests__/env.test.ts` (extend existing)",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-044", "T-048"],
@@ -1567,14 +1567,14 @@
             "tags": ["config", "env", "make"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-20T00:00:00.000Z",
+                "completed": "2026-06-20T00:00:00.000Z"
             }
         },
         {
@@ -1911,9 +1911,9 @@
     ],
     "summary": {
         "total": 52,
-        "pending": 40,
+        "pending": 38,
         "inProgress": 0,
-        "completed": 12,
+        "completed": 14,
         "blocked": 0,
         "averageComplexity": 2.3
     }
