@@ -432,7 +432,7 @@
             "id": "T-013",
             "title": "Create DB model files for all 17 social tables in packages/db/src/models/social/",
             "description": "Create one BaseModelImpl-extending model file per table in `packages/db/src/models/social/`. Each model provides typed query methods (findById, findMany, create, update, softDelete) following the pattern of existing models (e.g., `packages/db/src/models/accommodation/`). The append-only tables (social_ai_requests, social_publish_logs, social_audit_log) only expose `create` and `findMany` — no update/softDelete.\n\nSplit into 3 atomic batches:\n- Batch A: simple catalog models (campaigns, batches, audiences, platforms, hashtag-sets, footers, hashtags, platform-formats, settings)\n- Batch B: social_posts + social_post_targets models\n- Batch C: join-table models (social_post_media, social_post_hashtags, social_assets) + append-only models (social_ai_requests, social_publish_logs, social_audit_log)\n\nAlso create `packages/db/src/models/social/index.ts` and export from `packages/db/src/models/index.ts`.\n\nTest requirements:\n- Unit tests for non-trivial query methods (soft delete excludes deleted_at records, findMany with filters)\n- File: `packages/db/src/models/social/__tests__/social-models.test.ts`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-011"],
             "blocks": ["T-014", "T-020"],
@@ -457,14 +457,14 @@
             "tags": ["database", "models"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": true,
+                "typecheck": true,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-20T00:00:00.000Z",
+                "completed": "2026-06-20T00:00:00.000Z"
             }
         },
         {
@@ -1911,9 +1911,9 @@
     ],
     "summary": {
         "total": 52,
-        "pending": 38,
+        "pending": 37,
         "inProgress": 0,
-        "completed": 14,
+        "completed": 15,
         "blocked": 0,
         "averageComplexity": 2.3
     }

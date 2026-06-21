@@ -1,6 +1,6 @@
 # SPEC-254: Social Automation Backend
 
-## Progress: 14/52 tasks (27%) — setup phase complete
+## Progress: 15/52 tasks (29%) — setup complete, core in progress
 
 **Average Complexity:** 2.3/3 (max)
 **Critical Path:** T-001 -> T-002 -> T-004 -> T-005 -> T-006 -> T-007 -> T-008 -> T-009 -> T-010 -> T-011 -> T-013 -> T-014 -> T-016 -> T-017 -> T-018 -> T-019 -> T-027 -> T-028 -> T-029 -> T-032 -> T-033 -> T-034 -> T-035 -> T-036 -> T-037 -> T-044 -> T-045 -> T-046 -> T-047 -> T-048 -> T-049 -> T-050 -> T-051 -> T-052 (34 steps)
@@ -89,7 +89,7 @@
 
 ## Phase: core (DB models, Zod entity schemas, services, seed, GPT routes)
 
-- [ ] **T-013** (complexity: 3) - Create DB model files for all 17 social tables
+- [x] **T-013** (complexity: 3) - Create DB model files for all 17 social tables
   - One BaseModelImpl-extending model per table; create models/social/index.ts.
   - Blocked by: T-011
   - Blocks: T-014, T-020, T-026, T-027, T-032, T-044
