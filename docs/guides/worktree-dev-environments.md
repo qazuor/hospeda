@@ -163,6 +163,12 @@ and you are about to cut new worktrees. If you skip it you are still covered for
 *schema* up to date on `wt:up`. The refresh is what gives those new tables their
 **example data** — without it they stay empty.
 
+**What a fresh worktree contains.** After a refresh + `wt:up`, the worktree DB clones the
+current template (sentinel OK, no heal) with the commerce example data seeded: at last
+check 6 gastronomy listings, 5 experience listings, 3 commerce owners, plus the dev test
+users. Verify with `psql -d worktree_<slug> -c 'SELECT count(*) FROM gastronomies'` and
+`… FROM experiences` — both must be `> 0`.
+
 ## Test users
 
 After `wt:up`, the worktree DB has the 13 dev test users (every role × plan combo).

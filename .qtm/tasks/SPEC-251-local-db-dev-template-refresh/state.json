@@ -82,22 +82,22 @@
             "id": "T-003",
             "title": "Verify commerce seed data is present after wt:up (gastronomy + experience listings)",
             "description": "Confirm that after running `wt:up` (which heals if stale per T-002), the worktree DB contains commerce example data: at least one gastronomy listing, one experience listing, and a COMMERCE_OWNER user — all required for SPEC-249/SPEC-252 workflows.\n\nIf the seed step in T-002's auto-heal path does NOT produce commerce data (because db:seed does not include commerce fixtures in its current form), document the gap and provide the manual command sequence. If it does produce commerce data, document which seed users/listings to expect.\n\nKey files:\n- packages/seed/CLAUDE.md (update test-user matrix if commerce owner seed users are confirmed)\n- docs/guides/worktree-dev-environments.md (add commerce-data verification step to the wt:up smoke checklist)\n\nNote: seed CONTENT fixes for SPEC-252 (loggable experience owner, profile_completed) are OUT OF SCOPE here (live in SPEC-252). This task only verifies the existing seed produces usable commerce data and documents what exists.\n\nAcceptance: after wt:up on a fresh worktree, `psql -c 'SELECT count(*) FROM gastronomies'` returns > 0 and `psql -c 'SELECT count(*) FROM experiences'` returns > 0; result documented in worktree-dev-environments.md.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002"],
             "blocks": [],
             "subtasks": [
                 {
-                    "title": "Smoke wt:up fresh worktree and count gastronomy/experience rows",
-                    "completed": false
+                    "title": "Smoke wt:up fresh worktree and count gastronomy/experience rows (6 gastronomies, 5 experiences, 3 commerce owners — no heal)",
+                    "completed": true
                 },
                 {
                     "title": "Document commerce-data expectations in worktree-dev-environments.md",
-                    "completed": false
+                    "completed": true
                 },
                 {
-                    "title": "Update packages/seed/CLAUDE.md if commerce owner seed users are confirmed",
-                    "completed": false
+                    "title": "Confirm commerce seed (CommerceOwners/Gastronomies/Experiences) loads; seed/CLAUDE.md already covers the test-user matrix, counts documented in worktree-dev-environments.md",
+                    "completed": true
                 }
             ],
             "tags": ["db", "worktree", "seed", "commerce"],
@@ -109,16 +109,16 @@
             },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-20T00:00:00.000Z",
+                "completed": "2026-06-20T00:00:00.000Z"
             }
         }
     ],
     "summary": {
         "total": 3,
-        "pending": 1,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 2,
+        "completed": 3,
         "blocked": 0,
         "averageComplexity": 2.0
     }
