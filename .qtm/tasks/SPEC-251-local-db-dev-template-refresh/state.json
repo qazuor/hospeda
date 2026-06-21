@@ -8,22 +8,22 @@
             "id": "T-001",
             "title": "Write DB lifecycle + refresh runbook docs",
             "description": "Update docs/guides/worktree-dev-environments.md with:\n- Canonical one-command DB refresh procedure: `pnpm db:fresh-dev` on hospeda_dev (DESTRUCTIVE — wipes and re-seeds local dev DB) followed by `bash ~/.claude/skills/worktree/scripts/wt-db.sh build-template` to rebuild hospeda_template from the freshly migrated hospeda_dev.\n- Warning that db:fresh-dev runs `docker compose down -v` which destroys the local dev DB — document what is lost and when to use it.\n- Step-by-step migration cadence: when a new spec ships schema changes (new tables, extras), the refresh must be re-run before cutting new worktrees.\n- Reference to AC-2 (drift detection) so readers know stale worktree DBs are now auto-healed.\n\nKey files: docs/guides/worktree-dev-environments.md (existing, extend the DB section).\nNo code changes. No tests. Acceptance: the guide contains a 'DB refresh' section covering the two-command flow, the destructive warning, and the cadence recommendation.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Add 'DB refresh' section to worktree-dev-environments.md",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Document destructive db:fresh-dev warning",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Document schema-cadence recommendation",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs", "db", "worktree"],
@@ -35,8 +35,8 @@
             },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-20T00:00:00.000Z",
+                "completed": "2026-06-20T00:00:00.000Z"
             }
         },
         {
@@ -116,9 +116,9 @@
     ],
     "summary": {
         "total": 3,
-        "pending": 2,
+        "pending": 1,
         "inProgress": 0,
-        "completed": 1,
+        "completed": 2,
         "blocked": 0,
         "averageComplexity": 2.0
     }

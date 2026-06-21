@@ -102,10 +102,25 @@ prints the current URLs and exits without touching anything.
 
 ### Auto-heal
 
-`wt:up` guarantees a working DB. If the database is missing, it is created from the
-template. If it exists but has no schema (empty), it is **auto-healed**: migrations,
-drizzle extras, base seed, and test users run automatically against the worktree DB.
-You never have to provision a worktree DB by hand.
+`wt:up` guarantees a working DB. Three cases are handled automatically, so you never
+provision a worktree DB by hand:
+
+- **Missing** — the database does not exist: it is created from the template.
+- **Empty** (no schema): full provisioning runs — migrations, drizzle extras, base
+  seed, and test users.
+- **Schema-stale** — the DB has a schema (it looks provisioned) but was cloned from an
+  **outdated template** that predates newer tables. This is detected via a configurable
+  **sentinel**: `.db.schemaSentinelTables` in `.claude/project.config.json` lists tables
+  that must exist in a current schema (e.g. `gastronomies`, `experiences`). If any is
+  absent, the schema is healed to the current TS schema with `db:push` + drizzle extras.
+  The heal is **additive and non-destructive** — it does **not** reseed, so existing
+  rows are preserved and newly created tables come up **empty** (populating them is the
+  template's job, see [Refreshing the dev DB & template](#refreshing-the-dev-db--template)).
+  A clone whose sentinels are all present is left untouched (a no-op).
+
+> Keep `schemaSentinelTables` pointed at the **most recently added** tables. When a spec
+> ships a new table that older templates won't have, add it to the sentinel list so
+> stale clones are detected and healed.
 
 ### One-time template bootstrap
 
@@ -118,6 +133,35 @@ bash ~/.claude/skills/worktree/scripts/wt-db.sh build-template
 
 Until the template exists, `wt:up` on a fresh worktree falls back to the slower
 auto-heal chain (migrate + seed) instead of the instant template clone.
+
+### Refreshing the dev DB & template
+
+The template is a **snapshot** — it only carries the schema and data that existed when
+it was built. When a merged spec ships **schema changes** (new tables, new extras) or
+example data you want every fresh worktree to inherit, refresh the source DB and rebuild
+the template. Two commands, in order:
+
+```bash
+# 1. Rebuild hospeda_dev to the CURRENT schema + seed.
+#    DESTRUCTIVE: runs `docker compose down -v`, which DELETES the Postgres volume —
+#    hospeda_dev, hospeda_template, and every worktree_* DB in the container — and
+#    re-creates it from scratch. Any local data not reproduced by the seed is lost.
+#    Only run it when you are fine wiping local data.
+pnpm db:fresh-dev
+
+# 2. Rebuild the shared template from the freshly migrated hospeda_dev.
+bash ~/.claude/skills/worktree/scripts/wt-db.sh build-template
+```
+
+After this, new worktrees clone a current, fully-seeded template and need no heal.
+Existing worktrees lost their DB in step 1, but the next `wt:up` re-creates each one
+from the refreshed template.
+
+**Cadence.** Re-run the two-command refresh whenever a merged spec adds tables or extras
+and you are about to cut new worktrees. If you skip it you are still covered for
+**correctness**: the [schema-stale auto-heal](#auto-heal) brings each new worktree's
+*schema* up to date on `wt:up`. The refresh is what gives those new tables their
+**example data** — without it they stay empty.
 
 ## Test users
 
