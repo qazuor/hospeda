@@ -155,6 +155,13 @@
             "when": 1781924302333,
             "tag": "0021_dry_emma_frost",
             "breakpoints": true
+        },
+        {
+            "idx": 22,
+            "version": "7",
+            "when": 1781999934256,
+            "tag": "0022_cuddly_natasha_romanoff",
+            "breakpoints": true
         }
     ]
 }

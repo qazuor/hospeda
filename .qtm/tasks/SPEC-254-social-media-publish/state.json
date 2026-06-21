@@ -327,7 +327,7 @@
             "id": "T-010",
             "title": "Generate migration file 0022_social_automation.sql via pnpm db:generate",
             "description": "Run `pnpm db:generate` from the worktree root to produce `packages/db/src/migrations/0022_social_automation.sql`. Verify the output contains:\n- All 10 new pgEnum CREATE TYPE statements\n- All 17 CREATE TABLE statements\n- The correct FK references between tables\n- No unexpected drops or alterations to existing tables\n\nIf the generator creates an unexpected file number (e.g., `0023_...`), check that the previous migration was committed. Commit the generated SQL file as part of the PR.\n\nTest requirements:\n- Run `pnpm db:migrate` against a test/dev database; confirm 0 errors\n- Run `pnpm typecheck` in `packages/db` after migration",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-009"],
             "blocks": ["T-011"],
@@ -348,21 +348,21 @@
             "tags": ["database", "migration"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": true,
+                "typecheck": true,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-20T00:00:00.000Z",
+                "completed": "2026-06-20T00:00:00.000Z"
             }
         },
         {
             "id": "T-011",
             "title": "Write extras migrations 018-social-indexes and 019-social-set-updated-at-triggers",
             "description": "Create two hand-written idempotent SQL files in `packages/db/src/migrations/extras/`:\n\n`018-social-indexes.kind.sql`:\n```sql\nCREATE INDEX CONCURRENTLY IF NOT EXISTS idx_social_posts_status ON social_posts(status);\nCREATE INDEX CONCURRENTLY IF NOT EXISTS idx_social_posts_next_run_at ON social_posts(next_run_at) WHERE next_run_at IS NOT NULL;\nCREATE INDEX CONCURRENTLY IF NOT EXISTS idx_social_post_targets_status ON social_post_targets(status);\nCREATE INDEX CONCURRENTLY IF NOT EXISTS idx_social_audit_log_entity ON social_audit_log(entity_type, entity_id);\nCREATE INDEX CONCURRENTLY IF NOT EXISTS idx_social_publish_logs_post ON social_publish_logs(social_post_id, created_at DESC);\n```\n\n`019-social-set-updated-at.trigger.sql`:\nFor each of the 14 tables with `updated_at` (all except the append-only trio: social_ai_requests, social_publish_logs, social_audit_log), register the `set_updated_at` trigger using `CREATE TRIGGER IF NOT EXISTS` following the pattern of existing extras files.\n\nRun `pnpm db:apply-extras` to verify both files are idempotent (can run twice without error).\n\nTest requirements:\n- Run `pnpm db:apply-extras` twice; no errors on second run\n- Verify indexes appear in `\\di+ social_*` in psql",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-010"],
             "blocks": ["T-013"],
@@ -383,14 +383,14 @@
             "tags": ["database", "migration", "extras"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": true,
+                "typecheck": true,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-20T00:00:00.000Z",
+                "completed": "2026-06-20T00:00:00.000Z"
             }
         },
         {
@@ -1911,9 +1911,9 @@
     ],
     "summary": {
         "total": 52,
-        "pending": 42,
+        "pending": 40,
         "inProgress": 0,
-        "completed": 10,
+        "completed": 12,
         "blocked": 0,
         "averageComplexity": 2.3
     }
