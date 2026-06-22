@@ -14,10 +14,10 @@ import type { TranslationKey } from '@repo/i18n';
  */
 export function mapApiError(message: string, t: (key: TranslationKey) => string): string {
     if (message.includes('MISSING_MEDIA')) {
-        return t('social.posts.detail.actions.approveMissingMedia' as TranslationKey);
+        return t('social.posts.detail.actions.approveMissingMedia');
     }
     if (message.includes('INVALID_STATE')) {
-        return t('social.posts.detail.actions.approveInvalidState' as TranslationKey);
+        return t('social.posts.detail.actions.approveInvalidState');
     }
     return message;
 }

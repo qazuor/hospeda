@@ -8,7 +8,7 @@
  */
 
 import { useTranslations } from '@/hooks/use-translations';
-import type { TranslationKey } from '@repo/i18n';
+
 import type { SocialDashboardFailureItem } from '@repo/schemas';
 import { Link } from '@tanstack/react-router';
 
@@ -35,13 +35,13 @@ export function RecentFailures({ items }: RecentFailuresProps) {
                 data-testid="recent-failures-section"
             >
                 <h2 className="font-semibold text-lg">
-                    {t('social.dashboard.recentFailures.title' as TranslationKey)}
+                    {t('social.dashboard.recentFailures.title')}
                 </h2>
                 <p
                     className="text-muted-foreground text-sm"
                     data-testid="recent-failures-empty"
                 >
-                    {t('social.dashboard.recentFailures.empty' as TranslationKey)}
+                    {t('social.dashboard.recentFailures.empty')}
                 </p>
             </section>
         );
@@ -52,9 +52,7 @@ export function RecentFailures({ items }: RecentFailuresProps) {
             className="space-y-3"
             data-testid="recent-failures-section"
         >
-            <h2 className="font-semibold text-lg">
-                {t('social.dashboard.recentFailures.title' as TranslationKey)}
-            </h2>
+            <h2 className="font-semibold text-lg">{t('social.dashboard.recentFailures.title')}</h2>
 
             <ul className="space-y-2">
                 {items.map((item) => (
@@ -70,7 +68,7 @@ export function RecentFailures({ items }: RecentFailuresProps) {
                                 </span>
                                 <span className="text-muted-foreground text-xs">
                                     {tPlural(
-                                        'social.dashboard.recentFailures.retries' as TranslationKey,
+                                        'social.dashboard.recentFailures.retries',
                                         item.retryCount,
                                         { count: item.retryCount }
                                     )}
@@ -97,7 +95,7 @@ export function RecentFailures({ items }: RecentFailuresProps) {
                             className="shrink-0 rounded-md border border-red-300 bg-white px-2.5 py-1 text-red-700 text-xs hover:bg-red-50"
                             data-testid={`failure-view-post-${item.targetId}`}
                         >
-                            {t('social.dashboard.recentFailures.viewPost' as TranslationKey)}
+                            {t('social.dashboard.recentFailures.viewPost')}
                         </Link>
                     </li>
                 ))}

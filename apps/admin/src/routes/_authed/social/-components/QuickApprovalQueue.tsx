@@ -12,7 +12,7 @@ import { useApproveSocialPost } from '@/hooks/use-social-posts';
 import { socialPostQueryKeys } from '@/hooks/use-social-posts';
 import { useTranslations } from '@/hooks/use-translations';
 import { SocialPostPlatformIcons } from '@/routes/_authed/social/posts/-components/SocialPostPlatformIcons';
-import type { TranslationKey } from '@repo/i18n';
+
 import type { SocialDashboardQueueItem, SocialDashboardResponse } from '@repo/schemas';
 import { useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
@@ -71,13 +71,13 @@ export function QuickApprovalQueue({ items }: QuickApprovalQueueProps) {
                 data-testid="approval-queue-section"
             >
                 <h2 className="font-semibold text-lg">
-                    {t('social.dashboard.approvalQueue.title' as TranslationKey)}
+                    {t('social.dashboard.approvalQueue.title')}
                 </h2>
                 <p
                     className="text-muted-foreground text-sm"
                     data-testid="approval-queue-empty"
                 >
-                    {t('social.dashboard.approvalQueue.empty' as TranslationKey)}
+                    {t('social.dashboard.approvalQueue.empty')}
                 </p>
             </section>
         );
@@ -90,7 +90,7 @@ export function QuickApprovalQueue({ items }: QuickApprovalQueueProps) {
         >
             <div className="flex items-center justify-between">
                 <h2 className="font-semibold text-lg">
-                    {t('social.dashboard.approvalQueue.title' as TranslationKey)}
+                    {t('social.dashboard.approvalQueue.title')}
                 </h2>
                 <Link
                     to="/social/posts"
@@ -98,7 +98,7 @@ export function QuickApprovalQueue({ items }: QuickApprovalQueueProps) {
                     className="text-primary text-sm hover:underline"
                     data-testid="approval-queue-view-all"
                 >
-                    {t('social.dashboard.approvalQueue.viewAll' as TranslationKey)}
+                    {t('social.dashboard.approvalQueue.viewAll')}
                 </Link>
             </div>
 
@@ -185,8 +185,8 @@ function QueueItem({ item, isApproving, onApprove }: QueueItemProps) {
                 data-testid={`queue-approve-btn-${item.id}`}
             >
                 {isApproving
-                    ? t('social.dashboard.approvalQueue.approving' as TranslationKey)
-                    : t('social.dashboard.approvalQueue.approve' as TranslationKey)}
+                    ? t('social.dashboard.approvalQueue.approving')
+                    : t('social.dashboard.approvalQueue.approve')}
             </Button>
         </li>
     );

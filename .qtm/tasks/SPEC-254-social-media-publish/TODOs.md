@@ -1,6 +1,6 @@
 # SPEC-254: Social Automation Backend
 
-## Progress: 44/52 tasks (85%) — T-041 admin social dashboard done (/admin/social: 5 KPI cards, quick-approval queue w/ optimistic remove, recent failures, missing-webhook alert; 7 files all <500L; 12/12 tests). NOTE for owner: apps/admin/src/hooks/use-social-posts.ts is 546L (46 over the 500 limit, cohesive social-post hooks) — optional split deferred. T-040 post-detail done (/admin/social/posts/$id: 5 tabs Content/Media/Targets/Logs/Audit, sticky action bar w/ 8 status-gated transitions, promote-hashtag modal, ARIA live regions; split into 10 files all <500L; 14/14 tests; removed broken /edit link). T-039 post-list done. social-publish-dispatch CRON (T-049) done: advisory lock 43032, missing-key guard, dryRun, sequential dispatch loop. **PUBLISHING CHAIN COMPLETE (T-044→049). ENTIRE SPEC-254 BACKEND DONE.** Remaining = admin UI (T-039-042, tanstack-start-engineer) + T-038 integration test (needs worktree DB up). Owner Coolify: set 4 HOSPEDA_* keys on staging+prod before phase-4 deploy
+## Progress: 45/52 tasks (87%) — T-042 i18n posts/dashboard done (regenerated TranslationKey types +213 social keys, removed 143 `as TranslationKey` casts, added approveAriaLabel w/ {title} interpolation; admin+i18n typecheck clean, 3 social test files green). POSTS UI TRACK COMPLETE (T-039-042). T-041 dashboard done (/admin/social: 5 KPI cards, quick-approval queue w/ optimistic remove, recent failures, missing-webhook alert; 7 files all <500L; 12/12 tests). NOTE for owner: apps/admin/src/hooks/use-social-posts.ts is 546L (46 over the 500 limit, cohesive social-post hooks) — optional split deferred. T-040 post-detail done (/admin/social/posts/$id: 5 tabs Content/Media/Targets/Logs/Audit, sticky action bar w/ 8 status-gated transitions, promote-hashtag modal, ARIA live regions; split into 10 files all <500L; 14/14 tests; removed broken /edit link). T-039 post-list done. social-publish-dispatch CRON (T-049) done: advisory lock 43032, missing-key guard, dryRun, sequential dispatch loop. **PUBLISHING CHAIN COMPLETE (T-044→049). ENTIRE SPEC-254 BACKEND DONE.** Remaining = admin UI (T-039-042, tanstack-start-engineer) + T-038 integration test (needs worktree DB up). Owner Coolify: set 4 HOSPEDA_* keys on staging+prod before phase-4 deploy
 
 **Average Complexity:** 2.3/3 (max)
 **Critical Path:** T-001 -> T-002 -> T-004 -> T-005 -> T-006 -> T-007 -> T-008 -> T-009 -> T-010 -> T-011 -> T-013 -> T-014 -> T-016 -> T-017 -> T-018 -> T-019 -> T-027 -> T-028 -> T-029 -> T-032 -> T-033 -> T-034 -> T-035 -> T-036 -> T-037 -> T-044 -> T-045 -> T-046 -> T-047 -> T-048 -> T-049 -> T-050 -> T-051 -> T-052 (34 steps)
@@ -228,7 +228,7 @@
   - Blocked by: T-040
   - Blocks: T-042
 
-- [ ] **T-042** (complexity: 1) - Add i18n translation keys for Phase 3 admin UI (posts, dashboard)
+- [x] **T-042** (complexity: 1) - Add i18n translation keys for Phase 3 admin UI (posts, dashboard)
   - Spanish locale keys; aria-labels with post title interpolation.
   - Blocked by: T-041
   - Blocks: T-043 (not a hard block — can proceed in parallel with Phase 4 if needed)

@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { useSocialPostsList } from '@/hooks/use-social-posts';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import type { TranslationKey } from '@repo/i18n';
+
 import { PermissionEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
 import { useState } from 'react';
@@ -77,18 +77,12 @@ function SocialPostsPage() {
             <div className="space-y-6 p-6">
                 {/* Header */}
                 <div className="flex items-center justify-between">
-                    <h1 className="font-bold text-2xl">
-                        {t('social.posts.title' as TranslationKey)}
-                    </h1>
+                    <h1 className="font-bold text-2xl">{t('social.posts.title')}</h1>
                     {pagination && (
                         <span className="text-muted-foreground text-sm">
-                            {tPlural(
-                                'social.posts.list.results' as TranslationKey,
-                                pagination.total,
-                                {
-                                    count: pagination.total
-                                }
-                            )}
+                            {tPlural('social.posts.list.results', pagination.total, {
+                                count: pagination.total
+                            })}
                         </span>
                     )}
                 </div>
@@ -121,7 +115,7 @@ function SocialPostsPage() {
                         role="alert"
                         data-testid="posts-error"
                     >
-                        {t('social.posts.list.error' as TranslationKey)}
+                        {t('social.posts.list.error')}
                     </p>
                 )}
 
@@ -133,15 +127,15 @@ function SocialPostsPage() {
                     >
                         <p>
                             {isFiltered
-                                ? t('social.posts.list.emptyFiltered' as TranslationKey)
-                                : t('social.posts.list.empty' as TranslationKey)}
+                                ? t('social.posts.list.emptyFiltered')
+                                : t('social.posts.list.empty')}
                         </p>
                         {isFiltered && (
                             <Button
                                 variant="outline"
                                 onClick={handleClearFilters}
                             >
-                                {t('social.posts.list.clearFilters' as TranslationKey)}
+                                {t('social.posts.list.clearFilters')}
                             </Button>
                         )}
                     </div>
@@ -154,7 +148,7 @@ function SocialPostsPage() {
                 {pagination && pagination.totalPages > 1 && (
                     <div className="flex items-center justify-between text-sm">
                         <span className="text-muted-foreground">
-                            {t('social.posts.list.pagination' as TranslationKey, {
+                            {t('social.posts.list.pagination', {
                                 page: pagination.page,
                                 totalPages: pagination.totalPages,
                                 total: pagination.total
@@ -167,7 +161,7 @@ function SocialPostsPage() {
                                 disabled={pagination.page <= 1}
                                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                             >
-                                {t('social.posts.list.prevPage' as TranslationKey)}
+                                {t('social.posts.list.prevPage')}
                             </Button>
                             <Button
                                 variant="outline"
@@ -175,7 +169,7 @@ function SocialPostsPage() {
                                 disabled={pagination.page >= pagination.totalPages}
                                 onClick={() => setPage((p) => p + 1)}
                             >
-                                {t('social.posts.list.nextPage' as TranslationKey)}
+                                {t('social.posts.list.nextPage')}
                             </Button>
                         </div>
                     </div>

@@ -5,7 +5,6 @@
  */
 
 import { useTranslations } from '@/hooks/use-translations';
-import type { TranslationKey } from '@repo/i18n';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -33,7 +32,7 @@ export function SocialPostLogsTab({ logs }: SocialPostLogsTabProps) {
                 className="text-muted-foreground text-sm"
                 data-testid="logs-empty"
             >
-                {t('social.posts.detail.logs.empty' as TranslationKey)}
+                {t('social.posts.detail.logs.empty')}
             </p>
         );
     }

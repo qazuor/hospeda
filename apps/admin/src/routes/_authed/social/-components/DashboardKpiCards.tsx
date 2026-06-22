@@ -27,31 +27,31 @@ interface KpiCardItem {
 const KPI_CARDS: readonly KpiCardItem[] = [
     {
         key: 'totalPosts',
-        labelKey: 'social.dashboard.kpis.totalPosts' as TranslationKey,
+        labelKey: 'social.dashboard.kpis.totalPosts',
         colorClass: 'text-foreground',
         testId: 'kpi-totalPosts'
     },
     {
         key: 'pendingReview',
-        labelKey: 'social.dashboard.kpis.pendingReview' as TranslationKey,
+        labelKey: 'social.dashboard.kpis.pendingReview',
         colorClass: 'text-yellow-600',
         testId: 'kpi-pendingReview'
     },
     {
         key: 'scheduled',
-        labelKey: 'social.dashboard.kpis.scheduled' as TranslationKey,
+        labelKey: 'social.dashboard.kpis.scheduled',
         colorClass: 'text-indigo-600',
         testId: 'kpi-scheduled'
     },
     {
         key: 'publishedLast30Days',
-        labelKey: 'social.dashboard.kpis.publishedLast30Days' as TranslationKey,
+        labelKey: 'social.dashboard.kpis.publishedLast30Days',
         colorClass: 'text-green-600',
         testId: 'kpi-publishedLast30Days'
     },
     {
         key: 'failedActionNeeded',
-        labelKey: 'social.dashboard.kpis.failedActionNeeded' as TranslationKey,
+        labelKey: 'social.dashboard.kpis.failedActionNeeded',
         colorClass: 'text-red-600',
         testId: 'kpi-failedActionNeeded'
     }

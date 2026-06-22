@@ -7,7 +7,6 @@
 
 import { Button } from '@/components/ui/button';
 import { useTranslations } from '@/hooks/use-translations';
-import type { TranslationKey } from '@repo/i18n';
 
 // ---------------------------------------------------------------------------
 // Section helper (used only within this tab)
@@ -64,42 +63,39 @@ export function SocialPostContentTab({ post, canPromote, onPromote }: SocialPost
 
     return (
         <div className="space-y-6">
-            <Section label={t('social.posts.detail.content.caption' as TranslationKey)}>
+            <Section label={t('social.posts.detail.content.caption')}>
                 <p className="whitespace-pre-wrap text-sm">{post.captionBase}</p>
             </Section>
 
-            <Section label={t('social.posts.detail.content.finalCaption' as TranslationKey)}>
+            <Section label={t('social.posts.detail.content.finalCaption')}>
                 <p className="whitespace-pre-wrap text-sm">
-                    {post.finalCaption ??
-                        t('social.posts.detail.content.finalCaptionEmpty' as TranslationKey)}
+                    {post.finalCaption ?? t('social.posts.detail.content.finalCaptionEmpty')}
                 </p>
             </Section>
 
-            <Section label={t('social.posts.detail.content.finalHashtags' as TranslationKey)}>
+            <Section label={t('social.posts.detail.content.finalHashtags')}>
                 <p className="text-sm">
-                    {post.finalHashtagsText ??
-                        t('social.posts.detail.content.finalHashtagsEmpty' as TranslationKey)}
+                    {post.finalHashtagsText ?? t('social.posts.detail.content.finalHashtagsEmpty')}
                 </p>
             </Section>
 
-            <Section label={t('social.posts.detail.content.notes' as TranslationKey)}>
+            <Section label={t('social.posts.detail.content.notes')}>
                 <p className="whitespace-pre-wrap text-sm">
-                    {post.notes ?? t('social.posts.detail.content.notesEmpty' as TranslationKey)}
+                    {post.notes ?? t('social.posts.detail.content.notesEmpty')}
                 </p>
             </Section>
 
-            <Section label={t('social.posts.detail.content.internalNotes' as TranslationKey)}>
+            <Section label={t('social.posts.detail.content.internalNotes')}>
                 <p className="whitespace-pre-wrap text-sm">
-                    {post.internalNotes ??
-                        t('social.posts.detail.content.internalNotesEmpty' as TranslationKey)}
+                    {post.internalNotes ?? t('social.posts.detail.content.internalNotesEmpty')}
                 </p>
             </Section>
 
             {/* GPT hashtag suggestions */}
-            <Section label={t('social.posts.detail.content.gptHashtags' as TranslationKey)}>
+            <Section label={t('social.posts.detail.content.gptHashtags')}>
                 {!post.gptHashtagPayloadJson || post.gptHashtagPayloadJson.length === 0 ? (
                     <p className="text-muted-foreground text-sm">
-                        {t('social.posts.detail.content.gptHashtagsEmpty' as TranslationKey)}
+                        {t('social.posts.detail.content.gptHashtagsEmpty')}
                     </p>
                 ) : (
                     <ul className="flex flex-wrap gap-2">
@@ -119,9 +115,7 @@ export function SocialPostContentTab({ post, canPromote, onPromote }: SocialPost
                                         onClick={() => onPromote(tag)}
                                         data-testid={`promote-btn-${tag}`}
                                     >
-                                        {t(
-                                            'social.posts.detail.content.promoteButton' as TranslationKey
-                                        )}
+                                        {t('social.posts.detail.content.promoteButton')}
                                     </Button>
                                 )}
                             </li>

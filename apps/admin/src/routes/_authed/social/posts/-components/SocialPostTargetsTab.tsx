@@ -6,7 +6,7 @@
  */
 
 import { useTranslations } from '@/hooks/use-translations';
-import type { TranslationKey } from '@repo/i18n';
+
 import { SocialPostStatusBadge } from './SocialPostStatusBadge';
 
 // ---------------------------------------------------------------------------
@@ -35,7 +35,7 @@ export function SocialPostTargetsTab({ targets }: SocialPostTargetsTabProps) {
                 className="text-muted-foreground text-sm"
                 data-testid="targets-empty"
             >
-                {t('social.posts.detail.targets.empty' as TranslationKey)}
+                {t('social.posts.detail.targets.empty')}
             </p>
         );
     }
@@ -58,39 +58,25 @@ export function SocialPostTargetsTab({ targets }: SocialPostTargetsTabProps) {
                     >
                         <div className="flex flex-wrap items-center gap-4">
                             <span>
-                                <strong>
-                                    {t('social.posts.detail.targets.platform' as TranslationKey)}:
-                                </strong>{' '}
+                                <strong>{t('social.posts.detail.targets.platform')}:</strong>{' '}
                                 {String(tgt.platform)}
                             </span>
                             <span>
-                                <strong>
-                                    {t('social.posts.detail.targets.format' as TranslationKey)}:
-                                </strong>{' '}
+                                <strong>{t('social.posts.detail.targets.format')}:</strong>{' '}
                                 {String(tgt.publishFormat)}
                             </span>
                             <SocialPostStatusBadge status={String(tgt.status)} />
                             <span>
-                                <strong>
-                                    {t('social.posts.detail.targets.scheduledAt' as TranslationKey)}
-                                    :
-                                </strong>{' '}
+                                <strong>{t('social.posts.detail.targets.scheduledAt')}:</strong>{' '}
                                 {scheduledAt
                                     ? new Date(scheduledAt as string).toLocaleString()
-                                    : t(
-                                          'social.posts.detail.targets.noScheduled' as TranslationKey
-                                      )}
+                                    : t('social.posts.detail.targets.noScheduled')}
                             </span>
                             <span>
-                                <strong>
-                                    {t('social.posts.detail.targets.publishedAt' as TranslationKey)}
-                                    :
-                                </strong>{' '}
+                                <strong>{t('social.posts.detail.targets.publishedAt')}:</strong>{' '}
                                 {publishedAt
                                     ? new Date(publishedAt as string).toLocaleString()
-                                    : t(
-                                          'social.posts.detail.targets.noPublished' as TranslationKey
-                                      )}
+                                    : t('social.posts.detail.targets.noPublished')}
                             </span>
                             {externalUrl && (
                                 <a
@@ -99,15 +85,13 @@ export function SocialPostTargetsTab({ targets }: SocialPostTargetsTabProps) {
                                     rel="noreferrer"
                                     className="text-primary underline"
                                 >
-                                    {t('social.posts.detail.targets.externalUrl' as TranslationKey)}
+                                    {t('social.posts.detail.targets.externalUrl')}
                                 </a>
                             )}
                         </div>
                         {lastError && (
                             <p className="mt-1 text-destructive text-xs">
-                                <strong>
-                                    {t('social.posts.detail.targets.lastError' as TranslationKey)}:
-                                </strong>{' '}
+                                <strong>{t('social.posts.detail.targets.lastError')}:</strong>{' '}
                                 {lastError}
                             </p>
                         )}

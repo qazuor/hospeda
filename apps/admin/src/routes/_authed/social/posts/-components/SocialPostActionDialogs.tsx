@@ -20,7 +20,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useTranslations } from '@/hooks/use-translations';
-import type { TranslationKey } from '@repo/i18n';
 
 // ---------------------------------------------------------------------------
 // Reject dialog
@@ -57,21 +56,17 @@ export function RejectDialog({
         >
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>
-                        {t('social.posts.detail.actions.reject' as TranslationKey)}
-                    </DialogTitle>
+                    <DialogTitle>{t('social.posts.detail.actions.reject')}</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-2">
                     <Label htmlFor="reject-reason">
-                        {t('social.posts.detail.actions.rejectReason' as TranslationKey)}
+                        {t('social.posts.detail.actions.rejectReason')}
                     </Label>
                     <Textarea
                         id="reject-reason"
                         value={reason}
                         onChange={(e) => onReasonChange(e.target.value)}
-                        placeholder={t(
-                            'social.posts.detail.actions.rejectReasonPlaceholder' as TranslationKey
-                        )}
+                        placeholder={t('social.posts.detail.actions.rejectReasonPlaceholder')}
                     />
                 </div>
                 <DialogFooter>
@@ -80,7 +75,7 @@ export function RejectDialog({
                         onClick={onClose}
                         disabled={isPending}
                     >
-                        {t('social.posts.detail.actions.confirmCancel' as TranslationKey)}
+                        {t('social.posts.detail.actions.confirmCancel')}
                     </Button>
                     <Button
                         variant="destructive"
@@ -88,8 +83,8 @@ export function RejectDialog({
                         onClick={() => onConfirm(reason.trim())}
                     >
                         {isPending
-                            ? t('social.posts.detail.actions.rejecting' as TranslationKey)
-                            : t('social.posts.detail.actions.reject' as TranslationKey)}
+                            ? t('social.posts.detail.actions.rejecting')
+                            : t('social.posts.detail.actions.reject')}
                     </Button>
                 </DialogFooter>
             </DialogContent>
@@ -132,20 +127,18 @@ export function RequestChangesDialog({
         >
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>
-                        {t('social.posts.detail.actions.requestChanges' as TranslationKey)}
-                    </DialogTitle>
+                    <DialogTitle>{t('social.posts.detail.actions.requestChanges')}</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-2">
                     <Label htmlFor="rc-feedback">
-                        {t('social.posts.detail.actions.requestChangesFeedback' as TranslationKey)}
+                        {t('social.posts.detail.actions.requestChangesFeedback')}
                     </Label>
                     <Textarea
                         id="rc-feedback"
                         value={feedback}
                         onChange={(e) => onFeedbackChange(e.target.value)}
                         placeholder={t(
-                            'social.posts.detail.actions.requestChangesFeedbackPlaceholder' as TranslationKey
+                            'social.posts.detail.actions.requestChangesFeedbackPlaceholder'
                         )}
                     />
                 </div>
@@ -155,15 +148,15 @@ export function RequestChangesDialog({
                         onClick={onClose}
                         disabled={isPending}
                     >
-                        {t('social.posts.detail.actions.confirmCancel' as TranslationKey)}
+                        {t('social.posts.detail.actions.confirmCancel')}
                     </Button>
                     <Button
                         disabled={!feedback.trim() || isPending}
                         onClick={() => onConfirm(feedback.trim())}
                     >
                         {isPending
-                            ? t('social.posts.detail.actions.requestingChanges' as TranslationKey)
-                            : t('social.posts.detail.actions.requestChanges' as TranslationKey)}
+                            ? t('social.posts.detail.actions.requestingChanges')
+                            : t('social.posts.detail.actions.requestChanges')}
                     </Button>
                 </DialogFooter>
             </DialogContent>
@@ -210,14 +203,12 @@ export function ScheduleDialog({
         >
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>
-                        {t('social.posts.detail.actions.schedule' as TranslationKey)}
-                    </DialogTitle>
+                    <DialogTitle>{t('social.posts.detail.actions.schedule')}</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
                     <div className="space-y-1">
                         <Label htmlFor="sched-at">
-                            {t('social.posts.detail.actions.scheduleAt' as TranslationKey)}
+                            {t('social.posts.detail.actions.scheduleAt')}
                         </Label>
                         <Input
                             id="sched-at"
@@ -228,7 +219,7 @@ export function ScheduleDialog({
                     </div>
                     <div className="space-y-1">
                         <Label htmlFor="sched-tz">
-                            {t('social.posts.detail.actions.scheduleTimezone' as TranslationKey)}
+                            {t('social.posts.detail.actions.scheduleTimezone')}
                         </Label>
                         <Input
                             id="sched-tz"
@@ -243,15 +234,15 @@ export function ScheduleDialog({
                         onClick={onClose}
                         disabled={isPending}
                     >
-                        {t('social.posts.detail.actions.confirmCancel' as TranslationKey)}
+                        {t('social.posts.detail.actions.confirmCancel')}
                     </Button>
                     <Button
                         disabled={!scheduleAt || !scheduleTz || isPending}
                         onClick={() => onConfirm(new Date(scheduleAt).toISOString(), scheduleTz)}
                     >
                         {isPending
-                            ? t('social.posts.detail.actions.scheduling' as TranslationKey)
-                            : t('social.posts.detail.actions.schedule' as TranslationKey)}
+                            ? t('social.posts.detail.actions.scheduling')
+                            : t('social.posts.detail.actions.schedule')}
                     </Button>
                 </DialogFooter>
             </DialogContent>

@@ -16,7 +16,7 @@ import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { useSocialDashboard } from '@/hooks/use-social-posts';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import type { TranslationKey } from '@repo/i18n';
+
 import { PermissionEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
 import { DashboardKpiCards } from './-components/DashboardKpiCards';
@@ -45,9 +45,7 @@ function SocialDashboardPage() {
                 data-testid="social-dashboard"
             >
                 {/* Header */}
-                <h1 className="font-bold text-2xl">
-                    {t('social.dashboard.title' as TranslationKey)}
-                </h1>
+                <h1 className="font-bold text-2xl">{t('social.dashboard.title')}</h1>
 
                 {/* Error state */}
                 {error && (
@@ -56,7 +54,7 @@ function SocialDashboardPage() {
                         role="alert"
                         data-testid="dashboard-error"
                     >
-                        {t('social.dashboard.error' as TranslationKey)}
+                        {t('social.dashboard.error')}
                     </p>
                 )}
 

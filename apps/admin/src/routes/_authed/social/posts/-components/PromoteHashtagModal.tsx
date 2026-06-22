@@ -17,7 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { usePromoteHashtag } from '@/hooks/use-social-posts';
 import { useTranslations } from '@/hooks/use-translations';
-import type { TranslationKey } from '@repo/i18n';
+
 import { useForm } from '@tanstack/react-form';
 import { useCallback, useState } from 'react';
 
@@ -63,10 +63,10 @@ export function PromoteHashtagModal({ postId, hashtag, open, onClose }: PromoteH
             });
             setFeedback(
                 result.isNew
-                    ? t('social.posts.detail.promoteHashtag.successNew' as TranslationKey, {
+                    ? t('social.posts.detail.promoteHashtag.successNew', {
                           hashtag: result.hashtag
                       })
-                    : t('social.posts.detail.promoteHashtag.successExisting' as TranslationKey, {
+                    : t('social.posts.detail.promoteHashtag.successExisting', {
                           hashtag: result.hashtag
                       })
             );
@@ -91,9 +91,7 @@ export function PromoteHashtagModal({ postId, hashtag, open, onClose }: PromoteH
         >
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>
-                        {t('social.posts.detail.promoteHashtag.title' as TranslationKey)}
-                    </DialogTitle>
+                    <DialogTitle>{t('social.posts.detail.promoteHashtag.title')}</DialogTitle>
                 </DialogHeader>
 
                 <form
@@ -107,9 +105,7 @@ export function PromoteHashtagModal({ postId, hashtag, open, onClose }: PromoteH
                         {(field) => (
                             <div className="space-y-1">
                                 <Label htmlFor="ph-hashtag">
-                                    {t(
-                                        'social.posts.detail.promoteHashtag.hashtagLabel' as TranslationKey
-                                    )}
+                                    {t('social.posts.detail.promoteHashtag.hashtagLabel')}
                                 </Label>
                                 <Input
                                     id="ph-hashtag"
@@ -125,16 +121,14 @@ export function PromoteHashtagModal({ postId, hashtag, open, onClose }: PromoteH
                         {(field) => (
                             <div className="space-y-1">
                                 <Label htmlFor="ph-category">
-                                    {t(
-                                        'social.posts.detail.promoteHashtag.categoryLabel' as TranslationKey
-                                    )}
+                                    {t('social.posts.detail.promoteHashtag.categoryLabel')}
                                 </Label>
                                 <Input
                                     id="ph-category"
                                     value={field.state.value}
                                     onChange={(e) => field.handleChange(e.target.value)}
                                     placeholder={t(
-                                        'social.posts.detail.promoteHashtag.categoryPlaceholder' as TranslationKey
+                                        'social.posts.detail.promoteHashtag.categoryPlaceholder'
                                     )}
                                     required
                                 />
@@ -146,16 +140,14 @@ export function PromoteHashtagModal({ postId, hashtag, open, onClose }: PromoteH
                         {(field) => (
                             <div className="space-y-1">
                                 <Label htmlFor="ph-platform">
-                                    {t(
-                                        'social.posts.detail.promoteHashtag.platformLabel' as TranslationKey
-                                    )}
+                                    {t('social.posts.detail.promoteHashtag.platformLabel')}
                                 </Label>
                                 <Input
                                     id="ph-platform"
                                     value={field.state.value}
                                     onChange={(e) => field.handleChange(e.target.value)}
                                     placeholder={t(
-                                        'social.posts.detail.promoteHashtag.platformAll' as TranslationKey
+                                        'social.posts.detail.promoteHashtag.platformAll'
                                     )}
                                 />
                             </div>
@@ -166,9 +158,7 @@ export function PromoteHashtagModal({ postId, hashtag, open, onClose }: PromoteH
                         {(field) => (
                             <div className="space-y-1">
                                 <Label htmlFor="ph-priority">
-                                    {t(
-                                        'social.posts.detail.promoteHashtag.priorityLabel' as TranslationKey
-                                    )}
+                                    {t('social.posts.detail.promoteHashtag.priorityLabel')}
                                 </Label>
                                 <Input
                                     id="ph-priority"
@@ -187,17 +177,15 @@ export function PromoteHashtagModal({ postId, hashtag, open, onClose }: PromoteH
                             onClick={handleClose}
                             disabled={promote.isPending}
                         >
-                            {t('social.posts.detail.promoteHashtag.cancel' as TranslationKey)}
+                            {t('social.posts.detail.promoteHashtag.cancel')}
                         </Button>
                         <Button
                             type="submit"
                             disabled={promote.isPending}
                         >
                             {promote.isPending
-                                ? t(
-                                      'social.posts.detail.promoteHashtag.submitting' as TranslationKey
-                                  )
-                                : t('social.posts.detail.promoteHashtag.submit' as TranslationKey)}
+                                ? t('social.posts.detail.promoteHashtag.submitting')
+                                : t('social.posts.detail.promoteHashtag.submit')}
                         </Button>
                     </DialogFooter>
                 </form>

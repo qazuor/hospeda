@@ -7,7 +7,7 @@
 
 import { useTranslations } from '@/hooks/use-translations';
 import { fetchApi } from '@/lib/api/client';
-import type { TranslationKey } from '@repo/i18n';
+
 import { useQuery } from '@tanstack/react-query';
 
 // ---------------------------------------------------------------------------
@@ -90,7 +90,7 @@ export function SocialPostAuditTab({ postId }: SocialPostAuditTabProps) {
                 className="text-destructive text-sm"
                 role="alert"
             >
-                {t('social.posts.detail.loadingError' as TranslationKey)}
+                {t('social.posts.detail.loadingError')}
             </p>
         );
     }
@@ -101,7 +101,7 @@ export function SocialPostAuditTab({ postId }: SocialPostAuditTabProps) {
                 className="text-muted-foreground text-sm"
                 data-testid="audit-empty"
             >
-                {t('social.posts.detail.audit.empty' as TranslationKey)}
+                {t('social.posts.detail.audit.empty')}
             </p>
         );
     }
@@ -121,7 +121,7 @@ export function SocialPostAuditTab({ postId }: SocialPostAuditTabProps) {
                         <span className="text-muted-foreground">
                             {entry.actorId
                                 ? String(entry.actorId)
-                                : t('social.posts.detail.audit.systemActor' as TranslationKey)}
+                                : t('social.posts.detail.audit.systemActor')}
                         </span>
                         <span className="text-muted-foreground">
                             {new Date(entry.createdAt as string).toLocaleString()}

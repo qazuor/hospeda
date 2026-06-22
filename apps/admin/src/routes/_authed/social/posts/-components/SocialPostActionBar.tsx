@@ -138,17 +138,18 @@ export function SocialPostActionBar({
     const [scheduleTz, setScheduleTz] = useState('America/Argentina/Buenos_Aires');
 
     const withFeedback = useCallback(
-        async (action: () => Promise<unknown>, successKey: string, errorKey: string) => {
+        async (
+            action: () => Promise<unknown>,
+            successKey: TranslationKey,
+            errorKey: TranslationKey
+        ) => {
             setActionMsg('');
             setActionError('');
             try {
                 await action();
-                setActionMsg(t(successKey as TranslationKey));
+                setActionMsg(t(successKey));
             } catch (err) {
-                const msg =
-                    err instanceof Error
-                        ? mapApiError(err.message, t)
-                        : t(errorKey as TranslationKey);
+                const msg = err instanceof Error ? mapApiError(err.message, t) : t(errorKey);
                 setActionError(msg);
             }
         },
@@ -195,12 +196,14 @@ export function SocialPostActionBar({
                             )
                         }
                         disabled={anyMutationPending}
-                        aria-label={`${t('social.posts.detail.actions.approve' as TranslationKey)}: ${postTitle}`}
+                        aria-label={t('social.posts.detail.actions.approveAriaLabel', {
+                            title: postTitle
+                        })}
                         data-testid="action-approve"
                     >
                         {approve.isPending
-                            ? t('social.posts.detail.actions.approving' as TranslationKey)
-                            : t('social.posts.detail.actions.approve' as TranslationKey)}
+                            ? t('social.posts.detail.actions.approving')
+                            : t('social.posts.detail.actions.approve')}
                     </Button>
                 )}
 
@@ -213,7 +216,7 @@ export function SocialPostActionBar({
                         disabled={anyMutationPending}
                         data-testid="action-reject"
                     >
-                        {t('social.posts.detail.actions.reject' as TranslationKey)}
+                        {t('social.posts.detail.actions.reject')}
                     </Button>
                 )}
 
@@ -226,7 +229,7 @@ export function SocialPostActionBar({
                         disabled={anyMutationPending}
                         data-testid="action-request-changes"
                     >
-                        {t('social.posts.detail.actions.requestChanges' as TranslationKey)}
+                        {t('social.posts.detail.actions.requestChanges')}
                     </Button>
                 )}
 
@@ -239,7 +242,7 @@ export function SocialPostActionBar({
                         disabled={anyMutationPending}
                         data-testid="action-schedule"
                     >
-                        {t('social.posts.detail.actions.schedule' as TranslationKey)}
+                        {t('social.posts.detail.actions.schedule')}
                     </Button>
                 )}
 
@@ -259,8 +262,8 @@ export function SocialPostActionBar({
                         data-testid="action-mark-ready"
                     >
                         {markReady.isPending
-                            ? t('social.posts.detail.actions.markingReady' as TranslationKey)
-                            : t('social.posts.detail.actions.markReady' as TranslationKey)}
+                            ? t('social.posts.detail.actions.markingReady')
+                            : t('social.posts.detail.actions.markReady')}
                     </Button>
                 )}
 
@@ -280,8 +283,8 @@ export function SocialPostActionBar({
                         data-testid="action-pause"
                     >
                         {pause.isPending
-                            ? t('social.posts.detail.actions.pausing' as TranslationKey)
-                            : t('social.posts.detail.actions.pause' as TranslationKey)}
+                            ? t('social.posts.detail.actions.pausing')
+                            : t('social.posts.detail.actions.pause')}
                     </Button>
                 )}
 
@@ -301,8 +304,8 @@ export function SocialPostActionBar({
                         data-testid="action-unpause"
                     >
                         {unpause.isPending
-                            ? t('social.posts.detail.actions.unpausing' as TranslationKey)
-                            : t('social.posts.detail.actions.unpause' as TranslationKey)}
+                            ? t('social.posts.detail.actions.unpausing')
+                            : t('social.posts.detail.actions.unpause')}
                     </Button>
                 )}
 
@@ -322,8 +325,8 @@ export function SocialPostActionBar({
                         data-testid="action-archive"
                     >
                         {archive.isPending
-                            ? t('social.posts.detail.actions.archiving' as TranslationKey)
-                            : t('social.posts.detail.actions.archive' as TranslationKey)}
+                            ? t('social.posts.detail.actions.archiving')
+                            : t('social.posts.detail.actions.archive')}
                     </Button>
                 )}
             </div>

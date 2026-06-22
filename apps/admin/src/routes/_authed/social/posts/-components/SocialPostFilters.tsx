@@ -41,13 +41,13 @@ export function SocialPostFilters({ value, onChange }: SocialPostFiltersProps) {
                     htmlFor="filter-search"
                     className="text-muted-foreground text-xs"
                 >
-                    {t('social.posts.filters.search' as TranslationKey)}
+                    {t('social.posts.filters.search')}
                 </label>
                 <input
                     id="filter-search"
                     type="search"
                     className="rounded-md border bg-background px-3 py-1.5 text-sm"
-                    placeholder={t('social.posts.filters.searchPlaceholder' as TranslationKey)}
+                    placeholder={t('social.posts.filters.searchPlaceholder')}
                     value={value.search}
                     onChange={(e) => onChange({ ...value, search: e.target.value })}
                 />
@@ -59,7 +59,7 @@ export function SocialPostFilters({ value, onChange }: SocialPostFiltersProps) {
                     htmlFor="filter-status"
                     className="text-muted-foreground text-xs"
                 >
-                    {t('social.posts.filters.status' as TranslationKey)}
+                    {t('social.posts.filters.status')}
                 </label>
                 <select
                     id="filter-status"
@@ -67,7 +67,7 @@ export function SocialPostFilters({ value, onChange }: SocialPostFiltersProps) {
                     value={value.status}
                     onChange={(e) => onChange({ ...value, status: e.target.value })}
                 >
-                    <option value="">{t('social.posts.filters.all' as TranslationKey)}</option>
+                    <option value="">{t('social.posts.filters.all')}</option>
                     {Object.values(SocialPostStatusEnum).map((s) => (
                         <option
                             key={s}
@@ -85,7 +85,7 @@ export function SocialPostFilters({ value, onChange }: SocialPostFiltersProps) {
                     htmlFor="filter-approval-status"
                     className="text-muted-foreground text-xs"
                 >
-                    {t('social.posts.filters.approvalStatus' as TranslationKey)}
+                    {t('social.posts.filters.approvalStatus')}
                 </label>
                 <select
                     id="filter-approval-status"
@@ -93,7 +93,7 @@ export function SocialPostFilters({ value, onChange }: SocialPostFiltersProps) {
                     value={value.approvalStatus}
                     onChange={(e) => onChange({ ...value, approvalStatus: e.target.value })}
                 >
-                    <option value="">{t('social.posts.filters.all' as TranslationKey)}</option>
+                    <option value="">{t('social.posts.filters.all')}</option>
                     {Object.values(SocialApprovalStatusEnum).map((s) => (
                         <option
                             key={s}
@@ -111,7 +111,7 @@ export function SocialPostFilters({ value, onChange }: SocialPostFiltersProps) {
                     htmlFor="filter-platform"
                     className="text-muted-foreground text-xs"
                 >
-                    {t('social.posts.filters.platform' as TranslationKey)}
+                    {t('social.posts.filters.platform')}
                 </label>
                 <select
                     id="filter-platform"
@@ -119,7 +119,7 @@ export function SocialPostFilters({ value, onChange }: SocialPostFiltersProps) {
                     value={value.platform}
                     onChange={(e) => onChange({ ...value, platform: e.target.value })}
                 >
-                    <option value="">{t('social.posts.filters.all' as TranslationKey)}</option>
+                    <option value="">{t('social.posts.filters.all')}</option>
                     {Object.values(SocialPlatformEnum).map((p) => (
                         <option
                             key={p}

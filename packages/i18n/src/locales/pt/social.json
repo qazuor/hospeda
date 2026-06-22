@@ -215,6 +215,7 @@
                 "archiving": "Arquivando...",
                 "archiveSuccess": "Post arquivado",
                 "archiveError": "Erro ao arquivar",
+                "approveAriaLabel": "Aprovar a publicação {title}",
                 "confirmTitle": "Confirmar ação",
                 "confirmCancel": "Cancelar",
                 "confirmAction": "Confirmar"

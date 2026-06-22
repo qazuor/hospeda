@@ -27,7 +27,7 @@ import { useDeleteSocialPost, useSocialPostDetail } from '@/hooks/use-social-pos
 import { useTranslations } from '@/hooks/use-translations';
 import { useHasPermission } from '@/hooks/use-user-permissions';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-import type { TranslationKey } from '@repo/i18n';
+
 import { PermissionEnum } from '@repo/schemas';
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
@@ -108,13 +108,13 @@ function SocialPostDetailPage() {
                 data-testid="post-detail-error"
             >
                 <p className="font-semibold text-destructive">
-                    {t('social.posts.detail.loadingError' as TranslationKey)}
+                    {t('social.posts.detail.loadingError')}
                 </p>
                 <Link
                     to="/social/posts"
                     className="mt-4 inline-block text-primary text-sm underline"
                 >
-                    {t('social.posts.detail.backToList' as TranslationKey)}
+                    {t('social.posts.detail.backToList')}
                 </Link>
             </div>
         );
@@ -126,17 +126,15 @@ function SocialPostDetailPage() {
                 className="p-6 text-center"
                 data-testid="post-detail-not-found"
             >
-                <p className="font-semibold text-lg">
-                    {t('social.posts.detail.notFound' as TranslationKey)}
-                </p>
+                <p className="font-semibold text-lg">{t('social.posts.detail.notFound')}</p>
                 <p className="mt-1 text-muted-foreground text-sm">
-                    {t('social.posts.detail.notFoundDesc' as TranslationKey)}
+                    {t('social.posts.detail.notFoundDesc')}
                 </p>
                 <Link
                     to="/social/posts"
                     className="mt-4 inline-block text-primary text-sm underline"
                 >
-                    {t('social.posts.detail.backToList' as TranslationKey)}
+                    {t('social.posts.detail.backToList')}
                 </Link>
             </div>
         );
@@ -162,7 +160,7 @@ function SocialPostDetailPage() {
                             <SocialPostApprovalBadge approvalStatus={post.approvalStatus} />
                             {paused && (
                                 <span className="rounded-md bg-gray-100 px-2 py-0.5 font-medium text-gray-600 text-xs">
-                                    {t('social.posts.detail.paused' as TranslationKey)}
+                                    {t('social.posts.detail.paused')}
                                 </span>
                             )}
                         </div>
@@ -176,7 +174,7 @@ function SocialPostDetailPage() {
                                     disabled={deleteMutation.isPending}
                                     data-testid="delete-btn"
                                 >
-                                    {t('social.posts.detail.delete.label' as TranslationKey)}
+                                    {t('social.posts.detail.delete.label')}
                                 </Button>
                             )}
                         </div>
@@ -185,7 +183,7 @@ function SocialPostDetailPage() {
                         to="/social/posts"
                         className="text-muted-foreground text-sm hover:text-primary"
                     >
-                        {t('social.posts.detail.backToList' as TranslationKey)}
+                        {t('social.posts.detail.backToList')}
                     </Link>
                 </div>
 
@@ -200,31 +198,31 @@ function SocialPostDetailPage() {
                                 value="content"
                                 data-testid="tab-content"
                             >
-                                {t('social.posts.detail.tabs.content' as TranslationKey)}
+                                {t('social.posts.detail.tabs.content')}
                             </TabsTrigger>
                             <TabsTrigger
                                 value="media"
                                 data-testid="tab-media"
                             >
-                                {t('social.posts.detail.tabs.media' as TranslationKey)}
+                                {t('social.posts.detail.tabs.media')}
                             </TabsTrigger>
                             <TabsTrigger
                                 value="targets"
                                 data-testid="tab-targets"
                             >
-                                {t('social.posts.detail.tabs.targets' as TranslationKey)}
+                                {t('social.posts.detail.tabs.targets')}
                             </TabsTrigger>
                             <TabsTrigger
                                 value="logs"
                                 data-testid="tab-logs"
                             >
-                                {t('social.posts.detail.tabs.logs' as TranslationKey)}
+                                {t('social.posts.detail.tabs.logs')}
                             </TabsTrigger>
                             <TabsTrigger
                                 value="audit"
                                 data-testid="tab-audit"
                             >
-                                {t('social.posts.detail.tabs.audit' as TranslationKey)}
+                                {t('social.posts.detail.tabs.audit')}
                             </TabsTrigger>
                         </TabsList>
 
@@ -282,10 +280,10 @@ function SocialPostDetailPage() {
                     <AlertDialogContent>
                         <AlertDialogHeader>
                             <AlertDialogTitle>
-                                {t('social.posts.detail.delete.confirmTitle' as TranslationKey)}
+                                {t('social.posts.detail.delete.confirmTitle')}
                             </AlertDialogTitle>
                             <AlertDialogDescription>
-                                {t('social.posts.detail.delete.confirmDesc' as TranslationKey)}
+                                {t('social.posts.detail.delete.confirmDesc')}
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
@@ -293,7 +291,7 @@ function SocialPostDetailPage() {
                                 onClick={() => setShowDeleteDialog(false)}
                                 disabled={deleteMutation.isPending}
                             >
-                                {t('social.posts.detail.delete.cancel' as TranslationKey)}
+                                {t('social.posts.detail.delete.cancel')}
                             </AlertDialogCancel>
                             <AlertDialogAction
                                 onClick={handleDeleteConfirm}
@@ -302,8 +300,8 @@ function SocialPostDetailPage() {
                                 data-testid="delete-confirm-btn"
                             >
                                 {deleteMutation.isPending
-                                    ? t('social.posts.detail.delete.deleting' as TranslationKey)
-                                    : t('social.posts.detail.delete.confirm' as TranslationKey)}
+                                    ? t('social.posts.detail.delete.deleting')
+                                    : t('social.posts.detail.delete.confirm')}
                             </AlertDialogAction>
                         </AlertDialogFooter>
                     </AlertDialogContent>

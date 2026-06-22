@@ -5,7 +5,6 @@
  */
 
 import { useTranslations } from '@/hooks/use-translations';
-import type { TranslationKey } from '@repo/i18n';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -33,7 +32,7 @@ export function SocialPostMediaTab({ media }: SocialPostMediaTabProps) {
                 className="text-muted-foreground text-sm"
                 data-testid="media-empty"
             >
-                {t('social.posts.detail.media.empty' as TranslationKey)}
+                {t('social.posts.detail.media.empty')}
             </p>
         );
     }
@@ -54,18 +53,18 @@ export function SocialPostMediaTab({ media }: SocialPostMediaTabProps) {
                         {cloudinaryUrl ? (
                             <img
                                 src={cloudinaryUrl}
-                                alt={t('social.posts.detail.media.position' as TranslationKey, {
+                                alt={t('social.posts.detail.media.position', {
                                     pos
                                 })}
                                 className="aspect-square w-full rounded-md border object-cover"
                             />
                         ) : (
                             <div className="flex aspect-square w-full items-center justify-center rounded-md border bg-muted text-muted-foreground text-xs">
-                                {t('social.posts.detail.media.pendingUpload' as TranslationKey)}
+                                {t('social.posts.detail.media.pendingUpload')}
                             </div>
                         )}
                         <p className="text-center text-muted-foreground text-xs">
-                            {t('social.posts.detail.media.position' as TranslationKey, { pos })}
+                            {t('social.posts.detail.media.position', { pos })}
                         </p>
                     </div>
                 );

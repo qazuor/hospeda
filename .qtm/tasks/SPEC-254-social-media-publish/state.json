@@ -1515,7 +1515,7 @@
             "id": "T-042",
             "title": "Add i18n translation keys for Phase 3 admin UI (posts, dashboard)",
             "description": "Add all i18n string keys needed by post list, post detail, and dashboard pages to `packages/i18n/src/locales/es/`:\n- Column headers for post list\n- Status/approval badge labels\n- Action button labels with post title (e.g., `social.posts.actions.approve.aria`: 'Aprobar post: {{title}}')\n- Confirmation dialog texts for each action\n- Tab labels for post detail\n- Dashboard KPI labels\n- Empty states: 'No social posts yet...', 'No posts pending review.', 'No publish history yet.', 'No audit events recorded.'\n- Error/warning messages\n- Quick approval queue labels\n- Failures table column headers\n- System alert text for missing Make webhook\n\nTest requirements:\n- No dedicated test; verified by TypeScript checking and visual review",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-041"],
             "blocks": ["T-043"],
@@ -1532,14 +1532,14 @@
             "tags": ["i18n", "admin-ui"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
             }
         },
         {

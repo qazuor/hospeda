@@ -14,7 +14,7 @@ import { PermissionGate } from '@/components/auth/PermissionGate';
 import { Button } from '@/components/ui/button';
 import { useApproveSocialPost } from '@/hooks/use-social-posts';
 import { useTranslations } from '@/hooks/use-translations';
-import type { TranslationKey } from '@repo/i18n';
+
 import { PermissionEnum } from '@repo/schemas';
 import type { SocialPostListItem } from '@repo/service-core';
 import { SocialPostApprovalBadge } from './SocialPostApprovalBadge';
@@ -58,27 +58,27 @@ export function SocialPostsTable({ items }: SocialPostsTableProps) {
         <div className="overflow-x-auto rounded-lg border bg-card">
             <table
                 className="w-full text-sm"
-                aria-label={t('social.posts.table.ariaLabel' as TranslationKey)}
+                aria-label={t('social.posts.table.ariaLabel')}
             >
                 <thead className="bg-muted/50 text-left">
                     <tr>
                         <th className="px-4 py-3 font-medium">
-                            {t('social.posts.table.colTitle' as TranslationKey)}
+                            {t('social.posts.table.colTitle')}
                         </th>
                         <th className="px-4 py-3 font-medium">
-                            {t('social.posts.table.colStatus' as TranslationKey)}
+                            {t('social.posts.table.colStatus')}
                         </th>
                         <th className="px-4 py-3 font-medium">
-                            {t('social.posts.table.colApprovalStatus' as TranslationKey)}
+                            {t('social.posts.table.colApprovalStatus')}
                         </th>
                         <th className="px-4 py-3 font-medium">
-                            {t('social.posts.table.colPlatforms' as TranslationKey)}
+                            {t('social.posts.table.colPlatforms')}
                         </th>
                         <th className="px-4 py-3 font-medium">
-                            {t('social.posts.table.colScheduledAt' as TranslationKey)}
+                            {t('social.posts.table.colScheduledAt')}
                         </th>
                         <th className="px-4 py-3 font-medium">
-                            {t('social.posts.table.colActions' as TranslationKey)}
+                            {t('social.posts.table.colActions')}
                         </th>
                     </tr>
                 </thead>
@@ -113,7 +113,7 @@ export function SocialPostsTable({ items }: SocialPostsTableProps) {
                             <td className="whitespace-nowrap px-4 py-3 text-muted-foreground">
                                 {post.scheduledAt
                                     ? formatDate(post.scheduledAt)
-                                    : t('social.posts.table.noScheduled' as TranslationKey)}
+                                    : t('social.posts.table.noScheduled')}
                             </td>
 
                             {/* Actions — approve button gated by permission */}
@@ -131,8 +131,8 @@ export function SocialPostsTable({ items }: SocialPostsTableProps) {
                                     >
                                         {approveMutation.isPending &&
                                         approveMutation.variables === post.id
-                                            ? t('social.posts.actions.approving' as TranslationKey)
-                                            : t('social.posts.actions.approve' as TranslationKey)}
+                                            ? t('social.posts.actions.approving')
+                                            : t('social.posts.actions.approve')}
                                     </Button>
                                 </PermissionGate>
                             </td>

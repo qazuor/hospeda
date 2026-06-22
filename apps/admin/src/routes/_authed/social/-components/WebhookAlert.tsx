@@ -8,7 +8,6 @@
  */
 
 import { useTranslations } from '@/hooks/use-translations';
-import type { TranslationKey } from '@repo/i18n';
 
 /**
  * Warning banner indicating the Make webhook URL is missing.
@@ -25,17 +24,17 @@ export function WebhookAlert() {
         >
             <div className="flex-1 space-y-1">
                 <p className="font-semibold text-destructive text-sm">
-                    {t('social.dashboard.webhookAlert.title' as TranslationKey)}
+                    {t('social.dashboard.webhookAlert.title')}
                 </p>
                 <p className="text-muted-foreground text-sm">
-                    {t('social.dashboard.webhookAlert.description' as TranslationKey)}
+                    {t('social.dashboard.webhookAlert.description')}
                 </p>
             </div>
             <span
                 className="shrink-0 rounded-md bg-destructive px-3 py-1.5 font-medium text-destructive-foreground text-xs"
                 data-testid="webhook-alert-configure-link"
             >
-                {t('social.dashboard.webhookAlert.configure' as TranslationKey)}
+                {t('social.dashboard.webhookAlert.configure')}
             </span>
         </div>
     );
