@@ -2328,3 +2328,615 @@ describe('SocialPublishDispatchService.rearmRecurrence — SPEC-254 T-046', () =
         });
     });
 });
+
+// ---------------------------------------------------------------------------
+// Additional imports needed for T-047 tests
+// ---------------------------------------------------------------------------
+
+import { ServiceErrorCode } from '@repo/schemas';
+import { SocialAuditEvent as AuditEvent } from '../../../src/services/social/social-audit-log.service';
+import type {
+    HandleMakeCallbackClaimResult,
+    HandleMakeCallbackResultResult
+} from '../../../src/services/social/social-publish-dispatch.service';
+import { ServiceError } from '../../../src/types';
+
+// ---------------------------------------------------------------------------
+// handleMakeCallbackClaim — SPEC-254 T-047
+// ---------------------------------------------------------------------------
+
+describe('SocialPublishDispatchService.handleMakeCallbackClaim — SPEC-254 T-047', () => {
+    let service: SocialPublishDispatchService;
+    let mocks: Mocks;
+
+    const MAKE_RUN_ID = 'make-run-abc-123';
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        const built = buildService();
+        service = built.service;
+        mocks = built.mocks;
+
+        mocks.targetModel.update.mockResolvedValue({ rowCount: 1 });
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    // -------------------------------------------------------------------------
+    // not found
+    // -------------------------------------------------------------------------
+
+    describe('not found', () => {
+        it('throws NOT_FOUND when targetId does not exist', async () => {
+            // Arrange
+            mocks.targetModel.findOne.mockResolvedValue(null);
+
+            // Act + Assert
+            await expect(
+                service.handleMakeCallbackClaim({ targetId: TARGET_ID, makeRunId: MAKE_RUN_ID })
+            ).rejects.toThrow(ServiceError);
+
+            await expect(
+                service.handleMakeCallbackClaim({ targetId: TARGET_ID, makeRunId: MAKE_RUN_ID })
+            ).rejects.toMatchObject({ code: ServiceErrorCode.NOT_FOUND });
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // already published
+    // -------------------------------------------------------------------------
+
+    describe('already published (409)', () => {
+        it('throws ALREADY_EXISTS with reason ALREADY_PUBLISHED when target is PUBLISHED', async () => {
+            // Arrange
+            mocks.targetModel.findOne.mockResolvedValue(
+                buildTarget({ status: SocialPostStatusEnum.PUBLISHED })
+            );
+
+            // Act + Assert
+            await expect(
+                service.handleMakeCallbackClaim({ targetId: TARGET_ID, makeRunId: MAKE_RUN_ID })
+            ).rejects.toMatchObject({
+                code: ServiceErrorCode.ALREADY_EXISTS,
+                reason: 'ALREADY_PUBLISHED',
+                message: 'Target already published'
+            });
+        });
+
+        it('does NOT update the target when already PUBLISHED', async () => {
+            // Arrange
+            mocks.targetModel.findOne.mockResolvedValue(
+                buildTarget({ status: SocialPostStatusEnum.PUBLISHED })
+            );
+
+            // Act
+            await expect(
+                service.handleMakeCallbackClaim({ targetId: TARGET_ID, makeRunId: MAKE_RUN_ID })
+            ).rejects.toBeInstanceOf(ServiceError);
+
+            // Assert
+            expect(mocks.targetModel.update).not.toHaveBeenCalled();
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // happy path
+    // -------------------------------------------------------------------------
+
+    describe('happy path — target moves to PUBLISHING', () => {
+        it('returns { targetId, status: PUBLISHING } when target is APPROVED', async () => {
+            // Arrange
+            mocks.targetModel.findOne.mockResolvedValue(
+                buildTarget({ status: SocialPostStatusEnum.APPROVED })
+            );
+
+            // Act
+            const result: HandleMakeCallbackClaimResult = await service.handleMakeCallbackClaim({
+                targetId: TARGET_ID,
+                makeRunId: MAKE_RUN_ID
+            });
+
+            // Assert
+            expect(result.targetId).toBe(TARGET_ID);
+            expect(result.status).toBe('PUBLISHING');
+        });
+
+        it('updates target status to PUBLISHING and sets makeLastRunId', async () => {
+            // Arrange
+            mocks.targetModel.findOne.mockResolvedValue(
+                buildTarget({ status: SocialPostStatusEnum.APPROVED })
+            );
+
+            // Act
+            await service.handleMakeCallbackClaim({
+                targetId: TARGET_ID,
+                makeRunId: MAKE_RUN_ID
+            });
+
+            // Assert
+            expect(mocks.targetModel.update).toHaveBeenCalledWith(
+                { id: TARGET_ID },
+                { status: SocialPostStatusEnum.PUBLISHING, makeLastRunId: MAKE_RUN_ID }
+            );
+        });
+
+        it('allows claim when target is in APPROVED state', async () => {
+            // Arrange
+            mocks.targetModel.findOne.mockResolvedValue(
+                buildTarget({ status: SocialPostStatusEnum.APPROVED })
+            );
+
+            // Act + Assert — should not throw
+            await expect(
+                service.handleMakeCallbackClaim({ targetId: TARGET_ID, makeRunId: MAKE_RUN_ID })
+            ).resolves.toMatchObject({ status: 'PUBLISHING' });
+        });
+
+        it('allows claim when target is in PUBLISHING state (re-claim after crash)', async () => {
+            // Arrange
+            mocks.targetModel.findOne.mockResolvedValue(
+                buildTarget({ status: SocialPostStatusEnum.PUBLISHING })
+            );
+
+            // Act + Assert — PUBLISHING is NOT PUBLISHED so no 409
+            await expect(
+                service.handleMakeCallbackClaim({ targetId: TARGET_ID, makeRunId: MAKE_RUN_ID })
+            ).resolves.toMatchObject({ status: 'PUBLISHING' });
+        });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// handleMakeCallbackResult — SPEC-254 T-047
+// ---------------------------------------------------------------------------
+
+describe('SocialPublishDispatchService.handleMakeCallbackResult — SPEC-254 T-047', () => {
+    let service: SocialPublishDispatchService;
+    let mocks: Mocks;
+
+    const MAKE_RUN_ID = 'make-run-xyz-999';
+    const EXTERNAL_POST_ID = 'ig-post-abc123';
+    const EXTERNAL_POST_URL = 'https://instagram.com/p/abc123';
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        const built = buildService();
+        service = built.service;
+        mocks = built.mocks;
+
+        mocks.targetModel.update.mockResolvedValue({ rowCount: 1 });
+        mocks.postModel.update.mockResolvedValue({ rowCount: 1 });
+        mocks.publishLogModel.create.mockResolvedValue({ id: 'log-id' });
+        // Default post for cascadePostStatus reload
+        mocks.postModel.findOne.mockResolvedValue(
+            buildPost({ recurrenceType: SocialRecurrenceTypeEnum.ONCE })
+        );
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    // -------------------------------------------------------------------------
+    // Validation
+    // -------------------------------------------------------------------------
+
+    describe('invalid status → VALIDATION_ERROR', () => {
+        it('throws VALIDATION_ERROR when status is not SUCCESS or FAILED', async () => {
+            // Arrange
+            mocks.targetModel.findOne.mockResolvedValue(
+                buildTarget({ status: SocialPostStatusEnum.PUBLISHING })
+            );
+
+            // Act + Assert
+            await expect(
+                service.handleMakeCallbackResult({
+                    targetId: TARGET_ID,
+                    // @ts-expect-error — intentionally passing invalid value
+                    status: 'UNKNOWN'
+                })
+            ).rejects.toMatchObject({ code: ServiceErrorCode.VALIDATION_ERROR });
+        });
+
+        it('validates status before loading the target (early exit)', async () => {
+            // Arrange — no mock needed since validation fires first
+
+            // Act + Assert
+            await expect(
+                service.handleMakeCallbackResult({
+                    targetId: TARGET_ID,
+                    // @ts-expect-error — intentionally passing invalid value
+                    status: 'RETRYING'
+                })
+            ).rejects.toBeInstanceOf(ServiceError);
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // Not found
+    // -------------------------------------------------------------------------
+
+    describe('not found → NOT_FOUND', () => {
+        it('throws NOT_FOUND when targetId does not exist (SUCCESS path)', async () => {
+            // Arrange
+            mocks.targetModel.findOne.mockResolvedValue(null);
+
+            // Act + Assert
+            await expect(
+                service.handleMakeCallbackResult({
+                    targetId: TARGET_ID,
+                    status: 'SUCCESS'
+                })
+            ).rejects.toMatchObject({ code: ServiceErrorCode.NOT_FOUND });
+        });
+
+        it('throws NOT_FOUND when targetId does not exist (FAILED path)', async () => {
+            // Arrange
+            mocks.targetModel.findOne.mockResolvedValue(null);
+
+            // Act + Assert
+            await expect(
+                service.handleMakeCallbackResult({
+                    targetId: TARGET_ID,
+                    status: 'FAILED'
+                })
+            ).rejects.toMatchObject({ code: ServiceErrorCode.NOT_FOUND });
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // SUCCESS path
+    // -------------------------------------------------------------------------
+
+    describe('SUCCESS path', () => {
+        beforeEach(() => {
+            // Default: one target PUBLISHED (all terminal after this update)
+            mocks.targetModel.findOne.mockResolvedValue(
+                buildTarget({ status: SocialPostStatusEnum.PUBLISHING, retryCount: 0 })
+            );
+            // cascadePostStatus uses targetModel.findAll
+            mocks.targetModel.findAll.mockResolvedValue({
+                items: [buildTarget({ status: SocialPostStatusEnum.PUBLISHED })],
+                total: 1
+            });
+        });
+
+        it('returns { targetId, status: PUBLISHED } on SUCCESS', async () => {
+            // Arrange
+            const result: HandleMakeCallbackResultResult = await service.handleMakeCallbackResult({
+                targetId: TARGET_ID,
+                status: 'SUCCESS',
+                externalPostId: EXTERNAL_POST_ID,
+                externalPostUrl: EXTERNAL_POST_URL,
+                makeRunId: MAKE_RUN_ID
+            });
+
+            // Assert
+            expect(result.targetId).toBe(TARGET_ID);
+            expect(result.status).toBe('PUBLISHED');
+        });
+
+        it('updates target to PUBLISHED with publishedAt and external identifiers', async () => {
+            // Act
+            await service.handleMakeCallbackResult({
+                targetId: TARGET_ID,
+                status: 'SUCCESS',
+                externalPostId: EXTERNAL_POST_ID,
+                externalPostUrl: EXTERNAL_POST_URL,
+                makeRunId: MAKE_RUN_ID
+            });
+
+            // Assert
+            expect(mocks.targetModel.update).toHaveBeenCalledWith(
+                { id: TARGET_ID },
+                expect.objectContaining({
+                    status: SocialPostStatusEnum.PUBLISHED,
+                    publishedAt: expect.any(Date),
+                    externalPostId: EXTERNAL_POST_ID,
+                    externalPostUrl: EXTERNAL_POST_URL,
+                    makeLastRunId: MAKE_RUN_ID
+                })
+            );
+        });
+
+        it('inserts publish_log with status SUCCESS', async () => {
+            // Act
+            await service.handleMakeCallbackResult({
+                targetId: TARGET_ID,
+                status: 'SUCCESS',
+                externalPostId: EXTERNAL_POST_ID,
+                externalPostUrl: EXTERNAL_POST_URL,
+                makeRunId: MAKE_RUN_ID
+            });
+
+            // Assert
+            expect(mocks.publishLogModel.create).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    status: SocialPublishResultStatusEnum.SUCCESS,
+                    socialPostId: POST_ID,
+                    socialPostTargetId: TARGET_ID,
+                    externalPostId: EXTERNAL_POST_ID,
+                    externalPostUrl: EXTERNAL_POST_URL,
+                    makeRunId: MAKE_RUN_ID,
+                    message: 'Published via Make'
+                })
+            );
+        });
+
+        it('logs audit TARGET_PUBLISHED with correct metadata', async () => {
+            // Act
+            await service.handleMakeCallbackResult({
+                targetId: TARGET_ID,
+                status: 'SUCCESS',
+                externalPostId: EXTERNAL_POST_ID,
+                externalPostUrl: EXTERNAL_POST_URL
+            });
+
+            // Assert
+            expect(mocks.auditLogMock.log).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    eventType: AuditEvent.TARGET_PUBLISHED,
+                    entityType: 'social_post_target',
+                    entityId: TARGET_ID,
+                    metadata: expect.objectContaining({
+                        postId: POST_ID,
+                        externalPostId: EXTERNAL_POST_ID
+                    })
+                })
+            );
+        });
+
+        it('calls cascadePostStatus after TARGET_PUBLISHED', async () => {
+            // Arrange — spy on cascadePostStatus
+            const cascadeSpy = vi.spyOn(service, 'cascadePostStatus');
+            cascadeSpy.mockResolvedValue({ outcome: 'post_published', nextRunAt: null });
+
+            // Act
+            await service.handleMakeCallbackResult({
+                targetId: TARGET_ID,
+                status: 'SUCCESS'
+            });
+
+            // Assert
+            expect(cascadeSpy).toHaveBeenCalledWith({ postId: POST_ID });
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // FAILED path — retry branch (newRetryCount < MAX_RETRY_COUNT)
+    // -------------------------------------------------------------------------
+
+    describe('FAILED path — retry (newRetryCount < 3 after increment)', () => {
+        beforeEach(() => {
+            // Target with retryCount=1 → after increment newRetryCount=2 < 3 → retry
+            mocks.targetModel.findOne.mockResolvedValue(
+                buildTarget({ status: SocialPostStatusEnum.PUBLISHING, retryCount: 1 })
+            );
+        });
+
+        it('returns { status: APPROVED } when newRetryCount < MAX_RETRY_COUNT', async () => {
+            // Act
+            const result: HandleMakeCallbackResultResult = await service.handleMakeCallbackResult({
+                targetId: TARGET_ID,
+                status: 'FAILED',
+                errorMessage: 'Platform rate limit'
+            });
+
+            // Assert
+            expect(result.status).toBe('APPROVED');
+            expect(result.targetId).toBe(TARGET_ID);
+        });
+
+        it('resets target status to APPROVED with incremented retryCount', async () => {
+            // Act
+            await service.handleMakeCallbackResult({
+                targetId: TARGET_ID,
+                status: 'FAILED',
+                errorMessage: 'Platform rate limit'
+            });
+
+            // Assert
+            expect(mocks.targetModel.update).toHaveBeenCalledWith(
+                { id: TARGET_ID },
+                expect.objectContaining({
+                    status: SocialPostStatusEnum.APPROVED,
+                    retryCount: 2,
+                    lastErrorMessage: 'Platform rate limit'
+                })
+            );
+        });
+
+        it('inserts publish_log with status FAILED on retry', async () => {
+            // Act
+            await service.handleMakeCallbackResult({
+                targetId: TARGET_ID,
+                status: 'FAILED',
+                errorMessage: 'Platform rate limit'
+            });
+
+            // Assert
+            expect(mocks.publishLogModel.create).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    status: SocialPublishResultStatusEnum.FAILED,
+                    socialPostId: POST_ID,
+                    socialPostTargetId: TARGET_ID,
+                    message: 'Platform rate limit'
+                })
+            );
+        });
+
+        it('logs audit TARGET_PUBLISH_FAILED on retry', async () => {
+            // Act
+            await service.handleMakeCallbackResult({
+                targetId: TARGET_ID,
+                status: 'FAILED',
+                errorMessage: 'Platform rate limit'
+            });
+
+            // Assert
+            expect(mocks.auditLogMock.log).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    eventType: AuditEvent.TARGET_PUBLISH_FAILED,
+                    entityType: 'social_post_target',
+                    entityId: TARGET_ID
+                })
+            );
+        });
+
+        it('does NOT call cascadePostStatus on retry (target is non-terminal)', async () => {
+            // Arrange
+            const cascadeSpy = vi.spyOn(service, 'cascadePostStatus');
+            cascadeSpy.mockResolvedValue({ outcome: 'not_all_terminal' });
+
+            // Act
+            await service.handleMakeCallbackResult({
+                targetId: TARGET_ID,
+                status: 'FAILED',
+                errorMessage: 'Platform rate limit'
+            });
+
+            // Assert
+            expect(cascadeSpy).not.toHaveBeenCalled();
+        });
+
+        it('also retries when retryCount=0 (first failure: newRetryCount=1 < 3)', async () => {
+            // Arrange — retryCount=0 → newRetryCount=1
+            mocks.targetModel.findOne.mockResolvedValue(
+                buildTarget({ status: SocialPostStatusEnum.PUBLISHING, retryCount: 0 })
+            );
+
+            // Act
+            const result = await service.handleMakeCallbackResult({
+                targetId: TARGET_ID,
+                status: 'FAILED'
+            });
+
+            // Assert
+            expect(result.status).toBe('APPROVED');
+            expect(mocks.targetModel.update).toHaveBeenCalledWith(
+                { id: TARGET_ID },
+                expect.objectContaining({ status: SocialPostStatusEnum.APPROVED, retryCount: 1 })
+            );
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // FAILED path — exhaustion (newRetryCount >= MAX_RETRY_COUNT)
+    // -------------------------------------------------------------------------
+
+    describe('FAILED path — exhaustion (newRetryCount >= 3)', () => {
+        beforeEach(() => {
+            // retryCount=2 → after increment newRetryCount=3 >= 3 → exhaustion
+            mocks.targetModel.findOne.mockResolvedValue(
+                buildTarget({ status: SocialPostStatusEnum.PUBLISHING, retryCount: 2 })
+            );
+            // All siblings terminal so cascade finalizes post
+            mocks.targetModel.findAll.mockResolvedValue({
+                items: [buildTarget({ status: SocialPostStatusEnum.FAILED })],
+                total: 1
+            });
+        });
+
+        it('returns { status: FAILED } when newRetryCount reaches MAX_RETRY_COUNT', async () => {
+            // Act
+            const result: HandleMakeCallbackResultResult = await service.handleMakeCallbackResult({
+                targetId: TARGET_ID,
+                status: 'FAILED',
+                errorMessage: 'Permanent platform error'
+            });
+
+            // Assert
+            expect(result.status).toBe('FAILED');
+        });
+
+        it('sets target to FAILED with incremented retryCount (=3)', async () => {
+            // Act
+            await service.handleMakeCallbackResult({
+                targetId: TARGET_ID,
+                status: 'FAILED',
+                errorMessage: 'Permanent platform error'
+            });
+
+            // Assert
+            expect(mocks.targetModel.update).toHaveBeenCalledWith(
+                { id: TARGET_ID },
+                expect.objectContaining({
+                    status: SocialPostStatusEnum.FAILED,
+                    retryCount: 3,
+                    lastErrorMessage: 'Permanent platform error'
+                })
+            );
+        });
+
+        it('inserts publish_log FAILED on exhaustion', async () => {
+            // Act
+            await service.handleMakeCallbackResult({
+                targetId: TARGET_ID,
+                status: 'FAILED',
+                errorMessage: 'Permanent platform error'
+            });
+
+            // Assert
+            expect(mocks.publishLogModel.create).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    status: SocialPublishResultStatusEnum.FAILED,
+                    socialPostId: POST_ID,
+                    socialPostTargetId: TARGET_ID
+                })
+            );
+        });
+
+        it('logs audit TARGET_PUBLISH_FAILED on exhaustion', async () => {
+            // Act
+            await service.handleMakeCallbackResult({
+                targetId: TARGET_ID,
+                status: 'FAILED',
+                errorMessage: 'Permanent platform error'
+            });
+
+            // Assert
+            expect(mocks.auditLogMock.log).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    eventType: AuditEvent.TARGET_PUBLISH_FAILED,
+                    entityType: 'social_post_target',
+                    entityId: TARGET_ID,
+                    metadata: expect.objectContaining({ retryCount: 3 })
+                })
+            );
+        });
+
+        it('calls cascadePostStatus on exhaustion (target is terminal)', async () => {
+            // Arrange
+            const cascadeSpy = vi.spyOn(service, 'cascadePostStatus');
+            cascadeSpy.mockResolvedValue({ outcome: 'post_failed' });
+
+            // Act
+            await service.handleMakeCallbackResult({
+                targetId: TARGET_ID,
+                status: 'FAILED',
+                errorMessage: 'Permanent platform error'
+            });
+
+            // Assert
+            expect(cascadeSpy).toHaveBeenCalledWith({ postId: POST_ID });
+        });
+
+        it('boundary: retryCount=1 → newRetryCount=2 is still retry (not exhaustion)', async () => {
+            // Arrange
+            mocks.targetModel.findOne.mockResolvedValue(
+                buildTarget({ status: SocialPostStatusEnum.PUBLISHING, retryCount: 1 })
+            );
+
+            // Act
+            const result = await service.handleMakeCallbackResult({
+                targetId: TARGET_ID,
+                status: 'FAILED'
+            });
+
+            // Assert — still retrying (newRetryCount=2 < 3)
+            expect(result.status).toBe('APPROVED');
+        });
+    });
+});

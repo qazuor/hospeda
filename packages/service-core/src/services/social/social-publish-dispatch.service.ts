@@ -18,19 +18,25 @@
  *  - `dispatchTarget`       — executes the actual Make.com HTTP push with
  *    optimistic lock, retry logic, and exhaustion cascade (US-11).
  *
- *  - `cascadePostStatus`    — evaluates all targets of a post and, when every
+ *  - `cascadePostStatus`          — evaluates all targets of a post and, when every
  *    target is terminal (PUBLISHED or FAILED), updates the post-level status
  *    and triggers recurrence rearm (US-13 / T-046).
  *
- *  - `rearmRecurrence`      — recomputes `next_run_at` for the next publish
+ *  - `rearmRecurrence`            — recomputes `next_run_at` for the next publish
  *    cycle and performs the clean-slate target reset for recurring posts
  *    (US-14 / T-046).
+ *
+ *  - `handleMakeCallbackClaim`    — processes the Make.com claim callback: marks
+ *    a target as PUBLISHING and records the run ID (US-12 / T-047).
+ *
+ *  - `handleMakeCallbackResult`   — processes the Make.com result callback: marks
+ *    a target PUBLISHED or handles FAILED with retry/exhaustion logic (US-13 / T-047).
  *
  * This service does NOT extend BaseCrudService.
  * It has NO actor / permission gate — it is always called from cron/system
  * context, never directly from a user-facing API route.
  *
- * @see SPEC-254 T-044 / T-045 / T-046 / US-11 / US-13 / US-14
+ * @see SPEC-254 T-044 / T-045 / T-046 / T-047 / US-11 / US-12 / US-13 / US-14
  */
 
 import type {
@@ -55,11 +61,13 @@ import {
 } from '@repo/db';
 import type { SocialMakePayload } from '@repo/schemas';
 import {
+    ServiceErrorCode,
     SocialPostStatusEnum,
     SocialPublishResultStatusEnum,
     SocialRecurrenceTypeEnum
 } from '@repo/schemas';
 import type { ServiceConfig } from '../../types';
+import { ServiceError } from '../../types';
 import { serviceLogger } from '../../utils/service-logger';
 import { SocialAuditLogService } from './social-audit-log.service';
 import { SocialAuditEvent } from './social-audit-log.service';
@@ -256,6 +264,74 @@ export interface RearmRecurrenceResult {
 }
 
 // ---------------------------------------------------------------------------
+// handleMakeCallbackClaim types (T-047)
+// ---------------------------------------------------------------------------
+
+/**
+ * Input for {@link SocialPublishDispatchService.handleMakeCallbackClaim}.
+ */
+export interface HandleMakeCallbackClaimInput {
+    /** The social_post_target ID being claimed by Make.com. */
+    readonly targetId: string;
+    /** The Make.com scenario run ID for correlation. */
+    readonly makeRunId: string;
+}
+
+/**
+ * Return value of {@link SocialPublishDispatchService.handleMakeCallbackClaim}.
+ */
+export interface HandleMakeCallbackClaimResult {
+    /** The target ID (echoed back). */
+    readonly targetId: string;
+    /** The new target status — always 'PUBLISHING' on success. */
+    readonly status: 'PUBLISHING';
+}
+
+// ---------------------------------------------------------------------------
+// handleMakeCallbackResult types (T-047)
+// ---------------------------------------------------------------------------
+
+/**
+ * Make-reported result status from the result callback.
+ * Only SUCCESS and FAILED are accepted inbound values.
+ */
+export type MakeCallbackResultStatus = 'SUCCESS' | 'FAILED';
+
+/**
+ * Input for {@link SocialPublishDispatchService.handleMakeCallbackResult}.
+ */
+export interface HandleMakeCallbackResultInput {
+    /** The social_post_target ID the result applies to. */
+    readonly targetId: string;
+    /**
+     * Make-reported outcome.  Must be exactly 'SUCCESS' or 'FAILED'.
+     * Any other value is rejected with VALIDATION_ERROR.
+     */
+    readonly status: MakeCallbackResultStatus;
+    /** External post ID on the social platform (SUCCESS path). */
+    readonly externalPostId?: string;
+    /** Public URL of the published post (SUCCESS path). */
+    readonly externalPostUrl?: string;
+    /** Make.com run ID for traceability (optional). */
+    readonly makeRunId?: string;
+    /** Human-readable error description (FAILED path). */
+    readonly errorMessage?: string;
+}
+
+/**
+ * Return value of {@link SocialPublishDispatchService.handleMakeCallbackResult}.
+ */
+export interface HandleMakeCallbackResultResult {
+    /** The target ID (echoed back). */
+    readonly targetId: string;
+    /**
+     * Final target status after processing the callback.
+     * 'PUBLISHED' on success; 'APPROVED' when retrying; 'FAILED' when exhausted.
+     */
+    readonly status: 'PUBLISHED' | 'APPROVED' | 'FAILED';
+}
+
+// ---------------------------------------------------------------------------
 // Eligibility constants
 // ---------------------------------------------------------------------------
 
@@ -336,10 +412,10 @@ const MAKE_WEBHOOK_URL_KEY = 'make_webhook_url';
  *   next publish cycle for recurring posts (T-046 / US-14).
  *
  * ## What this service does NOT do
- * - No Make result callbacks (T-047 handles those).
+ * - No auth gate for Make callbacks (handled at the route layer in T-048).
  * - No permission gate (cron / system context; no actor).
  *
- * SPEC-254 T-044 / T-045 / T-046.
+ * SPEC-254 T-044 / T-045 / T-046 / T-047.
  */
 export class SocialPublishDispatchService {
     private readonly postModel: SocialPostModelType;
@@ -1089,6 +1165,321 @@ export class SocialPublishDispatchService {
         );
 
         return { nextRunAt, rearmed: true };
+    }
+
+    // ---------------------------------------------------------------------------
+    // Make.com callback API (T-047)
+    // ---------------------------------------------------------------------------
+
+    /**
+     * Processes the Make.com **claim** callback: transitions the target to
+     * `PUBLISHING` and records the Make run ID.
+     *
+     * ## Auth note
+     * The `x-hospeda-make-key` header authentication is handled at the ROUTE layer
+     * (T-048) — this method performs pure business logic with no auth check.
+     *
+     * ## make_payload_json note
+     * The spec says `make_payload_json` "is updated" on claim. The payload is
+     * already persisted by `dispatchTarget` at dispatch time (step 3). We do NOT
+     * overwrite it here because the claim callback carries no new payload data.
+     * If Make.com sends payload fields on claim in the future, they should be
+     * merged at this point.
+     *
+     * @param input - `{ targetId, makeRunId }` from the inbound claim body.
+     * @returns `{ targetId, status: 'PUBLISHING' }` on success.
+     *
+     * @throws {ServiceError} `NOT_FOUND` when `targetId` does not exist.
+     * @throws {ServiceError} `ALREADY_EXISTS` (reason: 'ALREADY_PUBLISHED') when
+     *   the target is already in `PUBLISHED` state — maps to HTTP 409 at the route layer.
+     *
+     * @example
+     * ```ts
+     * const result = await service.handleMakeCallbackClaim({
+     *   targetId: 'abc-123',
+     *   makeRunId: 'run-xyz'
+     * });
+     * // result.status === 'PUBLISHING'
+     * ```
+     */
+    public async handleMakeCallbackClaim(
+        input: HandleMakeCallbackClaimInput
+    ): Promise<HandleMakeCallbackClaimResult> {
+        const { targetId, makeRunId } = input;
+
+        // -------------------------------------------------------------------------
+        // Load the target; 404 if not found
+        // -------------------------------------------------------------------------
+        const target = await this.targetModel.findOne({ id: targetId });
+        if (!target) {
+            throw new ServiceError(
+                ServiceErrorCode.NOT_FOUND,
+                `social_post_target not found: ${targetId}`
+            );
+        }
+
+        // -------------------------------------------------------------------------
+        // Already PUBLISHED guard — 409 idempotency check
+        // Using ALREADY_EXISTS (the ServiceErrorCode that maps to HTTP 409) with
+        // reason 'ALREADY_PUBLISHED' for machine-readable discrimination at route layer.
+        // -------------------------------------------------------------------------
+        if ((target.status as string) === SocialPostStatusEnum.PUBLISHED) {
+            throw new ServiceError(
+                ServiceErrorCode.ALREADY_EXISTS,
+                'Target already published',
+                undefined,
+                'ALREADY_PUBLISHED'
+            );
+        }
+
+        // -------------------------------------------------------------------------
+        // Transition to PUBLISHING and record the Make run ID.
+        // make_payload_json is already set by dispatchTarget — left unchanged (see JSDoc).
+        // -------------------------------------------------------------------------
+        await this.targetModel.update(
+            { id: targetId },
+            {
+                status: SocialPostStatusEnum.PUBLISHING,
+                makeLastRunId: makeRunId
+            }
+        );
+
+        serviceLogger.info(
+            { targetId, makeRunId },
+            'SocialPublishDispatchService.handleMakeCallbackClaim: target claimed by Make'
+        );
+
+        return { targetId, status: 'PUBLISHING' };
+    }
+
+    /**
+     * Processes the Make.com **result** callback: marks the target as PUBLISHED
+     * or handles FAILED with retry / exhaustion logic, then cascades post-level status.
+     *
+     * ## Auth note
+     * The `x-hospeda-make-key` header authentication is handled at the ROUTE layer
+     * (T-048) — this method performs pure business logic with no auth check.
+     *
+     * ## Retry-increment loop-safety
+     * On a FAILED callback, `retryCount` is INCREMENTED FIRST, then compared against
+     * `MAX_RETRY_COUNT`.  This prevents the cron ↔ callback retry loop from running
+     * forever:
+     *
+     *  - Without pre-increment: cron dispatches → Make fails → callback resets status
+     *    to APPROVED without moving retryCount → cron re-dispatches → repeat.
+     *  - With pre-increment (this implementation): each callback failure costs one
+     *    retry credit; at most 3 callback failures (newRetryCount reaching 3) before
+     *    the target is permanently marked FAILED.
+     *
+     * Combined retry budget across dispatch and callback:
+     *  - `dispatchTarget` increments retryCount when dispatch HTTP POST fails.
+     *  - `handleMakeCallbackResult` increments retryCount when Make reports FAILED.
+     *  - Both paths check `>= MAX_RETRY_COUNT` AFTER incrementing.
+     *  - Since `dispatchTarget` exhausts (sets FAILED) when `retryCount >= 3` at
+     *    dispatch time, a target that has already burned 3 dispatch retries never
+     *    reaches this callback.  A successfully dispatched target (retryCount = 0 or
+     *    1 after prior dispatch retries) gets up to 3 callback retries.  The combined
+     *    maximum is 3 dispatch + 3 callback = 6, but the two paths are mutually
+     *    exclusive per target (dispatch exhaustion prevents callback from running).
+     *    In the common case (successful dispatch on first try), the target gets at
+     *    most 3 total attempts via the callback path alone.
+     *
+     * @param input - Result payload from Make.com.
+     * @returns `{ targetId, status }` — 'PUBLISHED', 'APPROVED', or 'FAILED'.
+     *
+     * @throws {ServiceError} `NOT_FOUND` when `targetId` does not exist.
+     * @throws {ServiceError} `VALIDATION_ERROR` when `status` is not 'SUCCESS' or 'FAILED'.
+     *
+     * @example
+     * ```ts
+     * const result = await service.handleMakeCallbackResult({
+     *   targetId: 'abc-123',
+     *   status: 'SUCCESS',
+     *   externalPostId: 'ig-post-456',
+     *   externalPostUrl: 'https://instagram.com/p/abc',
+     *   makeRunId: 'run-xyz'
+     * });
+     * // result.status === 'PUBLISHED'
+     * ```
+     */
+    public async handleMakeCallbackResult(
+        input: HandleMakeCallbackResultInput
+    ): Promise<HandleMakeCallbackResultResult> {
+        const { targetId, status, externalPostId, externalPostUrl, makeRunId, errorMessage } =
+            input;
+
+        // -------------------------------------------------------------------------
+        // Validate the inbound status — only SUCCESS or FAILED are accepted
+        // -------------------------------------------------------------------------
+        if (status !== 'SUCCESS' && status !== 'FAILED') {
+            throw new ServiceError(
+                ServiceErrorCode.VALIDATION_ERROR,
+                `Invalid Make callback status: ${status}. Expected 'SUCCESS' or 'FAILED'.`
+            );
+        }
+
+        // -------------------------------------------------------------------------
+        // Load the target; 404 if not found
+        // -------------------------------------------------------------------------
+        const target = await this.targetModel.findOne({ id: targetId });
+        if (!target) {
+            throw new ServiceError(
+                ServiceErrorCode.NOT_FOUND,
+                `social_post_target not found: ${targetId}`
+            );
+        }
+
+        const postId = target.socialPostId as string;
+        const platform = target.platform as string | undefined;
+        const publishFormat = target.publishFormat as string | undefined;
+
+        // -------------------------------------------------------------------------
+        // SUCCESS path
+        // -------------------------------------------------------------------------
+        if (status === 'SUCCESS') {
+            const publishedAt = new Date();
+
+            // Update target to PUBLISHED with all external post identifiers
+            await this.targetModel.update(
+                { id: targetId },
+                {
+                    status: SocialPostStatusEnum.PUBLISHED,
+                    publishedAt,
+                    externalPostId: externalPostId ?? null,
+                    externalPostUrl: externalPostUrl ?? null,
+                    ...(makeRunId !== undefined ? { makeLastRunId: makeRunId } : {})
+                }
+            );
+
+            // Insert publish log: SUCCESS
+            await this.publishLogModel.create({
+                socialPostId: postId,
+                socialPostTargetId: targetId,
+                platform,
+                publishFormat,
+                status: SocialPublishResultStatusEnum.SUCCESS,
+                message: 'Published via Make',
+                externalPostId: externalPostId ?? null,
+                externalPostUrl: externalPostUrl ?? null,
+                makeRunId: makeRunId ?? null,
+                responsePayloadJson: null
+            });
+
+            // Audit TARGET_PUBLISHED
+            await this.auditLog.log({
+                eventType: SocialAuditEvent.TARGET_PUBLISHED,
+                entityType: 'social_post_target',
+                entityId: targetId,
+                metadata: {
+                    postId,
+                    externalPostId: externalPostId ?? null
+                }
+            });
+
+            // Cascade post-level status (may finalize post and rearm recurrence)
+            await this.cascadePostStatus({ postId });
+
+            serviceLogger.info(
+                { targetId, postId, externalPostId, externalPostUrl },
+                'SocialPublishDispatchService.handleMakeCallbackResult: target PUBLISHED'
+            );
+
+            return { targetId, status: 'PUBLISHED' };
+        }
+
+        // -------------------------------------------------------------------------
+        // FAILED path
+        //
+        // Retry-increment loop-safety: increment retryCount FIRST, then decide.
+        // See JSDoc on this method for the full rationale.
+        // -------------------------------------------------------------------------
+        const currentRetryCount = (target.retryCount as number | undefined) ?? 0;
+        // Increment first — this is what prevents the infinite cron ↔ callback loop
+        const newRetryCount = currentRetryCount + 1;
+
+        if (newRetryCount < MAX_RETRY_COUNT) {
+            // --- Retry branch: reset target to APPROVED for next cron cycle ---
+            await this.targetModel.update(
+                { id: targetId },
+                {
+                    status: SocialPostStatusEnum.APPROVED,
+                    lastErrorMessage: errorMessage ?? null,
+                    retryCount: newRetryCount
+                }
+            );
+
+            await this.publishLogModel.create({
+                socialPostId: postId,
+                socialPostTargetId: targetId,
+                platform,
+                publishFormat,
+                status: SocialPublishResultStatusEnum.FAILED,
+                message: errorMessage ?? 'Make reported failure',
+                makeRunId: makeRunId ?? null,
+                responsePayloadJson: null
+            });
+
+            await this.auditLog.log({
+                eventType: SocialAuditEvent.TARGET_PUBLISH_FAILED,
+                entityType: 'social_post_target',
+                entityId: targetId,
+                metadata: {
+                    postId,
+                    retryCount: newRetryCount,
+                    error: errorMessage ?? null
+                }
+            });
+
+            serviceLogger.info(
+                { targetId, postId, newRetryCount, error: errorMessage },
+                'SocialPublishDispatchService.handleMakeCallbackResult: target FAILED; retry scheduled'
+            );
+
+            // NOT terminal — do not cascade post status
+            return { targetId, status: 'APPROVED' };
+        }
+
+        // --- Exhaustion branch: newRetryCount >= MAX_RETRY_COUNT → FAILED terminal ---
+        await this.targetModel.update(
+            { id: targetId },
+            {
+                status: SocialPostStatusEnum.FAILED,
+                lastErrorMessage: errorMessage ?? null,
+                retryCount: newRetryCount
+            }
+        );
+
+        await this.publishLogModel.create({
+            socialPostId: postId,
+            socialPostTargetId: targetId,
+            platform,
+            publishFormat,
+            status: SocialPublishResultStatusEnum.FAILED,
+            message: errorMessage ?? 'Make reported failure; max retries reached',
+            makeRunId: makeRunId ?? null,
+            responsePayloadJson: null
+        });
+
+        await this.auditLog.log({
+            eventType: SocialAuditEvent.TARGET_PUBLISH_FAILED,
+            entityType: 'social_post_target',
+            entityId: targetId,
+            metadata: {
+                postId,
+                retryCount: newRetryCount,
+                error: errorMessage ?? null
+            }
+        });
+
+        // Cascade — this failed target may be the last one; cascade decides post fate
+        await this.cascadePostStatus({ postId });
+
+        serviceLogger.warn(
+            { targetId, postId, newRetryCount, error: errorMessage },
+            'SocialPublishDispatchService.handleMakeCallbackResult: target exhausted — FAILED'
+        );
+
+        return { targetId, status: 'FAILED' };
     }
 
     // ---------------------------------------------------------------------------

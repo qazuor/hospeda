@@ -1,6 +1,6 @@
 # SPEC-254: Social Automation Backend
 
-## Progress: 38/52 tasks (73%) — cascadePostStatus + rearmRecurrence (T-046) done: all-terminal cascade (>=1 PUBLISHED→PUBLISHED+rearm; all FAILED→FAILED+next_run_at null, no rearm per spec §313); recurrence via Intl (no new dep), MONTHLY clamps to last day, clean-slate rearm resets all targets to APPROVED+retry_count=0. Next = T-047 (Make callbacks claim/result)
+## Progress: 39/52 tasks (75%) — Make callback handlers (T-047) done: claim sets PUBLISHING (409 ALREADY_EXISTS+reason ALREADY_PUBLISHED if already published); result SUCCESS→PUBLISHED+log+audit+cascade, FAILED→increment retry (loop-safe) then <3 reset APPROVED / >=3 FAILED+cascade. SocialPublishDispatchService COMPLETE. Next = T-048 (Make callback routes, x-hospeda-make-key inbound)
 
 **Average Complexity:** 2.3/3 (max)
 **Critical Path:** T-001 -> T-002 -> T-004 -> T-005 -> T-006 -> T-007 -> T-008 -> T-009 -> T-010 -> T-011 -> T-013 -> T-014 -> T-016 -> T-017 -> T-018 -> T-019 -> T-027 -> T-028 -> T-029 -> T-032 -> T-033 -> T-034 -> T-035 -> T-036 -> T-037 -> T-044 -> T-045 -> T-046 -> T-047 -> T-048 -> T-049 -> T-050 -> T-051 -> T-052 (34 steps)
@@ -248,7 +248,7 @@
   - Blocked by: T-045
   - Blocks: T-047
 
-- [ ] **T-047** (complexity: 3) - Implement SocialPublishDispatchService — handleMakeCallbackClaim and handleMakeCallbackResult
+- [x] **T-047** (complexity: 3) - Implement SocialPublishDispatchService — handleMakeCallbackClaim and handleMakeCallbackResult
   - Claim sets PUBLISHING; result SUCCESS/FAILED with retry logic and cascade.
   - Blocked by: T-046
   - Blocks: T-048
