@@ -895,7 +895,7 @@
         {
             "specId": "SPEC-228",
             "title": "Web loading-states consistency & coverage",
-            "status": "in-progress",
+            "status": "completed",
             "progress": "22/22",
             "path": "SPEC-228-web-loading-states-consistency",
             "branch": "spec/SPEC-228-web-loading-states-consistency",
@@ -905,8 +905,10 @@
             "tasksAtomizedAt": "2026-06-20T00:00:00.000Z",
             "taskCount": 22,
             "averageComplexity": 2.1,
-            "archived": false,
-            "note": "Canonical web loading toolkit (Spinner/SkeletonCard/LoadingButton + convention doc) then migrate audited sites by priority. 22 tasks, 4 phases. Critical path T-001->T-003->T-010->T-013->T-022. Foundation T-001/T-002 independent; Astro skeleton-swaps (T-007/T-008) need only T-002."
+            "archived": true,
+            "note": "Canonical web loading toolkit (Spinner/SkeletonCard/LoadingButton + convention doc) then migrate audited sites by priority. 22 tasks, 4 phases. Critical path T-001->T-003->T-010->T-013->T-022. Foundation T-001/T-002 independent; Astro skeleton-swaps (T-007/T-008) need only T-002.",
+            "archivedAt": "2026-06-22",
+            "archiveNote": "Merged to staging via PR #1739 (merge commit d17adf9d9). 22/22 tasks: canonical loading toolkit (Spinner/SkeletonCard/LoadingButton) + 15 island migrations + Astro skeleton-swaps + CI guard. Browser smoke + full CI green."
         }
     ],
     "standalone": {
