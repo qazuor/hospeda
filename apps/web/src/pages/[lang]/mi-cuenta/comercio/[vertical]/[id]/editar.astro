@@ -8,6 +8,8 @@
  * @route     /[lang]/mi-cuenta/comercio/[vertical]/[id]/editar/
  * @rendering SSR (prerender = false — authenticated, owner-scoped data)
  */
+import { CommerceFaqManager } from '@/components/commerce/CommerceFaqManager.client';
+import type { CommerceFaq } from '@/components/commerce/CommerceFaqManager.client';
 import { CommerceListingEditor } from '@/components/commerce/CommerceListingEditor.client';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import { transformAmenityList } from '@/lib/api/transforms';
@@ -79,6 +81,19 @@ try {
 const title = t('commerce.owner.list.edit', 'Editar');
 const verticalLabel = t(`commerce.owner.list.badge.${vertical}`, vertical);
 const readOnlyNotice = t('commerce.owner.editor.readOnlyNotice', '');
+
+// Extract FAQs for the CommerceFaqManager — safe cast via unknown bridge.
+// The protected schema includes faqs when available; fallback to empty array.
+const rawFaqs = (detail as unknown as Record<string, unknown>).faqs;
+const initialFaqs: CommerceFaq[] = Array.isArray(rawFaqs)
+    ? (rawFaqs as Array<Record<string, unknown>>).map((f) => ({
+          id: typeof f.id === 'string' ? f.id : '',
+          question: typeof f.question === 'string' ? f.question : '',
+          answer: typeof f.answer === 'string' ? f.answer : '',
+          category: typeof f.category === 'string' ? f.category : null,
+          displayOrder: typeof f.displayOrder === 'number' ? f.displayOrder : null
+      }))
+    : [];
 ---
 
 <AccountLayout locale={locale} title={`${title}: ${detail.name}`} activeSection="comercio">
@@ -99,6 +114,14 @@ const readOnlyNotice = t('commerce.owner.editor.readOnlyNotice', '');
         initialData={detail}
         amenities={amenities}
         features={features}
+    />
+
+    <CommerceFaqManager
+        client:idle
+        vertical={vertical}
+        listingId={id}
+        locale={locale}
+        initialFaqs={initialFaqs}
     />
 </AccountLayout>
 
