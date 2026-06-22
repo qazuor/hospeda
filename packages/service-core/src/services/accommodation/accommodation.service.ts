@@ -999,6 +999,7 @@ export class AccommodationService extends BaseCrudService<
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'accommodation',
+                id: entity.id,
                 slug: entity.slug,
                 destinationSlug,
                 accommodationType: entity.type?.toLowerCase()
