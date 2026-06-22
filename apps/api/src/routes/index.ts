@@ -124,6 +124,7 @@ import {
     adminSocialHashtagRoutes,
     adminSocialHashtagSetRoutes,
     adminSocialPlatformFormatRoutes,
+    adminSocialPostTransitionRoutes,
     adminSocialSettingRoutes
 } from './social/index';
 import { adminSponsorshipRoutes, protectedSponsorshipRoutes } from './sponsorship';
@@ -508,6 +509,11 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Platform-format config (seed-only, list + patch) and settings (list + patch-by-key).
         app.route('/api/v1/admin/social/platform-formats', adminSocialPlatformFormatRoutes);
         app.route('/api/v1/admin/social/settings', adminSocialSettingRoutes);
+
+        // Social post state-transition routes (SPEC-254 T-036)
+        // Action paths: /{id}/approve, /{id}/reject, etc. — coexist with future /{id} CRUD (T-037).
+        // Must be mounted BEFORE any /{id} catch-all CRUD route if T-037 adds one at the same prefix.
+        app.route('/api/v1/admin/social/posts', adminSocialPostTransitionRoutes);
 
         // GPT Action schema export (SPEC-254 T-030)
         // Returns the OpenAPI 3.1 document the operator pastes into the Custom GPT Actions config.

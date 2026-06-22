@@ -14,3 +14,5 @@ export { adminSocialPlatformFormatRoutes } from './platform-formats/index';
 export { adminSocialSettingRoutes } from './settings/index';
 // GPT Action schema export (T-030)
 export { adminGetGptActionSchemaRoute } from './gpt-action-schema';
+// Social post state-transition routes (T-036)
+export { adminSocialPostTransitionRoutes } from './posts/index';

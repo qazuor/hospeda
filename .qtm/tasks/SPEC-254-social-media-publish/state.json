@@ -1269,7 +1269,7 @@
             "id": "T-036",
             "title": "Implement state-transition admin API routes (approve, reject, request-changes, schedule, mark-ready, pause, unpause, archive, promote-hashtag)",
             "description": "Create route files in `apps/api/src/routes/admin/social/posts/`:\n- `approve.route.ts` — POST /:id/approve, permission SOCIAL_POST_APPROVE\n- `reject.route.ts` — POST /:id/reject, body `{ reason: string }`, permission SOCIAL_POST_APPROVE\n- `request-changes.route.ts` — POST /:id/request-changes, body `{ feedback: string }`, permission SOCIAL_POST_APPROVE\n- `schedule.route.ts` — POST /:id/schedule, body `{ scheduledAt, timezone, recurrenceType?, recurrenceParamsJson? }`, permission SOCIAL_POST_SCHEDULE\n- `mark-ready.route.ts` — POST /:id/mark-ready, permission SOCIAL_POST_SCHEDULE\n- `pause.route.ts` — POST /:id/pause, permission SOCIAL_POST_PAUSE\n- `unpause.route.ts` — POST /:id/unpause, permission SOCIAL_POST_PAUSE\n- `archive.route.ts` — POST /:id/archive, permission SOCIAL_POST_ARCHIVE\n- `promote-hashtag.route.ts` — POST /:id/promote-hashtag, body `{ hashtag, category, platform?, audienceId?, priority? }`, permission SOCIAL_HASHTAG_MANAGE\n\nAll use `createAdminRoute`. All map service errors to correct HTTP status codes (422, 403, 404, 409). Register all under `/api/v1/admin/social/posts`.\n\nTest requirements:\n- Integration tests per route: permission gate, valid state transition succeeds, invalid state → 422, missing required body fields → 422\n- File: `apps/api/src/__tests__/routes/admin/social/post-transitions.test.ts`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-035"],
             "blocks": ["T-037"],

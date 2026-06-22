@@ -1,6 +1,6 @@
 # SPEC-254: Social Automation Backend
 
-## Progress: 33/52 tasks (63%) — SocialPostService COMPLETE (12 methods, T-033/34/35); phase-3 service layer done, next = phase-4 routes (T-036)
+## Progress: 34/52 tasks (65%) — 9 state-transition routes (T-036) done; error code=VALIDATION_ERROR + reason=INVALID_STATE/MISSING_MEDIA (owner-decided); promote-hashtag fixed 201 (factory has no dynamic status — spec wanted 200 for existing-hashtag; isNew in body is authoritative)
 
 **Average Complexity:** 2.3/3 (max)
 **Critical Path:** T-001 -> T-002 -> T-004 -> T-005 -> T-006 -> T-007 -> T-008 -> T-009 -> T-010 -> T-011 -> T-013 -> T-014 -> T-016 -> T-017 -> T-018 -> T-019 -> T-027 -> T-028 -> T-029 -> T-032 -> T-033 -> T-034 -> T-035 -> T-036 -> T-037 -> T-044 -> T-045 -> T-046 -> T-047 -> T-048 -> T-049 -> T-050 -> T-051 -> T-052 (34 steps)
@@ -203,7 +203,7 @@
   - Blocked by: T-020, T-021
   - Blocks: T-040
 
-- [ ] **T-036** (complexity: 3) - Implement state-transition admin API routes (9 routes)
+- [x] **T-036** (complexity: 3) - Implement state-transition admin API routes (9 routes)
   - approve, reject, request-changes, schedule, mark-ready, pause, unpause, archive, promote-hashtag.
   - Blocked by: T-035
   - Blocks: T-037
