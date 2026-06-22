@@ -143,6 +143,7 @@ function makeReputation(
         aggregateFetchedAt: new Date(),
         fetchStatus: 'ok',
         fetchMessage: null,
+        runStatus: 'idle',
         createdAt: new Date('2024-01-01T00:00:00Z'),
         updatedAt: new Date(),
         ...overrides
