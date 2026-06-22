@@ -5,9 +5,9 @@
     "created": "2026-06-02T00:00:00.000Z",
     "summary": {
         "total": 14,
-        "pending": 4,
+        "pending": 1,
         "inProgress": 0,
-        "completed": 10,
+        "completed": 13,
         "blocked": 0,
         "averageComplexity": 2.1
     },
@@ -236,7 +236,7 @@
             "id": "T-011",
             "title": "Audit ServiceErrorCode enum and add missing common.apiError keys (es/en/pt)",
             "description": "Compare all ServiceErrorCode enum values against common.apiError keys in all three locales. The following are missing: INVALID_PAGINATION_PARAMS, NOT_IMPLEMENTED, CONFIGURATION_ERROR, QUOTA_EXCEEDED, ENTITLEMENT_REQUIRED. Add them to packages/i18n/src/locales/es/common.json, en/common.json, pt/common.json with appropriate localized copy. es is the primary locale — en and pt must be provided (not '[MISSING:]' placeholders). Acceptance: all 5 keys present with non-empty values in all 3 locales.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-012"],
@@ -250,15 +250,15 @@
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
             }
         },
         {
             "id": "T-012",
             "title": "Add CI guard test: every ServiceErrorCode has a common.apiError key",
             "description": "Create packages/i18n/test/api-error-key-coverage.test.ts. Import ServiceErrorCode from '@repo/schemas' and trans from '@repo/i18n'. For each enum value V, assert that trans['es'][`common.apiError.${V}`], trans['en'][...], and trans['pt'][...] are all non-empty strings. The test must fail with a clear message listing missing keys when a new code is added without a corresponding translation. Acceptance: test green after T-011; test fails deterministically when a key is removed.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-011"],
             "blocks": ["T-013"],
@@ -272,15 +272,15 @@
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
             }
         },
         {
             "id": "T-013",
             "title": "Write api-error-translation guide in packages/i18n/docs/",
             "description": "Create packages/i18n/docs/api-error-translation.md explaining: (1) the translation priority chain (reason → code → message → fallback → GENERIC), (2) how to call translateApiError from a React component (with t) vs. a plain util (with locale), (3) how to add a new error code (add ServiceErrorCode value + common.apiError key in all 3 locales + guard test will catch omissions), (4) what NOT to migrate (native JS errors, cache internals, logger calls). Acceptance: doc is clear, accurate, and consistent with implemented code.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-005", "T-006", "T-010", "T-012"],
             "blocks": ["T-014"],
@@ -294,8 +294,8 @@
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
             }
         },
         {
