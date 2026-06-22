@@ -1,6 +1,6 @@
 # TODOs: Frictionless dev/test user setup
 
-Spec: SPEC-264 | Status: in-progress | Progress: 6/8
+Spec: SPEC-264 | Status: in-progress | Progress: 7/8
 
 ## Setup
 
@@ -22,7 +22,7 @@ Spec: SPEC-264 | Status: in-progress | Progress: 6/8
 
 ## Docs
 
-- [ ] T-006: Document the ready-user flow (complexity: 2) [blocked by T-005]
+- [x] T-006: Document the ready-user flow (complexity: 2) [blocked by T-005]
 
 ## Cleanup / Verify
 

@@ -192,32 +192,32 @@
             "id": "T-006",
             "title": "Document the ready-user flow",
             "description": "Document in packages/seed/CLAUDE.md (test-users section): what markUserReady does, that test users are ready out of the box, and the pnpm db:seed:ready-user <email> command for manually created users. Add db:seed:ready-user to the root command reference if a command list exists. Note the sentinel rationale briefly. Docs-only.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-005"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Update packages/seed/CLAUDE.md test-users section",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add db:seed:ready-user to command reference",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
+                "lint": true,
                 "typecheck": null,
                 "tests": null,
-                "notes": ""
+                "notes": "Documented in packages/seed/CLAUDE.md (new ready-out-of-the-box subsection + Key Commands) and root CLAUDE.md (db:seed:ready-user in DB block + SPEC-143 test-users note). markdownlint clean via pre-commit."
             },
             "timestamps": {
                 "created": "2026-06-22T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-22T18:00:00.000Z",
+                "completed": "2026-06-22T18:00:00.000Z"
             }
         },
         {
@@ -299,9 +299,9 @@
     ],
     "summary": {
         "total": 8,
-        "pending": 2,
+        "pending": 1,
         "inProgress": 0,
-        "completed": 6,
+        "completed": 7,
         "deferred": 0,
         "blocked": 0,
         "averageComplexity": 3.0
