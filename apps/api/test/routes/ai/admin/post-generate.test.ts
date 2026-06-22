@@ -296,8 +296,25 @@ describe('admin AI post-generate route (SPEC-223 T-008)', () => {
                 locale: 'es'
             });
             expect(result).toBe(
-                'Tone: neutral.\n\nTopic: River tourism\n\nKey points:\n1. Beautiful beaches'
+                'Tone: neutral. Write the entire output (title, summary, content) in Spanish (es).\n\nTopic: River tourism\n\nKey points:\n1. Beautiful beaches'
             );
+        });
+
+        it('states the requested output language in the prompt (SPEC-223 locale fix)', () => {
+            expect(
+                buildPostGeneratePrompt({
+                    topic: 'River tourism',
+                    points: ['Beaches'],
+                    locale: 'en'
+                })
+            ).toContain('in English (en).');
+            expect(
+                buildPostGeneratePrompt({
+                    topic: 'River tourism',
+                    points: ['Beaches'],
+                    locale: 'pt'
+                })
+            ).toContain('in Portuguese (pt).');
         });
 
         it('includes the category prefix when provided', () => {
@@ -350,7 +367,7 @@ describe('admin AI post-generate route (SPEC-223 T-008)', () => {
                 locale: 'es'
             });
             expect(result).toBe(
-                'Category: TOURISM. Tone: formal.\n\nTopic: Summer tourism in Concepción del Uruguay\n\nKey points:\n1. River beaches\n2. Colonial center'
+                'Category: TOURISM. Tone: formal. Write the entire output (title, summary, content) in Spanish (es).\n\nTopic: Summer tourism in Concepción del Uruguay\n\nKey points:\n1. River beaches\n2. Colonial center'
             );
         });
     });

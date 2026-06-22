@@ -96,7 +96,13 @@ export function buildPostGeneratePrompt(input: AiPostGenerateRequest): string {
     const points = input.points.map((p, i) => `${i + 1}. ${p}`).join('\n');
     const tone = input.tone ?? 'neutral';
     const cat = input.category ? `Category: ${input.category}. ` : '';
-    return `${cat}Tone: ${tone}.\n\nTopic: ${input.topic}\n\nKey points:\n${points}`;
+    const locale = input.locale ?? 'es';
+    // The engine passes `locale` as metadata, but the model only writes in the
+    // requested language if the concrete locale is stated in the prompt itself.
+    // Without this, the model defaults to the topic's language (SPEC-223 smoke
+    // found locale=en producing Spanish output).
+    const langName = locale === 'en' ? 'English' : locale === 'pt' ? 'Portuguese' : 'Spanish';
+    return `${cat}Tone: ${tone}. Write the entire output (title, summary, content) in ${langName} (${locale}).\n\nTopic: ${input.topic}\n\nKey points:\n${points}`;
 }
 
 // ---------------------------------------------------------------------------
