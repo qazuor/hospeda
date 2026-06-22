@@ -29,3 +29,6 @@ export * from './social-audit-log.index.js';
 
 // Dashboard response schema (T-037)
 export * from './social-dashboard.schema.js';
+
+// Make.com dispatch payload schema (T-044)
+export * from './social-make-payload.schema.js';

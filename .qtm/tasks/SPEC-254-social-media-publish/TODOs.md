@@ -1,6 +1,6 @@
 # SPEC-254: Social Automation Backend
 
-## Progress: 35/52 tasks (67%) — post CRUD + dashboard + publish-logs + audit-log routes (T-037) done; phase-4 admin API complete. promote-hashtag 201-fixed APPROVED by owner. Next = admin UI (T-039-042) then publishing backend (T-044+)
+## Progress: 36/52 tasks (69%) — SocialPublishDispatchService findEligibleTargets+buildMakePayload (T-044) done. NOTE: SKIPPED referenced in spec US-11/13 but absent from SocialPostStatusEnum — T-046/047 cascade needs it added (enum+migration) or use PUBLISHED/FAILED only. Next = T-045 (dispatchTarget retry logic)
 
 **Average Complexity:** 2.3/3 (max)
 **Critical Path:** T-001 -> T-002 -> T-004 -> T-005 -> T-006 -> T-007 -> T-008 -> T-009 -> T-010 -> T-011 -> T-013 -> T-014 -> T-016 -> T-017 -> T-018 -> T-019 -> T-027 -> T-028 -> T-029 -> T-032 -> T-033 -> T-034 -> T-035 -> T-036 -> T-037 -> T-044 -> T-045 -> T-046 -> T-047 -> T-048 -> T-049 -> T-050 -> T-051 -> T-052 (34 steps)
@@ -233,7 +233,7 @@
   - Blocked by: T-041
   - Blocks: T-043 (not a hard block — can proceed in parallel with Phase 4 if needed)
 
-- [ ] **T-044** (complexity: 3) - Create SocialPublishDispatchService — findEligibleTargets and buildMakePayload
+- [x] **T-044** (complexity: 3) - Create SocialPublishDispatchService — findEligibleTargets and buildMakePayload
   - Complex query with 5 filter conditions; payload includes callback URLs.
   - Blocked by: T-043, T-013
   - Blocks: T-045

@@ -83,3 +83,10 @@ export {
     checkCanViewPost,
     checkCanUpdatePost
 } from './social.permissions';
+export {
+    SocialPublishDispatchService,
+    type EligibleTarget,
+    type FindEligibleTargetsResult,
+    type BuildMakePayloadInput,
+    type BuildMakePayloadResult
+} from './social-publish-dispatch.service';
