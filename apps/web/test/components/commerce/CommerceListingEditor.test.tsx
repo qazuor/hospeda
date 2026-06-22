@@ -14,6 +14,20 @@ vi.mock('../../../src/components/commerce/CommerceListingEditor.module.css', () 
     default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
 }));
 
+// Stub out the TranslationPanel so its "Descripción ampliada" label does not
+// collide with the same label on the standalone richDescription textarea inside
+// the editor itself.  Integration between the two components is tested separately
+// in CommerceTranslationPanel.test.tsx.
+vi.mock('../../../src/components/commerce/CommerceTranslationPanel.client', () => ({
+    CommerceTranslationPanel: () => null,
+    parseCommerceI18nValues: () => ({
+        nameI18n: { es: '', en: '', pt: '' },
+        summaryI18n: { es: '', en: '', pt: '' },
+        descriptionI18n: { es: '', en: '', pt: '' },
+        richDescriptionI18n: { es: '', en: '', pt: '' }
+    })
+}));
+
 vi.mock('../../../src/lib/i18n', () => ({
     createTranslations: () => ({ t: (key: string, fallback?: string) => fallback ?? key })
 }));
