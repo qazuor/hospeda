@@ -8,141 +8,184 @@
             "id": "T-001",
             "title": "Add markUserReady helper skeleton",
             "description": "Create packages/seed/src/test-users/markUserReady.ts with: the TOUR_READY_SENTINEL constant (9999) with JSDoc pointing at apps/admin/src/config/ia/tours.ts and explaining it is a fixture-only value; the UserReadyModelPort type (findOne + update only) so the helper is unit-testable without a live DB; the MarkUserReadyParams / MarkUserReadyResult types; and the async markUserReady signature with full JSDoc. No merge logic yet (lands in T-002). Acceptance: pnpm --filter @repo/seed typecheck passes; the module exports markUserReady, TOUR_READY_SENTINEL, UserReadyModelPort.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-002"],
             "subtasks": [
                 {
                     "title": "Create packages/seed/src/test-users/markUserReady.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Define TOUR_READY_SENTINEL with JSDoc + UserReadyModelPort + param/result types",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Declare markUserReady signature with JSDoc, no body logic",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["seed", "scaffolding"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null, "notes": "" },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true,
+                "notes": "Green in worktree: @repo/seed typecheck/lint clean (2 pre-existing @repo/ai-core baseline errors unrelated), 17 markUserReady tests pass. Adversarial review applied (warn-on-not_found in seed loop, sentinel parse assertion, mustChangePassword test-scope comment)."
+            },
             "timestamps": {
                 "created": "2026-06-22T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-22T17:00:00.000Z",
+                "completed": "2026-06-22T17:00:00.000Z"
             }
         },
         {
             "id": "T-002",
             "title": "Implement read-modify-write merge in markUserReady",
             "description": "Implement the body: findOne({email}); if missing return {ok:false, reason:'not_found'}. Otherwise spread existing settings -> onboarding -> adminTours / whatsNew (calqued from UserService.markAdminTourSeen in packages/service-core/src/services/user/user.service.ts:1304-1358). Set adminTours['host.welcome']=TOUR_READY_SENTINEL; set whatsNew.baselineAt = existing ?? new Date().toISOString() (idempotent). Call model.update({id}, {profileCompleted:true, mustChangePassword:false, settings: mergedSettings}). Return {ok:true, userId}. MUST NOT touch admin_info.passwordChangeRequired. MUST preserve all pre-existing settings keys. Acceptance: typecheck clean; logic matches AC-1.x / AC-3.x in spec.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-001"],
             "blocks": ["T-003", "T-004", "T-005"],
             "subtasks": [
-                { "title": "findOne by email + not_found branch", "completed": false },
+                {
+                    "title": "findOne by email + not_found branch",
+                    "completed": true
+                },
                 {
                     "title": "Non-destructive settings merge (settings/onboarding/adminTours/whatsNew spreads)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write profileCompleted + mustChangePassword=false + mergedSettings via update",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Idempotent baselineAt (preserve existing)", "completed": false }
+                {
+                    "title": "Idempotent baselineAt (preserve existing)",
+                    "completed": true
+                }
             ],
             "tags": ["seed", "core", "onboarding"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null, "notes": "" },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true,
+                "notes": "Green in worktree: @repo/seed typecheck/lint clean (2 pre-existing @repo/ai-core baseline errors unrelated), 17 markUserReady tests pass. Adversarial review applied (warn-on-not_found in seed loop, sentinel parse assertion, mustChangePassword test-scope comment)."
+            },
             "timestamps": {
                 "created": "2026-06-22T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-22T17:00:00.000Z",
+                "completed": "2026-06-22T17:00:00.000Z"
             }
         },
         {
             "id": "T-003",
             "title": "Unit tests for markUserReady",
             "description": "Add packages/seed/test/test-users/markUserReady.test.ts following the port-injection + in-memory stub pattern of test/required/systemUser.seed.test.ts. Cover: AC-1.1..AC-1.4 (writes the 3 ready fields + clears pw change); AC-3.1 (preserves pre-existing settings.theme and onboarding.adminTours['other.tour']); AC-3.2 (settings=null -> valid object created); AC-2.2 (missing email -> {ok:false, reason:'not_found'}, no update call); idempotency (second run keeps same baselineAt); and that the produced settings object parses cleanly against UserSettingsSchema from @repo/schemas. AAA pattern. Acceptance: pnpm --filter @repo/seed test green.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-002"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Stub UserReadyModelPort + reset state in beforeEach",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Tests for AC-1.x ready fields + pw clear", "completed": false },
+                {
+                    "title": "Tests for AC-1.x ready fields + pw clear",
+                    "completed": true
+                },
                 {
                     "title": "Tests for AC-3.x non-destructive merge + null settings",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "not_found + idempotency + UserSettingsSchema parse",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["seed", "testing"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null, "notes": "" },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true,
+                "notes": "Green in worktree: @repo/seed typecheck/lint clean (2 pre-existing @repo/ai-core baseline errors unrelated), 17 markUserReady tests pass. Adversarial review applied (warn-on-not_found in seed loop, sentinel parse assertion, mustChangePassword test-scope comment)."
+            },
             "timestamps": {
                 "created": "2026-06-22T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-22T17:00:00.000Z",
+                "completed": "2026-06-22T17:00:00.000Z"
             }
         },
         {
             "id": "T-004",
             "title": "Wire markUserReady into testUsers.seed.ts",
             "description": "In packages/seed/src/test-users/testUsers.seed.ts, after each of the 13 users is created/updated (create call ~line 542, role update ~line 531), call markUserReady({email: spec.email, model: userModel}). Prefer a single convergence point per user so both the freshly-created and the already-existing paths end up ready. Do not change which users are created. Acceptance: typecheck clean; a manual db:seed:test-users run leaves all 13 users with profileCompleted=true and the onboarding sentinel set.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002"],
             "blocks": ["T-007"],
             "subtasks": [
-                { "title": "Locate per-user create/update convergence point", "completed": false },
-                { "title": "Invoke markUserReady for each test user", "completed": false }
+                {
+                    "title": "Locate per-user create/update convergence point",
+                    "completed": true
+                },
+                {
+                    "title": "Invoke markUserReady for each test user",
+                    "completed": true
+                }
             ],
             "tags": ["seed", "integration"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null, "notes": "" },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true,
+                "notes": "Green in worktree: @repo/seed typecheck/lint clean (2 pre-existing @repo/ai-core baseline errors unrelated), 17 markUserReady tests pass. Adversarial review applied (warn-on-not_found in seed loop, sentinel parse assertion, mustChangePassword test-scope comment)."
+            },
             "timestamps": {
                 "created": "2026-06-22T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-22T17:00:00.000Z",
+                "completed": "2026-06-22T17:00:00.000Z"
             }
         },
         {
             "id": "T-005",
             "title": "Add db:seed:ready-user ad-hoc CLI script",
             "description": "Create packages/seed/scripts/mark-user-ready.ts mirroring scripts/reset-superadmin-password.ts: load .env.local, init DB, read process.argv[2] as email (usage error + exit!=0 if missing -> AC-2.3), instantiate UserModel, call markUserReady, print a clear result, exit 0 on ok / non-zero on not_found (AC-2.2). Wire packages/seed/package.json 'seed:ready-user': 'tsx --tsconfig ./tsconfig.json ./scripts/mark-user-ready.ts' and root package.json 'db:seed:ready-user': 'pnpm --filter @repo/seed seed:ready-user'. Acceptance: pnpm db:seed:ready-user <existing-email> readies the user; missing/absent email exits non-zero with a message.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002"],
             "blocks": ["T-006", "T-007"],
             "subtasks": [
                 {
                     "title": "Create scripts/mark-user-ready.ts (env load, DB init, argv parse, exit codes)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add seed:ready-user to packages/seed/package.json",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Add db:seed:ready-user to root package.json", "completed": false }
+                {
+                    "title": "Add db:seed:ready-user to root package.json",
+                    "completed": true
+                }
             ],
             "tags": ["seed", "cli", "integration"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null, "notes": "" },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true,
+                "notes": "Green in worktree: @repo/seed typecheck/lint clean (2 pre-existing @repo/ai-core baseline errors unrelated), 17 markUserReady tests pass. Adversarial review applied (warn-on-not_found in seed loop, sentinel parse assertion, mustChangePassword test-scope comment)."
+            },
             "timestamps": {
                 "created": "2026-06-22T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-22T17:00:00.000Z",
+                "completed": "2026-06-22T17:00:00.000Z"
             }
         },
         {
@@ -158,11 +201,19 @@
                     "title": "Update packages/seed/CLAUDE.md test-users section",
                     "completed": false
                 },
-                { "title": "Add db:seed:ready-user to command reference", "completed": false }
+                {
+                    "title": "Add db:seed:ready-user to command reference",
+                    "completed": false
+                }
             ],
             "tags": ["docs"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null, "notes": "" },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null,
+                "notes": ""
+            },
             "timestamps": {
                 "created": "2026-06-22T00:00:00.000Z",
                 "started": null,
@@ -186,12 +237,23 @@
                     "title": "admin login no welcome tour / no whats-new (SC-2/SC-3)",
                     "completed": false
                 },
-                { "title": "ad-hoc ready-user on a hand-created user (SC-4)", "completed": false },
-                { "title": "confirm zero apps/* diff (SC-5)", "completed": false }
+                {
+                    "title": "ad-hoc ready-user on a hand-created user (SC-4)",
+                    "completed": false
+                },
+                {
+                    "title": "confirm zero apps/* diff (SC-5)",
+                    "completed": false
+                }
             ],
             "tags": ["verification", "cleanup"],
             "phase": "cleanup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null, "notes": "" },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null,
+                "notes": ""
+            },
             "timestamps": {
                 "created": "2026-06-22T00:00:00.000Z",
                 "started": null,
@@ -201,9 +263,9 @@
     ],
     "summary": {
         "total": 7,
-        "pending": 7,
+        "pending": 2,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 5,
         "deferred": 0,
         "blocked": 0,
         "averageComplexity": 3.0

@@ -928,8 +928,8 @@
         {
             "specId": "SPEC-264",
             "title": "Frictionless dev/test user setup",
-            "status": "draft",
-            "progress": "0/7",
+            "status": "in-progress",
+            "progress": "5/7",
             "path": "SPEC-264-frictionless-dev-test-users",
             "branch": "spec/SPEC-264-frictionless-dev-test-users",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-264-frictionless-dev-test-users",

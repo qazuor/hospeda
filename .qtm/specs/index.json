@@ -1707,7 +1707,7 @@
             "slug": "frictionless-dev-test-users",
             "type": "improvement",
             "complexity": "medium",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-264-frictionless-dev-test-users",
             "created": "2026-06-22T00:00:00Z",
             "base": "staging",
