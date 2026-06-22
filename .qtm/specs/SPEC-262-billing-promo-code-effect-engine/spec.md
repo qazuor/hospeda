@@ -3,7 +3,7 @@ spec-id: SPEC-262
 title: Billing Promo-Code Typed Effect Engine
 type: feature
 complexity: high
-status: draft
+status: in-progress
 created: 2026-06-22
 ---
 
@@ -521,16 +521,31 @@ atomization, not open choices.
    persisted/source-of-truth unit is days. Rationale: MP `freeTrialDays` and
    `trial_end` are day-based; "months" is ambiguous (28–31 days, from-when) and must
    not reach the charge engine.
-4. **OQ-4 — MP recurring mechanism → RESOLVED (direction + constraint; exact API
-   still a spike).** Case 1 (free-forever) uses NO preapproval (consequence of OQ-1
-   β) — closed. Case 3 (multi-cycle discount): PRIMARY mechanism is **mutating the
-   preapproval `transaction_amount`** for the discounted cycles. **Refund/credit
-   fallback is VETOED** (cobro-full + visible refund is unacceptable UX). If the §10
-   spike finds MP cannot mutate the amount reliably, the team does NOT silently fall
-   back to refunds — the case-3 delivery is **redesigned** and re-surfaced to the
-   owner. The spike (first technical task) verifies MP preapproval update semantics
-   against current MP docs; mechanisms 2 (cancel+recreate) and 4 (ledger+refund) are
-   out unless explicitly re-approved.
+4. **OQ-4 — MP recurring mechanism → RESOLVED + SPIKE DONE: Outcome A (GO).** Case 1
+   (free-forever) uses NO preapproval (consequence of OQ-1 β) — closed. Case 3
+   (multi-cycle discount): PRIMARY mechanism is **mutating the preapproval
+   `transaction_amount`** for the discounted cycles, then restoring it. **Refund/credit
+   fallback is VETOED.** The T-001 spike (see
+   `packages/service-core/src/services/billing/promo-code/docs/mp-preapproval-mutation-spike.md`)
+   **confirms this is viable**: Hospeda **already performs this exact mutation in
+   production** — `paymentAdapter.subscriptions.update(mpSubscriptionId, { transactionAmount })`
+   in the scheduled-downgrade cron (`apply-scheduled-plan-changes.ts`) and the
+   upgrade-confirmation webhook (`payment-logic.ts::confirmPlanUpgrade`); MP docs
+   independently confirm `auto_recurring.transaction_amount` is updatable via
+   `PUT /preapproval/{id}` for no-plan subscriptions (Hospeda's billing model).
+   Case 3 only moves the amount DOWN then back UP to the originally-authorized price,
+   the safe direction re MP's "large increase needs re-auth" rule. Implementation
+   constraints surfaced by the spike (now binding on the case-3 tasks): (a) reuse the
+   existing update primitive — `transactionAmount` is ARS **major units** (`unitAmount/100`),
+   not centavos; (b) anchor the remaining-cycle counter on the
+   `subscription_authorized_payment.created` webhook (count confirmed charges
+   post-hoc), NOT a pre-charge timing race; (c) the discount-apply mutation must be
+   **fail-closed** (the existing downgrade mutation is best-effort — wrong for a
+   discount), the restore best-effort-with-retry; (d) any reconciler/poll comparing
+   live MP amount vs plan price must be made **discount-aware** or it will "correct"
+   the intentional discount. Two items deferred to the AC-3.3 staging smoke (not
+   gating): restore-without-re-auth, and the exact next-charge anchor field name.
+   Mechanisms 2 (cancel+recreate) and 4 (ledger+refund) remain out.
 5. **OQ-5 — Trial extension on annual subs → RESOLVED: confirmed.** Annual sub still
    in trial → extend `trial_end`, defer the one-time charge. Annual sub already
    `active` (charged) → reject with a typed error (never a silent no-op). Granting

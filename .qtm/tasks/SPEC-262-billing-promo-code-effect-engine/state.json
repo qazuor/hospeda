@@ -6,7 +6,8 @@
     "summary": {
         "total": 15,
         "byStatus": {
-            "pending": 15
+            "pending": 14,
+            "completed": 1
         },
         "byPhase": {
             "spike": 1,
@@ -23,7 +24,7 @@
             "id": "T-001",
             "title": "Spike: MercadoPago preapproval amount-mutation capability",
             "description": "Investigate (against current MP docs via Context7 / MP API reference) whether a live preapproval's `transaction_amount` can be mutated reliably for discounted cycles and restored after:\n- Which PATCH/PUT endpoint mutates amount on a live preapproval (does `/v1/preapproval/{id}` accept `transaction_amount`?).\n- Timing window: can the amount be changed after a cycle starts? Before it? Is there a minimum lead-time?\n- Webhook implications: does a mutation trigger a new webhook? Does it shift the next-charge date?\n- Idempotency: is the PATCH idempotent? What happens on a retry?\n- Outcome A (MP CAN mutate reliably): document the exact endpoint + field + timing constraint + idempotency strategy. Case-3 tasks (T-007) proceed with amount-mutation as the mechanism.\n- Outcome B (MP CANNOT mutate reliably): write a clear finding doc; mark T-007 as BLOCKED and surface redesign requirement to owner before proceeding. Do NOT fall back to refunds/credits silently (VETOED in OQ-4).\n\nDeliverable: `packages/service-core/src/services/billing/promo-code/docs/mp-preapproval-mutation-spike.md` with findings, chosen mechanism (A or B), and any timing/idempotency constraints. This doc closes OQ-4 concretely.\n\nAcceptance criteria: the doc exists, answers all bullet questions above, states a go/no-go for Outcome A, and is referenced from T-007's description before T-007 starts.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-007"],

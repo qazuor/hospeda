@@ -1660,7 +1660,7 @@
             "slug": "billing-promo-code-effect-engine",
             "type": "feature",
             "complexity": "high",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-262-billing-promo-code-effect-engine",
             "created": "2026-06-22T18:17:18.089Z",
             "base": "staging",

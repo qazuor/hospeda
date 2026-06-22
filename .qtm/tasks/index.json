@@ -869,8 +869,8 @@
         {
             "specId": "SPEC-262",
             "title": "Billing Promo-Code Typed Effect Engine",
-            "status": "draft",
-            "progress": "0/15",
+            "status": "in-progress",
+            "progress": "1/15",
             "path": "SPEC-262-billing-promo-code-effect-engine",
             "branch": "spec/SPEC-262-billing-promo-code-effect-engine",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-262-billing-promo-code-effect-engine",
@@ -879,7 +879,7 @@
             "tasksAtomizedAt": "2026-06-22T18:30:00.000Z",
             "taskCount": 15,
             "averageComplexity": 2.53,
-            "note": "15 tasks across 6 phases (spike 1, core 6, integration 5, testing 2, docs 1). T-001 MP spike gates case-3 renewal tasks (T-007). Critical path: T-002->T-003->T-004->T-005->T-006->T-009->T-011->T-012->T-013->T-014->T-015 (11 steps). T-001 spike runs in parallel with DB/schema track. SPEC-143 billing CORE smoke (staging+prod) mandatory gate before merge."
+            "note": "15 tasks across 6 phases (spike 1, core 6, integration 5, testing 2, docs 1). T-001 MP spike gates case-3 renewal tasks (T-007). Critical path: T-002->T-003->T-004->T-005->T-006->T-009->T-011->T-012->T-013->T-014->T-015 (11 steps). T-001 spike runs in parallel with DB/schema track. SPEC-143 billing CORE smoke (staging+prod) mandatory gate before merge. T-001 DONE (2026-06-22): MP amount-mutation spike = Outcome A GO — Hospeda already mutates preapproval transactionAmount in prod (downgrade cron + upgrade webhook); case-3 unblocked, no redesign. See promo-code/docs/mp-preapproval-mutation-spike.md."
         },
         {
             "specId": "SPEC-261",
