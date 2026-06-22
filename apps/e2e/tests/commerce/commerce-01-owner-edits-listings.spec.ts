@@ -42,6 +42,7 @@
 import { expect, test } from '@playwright/test';
 import { signInExistingUser } from '../../fixtures/api-helpers.ts';
 import { execSQL } from '../../fixtures/db-helpers.ts';
+import { setReactInputValue } from '../../fixtures/react19-input-helpers.ts';
 
 // ---------------------------------------------------------------------------
 // Environment
@@ -226,24 +227,10 @@ test.describe('COMMERCE-01: commerce owner edits listings — both verticals @p1
         // fires and markDirty('menuUrl') is never called → dirty stays empty →
         // save button stays disabled → PATCH never fires.
         //
-        // Fix: use the native HTMLInputElement.prototype setter (the one React
-        // patches) and dispatch bubbling 'input' + 'change' events so React's
-        // onChange runs and marks the field dirty.
-        await menuUrlInput.evaluate((el: HTMLInputElement, value: string) => {
-            const setter = Object.getOwnPropertyDescriptor(
-                window.HTMLInputElement.prototype,
-                'value'
-            )?.set;
-            if (setter) {
-                setter.call(el, value);
-            } else {
-                // Fallback: direct assignment (less reliable with React but avoids
-                // a silent no-op if the descriptor is somehow absent).
-                el.value = value;
-            }
-            el.dispatchEvent(new Event('input', { bubbles: true }));
-            el.dispatchEvent(new Event('change', { bubbles: true }));
-        }, newMenuUrl);
+        // Fix: use the shared setReactInputValue helper (SPEC-253) which calls
+        // the native HTMLInputElement.prototype setter and dispatches a proper
+        // InputEvent with inputType:'insertText' so React 19's onChange fires.
+        await setReactInputValue(menuUrlInput, newMenuUrl);
 
         // Explicit pre-click check: if dirty.size===0 the button is disabled and
         // click() will hang for the full 15 s actionTimeout. Asserting here with a
@@ -303,25 +290,13 @@ test.describe('COMMERCE-01: commerce owner edits listings — both verticals @p1
         // synthetic onChange in CI (no native-setter interception → markDirty never
         // called → dirty.size===0 → save button stays disabled → PATCH never fires).
         //
-        // Fix: use the native HTMLTextAreaElement.prototype setter (the one React
-        // patches) and dispatch bubbling 'input' + 'change' events. This guarantees
-        // React's onChange runs and marks the field dirty, regardless of CI timing.
+        // Fix: use the shared setReactInputValue helper (SPEC-253) which selects the
+        // correct prototype (HTMLTextAreaElement) and dispatches InputEvent with
+        // inputType:'insertText' so React 19's onChange fires reliably.
         //
         // The seed has no richDescription for excursion-rio-uruguay-concepcion
         // (the DB column is NULL → strField returns "" → state starts as "").
-        await richDescriptionTextarea.evaluate((el: HTMLTextAreaElement, value: string) => {
-            const setter = Object.getOwnPropertyDescriptor(
-                window.HTMLTextAreaElement.prototype,
-                'value'
-            )?.set;
-            if (setter) {
-                setter.call(el, value);
-            } else {
-                el.value = value;
-            }
-            el.dispatchEvent(new Event('input', { bubbles: true }));
-            el.dispatchEvent(new Event('change', { bubbles: true }));
-        }, newRichDescription);
+        await setReactInputValue(richDescriptionTextarea, newRichDescription);
 
         // Explicit pre-click enabled assertion — surfaces dirty-form failures
         // clearly instead of masking them as a 15 s click timeout.
