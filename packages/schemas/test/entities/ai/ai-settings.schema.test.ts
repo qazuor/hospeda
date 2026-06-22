@@ -71,6 +71,11 @@ const minimalSettingsValue = {
             ...validFeatureConfig,
             model: 'gpt-4o-mini',
             primaryProvider: 'openai' as const
+        },
+        post_generate: {
+            ...validFeatureConfig,
+            model: 'gpt-4o-mini',
+            primaryProvider: 'openai' as const
         }
     }
 };

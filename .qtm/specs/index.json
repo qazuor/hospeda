@@ -1289,12 +1289,15 @@
             "title": "Create post from data with AI",
             "type": "feature",
             "complexity": "medium-high",
-            "status": "draft",
+            "status": "completed",
             "path": "SPEC-223-ai-post-generation",
             "created": "2026-06-13T12:00:00Z",
             "tags": ["posts", "ai", "ai-core", "content", "admin", "feature"],
-            "archived": false,
-            "note": "Admin gives topic + key points, AI generates a post draft (title/summary/content). New 'post_generate' AiFeature + admin-tier streaming route, replicating the text-improve pattern. Drafted 2026-06-13, ready to implement."
+            "archived": true,
+            "note": "Admin gives topic + key points, AI generates a post draft (title/summary/content). New 'post_generate' AiFeature + admin-tier streaming route, replicating the text-improve pattern. Drafted 2026-06-13, ready to implement.",
+            "completed": "2026-06-22T16:00:00Z",
+            "archivedAt": "2026-06-22T16:00:00Z",
+            "archiveNote": "Shipped via PR #1737; full live Chrome smoke (T-015) GO with Ollama. 5 integration bugs fixed during smoke."
         },
         {
             "specId": "SPEC-224",

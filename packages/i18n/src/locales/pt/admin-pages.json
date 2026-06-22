@@ -706,6 +706,30 @@
             "noSponsorship": "Sem Patrocínio",
             "noSponsorshipDesc": "Esta publicação ainda não tem um patrocinador atribuído.",
             "noteDescNoSponsor": "Os recursos de gerenciamento de patrocínio estarão disponíveis em uma atualização futura. Você poderá atribuir patrocinadores, configurar tipos de patrocínio e gerenciar períodos de patrocínio."
+        },
+        "aiGenerate": {
+            "panelTitle": "Gerar com IA",
+            "description": "Forneça um tema e pontos-chave; a IA redigirá um rascunho para você revisar.",
+            "topicLabel": "Tema",
+            "topicPlaceholder": "Ex.: Guia do carnaval em Concepción del Uruguay",
+            "pointsLabel": "Pontos-chave",
+            "pointsPlaceholder": "Adicione um ponto a cobrir",
+            "pointsAdd": "Adicionar ponto",
+            "pointsRemove": "Remover",
+            "categoryLabel": "Categoria",
+            "toneLabel": "Tom",
+            "toneFormal": "Formal",
+            "toneInformal": "Informal",
+            "toneNeutral": "Neutro",
+            "localeLabel": "Idioma de saída",
+            "generate": "Gerar",
+            "generating": "Gerando rascunho…",
+            "apply": "Aplicar rascunho",
+            "discard": "Descartar",
+            "errorModeration": "O conteúdo gerado não passou pela moderação. Tente reformular os pontos.",
+            "errorCeiling": "Limite de custo atingido. Tente novamente mais tarde.",
+            "errorExhausted": "O serviço de IA está temporariamente indisponível.",
+            "errorGeneric": "Não foi possível gerar o rascunho. Tente novamente."
         }
     },
     "events": {

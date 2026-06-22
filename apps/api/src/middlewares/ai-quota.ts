@@ -50,6 +50,21 @@ import { apiLogger } from '../utils/logger';
 import { getRemainingLimit, hasEntitlement } from './entitlement';
 
 // ---------------------------------------------------------------------------
+// QuotaGatedAiFeature
+// ---------------------------------------------------------------------------
+
+/**
+ * AI features that go through the protected-tier quota/entitlement middleware.
+ *
+ * Admin-tier features (e.g. `post_generate`) are excluded — they are
+ * permission-gated only and the quota middleware is never mounted on their
+ * routes. Exhaustive maps keyed by this type cover exactly the
+ * protected-tier features without requiring new EntitlementKey / LimitKey
+ * enum values for admin-only operations.
+ */
+export type QuotaGatedAiFeature = Exclude<AiFeature, 'post_generate'>;
+
+// ---------------------------------------------------------------------------
 // Feature → EntitlementKey mapping
 // ---------------------------------------------------------------------------
 
@@ -60,7 +75,7 @@ import { getRemainingLimit, hasEntitlement } from './entitlement';
  * Exported so downstream consumers (routes, tests) can reference the same
  * mapping without duplicating it.
  */
-export const AI_ENTITLEMENT_BY_FEATURE: Readonly<Record<AiFeature, EntitlementKey>> = {
+export const AI_ENTITLEMENT_BY_FEATURE: Readonly<Record<QuotaGatedAiFeature, EntitlementKey>> = {
     text_improve: EntitlementKey.AI_TEXT_IMPROVE,
     chat: EntitlementKey.AI_CHAT,
     search: EntitlementKey.AI_SEARCH,
@@ -80,7 +95,7 @@ export const AI_ENTITLEMENT_BY_FEATURE: Readonly<Record<AiFeature, EntitlementKe
  * enum value. Exported so downstream consumers (routes, tests) can reference
  * the same mapping without duplicating it.
  */
-export const AI_LIMIT_BY_FEATURE: Readonly<Record<AiFeature, LimitKey>> = {
+export const AI_LIMIT_BY_FEATURE: Readonly<Record<QuotaGatedAiFeature, LimitKey>> = {
     text_improve: LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH,
     chat: LimitKey.MAX_AI_CHAT_PER_MONTH,
     search: LimitKey.MAX_AI_SEARCH_PER_MONTH,
@@ -117,7 +132,9 @@ export const AI_LIMIT_BY_FEATURE: Readonly<Record<AiFeature, LimitKey>> = {
  * });
  * ```
  */
-export function createAiQuotaMiddleware(feature: AiFeature): MiddlewareHandler<AppBindings> {
+export function createAiQuotaMiddleware(
+    feature: QuotaGatedAiFeature
+): MiddlewareHandler<AppBindings> {
     return async (c, next) => {
         // ----------------------------------------------------------------
         // Step 1: Defensive actor check.

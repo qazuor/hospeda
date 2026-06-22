@@ -125,6 +125,7 @@
 | `POST /api/v1/admin/ai/translate` | `ai/admin/translate.ts` | none | - | n/a | Admin single-entity translate ("Translate now" in the admin TranslationSection); gated by adminAuthMiddleware([AI_SETTINGS_MANAGE]). Staff bypass entitlements (INV-6) so there is no billing gate. Mounted at /api/v1/admin/ai/translate via routes/index.ts (SPEC-212). |
 | `POST /api/v1/admin/ai/translate/batch` | `ai/admin/translate.ts` | none | - | n/a | Admin batch translation; gated by adminAuthMiddleware([AI_SETTINGS_MANAGE]). Staff bypass entitlements (INV-6) so there is no billing gate. Mounted at /api/v1/admin/ai/translate via routes/index.ts (SPEC-212 T-009). |
 | `PUT /api/v1/admin/ai/translate/override` | `ai/admin/translate.ts` | none | - | n/a | Admin manual translation override; gated by adminAuthMiddleware([AI_SETTINGS_MANAGE]); no billing gate (SPEC-212 T-010). |
+| `POST /api/v1/admin/ai/post-generate` | `ai/admin/post-generate.ts` | none | - | n/a | Admin write; gated by adminAuthMiddleware([POST_CREATE]). Generates AI post draft (title, summary, content) from topic + key points. No billing entitlement gate (staff bypass INV-6); cost ceiling enforced inside AI engine (SPEC-223 T-005). |
 | **AUTH — PROTECTED / PUBLIC** | | | | | |
 | `GET /api/v1/public/auth/me` | `auth/me.ts` | none | - | n/a | Session identity read; no entitlement needed |
 | `POST /api/v1/protected/auth/change-password` | `auth/change-password.ts` | none | - | n/a | Account management; auth-only sufficient |

@@ -872,6 +872,25 @@
             "status": "draft",
             "progress": "0/0",
             "path": "SPEC-261-commerce-e2e-stabilization"
+        },
+        {
+            "specId": "SPEC-223",
+            "title": "Create post from data with AI",
+            "status": "completed",
+            "progress": "15/15",
+            "path": "SPEC-223-ai-post-generation",
+            "parent": null,
+            "branch": "spec/SPEC-223-ai-post-generation",
+            "worktree": "../hospeda-223-ai-post-generation",
+            "base": "staging",
+            "createdAt": "2026-06-19",
+            "tasksAtomizedAt": "2026-06-19",
+            "taskCount": 15,
+            "averageComplexity": "medium-high",
+            "archived": true,
+            "archivedAt": "2026-06-22T16:00:00Z",
+            "archiveNote": "Shipped via PR #1737; T-015 full live smoke GO.",
+            "note": "AI post generation (admin). Buffered generateObject; loose-gen schema + strict server validation."
         }
     ],
     "standalone": {

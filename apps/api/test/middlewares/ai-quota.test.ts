@@ -34,6 +34,7 @@ import { Hono } from 'hono';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { QuotaGatedAiFeature } from '../../src/middlewares/ai-quota';
 import {
     AI_ENTITLEMENT_BY_FEATURE,
     AI_LIMIT_BY_FEATURE,
@@ -515,7 +516,7 @@ describe('createAiQuotaMiddleware', () => {
 
     describe('feature → entitlement/limit key mapping', () => {
         const FEATURES: ReadonlyArray<{
-            feature: AiFeature;
+            feature: QuotaGatedAiFeature;
             entitlement: EntitlementKey;
             limitKey: LimitKey;
         }> = [

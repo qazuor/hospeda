@@ -36,7 +36,8 @@ const FULL_FEATURES_MAP = {
     search: { ...VALID_FEATURE_CONFIG, enabled: false },
     support: { ...VALID_FEATURE_CONFIG, enabled: false },
     translate: { ...VALID_FEATURE_CONFIG, enabled: false },
-    accommodation_import: { ...VALID_FEATURE_CONFIG, enabled: false }
+    accommodation_import: { ...VALID_FEATURE_CONFIG, enabled: false },
+    post_generate: { ...VALID_FEATURE_CONFIG, enabled: false }
 } as const;
 
 /** A valid full settings value blob. */

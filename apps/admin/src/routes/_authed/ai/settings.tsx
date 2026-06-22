@@ -53,7 +53,8 @@ const ALL_FEATURES: AiFeatureId[] = [
     'search',
     'support',
     'translate',
-    'accommodation_import'
+    'accommodation_import',
+    'post_generate'
 ];
 
 /** Default settings blob used when the API returns an empty/missing value. */
@@ -105,6 +106,13 @@ const DEFAULT_SETTINGS: AiSettingsValue = {
             fallbackChain: [],
             model: 'gpt-4o-mini',
             params: {}
+        },
+        post_generate: {
+            enabled: false,
+            primaryProvider: 'stub',
+            fallbackChain: [],
+            model: 'gpt-4o-mini',
+            params: {}
         }
     }
 };
@@ -130,7 +138,9 @@ function toFormValues(settings: AiSettingsValue | undefined): AiSettingsValue {
             translate: settings.features.translate ?? DEFAULT_SETTINGS.features.translate,
             accommodation_import:
                 settings.features.accommodation_import ??
-                DEFAULT_SETTINGS.features.accommodation_import
+                DEFAULT_SETTINGS.features.accommodation_import,
+            post_generate:
+                settings.features.post_generate ?? DEFAULT_SETTINGS.features.post_generate
         }
     };
 }
