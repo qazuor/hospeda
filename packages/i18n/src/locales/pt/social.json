@@ -1,4 +1,38 @@
 {
+    "dashboard": {
+        "title": "Dashboard Social",
+        "kpis": {
+            "totalPosts": "Posts totais",
+            "pendingReview": "Em revisão",
+            "scheduled": "Agendados",
+            "publishedLast30Days": "Publicados (30 dias)",
+            "failedActionNeeded": "Falharam"
+        },
+        "approvalQueue": {
+            "title": "Fila de aprovação",
+            "empty": "Nenhum post aguardando aprovação",
+            "approve": "Aprovar",
+            "approving": "Aprovando...",
+            "viewAll": "Ver todos"
+        },
+        "recentFailures": {
+            "title": "Falhas recentes",
+            "empty": "Nenhuma falha recente",
+            "platform": "Plataforma",
+            "post": "Post",
+            "error": "Erro",
+            "retries": "{{count}} tentativa",
+            "retries_plural": "{{count}} tentativas",
+            "viewPost": "Ver post"
+        },
+        "webhookAlert": {
+            "title": "Webhook do Make não configurado",
+            "description": "A URL do webhook do Make não está configurada. Os posts não serão publicados automaticamente até que seja configurada.",
+            "configure": "Configurar agora"
+        },
+        "error": "Erro ao carregar o dashboard",
+        "loading": "Carregando dashboard..."
+    },
     "posts": {
         "title": "Posts Sociais",
         "list": {

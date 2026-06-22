@@ -26,7 +26,8 @@ export const socialPostQueryKeys = {
     all: ['social-posts'] as const,
     lists: () => [...socialPostQueryKeys.all, 'list'] as const,
     list: (filters: SocialPostListFilters) => [...socialPostQueryKeys.lists(), filters] as const,
-    detail: (id: string) => [...socialPostQueryKeys.all, 'detail', id] as const
+    detail: (id: string) => [...socialPostQueryKeys.all, 'detail', id] as const,
+    dashboard: () => [...socialPostQueryKeys.all, 'dashboard'] as const
 };
 
 // ---------------------------------------------------------------------------
@@ -505,6 +506,12 @@ export function usePromoteHashtag() {
         }
     });
 }
+
+// ---------------------------------------------------------------------------
+// Dashboard hook — defined in use-social-dashboard.ts, re-exported here for
+// a single import surface.
+// ---------------------------------------------------------------------------
+export { useSocialDashboard } from './use-social-dashboard';
 
 async function deleteSocialPostRequest(id: string): Promise<TransitionStatusResponse['data']> {
     // The social post domain uses archive (soft-delete) as the delete mechanism.
