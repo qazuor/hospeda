@@ -75,17 +75,8 @@ function createCommerceOwnerActor(userId: string): Actor {
     return {
         id: userId,
         role: RoleEnum.COMMERCE_OWNER,
-        permissions: [
-            PermissionEnum.COMMERCE_SCHEDULE_EDIT_OWN,
-            PermissionEnum.COMMERCE_CONTACT_EDIT_OWN,
-            PermissionEnum.COMMERCE_SOCIAL_EDIT_OWN,
-            PermissionEnum.COMMERCE_MEDIA_EDIT_OWN,
-            PermissionEnum.COMMERCE_MENU_EDIT_OWN,
-            PermissionEnum.COMMERCE_PRICE_RANGE_EDIT_OWN,
-            PermissionEnum.COMMERCE_RICH_DESCRIPTION_EDIT_OWN,
-            PermissionEnum.COMMERCE_AMENITIES_EDIT_OWN,
-            PermissionEnum.COMMERCE_FEATURES_EDIT_OWN
-        ]
+        // SPEC-253 D2=b: single COMMERCE_EDIT_OWN replaces 10 per-section perms
+        permissions: [PermissionEnum.COMMERCE_EDIT_OWN]
     };
 }
 
