@@ -1,0 +1,12 @@
+{
+  "specId": "SPEC-259",
+  "title": "Systematic Chrome smoke testing of staging features (post-e2fb184)",
+  "type": "testing",
+  "complexity": "high",
+  "status": "draft",
+  "created": "2026-06-22T15:39:13Z",
+  "approved": null,
+  "completed": null,
+  "planFileRef": null,
+  "tags": ["smoke-testing", "qa", "chrome", "web", "admin", "commerce", "billing", "campaign"]
+}

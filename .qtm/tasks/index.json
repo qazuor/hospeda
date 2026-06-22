@@ -868,6 +868,18 @@
       "base": "staging",
       "createdAt": "2026-06-22T14:53:31Z",
       "note": "Doc-only spec; tasks NOT atomized yet. 3 workstreams: coverage, UX surfacing, scraper resilience."
+    },
+    {
+      "specId": "SPEC-259",
+      "title": "Systematic Chrome smoke testing of staging features (post-e2fb184)",
+      "status": "draft",
+      "progress": "0/0",
+      "path": "SPEC-259-staging-smoke-testing",
+      "branch": "spec/SPEC-259-staging-smoke-testing",
+      "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-259-staging-smoke-testing",
+      "base": "staging",
+      "createdAt": "2026-06-22T15:39:13Z",
+      "note": "Campaign spec; tasks atomized when smoke starts. 4 phases: SPEC-230,203,239,249."
     }
   ],
   "standalone": {

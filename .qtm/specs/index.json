@@ -2068,6 +2068,29 @@
         "resilience",
         "spec-257-followup"
       ]
+    },
+    {
+      "specId": "SPEC-259",
+      "title": "Systematic Chrome smoke testing of staging features (post-e2fb184)",
+      "slug": "staging-smoke-testing",
+      "type": "testing",
+      "complexity": "high",
+      "status": "draft",
+      "path": "SPEC-259-staging-smoke-testing",
+      "created": "2026-06-22T15:39:13Z",
+      "base": "staging",
+      "origin": "Campaign: real Chrome e2e smoke of features merged since e2fb184 lacking a complete smoke (SPEC-230, 203, 239, 249).",
+      "dependsOn": [],
+      "tags": [
+        "smoke-testing",
+        "qa",
+        "chrome",
+        "web",
+        "admin",
+        "commerce",
+        "billing",
+        "campaign"
+      ]
     }
   ]
 }
