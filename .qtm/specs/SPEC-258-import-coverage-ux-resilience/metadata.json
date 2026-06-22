@@ -1,12 +1,23 @@
 {
-  "specId": "SPEC-258",
-  "title": "Accommodation import — coverage gaps, limbo fields, UX surfacing & scraper resilience",
-  "type": "improvement",
-  "complexity": "high",
-  "status": "draft",
-  "created": "2026-06-22T14:53:31Z",
-  "approved": null,
-  "completed": null,
-  "planFileRef": null,
-  "tags": ["accommodation-import", "service-core", "web", "ux", "resilience", "airbnb", "booking", "google-places", "mercadolibre", "spec-257-followup"]
+    "specId": "SPEC-258",
+    "title": "Accommodation import — coverage gaps, limbo fields, UX surfacing & scraper resilience",
+    "type": "improvement",
+    "complexity": "high",
+    "status": "draft",
+    "created": "2026-06-22T14:53:31Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": [
+        "accommodation-import",
+        "service-core",
+        "web",
+        "ux",
+        "resilience",
+        "airbnb",
+        "booking",
+        "google-places",
+        "mercadolibre",
+        "spec-257-followup"
+    ]
 }

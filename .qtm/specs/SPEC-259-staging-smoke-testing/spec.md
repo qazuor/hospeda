@@ -94,7 +94,7 @@ a "smoke plan", not a deep smoke.
 ### Phase 3 — SPEC-239: commerce listings core / Gastronomía (LOCAL+VPS)
 
 - **Surface:** web public `/[lang]/gastronomia` (list + detail), admin CRUD + lead inbox
-  + review moderation, owner force-password gate.
+  - review moderation, owner force-password gate.
 - **Smoke (happy):** public listing + filters; detail page (hours, menu, amenities, FAQs,
   reviews, rating); public lead form → ops notification; admin creates owner + listing;
   admin starts binary subscription → listing becomes visible; admin manages leads

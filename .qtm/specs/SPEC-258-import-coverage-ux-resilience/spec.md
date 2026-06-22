@@ -131,6 +131,7 @@ A blend of (1) for the create step + (3) for the panel is likely best: the host 
 immediate proof of what was captured, then reviews/edits in the panel.
 
 **AC examples:**
+
 - After importing an Airbnb listing, the create step shows a summary listing ≥ the
   fields that were prefilled (count of photos, amenities, capacity figures, price,
   description present), each with source/confidence.
