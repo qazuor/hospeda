@@ -10,7 +10,12 @@
         "other": "Outra plataforma"
     },
     "link": {
-        "cta": "Veja nossa hospedagem no {{platform}} →"
+        "cta": "Veja nossa hospedagem no {{platform}} →",
+        "viewOn": "Ver no {{platform}} →"
+    },
+    "reviews": {
+        "title": "Avaliações em destaque",
+        "via": "via {{platform}}"
     },
     "aggregate": {
         "rating": "Pontuação média",

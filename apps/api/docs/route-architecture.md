@@ -553,6 +553,7 @@ Reviews have their own admin sub-router mounted at
 
 | Method | Path | Permission | Notes |
 |--------|------|-----------|-------|
+| `GET` | `/api/v1/protected/gastronomies/mine` | Auth only (owner-scoped) | Returns the session owner's OWN listings as summaries; `listOwn` hard-scopes to ownerId. Registered before `/{id}` (SPEC-249) |
 | `GET` | `/api/v1/protected/gastronomies/{id}` | Auth only | Returns `GastronomyProtectedSchema` (includes ownerId, contactInfo, audit fields) |
 | `PATCH` | `/api/v1/protected/gastronomies/{id}` | `COMMERCE_*_EDIT_OWN` (per-section, enforced in service) | Operational fields only; identity fields silently stripped by Zod |
 | `POST` | `/api/v1/protected/gastronomies/{id}/faqs` | `COMMERCE_FAQS_EDIT_OWN` | displayOrder auto-assigned as max+1 |
@@ -622,6 +623,7 @@ Reviews have their own admin sub-router mounted at
 
 | Method | Path | Permission | Notes |
 |--------|------|-----------|-------|
+| `GET` | `/api/v1/protected/experiences/mine` | Auth only (owner-scoped) | Returns the session owner's OWN listings as summaries; `listOwn` hard-scopes to ownerId. Registered before `/{id}` (SPEC-249) |
 | `GET` | `/api/v1/protected/experiences/{id}` | Auth only | Returns `ExperienceProtectedSchema` (includes ownerId, contactInfo, audit fields) |
 | `PATCH` | `/api/v1/protected/experiences/{id}` | `COMMERCE_*_EDIT_OWN` (per-section, enforced in service) | Operational fields only; identity fields silently stripped by Zod |
 | `POST` | `/api/v1/protected/experiences/{id}/faqs` | `COMMERCE_FAQS_EDIT_OWN` | displayOrder auto-assigned as max+1 |

@@ -180,6 +180,34 @@ describe('AirbnbReputationAdapter', () => {
             expect(result.reviewsCount).toBe(50);
         });
 
+        it('should map from a nested rating object (tri_angle/airbnb-rooms-urls-scraper)', async () => {
+            // The rooms-urls scraper returns the aggregate as a nested object:
+            // { guestSatisfaction, reviewsCount, accuracy, ... }. Only the
+            // aggregate sub-fields are read (no review text — AC-7.1).
+            const adapter = new AirbnbReputationAdapter({
+                apifyToken: 'tok',
+                apifyAirbnbActor: 'tri_angle/airbnb-rooms-urls-scraper'
+            });
+            const listing = makeAirbnbListing();
+
+            mockRunApifyActor.mockResolvedValueOnce([
+                {
+                    rating: {
+                        guestSatisfaction: 5,
+                        reviewsCount: 9,
+                        accuracy: 5,
+                        cleanliness: 4.67
+                    }
+                }
+            ]);
+
+            const result = await adapter.fetch(listing);
+
+            expect(result.rating).toBe(5);
+            expect(result.reviewsCount).toBe(9);
+            expect(result.snippets).toBeNull();
+        });
+
         it('should fall back to starRating when rating is absent', async () => {
             const adapter = new AirbnbReputationAdapter({
                 apifyToken: 'tok',

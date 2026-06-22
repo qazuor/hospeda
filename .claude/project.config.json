@@ -92,6 +92,7 @@
         "connStringFile": "apps/api/.env.local",
         "connStringTemplate": "postgresql://hospeda_user:hospeda_pass@localhost:5436/{dbname}",
         "freshCmd": "pnpm db:fresh-dev",
-        "applyExtrasCmd": "pnpm db:apply-extras"
+        "applyExtrasCmd": "pnpm db:apply-extras",
+        "schemaSentinelTables": ["gastronomies", "experiences"]
     }
 }

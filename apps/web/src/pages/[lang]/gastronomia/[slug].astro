@@ -119,7 +119,9 @@ const descriptionText = renderPlain({ raw: gastronomy.description });
 const canonicalPath = buildUrl({ locale, path: `gastronomia/${gastronomy.slug}/` });
 
 // --- SEO ---
-const seoTitle = gastronomy.seo?.title ?? `${gastronomy.name} | Hospeda`;
+// SEOHead (via DetailLayout) already appends " | Hospeda", so the fallback is the
+// bare name — appending it here too produced a duplicated "… | Hospeda | Hospeda".
+const seoTitle = gastronomy.seo?.title ?? gastronomy.name;
 const seoDescription =
     gastronomy.seo?.description ??
     gastronomy.summary ??

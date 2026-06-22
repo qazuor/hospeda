@@ -22,6 +22,8 @@ import {
     AccommodationService,
     DestinationService,
     EventService,
+    ExperienceService,
+    GastronomyService,
     PostService
 } from '@repo/service-core';
 import type { Context, MiddlewareHandler } from 'hono';
@@ -107,7 +109,13 @@ const adminDeleteMediaPreValidation: MiddlewareHandler = async (ctx, next) => {
  */
 const resolveDeleteEntityService = (
     entityType: MediaEntityType
-): AccommodationService | DestinationService | EventService | PostService => {
+):
+    | AccommodationService
+    | DestinationService
+    | EventService
+    | PostService
+    | GastronomyService
+    | ExperienceService => {
     switch (entityType) {
         case 'accommodation':
             return new AccommodationService({ logger: apiLogger });
@@ -117,6 +125,10 @@ const resolveDeleteEntityService = (
             return new EventService({ logger: apiLogger });
         case 'post':
             return new PostService({ logger: apiLogger });
+        case 'gastronomy':
+            return new GastronomyService({ logger: apiLogger });
+        case 'experience':
+            return new ExperienceService({ logger: apiLogger });
     }
 };
 

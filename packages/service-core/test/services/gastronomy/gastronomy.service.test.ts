@@ -258,6 +258,57 @@ describe('GastronomyService.updateOwn', () => {
 });
 
 // ---------------------------------------------------------------------------
+// updateOwn — AC-3 identity-field regression (SPEC-249 T-022)
+// ---------------------------------------------------------------------------
+
+describe('GastronomyService.updateOwn — AC-3 identity-field regression (SPEC-249 T-022)', () => {
+    it('strips ALL forged identity/core fields while persisting the operational change', async () => {
+        const entity = makeGastronomyEntity();
+        const service = makeService(entity);
+        const mockUpdate = (service as AnyService).model.update;
+
+        // Full forged identity/core set alongside one valid operational field.
+        // biome-ignore lint/suspicious/noExplicitAny: simulating a forged HTTP body
+        const forgedPayload: any = {
+            priceRange: PriceRangeEnum.MID, // valid operational field — must persist
+            name: 'FORGED_NAME',
+            slug: 'forged-slug',
+            type: GastronomyTypeEnum.CAFE,
+            destinationId: '00000000-0000-4000-a000-0000000000ff',
+            lifecycleState: LifecycleStatusEnum.ARCHIVED,
+            visibility: VisibilityEnum.PRIVATE,
+            moderationState: ModerationStatusEnum.REJECTED,
+            isFeatured: true,
+            ownerId: '00000000-0000-4000-a000-0000000000fe'
+        };
+
+        const result = await service.updateOwn(ENTITY_ID, forgedPayload, ownerActor);
+
+        expect(result.error).toBeUndefined();
+        // The base update MUST have been invoked (no silent skip).
+        expect(mockUpdate).toHaveBeenCalledTimes(1);
+        const updatePayload = (mockUpdate.mock.calls[0]?.[1] ?? {}) as Record<string, unknown>;
+
+        // The valid operational field persisted.
+        expect(updatePayload.priceRange).toBe(PriceRangeEnum.MID);
+        // Every forged identity/core field was stripped by the owner-update schema.
+        for (const forbidden of [
+            'name',
+            'slug',
+            'type',
+            'destinationId',
+            'lifecycleState',
+            'visibility',
+            'moderationState',
+            'isFeatured',
+            'ownerId'
+        ]) {
+            expect(updatePayload).not.toHaveProperty(forbidden);
+        }
+    });
+});
+
+// ---------------------------------------------------------------------------
 // _executeSearch (indirect — through search() public API with mocked model)
 // ---------------------------------------------------------------------------
 
@@ -351,5 +402,70 @@ describe('GastronomyService public search visibility filter (AC-6.2)', () => {
             visibility: VisibilityEnum.PUBLIC,
             lifecycleState: LifecycleStatusEnum.ACTIVE
         });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// assignOwner — dedicated ownership action (regression: SPEC-239 assign-owner
+// was routed through update(), which omits ownerId, so it silently no-op'd)
+// ---------------------------------------------------------------------------
+
+describe('GastronomyService.assignOwner', () => {
+    it('writes the new ownerId via model.update for a staff actor', async () => {
+        const service = makeService(makeGastronomyEntity());
+        const model = (service as AnyService).model;
+
+        const result = await service.assignOwner(staffActor, ENTITY_ID, OTHER_USER);
+
+        expect(result.error).toBeUndefined();
+        expect(model.update).toHaveBeenCalledTimes(1);
+        // The update payload MUST carry ownerId (the bug was that it never did).
+        expect(model.update.mock.calls[0][1]).toMatchObject({ ownerId: OTHER_USER });
+        expect(result.data?.ownerId).toBe(OTHER_USER);
+    });
+
+    it('returns FORBIDDEN when the actor lacks COMMERCE_EDIT_ALL', async () => {
+        const service = makeService(makeGastronomyEntity());
+        const model = (service as AnyService).model;
+
+        const result = await service.assignOwner(ownerActor, ENTITY_ID, OTHER_USER);
+
+        expect(result.data).toBeUndefined();
+        expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+        expect(model.update).not.toHaveBeenCalled();
+    });
+
+    it('returns NOT_FOUND when the listing does not exist', async () => {
+        const service = makeService(null);
+        const model = (service as AnyService).model;
+
+        const result = await service.assignOwner(staffActor, ENTITY_ID, OTHER_USER);
+
+        expect(result.data).toBeUndefined();
+        expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+        expect(model.update).not.toHaveBeenCalled();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// listOwn — owner-tier read inherited from BaseCommerceListingService (SPEC-249 T-004)
+// ---------------------------------------------------------------------------
+
+describe('GastronomyService.listOwn', () => {
+    it("lists the owner's own non-deleted gastronomy listings (hard-scoped to ownerId)", async () => {
+        const entity = makeGastronomyEntity();
+        const service = makeService(entity);
+        const mockFindAll = (service as AnyService).model.findAll;
+
+        const result = await service.listOwn(ownerActor);
+
+        expect(result.error).toBeUndefined();
+        expect(result.data?.listings).toHaveLength(1);
+        expect(mockFindAll).toHaveBeenCalledWith(
+            { ownerId: OWNER_ID, deletedAt: null },
+            { page: 1, pageSize: 100 },
+            undefined,
+            undefined
+        );
     });
 });

@@ -28,6 +28,8 @@ import {
     AccommodationService,
     DestinationService,
     EventService,
+    ExperienceService,
+    GastronomyService,
     PostService
 } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -53,7 +55,14 @@ const ActorIdSchema = z.string().uuid();
  */
 const resolveEntityService = (
     entityType: string
-): AccommodationService | DestinationService | EventService | PostService | null => {
+):
+    | AccommodationService
+    | DestinationService
+    | EventService
+    | PostService
+    | GastronomyService
+    | ExperienceService
+    | null => {
     switch (entityType) {
         case 'accommodation':
             return new AccommodationService({ logger: apiLogger });
@@ -63,6 +72,10 @@ const resolveEntityService = (
             return new EventService({ logger: apiLogger });
         case 'post':
             return new PostService({ logger: apiLogger });
+        case 'gastronomy':
+            return new GastronomyService({ logger: apiLogger });
+        case 'experience':
+            return new ExperienceService({ logger: apiLogger });
         default:
             return null;
     }

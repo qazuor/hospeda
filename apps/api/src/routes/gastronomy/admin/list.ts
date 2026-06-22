@@ -2,7 +2,7 @@
  * Admin gastronomy list endpoint
  * Returns all gastronomy listings with full admin access.
  */
-import { GastronomyAdminSchema, GastronomyAdminSearchSchema } from '@repo/schemas';
+import { GastronomyAdminListItemSchema, GastronomyAdminSearchSchema } from '@repo/schemas';
 import { GastronomyService, ServiceError } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -27,7 +27,7 @@ export const adminListGastronomiesRoute = createAdminListRoute({
     description: 'Returns a paginated list of gastronomy listings with full admin details',
     tags: ['Gastronomy'],
     requestQuery: GastronomyAdminSearchSchema.omit({ page: true, pageSize: true }).shape,
-    responseSchema: GastronomyAdminSchema,
+    responseSchema: GastronomyAdminListItemSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});

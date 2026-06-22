@@ -87,7 +87,10 @@ export const createExperienceColumns = (
     {
         id: 'destination',
         header: t('admin-entities.columns.destination'),
-        accessorKey: 'destinationId',
+        // Show the destination NAME from the eager-loaded relation (the admin
+        // list response includes `destination: { id, name, slug }`), not the raw
+        // FK UUID. TanStack resolves the dot-path against the row.
+        accessorKey: 'destination.name',
         enableSorting: false,
         columnType: ColumnType.STRING
     },
@@ -101,9 +104,32 @@ export const createExperienceColumns = (
     {
         id: 'owner',
         header: t('admin-entities.columns.owner'),
+        // Show a readable owner label from the eager-loaded relation, not the raw
+        // FK UUID. The users table has no single `name` column, so compose from
+        // displayName → firstName+lastName → email (an admin-provisioned commerce
+        // owner may only have an email until they complete their profile).
         accessorKey: 'ownerId',
         enableSorting: false,
-        columnType: ColumnType.STRING
+        columnType: ColumnType.WIDGET,
+        widgetRenderer: (row) => {
+            const owner = (
+                row as {
+                    owner?: {
+                        displayName?: string | null;
+                        firstName?: string | null;
+                        lastName?: string | null;
+                        email?: string | null;
+                    };
+                }
+            ).owner;
+            if (!owner) return '—';
+            const composed =
+                owner.displayName?.trim() ||
+                [owner.firstName, owner.lastName].filter(Boolean).join(' ').trim() ||
+                owner.email ||
+                '—';
+            return composed;
+        }
     },
     {
         id: 'lifecycleStatus',

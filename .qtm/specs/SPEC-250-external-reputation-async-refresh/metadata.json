@@ -1,0 +1,12 @@
+{
+    "specId": "SPEC-250",
+    "title": "Asynchronous external reputation refresh (Apify async API + polling)",
+    "type": "improvement",
+    "complexity": "high",
+    "status": "draft",
+    "created": "2026-06-20T00:00:00.000Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["external-reputation", "apify", "cron", "async", "accommodation", "SPEC-237-followup"]
+}

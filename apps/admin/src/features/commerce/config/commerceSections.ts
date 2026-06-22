@@ -556,28 +556,24 @@ export function createCommerceOperationalSection(): ConsolidatedSectionConfig {
 
             // ------------------------------------------------------------------
             // Opening hours
-            // TODO(SPEC-239): replace with a structured OPENING_HOURS field type
-            // once FieldTypeEnum gains that entry.  For now TEXTAREA is the
-            // closest existing type.
+            // `openingHours` is a structured object ({ timezone, days }) edited by
+            // the listing owner on the web with a dedicated UI. The admin panel has
+            // no structured opening-hours widget yet, so it is shown read-only as
+            // formatted JSON (JSON field type) — never TEXTAREA, which fed the raw
+            // object to a text renderer and crashed the admin view
+            // ("Objects are not valid as a React child").
+            // TODO(SPEC-239): replace with a dedicated OPENING_HOURS field type +
+            // structured view/edit widget once FieldTypeEnum gains that entry.
             // ------------------------------------------------------------------
             {
                 id: 'openingHours',
-                type: FieldTypeEnum.TEXTAREA,
+                type: FieldTypeEnum.JSON,
                 required: false,
-                modes: ['view', 'edit', 'create'],
+                modes: ['view'],
                 label: 'Horarios de Apertura',
-                description: 'Horarios de atención del comercio',
-                placeholder: 'Lunes a Viernes 9:00–18:00, Sábados 10:00–14:00',
+                description: 'Horarios de atención del comercio (gestionados por el dueño)',
                 permissions: {
-                    view: [PermissionEnum.COMMERCE_VIEW_ALL],
-                    edit: [
-                        PermissionEnum.COMMERCE_SCHEDULE_EDIT_OWN,
-                        PermissionEnum.COMMERCE_EDIT_ALL
-                    ]
-                },
-                typeConfig: {
-                    minRows: 2,
-                    maxLength: 500
+                    view: [PermissionEnum.COMMERCE_VIEW_ALL]
                 }
             },
 

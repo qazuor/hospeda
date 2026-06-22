@@ -708,10 +708,12 @@
         {
             "specId": "SPEC-222",
             "title": "Accommodation import from URL",
-            "status": "in-progress",
-            "progress": "27/28",
+            "status": "completed",
+            "progress": "28/28",
             "path": "SPEC-222-accommodation-import-from-url",
-            "archived": false
+            "archived": true,
+            "archivedAt": "2026-06-22T15:10:22Z",
+            "archiveNote": "Smoke + legal copy shipped (smoke PR #1748). PostHog import-analytics events moved to SPEC-258 (A7). Short-link resolution follow-up = SPEC-257."
         },
         {
             "specId": "SPEC-244",
@@ -752,6 +754,124 @@
             "archivedAt": "2026-06-18T15:26:22Z",
             "completionRef": "PR #1724 (merge 487f46266)",
             "note": "15 tasks across setup/core/integration/docs phases (avg complexity 2.07). Critical path: T-001→T-004→T-005→T-006→T-007→T-008→T-009→T-015 (8 steps). T-002 (env) and T-003 (i18n) have float and run in parallel with early critical-path tasks. safeExternalFetch already exists in @repo/utils; apify-client already in SPEC-222 adapters; google-places import adapter MUST NOT be modified (new google-reputation.adapter.ts needed). SPEC-222 google/apify env vars may already be registered — verify before re-registering."
+        },
+        {
+            "specId": "SPEC-249",
+            "title": "Commerce owner self-service web area (operational editing + force-password + credential email)",
+            "status": "completed",
+            "progress": "26/26",
+            "path": "SPEC-249-commerce-owner-self-service-web",
+            "branch": "spec/SPEC-249-commerce-owner-self-service-web",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-249-commerce-owner-self-service-web",
+            "base": "staging",
+            "createdAt": "2026-06-20T00:00:00.000Z",
+            "tasksAtomizedAt": "2026-06-20T06:56:31.000Z",
+            "taskCount": 26,
+            "averageComplexity": 2.3,
+            "note": "Realigned vs staging post-SPEC-239: Parts B (force-password) + C (credential email) ALREADY BUILT by SPEC-239 -> verify-only (T-023/T-024). Build = web owner surface (Part A, mi-cuenta/comercio, gastronomy+experiences) + single approve&provision admin action (Part D / AC-6). Critical path T-003->T-006->T-009->T-011->T-012->T-016->T-025 (7 steps). 3 parallel tracks. Known gap covered: no protected list-own endpoint existed (T-006/T-007).",
+            "archived": true,
+            "archivedAt": "2026-06-20T18:15:00.000Z",
+            "archiveNote": "Feature shipped + validated live (T-021/T-025 browser+HTTP). Editor field-expansion -> SPEC-253; DB infra -> SPEC-251; E2E harness + seed fixtures -> SPEC-252."
+        },
+        {
+            "specId": "SPEC-253",
+            "title": "Commerce owner editor — extended fields + single COMMERCE_EDIT_OWN permission",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-253-commerce-owner-editor-extended-fields"
+        },
+        {
+            "specId": "SPEC-251",
+            "title": "Local DB dev/template refresh + worktree DB auto-heal correctness",
+            "status": "completed",
+            "progress": "3/3",
+            "path": "SPEC-251-local-db-dev-template-refresh"
+        },
+        {
+            "specId": "SPEC-252",
+            "title": "Extend apps/e2e with commerce-owner flows + seed fixtures",
+            "status": "completed",
+            "progress": "5/5",
+            "path": "SPEC-252-web-e2e-playwright-harness"
+        },
+        {
+            "specId": "SPEC-250",
+            "title": "Asynchronous external reputation refresh (Apify async API + polling)",
+            "status": "draft",
+            "progress": "0/39",
+            "path": "SPEC-250-external-reputation-async-refresh",
+            "parent": "SPEC-237",
+            "branch": "spec/SPEC-250-external-reputation-async-refresh",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-250-external-reputation-async-refresh",
+            "base": "staging",
+            "createdAt": "2026-06-20T00:00:00.000Z",
+            "tasksAtomizedAt": "2026-06-20T00:00:00.000Z",
+            "taskCount": 39,
+            "averageComplexity": 1.79,
+            "note": "39 tasks across 5 phases (setup 4, core 16, integration 13, testing 4, docs 2). Critical path T-001->T-002->T-018->T-025->T-026->T-028->T-035->T-036 (8 hops). Apify async API + polling cron. NOT to be implemented yet (owner: generate only)."
+        },
+        {
+            "specId": "SPEC-257",
+            "title": "Accommodation import short-link resolution + adapter enrichment",
+            "status": "in-progress",
+            "progress": "19/19",
+            "path": "SPEC-257-import-short-link-resolution",
+            "parent": "SPEC-222",
+            "branch": "spec/SPEC-257-import-short-link-resolution",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-257-import-short-link-resolution",
+            "base": "staging",
+            "createdAt": "2026-06-22T02:36:01Z",
+            "tasksAtomizedAt": "2026-06-22T02:36:01Z",
+            "taskCount": 19,
+            "averageComplexity": 2.36,
+            "note": "11 tasks across 5 phases (setup 1, core 4, integration 4, testing 1, docs 1). SPEC-222 short-link follow-up."
+        },
+        {
+            "specId": "SPEC-258",
+            "title": "Accommodation import — coverage gaps, limbo fields, UX surfacing & scraper resilience",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-258-import-coverage-ux-resilience",
+            "parent": "SPEC-257",
+            "branch": "spec/SPEC-258-import-coverage-ux-resilience",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-258-import-coverage-ux-resilience",
+            "base": "staging",
+            "createdAt": "2026-06-22T14:53:31Z",
+            "note": "Doc-only spec; tasks NOT atomized yet. 3 workstreams: coverage, UX surfacing, scraper resilience."
+        },
+        {
+            "specId": "SPEC-259",
+            "title": "Systematic Chrome smoke testing of staging features (post-e2fb184)",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-259-staging-smoke-testing",
+            "branch": "spec/SPEC-259-staging-smoke-testing",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-259-staging-smoke-testing",
+            "base": "staging",
+            "createdAt": "2026-06-22T15:39:13Z",
+            "note": "Campaign spec; tasks atomized when smoke starts. 4 phases: SPEC-230,203,239,249."
+        },
+        {
+            "specId": "SPEC-260",
+            "title": "AI Usage Dashboard",
+            "status": "draft",
+            "progress": "0/23",
+            "path": "SPEC-260-ai-usage-dashboard",
+            "branch": "spec/SPEC-260-ai-usage-dashboard",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-260-ai-usage-dashboard",
+            "base": "staging",
+            "createdAt": "2026-06-22T00:00:00Z",
+            "tasksAtomizedAt": "2026-06-22T00:00:00Z",
+            "taskCount": 23,
+            "averageComplexity": 2.39,
+            "note": "23 tasks across 5 phases (setup 1, core 7, integration 11, testing 3, docs 1). Admin AI usage dashboard; extends existing metering with by-model/by-provider/feature-cross/daily aggregations + recharts UI. Re-numbered from SPEC-259 (collision with parallel staging-smoke-testing)."
+        },
+        {
+            "specId": "SPEC-261",
+            "title": "Stabilize commerce-owner E2E and promote back to @p0",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-261-commerce-e2e-stabilization"
         },
         {
             "specId": "SPEC-228",

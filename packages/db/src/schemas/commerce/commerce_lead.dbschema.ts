@@ -39,14 +39,25 @@ export const commerceLeads = pgTable(
         /** Optional free-form message from the prospective owner. */
         message: text('message'),
         /**
-         * Lead handling status. Values: 'new' | 'contacted' | 'converted' | 'rejected'.
+         * Lead handling status. Values: 'pending' | 'reviewing' | 'approved' | 'rejected'
+         * (canonical workflow vocabulary defined by `CommerceLeadStatusEnum` in
+         * `@repo/schemas`; mirrored by the admin inbox filter, status badge, and i18n keys).
          * Stored as varchar (not enum) for flexibility.
          */
-        status: varchar('status', { length: 50 }).notNull().default('new'),
+        status: varchar('status', { length: 50 }).notNull().default('pending'),
         /** Timestamp when an admin first acted on this lead. */
         handledAt: timestamp('handled_at', { withTimezone: true }),
         /** Admin who acted on the lead. SET NULL if the admin account is deleted. */
         handledById: uuid('handled_by_id').references(() => users.id, { onDelete: 'set null' }),
+        /**
+         * COMMERCE_OWNER user provisioned from this lead (SPEC-249 Part D).
+         * Set once the "approve & provision" action creates the owner account;
+         * used as the idempotency guard so re-approving never double-provisions.
+         * SET NULL if the provisioned user account is later deleted.
+         */
+        provisionedUserId: uuid('provisioned_user_id').references(() => users.id, {
+            onDelete: 'set null'
+        }),
         /** Internal admin note about the lead disposition. */
         adminNote: text('admin_note'),
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
@@ -68,7 +79,13 @@ export const commerceLeadsRelations = relations(commerceLeads, ({ one }) => ({
     }),
     handledBy: one(users, {
         fields: [commerceLeads.handledById],
-        references: [users.id]
+        references: [users.id],
+        relationName: 'commerceLeadHandledBy'
+    }),
+    provisionedUser: one(users, {
+        fields: [commerceLeads.provisionedUserId],
+        references: [users.id],
+        relationName: 'commerceLeadProvisionedUser'
     })
 }));
 

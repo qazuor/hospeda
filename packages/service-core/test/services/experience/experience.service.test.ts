@@ -299,6 +299,63 @@ describe('ExperienceService.updateOwn — schema enforcement', () => {
 });
 
 // ---------------------------------------------------------------------------
+// updateOwn — AC-3 identity-field regression (SPEC-249 T-022)
+// ---------------------------------------------------------------------------
+
+describe('ExperienceService.updateOwn — AC-3 identity-field regression (SPEC-249 T-022)', () => {
+    it('strips ALL forged identity/core fields while persisting the operational change', async () => {
+        const entity = makeExperienceEntity();
+        const service = makeService(entity);
+        const mockUpdate = (service as AnyService).model.update;
+
+        // Full forged identity/core set alongside one valid operational field.
+        // biome-ignore lint/suspicious/noExplicitAny: simulating a forged HTTP body
+        const forgedPayload: any = {
+            isPriceOnRequest: true, // valid operational field — must persist
+            name: 'FORGED_NAME',
+            slug: 'forged-slug',
+            type: ExperienceTypeEnum.TOUR_GUIDE,
+            priceFrom: 9999999,
+            priceUnit: ExperiencePriceUnitEnum.PER_GROUP,
+            destinationId: '00000000-0000-4000-a000-0000000000ff',
+            lifecycleState: LifecycleStatusEnum.ARCHIVED,
+            visibility: VisibilityEnum.PRIVATE,
+            moderationState: ModerationStatusEnum.REJECTED,
+            isFeatured: true,
+            hasActiveSubscription: false,
+            ownerId: '00000000-0000-4000-a000-0000000000fe'
+        };
+
+        const result = await service.updateOwn(ENTITY_ID, forgedPayload, ownerActor);
+
+        expect(result.error).toBeUndefined();
+        // The base update MUST have been invoked (no silent skip).
+        expect(mockUpdate).toHaveBeenCalledTimes(1);
+        const updatePayload = (mockUpdate.mock.calls[0]?.[1] ?? {}) as Record<string, unknown>;
+
+        // The valid operational field persisted.
+        expect(updatePayload.isPriceOnRequest).toBe(true);
+        // Every forged identity/core field was stripped by the owner-update schema.
+        for (const forbidden of [
+            'name',
+            'slug',
+            'type',
+            'priceFrom',
+            'priceUnit',
+            'destinationId',
+            'lifecycleState',
+            'visibility',
+            'moderationState',
+            'isFeatured',
+            'hasActiveSubscription',
+            'ownerId'
+        ]) {
+            expect(updatePayload).not.toHaveProperty(forbidden);
+        }
+    });
+});
+
+// ---------------------------------------------------------------------------
 // _executeSearch
 // ---------------------------------------------------------------------------
 
@@ -370,6 +427,69 @@ describe('ExperienceService search filter forwarding', () => {
             expect.objectContaining({ deletedAt: null }),
             expect.anything()
         );
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Public search/count visibility filter (AC-6.2 / AC-4.3 regression)
+// A hidden (PRIVATE / non-ACTIVE) listing must never surface on the public list.
+// Before this fix the experience public list leaked DRAFT/PRIVATE/no-subscription
+// listings because _executeSearch only filtered deletedAt=null (gastronomy parity).
+// ---------------------------------------------------------------------------
+
+describe('ExperienceService public search visibility filter (AC-6.2)', () => {
+    it('forces visibility=PUBLIC + lifecycleState=ACTIVE on public search (no hidden-listing leak)', async () => {
+        const service = makeService(makeExperienceEntity());
+        const mockFindAll = (service as AnyService).model.findAll;
+
+        await (
+            service as unknown as { _executeSearch: (...args: unknown[]) => unknown }
+        )._executeSearch({ page: 1, pageSize: 10 }, otherUserActor, {});
+
+        expect(mockFindAll.mock.calls[0][0]).toMatchObject({
+            deletedAt: null,
+            visibility: VisibilityEnum.PUBLIC,
+            lifecycleState: LifecycleStatusEnum.ACTIVE
+        });
+    });
+
+    it('cannot be widened by a caller-supplied visibility/lifecycle param', async () => {
+        const service = makeService(makeExperienceEntity());
+        const mockFindAll = (service as AnyService).model.findAll;
+
+        await (
+            service as unknown as { _executeSearch: (...args: unknown[]) => unknown }
+        )._executeSearch(
+            {
+                visibility: VisibilityEnum.PRIVATE,
+                lifecycleState: LifecycleStatusEnum.DRAFT,
+                page: 1,
+                pageSize: 10
+            },
+            otherUserActor,
+            {}
+        );
+
+        // The forced gates are applied AFTER the spread, so they win.
+        expect(mockFindAll.mock.calls[0][0]).toMatchObject({
+            visibility: VisibilityEnum.PUBLIC,
+            lifecycleState: LifecycleStatusEnum.ACTIVE
+        });
+    });
+
+    it('forces the same visibility filter on the public count', async () => {
+        const service = makeService(makeExperienceEntity());
+        const mockCount = (service as AnyService).model.count;
+
+        await (
+            service as unknown as { _executeCount: (...args: unknown[]) => unknown }
+        )._executeCount({ page: 1, pageSize: 10 }, otherUserActor, {});
+
+        expect(mockCount.mock.calls[0][0]).toMatchObject({
+            deletedAt: null,
+            visibility: VisibilityEnum.PUBLIC,
+            lifecycleState: LifecycleStatusEnum.ACTIVE
+        });
     });
 });
 
@@ -475,5 +595,28 @@ describe('ExperienceService subscription visibility gate', () => {
 describe('ExperienceService.ENTITY_NAME', () => {
     it('should be "experience"', () => {
         expect(ExperienceService.ENTITY_NAME).toBe('experience');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// listOwn — owner-tier read inherited from BaseCommerceListingService (SPEC-249 T-005)
+// ---------------------------------------------------------------------------
+
+describe('ExperienceService.listOwn', () => {
+    it("lists the owner's own non-deleted experience listings (hard-scoped to ownerId)", async () => {
+        const entity = makeExperienceEntity();
+        const service = makeService(entity);
+        const mockFindAll = (service as AnyService).model.findAll;
+
+        const result = await service.listOwn(ownerActor);
+
+        expect(result.error).toBeUndefined();
+        expect(result.data?.listings).toHaveLength(1);
+        expect(mockFindAll).toHaveBeenCalledWith(
+            { ownerId: OWNER_ID, deletedAt: null },
+            { page: 1, pageSize: 100 },
+            undefined,
+            undefined
+        );
     });
 });

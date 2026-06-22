@@ -11,7 +11,7 @@ import { getSiteUrl } from '@/lib/env';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { isHostRole } from '@/lib/account-roles';
+import { isCommerceOwnerRole, isHostRole } from '@/lib/account-roles';
 import BaseLayout from './BaseLayout.astro';
 import SEOHead from '@/components/seo/SEOHead.astro';
 import {
@@ -24,6 +24,7 @@ import {
 	SettingsIcon,
 	NewsletterIcon,
 	BuildingIcon,
+	BriefcaseIcon,
 	DashboardIcon,
 	MegaphoneIcon,
 	WrenchIcon,
@@ -67,6 +68,7 @@ interface NavGroup {
 
 const userRole = Astro.locals.user?.role ?? null;
 const showPropertiesNav = isHostRole(userRole);
+const showCommerceNav = isCommerceOwnerRole(userRole);
 
 /**
  * Sidebar nav is grouped so users can scan it as two short lists instead
@@ -88,6 +90,9 @@ const navGroups: ReadonlyArray<NavGroup> = [
 		items: [
 			...(showPropertiesNav
 				? [{ section: 'propiedades', label: t('account.nav.properties', 'Mis propiedades'), path: 'mi-cuenta/propiedades', Icon: BuildingIcon }]
+				: []),
+			...(showCommerceNav
+				? [{ section: 'comercio', label: t('commerce.owner.nav', 'Mi comercio'), path: 'mi-cuenta/comercio', Icon: BriefcaseIcon }]
 				: []),
 			{ section: 'favoritos', label: t('account.nav.favorites', 'Favoritos'), path: 'mi-cuenta/favoritos', Icon: FavoriteIcon },
 			{ section: 'resenas', label: t('account.nav.reviews', 'Mis reseñas'), path: 'mi-cuenta/resenas', Icon: StarIcon },
