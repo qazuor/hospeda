@@ -364,7 +364,7 @@ describe('AirbnbAdapter', () => {
             expect(result.price?.price?.value).toBe(2500);
         });
 
-        it('should pass the listing URL in the actorInput startUrls', async () => {
+        it('should pass the listing URL unchanged in the actorInput startUrls', async () => {
             // Arrange
             mockRunApifyActor.mockResolvedValue([]);
             const url = new URL('https://www.airbnb.com/rooms/77777');
@@ -373,12 +373,12 @@ describe('AirbnbAdapter', () => {
             // Act
             await adapter.extract(url, ctx);
 
-            // Assert — makeCtx() has locale 'es', so the URL carries ?locale=es
-            expect(mockRunApifyActor).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    actorInput: { startUrls: [{ url: `${url.href}?locale=es` }] }
-                })
-            );
+            // Assert — URL is passed verbatim (locale goes in the actor input, NOT
+            // the URL — a ?locale= query breaks the tri_angle actor).
+            const callArg = mockRunApifyActor.mock.calls[0]?.[0];
+            const startUrls = (callArg?.actorInput as { startUrls: { url: string }[] }).startUrls;
+            expect(startUrls[0]?.url).toBe(url.href);
+            expect(startUrls[0]?.url).not.toContain('locale=');
         });
     });
 
@@ -541,6 +541,133 @@ describe('AirbnbAdapter', () => {
             expect(result.extraInfo?.beds).toEqual({ value: 4, source: 'official_api' });
         });
 
+        it('should fall back to metaDescription for summary (tri_angle actor)', async () => {
+            // Arrange — the real tri_angle actor exposes metaDescription, not summary
+            const item: Record<string, unknown> = {
+                title: 'Casa',
+                metaDescription: 'Cheroga te ofrece tranquilidad y espacios naturales.'
+            };
+            mockRunApifyActor.mockResolvedValue([item]);
+
+            // Act
+            const result = await adapter.extract(
+                new URL('https://www.airbnb.com/rooms/1'),
+                makeCtx()
+            );
+
+            // Assert
+            expect(result.summary?.value).toBe(
+                'Cheroga te ofrece tranquilidad y espacios naturales.'
+            );
+        });
+
+        it('should map scrapedLocality from the location string (tri_angle actor)', async () => {
+            // Arrange
+            const item: Record<string, unknown> = {
+                title: 'Casa',
+                location: 'Concepción del Uruguay'
+            };
+            mockRunApifyActor.mockResolvedValue([item]);
+
+            // Act
+            const result = await adapter.extract(
+                new URL('https://www.airbnb.com/rooms/1'),
+                makeCtx()
+            );
+
+            // Assert
+            expect(result.scrapedLocality).toBe('Concepción del Uruguay');
+        });
+
+        it('should parse capacity/bedrooms/beds/bathrooms from subDescription.items (English)', async () => {
+            // Arrange — tri_angle capacity line
+            const item: Record<string, unknown> = {
+                title: 'Casa',
+                subDescription: { items: ['11 guests', '3 bedrooms', '8 beds', '1 bath'] }
+            };
+            mockRunApifyActor.mockResolvedValue([item]);
+
+            // Act
+            const result = await adapter.extract(
+                new URL('https://www.airbnb.com/rooms/1'),
+                makeCtx()
+            );
+
+            // Assert
+            expect(result.extraInfo?.capacity).toEqual({ value: 11, source: 'official_api' });
+            expect(result.extraInfo?.bedrooms).toEqual({ value: 3, source: 'official_api' });
+            expect(result.extraInfo?.beds).toEqual({ value: 8, source: 'official_api' });
+            expect(result.extraInfo?.bathrooms).toEqual({ value: 1, source: 'official_api' });
+        });
+
+        it('should parse subDescription.items in Spanish', async () => {
+            // Arrange — localized capacity line
+            const item: Record<string, unknown> = {
+                title: 'Casa',
+                subDescription: { items: ['11 huéspedes', '3 habitaciones', '8 camas', '1 baño'] }
+            };
+            mockRunApifyActor.mockResolvedValue([item]);
+
+            // Act
+            const result = await adapter.extract(
+                new URL('https://www.airbnb.com/rooms/1'),
+                makeCtx()
+            );
+
+            // Assert
+            expect(result.extraInfo?.capacity?.value).toBe(11);
+            expect(result.extraInfo?.bedrooms?.value).toBe(3);
+            expect(result.extraInfo?.beds?.value).toBe(8);
+            expect(result.extraInfo?.bathrooms?.value).toBe(1);
+        });
+
+        it('should prefer top-level capacity fields over subDescription', async () => {
+            // Arrange — both present; top-level wins
+            const item: Record<string, unknown> = {
+                title: 'Casa',
+                personCapacity: 4,
+                subDescription: { items: ['11 guests', '2 bedrooms'] }
+            };
+            mockRunApifyActor.mockResolvedValue([item]);
+
+            // Act
+            const result = await adapter.extract(
+                new URL('https://www.airbnb.com/rooms/1'),
+                makeCtx()
+            );
+
+            // Assert — capacity from top-level (4), bedrooms from subDescription (2)
+            expect(result.extraInfo?.capacity?.value).toBe(4);
+            expect(result.extraInfo?.bedrooms?.value).toBe(2);
+        });
+
+        it('should map grouped tri_angle amenities (title/values/available)', async () => {
+            // Arrange — the real actor amenities shape
+            const item: Record<string, unknown> = {
+                title: 'Casa',
+                amenities: [
+                    {
+                        title: 'Scenic views',
+                        values: [
+                            { title: 'Garden view', available: true },
+                            { title: 'Pool view', available: true }
+                        ]
+                    },
+                    { title: 'Bathroom', values: [{ title: 'Body soap', available: true }] }
+                ]
+            };
+            mockRunApifyActor.mockResolvedValue([item]);
+
+            // Act
+            const result = await adapter.extract(
+                new URL('https://www.airbnb.com/rooms/1'),
+                makeCtx()
+            );
+
+            // Assert
+            expect(result.amenityNames).toEqual(['Garden view', 'Pool view', 'Body soap']);
+        });
+
         it('should omit summary, amenityNames and beds when absent', async () => {
             // Arrange — a minimal item with none of the enrichment fields
             const item: Record<string, unknown> = { name: 'Test' };
@@ -560,11 +687,11 @@ describe('AirbnbAdapter', () => {
     });
 
     // -----------------------------------------------------------------------
-    // extract() — SPEC-257 piece D: localise the scraped page via ?locale
+    // extract() — SPEC-257 piece D: localise via actor INPUT (not the URL)
     // -----------------------------------------------------------------------
 
     describe('extract() — SPEC-257 locale', () => {
-        it('should append the user locale to the listing URL passed to the actor', async () => {
+        it('should pass locale es-AR as actor input for ctx.locale "es"', async () => {
             // Arrange
             mockRunApifyActor.mockResolvedValue([]);
             const url = new URL('https://www.airbnb.com.ar/rooms/77777');
@@ -573,27 +700,50 @@ describe('AirbnbAdapter', () => {
             // Act
             await adapter.extract(url, ctx);
 
-            // Assert — the actor receives the URL with ?locale=es
-            const callArg = mockRunApifyActor.mock.calls[0]?.[0];
-            const passedUrl = (callArg?.actorInput as { startUrls: { url: string }[] }).startUrls[0]
-                ?.url;
-            expect(passedUrl).toContain('locale=es');
+            // Assert — locale goes in the actor input, mapped to es-AR; URL untouched
+            const input = mockRunApifyActor.mock.calls[0]?.[0]?.actorInput as {
+                startUrls: { url: string }[];
+                locale?: string;
+            };
+            expect(input.locale).toBe('es-AR');
+            expect(input.startUrls[0]?.url).toBe(url.href);
+            expect(input.startUrls[0]?.url).not.toContain('locale=');
         });
 
-        it('should not add a locale param when ctx.locale is absent', async () => {
+        it('should map pt -> pt-BR and en -> en', async () => {
+            // pt
+            mockRunApifyActor.mockResolvedValue([]);
+            await adapter.extract(new URL('https://www.airbnb.com/rooms/1'), {
+                ...makeCtx(),
+                locale: 'pt'
+            });
+            expect(
+                (mockRunApifyActor.mock.calls[0]?.[0]?.actorInput as { locale?: string }).locale
+            ).toBe('pt-BR');
+
+            // en
+            mockRunApifyActor.mockClear();
+            mockRunApifyActor.mockResolvedValue([]);
+            await adapter.extract(new URL('https://www.airbnb.com/rooms/1'), {
+                ...makeCtx(),
+                locale: 'en'
+            });
+            expect(
+                (mockRunApifyActor.mock.calls[0]?.[0]?.actorInput as { locale?: string }).locale
+            ).toBe('en');
+        });
+
+        it('should not set a locale in the actor input when ctx.locale is absent', async () => {
             // Arrange
             mockRunApifyActor.mockResolvedValue([]);
-            const url = new URL('https://www.airbnb.com/rooms/1');
             const ctx: ImportContext = { ...makeCtx(), locale: undefined };
 
             // Act
-            await adapter.extract(url, ctx);
+            await adapter.extract(new URL('https://www.airbnb.com/rooms/1'), ctx);
 
             // Assert
-            const callArg = mockRunApifyActor.mock.calls[0]?.[0];
-            const passedUrl = (callArg?.actorInput as { startUrls: { url: string }[] }).startUrls[0]
-                ?.url;
-            expect(passedUrl).not.toContain('locale=');
+            const input = mockRunApifyActor.mock.calls[0]?.[0]?.actorInput as { locale?: string };
+            expect(input.locale).toBeUndefined();
         });
     });
 });

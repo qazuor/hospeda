@@ -15,12 +15,17 @@
  * are unreachable even if the actor returns them in the dataset.
  *
  * **Actor input shape**: the adapter sends
- * `{ startUrls: [{ url: listingUrl }] }` as the actor `INPUT`.  This matches
- * the convention used by popular Apify Airbnb actors (e.g.
- * `dtrungtin/airbnb-scraper`, `maxcopell/airbnb-scraper`).  If you swap to an
- * actor with a different input schema, adjust the `actorInput` object passed
- * to {@link runApifyActor} accordingly — the provider is intentionally
- * swappable via the `ctx.credentials.apifyAirbnbActor` config value.
+ * `{ startUrls: [{ url: listingUrl }], locale? }` as the actor `INPUT`. The
+ * `locale` (mapped from `ctx.locale` — see {@link mapAirbnbActorLocale}) makes
+ * the actor return the listing in the user's language. The default actor is
+ * `tri_angle/airbnb-scraper`, whose item shape this adapter maps (title,
+ * description, metaDescription, subDescription.items, amenities, coordinates,
+ * location). If you swap to an actor with a different schema, adjust both
+ * `actorInput` and {@link mapItemToRawExtraction} — the provider is swappable
+ * via the `ctx.credentials.apifyAirbnbActor` config value.
+ *
+ * NOTE: the locale MUST NOT be appended to the listing URL as `?locale=` — that
+ * breaks the tri_angle actor (empty dataset). It goes in the actor input only.
  *
  * @module services/accommodation-import/adapters/airbnb
  */
@@ -80,6 +85,16 @@ type AirbnbAmenityEntry =
       };
 
 /**
+ * The capacity sub-description block. The tri_angle actor returns the
+ * capacity line as a localized string array, e.g.
+ * `{ title: '...', items: ['11 guests', '3 bedrooms', '8 beds', '1 bath'] }`.
+ */
+interface AirbnbSubDescription {
+    readonly title?: string | null | undefined;
+    readonly items?: readonly (string | null | undefined)[] | null | undefined;
+}
+
+/**
  * The subset of an Airbnb actor dataset item that this adapter reads.
  *
  * **CRITICAL — SPEC-222 hard rule**: `reviews`, `reviewsCount`, `rating`,
@@ -96,14 +111,20 @@ interface AirbnbItem {
     // Description
     readonly description?: string | null | undefined;
 
-    // Short summary (candidate actor keys)
+    // Short summary candidates. The tri_angle actor exposes `metaDescription`
+    // (a one-paragraph blurb); other actors may use `summary`/`publicDescription`.
     readonly summary?: string | null | undefined;
     readonly publicDescription?: string | null | undefined;
+    readonly metaDescription?: string | null | undefined;
+
+    // subDescription carries the capacity line as a localized string array, e.g.
+    // { items: ["11 guests", "3 bedrooms", "8 beds", "1 bath"] } (or its es/pt form).
+    readonly subDescription?: AirbnbSubDescription | null | undefined;
 
     // Amenities (heterogeneous shapes — see AirbnbAmenityEntry)
     readonly amenities?: readonly AirbnbAmenityEntry[] | null | undefined;
 
-    // Beds (distinct from bedrooms)
+    // Beds (distinct from bedrooms) — top-level fallback; tri_angle puts it in subDescription
     readonly beds?: number | string | null | undefined;
 
     // Coordinates (flat form)
@@ -113,7 +134,8 @@ interface AirbnbItem {
     // Coordinates (nested form)
     readonly coordinates?: AirbnbCoordinates | null | undefined;
 
-    // Address / locality
+    // Address / locality. tri_angle exposes a single `location` string.
+    readonly location?: string | null | undefined;
     readonly address?: string | null | undefined;
     readonly localizedCity?: string | null | undefined;
     readonly city?: string | null | undefined;
@@ -281,6 +303,54 @@ function extractAmenityNames(entries: readonly AirbnbAmenityEntry[] | null | und
 }
 
 // ---------------------------------------------------------------------------
+// Capacity sub-description parser
+// ---------------------------------------------------------------------------
+
+interface ParsedCapacity {
+    capacity?: number;
+    bedrooms?: number;
+    beds?: number;
+    bathrooms?: number;
+}
+
+/**
+ * Parses the capacity figures out of a {@link AirbnbSubDescription} item list.
+ * The tri_angle actor returns localized strings such as `"3 bedrooms"` /
+ * `"3 habitaciones"` / `"3 quartos"`, `"8 beds"` / `"8 camas"`,
+ * `"1 bath"` / `"1 baño"` / `"1 banheiro"`, `"11 guests"` / `"11 huéspedes"`.
+ *
+ * Each entry is matched as `<number> <label>` and classified by keyword. Order
+ * matters: "bedroom"/"habitación" is checked before the bare "bed"/"cama" so a
+ * bedroom line is not miscounted as beds.
+ *
+ * @param sub - The sub-description block, or null/undefined.
+ * @returns The parsed capacity figures (absent keys when not found).
+ */
+function parseSubDescriptionItems(sub: AirbnbSubDescription | null | undefined): ParsedCapacity {
+    const items = sub?.items;
+    if (!Array.isArray(items)) return {};
+    const out: ParsedCapacity = {};
+    for (const item of items) {
+        if (typeof item !== 'string') continue;
+        const match = /(\d+(?:[.,]\d+)?)\s*(.+)/.exec(item.trim());
+        if (!match?.[1] || !match[2]) continue;
+        const n = Number(match[1].replace(',', '.'));
+        if (!Number.isFinite(n)) continue;
+        const label = match[2].toLowerCase();
+        if (/bedroom|habitaci|dormitor|quarto/.test(label)) {
+            out.bedrooms ??= n;
+        } else if (/bath|baño|bano|banheiro/.test(label)) {
+            out.bathrooms ??= n;
+        } else if (/bed|cama/.test(label)) {
+            out.beds ??= n;
+        } else if (/guest|hu[ée]sped|h[óo]spede/.test(label)) {
+            out.capacity ??= n;
+        }
+    }
+    return out;
+}
+
+// ---------------------------------------------------------------------------
 // Dataset item → RawExtraction mapper
 // ---------------------------------------------------------------------------
 
@@ -325,13 +395,17 @@ function mapItemToRawExtraction(raw: AirbnbItem): RawExtraction {
     }
 
     // -- summary ---------------------------------------------------------------
-    const summaryRaw = raw.summary ?? raw.publicDescription;
+    // tri_angle exposes a one-paragraph `metaDescription`; other actors may use
+    // `summary`/`publicDescription`.
+    const summaryRaw = raw.summary ?? raw.publicDescription ?? raw.metaDescription;
     if (summaryRaw) {
         result.summary = { value: summaryRaw, source: 'official_api' };
     }
 
     // -- type ------------------------------------------------------------------
-    const typeRaw = raw.roomType ?? raw.propertyType;
+    // Prefer propertyType ("Entire cottage" / "casa de campo") — it is more
+    // specific than roomType ("Entire home/apt") and maps better to the enum.
+    const typeRaw = raw.propertyType ?? raw.roomType;
     if (typeRaw) {
         result.type = { value: typeRaw, source: 'official_api' };
     }
@@ -345,7 +419,8 @@ function mapItemToRawExtraction(raw: AirbnbItem): RawExtraction {
     }
 
     // -- scrapedLocality -------------------------------------------------------
-    const locality = raw.address ?? raw.localizedCity ?? raw.city;
+    // tri_angle exposes a single `location` string (e.g. "Concepción del Uruguay").
+    const locality = raw.location ?? raw.address ?? raw.localizedCity ?? raw.city;
     if (locality) {
         result.scrapedLocality = locality;
     }
@@ -373,27 +448,20 @@ function mapItemToRawExtraction(raw: AirbnbItem): RawExtraction {
     }
 
     // -- extraInfo (capacity, bedrooms, bathrooms, beds) -----------------------
-    const capacityRaw = raw.personCapacity ?? raw.guests;
+    // tri_angle has no top-level capacity fields; they live in
+    // subDescription.items ("11 guests / 3 bedrooms / 8 beds / 1 bath"). Prefer
+    // explicit top-level fields, fall back to the parsed sub-description line.
+    const parsedCapacity = parseSubDescriptionItems(raw.subDescription);
+    const toFiniteNumber = (v: number | string | null | undefined): number | null => {
+        if (v == null) return null;
+        const n = typeof v === 'number' ? v : Number(v);
+        return Number.isFinite(n) ? n : null;
+    };
     const capacity =
-        capacityRaw != null
-            ? typeof capacityRaw === 'number'
-                ? capacityRaw
-                : Number(capacityRaw)
-            : null;
-    const bedrooms =
-        raw.bedrooms != null
-            ? typeof raw.bedrooms === 'number'
-                ? raw.bedrooms
-                : Number(raw.bedrooms)
-            : null;
-    const bathrooms =
-        raw.bathrooms != null
-            ? typeof raw.bathrooms === 'number'
-                ? raw.bathrooms
-                : Number(raw.bathrooms)
-            : null;
-    const beds =
-        raw.beds != null ? (typeof raw.beds === 'number' ? raw.beds : Number(raw.beds)) : null;
+        toFiniteNumber(raw.personCapacity ?? raw.guests) ?? parsedCapacity.capacity ?? null;
+    const bedrooms = toFiniteNumber(raw.bedrooms) ?? parsedCapacity.bedrooms ?? null;
+    const bathrooms = toFiniteNumber(raw.bathrooms) ?? parsedCapacity.bathrooms ?? null;
+    const beds = toFiniteNumber(raw.beds) ?? parsedCapacity.beds ?? null;
 
     const hasCapacity = capacity !== null && Number.isFinite(capacity);
     const hasBedrooms = bedrooms !== null && Number.isFinite(bedrooms);
@@ -431,21 +499,24 @@ function mapItemToRawExtraction(raw: AirbnbItem): RawExtraction {
 // ---------------------------------------------------------------------------
 
 /**
- * Appends a `locale` query parameter to an Airbnb listing URL so the page (and
- * therefore the scraped content) is served in the user's language. Airbnb honours
- * `?locale=<code>` independently of the chosen Apify actor, so this is the most
- * robust way to localise the import (SPEC-257 piece D). Returns the original href
- * unchanged when no locale is provided.
+ * Maps the app locale to the `locale` value the Apify actor expects as INPUT
+ * (SPEC-257 piece D). The actor returns the listing content in that language.
  *
- * @param url - The parsed Airbnb listing URL.
+ * NOTE: the locale MUST be passed as an actor input field, NOT appended to the
+ * listing URL as `?locale=` — a `?locale=` query param breaks the tri_angle
+ * actor (it returns an empty dataset). Verified in the SPEC-257 smoke:
+ * `{ startUrls, locale: 'es-AR' }` returns Spanish content.
+ *
  * @param locale - BCP-47 locale code from {@link ImportContext.locale}.
- * @returns The listing URL string, with `locale` applied when present.
+ * @returns The actor locale code, or `undefined` when no locale is provided.
  */
-function withAirbnbLocale(url: URL, locale: string | undefined): string {
-    if (!locale) return url.href;
-    const localised = new URL(url.href);
-    localised.searchParams.set('locale', locale);
-    return localised.href;
+function mapAirbnbActorLocale(locale: string | undefined): string | undefined {
+    if (!locale) return undefined;
+    const base = locale.toLowerCase().split('-')[0];
+    if (base === 'es') return 'es-AR';
+    if (base === 'pt') return 'pt-BR';
+    if (base === 'en') return 'en';
+    return locale;
 }
 
 // ---------------------------------------------------------------------------
@@ -538,10 +609,14 @@ export class AirbnbAdapter implements ImportSourceAdapter {
         // for most Airbnb Apify actors.  If the chosen actor expects a
         // different schema (e.g. { urls: [...] }), update this object.
         // -------------------------------------------------------------------
+        const actorLocale = mapAirbnbActorLocale(ctx.locale);
         const dataset = await runApifyActor({
             token,
             actor,
-            actorInput: { startUrls: [{ url: withAirbnbLocale(url, ctx.locale) }] },
+            actorInput: {
+                startUrls: [{ url: url.href }],
+                ...(actorLocale ? { locale: actorLocale } : {})
+            },
             timeoutMs: ctx.timeoutMs
         });
 
