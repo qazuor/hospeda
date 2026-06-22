@@ -94,7 +94,10 @@ vi.mock('undici', () => {
                 lookup?: (
                     hostname: string,
                     opts: unknown,
-                    callback: (err: Error | null, address: string, family: number) => void
+                    callback: (
+                        err: Error | null,
+                        addresses: { address: string; family: number }[]
+                    ) => void
                 ) => void;
             };
         }) {
@@ -102,8 +105,10 @@ vi.mock('undici', () => {
             if (lookupFn) {
                 // Probe immediately: invoke the lookup callback with a dummy
                 // hostname to extract the pinned address the callback returns.
-                lookupFn('__probe__', {}, (_err, addr, _fam) => {
-                    lastPinnedAddress = addr;
+                // undici 7 receives the dns.lookup `{ all: true }` array shape
+                // (`[{ address, family }]`) and pins `addresses[0].address`.
+                lookupFn('__probe__', {}, (_err, addresses) => {
+                    lastPinnedAddress = addresses[0]?.address ?? null;
                 });
             }
         }
