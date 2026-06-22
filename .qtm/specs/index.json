@@ -1653,6 +1653,19 @@
                 "api",
                 "i18n"
             ]
+        },
+        {
+            "specId": "SPEC-261",
+            "title": "Stabilize commerce-owner E2E and promote back to @p0",
+            "slug": "commerce-e2e-stabilization",
+            "type": "chore",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-261-commerce-e2e-stabilization",
+            "created": "2026-06-22T00:00:00Z",
+            "base": "staging",
+            "dependsOn": ["SPEC-252"],
+            "tags": ["e2e", "playwright", "testing", "commerce", "ci", "dev-infra"]
         }
     ]
 }
