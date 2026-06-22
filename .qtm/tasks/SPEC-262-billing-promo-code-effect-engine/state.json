@@ -6,8 +6,8 @@
     "summary": {
         "total": 15,
         "byStatus": {
-            "pending": 14,
-            "completed": 1
+            "pending": 13,
+            "completed": 2
         },
         "byPhase": {
             "spike": 1,
@@ -46,7 +46,7 @@
             "id": "T-002",
             "title": "Add typed effect columns to @repo/db promo-code + subscription schemas",
             "description": "Structural DB changes (via `pnpm db:generate` + `pnpm db:migrate` \u2014 structural carril):\n\n`billing_promo_codes` \u2014 add explicit typed columns (OQ-2 decision):\n- `effect_kind varchar(30) NOT NULL DEFAULT 'discount'` \u2014 values: 'discount' | 'trial_extension' | 'comp'\n- `value_kind varchar(20)` \u2014 values: 'percentage' | 'fixed'; NULL for non-discount effects\n- `value integer` \u2014 discount value (centavos for fixed, integer 0-100 for percentage); NULL for non-discount\n- `duration_cycles integer` \u2014 NULL = forever; positive integer for N cycles; NULL for trial_extension/comp\n- `extra_days integer` \u2014 NULL for non-trial-extension effects\n\n`billing_subscriptions` \u2014 add:\n- `promo_effect_remaining_cycles integer` \u2014 countdown for multi-cycle discounts; NULL when no active discount or discount is forever\n\nDrizzle model files affected:\n- `packages/db/src/schema/billing/billing-promo-codes.schema.ts`\n- `packages/db/src/schema/billing/billing-subscriptions.schema.ts`\n\nGenerate migration with `pnpm db:generate`. Commit the generated migration file.\n\nAcceptance criteria:\n- AC-1.1 (effect fields readable via API after persist)\n- AC-2.4 (comp state explicit in DB)\n- `pnpm db:generate` produces no additional drift after this task\n- `pnpm typecheck` passes",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-003", "T-004", "T-005"],
