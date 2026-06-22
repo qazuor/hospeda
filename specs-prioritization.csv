@@ -103,3 +103,4 @@ rank|spec|name|avance|prioridad|estado|estado_manual|estado_real|descripcion|por
 101|SPEC-251|Local DB dev/template refresh + worktree DB auto-heal correctness|-|-|done|-|index staging: status=draft; stale hospeda_template/hospeda_dev surfaced in SPEC-249 wt:up; no hard deps|-|-|-|-|-|-|-|-
 102|SPEC-252|Web functional E2E (Playwright) harness + login fixtures + CI|-|-|backlog|-|index staging: status=draft; web lacks functional Playwright harness (SPEC-249 T-025); includes commerce-owner seed/profile fixtures; dep SPEC-249 done|-|-|-|-|-|-|SPEC-249|-
 103|SPEC-253|Commerce owner editor — extended fields + single COMMERCE_EDIT_OWN permission|-|-|backlog|-|index staging: status=draft; expands SPEC-249 owner editor (type/summary/i18n/faqs/exp-price) + collapses per-section perms to COMMERCE_EDIT_OWN; dep SPEC-249 done|-|-|-|-|-|-|SPEC-249|-
+104|SPEC-257|Accommodation import short-link resolution + adapter enrichment|-|-|backlog|-|-|-|-|-|-|-|-|SPEC-222|-
