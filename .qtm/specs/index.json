@@ -2045,6 +2045,29 @@
         "google-places",
         "spec-222-followup"
       ]
+    },
+    {
+      "specId": "SPEC-258",
+      "title": "Accommodation import — coverage gaps, limbo fields, UX surfacing & scraper resilience",
+      "slug": "import-coverage-ux-resilience",
+      "type": "improvement",
+      "complexity": "high",
+      "status": "draft",
+      "path": "SPEC-258-import-coverage-ux-resilience",
+      "created": "2026-06-22T14:53:31Z",
+      "base": "staging",
+      "origin": "SPEC-257 follow-up: close per-source coverage limbo, surface imported fields in the create UX, and add scraper anti-bot resilience.",
+      "dependsOn": [
+        "SPEC-257"
+      ],
+      "tags": [
+        "accommodation-import",
+        "service-core",
+        "web",
+        "ux",
+        "resilience",
+        "spec-257-followup"
+      ]
     }
   ]
 }
