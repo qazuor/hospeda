@@ -267,30 +267,30 @@ BEGIN
     -- =========================================================================
 
     -- -------------------------------------------------------------------------
-    -- 2a. Discount shape: when effect_kind = 'discount', value_kind must be
-    --     non-NULL, value must be non-negative, and percentage values must
-    --     not exceed 100.
+    -- 2a. Discount shape: when effect_kind = 'discount', value must be present
+    --     and non-negative, and a percentage discount must not exceed 100.
+    --     The percentage check uses COALESCE(value_kind, type) so it holds for
+    --     BOTH the new typed path (value_kind set) AND legacy / direct inserts
+    --     that only populate the pre-existing NOT NULL `type` column (value_kind
+    --     left NULL). We deliberately do NOT require value_kind IS NOT NULL:
+    --     effect_kind DEFAULTs to 'discount', so requiring value_kind would
+    --     reject every insert that doesn't set it (seed, tests, un-migrated code).
+    --     DROP+ADD (not IF NOT EXISTS) so an earlier, stricter version of this
+    --     constraint is replaced when the extras are re-applied.
     -- -------------------------------------------------------------------------
-    IF NOT EXISTS (
-        SELECT 1 FROM pg_constraint
-        WHERE conname = 'billing_promo_codes_discount_shape_chk'
-          AND conrelid = 'billing_promo_codes'::regclass
-    ) THEN
-        ALTER TABLE billing_promo_codes
-            ADD CONSTRAINT billing_promo_codes_discount_shape_chk
-            CHECK (
-                effect_kind <> 'discount'
-                OR (
-                    value_kind IS NOT NULL
-                    AND value  IS NOT NULL
-                    AND value  >= 0
-                    AND (value_kind <> 'percentage' OR value <= 100)
-                )
-            );
-        RAISE NOTICE '020-promo-code-effect-constraints-backfill: added constraint billing_promo_codes_discount_shape_chk';
-    ELSE
-        RAISE NOTICE '020-promo-code-effect-constraints-backfill: constraint billing_promo_codes_discount_shape_chk already exists, skipping.';
-    END IF;
+    ALTER TABLE billing_promo_codes
+        DROP CONSTRAINT IF EXISTS billing_promo_codes_discount_shape_chk;
+    ALTER TABLE billing_promo_codes
+        ADD CONSTRAINT billing_promo_codes_discount_shape_chk
+        CHECK (
+            effect_kind <> 'discount'
+            OR (
+                value IS NOT NULL
+                AND value >= 0
+                AND (COALESCE(value_kind, type) <> 'percentage' OR value <= 100)
+            )
+        );
+    RAISE NOTICE '020-promo-code-effect-constraints-backfill: (re)added constraint billing_promo_codes_discount_shape_chk';
 
     -- -------------------------------------------------------------------------
     -- 2b. Trial extension shape: when effect_kind = 'trial_extension',
