@@ -5,7 +5,7 @@
 import {
     type PostCategoryEnum,
     PostCategoryEnumSchema,
-    PostListItemSchema,
+    PostPublicSchema,
     PostsByCategoryHttpSchema
 } from '@repo/schemas';
 import { PostService, ServiceError } from '@repo/service-core';
@@ -29,7 +29,7 @@ export const publicGetPostsByCategoryRoute = createPublicListRoute({
     tags: ['Posts'],
     requestParams: { category: PostCategoryEnumSchema },
     requestQuery: PostsByCategoryHttpSchema.shape,
-    responseSchema: PostListItemSchema,
+    responseSchema: PostPublicSchema,
     handler: async (ctx: Context, params: Record<string, unknown>, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
