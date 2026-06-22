@@ -11,8 +11,12 @@
  */
 
 import type { SocialAuditLogModel as SocialAuditLogModelType } from '@repo/db';
-import { SocialAuditLogModel } from '@repo/db';
-import type { ServiceConfig } from '../../types';
+import { SocialAuditLogModel, gte, lte, socialAuditLog } from '@repo/db';
+import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
+import type { ServiceConfig, ServiceOutput } from '../../types';
+import { ServiceError } from '../../types';
+import type { Actor } from '../../types';
+import { hasPermission } from '../../utils/permission';
 import { serviceLogger } from '../../utils/service-logger';
 import type { ServiceLogger } from '../../utils/service-logger';
 
@@ -146,6 +150,38 @@ export interface SocialAuditLogResult {
     readonly logged: boolean;
 }
 
+/**
+ * Filters accepted by {@link SocialAuditLogService.list}.
+ */
+export interface ListAuditLogsFilters {
+    readonly page?: number;
+    readonly pageSize?: number;
+    readonly entityType?: string;
+    readonly entityId?: string;
+    readonly eventType?: string;
+    readonly actorId?: string;
+    readonly createdAtFrom?: Date;
+    readonly createdAtTo?: Date;
+}
+
+/**
+ * Input for {@link SocialAuditLogService.list}.
+ */
+export interface ListAuditLogsInput {
+    /** Actor performing the action — must hold SOCIAL_AUDIT_LOG_VIEW. */
+    readonly actor: Actor;
+    /** Optional filter set. */
+    readonly filters?: ListAuditLogsFilters;
+}
+
+/**
+ * Paginated result from {@link SocialAuditLogService.list}.
+ */
+export interface SocialAuditLogListResult {
+    readonly items: ReadonlyArray<Record<string, unknown>>;
+    readonly total: number;
+}
+
 // ---------------------------------------------------------------------------
 // Service
 // ---------------------------------------------------------------------------
@@ -232,6 +268,85 @@ export class SocialAuditLogService {
                 'SocialAuditLogService.log: failed to write audit row; swallowing error'
             );
             return { logged: false };
+        }
+    }
+
+    /**
+     * Returns a paginated list of audit log entries ordered by createdAt DESC.
+     *
+     * Permission required: SOCIAL_AUDIT_LOG_VIEW.
+     *
+     * @param input - Actor and optional filters.
+     * @returns ServiceOutput containing items and total count.
+     *
+     * @example
+     * ```ts
+     * const result = await service.list({
+     *   actor,
+     *   filters: { eventType: 'POST_APPROVED', page: 1, pageSize: 20 }
+     * });
+     * ```
+     */
+    public async list(input: ListAuditLogsInput): Promise<ServiceOutput<SocialAuditLogListResult>> {
+        const { actor, filters = {} } = input;
+
+        try {
+            // Permission check
+            if (!hasPermission(actor, PermissionEnum.SOCIAL_AUDIT_LOG_VIEW)) {
+                throw new ServiceError(
+                    ServiceErrorCode.FORBIDDEN,
+                    'Permission denied: SOCIAL_AUDIT_LOG_VIEW required'
+                );
+            }
+
+            const page = filters.page ?? 1;
+            const pageSize = Math.min(filters.pageSize ?? 20, 100);
+
+            // Build equality-based where clause
+            const where: Record<string, unknown> = {};
+            if (filters.entityType) where.entityType = filters.entityType;
+            if (filters.entityId) where.entityId = filters.entityId;
+            if (filters.eventType) where.eventType = filters.eventType;
+            if (filters.actorId) where.actorId = filters.actorId;
+
+            // Build SQL conditions for date range
+            const conditions = [];
+            if (filters.createdAtFrom) {
+                conditions.push(gte(socialAuditLog.createdAt, filters.createdAtFrom));
+            }
+            if (filters.createdAtTo) {
+                conditions.push(lte(socialAuditLog.createdAt, filters.createdAtTo));
+            }
+
+            const { items, total } = await this.model.findAll(
+                where,
+                { page, pageSize, sortBy: 'createdAt', sortOrder: 'desc' },
+                conditions.length > 0 ? conditions : undefined
+            );
+
+            return { data: { items: items as Record<string, unknown>[], total } };
+        } catch (err) {
+            if (err instanceof ServiceError) {
+                return {
+                    error: {
+                        code: err.code,
+                        message: err.message,
+                        details: err.details,
+                        reason: err.reason
+                    }
+                };
+            }
+            const message = err instanceof Error ? err.message : String(err);
+            this.logger.error(
+                { actorId: actor.id, error: message },
+                'SocialAuditLogService.list: unexpected error'
+            );
+            return {
+                error: {
+                    code: ServiceErrorCode.INTERNAL_ERROR,
+                    message: `Unexpected error during list: ${message}`
+                }
+            };
         }
     }
 }

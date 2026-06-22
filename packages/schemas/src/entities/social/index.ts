@@ -26,3 +26,6 @@ export * from './social-post-hashtag.index.js';
 export * from './social-ai-request.index.js';
 export * from './social-publish-log.index.js';
 export * from './social-audit-log.index.js';
+
+// Dashboard response schema (T-037)
+export * from './social-dashboard.schema.js';

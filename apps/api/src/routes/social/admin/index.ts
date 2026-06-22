@@ -14,5 +14,9 @@ export { adminSocialPlatformFormatRoutes } from './platform-formats/index';
 export { adminSocialSettingRoutes } from './settings/index';
 // GPT Action schema export (T-030)
 export { adminGetGptActionSchemaRoute } from './gpt-action-schema';
-// Social post state-transition routes (T-036)
+// Social post routes (T-036 transitions + T-037 CRUD)
 export { adminSocialPostTransitionRoutes } from './posts/index';
+// Social dashboard + publish-logs + audit-log (T-037)
+export { adminSocialDashboardRoutes } from './dashboard/index';
+export { adminSocialPublishLogRoutes } from './publish-logs/index';
+export { adminSocialAuditLogRoutes } from './audit-log/index';

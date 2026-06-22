@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { AdminSearchBaseSchema } from '../../common/admin-search.schema.js';
 import { queryBooleanParam } from '../../common/query-helpers.js';
 import { SocialApprovalStatusEnumSchema } from '../../enums/social-approval-status.schema.js';
+import { SocialPlatformEnumSchema } from '../../enums/social-platform.schema.js';
 import { SocialPostStatusEnumSchema } from '../../enums/social-post-status.schema.js';
 import { SocialSourceEnumSchema } from '../../enums/social-source.schema.js';
 
@@ -68,7 +69,21 @@ export const SocialPostAdminSearchSchema = AdminSearchBaseSchema.extend({
         .string()
         .uuid({ message: 'zodError.admin.search.socialPost.approvedById.uuid' })
         .optional()
-        .describe('Filter by approving admin')
+        .describe('Filter by approving admin'),
+
+    /**
+     * Filter to posts that have at least one social_post_target on this platform.
+     * Resolved via a two-step query in the service layer.
+     */
+    platform: SocialPlatformEnumSchema.optional().describe(
+        'Filter by target platform (posts with at least one target on this platform)'
+    ),
+
+    /** Inclusive lower bound on createdAt (alias forwarded to service as createdAtFrom). */
+    createdAtFrom: z.coerce.date().optional().describe('Inclusive lower bound on createdAt'),
+
+    /** Inclusive upper bound on createdAt (alias forwarded to service as createdAtTo). */
+    createdAtTo: z.coerce.date().optional().describe('Inclusive upper bound on createdAt')
 });
 
 /**

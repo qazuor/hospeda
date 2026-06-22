@@ -31,7 +31,8 @@ import type {
     SocialPostMediaModel as SocialPostMediaModelType,
     SocialPostModel as SocialPostModelType,
     SocialPostTargetModel as SocialPostTargetModelType,
-    SocialPublishLogModel as SocialPublishLogModelType
+    SocialPublishLogModel as SocialPublishLogModelType,
+    SocialSettingModel as SocialSettingModelType
 } from '@repo/db';
 import {
     SocialAssetModel,
@@ -42,16 +43,19 @@ import {
     SocialPostModel,
     SocialPostTargetModel,
     SocialPublishLogModel,
+    SocialSettingModel,
     gte,
     lte,
     safeIlike,
-    socialPosts
+    socialPosts,
+    socialPublishLogs
 } from '@repo/db';
 import {
     PermissionEnum,
     ServiceErrorCode,
     SocialApprovalStatusEnum,
-    SocialPostStatusEnum
+    SocialPostStatusEnum,
+    SocialPublishResultStatusEnum
 } from '@repo/schemas';
 import type { ServiceConfig, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
@@ -404,6 +408,60 @@ export interface UpdatePostInput {
 }
 
 /**
+ * KPI counters returned by {@link SocialPostService.getDashboard}.
+ */
+export interface SocialDashboardKpis {
+    readonly totalPosts: number;
+    readonly pendingReview: number;
+    readonly scheduled: number;
+    readonly publishedLast30Days: number;
+    readonly failedActionNeeded: number;
+}
+
+/**
+ * Quick-approval queue item returned by {@link SocialPostService.getDashboard}.
+ */
+export interface SocialDashboardQueueItem {
+    readonly id: string;
+    readonly title: string;
+    readonly status: string;
+    readonly platforms: string[];
+    readonly thumbnailUrl: string | null;
+    readonly createdAt: Date;
+}
+
+/**
+ * Recent failure item returned by {@link SocialPostService.getDashboard}.
+ * Sourced from social_post_targets rows with FAILED status.
+ */
+export interface SocialDashboardFailureItem {
+    readonly targetId: string;
+    readonly postTitle: string;
+    readonly platform: string;
+    readonly lastError: string | null;
+    readonly retryCount: number;
+    readonly failedAt: Date;
+}
+
+/**
+ * Data returned by {@link SocialPostService.getDashboard}.
+ */
+export interface SocialDashboardData {
+    readonly kpis: SocialDashboardKpis;
+    readonly quickApprovalQueue: SocialDashboardQueueItem[];
+    readonly recentFailures: SocialDashboardFailureItem[];
+    readonly makeWebhookConfigured: boolean;
+}
+
+/**
+ * Input for {@link SocialPostService.getDashboard}.
+ */
+export interface GetDashboardInput {
+    /** Actor performing the action — must hold SOCIAL_POST_VIEW. */
+    readonly actor: Actor;
+}
+
+/**
  * Input for {@link SocialPostService.promoteHashtag}.
  */
 export interface PromoteHashtagInput {
@@ -467,6 +525,7 @@ export class SocialPostService {
     private readonly postHashtagModel: SocialPostHashtagModelType;
     private readonly assetModel: SocialAssetModelType;
     private readonly publishLogModel: SocialPublishLogModelType;
+    private readonly settingModel: SocialSettingModelType;
     private readonly auditLog: SocialAuditLogServiceType;
 
     constructor(
@@ -479,7 +538,8 @@ export class SocialPostService {
         hashtagModel?: SocialHashtagModelType,
         postHashtagModel?: SocialPostHashtagModelType,
         assetModel?: SocialAssetModelType,
-        publishLogModel?: SocialPublishLogModelType
+        publishLogModel?: SocialPublishLogModelType,
+        settingModel?: SocialSettingModelType
     ) {
         this.postModel = postModel ?? new SocialPostModel();
         this.postTargetModel = postTargetModel ?? new SocialPostTargetModel();
@@ -489,6 +549,7 @@ export class SocialPostService {
         this.postHashtagModel = postHashtagModel ?? new SocialPostHashtagModel();
         this.assetModel = assetModel ?? new SocialAssetModel();
         this.publishLogModel = publishLogModel ?? new SocialPublishLogModel();
+        this.settingModel = settingModel ?? new SocialSettingModel();
         this.auditLog = auditLog ?? new SocialAuditLogService(config);
     }
 
@@ -1805,6 +1866,198 @@ export class SocialPostService {
                 error: {
                     code: ServiceErrorCode.INTERNAL_ERROR,
                     message: `Unexpected error during updatePost: ${message}`
+                }
+            };
+        }
+    }
+
+    /**
+     * Returns aggregate dashboard data for the social publishing pipeline.
+     *
+     * Includes:
+     * - KPI counters (totalPosts, pendingReview, scheduled, publishedLast30Days, failedActionNeeded).
+     * - Quick-approval queue (up to 10 NEEDS_REVIEW / PENDING posts, oldest first).
+     * - Recent failures (up to 10 FAILED social_post_targets, newest first).
+     * - makeWebhookConfigured flag (live check on social_settings.make_webhook_url).
+     *
+     * publishedLast30Days is derived from social_publish_logs rows with SUCCESS status
+     * created in the last 30 days, de-duped by socialPostId. This is more faithful than
+     * counting social_posts with status=PUBLISHED because a post may have been published
+     * more than 30 days ago and then reprocessed, or the status may lag behind the log.
+     *
+     * recentFailures is sourced from social_post_targets with status=FAILED (not
+     * social_publish_logs), because that is the canonical place where "action needed"
+     * state is held. A target in FAILED status means it has been exhausted — the admin
+     * needs to take action. The publish log is ephemeral per-attempt; the target row
+     * is the durable state.
+     *
+     * Permission required: SOCIAL_POST_VIEW.
+     *
+     * @param input - Actor.
+     * @returns ServiceOutput containing SocialDashboardData.
+     */
+    public async getDashboard(
+        input: GetDashboardInput
+    ): Promise<ServiceOutput<SocialDashboardData>> {
+        const { actor } = input;
+
+        try {
+            // Permission check
+            checkCanViewPost(actor);
+
+            // --- KPIs ---
+
+            // totalPosts: all non-deleted posts
+            const { total: totalPosts } = await this.postModel.findAll({ deletedAt: null });
+
+            // pendingReview: NEEDS_REVIEW status with PENDING approvalStatus
+            const { total: pendingReview } = await this.postModel.findAll({
+                deletedAt: null,
+                status: SocialPostStatusEnum.NEEDS_REVIEW,
+                approvalStatus: SocialApprovalStatusEnum.PENDING
+            });
+
+            // scheduled: posts in SCHEDULED status
+            const { total: scheduled } = await this.postModel.findAll({
+                deletedAt: null,
+                status: SocialPostStatusEnum.SCHEDULED
+            });
+
+            // publishedLast30Days: count distinct socialPostIds from SUCCESS publish logs in last 30d
+            const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+            const { items: recentSuccessLogs } = await this.publishLogModel.findAll(
+                { status: SocialPublishResultStatusEnum.SUCCESS },
+                { page: 1, pageSize: 2000 },
+                [gte(socialPublishLogs.createdAt, thirtyDaysAgo)]
+            );
+            // De-dup by socialPostId
+            const publishedPostIds = new Set(
+                recentSuccessLogs
+                    .map((log) => log.socialPostId as string | undefined)
+                    .filter((id): id is string => typeof id === 'string')
+            );
+            const publishedLast30Days = publishedPostIds.size;
+
+            // failedActionNeeded: posts in FAILED status
+            const { total: failedActionNeeded } = await this.postModel.findAll({
+                deletedAt: null,
+                status: SocialPostStatusEnum.FAILED
+            });
+
+            // --- Quick approval queue ---
+            const { items: reviewPosts } = await this.postModel.findAll(
+                {
+                    deletedAt: null,
+                    status: SocialPostStatusEnum.NEEDS_REVIEW,
+                    approvalStatus: SocialApprovalStatusEnum.PENDING
+                },
+                { page: 1, pageSize: 10, sortBy: 'createdAt', sortOrder: 'asc' }
+            );
+
+            const quickApprovalQueue: SocialDashboardQueueItem[] = await Promise.all(
+                reviewPosts.map(async (post) => {
+                    const postId = post.id as string;
+                    const { items: targets } = await this.postTargetModel.findAll(
+                        { socialPostId: postId },
+                        { page: 1, pageSize: 50 }
+                    );
+                    const platforms = [
+                        ...new Set(
+                            targets
+                                .map((t) => t.platform as string | undefined)
+                                .filter((p): p is string => typeof p === 'string')
+                        )
+                    ];
+                    const { items: mediaRows } = await this.postMediaModel.findAll(
+                        { socialPostId: postId },
+                        { page: 1, pageSize: 1, sortBy: 'position', sortOrder: 'asc' }
+                    );
+                    let thumbnailUrl: string | null = null;
+                    const firstMedia = mediaRows[0];
+                    if (firstMedia) {
+                        const assetId = firstMedia.assetId as string | undefined;
+                        if (assetId) {
+                            const asset = await this.assetModel.findOne({
+                                id: assetId,
+                                deletedAt: null
+                            });
+                            thumbnailUrl =
+                                (asset?.cloudinaryUrl as string | null | undefined) ?? null;
+                        }
+                    }
+                    return {
+                        id: postId,
+                        title: post.title as string,
+                        status: post.status as string,
+                        platforms,
+                        thumbnailUrl,
+                        createdAt: post.createdAt as Date
+                    };
+                })
+            );
+
+            // --- Recent failures from social_post_targets ---
+            const { items: failedTargets } = await this.postTargetModel.findAll(
+                { status: SocialPostStatusEnum.FAILED },
+                { page: 1, pageSize: 10, sortBy: 'updatedAt', sortOrder: 'desc' }
+            );
+
+            const recentFailures: SocialDashboardFailureItem[] = await Promise.all(
+                failedTargets.map(async (target) => {
+                    const socialPostId = target.socialPostId as string;
+                    const post = await this.postModel.findOne({ id: socialPostId });
+                    return {
+                        targetId: target.id as string,
+                        postTitle: (post?.title as string | undefined) ?? 'Unknown',
+                        platform: target.platform as string,
+                        lastError: (target.lastErrorMessage as string | null | undefined) ?? null,
+                        retryCount: (target.retryCount as number | undefined) ?? 0,
+                        failedAt: target.updatedAt as Date
+                    };
+                })
+            );
+
+            // --- Make webhook configured ---
+            const webhookSetting = await this.settingModel.findOne({ key: 'make_webhook_url' });
+            const makeWebhookConfigured =
+                typeof webhookSetting?.value === 'string' && webhookSetting.value.trim().length > 0;
+
+            serviceLogger.info({ actorId: actor.id }, 'SocialPostService.getDashboard: completed');
+
+            return {
+                data: {
+                    kpis: {
+                        totalPosts,
+                        pendingReview,
+                        scheduled,
+                        publishedLast30Days,
+                        failedActionNeeded
+                    },
+                    quickApprovalQueue,
+                    recentFailures,
+                    makeWebhookConfigured
+                }
+            };
+        } catch (err) {
+            if (err instanceof ServiceError) {
+                return {
+                    error: {
+                        code: err.code,
+                        message: err.message,
+                        details: err.details,
+                        reason: err.reason
+                    }
+                };
+            }
+            const message = err instanceof Error ? err.message : String(err);
+            serviceLogger.error(
+                { actorId: actor.id, error: message },
+                'SocialPostService.getDashboard: unexpected error'
+            );
+            return {
+                error: {
+                    code: ServiceErrorCode.INTERNAL_ERROR,
+                    message: `Unexpected error during getDashboard: ${message}`
                 }
             };
         }

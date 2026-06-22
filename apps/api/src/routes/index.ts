@@ -118,13 +118,16 @@ import { publicSearchRoutes } from './search/public';
 import {
     adminGetGptActionSchemaRoute,
     adminSocialAudienceRoutes,
+    adminSocialAuditLogRoutes,
     adminSocialBatchRoutes,
     adminSocialCampaignRoutes,
+    adminSocialDashboardRoutes,
     adminSocialFooterRoutes,
     adminSocialHashtagRoutes,
     adminSocialHashtagSetRoutes,
     adminSocialPlatformFormatRoutes,
     adminSocialPostTransitionRoutes,
+    adminSocialPublishLogRoutes,
     adminSocialSettingRoutes
 } from './social/index';
 import { adminSponsorshipRoutes, protectedSponsorshipRoutes } from './sponsorship';
@@ -510,10 +513,19 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/social/platform-formats', adminSocialPlatformFormatRoutes);
         app.route('/api/v1/admin/social/settings', adminSocialSettingRoutes);
 
-        // Social post state-transition routes (SPEC-254 T-036)
-        // Action paths: /{id}/approve, /{id}/reject, etc. — coexist with future /{id} CRUD (T-037).
-        // Must be mounted BEFORE any /{id} catch-all CRUD route if T-037 adds one at the same prefix.
+        // Social post routes (SPEC-254 T-036 transitions + T-037 CRUD)
+        // Transition paths: /{id}/approve, /{id}/reject, etc.
+        // CRUD paths: / (list), /{id} (detail, PATCH).
         app.route('/api/v1/admin/social/posts', adminSocialPostTransitionRoutes);
+
+        // Social dashboard (SPEC-254 T-037)
+        app.route('/api/v1/admin/social/dashboard', adminSocialDashboardRoutes);
+
+        // Social publish logs (SPEC-254 T-037)
+        app.route('/api/v1/admin/social/publish-logs', adminSocialPublishLogRoutes);
+
+        // Social audit log (SPEC-254 T-037)
+        app.route('/api/v1/admin/social/audit-log', adminSocialAuditLogRoutes);
 
         // GPT Action schema export (SPEC-254 T-030)
         // Returns the OpenAPI 3.1 document the operator pastes into the Custom GPT Actions config.

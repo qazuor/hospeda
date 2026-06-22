@@ -36,7 +36,10 @@ export {
     SocialAuditEvent,
     type SocialAuditEventType,
     type SocialAuditLogInput,
-    type SocialAuditLogResult
+    type SocialAuditLogResult,
+    type ListAuditLogsInput,
+    type ListAuditLogsFilters,
+    type SocialAuditLogListResult
 } from './social-audit-log.service';
 export {
     SocialPostService,
@@ -63,8 +66,19 @@ export {
     type UpdatePostData,
     type PromoteHashtagInput,
     type PromoteHashtagData,
-    type ServiceWarning
+    type ServiceWarning,
+    type GetDashboardInput,
+    type SocialDashboardData,
+    type SocialDashboardKpis,
+    type SocialDashboardQueueItem,
+    type SocialDashboardFailureItem
 } from './social-post.service';
+export {
+    SocialPublishLogService,
+    type ListPublishLogsInput,
+    type ListPublishLogsFilters,
+    type SocialPublishLogListResult
+} from './social-publish-log.service';
 export {
     checkCanViewPost,
     checkCanUpdatePost
