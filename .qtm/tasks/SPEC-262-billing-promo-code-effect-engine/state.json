@@ -7,8 +7,7 @@
         "total": 15,
         "byStatus": {
             "pending": 10,
-            "in_progress": 1,
-            "completed": 4
+            "completed": 5
         },
         "byPhase": {
             "spike": 1,
@@ -113,7 +112,7 @@
             "id": "T-005",
             "title": "Extend service-core promo-code CRUD + effect-engine branching",
             "description": "Changes to `packages/service-core/src/services/billing/promo-code/`:\n\n1. `promo-code.crud.ts` \u2014 update `mapDbToPromoCode` to read the new typed columns and populate the `effect` discriminated union on the DTO. Legacy rows (effect_kind = 'discount', duration_cycles = 1) map identically to the current shape.\n\n2. `promo-code.service.ts` (PromoCode facade) \u2014 expose `createPromoCode`/`updatePromoCode` accepting the new `CreatePromoCodeInput` discriminated union; persist `effect_kind`, `value_kind`, `value`, `duration_cycles`, `extra_days` to the DB columns.\n\n3. `promo-code.redemption.ts::applyPromoCode` \u2014 branch by `effect.kind` instead of assuming money discount:\n   - `discount`: existing `finalAmount` computation (unchanged for durationCycles=1, AC-4.3); set `promo_effect_remaining_cycles = duration_cycles - 1` on the subscription (NULL when durationCycles is null = forever)\n   - `trial_extension` at checkout: translate to `freeTrialDays` for qzpay subscription-create (existing path, now reads from persisted DB effect, NOT from `@repo/billing` config)\n   - `comp`: create subscription with `status = 'comp'`, no MP preapproval created\n\n4. Retire / stub `resolveFreeTrialExtensionPromo()` in `@repo/billing` \u2014 it now reads from the DB-persisted effect via the promo-code service. Keep the function signature for now but delegate to the DB lookup.\n\nUnit tests (AAA pattern, real DB fixtures or seeded test data):\n- discount durationCycles=1 \u2192 finalAmount identical to current (AC-4.1 regression lock)\n- discount durationCycles=3 \u2192 remaining_cycles set to 2 after first cycle\n- comp \u2192 status='comp', no MP preapproval param emitted\n- trial_extension at checkout \u2192 freeTrialDays populated correctly\n\nAcceptance criteria: AC-1.4, AC-2.1, AC-3.2, AC-4.1, AC-4.3",
-            "status": "in_progress",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002", "T-004"],
             "blocks": ["T-006", "T-007", "T-008", "T-009"],
