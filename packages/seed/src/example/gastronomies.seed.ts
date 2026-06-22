@@ -46,6 +46,29 @@ interface CommerceOwnerSpec {
 }
 
 /**
+ * E2E tourist user seeded alongside the commerce-owner block.
+ *
+ * Role: USER — intentionally NOT COMMERCE_OWNER and NOT staff, so the
+ * `isCommerceOwnerRole` gate in `/mi-cuenta/comercio/index.astro` redirects
+ * this user to `/mi-cuenta/`.  Used by SPEC-252 COMMERCE-02 test case 1.
+ *
+ * `profileCompleted: true` is required because the profile-completion
+ * middleware guard (Step 7.5 in middleware.ts) intercepts incomplete profiles
+ * before the commerce role gate runs — an incomplete profile would redirect
+ * to `/mi-cuenta/completar-perfil/` instead, breaking the test assertion.
+ *
+ * Password: Password123! (same shared dev constant as COMMERCE_OWNER accounts).
+ * Email: e2e-tourist@local.test (clearly E2E-scoped, never used on staging/prod).
+ */
+const E2E_TOURIST = {
+    email: 'e2e-tourist@local.test',
+    displayName: 'E2E Tourist',
+    firstName: 'E2E',
+    lastName: 'Tourist',
+    slug: 'e2e-tourist'
+} as const;
+
+/**
  * Dev COMMERCE_OWNER users for gastronomy listings.
  * Three owners covering 6 listings (2 each):
  * - Julieta: listings 001 (la-parrilla-del-puerto, CdU) + 002 (cafe-del-palacio, Colón)
@@ -398,6 +421,72 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
         await ensureBillingCustomer(realUserId, owner.email, db);
 
         summaryTracker.trackSuccess('CommerceOwners');
+    }
+
+    // ── Step 2b: Seed E2E tourist user (role USER, credential account) ────────
+    // Needed by SPEC-252 COMMERCE-02 test case 1: a logueable non-commerce,
+    // non-staff user that the `isCommerceOwnerRole` gate redirects away from
+    // /mi-cuenta/comercio/. The example seed's regular users are created via
+    // UserService and never get a Better Auth `accounts` row, so sign-in fails
+    // for them. This user is seeded here alongside the commerce owners because
+    // this function already owns the credential-creation infrastructure.
+    {
+        const existingTourist = await db
+            .select({ id: users.id })
+            .from(users)
+            .where(eq(users.email, E2E_TOURIST.email))
+            .limit(1);
+
+        const existingTouristRow = existingTourist[0];
+        if (existingTouristRow) {
+            logger.debug(
+                `  ${STATUS_ICONS.Info} E2E tourist "${E2E_TOURIST.displayName}" already exists — skipped`
+            );
+            // Heal: ensure profile_completed = true so the profile-completion gate
+            // does not intercept before the commerce role gate runs.
+            await db.execute(
+                sql`UPDATE users SET profile_completed = true WHERE id = ${existingTouristRow.id} AND profile_completed = false`
+            );
+        } else {
+            const insertedTourists = await db
+                .insert(users)
+                .values({
+                    email: E2E_TOURIST.email,
+                    emailVerified: true,
+                    displayName: E2E_TOURIST.displayName,
+                    firstName: E2E_TOURIST.firstName,
+                    lastName: E2E_TOURIST.lastName,
+                    slug: E2E_TOURIST.slug,
+                    role: RoleEnum.USER as (typeof users.$inferInsert)['role'],
+                    mustChangePassword: false,
+                    profileCompleted: true,
+                    lifecycleState:
+                        LifecycleStatusEnum.ACTIVE as (typeof users.$inferInsert)['lifecycleState'],
+                    visibility: VisibilityEnum.PUBLIC as (typeof users.$inferInsert)['visibility']
+                })
+                .returning({ id: users.id });
+
+            const insertedTouristRow = insertedTourists[0];
+            if (!insertedTouristRow) {
+                throw new Error(`Insert into users returned no row for email=${E2E_TOURIST.email}`);
+            }
+
+            // Create Better Auth account row (email + password credential provider).
+            // Better Auth convention: accountId = userId for the credential provider.
+            await db.insert(accounts).values({
+                id: crypto.randomUUID(),
+                accountId: insertedTouristRow.id,
+                userId: insertedTouristRow.id,
+                providerId: 'credential',
+                password: passwordHash,
+                createdAt: new Date(),
+                updatedAt: new Date()
+            });
+
+            logger.debug(
+                `  ${STATUS_ICONS.Success} Created E2E tourist "${E2E_TOURIST.displayName}" (${E2E_TOURIST.email})`
+            );
+        }
     }
 
     // ── Step 3: Load and insert gastronomy listing JSON files ────────────────

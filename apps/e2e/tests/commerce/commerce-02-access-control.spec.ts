@@ -17,7 +17,7 @@
  *        `if (!ownsListing && !isStaff) → redirect('mi-cuenta/comercio')`
  *
  * Actors:
- *   - tourist-free@local.test       (role USER, seeded by @repo/seed testUsers.seed.ts)
+ *   - e2e-tourist@local.test          (role USER, seeded by gastronomies.seed.ts Step 2b)
  *   - gastro-owner-julieta@local.test (role COMMERCE_OWNER, seeded by gastronomies.seed.ts)
  *
  * Cross-owner listing used:
@@ -30,7 +30,7 @@
  *
  * Preconditions:
  *   - e2e:seed has run (`pnpm --filter hospeda-e2e e2e:seed`).
- *   - tourist-free@local.test exists with role USER and profileCompleted=true.
+ *   - e2e-tourist@local.test exists with role USER and profileCompleted=true.
  *   - gastro-owner-julieta@local.test exists with role COMMERCE_OWNER.
  *   - Rodrigo's gastronomy "La Cervecería del Río" (id above) is seeded and ACTIVE.
  *   - Web and API servers are running (playwright.config webServer).
@@ -57,9 +57,13 @@ const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
 // Actors
 // ---------------------------------------------------------------------------
 
-/** Plain tourist (role USER). Has no COMMERCE_OWNER role. */
+/**
+ * Plain tourist (role USER). Has no COMMERCE_OWNER role.
+ * Seeded by packages/seed/src/example/gastronomies.seed.ts Step 2b
+ * as part of the example seed (runs via `e2e:seed`).
+ */
 const TOURIST = {
-    email: 'tourist-free@local.test',
+    email: 'e2e-tourist@local.test',
     password: 'Password123!'
 } as const;
 
