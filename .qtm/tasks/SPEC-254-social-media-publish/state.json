@@ -1386,7 +1386,7 @@
             "id": "T-039",
             "title": "Build admin UI post list page (/admin/social/posts)",
             "description": "Create `apps/admin/src/routes/_authed/social/posts/index.tsx`.\n\nFeatures:\n- DataTable with columns: Thumbnail (small img), Title, Status badge (color-coded, text+color never color alone per accessibility), Approval Status badge, Platforms (icon row with aria-label), Scheduled At, Created At, Actions (Approve / View / Archive buttons)\n- Filter bar: Status multi-select, Approval Status multi-select, Platform multi-select, search by title, date range for created_at\n- Pagination: page + pageSize selectors\n- Clicking a row navigates to post detail page\n- TanStack Query with 30-second stale time (stale-while-revalidate per performance spec)\n- Loading: skeleton rows\n- Empty state: 'No social posts yet. Drafts submitted by the Custom GPT will appear here.'\n- Permission-gated action buttons (Approve hidden without SOCIAL_POST_APPROVE)\n- Optimistic approve: on Approve click, immediately remove from list pending confirmation\n\nTest requirements:\n- Component tests: table renders, filter bar interacts, empty state shows, permission-gated buttons hidden, status badges have both color and text label\n- File: `apps/admin/src/routes/_authed/social/__tests__/posts-list.test.tsx`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-037"],
             "blocks": ["T-040"],
@@ -1415,14 +1415,14 @@
             "tags": ["admin-ui", "posts"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
             }
         },
         {

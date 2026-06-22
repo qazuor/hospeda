@@ -1,0 +1,64 @@
+{
+    "posts": {
+        "title": "Posts Sociales",
+        "list": {
+            "loading": "Cargando posts sociales...",
+            "error": "Error al cargar los posts sociales",
+            "empty": "No hay posts sociales",
+            "emptyFiltered": "No hay posts que coincidan con los filtros aplicados",
+            "clearFilters": "Limpiar filtros",
+            "results": "{{count}} resultado",
+            "results_plural": "{{count}} resultados",
+            "prevPage": "Anterior",
+            "nextPage": "Siguiente",
+            "pagination": "Página {{page}} de {{totalPages}} ({{total}} total)"
+        },
+        "table": {
+            "ariaLabel": "Lista de posts sociales",
+            "colTitle": "Título",
+            "colStatus": "Estado",
+            "colApprovalStatus": "Aprobación",
+            "colPlatforms": "Plataformas",
+            "colScheduledAt": "Programado para",
+            "colActions": "Acciones",
+            "noScheduled": "Sin programar"
+        },
+        "filters": {
+            "search": "Buscar",
+            "searchPlaceholder": "Buscar por título...",
+            "status": "Estado del pipeline",
+            "approvalStatus": "Estado de aprobación",
+            "platform": "Plataforma",
+            "all": "Todos"
+        },
+        "status": {
+            "DRAFT": "Borrador",
+            "NEEDS_REVIEW": "En revisión",
+            "APPROVED": "Aprobado",
+            "SCHEDULED": "Programado",
+            "READY_TO_PUBLISH": "Listo para publicar",
+            "PUBLISHING": "Publicando",
+            "PUBLISHED": "Publicado",
+            "FAILED": "Fallido",
+            "PAUSED": "Pausado",
+            "ARCHIVED": "Archivado"
+        },
+        "approvalStatus": {
+            "PENDING": "Pendiente",
+            "APPROVED": "Aprobado",
+            "REJECTED": "Rechazado",
+            "CHANGES_REQUESTED": "Cambios solicitados"
+        },
+        "platforms": {
+            "INSTAGRAM": "Instagram",
+            "FACEBOOK": "Facebook",
+            "X": "X (Twitter)"
+        },
+        "actions": {
+            "approve": "Aprobar",
+            "approving": "Aprobando...",
+            "approveSuccess": "Post aprobado exitosamente",
+            "approveError": "Error al aprobar el post"
+        }
+    }
+}

@@ -1,0 +1,64 @@
+{
+    "posts": {
+        "title": "Social Posts",
+        "list": {
+            "loading": "Loading social posts...",
+            "error": "Error loading social posts",
+            "empty": "No social posts found",
+            "emptyFiltered": "No posts match the applied filters",
+            "clearFilters": "Clear filters",
+            "results": "{{count}} result",
+            "results_plural": "{{count}} results",
+            "prevPage": "Previous",
+            "nextPage": "Next",
+            "pagination": "Page {{page}} of {{totalPages}} ({{total}} total)"
+        },
+        "table": {
+            "ariaLabel": "Social posts list",
+            "colTitle": "Title",
+            "colStatus": "Status",
+            "colApprovalStatus": "Approval",
+            "colPlatforms": "Platforms",
+            "colScheduledAt": "Scheduled for",
+            "colActions": "Actions",
+            "noScheduled": "Not scheduled"
+        },
+        "filters": {
+            "search": "Search",
+            "searchPlaceholder": "Search by title...",
+            "status": "Pipeline status",
+            "approvalStatus": "Approval status",
+            "platform": "Platform",
+            "all": "All"
+        },
+        "status": {
+            "DRAFT": "Draft",
+            "NEEDS_REVIEW": "Needs Review",
+            "APPROVED": "Approved",
+            "SCHEDULED": "Scheduled",
+            "READY_TO_PUBLISH": "Ready to Publish",
+            "PUBLISHING": "Publishing",
+            "PUBLISHED": "Published",
+            "FAILED": "Failed",
+            "PAUSED": "Paused",
+            "ARCHIVED": "Archived"
+        },
+        "approvalStatus": {
+            "PENDING": "Pending",
+            "APPROVED": "Approved",
+            "REJECTED": "Rejected",
+            "CHANGES_REQUESTED": "Changes Requested"
+        },
+        "platforms": {
+            "INSTAGRAM": "Instagram",
+            "FACEBOOK": "Facebook",
+            "X": "X (Twitter)"
+        },
+        "actions": {
+            "approve": "Approve",
+            "approving": "Approving...",
+            "approveSuccess": "Post approved successfully",
+            "approveError": "Error approving post"
+        }
+    }
+}
