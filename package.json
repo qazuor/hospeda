@@ -64,6 +64,7 @@
         "db:studio": "pnpm --filter @repo/db db:studio",
         "db:seed": "pnpm --filter @repo/seed seed --reset --required --example",
         "db:seed:test-users": "pnpm --filter @repo/seed seed:test-users",
+        "db:seed:ready-user": "pnpm --filter @repo/seed seed:ready-user",
         "pgadmin:start": "docker compose --env-file docker/.env up -d pgadmin",
         "pgadmin:stop": "docker compose --env-file docker/.env stop pgadmin",
         "telemetry:report": "tsx .claude/scripts/telemetry-report.ts",
