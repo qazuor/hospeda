@@ -5,8 +5,17 @@
     "created": "2026-06-22T00:00:00Z",
     "summary": {
         "total": 23,
-        "byStatus": { "pending": 23 },
-        "byPhase": { "setup": 1, "core": 7, "integration": 11, "testing": 3, "docs": 1 },
+        "byStatus": {
+            "completed": 2,
+            "pending": 21
+        },
+        "byPhase": {
+            "setup": 1,
+            "core": 7,
+            "integration": 11,
+            "testing": 3,
+            "docs": 1
+        },
         "averageComplexity": 2.39
     },
     "tasks": [
@@ -14,7 +23,7 @@
             "id": "T-001",
             "title": "Add AI usage row schemas in @repo/schemas",
             "description": "Add AiUsageByModelRowSchema, AiUsageByProviderRowSchema, AiUsageByFeatureModelRowSchema, AiUsageDailyRowSchema (next to AiUsageByFeatureRowSchema) plus inferred types. These are the single source of truth for API response validation and admin client types. Row shape: { <dimension fields>, calls, tokensIn, tokensOut, costMicroUsd }; daily adds day:'YYYY-MM-DD'. Unit tests for parse/reject.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [
@@ -33,22 +42,38 @@
             "subtasks": [],
             "tags": ["setup", "schemas", "zod", "types"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": "2026-06-22T00:00:00Z",
+                "completed": "2026-06-22T22:57:12Z"
+            }
         },
         {
             "id": "T-002",
             "title": "Add formatMicroUsd helper",
             "description": "Add a shared formatMicroUsd(micro:number):string formatter (e.g. 90000 -> $0.09, 184000 -> $0.184). Check @repo/utils for an existing money formatter and reuse; otherwise add a local admin util. Unit tests for zero, small, and large values. Cost is stored as integer micro-USD (1e6 = $1); never format inline.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-015", "T-016", "T-017"],
             "subtasks": [],
             "tags": ["core", "admin", "formatting", "utils"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": "2026-06-22T00:00:00Z",
+                "completed": "2026-06-22T22:57:12Z"
+            }
         },
         {
             "id": "T-003",
@@ -61,8 +86,16 @@
             "subtasks": [],
             "tags": ["core", "ai-core", "drizzle", "storage"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-004",
@@ -75,8 +108,16 @@
             "subtasks": [],
             "tags": ["core", "ai-core", "drizzle", "storage"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-005",
@@ -89,8 +130,16 @@
             "subtasks": [],
             "tags": ["core", "ai-core", "drizzle", "storage"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-006",
@@ -103,8 +152,16 @@
             "subtasks": [],
             "tags": ["core", "ai-core", "drizzle", "storage", "timeseries"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-007",
@@ -117,8 +174,16 @@
             "subtasks": [],
             "tags": ["core", "ai-core", "drizzle", "storage"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-008",
@@ -131,8 +196,16 @@
             "subtasks": [],
             "tags": ["core", "ai-core", "reporting"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-009",
@@ -145,8 +218,16 @@
             "subtasks": [],
             "tags": ["integration", "api", "hono"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-010",
@@ -159,8 +240,16 @@
             "subtasks": [],
             "tags": ["integration", "api", "hono"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-011",
@@ -173,8 +262,16 @@
             "subtasks": [],
             "tags": ["integration", "api", "hono"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-012",
@@ -187,8 +284,16 @@
             "subtasks": [],
             "tags": ["integration", "api", "hono", "timeseries"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-013",
@@ -201,8 +306,16 @@
             "subtasks": [],
             "tags": ["integration", "admin", "tanstack-query", "tanstack-router"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-014",
@@ -215,8 +328,16 @@
             "subtasks": [],
             "tags": ["integration", "admin", "tanstack-router", "ui"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-015",
@@ -229,8 +350,16 @@
             "subtasks": [],
             "tags": ["integration", "admin", "ui", "tables"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-016",
@@ -243,8 +372,16 @@
             "subtasks": [],
             "tags": ["integration", "admin", "ui", "recharts"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-017",
@@ -257,8 +394,16 @@
             "subtasks": [],
             "tags": ["integration", "admin", "ui", "recharts", "timeseries"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-018",
@@ -271,8 +416,16 @@
             "subtasks": [],
             "tags": ["integration", "i18n"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-019",
@@ -285,8 +438,16 @@
             "subtasks": [],
             "tags": ["integration", "admin", "ui", "ux"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-020",
@@ -299,8 +460,16 @@
             "subtasks": [],
             "tags": ["testing", "ai-core", "reconciliation"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-021",
@@ -313,8 +482,16 @@
             "subtasks": [],
             "tags": ["testing", "admin", "component"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-022",
@@ -327,8 +504,16 @@
             "subtasks": [],
             "tags": ["testing", "admin", "accessibility"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-023",
@@ -341,8 +526,16 @@
             "subtasks": [],
             "tags": ["docs"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
         }
     ]
 }
