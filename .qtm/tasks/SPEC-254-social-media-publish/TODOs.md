@@ -1,6 +1,6 @@
 # SPEC-254: Social Automation Backend
 
-## Progress: 37/52 tasks (71%) — dispatchTarget (T-045) done: optimistic lock, live make_webhook_url, x-make-apikey POST, retry<3 reset to APPROVED, retry>=3 FAILED + exhaustion cascade. OWNER DECISION: terminal target = PUBLISHED/FAILED only (SKIPPED dropped). Next = T-046 (cascadePostStatus + rearmRecurrence)
+## Progress: 38/52 tasks (73%) — cascadePostStatus + rearmRecurrence (T-046) done: all-terminal cascade (>=1 PUBLISHED→PUBLISHED+rearm; all FAILED→FAILED+next_run_at null, no rearm per spec §313); recurrence via Intl (no new dep), MONTHLY clamps to last day, clean-slate rearm resets all targets to APPROVED+retry_count=0. Next = T-047 (Make callbacks claim/result)
 
 **Average Complexity:** 2.3/3 (max)
 **Critical Path:** T-001 -> T-002 -> T-004 -> T-005 -> T-006 -> T-007 -> T-008 -> T-009 -> T-010 -> T-011 -> T-013 -> T-014 -> T-016 -> T-017 -> T-018 -> T-019 -> T-027 -> T-028 -> T-029 -> T-032 -> T-033 -> T-034 -> T-035 -> T-036 -> T-037 -> T-044 -> T-045 -> T-046 -> T-047 -> T-048 -> T-049 -> T-050 -> T-051 -> T-052 (34 steps)
@@ -243,7 +243,7 @@
   - Blocked by: T-044
   - Blocks: T-046
 
-- [ ] **T-046** (complexity: 3) - Implement SocialPublishDispatchService — cascadePostStatus and rearmRecurrence
+- [x] **T-046** (complexity: 3) - Implement SocialPublishDispatchService — cascadePostStatus and rearmRecurrence
   - Terminal state detection; ONCE/WEEKLY/BIWEEKLY/MONTHLY next-run computation; clean-slate rearm (all targets reset).
   - Blocked by: T-045
   - Blocks: T-047

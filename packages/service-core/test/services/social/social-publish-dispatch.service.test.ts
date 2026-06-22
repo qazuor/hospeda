@@ -51,11 +51,19 @@ import type {
     SocialPublishLogModel,
     SocialSettingModel
 } from '@repo/db';
-import { SocialPostStatusEnum, SocialPublishResultStatusEnum } from '@repo/schemas';
+import {
+    SocialPostStatusEnum,
+    SocialPublishResultStatusEnum,
+    SocialRecurrenceTypeEnum
+} from '@repo/schemas';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { SocialAuditLogService } from '../../../src/services/social/social-audit-log.service';
 import { SocialAuditEvent } from '../../../src/services/social/social-audit-log.service';
-import type { BuildMakePayloadInput } from '../../../src/services/social/social-publish-dispatch.service';
+import type {
+    BuildMakePayloadInput,
+    CascadePostStatusResult,
+    RearmRecurrenceResult
+} from '../../../src/services/social/social-publish-dispatch.service';
 import { SocialPublishDispatchService } from '../../../src/services/social/social-publish-dispatch.service';
 import { createModelMock } from '../../utils/modelMockFactory';
 import type { StandardModelMock } from '../../utils/modelMockFactory';
@@ -1531,6 +1539,792 @@ describe('SocialPublishDispatchService.dispatchTarget — SPEC-254 T-045', () =>
                     socialPostTargetId: TARGET_ID
                 })
             );
+        });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Additional UUIDs for T-046 tests
+// ---------------------------------------------------------------------------
+
+const TARGET_ID_3 = '00000000-0000-4000-8000-000000000008';
+
+// ---------------------------------------------------------------------------
+// cascadePostStatus — SPEC-254 T-046
+// ---------------------------------------------------------------------------
+
+describe('SocialPublishDispatchService.cascadePostStatus — SPEC-254 T-046', () => {
+    let service: SocialPublishDispatchService;
+    let mocks: Mocks;
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        const built = buildService();
+        service = built.service;
+        mocks = built.mocks;
+
+        // Default: postModel.update and targetModel.update succeed
+        mocks.postModel.update.mockResolvedValue({ id: POST_ID });
+        mocks.targetModel.update.mockResolvedValue({ rowCount: 1 });
+        // Default: no targets (overridden per test)
+        mocks.targetModel.findAll.mockResolvedValue({ items: [], total: 0 });
+        // Default: post for reload in cascadePostStatus (ONCE, no recurrence)
+        mocks.postModel.findOne.mockResolvedValue(
+            buildPost({
+                recurrenceType: SocialRecurrenceTypeEnum.ONCE,
+                status: SocialPostStatusEnum.PUBLISHED
+            })
+        );
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    // -------------------------------------------------------------------------
+    // not_all_terminal — returns early without changes
+    // -------------------------------------------------------------------------
+
+    describe('not_all_terminal — at least one target is non-terminal', () => {
+        it('returns not_all_terminal when one target is still APPROVED', async () => {
+            // Arrange
+            mocks.targetModel.findAll.mockResolvedValue({
+                items: [
+                    {
+                        id: TARGET_ID,
+                        socialPostId: POST_ID,
+                        status: SocialPostStatusEnum.PUBLISHED
+                    },
+                    {
+                        id: TARGET_ID_2,
+                        socialPostId: POST_ID,
+                        status: SocialPostStatusEnum.APPROVED
+                    }
+                ],
+                total: 2
+            });
+
+            // Act
+            const result: CascadePostStatusResult = await service.cascadePostStatus({
+                postId: POST_ID
+            });
+
+            // Assert
+            expect(result.outcome).toBe('not_all_terminal');
+            expect(mocks.postModel.update).not.toHaveBeenCalled();
+        });
+
+        it('returns not_all_terminal when one target is PUBLISHING', async () => {
+            // Arrange
+            mocks.targetModel.findAll.mockResolvedValue({
+                items: [
+                    { id: TARGET_ID, socialPostId: POST_ID, status: SocialPostStatusEnum.FAILED },
+                    {
+                        id: TARGET_ID_2,
+                        socialPostId: POST_ID,
+                        status: SocialPostStatusEnum.PUBLISHING
+                    }
+                ],
+                total: 2
+            });
+
+            // Act
+            const result = await service.cascadePostStatus({ postId: POST_ID });
+
+            // Assert
+            expect(result.outcome).toBe('not_all_terminal');
+            expect(mocks.postModel.update).not.toHaveBeenCalled();
+        });
+
+        it('returns not_all_terminal when one target is READY_TO_PUBLISH', async () => {
+            // Arrange
+            mocks.targetModel.findAll.mockResolvedValue({
+                items: [
+                    {
+                        id: TARGET_ID,
+                        socialPostId: POST_ID,
+                        status: SocialPostStatusEnum.PUBLISHED
+                    },
+                    {
+                        id: TARGET_ID_2,
+                        socialPostId: POST_ID,
+                        status: SocialPostStatusEnum.READY_TO_PUBLISH
+                    }
+                ],
+                total: 2
+            });
+
+            // Act
+            const result = await service.cascadePostStatus({ postId: POST_ID });
+
+            // Assert
+            expect(result.outcome).toBe('not_all_terminal');
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // post_published — all terminal, at least one PUBLISHED
+    // -------------------------------------------------------------------------
+
+    describe('post_published — all terminal, at least one PUBLISHED', () => {
+        it('sets post status to PUBLISHED and returns post_published when all targets are PUBLISHED', async () => {
+            // Arrange
+            mocks.targetModel.findAll.mockResolvedValue({
+                items: [
+                    {
+                        id: TARGET_ID,
+                        socialPostId: POST_ID,
+                        status: SocialPostStatusEnum.PUBLISHED
+                    },
+                    {
+                        id: TARGET_ID_2,
+                        socialPostId: POST_ID,
+                        status: SocialPostStatusEnum.PUBLISHED
+                    }
+                ],
+                total: 2
+            });
+
+            // Act
+            const result = await service.cascadePostStatus({ postId: POST_ID });
+
+            // Assert
+            expect(result.outcome).toBe('post_published');
+            expect(mocks.postModel.update).toHaveBeenCalledWith(
+                { id: POST_ID },
+                { status: SocialPostStatusEnum.PUBLISHED }
+            );
+        });
+
+        it('returns post_published when targets are mixed PUBLISHED+FAILED (at least one PUBLISHED)', async () => {
+            // Arrange
+            mocks.targetModel.findAll.mockResolvedValue({
+                items: [
+                    {
+                        id: TARGET_ID,
+                        socialPostId: POST_ID,
+                        status: SocialPostStatusEnum.PUBLISHED
+                    },
+                    { id: TARGET_ID_2, socialPostId: POST_ID, status: SocialPostStatusEnum.FAILED }
+                ],
+                total: 2
+            });
+
+            // Act
+            const result = await service.cascadePostStatus({ postId: POST_ID });
+
+            // Assert
+            expect(result.outcome).toBe('post_published');
+            expect(mocks.postModel.update).toHaveBeenCalledWith(
+                { id: POST_ID },
+                { status: SocialPostStatusEnum.PUBLISHED }
+            );
+        });
+
+        it('calls rearmRecurrence (postModel.findOne then update) after setting PUBLISHED', async () => {
+            // Arrange — ONCE post (rearm sets next_run_at = null)
+            mocks.targetModel.findAll.mockResolvedValue({
+                items: [
+                    { id: TARGET_ID, socialPostId: POST_ID, status: SocialPostStatusEnum.PUBLISHED }
+                ],
+                total: 1
+            });
+            mocks.postModel.findOne.mockResolvedValue(
+                buildPost({
+                    recurrenceType: SocialRecurrenceTypeEnum.ONCE,
+                    status: SocialPostStatusEnum.PUBLISHED
+                })
+            );
+
+            // Act
+            const result = await service.cascadePostStatus({ postId: POST_ID });
+
+            // Assert: rearm was invoked (postModel.findOne called for reload)
+            expect(result.outcome).toBe('post_published');
+            expect(mocks.postModel.findOne).toHaveBeenCalledWith({ id: POST_ID });
+        });
+
+        it('returns nextRunAt = null for a ONCE post after cascade', async () => {
+            // Arrange
+            mocks.targetModel.findAll.mockResolvedValue({
+                items: [
+                    { id: TARGET_ID, socialPostId: POST_ID, status: SocialPostStatusEnum.PUBLISHED }
+                ],
+                total: 1
+            });
+            mocks.postModel.findOne.mockResolvedValue(
+                buildPost({ recurrenceType: SocialRecurrenceTypeEnum.ONCE })
+            );
+
+            // Act
+            const result = await service.cascadePostStatus({ postId: POST_ID });
+
+            // Assert
+            expect(result.nextRunAt).toBeNull();
+        });
+
+        it('returns a future nextRunAt for a BIWEEKLY post after cascade', async () => {
+            // Arrange
+            const _now = new Date('2024-03-01T10:00:00Z');
+            mocks.targetModel.findAll.mockResolvedValue({
+                items: [
+                    { id: TARGET_ID, socialPostId: POST_ID, status: SocialPostStatusEnum.PUBLISHED }
+                ],
+                total: 1
+            });
+            const post = buildPost({
+                recurrenceType: SocialRecurrenceTypeEnum.BIWEEKLY,
+                timezone: 'UTC'
+            });
+            mocks.postModel.findOne.mockResolvedValue(post);
+            // Targets for the rearm reset
+            mocks.targetModel.findAll
+                .mockResolvedValueOnce({
+                    items: [
+                        {
+                            id: TARGET_ID,
+                            socialPostId: POST_ID,
+                            status: SocialPostStatusEnum.PUBLISHED
+                        }
+                    ],
+                    total: 1
+                })
+                .mockResolvedValue({
+                    items: [
+                        {
+                            id: TARGET_ID,
+                            socialPostId: POST_ID,
+                            status: SocialPostStatusEnum.PUBLISHED
+                        }
+                    ],
+                    total: 1
+                });
+
+            // We need to pass now via rearmRecurrence directly, but cascadePostStatus
+            // calls it internally. We test via the final postModel.update call.
+            // Act
+            const result = await service.cascadePostStatus({ postId: POST_ID });
+
+            // Assert: a future date was set
+            expect(result.outcome).toBe('post_published');
+            expect(result.nextRunAt).toBeInstanceOf(Date);
+            if (result.nextRunAt) {
+                expect(result.nextRunAt.getTime()).toBeGreaterThan(Date.now() - 60_000);
+            }
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // post_failed — all targets are FAILED
+    // -------------------------------------------------------------------------
+
+    describe('post_failed — all targets are FAILED', () => {
+        it('sets post status to FAILED and next_run_at to null when all targets are FAILED', async () => {
+            // Arrange
+            mocks.targetModel.findAll.mockResolvedValue({
+                items: [
+                    { id: TARGET_ID, socialPostId: POST_ID, status: SocialPostStatusEnum.FAILED },
+                    { id: TARGET_ID_2, socialPostId: POST_ID, status: SocialPostStatusEnum.FAILED }
+                ],
+                total: 2
+            });
+
+            // Act
+            const result = await service.cascadePostStatus({ postId: POST_ID });
+
+            // Assert
+            expect(result.outcome).toBe('post_failed');
+            expect(mocks.postModel.update).toHaveBeenCalledWith(
+                { id: POST_ID },
+                { status: SocialPostStatusEnum.FAILED, nextRunAt: null }
+            );
+        });
+
+        it('does NOT reset any targets when all targets are FAILED', async () => {
+            // Arrange — spec edge-case §313: no rearm on full failure
+            mocks.targetModel.findAll.mockResolvedValue({
+                items: [
+                    { id: TARGET_ID, socialPostId: POST_ID, status: SocialPostStatusEnum.FAILED }
+                ],
+                total: 1
+            });
+
+            // Act
+            await service.cascadePostStatus({ postId: POST_ID });
+
+            // Assert: targetModel.update NOT called (no target reset)
+            expect(mocks.targetModel.update).not.toHaveBeenCalled();
+        });
+
+        it('does NOT call rearmRecurrence when all targets are FAILED', async () => {
+            // Arrange
+            mocks.targetModel.findAll.mockResolvedValue({
+                items: [
+                    { id: TARGET_ID, socialPostId: POST_ID, status: SocialPostStatusEnum.FAILED }
+                ],
+                total: 1
+            });
+
+            // Act
+            await service.cascadePostStatus({ postId: POST_ID });
+
+            // Assert: postModel.findOne (used by rearm) NOT called
+            expect(mocks.postModel.findOne).not.toHaveBeenCalled();
+        });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// rearmRecurrence — SPEC-254 T-046
+// ---------------------------------------------------------------------------
+
+describe('SocialPublishDispatchService.rearmRecurrence — SPEC-254 T-046', () => {
+    let service: SocialPublishDispatchService;
+    let mocks: Mocks;
+
+    // Fixed "now" for deterministic tests: Friday 2024-03-01 10:00:00 UTC
+    // In UTC that is a Friday (weekday index 5).
+    const FIXED_NOW = new Date('2024-03-01T10:00:00.000Z');
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        const built = buildService();
+        service = built.service;
+        mocks = built.mocks;
+
+        mocks.postModel.update.mockResolvedValue({ id: POST_ID });
+        mocks.targetModel.update.mockResolvedValue({ rowCount: 1 });
+        // Default: no targets (overridden per test when targets need to be reset)
+        mocks.targetModel.findAll.mockResolvedValue({ items: [], total: 0 });
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    // -------------------------------------------------------------------------
+    // ONCE: next_run_at = null, post stays PUBLISHED, targets untouched
+    // -------------------------------------------------------------------------
+
+    describe('ONCE recurrence', () => {
+        it('sets next_run_at to null for a ONCE post', async () => {
+            // Arrange
+            const post = buildPost({ recurrenceType: SocialRecurrenceTypeEnum.ONCE });
+
+            // Act
+            const result: RearmRecurrenceResult = await service.rearmRecurrence({
+                post,
+                now: FIXED_NOW
+            });
+
+            // Assert
+            expect(result.nextRunAt).toBeNull();
+            expect(result.rearmed).toBe(false);
+        });
+
+        it('calls postModel.update with next_run_at = null for ONCE', async () => {
+            // Arrange
+            const post = buildPost({ recurrenceType: SocialRecurrenceTypeEnum.ONCE });
+
+            // Act
+            await service.rearmRecurrence({ post, now: FIXED_NOW });
+
+            // Assert
+            expect(mocks.postModel.update).toHaveBeenCalledWith(
+                { id: POST_ID },
+                { nextRunAt: null }
+            );
+        });
+
+        it('does NOT call targetModel.update for ONCE (targets untouched)', async () => {
+            // Arrange
+            const post = buildPost({ recurrenceType: SocialRecurrenceTypeEnum.ONCE });
+
+            // Act
+            await service.rearmRecurrence({ post, now: FIXED_NOW });
+
+            // Assert
+            expect(mocks.targetModel.update).not.toHaveBeenCalled();
+            expect(mocks.targetModel.findAll).not.toHaveBeenCalled();
+        });
+
+        it('does NOT change post status to APPROVED for ONCE', async () => {
+            // Arrange
+            const post = buildPost({ recurrenceType: SocialRecurrenceTypeEnum.ONCE });
+
+            // Act
+            await service.rearmRecurrence({ post, now: FIXED_NOW });
+
+            // Assert: update should only set nextRunAt, not status
+            const updateCalls = (mocks.postModel.update as ReturnType<typeof vi.fn>).mock.calls;
+            const updateData = (updateCalls[0] ?? [])[1] as Record<string, unknown>;
+            expect(updateData.status).toBeUndefined();
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // BIWEEKLY: next_run_at = now + 14 days
+    // -------------------------------------------------------------------------
+
+    describe('BIWEEKLY recurrence', () => {
+        it('sets next_run_at to now + 14 days for BIWEEKLY', async () => {
+            // Arrange
+            const post = buildPost({ recurrenceType: SocialRecurrenceTypeEnum.BIWEEKLY });
+            const expected = new Date(FIXED_NOW.getTime() + 14 * 24 * 60 * 60 * 1000);
+
+            // Act
+            const result = await service.rearmRecurrence({ post, now: FIXED_NOW });
+
+            // Assert
+            expect(result.nextRunAt).toEqual(expected);
+            expect(result.rearmed).toBe(true);
+        });
+
+        it('resets post status to APPROVED for BIWEEKLY', async () => {
+            // Arrange
+            const post = buildPost({ recurrenceType: SocialRecurrenceTypeEnum.BIWEEKLY });
+
+            // Act
+            await service.rearmRecurrence({ post, now: FIXED_NOW });
+
+            // Assert: postModel.update called with status=APPROVED
+            expect(mocks.postModel.update).toHaveBeenCalledWith(
+                { id: POST_ID },
+                expect.objectContaining({ status: SocialPostStatusEnum.APPROVED })
+            );
+        });
+
+        it('resets all targets to APPROVED with retry_count=0 for BIWEEKLY', async () => {
+            // Arrange
+            const post = buildPost({ recurrenceType: SocialRecurrenceTypeEnum.BIWEEKLY });
+            mocks.targetModel.findAll.mockResolvedValue({
+                items: [
+                    {
+                        id: TARGET_ID,
+                        socialPostId: POST_ID,
+                        status: SocialPostStatusEnum.PUBLISHED
+                    },
+                    { id: TARGET_ID_2, socialPostId: POST_ID, status: SocialPostStatusEnum.FAILED }
+                ],
+                total: 2
+            });
+
+            // Act
+            await service.rearmRecurrence({ post, now: FIXED_NOW });
+
+            // Assert: both targets reset
+            expect(mocks.targetModel.update).toHaveBeenCalledTimes(2);
+            expect(mocks.targetModel.update).toHaveBeenCalledWith(
+                { id: TARGET_ID },
+                { status: SocialPostStatusEnum.APPROVED, retryCount: 0 }
+            );
+            expect(mocks.targetModel.update).toHaveBeenCalledWith(
+                { id: TARGET_ID_2 },
+                { status: SocialPostStatusEnum.APPROVED, retryCount: 0 }
+            );
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // MONTHLY: next_run_at = same day next month, with clamping
+    // -------------------------------------------------------------------------
+
+    describe('MONTHLY recurrence', () => {
+        it('sets next_run_at to same day next month for MONTHLY', async () => {
+            // Arrange: March 1 → April 1
+            const march1 = new Date('2024-03-01T10:00:00.000Z');
+            const post = buildPost({ recurrenceType: SocialRecurrenceTypeEnum.MONTHLY });
+            const expectedApril1 = new Date('2024-04-01T10:00:00.000Z');
+
+            // Act
+            const result = await service.rearmRecurrence({ post, now: march1 });
+
+            // Assert
+            expect(result.nextRunAt).toEqual(expectedApril1);
+            expect(result.rearmed).toBe(true);
+        });
+
+        it('clamps month-end date (Jan 31 → last day of Feb)', async () => {
+            // Arrange: Jan 31 2024 → Feb 29 2024 (2024 is a leap year)
+            const jan31 = new Date('2024-01-31T10:00:00.000Z');
+            const post = buildPost({ recurrenceType: SocialRecurrenceTypeEnum.MONTHLY });
+            const expectedFeb29 = new Date('2024-02-29T10:00:00.000Z');
+
+            // Act
+            const result = await service.rearmRecurrence({ post, now: jan31 });
+
+            // Assert
+            expect(result.nextRunAt).toEqual(expectedFeb29);
+        });
+
+        it('clamps month-end date in non-leap year (Jan 31 → Feb 28)', async () => {
+            // Arrange: Jan 31 2023 → Feb 28 2023 (non-leap year)
+            const jan31_2023 = new Date('2023-01-31T10:00:00.000Z');
+            const post = buildPost({ recurrenceType: SocialRecurrenceTypeEnum.MONTHLY });
+            const expectedFeb28 = new Date('2023-02-28T10:00:00.000Z');
+
+            // Act
+            const result = await service.rearmRecurrence({ post, now: jan31_2023 });
+
+            // Assert
+            expect(result.nextRunAt).toEqual(expectedFeb28);
+        });
+
+        it('handles December → January (year rollover)', async () => {
+            // Arrange: Dec 15 2024 → Jan 15 2025
+            const dec15 = new Date('2024-12-15T10:00:00.000Z');
+            const post = buildPost({ recurrenceType: SocialRecurrenceTypeEnum.MONTHLY });
+            const expectedJan15 = new Date('2025-01-15T10:00:00.000Z');
+
+            // Act
+            const result = await service.rearmRecurrence({ post, now: dec15 });
+
+            // Assert
+            expect(result.nextRunAt).toEqual(expectedJan15);
+        });
+
+        it('resets post status to APPROVED and targets for MONTHLY', async () => {
+            // Arrange
+            const post = buildPost({ recurrenceType: SocialRecurrenceTypeEnum.MONTHLY });
+            mocks.targetModel.findAll.mockResolvedValue({
+                items: [
+                    { id: TARGET_ID, socialPostId: POST_ID, status: SocialPostStatusEnum.PUBLISHED }
+                ],
+                total: 1
+            });
+
+            // Act
+            await service.rearmRecurrence({ post, now: FIXED_NOW });
+
+            // Assert
+            expect(mocks.postModel.update).toHaveBeenCalledWith(
+                { id: POST_ID },
+                expect.objectContaining({ status: SocialPostStatusEnum.APPROVED })
+            );
+            expect(mocks.targetModel.update).toHaveBeenCalledWith(
+                { id: TARGET_ID },
+                { status: SocialPostStatusEnum.APPROVED, retryCount: 0 }
+            );
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // WEEKLY: next occurrence of configured weekday in timezone
+    // -------------------------------------------------------------------------
+
+    describe('WEEKLY recurrence', () => {
+        // FIXED_NOW = 2024-03-01T10:00:00Z = Friday UTC
+        // In UTC: weekday is Friday (index 5).
+
+        it('returns the SAME day when next weekday = today (Friday → Friday)', async () => {
+            // Arrange: now is Friday, want FRIDAY → daysToAdd=0, same moment
+            const post = buildPost({
+                recurrenceType: SocialRecurrenceTypeEnum.WEEKLY,
+                recurrenceParamsJson: { weekday: 'FRIDAY' },
+                timezone: 'UTC'
+            });
+
+            // Act
+            const result = await service.rearmRecurrence({ post, now: FIXED_NOW });
+
+            // Assert: same-day publish is valid (daysToAdd = 0)
+            expect(result.rearmed).toBe(true);
+            expect(result.nextRunAt).toBeInstanceOf(Date);
+            // Should be FIXED_NOW itself (0 days added)
+            expect(result.nextRunAt?.getTime()).toBe(FIXED_NOW.getTime());
+        });
+
+        it('advances to next MONDAY from a Friday (daysToAdd = 3)', async () => {
+            // Arrange: 2024-03-01 is Friday UTC. Next Monday = 2024-03-04.
+            const post = buildPost({
+                recurrenceType: SocialRecurrenceTypeEnum.WEEKLY,
+                recurrenceParamsJson: { weekday: 'MONDAY' },
+                timezone: 'UTC'
+            });
+            const expectedMonday = new Date('2024-03-04T10:00:00.000Z');
+
+            // Act
+            const result = await service.rearmRecurrence({ post, now: FIXED_NOW });
+
+            // Assert
+            expect(result.nextRunAt).toEqual(expectedMonday);
+        });
+
+        it('advances to next SATURDAY from a Friday (daysToAdd = 1)', async () => {
+            // Arrange: Friday → Saturday = 1 day
+            const post = buildPost({
+                recurrenceType: SocialRecurrenceTypeEnum.WEEKLY,
+                recurrenceParamsJson: { weekday: 'SATURDAY' },
+                timezone: 'UTC'
+            });
+            const expectedSaturday = new Date('2024-03-02T10:00:00.000Z');
+
+            // Act
+            const result = await service.rearmRecurrence({ post, now: FIXED_NOW });
+
+            // Assert
+            expect(result.nextRunAt).toEqual(expectedSaturday);
+        });
+
+        it('advances to next THURSDAY from a Friday (daysToAdd = 6)', async () => {
+            // Arrange: Friday → next Thursday = 6 days ahead
+            const post = buildPost({
+                recurrenceType: SocialRecurrenceTypeEnum.WEEKLY,
+                recurrenceParamsJson: { weekday: 'THURSDAY' },
+                timezone: 'UTC'
+            });
+            const expectedThursday = new Date('2024-03-07T10:00:00.000Z');
+
+            // Act
+            const result = await service.rearmRecurrence({ post, now: FIXED_NOW });
+
+            // Assert
+            expect(result.nextRunAt).toEqual(expectedThursday);
+        });
+
+        it('uses the post timezone to determine the local weekday (UTC+3 Saturday = UTC Friday)', async () => {
+            // Arrange: FIXED_NOW = 2024-03-01T10:00:00Z.
+            // In UTC+3 (e.g. 'Africa/Nairobi') this is Friday at 13:00.
+            // Requesting SATURDAY → daysToAdd = 1 → 2024-03-02T10:00:00Z.
+            const post = buildPost({
+                recurrenceType: SocialRecurrenceTypeEnum.WEEKLY,
+                recurrenceParamsJson: { weekday: 'SATURDAY' },
+                timezone: 'Africa/Nairobi' // UTC+3
+            });
+            const expected = new Date('2024-03-02T10:00:00.000Z');
+
+            // Act
+            const result = await service.rearmRecurrence({ post, now: FIXED_NOW });
+
+            // Assert
+            expect(result.nextRunAt).toEqual(expected);
+        });
+
+        it('handles timezone where local day is SATURDAY when UTC is still Friday', async () => {
+            // Arrange: FIXED_NOW = 2024-03-01T10:00:00Z.
+            // In UTC+14 (Pacific/Kiritimati) this would already be Saturday
+            // (UTC 10:00 → local Saturday). Requesting SATURDAY → daysToAdd = 0.
+            const post = buildPost({
+                recurrenceType: SocialRecurrenceTypeEnum.WEEKLY,
+                recurrenceParamsJson: { weekday: 'SATURDAY' },
+                timezone: 'Pacific/Kiritimati' // UTC+14
+            });
+
+            // Act
+            const result = await service.rearmRecurrence({ post, now: FIXED_NOW });
+
+            // Assert: daysToAdd = 0 → returns FIXED_NOW itself
+            expect(result.nextRunAt?.getTime()).toBe(FIXED_NOW.getTime());
+        });
+
+        it('resets post status to APPROVED and all targets for WEEKLY', async () => {
+            // Arrange
+            const post = buildPost({
+                recurrenceType: SocialRecurrenceTypeEnum.WEEKLY,
+                recurrenceParamsJson: { weekday: 'MONDAY' },
+                timezone: 'UTC'
+            });
+            mocks.targetModel.findAll.mockResolvedValue({
+                items: [
+                    {
+                        id: TARGET_ID,
+                        socialPostId: POST_ID,
+                        status: SocialPostStatusEnum.PUBLISHED
+                    },
+                    {
+                        id: TARGET_ID_2,
+                        socialPostId: POST_ID,
+                        status: SocialPostStatusEnum.PUBLISHED
+                    },
+                    { id: TARGET_ID_3, socialPostId: POST_ID, status: SocialPostStatusEnum.FAILED }
+                ],
+                total: 3
+            });
+
+            // Act
+            await service.rearmRecurrence({ post, now: FIXED_NOW });
+
+            // Assert: post reset to APPROVED
+            expect(mocks.postModel.update).toHaveBeenCalledWith(
+                { id: POST_ID },
+                expect.objectContaining({ status: SocialPostStatusEnum.APPROVED })
+            );
+            // Assert: ALL 3 targets reset
+            expect(mocks.targetModel.update).toHaveBeenCalledTimes(3);
+            for (const tid of [TARGET_ID, TARGET_ID_2, TARGET_ID_3]) {
+                expect(mocks.targetModel.update).toHaveBeenCalledWith(
+                    { id: tid },
+                    { status: SocialPostStatusEnum.APPROVED, retryCount: 0 }
+                );
+            }
+        });
+
+        it('does NOT modify approval_status (keeps it APPROVED)', async () => {
+            // Arrange
+            const post = buildPost({
+                recurrenceType: SocialRecurrenceTypeEnum.WEEKLY,
+                recurrenceParamsJson: { weekday: 'MONDAY' },
+                timezone: 'UTC',
+                approvalStatus: 'APPROVED'
+            });
+
+            // Act
+            await service.rearmRecurrence({ post, now: FIXED_NOW });
+
+            // Assert: postModel.update does NOT include approvalStatus
+            const updateCalls = (mocks.postModel.update as ReturnType<typeof vi.fn>).mock.calls;
+            const updateData = (updateCalls[0] ?? [])[1] as Record<string, unknown>;
+            expect(updateData.approvalStatus).toBeUndefined();
+        });
+
+        it('returns rearmed=true for WEEKLY', async () => {
+            // Arrange
+            const post = buildPost({
+                recurrenceType: SocialRecurrenceTypeEnum.WEEKLY,
+                recurrenceParamsJson: { weekday: 'MONDAY' },
+                timezone: 'UTC'
+            });
+
+            // Act
+            const result = await service.rearmRecurrence({ post, now: FIXED_NOW });
+
+            // Assert
+            expect(result.rearmed).toBe(true);
+        });
+
+        it('nextRunAt is in the future (or same moment) relative to FIXED_NOW', async () => {
+            // Arrange
+            const post = buildPost({
+                recurrenceType: SocialRecurrenceTypeEnum.WEEKLY,
+                recurrenceParamsJson: { weekday: 'WEDNESDAY' },
+                timezone: 'UTC'
+            });
+            // Friday → Wednesday = 5 days ahead
+
+            // Act
+            const result = await service.rearmRecurrence({ post, now: FIXED_NOW });
+
+            // Assert
+            expect(result.nextRunAt).toBeInstanceOf(Date);
+            expect(result.nextRunAt!.getTime()).toBeGreaterThanOrEqual(FIXED_NOW.getTime());
+        });
+
+        it('nextRunAt lands on the configured WEDNESDAY (UTC) from a Friday', async () => {
+            // Arrange: 2024-03-01 is Friday; next Wednesday = 2024-03-06
+            const post = buildPost({
+                recurrenceType: SocialRecurrenceTypeEnum.WEEKLY,
+                recurrenceParamsJson: { weekday: 'WEDNESDAY' },
+                timezone: 'UTC'
+            });
+            const expectedWednesday = new Date('2024-03-06T10:00:00.000Z');
+
+            // Act
+            const result = await service.rearmRecurrence({ post, now: FIXED_NOW });
+
+            // Assert
+            expect(result.nextRunAt).toEqual(expectedWednesday);
+            // Verify it is indeed a Wednesday (UTC day = 3)
+            expect(result.nextRunAt?.getUTCDay()).toBe(3);
         });
     });
 });

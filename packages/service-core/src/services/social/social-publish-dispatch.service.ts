@@ -4,8 +4,8 @@
  * Eligibility query, payload assembly, and HTTP dispatch for the Make.com
  * social publishing pipeline.
  *
- * This service provides three methods consumed by the
- * `social-publish-dispatch` cron job:
+ * This service provides five methods consumed by the
+ * `social-publish-dispatch` cron job and the Make.com result callback:
  *
  *  - `findEligibleTargets`  — queries `social_post_targets` (joined to their
  *    parent `social_posts`) and returns every target that the cron is allowed
@@ -16,15 +16,21 @@
  *    or status changes.
  *
  *  - `dispatchTarget`       — executes the actual Make.com HTTP push with
- *    optimistic lock, retry logic, and exhaustion cascade (US-11). The
- *    Make callbacks (T-047) and general recurrence cascade (T-046) are NOT
- *    handled here.
+ *    optimistic lock, retry logic, and exhaustion cascade (US-11).
+ *
+ *  - `cascadePostStatus`    — evaluates all targets of a post and, when every
+ *    target is terminal (PUBLISHED or FAILED), updates the post-level status
+ *    and triggers recurrence rearm (US-13 / T-046).
+ *
+ *  - `rearmRecurrence`      — recomputes `next_run_at` for the next publish
+ *    cycle and performs the clean-slate target reset for recurring posts
+ *    (US-14 / T-046).
  *
  * This service does NOT extend BaseCrudService.
  * It has NO actor / permission gate — it is always called from cron/system
  * context, never directly from a user-facing API route.
  *
- * @see SPEC-254 T-044 / T-045 / US-11
+ * @see SPEC-254 T-044 / T-045 / T-046 / US-11 / US-13 / US-14
  */
 
 import type {
@@ -48,7 +54,11 @@ import {
     SocialSettingModel
 } from '@repo/db';
 import type { SocialMakePayload } from '@repo/schemas';
-import { SocialPostStatusEnum, SocialPublishResultStatusEnum } from '@repo/schemas';
+import {
+    SocialPostStatusEnum,
+    SocialPublishResultStatusEnum,
+    SocialRecurrenceTypeEnum
+} from '@repo/schemas';
 import type { ServiceConfig } from '../../types';
 import { serviceLogger } from '../../utils/service-logger';
 import { SocialAuditLogService } from './social-audit-log.service';
@@ -174,6 +184,78 @@ export interface DispatchTargetResult {
 }
 
 // ---------------------------------------------------------------------------
+// cascadePostStatus types
+// ---------------------------------------------------------------------------
+
+/**
+ * Possible outcomes of a {@link SocialPublishDispatchService.cascadePostStatus} call.
+ *
+ * - `not_all_terminal` — at least one target is still in a non-terminal state
+ *   (not PUBLISHED or FAILED). No post-level status change was made.
+ * - `post_published`   — all targets reached terminal state and at least one is
+ *   PUBLISHED. Post status set to PUBLISHED; recurrence rearmed.
+ * - `post_failed`      — all targets reached terminal state and ALL are FAILED.
+ *   Post status set to FAILED; `next_run_at` set to null (no rearm).
+ */
+export type CascadeOutcome = 'not_all_terminal' | 'post_published' | 'post_failed';
+
+/**
+ * Input for {@link SocialPublishDispatchService.cascadePostStatus}.
+ */
+export interface CascadePostStatusInput {
+    /** The post ID whose targets should be evaluated. */
+    readonly postId: string;
+}
+
+/**
+ * Return value of {@link SocialPublishDispatchService.cascadePostStatus}.
+ */
+export interface CascadePostStatusResult {
+    /** Whether a cascade was performed and which outcome was reached. */
+    readonly outcome: CascadeOutcome;
+    /**
+     * Present when `outcome === 'post_published'` for a recurring post.
+     * The newly computed next_run_at value.
+     */
+    readonly nextRunAt?: Date | null;
+}
+
+// ---------------------------------------------------------------------------
+// rearmRecurrence types
+// ---------------------------------------------------------------------------
+
+/**
+ * Input for {@link SocialPublishDispatchService.rearmRecurrence}.
+ */
+export interface RearmRecurrenceInput {
+    /** The parent post row (raw DB record). Must include: id, recurrenceType,
+     * recurrenceParamsJson, timezone, and status columns. */
+    readonly post: Record<string, unknown>;
+    /**
+     * Override for "now". Accepts a Date for testability.
+     * Defaults to `new Date()` when not provided.
+     */
+    readonly now?: Date;
+}
+
+/**
+ * Return value of {@link SocialPublishDispatchService.rearmRecurrence}.
+ */
+export interface RearmRecurrenceResult {
+    /**
+     * The computed `next_run_at` value written to the post row.
+     * - `null` for ONCE posts (no rearm).
+     * - A future Date for WEEKLY / BIWEEKLY / MONTHLY posts.
+     */
+    readonly nextRunAt: Date | null;
+    /**
+     * True when the post and all its targets were reset for the next cycle
+     * (WEEKLY / BIWEEKLY / MONTHLY). False for ONCE posts (no reset).
+     */
+    readonly rearmed: boolean;
+}
+
+// ---------------------------------------------------------------------------
 // Eligibility constants
 // ---------------------------------------------------------------------------
 
@@ -247,15 +329,17 @@ const MAKE_WEBHOOK_URL_KEY = 'make_webhook_url';
  * - `buildMakePayload` — assemble the exact payload object that Make.com
  *   expects, resolving footer, media URLs, and platform-format config.
  * - `dispatchTarget` — execute the HTTP POST to Make.com with optimistic lock
- *   and retry/exhaustion logic (US-11). DOES NOT handle Make result callbacks
- *   (T-047) or general recurrence cascade (T-046).
+ *   and retry/exhaustion logic (US-11).
+ * - `cascadePostStatus` — evaluate all sibling targets and, when all are
+ *   terminal, update the post-level status; trigger recurrence rearm (T-046).
+ * - `rearmRecurrence` — recompute `next_run_at` and reset targets for the
+ *   next publish cycle for recurring posts (T-046 / US-14).
  *
  * ## What this service does NOT do
- * - No Make result callbacks (T-047).
- * - No general cascade / recurrence reset (T-046).
+ * - No Make result callbacks (T-047 handles those).
  * - No permission gate (cron / system context; no actor).
  *
- * SPEC-254 T-044 / T-045.
+ * SPEC-254 T-044 / T-045 / T-046.
  */
 export class SocialPublishDispatchService {
     private readonly postModel: SocialPostModelType;
@@ -799,6 +883,215 @@ export class SocialPublishDispatchService {
     }
 
     // ---------------------------------------------------------------------------
+    // Public cascade / recurrence API (T-046)
+    // ---------------------------------------------------------------------------
+
+    /**
+     * Evaluates all targets of a post and cascades the post-level status once
+     * every target reaches a terminal state (PUBLISHED or FAILED).
+     *
+     * ## Decision table
+     * | Targets state              | Action                                      |
+     * |----------------------------|---------------------------------------------|
+     * | Any target is non-terminal | No change — return `{ outcome: 'not_all_terminal' }` |
+     * | All terminal, ≥1 PUBLISHED | Post → PUBLISHED; call `rearmRecurrence`    |
+     * | All terminal, all FAILED   | Post → FAILED; `next_run_at` → null (spec edge-case §313: recurrence does NOT rearm on full failure) |
+     *
+     * This method is called by the Make.com result callback (T-047) and by the
+     * dispatch exhaustion path.
+     *
+     * @param input - `{ postId }` — the post whose targets should be evaluated.
+     * @returns The cascade outcome and (for recurring published posts) the new `nextRunAt`.
+     *
+     * @example
+     * ```ts
+     * const result = await service.cascadePostStatus({ postId: 'abc-123' });
+     * if (result.outcome === 'post_published') {
+     *   logger.info({ nextRunAt: result.nextRunAt }, 'Post published; recurrence armed');
+     * }
+     * ```
+     */
+    public async cascadePostStatus(
+        input: CascadePostStatusInput
+    ): Promise<CascadePostStatusResult> {
+        const { postId } = input;
+
+        // Load ALL targets for this post
+        const { items: allTargets } = await this.targetModel.findAll(
+            { socialPostId: postId },
+            { page: 1, pageSize: 1000 }
+        );
+
+        // Check if every target is in a terminal state
+        const allTerminal = allTargets.every((t) => {
+            const s = t.status as string | undefined;
+            return s !== undefined && CASCADE_TERMINAL_STATUSES.has(s);
+        });
+
+        if (!allTerminal) {
+            serviceLogger.info(
+                { postId },
+                'SocialPublishDispatchService.cascadePostStatus: not all targets terminal; skipping'
+            );
+            return { outcome: 'not_all_terminal' };
+        }
+
+        // Determine whether at least one target is PUBLISHED
+        const anyPublished = allTargets.some(
+            (t) => (t.status as string | undefined) === SocialPostStatusEnum.PUBLISHED
+        );
+
+        if (anyPublished) {
+            // Set post to PUBLISHED and rearm recurrence
+            await this.postModel.update({ id: postId }, { status: SocialPostStatusEnum.PUBLISHED });
+
+            // Reload the post to obtain recurrence fields (recurrenceType, timezone, etc.)
+            const post = await this.postModel.findOne({ id: postId });
+            const rearmResult = post
+                ? await this.rearmRecurrence({ post })
+                : { nextRunAt: null, rearmed: false };
+
+            serviceLogger.info(
+                { postId, nextRunAt: rearmResult.nextRunAt, rearmed: rearmResult.rearmed },
+                'SocialPublishDispatchService.cascadePostStatus: post PUBLISHED; recurrence armed'
+            );
+
+            return { outcome: 'post_published', nextRunAt: rearmResult.nextRunAt };
+        }
+
+        // All targets are FAILED — post fails; no rearm (spec edge-case §313)
+        await this.postModel.update(
+            { id: postId },
+            {
+                status: SocialPostStatusEnum.FAILED,
+                nextRunAt: null
+            }
+        );
+
+        serviceLogger.warn(
+            { postId },
+            'SocialPublishDispatchService.cascadePostStatus: all targets FAILED — post FAILED, next_run_at nulled'
+        );
+
+        return { outcome: 'post_failed' };
+    }
+
+    /**
+     * Recomputes `next_run_at` for the post's next publish cycle and, for recurring
+     * posts (WEEKLY / BIWEEKLY / MONTHLY), performs a clean-slate reset so the
+     * dispatch cron can re-pick the post when `next_run_at <= now`.
+     *
+     * ## Clean-slate rearm (WEEKLY / BIWEEKLY / MONTHLY)
+     * 1. Set `post.status = APPROVED` (dispatch cron condition: status = APPROVED +
+     *    next_run_at <= now).
+     * 2. Keep `post.approvalStatus = APPROVED` (recurrence auto-reuses approval).
+     * 3. Reset ALL of the post's targets to `status = APPROVED`, `retry_count = 0`.
+     * 4. Set `next_run_at` to the computed future date.
+     *
+     * ## ONCE posts
+     * `next_run_at` is set to `null`. The post STAYS PUBLISHED; targets are NOT reset.
+     *
+     * ## WEEKLY timezone computation
+     * Uses `Intl.DateTimeFormat` with the post's IANA `timezone` to determine the
+     * current weekday in the post's local time, then adds the minimum number of days
+     * (0–6) to reach the target weekday. This avoids the `date-fns-tz` dependency.
+     *
+     * ## MONTHLY clamping
+     * If the source day-of-month exceeds the length of the target month (e.g. Jan 31
+     * → Feb), the date is clamped to the last day of the target month. This follows
+     * the principle of least surprise: the post fires as late as possible within the
+     * intended month, not the following month.
+     *
+     * @param input - Post row and optional `now` override for testability.
+     * @returns `{ nextRunAt, rearmed }` — the new next_run_at and whether targets were reset.
+     *
+     * @example
+     * ```ts
+     * const { nextRunAt, rearmed } = await service.rearmRecurrence({ post });
+     * logger.info({ nextRunAt, rearmed }, 'Recurrence rearmed');
+     * ```
+     */
+    public async rearmRecurrence(input: RearmRecurrenceInput): Promise<RearmRecurrenceResult> {
+        const { post, now: nowOverride } = input;
+        const now = nowOverride ?? new Date();
+
+        const postId = post.id as string;
+        const recurrenceType =
+            (post.recurrenceType as string | undefined) ?? SocialRecurrenceTypeEnum.ONCE;
+        const recurrenceParamsJson = post.recurrenceParamsJson as
+            | Record<string, unknown>
+            | null
+            | undefined;
+        const timezone = (post.timezone as string | undefined) ?? 'UTC';
+
+        // -------------------------------------------------------------------------
+        // ONCE: no rearm, no target reset
+        // -------------------------------------------------------------------------
+        if (recurrenceType === SocialRecurrenceTypeEnum.ONCE) {
+            await this.postModel.update({ id: postId }, { nextRunAt: null });
+
+            serviceLogger.info(
+                { postId },
+                'SocialPublishDispatchService.rearmRecurrence: ONCE post — next_run_at nulled, no reset'
+            );
+
+            return { nextRunAt: null, rearmed: false };
+        }
+
+        // -------------------------------------------------------------------------
+        // Compute next_run_at based on recurrence type
+        // -------------------------------------------------------------------------
+        let nextRunAt: Date;
+
+        if (recurrenceType === SocialRecurrenceTypeEnum.BIWEEKLY) {
+            // BIWEEKLY: now + 14 days (simple, timezone-agnostic wall-clock arithmetic)
+            nextRunAt = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+        } else if (recurrenceType === SocialRecurrenceTypeEnum.MONTHLY) {
+            // MONTHLY: same day-of-month next month, clamped to last day of target month
+            nextRunAt = this.computeNextMonthlyDate(now);
+        } else {
+            // WEEKLY: next occurrence of the configured weekday in the post's timezone
+            const weekdayName = (recurrenceParamsJson?.weekday as string | undefined) ?? 'MONDAY';
+            nextRunAt = this.computeNextWeeklyDate({ now, weekdayName, timezone });
+        }
+
+        // -------------------------------------------------------------------------
+        // Clean-slate rearm: reset post + all targets
+        // -------------------------------------------------------------------------
+        await this.postModel.update(
+            { id: postId },
+            {
+                status: SocialPostStatusEnum.APPROVED,
+                nextRunAt
+            }
+        );
+
+        // Reset all targets for this post to APPROVED with retry_count = 0
+        const { items: allTargets } = await this.targetModel.findAll(
+            { socialPostId: postId },
+            { page: 1, pageSize: 1000 }
+        );
+
+        for (const target of allTargets) {
+            const targetId = target.id as string;
+            await this.targetModel.update(
+                { id: targetId },
+                {
+                    status: SocialPostStatusEnum.APPROVED,
+                    retryCount: 0
+                }
+            );
+        }
+
+        serviceLogger.info(
+            { postId, recurrenceType, nextRunAt, targetCount: allTargets.length },
+            'SocialPublishDispatchService.rearmRecurrence: recurring post rearmed; targets reset'
+        );
+
+        return { nextRunAt, rearmed: true };
+    }
+
+    // ---------------------------------------------------------------------------
     // Private helpers
     // ---------------------------------------------------------------------------
 
@@ -850,5 +1143,110 @@ export class SocialPublishDispatchService {
                 'SocialPublishDispatchService: all targets exhausted — post set to FAILED'
             );
         }
+    }
+
+    /**
+     * Computes the next monthly occurrence from `now`.
+     *
+     * Returns the same calendar day-of-month in the following month. If the
+     * target month is shorter than the source day (e.g. Jan 31 → Feb), the
+     * result is clamped to the last day of the target month (Feb 28 / 29).
+     *
+     * The time-of-day component is preserved from `now` (UTC milliseconds).
+     *
+     * @param now - Reference point for computation.
+     * @returns Date one calendar month after `now`, clamped to month length.
+     */
+    private computeNextMonthlyDate(now: Date): Date {
+        const srcYear = now.getUTCFullYear();
+        const srcMonth = now.getUTCMonth(); // 0-indexed
+        const srcDay = now.getUTCDate();
+        const srcHours = now.getUTCHours();
+        const srcMinutes = now.getUTCMinutes();
+        const srcSeconds = now.getUTCSeconds();
+        const srcMs = now.getUTCMilliseconds();
+
+        // Target: one month ahead
+        const targetMonth = (srcMonth + 1) % 12;
+        const targetYear = srcMonth === 11 ? srcYear + 1 : srcYear;
+
+        // Last day of target month: use day=0 of the month AFTER target
+        const lastDayOfTargetMonth = new Date(
+            Date.UTC(targetYear, targetMonth + 1, 0)
+        ).getUTCDate();
+
+        const clampedDay = Math.min(srcDay, lastDayOfTargetMonth);
+
+        return new Date(
+            Date.UTC(targetYear, targetMonth, clampedDay, srcHours, srcMinutes, srcSeconds, srcMs)
+        );
+    }
+
+    /**
+     * Computes the next occurrence of a given weekday at or after `now`, using
+     * the post's IANA `timezone` to determine the local weekday.
+     *
+     * ## Algorithm
+     * 1. Use `Intl.DateTimeFormat` with the post's `timezone` to extract the
+     *    current weekday in local time (as a locale-independent `weekday: 'long'`
+     *    string in English locale).
+     * 2. Map both the current local weekday and the target weekday to 0–6
+     *    (Sunday = 0, Monday = 1, …, Saturday = 6).
+     * 3. Compute `daysToAdd = (target - current + 7) % 7`.
+     *    - If `daysToAdd === 0`, the target weekday is TODAY in the post's timezone,
+     *      so the next run is `now` itself (same-day publish is valid per spec).
+     * 4. Add `daysToAdd` days (86 400 000 ms each) to `now` in UTC.
+     *
+     * This is purely UTC math after the initial weekday lookup, so daylight-saving
+     * transitions do not affect correctness (the returned Date is in UTC).
+     *
+     * @param params.now         - Reference time for the computation.
+     * @param params.weekdayName - Uppercase weekday name, e.g. `"MONDAY"`.
+     * @param params.timezone    - IANA timezone string, e.g. `"America/Argentina/Buenos_Aires"`.
+     * @returns UTC Date for the next occurrence of the requested weekday.
+     */
+    private computeNextWeeklyDate({
+        now,
+        weekdayName,
+        timezone
+    }: {
+        readonly now: Date;
+        readonly weekdayName: string;
+        readonly timezone: string;
+    }): Date {
+        // Map uppercase weekday names to 0-based Sunday-first indices
+        const WEEKDAY_INDEX: Record<string, number> = {
+            SUNDAY: 0,
+            MONDAY: 1,
+            TUESDAY: 2,
+            WEDNESDAY: 3,
+            THURSDAY: 4,
+            FRIDAY: 5,
+            SATURDAY: 6
+        };
+
+        // Map English long weekday names (from Intl) to 0-based indices
+        const INTL_WEEKDAY_INDEX: Record<string, number> = {
+            Sunday: 0,
+            Monday: 1,
+            Tuesday: 2,
+            Wednesday: 3,
+            Thursday: 4,
+            Friday: 5,
+            Saturday: 6
+        };
+
+        // Determine the current weekday in the post's local timezone
+        const formatter = new Intl.DateTimeFormat('en-US', {
+            timeZone: timezone,
+            weekday: 'long'
+        });
+        const localWeekdayName = formatter.format(now);
+        const currentIndex = INTL_WEEKDAY_INDEX[localWeekdayName] ?? 0;
+        const targetIndex = WEEKDAY_INDEX[weekdayName] ?? 1; // default Monday
+
+        const daysToAdd = (targetIndex - currentIndex + 7) % 7;
+
+        return new Date(now.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
     }
 }

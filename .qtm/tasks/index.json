@@ -773,7 +773,7 @@
             "specId": "SPEC-254",
             "title": "Social Automation Backend",
             "status": "in-progress",
-            "progress": "37/52",
+            "progress": "38/52",
             "path": "SPEC-254-social-media-publish",
             "branch": "spec/SPEC-254-phase-1-data-model",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-254-social-media-publish",
