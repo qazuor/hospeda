@@ -3,7 +3,7 @@ spec-id: SPEC-260
 title: AI Usage Dashboard
 type: feature
 complexity: high
-status: draft
+status: in-progress
 created: 2026-06-22
 ---
 
