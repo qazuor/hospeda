@@ -28,5 +28,16 @@ export enum SubscriptionStatusEnum {
      * but never confirmed by the payment provider before the TTL elapsed.
      * Terminal state — the user must restart the flow to subscribe again.
      */
-    ABANDONED = 'abandoned'
+    ABANDONED = 'abandoned',
+    /**
+     * Subscription is permanently complimentary (free-forever).
+     * A subscription in this state short-circuits billing entirely —
+     * no MercadoPago preapproval is created or charged. The subscriber
+     * retains all entitlements of the plan they were comped on.
+     *
+     * Set by applying a promo code with effect_kind = 'comp' (SPEC-262).
+     * This is an explicit subscription state, NOT a 100% discount computation,
+     * so it cannot revert to full price by a discount-engine change.
+     */
+    COMP = 'comp'
 }
