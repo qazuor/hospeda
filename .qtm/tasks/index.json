@@ -1,817 +1,860 @@
 {
-    "version": "1.0",
-    "epics": [
-        {
-            "specId": "SPEC-203",
-            "title": "Self-serve plan management UI (web)",
-            "status": "completed",
-            "progress": "11/11",
-            "path": "SPEC-203-web-plan-management-ui",
-            "parent": "SPEC-193",
-            "branch": "spec/SPEC-203-web-plan-management-ui",
-            "worktree": "/home/qazuor/projects/WEBS/hospeda-203-web-plan-management-ui",
-            "base": "staging",
-            "createdAt": "2026-06-15T00:00:00.000Z",
-            "tasksAtomizedAt": "2026-06-15T00:00:00.000Z",
-            "taskCount": 11,
-            "averageComplexity": 3.9,
-            "archived": true,
-            "archivedAt": "2026-06-16",
-            "archiveNote": "PR #1687 merged (10/11 UI + backend). T-011a mount-order routing regression test merged via PR #1697. T-011b (real-MP-sandbox staging smoke for the pending_payment upgrade branch) deferred as a post-merge operational check per owner sign-off 2026-06-16 (precedent SPEC-209 T-012) — not coverable by the local test-control stub. See specs/index.json archiveNote for detail.",
-            "note": "11 tasks across 4 phases (avg complexity 3.9). Backend endpoint T-002 in-progress. Critical path: T-001->T-002->T-003->T-005->T-007->T-008->T-009->T-010->T-011 (9 steps). Three parallel tracks after T-003: banner (T-004), plan-change flow (T-005..T-009), cancel (T-006). Converge at i18n (T-010) + smoke (T-011). Depends on SPEC-167 + SPEC-147."
-        },
-        {
-            "specId": "SPEC-239",
-            "title": "Commerce listing core (merchant-with-subscription) + Gastronomía",
-            "status": "in-progress",
-            "progress": "0/64",
-            "path": "SPEC-239-commerce-listings-core-gastronomy"
-        },
-        {
-            "specId": "SPEC-240",
-            "title": "Experiencias y Servicios (tourism services & experiences)",
-            "status": "completed",
-            "progress": "40/40",
-            "path": "SPEC-240-experiences-services",
-            "archived": true,
-            "archivedAt": "2026-06-18T00:00:00.000Z",
-            "archiveNote": "SPEC-240 Experiencias shipped via PR #1722 (merge d4e523a77)."
-        },
-        {
-            "specId": "SPEC-241",
-            "title": "Host trades/services directory (24h emergency trades for hosts)",
-            "status": "completed",
-            "progress": "19/19",
-            "path": "SPEC-241-host-trades-directory",
-            "archived": true,
-            "archivedAt": "2026-06-19"
-        },
-        {
-            "specId": "SPEC-242",
-            "title": "Tarjeta Hospeda (benefits card for guests)",
-            "status": "draft",
-            "progress": "0/0",
-            "path": "SPEC-242-hospeda-card"
-        },
-        {
-            "specId": "SPEC-243",
-            "title": "Hospeda mobile app (React Native / Expo)",
-            "status": "in-progress",
-            "progress": "25/26",
-            "path": "SPEC-243-mobile-app"
-        },
-        {
-            "specId": "SPEC-236",
-            "title": "Coverage ratchet-up — restore per-package thresholds to the 90% target",
-            "status": "completed",
-            "progress": "3/3",
-            "path": "SPEC-236-coverage-ratchet-up",
-            "archived": true,
-            "archivedAt": "2026-06-15",
-            "archiveNote": "10 PRs merged to staging. All logic packages raised to/past target + floors ratcheted in lockstep. service-core floored at 88 (real 90.25); icons/billing/schemas/notifications/seed/feedback back to 90 default."
-        },
-        {
-            "specId": "SPEC-230",
-            "title": "Soft-delete filtering in the service list() path — make BaseCrudService.list exclude soft-deleted rows by default so protected list endpoints stop returning deleted records",
-            "status": "completed",
-            "progress": "0/0",
-            "path": "SPEC-230-list-soft-delete-filtering",
-            "archived": true,
-            "archivedAt": "2026-06-16",
-            "archiveNote": "PR #1680 merged to staging. list() excludes soft-deleted by default (+includeDeleted opt-in). Real-DB smoke PASS. Never atomized into formal tasks (direct fix), so progress stays 0/0."
-        },
-        {
-            "specId": "SPEC-231",
-            "title": "TypeScript 6 Migration",
-            "status": "draft",
-            "progress": "0/4",
-            "path": "SPEC-231-typescript-6-migration"
-        },
-        {
-            "specId": "SPEC-232",
-            "title": "Biome 2 Migration",
-            "status": "draft",
-            "progress": "0/4",
-            "path": "SPEC-232-biome-2-migration"
-        },
-        {
-            "specId": "SPEC-233",
-            "title": "Vitest 4 Migration",
-            "status": "draft",
-            "progress": "0/4",
-            "path": "SPEC-233-vitest-4-migration"
-        },
-        {
-            "specId": "SPEC-234",
-            "title": "TanStack Router family bump — unblock the production-minor-patch Dependabot group",
-            "status": "draft",
-            "progress": "0/4",
-            "path": "SPEC-234-tanstack-router-family-bump"
-        },
-        {
-            "specId": "SPEC-229",
-            "title": "Accommodation partial-update data loss — partial JSONB objects + shallow-merge nested columns",
-            "status": "completed",
-            "progress": "4/4",
-            "path": "SPEC-229-accommodation-partial-update-merge",
-            "archived": true,
-            "archivedAt": "2026-06-14",
-            "archiveNote": "PR #1632 merged to staging. Converter emits partial nested objects (no default injection) + extraInfo/contactInfo deep-partial in update schema + price/extraInfo/contactInfo/socialNetworks/location added to mergeableJsonbColumns. Adversarial review caught + fixed a null-merge column-corruption bug (col::jsonb || 'null' yields [x,null], not a clear) — guarded in buildMergeSetClause. Tests: schemas 4877, db 960, api patch-persistence 13.",
-            "note": "P1 fix. 3 coordinated changes: converter emits partial nested objects (no default injection); AccommodationUpdateInputSchema makes extraInfo+contactInfo inner fields optional; AccommodationModel.mergeableJsonbColumns gains price/extraInfo/contactInfo/socialNetworks/location. Regression tests in schemas+db+api."
-        },
-        {
-            "specId": "SPEC-217",
-            "title": "Deterministic Billing for E2E — QZPay test-control wiring + date-aware publish gate",
-            "status": "completed",
-            "progress": "15/16",
-            "path": "SPEC-217-qzpay-test-control-e2e-wiring",
-            "archived": true,
-            "archivedAt": "2026-06-13",
-            "archiveNote": "PR #1586 merged to staging (4f374036a); E2E P0 Suite green. Final 2 blockers closed: failNext scoped by ownerId (parallel-worker contamination) + publish() promotes PRIVATE->PUBLIC visibility (robust variant — never clobbers RESTRICTED or explicit caller visibility; adversarial review caught the unconditional-PUBLIC security regression). T-012 host-07d deferred; qzpay test-control hardening + deferred coverage tracked in SPEC-221.",
-            "note": "15/16 (T-012 host-07d deferred to SPEC-221). Earlier blocker (Zod 4 .partial() not stripping .default()) fixed via stripShapeDefaults across 32 update/patch schemas. T-011 (host-07c) + T-013 (res-01) verified live. T-014/T-015 done. T-016 CI soak green."
-        },
-        {
-            "specId": "SPEC-221",
-            "title": "QZPay Test-Control Hardening & Deferred E2E Coverage",
-            "status": "completed",
-            "progress": "2/3",
-            "path": "SPEC-221-qzpay-test-control-hardening",
-            "base": "staging",
-            "archived": true,
-            "archivedAt": "2026-06-13",
-            "archiveNote": "PR #1602 merged (a909ef4eb). F-1 (scope delayNextQueue) + F-2 (extractScope extensibility) shipped. F-3 dropped as contrived prod code (no sync updateSubscription in publish; compensation already unit-tested) — legitimate debugging need moved to SPEC-227 (non-blocking observability + creation-time MP enrichment).",
-            "note": "F-1 + F-2 DONE. F-3 (host-07d sync updateSubscription E2E) dropped; see SPEC-227."
-        },
-        {
-            "specId": "SPEC-227",
-            "title": "Billing Subscription Observability — trial↔accommodation↔owner linkage logging + creation-time MP reference enrichment",
-            "status": "completed",
-            "progress": "4/4",
-            "path": "SPEC-227-billing-subscription-observability",
-            "base": "staging",
-            "archived": true,
-            "archivedAt": "2026-06-13",
-            "renumberedFrom": "SPEC-222",
-            "archiveNote": "PR #1608 merged (d778b120c). Part 1 (publish linkage log + Sentry) + Part 2 (creation-time MP metadata) shipped; adversarial review GO; also fixed the SPEC-222 collision. Billing staging smoke not run (observability-only, inert when gate off).",
-            "note": "Renumbered from SPEC-222 (collided with the SPEC-222..226 batch). Reshaped from SPEC-221 F-3. Done."
-        },
-        {
-            "specId": "SPEC-220",
-            "title": "Staging→Main Promotion Hardening — clear CodeQL security debt blocking the promotion",
-            "status": "completed",
-            "progress": "7/7",
-            "path": "SPEC-220-staging-main-promotion-hardening",
-            "archived": true,
-            "archivedAt": "2026-06-14",
-            "archiveNote": "T-001..T-007 done (T-004 N/A — both findings fixed by code, no dismissals). T-006 live: advanced setup (GitHub codeql.yml on main + default setup disabled) + codeql-staging.yml nightly staging scan; staging↔main reconciled. Promo #1629 merged to main; #1618 unblocked SPEC-219 T-005."
-        },
-        {
-            "specId": "SPEC-211",
-            "title": "AI Monetization Model",
-            "status": "completed",
-            "progress": "17/17",
-            "path": "SPEC-211-ai-monetization-model",
-            "note": "Follow-up to SPEC-200. Owner-governed AI chat + Model C config-driven capability sync. All 17 tasks complete; full monorepo typecheck green. Stays in-progress until merged to staging (closeout flips to completed/archived post-merge). ai_support feature route + AC-4.2 metering deferred to a future spec.",
-            "archived": true,
-            "archivedAt": "2026-06-10T19:28:09.000Z",
-            "archiveNote": "PR #1560 merged to staging. Owner ops gates still pending before staging->main: SPEC-143 staging smoke (MP sandbox + OpenAI vault). ai_support feature route + AC-4.2 metering deferred to a future spec."
-        },
-        {
-            "specId": "SPEC-200",
-            "title": "AI Accommodation Chat (tourist)",
-            "status": "completed",
-            "progress": "11/12",
-            "path": "SPEC-200-ai-accommodation-chat",
-            "archived": true,
-            "archivedAt": "2026-06-13",
-            "archiveNote": "DRIFT FIX: shipped (#1492/#1494/#1497/#1507 + #1520), archived by #1584, promoted to main via #1542. Stale-base edit reverted it; restored. Metering deferred to SPEC-211 (12th item).",
-            "note": "Implemented and merged to staging via PRs #1492/#1494/#1497/#1507. Prod-readiness fixes (debug-leak, getById 404/403, ghost-bubble, FAB focus, maxTokens cap, 503 mapping, vault-key prod-required, admin url no-op) on branch fix/SPEC-200-prod-readiness (PR #1520). Chat works (ai_chat granted to every plan, tourists included); monetization is provisional: quota charged to the tourist, not the accommodation owner. SPEC-211 reworks this (owner-governed chat + Model C); SPEC-200 ships to prod after SPEC-211 Phase 0 cost mitigation."
-        },
-        {
-            "specId": "SPEC-131",
-            "title": "PlanPurchaseButton async-state tests broken post Astro 6 bump",
-            "status": "completed",
-            "progress": "6/6",
-            "path": "SPEC-131-plan-purchase-button-async-state-tests",
-            "archived": true,
-            "archivedAt": "2026-06-09",
-            "archiveNote": "Root cause was a latent apiClient try/catch bug (env URL thrown out of contract), not the React 19/Astro 6 timing the spec hypothesized. Single PR. Full web suite 3725 passed."
-        },
-        {
-            "specId": "SPEC-128",
-            "title": "Billing cleanup + E2E smoke + ops runbook (Phase F+G)",
-            "status": "completed",
-            "progress": "3/3 (+2 superseded)",
-            "path": "SPEC-128-billing-cleanup-and-smoke",
-            "archived": true,
-            "archivedAt": "2026-06-09",
-            "archiveNote": "Realigned to SPEC-193: F1 dead-code + F2 docs + G2 runbook done; G1 10-smokes superseded by SPEC-193 batch; G3 SPEC-122/109 closure superseded (legacy parent)."
-        },
-        {
-            "specId": "SPEC-132",
-            "title": "Migrate shared packages to Zod 4 top-level format validators",
-            "status": "draft",
-            "progress": "0/6",
-            "path": "SPEC-132-zod-4-cross-package-migration"
-        },
-        {
-            "specId": "SPEC-133",
-            "title": "Evaluate migrating apps/web from custom Zod env layer to astro:env",
-            "status": "draft",
-            "progress": "0/5",
-            "path": "SPEC-133-evaluate-astro-env"
-        },
-        {
-            "specId": "SPEC-188",
-            "title": "Vitest Test-Suite Performance — Cut Per-File Overhead Without Saturating the Machine",
-            "status": "completed",
-            "progress": "9/21",
-            "path": "SPEC-188-vitest-test-performance",
-            "archived": true,
-            "archivedAt": "2026-06-04T00:00:00Z",
-            "archiveNote": "Track A (9 tasks completed). B2 (T-007..T-010) done on branch spec/SPEC-188 but not merged (9% gain, 147-commit rebase). T-001..T-002 + T-011..T-021 cancelled (deferred/dead-end)."
-        },
-        {
-            "specId": "SPEC-180",
-            "title": "Sentry Observability Hardening — source maps, environments, and logger-driven capture",
-            "status": "approved",
-            "progress": "0/14",
-            "path": "SPEC-180-sentry-observability"
-        },
-        {
-            "specId": "SPEC-183",
-            "title": "API Error i18n Standardization",
-            "status": "approved",
-            "progress": "0/14",
-            "path": "SPEC-183-api-error-i18n-standardization",
-            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-183-api-error-i18n-standardization",
-            "branch": "spec/SPEC-183-api-error-i18n-standardization",
-            "base": "staging",
-            "driver": "Linear BETA-63",
-            "createdAt": "2026-06-02T00:00:00.000Z",
-            "tasksAtomizedAt": "2026-06-02T00:00:00.000Z",
-            "taskCount": 14,
-            "averageComplexity": 2.1,
-            "note": "14 tasks across 4 phases (avg complexity 2.1). Centralizes translateApiError from apps/web/src/lib/api-errors.ts into @repo/i18n (T-001..T-004); web shim re-export preserves all existing callers. Phase 2 (T-005..T-006): migrate ~5 remaining genuine API-error sites in web. Phase 3 (T-007..T-010): wire admin dialogs/forms (PlanDialog, AddonDialog, RefundDialog, exchange-rate x3, sponsorship x5, CronJobsPanel). Phase 4 (T-011..T-014): add 5 missing common.apiError keys (INVALID_PAGINATION_PARAMS, NOT_IMPLEMENTED, CONFIGURATION_ERROR, QUOTA_EXCEEDED, ENTITLEMENT_REQUIRED) + CI guard test + docs + index closeout. Excluded: cache internals, error-boundaries, logger, native JS errors. Zero breaking changes to existing callers.",
-            "archived": false
-        },
-        {
-            "specId": "SPEC-185",
-            "title": "Admin Entity Lists v2 — filters, grid cards, host portfolio & tags migration",
-            "status": "completed",
-            "progress": "17/17",
-            "path": "SPEC-185-admin-entity-lists-v2",
-            "branch": "spec/SPEC-185-admin-entity-lists-v2",
-            "linearIssues": ["BETA-75", "BETA-72", "BETA-76"],
-            "archived": true,
-            "archivedAt": "2026-06-04",
-            "archiveNote": "Closeout PR #1443 merged to staging (2621fa54f). All 17 tasks done; T-016 smoke fixed 3 defects, all verified live."
-        },
-        {
-            "specId": "SPEC-186",
-            "title": "Web Dynamic Image Grid — count-aware gallery layout, fixed-ratio cells & per-cell responsive images",
-            "status": "completed",
-            "progress": "18/18",
-            "path": "SPEC-186-web-dynamic-image-grid",
-            "branch": "spec/SPEC-186-web-dynamic-image-grid",
-            "linearIssues": ["BETA-53"],
-            "note": "Closed 2026-06-05: 18/18, browser smoke passed, 3 smoke-finding fixes (container-ratio height, viewAll CTA, data-astro-reload). Videos-in-lightbox deferred to follow-up spec.",
-            "archived": true,
-            "archivedAt": "2026-06-05"
-        },
-        {
-            "specId": "SPEC-187",
-            "title": "Rich Text Entity Descriptions — per-entity toolbars, plain-text accommodation.description, full richDescription backing, ratify canonical format & harden rendering",
-            "status": "completed",
-            "progress": "25/25",
-            "path": "SPEC-187-rich-text-entity-descriptions",
-            "branch": "spec/SPEC-187-rich-text-entity-descriptions",
-            "linearIssues": ["BETA-60"],
-            "archived": true,
-            "archivedAt": "2026-06-08T15:13:03.505606",
-            "archiveNote": "All 5 PRs merged to staging: P0 strip migration, P1 config flips+renderPlain, P2 richDescription vertical slice, P3 ADR-032+XSS+audit, P4 closeout."
-        },
-        {
-            "specId": "SPEC-189",
-            "title": "Optimize Seed & App Builds — run seed from src (no build) + decouple @repo/schemas from @repo/feedback",
-            "status": "completed",
-            "progress": "12/12",
-            "path": "SPEC-189-optimize-seed-and-app-builds",
-            "branch": "spec/SPEC-189-optimize-seed-and-app-builds",
-            "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-189-optimize-seed-and-app-builds",
-            "base": "staging",
-            "linearIssues": ["BETA-54"],
-            "note": "12/12 completed. Front B (schemas/feedback decouple) + Front A (seed from src no-build). Build set: schemas dropped feedback+icons. Seed cold startup ~9s vs ~30-60s before.",
-            "archived": true,
-            "archivedAt": "2026-06-10"
-        },
-        {
-            "specId": "SPEC-190",
-            "title": "Admin Bundle Perf — Icon Tree-Shaking & Entity-Chunk Code-Split",
-            "status": "completed",
-            "progress": "14/14",
-            "path": "SPEC-190-admin-bundle-perf-icons-and-codesplit",
-            "branch": "spec/SPEC-190-admin-bundle-perf-icons-and-codesplit",
-            "linearIssues": ["BETA-74"],
-            "note": "Tests added, pending smoke",
-            "archived": true,
-            "archivedAt": "2026-06-15",
-            "archiveNote": "Admin bundle perf (icon tree-shaking + entity code-split). All 14 tasks done: code shipped via PR #1559; T-013 doc (final-report + sideEffects claim now true via T-003); T-014 browser smoke VERIFIED 2026-06-15 — all 3 lazy fields (tiptap rich-text, leaflet coordinates, media upload) render in admin edit, zero dynamic-chunk errors."
-        },
-        {
-            "specId": "SPEC-191",
-            "title": "Web Contribution Pages & Banners — /colaborar hub, report link & recruitment banners",
-            "status": "completed",
-            "progress": "16/16",
-            "path": "SPEC-191-web-contribution-pages-and-banners",
-            "branch": "spec/SPEC-191-web-contribution-pages-and-banners",
-            "linearIssues": ["BETA-69", "BETA-68", "BETA-65"],
-            "archived": true,
-            "note": "16/16 + smoke + follow-ups; shipped via PR #1447",
-            "archivedAt": "2026-06-04"
-        },
-        {
-            "specId": "SPEC-192",
-            "title": "Billing Catalog to DB — complete SPEC-168 by making the addon catalog & residual plan/promo reads DB-backed, and document the code-level structural boundary",
-            "status": "completed",
-            "progress": "37/37",
-            "path": "SPEC-192-billing-catalog-to-db",
-            "parent": "SPEC-193",
-            "branch": "spec/SPEC-192-billing-catalog-to-db",
-            "linearIssues": ["BETA-58"],
-            "note": "PR #1428 merged 2026-06-04; staging smoke deferred to SPEC-193 batch (pending-staging-smoke.md)",
-            "archived": true,
-            "archivedAt": "2026-06-04"
-        },
-        {
-            "specId": "SPEC-127",
-            "title": "Migrate addon.checkout.ts to qzpay path (Phase E)",
-            "status": "completed",
-            "progress": "15/15",
-            "path": "SPEC-127-migrate-addon-checkout-to-qzpay",
-            "archived": true,
-            "archivedAt": "2026-06-04",
-            "note": "PR #1448 merged 2026-06-04; staging smoke deferred to SPEC-193 batch (pending-staging-smoke.md)"
-        },
-        {
-            "specId": "SPEC-166",
-            "title": "Review Moderation State",
-            "status": "completed",
-            "progress": "27/27",
-            "path": "SPEC-166-review-moderation-state",
-            "branch": "spec/SPEC-166-review-moderation-state",
-            "archived": true,
-            "archivedAt": "2026-06-05",
-            "note": "PRs #1446/#1449/#1452/#1453/#1458/#1459 merged to staging 2026-06-04..05; phase 2c recovered after machine crash"
-        },
-        {
-            "specId": "SPEC-194",
-            "title": "Billing Lifecycle Robustness & Bug Fixes",
-            "status": "completed",
-            "progress": "30/30",
-            "path": "SPEC-194-billing-lifecycle-robustness",
-            "branch": "spec/SPEC-194-billing-lifecycle-robustness",
-            "archived": true,
-            "archivedAt": "2026-06-05",
-            "note": "PR #1455 merged 2026-06-05; staging smoke deferred to SPEC-193 batch; deploy requires db-apply-extras (migration 010)"
-        },
-        {
-            "specId": "SPEC-196",
-            "title": "Shared Config-as-Code Package — centralize curated content & catalog files",
-            "status": "draft",
-            "progress": "0/0",
-            "path": "SPEC-196-shared-content-config-package",
-            "note": "Draft only — no tasks until activation; decisions D-1..D-6 pending owner workshop."
-        },
-        {
-            "specId": "SPEC-145",
-            "title": "Billing Entitlements & Limits Enforcement",
-            "status": "completed",
-            "progress": "29/29",
-            "path": "SPEC-145-billing-entitlements-and-limits-enforcement",
-            "branch": "spec/SPEC-145-billing-entitlements-and-limits-enforcement",
-            "archived": true,
-            "archivedAt": "2026-06-05",
-            "note": "PR #1462 merged 2026-06-05; staging smoke deferred to SPEC-193 batch; behavior changes: docs/billing/spec-145-behavior-changes.md"
-        },
-        {
-            "specId": "SPEC-149",
-            "title": "Billing provider error propagation + Sentry context + retry policy",
-            "status": "completed",
-            "progress": "15/15",
-            "path": "SPEC-149-billing-provider-error-propagation-and-sentry",
-            "branch": "spec/SPEC-149-billing-provider-error-propagation-and-sentry",
-            "archived": true,
-            "archivedAt": "2026-06-05",
-            "note": "PR #1468 merged 2026-06-05; staging smoke deferred to SPEC-193 batch (entry #5); monthly preapproval 500 asymmetry documented in spec scope note"
-        },
-        {
-            "specId": "SPEC-159",
-            "title": "Cross-Entity View Tracking",
-            "status": "completed",
-            "progress": "15/15",
-            "path": "SPEC-159-cross-entity-view-tracking",
-            "branch": "spec/SPEC-159-cross-entity-view-tracking",
-            "archived": true,
-            "archivedAt": "2026-06-05",
-            "archiveNote": "DRIFT FIX (2026-06-15): added missing archived flag. Shipped via #1461."
-        },
-        {
-            "specId": "SPEC-197",
-            "title": "Admin View-Stats Surfaces",
-            "status": "completed",
-            "progress": "21/21",
-            "path": "SPEC-197-admin-view-stats-surfaces",
-            "branch": "fix/SPEC-197-smoke-findings",
-            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-197-admin-view-stats-surfaces",
-            "base": "staging",
-            "archived": true,
-            "archivedAt": "2026-06-06",
-            "archiveNote": "21/21 in two days: impl PR #1472 merged; T-021 real-DB + 4-role Chrome smoke found 4 fixes shipped via PR #1473 (response envelope, leftover deferred slot, chips section title/expand, sidebar menu entry). Worktree cleanup pending post-merge."
-        },
-        {
-            "specId": "SPEC-202",
-            "title": "Destination Review Submission Flow (web) + API contract/security fix",
-            "status": "completed",
-            "progress": "21/21",
-            "path": "SPEC-202-destination-review-submission",
-            "branch": "spec/SPEC-202-destination-review-submission",
-            "base": "staging",
-            "archived": true,
-            "archivedAt": "2026-06-06T18:30:00.000Z",
-            "updatedAt": "2026-06-06T18:30:00.000Z"
-        },
-        {
-            "specId": "SPEC-205",
-            "title": "Host Web Foundation — Dashboard, Navigation, Promotions & Funnel",
-            "status": "completed",
-            "progress": "9/9",
-            "path": "SPEC-205-host-web-foundation",
-            "archived": true,
-            "archivedAt": "2026-06-13T00:00:00Z",
-            "archiveNote": "All phases shipped (1/2/4 in #1542, Phase 3 owner-promotions CRUD in #1591)",
-            "tags": ["host-migration", "phase-1"]
-        },
-        {
-            "specId": "SPEC-206",
-            "title": "Host Conversations — Inbox, Threads, Replies & Archive in Web",
-            "status": "completed",
-            "progress": "1/1",
-            "path": "SPEC-206-host-conversations",
-            "tags": ["host-migration", "phase-2"],
-            "archived": true,
-            "archivedAt": "2026-06-15",
-            "archiveNote": "Ghost-completed: epic shipped ad-hoc (inbox/threads/replies/archive for owner), PRs #1503/#1521/#1627/#1610 merged + on main. No formal spec.md (owner decision, like SPEC-208)."
-        },
-        {
-            "specId": "SPEC-207",
-            "title": "Host Analytics & KPIs — Business Dashboard in Web",
-            "status": "completed",
-            "progress": "1/1",
-            "path": "SPEC-207-host-analytics-kpis",
-            "archived": true,
-            "archivedAt": "2026-06-15T00:00:00.000Z",
-            "archiveNote": "Merged to staging via PR #1678. Follow-up fix/SPEC-207-i18n-hostdailyseries adds the i18n keys that landed after the merge commit.",
-            "tags": ["host-migration", "phase-3"]
-        },
-        {
-            "specId": "SPEC-208",
-            "title": "Web Accommodation Editor — Full Property Management in Web",
-            "status": "completed",
-            "progress": "1/1",
-            "path": "SPEC-208-web-accommodation-editor",
-            "tags": ["host-migration", "phase-4"],
-            "archived": true,
-            "archivedAt": "2026-06-10",
-            "note": "Mirror of specs/index.json. Feature shipped via PRs #1509/#1513/#1516; prod-readiness remediation merged to staging (#1528/#1529/#1533-via-#1540/#1534) + local e2e 6/6 PASS. No state.json with atomic tasks (progress 1/1 nominal). Closed 2026-06-10."
-        },
-        {
-            "specId": "SPEC-147",
-            "title": "User self-service subscription cancellation",
-            "status": "completed",
-            "progress": "16/16",
-            "path": "SPEC-147-user-self-service-subscription-cancellation",
-            "branch": "spec/SPEC-147-user-self-service-subscription-cancellation",
-            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-147-user-self-service-subscription-cancellation",
-            "base": "staging",
-            "note": "PR #1510 merged 2026-06-09; ships DARK behind HOSPEDA_USER_CANCEL_ENABLED until SPEC-203 UI; qzpay #42 B.1 prereq published (core 1.12.0/mp 2.2.0); staging smoke entry #7; review fixed M1+M2",
-            "archived": true,
-            "archivedAt": "2026-06-09"
-        },
-        {
-            "specId": "SPEC-209",
-            "title": "Admin SSR memory leak + cheap healthcheck",
-            "status": "completed",
-            "progress": "12/13",
-            "path": "SPEC-209-admin-ssr-memory-leak-healthcheck",
-            "branch": "spec/SPEC-209-admin-ssr-memory-leak-healthcheck",
-            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-209-admin-ssr-memory-leak-healthcheck",
-            "base": "staging",
-            "archived": true,
-            "note": "13 atomized tasks across setup/core/testing/docs phases (avg complexity 2.1). Investigate-first: T-001/T-004/T-007 start in parallel (no blockers). Critical path: T-004->T-006->T-009->T-010->T-011->T-012->T-013. Healthcheck (T-001..T-003), regression+guard tests (T-005..T-008), leak fix (T-009), staging validation (T-010..T-012), docs (T-013).",
-            "archivedAt": "2026-06-10",
-            "archiveNote": "Code complete + merged to staging via PR #1538 (12/13 implemented). T-012 (staging RSS/heap validation) DEFERRED as a post-merge operational check (see .qtm/specs/SPEC-209-.../docs/memory-validation-procedure.md) — not a code gate. Prod build locally showed 0 QZPayBilling-init on SSR; manual Chrome smoke (T-010) passed."
-        },
-        {
-            "specId": "SPEC-210",
-            "title": "Public Response Tier Enforcement — make schema-tier serialization mandatory and fail-closed so public endpoints can never leak undeclared DB columns",
-            "status": "draft",
-            "progress": "0/13",
-            "path": "SPEC-210-public-response-tier-enforcement",
-            "archived": false
-        },
-        {
-            "specId": "SPEC-148",
-            "title": "Billing defensive grace + plan lifecycle (cron-lag grace + plan disable)",
-            "status": "completed",
-            "progress": "12/12",
-            "path": "SPEC-148-billing-grace-defensive-and-plan-lifecycle",
-            "branch": "spec/SPEC-148-billing-grace-defensive-and-plan-lifecycle",
-            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-148-billing-grace-defensive-and-plan-lifecycle",
-            "base": "staging",
-            "archived": true,
-            "archivedAt": "2026-06-09",
-            "note": "Last code item of SPEC-193 batch 4 (merged PR #1515). Part A pass-through grace + Sentry; Part B auto-cancel-at-period-end reusing SPEC-147 finalize cron. T-011 fixed critical empty-recipient bug in PLAN_BEING_RETIRED notif."
-        },
-        {
-            "specId": "SPEC-195",
-            "title": "Content Auto-Moderation Engine",
-            "status": "completed",
-            "progress": "6/7",
-            "path": "SPEC-195-content-auto-moderation",
-            "archived": true,
-            "archivedAt": "2026-06-13",
-            "archiveNote": "DRIFT FIX: shipped via #1491/#1496/#1499/#1508, archived by #1584, promoted to main via #1542. Stale-base edit reverted it; restored."
-        },
-        {
-            "specId": "SPEC-199",
-            "title": "AI Natural-Language Search",
-            "status": "completed",
-            "progress": "21/21",
-            "path": "SPEC-199-ai-nl-search",
-            "archived": true,
-            "archivedAt": "2026-06-10",
-            "archiveNote": "Shipped via PR #1557 (merged to staging 2026-06-10); 21/21 tasks complete.",
-            "note": "Child B of SPEC-173. NL search: generateObject -> SearchIntentEntities -> AccommodationSearchHttp params, NO embeddings V1. All §3 decisions resolved. spec-realign 2026-06-10: greenfield, foundation stable; slot set expanded (D-5: bedrooms/bathrooms/maxRating/featureSlugs). 21 atomic tasks generated. IN-PROGRESS."
-        },
-        {
-            "specId": "SPEC-213",
-            "title": "Web + Admin pre-beta polish & bugfix batch",
-            "status": "completed",
-            "progress": "19/19",
-            "path": "SPEC-213-web-admin-prebeta-fixes-batch",
-            "archived": true,
-            "archivedAt": "2026-06-13",
-            "archiveNote": "DRIFT FIX: 19/19 done, archived by #1584. Stale-base edit reverted it; restored."
-        },
-        {
-            "specId": "SPEC-214",
-            "title": "Editable AI prompt rules (DB-backed, per feature)",
-            "status": "completed",
-            "progress": "12/12",
-            "path": "SPEC-214-ai-prompt-rules-editable",
-            "archived": true,
-            "archivedAt": "2026-06-12T17:39:12Z",
-            "archiveNote": "PR #1583 merged to staging"
-        },
-        {
-            "specId": "SPEC-215",
-            "title": "Destination climate & live weather",
-            "status": "completed",
-            "progress": "28/28",
-            "path": "SPEC-215-destination-climate-weather",
-            "archived": true,
-            "archivedAt": "2026-06-16",
-            "archiveNote": "Implementation merged to staging via PR #1690 (merge 69147a17c). PR #1573 had only carried the spec doc."
-        },
-        {
-            "specId": "SPEC-216",
-            "title": "Owner plans inherit tourist entitlements & limits (owner = superset of tourist)",
-            "status": "completed",
-            "progress": "12/12",
-            "path": "SPEC-216-owner-inherits-tourist-entitlements",
-            "archived": true,
-            "archivedAt": "2026-06-12T00:00:00Z",
-            "archiveNote": "PR #1579 merged to staging"
-        },
-        {
-            "specId": "SPEC-218",
-            "title": "astro check in web CI — load the App.Locals augmentation, clean .astro type errors, gate typecheck",
-            "status": "completed",
-            "progress": "10/10",
-            "path": "SPEC-218-astro-check-web-typecheck",
-            "archived": true,
-            "archivedAt": "2026-06-12T00:00:00Z",
-            "archiveNote": "PR #1578 merged to staging"
-        },
-        {
-            "specId": "SPEC-212",
-            "title": "Conversational AI Accommodation Search",
-            "status": "completed",
-            "progress": "18/18",
-            "path": "SPEC-212-conversational-ai-search",
-            "archived": true,
-            "archivedAt": "2026-06-11",
-            "archiveNote": "PR #1577 merged to staging (f8df2b971); 18/18 tasks complete. Post-merge pending (owner-gated): @ai e2e + manual conversational-search smoke on staging once AI is configured, then staging->main promotion after soak.",
-            "note": "ALL 18 TASKS DONE (implementation complete, all green). Conversational AI search live: NL->filters extraction (generateObject) -> filters SSE event -> frontend GET /public/accommodations -> streamed NL reply -> best-effort persistence. SPEC-199 UI+route retired. E2E (T-016) is write-only, runs in CI/staging with @ai tag."
-        },
-        {
-            "specId": "SPEC-219",
-            "title": "Dependabot CI Hardening & Dependency Bump Merge Strategy",
-            "status": "completed",
-            "progress": "10/10",
-            "path": "SPEC-219-dependabot-ci-hardening",
-            "archived": true,
-            "archivedAt": "2026-06-13",
-            "archiveNote": "Closed: dependabot.yml ignores reached main via forced merge of #1607; #1588 closed. Clean main resolution owned by SPEC-220 promotion."
-        },
-        {
-            "specId": "SPEC-235",
-            "title": "AI Content Translation for Multi-Language Listings",
-            "status": "completed",
-            "progress": "shipped (no formal task breakdown)",
-            "path": "SPEC-235-ai-content-translation",
-            "archived": true,
-            "archivedAt": "2026-06-15",
-            "archiveNote": "Renumbered from SPEC-212 (collision with SPEC-212-conversational-ai-search). Shipped via PRs #1581 + #1623 + #1652 merged to staging; full browser smoke (admin + web host happy-path) + curl SEO verification passed. No formal .qtm/tasks breakdown existed (spec was draft); delivered directly."
-        },
-        {
-            "specId": "SPEC-238",
-            "title": "Reduce apps/api per-file test cold-import overhead (~9% suite speedup)",
-            "status": "completed",
-            "progress": "10/10",
-            "path": "SPEC-238-api-test-cold-import-perf",
-            "archived": true,
-            "archivedAt": "2026-06-16T01:29:32Z",
-            "archiveNote": "Shipped Sentry mock (PR #1685, -18% local, beats ~9% 2x); service-core ...actual lever deferred (4 tasks cancelled): ~58 symbols/~50 files, no subpath exports, AC#3 risk, not worth it for P3. CI runner re-measure authoritative."
-        },
-        {
-            "specId": "SPEC-198",
-            "title": "AI Text Improvement (HOST)",
-            "status": "completed",
-            "progress": "10/10",
-            "path": "SPEC-198-ai-text-improvement",
-            "archived": true,
-            "archivedAt": "2026-06-06",
-            "archiveNote": "DRIFT FIX (2026-06-15 cleanup): specs/index had this completed+archived but tasks/index had NO entry. state.json shows 10/10 tasks completed, 77/77 tests. Shipped via PRs #1487 + #1514. Reconstructed entry to match specs/index."
-        },
-        {
-            "specId": "SPEC-167",
-            "title": "Downgrade preflight + remediation",
-            "status": "completed",
-            "progress": "26/26",
-            "path": "SPEC-167-downgrade-preflight-remediation",
-            "archived": true,
-            "archivedAt": "2026-06-07",
-            "archiveNote": "DRIFT FIX (2026-06-15 cleanup): specs/index had completed+archived but tasks/index had NO entry. state.json shows 26/26 completed. Shipped via PR #1484, closed out #1485. Reconstructed entry."
-        },
-        {
-            "specId": "SPEC-174",
-            "title": "Admin Guided Welcome Tour (role-based, config-driven)",
-            "status": "completed",
-            "progress": "18/18",
-            "path": "SPEC-174-admin-welcome-tour",
-            "archived": true,
-            "archivedAt": "2026-06-04",
-            "archiveNote": "Restored 2026-06-15 (entry lost to stale-base edit). Completed + archived in June via feat #1451 / archive #1454. state.json shows 18/18 tasks completed."
-        },
-        {
-            "specId": "SPEC-175",
-            "title": "Admin What's New / Release Notes Dialog",
-            "status": "completed",
-            "progress": "20/20",
-            "path": "SPEC-175-admin-whats-new",
-            "archived": true,
-            "archivedAt": "2026-06-04",
-            "archiveNote": "Restored 2026-06-15 (entry lost to stale-base edit). Completed + archived in June via feat #1437 / archive #1440. state.json shows 20/20 tasks completed."
-        },
-        {
-            "specId": "SPEC-179",
-            "title": "Self-Hosted Runner for PR CI (GitHub Actions cost/quota reduction)",
-            "status": "completed",
-            "progress": "0/0",
-            "path": "SPEC-179-self-hosted-pr-ci-runner",
-            "archived": true,
-            "archivedAt": "2026-06-03",
-            "archiveNote": "Restored 2026-06-15 (entry lost to stale-base edit). Completed + archived in June via feat #1369 / archive #1415. Implemented without atomized tasks (progress shown as 0/0)."
-        },
-        {
-            "specId": "SPEC-173",
-            "title": "AI Foundation (@repo/ai-core)",
-            "status": "completed",
-            "progress": "43/43",
-            "path": "SPEC-173-ai-core",
-            "archived": true,
-            "archivedAt": "2026-06-05",
-            "archiveNote": "DRIFT FIX (2026-06-15 cleanup): specs/index had completed+archived but tasks/index had NO entry. state.json shows 43/43 completed. AI foundation pkg shipped via PR #1466, closed out #1467, e2e fix #1477. Reconstructed entry."
-        },
-        {
-            "specId": "SPEC-222",
-            "title": "Accommodation import from URL",
-            "status": "in-progress",
-            "progress": "27/28",
-            "path": "SPEC-222-accommodation-import-from-url",
-            "archived": false
-        },
-        {
-            "specId": "SPEC-244",
-            "title": "Test suite order-independence hardening",
-            "status": "draft",
-            "progress": "0/15",
-            "path": "SPEC-244-test-suite-order-independence",
-            "archived": false
-        },
-        {
-            "specId": "SPEC-245",
-            "title": "Mobile Testing Infrastructure",
-            "status": "draft",
-            "progress": "0/0",
-            "path": "SPEC-245-mobile-testing-infrastructure"
-        },
-        {
-            "specId": "SPEC-246",
-            "title": "Revalidation log entity_id tracking + re-enable ACC-02 E2E",
-            "status": "draft",
-            "progress": "0/0",
-            "path": "SPEC-246-revalidation-log-entity-id-tracking"
-        },
-        {
-            "specId": "SPEC-237",
-            "title": "External-platform reviews & reputation on accommodation pages",
-            "status": "completed",
-            "progress": "15/15",
-            "path": "SPEC-237-accommodation-external-reviews",
-            "branch": "spec/SPEC-237-accommodation-external-reviews",
-            "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-237-accommodation-external-reviews",
-            "base": "staging",
-            "createdAt": "2026-06-18T00:00:00.000Z",
-            "tasksAtomizedAt": "2026-06-18T00:00:00.000Z",
-            "taskCount": 15,
-            "averageComplexity": 2.07,
-            "archived": true,
-            "archivedAt": "2026-06-18T15:26:22Z",
-            "completionRef": "PR #1724 (merge 487f46266)",
-            "note": "15 tasks across setup/core/integration/docs phases (avg complexity 2.07). Critical path: T-001→T-004→T-005→T-006→T-007→T-008→T-009→T-015 (8 steps). T-002 (env) and T-003 (i18n) have float and run in parallel with early critical-path tasks. safeExternalFetch already exists in @repo/utils; apify-client already in SPEC-222 adapters; google-places import adapter MUST NOT be modified (new google-reputation.adapter.ts needed). SPEC-222 google/apify env vars may already be registered — verify before re-registering."
-        },
-        {
-            "specId": "SPEC-249",
-            "title": "Commerce owner self-service web area (operational editing + force-password + credential email)",
-            "status": "completed",
-            "progress": "26/26",
-            "path": "SPEC-249-commerce-owner-self-service-web",
-            "branch": "spec/SPEC-249-commerce-owner-self-service-web",
-            "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-249-commerce-owner-self-service-web",
-            "base": "staging",
-            "createdAt": "2026-06-20T00:00:00.000Z",
-            "tasksAtomizedAt": "2026-06-20T06:56:31.000Z",
-            "taskCount": 26,
-            "averageComplexity": 2.3,
-            "note": "Realigned vs staging post-SPEC-239: Parts B (force-password) + C (credential email) ALREADY BUILT by SPEC-239 -> verify-only (T-023/T-024). Build = web owner surface (Part A, mi-cuenta/comercio, gastronomy+experiences) + single approve&provision admin action (Part D / AC-6). Critical path T-003->T-006->T-009->T-011->T-012->T-016->T-025 (7 steps). 3 parallel tracks. Known gap covered: no protected list-own endpoint existed (T-006/T-007).",
-            "archived": true,
-            "archivedAt": "2026-06-20T18:15:00.000Z",
-            "archiveNote": "Feature shipped + validated live (T-021/T-025 browser+HTTP). Editor field-expansion -> SPEC-253; DB infra -> SPEC-251; E2E harness + seed fixtures -> SPEC-252."
-        },
-        {
-            "specId": "SPEC-253",
-            "title": "Commerce owner editor — extended fields + single COMMERCE_EDIT_OWN permission",
-            "status": "draft",
-            "progress": "0/0",
-            "path": "SPEC-253-commerce-owner-editor-extended-fields"
-        },
-        {
-            "specId": "SPEC-251",
-            "title": "Local DB dev/template refresh + worktree DB auto-heal correctness",
-            "status": "completed",
-            "progress": "3/3",
-            "path": "SPEC-251-local-db-dev-template-refresh"
-        },
-        {
-            "specId": "SPEC-252",
-            "title": "Web functional E2E (Playwright) harness + login fixtures + CI",
-            "status": "draft",
-            "progress": "0/0",
-            "path": "SPEC-252-web-e2e-playwright-harness"
-        },
-        {
-            "specId": "SPEC-250",
-            "title": "Asynchronous external reputation refresh (Apify async API + polling)",
-            "status": "draft",
-            "progress": "0/39",
-            "path": "SPEC-250-external-reputation-async-refresh",
-            "parent": "SPEC-237",
-            "branch": "spec/SPEC-250-external-reputation-async-refresh",
-            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-250-external-reputation-async-refresh",
-            "base": "staging",
-            "createdAt": "2026-06-20T00:00:00.000Z",
-            "tasksAtomizedAt": "2026-06-20T00:00:00.000Z",
-            "taskCount": 39,
-            "averageComplexity": 1.79,
-            "note": "39 tasks across 5 phases (setup 4, core 16, integration 13, testing 4, docs 2). Critical path T-001->T-002->T-018->T-025->T-026->T-028->T-035->T-036 (8 hops). Apify async API + polling cron. NOT to be implemented yet (owner: generate only)."
-        }
-    ],
-    "standalone": {
-        "path": "standalone",
-        "total": 0,
-        "completed": 0
+  "version": "1.0",
+  "epics": [
+    {
+      "specId": "SPEC-203",
+      "title": "Self-serve plan management UI (web)",
+      "status": "completed",
+      "progress": "11/11",
+      "path": "SPEC-203-web-plan-management-ui",
+      "parent": "SPEC-193",
+      "branch": "spec/SPEC-203-web-plan-management-ui",
+      "worktree": "/home/qazuor/projects/WEBS/hospeda-203-web-plan-management-ui",
+      "base": "staging",
+      "createdAt": "2026-06-15T00:00:00.000Z",
+      "tasksAtomizedAt": "2026-06-15T00:00:00.000Z",
+      "taskCount": 11,
+      "averageComplexity": 3.9,
+      "archived": true,
+      "archivedAt": "2026-06-16",
+      "archiveNote": "PR #1687 merged (10/11 UI + backend). T-011a mount-order routing regression test merged via PR #1697. T-011b (real-MP-sandbox staging smoke for the pending_payment upgrade branch) deferred as a post-merge operational check per owner sign-off 2026-06-16 (precedent SPEC-209 T-012) — not coverable by the local test-control stub. See specs/index.json archiveNote for detail.",
+      "note": "11 tasks across 4 phases (avg complexity 3.9). Backend endpoint T-002 in-progress. Critical path: T-001->T-002->T-003->T-005->T-007->T-008->T-009->T-010->T-011 (9 steps). Three parallel tracks after T-003: banner (T-004), plan-change flow (T-005..T-009), cancel (T-006). Converge at i18n (T-010) + smoke (T-011). Depends on SPEC-167 + SPEC-147."
+    },
+    {
+      "specId": "SPEC-239",
+      "title": "Commerce listing core (merchant-with-subscription) + Gastronomía",
+      "status": "in-progress",
+      "progress": "0/64",
+      "path": "SPEC-239-commerce-listings-core-gastronomy"
+    },
+    {
+      "specId": "SPEC-240",
+      "title": "Experiencias y Servicios (tourism services & experiences)",
+      "status": "completed",
+      "progress": "40/40",
+      "path": "SPEC-240-experiences-services",
+      "archived": true,
+      "archivedAt": "2026-06-18T00:00:00.000Z",
+      "archiveNote": "SPEC-240 Experiencias shipped via PR #1722 (merge d4e523a77)."
+    },
+    {
+      "specId": "SPEC-241",
+      "title": "Host trades/services directory (24h emergency trades for hosts)",
+      "status": "completed",
+      "progress": "19/19",
+      "path": "SPEC-241-host-trades-directory",
+      "archived": true,
+      "archivedAt": "2026-06-19"
+    },
+    {
+      "specId": "SPEC-242",
+      "title": "Tarjeta Hospeda (benefits card for guests)",
+      "status": "draft",
+      "progress": "0/0",
+      "path": "SPEC-242-hospeda-card"
+    },
+    {
+      "specId": "SPEC-243",
+      "title": "Hospeda mobile app (React Native / Expo)",
+      "status": "in-progress",
+      "progress": "25/26",
+      "path": "SPEC-243-mobile-app"
+    },
+    {
+      "specId": "SPEC-236",
+      "title": "Coverage ratchet-up — restore per-package thresholds to the 90% target",
+      "status": "completed",
+      "progress": "3/3",
+      "path": "SPEC-236-coverage-ratchet-up",
+      "archived": true,
+      "archivedAt": "2026-06-15",
+      "archiveNote": "10 PRs merged to staging. All logic packages raised to/past target + floors ratcheted in lockstep. service-core floored at 88 (real 90.25); icons/billing/schemas/notifications/seed/feedback back to 90 default."
+    },
+    {
+      "specId": "SPEC-230",
+      "title": "Soft-delete filtering in the service list() path — make BaseCrudService.list exclude soft-deleted rows by default so protected list endpoints stop returning deleted records",
+      "status": "completed",
+      "progress": "0/0",
+      "path": "SPEC-230-list-soft-delete-filtering",
+      "archived": true,
+      "archivedAt": "2026-06-16",
+      "archiveNote": "PR #1680 merged to staging. list() excludes soft-deleted by default (+includeDeleted opt-in). Real-DB smoke PASS. Never atomized into formal tasks (direct fix), so progress stays 0/0."
+    },
+    {
+      "specId": "SPEC-231",
+      "title": "TypeScript 6 Migration",
+      "status": "draft",
+      "progress": "0/4",
+      "path": "SPEC-231-typescript-6-migration"
+    },
+    {
+      "specId": "SPEC-232",
+      "title": "Biome 2 Migration",
+      "status": "draft",
+      "progress": "0/4",
+      "path": "SPEC-232-biome-2-migration"
+    },
+    {
+      "specId": "SPEC-233",
+      "title": "Vitest 4 Migration",
+      "status": "draft",
+      "progress": "0/4",
+      "path": "SPEC-233-vitest-4-migration"
+    },
+    {
+      "specId": "SPEC-234",
+      "title": "TanStack Router family bump — unblock the production-minor-patch Dependabot group",
+      "status": "draft",
+      "progress": "0/4",
+      "path": "SPEC-234-tanstack-router-family-bump"
+    },
+    {
+      "specId": "SPEC-229",
+      "title": "Accommodation partial-update data loss — partial JSONB objects + shallow-merge nested columns",
+      "status": "completed",
+      "progress": "4/4",
+      "path": "SPEC-229-accommodation-partial-update-merge",
+      "archived": true,
+      "archivedAt": "2026-06-14",
+      "archiveNote": "PR #1632 merged to staging. Converter emits partial nested objects (no default injection) + extraInfo/contactInfo deep-partial in update schema + price/extraInfo/contactInfo/socialNetworks/location added to mergeableJsonbColumns. Adversarial review caught + fixed a null-merge column-corruption bug (col::jsonb || 'null' yields [x,null], not a clear) — guarded in buildMergeSetClause. Tests: schemas 4877, db 960, api patch-persistence 13.",
+      "note": "P1 fix. 3 coordinated changes: converter emits partial nested objects (no default injection); AccommodationUpdateInputSchema makes extraInfo+contactInfo inner fields optional; AccommodationModel.mergeableJsonbColumns gains price/extraInfo/contactInfo/socialNetworks/location. Regression tests in schemas+db+api."
+    },
+    {
+      "specId": "SPEC-217",
+      "title": "Deterministic Billing for E2E — QZPay test-control wiring + date-aware publish gate",
+      "status": "completed",
+      "progress": "15/16",
+      "path": "SPEC-217-qzpay-test-control-e2e-wiring",
+      "archived": true,
+      "archivedAt": "2026-06-13",
+      "archiveNote": "PR #1586 merged to staging (4f374036a); E2E P0 Suite green. Final 2 blockers closed: failNext scoped by ownerId (parallel-worker contamination) + publish() promotes PRIVATE->PUBLIC visibility (robust variant — never clobbers RESTRICTED or explicit caller visibility; adversarial review caught the unconditional-PUBLIC security regression). T-012 host-07d deferred; qzpay test-control hardening + deferred coverage tracked in SPEC-221.",
+      "note": "15/16 (T-012 host-07d deferred to SPEC-221). Earlier blocker (Zod 4 .partial() not stripping .default()) fixed via stripShapeDefaults across 32 update/patch schemas. T-011 (host-07c) + T-013 (res-01) verified live. T-014/T-015 done. T-016 CI soak green."
+    },
+    {
+      "specId": "SPEC-221",
+      "title": "QZPay Test-Control Hardening & Deferred E2E Coverage",
+      "status": "completed",
+      "progress": "2/3",
+      "path": "SPEC-221-qzpay-test-control-hardening",
+      "base": "staging",
+      "archived": true,
+      "archivedAt": "2026-06-13",
+      "archiveNote": "PR #1602 merged (a909ef4eb). F-1 (scope delayNextQueue) + F-2 (extractScope extensibility) shipped. F-3 dropped as contrived prod code (no sync updateSubscription in publish; compensation already unit-tested) — legitimate debugging need moved to SPEC-227 (non-blocking observability + creation-time MP enrichment).",
+      "note": "F-1 + F-2 DONE. F-3 (host-07d sync updateSubscription E2E) dropped; see SPEC-227."
+    },
+    {
+      "specId": "SPEC-227",
+      "title": "Billing Subscription Observability — trial↔accommodation↔owner linkage logging + creation-time MP reference enrichment",
+      "status": "completed",
+      "progress": "4/4",
+      "path": "SPEC-227-billing-subscription-observability",
+      "base": "staging",
+      "archived": true,
+      "archivedAt": "2026-06-13",
+      "renumberedFrom": "SPEC-222",
+      "archiveNote": "PR #1608 merged (d778b120c). Part 1 (publish linkage log + Sentry) + Part 2 (creation-time MP metadata) shipped; adversarial review GO; also fixed the SPEC-222 collision. Billing staging smoke not run (observability-only, inert when gate off).",
+      "note": "Renumbered from SPEC-222 (collided with the SPEC-222..226 batch). Reshaped from SPEC-221 F-3. Done."
+    },
+    {
+      "specId": "SPEC-220",
+      "title": "Staging→Main Promotion Hardening — clear CodeQL security debt blocking the promotion",
+      "status": "completed",
+      "progress": "7/7",
+      "path": "SPEC-220-staging-main-promotion-hardening",
+      "archived": true,
+      "archivedAt": "2026-06-14",
+      "archiveNote": "T-001..T-007 done (T-004 N/A — both findings fixed by code, no dismissals). T-006 live: advanced setup (GitHub codeql.yml on main + default setup disabled) + codeql-staging.yml nightly staging scan; staging↔main reconciled. Promo #1629 merged to main; #1618 unblocked SPEC-219 T-005."
+    },
+    {
+      "specId": "SPEC-211",
+      "title": "AI Monetization Model",
+      "status": "completed",
+      "progress": "17/17",
+      "path": "SPEC-211-ai-monetization-model",
+      "note": "Follow-up to SPEC-200. Owner-governed AI chat + Model C config-driven capability sync. All 17 tasks complete; full monorepo typecheck green. Stays in-progress until merged to staging (closeout flips to completed/archived post-merge). ai_support feature route + AC-4.2 metering deferred to a future spec.",
+      "archived": true,
+      "archivedAt": "2026-06-10T19:28:09.000Z",
+      "archiveNote": "PR #1560 merged to staging. Owner ops gates still pending before staging->main: SPEC-143 staging smoke (MP sandbox + OpenAI vault). ai_support feature route + AC-4.2 metering deferred to a future spec."
+    },
+    {
+      "specId": "SPEC-200",
+      "title": "AI Accommodation Chat (tourist)",
+      "status": "completed",
+      "progress": "11/12",
+      "path": "SPEC-200-ai-accommodation-chat",
+      "archived": true,
+      "archivedAt": "2026-06-13",
+      "archiveNote": "DRIFT FIX: shipped (#1492/#1494/#1497/#1507 + #1520), archived by #1584, promoted to main via #1542. Stale-base edit reverted it; restored. Metering deferred to SPEC-211 (12th item).",
+      "note": "Implemented and merged to staging via PRs #1492/#1494/#1497/#1507. Prod-readiness fixes (debug-leak, getById 404/403, ghost-bubble, FAB focus, maxTokens cap, 503 mapping, vault-key prod-required, admin url no-op) on branch fix/SPEC-200-prod-readiness (PR #1520). Chat works (ai_chat granted to every plan, tourists included); monetization is provisional: quota charged to the tourist, not the accommodation owner. SPEC-211 reworks this (owner-governed chat + Model C); SPEC-200 ships to prod after SPEC-211 Phase 0 cost mitigation."
+    },
+    {
+      "specId": "SPEC-131",
+      "title": "PlanPurchaseButton async-state tests broken post Astro 6 bump",
+      "status": "completed",
+      "progress": "6/6",
+      "path": "SPEC-131-plan-purchase-button-async-state-tests",
+      "archived": true,
+      "archivedAt": "2026-06-09",
+      "archiveNote": "Root cause was a latent apiClient try/catch bug (env URL thrown out of contract), not the React 19/Astro 6 timing the spec hypothesized. Single PR. Full web suite 3725 passed."
+    },
+    {
+      "specId": "SPEC-128",
+      "title": "Billing cleanup + E2E smoke + ops runbook (Phase F+G)",
+      "status": "completed",
+      "progress": "3/3 (+2 superseded)",
+      "path": "SPEC-128-billing-cleanup-and-smoke",
+      "archived": true,
+      "archivedAt": "2026-06-09",
+      "archiveNote": "Realigned to SPEC-193: F1 dead-code + F2 docs + G2 runbook done; G1 10-smokes superseded by SPEC-193 batch; G3 SPEC-122/109 closure superseded (legacy parent)."
+    },
+    {
+      "specId": "SPEC-132",
+      "title": "Migrate shared packages to Zod 4 top-level format validators",
+      "status": "draft",
+      "progress": "0/6",
+      "path": "SPEC-132-zod-4-cross-package-migration"
+    },
+    {
+      "specId": "SPEC-133",
+      "title": "Evaluate migrating apps/web from custom Zod env layer to astro:env",
+      "status": "draft",
+      "progress": "0/5",
+      "path": "SPEC-133-evaluate-astro-env"
+    },
+    {
+      "specId": "SPEC-188",
+      "title": "Vitest Test-Suite Performance — Cut Per-File Overhead Without Saturating the Machine",
+      "status": "completed",
+      "progress": "9/21",
+      "path": "SPEC-188-vitest-test-performance",
+      "archived": true,
+      "archivedAt": "2026-06-04T00:00:00Z",
+      "archiveNote": "Track A (9 tasks completed). B2 (T-007..T-010) done on branch spec/SPEC-188 but not merged (9% gain, 147-commit rebase). T-001..T-002 + T-011..T-021 cancelled (deferred/dead-end)."
+    },
+    {
+      "specId": "SPEC-180",
+      "title": "Sentry Observability Hardening — source maps, environments, and logger-driven capture",
+      "status": "approved",
+      "progress": "0/14",
+      "path": "SPEC-180-sentry-observability"
+    },
+    {
+      "specId": "SPEC-183",
+      "title": "API Error i18n Standardization",
+      "status": "approved",
+      "progress": "0/14",
+      "path": "SPEC-183-api-error-i18n-standardization",
+      "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-183-api-error-i18n-standardization",
+      "branch": "spec/SPEC-183-api-error-i18n-standardization",
+      "base": "staging",
+      "driver": "Linear BETA-63",
+      "createdAt": "2026-06-02T00:00:00.000Z",
+      "tasksAtomizedAt": "2026-06-02T00:00:00.000Z",
+      "taskCount": 14,
+      "averageComplexity": 2.1,
+      "note": "14 tasks across 4 phases (avg complexity 2.1). Centralizes translateApiError from apps/web/src/lib/api-errors.ts into @repo/i18n (T-001..T-004); web shim re-export preserves all existing callers. Phase 2 (T-005..T-006): migrate ~5 remaining genuine API-error sites in web. Phase 3 (T-007..T-010): wire admin dialogs/forms (PlanDialog, AddonDialog, RefundDialog, exchange-rate x3, sponsorship x5, CronJobsPanel). Phase 4 (T-011..T-014): add 5 missing common.apiError keys (INVALID_PAGINATION_PARAMS, NOT_IMPLEMENTED, CONFIGURATION_ERROR, QUOTA_EXCEEDED, ENTITLEMENT_REQUIRED) + CI guard test + docs + index closeout. Excluded: cache internals, error-boundaries, logger, native JS errors. Zero breaking changes to existing callers.",
+      "archived": false
+    },
+    {
+      "specId": "SPEC-185",
+      "title": "Admin Entity Lists v2 — filters, grid cards, host portfolio & tags migration",
+      "status": "completed",
+      "progress": "17/17",
+      "path": "SPEC-185-admin-entity-lists-v2",
+      "branch": "spec/SPEC-185-admin-entity-lists-v2",
+      "linearIssues": [
+        "BETA-75",
+        "BETA-72",
+        "BETA-76"
+      ],
+      "archived": true,
+      "archivedAt": "2026-06-04",
+      "archiveNote": "Closeout PR #1443 merged to staging (2621fa54f). All 17 tasks done; T-016 smoke fixed 3 defects, all verified live."
+    },
+    {
+      "specId": "SPEC-186",
+      "title": "Web Dynamic Image Grid — count-aware gallery layout, fixed-ratio cells & per-cell responsive images",
+      "status": "completed",
+      "progress": "18/18",
+      "path": "SPEC-186-web-dynamic-image-grid",
+      "branch": "spec/SPEC-186-web-dynamic-image-grid",
+      "linearIssues": [
+        "BETA-53"
+      ],
+      "note": "Closed 2026-06-05: 18/18, browser smoke passed, 3 smoke-finding fixes (container-ratio height, viewAll CTA, data-astro-reload). Videos-in-lightbox deferred to follow-up spec.",
+      "archived": true,
+      "archivedAt": "2026-06-05"
+    },
+    {
+      "specId": "SPEC-187",
+      "title": "Rich Text Entity Descriptions — per-entity toolbars, plain-text accommodation.description, full richDescription backing, ratify canonical format & harden rendering",
+      "status": "completed",
+      "progress": "25/25",
+      "path": "SPEC-187-rich-text-entity-descriptions",
+      "branch": "spec/SPEC-187-rich-text-entity-descriptions",
+      "linearIssues": [
+        "BETA-60"
+      ],
+      "archived": true,
+      "archivedAt": "2026-06-08T15:13:03.505606",
+      "archiveNote": "All 5 PRs merged to staging: P0 strip migration, P1 config flips+renderPlain, P2 richDescription vertical slice, P3 ADR-032+XSS+audit, P4 closeout."
+    },
+    {
+      "specId": "SPEC-189",
+      "title": "Optimize Seed & App Builds — run seed from src (no build) + decouple @repo/schemas from @repo/feedback",
+      "status": "completed",
+      "progress": "12/12",
+      "path": "SPEC-189-optimize-seed-and-app-builds",
+      "branch": "spec/SPEC-189-optimize-seed-and-app-builds",
+      "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-189-optimize-seed-and-app-builds",
+      "base": "staging",
+      "linearIssues": [
+        "BETA-54"
+      ],
+      "note": "12/12 completed. Front B (schemas/feedback decouple) + Front A (seed from src no-build). Build set: schemas dropped feedback+icons. Seed cold startup ~9s vs ~30-60s before.",
+      "archived": true,
+      "archivedAt": "2026-06-10"
+    },
+    {
+      "specId": "SPEC-190",
+      "title": "Admin Bundle Perf — Icon Tree-Shaking & Entity-Chunk Code-Split",
+      "status": "completed",
+      "progress": "14/14",
+      "path": "SPEC-190-admin-bundle-perf-icons-and-codesplit",
+      "branch": "spec/SPEC-190-admin-bundle-perf-icons-and-codesplit",
+      "linearIssues": [
+        "BETA-74"
+      ],
+      "note": "Tests added, pending smoke",
+      "archived": true,
+      "archivedAt": "2026-06-15",
+      "archiveNote": "Admin bundle perf (icon tree-shaking + entity code-split). All 14 tasks done: code shipped via PR #1559; T-013 doc (final-report + sideEffects claim now true via T-003); T-014 browser smoke VERIFIED 2026-06-15 — all 3 lazy fields (tiptap rich-text, leaflet coordinates, media upload) render in admin edit, zero dynamic-chunk errors."
+    },
+    {
+      "specId": "SPEC-191",
+      "title": "Web Contribution Pages & Banners — /colaborar hub, report link & recruitment banners",
+      "status": "completed",
+      "progress": "16/16",
+      "path": "SPEC-191-web-contribution-pages-and-banners",
+      "branch": "spec/SPEC-191-web-contribution-pages-and-banners",
+      "linearIssues": [
+        "BETA-69",
+        "BETA-68",
+        "BETA-65"
+      ],
+      "archived": true,
+      "note": "16/16 + smoke + follow-ups; shipped via PR #1447",
+      "archivedAt": "2026-06-04"
+    },
+    {
+      "specId": "SPEC-192",
+      "title": "Billing Catalog to DB — complete SPEC-168 by making the addon catalog & residual plan/promo reads DB-backed, and document the code-level structural boundary",
+      "status": "completed",
+      "progress": "37/37",
+      "path": "SPEC-192-billing-catalog-to-db",
+      "parent": "SPEC-193",
+      "branch": "spec/SPEC-192-billing-catalog-to-db",
+      "linearIssues": [
+        "BETA-58"
+      ],
+      "note": "PR #1428 merged 2026-06-04; staging smoke deferred to SPEC-193 batch (pending-staging-smoke.md)",
+      "archived": true,
+      "archivedAt": "2026-06-04"
+    },
+    {
+      "specId": "SPEC-127",
+      "title": "Migrate addon.checkout.ts to qzpay path (Phase E)",
+      "status": "completed",
+      "progress": "15/15",
+      "path": "SPEC-127-migrate-addon-checkout-to-qzpay",
+      "archived": true,
+      "archivedAt": "2026-06-04",
+      "note": "PR #1448 merged 2026-06-04; staging smoke deferred to SPEC-193 batch (pending-staging-smoke.md)"
+    },
+    {
+      "specId": "SPEC-166",
+      "title": "Review Moderation State",
+      "status": "completed",
+      "progress": "27/27",
+      "path": "SPEC-166-review-moderation-state",
+      "branch": "spec/SPEC-166-review-moderation-state",
+      "archived": true,
+      "archivedAt": "2026-06-05",
+      "note": "PRs #1446/#1449/#1452/#1453/#1458/#1459 merged to staging 2026-06-04..05; phase 2c recovered after machine crash"
+    },
+    {
+      "specId": "SPEC-194",
+      "title": "Billing Lifecycle Robustness & Bug Fixes",
+      "status": "completed",
+      "progress": "30/30",
+      "path": "SPEC-194-billing-lifecycle-robustness",
+      "branch": "spec/SPEC-194-billing-lifecycle-robustness",
+      "archived": true,
+      "archivedAt": "2026-06-05",
+      "note": "PR #1455 merged 2026-06-05; staging smoke deferred to SPEC-193 batch; deploy requires db-apply-extras (migration 010)"
+    },
+    {
+      "specId": "SPEC-196",
+      "title": "Shared Config-as-Code Package — centralize curated content & catalog files",
+      "status": "draft",
+      "progress": "0/0",
+      "path": "SPEC-196-shared-content-config-package",
+      "note": "Draft only — no tasks until activation; decisions D-1..D-6 pending owner workshop."
+    },
+    {
+      "specId": "SPEC-145",
+      "title": "Billing Entitlements & Limits Enforcement",
+      "status": "completed",
+      "progress": "29/29",
+      "path": "SPEC-145-billing-entitlements-and-limits-enforcement",
+      "branch": "spec/SPEC-145-billing-entitlements-and-limits-enforcement",
+      "archived": true,
+      "archivedAt": "2026-06-05",
+      "note": "PR #1462 merged 2026-06-05; staging smoke deferred to SPEC-193 batch; behavior changes: docs/billing/spec-145-behavior-changes.md"
+    },
+    {
+      "specId": "SPEC-149",
+      "title": "Billing provider error propagation + Sentry context + retry policy",
+      "status": "completed",
+      "progress": "15/15",
+      "path": "SPEC-149-billing-provider-error-propagation-and-sentry",
+      "branch": "spec/SPEC-149-billing-provider-error-propagation-and-sentry",
+      "archived": true,
+      "archivedAt": "2026-06-05",
+      "note": "PR #1468 merged 2026-06-05; staging smoke deferred to SPEC-193 batch (entry #5); monthly preapproval 500 asymmetry documented in spec scope note"
+    },
+    {
+      "specId": "SPEC-159",
+      "title": "Cross-Entity View Tracking",
+      "status": "completed",
+      "progress": "15/15",
+      "path": "SPEC-159-cross-entity-view-tracking",
+      "branch": "spec/SPEC-159-cross-entity-view-tracking",
+      "archived": true,
+      "archivedAt": "2026-06-05",
+      "archiveNote": "DRIFT FIX (2026-06-15): added missing archived flag. Shipped via #1461."
+    },
+    {
+      "specId": "SPEC-197",
+      "title": "Admin View-Stats Surfaces",
+      "status": "completed",
+      "progress": "21/21",
+      "path": "SPEC-197-admin-view-stats-surfaces",
+      "branch": "fix/SPEC-197-smoke-findings",
+      "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-197-admin-view-stats-surfaces",
+      "base": "staging",
+      "archived": true,
+      "archivedAt": "2026-06-06",
+      "archiveNote": "21/21 in two days: impl PR #1472 merged; T-021 real-DB + 4-role Chrome smoke found 4 fixes shipped via PR #1473 (response envelope, leftover deferred slot, chips section title/expand, sidebar menu entry). Worktree cleanup pending post-merge."
+    },
+    {
+      "specId": "SPEC-202",
+      "title": "Destination Review Submission Flow (web) + API contract/security fix",
+      "status": "completed",
+      "progress": "21/21",
+      "path": "SPEC-202-destination-review-submission",
+      "branch": "spec/SPEC-202-destination-review-submission",
+      "base": "staging",
+      "archived": true,
+      "archivedAt": "2026-06-06T18:30:00.000Z",
+      "updatedAt": "2026-06-06T18:30:00.000Z"
+    },
+    {
+      "specId": "SPEC-205",
+      "title": "Host Web Foundation — Dashboard, Navigation, Promotions & Funnel",
+      "status": "completed",
+      "progress": "9/9",
+      "path": "SPEC-205-host-web-foundation",
+      "archived": true,
+      "archivedAt": "2026-06-13T00:00:00Z",
+      "archiveNote": "All phases shipped (1/2/4 in #1542, Phase 3 owner-promotions CRUD in #1591)",
+      "tags": [
+        "host-migration",
+        "phase-1"
+      ]
+    },
+    {
+      "specId": "SPEC-206",
+      "title": "Host Conversations — Inbox, Threads, Replies & Archive in Web",
+      "status": "completed",
+      "progress": "1/1",
+      "path": "SPEC-206-host-conversations",
+      "tags": [
+        "host-migration",
+        "phase-2"
+      ],
+      "archived": true,
+      "archivedAt": "2026-06-15",
+      "archiveNote": "Ghost-completed: epic shipped ad-hoc (inbox/threads/replies/archive for owner), PRs #1503/#1521/#1627/#1610 merged + on main. No formal spec.md (owner decision, like SPEC-208)."
+    },
+    {
+      "specId": "SPEC-207",
+      "title": "Host Analytics & KPIs — Business Dashboard in Web",
+      "status": "completed",
+      "progress": "1/1",
+      "path": "SPEC-207-host-analytics-kpis",
+      "archived": true,
+      "archivedAt": "2026-06-15T00:00:00.000Z",
+      "archiveNote": "Merged to staging via PR #1678. Follow-up fix/SPEC-207-i18n-hostdailyseries adds the i18n keys that landed after the merge commit.",
+      "tags": [
+        "host-migration",
+        "phase-3"
+      ]
+    },
+    {
+      "specId": "SPEC-208",
+      "title": "Web Accommodation Editor — Full Property Management in Web",
+      "status": "completed",
+      "progress": "1/1",
+      "path": "SPEC-208-web-accommodation-editor",
+      "tags": [
+        "host-migration",
+        "phase-4"
+      ],
+      "archived": true,
+      "archivedAt": "2026-06-10",
+      "note": "Mirror of specs/index.json. Feature shipped via PRs #1509/#1513/#1516; prod-readiness remediation merged to staging (#1528/#1529/#1533-via-#1540/#1534) + local e2e 6/6 PASS. No state.json with atomic tasks (progress 1/1 nominal). Closed 2026-06-10."
+    },
+    {
+      "specId": "SPEC-147",
+      "title": "User self-service subscription cancellation",
+      "status": "completed",
+      "progress": "16/16",
+      "path": "SPEC-147-user-self-service-subscription-cancellation",
+      "branch": "spec/SPEC-147-user-self-service-subscription-cancellation",
+      "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-147-user-self-service-subscription-cancellation",
+      "base": "staging",
+      "note": "PR #1510 merged 2026-06-09; ships DARK behind HOSPEDA_USER_CANCEL_ENABLED until SPEC-203 UI; qzpay #42 B.1 prereq published (core 1.12.0/mp 2.2.0); staging smoke entry #7; review fixed M1+M2",
+      "archived": true,
+      "archivedAt": "2026-06-09"
+    },
+    {
+      "specId": "SPEC-209",
+      "title": "Admin SSR memory leak + cheap healthcheck",
+      "status": "completed",
+      "progress": "12/13",
+      "path": "SPEC-209-admin-ssr-memory-leak-healthcheck",
+      "branch": "spec/SPEC-209-admin-ssr-memory-leak-healthcheck",
+      "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-209-admin-ssr-memory-leak-healthcheck",
+      "base": "staging",
+      "archived": true,
+      "note": "13 atomized tasks across setup/core/testing/docs phases (avg complexity 2.1). Investigate-first: T-001/T-004/T-007 start in parallel (no blockers). Critical path: T-004->T-006->T-009->T-010->T-011->T-012->T-013. Healthcheck (T-001..T-003), regression+guard tests (T-005..T-008), leak fix (T-009), staging validation (T-010..T-012), docs (T-013).",
+      "archivedAt": "2026-06-10",
+      "archiveNote": "Code complete + merged to staging via PR #1538 (12/13 implemented). T-012 (staging RSS/heap validation) DEFERRED as a post-merge operational check (see .qtm/specs/SPEC-209-.../docs/memory-validation-procedure.md) — not a code gate. Prod build locally showed 0 QZPayBilling-init on SSR; manual Chrome smoke (T-010) passed."
+    },
+    {
+      "specId": "SPEC-210",
+      "title": "Public Response Tier Enforcement — make schema-tier serialization mandatory and fail-closed so public endpoints can never leak undeclared DB columns",
+      "status": "draft",
+      "progress": "0/13",
+      "path": "SPEC-210-public-response-tier-enforcement",
+      "archived": false
+    },
+    {
+      "specId": "SPEC-148",
+      "title": "Billing defensive grace + plan lifecycle (cron-lag grace + plan disable)",
+      "status": "completed",
+      "progress": "12/12",
+      "path": "SPEC-148-billing-grace-defensive-and-plan-lifecycle",
+      "branch": "spec/SPEC-148-billing-grace-defensive-and-plan-lifecycle",
+      "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-148-billing-grace-defensive-and-plan-lifecycle",
+      "base": "staging",
+      "archived": true,
+      "archivedAt": "2026-06-09",
+      "note": "Last code item of SPEC-193 batch 4 (merged PR #1515). Part A pass-through grace + Sentry; Part B auto-cancel-at-period-end reusing SPEC-147 finalize cron. T-011 fixed critical empty-recipient bug in PLAN_BEING_RETIRED notif."
+    },
+    {
+      "specId": "SPEC-195",
+      "title": "Content Auto-Moderation Engine",
+      "status": "completed",
+      "progress": "6/7",
+      "path": "SPEC-195-content-auto-moderation",
+      "archived": true,
+      "archivedAt": "2026-06-13",
+      "archiveNote": "DRIFT FIX: shipped via #1491/#1496/#1499/#1508, archived by #1584, promoted to main via #1542. Stale-base edit reverted it; restored."
+    },
+    {
+      "specId": "SPEC-199",
+      "title": "AI Natural-Language Search",
+      "status": "completed",
+      "progress": "21/21",
+      "path": "SPEC-199-ai-nl-search",
+      "archived": true,
+      "archivedAt": "2026-06-10",
+      "archiveNote": "Shipped via PR #1557 (merged to staging 2026-06-10); 21/21 tasks complete.",
+      "note": "Child B of SPEC-173. NL search: generateObject -> SearchIntentEntities -> AccommodationSearchHttp params, NO embeddings V1. All §3 decisions resolved. spec-realign 2026-06-10: greenfield, foundation stable; slot set expanded (D-5: bedrooms/bathrooms/maxRating/featureSlugs). 21 atomic tasks generated. IN-PROGRESS."
+    },
+    {
+      "specId": "SPEC-213",
+      "title": "Web + Admin pre-beta polish & bugfix batch",
+      "status": "completed",
+      "progress": "19/19",
+      "path": "SPEC-213-web-admin-prebeta-fixes-batch",
+      "archived": true,
+      "archivedAt": "2026-06-13",
+      "archiveNote": "DRIFT FIX: 19/19 done, archived by #1584. Stale-base edit reverted it; restored."
+    },
+    {
+      "specId": "SPEC-214",
+      "title": "Editable AI prompt rules (DB-backed, per feature)",
+      "status": "completed",
+      "progress": "12/12",
+      "path": "SPEC-214-ai-prompt-rules-editable",
+      "archived": true,
+      "archivedAt": "2026-06-12T17:39:12Z",
+      "archiveNote": "PR #1583 merged to staging"
+    },
+    {
+      "specId": "SPEC-215",
+      "title": "Destination climate & live weather",
+      "status": "completed",
+      "progress": "28/28",
+      "path": "SPEC-215-destination-climate-weather",
+      "archived": true,
+      "archivedAt": "2026-06-16",
+      "archiveNote": "Implementation merged to staging via PR #1690 (merge 69147a17c). PR #1573 had only carried the spec doc."
+    },
+    {
+      "specId": "SPEC-216",
+      "title": "Owner plans inherit tourist entitlements & limits (owner = superset of tourist)",
+      "status": "completed",
+      "progress": "12/12",
+      "path": "SPEC-216-owner-inherits-tourist-entitlements",
+      "archived": true,
+      "archivedAt": "2026-06-12T00:00:00Z",
+      "archiveNote": "PR #1579 merged to staging"
+    },
+    {
+      "specId": "SPEC-218",
+      "title": "astro check in web CI — load the App.Locals augmentation, clean .astro type errors, gate typecheck",
+      "status": "completed",
+      "progress": "10/10",
+      "path": "SPEC-218-astro-check-web-typecheck",
+      "archived": true,
+      "archivedAt": "2026-06-12T00:00:00Z",
+      "archiveNote": "PR #1578 merged to staging"
+    },
+    {
+      "specId": "SPEC-212",
+      "title": "Conversational AI Accommodation Search",
+      "status": "completed",
+      "progress": "18/18",
+      "path": "SPEC-212-conversational-ai-search",
+      "archived": true,
+      "archivedAt": "2026-06-11",
+      "archiveNote": "PR #1577 merged to staging (f8df2b971); 18/18 tasks complete. Post-merge pending (owner-gated): @ai e2e + manual conversational-search smoke on staging once AI is configured, then staging->main promotion after soak.",
+      "note": "ALL 18 TASKS DONE (implementation complete, all green). Conversational AI search live: NL->filters extraction (generateObject) -> filters SSE event -> frontend GET /public/accommodations -> streamed NL reply -> best-effort persistence. SPEC-199 UI+route retired. E2E (T-016) is write-only, runs in CI/staging with @ai tag."
+    },
+    {
+      "specId": "SPEC-219",
+      "title": "Dependabot CI Hardening & Dependency Bump Merge Strategy",
+      "status": "completed",
+      "progress": "10/10",
+      "path": "SPEC-219-dependabot-ci-hardening",
+      "archived": true,
+      "archivedAt": "2026-06-13",
+      "archiveNote": "Closed: dependabot.yml ignores reached main via forced merge of #1607; #1588 closed. Clean main resolution owned by SPEC-220 promotion."
+    },
+    {
+      "specId": "SPEC-235",
+      "title": "AI Content Translation for Multi-Language Listings",
+      "status": "completed",
+      "progress": "shipped (no formal task breakdown)",
+      "path": "SPEC-235-ai-content-translation",
+      "archived": true,
+      "archivedAt": "2026-06-15",
+      "archiveNote": "Renumbered from SPEC-212 (collision with SPEC-212-conversational-ai-search). Shipped via PRs #1581 + #1623 + #1652 merged to staging; full browser smoke (admin + web host happy-path) + curl SEO verification passed. No formal .qtm/tasks breakdown existed (spec was draft); delivered directly."
+    },
+    {
+      "specId": "SPEC-238",
+      "title": "Reduce apps/api per-file test cold-import overhead (~9% suite speedup)",
+      "status": "completed",
+      "progress": "10/10",
+      "path": "SPEC-238-api-test-cold-import-perf",
+      "archived": true,
+      "archivedAt": "2026-06-16T01:29:32Z",
+      "archiveNote": "Shipped Sentry mock (PR #1685, -18% local, beats ~9% 2x); service-core ...actual lever deferred (4 tasks cancelled): ~58 symbols/~50 files, no subpath exports, AC#3 risk, not worth it for P3. CI runner re-measure authoritative."
+    },
+    {
+      "specId": "SPEC-198",
+      "title": "AI Text Improvement (HOST)",
+      "status": "completed",
+      "progress": "10/10",
+      "path": "SPEC-198-ai-text-improvement",
+      "archived": true,
+      "archivedAt": "2026-06-06",
+      "archiveNote": "DRIFT FIX (2026-06-15 cleanup): specs/index had this completed+archived but tasks/index had NO entry. state.json shows 10/10 tasks completed, 77/77 tests. Shipped via PRs #1487 + #1514. Reconstructed entry to match specs/index."
+    },
+    {
+      "specId": "SPEC-167",
+      "title": "Downgrade preflight + remediation",
+      "status": "completed",
+      "progress": "26/26",
+      "path": "SPEC-167-downgrade-preflight-remediation",
+      "archived": true,
+      "archivedAt": "2026-06-07",
+      "archiveNote": "DRIFT FIX (2026-06-15 cleanup): specs/index had completed+archived but tasks/index had NO entry. state.json shows 26/26 completed. Shipped via PR #1484, closed out #1485. Reconstructed entry."
+    },
+    {
+      "specId": "SPEC-174",
+      "title": "Admin Guided Welcome Tour (role-based, config-driven)",
+      "status": "completed",
+      "progress": "18/18",
+      "path": "SPEC-174-admin-welcome-tour",
+      "archived": true,
+      "archivedAt": "2026-06-04",
+      "archiveNote": "Restored 2026-06-15 (entry lost to stale-base edit). Completed + archived in June via feat #1451 / archive #1454. state.json shows 18/18 tasks completed."
+    },
+    {
+      "specId": "SPEC-175",
+      "title": "Admin What's New / Release Notes Dialog",
+      "status": "completed",
+      "progress": "20/20",
+      "path": "SPEC-175-admin-whats-new",
+      "archived": true,
+      "archivedAt": "2026-06-04",
+      "archiveNote": "Restored 2026-06-15 (entry lost to stale-base edit). Completed + archived in June via feat #1437 / archive #1440. state.json shows 20/20 tasks completed."
+    },
+    {
+      "specId": "SPEC-179",
+      "title": "Self-Hosted Runner for PR CI (GitHub Actions cost/quota reduction)",
+      "status": "completed",
+      "progress": "0/0",
+      "path": "SPEC-179-self-hosted-pr-ci-runner",
+      "archived": true,
+      "archivedAt": "2026-06-03",
+      "archiveNote": "Restored 2026-06-15 (entry lost to stale-base edit). Completed + archived in June via feat #1369 / archive #1415. Implemented without atomized tasks (progress shown as 0/0)."
+    },
+    {
+      "specId": "SPEC-173",
+      "title": "AI Foundation (@repo/ai-core)",
+      "status": "completed",
+      "progress": "43/43",
+      "path": "SPEC-173-ai-core",
+      "archived": true,
+      "archivedAt": "2026-06-05",
+      "archiveNote": "DRIFT FIX (2026-06-15 cleanup): specs/index had completed+archived but tasks/index had NO entry. state.json shows 43/43 completed. AI foundation pkg shipped via PR #1466, closed out #1467, e2e fix #1477. Reconstructed entry."
+    },
+    {
+      "specId": "SPEC-222",
+      "title": "Accommodation import from URL",
+      "status": "in-progress",
+      "progress": "27/28",
+      "path": "SPEC-222-accommodation-import-from-url",
+      "archived": false
+    },
+    {
+      "specId": "SPEC-244",
+      "title": "Test suite order-independence hardening",
+      "status": "draft",
+      "progress": "0/15",
+      "path": "SPEC-244-test-suite-order-independence",
+      "archived": false
+    },
+    {
+      "specId": "SPEC-245",
+      "title": "Mobile Testing Infrastructure",
+      "status": "draft",
+      "progress": "0/0",
+      "path": "SPEC-245-mobile-testing-infrastructure"
+    },
+    {
+      "specId": "SPEC-246",
+      "title": "Revalidation log entity_id tracking + re-enable ACC-02 E2E",
+      "status": "draft",
+      "progress": "0/0",
+      "path": "SPEC-246-revalidation-log-entity-id-tracking"
+    },
+    {
+      "specId": "SPEC-237",
+      "title": "External-platform reviews & reputation on accommodation pages",
+      "status": "completed",
+      "progress": "15/15",
+      "path": "SPEC-237-accommodation-external-reviews",
+      "branch": "spec/SPEC-237-accommodation-external-reviews",
+      "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-237-accommodation-external-reviews",
+      "base": "staging",
+      "createdAt": "2026-06-18T00:00:00.000Z",
+      "tasksAtomizedAt": "2026-06-18T00:00:00.000Z",
+      "taskCount": 15,
+      "averageComplexity": 2.07,
+      "archived": true,
+      "archivedAt": "2026-06-18T15:26:22Z",
+      "completionRef": "PR #1724 (merge 487f46266)",
+      "note": "15 tasks across setup/core/integration/docs phases (avg complexity 2.07). Critical path: T-001→T-004→T-005→T-006→T-007→T-008→T-009→T-015 (8 steps). T-002 (env) and T-003 (i18n) have float and run in parallel with early critical-path tasks. safeExternalFetch already exists in @repo/utils; apify-client already in SPEC-222 adapters; google-places import adapter MUST NOT be modified (new google-reputation.adapter.ts needed). SPEC-222 google/apify env vars may already be registered — verify before re-registering."
+    },
+    {
+      "specId": "SPEC-249",
+      "title": "Commerce owner self-service web area (operational editing + force-password + credential email)",
+      "status": "completed",
+      "progress": "26/26",
+      "path": "SPEC-249-commerce-owner-self-service-web",
+      "branch": "spec/SPEC-249-commerce-owner-self-service-web",
+      "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-249-commerce-owner-self-service-web",
+      "base": "staging",
+      "createdAt": "2026-06-20T00:00:00.000Z",
+      "tasksAtomizedAt": "2026-06-20T06:56:31.000Z",
+      "taskCount": 26,
+      "averageComplexity": 2.3,
+      "note": "Realigned vs staging post-SPEC-239: Parts B (force-password) + C (credential email) ALREADY BUILT by SPEC-239 -> verify-only (T-023/T-024). Build = web owner surface (Part A, mi-cuenta/comercio, gastronomy+experiences) + single approve&provision admin action (Part D / AC-6). Critical path T-003->T-006->T-009->T-011->T-012->T-016->T-025 (7 steps). 3 parallel tracks. Known gap covered: no protected list-own endpoint existed (T-006/T-007).",
+      "archived": true,
+      "archivedAt": "2026-06-20T18:15:00.000Z",
+      "archiveNote": "Feature shipped + validated live (T-021/T-025 browser+HTTP). Editor field-expansion -> SPEC-253; DB infra -> SPEC-251; E2E harness + seed fixtures -> SPEC-252."
+    },
+    {
+      "specId": "SPEC-253",
+      "title": "Commerce owner editor — extended fields + single COMMERCE_EDIT_OWN permission",
+      "status": "draft",
+      "progress": "0/0",
+      "path": "SPEC-253-commerce-owner-editor-extended-fields"
+    },
+    {
+      "specId": "SPEC-251",
+      "title": "Local DB dev/template refresh + worktree DB auto-heal correctness",
+      "status": "completed",
+      "progress": "3/3",
+      "path": "SPEC-251-local-db-dev-template-refresh"
+    },
+    {
+      "specId": "SPEC-252",
+      "title": "Web functional E2E (Playwright) harness + login fixtures + CI",
+      "status": "draft",
+      "progress": "0/0",
+      "path": "SPEC-252-web-e2e-playwright-harness"
+    },
+    {
+      "specId": "SPEC-250",
+      "title": "Asynchronous external reputation refresh (Apify async API + polling)",
+      "status": "draft",
+      "progress": "0/39",
+      "path": "SPEC-250-external-reputation-async-refresh",
+      "parent": "SPEC-237",
+      "branch": "spec/SPEC-250-external-reputation-async-refresh",
+      "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-250-external-reputation-async-refresh",
+      "base": "staging",
+      "createdAt": "2026-06-20T00:00:00.000Z",
+      "tasksAtomizedAt": "2026-06-20T00:00:00.000Z",
+      "taskCount": 39,
+      "averageComplexity": 1.79,
+      "note": "39 tasks across 5 phases (setup 4, core 16, integration 13, testing 4, docs 2). Critical path T-001->T-002->T-018->T-025->T-026->T-028->T-035->T-036 (8 hops). Apify async API + polling cron. NOT to be implemented yet (owner: generate only)."
+    },
+    {
+      "specId": "SPEC-258",
+      "title": "Accommodation import — coverage gaps, limbo fields, UX surfacing & scraper resilience",
+      "status": "draft",
+      "progress": "0/0",
+      "path": "SPEC-258-import-coverage-ux-resilience",
+      "parent": "SPEC-257",
+      "branch": "spec/SPEC-258-import-coverage-ux-resilience",
+      "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-258-import-coverage-ux-resilience",
+      "base": "staging",
+      "createdAt": "2026-06-22T14:53:31Z",
+      "note": "Doc-only spec; tasks NOT atomized yet (run task-from-spec when implementation starts). 3 workstreams: coverage, UX surfacing, scraper resilience."
     }
+  ],
+  "standalone": {
+    "path": "standalone",
+    "total": 0,
+    "completed": 0
+  }
 }
