@@ -27,6 +27,27 @@ The Phase-0 re-baseline therefore found the gate **already green**. Per owner de
 
 Net result: **51 → 20** advisory hits (`1 low | 19 moderate`), **0 critical / 0 high**.
 
+### Side effect of `pnpm dedupe`: `zod` pinned to 4.3.6
+
+`pnpm dedupe` had an unintended side effect: it collapsed the duplicate `zod` instances and
+promoted `zod` from `4.3.6` to `4.4.3` (the root range is `"zod": "^4.0.8"`, which permits
+both). `zod 4.4.3` introduced a breaking runtime guard that throws
+`.merge() cannot be used on object schemas containing refinements` — and
+`packages/schemas/src/api/api.schema.ts` builds `ExtendedQuerySchema` via `.merge()` on refined
+schemas (`DateRangeQuerySchema`, `LocationQuerySchema`). This broke the `Build`, `Guards`, and
+`E2E` jobs (the error is a **runtime** throw at schema-evaluation time, so `typecheck` did not
+catch it).
+
+This also revealed a **latent repo-wide risk**: `"zod": "^4.0.8"` lets any future
+`pnpm install`/`update` promote `zod` to 4.4.x and break the build, independent of this PR.
+
+Fix applied here: a `pnpm.overrides` entry **`"zod": "4.3.6"`** in the root `package.json`,
+pinning `zod` to the version the codebase currently supports (the same version `staging`
+resolved to). This is intentionally **not** the `.safeExtend()` migration — adopting the zod
+4.4.x API is owned by **SPEC-132 (Zod 4 migration)**, which the owner deferred to post-launch.
+The override should be **removed as part of SPEC-132** once `api.schema.ts` is migrated off
+`.merge()` on refined schemas.
+
 ## Remaining advisories (accepted for now)
 
 None of the following block the CI gate (all moderate/low). Each requires either a
