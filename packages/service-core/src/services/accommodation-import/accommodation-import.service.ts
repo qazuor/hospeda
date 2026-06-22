@@ -123,24 +123,15 @@ function needsShortLinkResolution(url: URL): boolean {
  * redirect loop, timeout) returns the original `inputUrl` unchanged so the
  * pipeline continues as-is rather than crashing.
  *
- * **Body discard**: we only need the `finalUrl` after redirects, not the page
- * body. `maxBytes` is set to 1 byte so the body cap triggers immediately after
- * the first byte is received — this minimises data transfer while still
- * allowing the redirect chain to complete.  The result is always `ok: false`
- * due to the cap, but `safeExternalFetch` resolves each redirect before
- * reading the body, so `finalUrl` (from the last successful redirect step) is
- * available in the `SafeFetchSuccess` shape.
- *
- * Implementation note: because a 1-byte cap causes the body-read to return a
- * `SafeFetchBlocked` result rather than a `SafeFetchSuccess`, we cannot rely on
- * `result.finalUrl` from the capped call. Instead we use `maxBytes` of 0 which
- * causes no body read; but that is not exposed. The actual approach used here is
- * to issue the request with a small body cap and read `result.finalUrl` only
- * when `result.ok === true`. When the body cap fires we get `ok: false` — in
- * that case we fall back to the original URL. To avoid this, we use a `HEAD`-
- * style approach: pass `maxBytes` large enough for a tiny response but rely on
- * the `finalUrl` field exposed on `SafeFetchSuccess` after following all hops.
- * A 512-byte cap is sufficient to get past any redirect body.
+ * **Body discard (resolve-only)**: we only need the `finalUrl` after the
+ * redirect chain, not the terminal page body. The previous implementation used
+ * a tiny `maxBytes` cap, but the cap fires on the TERMINAL (non-redirect)
+ * response — yielding `SafeFetchBlocked` and discarding `finalUrl` whenever the
+ * canonical page body exceeded the cap (e.g. the large Google Maps place page).
+ * That left Google `maps.app.goo.gl` short links unresolved. We now use
+ * `resolveOnly: true`, which follows the redirects and returns the terminal URL
+ * without ever reading its body, so a large terminal page no longer blocks
+ * resolution.
  *
  * @param inputUrl - The short-link URL string to resolve.
  * @param timeoutMs - Timeout in milliseconds, forwarded from {@link ImportContext}.
@@ -151,19 +142,16 @@ async function resolveCanonicalUrl(inputUrl: string, timeoutMs: number): Promise
         const result = await safeExternalFetch({
             url: inputUrl,
             timeoutMs,
-            // 512 bytes is enough to receive the final (non-redirect) response
-            // headers and a tiny body, ensuring the redirect chain completes.
-            maxBytes: 512,
-            maxRedirects: 5
+            maxRedirects: 5,
+            resolveOnly: true
         });
 
         if (result.ok && result.finalUrl !== inputUrl) {
             return result.finalUrl;
         }
 
-        // ok: false — body cap fired or SSRF block. The redirect chain MAY have
-        // been followed partially. We cannot recover the finalUrl here, so fall
-        // back to the original input.
+        // ok: false (SSRF block / redirect-cap / network error) or no redirect
+        // happened — fall back to the original input so the pipeline continues.
         return inputUrl;
     } catch {
         // safeExternalFetch is documented to never throw, but guard defensively.

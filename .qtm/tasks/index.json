@@ -807,6 +807,22 @@
             "taskCount": 39,
             "averageComplexity": 1.79,
             "note": "39 tasks across 5 phases (setup 4, core 16, integration 13, testing 4, docs 2). Critical path T-001->T-002->T-018->T-025->T-026->T-028->T-035->T-036 (8 hops). Apify async API + polling cron. NOT to be implemented yet (owner: generate only)."
+        },
+        {
+            "specId": "SPEC-257",
+            "title": "Accommodation import short-link resolution + adapter enrichment",
+            "status": "in-progress",
+            "progress": "19/19",
+            "path": "SPEC-257-import-short-link-resolution",
+            "parent": "SPEC-222",
+            "branch": "spec/SPEC-257-import-short-link-resolution",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-257-import-short-link-resolution",
+            "base": "staging",
+            "createdAt": "2026-06-22T02:36:01Z",
+            "tasksAtomizedAt": "2026-06-22T02:36:01Z",
+            "taskCount": 19,
+            "averageComplexity": 2.36,
+            "note": "11 tasks across 5 phases (setup 1, core 4, integration 4, testing 1, docs 1). SPEC-222 short-link follow-up."
         }
     ],
     "standalone": {

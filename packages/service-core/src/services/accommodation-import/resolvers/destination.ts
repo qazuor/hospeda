@@ -107,7 +107,7 @@ const MAX_CANDIDATES = 5;
 export async function buildDestinationHint(
     input: BuildDestinationHintInput
 ): Promise<DestinationHint> {
-    const { locality, country, destinationService, actor } = input;
+    const { locality, destinationService, actor } = input;
 
     // Guard: nothing to search when locality is absent or blank.
     if (!locality || locality.trim().length === 0) {
@@ -117,12 +117,15 @@ export async function buildDestinationHint(
     const trimmedLocality = locality.trim();
 
     try {
+        // NOTE: do NOT pass `country` here. The destination search schema accepts
+        // it, but the destinations table has no `country` column, so a `country`
+        // filter throws a DbError ("unknown columns") and yields zero candidates.
+        // Searching by locality name alone is sufficient (SPEC-257 smoke finding).
         const result = await destinationService.search(actor, {
             q: trimmedLocality,
             searchScope: 'name',
             pageSize: MAX_CANDIDATES,
-            page: 1,
-            ...(country ? { country } : {})
+            page: 1
         });
 
         // Service returned an error — degrade gracefully.

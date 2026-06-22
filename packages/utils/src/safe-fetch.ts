@@ -114,6 +114,16 @@ export interface SafeFetchInput {
      * Caller must NOT include `Host` — it is derived from the URL.
      */
     readonly headers?: Readonly<Record<string, string>>;
+    /**
+     * Resolve-only (HEAD-like) mode: follow the redirect chain (running every
+     * SSRF check on each hop, exactly as the default mode) and return the
+     * terminal URL WITHOUT reading its body. `maxBytes` is not applied to the
+     * terminal response, so a large or hostile terminal page (e.g. an anti-bot
+     * Google Maps page) cannot turn into a `SafeFetchBlocked` body-cap result.
+     * On success `body` is the empty string and `finalUrl` is the resolved URL.
+     * @default false
+     */
+    readonly resolveOnly?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -357,10 +367,17 @@ async function readBodyCapped(
  * @returns A {@link SafeFetchResult} — never throws.
  */
 export async function safeExternalFetch(input: SafeFetchInput): Promise<SafeFetchResult> {
-    const { url, timeoutMs = 8_000, maxBytes = 3_000_000, maxRedirects = 3, headers = {} } = input;
+    const {
+        url,
+        timeoutMs = 8_000,
+        maxBytes = 3_000_000,
+        maxRedirects = 3,
+        headers = {},
+        resolveOnly = false
+    } = input;
 
     try {
-        return await _doFetch({ url, timeoutMs, maxBytes, maxRedirects, headers });
+        return await _doFetch({ url, timeoutMs, maxBytes, maxRedirects, headers, resolveOnly });
     } catch (err) {
         // Internal `throwBlocked` calls land here — they are plain objects, not
         // Error instances, shaped as SafeFetchBlocked.
@@ -396,10 +413,11 @@ interface FetchParams {
     readonly maxBytes: number;
     readonly maxRedirects: number;
     readonly headers: Readonly<Record<string, string>>;
+    readonly resolveOnly: boolean;
 }
 
 async function _doFetch(params: FetchParams): Promise<SafeFetchResult> {
-    const { timeoutMs, maxBytes, maxRedirects, headers } = params;
+    const { timeoutMs, maxBytes, maxRedirects, headers, resolveOnly } = params;
     let currentUrl = params.url;
     let hopsRemaining = maxRedirects;
 
@@ -474,6 +492,23 @@ async function _doFetch(params: FetchParams): Promise<SafeFetchResult> {
                     hopsRemaining--;
                     currentUrl = nextUrl;
                     continue; // Loop back: re-run ALL checks on the next URL.
+                }
+
+                // --- Resolve-only: return the terminal URL without reading
+                // the body. Dump/discard the stream so the connection closes
+                // cleanly BEFORE the finally destroys the dispatcher (undici-7
+                // invalidates a still-pending body otherwise). maxBytes is NOT
+                // applied here, so a large terminal page does not become a
+                // body-cap block. ---
+                if (resolveOnly) {
+                    await response.body.dump().catch(() => undefined);
+
+                    return {
+                        ok: true,
+                        status: response.statusCode,
+                        body: '',
+                        finalUrl: currentUrl
+                    };
                 }
 
                 // --- Stream body with cap ---

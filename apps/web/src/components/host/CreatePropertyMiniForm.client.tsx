@@ -263,6 +263,13 @@ export function CreatePropertyMiniForm({
                         candidates: hint.candidates
                     });
                 }
+                // Auto-select the best-matching destination (the search ranks
+                // candidates, so [0] is the closest). The City picker stays fully
+                // editable — the host can change it if the guess is wrong.
+                const best = hint.candidates[0];
+                if (best) {
+                    setCity({ id: best.id, label: best.name });
+                }
             }
 
             webLogger.info('CreatePropertyMiniForm: prefilled from import', {
@@ -713,10 +720,15 @@ export function CreatePropertyMiniForm({
                             </span>
                         ) : null}
                         <span className={styles.destinationHintCallout}>
-                            {t(
-                                'host.importFromUrl.prefill.destinationHint.hint',
-                                'Elegí el destino manualmente en el campo Ciudad.'
-                            )}
+                            {destinationHint.candidates.length > 0
+                                ? t(
+                                      'host.importFromUrl.prefill.destinationHint.autoSelected',
+                                      'Autoseleccionamos el destino detectado. Revisalo y cambialo si no es correcto.'
+                                  )
+                                : t(
+                                      'host.importFromUrl.prefill.destinationHint.hint',
+                                      'Elegí el destino manualmente en el campo Ciudad.'
+                                  )}
                         </span>
                     </div>
                 ) : null}
