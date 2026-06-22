@@ -114,6 +114,14 @@ import { publicPlatformSettingsRoutes } from './platform-settings/public/index.j
 import { protectedProfileRoutes } from './profile';
 import { revalidationRouter } from './revalidation';
 import { publicSearchRoutes } from './search/public';
+import {
+    adminSocialAudienceRoutes,
+    adminSocialBatchRoutes,
+    adminSocialCampaignRoutes,
+    adminSocialFooterRoutes,
+    adminSocialHashtagRoutes,
+    adminSocialHashtagSetRoutes
+} from './social/index';
 import { adminSponsorshipRoutes, protectedSponsorshipRoutes } from './sponsorship';
 import { adminSponsorshipLevelRoutes } from './sponsorship-level';
 import { adminSponsorshipPackageRoutes } from './sponsorship-package';
@@ -474,6 +482,15 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
         // Media (entity image uploads + asset deletion)
         app.route('/api/v1/admin/media', adminMediaRoutes);
+
+        // Social catalog admin routes (SPEC-254 T-018)
+        // Catalog entity management: hashtags, hashtag-sets, footers, campaigns, batches, audiences.
+        app.route('/api/v1/admin/social/hashtags', adminSocialHashtagRoutes);
+        app.route('/api/v1/admin/social/hashtag-sets', adminSocialHashtagSetRoutes);
+        app.route('/api/v1/admin/social/footers', adminSocialFooterRoutes);
+        app.route('/api/v1/admin/social/campaigns', adminSocialCampaignRoutes);
+        app.route('/api/v1/admin/social/batches', adminSocialBatchRoutes);
+        app.route('/api/v1/admin/social/audiences', adminSocialAudienceRoutes);
 
         apiLogger.debug('✅ Admin routes registered successfully');
 

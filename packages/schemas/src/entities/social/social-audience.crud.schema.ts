@@ -4,6 +4,9 @@ import { SocialAudienceSchema } from './social-audience.schema.js';
 /**
  * Input schema for creating a new social audience.
  * Excludes auto-generated audit and id fields.
+ *
+ * `slug` is optional — the service auto-generates it from `name` in `_beforeCreate`
+ * when not supplied. Any client-supplied slug is preserved.
  */
 export const SocialAudienceCreateSchema = SocialAudienceSchema.omit({
     id: true,
@@ -13,7 +16,7 @@ export const SocialAudienceCreateSchema = SocialAudienceSchema.omit({
     updatedById: true,
     deletedAt: true,
     deletedById: true
-});
+}).partial({ slug: true });
 
 /**
  * Input schema for updating an existing social audience.

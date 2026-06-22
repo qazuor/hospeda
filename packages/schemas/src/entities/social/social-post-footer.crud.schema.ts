@@ -4,6 +4,9 @@ import { SocialPostFooterSchema } from './social-post-footer.schema.js';
 /**
  * Input schema for creating a new social post footer.
  * Excludes auto-generated audit and id fields.
+ *
+ * `slug` is optional — the service auto-generates it from `name` in `_beforeCreate`
+ * when not supplied. Any client-supplied slug is preserved.
  */
 export const SocialPostFooterCreateSchema = SocialPostFooterSchema.omit({
     id: true,
@@ -13,7 +16,7 @@ export const SocialPostFooterCreateSchema = SocialPostFooterSchema.omit({
     updatedById: true,
     deletedAt: true,
     deletedById: true
-});
+}).partial({ slug: true });
 
 /**
  * Input schema for updating an existing social post footer.
