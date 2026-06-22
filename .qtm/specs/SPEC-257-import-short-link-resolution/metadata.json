@@ -1,0 +1,21 @@
+{
+    "specId": "SPEC-257",
+    "title": "Accommodation import short-link resolution + adapter enrichment",
+    "type": "improvement",
+    "complexity": "medium",
+    "status": "approved",
+    "created": "2026-06-22T02:36:01Z",
+    "approved": "2026-06-22T02:36:01Z",
+    "completed": null,
+    "planFileRef": null,
+    "tags": [
+        "accommodation-import",
+        "safe-fetch",
+        "utils",
+        "service-core",
+        "i18n",
+        "airbnb",
+        "google-places",
+        "spec-222-followup"
+    ]
+}

@@ -137,6 +137,21 @@ beforeAll(
                         return;
                     }
 
+                    if (req.url === '/short') {
+                        // Short-link style: a single redirect to the canonical page.
+                        res.writeHead(302, { Location: '/canonical' });
+                        res.end();
+                        return;
+                    }
+
+                    if (req.url === '/canonical') {
+                        // Terminal page with a LARGE body (5000 bytes) — emulates a
+                        // canonical Google Maps page. resolveOnly must NOT read it.
+                        res.writeHead(200, { 'Content-Type': 'text/html' });
+                        res.end('y'.repeat(5000));
+                        return;
+                    }
+
                     res.writeHead(404);
                     res.end('not found');
                 }
@@ -276,6 +291,81 @@ describe('safeExternalFetch — undici-7 integration (real dispatcher)', () => {
         expect(result.ok).toBe(true);
         if (result.ok) {
             expect(result.body).toBe('world');
+        }
+    });
+
+    /**
+     * Test 4 (resolve-only): follows a 302 to a LARGE terminal page and returns
+     * the resolved URL without reading the body — even when maxBytes is tiny.
+     *
+     * This is the SPEC-257 regression guard. The /canonical body is 5000 bytes;
+     * with maxBytes:10 the default mode would return ok:false (blocked) and lose
+     * finalUrl (the exact bug that left Google maps.app.goo.gl short links
+     * unresolved). resolveOnly:true must skip the body read entirely → ok:true,
+     * finalUrl ~ /canonical, body === ''.
+     */
+    it('resolveOnly: follows redirect to a large terminal page without reading the body', async () => {
+        // Arrange — /short → 302 → /canonical (5000-byte body), cap deliberately tiny
+        const shortUrl = `https://127.0.0.1:${port}/short`;
+
+        // Act
+        const result = await safeExternalFetch({
+            url: shortUrl,
+            timeoutMs: 5_000,
+            maxBytes: 10,
+            maxRedirects: 5,
+            resolveOnly: true
+        });
+
+        // Assert
+        expect(result.ok).toBe(true);
+        if (result.ok) {
+            expect(result.status).toBe(200);
+            expect(result.body).toBe('');
+            expect(result.finalUrl).toMatch(/\/canonical$/);
+        }
+    });
+
+    /**
+     * Test 5 (resolve-only): a direct (non-redirect) 2xx URL returns ok:true with
+     * the input URL as finalUrl and an empty body — no body download.
+     */
+    it('resolveOnly: returns the input URL with empty body for a direct 2xx response', async () => {
+        // Arrange
+        const url = `https://127.0.0.1:${port}/hello`;
+
+        // Act
+        const result = await safeExternalFetch({ url, timeoutMs: 5_000, resolveOnly: true });
+
+        // Assert
+        expect(result.ok).toBe(true);
+        if (result.ok) {
+            expect(result.status).toBe(200);
+            expect(result.body).toBe('');
+            expect(result.finalUrl).toBe(url);
+        }
+    });
+
+    /**
+     * Test 6 (resolve-only): the redirect cap still applies. With maxRedirects:0
+     * a redirecting short link must be blocked (no silent bypass via resolveOnly).
+     */
+    it('resolveOnly: still enforces the redirect cap (ok:false when exceeded)', async () => {
+        // Arrange — /short redirects once; cap at 0 hops → must block
+        const shortUrl = `https://127.0.0.1:${port}/short`;
+
+        // Act
+        const result = await safeExternalFetch({
+            url: shortUrl,
+            timeoutMs: 5_000,
+            maxRedirects: 0,
+            resolveOnly: true
+        });
+
+        // Assert
+        expect(result.ok).toBe(false);
+        if (!result.ok) {
+            expect(result.blocked).toBe(true);
         }
     });
 });
