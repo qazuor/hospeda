@@ -6,8 +6,8 @@
     "summary": {
         "total": 23,
         "byStatus": {
-            "completed": 2,
-            "pending": 21
+            "completed": 8,
+            "pending": 15
         },
         "byPhase": {
             "setup": 1,
@@ -79,7 +79,7 @@
             "id": "T-003",
             "title": "aggregateAiUsageByModel storage query",
             "description": "Add aggregateAiUsageByModel to packages/ai-core/src/storage/usage.queries.ts mirroring aggregateAiUsageByFeature: select count + sum(tokensIn/tokensOut/costEstimateMicroUsd), groupBy(aiUsage.model), order by cost desc, map to Number. Optional feature/provider filters + window via buildConditions. Unit test against seeded fixtures; empty -> [].",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001", "T-007"],
             "blocks": ["T-008"],
@@ -93,15 +93,15 @@
             },
             "timestamps": {
                 "created": "2026-06-22T00:00:00Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-22T00:00:00Z",
+                "completed": "2026-06-22T23:07:12Z"
             }
         },
         {
             "id": "T-004",
             "title": "aggregateAiUsageByProvider storage query",
             "description": "Add aggregateAiUsageByProvider to usage.queries.ts: groupBy(aiUsage.provider), optional feature filter + window. Same map-to-Number pattern. Unit test.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001", "T-007"],
             "blocks": ["T-008"],
@@ -115,15 +115,15 @@
             },
             "timestamps": {
                 "created": "2026-06-22T00:00:00Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-22T00:00:00Z",
+                "completed": "2026-06-22T23:07:12Z"
             }
         },
         {
             "id": "T-005",
             "title": "aggregateAiUsageByFeatureModel storage query (the cross)",
             "description": "Add aggregateAiUsageByFeatureModel to usage.queries.ts: groupBy(aiUsage.feature, aiUsage.model) -> one row per (feature, model). Window filter. This is the query that powers per-feature model comparison. Unit test asserting one row per combination present.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001"],
             "blocks": ["T-008"],
@@ -137,15 +137,15 @@
             },
             "timestamps": {
                 "created": "2026-06-22T00:00:00Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-22T00:00:00Z",
+                "completed": "2026-06-22T23:07:12Z"
             }
         },
         {
             "id": "T-006",
             "title": "aggregateAiUsageDaily storage query",
             "description": "Add aggregateAiUsageDaily to usage.queries.ts: groupBy(date_trunc('day', aiUsage.createdAt)) ordered ascending, return day as 'YYYY-MM-DD' (UTC). Optional feature/model/provider filters. Boundary unit tests (rows at month/window edges land in the correct UTC day).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001", "T-007"],
             "blocks": ["T-008"],
@@ -159,15 +159,15 @@
             },
             "timestamps": {
                 "created": "2026-06-22T00:00:00Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-22T00:00:00Z",
+                "completed": "2026-06-22T23:07:12Z"
             }
         },
         {
             "id": "T-007",
             "title": "Extend buildConditions for model/provider filters",
             "description": "Extend buildConditions (or add a sibling) in usage.queries.ts to optionally filter by model and provider in addition to existing since/until/userId/feature. Unit test the new predicates compose with AND.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": ["T-003", "T-004", "T-006"],
@@ -181,15 +181,15 @@
             },
             "timestamps": {
                 "created": "2026-06-22T00:00:00Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-22T00:00:00Z",
+                "completed": "2026-06-22T23:07:12Z"
             }
         },
         {
             "id": "T-008",
             "title": "Public reporting wrappers + daily zero-fill",
             "description": "Add getUsageByModel, getUsageByProvider, getUsageByFeatureModel, getDailyUsage to packages/ai-core/src/usage/reporting/usage-reporting.ts mirroring getUsageByFeature (resolve window via getUtcMonthRange when year+month given; validate output against the new schemas). getDailyUsage fills missing days in the window with zeros (continuous axis). Export from reporting/index.ts, usage/index.ts, and package root. Unit tests incl. zero-fill continuity.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003", "T-004", "T-005", "T-006"],
             "blocks": ["T-009", "T-010", "T-011", "T-012", "T-020"],
@@ -203,8 +203,8 @@
             },
             "timestamps": {
                 "created": "2026-06-22T00:00:00Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-22T00:00:00Z",
+                "completed": "2026-06-22T23:07:12Z"
             }
         },
         {
