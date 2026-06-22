@@ -18,6 +18,7 @@
  * Hydration: caller must use `client:load`.
  */
 
+import { translateApiError } from '@/lib/api-errors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildLocaleSwitchPathname } from '@/lib/urls';
@@ -72,7 +73,11 @@ interface UserApiResponse {
 /** PATCH response */
 interface PatchApiResponse {
     readonly success: boolean;
-    readonly error?: { readonly message: string };
+    readonly error?: {
+        readonly code?: string | null;
+        readonly message?: string | null;
+        readonly reason?: string | null;
+    };
 }
 
 interface PreferenceTogglesProps {
@@ -231,7 +236,11 @@ export function PreferenceToggles({ userId, locale, apiUrl }: PreferenceTogglesP
                 );
                 try {
                     const errBody = (await res.json()) as PatchApiResponse;
-                    if (errBody.error?.message) msg = errBody.error.message;
+                    msg = translateApiError({
+                        error: errBody.error,
+                        t,
+                        fallback: msg
+                    });
                 } catch {
                     // ignore
                 }
