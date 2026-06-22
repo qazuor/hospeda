@@ -120,7 +120,9 @@ import {
     adminSocialCampaignRoutes,
     adminSocialFooterRoutes,
     adminSocialHashtagRoutes,
-    adminSocialHashtagSetRoutes
+    adminSocialHashtagSetRoutes,
+    adminSocialPlatformFormatRoutes,
+    adminSocialSettingRoutes
 } from './social/index';
 import { adminSponsorshipRoutes, protectedSponsorshipRoutes } from './sponsorship';
 import { adminSponsorshipLevelRoutes } from './sponsorship-level';
@@ -491,6 +493,11 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/social/campaigns', adminSocialCampaignRoutes);
         app.route('/api/v1/admin/social/batches', adminSocialBatchRoutes);
         app.route('/api/v1/admin/social/audiences', adminSocialAudienceRoutes);
+
+        // Social config admin routes (SPEC-254 T-019)
+        // Platform-format config (seed-only, list + patch) and settings (list + patch-by-key).
+        app.route('/api/v1/admin/social/platform-formats', adminSocialPlatformFormatRoutes);
+        app.route('/api/v1/admin/social/settings', adminSocialSettingRoutes);
 
         apiLogger.debug('✅ Admin routes registered successfully');
 
