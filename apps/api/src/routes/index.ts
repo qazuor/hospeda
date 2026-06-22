@@ -116,6 +116,7 @@ import { protectedProfileRoutes } from './profile';
 import { revalidationRouter } from './revalidation';
 import { publicSearchRoutes } from './search/public';
 import {
+    adminGetGptActionSchemaRoute,
     adminSocialAudienceRoutes,
     adminSocialBatchRoutes,
     adminSocialCampaignRoutes,
@@ -507,6 +508,10 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Platform-format config (seed-only, list + patch) and settings (list + patch-by-key).
         app.route('/api/v1/admin/social/platform-formats', adminSocialPlatformFormatRoutes);
         app.route('/api/v1/admin/social/settings', adminSocialSettingRoutes);
+
+        // GPT Action schema export (SPEC-254 T-030)
+        // Returns the OpenAPI 3.1 document the operator pastes into the Custom GPT Actions config.
+        app.route('/api/v1/admin/social/gpt-action-schema', adminGetGptActionSchemaRoute);
 
         apiLogger.debug('✅ Admin routes registered successfully');
 

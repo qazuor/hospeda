@@ -12,3 +12,5 @@ export { adminSocialHashtagSetRoutes } from './hashtag-sets/index';
 // Config route groups (T-019)
 export { adminSocialPlatformFormatRoutes } from './platform-formats/index';
 export { adminSocialSettingRoutes } from './settings/index';
+// GPT Action schema export (T-030)
+export { adminGetGptActionSchemaRoute } from './gpt-action-schema';

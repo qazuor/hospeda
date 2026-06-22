@@ -1047,7 +1047,7 @@
             "id": "T-030",
             "title": "Implement GET /api/v1/admin/social/gpt-action-schema route",
             "description": "Create `apps/api/src/routes/admin/social/gpt-action-schema.route.ts`.\n\nAuth: `createAdminRoute` with `requiredPermissions: [SOCIAL_SETTINGS_MANAGE]`.\n\nHandler generates programmatically (not hand-authored) an OpenAPI 3.1 JSON document containing exactly 2 paths:\n1. `GET /api/v1/ai/social/catalog` — operationId `getSocialCatalog`; request: no body, header `x-hospeda-ai-key`; response: catalog response schema derived from Zod schema\n2. `POST /api/v1/ai/social/drafts` — operationId `saveSocialDraft`; request body: `CreateSocialDraftSchema`; response: draft ingestion response schema\n\nUse `zod-to-json-schema` (if already in the project) or construct the OpenAPI shape manually from the Zod `.shape` property. Return `Content-Type: application/json`. Works in production (not guarded by NODE_ENV).\n\nRegister under `/api/v1/admin/social/gpt-action-schema`.\n\nTest requirements:\n- Unit test: response is valid JSON, contains exactly 2 paths with the specified operationIds\n- File: `apps/api/src/__tests__/routes/admin/social/gpt-action-schema.test.ts`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-018", "T-029"],
             "blocks": ["T-040"],
