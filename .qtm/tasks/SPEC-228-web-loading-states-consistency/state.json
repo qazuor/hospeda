@@ -1,0 +1,807 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-228",
+    "title": "Web loading-states consistency & coverage",
+    "created": "2026-06-20T00:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Create canonical Spinner component",
+            "description": "Create apps/web/src/components/shared/feedback/Spinner.tsx + Spinner.module.css. Pure CSS animated ring (no external dep). Props: size ('sm'|'md'|'lg'), label (forwarded to aria-label), role='status'. Named export, full TS types, JSDoc, RO-RO props interface. Tests: apps/web/src/components/shared/feedback/test/Spinner.test.tsx — renders with role status, applies aria-label from label prop, applies size class. AAA pattern.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [
+                "T-004",
+                "T-006",
+                "T-009",
+                "T-010",
+                "T-011",
+                "T-012",
+                "T-014",
+                "T-017",
+                "T-019",
+                "T-021"
+            ],
+            "subtasks": [
+                {
+                    "title": "Spinner.tsx with size/label props + aria-label + role=status",
+                    "completed": true
+                },
+                {
+                    "title": "Spinner.module.css pure CSS ring animation",
+                    "completed": true
+                },
+                {
+                    "title": "JSDoc + named export + typed props",
+                    "completed": true
+                },
+                {
+                    "title": "Spinner.test.tsx unit tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "toolkit", "spinner", "phase-1"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": "2026-06-20T00:30:00.000Z",
+                "completed": "2026-06-20T00:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Create SkeletonCard + SkeletonCardList components",
+            "description": "Create apps/web/src/components/shared/feedback/SkeletonCard.tsx + SkeletonCard.module.css (configurable shimmer block: width, height, borderRadius) and SkeletonCardList.tsx (renders N SkeletonCards for list patterns). For use inside React islands (separate from Astro skeletons). Named exports, JSDoc, typed props, aria-hidden on decorative shimmer. Tests: test/SkeletonCard.test.tsx — applies width/height/borderRadius, SkeletonCardList renders requested count.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-007", "T-008", "T-013", "T-020"],
+            "subtasks": [
+                {
+                    "title": "SkeletonCard.tsx with width/height/borderRadius props",
+                    "completed": true
+                },
+                {
+                    "title": "SkeletonCard.module.css shimmer animation",
+                    "completed": true
+                },
+                {
+                    "title": "SkeletonCardList.tsx wrapper for list patterns",
+                    "completed": true
+                },
+                {
+                    "title": "SkeletonCard.test.tsx unit tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "toolkit", "skeleton", "phase-1"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": "2026-06-20T00:30:00.000Z",
+                "completed": "2026-06-20T00:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Create LoadingButton (or extend GradientButtonReact) + record decision",
+            "description": "Per locked design decision 3: implementer picks ONE approach — standalone LoadingButton OR extend GradientButtonReact with loading/loadingLabel props. Create apps/web/src/components/shared/feedback/LoadingButton.tsx + LoadingButton.module.css: <button> wrapper accepting loading:boolean, loadingLabel:string (resolved i18n), renders aria-busy={loading} + disabled={loading} + inline <Spinner size='sm'/> when loading. Composes T-001 Spinner. Document the chosen approach (mixing both is forbidden). Tests: test/LoadingButton.test.tsx — aria-busy + disabled when loading, shows loadingLabel + spinner, forwards onClick when idle.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-004", "T-010", "T-011", "T-012", "T-019"],
+            "subtasks": [
+                {
+                    "title": "Decide LoadingButton vs extend GradientButtonReact",
+                    "completed": true
+                },
+                {
+                    "title": "LoadingButton.tsx with loading/loadingLabel + aria-busy + disabled + inline Spinner",
+                    "completed": true
+                },
+                {
+                    "title": "LoadingButton.module.css",
+                    "completed": true
+                },
+                {
+                    "title": "LoadingButton.test.tsx unit tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "toolkit", "button", "phase-1"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": "2026-06-20T00:30:00.000Z",
+                "completed": "2026-06-20T00:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Write loading-states convention doc",
+            "description": "Create apps/web/docs/loading-states.md. Contents: decision table (skeleton vs spinner vs disabled-label vs optimistic UI); required a11y attrs (aria-busy, aria-live='polite', role='status'); when to use html[data-filters-loading] CSS pattern vs island state; links to each reference implementation; forbidden patterns ('...' strings, ⏳ emoji, per-component inline spinner CSS); record the T-003 LoadingButton-vs-GradientButtonReact decision. No code tests; markdown lint clean.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-002", "T-003"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Decision table skeleton/spinner/disabled-label/optimistic",
+                    "completed": true
+                },
+                {
+                    "title": "A11y attribute rules section",
+                    "completed": true
+                },
+                {
+                    "title": "data-filters-loading vs island-state guidance",
+                    "completed": true
+                },
+                {
+                    "title": "Forbidden patterns + reference impl links + recorded decision",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "docs", "phase-1"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": "2026-06-20T00:30:00.000Z",
+                "completed": "2026-06-20T00:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Add CI grep guard for forbidden loading patterns",
+            "description": "Optional-but-listed Phase 1 task: add a grep-based CI check (script under scripts/ wired into CI, or a Biome check) that fails when '...' as a loading label or ⏳ emoji appears in apps/web/src/components/**/*.{tsx,client.tsx}. Must allowlist legitimate ellipsis (e.g. truncation copy) to avoid false positives — scope to known loading idioms. Self-test the script against a fixture. Document usage in the convention doc.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-004"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Grep guard script with allowlist for non-loading ellipsis",
+                    "completed": true
+                },
+                {
+                    "title": "Wire into CI (or Biome check)",
+                    "completed": true
+                },
+                {
+                    "title": "Self-test against fixture + document",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "ci", "tooling", "phase-1"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": "2026-06-20T00:30:00.000Z",
+                "completed": "2026-06-20T00:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "A1 — Map sidebar loading indicator (isFetching)",
+            "description": "HIGH. Wire useViewportSearch isFetching: in AccommodationsListingMap.client.tsx (~L146) destructure isFetching (hook returns it at useViewportSearch.ts:94, currently ignored) and pass to MapCardsSidebar.client.tsx (used ~L364). In MapCardsSidebar.client.tsx show a loading overlay (semi-transparent, centered <Spinner size='lg'/>) or skeleton cards when isFetching is true, replacing stale cards; overlay disappears when isFetching=false. Update both files in one change. Tests: component test asserting overlay/skeleton renders when isFetching prop true, hidden when false.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Destructure + thread isFetching prop through AccommodationsListingMap",
+                    "completed": true
+                },
+                {
+                    "title": "Loading overlay/skeleton in MapCardsSidebar when isFetching",
+                    "completed": true
+                },
+                {
+                    "title": "Component test for isFetching true/false",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "maps", "high", "phase-2"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": "2026-06-20T02:00:00.000Z",
+                "completed": "2026-06-20T02:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "A2 — Eventos filter skeleton-swap",
+            "description": "HIGH. In apps/web/src/pages/[lang]/eventos/index.astro port the html[data-filters-loading] skeleton-swap from alojamientos/index.astro (L848-L910): add a hidden <EventCardHorizontalSkeleton/> block (components/skeletons/EventCardHorizontalSkeleton.astro) alongside the event grid, toggled via the data-filters-loading CSS attribute. Verify against the alojamientos reference. Manual verification of filter navigation (Astro page, no unit test framework for .astro view logic — note in PR).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add hidden EventCardHorizontalSkeleton block",
+                    "completed": true
+                },
+                {
+                    "title": "Wire html[data-filters-loading] CSS toggle",
+                    "completed": true
+                },
+                {
+                    "title": "Verify parity with alojamientos reference",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "eventos", "skeleton", "high", "phase-2"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": "2026-06-20T02:10:00.000Z",
+                "completed": "2026-06-20T02:10:00.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "A3 — Publicaciones filter skeleton-swap",
+            "description": "HIGH. In apps/web/src/pages/[lang]/publicaciones/index.astro add PostGridSkeleton.astro (components/skeletons/PostGridSkeleton.astro) alongside the post grid using the html[data-filters-loading] CSS pattern. The existing ArticleCardSkeleton.astro error-branch usage (L36 import / L365) stays — this task closes the filter-loading-path gap only. Manual verification of filter navigation (note in PR).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add PostGridSkeleton block in filter-loading path",
+                    "completed": true
+                },
+                {
+                    "title": "Wire html[data-filters-loading] CSS toggle",
+                    "completed": true
+                },
+                {
+                    "title": "Leave ArticleCardSkeleton error branch intact",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "publicaciones", "skeleton", "high", "phase-2"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": "2026-06-20T02:10:00.000Z",
+                "completed": "2026-06-20T02:10:00.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "A4 — AiChatWidget thinking indicator + ⏳ replacement",
+            "description": "HIGH. apps/web/src/components/accommodation/AiChatWidget.tsx: replace ⏳ emoji on send button (~L241) with <Spinner size='sm'/> when streaming. Add showThinking state (mirror SearchChatPanel.client.tsx:217) true when chat.state.status==='streaming' and no reply token yet; render animated dots pattern from SearchChatPanel.client.tsx:292. i18n for any visible label. Tests: component test — spinner shown on send while streaming, thinking dots shown before first token.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Replace ⏳ on send button with Spinner when streaming",
+                    "completed": true
+                },
+                {
+                    "title": "Add showThinking state + animated dots (mirror SearchChatPanel)",
+                    "completed": true
+                },
+                {
+                    "title": "Component test for spinner + thinking indicator",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "ai-chat", "high", "phase-2"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": "2026-06-20T02:40:00.000Z",
+                "completed": "2026-06-20T02:40:00.000Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "A5 — ReviewsModal + DestinationReviewsModal canonical spinner",
+            "description": "HIGH. ReviewsModal.client.tsx (L236: replace <div className={styles.spinner}>...</div> with <Spinner/>). 'Cargar más' button: use LoadingButton or add aria-busy + label change during loading; button must NOT disappear while loading (L251 condition). Apply identical treatment to destination/DestinationReviewsModal.client.tsx. Tests: component test — Spinner replaces '...' on load, cargar-más stays mounted + aria-busy during loading.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-003"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                {
+                    "title": "ReviewsModal: Spinner + cargar-más aria-busy/label (no disappear)",
+                    "completed": true
+                },
+                {
+                    "title": "DestinationReviewsModal: same treatment",
+                    "completed": true
+                },
+                {
+                    "title": "Component tests for both modals",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "reviews", "high", "phase-2"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": "2026-06-20T02:40:00.000Z",
+                "completed": "2026-06-20T02:40:00.000Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "A6 — ContactHost double-submit guard",
+            "description": "HIGH. apps/web/src/components/accommodation/ContactHost.client.tsx: wrap 'Solicitar acceso' CTA (handleRequestAccess ~L280) with LoadingButton or add disabled+aria-busy for the async call duration to prevent double-submit. Verify handleSubmit form button and add aria-busy if missing. Tests: component test — button disabled+aria-busy during async, second click ignored while in flight.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-003"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Guard handleRequestAccess CTA (disabled + aria-busy)",
+                    "completed": true
+                },
+                {
+                    "title": "Add aria-busy on handleSubmit button if missing",
+                    "completed": true
+                },
+                {
+                    "title": "Component test for double-submit prevention",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "contact-host", "high", "phase-2"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": "2026-06-20T02:40:00.000Z",
+                "completed": "2026-06-20T02:40:00.000Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "A7 — ConversationReply send button",
+            "description": "HIGH. apps/web/src/components/account/ConversationReply.client.tsx (L174): replace {sending ? '...' : t('conversations.thread.send')} with <Spinner size='sm'/> or an i18n-keyed label. Add conversations.thread.sending key to packages/i18n/src/locales/{es,en,pt}/ (correct namespace). Add aria-busy={sending} on submit button. Tests: component test — no '...' string, aria-busy when sending, i18n label/spinner shown.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Replace '...' with Spinner or i18n sending label",
+                    "completed": true
+                },
+                {
+                    "title": "Add conversations.thread.sending key in es/en/pt",
+                    "completed": true
+                },
+                {
+                    "title": "aria-busy on submit + component test",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "conversations", "i18n", "high", "phase-2"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": "2026-06-20T02:40:00.000Z",
+                "completed": "2026-06-20T02:40:00.000Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "MEDIUM — Review modals initial-load skeleton",
+            "description": "MEDIUM. ReviewsModal.client.tsx and DestinationReviewsModal.client.tsx: show a SkeletonCard stack during the first fetch (before any reviews returned), distinct from the 'cargar más' spinner added in T-010. Uses SkeletonCardList from T-002. Tests: component test — skeleton stack on initial open, replaced by content once loaded.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-002", "T-010"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "SkeletonCard stack on initial fetch in both modals",
+                    "completed": true
+                },
+                {
+                    "title": "Distinct from cargar-más spinner",
+                    "completed": true
+                },
+                {
+                    "title": "Component test for initial-load skeleton",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "reviews", "skeleton", "medium", "phase-3"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": "2026-06-20T03:00:00.000Z",
+                "completed": "2026-06-20T03:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "MEDIUM — CommentThreadIsland visual spinner",
+            "description": "MEDIUM. apps/web/src/components/comments/CommentThreadIsland.client.tsx (~L307 already has aria-busy={isSubmitting} but no visual): add inline <Spinner size='sm'/> next to the submit button when isSubmitting is true, consistent with canonical pattern. Tests: component test — spinner visible when isSubmitting.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Inline Spinner next to submit when isSubmitting",
+                    "completed": true
+                },
+                {
+                    "title": "Component test for spinner visibility",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "comments", "medium", "phase-3"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": "2026-06-20T03:00:00.000Z",
+                "completed": "2026-06-20T03:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "MEDIUM — ImageGallery lightbox fade",
+            "description": "MEDIUM. apps/web/src/components/ImageGallery.client.tsx: add CSS fade transition (opacity 0->1 via CSS Module) or brief shimmer between lightbox image changes to avoid jarring blank states. No toolkit dependency (CSS-only) unless shimmer reuses SkeletonCard. Manual visual verification; add component test if state-driven class is testable.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "CSS fade/shimmer between lightbox image changes",
+                    "completed": true
+                },
+                {
+                    "title": "Visual verification + optional class test",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "gallery", "medium", "phase-3"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": "2026-06-20T03:00:00.000Z",
+                "completed": "2026-06-20T03:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "MEDIUM — MapPlaceholder hydration fallback",
+            "description": "MEDIUM. apps/web/src/pages/[lang]/alojamientos/mapa.astro (L16/L410 imports AccommodationsListingMap.client.tsx but does not use existing components/MapPlaceholder.astro): render MapPlaceholder.astro as the Astro-side slot content until the island hydrates (Astro client:* fallback slot pattern). Manual verification of pre-hydration placeholder.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Render MapPlaceholder.astro as island fallback slot",
+                    "completed": true
+                },
+                {
+                    "title": "Verify placeholder shows until hydration",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "maps", "medium", "phase-3"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": "2026-06-20T03:00:00.000Z",
+                "completed": "2026-06-20T03:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "LOW — LocationPicker ⏳ replacement",
+            "description": "LOW. apps/web/src/components/host/editor/LocationPicker.client.tsx (~L230): replace ⏳ emoji with <Spinner size='sm'/>. Tests: component test confirming no emoji + Spinner rendered during loading.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Replace ⏳ with Spinner",
+                    "completed": true
+                },
+                {
+                    "title": "Component test",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "host-editor", "low", "phase-4"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": "2026-06-20T03:30:00.000Z",
+                "completed": "2026-06-20T03:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "LOW — FavoriteButton hydration spinner (measure first)",
+            "description": "LOW. apps/web/src/components/shared/favorite/FavoriteButton.client.tsx has isHydrating state but no visual. Measure hydration delay first; if perceptible (>~100ms) add a subtle Spinner/skeleton during isHydrating, otherwise skip and document the measurement decision in the PR. Conditional: tests only if a visual is added.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Measure isHydrating delay",
+                    "completed": true
+                },
+                {
+                    "title": "Add subtle Spinner if perceptible, else document skip",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "favorite", "low", "phase-4"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": "2026-06-20T03:30:00.000Z",
+                "completed": "2026-06-20T03:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "LOW — NewsletterPreferences + CollectionDetailActions polish",
+            "description": "LOW. NewsletterPreferences.client.tsx (L279: aria-busy='true' paragraph, no spinner) — add <Spinner/> alongside the text. CollectionDetailActions.client.tsx (L117-L138: aria-busy={isDeleting} but deleteLabel static) — add a loadingLabel variant so the button text reflects in-progress deletion. Use LoadingButton where it fits. Tests: component tests for spinner visibility + label change.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-003"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "NewsletterPreferences: add Spinner alongside aria-busy text",
+                    "completed": true
+                },
+                {
+                    "title": "CollectionDetailActions: changing loadingLabel during delete",
+                    "completed": true
+                },
+                {
+                    "title": "Component tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "newsletter", "collections", "low", "phase-4"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": "2026-06-20T03:30:00.000Z",
+                "completed": "2026-06-20T03:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "LOW — UserFavoritesList + UserReviewsList SkeletonCard",
+            "description": "LOW. UserFavoritesList.client.tsx (L723-L729) and UserReviewsList.client.tsx (L282): replace the t('common.loading','Cargando…') text block with SkeletonCard/SkeletonCardList for a polished initial-load. Uses T-002. Tests: component tests — skeleton list on loading, content after.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "UserFavoritesList: SkeletonCardList on initial load",
+                    "completed": true
+                },
+                {
+                    "title": "UserReviewsList: SkeletonCardList on initial load",
+                    "completed": true
+                },
+                {
+                    "title": "Component tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "account", "skeleton", "low", "phase-4"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": "2026-06-20T03:30:00.000Z",
+                "completed": "2026-06-20T03:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "LOW — SearchChatPanel ⏳ replacement",
+            "description": "LOW. apps/web/src/components/ai-search/SearchChatPanel.client.tsx (~L442): replace ⏳ on the send button with <Spinner size='sm'/>, matching the AiChatWidget treatment from T-009. Note: this file is the thinking-indicator reference for T-009 — only the send-button emoji changes here. Tests: component test confirming Spinner replaces emoji.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Replace ⏳ on send button with Spinner",
+                    "completed": true
+                },
+                {
+                    "title": "Component test",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "ai-search", "low", "phase-4"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": "2026-06-20T03:30:00.000Z",
+                "completed": "2026-06-20T03:30:00.000Z"
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Final consistency sweep + grep audit",
+            "description": "Audit all *.client.tsx / *.tsx in apps/web/src/ for any remaining '...' loading labels or ⏳ emoji not covered by prior tasks; migrate each to the canonical toolkit. Confirm the T-005 CI guard passes clean. Verify success criteria 3 (zero '...'/⏳ spinners) and 4 (aria-busy/aria-live consistency). Document the final audit result. This task closes the spec.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [
+                "T-005",
+                "T-006",
+                "T-007",
+                "T-008",
+                "T-009",
+                "T-010",
+                "T-011",
+                "T-012",
+                "T-013",
+                "T-014",
+                "T-015",
+                "T-016",
+                "T-017",
+                "T-018",
+                "T-019",
+                "T-020",
+                "T-021"
+            ],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Grep audit for remaining '...' / ⏳ in islands",
+                    "completed": true
+                },
+                {
+                    "title": "Migrate any stragglers to canonical toolkit",
+                    "completed": true
+                },
+                {
+                    "title": "Confirm CI guard clean + success criteria 3/4",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "audit", "cleanup", "phase-4"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": "2026-06-20T03:30:00.000Z",
+                "completed": "2026-06-20T03:30:00.000Z"
+            }
+        }
+    ],
+    "summary": {
+        "total": 22,
+        "pending": 0,
+        "inProgress": 0,
+        "completed": 22,
+        "blocked": 0,
+        "averageComplexity": 2.1
+    }
+}

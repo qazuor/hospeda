@@ -46,6 +46,12 @@ vi.mock('../../src/components/ai-search/SearchChatPanel.module.css', () => ({
     })
 }));
 
+vi.mock('../../src/components/shared/feedback/Spinner.module.css', () => ({
+    default: new Proxy({} as Record<string, string>, {
+        get: (_target, prop) => String(prop)
+    })
+}));
+
 // Mock buildUrl — return a predictable href for test assertions.
 vi.mock('@/lib/urls', () => ({
     buildUrl: ({ path }: { locale: string; path: string }) => `/es${path}`
@@ -484,6 +490,38 @@ describe('SearchChatPanel', () => {
         it('renders the chat composer when authenticated', () => {
             renderPanel({ isAuthenticated: true });
             expect(screen.getByRole('textbox')).toBeInTheDocument();
+        });
+    });
+
+    // ── Send button spinner (SPEC-228 T-021) ─────────────────────────────────
+
+    describe('Send button spinner replaces ⏳ (SPEC-228 T-021)', () => {
+        it('does NOT show ⏳ on the send button when idle', () => {
+            renderPanel();
+            expect(document.body.textContent).not.toContain('⏳');
+        });
+
+        it('does NOT show ⏳ on the send button when streaming', () => {
+            mockHook({ isStreaming: true });
+            renderPanel();
+            expect(document.body.textContent).not.toContain('⏳');
+        });
+
+        it('renders the Spinner (aria-hidden) inside the send button while streaming', () => {
+            mockHook({ isStreaming: true });
+            renderPanel();
+            const sendBtn = screen.getByRole('button', { name: /enviando/i });
+            // Spinner renders a decorative aria-hidden span inside the button
+            const spinnerInBtn = sendBtn.querySelector('[aria-hidden="true"]');
+            expect(spinnerInBtn).not.toBeNull();
+            // Make sure the overall body has no emoji
+            expect(document.body.textContent).not.toContain('⏳');
+        });
+
+        it('shows the up-arrow (↑) on the send button when not streaming', () => {
+            renderPanel();
+            const sendBtn = screen.getByRole('button', { name: /enviar mensaje/i });
+            expect(sendBtn.textContent).toContain('↑');
         });
     });
 });

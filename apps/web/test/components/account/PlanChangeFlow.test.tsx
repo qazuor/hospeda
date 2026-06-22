@@ -52,6 +52,10 @@ vi.mock('../../../src/components/account/SubscriptionDashboard.module.css', () =
     default: new Proxy({} as Record<string, string>, { get: (_t, p) => String(p) })
 }));
 
+vi.mock('../../../src/components/shared/feedback/Spinner.module.css', () => ({
+    default: new Proxy({} as Record<string, string>, { get: (_t, p) => String(p) })
+}));
+
 // ─── Icon mocks ───────────────────────────────────────────────────────────────
 
 vi.mock('@repo/icons', () => ({
@@ -833,6 +837,38 @@ describe('PlanChangeFlow', () => {
         await waitFor(() => {
             expect(onDismiss).toHaveBeenCalledTimes(1);
         });
+    });
+
+    it('scheduled result: shows Spinner instead of the hourglass emoji (SPEC-228 T-022)', async () => {
+        mockPreviewDowngrade.mockResolvedValue({
+            ok: true,
+            data: EMPTY_DOWNGRADE_PREVIEW
+        });
+        mockChangePlan.mockResolvedValue({
+            ok: true,
+            data: {
+                status: 'scheduled',
+                subscriptionId: 'sub-1',
+                previousPlanId: 'plan-pro-id',
+                newPlanId: 'plan-basic-id',
+                effectiveAt: '2026-05-01T00:00:00Z'
+            }
+        });
+
+        renderFlow({ currentSlug: 'owner-pro' });
+        fireEvent.click(screen.getByRole('button', { name: /mensual/i }));
+
+        await waitFor(() => {
+            expect(screen.getByText(/cambio programado/i)).toBeInTheDocument();
+        });
+
+        // The hourglass emoji must NOT appear
+        expect(document.body.textContent).not.toContain('⏳');
+
+        // The Spinner renders inside the resultIcon div (aria-hidden parent).
+        // It is decorative — no role="status". Verify it is in the DOM by class.
+        const spinnerRing = document.querySelector('.ring');
+        expect(spinnerRing).not.toBeNull();
     });
 
     it('goes back from preview step to picker step', async () => {

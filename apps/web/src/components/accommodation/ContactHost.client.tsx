@@ -9,6 +9,7 @@
  * Only renders when accommodation.lifecycleState === 'ACTIVE' && !accommodation.deletedAt.
  */
 
+import { Spinner } from '@/components/shared/feedback/Spinner';
 import { WebEvents } from '@/lib/analytics/events';
 import { trackEvent } from '@/lib/analytics/posthog-client';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -132,6 +133,7 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
     const [message, setMessage] = useState(initialMessage ?? '');
     const [submitState, setSubmitState] = useState<SubmitState>({ phase: 'idle' });
     const [requestAccessSent, setRequestAccessSent] = useState(false);
+    const [requestAccessLoading, setRequestAccessLoading] = useState(false);
 
     const retryTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const [retryCountdown, setRetryCountdown] = useState(0);
@@ -279,16 +281,20 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
 
     async function handleRequestAccess() {
         const addr = isAuthenticated ? (currentUser?.email ?? email) : email;
-        if (!addr) return;
+        if (!addr || requestAccessLoading) return;
 
-        await fetch(`${API_BASE}/api/v1/public/conversations/request-access`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: addr })
-        });
-
-        // Always show the same confirmation regardless of response (anti-enumeration)
-        setRequestAccessSent(true);
+        setRequestAccessLoading(true);
+        try {
+            await fetch(`${API_BASE}/api/v1/public/conversations/request-access`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: addr })
+            });
+            // Always show the same confirmation regardless of response (anti-enumeration)
+            setRequestAccessSent(true);
+        } finally {
+            setRequestAccessLoading(false);
+        }
     }
 
     const messageDescId = 'contact-host-message-desc';
@@ -334,9 +340,23 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
                         <button
                             type="button"
                             className={styles.secondaryButton}
+                            disabled={requestAccessLoading}
+                            aria-busy={requestAccessLoading}
                             onClick={handleRequestAccess}
                         >
-                            {t('conversations.actions.requestAccess')}
+                            {requestAccessLoading ? (
+                                <span className={styles.loadingContent}>
+                                    <Spinner size="sm" />
+                                    <span>
+                                        {t(
+                                            'conversations.actions.requestAccessLoading',
+                                            'Solicitando…'
+                                        )}
+                                    </span>
+                                </span>
+                            ) : (
+                                t('conversations.actions.requestAccess')
+                            )}
                         </button>
                     )}
                 </div>
@@ -487,11 +507,17 @@ function ContactForm({ accommodation, currentUser, locale, t, initialMessage }: 
                     <button
                         type="submit"
                         disabled={isSubmitDisabled}
+                        aria-busy={submitState.phase === 'submitting'}
                         className={styles.submitButton}
                     >
-                        {submitState.phase === 'submitting'
-                            ? '...'
-                            : t('conversations.form.submit')}
+                        {submitState.phase === 'submitting' ? (
+                            <span className={styles.loadingContent}>
+                                <Spinner size="sm" />
+                                <span>{t('conversations.form.submitting', 'Enviando…')}</span>
+                            </span>
+                        ) : (
+                            t('conversations.form.submit')
+                        )}
                     </button>
                 </form>
             )}

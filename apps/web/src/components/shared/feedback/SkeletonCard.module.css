@@ -1,0 +1,39 @@
+/**
+ * SkeletonCard.module.css — shimmer placeholder.
+ * Uses subtle token tints for the base and a moving highlight for the shimmer.
+ * Honors prefers-reduced-motion (shimmer stops, the block stays visible).
+ */
+
+.skeleton {
+    position: relative;
+    overflow: hidden;
+    background-color: var(--core-foreground-a08);
+    border-radius: var(--radius-card, 24px);
+}
+
+.skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, var(--core-foreground-a05), transparent);
+    animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-card-gap, 0.75rem);
+}
+
+@keyframes skeleton-shimmer {
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .skeleton::after {
+        animation: none;
+    }
+}

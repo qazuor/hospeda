@@ -41,7 +41,8 @@ const ALL_FEATURES: AiFeatureId[] = [
     'search',
     'support',
     'translate',
-    'accommodation_import'
+    'accommodation_import',
+    'post_generate'
 ];
 
 // ---------------------------------------------------------------------------

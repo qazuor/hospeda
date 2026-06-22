@@ -49,6 +49,8 @@ interface SidebarI18n {
     readonly openSheetCountOne: string;
     readonly openSheetCountOther: string;
     readonly closeSheet: string;
+    /** Spinner label shown while a viewport refetch is in flight (A1). */
+    readonly loading?: string;
 }
 
 interface AccommodationsListingMapProps {
@@ -143,7 +145,7 @@ export function AccommodationsListingMap({
     isAuthenticated = false,
     locale = 'es'
 }: AccommodationsListingMapProps) {
-    const { items, onBoundsChange } = useViewportSearch({
+    const { items, isFetching, onBoundsChange } = useViewportSearch({
         initialItems,
         pageSize: 100,
         extraParams: extraSearchParams,
@@ -369,13 +371,15 @@ export function AccommodationsListingMap({
                     onCardSelect={handleCardSelect}
                     locale={locale}
                     isAuthenticated={isAuthenticated}
+                    isFetching={isFetching}
                     i18n={{
                         resultsHeading: sidebarI18n.resultsHeading,
                         resultsCount: sidebarCountFn,
                         emptyState: sidebarI18n.emptyState,
                         openSheet: sidebarI18n.openSheet,
                         openSheetCount: openSheetCountFn,
-                        closeSheet: sidebarI18n.closeSheet
+                        closeSheet: sidebarI18n.closeSheet,
+                        loading: sidebarI18n.loading ?? 'Cargando resultados…'
                     }}
                 />
             </div>

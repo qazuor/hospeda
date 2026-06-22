@@ -1,5 +1,5 @@
 {
-    "specId": "SPEC-262",
+    "specId": "SPEC-263",
     "title": "Security deps moderate remediation (framework bumps + overrides)",
     "type": "security",
     "complexity": "medium",

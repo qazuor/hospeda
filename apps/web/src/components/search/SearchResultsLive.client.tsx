@@ -8,6 +8,7 @@
  * Hydration: client:load (page needs to be interactive immediately).
  */
 
+import { LoadingButton } from '@/components/shared/feedback/LoadingButton';
 import type {
     PublicSearchGroup,
     PublicSearchResponse,
@@ -272,14 +273,15 @@ export function SearchResultsLive({
                     className={styles.input}
                     aria-label={t('search.label', 'Buscar')}
                 />
-                <button
+                <LoadingButton
                     type="submit"
                     className={styles.btn}
-                    disabled={isLoading}
+                    loading={isLoading}
+                    loadingLabel={t('search.searching', 'Buscando…')}
                     aria-label={t('search.submit', 'Buscar')}
                 >
-                    {isLoading ? '...' : t('search.submit', 'Buscar')}
-                </button>
+                    {t('search.submit', 'Buscar')}
+                </LoadingButton>
             </form>
 
             {/* Empty state: popular tags */}

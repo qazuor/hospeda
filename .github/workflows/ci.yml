@@ -196,6 +196,8 @@ jobs:
         run: bash scripts/check-getbyid-tests.sh
       - name: Check is:inline blocks carry CSP nonce (SPEC-047)
         run: bash scripts/check-inline-nonce.sh
+      - name: Check web loading-state patterns (SPEC-228)
+        run: bash scripts/check-web-loading-patterns.sh
       - name: Check for disabled tests (.only/.skip)
         run: |
           echo "Checking for .only() test isolation..."

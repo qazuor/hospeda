@@ -31,7 +31,8 @@ const AI_CHAT_KEYS = [
     'close',
     'unavailable',
     'expand',
-    'collapse'
+    'collapse',
+    'thinking'
 ] as const;
 
 /** Resolves a dot-notation key against a nested object. */
@@ -45,7 +46,7 @@ function resolveKey(obj: Record<string, unknown>, key: string): unknown {
 }
 
 describe('accommodations aiChat keys (SPEC-200 REQ-200-7 AC-7.1)', () => {
-    it('has all 14 aiChat keys in es locale with non-empty values', () => {
+    it('has all 15 aiChat keys in es locale with non-empty values', () => {
         const aiChat = (esAccommodations as Record<string, unknown>).aiChat;
         expect(aiChat).toBeDefined();
         expect(typeof aiChat).toBe('object');
@@ -58,7 +59,7 @@ describe('accommodations aiChat keys (SPEC-200 REQ-200-7 AC-7.1)', () => {
         expect(missing, 'aiChat keys missing or empty in es/accommodations.json').toEqual([]);
     });
 
-    it('has all 14 aiChat keys in en locale with non-empty values', () => {
+    it('has all 15 aiChat keys in en locale with non-empty values', () => {
         const aiChat = (enAccommodations as Record<string, unknown>).aiChat;
         expect(aiChat).toBeDefined();
         expect(typeof aiChat).toBe('object');
@@ -71,7 +72,7 @@ describe('accommodations aiChat keys (SPEC-200 REQ-200-7 AC-7.1)', () => {
         expect(missing, 'aiChat keys missing or empty in en/accommodations.json').toEqual([]);
     });
 
-    it('has all 14 aiChat keys in pt locale with non-empty values', () => {
+    it('has all 15 aiChat keys in pt locale with non-empty values', () => {
         const aiChat = (ptAccommodations as Record<string, unknown>).aiChat;
         expect(aiChat).toBeDefined();
         expect(typeof aiChat).toBe('object');
@@ -84,7 +85,7 @@ describe('accommodations aiChat keys (SPEC-200 REQ-200-7 AC-7.1)', () => {
         expect(missing, 'aiChat keys missing or empty in pt/accommodations.json').toEqual([]);
     });
 
-    it('has exactly 14 keys in the aiChat section (no extra keys)', () => {
+    it('has exactly 15 keys in the aiChat section (no extra keys)', () => {
         const esAiChat = (esAccommodations as Record<string, unknown>).aiChat as Record<
             string,
             unknown

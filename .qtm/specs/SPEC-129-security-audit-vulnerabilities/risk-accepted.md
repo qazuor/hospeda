@@ -59,7 +59,7 @@ refined schemas.
 None of the following block the CI gate (all moderate/low). Each requires either a
 **framework-level bump** (risk of build/SSR/routing regression) or an **override** on a deep
 transitive (maintenance burden + risk of breaking the parent), so they are explicitly
-**out of scope** for the low-risk pass and tracked under the follow-up spec **SPEC-262**.
+**out of scope** for the low-risk pass and tracked under the follow-up spec **SPEC-263**.
 
 | Severity | Package | Patched | Why deferred |
 |---|---|---|---|
@@ -76,12 +76,12 @@ transitive (maintenance burden + risk of breaking the parent), so they are expli
 
 ## Follow-up
 
-Tracked by **SPEC-262 — Security deps moderate remediation (framework bumps + overrides)**
+Tracked by **SPEC-263 — Security deps moderate remediation (framework bumps + overrides)**
 (`draft`). That spec owns the higher-risk work: the `better-auth` + TanStack Start bumps
 (each with the required regression smoke) and the Astro/nitro/h3 framework bump, plus a
 deliberate evaluation of `pnpm.overrides` for the deep transitives that have no patched
 parent release.
 
-The `sanitize-html` 2.17.0 status should also be re-confirmed under SPEC-262: although the
+The `sanitize-html` 2.17.0 status should also be re-confirmed under SPEC-263: although the
 advisory no longer matches, it is worth verifying against the upstream Apostrophe tracker
 whether a 2.17.x patch or a clean upgrade path exists.

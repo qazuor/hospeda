@@ -223,6 +223,7 @@
             "moveSuccess": "Movido para {{name}}",
             "moveSuccessUncollected": "Removido da coleção",
             "moveError": "Não foi possível mover o favorito",
+            "deleting": "Excluindo…",
             "deleteSuccess": "Coleção excluída com sucesso",
             "deleteError": "Não foi possível excluir a coleção. Tente novamente."
         },
@@ -493,6 +494,7 @@
     },
     "newsletter": {
         "title": "Newsletter",
+        "loading": "Carregando preferências…",
         "statusLabel": "Status",
         "statusActive": "Ativo",
         "statusPending": "Verificação pendente",

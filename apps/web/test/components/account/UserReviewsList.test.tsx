@@ -25,6 +25,12 @@ vi.mock('../../../src/components/account/UserReviewsList.module.css', () => ({
     })
 }));
 
+vi.mock('../../../src/components/shared/feedback/SkeletonCard.module.css', () => ({
+    default: new Proxy({} as Record<string, string>, {
+        get: (_target, prop) => String(prop)
+    })
+}));
+
 vi.mock('../../../src/lib/i18n', () => {
     const t = (key: string, fallback?: string): string => fallback ?? key;
     // tPlural was added in commit b138f3cbb ("fix(web,i18n): show review title
@@ -110,10 +116,18 @@ describe('UserReviewsList', () => {
         vi.clearAllMocks();
     });
 
-    it('shows loading state on mount', () => {
+    it('shows skeleton loading state on mount (SPEC-228 T-020)', () => {
         globalThis.fetch = vi.fn().mockImplementation(() => new Promise(() => undefined));
-        renderList();
-        expect(screen.getByText('Cargando…')).toBeInTheDocument();
+        const { container } = renderList();
+        // No '⏳' or raw loading text — SkeletonCardList renders aria-hidden shimmer divs
+        expect(screen.queryByText('Cargando…')).not.toBeInTheDocument();
+        // Loading wrapper is busy with aria-label
+        const loadingWrap = container.querySelector('[aria-busy="true"]');
+        expect(loadingWrap).not.toBeNull();
+        expect(loadingWrap?.getAttribute('aria-label')).toBe('Cargando…');
+        // SkeletonCardList renders aria-hidden shimmer divs
+        const skeletons = container.querySelectorAll('[aria-hidden="true"]');
+        expect(skeletons.length).toBeGreaterThan(0);
     });
 
     it('renders empty state when no reviews', async () => {

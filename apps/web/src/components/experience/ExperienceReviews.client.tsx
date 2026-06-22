@@ -15,6 +15,7 @@
  * Hydration: caller MUST use `client:visible`.
  */
 
+import { Spinner } from '@/components/shared/feedback/Spinner';
 import type { ExperienceReviewPublicItem } from '@/lib/api/endpoints';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -310,10 +311,12 @@ export function ExperienceReviews({
                     type="button"
                     onClick={() => void loadMore()}
                     disabled={isLoading}
+                    aria-busy={isLoading}
                     style={{
                         display: 'inline-flex',
                         alignItems: 'center',
                         justifyContent: 'center',
+                        gap: '6px',
                         padding: '10px 24px',
                         borderRadius: 'var(--radius-pill, 9999px)',
                         border: '1px solid var(--border)',
@@ -329,12 +332,17 @@ export function ExperienceReviews({
                         alignSelf: 'center'
                     }}
                 >
-                    {isLoading
-                        ? '...'
-                        : t('experience.reviews.more', '+ más reseñas').replace(
-                              '{{n}}',
-                              String(totalReviews - reviews.length)
-                          )}
+                    {isLoading ? (
+                        <Spinner
+                            size="sm"
+                            label={t('experience.reviews.loading', 'Cargando reseñas…')}
+                        />
+                    ) : (
+                        t('experience.reviews.more', '+ más reseñas').replace(
+                            '{{n}}',
+                            String(totalReviews - reviews.length)
+                        )
+                    )}
                 </button>
             )}
 

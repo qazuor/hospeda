@@ -194,7 +194,8 @@ async function seedAiSettingsWithFallback(actorId: string): Promise<void> {
             search: featureConfig,
             support: featureConfig,
             translate: featureConfig,
-            accommodation_import: featureConfig
+            accommodation_import: featureConfig,
+            post_generate: featureConfig
         }
     };
 

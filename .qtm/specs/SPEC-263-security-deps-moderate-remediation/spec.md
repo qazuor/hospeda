@@ -1,5 +1,5 @@
 ---
-spec-id: SPEC-262
+spec-id: SPEC-263
 title: Security deps moderate remediation (framework bumps + overrides)
 type: security
 complexity: medium
@@ -12,7 +12,7 @@ priority: medium
 dependsOn: []
 ---
 
-# SPEC-262: Security deps moderate remediation (framework bumps + overrides)
+# SPEC-263: Security deps moderate remediation (framework bumps + overrides)
 
 ## Part 1 — Overview & Goals
 
