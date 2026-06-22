@@ -1,16 +1,21 @@
 /**
  * @file CommerceListingEditor.client.tsx
  * @description Operational editor island for a commerce owner's listing
- * (SPEC-249 Part A). Native HTML form (no TanStack Form, per web conventions)
- * that edits ONLY the operational fields the owner may change and persists them
- * through the vertical's protected PATCH endpoint (`updateOwn`).
+ * (SPEC-249 Part A, extended in SPEC-253). Native HTML form (no TanStack Form,
+ * per web conventions) that edits ONLY the operational fields the owner may
+ * change and persists them through the vertical's protected PATCH endpoint
+ * (`updateOwn`).
  *
  * Identity/core fields are rendered read-only by the hosting page, not here.
  *
- * Field-group coverage:
+ * Field-group coverage (SPEC-253 additions marked *):
+ *   * type select (per-vertical enum, T-020)
+ *   * summary textarea (min 10 / max 300, T-020)
  *   T-012 mechanics + richDescription
- *   T-013 simple fields (contactInfo, price group: menuUrl/priceRange | isPriceOnRequest)
- *   T-014 structured fields (openingHours, socialNetworks)
+ *   T-013 simple fields (contactInfo — no website per AC-4)
+ *   T-013 social networks (facebook/instagram/twitter/tiktok/youtube + *linkedIn)
+ *   T-014 structured fields (openingHours)
+ *   T-014 price group (gastronomy: priceRange + menuUrl | experience: isPriceOnRequest + *priceFrom + *priceUnit)
  *   T-015 media gallery
  *   T-016 amenities / features
  */
@@ -19,7 +24,7 @@ import type { AmenityData } from '@/lib/api/types';
 import type { CommerceListingDetail, CommerceVertical } from '@/lib/commerce/owner-listings';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { PriceRangeEnum } from '@repo/schemas';
+import { ExperienceTypeEnum, GastronomyTypeEnum, PriceRangeEnum } from '@repo/schemas';
 import type { Image, OpeningHours } from '@repo/schemas';
 import { type JSX, useCallback, useState } from 'react';
 import { AmenitiesFeaturesField } from './AmenitiesFeaturesField';
@@ -48,20 +53,24 @@ type SaveStatus =
     | { readonly kind: 'success' }
     | { readonly kind: 'error'; readonly message: string };
 
-/** Subset of the contact JSONB block the owner edits in this surface. */
+/**
+ * Subset of the contact JSONB block the owner edits in this surface.
+ * NOTE: `website` is intentionally absent per SPEC-253 AC-4 — it is not
+ * exposed in the owner editor UI even though it exists in ContactInfoSchema.
+ */
 interface ContactValues {
     mobilePhone: string;
     workEmail: string;
-    website: string;
 }
 
-/** Social URLs the owner edits (subset of SocialNetwork). */
+/** Social URLs the owner edits (subset of SocialNetwork, includes linkedIn per AC-4). */
 interface SocialValues {
     facebook: string;
     instagram: string;
     twitter: string;
     tiktok: string;
     youtube: string;
+    linkedIn: string;
 }
 
 const SOCIAL_KEYS: ReadonlyArray<keyof SocialValues> = [
@@ -69,8 +78,15 @@ const SOCIAL_KEYS: ReadonlyArray<keyof SocialValues> = [
     'instagram',
     'twitter',
     'tiktok',
-    'youtube'
+    'youtube',
+    'linkedIn'
 ];
+
+/** Gastronomy type options in display order. */
+const GASTRONOMY_TYPE_OPTIONS = Object.values(GastronomyTypeEnum);
+
+/** Experience type options in display order. */
+const EXPERIENCE_TYPE_OPTIONS = Object.values(ExperienceTypeEnum);
 
 /** Resolve the owner PATCH endpoint for the given vertical. */
 function patchPathFor({
@@ -113,20 +129,29 @@ export function CommerceListingEditor({
     const initialSocial = (data.socialNetworks ?? {}) as Record<string, unknown>;
     const initialMedia = (data.media ?? {}) as Record<string, unknown>;
 
+    // T-020: type select state (per-vertical enum value)
+    const [listingType, setListingType] = useState<string>(strField(data, 'type'));
+
+    // T-020: summary textarea state (min 10 / max 300)
+    const [summary, setSummary] = useState<string>(strField(data, 'summary'));
+    const [summaryError, setSummaryError] = useState<string>('');
+
     const [richDescription, setRichDescription] = useState<string>(
         strField(data, 'richDescription')
     );
+    // T-020: website removed from contact per AC-4; mobilePhone + workEmail only
     const [contact, setContact] = useState<ContactValues>({
         mobilePhone: strField(initialContact, 'mobilePhone'),
-        workEmail: strField(initialContact, 'workEmail'),
-        website: strField(initialContact, 'website')
+        workEmail: strField(initialContact, 'workEmail')
     });
+    // T-020: added linkedIn to social per AC-4
     const [social, setSocial] = useState<SocialValues>({
         facebook: strField(initialSocial, 'facebook'),
         instagram: strField(initialSocial, 'instagram'),
         twitter: strField(initialSocial, 'twitter'),
         tiktok: strField(initialSocial, 'tiktok'),
-        youtube: strField(initialSocial, 'youtube')
+        youtube: strField(initialSocial, 'youtube'),
+        linkedIn: strField(initialSocial, 'linkedIn')
     });
     const [openingHours, setOpeningHours] = useState<OpeningHours | null>(
         (data.openingHours as OpeningHours | null | undefined) ?? null
@@ -231,17 +256,43 @@ export function CommerceListingEditor({
         [markDirty]
     );
 
+    /** Validate summary: if non-empty, must be 10–300 chars. */
+    const validateSummary = useCallback(
+        (value: string): boolean => {
+            if (value.length > 0 && value.length < 10) {
+                setSummaryError(
+                    t('commerce.owner.editor.validation.summaryMin', 'Mínimo 10 caracteres.')
+                );
+                return false;
+            }
+            if (value.length > 300) {
+                setSummaryError(
+                    t('commerce.owner.editor.validation.summaryMax', 'Máximo 300 caracteres.')
+                );
+                return false;
+            }
+            setSummaryError('');
+            return true;
+        },
+        [t]
+    );
+
     /** Build the PATCH payload from the dirty field groups only. */
     const buildPayload = useCallback((): Record<string, unknown> => {
         const payload: Record<string, unknown> = {};
+        if (dirty.has('type')) {
+            payload.type = listingType || undefined;
+        }
+        if (dirty.has('summary')) {
+            payload.summary = summary || undefined;
+        }
         if (dirty.has('richDescription')) {
             payload.richDescription = richDescription;
         }
         if (dirty.has('contactInfo')) {
             payload.contactInfo = {
                 mobilePhone: nonEmpty(contact.mobilePhone),
-                workEmail: nonEmpty(contact.workEmail),
-                website: nonEmpty(contact.website)
+                workEmail: nonEmpty(contact.workEmail)
             };
         }
         if (dirty.has('socialNetworks')) {
@@ -250,7 +301,8 @@ export function CommerceListingEditor({
                 instagram: nonEmpty(social.instagram),
                 twitter: nonEmpty(social.twitter),
                 tiktok: nonEmpty(social.tiktok),
-                youtube: nonEmpty(social.youtube)
+                youtube: nonEmpty(social.youtube),
+                linkedIn: nonEmpty(social.linkedIn)
             };
         }
         if (dirty.has('openingHours')) {
@@ -281,6 +333,8 @@ export function CommerceListingEditor({
         return payload;
     }, [
         dirty,
+        listingType,
+        summary,
         richDescription,
         contact,
         social,
@@ -301,6 +355,10 @@ export function CommerceListingEditor({
             if (dirty.size === 0) {
                 return;
             }
+            // Validate summary before submit
+            if (dirty.has('summary') && !validateSummary(summary)) {
+                return;
+            }
             setStatus({ kind: 'saving' });
 
             const result = await apiClient.patch<unknown>({
@@ -318,11 +376,14 @@ export function CommerceListingEditor({
                 });
             }
         },
-        [dirty, vertical, listingId, buildPayload, t]
+        [dirty, vertical, listingId, buildPayload, t, validateSummary, summary]
     );
 
     const isSaving = status.kind === 'saving';
     const canSave = dirty.size > 0 && !isSaving;
+
+    const typeOptions =
+        vertical === 'gastronomy' ? GASTRONOMY_TYPE_OPTIONS : EXPERIENCE_TYPE_OPTIONS;
 
     return (
         <form
@@ -330,6 +391,67 @@ export function CommerceListingEditor({
             onSubmit={handleSubmit}
             aria-busy={isSaving}
         >
+            {/* T-020: type select */}
+            <section className={styles.section}>
+                <label
+                    className={styles.label}
+                    htmlFor="ce-type"
+                >
+                    {t('commerce.owner.editor.sections.type', 'Categoría')}
+                </label>
+                <select
+                    id="ce-type"
+                    className={styles.input}
+                    value={listingType}
+                    onChange={(event) => {
+                        setListingType(event.target.value);
+                        markDirty('type');
+                    }}
+                >
+                    <option value="">—</option>
+                    {typeOptions.map((opt) => (
+                        <option
+                            key={opt}
+                            value={opt}
+                        >
+                            {t(`commerce.owner.editor.typeOption.${opt}`, opt)}
+                        </option>
+                    ))}
+                </select>
+            </section>
+
+            {/* T-020: summary textarea (min 10 / max 300) */}
+            <section className={styles.section}>
+                <label
+                    className={styles.label}
+                    htmlFor="ce-summary"
+                >
+                    {t('commerce.owner.editor.sections.summary', 'Resumen')}
+                </label>
+                <textarea
+                    id="ce-summary"
+                    className={styles.textarea}
+                    value={summary}
+                    rows={3}
+                    minLength={10}
+                    maxLength={300}
+                    aria-describedby="ce-summary-hint"
+                    onChange={(event) => {
+                        setSummary(event.target.value);
+                        markDirty('summary');
+                        validateSummary(event.target.value);
+                    }}
+                />
+                <span
+                    id="ce-summary-hint"
+                    className={summaryError ? styles.error : styles.hint}
+                    aria-live="polite"
+                >
+                    {summaryError ||
+                        t('commerce.owner.editor.validation.summaryHint', `${summary.length}/300`)}
+                </span>
+            </section>
+
             <section className={styles.section}>
                 <label
                     className={styles.label}
@@ -349,6 +471,7 @@ export function CommerceListingEditor({
                 />
             </section>
 
+            {/* Contact: mobilePhone + workEmail only (no website per AC-4) */}
             <fieldset className={styles.section}>
                 <legend className={styles.label}>
                     {t('commerce.owner.editor.sections.contactInfo', 'Información de contacto')}
@@ -356,7 +479,7 @@ export function CommerceListingEditor({
                 <input
                     className={styles.input}
                     type="tel"
-                    aria-label={t('commerce.owner.editor.sections.contactInfo', 'Teléfono')}
+                    aria-label={t('commerce.owner.editor.contactField.mobilePhone', 'Teléfono')}
                     value={contact.mobilePhone}
                     placeholder="+54..."
                     onChange={(event) => updateContact({ mobilePhone: event.target.value })}
@@ -364,19 +487,13 @@ export function CommerceListingEditor({
                 <input
                     className={styles.input}
                     type="email"
-                    aria-label="email"
+                    aria-label={t('commerce.owner.editor.contactField.workEmail', 'Email')}
                     value={contact.workEmail}
                     onChange={(event) => updateContact({ workEmail: event.target.value })}
                 />
-                <input
-                    className={styles.input}
-                    type="url"
-                    aria-label="website"
-                    value={contact.website}
-                    onChange={(event) => updateContact({ website: event.target.value })}
-                />
             </fieldset>
 
+            {/* Social: facebook/instagram/twitter/tiktok/youtube + linkedIn (AC-4) */}
             <fieldset className={styles.section}>
                 <legend className={styles.label}>
                     {t('commerce.owner.editor.sections.socialNetworks', 'Redes sociales')}
@@ -388,7 +505,7 @@ export function CommerceListingEditor({
                         type="url"
                         aria-label={key}
                         value={social[key]}
-                        placeholder={`https://${key}.com/...`}
+                        placeholder={`https://${key === 'linkedIn' ? 'linkedin' : key}.com/...`}
                         onChange={(event) => updateSocial(key, event.target.value)}
                     />
                 ))}
@@ -495,7 +612,7 @@ export function CommerceListingEditor({
                                 markDirty('isPriceOnRequest');
                             }}
                         />
-                        {t('commerce.owner.editor.sections.priceRange', 'Precio a consultar')}
+                        {t('commerce.owner.editor.sections.isPriceOnRequest', 'Precio a consultar')}
                     </label>
                 </section>
             )}

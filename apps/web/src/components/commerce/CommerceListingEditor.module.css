@@ -119,6 +119,12 @@
     font-size: var(--text-body-sm, 0.9375rem);
 }
 
+.hint {
+    margin: 0;
+    color: var(--core-muted-foreground);
+    font-size: var(--text-body-xs, 0.8125rem);
+}
+
 .media {
     display: flex;
     flex-direction: column;
