@@ -89,7 +89,7 @@ const isNew = experience.createdAt
             </span>
             {experience.reviewsCount > 0 && (
                 <span class="exp-hero__reviews-count">
-                    · {tPlural('review.totalReviews', experience.reviewsCount)}
+                    · {tPlural('review.list.totalReviews', experience.reviewsCount, { count: experience.reviewsCount })}
                 </span>
             )}
         </div>
