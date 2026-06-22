@@ -1,0 +1,240 @@
+/* CommerceFaqManager.module.css — SPEC-253 T-024 */
+
+.section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4, 1.5rem);
+}
+
+.sectionTitle {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 1.125rem;
+    color: var(--core-foreground);
+    margin: 0;
+    padding-bottom: var(--space-2, 0.5rem);
+    border-bottom: 1px solid var(--border);
+}
+
+.emptyState {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+    margin: 0;
+}
+
+.error {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--destructive, #b91c1c);
+    margin: 0;
+    padding: 0.5rem 0.75rem;
+    border-radius: var(--radius-md, 0.5rem);
+    background-color: oklch(0.96 0.02 25);
+    border: 1px solid oklch(0.88 0.06 25);
+}
+
+/* FAQ ordered list */
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 1rem);
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.item {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 10px);
+    background-color: var(--core-card);
+    padding: var(--space-3, 1rem);
+}
+
+/* Display row: content + actions side by side */
+.displayRow {
+    display: flex;
+    gap: var(--space-3, 1rem);
+    align-items: flex-start;
+}
+
+.itemContent {
+    flex: 1;
+    min-width: 0;
+}
+
+.question {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: var(--text-body-sm, 0.9375rem);
+    color: var(--core-foreground);
+    margin: 0 0 var(--space-1, 0.25rem);
+    word-break: break-word;
+}
+
+.answer {
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm, 0.9375rem);
+    color: var(--core-muted-foreground);
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    word-break: break-word;
+}
+
+.itemActions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.25rem);
+    flex-shrink: 0;
+}
+
+/* Icon buttons for reorder (↑↓) */
+.iconBtn {
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm, 0.25rem);
+    background: var(--core-background);
+    color: var(--core-foreground);
+    font-size: 0.875rem;
+    cursor: pointer;
+}
+
+.iconBtn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.iconBtn:hover:not(:disabled) {
+    background: var(--surface-warm, rgba(0, 0, 0, 0.06));
+}
+
+.editBtn {
+    padding: 0.25rem 0.625rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm, 0.25rem);
+    background: var(--core-background);
+    color: var(--core-foreground);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    cursor: pointer;
+}
+
+.editBtn:hover:not(:disabled) {
+    background: var(--surface-warm, rgba(0, 0, 0, 0.06));
+}
+
+.deleteBtn {
+    padding: 0.25rem 0.625rem;
+    border: 1px solid oklch(0.88 0.06 25);
+    border-radius: var(--radius-sm, 0.25rem);
+    background: transparent;
+    color: var(--destructive, #b91c1c);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    cursor: pointer;
+}
+
+.deleteBtn:hover:not(:disabled) {
+    background: oklch(0.96 0.02 25);
+}
+
+.deleteBtn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Edit / Add form */
+.editForm,
+.addForm {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+}
+
+.fieldLabel {
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: var(--core-foreground);
+}
+
+.textarea {
+    width: 100%;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 0.5rem);
+    background: var(--core-background);
+    color: var(--core-foreground);
+    font-family: var(--font-sans);
+    font-size: var(--text-body, 1rem);
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+.textarea:focus {
+    outline: 2px solid var(--brand-primary, var(--core-foreground));
+    outline-offset: 1px;
+}
+
+.editActions {
+    display: flex;
+    gap: var(--space-3, 1rem);
+    margin-top: var(--space-2, 0.5rem);
+}
+
+.saveBtn {
+    padding: var(--space-2) var(--space-4);
+    border: none;
+    border-radius: var(--radius-md, 0.5rem);
+    background: var(--brand-primary, var(--core-foreground));
+    color: var(--accent-foreground, var(--core-background));
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    cursor: pointer;
+}
+
+.saveBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.cancelBtn {
+    padding: var(--space-2) var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 0.5rem);
+    background: transparent;
+    color: var(--core-foreground);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    cursor: pointer;
+}
+
+.cancelBtn:hover {
+    background: var(--surface-warm, rgba(0, 0, 0, 0.06));
+}
+
+/* Add button */
+.addBtn {
+    align-self: flex-start;
+    padding: var(--space-2) var(--space-4);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-md, 0.5rem);
+    background: transparent;
+    color: var(--brand-primary, var(--core-foreground));
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 0.9375rem;
+    cursor: pointer;
+}
+
+.addBtn:hover {
+    background: oklch(0.96 0.02 240 / 0.15);
+}
