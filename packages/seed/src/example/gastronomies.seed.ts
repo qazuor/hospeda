@@ -344,6 +344,11 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
             logger.debug(
                 `  ${STATUS_ICONS.Info} COMMERCE_OWNER "${owner.displayName}" already exists — skipped`
             );
+            // Heal: ensure profile_completed = true on existing rows so the
+            // profile-completion middleware gate does not block the commerce area.
+            await db.execute(
+                sql`UPDATE users SET profile_completed = true WHERE id = ${realUserId} AND profile_completed = false`
+            );
         } else {
             const insertedUsers = await db
                 .insert(users)
@@ -356,6 +361,7 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
                     slug: owner.slug,
                     role: RoleEnum.COMMERCE_OWNER as (typeof users.$inferInsert)['role'],
                     mustChangePassword: false,
+                    profileCompleted: true,
                     lifecycleState:
                         LifecycleStatusEnum.ACTIVE as (typeof users.$inferInsert)['lifecycleState'],
                     visibility: VisibilityEnum.PUBLIC as (typeof users.$inferInsert)['visibility']
