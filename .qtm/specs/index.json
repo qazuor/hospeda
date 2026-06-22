@@ -2020,6 +2020,31 @@
         "accommodation",
         "SPEC-237-followup"
       ]
+    },
+    {
+      "specId": "SPEC-257",
+      "title": "Accommodation import short-link resolution + adapter enrichment",
+      "slug": "import-short-link-resolution",
+      "type": "improvement",
+      "complexity": "medium",
+      "status": "in-progress",
+      "path": "SPEC-257-import-short-link-resolution",
+      "created": "2026-06-22T02:36:01Z",
+      "base": "staging",
+      "origin": "SPEC-222 Chrome smoke follow-up: Google maps.app.goo.gl short links do not resolve e2e (body-cap loses finalUrl); Booking Share-XXX = WAF (UX copy); Airbnb adapter missing summary/amenities/beds.",
+      "dependsOn": [
+        "SPEC-222"
+      ],
+      "tags": [
+        "accommodation-import",
+        "safe-fetch",
+        "utils",
+        "service-core",
+        "i18n",
+        "airbnb",
+        "google-places",
+        "spec-222-followup"
+      ]
     }
   ]
 }

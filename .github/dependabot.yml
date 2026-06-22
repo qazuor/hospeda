@@ -4,11 +4,13 @@
 # default branch `main`. All work in this repo flows through `staging` first;
 # `main` is the validated baseline promoted from `staging`.
 #
-# NOTE: GitHub disables *automated security-update* PRs when `target-branch` is
-# set to a non-default branch. Dependabot security ALERTS remain active, and
-# security patches still arrive through the grouped version-update PRs below
-# (which also land on `staging`). Critical advisories can additionally be
-# applied by hand on a `staging` branch when an out-of-cycle fix is needed.
+# NOTE: `target-branch` only governs *version updates* (the grouped weekly bumps
+# below) — those land on `staging`. It does NOT govern *security updates*:
+# GitHub opens those against the default branch `main`, ignoring `target-branch`.
+# That is expected platform behavior. A `dependabot` PR based on `main` is, by
+# construction, a security update; it may merge to `main` (CI green) and MUST be
+# back-merged into `staging` afterward via `.github/workflows/sync-main-to-staging.yml`.
+# See the "Dependabot security exception" section in CLAUDE.md for the full rule.
 version: 2
 updates:
   - package-ecosystem: 'npm'

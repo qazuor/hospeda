@@ -80,6 +80,9 @@ interface PlaceObject {
     readonly websiteUri?: string;
     readonly types?: readonly string[];
     readonly addressComponents?: readonly PlacesAddressComponent[];
+    /** Short editorial blurb (localized via languageCode). The only description
+     * Google Places exposes; mapped to the draft summary. */
+    readonly editorialSummary?: { readonly text?: string; readonly languageCode?: string };
 }
 
 /**
@@ -126,7 +129,7 @@ const PLACES_API_BASE = 'https://places.googleapis.com/v1/places';
  * fetch them, ensuring no accidental leak into RawExtraction.
  */
 const PLACES_FIELD_MASK =
-    'displayName,formattedAddress,location,nationalPhoneNumber,internationalPhoneNumber,websiteUri,types,addressComponents';
+    'displayName,formattedAddress,location,nationalPhoneNumber,internationalPhoneNumber,websiteUri,types,addressComponents,editorialSummary';
 
 /**
  * Fields to request from the Places API — Text Search path.
@@ -140,7 +143,7 @@ const PLACES_FIELD_MASK =
  * CRITICAL: same omissions as PLACES_FIELD_MASK — no reviews/rating/userRatingCount.
  */
 const TEXT_SEARCH_FIELD_MASK =
-    'places.displayName,places.formattedAddress,places.location,places.nationalPhoneNumber,places.internationalPhoneNumber,places.websiteUri,places.types,places.addressComponents';
+    'places.displayName,places.formattedAddress,places.location,places.nationalPhoneNumber,places.internationalPhoneNumber,places.websiteUri,places.types,places.addressComponents,places.editorialSummary';
 
 // ---------------------------------------------------------------------------
 // Place ID extraction helpers
@@ -288,9 +291,17 @@ async function fetchTextSearch(
     name: string,
     coords: PlacesLatLng | null,
     apiKey: string,
-    timeoutMs: number
+    timeoutMs: number,
+    languageCode?: string
 ): Promise<PlaceObject | null> {
     const body: Record<string, unknown> = { textQuery: name };
+
+    // Localise displayName / formattedAddress / types to the user's locale when
+    // provided. The Places API (New) accepts a BCP-47 `languageCode` and returns
+    // the place data in that language where Google has it (SPEC-257 piece D).
+    if (languageCode) {
+        body.languageCode = languageCode;
+    }
 
     if (coords !== null) {
         body.locationBias = {
@@ -525,13 +536,20 @@ export class GooglePlacesAdapter implements ImportSourceAdapter {
         if (placeId) {
             let placeObject: PlaceObject;
 
+            // Localise the place details to the user's locale when provided
+            // (SPEC-257 piece D). Place Details (New) takes languageCode as a
+            // query parameter.
+            const detailsUrl = ctx.locale
+                ? `${PLACES_API_BASE}/${placeId}?languageCode=${encodeURIComponent(ctx.locale)}`
+                : `${PLACES_API_BASE}/${placeId}`;
+
             try {
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), ctx.timeoutMs);
 
                 let response: Response;
                 try {
-                    response = await fetch(`${PLACES_API_BASE}/${placeId}`, {
+                    response = await fetch(detailsUrl, {
                         method: 'GET',
                         headers: {
                             'X-Goog-Api-Key': apiKey,
@@ -582,7 +600,13 @@ export class GooglePlacesAdapter implements ImportSourceAdapter {
         }
 
         const coords = extractCoordsFromPath(url);
-        const textSearchResult = await fetchTextSearch(placeName, coords, apiKey, ctx.timeoutMs);
+        const textSearchResult = await fetchTextSearch(
+            placeName,
+            coords,
+            apiKey,
+            ctx.timeoutMs,
+            ctx.locale
+        );
 
         if (!textSearchResult) {
             // Text Search returned no results or failed — degrade gracefully.
@@ -640,6 +664,10 @@ function buildRawExtraction(place: PlaceObject): RawExtraction {
 
         ...(place.displayName?.text
             ? { name: { value: place.displayName.text, source: 'official_api' } }
+            : {}),
+
+        ...(place.editorialSummary?.text
+            ? { summary: { value: place.editorialSummary.text, source: 'official_api' } }
             : {}),
 
         ...(locationEntries ? { location: locationEntries } : {}),

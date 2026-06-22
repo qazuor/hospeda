@@ -519,7 +519,7 @@ describe('AccommodationImportService — short-link resolution (Step 1b)', () =>
     // safeExternalFetch is called with correct parameters
     // -------------------------------------------------------------------------
     describe('safeExternalFetch call parameters for short-link resolution', () => {
-        it('should pass the context timeoutMs and a capped maxBytes to safeExternalFetch', async () => {
+        it('should resolve short links in resolveOnly mode (no body cap) with the context timeoutMs', async () => {
             // Arrange
             const shortLink = 'https://maps.app.goo.gl/dCaudGsZ8r9fKvWk9';
             mockSafeExternalFetch.mockResolvedValueOnce({
@@ -540,19 +540,20 @@ describe('AccommodationImportService — short-link resolution (Step 1b)', () =>
                 fakeActor
             );
 
-            // Assert — timeoutMs forwarded from context, maxBytes is a small cap
+            // Assert — resolveOnly mode forwards timeoutMs and does NOT set a body
+            // cap (the old maxBytes:512 cap fired on the terminal page and lost
+            // finalUrl for large canonical pages — SPEC-257).
             expect(mockSafeExternalFetch).toHaveBeenCalledWith(
                 expect.objectContaining({
                     url: shortLink,
                     timeoutMs: 5_000,
-                    maxBytes: expect.any(Number)
+                    resolveOnly: true
                 })
             );
 
-            // maxBytes must be a positive number (we use 512 for redirect resolution)
             const callArgs = mockSafeExternalFetch.mock.calls[0]?.[0];
-            expect(callArgs?.maxBytes).toBeGreaterThan(0);
-            expect(callArgs?.maxBytes).toBeLessThanOrEqual(1024); // sanity: small cap
+            expect(callArgs?.resolveOnly).toBe(true);
+            expect(callArgs?.maxBytes).toBeUndefined();
         });
     });
 });
