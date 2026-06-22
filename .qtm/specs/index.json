@@ -2091,6 +2091,30 @@
         "billing",
         "campaign"
       ]
+    },
+    {
+      "specId": "SPEC-260",
+      "title": "AI Usage Dashboard",
+      "slug": "ai-usage-dashboard",
+      "type": "feature",
+      "complexity": "high",
+      "status": "draft",
+      "path": "SPEC-260-ai-usage-dashboard",
+      "created": "2026-06-22T00:00:00Z",
+      "base": "staging",
+      "tags": [
+        "ai",
+        "ai-core",
+        "admin",
+        "metering",
+        "usage",
+        "cost",
+        "reporting",
+        "recharts",
+        "schemas",
+        "api",
+        "i18n"
+      ]
     }
   ]
 }
