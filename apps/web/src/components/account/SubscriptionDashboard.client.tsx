@@ -1057,7 +1057,12 @@ export function SubscriptionDashboard({ locale, user, plans }: SubscriptionDashb
                     currentPlanSlug={subscription.planSlug}
                     locale={locale}
                     onChanged={() => {
-                        void fetchData();
+                        // Silent refresh (no loading spinner) so the flow's result
+                        // step stays mounted. fetchData() would set isLoading=true,
+                        // unmount the dashboard, and reset PlanChangeFlow's internal
+                        // step back to 'picker' — making a just-confirmed change look
+                        // like nothing happened. Mirrors the cancel-modal path.
+                        void refreshSilently();
                     }}
                     onDismiss={() => {
                         setShowPlanChangeFlow(false);
