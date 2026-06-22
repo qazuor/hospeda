@@ -1,12 +1,13 @@
 /**
- * Unit tests for AirbnbReputationAdapter (SPEC-237 T-006)
+ * Unit tests for AirbnbReputationAdapter (SPEC-237 T-006, updated SPEC-250)
  *
  * Key assertions:
  * - AC-7.1 legal guard: `snippets` is ALWAYS `null` even when the Apify
  *   actor payload contains review text / snippet data.
- * - Credential degradation: missing apifyToken or apifyAirbnbActor → degrade.
- * - Rating and reviewsCount are mapped from various actor field names.
- * - Empty actor dataset → degrade.
+ * - `fetch()` always returns all-null (Airbnb has no fast inline path).
+ * - `startRun()`: calls startApifyRun with correct input; maps run/dataset IDs.
+ * - `startRun()` degrades to null when credentials absent or startApifyRun returns null.
+ * - `mapDatasetItems()`: pure mapping for representative Airbnb dataset items.
  * - Never throws.
  */
 
@@ -16,15 +17,15 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { AirbnbReputationAdapter } from '../../src/services/accommodation-external-reputation/adapters/airbnb-reputation.adapter.js';
 
 // ---------------------------------------------------------------------------
-// Mock runApifyActor
+// Mock startApifyRun
 // ---------------------------------------------------------------------------
 
-const { mockRunApifyActor } = vi.hoisted(() => ({
-    mockRunApifyActor: vi.fn()
+const { mockStartApifyRun } = vi.hoisted(() => ({
+    mockStartApifyRun: vi.fn()
 }));
 
 vi.mock('../../src/services/accommodation-import/adapters/apify-client.js', () => ({
-    runApifyActor: mockRunApifyActor
+    startApifyRun: mockStartApifyRun
 }));
 
 // ---------------------------------------------------------------------------
@@ -63,244 +64,310 @@ afterEach(() => {
 });
 
 describe('AirbnbReputationAdapter', () => {
-    describe('AC-7.1 legal guard — snippets must ALWAYS be null', () => {
-        it('should return snippets:null even when Apify dataset includes review text', async () => {
-            // Arrange: Apify returns a payload containing review text and a reviews list
+    describe('fetch() — always returns all-null (no inline path for Airbnb)', () => {
+        it('should return all-null result without making any network call', async () => {
+            // Arrange
             const adapter = new AirbnbReputationAdapter({
                 apifyToken: 'apify_tok',
                 apifyAirbnbActor: 'dtrungtin/airbnb-scraper'
             });
             const listing = makeAirbnbListing();
 
-            // Apify dataset WITH review text — must be stripped by the adapter
-            mockRunApifyActor.mockResolvedValueOnce([
-                {
-                    rating: 4.8,
-                    reviewsCount: 95,
-                    // These fields MUST NOT appear in the result:
-                    reviews: [
-                        {
-                            author: 'Carlos M.',
-                            text: 'Perfect location and great host!',
-                            rating: 5,
-                            createdAt: '2024-02-10'
-                        },
-                        {
-                            author: 'Laura P.',
-                            text: 'Very clean and comfortable.',
-                            rating: 5
-                        }
-                    ],
-                    reviewsList: [{ text: 'Would come again!' }],
-                    guestReviews: 'Many positive reviews'
-                }
-            ]);
-
             // Act
             const result = await adapter.fetch(listing);
 
-            // Assert: snippets stripped regardless of source payload
-            expect(result.snippets).toBeNull();
-        });
-
-        it('should return snippets:null when Apify dataset uses alternative review field names', async () => {
-            const adapter = new AirbnbReputationAdapter({
-                apifyToken: 'tok',
-                apifyAirbnbActor: 'maxcopell/airbnb-scraper'
-            });
-            const listing = makeAirbnbListing();
-
-            mockRunApifyActor.mockResolvedValueOnce([
-                {
-                    starRating: 4.6,
-                    numberOfReviews: 200,
-                    // Alternative review field names that must not leak
-                    reviewText: 'Nice apartment',
-                    comments: [{ text: 'Loved the balcony' }]
-                }
-            ]);
-
-            const result = await adapter.fetch(listing);
-
-            expect(result.snippets).toBeNull();
-        });
-    });
-
-    describe('credential degradation', () => {
-        it('should return all-null result when apifyToken is absent', async () => {
-            const adapter = new AirbnbReputationAdapter({
-                apifyAirbnbActor: 'dtrungtin/airbnb-scraper'
-            });
-            const listing = makeAirbnbListing();
-
-            const result = await adapter.fetch(listing);
-
-            expect(mockRunApifyActor).not.toHaveBeenCalled();
+            // Assert: always empty — no network call, no startApifyRun from fetch()
+            expect(mockStartApifyRun).not.toHaveBeenCalled();
             expect(result.rating).toBeNull();
             expect(result.reviewsCount).toBeNull();
             expect(result.deepLink).toBeNull();
             expect(result.snippets).toBeNull();
         });
 
-        it('should return all-null result when apifyAirbnbActor is absent', async () => {
-            const adapter = new AirbnbReputationAdapter({ apifyToken: 'tok' });
-            const listing = makeAirbnbListing();
-
-            const result = await adapter.fetch(listing);
-
-            expect(mockRunApifyActor).not.toHaveBeenCalled();
-            expect(result.rating).toBeNull();
-            expect(result.snippets).toBeNull();
-        });
-
-        it('should return all-null result when both credentials are absent', async () => {
+        it('should return all-null even when credentials are absent', async () => {
+            // Arrange
             const adapter = new AirbnbReputationAdapter({});
             const listing = makeAirbnbListing();
 
+            // Act
             const result = await adapter.fetch(listing);
 
-            expect(mockRunApifyActor).not.toHaveBeenCalled();
+            // Assert
             expect(result.rating).toBeNull();
+            expect(result.snippets).toBeNull();
         });
     });
 
-    describe('rating and reviewsCount mapping', () => {
-        it('should map rating from the `rating` field', async () => {
+    describe('startRun() — Phase A async enqueue', () => {
+        it('should call startApifyRun with correct actor input and return runId + datasetId', async () => {
+            // Arrange
             const adapter = new AirbnbReputationAdapter({
-                apifyToken: 'tok',
+                apifyToken: 'apify_tok',
                 apifyAirbnbActor: 'dtrungtin/airbnb-scraper'
             });
             const listing = makeAirbnbListing();
 
-            mockRunApifyActor.mockResolvedValueOnce([{ rating: 4.9, reviewsCount: 50 }]);
+            mockStartApifyRun.mockResolvedValueOnce({
+                runId: 'run-airbnb-111',
+                defaultDatasetId: 'ds-airbnb-222'
+            });
 
-            const result = await adapter.fetch(listing);
+            // Act
+            const result = await adapter.startRun(listing);
 
-            expect(result.rating).toBe(4.9);
-            expect(result.reviewsCount).toBe(50);
+            // Assert
+            expect(mockStartApifyRun).toHaveBeenCalledOnce();
+            expect(mockStartApifyRun).toHaveBeenCalledWith({
+                token: 'apify_tok',
+                actor: 'dtrungtin/airbnb-scraper',
+                actorInput: { startUrls: [{ url: listing.url }] }
+            });
+            expect(result).toEqual({ runId: 'run-airbnb-111', datasetId: 'ds-airbnb-222' });
         });
 
-        it('should map from a nested rating object (tri_angle/airbnb-rooms-urls-scraper)', async () => {
-            // The rooms-urls scraper returns the aggregate as a nested object:
-            // { guestSatisfaction, reviewsCount, accuracy, ... }. Only the
-            // aggregate sub-fields are read (no review text — AC-7.1).
+        it('should return null when apifyToken is absent', async () => {
+            // Arrange
             const adapter = new AirbnbReputationAdapter({
-                apifyToken: 'tok',
-                apifyAirbnbActor: 'tri_angle/airbnb-rooms-urls-scraper'
+                apifyAirbnbActor: 'dtrungtin/airbnb-scraper'
             });
             const listing = makeAirbnbListing();
 
-            mockRunApifyActor.mockResolvedValueOnce([
-                {
-                    rating: {
-                        guestSatisfaction: 5,
-                        reviewsCount: 9,
-                        accuracy: 5,
-                        cleanliness: 4.67
-                    }
-                }
-            ]);
+            // Act
+            const result = await adapter.startRun(listing);
 
-            const result = await adapter.fetch(listing);
-
-            expect(result.rating).toBe(5);
-            expect(result.reviewsCount).toBe(9);
-            expect(result.snippets).toBeNull();
+            // Assert
+            expect(mockStartApifyRun).not.toHaveBeenCalled();
+            expect(result).toBeNull();
         });
 
-        it('should fall back to starRating when rating is absent', async () => {
-            const adapter = new AirbnbReputationAdapter({
-                apifyToken: 'tok',
-                apifyAirbnbActor: 'actor/slug'
-            });
+        it('should return null when apifyAirbnbActor is absent', async () => {
+            // Arrange
+            const adapter = new AirbnbReputationAdapter({ apifyToken: 'tok' });
             const listing = makeAirbnbListing();
 
-            mockRunApifyActor.mockResolvedValueOnce([{ starRating: 4.5, numberOfReviews: 30 }]);
+            // Act
+            const result = await adapter.startRun(listing);
 
-            const result = await adapter.fetch(listing);
-
-            expect(result.rating).toBe(4.5);
-            expect(result.reviewsCount).toBe(30);
+            // Assert
+            expect(mockStartApifyRun).not.toHaveBeenCalled();
+            expect(result).toBeNull();
         });
 
-        it('should fall back to guestSatisfactionOverall when rating/starRating absent', async () => {
-            const adapter = new AirbnbReputationAdapter({
-                apifyToken: 'tok',
-                apifyAirbnbActor: 'actor/slug'
-            });
+        it('should return null when both credentials are absent', async () => {
+            // Arrange
+            const adapter = new AirbnbReputationAdapter({});
             const listing = makeAirbnbListing();
 
-            mockRunApifyActor.mockResolvedValueOnce([
-                { guestSatisfactionOverall: 97, reviewCount: 80 }
-            ]);
+            // Act
+            const result = await adapter.startRun(listing);
 
-            const result = await adapter.fetch(listing);
-
-            expect(result.rating).toBe(97);
+            // Assert
+            expect(mockStartApifyRun).not.toHaveBeenCalled();
+            expect(result).toBeNull();
         });
 
-        it('should use listing.url as deepLink when item has no url', async () => {
+        it('should return null when startApifyRun returns null (Apify API error)', async () => {
+            // Arrange
             const adapter = new AirbnbReputationAdapter({
                 apifyToken: 'tok',
                 apifyAirbnbActor: 'actor/slug'
             });
             const listing = makeAirbnbListing();
 
-            mockRunApifyActor.mockResolvedValueOnce([{ rating: 4.7, reviewsCount: 20 }]);
+            mockStartApifyRun.mockResolvedValueOnce(null);
 
-            const result = await adapter.fetch(listing);
+            // Act
+            const result = await adapter.startRun(listing);
 
-            expect(result.deepLink).toBe(listing.url);
-        });
-
-        it('should use item.url as deepLink when present', async () => {
-            const adapter = new AirbnbReputationAdapter({
-                apifyToken: 'tok',
-                apifyAirbnbActor: 'actor/slug'
-            });
-            const listing = makeAirbnbListing();
-            const itemUrl = 'https://www.airbnb.com/rooms/12345678?check_in=2024-05-01';
-
-            mockRunApifyActor.mockResolvedValueOnce([
-                { rating: 4.7, reviewsCount: 20, url: itemUrl }
-            ]);
-
-            const result = await adapter.fetch(listing);
-
-            expect(result.deepLink).toBe(itemUrl);
+            // Assert
+            expect(result).toBeNull();
         });
     });
 
-    describe('empty / error cases', () => {
-        it('should return all-null result when Apify returns empty dataset', async () => {
-            const adapter = new AirbnbReputationAdapter({
-                apifyToken: 'tok',
-                apifyAirbnbActor: 'actor/slug'
+    describe('mapDatasetItems() — Phase B pure mapping', () => {
+        describe('AC-7.1 legal guard — snippets must ALWAYS be null', () => {
+            it('should return snippets:null even when dataset item includes review text', () => {
+                // Arrange
+                const adapter = new AirbnbReputationAdapter({});
+                const listing = makeAirbnbListing();
+                const items = [
+                    {
+                        rating: 4.8,
+                        reviewsCount: 95,
+                        // These fields MUST NOT appear in the result:
+                        reviews: [
+                            { author: 'Carlos M.', text: 'Perfect location!', rating: 5 },
+                            { author: 'Laura P.', text: 'Very clean.', rating: 5 }
+                        ],
+                        reviewsList: [{ text: 'Would come again!' }],
+                        guestReviews: 'Many positive reviews'
+                    }
+                ];
+
+                // Act
+                const result = adapter.mapDatasetItems(items, listing);
+
+                // Assert
+                expect(result.snippets).toBeNull();
             });
-            const listing = makeAirbnbListing();
-
-            mockRunApifyActor.mockResolvedValueOnce([]);
-
-            const result = await adapter.fetch(listing);
-
-            expect(result.rating).toBeNull();
-            expect(result.reviewsCount).toBeNull();
-            expect(result.snippets).toBeNull();
         });
 
-        it('should return all-null result without throwing on unexpected error', async () => {
-            const adapter = new AirbnbReputationAdapter({
-                apifyToken: 'tok',
-                apifyAirbnbActor: 'actor/slug'
+        describe('rating and reviewsCount mapping', () => {
+            it('should map rating from the flat `rating` field', () => {
+                // Arrange
+                const adapter = new AirbnbReputationAdapter({});
+                const listing = makeAirbnbListing();
+                const items = [{ rating: 4.9, reviewsCount: 50 }];
+
+                // Act
+                const result = adapter.mapDatasetItems(items, listing);
+
+                // Assert
+                expect(result.rating).toBe(4.9);
+                expect(result.reviewsCount).toBe(50);
             });
-            const listing = makeAirbnbListing();
 
-            mockRunApifyActor.mockRejectedValueOnce(new Error('network failure'));
+            it('should map from a nested rating object (tri_angle/airbnb-rooms-urls-scraper)', () => {
+                // The rooms-urls scraper returns the aggregate as a nested object:
+                // { guestSatisfaction, reviewsCount, accuracy, ... }. Only the
+                // aggregate sub-fields are read (no review text — AC-7.1).
+                const adapter = new AirbnbReputationAdapter({});
+                const listing = makeAirbnbListing();
+                const items = [
+                    {
+                        rating: {
+                            guestSatisfaction: 5,
+                            reviewsCount: 9,
+                            accuracy: 5,
+                            cleanliness: 4.67
+                        }
+                    }
+                ];
 
-            await expect(adapter.fetch(listing)).resolves.toMatchObject({
-                rating: null,
-                reviewsCount: null,
-                snippets: null
+                // Act
+                const result = adapter.mapDatasetItems(items, listing);
+
+                // Assert
+                expect(result.rating).toBe(5);
+                expect(result.reviewsCount).toBe(9);
+                expect(result.snippets).toBeNull();
+            });
+
+            it('should fall back to starRating when rating is absent', () => {
+                // Arrange
+                const adapter = new AirbnbReputationAdapter({});
+                const listing = makeAirbnbListing();
+                const items = [{ starRating: 4.5, numberOfReviews: 30 }];
+
+                // Act
+                const result = adapter.mapDatasetItems(items, listing);
+
+                // Assert
+                expect(result.rating).toBe(4.5);
+                expect(result.reviewsCount).toBe(30);
+            });
+
+            it('should fall back to guestSatisfactionOverall when rating/starRating absent', () => {
+                // Arrange
+                const adapter = new AirbnbReputationAdapter({});
+                const listing = makeAirbnbListing();
+                const items = [{ guestSatisfactionOverall: 97, reviewCount: 80 }];
+
+                // Act
+                const result = adapter.mapDatasetItems(items, listing);
+
+                // Assert
+                expect(result.rating).toBe(97);
+            });
+
+            it('should prefer nested reviewsCount over flat field', () => {
+                // Arrange: tri_angle actor has nested reviewsCount under `rating`
+                const adapter = new AirbnbReputationAdapter({});
+                const listing = makeAirbnbListing();
+                const items = [
+                    {
+                        rating: { guestSatisfaction: 4.8, reviewsCount: 42 },
+                        reviewsCount: 999 // top-level should be secondary
+                    }
+                ];
+
+                // Act
+                const result = adapter.mapDatasetItems(items, listing);
+
+                // Assert: nested wins
+                expect(result.reviewsCount).toBe(42);
+            });
+
+            it('should use listing.url as deepLink when item has no url', () => {
+                // Arrange
+                const adapter = new AirbnbReputationAdapter({});
+                const listing = makeAirbnbListing();
+                const items = [{ rating: 4.7, reviewsCount: 20 }];
+
+                // Act
+                const result = adapter.mapDatasetItems(items, listing);
+
+                // Assert
+                expect(result.deepLink).toBe(listing.url);
+            });
+
+            it('should use item.url as deepLink when present', () => {
+                // Arrange
+                const adapter = new AirbnbReputationAdapter({});
+                const listing = makeAirbnbListing();
+                const itemUrl = 'https://www.airbnb.com/rooms/12345678?check_in=2024-05-01';
+                const items = [{ rating: 4.7, reviewsCount: 20, url: itemUrl }];
+
+                // Act
+                const result = adapter.mapDatasetItems(items, listing);
+
+                // Assert
+                expect(result.deepLink).toBe(itemUrl);
+            });
+        });
+
+        describe('empty / error cases', () => {
+            it('should return all-null when items array is empty', () => {
+                // Arrange
+                const adapter = new AirbnbReputationAdapter({});
+                const listing = makeAirbnbListing();
+
+                // Act
+                const result = adapter.mapDatasetItems([], listing);
+
+                // Assert
+                expect(result.rating).toBeNull();
+                expect(result.reviewsCount).toBeNull();
+                expect(result.deepLink).toBeNull();
+                expect(result.snippets).toBeNull();
+            });
+
+            it('should return null rating for non-numeric string', () => {
+                // Arrange
+                const adapter = new AirbnbReputationAdapter({});
+                const listing = makeAirbnbListing();
+                const items = [{ rating: 'not-a-number', reviewsCount: 10 }];
+
+                // Act
+                const result = adapter.mapDatasetItems(items, listing);
+
+                // Assert
+                expect(result.rating).toBeNull();
+                expect(result.reviewsCount).toBe(10);
+            });
+
+            it('should return null rating and reviewsCount when all fields absent', () => {
+                // Arrange
+                const adapter = new AirbnbReputationAdapter({});
+                const listing = makeAirbnbListing();
+                const items = [{ url: 'https://www.airbnb.com/rooms/99999' }];
+
+                // Act
+                const result = adapter.mapDatasetItems(items, listing);
+
+                // Assert
+                expect(result.rating).toBeNull();
+                expect(result.reviewsCount).toBeNull();
             });
         });
     });
