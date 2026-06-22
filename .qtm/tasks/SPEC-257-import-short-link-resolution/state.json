@@ -8,7 +8,7 @@
             "id": "T-001",
             "title": "Confirm worktree dev env + import rate limit",
             "description": "Verify that the SPEC-257 worktree dev environment is correctly set up before writing any code. Specifically:\n\n1. Confirm `apps/api/.env.local` has the import rate limit raised to 100/h (the same raise applied during the SPEC-222 Chrome smoke). Look for a key like `HOSPEDA_IMPORT_RATE_LIMIT_PER_HOUR` or similar — grep `apps/api/.env.local` and `apps/api/src/utils/env.ts` to find the actual key name.\n2. Confirm the web app is running (or can be started) on port 4422 (`apps/web`), the API on 3102 (`apps/api`), and the worktree DB on 5436 (PostgreSQL). These ports were established in the SPEC-222 smoke (see memory `spec-222-smoke.md`).\n3. If any env key is missing or the port config is wrong, document the delta — but do NOT start coding. Fix the config only; no logic changes.\n\nThis task has no code output. Acceptance: every env/port check passes or the gap is documented in a comment in this task.\n\nKey files to inspect: `apps/api/.env.local`, `apps/web/.env.local`, `apps/api/src/utils/env.ts`.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": [],
@@ -32,7 +32,7 @@
             "timestamps": {
                 "created": "2026-06-22T02:36:01Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-22T14:22:03Z"
             }
         },
         {
@@ -323,7 +323,7 @@
             "id": "T-010",
             "title": "Real Chrome smoke + confirm Airbnb actor fields",
             "description": "Run a real Chrome smoke against the local worktree environment (web :4422, API :3102, DB :5436) to validate the end-to-end flows and confirm the actual Airbnb Apify actor field names for the T-004 enrichment.\n\n**Environment prerequisites:** servers running (`pnpm cli wt:up` or start manually), rate limit at 100/h (T-001).\n\n**Smoke scenarios:**\n\n1. **Google short link:** paste `https://maps.app.goo.gl/dCaudGsZ8r9fKvWk9` (\"Cheroga\") into `/es/publicar/nueva/`. Assert:\n   - The import resolves and the draft prefills with the place name and coordinates.\n   - The \"Importado · NN% · ...\" badge appears.\n   - No console errors about resolveCanonicalUrl.\n\n2. **Airbnb enrichment + field confirmation:** paste `https://www.airbnb.com.ar/rooms/817515602448448452` into the import. Inspect the prefilled draft:\n   - Open the network tab and check the `/api/v1/protected/accommodations/import` response body.\n   - Find the actual field names the Apify actor returns for description, amenities and beds in the raw response payload.\n   - Compare to T-004's `AirbnbItem` interface; if the candidate field names differ, update the interface in T-004 now (finalize the TODO T-010 comments).\n   - Assert that summary/amenityNames/beds are present in the prefilled draft if the actor returned them.\n\n3. **Booking help copy:** navigate to the import form, expand the help panel for Booking. Assert the updated copy renders (mentions `booking.com/hotel/...` and warns against Share-... links). No missing-key `[MISSING: ...]` tokens visible.\n\n**Tests must run one file at a time** (`pnpm exec vitest run <path>`) to avoid OOM.\n\nAC-1.1, AC-1.2, AC-4.1, AC-4.2, AC-4.3, AC-3.1.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": ["T-003", "T-004", "T-005", "T-006"],
             "blocks": ["T-011"],
@@ -359,7 +359,7 @@
             "timestamps": {
                 "created": "2026-06-22T02:36:01Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-22T14:22:03Z"
             }
         },
         {
@@ -462,13 +462,123 @@
                 "started": "2026-06-22T13:25:25Z",
                 "completed": "2026-06-22T13:25:25Z"
             }
+        },
+        {
+            "id": "T-015",
+            "title": "Re-map Airbnb adapter to the real tri_angle actor",
+            "description": "Smoke finding: adapter was written for a different actor. locale via actor input (not URL ?locale= which breaks it); summary<-metaDescription; locality<-location; capacity/bedrooms/beds/bathrooms<-parse subDescription.items (es/en/pt); amenities grouped shape; type prefers propertyType.",
+            "status": "completed",
+            "complexity": 4,
+            "blockedBy": ["T-010"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["service-core", "airbnb", "locale"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T14:22:03Z",
+                "started": "2026-06-22T14:22:03Z",
+                "completed": "2026-06-22T14:22:03Z"
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Map Google editorialSummary to draft summary",
+            "description": "Smoke/owner finding: Google imports had no description. Add editorialSummary to field masks + map to summary. Reviews stay out (SPEC-222).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-010"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["service-core", "google-places"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T14:22:03Z",
+                "started": "2026-06-22T14:22:03Z",
+                "completed": "2026-06-22T14:22:03Z"
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Fix destination hint country filter (DbError)",
+            "description": "Smoke finding: import passed country to destination.search but destinations has no country column -> DbError -> zero candidates -> city never detected. Search by locality only.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-019"],
+            "subtasks": [],
+            "tags": ["service-core", "destination"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T14:22:03Z",
+                "started": "2026-06-22T14:22:03Z",
+                "completed": "2026-06-22T14:22:03Z"
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Map free-text platform type to AccommodationTypeEnum",
+            "description": "Owner finding: imported type never matched the enum so the picker was empty. mapAccommodationType keyword heuristic (es/en/pt) in mapRawToDraft. Airbnb prefers propertyType.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-019"],
+            "subtasks": [],
+            "tags": ["service-core", "mapping", "type"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T14:22:03Z",
+                "started": "2026-06-22T14:22:03Z",
+                "completed": "2026-06-22T14:22:03Z"
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Web: auto-select detected destination in mini-form + i18n",
+            "description": "Owner request: pre-select the best destination candidate in the City picker (editable). Relaxes SPEC-222 AC-8.2 at UI layer (backend never sets FK). New autoSelected i18n key es/en/pt.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-017"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["web", "i18n", "destination"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T14:22:03Z",
+                "started": "2026-06-22T14:22:03Z",
+                "completed": "2026-06-22T14:22:03Z"
+            }
         }
     ],
     "summary": {
-        "total": 14,
+        "total": 19,
         "byStatus": {
-            "pending": 3,
-            "completed": 11
+            "completed": 18,
+            "pending": 1
         },
         "byPhase": {
             "setup": 1,

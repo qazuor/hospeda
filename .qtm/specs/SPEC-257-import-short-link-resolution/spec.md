@@ -244,6 +244,33 @@ imported, **so that** my draft is more complete.
   actor fields.
 - **Docs/cleanup:** update SPEC-222 cross-reference; PR to staging.
 
+## Smoke Findings (2026-06-22) — scope expansion (piece E)
+
+The real Chrome smoke validated piece A (Google short link resolves + prefills,
+city auto-detected) and piece B (help copy), and surfaced deeper issues that were
+fixed under this spec (owner-approved during the smoke):
+
+- **Airbnb adapter was written for a different actor.** The configured `tri_angle`
+  actor has no `summary`/`beds`/`bedrooms` top-level fields and returned English
+  content. Re-mapped: locale via **actor input** (`{locale: 'es-AR'}`, NOT a `?locale=`
+  URL param — that breaks the actor), `summary←metaDescription`, `locality←location`,
+  capacity figures parsed from `subDescription.items` (es/en/pt), grouped amenities,
+  `type` prefers `propertyType`.
+- **Destination never auto-detected**: the hint passed `country` to the destination
+  search, but `destinations` has no `country` column → DbError → zero candidates.
+  Fixed: search by locality name only.
+- **Type never prefilled**: free-text platform types didn't match the enum. Added
+  `mapAccommodationType` (keyword heuristic, es/en/pt) in `mapRawToDraft`.
+- **Google description empty**: added `editorialSummary` to the field mask (still
+  empty for places Google has no blurb for — a source limitation, not a bug).
+- **Auto-select destination (UI)**: the mini-form now pre-selects the best candidate
+  (editable). Relaxes SPEC-222 AC-8.2 at the UI layer per owner request; the backend
+  still never sets the destination FK.
+
+Live status: Google e2e ✓ (name + city in es). Airbnb e2e ✓ in Spanish (name +
+summary; the actor is anti-bot flaky on repeated runs — type/beds covered by unit
+tests + a direct actor probe). Booking help copy ✓.
+
 ## Internal Review Notes
 
 - **Strengthened during review:** the original handoff premise "Airbnb maps only the name" was
