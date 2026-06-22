@@ -1429,43 +1429,43 @@
             "id": "T-040",
             "title": "Build admin UI post detail page (/admin/social/posts/$id)",
             "description": "Create `apps/admin/src/routes/_authed/social/posts/$id.tsx`.\n\nFeatures:\n- Header: Title, status badge, approval badge, paused toggle\n- Tabs:\n  - Content: caption_base, final_caption, final_hashtags_text, gpt_hashtag_payload_json suggestions (each with 'Promote' button)\n  - Media: Cloudinary thumbnail grid (ordered by position)\n  - Targets: per-platform status list\n  - Logs: last 20 publish log entries\n  - Audit: audit log entries for this post\n- Action bar (sticky, permission-gated): Approve, Reject, Request Changes, Schedule, Mark Ready, Pause/Unpause, Archive. Each opens a confirmation dialog (with optional reason/feedback text input where applicable)\n- Promote Hashtag modal: form with hashtag, category, platform (optional), priority; calls promote-hashtag route\n- Keyboard navigation: Tab+Enter triggers focused action button\n- ARIA live regions for error/success messages\n- TanStack Query for all nested data\n\nTest requirements:\n- Component tests: action bar buttons shown/hidden per permission, confirmation dialog opens on click, promote-hashtag modal renders, accessibility: aria-labels on platform icons\n- File: `apps/admin/src/routes/_authed/social/__tests__/post-detail.test.tsx`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-039"],
             "blocks": ["T-041"],
             "subtasks": [
                 {
                     "title": "Create $id.tsx skeleton with tabs and header",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement Content tab + Promote Hashtag modal",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement Media, Targets, Logs, Audit tabs",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement sticky action bar with confirmation dialogs",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write component tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin-ui", "posts"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
             }
         },
         {
