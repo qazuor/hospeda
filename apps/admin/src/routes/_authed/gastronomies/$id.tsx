@@ -219,23 +219,28 @@ function GastronomyViewPage() {
 
     return (
         <div className="space-y-4">
-            <div className="flex justify-end">
-                <DeleteRowButton
-                    entityId={id}
-                    entityName={gastronomy?.name ?? id}
-                    entityLabel={t('admin-entities.entities.gastronomy.singular')}
-                    permission={PermissionEnum.COMMERCE_DELETE}
-                    useDeleteMutation={useDeleteGastronomyMutation}
-                    variant="full"
-                    entityGender="f"
-                    onDeleted={() => navigate({ to: '/gastronomies' })}
+            {/* px-6 mirrors the EntityPageBase content inset so the delete row
+                and assign-owner card align with the entity card below instead of
+                sitting full-bleed against the page edges. */}
+            <div className="space-y-4 px-6 pt-6">
+                <div className="flex justify-end">
+                    <DeleteRowButton
+                        entityId={id}
+                        entityName={gastronomy?.name ?? id}
+                        entityLabel={t('admin-entities.entities.gastronomy.singular')}
+                        permission={PermissionEnum.COMMERCE_DELETE}
+                        useDeleteMutation={useDeleteGastronomyMutation}
+                        variant="full"
+                        entityGender="f"
+                        onDeleted={() => navigate({ to: '/gastronomies' })}
+                    />
+                </div>
+
+                <GastronomyAssignOwner
+                    gastronomyId={id}
+                    currentOwnerId={gastronomy?.ownerId}
                 />
             </div>
-
-            <GastronomyAssignOwner
-                gastronomyId={id}
-                currentOwnerId={gastronomy?.ownerId}
-            />
 
             <EntityPageBase
                 entityType="gastronomy"
