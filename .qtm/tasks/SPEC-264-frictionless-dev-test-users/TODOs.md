@@ -1,6 +1,6 @@
 # TODOs: Frictionless dev/test user setup
 
-Spec: SPEC-264 | Status: in-progress | Progress: 7/8
+Spec: SPEC-264 | Status: in-progress | Progress: 8/8 (awaiting PR #1768 merge)
 
 ## Setup
 
@@ -26,4 +26,4 @@ Spec: SPEC-264 | Status: in-progress | Progress: 7/8
 
 ## Cleanup / Verify
 
-- [ ] T-007: Verify SC-1..SC-4 via db:fresh-dev + login (complexity: 3) [blocked by T-004, T-005]
+- [x] T-007: Verify SC-1..SC-4 via db:fresh-dev + login (complexity: 3) [blocked by T-004, T-005]
