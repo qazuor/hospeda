@@ -510,7 +510,7 @@
             "id": "T-015",
             "title": "Create seed data files for all catalog entities (platforms, platform-formats, campaigns, batches, audiences, hashtag-sets, hashtags, footers, settings)",
             "description": "Create seed files in `packages/seed/src/required/` using `createSeedFactory` + JSON fixture files in `packages/seed/src/data/social/`:\n- `social-platforms.seed.ts` + `social-platforms.data.json` (3 rows: INSTAGRAM, FACEBOOK, X)\n- `social-platform-formats.seed.ts` + `social-platform-formats.data.json` (13 rows per spec: INSTAGRAM×FEED_POST, INSTAGRAM×REEL, INSTAGRAM×STORY, INSTAGRAM×CAROUSEL, FACEBOOK×PHOTO_POST, FACEBOOK×VIDEO_POST, FACEBOOK×STORY, X×TEXT_POST, X×IMAGE_POST, X×VIDEO_POST, plus enabled/makeChannelKey/requiresMedia per each)\n- `social-campaigns.seed.ts` (at least 1 default row: `institucional-hospeda`)\n- `social-content-batches.seed.ts` (at least 1 default row: `hospeda-launch-2026-06`)\n- `social-audiences.seed.ts` (at least 1 row: `turistas`)\n- `social-hashtag-sets.seed.ts` (at least 1 row: `verano`)\n- `social-hashtags.seed.ts` (at least 2 sample hashtags)\n- `social-post-footers.seed.ts` (1 default row: `hospeda-default` with `is_default=true`)\n- `social-settings.seed.ts` (keys: `make_webhook_url`, `default_timezone`, `max_hashtags_per_platform_json`, `dispatch_cron_interval_minutes`)\n\nAll seed files must be idempotent (upsert by unique key). `social_platforms` is seed-only — no create endpoint per resolved decision #4.\n\nTest requirements:\n- Integration test: run all seeds against a test DB and assert expected row counts\n- File: `packages/seed/src/__tests__/social-seeds.test.ts`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-012", "T-014", "T-016", "T-017"],
             "blocks": ["T-018"],
@@ -531,14 +531,14 @@
             "tags": ["seed", "database"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": true,
+                "typecheck": true,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
             }
         },
         {
@@ -1911,9 +1911,9 @@
     ],
     "summary": {
         "total": 52,
-        "pending": 34,
+        "pending": 33,
         "inProgress": 0,
-        "completed": 18,
+        "completed": 19,
         "blocked": 0,
         "averageComplexity": 2.3
     }
