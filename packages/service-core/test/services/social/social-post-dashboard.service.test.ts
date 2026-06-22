@@ -360,7 +360,7 @@ describe('SocialPostService.getDashboard — SPEC-254 T-037', () => {
             const result = await service.getDashboard({ actor });
 
             // Assert
-            expect(result.data?.quickApprovalQueue[0].thumbnailUrl).toBe(
+            expect(result.data?.quickApprovalQueue[0]?.thumbnailUrl).toBe(
                 'https://res.cloudinary.com/demo/image/upload/sample.jpg'
             );
         });
@@ -441,7 +441,7 @@ describe('SocialPostService.getDashboard — SPEC-254 T-037', () => {
             const result = await service.getDashboard({ actor });
 
             // Assert
-            expect(result.data?.recentFailures[0].postTitle).toBe('Unknown');
+            expect(result.data?.recentFailures[0]?.postTitle).toBe('Unknown');
         });
 
         it('maps null lastErrorMessage to null on the failure item', async () => {
@@ -475,7 +475,7 @@ describe('SocialPostService.getDashboard — SPEC-254 T-037', () => {
             const result = await service.getDashboard({ actor });
 
             // Assert
-            expect(result.data?.recentFailures[0].lastError).toBeNull();
+            expect(result.data?.recentFailures[0]?.lastError).toBeNull();
         });
     });
 

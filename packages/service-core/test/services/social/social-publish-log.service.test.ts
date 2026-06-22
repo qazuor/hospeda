@@ -120,7 +120,7 @@ describe('SocialPublishLogService.list — SPEC-254 T-037', () => {
             await service.list(buildInput());
 
             // Assert
-            const [, opts] = modelMock.findAll.mock.calls[0];
+            const [, opts] = modelMock.findAll.mock.calls[0] ?? [];
             expect(opts.sortBy).toBe('createdAt');
             expect(opts.sortOrder).toBe('desc');
         });
@@ -136,7 +136,7 @@ describe('SocialPublishLogService.list — SPEC-254 T-037', () => {
             await service.list(buildInput({ filters: {} }));
 
             // Assert
-            const [, opts] = modelMock.findAll.mock.calls[0];
+            const [, opts] = modelMock.findAll.mock.calls[0] ?? [];
             expect(opts.page).toBe(1);
             expect(opts.pageSize).toBe(20);
         });
@@ -146,7 +146,7 @@ describe('SocialPublishLogService.list — SPEC-254 T-037', () => {
             await service.list(buildInput({ filters: { pageSize: 500 } }));
 
             // Assert
-            const [, opts] = modelMock.findAll.mock.calls[0];
+            const [, opts] = modelMock.findAll.mock.calls[0] ?? [];
             expect(opts.pageSize).toBe(100);
         });
 
@@ -155,7 +155,7 @@ describe('SocialPublishLogService.list — SPEC-254 T-037', () => {
             await service.list(buildInput({ filters: { page: 2, pageSize: 50 } }));
 
             // Assert
-            const [, opts] = modelMock.findAll.mock.calls[0];
+            const [, opts] = modelMock.findAll.mock.calls[0] ?? [];
             expect(opts.page).toBe(2);
             expect(opts.pageSize).toBe(50);
         });
@@ -171,7 +171,7 @@ describe('SocialPublishLogService.list — SPEC-254 T-037', () => {
             await service.list(buildInput({ filters: { postId: POST_ID } }));
 
             // Assert
-            const [where] = modelMock.findAll.mock.calls[0];
+            const [where] = modelMock.findAll.mock.calls[0] ?? [];
             expect(where.socialPostId).toBe(POST_ID);
             expect(where.postId).toBeUndefined();
         });
@@ -181,7 +181,7 @@ describe('SocialPublishLogService.list — SPEC-254 T-037', () => {
             await service.list(buildInput({ filters: { targetId: TARGET_ID } }));
 
             // Assert
-            const [where] = modelMock.findAll.mock.calls[0];
+            const [where] = modelMock.findAll.mock.calls[0] ?? [];
             expect(where.socialPostTargetId).toBe(TARGET_ID);
             expect(where.targetId).toBeUndefined();
         });
@@ -195,7 +195,7 @@ describe('SocialPublishLogService.list — SPEC-254 T-037', () => {
             );
 
             // Assert
-            const [where] = modelMock.findAll.mock.calls[0];
+            const [where] = modelMock.findAll.mock.calls[0] ?? [];
             expect(where.status).toBe(SocialPublishResultStatusEnum.FAILED);
         });
 
@@ -204,7 +204,7 @@ describe('SocialPublishLogService.list — SPEC-254 T-037', () => {
             await service.list(buildInput({ filters: { platform: 'INSTAGRAM' } }));
 
             // Assert
-            const [where] = modelMock.findAll.mock.calls[0];
+            const [where] = modelMock.findAll.mock.calls[0] ?? [];
             expect(where.platform).toBe('INSTAGRAM');
         });
 
@@ -213,7 +213,7 @@ describe('SocialPublishLogService.list — SPEC-254 T-037', () => {
             await service.list(buildInput({ filters: {} }));
 
             // Assert
-            const [where] = modelMock.findAll.mock.calls[0];
+            const [where] = modelMock.findAll.mock.calls[0] ?? [];
             expect(Object.keys(where)).toHaveLength(0);
         });
 
@@ -230,7 +230,7 @@ describe('SocialPublishLogService.list — SPEC-254 T-037', () => {
             );
 
             // Assert
-            const [where] = modelMock.findAll.mock.calls[0];
+            const [where] = modelMock.findAll.mock.calls[0] ?? [];
             expect(where.socialPostId).toBe(POST_ID);
             expect(where.status).toBe(SocialPublishResultStatusEnum.SUCCESS);
             expect(where.platform).toBe('FACEBOOK');

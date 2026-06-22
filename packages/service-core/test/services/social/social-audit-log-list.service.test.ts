@@ -115,7 +115,7 @@ describe('SocialAuditLogService.list — SPEC-254 T-037', () => {
             await service.list(buildInput());
 
             // Assert
-            const [, opts] = modelMock.findAll.mock.calls[0];
+            const [, opts] = modelMock.findAll.mock.calls[0] ?? [];
             expect(opts.sortBy).toBe('createdAt');
             expect(opts.sortOrder).toBe('desc');
         });
@@ -131,7 +131,7 @@ describe('SocialAuditLogService.list — SPEC-254 T-037', () => {
             await service.list(buildInput({ filters: {} }));
 
             // Assert
-            const [, opts] = modelMock.findAll.mock.calls[0];
+            const [, opts] = modelMock.findAll.mock.calls[0] ?? [];
             expect(opts.page).toBe(1);
             expect(opts.pageSize).toBe(20);
         });
@@ -141,7 +141,7 @@ describe('SocialAuditLogService.list — SPEC-254 T-037', () => {
             await service.list(buildInput({ filters: { pageSize: 200 } }));
 
             // Assert
-            const [, opts] = modelMock.findAll.mock.calls[0];
+            const [, opts] = modelMock.findAll.mock.calls[0] ?? [];
             expect(opts.pageSize).toBe(100);
         });
 
@@ -150,7 +150,7 @@ describe('SocialAuditLogService.list — SPEC-254 T-037', () => {
             await service.list(buildInput({ filters: { page: 3, pageSize: 50 } }));
 
             // Assert
-            const [, opts] = modelMock.findAll.mock.calls[0];
+            const [, opts] = modelMock.findAll.mock.calls[0] ?? [];
             expect(opts.page).toBe(3);
             expect(opts.pageSize).toBe(50);
         });
@@ -166,7 +166,7 @@ describe('SocialAuditLogService.list — SPEC-254 T-037', () => {
             await service.list(buildInput({ filters: { entityType: 'social_post' } }));
 
             // Assert
-            const [where] = modelMock.findAll.mock.calls[0];
+            const [where] = modelMock.findAll.mock.calls[0] ?? [];
             expect(where.entityType).toBe('social_post');
         });
 
@@ -175,7 +175,7 @@ describe('SocialAuditLogService.list — SPEC-254 T-037', () => {
             await service.list(buildInput({ filters: { entityId: ENTITY_ID } }));
 
             // Assert
-            const [where] = modelMock.findAll.mock.calls[0];
+            const [where] = modelMock.findAll.mock.calls[0] ?? [];
             expect(where.entityId).toBe(ENTITY_ID);
         });
 
@@ -184,7 +184,7 @@ describe('SocialAuditLogService.list — SPEC-254 T-037', () => {
             await service.list(buildInput({ filters: { eventType: 'POST_APPROVED' } }));
 
             // Assert
-            const [where] = modelMock.findAll.mock.calls[0];
+            const [where] = modelMock.findAll.mock.calls[0] ?? [];
             expect(where.eventType).toBe('POST_APPROVED');
         });
 
@@ -193,7 +193,7 @@ describe('SocialAuditLogService.list — SPEC-254 T-037', () => {
             await service.list(buildInput({ filters: { actorId: ACTOR_ID } }));
 
             // Assert
-            const [where] = modelMock.findAll.mock.calls[0];
+            const [where] = modelMock.findAll.mock.calls[0] ?? [];
             expect(where.actorId).toBe(ACTOR_ID);
         });
 
@@ -202,7 +202,7 @@ describe('SocialAuditLogService.list — SPEC-254 T-037', () => {
             await service.list(buildInput({ filters: {} }));
 
             // Assert
-            const [where] = modelMock.findAll.mock.calls[0];
+            const [where] = modelMock.findAll.mock.calls[0] ?? [];
             expect(Object.keys(where)).toHaveLength(0);
         });
     });
@@ -221,7 +221,7 @@ describe('SocialAuditLogService.list — SPEC-254 T-037', () => {
             );
 
             // Assert
-            const [, , conditions] = modelMock.findAll.mock.calls[0];
+            const [, , conditions] = modelMock.findAll.mock.calls[0] ?? [];
             expect(Array.isArray(conditions)).toBe(true);
             expect(conditions).toHaveLength(1);
         });
@@ -235,7 +235,7 @@ describe('SocialAuditLogService.list — SPEC-254 T-037', () => {
             );
 
             // Assert
-            const [, , conditions] = modelMock.findAll.mock.calls[0];
+            const [, , conditions] = modelMock.findAll.mock.calls[0] ?? [];
             expect(Array.isArray(conditions)).toBe(true);
             expect(conditions).toHaveLength(1);
         });
@@ -252,7 +252,7 @@ describe('SocialAuditLogService.list — SPEC-254 T-037', () => {
             );
 
             // Assert
-            const [, , conditions] = modelMock.findAll.mock.calls[0];
+            const [, , conditions] = modelMock.findAll.mock.calls[0] ?? [];
             expect(conditions).toHaveLength(2);
         });
 
@@ -261,7 +261,7 @@ describe('SocialAuditLogService.list — SPEC-254 T-037', () => {
             await service.list(buildInput({ filters: {} }));
 
             // Assert
-            const [, , conditions] = modelMock.findAll.mock.calls[0];
+            const [, , conditions] = modelMock.findAll.mock.calls[0] ?? [];
             expect(conditions).toBeUndefined();
         });
     });
