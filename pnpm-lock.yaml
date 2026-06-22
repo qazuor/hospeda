@@ -1379,6 +1379,9 @@ importers:
         specifier: 4.3.6
         version: 4.3.6
     devDependencies:
+      '@repo/schemas':
+        specifier: workspace:*
+        version: link:../schemas
       '@repo/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
