@@ -870,6 +870,46 @@ describe('GooglePlacesAdapter', () => {
             const [calledUrl] = mockFetch.mock.calls[0] as [string, RequestInit];
             expect(calledUrl).toBe(`https://places.googleapis.com/v1/places/${placeId}`);
         });
+
+        it('should map editorialSummary to the draft summary (SPEC-257)', async () => {
+            // Arrange — Places returns a short editorial blurb
+            const mockFetch = mockFetchOk({
+                displayName: { text: 'Cheroga Casa Quinta' },
+                editorialSummary: { text: 'Casa de campo con pileta y parque.', languageCode: 'es' }
+            });
+            vi.stubGlobal('fetch', mockFetch);
+            const url = new URL(
+                'https://www.google.com/maps/place/Cheroga?place_id=ChIJN1t_tDeuEmsRUsoyG83frY4'
+            );
+
+            // Act
+            const result = await adapter.extract(url, makeCtx());
+
+            // Assert
+            expect(result.summary).toEqual({
+                value: 'Casa de campo con pileta y parque.',
+                source: 'official_api'
+            });
+        });
+
+        it('should request editorialSummary in the field mask (SPEC-257)', async () => {
+            // Arrange
+            const mockFetch = mockFetchOk(makePlacesResponse());
+            vi.stubGlobal('fetch', mockFetch);
+            const url = new URL(
+                'https://www.google.com/maps/place/Hotel?place_id=ChIJN1t_tDeuEmsRUsoyG83frY4'
+            );
+
+            // Act
+            await adapter.extract(url, makeCtx());
+
+            // Assert — and reviews/rating still NOT requested
+            const [, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+            const mask = (init?.headers as Record<string, string>)['X-Goog-FieldMask'] ?? '';
+            expect(mask).toContain('editorialSummary');
+            expect(mask).not.toContain('rating');
+            expect(mask).not.toContain('reviews');
+        });
     });
 
     // -----------------------------------------------------------------------
