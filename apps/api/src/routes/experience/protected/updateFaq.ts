@@ -2,7 +2,7 @@
  * PUT /api/v1/protected/experiences/:id/faqs/:faqId
  * Update an existing FAQ on an experience listing (T-020)
  *
- * Gated on COMMERCE_FAQS_EDIT_OWN (listing owner) or COMMERCE_EDIT_ALL (staff).
+ * Gated on COMMERCE_EDIT_OWN (listing owner) or COMMERCE_EDIT_ALL (staff).
  * The FAQ must belong to the specified experience (enforced inside updateExperienceFaq).
  */
 import {
