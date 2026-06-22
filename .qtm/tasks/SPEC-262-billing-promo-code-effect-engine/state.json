@@ -6,8 +6,8 @@
     "summary": {
         "total": 15,
         "byStatus": {
-            "pending": 12,
-            "completed": 3
+            "pending": 11,
+            "completed": 4
         },
         "byPhase": {
             "spike": 1,
@@ -90,7 +90,7 @@
             "id": "T-004",
             "title": "Extend @repo/schemas promo-code Zod schemas for typed effects",
             "description": "Extend schemas in `packages/schemas/src/api/billing/promo-code.schema.ts`:\n\n- Add `PromoEffectKindEnum` and `ValueKindEnum` enums\n- Replace the current `discountType: 'percentage' | 'fixed'` flat field with a discriminated union `effect` discriminated on `kind`:\n  - `discount`: `{ kind: 'discount', valueKind: 'percentage' | 'fixed', value: number, durationCycles: number | null }`\n    - refines: percentage value \u2264 100 (AC-1.2), durationCycles > 0 when not null (AC-1.3)\n  - `trial_extension`: `{ kind: 'trial_extension', extraDays: number }` (positive integer)\n  - `comp`: `{ kind: 'comp' }` (no extra params)\n- Update `CreatePromoCodeSchema` (admin create/edit input) and `PromoCodeResponseSchema` (API response / admin form hydration)\n- Keep backward-compat: existing one-shot codes serialize as `{ kind: 'discount', valueKind: ..., value: ..., durationCycles: 1 }`\n- Export inferred `CreatePromoCodeInput`, `PromoCodeResponse`, `PromoEffect` types\n- Unit tests: valid combos parse, invalid (percentage > 100, negative days, durationCycles = 0, comp with value) are rejected\n\nAcceptance criteria:\n- AC-1.2, AC-1.3, AC-5.1\u2013AC-5.4 (schema is the single source of truth for admin form validation)\n- AC-4.3 (one-shot response shape unchanged for clients using durationCycles=1)\n- `pnpm typecheck` passes across all packages",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002", "T-003"],
             "blocks": ["T-005", "T-006", "T-009", "T-010"],
