@@ -1620,7 +1620,7 @@
             "id": "T-045",
             "title": "Implement SocialPublishDispatchService — dispatchTarget with retry logic",
             "description": "Add to `social-publish-dispatch.service.ts`:\n\n`dispatchTarget(targetId: string): Promise<DispatchResult>`:\n1. Load target + parent post\n2. Set target.status = PUBLISHING (optimistic lock, atomic DB update)\n3. Read `make_webhook_url` from `social_settings` (NOT from env/cache — live read per spec)\n4. POST to webhook URL with `buildMakePayload()` result and header `x-make-apikey: env.HOSPEDA_MAKE_API_KEY`. Timeout: 30s.\n5. On HTTP 2xx: insert `social_publish_logs` row with status=RETRYING. Set post.status=PUBLISHING if not already. Return success.\n6. On failure (non-2xx or network error):\n   a. If target.retry_count < 3: increment retry_count, reset target.status=APPROVED (will be retried next cron run), insert publish_log with status=FAILED + error message. Return `{ retrying: true }`.\n   b. If target.retry_count >= 3: set target.status=FAILED, insert publish_log with status=FAILED, log audit event TARGET_DISPATCH_FAILED_EXHAUSTED. Call `cascadePostStatus(postId)`. Return `{ failed: true }`.\n\nTest requirements:\n- Unit tests: dispatch success → target PUBLISHING, log RETRYING; dispatch failure retry_count < 3 → target back to APPROVED, retry_count incremented; dispatch failure retry_count >= 3 → target FAILED, audit logged\n- File: `packages/service-core/src/services/social/__tests__/dispatch-target.test.ts`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-044"],
             "blocks": ["T-046"],

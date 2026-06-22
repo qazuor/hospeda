@@ -1,6 +1,6 @@
 # SPEC-254: Social Automation Backend
 
-## Progress: 36/52 tasks (69%) — SocialPublishDispatchService findEligibleTargets+buildMakePayload (T-044) done. NOTE: SKIPPED referenced in spec US-11/13 but absent from SocialPostStatusEnum — T-046/047 cascade needs it added (enum+migration) or use PUBLISHED/FAILED only. Next = T-045 (dispatchTarget retry logic)
+## Progress: 37/52 tasks (71%) — dispatchTarget (T-045) done: optimistic lock, live make_webhook_url, x-make-apikey POST, retry<3 reset to APPROVED, retry>=3 FAILED + exhaustion cascade. OWNER DECISION: terminal target = PUBLISHED/FAILED only (SKIPPED dropped). Next = T-046 (cascadePostStatus + rearmRecurrence)
 
 **Average Complexity:** 2.3/3 (max)
 **Critical Path:** T-001 -> T-002 -> T-004 -> T-005 -> T-006 -> T-007 -> T-008 -> T-009 -> T-010 -> T-011 -> T-013 -> T-014 -> T-016 -> T-017 -> T-018 -> T-019 -> T-027 -> T-028 -> T-029 -> T-032 -> T-033 -> T-034 -> T-035 -> T-036 -> T-037 -> T-044 -> T-045 -> T-046 -> T-047 -> T-048 -> T-049 -> T-050 -> T-051 -> T-052 (34 steps)
@@ -238,7 +238,7 @@
   - Blocked by: T-043, T-013
   - Blocks: T-045
 
-- [ ] **T-045** (complexity: 3) - Implement SocialPublishDispatchService — dispatchTarget with retry logic
+- [x] **T-045** (complexity: 3) - Implement SocialPublishDispatchService — dispatchTarget with retry logic
   - Optimistic lock; live webhook URL read; 3-retry exhaustion logic.
   - Blocked by: T-044
   - Blocks: T-046
