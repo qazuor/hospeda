@@ -257,10 +257,10 @@
         {
             "specId": "SPEC-183",
             "title": "API Error i18n Standardization",
-            "status": "approved",
-            "progress": "0/14",
+            "status": "in-progress",
+            "progress": "13/14",
             "path": "SPEC-183-api-error-i18n-standardization",
-            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-183-api-error-i18n-standardization",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-183-api-error-i18n-standardization",
             "branch": "spec/SPEC-183-api-error-i18n-standardization",
             "base": "staging",
             "driver": "Linear BETA-63",

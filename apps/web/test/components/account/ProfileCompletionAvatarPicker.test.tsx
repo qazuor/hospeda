@@ -8,6 +8,7 @@
  *   - Successful upload calls onUploaded(url) with the URL from the API
  *   - Upload failure reports a translated error and does NOT call onUploaded
  *   - The picker is disabled when the parent reports `disabled={true}`
+ *   - SPEC-183 T-006: upload error with known code surfaces localized text
  */
 
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
@@ -197,5 +198,116 @@ describe('ProfileCompletionAvatarPicker', () => {
             />
         );
         expect(screen.getByRole('button', { name: /cambiar foto/i })).toBeDisabled();
+    });
+
+    // ── SPEC-183 T-006: translateApiError integration ─────────────────────────
+
+    it('T-006: upload error with known code shows localized text, not raw English', async () => {
+        const onError = vi.fn();
+        // A t function that simulates a real translation lookup for apiError.* keys.
+        const localizedT = (key: string, fallback: string): string => {
+            if (key === 'common.apiError.UNAUTHORIZED') return '[es] No autorizado';
+            return fallback;
+        };
+
+        const fetchMock = vi.fn().mockResolvedValue({
+            ok: false,
+            json: async () => ({
+                error: { code: 'UNAUTHORIZED', message: 'Unauthorized (English raw)' }
+            })
+        });
+        global.fetch = fetchMock as unknown as typeof fetch;
+
+        render(
+            <ProfileCompletionAvatarPicker
+                apiUrl={API_URL}
+                disabled={false}
+                t={localizedT}
+                onUploaded={() => {}}
+                onError={onError}
+            />
+        );
+
+        const fileInput = document.querySelector('input#pc-avatar-upload') as HTMLInputElement;
+        fireEvent.change(fileInput, { target: { files: [makeFile()] } });
+
+        await waitFor(() => {
+            expect(onError).toHaveBeenCalledWith('[es] No autorizado');
+        });
+
+        // The inline alert also shows the localized text.
+        expect(screen.getByRole('alert')).toHaveTextContent('[es] No autorizado');
+        // The raw English message must NOT appear.
+        expect(screen.getByRole('alert').textContent).not.toContain('Unauthorized (English raw)');
+    });
+
+    it('T-006: upload error with no code falls back to the API message', async () => {
+        const onError = vi.fn();
+        const localizedT = (_key: string, fallback: string): string => fallback;
+
+        const fetchMock = vi.fn().mockResolvedValue({
+            ok: false,
+            json: async () => ({
+                error: { message: 'File too large on server' }
+            })
+        });
+        global.fetch = fetchMock as unknown as typeof fetch;
+
+        render(
+            <ProfileCompletionAvatarPicker
+                apiUrl={API_URL}
+                disabled={false}
+                t={localizedT}
+                onUploaded={() => {}}
+                onError={onError}
+            />
+        );
+
+        const fileInput = document.querySelector('input#pc-avatar-upload') as HTMLInputElement;
+        fireEvent.change(fileInput, { target: { files: [makeFile()] } });
+
+        await waitFor(() => {
+            expect(onError).toHaveBeenCalledWith('File too large on server');
+        });
+    });
+
+    it('T-006: error.reason takes priority over error.code in translateApiError', async () => {
+        const onError = vi.fn();
+        const localizedT = (key: string, fallback: string): string => {
+            if (key === 'common.apiError.MEDIA_QUOTA_EXCEEDED')
+                return '[es] Cuota de media excedida';
+            if (key === 'common.apiError.FORBIDDEN') return '[es] Sin permisos';
+            return fallback;
+        };
+
+        const fetchMock = vi.fn().mockResolvedValue({
+            ok: false,
+            json: async () => ({
+                error: {
+                    code: 'FORBIDDEN',
+                    reason: 'MEDIA_QUOTA_EXCEEDED',
+                    message: 'Storage quota exceeded (English raw)'
+                }
+            })
+        });
+        global.fetch = fetchMock as unknown as typeof fetch;
+
+        render(
+            <ProfileCompletionAvatarPicker
+                apiUrl={API_URL}
+                disabled={false}
+                t={localizedT}
+                onUploaded={() => {}}
+                onError={onError}
+            />
+        );
+
+        const fileInput = document.querySelector('input#pc-avatar-upload') as HTMLInputElement;
+        fireEvent.change(fileInput, { target: { files: [makeFile()] } });
+
+        await waitFor(() => {
+            // reason wins over code
+            expect(onError).toHaveBeenCalledWith('[es] Cuota de media excedida');
+        });
     });
 });

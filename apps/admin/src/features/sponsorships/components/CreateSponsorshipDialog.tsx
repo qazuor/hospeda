@@ -25,8 +25,11 @@ import {
     SelectTrigger,
     SelectValue
 } from '@/components/ui/select';
+import { useTranslations } from '@/hooks/use-translations';
 import { fetchApi } from '@/lib/api/client';
+import { translateAdminApiError } from '@/lib/errors';
 import { adminLogger } from '@/utils/logger';
+import type { ApiErrorShape } from '@repo/i18n';
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useCreateSponsorshipMutation } from '../hooks/useSponsorshipQueries';
@@ -74,6 +77,7 @@ interface LevelOption {
 
 export function CreateSponsorshipDialog({ open, onOpenChange }: CreateSponsorshipDialogProps) {
     const { addToast } = useToast();
+    const { t } = useTranslations();
     const mutation = useCreateSponsorshipMutation();
     const [values, setValues] = useState<FormState>(INITIAL_STATE);
     const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
@@ -170,10 +174,11 @@ export function CreateSponsorshipDialog({ open, onOpenChange }: CreateSponsorshi
             adminLogger.error('[CreateSponsorshipDialog] Submit failed', error);
             addToast({
                 title: 'Error al crear el patrocinio',
-                message:
-                    error instanceof Error
-                        ? error.message
-                        : 'No pudimos crear el patrocinio. Probá de nuevo.',
+                message: translateAdminApiError({
+                    error: error as ApiErrorShape,
+                    t,
+                    fallback: 'No pudimos crear el patrocinio. Probá de nuevo.'
+                }),
                 variant: 'error'
             });
         }
