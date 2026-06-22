@@ -96,14 +96,14 @@ export type ExperienceAdminCreateOutput = z.infer<typeof ExperienceAdminCreateOu
  * are silently dropped before reaching the service layer.
  *
  * Permitted operational sections (AC-4.1 from SPEC-240):
- * - `openingHours`    — schedule (gated by `commerce.schedule.editOwn`)
- * - `contactInfo`     — contact details (gated by `commerce.contact.editOwn`)
- * - `socialNetworks`  — social links (gated by `commerce.social.editOwn`)
- * - `media`           — featured image, gallery, videos (gated by `commerce.media.editOwn`)
- * - `isPriceOnRequest`— price-on-request toggle (gated by `COMMERCE_PRICE_RANGE_EDIT_OWN`)
- * - `richDescription` — rich-text description (gated by `commerce.richDescription.editOwn`)
- * - `amenityIds`      — junction sync (gated by `commerce.amenities.editOwn`)
- * - `featureIds`      — junction sync (gated by `commerce.features.editOwn`)
+ * - `openingHours`    — schedule (gated by `COMMERCE_EDIT_OWN`, SPEC-253 D2=b)
+ * - `contactInfo`     — contact details (gated by `COMMERCE_EDIT_OWN`)
+ * - `socialNetworks`  — social links (gated by `COMMERCE_EDIT_OWN`)
+ * - `media`           — featured image, gallery, videos (gated by `COMMERCE_EDIT_OWN`)
+ * - `isPriceOnRequest`— price-on-request toggle (gated by `COMMERCE_EDIT_OWN`)
+ * - `richDescription` — rich-text description (gated by `COMMERCE_EDIT_OWN`)
+ * - `amenityIds`      — junction sync (gated by `COMMERCE_EDIT_OWN`)
+ * - `featureIds`      — junction sync (gated by `COMMERCE_EDIT_OWN`)
  *
  * NOT permitted for owner (admin-only):
  * - `name`, `slug` (legal identity)
