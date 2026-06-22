@@ -266,18 +266,31 @@ test.describe('COMMERCE-01: commerce owner edits listings — both verticals @p0
         });
 
         // Wait for editor island hydration using the stable, unique textarea id.
-        // #ce-richDescription is only rendered by the experience-vertical branch of
-        // CommerceListingEditor — it is unique on the page and never appears on the
-        // gastronomy editor, so it cannot cause a strict-mode multi-match.
         // toBeEditable() (not just toBeVisible()) confirms the textarea is interactive
         // and React event handlers are in place.
         const richDescriptionTextarea = page.locator('#ce-richDescription');
         await expect(richDescriptionTextarea).toBeVisible({ timeout: 15_000 });
         await expect(richDescriptionTextarea).toBeEditable({ timeout: 10_000 });
 
-        // Same fill()-only strategy as the menuUrl step: no preceding clear() to
-        // avoid intermediate empty-string race states.
-        await richDescriptionTextarea.fill(newRichDescription);
+        // Use pressSequentially instead of fill() for the controlled React textarea.
+        //
+        // Root cause: Playwright's fill() sets element.value and dispatches a
+        // synthetic 'input' event. For React 19 controlled <textarea> elements with
+        // an empty initial value (""), React's change-tracking can fail to detect
+        // the modification and never fires onChange — so markDirty('richDescription')
+        // is never called, dirty.size stays 0, and the save button stays disabled.
+        // This does NOT affect <input> elements (menuUrl works with fill()) because
+        // React 19 tracks <input> and <textarea> DOM mutations differently.
+        //
+        // pressSequentially fires real keydown/keypress/keyup/input events for every
+        // character — identical to what a human typing produces — which React 19's
+        // synthetic onChange reliably intercepts regardless of initial value state.
+        //
+        // The seed has no richDescription for excursion-rio-uruguay-concepcion
+        // (the DB column is NULL → strField returns "" → state starts as "").
+        // We click first to focus, then type. No select-all needed (field is empty).
+        await richDescriptionTextarea.click();
+        await richDescriptionTextarea.pressSequentially(newRichDescription, { delay: 0 });
 
         // Explicit pre-click enabled assertion — surfaces dirty-form failures
         // clearly instead of masking them as a 15 s click timeout.
