@@ -83,47 +83,33 @@ describe('checkCanEditAll', () => {
 });
 
 // ---------------------------------------------------------------------------
-// checkCanEditOwn
+// checkCanEditOwn (SPEC-253 D2=b: single COMMERCE_EDIT_OWN, section param dropped)
 // ---------------------------------------------------------------------------
 
 describe('checkCanEditOwn', () => {
     const entity = { ownerId: 'actor-1' };
     const nonOwnedEntity = { ownerId: 'other-user' };
 
-    it('should allow actor with COMMERCE_EDIT_ALL (any entity)', () => {
+    it('should allow actor with COMMERCE_EDIT_ALL (staff bypass, any entity)', () => {
         expect(() =>
-            checkCanEditOwn(
-                makeActor([PermissionEnum.COMMERCE_EDIT_ALL]),
-                nonOwnedEntity,
-                PermissionEnum.COMMERCE_SCHEDULE_EDIT_OWN
-            )
+            checkCanEditOwn(makeActor([PermissionEnum.COMMERCE_EDIT_ALL]), nonOwnedEntity)
         ).not.toThrow();
     });
 
-    it('should allow actor with section own permission who is the owner', () => {
+    it('should allow owner with COMMERCE_EDIT_OWN', () => {
         expect(() =>
-            checkCanEditOwn(
-                makeActor([PermissionEnum.COMMERCE_SCHEDULE_EDIT_OWN], 'actor-1'),
-                entity,
-                PermissionEnum.COMMERCE_SCHEDULE_EDIT_OWN
-            )
+            checkCanEditOwn(makeActor([PermissionEnum.COMMERCE_EDIT_OWN], 'actor-1'), entity)
         ).not.toThrow();
     });
 
-    it('should forbid actor with section own permission who is NOT the owner', () => {
+    it('should forbid owner with COMMERCE_EDIT_OWN who is NOT the entity owner', () => {
         expectForbidden(() =>
-            checkCanEditOwn(
-                makeActor([PermissionEnum.COMMERCE_SCHEDULE_EDIT_OWN], 'other-actor'),
-                entity,
-                PermissionEnum.COMMERCE_SCHEDULE_EDIT_OWN
-            )
+            checkCanEditOwn(makeActor([PermissionEnum.COMMERCE_EDIT_OWN], 'other-actor'), entity)
         );
     });
 
     it('should forbid actor with no permissions', () => {
-        expectForbidden(() =>
-            checkCanEditOwn(makeActor([]), entity, PermissionEnum.COMMERCE_SCHEDULE_EDIT_OWN)
-        );
+        expectForbidden(() => checkCanEditOwn(makeActor([]), entity));
     });
 });
 
@@ -168,11 +154,11 @@ describe('checkCanAdminListCommerce', () => {
         ).not.toThrow();
     });
 
-    it('should allow actor with custom viewOwnPermission', () => {
+    it('should allow actor with custom viewOwnPermission (COMMERCE_EDIT_OWN)', () => {
         expect(() =>
             checkCanAdminListCommerce(
-                makeActor([PermissionEnum.COMMERCE_AMENITIES_EDIT_OWN]),
-                PermissionEnum.COMMERCE_AMENITIES_EDIT_OWN
+                makeActor([PermissionEnum.COMMERCE_EDIT_OWN]),
+                PermissionEnum.COMMERCE_EDIT_OWN
             )
         ).not.toThrow();
     });

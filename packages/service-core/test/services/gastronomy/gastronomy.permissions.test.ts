@@ -86,51 +86,39 @@ describe('checkGastronomyCanEditAll', () => {
 });
 
 // ---------------------------------------------------------------------------
-// checkGastronomyCanEditOwn
+// checkGastronomyCanEditOwn (SPEC-253 D2=b: single COMMERCE_EDIT_OWN)
 // ---------------------------------------------------------------------------
 
 describe('checkGastronomyCanEditOwn', () => {
     const entity = { ownerId: 'actor-uuid-1' };
     const nonOwnedEntity = { ownerId: 'other-owner' };
 
-    it('should allow actor with COMMERCE_EDIT_ALL (any entity)', () => {
+    it('should allow actor with COMMERCE_EDIT_ALL (staff bypass, any entity)', () => {
+        expect(() =>
+            checkGastronomyCanEditOwn(makeActor([PermissionEnum.COMMERCE_EDIT_ALL]), nonOwnedEntity)
+        ).not.toThrow();
+    });
+
+    it('should allow owner with COMMERCE_EDIT_OWN', () => {
         expect(() =>
             checkGastronomyCanEditOwn(
-                makeActor([PermissionEnum.COMMERCE_EDIT_ALL]),
-                nonOwnedEntity,
-                PermissionEnum.COMMERCE_SCHEDULE_EDIT_OWN
+                makeActor([PermissionEnum.COMMERCE_EDIT_OWN], 'actor-uuid-1'),
+                entity
             )
         ).not.toThrow();
     });
 
-    it('should allow actor with section own permission who is the owner', () => {
-        expect(() =>
-            checkGastronomyCanEditOwn(
-                makeActor([PermissionEnum.COMMERCE_SCHEDULE_EDIT_OWN], 'actor-uuid-1'),
-                entity,
-                PermissionEnum.COMMERCE_SCHEDULE_EDIT_OWN
-            )
-        ).not.toThrow();
-    });
-
-    it('should forbid actor with section own permission who is NOT the owner', () => {
+    it('should forbid COMMERCE_EDIT_OWN actor who is NOT the owner', () => {
         expectForbidden(() =>
             checkGastronomyCanEditOwn(
-                makeActor([PermissionEnum.COMMERCE_SCHEDULE_EDIT_OWN], 'other-actor'),
-                entity,
-                PermissionEnum.COMMERCE_SCHEDULE_EDIT_OWN
+                makeActor([PermissionEnum.COMMERCE_EDIT_OWN], 'other-actor'),
+                entity
             )
         );
     });
 
     it('should forbid actor with no permissions', () => {
-        expectForbidden(() =>
-            checkGastronomyCanEditOwn(
-                makeActor([]),
-                entity,
-                PermissionEnum.COMMERCE_SCHEDULE_EDIT_OWN
-            )
-        );
+        expectForbidden(() => checkGastronomyCanEditOwn(makeActor([]), entity));
     });
 });
 
@@ -215,7 +203,7 @@ describe('checkGastronomyCanModerateReview', () => {
 });
 
 // ---------------------------------------------------------------------------
-// checkGastronomyCanEditFaqs
+// checkGastronomyCanEditFaqs (SPEC-253 D2=b: COMMERCE_FAQS_EDIT_OWN replaced by COMMERCE_EDIT_OWN)
 // ---------------------------------------------------------------------------
 
 describe('checkGastronomyCanEditFaqs', () => {
@@ -231,22 +219,26 @@ describe('checkGastronomyCanEditFaqs', () => {
         ).not.toThrow();
     });
 
-    it('should allow owner with COMMERCE_FAQS_EDIT_OWN', () => {
+    it('should allow owner with COMMERCE_EDIT_OWN', () => {
         expect(() =>
             checkGastronomyCanEditFaqs(
-                makeActor([PermissionEnum.COMMERCE_FAQS_EDIT_OWN], 'actor-uuid-1'),
+                makeActor([PermissionEnum.COMMERCE_EDIT_OWN], 'actor-uuid-1'),
                 entity
             )
         ).not.toThrow();
     });
 
-    it('should forbid non-owner with COMMERCE_FAQS_EDIT_OWN', () => {
+    it('should forbid COMMERCE_EDIT_OWN actor who is NOT the owner', () => {
         expectForbidden(() =>
             checkGastronomyCanEditFaqs(
-                makeActor([PermissionEnum.COMMERCE_FAQS_EDIT_OWN], 'other-actor'),
+                makeActor([PermissionEnum.COMMERCE_EDIT_OWN], 'other-actor'),
                 entity
             )
         );
+    });
+
+    it('should forbid actor with no commerce permissions', () => {
+        expectForbidden(() => checkGastronomyCanEditFaqs(makeActor([]), entity));
     });
 });
 
