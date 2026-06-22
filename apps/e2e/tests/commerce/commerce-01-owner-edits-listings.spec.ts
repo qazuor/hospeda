@@ -220,13 +220,30 @@ test.describe('COMMERCE-01: commerce owner edits listings — both verticals @p0
         await expect(menuUrlInput).toBeVisible({ timeout: 15_000 });
         await expect(menuUrlInput).toBeEditable({ timeout: 10_000 });
 
-        // fill() is atomic: it selects-all, sets the value, and dispatches a
-        // native input event that React's synthetic event delegation intercepts.
-        // We do NOT call clear() first — that creates an intermediate empty-string
-        // state (also dispatches input) which can race with the subsequent fill()
-        // and leave the field value empty if React batches the two events in the
-        // wrong order under CI load. fill() alone is sufficient.
-        await menuUrlInput.fill(newMenuUrl);
+        // React 19 controlled inputs track mutations through the native prototype
+        // setter (patched by React). Playwright's fill() bypasses that setter on
+        // some Chromium builds under CI load, so React's synthetic onChange never
+        // fires and markDirty('menuUrl') is never called → dirty stays empty →
+        // save button stays disabled → PATCH never fires.
+        //
+        // Fix: use the native HTMLInputElement.prototype setter (the one React
+        // patches) and dispatch bubbling 'input' + 'change' events so React's
+        // onChange runs and marks the field dirty.
+        await menuUrlInput.evaluate((el: HTMLInputElement, value: string) => {
+            const setter = Object.getOwnPropertyDescriptor(
+                window.HTMLInputElement.prototype,
+                'value'
+            )?.set;
+            if (setter) {
+                setter.call(el, value);
+            } else {
+                // Fallback: direct assignment (less reliable with React but avoids
+                // a silent no-op if the descriptor is somehow absent).
+                el.value = value;
+            }
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+        }, newMenuUrl);
 
         // Explicit pre-click check: if dirty.size===0 the button is disabled and
         // click() will hang for the full 15 s actionTimeout. Asserting here with a
@@ -281,25 +298,30 @@ test.describe('COMMERCE-01: commerce owner edits listings — both verticals @p0
         await expect(richDescriptionTextarea).toBeVisible({ timeout: 15_000 });
         await expect(richDescriptionTextarea).toBeEditable({ timeout: 10_000 });
 
-        // Use pressSequentially instead of fill() for the controlled React textarea.
+        // React 19 controlled textareas have the same issue as controlled inputs:
+        // Playwright's fill() / pressSequentially() may not reliably trigger React's
+        // synthetic onChange in CI (no native-setter interception → markDirty never
+        // called → dirty.size===0 → save button stays disabled → PATCH never fires).
         //
-        // Root cause: Playwright's fill() sets element.value and dispatches a
-        // synthetic 'input' event. For React 19 controlled <textarea> elements with
-        // an empty initial value (""), React's change-tracking can fail to detect
-        // the modification and never fires onChange — so markDirty('richDescription')
-        // is never called, dirty.size stays 0, and the save button stays disabled.
-        // This does NOT affect <input> elements (menuUrl works with fill()) because
-        // React 19 tracks <input> and <textarea> DOM mutations differently.
-        //
-        // pressSequentially fires real keydown/keypress/keyup/input events for every
-        // character — identical to what a human typing produces — which React 19's
-        // synthetic onChange reliably intercepts regardless of initial value state.
+        // Fix: use the native HTMLTextAreaElement.prototype setter (the one React
+        // patches) and dispatch bubbling 'input' + 'change' events. This guarantees
+        // React's onChange runs and marks the field dirty, regardless of CI timing.
         //
         // The seed has no richDescription for excursion-rio-uruguay-concepcion
         // (the DB column is NULL → strField returns "" → state starts as "").
-        // We click first to focus, then type. No select-all needed (field is empty).
-        await richDescriptionTextarea.click();
-        await richDescriptionTextarea.pressSequentially(newRichDescription, { delay: 0 });
+        await richDescriptionTextarea.evaluate((el: HTMLTextAreaElement, value: string) => {
+            const setter = Object.getOwnPropertyDescriptor(
+                window.HTMLTextAreaElement.prototype,
+                'value'
+            )?.set;
+            if (setter) {
+                setter.call(el, value);
+            } else {
+                el.value = value;
+            }
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            el.dispatchEvent(new Event('change', { bubbles: true }));
+        }, newRichDescription);
 
         // Explicit pre-click enabled assertion — surfaces dirty-form failures
         // clearly instead of masking them as a 15 s click timeout.
