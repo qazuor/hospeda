@@ -46,8 +46,8 @@ import {
 import { useCallback, useContext, useReducer, useRef } from 'react';
 import { initialPanelState, panelReducer } from './ai-post-generate-panel.state';
 import {
-    AI_POST_GENERATE_ENDPOINT,
     POST_CATEGORY_LABELS,
+    getAiPostGenerateUrl,
     mapErrorKey
 } from './ai-post-generate-panel.utils';
 
@@ -172,7 +172,7 @@ export function AiPostGeneratePanel({ onDraftReady }: AiPostGeneratePanelProps) 
         abortRef.current = new AbortController();
 
         try {
-            const res = await fetch(AI_POST_GENERATE_ENDPOINT, {
+            const res = await fetch(getAiPostGenerateUrl(), {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 credentials: 'include',

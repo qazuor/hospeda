@@ -42,8 +42,37 @@ export const POST_CATEGORY_LABELS: Record<string, string> = {
     FESTIVALS: 'Festivales'
 };
 
-/** API endpoint for the AI post-generation route. */
-export const AI_POST_GENERATE_ENDPOINT = '/api/v1/admin/ai/post-generate';
+/** API path for the AI post-generation route. */
+export const AI_POST_GENERATE_PATH = '/api/v1/admin/ai/post-generate';
+
+/**
+ * Resolves the API base URL from `VITE_API_URL`, mirroring the admin's other
+ * AI fetch clients (e.g. `ai/-components/stream-chat.ts`). The admin app runs
+ * on a different origin than the API, so a relative path would resolve against
+ * the admin origin and 404. Falls back to an empty string (relative) when the
+ * env var is absent — e.g. under jsdom in unit tests.
+ *
+ * @returns The API base URL without a trailing slash, or `''` if unset.
+ */
+function getApiBaseUrl(): string {
+    const url = (import.meta.env as Record<string, string | undefined>).VITE_API_URL;
+    return url ? url.replace(/\/$/, '') : '';
+}
+
+/**
+ * Absolute URL for the AI post-generation endpoint.
+ *
+ * @returns The API base URL joined with {@link AI_POST_GENERATE_PATH}.
+ */
+export function getAiPostGenerateUrl(): string {
+    return `${getApiBaseUrl()}${AI_POST_GENERATE_PATH}`;
+}
+
+/**
+ * @deprecated Use {@link getAiPostGenerateUrl} — a bare relative path resolves
+ * against the admin origin (wrong port) and 404s. Kept as the path constant.
+ */
+export const AI_POST_GENERATE_ENDPOINT = AI_POST_GENERATE_PATH;
 
 // ---------------------------------------------------------------------------
 // Error mapping

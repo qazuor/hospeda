@@ -174,7 +174,10 @@ describe('AiPostGeneratePanel', () => {
         await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
 
         const [url, init] = fetchMock.mock.calls[0] as [string, RequestInit];
-        expect(url).toBe('/api/v1/admin/ai/post-generate');
+        // The panel MUST target the API origin (VITE_API_URL), not a bare
+        // relative path — a relative path resolves against the admin origin
+        // and 404s (SPEC-223 smoke regression). Assert the absolute URL.
+        expect(url).toMatch(/^https?:\/\/.+\/api\/v1\/admin\/ai\/post-generate$/);
         expect(init.method).toBe('POST');
         expect(init.credentials).toBe('include');
 
