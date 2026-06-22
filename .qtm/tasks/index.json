@@ -855,6 +855,19 @@
       "note": "11 tasks across 5 phases (setup 1, core 4, integration 4, testing 1, docs 1). SPEC-222 short-link follow-up."
     },
     {
+      "specId": "SPEC-258",
+      "title": "Accommodation import — coverage gaps, limbo fields, UX surfacing & scraper resilience",
+      "status": "draft",
+      "progress": "0/0",
+      "path": "SPEC-258-import-coverage-ux-resilience",
+      "parent": "SPEC-257",
+      "branch": "spec/SPEC-258-import-coverage-ux-resilience",
+      "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-258-import-coverage-ux-resilience",
+      "base": "staging",
+      "createdAt": "2026-06-22T14:53:31Z",
+      "note": "Doc-only spec; tasks NOT atomized yet. 3 workstreams: coverage, UX surfacing, scraper resilience."
+    },
+    {
       "specId": "SPEC-259",
       "title": "Systematic Chrome smoke testing of staging features (post-e2fb184)",
       "status": "draft",
@@ -864,7 +877,7 @@
       "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-259-staging-smoke-testing",
       "base": "staging",
       "createdAt": "2026-06-22T15:39:13Z",
-      "note": "Campaign spec; tasks atomized when smoke starts. 4 phases: SPEC-230(local), 203, 239, 249 (LOCAL+VPS)."
+      "note": "Campaign spec; tasks atomized when smoke starts. 4 phases: SPEC-230,203,239,249."
     }
   ],
   "standalone": {
