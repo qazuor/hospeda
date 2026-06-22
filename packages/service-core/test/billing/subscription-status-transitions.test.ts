@@ -77,7 +77,8 @@ const LEGAL_TRANSITIONS: ReadonlyMap<
     ],
     [SubscriptionStatusEnum.CANCELLED, new Set([SubscriptionStatusEnum.ACTIVE])],
     [SubscriptionStatusEnum.EXPIRED, new Set<SubscriptionStatusEnum>()],
-    [SubscriptionStatusEnum.ABANDONED, new Set<SubscriptionStatusEnum>()]
+    [SubscriptionStatusEnum.ABANDONED, new Set<SubscriptionStatusEnum>()],
+    [SubscriptionStatusEnum.COMP, new Set([SubscriptionStatusEnum.CANCELLED])]
 ]);
 
 /** All status values for exhaustive matrix loops. */
