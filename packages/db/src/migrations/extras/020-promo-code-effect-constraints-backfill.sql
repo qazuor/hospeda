@@ -252,8 +252,10 @@ BEGIN
     -- that re-running this script is a no-op (idempotent ADD CONSTRAINT).
     --
     -- Postgres has no `ADD CONSTRAINT IF NOT EXISTS` syntax, so we use the
-    -- standard DO $$ ... IF NOT EXISTS (SELECT 1 FROM pg_constraint ...) THEN
+    -- standard DO-block IF NOT EXISTS (SELECT 1 FROM pg_constraint ...) THEN
     -- ALTER TABLE ... ADD CONSTRAINT ... END IF pattern.
+    -- (NOTE: never write the dollar-quote delimiter inside this block's comments —
+    --  Postgres dollar-quoting ignores comments, so it would close the block early.)
     --
     -- We use plain ADD CONSTRAINT (not ADD ... NOT VALID + VALIDATE CONSTRAINT)
     -- because the backfill above guarantees every existing row satisfies each
