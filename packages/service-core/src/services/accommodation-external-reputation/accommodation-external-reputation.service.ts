@@ -21,7 +21,9 @@ import type {
 import { withTransaction } from '@repo/db';
 import type { AccommodationExternalListing } from '@repo/schemas';
 import {
+    type ExternalFetchStatus,
     type ExternalPlatformEnum,
+    type ExternalReputationRunStatus,
     PermissionEnum,
     ServiceErrorCode,
     buildExternalReputationBlock
@@ -36,6 +38,45 @@ import { getReputationAdapter } from './adapters/index.js';
 // ---------------------------------------------------------------------------
 // Result types
 // ---------------------------------------------------------------------------
+
+/**
+ * Per-platform status summary returned by {@link AccommodationExternalReputationService.getRefreshStatus}.
+ *
+ * Contains the raw run state and latest data quality fields for a single platform.
+ * This is an internal-only view — it includes `runStatus` which is never exposed
+ * on public block schemas.
+ */
+export interface PlatformRefreshStatus {
+    /** Current async run state ('idle' | 'pending' | 'running'). Internal only. */
+    readonly runStatus: ExternalReputationRunStatus;
+    /** Outcome of the last completed fetch ('ok' | 'blocked' | 'not_found' | 'error'). */
+    readonly fetchStatus: ExternalFetchStatus;
+    /** Numeric rating from the platform, or null when unavailable. */
+    readonly rating: number | null | undefined;
+    /** Total review count from the platform, or null when unavailable. */
+    readonly reviewsCount: number | null | undefined;
+    /** ISO 8601 timestamp of the last successful aggregate fetch, or null. */
+    readonly aggregateFetchedAt: string | null;
+}
+
+/**
+ * Result returned by {@link AccommodationExternalReputationService.getRefreshStatus}.
+ *
+ * Provides a lightweight per-platform snapshot used by the owner panel's polling
+ * hook to decide whether to keep polling or stop.
+ */
+export interface RefreshStatusResult {
+    /**
+     * Per-platform status map.
+     * Only platforms that have at least one reputation row are included.
+     */
+    readonly platforms: Partial<Record<ExternalPlatformEnum, PlatformRefreshStatus>>;
+    /**
+     * True when every platform's runStatus is 'idle' (no active Apify runs).
+     * The UI polling hook should stop when this is true.
+     */
+    readonly allSettled: boolean;
+}
 
 /**
  * Describes a single platform fetch failure captured during {@link refresh}.
@@ -622,6 +663,96 @@ export class AccommodationExternalReputationService {
             }, ctx?.tx);
 
             return { data: { disabled } };
+        } catch (err) {
+            if (err instanceof ServiceError) {
+                return { error: { code: err.code, message: err.message, details: err.details } };
+            }
+            return {
+                error: {
+                    code: ServiceErrorCode.INTERNAL_ERROR,
+                    message: `Unexpected error: ${err instanceof Error ? err.message : String(err)}`
+                }
+            };
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // getRefreshStatus
+    // -------------------------------------------------------------------------
+
+    /**
+     * Returns the current async refresh status for all platforms of the given
+     * accommodation without triggering any Apify calls.
+     *
+     * Used by the owner panel's polling hook
+     * (`GET /api/v1/protected/accommodations/:id/external-reputation/status`) to
+     * decide whether to continue polling (`allSettled = false`) or stop
+     * (`allSettled = true`).
+     *
+     * **Ownership enforcement** mirrors {@link refresh}:
+     * the actor must own the accommodation OR hold `ACCOMMODATION_UPDATE_ANY`.
+     *
+     * **Raw state**: the returned status includes `runStatus` (an internal
+     * coordination column). This method intentionally does NOT apply the
+     * public-display toggles (`showReviews`, `showLink`) — the owner panel
+     * needs the raw run state regardless of display settings.
+     *
+     * **Pure read**: this method never writes to the database or calls Apify.
+     *
+     * @param accommodationId - UUID of the accommodation.
+     * @param actor - The actor requesting the status. Must own the accommodation
+     *   or hold `ACCOMMODATION_UPDATE_ANY`.
+     * @param ctx - Optional service context (transaction).
+     * @returns `{ data: RefreshStatusResult }` on success; error otherwise.
+     */
+    async getRefreshStatus(
+        accommodationId: string,
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<RefreshStatusResult>> {
+        try {
+            await assertCanUpdateAccommodation(
+                actor,
+                accommodationId,
+                this.accommodationModel,
+                ctx?.tx
+            );
+
+            // Read all reputation rows for this accommodation — no display-toggle
+            // filtering applied here, because the owner sees raw run state.
+            // pageSize=200 safely covers all platforms (an accommodation has ≤5).
+            const { items: reputationRows } = await this.reputationModel.findAll(
+                { accommodationId },
+                { pageSize: 200 },
+                undefined,
+                ctx?.tx
+            );
+
+            const platforms: Partial<Record<ExternalPlatformEnum, PlatformRefreshStatus>> = {};
+            let allSettled = true;
+
+            for (const rep of reputationRows) {
+                const platform = rep.platform as ExternalPlatformEnum;
+                const runStatus = (rep.runStatus ?? 'idle') as ExternalReputationRunStatus;
+
+                if (runStatus !== 'idle') {
+                    allSettled = false;
+                }
+
+                platforms[platform] = {
+                    runStatus,
+                    fetchStatus: rep.fetchStatus as ExternalFetchStatus,
+                    rating: rep.rating,
+                    reviewsCount: rep.reviewsCount,
+                    aggregateFetchedAt: rep.aggregateFetchedAt
+                        ? rep.aggregateFetchedAt instanceof Date
+                            ? rep.aggregateFetchedAt.toISOString()
+                            : String(rep.aggregateFetchedAt)
+                        : null
+                };
+            }
+
+            return { data: { platforms, allSettled } };
         } catch (err) {
             if (err instanceof ServiceError) {
                 return { error: { code: err.code, message: err.message, details: err.details } };
