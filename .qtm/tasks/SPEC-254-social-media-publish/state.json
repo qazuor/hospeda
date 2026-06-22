@@ -1148,7 +1148,7 @@
             "id": "T-033",
             "title": "Create SocialPostService — core state-transition methods (approve, reject, requestChanges)",
             "description": "Create `packages/service-core/src/services/social/social-post.service.ts` (non-CRUD, does not extend BaseCrudService).\n\nImplement first batch of methods:\n\n`approve(postId, actorId)`:\n- Load post; assert status === NEEDS_REVIEW → 422 if not\n- Assert at least 1 active target exists → 422 if not (zero active targets block)\n- Check if any target requires media (`requires_media = true` on platform_format): if post has no social_post_media rows → 422 MISSING_MEDIA\n- Set status=APPROVED, approval_status=APPROVED, approved_by_id=actorId, approved_at=now() (atomic DB update)\n- Call `SocialAuditLogService.log(POST_APPROVED, old/new values)`\n- Return `{ id, status, approvalStatus, approvedAt }`\n\n`reject(postId, actorId, reason)`:\n- Assert reason is non-empty → 422 if blank\n- Assert post is in NEEDS_REVIEW → 422 if not\n- Set approval_status=REJECTED, append reason to notes\n- Log POST_REJECTED\n\n`requestChanges(postId, actorId, feedback)`:\n- Assert feedback is non-empty → 422\n- Set approval_status=CHANGES_REQUESTED, append feedback to notes\n- Log POST_CHANGES_REQUESTED\n\nTest requirements:\n- Unit tests: approve succeeds, approve fails on wrong status, approve fails on missing media, reject requires reason, requestChanges requires feedback\n- File: `packages/service-core/src/services/social/__tests__/social-post-service-approve.test.ts`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-032"],
             "blocks": ["T-034"],

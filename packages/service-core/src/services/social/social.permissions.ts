@@ -162,3 +162,19 @@ export const checkCanManageSettings = (actor: Actor): void => {
         );
     }
 };
+
+/**
+ * Asserts that the actor holds SOCIAL_POST_APPROVE permission.
+ * Gates approve, reject, and requestChanges operations on social posts.
+ *
+ * @param actor - The acting user.
+ * @throws {ServiceError} FORBIDDEN if the actor lacks the permission.
+ */
+export const checkCanApprovePost = (actor: Actor): void => {
+    if (!hasPermission(actor, PermissionEnum.SOCIAL_POST_APPROVE)) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied: SOCIAL_POST_APPROVE required'
+        );
+    }
+};

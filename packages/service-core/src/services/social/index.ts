@@ -38,3 +38,10 @@ export {
     type SocialAuditLogInput,
     type SocialAuditLogResult
 } from './social-audit-log.service';
+export {
+    SocialPostService,
+    type ApprovePostInput,
+    type RejectPostInput,
+    type RequestChangesInput,
+    type SocialPostTransitionData
+} from './social-post.service';

@@ -1,6 +1,6 @@
 # SPEC-254: Social Automation Backend
 
-## Progress: 30/52 tasks (58%) — SocialAuditLogService (T-032) done, SocialAuditEvent const assembled from spec ACs
+## Progress: 31/52 tasks (60%) — SocialPostService approve/reject/requestChanges (T-033) done; INVALID_STATE/MISSING_MEDIA carried in ServiceError.reason (route T-036 must surface reason as response code)
 
 **Average Complexity:** 2.3/3 (max)
 **Critical Path:** T-001 -> T-002 -> T-004 -> T-005 -> T-006 -> T-007 -> T-008 -> T-009 -> T-010 -> T-011 -> T-013 -> T-014 -> T-016 -> T-017 -> T-018 -> T-019 -> T-027 -> T-028 -> T-029 -> T-032 -> T-033 -> T-034 -> T-035 -> T-036 -> T-037 -> T-044 -> T-045 -> T-046 -> T-047 -> T-048 -> T-049 -> T-050 -> T-051 -> T-052 (34 steps)
@@ -169,7 +169,7 @@
   - Blocked by: T-013
   - Blocks: T-033
 
-- [ ] **T-033** (complexity: 3) - Create SocialPostService — approve, reject, requestChanges
+- [x] **T-033** (complexity: 3) - Create SocialPostService — approve, reject, requestChanges
   - State machine enforcement; media check on approve; audit log calls.
   - Blocked by: T-032
   - Blocks: T-034
