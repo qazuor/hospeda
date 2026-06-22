@@ -417,4 +417,145 @@ describe('AirbnbAdapter', () => {
             expect(result).not.toHaveProperty('guestSatisfactionOverall');
         });
     });
+
+    // -----------------------------------------------------------------------
+    // extract() — SPEC-257 enrichment: summary, amenityNames, beds
+    // -----------------------------------------------------------------------
+
+    describe('extract() — SPEC-257 enrichment', () => {
+        it('should map summary from the summary field', async () => {
+            // Arrange
+            const item: Record<string, unknown> = {
+                name: 'Test',
+                summary: 'A cozy riverside cabin.'
+            };
+            mockRunApifyActor.mockResolvedValue([item]);
+
+            // Act
+            const result = await adapter.extract(
+                new URL('https://www.airbnb.com/rooms/1'),
+                makeCtx()
+            );
+
+            // Assert
+            expect(result.summary).toEqual({
+                value: 'A cozy riverside cabin.',
+                source: 'official_api'
+            });
+        });
+
+        it('should fall back to publicDescription for summary', async () => {
+            // Arrange
+            const item: Record<string, unknown> = {
+                name: 'Test',
+                publicDescription: 'Fallback summary text.'
+            };
+            mockRunApifyActor.mockResolvedValue([item]);
+
+            // Act
+            const result = await adapter.extract(
+                new URL('https://www.airbnb.com/rooms/1'),
+                makeCtx()
+            );
+
+            // Assert
+            expect(result.summary?.value).toBe('Fallback summary text.');
+        });
+
+        it('should map amenityNames from a plain string array', async () => {
+            // Arrange
+            const item: Record<string, unknown> = {
+                name: 'Test',
+                amenities: ['WiFi', 'Pool', 'Air conditioning']
+            };
+            mockRunApifyActor.mockResolvedValue([item]);
+
+            // Act
+            const result = await adapter.extract(
+                new URL('https://www.airbnb.com/rooms/1'),
+                makeCtx()
+            );
+
+            // Assert
+            expect(result.amenityNames).toEqual(['WiFi', 'Pool', 'Air conditioning']);
+        });
+
+        it('should map amenityNames from objects and skip unavailable ones', async () => {
+            // Arrange
+            const item: Record<string, unknown> = {
+                name: 'Test',
+                amenities: [
+                    { title: 'WiFi', available: true },
+                    { name: 'Kitchen' },
+                    { title: 'Hot tub', available: false }
+                ]
+            };
+            mockRunApifyActor.mockResolvedValue([item]);
+
+            // Act
+            const result = await adapter.extract(
+                new URL('https://www.airbnb.com/rooms/1'),
+                makeCtx()
+            );
+
+            // Assert — unavailable "Hot tub" is dropped
+            expect(result.amenityNames).toEqual(['WiFi', 'Kitchen']);
+        });
+
+        it('should flatten grouped amenities (values arrays) and dedupe', async () => {
+            // Arrange
+            const item: Record<string, unknown> = {
+                name: 'Test',
+                amenities: [
+                    { title: 'Bathroom', values: ['Shampoo', 'Hot water'] },
+                    { title: 'Kitchen', values: [{ title: 'Hot water' }, { title: 'Oven' }] }
+                ]
+            };
+            mockRunApifyActor.mockResolvedValue([item]);
+
+            // Act
+            const result = await adapter.extract(
+                new URL('https://www.airbnb.com/rooms/1'),
+                makeCtx()
+            );
+
+            // Assert — flattened, "Hot water" deduped
+            expect(result.amenityNames).toEqual(['Shampoo', 'Hot water', 'Oven']);
+        });
+
+        it('should map beds to extraInfo.beds', async () => {
+            // Arrange
+            const item: Record<string, unknown> = {
+                name: 'Test',
+                beds: 4
+            };
+            mockRunApifyActor.mockResolvedValue([item]);
+
+            // Act
+            const result = await adapter.extract(
+                new URL('https://www.airbnb.com/rooms/1'),
+                makeCtx()
+            );
+
+            // Assert
+            expect(result.extraInfo?.beds).toEqual({ value: 4, source: 'official_api' });
+        });
+
+        it('should omit summary, amenityNames and beds when absent', async () => {
+            // Arrange — a minimal item with none of the enrichment fields
+            const item: Record<string, unknown> = { name: 'Test' };
+            mockRunApifyActor.mockResolvedValue([item]);
+
+            // Act
+            const result = await adapter.extract(
+                new URL('https://www.airbnb.com/rooms/1'),
+                makeCtx()
+            );
+
+            // Assert
+            expect(result).not.toHaveProperty('summary');
+            expect(result).not.toHaveProperty('amenityNames');
+            expect(result.extraInfo?.beds).toBeUndefined();
+        });
+    });
 });

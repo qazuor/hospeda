@@ -61,6 +61,25 @@ interface AirbnbPricing {
 }
 
 /**
+ * Amenity entry — Apify Airbnb actors return amenities heterogeneously: a plain
+ * string array, an array of `{ title | name, available }` objects, or grouped
+ * objects with a nested `values` array. {@link extractAmenityNames} normalises
+ * all of these to a flat list of names.
+ *
+ * NOTE (SPEC-257): the exact actor field name(s) for amenities/summary/beds are
+ * confirmed against the live Apify actor output during the smoke (T-010); the
+ * candidate keys declared on {@link AirbnbItem} cover the known actor shapes.
+ */
+type AirbnbAmenityEntry =
+    | string
+    | {
+          readonly name?: string | null | undefined;
+          readonly title?: string | null | undefined;
+          readonly available?: boolean | null | undefined;
+          readonly values?: readonly AirbnbAmenityEntry[] | null | undefined;
+      };
+
+/**
  * The subset of an Airbnb actor dataset item that this adapter reads.
  *
  * **CRITICAL — SPEC-222 hard rule**: `reviews`, `reviewsCount`, `rating`,
@@ -76,6 +95,16 @@ interface AirbnbItem {
 
     // Description
     readonly description?: string | null | undefined;
+
+    // Short summary (candidate actor keys)
+    readonly summary?: string | null | undefined;
+    readonly publicDescription?: string | null | undefined;
+
+    // Amenities (heterogeneous shapes — see AirbnbAmenityEntry)
+    readonly amenities?: readonly AirbnbAmenityEntry[] | null | undefined;
+
+    // Beds (distinct from bedrooms)
+    readonly beds?: number | string | null | undefined;
 
     // Coordinates (flat form)
     readonly lat?: number | string | null | undefined;
@@ -216,6 +245,42 @@ function extractPrice(raw: number | string | AirbnbPricing | null | undefined): 
 }
 
 // ---------------------------------------------------------------------------
+// Amenity name extraction helper
+// ---------------------------------------------------------------------------
+
+/**
+ * Flattens a heterogeneous amenities array to a deduplicated list of name
+ * strings. Handles plain strings, `{ name | title }` objects, and grouped
+ * objects carrying a nested `values` array. Entries explicitly marked
+ * `available: false` are skipped.
+ *
+ * @param entries - Raw amenities from the dataset item.
+ * @returns Array of amenity name strings; empty array when nothing is usable.
+ */
+function extractAmenityNames(entries: readonly AirbnbAmenityEntry[] | null | undefined): string[] {
+    if (!entries || entries.length === 0) return [];
+    const names: string[] = [];
+    const visit = (entry: AirbnbAmenityEntry): void => {
+        if (typeof entry === 'string') {
+            const trimmed = entry.trim();
+            if (trimmed.length > 0) names.push(trimmed);
+            return;
+        }
+        if (entry === null || typeof entry !== 'object') return;
+        if (Array.isArray(entry.values) && entry.values.length > 0) {
+            for (const child of entry.values) visit(child);
+            return;
+        }
+        if (entry.available === false) return;
+        const label = (entry.name ?? entry.title ?? '').trim();
+        if (label.length > 0) names.push(label);
+    };
+    for (const entry of entries) visit(entry);
+    // Dedupe preserving order.
+    return [...new Set(names)];
+}
+
+// ---------------------------------------------------------------------------
 // Dataset item → RawExtraction mapper
 // ---------------------------------------------------------------------------
 
@@ -237,9 +302,11 @@ function mapItemToRawExtraction(raw: AirbnbItem): RawExtraction {
         sourcePlatform: 'airbnb';
         name?: RawExtraction['name'];
         description?: RawExtraction['description'];
+        summary?: RawExtraction['summary'];
         type?: RawExtraction['type'];
         location?: RawExtraction['location'];
         imageUrls?: readonly string[];
+        amenityNames?: readonly string[];
         scrapedLocality?: string;
         scrapedCountry?: string;
         extraInfo?: RawExtraction['extraInfo'];
@@ -255,6 +322,12 @@ function mapItemToRawExtraction(raw: AirbnbItem): RawExtraction {
     // -- description -----------------------------------------------------------
     if (raw.description) {
         result.description = { value: raw.description, source: 'official_api' };
+    }
+
+    // -- summary ---------------------------------------------------------------
+    const summaryRaw = raw.summary ?? raw.publicDescription;
+    if (summaryRaw) {
+        result.summary = { value: summaryRaw, source: 'official_api' };
     }
 
     // -- type ------------------------------------------------------------------
@@ -293,7 +366,13 @@ function mapItemToRawExtraction(raw: AirbnbItem): RawExtraction {
         result.imageUrls = resolvedUrls;
     }
 
-    // -- extraInfo (capacity, bedrooms, bathrooms) -----------------------------
+    // -- amenityNames ----------------------------------------------------------
+    const amenityNames = extractAmenityNames(raw.amenities);
+    if (amenityNames.length > 0) {
+        result.amenityNames = amenityNames;
+    }
+
+    // -- extraInfo (capacity, bedrooms, bathrooms, beds) -----------------------
     const capacityRaw = raw.personCapacity ?? raw.guests;
     const capacity =
         capacityRaw != null
@@ -313,12 +392,15 @@ function mapItemToRawExtraction(raw: AirbnbItem): RawExtraction {
                 ? raw.bathrooms
                 : Number(raw.bathrooms)
             : null;
+    const beds =
+        raw.beds != null ? (typeof raw.beds === 'number' ? raw.beds : Number(raw.beds)) : null;
 
     const hasCapacity = capacity !== null && Number.isFinite(capacity);
     const hasBedrooms = bedrooms !== null && Number.isFinite(bedrooms);
     const hasBathrooms = bathrooms !== null && Number.isFinite(bathrooms);
+    const hasBeds = beds !== null && Number.isFinite(beds);
 
-    if (hasCapacity || hasBedrooms || hasBathrooms) {
+    if (hasCapacity || hasBedrooms || hasBathrooms || hasBeds) {
         result.extraInfo = {
             ...(hasCapacity
                 ? { capacity: { value: capacity, source: 'official_api' as const } }
@@ -328,7 +410,8 @@ function mapItemToRawExtraction(raw: AirbnbItem): RawExtraction {
                 : {}),
             ...(hasBathrooms
                 ? { bathrooms: { value: bathrooms, source: 'official_api' as const } }
-                : {})
+                : {}),
+            ...(hasBeds ? { beds: { value: beds, source: 'official_api' as const } } : {})
         };
     }
 
