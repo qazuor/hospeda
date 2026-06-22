@@ -24,3 +24,10 @@ export {
     type ProcessImageInput,
     type ProcessImageResult
 } from './social-image-pipeline.service';
+export {
+    SocialDraftIngestionService,
+    type IngestDraftInput,
+    type IngestionResult,
+    type IngestionResultCode,
+    type IngestionSuccessData
+} from './social-draft-ingestion.service';

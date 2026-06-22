@@ -3,6 +3,9 @@
 // AI catalog HTTP response schema (T-026, reused by T-030)
 export * from './social-catalog.http.schema.js';
 
+// AI draft ingestion HTTP schema (T-028, T-029)
+export * from './social-draft.http.schema.js';
+
 // FULL entities (schema + crud + admin-search)
 export * from './social-campaign.index.js';
 export * from './social-content-batch.index.js';

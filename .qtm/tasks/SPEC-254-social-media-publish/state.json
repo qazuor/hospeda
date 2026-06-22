@@ -973,7 +973,7 @@
             "id": "T-028",
             "title": "Create SocialDraftIngestionService",
             "description": "Create `packages/service-core/src/services/social/social-draft-ingestion.service.ts`.\n\nMethod: `ingestDraft(payload: CreateSocialDraftSchema, actorId: string): Promise<IngestDraftResult>`\n\nSteps:\n1. Validate `operator_pin`: hash the incoming pin using `sha256(pin + env.HOSPEDA_OPERATOR_PIN_HASH_SALT)` and compare with `timingSafeEqual` against `env.HOSPEDA_OPERATOR_PIN_HASH`. Return 403 on mismatch.\n2. Check `draft_id` uniqueness in `social_posts`; return 409 on conflict.\n3. Resolve slugs → IDs: campaign, batch, audience, footer, base_hashtag_set (log warnings for unresolved, do not block)\n4. Validate targets: for each `{platform, publishFormat}`, check an active `social_platform_formats` row exists. Collect invalid targets as warnings. If ALL targets invalid → return 422.\n5. Override: force `status = NEEDS_REVIEW`, `approval_status = PENDING`, `paused = false` regardless of what the payload specifies. Add warnings if payload tried to set state fields.\n6. Write `social_posts` row (DB transaction).\n7. Write `social_post_targets` rows for each valid target.\n8. Process `curatedHashtags`: look up each by `normalized_hashtag` in `social_hashtags`; create `social_post_hashtags` for found ones; add warnings for unresolved.\n9. Store `customHashtagSuggestions` verbatim in `social_posts.gpt_hashtag_payload_json` — do NOT add to `social_post_hashtags`.\n10. Write `social_ai_requests` row (append-only log).\n11. Trigger `SocialImagePipelineService.pipelineUpload()` if `image` is present. Collect media warnings.\n12. Return `{ postId, draftId, status, approvalStatus, targetsCreated, assetStatus, warnings }`.\n\nTest requirements:\n- Unit tests covering all 12 steps; focus on: operator_pin mismatch → 403, draft_id duplicate → 409, all-targets-invalid → 422, status override with warnings, unknown curatedHashtags → warnings not errors, image failure → draft still created\n- File: `packages/service-core/src/services/social/__tests__/social-draft-ingestion.test.ts`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-027", "T-014"],
             "blocks": ["T-029"],
@@ -998,21 +998,21 @@
             "tags": ["service-core", "ingestion", "gpt"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
             }
         },
         {
             "id": "T-029",
             "title": "Implement POST /api/v1/ai/social/drafts route",
             "description": "Create `apps/api/src/routes/ai/social/drafts.route.ts` using `createApiKeyRoute` with the AI social key config.\n\nHandler:\n1. Parse body with `CreateSocialDraftSchema` from `@repo/schemas` — return 422 on validation failure\n2. Call `SocialDraftIngestionService.ingestDraft(payload, 'api-key')`\n3. Map service result to HTTP response:\n   - Success → HTTP 201, `{ success: true, data: { postId, draftId, status, approvalStatus, targetsCreated, assetStatus, warnings } }`\n   - 403 pin mismatch → HTTP 403\n   - 409 conflict → HTTP 409\n   - 422 no valid targets → HTTP 422\n4. Register under `/api/v1/ai/social/drafts`\n\nTest requirements:\n- Integration tests: valid payload → 201, missing required fields → 422, duplicate draftId → 409, wrong pin → 403, no valid targets → 422\n- File: `apps/api/src/__tests__/routes/ai/social/drafts.test.ts`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-028"],
             "blocks": ["T-031"],
@@ -1033,14 +1033,14 @@
             "tags": ["api", "routes", "ai", "gpt"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
             }
         },
         {
@@ -1911,9 +1911,9 @@
     ],
     "summary": {
         "total": 52,
-        "pending": 27,
+        "pending": 25,
         "inProgress": 0,
-        "completed": 25,
+        "completed": 27,
         "blocked": 0,
         "averageComplexity": 2.3
     }

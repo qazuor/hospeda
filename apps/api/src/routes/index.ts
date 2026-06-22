@@ -82,7 +82,7 @@ import {
     adminAiUsageRoutes
 } from './ai/index.js';
 import { protectedAiRoutes } from './ai/protected/index.js';
-import { aiSocialCatalogRoute } from './ai/social/index.js';
+import { aiSocialCatalogRoute, aiSocialDraftsRoute } from './ai/social/index.js';
 import { adminAppLogRoutes } from './app-logs';
 // ─── Non-entity route imports ─────────────────────────────────────────────────
 import { adminAuthRoutes, authRoutes, protectedAuthRoutes } from './auth';
@@ -486,6 +486,10 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // AI social catalog (SPEC-254 T-026): machine-authenticated (x-hospeda-ai-key), no session.
         // Returns the full GPT-safe catalog the Custom GPT fetches before drafting a post.
         app.route('/api/v1/ai/social/catalog', aiSocialCatalogRoute);
+
+        // AI social draft submission (SPEC-254 T-029): API-key + operator_pin gated.
+        // Custom GPT submits a structured social post draft for admin review.
+        app.route('/api/v1/ai/social/drafts', aiSocialDraftsRoute);
 
         // Media (entity image uploads + asset deletion)
         app.route('/api/v1/admin/media', adminMediaRoutes);

@@ -1,9 +1,9 @@
 /**
- * AI social routes barrel — SPEC-254 T-026.
- * Registers the GPT-authenticated social catalog endpoint.
+ * AI social routes barrel — SPEC-254 T-026, T-029.
+ * Registers the GPT-authenticated social catalog and draft submission endpoints.
  *
- * The `socialCatalogRoute` returned by `createApiKeyRoute` is already an
- * OpenAPIHono sub-router; we re-export it so the main router can mount it
- * at `/api/v1/ai/social/catalog`.
+ * Routes returned by `createApiKeyRoute` are OpenAPIHono sub-routers;
+ * the main router mounts them at their respective paths.
  */
 export { socialCatalogRoute as aiSocialCatalogRoute } from './catalog';
+export { socialDraftsRoute as aiSocialDraftsRoute } from './drafts';

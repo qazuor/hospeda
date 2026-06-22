@@ -1,6 +1,6 @@
 # SPEC-254: Social Automation Backend
 
-## Progress: 25/52 tasks (48%) — catalog + admin routes + api-key + GPT catalog + image pipeline done
+## Progress: 27/52 tasks (52%) — GPT ingestion flow (catalog + drafts) complete end-to-end
 
 **Average Complexity:** 2.3/3 (max)
 **Critical Path:** T-001 -> T-002 -> T-004 -> T-005 -> T-006 -> T-007 -> T-008 -> T-009 -> T-010 -> T-011 -> T-013 -> T-014 -> T-016 -> T-017 -> T-018 -> T-019 -> T-027 -> T-028 -> T-029 -> T-032 -> T-033 -> T-034 -> T-035 -> T-036 -> T-037 -> T-044 -> T-045 -> T-046 -> T-047 -> T-048 -> T-049 -> T-050 -> T-051 -> T-052 (34 steps)
@@ -144,12 +144,12 @@
   - Blocked by: T-025, T-013
   - Blocks: T-028
 
-- [ ] **T-028** (complexity: 3) - Create SocialDraftIngestionService
+- [x] **T-028** (complexity: 3) - Create SocialDraftIngestionService
   - 12-step ingestion: pin check, conflict, slug resolution, target validation, status override, DB writes, hashtag linking, image pipeline.
   - Blocked by: T-027, T-014
   - Blocks: T-029
 
-- [ ] **T-029** (complexity: 2) - Implement POST /api/v1/ai/social/drafts route
+- [x] **T-029** (complexity: 2) - Implement POST /api/v1/ai/social/drafts route
   - Parse body, call SocialDraftIngestionService, map errors to HTTP codes.
   - Blocked by: T-028
   - Blocks: T-031
