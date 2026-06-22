@@ -833,7 +833,7 @@
             "id": "T-024",
             "title": "Create inbound API-key middleware factory (apps/api/src/middlewares/api-key.ts)",
             "description": "Create `apps/api/src/middlewares/api-key.ts`. It exports a factory function:\n```ts\ncreateApiKeyMiddleware(config: { headerName: string; envVarKey: string; errorCode: string }): MiddlewareHandler\n```\nThe returned middleware:\n1. Reads `config.headerName` from the incoming request headers\n2. Reads `process.env[config.envVarKey]` for the expected value\n3. Compares using `crypto.timingSafeEqual(Buffer.from(incoming), Buffer.from(expected))`\n4. On mismatch: logs WARN with `{ event: 'api_key_mismatch', header: config.headerName }` (no key value in log), returns HTTP 401 `{ success: false, error: { code: config.errorCode, message: '...' } }`\n5. On match: injects synthetic actor `{ id: 'api-key', role: 'SYSTEM' }` into `c.set('actor', ...)` so downstream logging hooks work without crashing\n\nTest requirements:\n- Unit tests: valid key → passes through, invalid key → 401, missing header → 401, timingSafeEqual prevents timing attack (use fixed-time mock)\n- File: `apps/api/src/__tests__/middlewares/api-key.test.ts`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-023"],
             "blocks": ["T-025", "T-048"],
@@ -854,21 +854,21 @@
             "tags": ["api", "middleware", "security"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
             }
         },
         {
             "id": "T-025",
             "title": "Add createApiKeyRoute factory to route-factory-tiered.ts",
             "description": "Add `createApiKeyRoute` to `apps/api/src/utils/route-factory-tiered.ts`. It mirrors `createAdminRoute` but:\n- Swaps `adminAuthMiddleware` for the `createApiKeyMiddleware` instance\n- Accepts `apiKeyConfig: { headerName: string; envVarKey: string; errorCode: string }` as a required option\n- Applies rate limiting appropriate for AI/external inbound routes\n\nExport the new factory alongside the existing ones. Existing factories must not be modified.\n\nTest requirements:\n- Unit test: route created with `createApiKeyRoute` rejects requests without the configured header\n- File: `apps/api/src/__tests__/utils/route-factory-tiered.test.ts` (extend)",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-024"],
             "blocks": ["T-026", "T-027", "T-048", "T-049"],
@@ -885,14 +885,14 @@
             "tags": ["api", "route-factory"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
             }
         },
         {
@@ -1911,9 +1911,9 @@
     ],
     "summary": {
         "total": 52,
-        "pending": 31,
+        "pending": 29,
         "inProgress": 0,
-        "completed": 21,
+        "completed": 23,
         "blocked": 0,
         "averageComplexity": 2.3
     }

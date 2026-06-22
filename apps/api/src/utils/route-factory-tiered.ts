@@ -1,5 +1,6 @@
 /**
  * Three-tier authorization route factories (Public, Protected, Admin)
+ * plus the API-key tier for machine callers (Custom GPT, Make.com).
  * Extracted from route-factory.ts to keep each file under 500 lines.
  * All symbols are re-exported from route-factory.ts so importers are unaffected.
  */
@@ -7,6 +8,11 @@
 import type { z } from '@hono/zod-openapi';
 import type { PermissionEnum } from '@repo/schemas';
 import type { MiddlewareHandler } from 'hono';
+import {
+    type ApiKeyActorIdentity,
+    type ApiKeyMiddlewareConfig,
+    apiKeyMiddleware
+} from '../middlewares/api-key';
 import {
     adminAuthMiddleware,
     protectedAuthMiddleware,
@@ -339,6 +345,160 @@ export const createAdminListRoute = (options: AdminListRouteOptions) => {
         }
     });
 };
+
+// ============================================================================
+// API-Key Route Factory (machine callers: Custom GPT, Make.com)
+// ============================================================================
+
+/**
+ * Configuration for an API-key authenticated route.
+ * Extends the standard OpenAPI route interface with the API-key security config.
+ */
+export interface ApiKeyRouteOptions extends CreateOpenApiRouteInterface {
+    /**
+     * API-key middleware configuration.
+     *
+     * - headerName: header the caller sends the key in (e.g. 'x-hospeda-ai-key')
+     * - getExpectedKey: function returning the expected key from env (called per request)
+     * - actor: stable machine identity to inject into context on auth success
+     *
+     * @example
+     * ```typescript
+     * apiKeyConfig: {
+     *   headerName: 'x-hospeda-ai-key',
+     *   getExpectedKey: () => env.HOSPEDA_AI_SOCIAL_KEY,
+     *   actor: { id: 'gpt-action', name: 'Custom GPT Social Action' },
+     * }
+     * ```
+     */
+    readonly apiKeyConfig: ApiKeyMiddlewareConfig;
+    /**
+     * Override default tag prefix. When true (default) tags are prefixed
+     * with 'AI - ' for GPT routes or any prefix the caller sets via tags.
+     * Set to false to use tags as-is.
+     */
+    readonly apiKeyTag?: boolean;
+}
+
+/**
+ * Configuration for an API-key authenticated list route (with pagination).
+ */
+export interface ApiKeyListRouteOptions extends CreateOpenApiRouteInterface {
+    requestQuery?: Record<string, z.ZodTypeAny>;
+    allowedQueryParams?: string[];
+    readonly apiKeyConfig: ApiKeyMiddlewareConfig;
+    readonly apiKeyTag?: boolean;
+}
+
+/**
+ * Creates a route authenticated via a static inbound API key.
+ * Designed for machine-to-machine callers (Custom GPT, Make.com webhooks).
+ *
+ * Does NOT run the session authMiddleware / actorMiddleware chain.
+ * Instead, injects a synthetic SYSTEM-role actor via apiKeyMiddleware.
+ *
+ * Rate limiting falls through to the 'general' bucket by default.
+ * For dedicated buckets pass `customRateLimit` in the route options.
+ * NOTE: /api/v1/ai/* and /api/v1/integrations/make/* paths are intentionally
+ * left to the 'general' bucket for now — add explicit buckets in
+ * getEndpointType() when call volumes justify it (see T-026 notes).
+ *
+ * @example
+ * ```typescript
+ * export const draftPostRoute = createApiKeyRoute({
+ *   method: 'post',
+ *   path: '/draft',
+ *   summary: 'Draft a social post',
+ *   description: 'Custom GPT drafts a social post for operator review',
+ *   tags: ['AI - Social'],
+ *   apiKeyConfig: {
+ *     headerName: 'x-hospeda-ai-key',
+ *     getExpectedKey: () => env.HOSPEDA_AI_SOCIAL_KEY,
+ *     actor: { id: 'gpt-action', name: 'Custom GPT Social Action' },
+ *   },
+ *   requestBody: DraftPostSchema,
+ *   responseSchema: SocialPostDraftSchema,
+ *   handler: async (ctx, _params, body) => {
+ *     return socialDraftService.create(getActorFromContext(ctx), body);
+ *   },
+ * });
+ * ```
+ */
+export const createApiKeyRoute = (options: ApiKeyRouteOptions) => {
+    const { apiKeyConfig, apiKeyTag = false, ...routeOptions } = options;
+
+    // Tags: when apiKeyTag=true (opt-in) prefix untagged items — callers
+    // typically set their own descriptive tags ('AI - Social', etc.) already.
+    const tags = apiKeyTag
+        ? options.tags.map((tag) =>
+              tag.startsWith('AI -') || tag.startsWith('Integrations -') ? tag : `AI - ${tag}`
+          )
+        : options.tags;
+
+    const middlewares: MiddlewareHandler[] = [
+        apiKeyMiddleware(apiKeyConfig),
+        ...(routeOptions.options?.middlewares ?? [])
+    ];
+
+    return createCRUDRoute({
+        ...routeOptions,
+        tags,
+        options: {
+            ...routeOptions.options,
+            // Skip the Better Auth session middleware — machine callers have no session.
+            skipAuth: true,
+            middlewares
+        }
+    });
+};
+
+/**
+ * Creates a list (paginated) route authenticated via a static inbound API key.
+ * Mirror of createApiKeyRoute for endpoints that return paginated collections.
+ *
+ * @example
+ * ```typescript
+ * export const listDraftsRoute = createApiKeyListRoute({
+ *   method: 'get',
+ *   path: '/drafts',
+ *   summary: 'List social post drafts',
+ *   tags: ['AI - Social'],
+ *   apiKeyConfig: { ... },
+ *   requestQuery: { status: z.enum(['pending', 'approved']).optional() },
+ *   responseSchema: SocialPostDraftSchema,
+ *   handler: async (ctx, _params, _body, query) => {
+ *     return socialDraftService.list(getActorFromContext(ctx), query);
+ *   },
+ * });
+ * ```
+ */
+export const createApiKeyListRoute = (options: ApiKeyListRouteOptions) => {
+    const { apiKeyConfig, apiKeyTag = false, ...routeOptions } = options;
+
+    const tags = apiKeyTag
+        ? options.tags.map((tag) =>
+              tag.startsWith('AI -') || tag.startsWith('Integrations -') ? tag : `AI - ${tag}`
+          )
+        : options.tags;
+
+    const middlewares: MiddlewareHandler[] = [
+        apiKeyMiddleware(apiKeyConfig),
+        ...(routeOptions.options?.middlewares ?? [])
+    ];
+
+    return createListRoute({
+        ...routeOptions,
+        tags,
+        options: {
+            ...routeOptions.options,
+            skipAuth: true,
+            middlewares
+        }
+    });
+};
+
+// Re-export the identity type so route files can import it from one place.
+export type { ApiKeyActorIdentity, ApiKeyMiddlewareConfig };
 
 // ============================================================================
 // Streaming Route Factory (SSE) — re-exported here for discoverability

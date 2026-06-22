@@ -1,6 +1,6 @@
 # SPEC-254: Social Automation Backend
 
-## Progress: 21/52 tasks (40%) — catalog backend + all admin catalog routes done
+## Progress: 23/52 tasks (44%) — catalog backend + admin routes + inbound api-key auth done
 
 **Average Complexity:** 2.3/3 (max)
 **Critical Path:** T-001 -> T-002 -> T-004 -> T-005 -> T-006 -> T-007 -> T-008 -> T-009 -> T-010 -> T-011 -> T-013 -> T-014 -> T-016 -> T-017 -> T-018 -> T-019 -> T-027 -> T-028 -> T-029 -> T-032 -> T-033 -> T-034 -> T-035 -> T-036 -> T-037 -> T-044 -> T-045 -> T-046 -> T-047 -> T-048 -> T-049 -> T-050 -> T-051 -> T-052 (34 steps)
@@ -124,12 +124,12 @@
   - Blocked by: T-018
   - Blocks: T-020
 
-- [ ] **T-024** (complexity: 2) - Create inbound API-key middleware factory
+- [x] **T-024** (complexity: 2) - Create inbound API-key middleware factory
   - apps/api/src/middlewares/api-key.ts; timingSafeEqual, synthetic actor injection.
   - Blocked by: T-023
   - Blocks: T-025, T-048
 
-- [ ] **T-025** (complexity: 2) - Add createApiKeyRoute factory to route-factory-tiered.ts
+- [x] **T-025** (complexity: 2) - Add createApiKeyRoute factory to route-factory-tiered.ts
   - Mirrors createAdminRoute but uses api-key middleware.
   - Blocked by: T-024
   - Blocks: T-026, T-027, T-048, T-049
