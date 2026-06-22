@@ -1113,7 +1113,7 @@
             "id": "T-032",
             "title": "Create SocialAuditLogService",
             "description": "Create `packages/service-core/src/services/social/social-audit-log.service.ts`.\n\nSingle exported method:\n```ts\nlog(params: {\n  actorId: string | null;\n  eventType: string;\n  entityType: string;\n  entityId: string;\n  oldValue?: Record<string, unknown>;\n  newValue?: Record<string, unknown>;\n  metadata?: Record<string, unknown>;\n}): Promise<void>\n```\n\nWrites one row to `social_audit_log`. Must never throw — wrap in try/catch and log error with `@repo/logger` if the DB write fails (so an audit log failure never blocks a state transition).\n\nAlso export a const `SocialAuditEvent` object mapping all event type strings (POST_APPROVED, POST_REJECTED, POST_CHANGES_REQUESTED, POST_SCHEDULED, POST_RESCHEDULED, POST_MARKED_READY, POST_PAUSED, POST_UNPAUSED, POST_ARCHIVED, HASHTAG_PROMOTED, PLATFORM_FORMAT_UPDATED, SETTING_UPDATED, TARGET_PUBLISHED, TARGET_PUBLISH_FAILED, TARGET_DISPATCH_FAILED_EXHAUSTED) for type safety.\n\nTest requirements:\n- Unit tests: log() creates a row, log() swallows DB errors without rethrowing\n- File: `packages/service-core/src/services/social/__tests__/social-audit-log.test.ts`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-013"],
             "blocks": ["T-033"],

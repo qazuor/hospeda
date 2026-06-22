@@ -31,3 +31,10 @@ export {
     type IngestionResultCode,
     type IngestionSuccessData
 } from './social-draft-ingestion.service';
+export {
+    SocialAuditLogService,
+    SocialAuditEvent,
+    type SocialAuditEventType,
+    type SocialAuditLogInput,
+    type SocialAuditLogResult
+} from './social-audit-log.service';
