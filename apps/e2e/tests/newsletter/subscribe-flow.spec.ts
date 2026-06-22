@@ -21,6 +21,7 @@
 
 import { expect, test } from '@playwright/test';
 import { forceVerifyEmail, signupUser } from '../../fixtures/api-helpers.ts';
+import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
@@ -30,6 +31,10 @@ const WEB_URL = process.env.HOSPEDA_E2E_WEB_URL ?? 'http://localhost:4321';
 test.describe('NL-01: newsletter subscribe flow @p1 @newsletter', () => {
     let userId: string | null = null;
     const createdEmails: string[] = [];
+
+    test.beforeEach(async ({ page }) => {
+        await seedCookieConsent(page);
+    });
 
     test.afterEach(async () => {
         if (userId) {

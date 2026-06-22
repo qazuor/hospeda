@@ -14,10 +14,15 @@
  */
 
 import { expect, test } from '@playwright/test';
+import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 
 const WEB_URL = process.env.HOSPEDA_E2E_WEB_URL ?? 'http://localhost:4321';
 
 test.describe('GUEST-01: search + filter + paginate @p0 @guest @discovery', () => {
+    test.beforeEach(async ({ page }) => {
+        await seedCookieConsent(page);
+    });
+
     test('anonymous can search by destination and reach detail', async ({ page }) => {
         // ── 1. Home loads ──────────────────────────────────────────────────
         await page.goto(`${WEB_URL}/es/`, { waitUntil: 'domcontentloaded' });

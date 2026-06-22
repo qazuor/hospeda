@@ -27,6 +27,7 @@
 
 import { expect, test } from '@playwright/test';
 import { createUser } from '../../fixtures/api-helpers.ts';
+import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
@@ -67,6 +68,10 @@ async function attachSessionCookie(
 
 test.describe('E2E-04b: move bookmark via UI @p1 @favorites @collections @move @ui @spec-098', () => {
     const userIds: string[] = [];
+
+    test.beforeEach(async ({ page }) => {
+        await seedCookieConsent(page);
+    });
 
     test.afterEach(async () => {
         if (userIds.length > 0) {
