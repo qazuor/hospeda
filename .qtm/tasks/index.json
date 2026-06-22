@@ -811,8 +811,8 @@
         {
             "specId": "SPEC-257",
             "title": "Accommodation import short-link resolution + adapter enrichment",
-            "status": "draft",
-            "progress": "18/19",
+            "status": "in-progress",
+            "progress": "19/19",
             "path": "SPEC-257-import-short-link-resolution",
             "parent": "SPEC-222",
             "branch": "spec/SPEC-257-import-short-link-resolution",

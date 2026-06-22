@@ -366,7 +366,7 @@
             "id": "T-011",
             "title": "Cross-ref SPEC-222 + open PR to staging",
             "description": "Finalize the SPEC-257 implementation, add a cross-reference to SPEC-222, and open the PR to staging.\n\n**Steps:**\n\n1. **Cross-reference SPEC-222:** Add a note to `apps/web/src/components/accommodation-import/` or the relevant CLAUDE.md / docs file stating that SPEC-257 closed the short-link resolution follow-up from SPEC-222 (PRs #1747 and #1748). This helps future developers understand the connection without re-reading the spec history.\n\n2. **Commit discipline:**\n   - Stage files individually (never `git add .` or `git add -A`).\n   - Each commit covers one logical change: safe-fetch change, service rewire, adapter enrichment, i18n copy, tests.\n   - Commit messages follow Conventional Commits: `fix(utils): add resolveOnly mode to safeExternalFetch (SPEC-257)`, `fix(service-core): rewire resolveCanonicalUrl to resolveOnly (SPEC-257)`, etc.\n   - Do NOT add AI attribution (no Co-Authored-By, no \"Generated with Claude Code\").\n   - Lowercase subject line.\n\n3. **Final checks before PR:**\n   - `pnpm exec vitest run packages/utils/test/safe-fetch.integration.test.ts` — green.\n   - `pnpm exec vitest run packages/service-core/test/...` — green (relevant test files only, one at a time).\n   - `pnpm exec vitest run packages/i18n` — green.\n   - `pnpm lint` (or `pnpm check`) — green.\n   - `pnpm typecheck` — green.\n\n4. **Open PR to `staging`:** use `gh pr create --base staging --head spec/SPEC-257-import-short-link-resolution`. Title: `fix(import): short-link resolution + Airbnb enrichment (SPEC-257)`. Body: summarize what changed and reference SPEC-222 PRs #1747/#1748.\n\n5. **Owner merges after CI green** — do not force-merge with `--admin` unless there is a known pre-existing baseline failure unrelated to SPEC-257.\n\nAC-1.1, AC-1.2, AC-3.1, AC-3.2, AC-4.1, AC-4.2, AC-4.3.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-010"],
             "blocks": [],
@@ -394,7 +394,7 @@
             "timestamps": {
                 "created": "2026-06-22T02:36:01Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-22T14:33:20Z"
             }
         },
         {
@@ -577,8 +577,7 @@
     "summary": {
         "total": 19,
         "byStatus": {
-            "completed": 18,
-            "pending": 1
+            "completed": 19
         },
         "byPhase": {
             "setup": 1,
