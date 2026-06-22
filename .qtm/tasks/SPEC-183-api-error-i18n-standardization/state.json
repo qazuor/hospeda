@@ -5,9 +5,9 @@
     "created": "2026-06-02T00:00:00.000Z",
     "summary": {
         "total": 14,
-        "pending": 14,
+        "pending": 10,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 4,
         "blocked": 0,
         "averageComplexity": 2.1
     },
@@ -16,7 +16,7 @@
             "id": "T-001",
             "title": "Move translateApiError + types into packages/i18n/src/api-errors.ts",
             "description": "Create packages/i18n/src/api-errors.ts containing the ApiErrorShape interface, TranslationFn type, and translateApiError pure function. Port the implementation verbatim from apps/web/src/lib/api-errors.ts. Replace the web-local `createT` call with a locale-to-trans lookup using @repo/i18n's own `trans` map and `Locale` type (same mechanism already used by toast-error.ts). Acceptance: the function compiles inside @repo/i18n with no imports from web. SupportedLocale in the param interface is aliased to @repo/i18n's `Locale` type.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-002", "T-003"],
@@ -31,14 +31,14 @@
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-22T00:00:00.000Z"
             }
         },
         {
             "id": "T-002",
             "title": "Export translateApiError + types from packages/i18n/src/index.ts",
             "description": "Add named exports for translateApiError, ApiErrorShape, and TranslationFn to packages/i18n/src/index.ts. Build @repo/i18n and verify the dist exports are present. Acceptance: `import { translateApiError } from '@repo/i18n'` resolves in TypeScript strict mode from any package in the monorepo.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-001"],
             "blocks": ["T-003", "T-006", "T-009"],
@@ -53,14 +53,14 @@
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-22T00:00:00.000Z"
             }
         },
         {
             "id": "T-003",
             "title": "Port + extend api-errors test suite into packages/i18n/test/",
             "description": "Create packages/i18n/test/translate-api-error.test.ts. Port all 7 existing test cases from apps/web/test/lib/api-errors.test.ts, updating the import to '@repo/i18n'. Add two new cases: (a) locale-only path (no t function, uses internal trans lookup) — assert returns correct Spanish text; (b) reason fallback when translation missing — assert falls through to code translation. Acceptance: all 9 tests pass; coverage ≥ 90% on packages/i18n/src/api-errors.ts.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002"],
             "blocks": ["T-004"],
@@ -75,14 +75,14 @@
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-22T00:00:00.000Z"
             }
         },
         {
             "id": "T-004",
             "title": "Replace apps/web/src/lib/api-errors.ts with a re-export shim",
             "description": "Reduce apps/web/src/lib/api-errors.ts to three lines: re-export translateApiError, ApiErrorShape, and TranslationFn from '@repo/i18n'. Remove all implementation code and the import of web-local `createT`. Verify that all 17 existing web import sites (`import { translateApiError } from '@/lib/api-errors'` or similar) continue to resolve with zero changes. Acceptance: `pnpm typecheck` on apps/web passes; existing web api-errors.test.ts imports updated to point to @repo/i18n and all 7 cases still pass (or the test file is removed in favour of packages/i18n/test/ from T-003).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-003"],
             "blocks": ["T-005", "T-006"],
@@ -97,7 +97,7 @@
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
                 "started": null,
-                "completed": null
+                "completed": "2026-06-22T00:00:00.000Z"
             }
         },
         {
