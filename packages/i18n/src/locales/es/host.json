@@ -42,7 +42,7 @@
                 },
                 "booking": {
                     "name": "Booking",
-                    "steps": "Entrá a la página del alojamiento y copiá la dirección del navegador, sin los filtros de fecha.",
+                    "steps": "Entrá a la página del alojamiento y copiá la dirección del navegador (debe verse como booking.com/hotel/...), sin los filtros de fecha. Los enlaces para compartir (booking.com/Share-...) no funcionan: abrilos en el navegador y copiá la dirección final.",
                     "example": "https://www.booking.com/hotel/ar/nombre.es.html"
                 },
                 "mercadolibre": {
@@ -52,7 +52,7 @@
                 },
                 "google": {
                     "name": "Google Maps",
-                    "steps": "Buscá el lugar en Google Maps, abrí su ficha y copiá la dirección del navegador.",
+                    "steps": "Buscá el lugar en Google Maps, abrí su ficha y copiá la dirección del navegador. También funciona el enlace para compartir de la app (maps.app.goo.gl/...).",
                     "example": "https://www.google.com/maps/place/..."
                 }
             }

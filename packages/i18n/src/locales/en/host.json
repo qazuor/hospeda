@@ -42,7 +42,7 @@
                 },
                 "booking": {
                     "name": "Booking",
-                    "steps": "Open the property page and copy the browser address, without the date filters.",
+                    "steps": "Open the property page and copy the browser address (it should look like booking.com/hotel/...), without the date filters. Share links (booking.com/Share-...) won't work: open them in your browser and copy the final address.",
                     "example": "https://www.booking.com/hotel/ar/name.html"
                 },
                 "mercadolibre": {
@@ -52,7 +52,7 @@
                 },
                 "google": {
                     "name": "Google Maps",
-                    "steps": "Find the place on Google Maps, open its card and copy the browser address.",
+                    "steps": "Find the place on Google Maps, open its card and copy the browser address. The app share link (maps.app.goo.gl/...) also works.",
                     "example": "https://www.google.com/maps/place/..."
                 }
             }
