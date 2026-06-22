@@ -24,7 +24,12 @@ import type { AmenityData } from '@/lib/api/types';
 import type { CommerceListingDetail, CommerceVertical } from '@/lib/commerce/owner-listings';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { ExperienceTypeEnum, GastronomyTypeEnum, PriceRangeEnum } from '@repo/schemas';
+import {
+    ExperiencePriceUnitEnum,
+    ExperienceTypeEnum,
+    GastronomyTypeEnum,
+    PriceRangeEnum
+} from '@repo/schemas';
 import type { Image, OpeningHours } from '@repo/schemas';
 import { type JSX, useCallback, useState } from 'react';
 import { AmenitiesFeaturesField } from './AmenitiesFeaturesField';
@@ -87,6 +92,9 @@ const GASTRONOMY_TYPE_OPTIONS = Object.values(GastronomyTypeEnum);
 
 /** Experience type options in display order. */
 const EXPERIENCE_TYPE_OPTIONS = Object.values(ExperienceTypeEnum);
+
+/** Experience price unit options. */
+const PRICE_UNIT_OPTIONS = Object.values(ExperiencePriceUnitEnum);
 
 /** Resolve the owner PATCH endpoint for the given vertical. */
 function patchPathFor({
@@ -161,6 +169,12 @@ export function CommerceListingEditor({
     const [isPriceOnRequest, setIsPriceOnRequest] = useState<boolean>(
         data.isPriceOnRequest === true
     );
+    // T-021: experience-only pricing fields
+    const [priceFrom, setPriceFrom] = useState<number | null>(
+        typeof data.priceFrom === 'number' ? data.priceFrom : null
+    );
+    const [priceFromError, setPriceFromError] = useState<string>('');
+    const [priceUnit, setPriceUnit] = useState<string>(strField(data, 'priceUnit'));
     const [featuredImage, setFeaturedImage] = useState<Image | null>(
         (initialMedia.featuredImage as Image | undefined) ?? null
     );
@@ -277,6 +291,24 @@ export function CommerceListingEditor({
         [t]
     );
 
+    /** Validate priceFrom: must be a non-negative integer when provided. */
+    const validatePriceFrom = useCallback(
+        (value: number | null): boolean => {
+            if (value !== null && (!Number.isInteger(value) || value < 0)) {
+                setPriceFromError(
+                    t(
+                        'commerce.owner.editor.validation.priceMustBePositive',
+                        'El precio debe ser un número positivo.'
+                    )
+                );
+                return false;
+            }
+            setPriceFromError('');
+            return true;
+        },
+        [t]
+    );
+
     /** Build the PATCH payload from the dirty field groups only. */
     const buildPayload = useCallback((): Record<string, unknown> => {
         const payload: Record<string, unknown> = {};
@@ -330,6 +362,13 @@ export function CommerceListingEditor({
         if (dirty.has('isPriceOnRequest')) {
             payload.isPriceOnRequest = isPriceOnRequest;
         }
+        // T-021: experience-only
+        if (dirty.has('priceFrom')) {
+            payload.priceFrom = priceFrom ?? null;
+        }
+        if (dirty.has('priceUnit')) {
+            payload.priceUnit = priceUnit || null;
+        }
         return payload;
     }, [
         dirty,
@@ -342,6 +381,8 @@ export function CommerceListingEditor({
         priceRange,
         menuUrl,
         isPriceOnRequest,
+        priceFrom,
+        priceUnit,
         featuredImage,
         gallery,
         preservedMedia,
@@ -357,6 +398,10 @@ export function CommerceListingEditor({
             }
             // Validate summary before submit
             if (dirty.has('summary') && !validateSummary(summary)) {
+                return;
+            }
+            // Validate priceFrom before submit (experience only)
+            if (dirty.has('priceFrom') && !validatePriceFrom(priceFrom)) {
                 return;
             }
             setStatus({ kind: 'saving' });
@@ -376,7 +421,17 @@ export function CommerceListingEditor({
                 });
             }
         },
-        [dirty, vertical, listingId, buildPayload, t, validateSummary, summary]
+        [
+            dirty,
+            vertical,
+            listingId,
+            buildPayload,
+            t,
+            validateSummary,
+            summary,
+            validatePriceFrom,
+            priceFrom
+        ]
     );
 
     const isSaving = status.kind === 'saving';
@@ -603,6 +658,7 @@ export function CommerceListingEditor({
                 </section>
             ) : (
                 <section className={styles.section}>
+                    {/* isPriceOnRequest toggle */}
                     <label className={styles.checkbox}>
                         <input
                             type="checkbox"
@@ -614,6 +670,68 @@ export function CommerceListingEditor({
                         />
                         {t('commerce.owner.editor.sections.isPriceOnRequest', 'Precio a consultar')}
                     </label>
+
+                    {/* T-021: priceFrom — disabled when isPriceOnRequest */}
+                    <label
+                        className={styles.label}
+                        htmlFor="ce-priceFrom"
+                    >
+                        {t('commerce.owner.editor.sections.priceFrom', 'Precio desde (centavos)')}
+                    </label>
+                    <input
+                        id="ce-priceFrom"
+                        className={styles.input}
+                        type="number"
+                        min={0}
+                        step={1}
+                        disabled={isPriceOnRequest}
+                        value={priceFrom ?? ''}
+                        aria-describedby="ce-priceFrom-err"
+                        onChange={(event) => {
+                            const raw = event.target.value;
+                            const parsed = raw === '' ? null : Math.floor(Number(raw));
+                            setPriceFrom(parsed);
+                            markDirty('priceFrom');
+                            validatePriceFrom(parsed);
+                        }}
+                    />
+                    {priceFromError && (
+                        <span
+                            id="ce-priceFrom-err"
+                            className={styles.error}
+                            aria-live="polite"
+                        >
+                            {priceFromError}
+                        </span>
+                    )}
+
+                    {/* T-021: priceUnit select — disabled when isPriceOnRequest */}
+                    <label
+                        className={styles.label}
+                        htmlFor="ce-priceUnit"
+                    >
+                        {t('commerce.owner.editor.sections.priceUnit', 'Unidad de precio')}
+                    </label>
+                    <select
+                        id="ce-priceUnit"
+                        className={styles.input}
+                        value={priceUnit}
+                        disabled={isPriceOnRequest}
+                        onChange={(event) => {
+                            setPriceUnit(event.target.value);
+                            markDirty('priceUnit');
+                        }}
+                    >
+                        <option value="">—</option>
+                        {PRICE_UNIT_OPTIONS.map((unit) => (
+                            <option
+                                key={unit}
+                                value={unit}
+                            >
+                                {t(`commerce.owner.editor.priceUnitOption.${unit}`, unit)}
+                            </option>
+                        ))}
+                    </select>
                 </section>
             )}
 
