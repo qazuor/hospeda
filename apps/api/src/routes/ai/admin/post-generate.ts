@@ -47,6 +47,7 @@
 
 import type { AiService } from '@repo/ai-core';
 import {
+    AiPostGenerateDraftGenerationSchema,
     AiPostGenerateDraftSchema,
     AiPostGenerateRequestSchema,
     PermissionEnum
@@ -173,35 +174,82 @@ adminAiPostGenerateRoute.post('/', async (c) => {
     try {
         const aiService = await createConfiguredAiService();
 
-        const outputSchema = AiPostGenerateDraftSchema as unknown as GenerateObjectSchema; // TYPE-WORKAROUND: pnpm may resolve @repo/schemas and @repo/ai-core to different Zod patch versions (4.3.x vs 4.4.x), causing a nominal ZodType mismatch; the runtime schemas are structurally identical and AiPostGenerateDraftSchema.safeParse enforces the contract.
-        const result = await aiService.generateObject(
-            {
-                feature: 'post_generate',
-                prompt,
-                locale
-            },
-            outputSchema
-        );
+        // Use the LOOSE schema (no minLength/maxLength bounds) for the provider call.
+        // Constrained-decoding runtimes (llama.cpp/Ollama) crash building a GBNF grammar
+        // for large length bounds; structural shape is all the provider needs.
+        // The strict bounds are enforced below via AiPostGenerateDraftSchema.safeParse.
+        // TYPE-WORKAROUND: pnpm may resolve @repo/schemas and @repo/ai-core to different
+        // Zod patch versions (4.3.x vs 4.4.x), causing a nominal ZodType mismatch; the
+        // runtime schemas are structurally identical and AiPostGenerateDraftSchema.safeParse
+        // enforces the contract. Mirrors the cast pattern in search-chat.ts / import-from-url.ts.
+        const outputSchema = AiPostGenerateDraftGenerationSchema as unknown as GenerateObjectSchema; // TYPE-WORKAROUND
 
-        // Re-parse the object through the schema to restore the typed `AiPostGenerateDraft`
-        // after the Zod-version-bridge cast above loses the generic type parameter.
-        // The engine already validated the structured output, so this safeParse is
-        // a defensive type-narrowing assertion rather than a validation gate.
-        const draftParse = AiPostGenerateDraftSchema.safeParse(result.object);
-        const draft: AiPostGenerateDraft = draftParse.success
-            ? draftParse.data
-            : (result.object as AiPostGenerateDraft); // engine validated; only fails on severe version drift
-
-        apiLogger.info(
-            {
+        /**
+         * Calls the AI engine once and validates the result against the STRICT
+         * schema. Returns the validated draft or `null` if validation fails.
+         *
+         * @returns Validated `AiPostGenerateDraft` or `null` on parse failure.
+         */
+        const attemptGenerate = async (): Promise<{
+            draft: AiPostGenerateDraft;
+            provider: string;
+            model: string;
+            usage: { promptTokens: number; completionTokens: number; totalTokens: number };
+        } | null> => {
+            const result = await aiService.generateObject(
+                { feature: 'post_generate', prompt, locale },
+                outputSchema
+            );
+            const draftParsed = AiPostGenerateDraftSchema.safeParse(result.object);
+            if (!draftParsed.success) {
+                return null;
+            }
+            return {
+                draft: draftParsed.data,
                 provider: result.provider,
                 model: result.model,
                 usage: result.usage
+            };
+        };
+
+        let attempt = await attemptGenerate();
+
+        if (attempt === null) {
+            apiLogger.warn(
+                { topic: input.topic },
+                'admin-ai-post-generate: strict validation failed on first attempt — retrying once'
+            );
+            attempt = await attemptGenerate();
+        }
+
+        if (attempt === null) {
+            apiLogger.warn(
+                { topic: input.topic },
+                'admin-ai-post-generate: strict validation failed on retry — returning 422'
+            );
+            return c.json(
+                {
+                    success: false,
+                    error: {
+                        code: 'DRAFT_VALIDATION_FAILED',
+                        message:
+                            'The generated draft did not meet the required format after two attempts'
+                    }
+                },
+                422
+            );
+        }
+
+        apiLogger.info(
+            {
+                provider: attempt.provider,
+                model: attempt.model,
+                usage: attempt.usage
             },
             'admin-ai-post-generate: draft generated successfully'
         );
 
-        return c.json({ success: true, data: draft });
+        return c.json({ success: true, data: attempt.draft });
     } catch (error) {
         const mapped = mapAiEngineErrorToHttpStatus(error);
 

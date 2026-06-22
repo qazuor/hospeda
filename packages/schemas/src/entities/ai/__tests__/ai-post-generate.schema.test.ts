@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+    AiPostGenerateDraftGenerationSchema,
     AiPostGenerateDraftSchema,
     AiPostGenerateRequestSchema,
     AiPostGenerateToneSchema
@@ -513,6 +514,114 @@ describe('AiPostGenerateDraftSchema', () => {
 
             // Act
             const result = AiPostGenerateDraftSchema.safeParse(input);
+
+            // Assert
+            expect(result.success).toBe(false);
+        });
+    });
+});
+
+// ============================================================================
+// AiPostGenerateDraftGenerationSchema — loose provider schema
+// ============================================================================
+
+describe('AiPostGenerateDraftGenerationSchema', () => {
+    describe('when given all three required string fields', () => {
+        it('should accept a well-formed object with standard-length strings', () => {
+            // Arrange
+            const input = {
+                title: VALID_TITLE,
+                summary: VALID_SUMMARY,
+                content: VALID_CONTENT
+            };
+
+            // Act
+            const result = AiPostGenerateDraftGenerationSchema.safeParse(input);
+
+            // Assert
+            expect(result.success).toBe(true);
+        });
+
+        it('should accept a very short content that AiPostGenerateDraftSchema would reject', () => {
+            // Arrange — content below the strict 100-char minimum
+            const input = {
+                title: 'Short',
+                summary: 'Short summary',
+                content: 'hi'
+            };
+
+            // Act
+            const result = AiPostGenerateDraftGenerationSchema.safeParse(input);
+
+            // Assert — loose schema has no length bounds, so this must pass
+            expect(result.success).toBe(true);
+        });
+
+        it('should accept an empty string in all three fields (no min bounds)', () => {
+            // Arrange
+            const input = { title: '', summary: '', content: '' };
+
+            // Act
+            const result = AiPostGenerateDraftGenerationSchema.safeParse(input);
+
+            // Assert
+            expect(result.success).toBe(true);
+        });
+    });
+
+    describe('when required fields are missing', () => {
+        it('should reject an object missing "title"', () => {
+            // Arrange
+            const input = { summary: VALID_SUMMARY, content: VALID_CONTENT };
+
+            // Act
+            const result = AiPostGenerateDraftGenerationSchema.safeParse(input);
+
+            // Assert
+            expect(result.success).toBe(false);
+        });
+
+        it('should reject an object missing "summary"', () => {
+            // Arrange
+            const input = { title: VALID_TITLE, content: VALID_CONTENT };
+
+            // Act
+            const result = AiPostGenerateDraftGenerationSchema.safeParse(input);
+
+            // Assert
+            expect(result.success).toBe(false);
+        });
+
+        it('should reject an object missing "content"', () => {
+            // Arrange
+            const input = { title: VALID_TITLE, summary: VALID_SUMMARY };
+
+            // Act
+            const result = AiPostGenerateDraftGenerationSchema.safeParse(input);
+
+            // Assert
+            expect(result.success).toBe(false);
+        });
+    });
+
+    describe('when fields are non-string types', () => {
+        it('should reject a numeric title', () => {
+            // Arrange
+            const input = { title: 42, summary: VALID_SUMMARY, content: VALID_CONTENT };
+
+            // Act
+            const result = AiPostGenerateDraftGenerationSchema.safeParse(input);
+
+            // Assert
+            expect(result.success).toBe(false);
+        });
+
+        it('should reject a null content', () => {
+            // Arrange
+            const input = { title: VALID_TITLE, summary: VALID_SUMMARY, content: null };
+
+            // Act
+            const result = AiPostGenerateDraftGenerationSchema.safeParse(input);
 
             // Assert
             expect(result.success).toBe(false);

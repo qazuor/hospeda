@@ -39,26 +39,32 @@ const { generateObjectCalls } = vi.hoisted(() => ({
 }));
 
 /**
- * Configurable next return/throw for the stubbed `generateObject`.
+ * Configurable per-call responses for the stubbed `generateObject`.
  *
- * `nextReturnValue` — when set, `generateObject` resolves with this value.
- * `nextThrow`       — when set, `generateObject` throws this error instead.
+ * `callQueue` — a FIFO queue of per-invocation results. On each call, the stub
+ *   shifts one entry from the front of the queue. An entry is either:
+ *   - `{ value: ... }` — resolve with `value`
+ *   - `{ throw: ... }` — throw the error
+ *
+ * When the queue is empty the stub throws (tests must always pre-load it).
+ *
+ * Legacy `nextReturnValue` / `nextThrow` (single-value) are preserved as
+ * convenience helpers: `setNext()` pushes a single entry to the queue.
  */
-const { nextReturnValue, nextThrow } = vi.hoisted(() => ({
-    nextReturnValue: {
-        current: null as null | {
-            object: {
-                title: string;
-                summary: string;
-                content: string;
-            };
-            usage: { promptTokens: number; completionTokens: number; totalTokens: number };
-            provider: string;
-            model: string;
-            finishReason: string;
-        }
-    },
-    nextThrow: { current: undefined as unknown }
+type StubEntry =
+    | {
+          value: {
+              object: { title: string; summary: string; content: string };
+              usage: { promptTokens: number; completionTokens: number; totalTokens: number };
+              provider: string;
+              model: string;
+              finishReason: string;
+          };
+      }
+    | { throw: unknown };
+
+const { callQueue } = vi.hoisted(() => ({
+    callQueue: [] as StubEntry[]
 }));
 
 // ---------------------------------------------------------------------------
@@ -76,7 +82,7 @@ vi.mock('../../../../src/middlewares/authorization', () => ({
 
 /**
  * AI service factory: returns a stub `AiService` with a configurable
- * `generateObject`. The stub records calls and resolves/throws as configured.
+ * `generateObject`. The stub records calls and processes the per-call queue.
  */
 vi.mock('../../../../src/services/ai-service.factory.js', () => ({
     createConfiguredAiService: async () => ({
@@ -89,14 +95,16 @@ vi.mock('../../../../src/services/ai-service.factory.js', () => ({
                 prompt: args.prompt,
                 locale: args.locale
             });
-            if (nextThrow.current !== undefined) {
-                throw nextThrow.current;
+            const entry = callQueue.shift();
+            if (entry === undefined) {
+                throw new Error(
+                    'generateObject stub: callQueue is empty — pre-load entries in the test'
+                );
             }
-            if (nextReturnValue.current !== null) {
-                return nextReturnValue.current;
+            if ('throw' in entry) {
+                throw entry.throw;
             }
-            // Defensive: tests should always set nextReturnValue or nextThrow.
-            throw new Error('generateObject stub: no return value or throw configured');
+            return entry.value;
         }
     })
 }));
@@ -227,14 +235,15 @@ import {
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** A valid AiPostGenerateDraft for use in `nextReturnValue`. */
+/** A valid AiPostGenerateDraft used as the default `callQueue` entry. */
 const VALID_DRAFT = {
     object: {
         title: 'Visit Concepción del Uruguay This Summer',
         summary:
             'Discover the best of Concepción del Uruguay with its river beaches, colonial architecture, and vibrant local gastronomy.',
         content:
-            '<h2>Why Visit</h2><p>Concepción del Uruguay is one of the hidden gems of Entre Ríos province...</p>'
+            '<h2>Why Visit</h2><p>Concepción del Uruguay is one of the hidden gems of Entre Ríos province. ' +
+            'Its colonial architecture, river beaches on the Uruguay River, and vibrant gastronomy make it a must-visit destination.</p>'
     },
     usage: { promptTokens: 120, completionTokens: 280, totalTokens: 400 },
     provider: 'stub',
@@ -270,8 +279,9 @@ describe('admin AI post-generate route (SPEC-223 T-008)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         generateObjectCalls.length = 0;
-        nextReturnValue.current = VALID_DRAFT;
-        nextThrow.current = undefined;
+        callQueue.length = 0;
+        // Default: a single valid response (happy-path tests consume one call).
+        callQueue.push({ value: VALID_DRAFT });
     });
 
     // =========================================================================
@@ -394,14 +404,20 @@ describe('admin AI post-generate route (SPEC-223 T-008)', () => {
                 topic: 'A simple topic',
                 points: ['One key point']
             };
-            nextReturnValue.current = {
-                ...VALID_DRAFT,
-                object: {
-                    title: 'Simple title',
-                    summary: 'A short summary for the generated post about a simple topic.',
-                    content: '<p>Content goes here with enough text to exceed the minimum.</p>'
+            // Override the default entry set in beforeEach with a custom draft.
+            callQueue.length = 0;
+            callQueue.push({
+                value: {
+                    ...VALID_DRAFT,
+                    object: {
+                        title: 'Simple title',
+                        summary: 'A short summary for the generated post about a simple topic.',
+                        content:
+                            '<p>Content goes here with enough text to exceed the minimum required ' +
+                            'length of one hundred characters in the strict validation schema.</p>'
+                    }
                 }
-            };
+            });
             const res = await POST(minimalBody);
             expect(res.status).toBe(200);
         });
@@ -470,12 +486,14 @@ describe('admin AI post-generate route (SPEC-223 T-008)', () => {
 
     describe('AI engine error mapping', () => {
         it('returns HTTP 422 MODERATION_FAILED when content is moderation-blocked', async () => {
-            nextThrow.current = new AiModerationBlockedError({
-                feature: 'post_generate',
-                direction: 'output',
-                categories: ['violence']
+            callQueue.length = 0;
+            callQueue.push({
+                throw: new AiModerationBlockedError({
+                    feature: 'post_generate',
+                    direction: 'output',
+                    categories: ['violence']
+                })
             });
-            nextReturnValue.current = null;
 
             const res = await POST(VALID_BODY);
             expect(res.status).toBe(422);
@@ -487,8 +505,8 @@ describe('admin AI post-generate route (SPEC-223 T-008)', () => {
         });
 
         it('returns HTTP 429 when the cost ceiling is hit', async () => {
-            nextThrow.current = new AiCeilingHitError('post_generate');
-            nextReturnValue.current = null;
+            callQueue.length = 0;
+            callQueue.push({ throw: new AiCeilingHitError('post_generate') });
 
             const res = await POST(VALID_BODY);
             expect(res.status).toBe(429);
@@ -499,8 +517,8 @@ describe('admin AI post-generate route (SPEC-223 T-008)', () => {
         });
 
         it('returns HTTP 502 when the engine is exhausted (all providers failed)', async () => {
-            nextThrow.current = new AiEngineExhaustedError('post_generate');
-            nextReturnValue.current = null;
+            callQueue.length = 0;
+            callQueue.push({ throw: new AiEngineExhaustedError('post_generate') });
 
             const res = await POST(VALID_BODY);
             expect(res.status).toBe(502);
@@ -511,8 +529,8 @@ describe('admin AI post-generate route (SPEC-223 T-008)', () => {
         });
 
         it('returns HTTP 503 when the feature is not configured', async () => {
-            nextThrow.current = new AiFeatureNotConfiguredError('post_generate');
-            nextReturnValue.current = null;
+            callQueue.length = 0;
+            callQueue.push({ throw: new AiFeatureNotConfiguredError('post_generate') });
 
             const res = await POST(VALID_BODY);
             expect(res.status).toBe(503);
@@ -523,8 +541,8 @@ describe('admin AI post-generate route (SPEC-223 T-008)', () => {
         });
 
         it('returns HTTP 500 INTERNAL_ERROR for unexpected errors', async () => {
-            nextThrow.current = new Error('Unexpected database failure');
-            nextReturnValue.current = null;
+            callQueue.length = 0;
+            callQueue.push({ throw: new Error('Unexpected database failure') });
 
             const res = await POST(VALID_BODY);
             expect(res.status).toBe(500);
@@ -532,6 +550,80 @@ describe('admin AI post-generate route (SPEC-223 T-008)', () => {
             const body = (await res.json()) as { success: boolean; error: { code: string } };
             expect(body.success).toBe(false);
             expect(body.error.code).toBe('INTERNAL_ERROR');
+        });
+    });
+
+    // =========================================================================
+    // Retry-on-strict-validation-failure behaviour
+    // =========================================================================
+
+    /**
+     * An object whose fields exist but whose content is too short to pass the
+     * strict AiPostGenerateDraftSchema (content < 100 chars, summary < 10 chars).
+     * The loose generation schema used for the provider call accepts this, but
+     * the server-side strict validation must reject it.
+     */
+    const OUT_OF_BOUNDS_DRAFT = {
+        ...VALID_DRAFT,
+        object: {
+            title: 'Ok title',
+            summary: 'Too short', // < 10 chars — fails AiPostGenerateDraftSchema
+            content: 'hi' // < 100 chars — fails AiPostGenerateDraftSchema
+        }
+    };
+
+    describe('retry on strict-validation failure', () => {
+        it('returns HTTP 422 DRAFT_VALIDATION_FAILED and calls generateObject twice when both attempts produce out-of-bounds output', async () => {
+            // Arrange — both attempts return an object that fails the strict schema.
+            callQueue.length = 0;
+            callQueue.push({ value: OUT_OF_BOUNDS_DRAFT });
+            callQueue.push({ value: OUT_OF_BOUNDS_DRAFT });
+
+            // Act
+            const res = await POST(VALID_BODY);
+
+            // Assert — 422 after two failed attempts
+            expect(res.status).toBe(422);
+
+            const body = (await res.json()) as { success: boolean; error: { code: string } };
+            expect(body.success).toBe(false);
+            expect(body.error.code).toBe('DRAFT_VALIDATION_FAILED');
+
+            // generateObject must have been called exactly twice (initial + retry)
+            expect(generateObjectCalls).toHaveLength(2);
+        });
+
+        it('returns HTTP 200 and calls generateObject twice when the first attempt fails strict validation but the retry succeeds', async () => {
+            // Arrange — first call returns out-of-bounds, second call returns a valid draft.
+            callQueue.length = 0;
+            callQueue.push({ value: OUT_OF_BOUNDS_DRAFT });
+            callQueue.push({ value: VALID_DRAFT });
+
+            // Act
+            const res = await POST(VALID_BODY);
+
+            // Assert — 200 because the retry recovered
+            expect(res.status).toBe(200);
+
+            const body = (await res.json()) as {
+                success: boolean;
+                data: { title: string; summary: string; content: string };
+            };
+            expect(body.success).toBe(true);
+            expect(body.data.title).toBe(VALID_DRAFT.object.title);
+
+            // generateObject must have been called exactly twice
+            expect(generateObjectCalls).toHaveLength(2);
+        });
+
+        it('returns HTTP 200 on the first attempt (no retry) when the output already passes strict validation', async () => {
+            // Arrange — default beforeEach queue already has one valid entry.
+            // Act
+            const res = await POST(VALID_BODY);
+
+            // Assert — succeeded on the first call; no retry needed
+            expect(res.status).toBe(200);
+            expect(generateObjectCalls).toHaveLength(1);
         });
     });
 });

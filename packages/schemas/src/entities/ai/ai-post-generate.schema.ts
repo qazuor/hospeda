@@ -141,3 +141,41 @@ export const AiPostGenerateDraftSchema = z.object({
 
 /** Inferred type for {@link AiPostGenerateDraftSchema}. */
 export type AiPostGenerateDraft = z.infer<typeof AiPostGenerateDraftSchema>;
+
+// ---------------------------------------------------------------------------
+// Loose generation schema (provider-safe, no length bounds)
+// ---------------------------------------------------------------------------
+
+/**
+ * LOOSE generation schema sent to the AI provider for structured output.
+ *
+ * Deliberately OMITS the length bounds (min/max) of {@link AiPostGenerateDraftSchema}:
+ * `generateObject` translates Zod `.min()/.max()` into JSON-schema
+ * `minLength`/`maxLength`, and constrained-decoding providers (llama.cpp/Ollama)
+ * crash building a GBNF grammar for large bounds (e.g. content maxLength 50000).
+ * The structural shape (three required string fields) is all the provider needs;
+ * the strict bounds are enforced server-side by validating the response against
+ * {@link AiPostGenerateDraftSchema}.
+ *
+ * @see AiPostGenerateDraftSchema — the strict validator applied after generation.
+ */
+export const AiPostGenerateDraftGenerationSchema = z.object({
+    /**
+     * Generated post title — structural type only; strict length enforced
+     * server-side by {@link AiPostGenerateDraftSchema}.
+     */
+    title: z.string(),
+    /**
+     * Generated post summary / teaser — structural type only; strict length
+     * enforced server-side by {@link AiPostGenerateDraftSchema}.
+     */
+    summary: z.string(),
+    /**
+     * Generated post body as valid HTML — structural type only; strict length
+     * enforced server-side by {@link AiPostGenerateDraftSchema}.
+     */
+    content: z.string()
+});
+
+/** Inferred type for {@link AiPostGenerateDraftGenerationSchema}. */
+export type AiPostGenerateDraftGeneration = z.infer<typeof AiPostGenerateDraftGenerationSchema>;
