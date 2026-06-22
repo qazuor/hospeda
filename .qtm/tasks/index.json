@@ -865,6 +865,20 @@
             "taskCount": 23,
             "averageComplexity": 2.39,
             "note": "23 tasks across 5 phases (setup 1, core 7, integration 11, testing 3, docs 1). Admin AI usage dashboard; extends existing metering with by-model/by-provider/feature-cross/daily aggregations + recharts UI. Re-numbered from SPEC-259 (collision with parallel staging-smoke-testing)."
+        },
+        {
+            "specId": "SPEC-262",
+            "title": "Billing Promo-Code Typed Effect Engine",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-262-billing-promo-code-effect-engine",
+            "branch": "spec/SPEC-262-billing-promo-code-effect-engine",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-262-billing-promo-code-effect-engine",
+            "base": "staging",
+            "createdAt": "2026-06-22T18:17:18.089Z",
+            "tasksAtomizedAt": null,
+            "taskCount": 0,
+            "note": "Spec written (draft), 5 owner decisions closed. NOT atomized yet."
         }
     ],
     "standalone": {

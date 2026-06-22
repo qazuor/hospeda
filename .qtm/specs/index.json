@@ -1653,6 +1653,34 @@
                 "api",
                 "i18n"
             ]
+        },
+        {
+            "specId": "SPEC-262",
+            "title": "Billing Promo-Code Typed Effect Engine",
+            "slug": "billing-promo-code-effect-engine",
+            "type": "feature",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-262-billing-promo-code-effect-engine",
+            "created": "2026-06-22T18:17:18.089Z",
+            "base": "staging",
+            "origin": "Owner request: promo codes that express free-forever, trial extension, and multi-cycle discount. Chose Option B (typed-effect engine) over subscription-ops.",
+            "dependsOn": [],
+            "tags": [
+                "billing",
+                "promo-codes",
+                "mercadopago",
+                "subscriptions",
+                "recurring",
+                "trial",
+                "discount",
+                "service-core",
+                "schemas",
+                "db",
+                "cron",
+                "admin",
+                "spec-143-gate"
+            ]
         }
     ]
 }
