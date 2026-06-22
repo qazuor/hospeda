@@ -100,6 +100,7 @@ Legend: **✅ mapped today** · **⚠️ limbo (available upstream, not mapped /
 | A4 | Booking | Add `beds`, `price`/`currency`, `facilities`/`amenities` to `BookingItem` + map them; reconsider the `USEFUL_FIELD_THRESHOLD` so type/capacity/amenities aren't dropped when JSON-LD barely passes (e.g. always try to enrich `type`+`capacity` via the actor even if JSON-LD gave name+description). | Medium |
 | A5 | Generic | Wire JSON-LD `priceRange` → `price` where it is numeric-parseable; map JSON-LD `@type` → `type`. | Low |
 | A6 | All | Decide SEO: either leave `seo.*` host-authored (document as intentional) or auto-derive `seo.title`/`seo.description` from name+locality+summary (no AI needed). | Low |
+| A7 | Web | **Import analytics — PostHog events** (import attempt / success / failure-with-source / fields-prefilled count). Inherited from SPEC-222 T-028 (the smoke + legal copy parts shipped; the PostHog events were never wired). | Low |
 
 > Each A-task ships with the same non-mocked / real-shape test discipline SPEC-257
 > established (probe the real actor/API response shape; do not trust guessed field
