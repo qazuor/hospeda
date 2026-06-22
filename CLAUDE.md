@@ -219,6 +219,10 @@ This rule was approved as part of SPEC-143 phase 4 polish (engram `#532` decisio
 - Exclude documentation/CLAUDE.md files from code commits (commit them separately if needed)
 - Pre-commit hooks (husky + lint-staged + biome) run on ALL staged files.. if the hook fails, fix the issue and create a NEW commit (never amend)
 - **Merge commit messages**: commitlint rejects `merge:` as a type. Use `chore: merge <source> into <target> (...)` instead.
+- **PR titles MUST carry a work tag** (enforced by the `Validate PR Title` CI check — see [`.github/workflows/validate-pr-title.yml`](.github/workflows/validate-pr-title.yml)). Every PR title MUST start with one of two tags, before the conventional-commit type:
+  - `[SPEC-NNN]` — work that belongs to a formal spec. Format: `[SPEC-NNN] type(scope): description` (e.g. `[SPEC-228] feat(web): unify loading states`).
+  - `[NOSPEC:<slug>]` — small changes that do NOT go through the formal spec process (typos, infra one-offs, dependency patches). The `<slug>` is a short kebab-case identifier so multiple no-spec PRs are distinguishable at a glance. Format: `[NOSPEC:<slug>] type(scope): description` (e.g. `[NOSPEC:footer-copy] fix(web): typo in footer`).
+  - The tag is non-negotiable: a reviewer must know which spec (or that none) a PR belongs to from the PR list alone. Bot-authored PRs (`dependabot[bot]`, `github-actions[bot]`) are exempt — the CI check skips them.
 
 ### Protected Branches — `main` and `staging`
 
@@ -251,7 +255,7 @@ ALL new work follows this 6-step flow (full reference: [`.claude/docs/git-branch
 1. Cut worktree/branch from **`staging`** (NOT `main`).
 2. Make changes in that branch.
 3. Leave everything green (typecheck + lint + test) on that branch.
-4. Open PR targeting `staging`.
+4. Open PR targeting `staging`. The PR title MUST start with a work tag — `[SPEC-NNN]` or `[NOSPEC:<slug>]` (see Git Conventions → PR titles). CI (`Validate PR Title`) rejects PRs without it.
 5. Merge PR into `staging`.
 6. ONLY when the user explicitly says so (after soak time in staging), merge `staging` → `main`.
 
