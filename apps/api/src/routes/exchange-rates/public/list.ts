@@ -1,12 +1,10 @@
 import type {
     ExchangeRateSearchInput,
-    ExchangeRateSourceEnum,
     ExchangeRateTypeEnum,
     PriceCurrencyEnum
 } from '@repo/schemas';
 import {
-    ExchangeRateSchema,
-    ExchangeRateSourceEnumSchema,
+    ExchangeRatePublicSchema,
     ExchangeRateTypeEnumSchema,
     PriceCurrencyEnumSchema
 } from '@repo/schemas';
@@ -24,15 +22,17 @@ import { createPublicListRoute } from '../../../utils/route-factory.js';
 const exchangeRateService = new ExchangeRateService({ logger: apiLogger });
 
 /**
- * HTTP-compatible search schema for exchange rates
- * All fields optional for flexible filtering
+ * HTTP-compatible search schema for the PUBLIC exchange rates endpoint.
+ *
+ * Only exposes currency-pair and rate-type filters that are safe for public
+ * consumers. The `source` and `isManualOverride` fields are intentionally
+ * EXCLUDED — they expose internal data-source bookkeeping and override flags
+ * that public callers have no business querying. SPEC-210: query-param tier leak fix.
  */
 const ExchangeRateSearchHttpSchema = z.object({
     fromCurrency: PriceCurrencyEnumSchema.optional(),
     toCurrency: PriceCurrencyEnumSchema.optional(),
-    rateType: ExchangeRateTypeEnumSchema.optional(),
-    source: ExchangeRateSourceEnumSchema.optional(),
-    isManualOverride: z.coerce.boolean().optional()
+    rateType: ExchangeRateTypeEnumSchema.optional()
 });
 
 /**
@@ -46,7 +46,7 @@ export const publicListExchangeRatesRoute = createPublicListRoute({
     description: 'Returns current exchange rates with optional filters',
     tags: ['Exchange Rates'],
     requestQuery: ExchangeRateSearchHttpSchema.shape,
-    responseSchema: ExchangeRateSchema,
+    responseSchema: ExchangeRatePublicSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
@@ -67,10 +67,6 @@ export const publicListExchangeRatesRoute = createPublicListRoute({
 
         if (query?.rateType) {
             filters.rateType = query.rateType as ExchangeRateTypeEnum;
-        }
-
-        if (query?.source) {
-            filters.source = query.source as ExchangeRateSourceEnum;
         }
 
         // Always use search for consistency (it handles pagination internally)

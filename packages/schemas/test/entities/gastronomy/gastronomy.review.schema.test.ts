@@ -86,13 +86,22 @@ describe('GastronomyReviewSchema', () => {
     });
 
     it('should reject a rating with an out-of-range dimension (CommerceRatingSchema enforced on entity schema)', () => {
-        // GastronomyReviewSchema.rating is CommerceRatingSchema.optional() — invalid dimensions
+        // GastronomyReviewSchema.rating is CommerceRatingSchema.nullish() — invalid dimensions
         // are rejected directly on the entity schema (food max is 5).
         const data = {
             ...validReviewBase(),
             rating: { food: 6, service: 4, ambiance: 3, value: 4 }
         };
         expect(() => GastronomyReviewSchema.parse(data)).toThrow(ZodError);
+    });
+
+    it('should accept a null rating breakdown (SPEC-259: column is nullable, reads back NULL)', () => {
+        // Regression: the `rating` column dropped NOT NULL (migration 0023), so a
+        // rating-less review reads back NULL. The entity schema (used for response
+        // validation on the create route) must accept null — not only undefined —
+        // or the create response would fail validation after a successful insert.
+        const data = { ...validReviewBase(), rating: null };
+        expect(() => GastronomyReviewSchema.parse(data)).not.toThrow();
     });
 });
 

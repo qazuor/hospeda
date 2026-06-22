@@ -779,13 +779,13 @@
         {
             "specId": "SPEC-183",
             "title": "API Error i18n Standardization",
-            "status": "approved",
+            "status": "completed",
             "complexity": "medium",
             "path": "SPEC-183-api-error-i18n-standardization",
             "created": "2026-06-02T00:00:00.000Z",
-            "archived": false,
-            "archivedAt": null,
-            "archiveNote": null
+            "archived": true,
+            "archivedAt": "2026-06-22",
+            "archiveNote": "Shipped via PR #1771 (merge c280a24b8). translateApiError centralized in @repo/i18n; web shim + 3 user-facing web sites migrated; 12 admin sites adopt a translateAdminApiError adapter bridging admin's (key, params?) t signature; 9 missing common.apiError keys added (es/en/pt) — the new CI coverage guard surfaced 4 provider/plan codes beyond the 5 the spec listed. T-014 closeout done in this entry."
         },
         {
             "specId": "SPEC-185",
@@ -1177,7 +1177,7 @@
             "specId": "SPEC-210",
             "title": "Public Response Tier Enforcement — make schema-tier serialization mandatory and fail-closed so public endpoints can never leak undeclared DB columns",
             "type": "refactor",
-            "status": "draft",
+            "status": "in-progress",
             "complexity": "high",
             "path": "SPEC-210-public-response-tier-enforcement",
             "base": "staging",
@@ -1483,7 +1483,9 @@
             "title": "Revalidation log entity_id tracking + re-enable ACC-02 E2E",
             "type": "bugfix",
             "complexity": "medium",
-            "status": "draft",
+            "status": "completed",
+            "archived": true,
+            "archivedAt": "2026-06-22T21:49:54Z",
             "path": "SPEC-246-revalidation-log-entity-id-tracking",
             "created": "2026-06-17T00:00:00Z",
             "base": "staging",
@@ -1728,6 +1730,20 @@
             "base": "staging",
             "dependsOn": [],
             "tags": ["seed", "dev-experience", "testing", "onboarding", "test-users"]
+        },
+        {
+            "specId": "SPEC-265",
+            "title": "AI accommodation search — UI/UX improvements (transparency, onboarding, chat control, layout)",
+            "slug": "ai-search-ux",
+            "type": "improvement",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-265-ai-search-ux",
+            "created": "2026-06-22T21:55:01Z",
+            "base": "staging",
+            "origin": "SPEC-199/212 follow-up: improve AI natural-language search UI/UX — surface interpretation (confidence), onboarding example queries, chat control + error clarity, and a layout/placement decision.",
+            "dependsOn": [],
+            "tags": ["ai-search", "web", "ux", "ui", "spec-199-followup", "spec-212-followup"]
         }
     ]
 }

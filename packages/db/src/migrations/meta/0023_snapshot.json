@@ -1,5 +1,5 @@
 {
-    "id": "d6e4be30-d52a-4614-aa63-7eb61ccfd5bd",
+    "id": "0f04188b-246f-4a99-a540-c09c97b04364",
     "prevId": "a9738d59-e501-4e12-98e1-b40c81941c40",
     "version": "7",
     "dialect": "postgresql",
@@ -8702,7 +8702,7 @@
                     "name": "rating",
                     "type": "jsonb",
                     "primaryKey": false,
-                    "notNull": true
+                    "notNull": false
                 },
                 "average_rating": {
                     "name": "average_rating",
@@ -21221,8 +21221,7 @@
                 "cancelled",
                 "expired",
                 "pending_provider",
-                "abandoned",
-                "comp"
+                "abandoned"
             ]
         },
         "public.tag_color_enum": {

@@ -69,7 +69,16 @@
         "SERVICE_UNAVAILABLE": "Este servicio no está disponible temporalmente. Probá de nuevo en unos minutos.",
         "NEWSLETTER_NOT_CONFIGURED": "El newsletter no está disponible en este momento. Estamos trabajando para restablecerlo.",
         "INVALID_EMAIL_OR_PASSWORD": "El correo electrónico o la contraseña son incorrectos.",
-        "ACCOUNT_LOCKED": "Tu cuenta está bloqueada temporalmente por demasiados intentos fallidos. Intentá de nuevo en unos minutos o usá la opción de recuperar contraseña."
+        "ACCOUNT_LOCKED": "Tu cuenta está bloqueada temporalmente por demasiados intentos fallidos. Intentá de nuevo en unos minutos o usá la opción de recuperar contraseña.",
+        "INVALID_PAGINATION_PARAMS": "Los parámetros de paginación no son válidos.",
+        "NOT_IMPLEMENTED": "Esta función todavía no está disponible.",
+        "CONFIGURATION_ERROR": "Hay un problema de configuración. Probá de nuevo en unos minutos.",
+        "QUOTA_EXCEEDED": "Alcanzaste el límite permitido para esta acción.",
+        "ENTITLEMENT_REQUIRED": "Tu plan no incluye esta función. Actualizalo para continuar.",
+        "PROVIDER_ERROR": "El servicio de pago devolvió un error inesperado. Intentá de nuevo en unos minutos.",
+        "PROVIDER_RATE_LIMITED": "El servicio de pago está ocupado. Esperá unos segundos y volvé a intentar.",
+        "PROVIDER_TIMEOUT": "El servicio de pago tardó demasiado en responder. Intentá de nuevo.",
+        "PLAN_DISABLED": "El plan seleccionado ya no está disponible. Elegí otro plan para continuar."
     },
     "filters": "Filtros",
     "goHome": "Volver al inicio",

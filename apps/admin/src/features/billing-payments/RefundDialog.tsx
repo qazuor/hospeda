@@ -11,6 +11,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useTranslations } from '@/hooks/use-translations';
+import { translateAdminApiError } from '@/lib/errors';
+import type { ApiErrorShape } from '@repo/i18n';
 import { useState } from 'react';
 import type { useRefundPaymentMutation } from './hooks';
 import type { Payment } from './types';
@@ -70,7 +72,7 @@ export function RefundDialog({
                 },
                 onError: (error) => {
                     addToast({
-                        message: `${t('admin-billing.payments.toasts.refundError')} ${error.message}`,
+                        message: `${t('admin-billing.payments.toasts.refundError')} ${translateAdminApiError({ error: error as ApiErrorShape, t })}`,
                         variant: 'error'
                     });
                 }

@@ -69,7 +69,16 @@
         "SERVICE_UNAVAILABLE": "This service is temporarily unavailable. Please try again in a few minutes.",
         "NEWSLETTER_NOT_CONFIGURED": "The newsletter isn't available right now. We're working on bringing it back.",
         "INVALID_EMAIL_OR_PASSWORD": "The email address or password is incorrect.",
-        "ACCOUNT_LOCKED": "Your account is temporarily locked due to too many failed login attempts. Please try again in a few minutes or use the password recovery option."
+        "ACCOUNT_LOCKED": "Your account is temporarily locked due to too many failed login attempts. Please try again in a few minutes or use the password recovery option.",
+        "INVALID_PAGINATION_PARAMS": "The pagination parameters are not valid.",
+        "NOT_IMPLEMENTED": "This feature is not available yet.",
+        "CONFIGURATION_ERROR": "There is a configuration issue. Please try again in a few minutes.",
+        "QUOTA_EXCEEDED": "You have reached the allowed limit for this action.",
+        "ENTITLEMENT_REQUIRED": "Your plan does not include this feature. Upgrade to continue.",
+        "PROVIDER_ERROR": "The payment service returned an unexpected error. Please try again in a few minutes.",
+        "PROVIDER_RATE_LIMITED": "The payment service is busy. Please wait a few seconds and try again.",
+        "PROVIDER_TIMEOUT": "The payment service took too long to respond. Please try again.",
+        "PLAN_DISABLED": "The selected plan is no longer available. Please choose a different plan to continue."
     },
     "filters": "Filters",
     "goHome": "Back to home",
