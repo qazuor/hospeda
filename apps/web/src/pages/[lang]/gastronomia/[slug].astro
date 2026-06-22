@@ -158,6 +158,11 @@ const seoDescription =
         ]}
     />
 
+    <!-- Header (rendered inside the wave band, like destinos/alojamientos) -->
+    <Fragment slot="page-header">
+        <GastronomyDetailHeader gastronomy={gastronomy} locale={locale} />
+    </Fragment>
+
     <div class="gastro-detail">
         <!-- Gallery -->
         {galleryImages.length > 0 && (
@@ -170,9 +175,6 @@ const seoDescription =
                 />
             </div>
         )}
-
-        <!-- Header -->
-        <GastronomyDetailHeader gastronomy={gastronomy} locale={locale} />
 
         <!-- Description -->
         <GastronomyDescription
