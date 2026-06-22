@@ -226,3 +226,35 @@ export const checkCanArchivePost = (actor: Actor): void => {
         );
     }
 };
+
+/**
+ * Asserts that the actor holds SOCIAL_POST_VIEW permission.
+ * Gates list and detail read operations on social posts.
+ *
+ * @param actor - The acting user.
+ * @throws {ServiceError} FORBIDDEN if the actor lacks the permission.
+ */
+export const checkCanViewPost = (actor: Actor): void => {
+    if (!hasPermission(actor, PermissionEnum.SOCIAL_POST_VIEW)) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied: SOCIAL_POST_VIEW required'
+        );
+    }
+};
+
+/**
+ * Asserts that the actor holds SOCIAL_POST_UPDATE permission.
+ * Gates content-update (PATCH) operations on social posts.
+ *
+ * @param actor - The acting user.
+ * @throws {ServiceError} FORBIDDEN if the actor lacks the permission.
+ */
+export const checkCanUpdatePost = (actor: Actor): void => {
+    if (!hasPermission(actor, PermissionEnum.SOCIAL_POST_UPDATE)) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied: SOCIAL_POST_UPDATE required'
+        );
+    }
+};

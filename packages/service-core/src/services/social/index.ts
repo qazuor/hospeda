@@ -52,5 +52,20 @@ export {
     type SocialPostScheduleData,
     type SocialPostReadyData,
     type SocialPostPauseData,
-    type SocialPostArchiveData
+    type SocialPostArchiveData,
+    type ListPostsInput,
+    type ListPostsFilters,
+    type SocialPostListItem,
+    type SocialPostListResult,
+    type GetPostDetailInput,
+    type SocialPostDetail,
+    type UpdatePostInput,
+    type UpdatePostData,
+    type PromoteHashtagInput,
+    type PromoteHashtagData,
+    type ServiceWarning
 } from './social-post.service';
+export {
+    checkCanViewPost,
+    checkCanUpdatePost
+} from './social.permissions';

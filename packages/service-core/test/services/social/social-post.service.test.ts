@@ -56,7 +56,36 @@
  *   - FORBIDDEN
  *   - NOT_FOUND
  *
- * SPEC-254 T-033 / T-034.
+ * listPosts (T-035):
+ *   - FORBIDDEN when actor lacks SOCIAL_POST_VIEW
+ *   - default pagination applied (page=1, pageSize=20)
+ *   - pageSize clamped to 100
+ *   - includeDeleted ignored when actor lacks SOCIAL_POST_HARD_DELETE
+ *   - status/approvalStatus filters passed to where
+ *   - platform filter resolves via targets two-step (returns empty when no targets)
+ *   - platform filter resolves via targets two-step (happy path)
+ *   - item shape includes platforms + thumbnailUrl
+ *
+ * getPostDetail (T-035):
+ *   - FORBIDDEN when actor lacks SOCIAL_POST_VIEW
+ *   - NOT_FOUND when post does not exist
+ *   - happy path assembles targets/media/hashtags/publishLogs (10 limit)
+ *
+ * updatePost (T-035):
+ *   - FORBIDDEN when actor lacks SOCIAL_POST_UPDATE
+ *   - NOT_FOUND when post does not exist
+ *   - happy path updates whitelisted fields; updatedById set
+ *   - status/approvalStatus/paused STRIPPED even if passed in data
+ *
+ * promoteHashtag (T-035):
+ *   - FORBIDDEN when actor lacks SOCIAL_HASHTAG_MANAGE
+ *   - NOT_FOUND when post does not exist
+ *   - new hashtag path: creates catalog row + link, isNew=true, audit called
+ *   - existing hashtag path: no duplicate create, isNew=false
+ *   - link-already-exists path: no duplicate link insert
+ *   - auto-# warning when input lacks `#` prefix
+ *
+ * SPEC-254 T-033 / T-034 / T-035.
  */
 
 import {
@@ -72,12 +101,16 @@ import { SocialAuditEvent } from '../../../src/services/social/social-audit-log.
 import type {
     ApprovePostInput,
     ArchivePostInput,
+    GetPostDetailInput,
+    ListPostsInput,
     MarkReadyPostInput,
     PausePostInput,
+    PromoteHashtagInput,
     RejectPostInput,
     RequestChangesInput,
     SchedulePostInput,
-    UnpausePostInput
+    UnpausePostInput,
+    UpdatePostInput
 } from '../../../src/services/social/social-post.service';
 import { SocialPostService } from '../../../src/services/social/social-post.service';
 import type { Actor } from '../../../src/types';
@@ -92,6 +125,8 @@ const ACTOR_ID = '00000000-0000-4000-8000-000000000002';
 const TARGET_ID = '00000000-0000-4000-8000-000000000003';
 const FORMAT_ID = '00000000-0000-4000-8000-000000000004';
 const MEDIA_ID = '00000000-0000-4000-8000-000000000005';
+const HASHTAG_ID = '00000000-0000-4000-8000-000000000006';
+const ASSET_ID = '00000000-0000-4000-8000-000000000007';
 
 // ---------------------------------------------------------------------------
 // Actor fixtures
@@ -129,6 +164,38 @@ function buildActorWithArchive(hasPerm: boolean): Actor {
     };
 }
 
+function buildActorWithView(hasPerm: boolean): Actor {
+    return {
+        id: ACTOR_ID,
+        role: RoleEnum.ADMIN,
+        permissions: hasPerm ? [PermissionEnum.SOCIAL_POST_VIEW] : []
+    };
+}
+
+function buildActorWithViewAndHardDelete(): Actor {
+    return {
+        id: ACTOR_ID,
+        role: RoleEnum.ADMIN,
+        permissions: [PermissionEnum.SOCIAL_POST_VIEW, PermissionEnum.SOCIAL_POST_HARD_DELETE]
+    };
+}
+
+function buildActorWithUpdate(hasPerm: boolean): Actor {
+    return {
+        id: ACTOR_ID,
+        role: RoleEnum.ADMIN,
+        permissions: hasPerm ? [PermissionEnum.SOCIAL_POST_UPDATE] : []
+    };
+}
+
+function buildActorWithHashtagManage(hasPerm: boolean): Actor {
+    return {
+        id: ACTOR_ID,
+        role: RoleEnum.ADMIN,
+        permissions: hasPerm ? [PermissionEnum.SOCIAL_HASHTAG_MANAGE] : []
+    };
+}
+
 const actorWithPerm = buildActor(true);
 const actorWithoutPerm = buildActor(false);
 const actorWithSchedulePerm = buildActorWithSchedule(true);
@@ -137,6 +204,13 @@ const actorWithPausePerm = buildActorWithPause(true);
 const actorWithoutPausePerm = buildActorWithPause(false);
 const actorWithArchivePerm = buildActorWithArchive(true);
 const actorWithoutArchivePerm = buildActorWithArchive(false);
+const actorWithViewPerm = buildActorWithView(true);
+const actorWithoutViewPerm = buildActorWithView(false);
+const actorWithViewAndHardDeletePerm = buildActorWithViewAndHardDelete();
+const actorWithUpdatePerm = buildActorWithUpdate(true);
+const actorWithoutUpdatePerm = buildActorWithUpdate(false);
+const actorWithHashtagManagePerm = buildActorWithHashtagManage(true);
+const actorWithoutHashtagManagePerm = buildActorWithHashtagManage(false);
 
 // ---------------------------------------------------------------------------
 // Post / row fixtures
@@ -204,6 +278,57 @@ function buildAuditLogMock(): SocialAuditLogService {
 }
 
 // ---------------------------------------------------------------------------
+// Additional row fixtures (T-035)
+// ---------------------------------------------------------------------------
+
+function buildHashtagRow(overrides: Record<string, unknown> = {}) {
+    return {
+        id: HASHTAG_ID,
+        hashtag: '#verano',
+        normalizedHashtag: '#verano',
+        category: 'seasonal',
+        platform: null,
+        audienceId: null,
+        priority: 0,
+        active: true,
+        createdAt: new Date(),
+        ...overrides
+    };
+}
+
+function buildPostHashtagRow(overrides: Record<string, unknown> = {}) {
+    return {
+        id: '00000000-0000-4000-8000-000000000008',
+        socialPostId: POST_ID,
+        hashtagId: HASHTAG_ID,
+        position: 0,
+        createdAt: new Date(),
+        ...overrides
+    };
+}
+
+function buildAssetRow(overrides: Record<string, unknown> = {}) {
+    return {
+        id: ASSET_ID,
+        cloudinaryUrl: 'https://res.cloudinary.com/example/image/upload/v1/test.jpg',
+        mediaType: 'IMAGE',
+        source: 'GPT',
+        deletedAt: null,
+        ...overrides
+    };
+}
+
+function buildPublishLogRow(overrides: Record<string, unknown> = {}) {
+    return {
+        id: '00000000-0000-4000-8000-000000000009',
+        socialPostId: POST_ID,
+        status: 'PUBLISHED',
+        createdAt: new Date(),
+        ...overrides
+    };
+}
+
+// ---------------------------------------------------------------------------
 // Service factory
 // ---------------------------------------------------------------------------
 
@@ -213,6 +338,10 @@ interface BuildServiceOptions {
     postMediaModel?: ReturnType<typeof createModelMock>;
     platformFormatModel?: ReturnType<typeof createModelMock>;
     auditLog?: SocialAuditLogService;
+    hashtagModel?: ReturnType<typeof createModelMock>;
+    postHashtagModel?: ReturnType<typeof createModelMock>;
+    assetModel?: ReturnType<typeof createModelMock>;
+    publishLogModel?: ReturnType<typeof createModelMock>;
 }
 
 function buildService(opts: BuildServiceOptions = {}) {
@@ -249,6 +378,41 @@ function buildService(opts: BuildServiceOptions = {}) {
             return m;
         })();
 
+    const hashtagModel =
+        opts.hashtagModel ??
+        (() => {
+            const m = createModelMock();
+            m.findOne.mockResolvedValue(null);
+            m.create.mockResolvedValue(buildHashtagRow());
+            return m;
+        })();
+
+    const postHashtagModel =
+        opts.postHashtagModel ??
+        (() => {
+            const m = createModelMock();
+            m.findOne.mockResolvedValue(null);
+            m.findAll.mockResolvedValue({ items: [], total: 0 });
+            m.create.mockResolvedValue(buildPostHashtagRow());
+            return m;
+        })();
+
+    const assetModel =
+        opts.assetModel ??
+        (() => {
+            const m = createModelMock();
+            m.findOne.mockResolvedValue(buildAssetRow());
+            return m;
+        })();
+
+    const publishLogModel =
+        opts.publishLogModel ??
+        (() => {
+            const m = createModelMock();
+            m.findAll.mockResolvedValue({ items: [], total: 0 });
+            return m;
+        })();
+
     const auditLog = opts.auditLog ?? buildAuditLogMock();
 
     const service = new SocialPostService(
@@ -257,7 +421,11 @@ function buildService(opts: BuildServiceOptions = {}) {
         postTargetModel as never,
         postMediaModel as never,
         platformFormatModel as never,
-        auditLog
+        auditLog,
+        hashtagModel as never,
+        postHashtagModel as never,
+        assetModel as never,
+        publishLogModel as never
     );
 
     return {
@@ -266,7 +434,11 @@ function buildService(opts: BuildServiceOptions = {}) {
         postTargetModel,
         postMediaModel,
         platformFormatModel,
-        auditLog
+        auditLog,
+        hashtagModel,
+        postHashtagModel,
+        assetModel,
+        publishLogModel
     };
 }
 
@@ -1445,6 +1617,741 @@ describe('SocialPostService.archive', () => {
             // Assert
             expect(result.data).toBeUndefined();
             expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+        });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Tests — listPosts (T-035)
+// ---------------------------------------------------------------------------
+
+describe('SocialPostService.listPosts', () => {
+    describe('FORBIDDEN', () => {
+        it('should return FORBIDDEN when actor lacks SOCIAL_POST_VIEW', async () => {
+            // Arrange
+            const { service } = buildService();
+            const input: ListPostsInput = { actor: actorWithoutViewPerm };
+
+            // Act
+            const result = await service.listPosts(input);
+
+            // Assert
+            expect(result.data).toBeUndefined();
+            expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+        });
+    });
+
+    describe('default pagination', () => {
+        it('should apply page=1 and pageSize=20 when no filters provided', async () => {
+            // Arrange
+            const postModel = createModelMock();
+            postModel.findAll.mockResolvedValue({ items: [buildPostRow()], total: 1 });
+            const { service } = buildService({ postModel });
+            const input: ListPostsInput = { actor: actorWithViewPerm };
+
+            // Act
+            const result = await service.listPosts(input);
+
+            // Assert
+            expect(result.error).toBeUndefined();
+            expect(postModel.findAll).toHaveBeenCalledWith(
+                expect.any(Object),
+                expect.objectContaining({ page: 1, pageSize: 20 }),
+                expect.any(Array)
+            );
+        });
+    });
+
+    describe('pageSize clamping', () => {
+        it('should clamp pageSize to 100 when value exceeds 100', async () => {
+            // Arrange
+            const postModel = createModelMock();
+            postModel.findAll.mockResolvedValue({ items: [], total: 0 });
+            const { service } = buildService({ postModel });
+            const input: ListPostsInput = {
+                actor: actorWithViewPerm,
+                filters: { pageSize: 500 }
+            };
+
+            // Act
+            await service.listPosts(input);
+
+            // Assert
+            expect(postModel.findAll).toHaveBeenCalledWith(
+                expect.any(Object),
+                expect.objectContaining({ pageSize: 100 }),
+                expect.any(Array)
+            );
+        });
+    });
+
+    describe('includeDeleted — ignored without SOCIAL_POST_HARD_DELETE', () => {
+        it('should force includeDeleted=false when actor lacks SOCIAL_POST_HARD_DELETE', async () => {
+            // Arrange
+            const postModel = createModelMock();
+            postModel.findAll.mockResolvedValue({ items: [], total: 0 });
+            const { service } = buildService({ postModel });
+            const input: ListPostsInput = {
+                actor: actorWithViewPerm,
+                // actorWithViewPerm does NOT have SOCIAL_POST_HARD_DELETE
+                filters: { includeDeleted: true }
+            };
+
+            // Act
+            await service.listPosts(input);
+
+            // Assert — the where clause must include deletedAt: null
+            expect(postModel.findAll).toHaveBeenCalledWith(
+                expect.objectContaining({ deletedAt: null }),
+                expect.any(Object),
+                expect.any(Array)
+            );
+        });
+
+        it('should honour includeDeleted=true when actor holds SOCIAL_POST_HARD_DELETE', async () => {
+            // Arrange
+            const postModel = createModelMock();
+            postModel.findAll.mockResolvedValue({ items: [], total: 0 });
+            const { service } = buildService({ postModel });
+            const input: ListPostsInput = {
+                actor: actorWithViewAndHardDeletePerm,
+                filters: { includeDeleted: true }
+            };
+
+            // Act
+            await service.listPosts(input);
+
+            // Assert — deletedAt should NOT be in the where clause
+            const whereArg = (postModel.findAll as ReturnType<typeof vi.fn>).mock.calls[0]?.[0];
+            expect(whereArg).not.toHaveProperty('deletedAt');
+        });
+    });
+
+    describe('status and approvalStatus filters', () => {
+        it('should pass status and approvalStatus into the where clause', async () => {
+            // Arrange
+            const postModel = createModelMock();
+            postModel.findAll.mockResolvedValue({ items: [], total: 0 });
+            const { service } = buildService({ postModel });
+            const input: ListPostsInput = {
+                actor: actorWithViewPerm,
+                filters: {
+                    status: SocialPostStatusEnum.APPROVED,
+                    approvalStatus: SocialApprovalStatusEnum.APPROVED
+                }
+            };
+
+            // Act
+            await service.listPosts(input);
+
+            // Assert
+            expect(postModel.findAll).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    status: SocialPostStatusEnum.APPROVED,
+                    approvalStatus: SocialApprovalStatusEnum.APPROVED
+                }),
+                expect.any(Object),
+                expect.any(Array)
+            );
+        });
+    });
+
+    describe('platform filter — empty targets', () => {
+        it('should return empty items when no targets match the platform', async () => {
+            // Arrange
+            const postTargetModel = createModelMock();
+            postTargetModel.findAll.mockResolvedValue({ items: [], total: 0 });
+            const { service } = buildService({ postTargetModel });
+            const input: ListPostsInput = {
+                actor: actorWithViewPerm,
+                filters: { platform: 'TIKTOK' }
+            };
+
+            // Act
+            const result = await service.listPosts(input);
+
+            // Assert — early return with empty items
+            expect(result.error).toBeUndefined();
+            expect(result.data?.items).toHaveLength(0);
+            expect(result.data?.total).toBe(0);
+        });
+    });
+
+    describe('platform filter — happy path', () => {
+        it('should filter posts to those with a matching target platform', async () => {
+            // Arrange
+            const postModel = createModelMock();
+            const postRow = buildPostRow();
+            postModel.findAll.mockResolvedValue({ items: [postRow], total: 1 });
+
+            const postTargetModel = createModelMock();
+            // First call: resolve platform filter → return a target with our POST_ID
+            // Subsequent calls (per-post enrichment): return platforms for the post
+            postTargetModel.findAll
+                .mockResolvedValueOnce({
+                    items: [buildTargetRow({ platform: 'INSTAGRAM' })],
+                    total: 1
+                })
+                .mockResolvedValue({
+                    items: [buildTargetRow({ platform: 'INSTAGRAM' })],
+                    total: 1
+                });
+
+            const postMediaModel = createModelMock();
+            postMediaModel.findAll.mockResolvedValue({ items: [], total: 0 });
+
+            const { service } = buildService({ postModel, postTargetModel, postMediaModel });
+            const input: ListPostsInput = {
+                actor: actorWithViewPerm,
+                filters: { platform: 'INSTAGRAM' }
+            };
+
+            // Act
+            const result = await service.listPosts(input);
+
+            // Assert
+            expect(result.error).toBeUndefined();
+            expect(result.data?.items).toHaveLength(1);
+        });
+    });
+
+    describe('item shape', () => {
+        it('should return item with platforms and thumbnailUrl from asset', async () => {
+            // Arrange
+            const postModel = createModelMock();
+            postModel.findAll.mockResolvedValue({ items: [buildPostRow()], total: 1 });
+
+            const postTargetModel = createModelMock();
+            postTargetModel.findAll.mockResolvedValue({
+                items: [buildTargetRow({ platform: 'INSTAGRAM' })],
+                total: 1
+            });
+
+            const postMediaModel = createModelMock();
+            postMediaModel.findAll.mockResolvedValue({
+                items: [{ ...buildMediaRow(), assetId: ASSET_ID }],
+                total: 1
+            });
+
+            const assetModel = createModelMock();
+            assetModel.findOne.mockResolvedValue(buildAssetRow());
+
+            const { service } = buildService({
+                postModel,
+                postTargetModel,
+                postMediaModel,
+                assetModel
+            });
+            const input: ListPostsInput = { actor: actorWithViewPerm };
+
+            // Act
+            const result = await service.listPosts(input);
+
+            // Assert
+            expect(result.error).toBeUndefined();
+            const item = result.data?.items[0];
+            expect(item).toBeDefined();
+            expect(item?.platforms).toContain('INSTAGRAM');
+            expect(item?.thumbnailUrl).toBe(
+                'https://res.cloudinary.com/example/image/upload/v1/test.jpg'
+            );
+            expect(item?.id).toBe(POST_ID);
+        });
+
+        it('should return thumbnailUrl=null when post has no media', async () => {
+            // Arrange
+            const postModel = createModelMock();
+            postModel.findAll.mockResolvedValue({ items: [buildPostRow()], total: 1 });
+
+            const postTargetModel = createModelMock();
+            postTargetModel.findAll.mockResolvedValue({ items: [], total: 0 });
+
+            const postMediaModel = createModelMock();
+            postMediaModel.findAll.mockResolvedValue({ items: [], total: 0 });
+
+            const { service } = buildService({ postModel, postTargetModel, postMediaModel });
+            const input: ListPostsInput = { actor: actorWithViewPerm };
+
+            // Act
+            const result = await service.listPosts(input);
+
+            // Assert
+            expect(result.data?.items[0]?.thumbnailUrl).toBeNull();
+        });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Tests — getPostDetail (T-035)
+// ---------------------------------------------------------------------------
+
+describe('SocialPostService.getPostDetail', () => {
+    describe('FORBIDDEN', () => {
+        it('should return FORBIDDEN when actor lacks SOCIAL_POST_VIEW', async () => {
+            // Arrange
+            const { service } = buildService();
+            const input: GetPostDetailInput = { actor: actorWithoutViewPerm, postId: POST_ID };
+
+            // Act
+            const result = await service.getPostDetail(input);
+
+            // Assert
+            expect(result.data).toBeUndefined();
+            expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+        });
+    });
+
+    describe('NOT_FOUND', () => {
+        it('should return NOT_FOUND when post does not exist or is soft-deleted', async () => {
+            // Arrange
+            const postModel = createModelMock();
+            postModel.findOne.mockResolvedValue(null);
+            const { service } = buildService({ postModel });
+            const input: GetPostDetailInput = { actor: actorWithViewPerm, postId: POST_ID };
+
+            // Act
+            const result = await service.getPostDetail(input);
+
+            // Assert
+            expect(result.data).toBeUndefined();
+            expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+        });
+    });
+
+    describe('happy path', () => {
+        it('should assemble targets, media (with cloudinaryUrl), hashtags, and publishLogs (max 10)', async () => {
+            // Arrange
+            const postModel = createModelMock();
+            postModel.findOne.mockResolvedValue(
+                buildPostRow({ captionBase: 'Hello world', gptHashtagPayloadJson: ['#verano'] })
+            );
+
+            const postTargetModel = createModelMock();
+            postTargetModel.findAll.mockResolvedValue({
+                items: [buildTargetRow()],
+                total: 1
+            });
+
+            const postMediaModel = createModelMock();
+            postMediaModel.findAll.mockResolvedValue({
+                items: [{ ...buildMediaRow(), assetId: ASSET_ID }],
+                total: 1
+            });
+
+            const assetModel = createModelMock();
+            assetModel.findOne.mockResolvedValue(buildAssetRow());
+
+            const postHashtagModel = createModelMock();
+            postHashtagModel.findAll.mockResolvedValue({
+                items: [buildPostHashtagRow()],
+                total: 1
+            });
+
+            const hashtagModel = createModelMock();
+            hashtagModel.findOne.mockResolvedValue(buildHashtagRow());
+
+            // Simulate 10 publish logs (the limit)
+            const logItems = Array.from({ length: 10 }, (_, i) =>
+                buildPublishLogRow({ id: `log-${i}` })
+            );
+            const publishLogModel = createModelMock();
+            publishLogModel.findAll.mockResolvedValue({ items: logItems, total: 15 });
+
+            const { service } = buildService({
+                postModel,
+                postTargetModel,
+                postMediaModel,
+                assetModel,
+                postHashtagModel,
+                hashtagModel,
+                publishLogModel
+            });
+            const input: GetPostDetailInput = { actor: actorWithViewPerm, postId: POST_ID };
+
+            // Act
+            const result = await service.getPostDetail(input);
+
+            // Assert
+            expect(result.error).toBeUndefined();
+            const detail = result.data;
+            expect(detail?.id).toBe(POST_ID);
+            expect(detail?.captionBase).toBe('Hello world');
+
+            // Targets assembled
+            expect(detail?.targets).toHaveLength(1);
+
+            // Media enriched with cloudinaryUrl
+            expect(detail?.media).toHaveLength(1);
+            expect((detail?.media[0] as Record<string, unknown>)?.cloudinaryUrl).toBe(
+                'https://res.cloudinary.com/example/image/upload/v1/test.jpg'
+            );
+
+            // Hashtags resolved from catalog
+            expect(detail?.hashtags).toContain('#verano');
+
+            // publishLogs limited to 10 (findAll called with pageSize=10)
+            expect(detail?.publishLogs).toHaveLength(10);
+            expect(publishLogModel.findAll).toHaveBeenCalledWith(
+                expect.objectContaining({ socialPostId: POST_ID }),
+                expect.objectContaining({ pageSize: 10, sortOrder: 'desc' })
+            );
+        });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Tests — updatePost (T-035)
+// ---------------------------------------------------------------------------
+
+describe('SocialPostService.updatePost', () => {
+    describe('FORBIDDEN', () => {
+        it('should return FORBIDDEN when actor lacks SOCIAL_POST_UPDATE', async () => {
+            // Arrange
+            const { service } = buildService();
+            const input: UpdatePostInput = {
+                actor: actorWithoutUpdatePerm,
+                postId: POST_ID,
+                data: { title: 'New title' }
+            };
+
+            // Act
+            const result = await service.updatePost(input);
+
+            // Assert
+            expect(result.data).toBeUndefined();
+            expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+        });
+    });
+
+    describe('NOT_FOUND', () => {
+        it('should return NOT_FOUND when post does not exist', async () => {
+            // Arrange
+            const postModel = createModelMock();
+            postModel.findOne.mockResolvedValue(null);
+            const { service } = buildService({ postModel });
+            const input: UpdatePostInput = {
+                actor: actorWithUpdatePerm,
+                postId: POST_ID,
+                data: { title: 'New title' }
+            };
+
+            // Act
+            const result = await service.updatePost(input);
+
+            // Assert
+            expect(result.data).toBeUndefined();
+            expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+        });
+    });
+
+    describe('happy path — whitelisted fields', () => {
+        it('should update whitelisted fields and set updatedById=actor.id', async () => {
+            // Arrange
+            const postModel = createModelMock();
+            postModel.findOne.mockResolvedValue(buildPostRow());
+            const updatedRow = buildPostRow({ title: 'New title', notes: 'Admin note' });
+            postModel.update.mockResolvedValue(updatedRow);
+            const { service } = buildService({ postModel });
+            const input: UpdatePostInput = {
+                actor: actorWithUpdatePerm,
+                postId: POST_ID,
+                data: { title: 'New title', notes: 'Admin note' }
+            };
+
+            // Act
+            const result = await service.updatePost(input);
+
+            // Assert
+            expect(result.error).toBeUndefined();
+            expect(postModel.update).toHaveBeenCalledWith(
+                { id: POST_ID },
+                expect.objectContaining({
+                    title: 'New title',
+                    notes: 'Admin note',
+                    updatedById: ACTOR_ID
+                })
+            );
+        });
+    });
+
+    describe('stripped fields — status/approvalStatus/paused must not be passed to update', () => {
+        it('should NOT pass status, approvalStatus, or paused to postModel.update', async () => {
+            // Arrange
+            const postModel = createModelMock();
+            postModel.findOne.mockResolvedValue(buildPostRow());
+            postModel.update.mockResolvedValue(buildPostRow());
+            const { service } = buildService({ postModel });
+
+            // Pass the forbidden fields in data (they must be silently stripped).
+            // Casting as never lets us inject forbidden fields at the type level so we
+            // can assert the runtime whitelist strips them without TS errors.
+            const rawData = {
+                title: 'Safe update',
+                status: SocialPostStatusEnum.PUBLISHED,
+                approvalStatus: SocialApprovalStatusEnum.APPROVED,
+                paused: true
+            };
+            const input: UpdatePostInput = {
+                actor: actorWithUpdatePerm,
+                postId: POST_ID,
+                data: rawData as never
+            };
+
+            // Act
+            const result = await service.updatePost(input);
+
+            // Assert — update called without the forbidden fields
+            expect(result.error).toBeUndefined();
+            const patchArg = (postModel.update as ReturnType<typeof vi.fn>).mock.calls[0]?.[1];
+            expect(patchArg).not.toHaveProperty('status');
+            expect(patchArg).not.toHaveProperty('approvalStatus');
+            expect(patchArg).not.toHaveProperty('paused');
+            // But title is there
+            expect(patchArg).toHaveProperty('title', 'Safe update');
+        });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Tests — promoteHashtag (T-035)
+// ---------------------------------------------------------------------------
+
+describe('SocialPostService.promoteHashtag', () => {
+    describe('FORBIDDEN', () => {
+        it('should return FORBIDDEN when actor lacks SOCIAL_HASHTAG_MANAGE', async () => {
+            // Arrange
+            const { service } = buildService();
+            const input: PromoteHashtagInput = {
+                actor: actorWithoutHashtagManagePerm,
+                postId: POST_ID,
+                hashtag: '#verano',
+                category: 'seasonal'
+            };
+
+            // Act
+            const result = await service.promoteHashtag(input);
+
+            // Assert
+            expect(result.data).toBeUndefined();
+            expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+        });
+    });
+
+    describe('NOT_FOUND', () => {
+        it('should return NOT_FOUND when post does not exist', async () => {
+            // Arrange
+            const postModel = createModelMock();
+            postModel.findOne.mockResolvedValue(null);
+            const { service } = buildService({ postModel });
+            const input: PromoteHashtagInput = {
+                actor: actorWithHashtagManagePerm,
+                postId: POST_ID,
+                hashtag: '#verano',
+                category: 'seasonal'
+            };
+
+            // Act
+            const result = await service.promoteHashtag(input);
+
+            // Assert
+            expect(result.data).toBeUndefined();
+            expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+        });
+    });
+
+    describe('new hashtag path', () => {
+        it('should create catalog row + link, return isNew=true, and call audit HASHTAG_PROMOTED', async () => {
+            // Arrange
+            const auditLog = buildAuditLogMock();
+            const postModel = createModelMock();
+            postModel.findOne.mockResolvedValue(buildPostRow());
+
+            const hashtagModel = createModelMock();
+            hashtagModel.findOne.mockResolvedValue(null); // not found → create
+            hashtagModel.create.mockResolvedValue(buildHashtagRow());
+
+            const postHashtagModel = createModelMock();
+            postHashtagModel.findOne.mockResolvedValue(null);
+            postHashtagModel.create.mockResolvedValue(buildPostHashtagRow());
+
+            const { service } = buildService({
+                postModel,
+                hashtagModel,
+                postHashtagModel,
+                auditLog
+            });
+            const input: PromoteHashtagInput = {
+                actor: actorWithHashtagManagePerm,
+                postId: POST_ID,
+                hashtag: '#verano',
+                category: 'seasonal'
+            };
+
+            // Act
+            const result = await service.promoteHashtag(input);
+
+            // Assert
+            expect(result.error).toBeUndefined();
+            expect(result.data?.isNew).toBe(true);
+            expect(result.data?.hashtag).toBe('#verano');
+            expect(result.data?.hashtagId).toBe(HASHTAG_ID);
+
+            // Catalog row created
+            expect(hashtagModel.create).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    normalizedHashtag: '#verano',
+                    category: 'seasonal',
+                    active: true,
+                    createdById: ACTOR_ID
+                })
+            );
+
+            // Link created
+            expect(postHashtagModel.create).toHaveBeenCalledWith(
+                expect.objectContaining({ socialPostId: POST_ID, hashtagId: HASHTAG_ID })
+            );
+
+            // Audit log called with HASHTAG_PROMOTED
+            expect(auditLog.log).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    actorId: ACTOR_ID,
+                    eventType: SocialAuditEvent.HASHTAG_PROMOTED,
+                    entityType: 'social_post',
+                    entityId: POST_ID,
+                    metadata: expect.objectContaining({ isNew: true, normalizedHashtag: '#verano' })
+                })
+            );
+        });
+    });
+
+    describe('existing hashtag path', () => {
+        it('should NOT create catalog row, return isNew=false, and create link', async () => {
+            // Arrange
+            const postModel = createModelMock();
+            postModel.findOne.mockResolvedValue(buildPostRow());
+
+            const hashtagModel = createModelMock();
+            hashtagModel.findOne.mockResolvedValue(buildHashtagRow()); // exists
+            hashtagModel.create.mockResolvedValue(buildHashtagRow());
+
+            const postHashtagModel = createModelMock();
+            postHashtagModel.findOne.mockResolvedValue(null); // link not yet created
+            postHashtagModel.create.mockResolvedValue(buildPostHashtagRow());
+
+            const { service } = buildService({ postModel, hashtagModel, postHashtagModel });
+            const input: PromoteHashtagInput = {
+                actor: actorWithHashtagManagePerm,
+                postId: POST_ID,
+                hashtag: '#verano',
+                category: 'seasonal'
+            };
+
+            // Act
+            const result = await service.promoteHashtag(input);
+
+            // Assert
+            expect(result.error).toBeUndefined();
+            expect(result.data?.isNew).toBe(false);
+
+            // Catalog row must NOT be created again
+            expect(hashtagModel.create).not.toHaveBeenCalled();
+
+            // Link created once
+            expect(postHashtagModel.create).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('link-already-exists path', () => {
+        it('should NOT create a duplicate link when (postId, hashtagId) link already exists', async () => {
+            // Arrange
+            const postModel = createModelMock();
+            postModel.findOne.mockResolvedValue(buildPostRow());
+
+            const hashtagModel = createModelMock();
+            hashtagModel.findOne.mockResolvedValue(buildHashtagRow()); // exists
+
+            const postHashtagModel = createModelMock();
+            postHashtagModel.findOne.mockResolvedValue(buildPostHashtagRow()); // link also exists
+            postHashtagModel.create.mockResolvedValue(buildPostHashtagRow());
+
+            const { service } = buildService({ postModel, hashtagModel, postHashtagModel });
+            const input: PromoteHashtagInput = {
+                actor: actorWithHashtagManagePerm,
+                postId: POST_ID,
+                hashtag: '#verano',
+                category: 'seasonal'
+            };
+
+            // Act
+            const result = await service.promoteHashtag(input);
+
+            // Assert — link create must NOT be called (already exists)
+            expect(result.error).toBeUndefined();
+            expect(postHashtagModel.create).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('auto-# prefix warning', () => {
+        it('should auto-prepend # and include a warning when input lacks # prefix', async () => {
+            // Arrange
+            const postModel = createModelMock();
+            postModel.findOne.mockResolvedValue(buildPostRow());
+
+            const hashtagModel = createModelMock();
+            hashtagModel.findOne.mockResolvedValue(null);
+            hashtagModel.create.mockResolvedValue(buildHashtagRow());
+
+            const postHashtagModel = createModelMock();
+            postHashtagModel.findOne.mockResolvedValue(null);
+            postHashtagModel.create.mockResolvedValue(buildPostHashtagRow());
+
+            const { service } = buildService({ postModel, hashtagModel, postHashtagModel });
+            const input: PromoteHashtagInput = {
+                actor: actorWithHashtagManagePerm,
+                postId: POST_ID,
+                hashtag: 'verano', // no # prefix
+                category: 'seasonal'
+            };
+
+            // Act
+            const result = await service.promoteHashtag(input);
+
+            // Assert
+            expect(result.error).toBeUndefined();
+            // Normalized hashtag returned
+            expect(result.data?.hashtag).toBe('#verano');
+            // Warning present
+            expect(result.data?.warnings).toHaveLength(1);
+            expect(result.data?.warnings[0]?.field).toBe('hashtag');
+            expect(result.data?.warnings[0]?.message).toContain('# prefix auto-added');
+        });
+
+        it('should NOT include a warning when input already has # prefix', async () => {
+            // Arrange
+            const postModel = createModelMock();
+            postModel.findOne.mockResolvedValue(buildPostRow());
+
+            const hashtagModel = createModelMock();
+            hashtagModel.findOne.mockResolvedValue(null);
+            hashtagModel.create.mockResolvedValue(buildHashtagRow());
+
+            const postHashtagModel = createModelMock();
+            postHashtagModel.findOne.mockResolvedValue(null);
+            postHashtagModel.create.mockResolvedValue(buildPostHashtagRow());
+
+            const { service } = buildService({ postModel, hashtagModel, postHashtagModel });
+            const input: PromoteHashtagInput = {
+                actor: actorWithHashtagManagePerm,
+                postId: POST_ID,
+                hashtag: '#verano', // already has #
+                category: 'seasonal'
+            };
+
+            // Act
+            const result = await service.promoteHashtag(input);
+
+            // Assert
+            expect(result.data?.warnings).toHaveLength(0);
         });
     });
 });
