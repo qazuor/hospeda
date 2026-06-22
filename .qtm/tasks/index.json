@@ -787,9 +787,9 @@
         },
         {
             "specId": "SPEC-252",
-            "title": "Web functional E2E (Playwright) harness + login fixtures + CI",
-            "status": "draft",
-            "progress": "0/0",
+            "title": "Extend apps/e2e with commerce-owner flows + seed fixtures",
+            "status": "in-progress",
+            "progress": "0/5",
             "path": "SPEC-252-web-e2e-playwright-harness"
         },
         {
