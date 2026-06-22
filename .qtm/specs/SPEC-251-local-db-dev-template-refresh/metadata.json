@@ -1,0 +1,13 @@
+{
+    "specId": "SPEC-251",
+    "title": "Local DB dev/template refresh + worktree DB auto-heal correctness",
+    "type": "chore",
+    "complexity": "small",
+    "status": "in-progress",
+    "created": "2026-06-20T00:00:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "dependsOn": [],
+    "tags": ["db", "dev-infra", "worktree", "seed", "tooling"]
+}

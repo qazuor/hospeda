@@ -1,0 +1,125 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-251",
+    "title": "Local DB dev/template refresh + worktree DB auto-heal correctness",
+    "created": "2026-06-20T00:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Write DB lifecycle + refresh runbook docs",
+            "description": "Update docs/guides/worktree-dev-environments.md with:\n- Canonical one-command DB refresh procedure: `pnpm db:fresh-dev` on hospeda_dev (DESTRUCTIVE — wipes and re-seeds local dev DB) followed by `bash ~/.claude/skills/worktree/scripts/wt-db.sh build-template` to rebuild hospeda_template from the freshly migrated hospeda_dev.\n- Warning that db:fresh-dev runs `docker compose down -v` which destroys the local dev DB — document what is lost and when to use it.\n- Step-by-step migration cadence: when a new spec ships schema changes (new tables, extras), the refresh must be re-run before cutting new worktrees.\n- Reference to AC-2 (drift detection) so readers know stale worktree DBs are now auto-healed.\n\nKey files: docs/guides/worktree-dev-environments.md (existing, extend the DB section).\nNo code changes. No tests. Acceptance: the guide contains a 'DB refresh' section covering the two-command flow, the destructive warning, and the cadence recommendation.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add 'DB refresh' section to worktree-dev-environments.md",
+                    "completed": true
+                },
+                {
+                    "title": "Document destructive db:fresh-dev warning",
+                    "completed": true
+                },
+                {
+                    "title": "Document schema-cadence recommendation",
+                    "completed": true
+                }
+            ],
+            "tags": ["docs", "db", "worktree"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": "2026-06-20T00:00:00.000Z",
+                "completed": "2026-06-20T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Add schema-drift detection + auto-heal to wt-db.sh ensure-ready path",
+            "description": "Extend ~/.claude/skills/worktree/scripts/wt-db.sh (outside the repo, parametrized by .claude/project.config.json) to detect a stale DB clone and heal it.\n\nThe EXISTING auto-heal path handles DB with NO schema (empty clone) by running db:migrate + db:apply-extras. The GAP is a clone that HAS a schema but is STALE — it was cloned from an old template that predates newer migrations.\n\nImplementation:\n- Add a schema-version check in the ensure-ready step: after cloning the template, compare a known sentinel (e.g., check for the existence of a table introduced in the most recent migration, such as `experiences` or a custom schema-version marker) against the cloned DB.\n- If the sentinel is absent (stale clone detected): log a clear message ('stale DB detected, healing...'), run `pnpm db:migrate` + `pnpm db:apply-extras` + `pnpm db:seed` (or the project's configured seed command) against the worktree DB.\n- If the sentinel is present (schema is current): proceed as today (no-op).\n- The sentinel table/marker should be configurable via .claude/project.config.json (e.g., a `schemaVersionSentinel` key listing the table to probe) so it can be updated when new migrations ship without touching the skill script.\n\nKey files: ~/.claude/skills/worktree/scripts/wt-db.sh (primary change), .claude/project.config.json (add schemaVersionSentinel or equivalent config key).\n\nAcceptance (AC-1 + AC-2): a worktree created from a stale template is healed at wt:up time (logged), schema matches current TS schema after heal; a worktree created from a current template is NOT redundantly re-migrated.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Add sentinel-based stale-clone detection to wt-db.sh",
+                    "completed": true
+                },
+                {
+                    "title": "Add auto-heal path (db:push + apply-extras, no reseed) on stale detection",
+                    "completed": true
+                },
+                {
+                    "title": "Add schemaSentinelTables config key to .claude/project.config.json",
+                    "completed": true
+                },
+                {
+                    "title": "Manual smoke: stale template clone heals cleanly; current clone is a no-op (verified)",
+                    "completed": true
+                }
+            ],
+            "tags": ["db", "worktree", "dev-infra", "tooling"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": "2026-06-20T00:00:00.000Z",
+                "completed": "2026-06-20T00:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Verify commerce seed data is present after wt:up (gastronomy + experience listings)",
+            "description": "Confirm that after running `wt:up` (which heals if stale per T-002), the worktree DB contains commerce example data: at least one gastronomy listing, one experience listing, and a COMMERCE_OWNER user — all required for SPEC-249/SPEC-252 workflows.\n\nIf the seed step in T-002's auto-heal path does NOT produce commerce data (because db:seed does not include commerce fixtures in its current form), document the gap and provide the manual command sequence. If it does produce commerce data, document which seed users/listings to expect.\n\nKey files:\n- packages/seed/CLAUDE.md (update test-user matrix if commerce owner seed users are confirmed)\n- docs/guides/worktree-dev-environments.md (add commerce-data verification step to the wt:up smoke checklist)\n\nNote: seed CONTENT fixes for SPEC-252 (loggable experience owner, profile_completed) are OUT OF SCOPE here (live in SPEC-252). This task only verifies the existing seed produces usable commerce data and documents what exists.\n\nAcceptance: after wt:up on a fresh worktree, `psql -c 'SELECT count(*) FROM gastronomies'` returns > 0 and `psql -c 'SELECT count(*) FROM experiences'` returns > 0; result documented in worktree-dev-environments.md.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Smoke wt:up fresh worktree and count gastronomy/experience rows (6 gastronomies, 5 experiences, 3 commerce owners — no heal)",
+                    "completed": true
+                },
+                {
+                    "title": "Document commerce-data expectations in worktree-dev-environments.md",
+                    "completed": true
+                },
+                {
+                    "title": "Confirm commerce seed (CommerceOwners/Gastronomies/Experiences) loads; seed/CLAUDE.md already covers the test-user matrix, counts documented in worktree-dev-environments.md",
+                    "completed": true
+                }
+            ],
+            "tags": ["db", "worktree", "seed", "commerce"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": "2026-06-20T00:00:00.000Z",
+                "completed": "2026-06-20T00:00:00.000Z"
+            }
+        }
+    ],
+    "summary": {
+        "total": 3,
+        "pending": 0,
+        "inProgress": 0,
+        "completed": 3,
+        "blocked": 0,
+        "averageComplexity": 2.0
+    }
+}
