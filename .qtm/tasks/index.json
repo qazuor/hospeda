@@ -2,6 +2,21 @@
     "version": "1.0",
     "epics": [
         {
+            "specId": "SPEC-129",
+            "title": "Security Audit — Dependency Vulnerabilities Remediation",
+            "status": "in-progress",
+            "progress": "1/5",
+            "path": "SPEC-129-security-audit-vulnerabilities",
+            "branch": "spec/SPEC-129-security-audit-vulnerabilities",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-129-security-audit-vulnerabilities",
+            "base": "staging",
+            "createdAt": "2026-06-22T00:00:00.000Z",
+            "tasksAtomizedAt": "2026-06-22T00:00:00.000Z",
+            "taskCount": 5,
+            "archived": false,
+            "note": "Scope realigned 2026-06-22: the 2 original blockers (sanitize-html CRITICAL, devalue HIGH) were already resolved by intervening bumps (Astro 5.x->6.4.7 in PR #1700 pins devalue 5.8.1; sanitize-html advisory no longer reported as critical/high). `pnpm audit --prod --audit-level=high` already exits 0 and the CI Security job is green on staging. Remaining work is low-risk hardening only (owner decision 2026-06-22): T-1 re-baseline audit (done), T-2 bump dompurify 3.3.1->3.4.x in apps/admin, T-3 pnpm dedupe transitives, T-4 verify gate green + smoke admin rich-text, T-5 risk-accepted.md + close. Higher-risk bumps (better-auth/OAuth, @tanstack/start-server-core/routing) deferred to a new follow-up spec."
+        },
+        {
             "specId": "SPEC-203",
             "title": "Self-serve plan management UI (web)",
             "status": "completed",

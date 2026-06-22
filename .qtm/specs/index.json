@@ -402,7 +402,7 @@
             "title": "Security Audit — Dependency Vulnerabilities Remediation",
             "type": "security",
             "complexity": "medium",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-129-security-audit-vulnerabilities",
             "created": "2026-05-15T17:50:00.000Z",
             "extractedFrom": "SPEC-117 PR #1106 audit (2026-05-15)",
