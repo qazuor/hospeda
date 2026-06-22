@@ -400,13 +400,16 @@ export async function initiatePaidMonthlySubscription(
                 // DB-persisted trial extension — use extraDays from the effect.
                 freeTrialDays = dbCode.effect.extraDays;
             } else if (dbCode.effect?.kind === PromoEffectKindEnum.COMP) {
-                // Comp codes handled separately at subscription creation time.
-                // The checkout service does not create an MP preapproval for comp
-                // (AC-2.1 / Model β). For now, freeTrialDays stays undefined and
-                // the subscription will be created with status='comp' by the
-                // caller after the qzpay call. Full comp-at-checkout wiring is
-                // T-008.
-                freeTrialDays = undefined;
+                // Comp (free-forever, Model β) must NEVER create an MP preapproval.
+                // This self-serve monthly path can only create a PAID subscription
+                // (mode:'paid' → preapproval), which would BILL a code that must be
+                // free — a fail-open on the charge surface (AC-2.1). So we reject:
+                // comp grants are admin-driven (US-2). The full comp-subscription
+                // creation flow (status='comp', no preapproval) is wired in T-008.
+                throw new SubscriptionCheckoutError(
+                    'INVALID_PROMO_CODE',
+                    `Promo code '${promoCode}' is a complimentary (free-forever) code and cannot be redeemed at self-serve checkout. Comp grants are applied by an administrator.`
+                );
             } else if (dbCode.effect?.kind === PromoEffectKindEnum.DISCOUNT) {
                 // Discount codes are not honored at monthly subscription creation
                 // (SPEC-126 D9 / master plan Decision 4 — only trial extensions

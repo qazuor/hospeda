@@ -592,9 +592,9 @@ describe('SPEC-262 T-005 — Effect Engine', () => {
             });
             mockGetPromoCodeByCode.mockResolvedValue({ success: true, data: promoCode });
 
-            // The comp branch calls getDb().execute() OUTSIDE the transaction
-            const mockDbExecute = vi.fn().mockResolvedValue(undefined);
-            mockGetDb.mockReturnValue({ execute: mockDbExecute });
+            // The comp branch stamps status='comp' via tx.execute INSIDE the
+            // transaction (atomic with the redeem — S-1 fix).
+            let capturedTxExecute: ReturnType<typeof vi.fn> | null = null;
 
             mockWithTransaction.mockImplementation(
                 async (fn: (tx: unknown) => Promise<unknown>) => {
@@ -604,6 +604,7 @@ describe('SPEC-262 T-005 — Effect Engine', () => {
                         maxUses: null,
                         expiresAt: null
                     });
+                    capturedTxExecute = tx.execute;
                     return fn(tx);
                 }
             );
@@ -631,9 +632,12 @@ describe('SPEC-262 T-005 — Effect Engine', () => {
                 expect('preapprovalId' in result.data).toBe(false);
             }
 
-            // Assert — subscription status=comp was stamped via db.execute (outside tx)
-            expect(mockDbExecute).toHaveBeenCalledTimes(1);
-            const executeArg = (mockDbExecute.mock.calls[0] as [unknown] | undefined)?.[0] as
+            // Assert — subscription status=comp stamped via tx.execute INSIDE the
+            // transaction (atomic with redeem — S-1 fix).
+            expect(capturedTxExecute).not.toBeNull();
+            expect(capturedTxExecute).toHaveBeenCalledTimes(1);
+            const executeMockInstance = capturedTxExecute as unknown as MockInstance;
+            const executeArg = (executeMockInstance.mock.calls[0] as [unknown] | undefined)?.[0] as
                 | { strings: TemplateStringsArray; values: unknown[] }
                 | undefined;
             expect(executeArg).toBeDefined();

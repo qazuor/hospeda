@@ -750,7 +750,28 @@ export async function applyPromoCode(
         // ── COMP effect ──────────────────────────────────────────────────────
         if (effectKind === PromoEffectKindEnum.COMP) {
             const redeemResult = await withTransaction(async (tx) => {
-                return redeemAndRecordInTx(tx, promoCode, customerId, 0, livemode, subscriptionId);
+                const inner = await redeemAndRecordInTx(
+                    tx,
+                    promoCode,
+                    customerId,
+                    0,
+                    livemode,
+                    subscriptionId
+                );
+                if (!inner.success) {
+                    return inner;
+                }
+                // Stamp subscription status = 'comp' INSIDE the same transaction so
+                // the redeem (usage increment) and the comp flip are atomic: if the
+                // UPDATE fails, the redemption rolls back too (fail-closed — S-1/AC-2.1).
+                if (subscriptionId) {
+                    await tx.execute(
+                        sql`UPDATE billing_subscriptions
+                            SET status = ${SubscriptionStatusEnum.COMP}
+                            WHERE id = ${subscriptionId}`
+                    );
+                }
+                return inner;
             });
 
             if (!redeemResult.success) {
@@ -761,16 +782,6 @@ export async function applyPromoCode(
                         message: redeemResult.error?.message ?? 'Failed to apply promo code'
                     }
                 };
-            }
-
-            // Stamp subscription status = 'comp' via raw SQL (extras column, AC-2.1)
-            if (subscriptionId) {
-                const db = ctx?.tx ?? getDb();
-                await db.execute(
-                    sql`UPDATE billing_subscriptions
-                        SET status = ${SubscriptionStatusEnum.COMP}
-                        WHERE id = ${subscriptionId}`
-                );
             }
 
             return {
