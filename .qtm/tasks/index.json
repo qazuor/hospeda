@@ -531,7 +531,7 @@
         {
             "specId": "SPEC-210",
             "title": "Public Response Tier Enforcement — make schema-tier serialization mandatory and fail-closed so public endpoints can never leak undeclared DB columns",
-            "status": "draft",
+            "status": "in-progress",
             "progress": "0/13",
             "path": "SPEC-210-public-response-tier-enforcement",
             "archived": false
