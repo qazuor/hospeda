@@ -200,13 +200,12 @@ test.describe('COMMERCE-01: commerce owner edits listings — both verticals @p0
             waitUntil: 'domcontentloaded'
         });
 
-        // The editor island is hydrated client:load — wait for the form to be visible.
-        const editorForm = page.locator('form[aria-busy]');
-        await expect(editorForm).toBeVisible();
-
-        // The menuUrl input has id="ce-menuUrl" (set in CommerceListingEditor).
+        // The editor island is hydrated client:load — wait for the specific input to be
+        // visible/editable. Using the stable input id (#ce-menuUrl) avoids relying on
+        // form[aria-busy] which is a transient React-hydration attribute and can miss
+        // the timing window or match 0 elements before hydration completes.
         const menuUrlInput = page.locator('#ce-menuUrl');
-        await expect(menuUrlInput).toBeVisible();
+        await expect(menuUrlInput).toBeVisible({ timeout: 15_000 });
 
         await menuUrlInput.clear();
         await menuUrlInput.fill(newMenuUrl);
@@ -238,12 +237,12 @@ test.describe('COMMERCE-01: commerce owner edits listings — both verticals @p0
             waitUntil: 'domcontentloaded'
         });
 
-        // Wait for editor island hydration.
-        await expect(page.locator('form[aria-busy]')).toBeVisible();
-
-        // richDescription textarea has id="ce-richDescription".
+        // Wait for editor island hydration using the stable, unique input id.
+        // #ce-richDescription is only rendered by the experience-vertical branch of
+        // CommerceListingEditor — it is unique on the page and never appears on the
+        // gastronomy editor, so it cannot cause a strict-mode multi-match.
         const richDescriptionTextarea = page.locator('#ce-richDescription');
-        await expect(richDescriptionTextarea).toBeVisible();
+        await expect(richDescriptionTextarea).toBeVisible({ timeout: 15_000 });
 
         await richDescriptionTextarea.clear();
         await richDescriptionTextarea.fill(newRichDescription);

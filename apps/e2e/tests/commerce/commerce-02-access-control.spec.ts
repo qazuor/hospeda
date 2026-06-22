@@ -170,9 +170,12 @@ test.describe('COMMERCE-02: access-control negative paths @p0 @commerce', () => 
         // Assert the final URL is the commerce index and does NOT contain the editor path.
         await expect(page).toHaveURL(`${WEB_URL}/es/mi-cuenta/comercio/`);
 
-        // Additionally confirm the editor form is NOT present on this page
-        // (the listing index has no form[aria-busy] — that element only exists
-        // inside the CommerceListingEditor island on the editor page).
-        await expect(page.locator('form[aria-busy]')).not.toBeVisible();
+        // Additionally confirm the gastronomy editor input is NOT present on this page.
+        // #ce-menuUrl is the stable, unique id for the gastronomy editor's menuUrl field
+        // inside CommerceListingEditor. Its absence confirms we landed on the listing index
+        // (which has no editor island) rather than the editor page. Using toHaveCount(0)
+        // avoids strict-mode multi-match violations — it passes even if the selector would
+        // theoretically match zero OR many elements, since we only care about absence.
+        await expect(page.locator('#ce-menuUrl')).toHaveCount(0);
     });
 });
