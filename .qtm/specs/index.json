@@ -1297,7 +1297,7 @@
             "note": "Admin gives topic + key points, AI generates a post draft (title/summary/content). New 'post_generate' AiFeature + admin-tier streaming route, replicating the text-improve pattern. Drafted 2026-06-13, ready to implement.",
             "completed": "2026-06-22T16:00:00Z",
             "archivedAt": "2026-06-22T16:00:00Z",
-            "archiveNote": "Shipped via PR #1737; live Chrome smoke (T-015) GO — happy path verified with Ollama. 4 integration bugs fixed during smoke."
+            "archiveNote": "Shipped via PR #1737; full live Chrome smoke (T-015) GO with Ollama. 5 integration bugs fixed during smoke."
         },
         {
             "specId": "SPEC-224",
@@ -1535,16 +1535,16 @@
         },
         {
             "specId": "SPEC-252",
-            "title": "Web functional E2E (Playwright) harness + login fixtures + CI",
+            "title": "Extend apps/e2e with commerce-owner flows + seed fixtures",
             "slug": "web-e2e-playwright-harness",
             "type": "feature",
             "complexity": "medium",
-            "status": "draft",
+            "status": "completed",
             "created": "2026-06-20T00:00:00.000Z",
             "base": "staging",
-            "origin": "SPEC-249 T-025: web has no functional Playwright harness; seed gaps blocked the owner E2E",
+            "origin": "SPEC-249 T-025: apps/e2e exists (mature harness + CI); gaps are missing commerce tests and seed fixtures (no logueable experience owner, profile_completed=false)",
             "dependsOn": ["SPEC-249"],
-            "tags": ["web", "e2e", "playwright", "testing", "ci", "seed"]
+            "tags": ["e2e", "playwright", "testing", "seed", "commerce"]
         },
         {
             "specId": "SPEC-250",
@@ -1632,6 +1632,43 @@
                 "billing",
                 "campaign"
             ]
+        },
+        {
+            "specId": "SPEC-260",
+            "title": "AI Usage Dashboard",
+            "slug": "ai-usage-dashboard",
+            "type": "feature",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-260-ai-usage-dashboard",
+            "created": "2026-06-22T00:00:00Z",
+            "base": "staging",
+            "tags": [
+                "ai",
+                "ai-core",
+                "admin",
+                "metering",
+                "usage",
+                "cost",
+                "reporting",
+                "recharts",
+                "schemas",
+                "api",
+                "i18n"
+            ]
+        },
+        {
+            "specId": "SPEC-261",
+            "title": "Stabilize commerce-owner E2E and promote back to @p0",
+            "slug": "commerce-e2e-stabilization",
+            "type": "chore",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-261-commerce-e2e-stabilization",
+            "created": "2026-06-22T00:00:00Z",
+            "base": "staging",
+            "dependsOn": ["SPEC-252"],
+            "tags": ["e2e", "playwright", "testing", "commerce", "ci", "dev-infra"]
         }
     ]
 }

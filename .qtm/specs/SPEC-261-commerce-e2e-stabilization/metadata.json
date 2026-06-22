@@ -1,0 +1,12 @@
+{
+    "specId": "SPEC-261",
+    "title": "Stabilize commerce-owner E2E and promote back to @p0",
+    "type": "chore",
+    "complexity": "medium",
+    "status": "draft",
+    "created": "2026-06-22T00:00:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["e2e", "playwright", "testing", "commerce", "ci", "dev-infra"]
+}
