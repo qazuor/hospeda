@@ -257,8 +257,8 @@
         {
             "specId": "SPEC-183",
             "title": "API Error i18n Standardization",
-            "status": "in-progress",
-            "progress": "13/14",
+            "status": "completed",
+            "progress": "14/14",
             "path": "SPEC-183-api-error-i18n-standardization",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-183-api-error-i18n-standardization",
             "branch": "spec/SPEC-183-api-error-i18n-standardization",
@@ -269,7 +269,9 @@
             "taskCount": 14,
             "averageComplexity": 2.1,
             "note": "14 tasks across 4 phases (avg complexity 2.1). Centralizes translateApiError from apps/web/src/lib/api-errors.ts into @repo/i18n (T-001..T-004); web shim re-export preserves all existing callers. Phase 2 (T-005..T-006): migrate ~5 remaining genuine API-error sites in web. Phase 3 (T-007..T-010): wire admin dialogs/forms (PlanDialog, AddonDialog, RefundDialog, exchange-rate x3, sponsorship x5, CronJobsPanel). Phase 4 (T-011..T-014): add 5 missing common.apiError keys (INVALID_PAGINATION_PARAMS, NOT_IMPLEMENTED, CONFIGURATION_ERROR, QUOTA_EXCEEDED, ENTITLEMENT_REQUIRED) + CI guard test + docs + index closeout. Excluded: cache internals, error-boundaries, logger, native JS errors. Zero breaking changes to existing callers.",
-            "archived": false
+            "archived": true,
+            "archivedAt": "2026-06-22",
+            "completionRef": "#1771"
         },
         {
             "specId": "SPEC-185",

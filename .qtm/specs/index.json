@@ -779,13 +779,13 @@
         {
             "specId": "SPEC-183",
             "title": "API Error i18n Standardization",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": "medium",
             "path": "SPEC-183-api-error-i18n-standardization",
             "created": "2026-06-02T00:00:00.000Z",
-            "archived": false,
-            "archivedAt": null,
-            "archiveNote": null
+            "archived": true,
+            "archivedAt": "2026-06-22",
+            "archiveNote": "Shipped via PR #1771 (merge c280a24b8). translateApiError centralized in @repo/i18n; web shim + 3 user-facing web sites migrated; 12 admin sites adopt a translateAdminApiError adapter bridging admin's (key, params?) t signature; 9 missing common.apiError keys added (es/en/pt) — the new CI coverage guard surfaced 4 provider/plan codes beyond the 5 the spec listed. T-014 closeout done in this entry."
         },
         {
             "specId": "SPEC-185",
