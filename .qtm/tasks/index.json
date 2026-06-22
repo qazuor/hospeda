@@ -812,7 +812,7 @@
             "specId": "SPEC-257",
             "title": "Accommodation import short-link resolution + adapter enrichment",
             "status": "draft",
-            "progress": "8/11",
+            "progress": "11/14",
             "path": "SPEC-257-import-short-link-resolution",
             "parent": "SPEC-222",
             "branch": "spec/SPEC-257-import-short-link-resolution",
@@ -820,7 +820,7 @@
             "base": "staging",
             "createdAt": "2026-06-22T02:36:01Z",
             "tasksAtomizedAt": "2026-06-22T02:36:01Z",
-            "taskCount": 11,
+            "taskCount": 14,
             "averageComplexity": 2.36,
             "note": "11 tasks across 5 phases (setup 1, core 4, integration 4, testing 1, docs 1). SPEC-222 short-link follow-up."
         }

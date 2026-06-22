@@ -396,13 +396,79 @@
                 "started": null,
                 "completed": null
             }
+        },
+        {
+            "id": "T-012",
+            "title": "Google Places: send languageCode from ctx.locale",
+            "description": "google-places.adapter.ts: add languageCode to places:searchText body (fetchTextSearch) and ?languageCode= query param to GET /v1/places/{id}. Omit when ctx.locale absent. AC-D.1.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-014"],
+            "subtasks": [],
+            "tags": ["service-core", "google-places", "i18n", "locale"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T13:25:25Z",
+                "started": "2026-06-22T13:25:25Z",
+                "completed": "2026-06-22T13:25:25Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Airbnb: append ?locale to listing URL for the actor",
+            "description": "airbnb.adapter.ts: withAirbnbLocale helper appends ?locale=<code> to the listing URL passed to the Apify actor so Airbnb serves the localized page. Omit when ctx.locale absent. AC-D.2.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-014"],
+            "subtasks": [],
+            "tags": ["service-core", "airbnb", "i18n", "locale"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T13:25:25Z",
+                "started": "2026-06-22T13:25:25Z",
+                "completed": "2026-06-22T13:25:25Z"
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Locale unit tests (Google + Airbnb)",
+            "description": "google-places.adapter.test.ts + airbnb.adapter.test.ts: assert languageCode on both Google API paths and ?locale on Airbnb actor URL, and absence when locale missing. AC-D.3.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-012", "T-013"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["service-core", "testing", "locale"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T13:25:25Z",
+                "started": "2026-06-22T13:25:25Z",
+                "completed": "2026-06-22T13:25:25Z"
+            }
         }
     ],
     "summary": {
-        "total": 11,
+        "total": 14,
         "byStatus": {
             "pending": 3,
-            "completed": 8
+            "completed": 11
         },
         "byPhase": {
             "setup": 1,

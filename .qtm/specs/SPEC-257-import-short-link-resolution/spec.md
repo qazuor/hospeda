@@ -27,6 +27,11 @@ Make accommodation import work end-to-end for the link forms hosts actually past
   `booking.com/hotel/...` URL via the import help panel.
 - **(C) Airbnb adapter** — enrich the output mapping with `summary`, `amenities[]` and `beds`
   (fields currently absent from the mapping), validated against the real Apify actor output.
+- **(D) Import in the user's locale** — imports currently return source-language (English)
+  data, which makes the feature low-value for the es/pt market. `ImportContext.locale` already
+  flows from the request; pass it to the sources that support native localization (Google Places
+  `languageCode`, Airbnb `?locale=`). No machine translation — native source data falls back to
+  the source language when unavailable. (Added 2026-06-22 on owner request.)
 
 ### Motivation
 
@@ -180,6 +185,24 @@ imported, **so that** my draft is more complete.
 - RO-RO, named exports, `import type`, no `any`, JSDoc on new exported surface.
 - Google Places Text Search uses native `fetch` (trusted endpoint) — unchanged.
 - i18n strings live only in `@repo/i18n`; never inline copy in the component.
+
+### D — Import in the user's locale
+
+**Files:** `packages/service-core/.../adapters/google-places.adapter.ts`,
+`packages/service-core/.../adapters/airbnb.adapter.ts`
+
+8. **Google Places**: `fetchTextSearch` adds `languageCode: ctx.locale` to the
+   `places:searchText` body; the Place Details path appends `?languageCode=<locale>` to the
+   `GET /v1/places/{id}` URL. Both omit the param when `ctx.locale` is absent.
+9. **Airbnb**: a `withAirbnbLocale(url, ctx.locale)` helper appends `?locale=<code>` to the
+   listing URL passed to the Apify actor, so Airbnb serves (and the actor scrapes) the localized
+   page. Robust across actors.
+10. **Booking**: stays covered by the canonical URL the host pastes (piece B copy) — its
+    lang-code mapping (`en-us`/`pt-br`) is too brittle to force programmatically.
+
+**AC-D.1** — a Google import with `ctx.locale='es'` requests `languageCode=es` on both API paths.
+**AC-D.2** — an Airbnb import with a locale appends `?locale=<code>` to the actor's listing URL.
+**AC-D.3** — when `ctx.locale` is absent, neither adapter adds a locale param (unchanged behavior).
 
 ## 4. Testing Strategy
 
