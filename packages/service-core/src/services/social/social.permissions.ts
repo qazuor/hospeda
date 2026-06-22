@@ -114,3 +114,51 @@ export const checkCanManageAudience = (actor: Actor): void => {
         );
     }
 };
+
+/**
+ * Asserts that the actor holds SOCIAL_PLATFORM_FORMAT_VIEW permission.
+ * Used for read/list/search/count operations on platform formats.
+ *
+ * @param actor - The acting user.
+ * @throws {ServiceError} FORBIDDEN if the actor lacks the permission.
+ */
+export const checkCanViewPlatformFormat = (actor: Actor): void => {
+    if (!hasPermission(actor, PermissionEnum.SOCIAL_PLATFORM_FORMAT_VIEW)) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied: SOCIAL_PLATFORM_FORMAT_VIEW required'
+        );
+    }
+};
+
+/**
+ * Asserts that the actor holds SOCIAL_PLATFORM_MANAGE permission.
+ * Used for update operations on platform formats.
+ *
+ * @param actor - The acting user.
+ * @throws {ServiceError} FORBIDDEN if the actor lacks the permission.
+ */
+export const checkCanManagePlatform = (actor: Actor): void => {
+    if (!hasPermission(actor, PermissionEnum.SOCIAL_PLATFORM_MANAGE)) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied: SOCIAL_PLATFORM_MANAGE required'
+        );
+    }
+};
+
+/**
+ * Asserts that the actor holds SOCIAL_SETTINGS_MANAGE permission.
+ * Gates all operations on social settings (read + write).
+ *
+ * @param actor - The acting user.
+ * @throws {ServiceError} FORBIDDEN if the actor lacks the permission.
+ */
+export const checkCanManageSettings = (actor: Actor): void => {
+    if (!hasPermission(actor, PermissionEnum.SOCIAL_SETTINGS_MANAGE)) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied: SOCIAL_SETTINGS_MANAGE required'
+        );
+    }
+};

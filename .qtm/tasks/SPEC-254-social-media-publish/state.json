@@ -588,7 +588,7 @@
             "id": "T-017",
             "title": "Create PlatformFormatService and SettingsService",
             "description": "Create 2 service modules in `packages/service-core/src/services/social/`:\n\n`platform-format.service.ts`:\n- `list()` — returns all rows (active + inactive) ordered by platform ASC, publish_format ASC\n- `update(id, data)` — updates enabled, mvpEnabled, maxCaptionLength, makeChannelKey, notes, recommendedRatio, recommendedSize; checks how many active social_post_targets reference this format and returns warning count in the result if enabled is being set to false\n- Permissions: `SOCIAL_PLATFORM_FORMAT_VIEW` (list), `SOCIAL_PLATFORM_MANAGE` (update)\n\n`settings.service.ts`:\n- `listAll()` — returns all settings rows; masks `type = 'secret'` values as `'***'`\n- `getByKey(key)` — 404 if key not found\n- `update(key, value)` — 404 if key not found; logs audit event SETTING_UPDATED with old/new values (secrets redacted in log)\n- Permissions: `SOCIAL_SETTINGS_MANAGE`\n\nTest requirements:\n- Unit tests for SettingsService: secret masking on listAll, audit log call on update, 404 on unknown key\n- Unit tests for PlatformFormatService: update returns warning count when disabling a format with active targets\n- File: `packages/service-core/src/services/social/__tests__/platform-format-settings.test.ts`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-016"],
             "blocks": ["T-018", "T-030"],
@@ -609,14 +609,14 @@
             "tags": ["service-core", "catalog"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
             }
         },
         {
@@ -1911,9 +1911,9 @@
     ],
     "summary": {
         "total": 52,
-        "pending": 35,
+        "pending": 34,
         "inProgress": 0,
-        "completed": 17,
+        "completed": 18,
         "blocked": 0,
         "averageComplexity": 2.3
     }
