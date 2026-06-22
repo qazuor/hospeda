@@ -740,6 +740,77 @@ describe('SPEC-239 — Gastronomy commerce admin-sells lifecycle (integration)',
                 expect(data.moderationState).toBe(ModerationStatusEnum.PENDING);
                 // The breakdown is absent (null/undefined) — never an empty-object sentinel.
                 expect(data.rating ?? null).toBeNull();
+                // Effective per-review rating falls back to the scalar overallRating
+                // (not 0) so the review never renders as ★0.0.
+                expect(Number(data.averageRating)).toBe(4);
+            });
+        }
+    );
+
+    // -----------------------------------------------------------------------
+    // T-8c: listForModeration surfaces PENDING reviews filtered by state.
+    //
+    // Regression (SPEC-259 Chrome smoke): the admin "Reseñas" moderation tab
+    // showed "no pending reviews" because the list route 400'd on `?status=`.
+    // The dedicated service method must filter by `moderationState` (NOT the
+    // base adminList `status`/lifecycleState semantics) and require the
+    // COMMERCE_MODERATE_REVIEW permission.
+    // -----------------------------------------------------------------------
+
+    it.skipIf(!dbAvailable)(
+        'T-8c: listForModeration returns PENDING reviews and enforces permission',
+        async () => {
+            await withServiceTestTransaction(async (tx) => {
+                const { gastronomyId } = await seedGastronomy(tx, {
+                    visibility: 'PUBLIC',
+                    lifecycleState: 'ACTIVE'
+                });
+                const touristUserId = await seedTouristUser(tx);
+                const touristActor = createTouristActor(touristUserId);
+                const ctx: ServiceContext = { tx };
+
+                // Arrange: a freshly-created review is PENDING.
+                const createResult = await reviewService.create(
+                    touristActor,
+                    { gastronomyId, overallRating: 5, title: 'Great' },
+                    ctx
+                );
+                expect(createResult.error).toBeUndefined();
+                const reviewId = (createResult.data as Record<string, unknown>).id as string;
+
+                // Act: list PENDING reviews as an admin moderator.
+                const pendingResult = await reviewService.listForModeration(
+                    adminActor,
+                    { moderationState: ModerationStatusEnum.PENDING },
+                    ctx
+                );
+
+                // Assert: the new review is in the PENDING queue.
+                expect(pendingResult.error).toBeUndefined();
+                const pendingIds = (pendingResult.data?.items ?? []).map(
+                    (r) => (r as Record<string, unknown>).id
+                );
+                expect(pendingIds).toContain(reviewId);
+
+                // Act/Assert: filtering by APPROVED excludes the pending review.
+                const approvedResult = await reviewService.listForModeration(
+                    adminActor,
+                    { moderationState: ModerationStatusEnum.APPROVED },
+                    ctx
+                );
+                expect(approvedResult.error).toBeUndefined();
+                const approvedIds = (approvedResult.data?.items ?? []).map(
+                    (r) => (r as Record<string, unknown>).id
+                );
+                expect(approvedIds).not.toContain(reviewId);
+
+                // Act/Assert: a non-moderator actor is forbidden.
+                const forbidden = await reviewService.listForModeration(
+                    touristActor,
+                    { moderationState: ModerationStatusEnum.PENDING },
+                    ctx
+                );
+                expect(forbidden.error?.code).toBe('FORBIDDEN');
             });
         }
     );
