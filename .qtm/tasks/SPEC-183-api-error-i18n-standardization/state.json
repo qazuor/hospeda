@@ -5,9 +5,9 @@
     "created": "2026-06-02T00:00:00.000Z",
     "summary": {
         "total": 14,
-        "pending": 8,
+        "pending": 4,
         "inProgress": 0,
-        "completed": 6,
+        "completed": 10,
         "blocked": 0,
         "averageComplexity": 2.1
     },
@@ -148,7 +148,7 @@
             "id": "T-007",
             "title": "Wire translateApiError into admin billing dialogs (PlanDialog, AddonDialog, RefundDialog)",
             "description": "In apps/admin: import { translateApiError } from '@repo/i18n'. In each component, get `t` from useTranslations() and replace the raw `error.message` with translateApiError({ error: apiError, t }). Files: (1) features/billing-plans/components/PlanDialog.tsx:115, (2) features/billing-addons/components/AddonDialog.tsx:93, (3) features/billing-payments/RefundDialog.tsx:73 (currently concatenated into toast description — replace the raw message portion). Acceptance: typecheck clean; no raw English API strings in these dialogs when an API error occurs.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002"],
             "blocks": ["T-010", "T-013"],
@@ -162,15 +162,15 @@
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
             }
         },
         {
             "id": "T-008",
             "title": "Wire translateApiError into admin exchange-rate components",
             "description": "In apps/admin exchange-rate feature: replace raw error.message with translateApiError in (1) features/exchange-rates/components/RateHistoryView.tsx:296, (2) features/exchange-rates/components/FetchConfigForm.tsx:97, (3) features/exchange-rates/components/ManualOverrideDialog.tsx:102. Use `t` from useTranslations(). Acceptance: typecheck clean.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002"],
             "blocks": ["T-010", "T-013"],
@@ -184,15 +184,15 @@
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
             }
         },
         {
             "id": "T-009",
             "title": "Wire translateApiError into admin sponsorship components + CronJobsPanel",
             "description": "In apps/admin: replace raw error.message with translateApiError in (1) features/sponsorships/components/CreateSponsorshipPackageDialog.tsx:131, (2) features/sponsorships/components/SponsorshipsTab.tsx:204, (3) features/sponsorships/components/SponsorshipLevelsTab.tsx:158, (4) features/sponsorships/components/CreateSponsorshipDialog.tsx:175, (5) features/sponsorships/components/SponsorshipPackagesTab.tsx:128, (6) features/cron-jobs/components/CronJobsPanel.tsx:73. Use `t` from useTranslations(). Acceptance: typecheck clean.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002"],
             "blocks": ["T-010", "T-013"],
@@ -206,15 +206,15 @@
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
             }
         },
         {
             "id": "T-010",
             "title": "Tests for migrated admin components",
             "description": "Write Vitest unit/component tests for the migrated admin sites (T-007, T-008, T-009). Minimum coverage: for PlanDialog, AddonDialog, RefundDialog — assert that a mock API error with a known code renders the localized message from common.apiError. Use mock `t` functions. Acceptance: tests green; coverage ≥ 90% on the migrated code paths.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-007", "T-008", "T-009"],
             "blocks": ["T-013"],
@@ -228,8 +228,8 @@
             },
             "timestamps": {
                 "created": "2026-06-02T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
             }
         },
         {
