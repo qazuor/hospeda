@@ -194,25 +194,50 @@ test.describe('COMMERCE-01: commerce owner edits listings — both verticals @p0
 
         // ── Step 3: edit gastronomy — change menuUrl ───────────────────────────
 
+        // Use a value that is:
+        //   (a) a valid URL (required by the type="url" input — invalid URLs block
+        //       the browser's native constraint-validation on submit AND may suppress
+        //       the input event in some Chromium builds)
+        //   (b) guaranteed different from the seeded value
+        //       (https://laparrilladelpu.com.ar/menu) so the form is always dirty
         const newMenuUrl = `https://e2e-test.example.com/menu-${Date.now()}`;
 
+        // Use waitUntil:'load' (not 'domcontentloaded') so the Astro JS bundle has
+        // been downloaded, parsed, and executed before we interact with the React
+        // island. 'domcontentloaded' fires before deferred scripts run; with
+        // client:load the React component hydrates during script execution — if we
+        // fill the input before that, onChange is not yet registered and the form
+        // stays clean (dirty.size===0 → button disabled → click times out).
         await page.goto(`${WEB_URL}/es/mi-cuenta/comercio/gastronomy/${gastronomyId}/editar`, {
-            waitUntil: 'domcontentloaded'
+            waitUntil: 'load'
         });
 
-        // The editor island is hydrated client:load — wait for the specific input to be
-        // visible/editable. Using the stable input id (#ce-menuUrl) avoids relying on
-        // form[aria-busy] which is a transient React-hydration attribute and can miss
-        // the timing window or match 0 elements before hydration completes.
+        // Wait for React hydration to complete: after client:load hydration the
+        // #ce-menuUrl input is under React's control. We verify it is editable
+        // (not disabled, not readonly) and stable — a stronger guarantee than
+        // toBeVisible alone, which resolves the moment the SSR HTML arrives.
         const menuUrlInput = page.locator('#ce-menuUrl');
         await expect(menuUrlInput).toBeVisible({ timeout: 15_000 });
+        await expect(menuUrlInput).toBeEditable({ timeout: 10_000 });
 
-        await menuUrlInput.clear();
+        // fill() is atomic: it selects-all, sets the value, and dispatches a
+        // native input event that React's synthetic event delegation intercepts.
+        // We do NOT call clear() first — that creates an intermediate empty-string
+        // state (also dispatches input) which can race with the subsequent fill()
+        // and leave the field value empty if React batches the two events in the
+        // wrong order under CI load. fill() alone is sufficient.
         await menuUrlInput.fill(newMenuUrl);
 
-        // The save button is enabled once a field is dirty.
+        // Explicit pre-click check: if dirty.size===0 the button is disabled and
+        // click() will hang for the full 15 s actionTimeout. Asserting here with a
+        // generous timeout surfaces the real root cause (form not dirty) with a
+        // clear AssertionError message instead of a cryptic click timeout.
         const saveButton = page.locator('button[type="submit"]', { hasText: /guardar cambios/i });
-        await expect(saveButton).toBeEnabled();
+        await expect(saveButton).toBeEnabled({ timeout: 10_000 });
+
+        // Scroll into view explicitly before clicking — the save button sits at the
+        // bottom of a tall form and may be below the initial viewport.
+        await saveButton.scrollIntoViewIfNeeded();
         await saveButton.click();
 
         // Success feedback: an <output> element appears after the PATCH succeeds.
@@ -231,26 +256,37 @@ test.describe('COMMERCE-01: commerce owner edits listings — both verticals @p0
 
         // ── Step 4: edit experience — change richDescription ──────────────────
 
+        // Plain text value — always different from whatever the seed stores.
         const newRichDescription = `E2E test update ${Date.now()}: tour description refreshed.`;
 
+        // Same waitUntil:'load' rationale as the gastronomy step above — ensures
+        // the Astro bundle has executed and React has hydrated before we interact.
         await page.goto(`${WEB_URL}/es/mi-cuenta/comercio/experience/${experienceId}/editar`, {
-            waitUntil: 'domcontentloaded'
+            waitUntil: 'load'
         });
 
-        // Wait for editor island hydration using the stable, unique input id.
+        // Wait for editor island hydration using the stable, unique textarea id.
         // #ce-richDescription is only rendered by the experience-vertical branch of
         // CommerceListingEditor — it is unique on the page and never appears on the
         // gastronomy editor, so it cannot cause a strict-mode multi-match.
+        // toBeEditable() (not just toBeVisible()) confirms the textarea is interactive
+        // and React event handlers are in place.
         const richDescriptionTextarea = page.locator('#ce-richDescription');
         await expect(richDescriptionTextarea).toBeVisible({ timeout: 15_000 });
+        await expect(richDescriptionTextarea).toBeEditable({ timeout: 10_000 });
 
-        await richDescriptionTextarea.clear();
+        // Same fill()-only strategy as the menuUrl step: no preceding clear() to
+        // avoid intermediate empty-string race states.
         await richDescriptionTextarea.fill(newRichDescription);
 
+        // Explicit pre-click enabled assertion — surfaces dirty-form failures
+        // clearly instead of masking them as a 15 s click timeout.
         const expSaveButton = page.locator('button[type="submit"]', {
             hasText: /guardar cambios/i
         });
-        await expect(expSaveButton).toBeEnabled();
+        await expect(expSaveButton).toBeEnabled({ timeout: 10_000 });
+
+        await expSaveButton.scrollIntoViewIfNeeded();
         await expSaveButton.click();
 
         await expect(page.locator('output')).toBeVisible({ timeout: 10_000 });
