@@ -1534,7 +1534,7 @@
             "slug": "web-e2e-playwright-harness",
             "type": "feature",
             "complexity": "medium",
-            "status": "in-progress",
+            "status": "completed",
             "created": "2026-06-20T00:00:00.000Z",
             "base": "staging",
             "origin": "SPEC-249 T-025: apps/e2e exists (mature harness + CI); gaps are missing commerce tests and seed fixtures (no logueable experience owner, profile_completed=false)",

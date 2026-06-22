@@ -788,8 +788,8 @@
         {
             "specId": "SPEC-252",
             "title": "Extend apps/e2e with commerce-owner flows + seed fixtures",
-            "status": "in-progress",
-            "progress": "3/5",
+            "status": "completed",
+            "progress": "5/5",
             "path": "SPEC-252-web-e2e-playwright-harness"
         },
         {

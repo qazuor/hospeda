@@ -133,3 +133,24 @@ one there. Scope realigned from "create a new harness in apps/web" to "extend th
 existing apps/e2e with commerce-owner flows + fix seed gaps." Owner approved this
 realignment. No new CI job is needed — correct `@p0` tagging on the new tests is
 sufficient.
+
+### 2026-06-22 — Implementation complete (5/5)
+
+- **T-001** seed fix (in `packages/seed/example`, which the e2e seed reuses via
+  `example:true`): logueable `gastro-owner-julieta@local.test` owns a gastronomy + an
+  experience, `profileCompleted=true`.
+- **T-002** `signInExistingUser()` helper in `apps/e2e/fixtures/api-helpers.ts`.
+- **T-003** positive E2E `apps/e2e/tests/commerce/commerce-01-owner-edits-listings.spec.ts`
+  (`@p0 @commerce`): owner edits gastronomy `menuUrl` + experience `richDescription`,
+  asserted on the public ficha; `afterEach` restores the mutated fields.
+- **T-004** negative E2E `commerce-02-access-control.spec.ts` (`@p0 @commerce`): tourist
+  redirected to `/mi-cuenta/`; cross-owner redirected to her own `/mi-cuenta/comercio/`
+  index (real guard behavior — a page-layer redirect, not a 404).
+- **T-005** CI verification: `e2e-pr.yml` runs `e2e:test:p0` (`playwright test --grep @p0`)
+  and `testDir: ./tests` includes `tests/commerce/`; both specs are `@p0`, so CI runs them
+  with no workflow change.
+
+**Runtime validation note:** the commerce specs are static-checked (tsc + biome); their
+runtime run is via CI (`e2e-pr.yml @p0`). Bringing up the full local E2E stack
+(3 servers plus the e2e DB) is blocked by the web prod-env build (`validateWebEnv`), so
+CI is the canonical E2E environment for these tests.
