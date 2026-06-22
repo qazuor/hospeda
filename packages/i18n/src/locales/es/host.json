@@ -28,7 +28,8 @@
                 "label": "Sugerencia de destino",
                 "locality": "Se detectó la localidad: {{locality}}",
                 "candidates": "Destinos sugeridos: {{names}}",
-                "hint": "Elegí el destino manualmente en el campo Ciudad."
+                "hint": "Elegí el destino manualmente en el campo Ciudad.",
+                "autoSelected": "Autoseleccionamos el destino detectado. Revisalo y cambialo si no es correcto."
             }
         },
         "help": {

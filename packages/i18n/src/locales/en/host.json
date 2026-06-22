@@ -28,7 +28,8 @@
                 "label": "Destination suggestion",
                 "locality": "Detected locality: {{locality}}",
                 "candidates": "Suggested destinations: {{names}}",
-                "hint": "Please select the destination manually in the City field."
+                "hint": "Please select the destination manually in the City field.",
+                "autoSelected": "We auto-selected the detected destination. Review it and change it if it's wrong."
             }
         },
         "help": {
