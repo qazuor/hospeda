@@ -6,8 +6,8 @@
     "summary": {
         "total": 15,
         "byStatus": {
-            "pending": 13,
-            "completed": 2
+            "pending": 12,
+            "completed": 3
         },
         "byPhase": {
             "spike": 1,
@@ -68,7 +68,7 @@
             "id": "T-003",
             "title": "Add DB CHECK constraints + backfill SQL (extras carril 018)",
             "description": "Hand-written idempotent SQL for `packages/db/src/migrations/extras/018-promo-code-effect-constraints.sql` (extras carril \u2014 re-applied by `pnpm db:apply-extras`):\n\nCHECK constraints on `billing_promo_codes`:\n- When `effect_kind = 'discount'`: `value_kind` NOT NULL, `value` NOT NULL, `value >= 0`, percentage `value <= 100`\n- When `effect_kind = 'trial_extension'`: `extra_days` NOT NULL, `extra_days > 0`, `value` IS NULL, `value_kind` IS NULL\n- When `effect_kind = 'comp'`: `value` IS NULL, `value_kind` IS NULL, `extra_days` IS NULL, `duration_cycles` IS NULL\n- `duration_cycles > 0` when NOT NULL\n\nData backfill (idempotent, dry-run count step first):\n- All existing rows where `effect_kind` IS NULL \u2192 set `effect_kind = 'discount'`, `value_kind` = existing `type` (mapped 'percentage'\u2192'percentage', 'fixed'\u2192'fixed'), `value` from existing discount value col, `duration_cycles = 1` (one-shot, AC-4.1)\n- `HOSPEDA_FREE` (code = 'HOSPEDA_FREE') \u2192 `effect_kind = 'comp'` (OQ-1 \u03b2; fixes AC-2.3 latent bug)\n- `FREEMONTH` \u2192 `effect_kind = 'trial_extension'`, `extra_days = 30`\n- `LANZAMIENTO50` \u2192 `effect_kind = 'discount'`, `value_kind = 'percentage'`, `value = 50`, `duration_cycles = 3`\n- `BIENVENIDO30` \u2192 `effect_kind = 'discount'`, `value_kind = 'percentage'`, `value = 30`, `duration_cycles = 1`\n\nAlso: subscription reconciliation \u2014 any `billing_subscriptions` row with `promo_code_id` pointing to HOSPEDA_FREE \u2192 set `status = 'comp'` if currently `active` (comp supersedes active billing).\n\nSQL must be idempotent (use `DO $$ IF NOT EXISTS ... $$` or `ON CONFLICT DO NOTHING` pattern; re-running produces zero rows changed).\n\nAcceptance criteria:\n- AC-2.3 (HOSPEDA_FREE migrated, no longer a latent bug)\n- AC-4.1 (legacy codes preserved as duration_cycles=1)\n- CHECK constraints reject impossible combos at DB level (AC-1.2, AC-1.3 enforcement layer)\n- `pnpm db:apply-extras` succeeds idempotently (second run = 0 rows changed)",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002"],
             "blocks": ["T-004", "T-008"],
