@@ -1,6 +1,6 @@
 # SPEC-254: Social Automation Backend
 
-## Progress: 42/52 tasks (81%) — T-039 admin post-list UI done (/admin/social/posts: DataTable, filters, status/approval badges, platform icons, optimistic approve, 10/10 tests). social-publish-dispatch CRON (T-049) done: advisory lock 43032, missing-key guard, dryRun, sequential dispatch loop. **PUBLISHING CHAIN COMPLETE (T-044→049). ENTIRE SPEC-254 BACKEND DONE.** Remaining = admin UI (T-039-042, tanstack-start-engineer) + T-038 integration test (needs worktree DB up). Owner Coolify: set 4 HOSPEDA_* keys on staging+prod before phase-4 deploy
+## Progress: 43/52 tasks (83%) — T-040 admin post-detail UI done (/admin/social/posts/$id: 5 tabs Content/Media/Targets/Logs/Audit, sticky action bar w/ 8 status-gated transitions, promote-hashtag modal, ARIA live regions; split into 10 files all <500L; 14/14 tests; removed broken /edit link). T-039 post-list done. social-publish-dispatch CRON (T-049) done: advisory lock 43032, missing-key guard, dryRun, sequential dispatch loop. **PUBLISHING CHAIN COMPLETE (T-044→049). ENTIRE SPEC-254 BACKEND DONE.** Remaining = admin UI (T-039-042, tanstack-start-engineer) + T-038 integration test (needs worktree DB up). Owner Coolify: set 4 HOSPEDA_* keys on staging+prod before phase-4 deploy
 
 **Average Complexity:** 2.3/3 (max)
 **Critical Path:** T-001 -> T-002 -> T-004 -> T-005 -> T-006 -> T-007 -> T-008 -> T-009 -> T-010 -> T-011 -> T-013 -> T-014 -> T-016 -> T-017 -> T-018 -> T-019 -> T-027 -> T-028 -> T-029 -> T-032 -> T-033 -> T-034 -> T-035 -> T-036 -> T-037 -> T-044 -> T-045 -> T-046 -> T-047 -> T-048 -> T-049 -> T-050 -> T-051 -> T-052 (34 steps)
@@ -218,7 +218,7 @@
   - Blocked by: T-037
   - Blocks: T-040
 
-- [ ] **T-040** (complexity: 3) - Build admin UI post detail page (/admin/social/posts/$id)
+- [x] **T-040** (complexity: 3) - Build admin UI post detail page (/admin/social/posts/$id)
   - Tabs (Content/Media/Targets/Logs/Audit); sticky action bar; promote-hashtag modal; ARIA live regions.
   - Blocked by: T-039
   - Blocks: T-041

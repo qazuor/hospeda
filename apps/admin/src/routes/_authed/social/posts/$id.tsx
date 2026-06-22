@@ -166,21 +166,8 @@ function SocialPostDetailPage() {
                                 </span>
                             )}
                         </div>
-                        {/* Header action buttons: Edit (T-041) + Delete */}
+                        {/* Header action button: quick archive (soft-delete) with confirmation */}
                         <div className="flex items-center gap-2">
-                            {/* Edit link — route implemented in T-041 (not yet available, using plain href) */}
-                            <a
-                                href={`/social/posts/${id}/edit`}
-                                data-testid="edit-link"
-                            >
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                >
-                                    {t('social.posts.detail.delete.editLabel' as TranslationKey)}
-                                </Button>
-                            </a>
-                            {/* Delete/archive button with confirmation dialog */}
                             {canArchive && (
                                 <Button
                                     variant="destructive"
