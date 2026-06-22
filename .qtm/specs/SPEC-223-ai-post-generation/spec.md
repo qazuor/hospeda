@@ -45,9 +45,18 @@ directly reduces authoring time while keeping human review mandatory before any 
    `/api/v1/admin/ai/post-generate` alongside the other admin AI management endpoints. No
    entitlement gate applies (admin routes are permission-gated by `PermissionEnum`, never
    billing-gated). The `ai_quota` and `ai_rate_limit` middlewares are NOT applied here.
-2. **Streaming output format.** The SSE stream carries incremental JSON tokens for the
-   draft object rather than plain text, following the `generate-object` capability. The
+2. **Streaming output format.** ~~The SSE stream carries incremental JSON tokens for the
+   draft object rather than plain text, following the `generate-object` capability.~~ The
    schema is `{ title: string; summary: string; content: string }`.
+   **REVISED (user, 2026-06-19).** `ai-core` exposes no `streamObject`; the `generateObject`
+   capability is **buffered** (returns a `Promise`, not a stream), and reliably parsing a
+   partial JSON object token-by-token is the spec's own Risk #1. Decision: the route is a
+   plain `POST` returning a single JSON body validated against `AiPostGenerateDraftSchema`
+   via `aiService.generateObject()` — **not** SSE. The admin panel shows a spinner while
+   the request is in flight and populates the three fields once on success. US-1/US-2 are
+   reinterpreted accordingly: "spinner + populate-on-complete" instead of "progressive
+   token fill". This removes the SSE-POST client risk row entirely and eliminates the
+   malformed-partial-JSON risk (the SDK validates the object against the schema).
 3. **Human review mandatory.** The UI never auto-publishes; it only populates the editor
    fields. The editor's existing `PostUpdateInputSchema` validation and publish flow are
    unchanged.
@@ -241,6 +250,7 @@ barrel) alongside the existing credentials/settings/prompts/usage routes.
 — **new** React component.
 
 Responsibilities:
+
 - Form fields: topic (text input), points (dynamic list, add/remove), category (select,
   optional), tone (select, optional), locale (select, optional, defaults `es`).
 - On submit: opens an SSE connection to `POST /api/v1/admin/ai/post-generate`, streams
