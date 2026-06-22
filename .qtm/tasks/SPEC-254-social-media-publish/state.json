@@ -471,7 +471,7 @@
             "id": "T-014",
             "title": "Create Zod entity schema directories for all 17 social entities in packages/schemas/src/entities/social/",
             "description": "For each of the 17 social tables, create a directory under `packages/schemas/src/entities/social/<entity>/` containing these files (following the existing entity schema pattern, e.g., `packages/schemas/src/entities/accommodation/`):\n- `<entity>.schema.ts` — base Zod shape mirroring the DB row\n- `<entity>.crud.schema.ts` — CreateSchema + UpdateSchema (partial)\n- `<entity>.query.schema.ts` — ListQuerySchema (page, pageSize, search, filters)\n- `<entity>.http.schema.ts` — HTTP request/response wrappers\n- `<entity>.access.schema.ts` — access-control shape\n- `index.ts` — re-exports all schemas\n\nKey schemas requiring extra fields:\n- `social-post.crud.schema.ts`: `CreateSocialDraftSchema` (the full GPT payload per the spec's API Design section), `UpdateSocialPostSchema` (partial, excludes state fields)\n- `social-post.http.schema.ts`: response envelope matching `GET /admin/social/posts/:id` nested structure\n\nAlso create `packages/schemas/src/entities/social/index.ts` and add it to the root `packages/schemas/src/entities/index.ts`.\n\nTest requirements:\n- Unit tests for complex schemas: `CreateSocialDraftSchema` (required fields, optional fields, nested targets array min 1)\n- File: `packages/schemas/src/entities/social/__tests__/social-schemas.test.ts`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002", "T-013"],
             "blocks": ["T-015", "T-016", "T-028"],
@@ -496,14 +496,14 @@
             "tags": ["schemas", "zod"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": true,
+                "typecheck": true,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-21T00:00:00.000Z",
+                "completed": "2026-06-21T00:00:00.000Z"
             }
         },
         {
@@ -1911,9 +1911,9 @@
     ],
     "summary": {
         "total": 52,
-        "pending": 37,
+        "pending": 36,
         "inProgress": 0,
-        "completed": 15,
+        "completed": 16,
         "blocked": 0,
         "averageComplexity": 2.3
     }
