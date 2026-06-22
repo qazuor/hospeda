@@ -1370,7 +1370,7 @@
             "title": "Web loading-states consistency & coverage",
             "type": "feature",
             "complexity": "high",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-228-web-loading-states-consistency",
             "created": "2026-06-13T12:00:00Z",
             "tags": [
@@ -1382,8 +1382,11 @@
                 "consistency",
                 "design-system"
             ],
-            "archived": false,
-            "note": "ONE canonical loading toolkit (React Spinner/Skeleton + LoadingButton + convention doc) to replace the 'mil maneras' of showing loading (text '...', emoji, ad-hoc spinners). Phase 1 foundation, then migrate audited cases by priority: map zoom/pan sidebar (isFetching unused), eventos/publicaciones skeleton-swap parity, AiChatWidget thinking indicator, review modals, ContactHost double-submit, ConversationReply. From the 2026-06-13 web UX audit. Drafted, ready to implement."
+            "archived": true,
+            "note": "ONE canonical loading toolkit (React Spinner/Skeleton + LoadingButton + convention doc) to replace the 'mil maneras' of showing loading (text '...', emoji, ad-hoc spinners). Phase 1 foundation, then migrate audited cases by priority: map zoom/pan sidebar (isFetching unused), eventos/publicaciones skeleton-swap parity, AiChatWidget thinking indicator, review modals, ContactHost double-submit, ConversationReply. From the 2026-06-13 web UX audit. Drafted, ready to implement.",
+            "archivedAt": "2026-06-22",
+            "archiveNote": "Merged to staging via PR #1739 (merge commit d17adf9d9). 22/22 tasks: canonical loading toolkit (Spinner/SkeletonCard/LoadingButton) + 15 island migrations + Astro skeleton-swaps + CI guard. Browser smoke + full CI green.",
+            "completed": "2026-06-22T00:00:00Z"
         },
         {
             "specId": "SPEC-235",
