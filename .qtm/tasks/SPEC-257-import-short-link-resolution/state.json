@@ -39,26 +39,26 @@
             "id": "T-002",
             "title": "Add resolveOnly mode to safeExternalFetch",
             "description": "Add a `resolveOnly` flag to `safeExternalFetch` in `packages/utils/src/safe-fetch.ts` so callers can discover where a redirect chain lands without reading the terminal page body.\n\n**What to change:**\n\n1. Add `readonly resolveOnly?: boolean;` to the `SafeFetchInput` interface (default `false`). JSDoc: \"Follow redirects and return the terminal URL without reading its body. `maxBytes` is not applied to the terminal response.\"\n2. In `_doFetch`, the existing `while (true)` redirect loop classifies responses as 3xx (redirect) or terminal (non-redirect). In the **terminal branch only**, when `resolveOnly` is `true`:\n   - Skip `readBodyCapped` entirely.\n   - Cancel/dump the body stream (so the underlying connection is released).\n   - Return `{ ok: true, status, body: '', finalUrl: currentUrl }`.\n3. **Critical: preserve the #1747 undici-7 agent-destroy fix.** The agent (undici `Agent` instance) MUST be destroyed AFTER the terminal result is returned, inside the same `try/finally` block that already handles agent cleanup. Do NOT move the `agent.destroy()` call before the return — that was the exact bug in prod (SSRF-safe fetch broke because agent was destroyed before the response was consumed). Review the existing agent-destroy ordering in the function before writing any code.\n4. The redirect-following branch (3xx responses) is unchanged — only the terminal branch gains the resolveOnly shortcut.\n5. Default mode (`resolveOnly` absent or `false`) is byte-for-byte unchanged: body is streamed and capped, `finalUrl` and `body` returned as before.\n\n**Key file:** `packages/utils/src/safe-fetch.ts`\n\nAC-2.1: resolveOnly returns terminal URL without body.\nAC-2.2: resolveOnly on a non-redirect returns ok=true, finalUrl=input, body=''.\nAC-2.3: maxBytes is NOT applied to the terminal response under resolveOnly.\nAC-2.4: redirect cap still fires under resolveOnly (SafeFetchBlocked).\nAC-2.5: default mode unchanged.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 4,
             "blockedBy": [],
             "blocks": ["T-003", "T-006"],
             "subtasks": [
                 {
                     "title": "Add resolveOnly to SafeFetchInput interface with JSDoc",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement terminal no-body branch in _doFetch when resolveOnly=true",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify agent-destroy ordering is preserved (not regressed from #1747)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Confirm default mode is unchanged (no body change, no finalUrl change)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["safe-fetch", "utils", "core", "undici", "redirect"],
@@ -70,26 +70,26 @@
             },
             "timestamps": {
                 "created": "2026-06-22T02:36:01Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-22T13:05:57Z",
+                "completed": "2026-06-22T13:05:57Z"
             }
         },
         {
             "id": "T-003",
             "title": "Rewire resolveCanonicalUrl to resolveOnly",
             "description": "Rewire the `resolveCanonicalUrl()` function in `packages/service-core/src/services/accommodation-import/accommodation-import.service.ts` to use the new `resolveOnly` mode from T-002.\n\n**Current behavior (broken):** `resolveCanonicalUrl` calls `safeExternalFetch({ url, timeoutMs, maxBytes: 512 })`. The 512-byte cap fires on the terminal Google Maps canonical page (large HTML), returning `SafeFetchBlocked` with a lost `finalUrl`. This causes the import to fall back to the original short link, which the Google adapter cannot parse — resulting in an empty draft.\n\n**New behavior:** Call `safeExternalFetch({ url: inputUrl, timeoutMs, maxRedirects: 5, resolveOnly: true })`. Drop `maxBytes: 512` entirely. Keep the existing fallback semantics:\n- If the call returns `ok === true && finalUrl !== inputUrl`: return `finalUrl` (the resolved canonical URL).\n- Otherwise (error, no redirect, SSRF blocked, same URL): return `inputUrl` unchanged.\n\nThe rest of the orchestration (Step 1b → `detectSource` → `_pickAdapter` → `extract` on the effective URL) is untouched. The resolved URL flows to `detectSource` which routes `www.google.com/maps/place/...` to `GooglePlacesAdapter`.\n\n**Key file:** `packages/service-core/src/services/accommodation-import/accommodation-import.service.ts`\n\nAC-1.1: maps.app.goo.gl resolves to canonical Google Maps URL without fetching terminal body.\nAC-1.2: resolved URL flows to GooglePlacesAdapter and prefills name + coords.\nAC-1.3: on failure, degrades gracefully — never 5xx.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002"],
             "blocks": ["T-007", "T-010"],
             "subtasks": [
                 {
                     "title": "Replace safeExternalFetch({ maxBytes:512 }) with safeExternalFetch({ resolveOnly:true, maxRedirects:5 })",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Confirm fallback semantics (return inputUrl on failure/no-redirect) are preserved",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "accommodation-import", "google", "redirect", "core"],
@@ -101,34 +101,34 @@
             },
             "timestamps": {
                 "created": "2026-06-22T02:36:01Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-22T13:05:57Z",
+                "completed": "2026-06-22T13:05:57Z"
             }
         },
         {
             "id": "T-004",
             "title": "Enrich Airbnb adapter output mapping",
             "description": "Extend the Airbnb adapter in `packages/service-core/src/services/accommodation-import/adapters/airbnb.adapter.ts` to map the `summary`, `amenities[]` and `beds` fields that the Apify Airbnb actor returns but the adapter currently ignores.\n\n**IMPORTANT: field name caveat.** The exact field names the Apify actor returns for these three fields are NOT confirmed at task-writing time. The candidates are:\n- Summary/description: `summary` or `publicDescription`\n- Amenities: `amenities` (array of strings or objects) or `amenityIds`\n- Bed count: `beds` (integer)\n\nDo NOT add speculative fields to `AirbnbItem` interface before the smoke (T-010) confirms them. Instead:\n1. Add the candidate optional fields to `AirbnbItem` now with a `// TODO T-010: confirm field name against real actor output` comment.\n2. In `mapItemToRawExtraction`, add guarded mapping for each:\n   - `summary`/`publicDescription` → `RawExtraction.summary`\n   - `amenities` → `RawExtraction.amenityNames` (extract strings if objects, pass through if already strings; feeds the existing amenity resolver)\n   - `beds` → `RawExtraction.extraInfo.beds`\n3. After the smoke confirms the real field names (T-010), remove the speculative candidates and finalize the interface.\n\n**Guards:** each mapping must be `if (item.fieldName !== undefined)` — absent fields must not inject `undefined` or empty values into the extraction result. Existing mapped fields (name, description, type, coords, location, images, capacity, bed/bath count, price) are NOT to be touched.\n\n**Key file:** `packages/service-core/src/services/accommodation-import/adapters/airbnb.adapter.ts`\n\nAC-4.1: summary/publicDescription → RawExtraction.summary.\nAC-4.2: amenities array → RawExtraction.amenityNames (existing resolver).\nAC-4.3: beds → RawExtraction.extraInfo.beds.\nAC-4.4: absent fields are omitted cleanly; existing fields unaffected.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-008", "T-010"],
             "subtasks": [
                 {
                     "title": "Add candidate optional fields (summary/publicDescription, amenities/amenityIds, beds) to AirbnbItem interface with TODO comment",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add guarded mapping: summary -> RawExtraction.summary",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add guarded mapping: amenities -> RawExtraction.amenityNames",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add guarded mapping: beds -> RawExtraction.extraInfo.beds",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "airbnb", "adapter", "apify", "core"],
@@ -140,30 +140,30 @@
             },
             "timestamps": {
                 "created": "2026-06-22T02:36:01Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-22T13:05:57Z",
+                "completed": "2026-06-22T13:05:57Z"
             }
         },
         {
             "id": "T-005",
             "title": "Update Booking + Google import help copy (i18n)",
             "description": "Update the import help panel copy in the three locale files to guide hosts on which URLs to use for Booking and Google.\n\n**Files to change:**\n- `packages/i18n/src/locales/es/host.json`\n- `packages/i18n/src/locales/en/host.json`\n- `packages/i18n/src/locales/pt/host.json`\n\n**What to update:**\n\n1. **Booking entry** — `host.importFromUrl.help.platforms.booking.steps`: rewrite the steps to instruct the host to:\n   - Open the Booking.com property page in a browser.\n   - Copy the URL from the address bar (it should look like `booking.com/hotel/...`).\n   - Explicitly warn that a `Share-...` link (the kind shared via the Booking mobile app) **will not work** because of a Booking security check.\n   - Keep the `.example` value as a canonical `booking.com/hotel/...` URL.\n\n2. **Google entry** (optional, if the key exists) — `host.importFromUrl.help.platforms.google.steps`: optionally add a note that mobile share links from Google Maps (`maps.app.goo.gl/...`) now work correctly in addition to the full canonical URL.\n\n**No component change needed.** `apps/web/src/components/accommodation-import/ImportFromUrl.client.tsx` (or equivalent) already renders these i18n keys — this task is copy-only.\n\n**Key constraint:** all three locales (es, en, pt) must have the exact same key set after editing — no new keys in one locale without the equivalent in the others.\n\nAC-3.1: Booking entry warns against Share-... links and instructs canonical URL.\nAC-3.2: copy exists in es, en, pt with no missing-key warnings.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-009"],
             "subtasks": [
                 {
                     "title": "Update booking.steps in es/host.json with canonical URL instruction + Share-... warning",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update booking.steps in en/host.json (same content, translated)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update booking.steps in pt/host.json (same content, translated)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["i18n", "copy", "booking", "google", "core"],
@@ -175,30 +175,30 @@
             },
             "timestamps": {
                 "created": "2026-06-22T02:36:01Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-22T13:05:57Z",
+                "completed": "2026-06-22T13:05:57Z"
             }
         },
         {
             "id": "T-006",
             "title": "Non-mocked safe-fetch resolve-only integration test",
             "description": "Add a NON-mocked integration test for the `resolveOnly` mode in `packages/utils/test/safe-fetch.integration.test.ts`. This is the undici-7 regression guard: a mocked test would not catch the class of bugs where undici's agent-destroy lifecycle breaks body streaming (the exact failure mode of the prod bug fixed in PR #1747).\n\n**Test scenario to add:**\n\nUsing the existing real-HTTPS-server harness in the test file (which already spins up a local HTTPS server with a self-signed openssl cert for integration testing):\n\n1. Add a route chain: `GET /short → 302 redirect → /canonical` where `/canonical` returns a 200 response with a **body larger than any reasonable `maxBytes` value** (e.g., 10 KB of filler text).\n2. Call `safeExternalFetch({ url: 'https://localhost:<port>/short', resolveOnly: true })`.\n3. Assert:\n   - `result.ok === true`\n   - `result.finalUrl` ends with `/canonical` (the terminal URL was resolved)\n   - `result.body === ''` (the large terminal body was NOT read)\n\n**Why non-mocked matters:** if resolveOnly were tested only with mocks, a regression in the undici-7 agent-destroy ordering (like the prod bug) would pass tests but break in production, exactly as happened before PR #1747.\n\n**Also add (optional but recommended):** a separate test verifying that the non-resolveOnly default mode on the same route chain still returns the full body (regression guard for AC-2.5).\n\n**Key file:** `packages/utils/test/safe-fetch.integration.test.ts`\n\nRelated: AC-2.1, AC-2.3, AC-2.5.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002"],
             "blocks": ["T-010"],
             "subtasks": [
                 {
                     "title": "Add /short→302→/canonical route with large body to existing HTTPS test server setup",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Assert resolveOnly=true: ok=true, finalUrl ends with /canonical, body===''",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Assert that terminal body larger than maxBytes does NOT produce SafeFetchBlocked under resolveOnly",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["utils", "safe-fetch", "test", "integration", "undici", "regression-guard"],
@@ -210,34 +210,34 @@
             },
             "timestamps": {
                 "created": "2026-06-22T02:36:01Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-22T13:05:57Z",
+                "completed": "2026-06-22T13:05:57Z"
             }
         },
         {
             "id": "T-007",
             "title": "Unit tests: resolveCanonicalUrl rewire + adapter routing",
             "description": "Add unit tests for the changes made in T-003 to `packages/service-core/src/services/accommodation-import/accommodation-import.service.ts`.\n\n**Tests to write (in the existing service test file, typically `packages/service-core/test/services/accommodation-import/accommodation-import.service.test.ts` or similar):**\n\n1. **resolveCanonicalUrl — happy path:** mock `safeExternalFetch` to return `{ ok: true, finalUrl: 'https://www.google.com/maps/place/Cheroga/@-32.48,-58.23/...', body: '' }` for input `https://maps.app.goo.gl/dCaudGsZ8r9fKvWk9`. Assert `resolveCanonicalUrl` returns the resolved canonical URL.\n2. **resolveCanonicalUrl — no redirect (same URL):** mock `safeExternalFetch` to return `{ ok: true, finalUrl: inputUrl, body: '' }`. Assert the function returns `inputUrl` (fallback semantics).\n3. **resolveCanonicalUrl — failure:** mock `safeExternalFetch` to return `{ ok: false }` or throw. Assert the function returns `inputUrl` (graceful degradation, no throw).\n4. **Orchestration routing — resolved Google URL routes to GooglePlacesAdapter:** mock `resolveCanonicalUrl` to return a `www.google.com/maps/place/...` URL. Confirm the orchestrator's `detectSource` + `_pickAdapter` maps this to `GooglePlacesAdapter`, not the raw Google Maps Embed path or an unknown adapter.\n\n**Key file:** `packages/service-core/test/services/accommodation-import/` (find the existing test file — do NOT create a parallel test file if one already exists).\n\nAC-1.1, AC-1.3.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-003"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Test resolveCanonicalUrl returns resolved URL when safeExternalFetch succeeds with different finalUrl",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test resolveCanonicalUrl returns inputUrl when finalUrl === inputUrl",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test resolveCanonicalUrl returns inputUrl on safeExternalFetch failure (no throw)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test orchestration routes resolved www.google.com/maps URL to GooglePlacesAdapter",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "accommodation-import", "test", "unit", "google"],
@@ -249,34 +249,34 @@
             },
             "timestamps": {
                 "created": "2026-06-22T02:36:01Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-22T13:05:57Z",
+                "completed": "2026-06-22T13:05:57Z"
             }
         },
         {
             "id": "T-008",
             "title": "Unit tests: Airbnb mapping enrichment",
             "description": "Add unit tests for the Airbnb adapter enrichment changes made in T-004, covering `mapItemToRawExtraction` in `packages/service-core/src/services/accommodation-import/adapters/airbnb.adapter.ts`.\n\n**Tests to write (in the existing adapter test file, likely `packages/service-core/test/services/accommodation-import/adapters/airbnb.adapter.test.ts`):**\n\n1. **summary present:** given an `AirbnbItem` with `summary: 'A beautiful cabin'`, assert `mapItemToRawExtraction` returns `{ ..., summary: 'A beautiful cabin' }`.\n2. **summary absent:** given an `AirbnbItem` without `summary` (undefined), assert the returned object does NOT have a `summary` key (or it's explicitly `undefined` — but NOT an empty string or null that could pollute the draft).\n3. **amenities present (string array):** given `amenities: ['WiFi', 'Pool']`, assert `amenityNames` is `['WiFi', 'Pool']`.\n4. **amenities present (object array):** if the actor returns `amenities: [{ name: 'WiFi' }, { name: 'Pool' }]`, assert the adapter extracts `['WiFi', 'Pool']` (confirm the shape from T-010 first; skip this variant if the actor always returns strings).\n5. **amenities absent:** assert the field is omitted cleanly.\n6. **beds present:** given `beds: 3`, assert `extraInfo.beds === 3`.\n7. **beds absent:** assert `extraInfo.beds` is not set.\n8. **Existing fields unchanged:** use a fixture with all new fields AND all existing fields; assert name/description/type/coords/price/etc. are identical to the pre-enrichment snapshot.\n\n**Key file:** find the existing test file path with `find packages/service-core/test -name 'airbnb*'`.\n\nAC-4.1, AC-4.2, AC-4.3, AC-4.4.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-004"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Test summary field: present maps to RawExtraction.summary; absent omits field",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test amenities field: present maps to RawExtraction.amenityNames array; absent omits field",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test beds field: present maps to RawExtraction.extraInfo.beds; absent omits field",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test existing fields unchanged (regression snapshot)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "airbnb", "adapter", "test", "unit"],
@@ -288,22 +288,22 @@
             },
             "timestamps": {
                 "created": "2026-06-22T02:36:01Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-22T13:05:57Z",
+                "completed": "2026-06-22T13:05:57Z"
             }
         },
         {
             "id": "T-009",
             "title": "i18n suite passes (no missing keys)",
             "description": "Run the i18n vitest suite to confirm that after the host.json edits from T-005, all three locales (es, en, pt) are in parity and there are no missing-key warnings.\n\n**Command:** `pnpm exec vitest run packages/i18n` (NOT `pnpm test` — the full suite causes OOM; run one file at a time).\n\n**What this validates:**\n- The new/updated Booking steps keys exist in all three locales.\n- No locale has an extra key that the others lack.\n- The i18n test suite passes 100% (currently at 638 tests per the SPEC-195 memory entry — expect that count to stay equal or increase).\n\n**If the suite fails:** fix the key parity issue in `packages/i18n/src/locales/` before marking this task done. A common failure is adding a new sub-key in one locale and forgetting to mirror it in the others.\n\n**Key files:** `packages/i18n/src/locales/es/host.json`, `packages/i18n/src/locales/en/host.json`, `packages/i18n/src/locales/pt/host.json`.\n\nAC-3.2.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-005"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Run pnpm exec vitest run packages/i18n and confirm all tests pass",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["i18n", "test", "parity", "booking"],
@@ -315,8 +315,8 @@
             },
             "timestamps": {
                 "created": "2026-06-22T02:36:01Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-22T13:05:57Z",
+                "completed": "2026-06-22T13:05:57Z"
             }
         },
         {
@@ -401,10 +401,8 @@
     "summary": {
         "total": 11,
         "byStatus": {
-            "pending": 11,
-            "in_progress": 0,
-            "completed": 0,
-            "blocked": 0
+            "pending": 3,
+            "completed": 8
         },
         "byPhase": {
             "setup": 1,
