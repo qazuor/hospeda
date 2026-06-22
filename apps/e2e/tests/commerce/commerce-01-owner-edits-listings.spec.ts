@@ -240,10 +240,17 @@ test.describe('COMMERCE-01: commerce owner edits listings — both verticals @p0
         // shift intercepts the pointer. force:true performs a real click at the element's
         // box, bypassing the obstruction + stability checks (Playwright still scrolls it
         // into view). The toBeEnabled assertion above already guards against a disabled save.
+        // Wait for the actual PATCH to the protected API rather than the transient
+        // <output> success element, which can appear and vanish before Playwright's
+        // assertion polls it. Register the wait BEFORE the click, then assert the save
+        // succeeded — if the PATCH itself fails, .ok() surfaces the real status.
+        const gastroPatch = page.waitForResponse(
+            (r) => /\/protected\/gastronomies\//.test(r.url()) && r.request().method() === 'PATCH',
+            { timeout: 15_000 }
+        );
         await saveButton.click({ force: true });
-
-        // Success feedback: an <output> element appears after the PATCH succeeds.
-        await expect(page.locator('output')).toBeVisible({ timeout: 10_000 });
+        const gastroSaved = await gastroPatch;
+        expect(gastroSaved.ok()).toBe(true);
 
         // ── Step 3 assertion: public gastronomy ficha reflects new menuUrl ─────
 
@@ -303,9 +310,14 @@ test.describe('COMMERCE-01: commerce owner edits listings — both verticals @p0
 
         // force:true — same non-deterministic actionability timeout as the gastronomy
         // save; the button is enabled (asserted above), so force the real click.
+        // Wait for the real PATCH instead of the transient <output> element.
+        const expPatch = page.waitForResponse(
+            (r) => /\/protected\/experiences\//.test(r.url()) && r.request().method() === 'PATCH',
+            { timeout: 15_000 }
+        );
         await expSaveButton.click({ force: true });
-
-        await expect(page.locator('output')).toBeVisible({ timeout: 10_000 });
+        const expSaved = await expPatch;
+        expect(expSaved.ok()).toBe(true);
 
         // ── Step 4 assertion: public experience ficha reflects new description ─
 
