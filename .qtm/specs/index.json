@@ -1569,7 +1569,7 @@
             "title": "Asynchronous external reputation refresh (Apify async API + polling)",
             "type": "improvement",
             "complexity": "high",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-250-external-reputation-async-refresh",
             "created": "2026-06-20T00:00:00.000Z",
             "base": "staging",
