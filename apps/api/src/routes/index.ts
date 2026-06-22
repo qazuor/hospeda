@@ -100,6 +100,10 @@ import { publicFeedbackRoutes } from './feedback';
 import { adminGeocodingRoutes, protectedGeocodingRoutes } from './geocoding';
 import { dbHealthRoutes, healthRoutes, liveRoutes, readyRoutes } from './health';
 import { mediaHealthRoutes } from './health/media';
+import {
+    makeClaimCallbackRoute,
+    makeResultCallbackRoute
+} from './integrations/make/social/jobs/index.js';
 import { adminMediaRoutes } from './media/admin';
 import { protectedMediaRoutes } from './media/protected';
 import { metricsRoutes } from './metrics';
@@ -495,6 +499,12 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // AI social draft submission (SPEC-254 T-029): API-key + operator_pin gated.
         // Custom GPT submits a structured social post draft for admin review.
         app.route('/api/v1/ai/social/drafts', aiSocialDraftsRoute);
+
+        // Make.com inbound callbacks (SPEC-254 T-048): authenticated via x-hospeda-make-key.
+        // POST /claim — Make picks up a dispatched job and records its run ID (US-12).
+        // POST /result — Make reports the publish outcome SUCCESS/FAILED (US-13).
+        app.route('/api/v1/integrations/make/social/jobs', makeClaimCallbackRoute);
+        app.route('/api/v1/integrations/make/social/jobs', makeResultCallbackRoute);
 
         // Media (entity image uploads + asset deletion)
         app.route('/api/v1/admin/media', adminMediaRoutes);

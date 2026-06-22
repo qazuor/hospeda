@@ -1741,7 +1741,7 @@
             "id": "T-048",
             "title": "Implement Make callback routes (claim and result)",
             "description": "Create route files in `apps/api/src/routes/integrations/make/social/`:\n\n`claim.route.ts` — POST /api/v1/integrations/make/social/jobs/:targetId/claim:\n- Use `createApiKeyRoute` with `{ headerName: 'x-hospeda-make-key', envVarKey: 'HOSPEDA_MAKE_INBOUND_KEY', errorCode: 'UNAUTHORIZED' }`\n- Body: `{ makeRunId: string }` (Zod-validated)\n- Calls `SocialPublishDispatchService.handleMakeCallbackClaim(targetId, makeRunId)`\n- Maps: 404 → HTTP 404, 409 ALREADY_PUBLISHED → HTTP 409, success → HTTP 200\n\n`result.route.ts` — POST /api/v1/integrations/make/social/jobs/:targetId/result:\n- Same Make key middleware\n- Body: `{ makeRunId, status: 'SUCCESS'|'FAILED', externalPostId?, externalPostUrl?, errorMessage? }` (Zod-validated, status is required)\n- Calls `SocialPublishDispatchService.handleMakeCallbackResult(targetId, result)`\n- Returns HTTP 200 with final state\n\nRegister both under `/api/v1/integrations/make/social`.\n\nTest requirements:\n- Integration tests: invalid Make key → 401, valid claim → 200, claim on published target → 409, valid result SUCCESS → 200 post status cascaded, result FAILED retry_count < 3 → 200 target reset\n- File: `apps/api/src/__tests__/routes/integrations/make/social/callbacks.test.ts`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-047", "T-025", "T-043"],
             "blocks": ["T-049"],

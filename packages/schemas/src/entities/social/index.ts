@@ -32,3 +32,6 @@ export * from './social-dashboard.schema.js';
 
 // Make.com dispatch payload schema (T-044)
 export * from './social-make-payload.schema.js';
+
+// Make.com inbound callback schemas (T-048)
+export * from './social-make-callback.schema.js';
