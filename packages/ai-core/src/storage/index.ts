@@ -62,3 +62,19 @@ export {
     countAiUsageForUserFeatureMonth,
     type CountAiUsageForUserFeatureMonthInput
 } from './usage.queries.js';
+
+// SPEC-260: new aggregate queries — byModel, byProvider, byFeatureModel, daily
+export {
+    aggregateAiUsageByModel,
+    aggregateAiUsageByProvider,
+    aggregateAiUsageByFeatureModel,
+    aggregateAiUsageDaily,
+    type AggregateAiUsageByModelInput,
+    type AggregateAiUsageByProviderInput,
+    type AggregateAiUsageByFeatureModelInput,
+    type AggregateAiUsageDailyInput,
+    type AiUsageByModelAggRow,
+    type AiUsageByProviderAggRow,
+    type AiUsageByFeatureModelAggRow,
+    type AiUsageDailyAggRow
+} from './usage.queries.js';
