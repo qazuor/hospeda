@@ -486,6 +486,18 @@ async function _doFetch(params: FetchParams): Promise<SafeFetchResult> {
                     finalUrl: currentUrl
                 };
             } catch (fetchErr) {
+                // A SafeFetchBlocked thrown by the body handling (e.g. the
+                // maxBytes cap in readBodyCapped, which calls abort() before
+                // throwing) must propagate verbatim — it already carries its own
+                // reason. Only a genuine timeout/abort with no blocked payload is
+                // reclassified as a timeout below.
+                if (
+                    fetchErr !== null &&
+                    typeof fetchErr === 'object' &&
+                    (fetchErr as { blocked?: unknown }).blocked === true
+                ) {
+                    throw fetchErr;
+                }
                 if (abortController.signal.aborted) {
                     throwBlocked(`Request timed out after ${timeoutMs} ms`);
                 }
