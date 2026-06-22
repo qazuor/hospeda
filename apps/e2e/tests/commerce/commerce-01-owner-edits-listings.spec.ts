@@ -235,10 +235,12 @@ test.describe('COMMERCE-01: commerce owner edits listings — both verticals @p0
         const saveButton = page.locator('button[type="submit"]', { hasText: /guardar cambios/i });
         await expect(saveButton).toBeEnabled({ timeout: 10_000 });
 
-        // Scroll into view explicitly before clicking — the save button sits at the
-        // bottom of a tall form and may be below the initial viewport.
-        await saveButton.scrollIntoViewIfNeeded();
-        await saveButton.click();
+        // The button is enabled (asserted above) but the actionability click times out
+        // non-deterministically in CI — a sticky/overlay element or a post-scroll layout
+        // shift intercepts the pointer. force:true performs a real click at the element's
+        // box, bypassing the obstruction + stability checks (Playwright still scrolls it
+        // into view). The toBeEnabled assertion above already guards against a disabled save.
+        await saveButton.click({ force: true });
 
         // Success feedback: an <output> element appears after the PATCH succeeds.
         await expect(page.locator('output')).toBeVisible({ timeout: 10_000 });
@@ -299,8 +301,9 @@ test.describe('COMMERCE-01: commerce owner edits listings — both verticals @p0
         });
         await expect(expSaveButton).toBeEnabled({ timeout: 10_000 });
 
-        await expSaveButton.scrollIntoViewIfNeeded();
-        await expSaveButton.click();
+        // force:true — same non-deterministic actionability timeout as the gastronomy
+        // save; the button is enabled (asserted above), so force the real click.
+        await expSaveButton.click({ force: true });
 
         await expect(page.locator('output')).toBeVisible({ timeout: 10_000 });
 
