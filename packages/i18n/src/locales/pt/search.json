@@ -2,6 +2,7 @@
     "label": "Buscar",
     "submit": "Buscar",
     "loading": "Buscando...",
+    "searching": "Buscando…",
     "resultsFor": "Resultados para \"{{query}}\"",
     "popular": "Buscas populares",
     "groups": {

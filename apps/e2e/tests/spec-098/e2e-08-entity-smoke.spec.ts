@@ -28,6 +28,7 @@
 
 import { expect, test } from '@playwright/test';
 import { createUser } from '../../fixtures/api-helpers.ts';
+import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
@@ -54,6 +55,10 @@ interface BookmarkListResponse {
 
 test.describe('E2E-08: entity smoke tests (DESTINATION, EVENT, POST) @p1 @favorites @smoke @spec-098', () => {
     let userId: string | null = null;
+
+    test.beforeEach(async ({ page }) => {
+        await seedCookieConsent(page);
+    });
 
     test.afterEach(async () => {
         if (userId) {

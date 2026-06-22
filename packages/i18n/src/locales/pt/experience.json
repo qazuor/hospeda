@@ -80,7 +80,8 @@
         "title": "Avaliações",
         "submit": "Deixar avaliação",
         "empty": "Ainda não há avaliações. Seja o primeiro a comentar!",
-        "more": "+ {{n}} avaliações"
+        "more": "+ {{n}} avaliações",
+        "loading": "Carregando avaliações…"
     },
     "faq": {
         "heading": "Perguntas frequentes"

@@ -7,6 +7,7 @@
         "reopen": "Reabrir",
         "reply": "Responder",
         "requestAccess": "Solicitar acesso",
+        "requestAccessLoading": "Solicitando…",
         "unarchive": "Desarquivar",
         "viewConversation": "Ver conversa"
     },
@@ -83,6 +84,7 @@
         "requestAccessTitle": "Acessar sua conversa",
         "requestNewLinkCta": "Solicitar um novo link",
         "submit": "Enviar mensagem",
+        "submitting": "Enviando…",
         "verifyExpiredBody": "O link de verificacao expirou ou ja foi utilizado. Voce pode solicitar um novo informando seu e-mail.",
         "verifyExpiredTitle": "Link expirado",
         "viewExisting": "Ver conversa existente",
@@ -135,6 +137,7 @@
         "readByOwner": "Lido pelo anfitriao",
         "replyPlaceholder": "Escreva sua resposta...",
         "send": "Enviar",
+        "sending": "Enviando…",
         "systemMessage": "Mensagem do sistema",
         "title": "Conversa com {senderName}"
     }

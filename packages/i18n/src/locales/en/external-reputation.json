@@ -38,7 +38,8 @@
         "lastUpdated": "Last updated: {{date}}",
         "rateLimitHit": "You can refresh again in {{minutes}} minutes",
         "googleOnlyExplainer": "Review text is only available for Google. Other platforms display the score and a link.",
-        "verifiedHint": "The link has been verified and corresponds to this accommodation"
+        "verifiedHint": "The link has been verified and corresponds to this accommodation",
+        "loading": "Loading listings…"
     },
     "errors": {
         "fetchFailed": "Could not load external reviews. Please try again later.",

@@ -41,6 +41,7 @@
 
 import { expect, test } from '@playwright/test';
 import { signInExistingUser } from '../../fixtures/api-helpers.ts';
+import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 import { execSQL } from '../../fixtures/db-helpers.ts';
 
 // ---------------------------------------------------------------------------
@@ -100,6 +101,10 @@ test.describe('COMMERCE-01: commerce owner edits listings — both verticals @p1
      */
     let originalMenuUrl: string | null = null;
     let originalRichDescription: string | null = null;
+
+    test.beforeEach(async ({ page }) => {
+        await seedCookieConsent(page);
+    });
 
     test.afterEach(async () => {
         // Restore the gastronomy menuUrl to the seeded value.

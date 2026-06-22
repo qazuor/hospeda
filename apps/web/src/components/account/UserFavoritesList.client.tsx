@@ -30,6 +30,7 @@
  * Hydration: caller must use `client:load`.
  */
 
+import { SkeletonCardList } from '@/components/shared/feedback/SkeletonCard';
 import { translateApiError } from '@/lib/api-errors';
 import type { BookmarkCollectionItem } from '@/lib/api/endpoints-protected';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -725,8 +726,13 @@ export function UserFavoritesList({ locale, apiUrl }: UserFavoritesListProps) {
                         className={styles.loadingWrap}
                         aria-live="polite"
                         aria-busy="true"
+                        aria-label={t('common.loading', 'Cargando…')}
                     >
-                        {t('common.loading', 'Cargando…')}
+                        <SkeletonCardList
+                            count={6}
+                            cardHeight="7rem"
+                            gap="var(--space-card-gap, 1rem)"
+                        />
                     </div>
                 )}
 

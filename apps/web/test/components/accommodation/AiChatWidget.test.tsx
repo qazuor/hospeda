@@ -17,7 +17,7 @@ import { AiChatWidget } from '../../../src/components/accommodation/AiChatWidget
 
 vi.mock('@/lib/i18n', () => ({
     createTranslations: () => ({
-        t: (key: string) => {
+        t: (key: string, fallback?: string) => {
             const map: Record<string, string> = {
                 'accommodations.aiChat.fabLabel': 'Ask AI about this accommodation',
                 'accommodations.aiChat.panelLabel': 'AI Chat — Accommodation Questions',
@@ -28,6 +28,7 @@ vi.mock('@/lib/i18n', () => ({
                 'accommodations.aiChat.placeholder': 'Type your question here…',
                 'accommodations.aiChat.send': 'Send',
                 'accommodations.aiChat.sending': 'Sending…',
+                'accommodations.aiChat.thinking': 'Thinking…',
                 'accommodations.aiChat.errorDefault':
                     'Could not display the response. Please try again.',
                 'accommodations.aiChat.atCapMessage': "You've reached the conversation limit.",
@@ -36,9 +37,21 @@ vi.mock('@/lib/i18n', () => ({
                 'accommodations.aiChat.expand': 'Expand panel',
                 'accommodations.aiChat.collapse': 'Collapse panel'
             };
-            return map[key] ?? key;
+            return map[key] ?? fallback ?? key;
         }
     })
+}));
+
+vi.mock('@/components/shared/feedback/Spinner.module.css', () => ({
+    default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
+}));
+
+vi.mock('@/components/shared/feedback/LoadingButton.module.css', () => ({
+    default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
+}));
+
+vi.mock('../../../src/components/accommodation/AiChatWidget.module.css', () => ({
+    default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
 }));
 
 const mockUseAccommodationChat = vi.fn();
@@ -307,5 +320,84 @@ describe('AiChatWidget', () => {
             name: 'Ask AI about this accommodation'
         });
         expect(document.activeElement).toBe(fabAfterClose);
+    });
+
+    // ─── T-009: send button shows Spinner, no emoji while streaming ──────────
+
+    it('T-009: send button shows Spinner (not emoji) while streaming', async () => {
+        // Arrange: streaming state
+        mockUseAccommodationChat.mockReturnValue({
+            ...idleChatState,
+            state: {
+                ...idleChatState.state,
+                status: 'streaming' as const,
+                currentAssistantContent: 'Hello'
+            }
+        });
+
+        const user = userEvent.setup();
+        render(<AiChatWidget {...defaultProps} />);
+        await user.click(screen.getByRole('button', { name: 'Ask AI about this accommodation' }));
+
+        // No literal emoji text in the send button area
+        expect(document.body.textContent).not.toContain('⏳');
+
+        // The send button should be present (disabled, aria-label 'Sending…')
+        const sendBtn = screen.getByRole('button', { name: 'Sending…' });
+        expect(sendBtn).toBeDisabled();
+    });
+
+    it('T-009: send button shows arrow icon when idle (not streaming)', async () => {
+        // Arrange: idle state
+        mockUseAccommodationChat.mockReturnValue(idleChatState);
+
+        const user = userEvent.setup();
+        render(<AiChatWidget {...defaultProps} />);
+        await user.click(screen.getByRole('button', { name: 'Ask AI about this accommodation' }));
+
+        // Arrow icon text should be present
+        const sendBtn = screen.getByRole('button', { name: 'Send' });
+        expect(sendBtn).toBeInTheDocument();
+        expect(sendBtn.textContent).toContain('↑');
+    });
+
+    it('T-009: shows thinking indicator when streaming with no assistant content yet', async () => {
+        // Arrange: streaming but no currentAssistantContent → showThinking = true
+        mockUseAccommodationChat.mockReturnValue({
+            ...idleChatState,
+            state: {
+                ...idleChatState.state,
+                status: 'streaming' as const,
+                currentAssistantContent: ''
+            }
+        });
+
+        const user = userEvent.setup();
+        render(<AiChatWidget {...defaultProps} />);
+        await user.click(screen.getByRole('button', { name: 'Ask AI about this accommodation' }));
+
+        // The thinking indicator <output> has aria-label with the i18n text
+        const thinkingEl = document.querySelector('output[aria-label="Thinking…"]');
+        expect(thinkingEl).not.toBeNull();
+        expect(thinkingEl?.textContent).toContain('Thinking…');
+    });
+
+    it('T-009: thinking indicator is hidden once assistant content arrives', async () => {
+        // Arrange: streaming WITH content — showThinking should be false
+        mockUseAccommodationChat.mockReturnValue({
+            ...idleChatState,
+            state: {
+                ...idleChatState.state,
+                status: 'streaming' as const,
+                currentAssistantContent: 'Here is my answer…'
+            }
+        });
+
+        const user = userEvent.setup();
+        render(<AiChatWidget {...defaultProps} />);
+        await user.click(screen.getByRole('button', { name: 'Ask AI about this accommodation' }));
+
+        const thinkingEl = document.querySelector('output[aria-label="Thinking…"]');
+        expect(thinkingEl).toBeNull();
     });
 });

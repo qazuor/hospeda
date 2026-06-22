@@ -105,3 +105,10 @@
     padding: var(--space-2, 8px) var(--space-3, 12px);
     margin: 0;
 }
+
+/* Loading content wrapper — centers Spinner + label inline inside a button */
+.loadingContent {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}

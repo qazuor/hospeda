@@ -80,7 +80,8 @@
         "title": "Reseñas",
         "submit": "Dejar reseña",
         "empty": "Todavía no hay reseñas. ¡Sé el primero en opinar!",
-        "more": "+ {{n}} reseñas más"
+        "more": "+ {{n}} reseñas más",
+        "loading": "Cargando reseñas…"
     },
     "faq": {
         "heading": "Preguntas frecuentes"

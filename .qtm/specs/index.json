@@ -402,11 +402,26 @@
             "title": "Security Audit — Dependency Vulnerabilities Remediation",
             "type": "security",
             "complexity": "medium",
-            "status": "draft",
+            "status": "completed",
             "path": "SPEC-129-security-audit-vulnerabilities",
             "created": "2026-05-15T17:50:00.000Z",
+            "completed": "2026-06-22",
+            "archived": true,
+            "archivedAt": "2026-06-22",
             "extractedFrom": "SPEC-117 PR #1106 audit (2026-05-15)",
+            "archiveNote": "Phase-0 re-baseline (2026-06-22) found the gate already green: the 2 original blockers were resolved by intervening bumps (devalue HIGH -> 5.8.1 via Astro 6.4.7 PR #1700; sanitize-html CRITICAL advisory no longer matching). pnpm audit --prod --audit-level=high exits 0 and CI Security is green on staging. Scoped down (owner decision) to low-risk hardening: bumped dompurify 3.3.1->3.4.11 in apps/admin (cleared 16 advisories) + pnpm dedupe (cleared brace-expansion/postcss/yaml/smol-toml/markdown-it/@babel-core). Net 51->20 advisories, 0 critical/high. The dedupe had a side effect (promoted zod 4.3.6->4.4.3 via root range ^4.0.8, breaking Build/Guards/E2E with a .merge()-on-refined runtime throw) — fixed by pinning pnpm.overrides 'zod@>=4.0.0 <5':4.3.6 (scoped to 4.x so zod 3.x consumers like admin/vite.config z.function().args still work; also fixes a latent repo-wide risk; remove in SPEC-132 Zod migration). Remaining 20 moderate/low deferred to SPEC-263 (framework bumps + overrides) and documented in risk-accepted.md.",
             "tags": ["security", "dependencies", "supply-chain", "ci", "vulnerability"]
+        },
+        {
+            "specId": "SPEC-263",
+            "title": "Security deps moderate remediation (framework bumps + overrides)",
+            "type": "security",
+            "complexity": "medium",
+            "status": "draft",
+            "path": "SPEC-263-security-deps-moderate-remediation",
+            "created": "2026-06-22T00:00:00.000Z",
+            "extractedFrom": "SPEC-129 low-risk pass (2026-06-22)",
+            "tags": ["security", "dependencies", "supply-chain", "framework-bump", "overrides"]
         },
         {
             "specId": "SPEC-142",
@@ -1289,12 +1304,15 @@
             "title": "Create post from data with AI",
             "type": "feature",
             "complexity": "medium-high",
-            "status": "draft",
+            "status": "completed",
             "path": "SPEC-223-ai-post-generation",
             "created": "2026-06-13T12:00:00Z",
             "tags": ["posts", "ai", "ai-core", "content", "admin", "feature"],
-            "archived": false,
-            "note": "Admin gives topic + key points, AI generates a post draft (title/summary/content). New 'post_generate' AiFeature + admin-tier streaming route, replicating the text-improve pattern. Drafted 2026-06-13, ready to implement."
+            "archived": true,
+            "note": "Admin gives topic + key points, AI generates a post draft (title/summary/content). New 'post_generate' AiFeature + admin-tier streaming route, replicating the text-improve pattern. Drafted 2026-06-13, ready to implement.",
+            "completed": "2026-06-22T16:00:00Z",
+            "archivedAt": "2026-06-22T16:00:00Z",
+            "archiveNote": "Shipped via PR #1737; full live Chrome smoke (T-015) GO with Ollama. 5 integration bugs fixed during smoke."
         },
         {
             "specId": "SPEC-224",
@@ -1367,7 +1385,7 @@
             "title": "Web loading-states consistency & coverage",
             "type": "feature",
             "complexity": "high",
-            "status": "draft",
+            "status": "completed",
             "path": "SPEC-228-web-loading-states-consistency",
             "created": "2026-06-13T12:00:00Z",
             "tags": [
@@ -1379,8 +1397,11 @@
                 "consistency",
                 "design-system"
             ],
-            "archived": false,
-            "note": "ONE canonical loading toolkit (React Spinner/Skeleton + LoadingButton + convention doc) to replace the 'mil maneras' of showing loading (text '...', emoji, ad-hoc spinners). Phase 1 foundation, then migrate audited cases by priority: map zoom/pan sidebar (isFetching unused), eventos/publicaciones skeleton-swap parity, AiChatWidget thinking indicator, review modals, ContactHost double-submit, ConversationReply. From the 2026-06-13 web UX audit. Drafted, ready to implement."
+            "archived": true,
+            "note": "ONE canonical loading toolkit (React Spinner/Skeleton + LoadingButton + convention doc) to replace the 'mil maneras' of showing loading (text '...', emoji, ad-hoc spinners). Phase 1 foundation, then migrate audited cases by priority: map zoom/pan sidebar (isFetching unused), eventos/publicaciones skeleton-swap parity, AiChatWidget thinking indicator, review modals, ContactHost double-submit, ConversationReply. From the 2026-06-13 web UX audit. Drafted, ready to implement.",
+            "archivedAt": "2026-06-22",
+            "archiveNote": "Merged to staging via PR #1739 (merge commit d17adf9d9). 22/22 tasks: canonical loading toolkit (Spinner/SkeletonCard/LoadingButton) + 15 island migrations + Astro skeleton-swaps + CI guard. Browser smoke + full CI green.",
+            "completed": "2026-06-22T00:00:00Z"
         },
         {
             "specId": "SPEC-235",
@@ -1694,6 +1715,19 @@
             "base": "staging",
             "dependsOn": ["SPEC-252"],
             "tags": ["e2e", "playwright", "testing", "commerce", "ci", "dev-infra"]
+        },
+        {
+            "specId": "SPEC-264",
+            "title": "Frictionless dev/test user setup",
+            "slug": "frictionless-dev-test-users",
+            "type": "improvement",
+            "complexity": "medium",
+            "status": "in-progress",
+            "path": "SPEC-264-frictionless-dev-test-users",
+            "created": "2026-06-22T00:00:00Z",
+            "base": "staging",
+            "dependsOn": [],
+            "tags": ["seed", "dev-experience", "testing", "onboarding", "test-users"]
         }
     ]
 }

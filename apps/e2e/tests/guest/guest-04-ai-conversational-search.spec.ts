@@ -36,6 +36,7 @@
  */
 
 import { expect, test } from '@playwright/test';
+import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 
 const WEB_URL = process.env.HOSPEDA_E2E_WEB_URL ?? 'http://localhost:4321';
 
@@ -46,6 +47,10 @@ const FIRST_TURN_TIMEOUT = 60_000;
 const SECOND_TURN_TIMEOUT = 45_000;
 
 test.describe('GUEST-04: conversational AI search panel @p1 @guest @ai', () => {
+    test.beforeEach(async ({ page }) => {
+        await seedCookieConsent(page);
+    });
+
     test('anonymous user can query the AI panel and refine results', async ({ page }) => {
         // ── 1. Navigate to the listings page ──────────────────────────────────
         await page.goto(`${WEB_URL}/es/alojamientos/`, { waitUntil: 'domcontentloaded' });

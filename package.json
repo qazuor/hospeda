@@ -39,7 +39,8 @@
         "check:getbyid-tests": "bash scripts/check-getbyid-tests.sh",
         "check:inline-nonce": "bash scripts/check-inline-nonce.sh",
         "check:env-registry": "bash scripts/check-env-registry.sh",
-        "check:guards": "pnpm check:circular && pnpm check:cloudinary-isolation && pnpm check:bare-cloudinary-img && pnpm check:csp-patterns && pnpm check:unsafe-ilike && pnpm check:type-casts && pnpm check:getbyid-tests && pnpm check:inline-nonce && pnpm check:env-registry",
+        "check:web-loading": "bash scripts/check-web-loading-patterns.sh",
+        "check:guards": "pnpm check:circular && pnpm check:cloudinary-isolation && pnpm check:bare-cloudinary-img && pnpm check:csp-patterns && pnpm check:unsafe-ilike && pnpm check:type-casts && pnpm check:getbyid-tests && pnpm check:inline-nonce && pnpm check:env-registry && pnpm check:web-loading",
         "format:md": "markdownlint-cli2 '**/*.md' --fix",
         "format:md:claude": "markdownlint-cli2 '.claude/**/*.md' --fix",
         "lint:md": "markdownlint-cli2 '**/*.md'",
@@ -63,6 +64,7 @@
         "db:studio": "pnpm --filter @repo/db db:studio",
         "db:seed": "pnpm --filter @repo/seed seed --reset --required --example",
         "db:seed:test-users": "pnpm --filter @repo/seed seed:test-users",
+        "db:seed:ready-user": "pnpm --filter @repo/seed seed:ready-user",
         "pgadmin:start": "docker compose --env-file docker/.env up -d pgadmin",
         "pgadmin:stop": "docker compose --env-file docker/.env stop pgadmin",
         "telemetry:report": "tsx .claude/scripts/telemetry-report.ts",
@@ -110,6 +112,7 @@
     "workspaces": ["apps/*", "packages/*"],
     "pnpm": {
         "overrides": {
+            "zod@>=4.0.0 <5": "4.3.6",
             "ws": ">=8.21.0",
             "form-data": ">=4.0.6",
             "protobufjs": ">=7.6.1",

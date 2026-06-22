@@ -18,6 +18,7 @@
         "openSheet": "View cards",
         "openSheetCount_one": "View {{count}} result",
         "openSheetCount_other": "View {{count}} results",
-        "closeSheet": "Close"
+        "closeSheet": "Close",
+        "loading": "Loading results…"
     }
 }

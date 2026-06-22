@@ -3,7 +3,7 @@ spec-id: SPEC-228
 title: Web loading-states consistency & coverage
 type: feature
 complexity: high
-status: draft
+status: completed
 created: 2026-06-13T12:00:00Z
 ---
 

@@ -7,6 +7,7 @@
         "reopen": "Reabrir",
         "reply": "Responder",
         "requestAccess": "Solicitar acceso",
+        "requestAccessLoading": "Solicitando…",
         "unarchive": "Desarchivar",
         "viewConversation": "Ver conversación"
     },
@@ -83,6 +84,7 @@
         "requestAccessTitle": "Acceder a tu conversación",
         "requestNewLinkCta": "Solicitar un nuevo enlace",
         "submit": "Enviar mensaje",
+        "submitting": "Enviando…",
         "verifyExpiredBody": "El enlace de verificación expiró o ya fue utilizado. Podés solicitar uno nuevo ingresando tu email.",
         "verifyExpiredTitle": "Enlace expirado",
         "viewExisting": "Ver conversación existente",
@@ -135,6 +137,7 @@
         "readByOwner": "Leído por el anfitrión",
         "replyPlaceholder": "Escribí tu respuesta...",
         "send": "Enviar",
+        "sending": "Enviando…",
         "systemMessage": "Mensaje del sistema",
         "title": "Conversación con {senderName}"
     }
