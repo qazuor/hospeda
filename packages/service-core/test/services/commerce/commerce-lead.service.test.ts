@@ -44,10 +44,11 @@ const createInput = {
 const mockLead = {
     id: LEAD_ID,
     ...createInput,
-    status: 'pending' as const,
+    status: 'pending' as string,
     handledAt: null,
     handledById: null,
     adminNote: null,
+    provisionedUserId: null as string | null,
     destinationId: null,
     createdAt: new Date(),
     updatedAt: new Date(),
@@ -245,6 +246,125 @@ describe('CommerceLeadService', () => {
             });
 
             expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+        });
+    });
+
+    describe('approveAndProvision (SPEC-249 Part D)', () => {
+        const PROVISIONED_USER_ID = '00000000-0000-4000-a000-000000000099';
+
+        function makeProvisioner() {
+            return {
+                provisionCommerceOwner: vi.fn().mockResolvedValue({
+                    data: {
+                        userId: PROVISIONED_USER_ID,
+                        email: 'juan@example.com',
+                        name: 'Juan Pérez'
+                    }
+                })
+            };
+        }
+
+        it('provisions the owner once and marks the lead approved + linked', async () => {
+            const service = makeService();
+            const model = makeLeadModel();
+            (service as any)._model = model;
+            const provisioner = makeProvisioner();
+
+            const result = await service.approveAndProvision(
+                adminActor,
+                { id: LEAD_ID, handledById: ACTOR_ID, adminNote: 'Welcome aboard' },
+                provisioner
+            );
+
+            expect(result.error).toBeUndefined();
+            expect(result.data?.provisioned).toBe(true);
+            expect(result.data?.userId).toBe(PROVISIONED_USER_ID);
+            expect(provisioner.provisionCommerceOwner).toHaveBeenCalledTimes(1);
+            // The lead update links the provisioned user + flips status to approved.
+            expect(model.update).toHaveBeenCalledWith(
+                { id: LEAD_ID },
+                expect.objectContaining({
+                    status: 'approved',
+                    provisionedUserId: PROVISIONED_USER_ID
+                }),
+                undefined
+            );
+        });
+
+        it('does NOT double-provision when the lead is already provisioned', async () => {
+            const service = makeService();
+            const model = makeLeadModel({
+                ...mockLead,
+                status: 'approved',
+                provisionedUserId: PROVISIONED_USER_ID
+            } as typeof mockLead);
+            (service as any)._model = model;
+            const provisioner = makeProvisioner();
+
+            const result = await service.approveAndProvision(
+                adminActor,
+                { id: LEAD_ID, handledById: ACTOR_ID },
+                provisioner
+            );
+
+            expect(result.error).toBeUndefined();
+            expect(result.data?.provisioned).toBe(false);
+            expect(result.data?.userId).toBe(PROVISIONED_USER_ID);
+            expect(provisioner.provisionCommerceOwner).not.toHaveBeenCalled();
+            expect(model.update).not.toHaveBeenCalled();
+        });
+
+        it('returns FORBIDDEN without COMMERCE_EDIT_ALL (never provisions)', async () => {
+            const service = makeService();
+            const model = makeLeadModel();
+            (service as any)._model = model;
+            const provisioner = makeProvisioner();
+
+            const result = await service.approveAndProvision(
+                guestActor,
+                { id: LEAD_ID, handledById: GUEST_ID },
+                provisioner
+            );
+
+            expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+            expect(provisioner.provisionCommerceOwner).not.toHaveBeenCalled();
+        });
+
+        it('returns NOT_FOUND when the lead does not exist', async () => {
+            const service = makeService();
+            const model = makeLeadModel();
+            model.findById.mockResolvedValue(null);
+            (service as any)._model = model;
+            const provisioner = makeProvisioner();
+
+            const result = await service.approveAndProvision(
+                adminActor,
+                { id: LEAD_ID, handledById: ACTOR_ID },
+                provisioner
+            );
+
+            expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+            expect(provisioner.provisionCommerceOwner).not.toHaveBeenCalled();
+        });
+
+        it('surfaces provisioning failure and leaves the lead unhandled (no update)', async () => {
+            const service = makeService();
+            const model = makeLeadModel();
+            (service as any)._model = model;
+            const provisioner = {
+                provisionCommerceOwner: vi.fn().mockResolvedValue({
+                    error: { code: ServiceErrorCode.INTERNAL_ERROR, message: 'duplicate email' }
+                })
+            };
+
+            const result = await service.approveAndProvision(
+                adminActor,
+                { id: LEAD_ID, handledById: ACTOR_ID },
+                provisioner
+            );
+
+            expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
+            expect(model.update).not.toHaveBeenCalled();
         });
     });
 });

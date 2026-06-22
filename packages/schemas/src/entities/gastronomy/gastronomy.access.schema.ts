@@ -180,7 +180,15 @@ export const GastronomyProtectedSchema = GastronomySchema.pick({
     richDescription: z
         .string()
         .max(5000, { message: 'zodError.commerce.richDescription.max' })
-        .nullish()
+        .nullish(),
+    /**
+     * Currently-associated amenity catalog IDs (junction read-back, SPEC-249).
+     * Populated by the protected getById route so the owner editor can seed
+     * its amenity multi-select; omitted on tiers that do not load junctions.
+     */
+    amenityIds: z.array(z.string().uuid()).optional(),
+    /** Currently-associated feature catalog IDs (junction read-back, SPEC-249). */
+    featureIds: z.array(z.string().uuid()).optional()
 });
 
 /** TypeScript type for {@link GastronomyProtectedSchema}. */
@@ -207,3 +215,33 @@ export const GastronomyAdminSchema = GastronomySchema.extend({
 
 /** TypeScript type for {@link GastronomyAdminSchema}. */
 export type GastronomyAdmin = z.infer<typeof GastronomyAdminSchema>;
+
+/**
+ * Admin LIST-row schema: the full admin entity plus the eager-loaded `owner`
+ * and `destination` relation summaries (the admin list query loads them via
+ * `findAllWithRelations`). The base {@link GastronomyAdminSchema} only carries
+ * the scalar FKs (`ownerId` / `destinationId`); without these relation fields
+ * the response strips them and the admin grid can only show raw UUIDs. Both are
+ * `nullish` because a freshly admin-created listing may not have an owner yet.
+ */
+export const GastronomyAdminListItemSchema = GastronomyAdminSchema.extend({
+    destination: z
+        .object({
+            id: z.string().uuid(),
+            name: z.string(),
+            slug: z.string()
+        })
+        .nullish(),
+    owner: z
+        .object({
+            id: z.string().uuid(),
+            displayName: z.string().nullish(),
+            firstName: z.string().nullish(),
+            lastName: z.string().nullish(),
+            email: z.string().nullish()
+        })
+        .nullish()
+});
+
+/** TypeScript type for {@link GastronomyAdminListItemSchema}. */
+export type GastronomyAdminListItem = z.infer<typeof GastronomyAdminListItemSchema>;

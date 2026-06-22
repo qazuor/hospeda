@@ -12,7 +12,7 @@ import { createEntityListPage } from '@/components/entity-list';
 import { EntityType } from '@/components/table/DataTable';
 import { createCommerceListConfig } from '@/features/commerce';
 import {
-    GastronomyAdminSchema,
+    GastronomyAdminListItemSchema,
     GastronomyTypeEnum,
     PermissionEnum,
     PriceRangeEnum
@@ -29,8 +29,17 @@ import { createGastronomyColumns } from './gastronomy.columns';
  * Picks the subset of fields actually rendered in columns.
  */
 export type GastronomyListItem = Pick<
-    z.infer<typeof GastronomyAdminSchema>,
-    'id' | 'name' | 'type' | 'priceRange' | 'destinationId' | 'isFeatured' | 'ownerId' | 'createdAt'
+    z.infer<typeof GastronomyAdminListItemSchema>,
+    | 'id'
+    | 'name'
+    | 'type'
+    | 'priceRange'
+    | 'destinationId'
+    | 'isFeatured'
+    | 'ownerId'
+    | 'createdAt'
+    | 'destination'
+    | 'owner'
 > & {
     /** Lifecycle state string rendered in the status column. */
     readonly lifecycleStatus?: string | null;
@@ -92,9 +101,14 @@ export const gastronomyListConfig = createCommerceListConfig<GastronomyListItem>
     apiEndpoint: '/api/v1/admin/gastronomies',
     basePath: '/gastronomies',
     detailPath: '/gastronomies/[id]',
-    // TYPE-WORKAROUND: GastronomyAdminSchema carries branded effects from @repo/schemas;
+    // Use the admin LIST schema, which keeps the eager-loaded `owner` and
+    // `destination` relation summaries. The base admin schema strips them, so the
+    // grid could only show raw FK UUIDs in the Destino / Propietario columns.
+    // TYPE-WORKAROUND: schema carries branded effects from @repo/schemas;
     // structurally compatible with the list-item shape, brand-only mismatch.
-    listItemSchema: GastronomyAdminSchema as unknown as import('zod').ZodSchema<GastronomyListItem>,
+    listItemSchema: GastronomyAdminListItemSchema as unknown as import(
+        'zod'
+    ).ZodSchema<GastronomyListItem>,
     createColumns: createGastronomyColumns,
     extraFilters: [
         {

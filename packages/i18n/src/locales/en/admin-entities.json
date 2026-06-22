@@ -883,7 +883,19 @@
         },
         "actions": {
             "handle": "Handle",
-            "provision": "Create account"
+            "provision": "Create account",
+            "approveProvision": "Approve & create account"
+        },
+        "approveProvision": {
+            "title": "Approve & create owner account",
+            "description": "The lead for {{businessName}} will be approved and a COMMERCE_OWNER account created for {{email}} in a single step. Temporary credentials will be sent by email.",
+            "noteLabel": "Note (optional)",
+            "notePlaceholder": "Internal comment for the team...",
+            "confirm": "Approve & create account",
+            "submitting": "Processing...",
+            "successMessage": "Lead approved and account created for {{email}}. Credentials have been sent by email.",
+            "alreadyProvisionedMessage": "The lead was already provisioned.",
+            "error": "Failed to approve and create the account. Please try again."
         },
         "handle": {
             "title": "Handle lead",

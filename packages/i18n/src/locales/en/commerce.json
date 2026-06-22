@@ -39,5 +39,47 @@
         "active": "Active",
         "hidden": "Hidden",
         "pending": "Pending"
+    },
+    "owner": {
+        "nav": "My business",
+        "list": {
+            "title": "My business",
+            "subtitle": "Manage the information of your published listings.",
+            "empty": "You don't have any listings assigned yet. An administrator must create your listing.",
+            "edit": "Edit",
+            "badge": {
+                "gastronomy": "Gastronomy",
+                "experience": "Experience"
+            }
+        },
+        "editor": {
+            "readOnlyNotice": "Name, category and location are managed by the Hospeda team. You can edit the operational information.",
+            "sections": {
+                "openingHours": "Opening hours",
+                "contactInfo": "Contact information",
+                "socialNetworks": "Social networks",
+                "media": "Photo gallery",
+                "menuUrl": "Menu link",
+                "priceRange": "Price range",
+                "richDescription": "Extended description",
+                "amenities": "Amenities",
+                "features": "Features"
+            },
+            "save": "Save changes",
+            "saving": "Saving...",
+            "success": "Changes saved.",
+            "error": "Changes could not be saved. Please try again.",
+            "media": {
+                "featured": "Featured image",
+                "gallery": "Photo gallery",
+                "add": "Add photo",
+                "remove": "Remove",
+                "uploadHint": "JPG, PNG or WebP — max. 5MB",
+                "invalidType": "Only JPG, PNG or WebP files are allowed",
+                "tooLarge": "The file cannot exceed 5MB",
+                "uploadFailed": "Error uploading the image",
+                "capReached": "Gallery limit reached (max. {{cap}} photos)"
+            }
+        }
     }
 }

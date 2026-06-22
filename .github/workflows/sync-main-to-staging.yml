@@ -1,0 +1,56 @@
+# Back-merge main into staging after any merge to main.
+#
+# Why this exists: Dependabot security updates ignore `target-branch` and are
+# always opened against `main` (the default branch). When such a fix merges to
+# `main`, `staging` falls behind on that security patch — and the next feature
+# PR on `staging` then fails the `pnpm audit` gate for a fix that only exists on
+# `main`. This workflow keeps the two lines in sync by opening (or reusing) a
+# `main` -> `staging` PR whenever `main` moves ahead.
+#
+# CI note: the default GITHUB_TOKEN does NOT trigger other workflows, so a PR it
+# opens starts without CI checks. Provide a fine-grained PAT in the `SYNC_PAT`
+# secret (Contents: read/write + Pull requests: read/write, scoped to this repo)
+# to have the sync PR run CI automatically. Without it, the PR still opens; just
+# re-trigger CI manually (a trivial push, or close/reopen).
+name: Sync main to staging
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  open-sync-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Open or reuse main -> staging PR
+        env:
+          GH_TOKEN: ${{ secrets.SYNC_PAT || secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          # Nothing to sync if staging already contains every commit on main.
+          if [ -z "$(git log origin/staging..origin/main --oneline)" ]; then
+            echo "staging is up to date with main; nothing to sync."
+            exit 0
+          fi
+
+          # Idempotent: reuse an already-open sync PR instead of duplicating it.
+          existing="$(gh pr list --head main --base staging --state open \
+            --json number --jq '.[0].number // empty')"
+          if [ -n "$existing" ]; then
+            echo "Sync PR #$existing already open; leaving it as-is."
+            exit 0
+          fi
+
+          gh pr create --base staging --head main \
+            --title "chore: back-merge main into staging (security sync)" \
+            --body "Auto-opened after a merge to \`main\` so \`staging\` does not fall behind on security fixes routed to \`main\` by Dependabot. Merge once CI is green. See the Dependabot security exception in CLAUDE.md."

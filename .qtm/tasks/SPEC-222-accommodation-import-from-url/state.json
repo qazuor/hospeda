@@ -1013,7 +1013,7 @@
             "id": "T-028",
             "title": "Polish: PostHog events + legal copy + smoke test",
             "description": "Optional ephemeral fire-and-forget PostHog events (accommodation_import_started/completed/failed) via getPostHogClient (no DB). Legal notice copy review. Manual smoke: import against a real JSON-LD page + one live Apify call. Mark spec open micro-decisions resolved.",
-            "status": "in_progress",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-020"],
             "blocks": [],
@@ -1042,8 +1042,9 @@
             "timestamps": {
                 "created": "2026-06-15T22:40:00.000Z",
                 "started": "2026-06-16T16:50:00.000Z",
-                "completed": null
-            }
+                "completed": "2026-06-22T15:10:22Z"
+            },
+            "closeNote": "Smoke + legal copy shipped (smoke PR #1748). PostHog import-analytics events moved to SPEC-258 (A7). Short-link resolution follow-up = SPEC-257."
         }
     ],
     "summary": {
@@ -1052,6 +1053,9 @@
         "inProgress": 1,
         "completed": 27,
         "blocked": 0,
-        "averageComplexity": 2.5
+        "averageComplexity": 2.5,
+        "byStatus": {
+            "completed": 28
+        }
     }
 }

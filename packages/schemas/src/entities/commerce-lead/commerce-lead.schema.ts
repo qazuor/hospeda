@@ -130,8 +130,25 @@ export const CommerceLeadSchema = z.object({
      */
     adminNote: z.string().max(1000, { message: 'zodError.commerceLead.adminNote.max' }).nullish(),
 
+    /**
+     * ID of the COMMERCE_OWNER user provisioned from this lead (SPEC-249 Part D).
+     * Set once the "approve & provision" action creates the owner account; acts
+     * as the idempotency guard so re-approving never double-provisions. Null
+     * until the lead has been provisioned.
+     */
+    provisionedUserId: UserIdSchema.nullish(),
+
     // Audit fields (createdAt, updatedAt, deletedAt, createdById, updatedById, deletedById)
-    ...BaseAuditFields
+    ...BaseAuditFields,
+
+    // The `commerce_leads` table intentionally omits the per-user / soft-delete audit
+    // columns (no `created_by_id` / `updated_by_id` / `deleted_at` / `deleted_by_id`):
+    // leads are administrative records that are never user-owned. `BaseAuditFields`
+    // declares createdById/updatedById as required-nullable, which would reject the
+    // persisted row (the keys are simply absent) and 500 the admin list endpoint.
+    // Relax them to nullish so the schema matches the real table shape.
+    createdById: UserIdSchema.nullish(),
+    updatedById: UserIdSchema.nullish()
 });
 
 /** TypeScript type inferred from {@link CommerceLeadSchema}. */

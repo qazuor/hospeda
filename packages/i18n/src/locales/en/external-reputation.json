@@ -10,7 +10,12 @@
         "other": "Other platform"
     },
     "link": {
-        "cta": "See our accommodation on {{platform}} →"
+        "cta": "See our accommodation on {{platform}} →",
+        "viewOn": "View on {{platform}} →"
+    },
+    "reviews": {
+        "title": "Featured reviews",
+        "via": "via {{platform}}"
     },
     "aggregate": {
         "rating": "Average score",

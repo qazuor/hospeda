@@ -1275,24 +1275,29 @@
             "title": "Accommodation import from URL",
             "type": "feature",
             "complexity": "high",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-222-accommodation-import-from-url",
             "created": "2026-06-13T12:00:00Z",
             "tags": ["accommodations", "import", "scraping", "ai", "web", "admin", "feature"],
-            "archived": false,
-            "note": "Import accommodation data from an external listing URL (Booking/Airbnb/etc) to pre-fill the create/edit form. JSON-LD/OG parsing primary + ai-core generate-object fallback. Human reviews draft before save. Drafted 2026-06-13, ready to implement."
+            "archived": true,
+            "note": "Import accommodation data from an external listing URL (Booking/Airbnb/etc) to pre-fill the create/edit form. JSON-LD/OG parsing primary + ai-core generate-object fallback. Human reviews draft before save. Drafted 2026-06-13, ready to implement.",
+            "archivedAt": "2026-06-22T15:10:22Z",
+            "archiveNote": "Smoke + legal copy shipped (smoke PR #1748). PostHog import-analytics events moved to SPEC-258 (A7). Short-link resolution follow-up = SPEC-257."
         },
         {
             "specId": "SPEC-223",
             "title": "Create post from data with AI",
             "type": "feature",
             "complexity": "medium-high",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-223-ai-post-generation",
             "created": "2026-06-13T12:00:00Z",
             "tags": ["posts", "ai", "ai-core", "content", "admin", "feature"],
-            "archived": false,
-            "note": "Admin gives topic + key points, AI generates a post draft (title/summary/content). New 'post_generate' AiFeature + admin-tier streaming route, replicating the text-improve pattern. Drafted 2026-06-13, ready to implement."
+            "archived": true,
+            "note": "Admin gives topic + key points, AI generates a post draft (title/summary/content). New 'post_generate' AiFeature + admin-tier streaming route, replicating the text-improve pattern. Drafted 2026-06-13, ready to implement.",
+            "completed": "2026-06-22T16:00:00Z",
+            "archivedAt": "2026-06-22T16:00:00Z",
+            "archiveNote": "Shipped via PR #1737; live Chrome smoke (T-015) GO — happy path verified with Ollama. 4 integration bugs fixed during smoke."
         },
         {
             "specId": "SPEC-224",
@@ -1478,6 +1483,155 @@
             "base": "staging",
             "origin": "Surfaced during SPEC-217 write-gate smoke (2026-06-19): capacity cap blocked hotels; interim cap raised in PR #1733. Hotels/complexes (e.g. 10-cabin complex) rent per unit and need a real unit model, not a flat capacity triple. Owner to resolve product OQs before task generation.",
             "tags": ["accommodation", "capacity", "product-design", "hotels", "schemas"]
+        },
+        {
+            "specId": "SPEC-249",
+            "title": "Commerce owner self-service web area (operational editing + force-password + credential email)",
+            "type": "feature",
+            "complexity": "medium",
+            "status": "completed",
+            "path": "SPEC-249-commerce-owner-self-service-web",
+            "created": "2026-06-20T00:00:00.000Z",
+            "base": "staging",
+            "origin": "SPEC-239 staging-readiness smoke (2026-06-20): admin-sells loop missing the consumer-facing owner web surface",
+            "dependsOn": ["SPEC-239"],
+            "tags": [
+                "commerce",
+                "gastronomy",
+                "web",
+                "owner",
+                "auth",
+                "self-service",
+                "admin-sells"
+            ],
+            "archived": true,
+            "archivedAt": "2026-06-20T18:15:00.000Z"
+        },
+        {
+            "specId": "SPEC-253",
+            "title": "Commerce owner editor — extended fields + single COMMERCE_EDIT_OWN permission",
+            "slug": "commerce-owner-editor-extended-fields",
+            "type": "feature",
+            "complexity": "medium",
+            "status": "draft",
+            "created": "2026-06-20T00:00:00.000Z",
+            "base": "staging",
+            "origin": "SPEC-249 close-out (2026-06-20): owner expanded the editable field set + collapsed per-section perms to a single COMMERCE_EDIT_OWN",
+            "dependsOn": ["SPEC-249"],
+            "tags": ["commerce", "gastronomy", "experience", "web", "owner", "permissions", "i18n"]
+        },
+        {
+            "specId": "SPEC-251",
+            "title": "Local DB dev/template refresh + worktree DB auto-heal correctness",
+            "slug": "local-db-dev-template-refresh",
+            "type": "chore",
+            "complexity": "small",
+            "status": "completed",
+            "created": "2026-06-20T00:00:00.000Z",
+            "base": "staging",
+            "origin": "SPEC-249 close-out: worktree DB cloned from a stale template (pre-SPEC-239); hospeda_dev also missing experiences table",
+            "dependsOn": [],
+            "tags": ["db", "dev-infra", "worktree", "seed", "tooling"]
+        },
+        {
+            "specId": "SPEC-252",
+            "title": "Web functional E2E (Playwright) harness + login fixtures + CI",
+            "slug": "web-e2e-playwright-harness",
+            "type": "feature",
+            "complexity": "medium",
+            "status": "draft",
+            "created": "2026-06-20T00:00:00.000Z",
+            "base": "staging",
+            "origin": "SPEC-249 T-025: web has no functional Playwright harness; seed gaps blocked the owner E2E",
+            "dependsOn": ["SPEC-249"],
+            "tags": ["web", "e2e", "playwright", "testing", "ci", "seed"]
+        },
+        {
+            "specId": "SPEC-250",
+            "title": "Asynchronous external reputation refresh (Apify async API + polling)",
+            "type": "improvement",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-250-external-reputation-async-refresh",
+            "created": "2026-06-20T00:00:00.000Z",
+            "base": "staging",
+            "origin": "SPEC-237 staging-smoke follow-up (2026-06-20): manual refresh is synchronous+serial (~100s, Booking actor 73-120s). Owner chose polling not webhook. Decisions: separate run_status column, Booking JSON-LD fast-path stays inline, unified async refresh() shared by weekly cron, owner panel live status.",
+            "dependsOn": ["SPEC-237"],
+            "tags": [
+                "external-reputation",
+                "apify",
+                "cron",
+                "async",
+                "accommodation",
+                "SPEC-237-followup"
+            ]
+        },
+        {
+            "specId": "SPEC-257",
+            "title": "Accommodation import short-link resolution + adapter enrichment",
+            "slug": "import-short-link-resolution",
+            "type": "improvement",
+            "complexity": "medium",
+            "status": "in-progress",
+            "path": "SPEC-257-import-short-link-resolution",
+            "created": "2026-06-22T02:36:01Z",
+            "base": "staging",
+            "origin": "SPEC-222 Chrome smoke follow-up: Google maps.app.goo.gl short links do not resolve e2e (body-cap loses finalUrl); Booking Share-XXX = WAF (UX copy); Airbnb adapter missing summary/amenities/beds.",
+            "dependsOn": ["SPEC-222"],
+            "tags": [
+                "accommodation-import",
+                "safe-fetch",
+                "utils",
+                "service-core",
+                "i18n",
+                "airbnb",
+                "google-places",
+                "spec-222-followup"
+            ]
+        },
+        {
+            "specId": "SPEC-258",
+            "title": "Accommodation import — coverage gaps, limbo fields, UX surfacing & scraper resilience",
+            "slug": "import-coverage-ux-resilience",
+            "type": "improvement",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-258-import-coverage-ux-resilience",
+            "created": "2026-06-22T14:53:31Z",
+            "base": "staging",
+            "origin": "SPEC-257 follow-up: close per-source coverage limbo, surface imported fields in the create UX, and add scraper anti-bot resilience.",
+            "dependsOn": ["SPEC-257"],
+            "tags": [
+                "accommodation-import",
+                "service-core",
+                "web",
+                "ux",
+                "resilience",
+                "spec-257-followup"
+            ]
+        },
+        {
+            "specId": "SPEC-259",
+            "title": "Systematic Chrome smoke testing of staging features (post-e2fb184)",
+            "slug": "staging-smoke-testing",
+            "type": "testing",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-259-staging-smoke-testing",
+            "created": "2026-06-22T15:39:13Z",
+            "base": "staging",
+            "origin": "Campaign: real Chrome e2e smoke of features merged since e2fb184 lacking a complete smoke (SPEC-230, 203, 239, 249).",
+            "dependsOn": [],
+            "tags": [
+                "smoke-testing",
+                "qa",
+                "chrome",
+                "web",
+                "admin",
+                "commerce",
+                "billing",
+                "campaign"
+            ]
         }
     ]
 }

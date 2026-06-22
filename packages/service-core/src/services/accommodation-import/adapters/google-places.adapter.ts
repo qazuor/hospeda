@@ -18,6 +18,14 @@
  * hit rate limits). For MVP these URLs degrade gracefully to an empty
  * extraction. A future task can add short-link resolution via a HEAD request.
  *
+ * **ftid / hex place token fallback**: When a canonical Google Maps URL carries
+ * an `!1s0xHEX:0xHEX` ftid token instead of a `ChIJ` Place ID (common with
+ * share-link–resolved canonical URLs from mobile), `extractPlaceId()` returns
+ * `null`. In that case the adapter falls back to a **Text Search** call using
+ * the place name from the URL path and optional `@lat,lng` coordinates for a
+ * location bias. This covers the confirmed live gap (SPEC-222 smoke test):
+ * `maps.app.goo.gl/dCaudGsZ8r9fKvWk9` → `maps/place/Cheroga+Casa+Quinta/@lat,lng,data=!1s0x…`.
+ *
  * @module services/accommodation-import/adapters/google-places
  */
 
@@ -54,14 +62,16 @@ interface PlacesDisplayName {
 }
 
 /**
- * Subset of the Places API (New) Place Details response that this adapter
- * reads. Only the fields requested via `X-Goog-FieldMask` will be present.
+ * Subset of a single Place object as returned by the Places API (New).
+ * Used by both Place Details (direct response) and Text Search (element of
+ * the `places[]` array). Only the fields requested via `X-Goog-FieldMask`
+ * will be present.
  *
  * **Hard rule**: `rating`, `userRatingCount`, and `reviews` are NEVER
  * included here — they are excluded from the field mask and must not be
  * added in the future (SPEC-222).
  */
-interface PlacesApiResponse {
+interface PlaceObject {
     readonly displayName?: PlacesDisplayName;
     readonly formattedAddress?: string;
     readonly location?: PlacesLatLng;
@@ -70,6 +80,24 @@ interface PlacesApiResponse {
     readonly websiteUri?: string;
     readonly types?: readonly string[];
     readonly addressComponents?: readonly PlacesAddressComponent[];
+    /** Short editorial blurb (localized via languageCode). The only description
+     * Google Places exposes; mapped to the draft summary. */
+    readonly editorialSummary?: { readonly text?: string; readonly languageCode?: string };
+}
+
+/**
+ * Response shape for a Place Details (GET) call.
+ * The response IS the place object directly (no wrapper).
+ */
+type PlacesDetailsApiResponse = PlaceObject;
+
+/**
+ * Response shape for a Text Search (POST) call.
+ * Verified against https://developers.google.com/maps/documentation/places/web-service/text-search
+ * The response wraps results in a `places` array.
+ */
+interface PlacesTextSearchApiResponse {
+    readonly places?: readonly PlaceObject[];
 }
 
 /**
@@ -93,7 +121,7 @@ interface PlacesApiErrorResponse {
 const PLACES_API_BASE = 'https://places.googleapis.com/v1/places';
 
 /**
- * Fields to request from the Places API.
+ * Fields to request from the Places API — Place Details path.
  *
  * CRITICAL: `reviews`, `rating`, and `userRatingCount` are intentionally
  * absent from this mask. SPEC-222 forbids importing guest reviews or star
@@ -101,7 +129,21 @@ const PLACES_API_BASE = 'https://places.googleapis.com/v1/places';
  * fetch them, ensuring no accidental leak into RawExtraction.
  */
 const PLACES_FIELD_MASK =
-    'displayName,formattedAddress,location,nationalPhoneNumber,internationalPhoneNumber,websiteUri,types,addressComponents';
+    'displayName,formattedAddress,location,nationalPhoneNumber,internationalPhoneNumber,websiteUri,types,addressComponents,editorialSummary';
+
+/**
+ * Fields to request from the Places API — Text Search path.
+ *
+ * Text Search uses the same field names but prefixed with `places.` in the
+ * `X-Goog-FieldMask` header (each result is an element of the `places[]`
+ * array).
+ *
+ * Verified against https://developers.google.com/maps/documentation/places/web-service/text-search
+ *
+ * CRITICAL: same omissions as PLACES_FIELD_MASK — no reviews/rating/userRatingCount.
+ */
+const TEXT_SEARCH_FIELD_MASK =
+    'places.displayName,places.formattedAddress,places.location,places.nationalPhoneNumber,places.internationalPhoneNumber,places.websiteUri,places.types,places.addressComponents,places.editorialSummary';
 
 // ---------------------------------------------------------------------------
 // Place ID extraction helpers
@@ -140,7 +182,8 @@ function isShortLink(url: URL): boolean {
  *    URL pattern.
  *
  * Returns `null` when no Place ID can be extracted without following a
- * redirect (e.g. short-links) or when the URL format is unrecognised.
+ * redirect (e.g. short-links) or when the URL format is unrecognised
+ * (e.g. the URL carries an ftid hex token `!1s0xHEX:0xHEX` instead).
  *
  * @param url - The parsed Google Maps URL.
  * @returns The extracted Place ID string, or `null`.
@@ -160,6 +203,157 @@ function extractPlaceId(url: URL): string | null {
     }
 
     return null;
+}
+
+// ---------------------------------------------------------------------------
+// Text Search fallback helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Extracts the human-readable place name from a Google Maps URL path.
+ *
+ * Google Maps canonical URLs follow the pattern:
+ * `/maps/place/<URL-encoded-name>/@lat,lng,...`
+ *
+ * The name segment sits between `/maps/place/` and the next `/`. It uses
+ * `+` as a space separator (in addition to standard percent-encoding).
+ *
+ * @param url - The parsed Google Maps URL.
+ * @returns The decoded place name, or `null` when the URL does not match the
+ *   `/maps/place/<name>` pattern.
+ */
+function extractPlaceNameFromPath(url: URL): string | null {
+    // Match /maps/place/<name> — name ends at the next slash or end-of-string
+    const match = /\/maps\/place\/([^/]+)/.exec(url.pathname);
+    if (!match || !match[1]) {
+        return null;
+    }
+
+    // URL-decode and replace `+` with spaces (Google Maps uses both)
+    const decoded = decodeURIComponent(match[1].replace(/\+/g, ' ')).trim();
+    return decoded.length > 0 ? decoded : null;
+}
+
+/**
+ * Extracts the `@lat,lng` coordinate pair from a Google Maps URL.
+ *
+ * The `@` token appears immediately after the place name in the path:
+ * `/maps/place/Name/@-32.4878131,-58.3626093,732m/...`
+ *
+ * @param url - The parsed Google Maps URL.
+ * @returns A `{ latitude, longitude }` pair, or `null` when no `@` token is
+ *   present.
+ */
+function extractCoordsFromPath(url: URL): PlacesLatLng | null {
+    // The @ token introduces the viewport: @<lat>,<lng>,<zoom>
+    const match = /@(-?\d+\.\d+),(-?\d+\.\d+)/.exec(url.pathname);
+    if (!match || !match[1] || !match[2]) {
+        return null;
+    }
+
+    const latitude = Number.parseFloat(match[1]);
+    const longitude = Number.parseFloat(match[2]);
+
+    // Guard against NaN (should not occur given the regex, but be defensive)
+    if (Number.isNaN(latitude) || Number.isNaN(longitude)) {
+        return null;
+    }
+
+    return { latitude, longitude };
+}
+
+/**
+ * Calls the Google Places API (New) **Text Search** endpoint to resolve a
+ * place by name (with an optional location bias).
+ *
+ * Used as a fallback when `extractPlaceId()` returns `null` — i.e. the URL
+ * carries an ftid hex token (`!1s0xHEX:0xHEX`) instead of a `ChIJ` Place ID.
+ * This is the confirmed live gap from SPEC-222 staging smoke: resolved
+ * `maps.app.goo.gl` short-links often produce ftid-style canonical URLs.
+ *
+ * Request shape (verified against
+ * https://developers.google.com/maps/documentation/places/web-service/text-search):
+ * - `POST https://places.googleapis.com/v1/places:searchText`
+ * - Header `X-Goog-Api-Key: <key>`
+ * - Header `X-Goog-FieldMask: places.displayName,places.formattedAddress,...`
+ * - Body `{ "textQuery": "<name>", "locationBias": { "circle": { ... } } }`
+ *
+ * The `locationBias.circle.radius` is set to 500 m — tight enough to
+ * disambiguate places in dense areas, wide enough to tolerate GPS drift.
+ *
+ * @param name - Human-readable place name to search for.
+ * @param coords - Optional `@lat,lng` coordinates for a location bias circle.
+ * @param apiKey - Google Places API key.
+ * @param timeoutMs - Abort timeout in milliseconds.
+ * @returns The first matching `PlaceObject`, or `null` on no results / error.
+ */
+async function fetchTextSearch(
+    name: string,
+    coords: PlacesLatLng | null,
+    apiKey: string,
+    timeoutMs: number,
+    languageCode?: string
+): Promise<PlaceObject | null> {
+    const body: Record<string, unknown> = { textQuery: name };
+
+    // Localise displayName / formattedAddress / types to the user's locale when
+    // provided. The Places API (New) accepts a BCP-47 `languageCode` and returns
+    // the place data in that language where Google has it (SPEC-257 piece D).
+    if (languageCode) {
+        body.languageCode = languageCode;
+    }
+
+    if (coords !== null) {
+        body.locationBias = {
+            circle: {
+                center: { latitude: coords.latitude, longitude: coords.longitude },
+                radius: 500
+            }
+        };
+    }
+
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+        let response: Response;
+        try {
+            // Verified against https://developers.google.com/maps/documentation/places/web-service/text-search
+            response = await fetch(`${PLACES_API_BASE}:searchText`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Goog-Api-Key': apiKey,
+                    // Text Search field mask uses the `places.` prefix
+                    // per the Places API (New) Text Search spec.
+                    'X-Goog-FieldMask': TEXT_SEARCH_FIELD_MASK
+                },
+                body: JSON.stringify(body),
+                signal: controller.signal
+            });
+        } finally {
+            clearTimeout(timeoutId);
+        }
+
+        if (!response.ok) {
+            return null;
+        }
+
+        const json = (await response.json()) as
+            | PlacesTextSearchApiResponse
+            | PlacesApiErrorResponse;
+
+        if ('error' in json && json.error) {
+            return null;
+        }
+
+        const searchResult = json as PlacesTextSearchApiResponse;
+        const firstPlace = searchResult.places?.[0];
+        return firstPlace ?? null;
+    } catch {
+        // Network error, timeout, JSON parse error — degrade silently.
+        return null;
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -283,12 +477,26 @@ export class GooglePlacesAdapter implements ImportSourceAdapter {
 
     /**
      * Extracts accommodation field candidates from a Google Maps URL using
-     * the Places API (New) Place Details endpoint.
+     * the Places API (New).
+     *
+     * **Path A — Place Details** (preferred): when a `ChIJ` Place ID can be
+     * extracted from the URL (via `?place_id=` param or `!1sChIJ…` token in the
+     * `data=` segment), a `GET /v1/places/<placeId>` call is made.
+     *
+     * **Path B — Text Search** (fallback): when the URL carries an ftid hex token
+     * (`!1s0xHEX:0xHEX`) instead of a `ChIJ` Place ID — the confirmed live gap for
+     * share-link–resolved canonical URLs — the adapter falls back to
+     * `POST /v1/places:searchText` using the place name from the URL path and the
+     * `@lat,lng` coordinates for a location bias. The first result is used.
+     *
+     * Both paths produce a `RawExtraction` via the shared `buildRawExtraction()`
+     * helper so the mapping logic is never duplicated.
      *
      * **Degradation contract (US-11)**:
      * - Missing / empty `googlePlacesApiKey` → return `{ sourcePlatform: 'google' }` immediately.
      * - Short-link URL with no extractable Place ID → return `{ sourcePlatform: 'google' }`.
      * - Non-2xx API response → return `{ sourcePlatform: 'google' }`.
+     * - Text Search returns no results → return `{ sourcePlatform: 'google' }`.
      * - Any unexpected error inside the fetch path → return `{ sourcePlatform: 'google' }`.
      *
      * Never throws. The caller (import orchestrator) treats a missing-data
@@ -312,68 +520,100 @@ export class GooglePlacesAdapter implements ImportSourceAdapter {
         // Short-link check: maps.app.goo.gl / goo.gl/maps / g.page cannot
         // have their Place ID resolved without following an HTTP redirect.
         // MVP scope: degrade gracefully. Future task: add short-link resolution.
+        // Note: when the orchestrator has already resolved the short-link to a
+        // canonical URL and passed THAT url here, isShortLink() returns false
+        // and we proceed normally.
         // -------------------------------------------------------------------
         if (isShortLink(url)) {
             return { sourcePlatform: this.source };
         }
 
         // -------------------------------------------------------------------
-        // Place ID extraction
+        // Path A: Place Details via ChIJ Place ID
         // -------------------------------------------------------------------
         const placeId = extractPlaceId(url);
-        if (!placeId) {
-            // Cannot identify the place from the URL structure — degrade.
-            return { sourcePlatform: this.source };
-        }
 
-        // -------------------------------------------------------------------
-        // Places API (New) Place Details call
-        // -------------------------------------------------------------------
-        let apiResponse: PlacesApiResponse;
+        if (placeId) {
+            let placeObject: PlaceObject;
 
-        try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), ctx.timeoutMs);
+            // Localise the place details to the user's locale when provided
+            // (SPEC-257 piece D). Place Details (New) takes languageCode as a
+            // query parameter.
+            const detailsUrl = ctx.locale
+                ? `${PLACES_API_BASE}/${placeId}?languageCode=${encodeURIComponent(ctx.locale)}`
+                : `${PLACES_API_BASE}/${placeId}`;
 
-            let response: Response;
             try {
-                response = await fetch(`${PLACES_API_BASE}/${placeId}`, {
-                    method: 'GET',
-                    headers: {
-                        'X-Goog-Api-Key': apiKey,
-                        // Field mask intentionally excludes reviews/rating/userRatingCount.
-                        // SPEC-222 hard rule: never fetch or import guest ratings/reviews.
-                        'X-Goog-FieldMask': PLACES_FIELD_MASK
-                    },
-                    signal: controller.signal
-                });
-            } finally {
-                clearTimeout(timeoutId);
-            }
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), ctx.timeoutMs);
 
-            if (!response.ok) {
-                // Non-2xx — degrade, do not throw
+                let response: Response;
+                try {
+                    response = await fetch(detailsUrl, {
+                        method: 'GET',
+                        headers: {
+                            'X-Goog-Api-Key': apiKey,
+                            // Field mask intentionally excludes reviews/rating/userRatingCount.
+                            // SPEC-222 hard rule: never fetch or import guest ratings/reviews.
+                            'X-Goog-FieldMask': PLACES_FIELD_MASK
+                        },
+                        signal: controller.signal
+                    });
+                } finally {
+                    clearTimeout(timeoutId);
+                }
+
+                if (!response.ok) {
+                    // Non-2xx — degrade, do not throw
+                    return { sourcePlatform: this.source };
+                }
+
+                const json = (await response.json()) as
+                    | PlacesDetailsApiResponse
+                    | PlacesApiErrorResponse;
+
+                // If the response contains an error object, treat it as a failure
+                if ('error' in json && json.error) {
+                    return { sourcePlatform: this.source };
+                }
+
+                placeObject = json as PlacesDetailsApiResponse;
+            } catch {
+                // Network error, timeout, JSON parse error — degrade, do not throw
                 return { sourcePlatform: this.source };
             }
 
-            const json = (await response.json()) as PlacesApiResponse | PlacesApiErrorResponse;
-
-            // If the response contains an error object, treat it as a failure
-            if ('error' in json && json.error) {
-                return { sourcePlatform: this.source };
-            }
-
-            apiResponse = json as PlacesApiResponse;
-        } catch {
-            // Network error, timeout, JSON parse error — degrade, do not throw
-            return { sourcePlatform: this.source };
+            return buildRawExtraction(placeObject);
         }
 
         // -------------------------------------------------------------------
-        // Map API response → RawExtraction
-        // All fields tagged source: 'official_api'
+        // Path B: Text Search fallback — for ftid hex URLs (0xHEX:0xHEX token)
+        //
+        // When there is no ChIJ Place ID but the URL is a canonical
+        // /maps/place/<Name>/@lat,lng/... URL, attempt to resolve the place
+        // via Text Search using the name and an optional location bias.
         // -------------------------------------------------------------------
-        return buildRawExtraction(apiResponse);
+        const placeName = extractPlaceNameFromPath(url);
+        if (!placeName) {
+            // URL has no ChIJ Place ID AND no place name in path — cannot identify.
+            return { sourcePlatform: this.source };
+        }
+
+        const coords = extractCoordsFromPath(url);
+        const textSearchResult = await fetchTextSearch(
+            placeName,
+            coords,
+            apiKey,
+            ctx.timeoutMs,
+            ctx.locale
+        );
+
+        if (!textSearchResult) {
+            // Text Search returned no results or failed — degrade gracefully.
+            return { sourcePlatform: this.source };
+        }
+
+        return buildRawExtraction(textSearchResult);
     }
 }
 
@@ -382,7 +622,12 @@ export class GooglePlacesAdapter implements ImportSourceAdapter {
 // ---------------------------------------------------------------------------
 
 /**
- * Maps a Places API (New) Place Details response to a {@link RawExtraction}.
+ * Maps a Places API (New) place object to a {@link RawExtraction}.
+ *
+ * Shared by both extraction paths:
+ * - **Place Details** (Path A): the response IS the place object directly.
+ * - **Text Search** (Path B): the place object is `places[0]` from the
+ *   Text Search response array.
  *
  * All candidate fields are tagged `source: 'official_api'` because the data
  * originates from Google's official structured API, not from HTML scraping.
@@ -390,10 +635,10 @@ export class GooglePlacesAdapter implements ImportSourceAdapter {
  * **Hard rule**: `rating`, `userRatingCount`, and `reviews` fields are NEVER
  * read from the response here, even if they were somehow present. SPEC-222.
  *
- * @param place - The raw Places API response object.
+ * @param place - A place object from the Places API (Details or Text Search).
  * @returns A RawExtraction bag with every field the API provided.
  */
-function buildRawExtraction(place: PlacesApiResponse): RawExtraction {
+function buildRawExtraction(place: PlaceObject): RawExtraction {
     const components = place.addressComponents ?? [];
 
     // Locality for destination resolution
@@ -419,6 +664,10 @@ function buildRawExtraction(place: PlacesApiResponse): RawExtraction {
 
         ...(place.displayName?.text
             ? { name: { value: place.displayName.text, source: 'official_api' } }
+            : {}),
+
+        ...(place.editorialSummary?.text
+            ? { summary: { value: place.editorialSummary.text, source: 'official_api' } }
             : {}),
 
         ...(locationEntries ? { location: locationEntries } : {}),
@@ -447,13 +696,13 @@ function buildRawExtraction(place: PlacesApiResponse): RawExtraction {
  *
  * Returns `undefined` when neither coordinates nor street data are available.
  *
- * @param place - The Places API response.
+ * @param place - A place object from the Places API (Details or Text Search).
  * @param streetName - Street name extracted from address components, if any.
  * @param streetNumber - Street number extracted from address components, if any.
  * @returns The location candidates object, or `undefined`.
  */
 function buildLocationEntries(
-    place: PlacesApiResponse,
+    place: PlaceObject,
     streetName: string | undefined,
     streetNumber: string | undefined
 ):

@@ -1,0 +1,177 @@
+---
+/**
+ * @file mi-cuenta/comercio/index.astro
+ * @description Commerce owner self-service listing index (SPEC-249 Part A).
+ * Lists the authenticated COMMERCE_OWNER's own listings across both verticals
+ * (gastronomy + experiences) and deep-links each to its operational editor.
+ *
+ * Auth: middleware protects /mi-cuenta/* (session required). This page adds a
+ * role gate so only commerce owners (and staff) reach it.
+ *
+ * @route     /[lang]/mi-cuenta/comercio/
+ * @rendering SSR (prerender = false — authenticated, owner-scoped data)
+ */
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import { isCommerceOwnerRole } from '@/lib/account-roles';
+import { fetchOwnerCommerceListings } from '@/lib/commerce/owner-listings';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+
+export const prerender = false;
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+
+const user = Astro.locals.user;
+if (!user) {
+    return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
+}
+
+// Role gate: only commerce owners (and staff) may manage commerce listings.
+if (!isCommerceOwnerRole(user.role)) {
+    return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta' }));
+}
+
+const title = t('commerce.owner.list.title', 'Mi comercio');
+const subtitle = t('commerce.owner.list.subtitle', '');
+
+const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
+const listings = await fetchOwnerCommerceListings({ cookieHeader });
+---
+
+<AccountLayout locale={locale} title={title} description={subtitle} activeSection="comercio">
+    <div class="mc-page__header">
+        <h2 class="mc-page__title">{title}</h2>
+        {subtitle && <p class="mc-page__subtitle">{subtitle}</p>}
+    </div>
+
+    {
+        listings.length === 0 ? (
+            <p class="mc-empty">{t('commerce.owner.list.empty', '')}</p>
+        ) : (
+            <ul class="mc-list">
+                {listings.map((listing) => (
+                    <li class="mc-list__item">
+                        <div class="mc-list__main">
+                            <span class="mc-list__name">{listing.name}</span>
+                            <span class="mc-badge">
+                                {t(`commerce.owner.list.badge.${listing.vertical}`, listing.vertical)}
+                            </span>
+                            <span
+                                class:list={[
+                                    'mc-visibility',
+                                    listing.isPublic ? 'mc-visibility--public' : 'mc-visibility--hidden'
+                                ]}
+                            >
+                                {listing.isPublic
+                                    ? t('commerce.visibility.active', 'Activo')
+                                    : t('commerce.visibility.hidden', 'Oculto')}
+                            </span>
+                        </div>
+                        <a
+                            class="mc-list__edit"
+                            href={buildUrl({
+                                locale,
+                                path: `mi-cuenta/comercio/${listing.vertical}/${listing.id}/editar`
+                            })}
+                        >
+                            {t('commerce.owner.list.edit', 'Editar')}
+                        </a>
+                    </li>
+                ))}
+            </ul>
+        )
+    }
+</AccountLayout>
+
+<style>
+    .mc-page__header {
+        margin-bottom: var(--space-6);
+    }
+
+    .mc-page__title {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: clamp(1.5rem, 3vw, 2rem);
+        color: var(--core-foreground);
+        margin: 0 0 0.25rem;
+    }
+
+    .mc-page__subtitle {
+        font-family: var(--font-sans);
+        font-size: var(--text-body-sm, 0.9375rem);
+        color: var(--core-muted-foreground);
+        margin: 0;
+    }
+
+    .mc-empty {
+        color: var(--core-muted-foreground);
+        font-size: var(--text-body-sm, 0.9375rem);
+    }
+
+    .mc-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+    }
+
+    .mc-list__item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-4);
+        padding: var(--space-4);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md, 0.5rem);
+        background: var(--core-card, var(--core-background));
+    }
+
+    .mc-list__main {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        flex-wrap: wrap;
+        min-width: 0;
+    }
+
+    .mc-list__name {
+        font-weight: 600;
+        color: var(--core-foreground);
+    }
+
+    .mc-badge {
+        font-size: var(--text-caption, 0.75rem);
+        padding: 0.125rem 0.5rem;
+        border-radius: var(--radius-pill, 999px);
+        background: var(--surface-warm, rgba(0, 0, 0, 0.06));
+        color: var(--core-muted-foreground);
+    }
+
+    .mc-visibility {
+        font-size: var(--text-caption, 0.75rem);
+        font-weight: 600;
+    }
+
+    .mc-visibility--public {
+        color: var(--success, #15803d);
+    }
+
+    .mc-visibility--hidden {
+        color: var(--core-muted-foreground);
+    }
+
+    .mc-list__edit {
+        flex-shrink: 0;
+        font-weight: 600;
+        color: var(--brand-primary, var(--core-foreground));
+        text-decoration: none;
+    }
+
+    .mc-list__edit:hover {
+        text-decoration: underline;
+    }
+</style>

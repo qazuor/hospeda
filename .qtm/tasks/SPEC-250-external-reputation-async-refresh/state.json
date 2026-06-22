@@ -1,0 +1,955 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-250",
+    "title": "Asynchronous external reputation refresh (Apify async API + polling)",
+    "created": "2026-06-20T00:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add ExternalReputationRunStatusPgEnum to enums.dbschema.ts",
+            "description": "Add the new Drizzle pgEnum `ExternalReputationRunStatusPgEnum` with values `['idle', 'pending', 'running']` to `packages/db/src/schemas/enums.dbschema.ts`.\n\nKey file:\n- packages/db/src/schemas/enums.dbschema.ts (add export)\n\nAcceptance criteria:\n- `ExternalReputationRunStatusPgEnum` is exported from the enums module.\n- `pnpm --filter @repo/db typecheck` passes.\n- No other enums are modified.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-005"],
+            "subtasks": [],
+            "tags": ["database", "schema", "enum"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Add 4 new columns + run_status index to accommodation_external_reputation Drizzle schema",
+            "description": "Modify `packages/db/src/schemas/accommodation-external/accommodation_external_reputation.dbschema.ts` to:\n1. Import `ExternalReputationRunStatusPgEnum` from `../enums.dbschema.ts`.\n2. Add columns inside the table definition:\n   - `runStatus: ExternalReputationRunStatusPgEnum('run_status').notNull().default('idle')`\n   - `apifyRunId: text('apify_run_id')` (nullable)\n   - `apifyDatasetId: text('apify_dataset_id')` (nullable)\n   - `runStartedAt: timestamp('run_started_at', { withTimezone: true })` (nullable)\n3. Add an index on `run_status` in the table's index config object:\n   `accommodation_external_reputation_runStatus_idx: index('accommodation_external_reputation_runStatus_idx').on(table.runStatus)`\n\nKey file:\n- packages/db/src/schemas/accommodation-external/accommodation_external_reputation.dbschema.ts\n\nAcceptance criteria:\n- Schema compiles: `pnpm --filter @repo/db typecheck` passes.\n- The four new columns are present in the TypeScript type inferred by Drizzle.\n- No existing columns are altered or removed.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-003", "T-016", "T-017", "T-018"],
+            "subtasks": [],
+            "tags": ["database", "schema", "drizzle"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Generate Drizzle migration for new enum + columns and commit migration file",
+            "description": "Run `pnpm --filter @repo/db db:generate` to produce the versioned migration SQL file that creates the `external_reputation_run_status_enum` pg enum and adds the 4 new columns + index to `accommodation_external_reputation`.\n\nSteps:\n1. `pnpm --filter @repo/db db:generate` — generates a new migration file in `packages/db/src/migrations/`.\n2. Open the generated SQL and verify it contains:\n   - `CREATE TYPE external_reputation_run_status_enum AS ENUM ('idle', 'pending', 'running');`\n   - `ALTER TABLE accommodation_external_reputation ADD COLUMN run_status ...`\n   - `ALTER TABLE accommodation_external_reputation ADD COLUMN apify_run_id ...`\n   - `ALTER TABLE accommodation_external_reputation ADD COLUMN apify_dataset_id ...`\n   - `ALTER TABLE accommodation_external_reputation ADD COLUMN run_started_at ...`\n   - `CREATE INDEX accommodation_external_reputation_runStatus_idx ...`\n3. Commit the generated migration file.\n4. `pnpm --filter @repo/db db:migrate` locally to verify it applies cleanly.\n\nKey files:\n- packages/db/src/migrations/<timestamp>_<name>.sql (new, generated)\n- packages/db/src/migrations/meta/ (snapshot files, auto-updated)\n\nAcceptance criteria:\n- Migration file is committed and passes `pnpm --filter @repo/db typecheck`.\n- The schema drift guard (`scripts/check-schema-drift.sh` or CI equivalent) passes — no uncommitted schema changes.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-036"],
+            "subtasks": [],
+            "tags": ["database", "migration"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Register HOSPEDA_EXTREP_POLL_SCHEDULE and HOSPEDA_EXTREP_APIFY_RUN_TIMEOUT_MS in env registry",
+            "description": "Add two new env vars to the canonical registry and consuming app.\n\n1. In `packages/config/src/env-registry.*.ts`, register:\n   - `HOSPEDA_EXTREP_POLL_SCHEDULE` (string, not secret, default `'*/2 * * * *'`, category 'cron', apps: ['api'], description: 'Cron schedule for the Apify reputation polling job')\n   - `HOSPEDA_EXTREP_APIFY_RUN_TIMEOUT_MS` (string/integer, not secret, default `'600000'`, category 'external', apps: ['api'], description: 'Max age of a pending Apify run before the poller marks it as timed out (ms)')\n\n2. Add Zod validation in `apps/api/src/utils/env.ts` (ApiEnvBaseSchema):\n   - `HOSPEDA_EXTREP_POLL_SCHEDULE: z.string().default('*/2 * * * *')`\n   - `HOSPEDA_EXTREP_APIFY_RUN_TIMEOUT_MS: z.string().default('600000')`\n\n3. Update `apps/api/.env.example` with safe placeholder values.\n\nKey files:\n- packages/config/src/env-registry.*.ts\n- apps/api/src/utils/env.ts\n- apps/api/.env.example\n\nAcceptance criteria:\n- `pnpm env:check:registry` passes.\n- `pnpm --filter apps/api typecheck` passes.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-025", "T-037"],
+            "subtasks": [],
+            "tags": ["config", "env"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Add ExternalReputationRunStatusSchema + run-state fields to AccommodationExternalReputationSchema",
+            "description": "Modify `packages/schemas/src/entities/accommodation-external/accommodation-external-reputation.schema.ts`:\n\n1. Export a new standalone schema and type:\n   ```ts\n   export const ExternalReputationRunStatusSchema = z.enum(['idle', 'pending', 'running']);\n   export type ExternalReputationRunStatus = z.infer<typeof ExternalReputationRunStatusSchema>;\n   ```\n\n2. Add additive optional fields to `AccommodationExternalReputationSchema`:\n   - `runStatus: ExternalReputationRunStatusSchema.default('idle')`\n   - `apifyRunId: z.string().nullish()`\n   - `apifyDatasetId: z.string().nullish()`\n   - `runStartedAt: z.coerce.date().nullish()`\n\nAll new fields use `.default()` or `.nullish()` so existing parse fixtures remain valid (schema compat policy).\n\nKey files:\n- packages/schemas/src/entities/accommodation-external/accommodation-external-reputation.schema.ts\n\nAcceptance criteria:\n- `ExternalReputationRunStatusSchema` and `ExternalReputationRunStatus` are exported.\n- Existing vitest schema tests still pass (additive, no breakage).\n- `pnpm --filter @repo/schemas typecheck` passes.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-006", "T-011", "T-019", "T-022"],
+            "subtasks": [],
+            "tags": ["schemas", "zod"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Verify ExternalReputationBlockSchema does NOT expose run-state columns",
+            "description": "Read `packages/schemas/src/entities/accommodation-external/accommodation-external.public.schema.ts` (or wherever `ExternalReputationBlockSchema` is defined) and confirm that none of the following fields are present or re-exported in it: `runStatus`, `apifyRunId`, `apifyDatasetId`, `runStartedAt`.\n\nIf they are present (accidental leak), remove them from the public schema type.\n\nAlso verify `buildExternalReputationBlock` in service-core does NOT copy these fields into the public output.\n\nKey files:\n- packages/schemas/src/entities/accommodation-external/accommodation-external.public.schema.ts (audit)\n- packages/service-core/src/.../accommodation-external-reputation.service.ts (audit buildExternalReputationBlock path)\n\nAcceptance criteria:\n- No run-state column appears in `ExternalReputationBlockSchema`.\n- Write a vitest assertion (can be in the existing schema test file) that parsing a full `AccommodationExternalReputation` through `ExternalReputationBlockSchema` strips run columns.\n- `pnpm --filter @repo/schemas typecheck` passes.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-019"],
+            "subtasks": [],
+            "tags": ["schemas", "security"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Implement startApifyRun in apify-client.ts",
+            "description": "Add `startApifyRun` to `packages/service-core/src/services/accommodation-import/adapters/apify-client.ts`.\n\nExport interface and function:\n```ts\nexport interface StartApifyRunInput {\n    readonly token: string;\n    readonly actor: string;  // 'owner/actor-name'\n    readonly actorInput: Record<string, unknown>;\n}\nexport interface StartApifyRunResult {\n    readonly runId: string;\n    readonly defaultDatasetId: string;\n}\nexport async function startApifyRun(input: StartApifyRunInput): Promise<StartApifyRunResult | null>\n```\n\nImplementation details:\n- POST `https://api.apify.com/v2/acts/{actor}/runs` with `Authorization: Bearer {token}`, `Content-Type: application/json`, body = `actorInput`.\n- On 201: return `{ runId: data.id, defaultDatasetId: data.defaultDatasetId }` using defensive destructuring (`data?.id`, `data?.defaultDatasetId` — return null if either missing).\n- On any non-2xx or fetch error: return `null`. Never throws.\n- Apply the same trusted-host exemption pattern used by `runApifyActor()` (no SSRF guard needed for `api.apify.com`).\n\nKey file:\n- packages/service-core/src/services/accommodation-import/adapters/apify-client.ts\n\nAcceptance criteria:\n- Existing `runApifyActor` export is UNTOUCHED.\n- `pnpm --filter @repo/service-core typecheck` passes.\n- Function returns null (not throws) on bad response shape.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-010", "T-012", "T-013"],
+            "subtasks": [],
+            "tags": ["service-core", "apify", "http"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Implement getApifyRunStatus in apify-client.ts",
+            "description": "Add `getApifyRunStatus` and its supporting types to `packages/service-core/src/services/accommodation-import/adapters/apify-client.ts`.\n\n```ts\nexport type ApifyRunStatus =\n    | 'READY' | 'RUNNING' | 'SUCCEEDED' | 'FAILED' | 'TIMED-OUT' | 'ABORTED';\n\nexport interface GetApifyRunStatusResult {\n    readonly status: ApifyRunStatus;\n    readonly defaultDatasetId: string;\n}\n\nexport async function getApifyRunStatus(input: {\n    token: string;\n    runId: string;\n}): Promise<GetApifyRunStatusResult | null>\n```\n\nImplementation details:\n- GET `https://api.apify.com/v2/actor-runs/{runId}` with `Authorization: Bearer {token}`.\n- On 200: return `{ status: data.status, defaultDatasetId: data.defaultDatasetId }` with defensive checks (return null if missing).\n- On any non-2xx or fetch error: return `null`. Never throws.\n\nKey file:\n- packages/service-core/src/services/accommodation-import/adapters/apify-client.ts\n\nAcceptance criteria:\n- `ApifyRunStatus`, `GetApifyRunStatusResult`, and `getApifyRunStatus` are exported.\n- `pnpm --filter @repo/service-core typecheck` passes.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-010", "T-025"],
+            "subtasks": [],
+            "tags": ["service-core", "apify", "http"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Implement getApifyDatasetItems in apify-client.ts",
+            "description": "Add `getApifyDatasetItems` to `packages/service-core/src/services/accommodation-import/adapters/apify-client.ts`.\n\n```ts\nexport async function getApifyDatasetItems(input: {\n    token: string;\n    datasetId: string;\n}): Promise<unknown[]>\n```\n\nImplementation details:\n- GET `https://api.apify.com/v2/datasets/{datasetId}/items` with `Authorization: Bearer {token}`.\n- On 200: return the parsed JSON array.\n- On any non-2xx, fetch error, or non-array response: return `[]`. Never throws.\n\nKey file:\n- packages/service-core/src/services/accommodation-import/adapters/apify-client.ts\n\nAcceptance criteria:\n- `getApifyDatasetItems` is exported.\n- Returns `[]` on failure (not null, not throw).\n- `pnpm --filter @repo/service-core typecheck` passes.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-010", "T-025"],
+            "subtasks": [],
+            "tags": ["service-core", "apify", "http"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Write unit tests for all three async Apify client functions",
+            "description": "Create (or extend) the test file for `apify-client.ts`, covering `startApifyRun`, `getApifyRunStatus`, and `getApifyDatasetItems`.\n\nTest location: `packages/service-core/src/services/accommodation-import/adapters/test/apify-client.test.ts` (or matching existing test directory).\n\nTest cases per function:\n\n`startApifyRun`:\n- 201 happy path returns `{ runId, defaultDatasetId }`.\n- Non-201 (400, 500) returns null.\n- Fetch network error returns null.\n- Response body missing `data.id` returns null.\n- Response body missing `data.defaultDatasetId` returns null.\n\n`getApifyRunStatus`:\n- 200 with `SUCCEEDED` status returns correct shape.\n- 200 with `RUNNING` status returns correct shape.\n- Non-200 returns null.\n- Fetch error returns null.\n- Missing `data.status` returns null.\n\n`getApifyDatasetItems`:\n- 200 with array body returns the array.\n- 200 with non-array body returns `[]`.\n- Non-200 returns `[]`.\n- Fetch error returns `[]`.\n\nAll tests mock `fetch` (e.g. via vitest `vi.spyOn(global, 'fetch')` or `vi.fn()`).\n\nAcceptance criteria:\n- All test cases pass.\n- Coverage on the three new functions >= 90%.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-007", "T-008", "T-009"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "service-core", "apify"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Add startRun + mapDatasetItems optional methods to ReputationAdapter interface",
+            "description": "Modify `packages/service-core/src/services/accommodation-external-reputation/adapters/adapter.types.ts` to add two optional methods:\n\n```ts\n/**\n * Phase A: enqueue an Apify actor run for this listing.\n * Implemented ONLY by adapters that use Apify (Booking fallback, Airbnb).\n * Returns the run ID + dataset ID on success, or null on failure.\n */\nstartRun?(listing: AccommodationExternalListing): Promise<{ runId: string; datasetId: string } | null>;\n\n/**\n * Phase B: map raw dataset items from a completed Apify run to a reputation result.\n * Pure function — no HTTP calls. Called by the poller after getApifyDatasetItems().\n */\nmapDatasetItems?(items: unknown[], listing: AccommodationExternalListing): ReputationFetchResult;\n```\n\nBoth methods are optional (`?:`) — adapters not using Apify (Google, Generic) do not implement them.\n\nKey file:\n- packages/service-core/src/services/accommodation-external-reputation/adapters/adapter.types.ts\n\nAcceptance criteria:\n- Interface compiles with both methods as optional.\n- Existing Google/Generic adapter implementations continue to satisfy the interface (no new required methods).\n- `pnpm --filter @repo/service-core typecheck` passes.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-012", "T-013"],
+            "subtasks": [],
+            "tags": ["service-core", "adapter", "types"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Refactor BookingReputationAdapter: retain JSON-LD fetch, add startRun + mapDatasetItems",
+            "description": "Modify `packages/service-core/src/services/accommodation-external-reputation/adapters/booking-reputation.adapter.ts`:\n\n1. `fetch(listing)` — UNCHANGED for the JSON-LD fast path. Keep: try `safeExternalFetch` + JSON-LD aggregate rating parse. If JSON-LD succeeds, return result as before (inline, no Apify). If JSON-LD fails/returns all-null aggregates, return the all-null result (the service will decide to go async based on null aggregates + presence of `startRun`).\n   - Remove the old `runApifyActor()` fallback call from `fetch()`.\n\n2. Add `startRun(listing)`: call `startApifyRun({ token: creds.apifyToken, actor: creds.apifyBookingActor, actorInput: <same input shape as the existing sync call> })`. Return `{ runId: result.runId, datasetId: result.defaultDatasetId }` or null.\n\n3. Add `mapDatasetItems(items, listing)`: pure mapping from Booking actor output items to `ReputationFetchResult`. Extract `rating` and `reviewsCount` from the actor output shape (verify from SPEC-237 implementation — use same field paths already used in the existing Booking actor parsing logic). Return `ReputationFetchResult`.\n\nKey file:\n- packages/service-core/src/services/accommodation-external-reputation/adapters/booking-reputation.adapter.ts\n\nAcceptance criteria:\n- `runApifyActor` is NO LONGER called from `fetch()` in this adapter.\n- `startRun` and `mapDatasetItems` are implemented and satisfy the updated `ReputationAdapter` interface.\n- `pnpm --filter @repo/service-core typecheck` passes.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-007", "T-011"],
+            "blocks": ["T-014", "T-019"],
+            "subtasks": [
+                {
+                    "title": "Remove runApifyActor() call from fetch(); keep JSON-LD path only",
+                    "completed": false
+                },
+                {
+                    "title": "Implement startRun() calling startApifyRun with existing actor input shape",
+                    "completed": false
+                },
+                {
+                    "title": "Implement mapDatasetItems() as pure mapping from Booking actor items",
+                    "completed": false
+                }
+            ],
+            "tags": ["service-core", "adapter", "booking"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Refactor AirbnbReputationAdapter: fetch returns empty, add startRun + mapDatasetItems",
+            "description": "Modify `packages/service-core/src/services/accommodation-external-reputation/adapters/airbnb-reputation.adapter.ts`:\n\n1. `fetch(listing)`: remove the `runApifyActor()` call entirely. Return `emptyReputationResult()` (all null aggregates). The service will always go async for Airbnb because `startRun` is present and `fetch()` returns all-null.\n\n2. Add `startRun(listing)`: call `startApifyRun({ token: creds.apifyToken, actor: creds.apifyAirbnbActor, actorInput: <same input shape as the existing sync call> })`. Return `{ runId, datasetId }` or null.\n\n3. Add `mapDatasetItems(items, listing)`: pure mapping from Airbnb actor output. Extract `guestSatisfaction` (rescale consistently with current logic) and `reviewsCount`. Return `ReputationFetchResult`.\n\nKey file:\n- packages/service-core/src/services/accommodation-external-reputation/adapters/airbnb-reputation.adapter.ts\n\nAcceptance criteria:\n- `runApifyActor` is NO LONGER called from this adapter.\n- `fetch()` returns all-null aggregates.\n- `startRun` and `mapDatasetItems` are implemented.\n- `pnpm --filter @repo/service-core typecheck` passes.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-007", "T-011"],
+            "blocks": ["T-015", "T-019"],
+            "subtasks": [
+                {
+                    "title": "Remove runApifyActor() call from fetch(); return emptyReputationResult()",
+                    "completed": false
+                },
+                {
+                    "title": "Implement startRun() calling startApifyRun with existing actor input shape",
+                    "completed": false
+                },
+                {
+                    "title": "Implement mapDatasetItems() as pure mapping from Airbnb actor items",
+                    "completed": false
+                }
+            ],
+            "tags": ["service-core", "adapter", "airbnb"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Write unit tests for BookingReputationAdapter",
+            "description": "Create or extend `packages/service-core/src/services/accommodation-external-reputation/adapters/test/booking-reputation.adapter.test.ts`.\n\nTest cases:\n1. `fetch()` — JSON-LD success path: mock `safeExternalFetch` to return HTML with JSON-LD aggregate rating. Expect non-null `rating` returned inline. Expect `startApifyRun` NOT called.\n2. `fetch()` — JSON-LD failure path: mock `safeExternalFetch` to return HTML without JSON-LD or blocked. Expect all-null aggregates returned. Expect `startApifyRun` NOT called (fetch just returns null aggregates; service decides to call startRun).\n3. `startRun()` — success: mock `startApifyRun` to return `{ runId: 'r1', defaultDatasetId: 'ds1' }`. Expect adapter returns `{ runId: 'r1', datasetId: 'ds1' }`.\n4. `startRun()` — failure: mock `startApifyRun` to return null. Expect adapter returns null.\n5. `mapDatasetItems()` — valid items: provide a representative Booking actor output array. Expect correct `rating` and `reviewsCount` extracted.\n6. `mapDatasetItems()` — empty array: returns `emptyReputationResult()`.\n7. `mapDatasetItems()` — malformed items: does not throw, degrades gracefully.\n\nAcceptance criteria:\n- All 7 cases pass.\n- `runApifyActor` is never called in any test (assert via spy).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-012"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "service-core", "adapter", "booking"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Write unit tests for AirbnbReputationAdapter",
+            "description": "Create or extend `packages/service-core/src/services/accommodation-external-reputation/adapters/test/airbnb-reputation.adapter.test.ts`.\n\nTest cases:\n1. `fetch()` — always returns all-null aggregates (no HTTP call made).\n2. `startRun()` — success: mock `startApifyRun` to return `{ runId: 'r2', defaultDatasetId: 'ds2' }`. Expect `{ runId: 'r2', datasetId: 'ds2' }`.\n3. `startRun()` — failure: mock `startApifyRun` to return null. Expect null.\n4. `mapDatasetItems()` — valid items: provide representative Airbnb actor output. Expect correct `guestSatisfaction`-derived `rating` and `reviewsCount`.\n5. `mapDatasetItems()` — empty array: returns `emptyReputationResult()`.\n6. `mapDatasetItems()` — malformed items: does not throw.\n7. `runApifyActor` is NEVER called anywhere in this adapter (assert via spy or absence of import).\n\nAcceptance criteria:\n- All 7 cases pass.\n- `runApifyActor` is provably not called.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-013"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "service-core", "adapter", "airbnb"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Add findPendingRuns() model method to AccommodationExternalReputationModel",
+            "description": "Add `findPendingRuns()` to the model in `packages/db/src/...` (locate the existing `AccommodationExternalReputationModel` file).\n\n```ts\n/** Returns all rows with run_status IN ('pending','running') and apify_run_id IS NOT NULL.\n *  Joins/includes associated AccommodationExternalListing data needed by mapDatasetItems. */\nfindPendingRuns(): Promise<PendingRunRow[]>\n```\n\nWhere `PendingRunRow` includes at minimum: `id`, `accommodationId`, `platform`, `runStatus`, `apifyRunId` (non-null), `apifyDatasetId`, `runStartedAt`, and the associated listing fields.\n\nImplementation: Drizzle SELECT with WHERE clause `and(inArray(table.runStatus, ['pending', 'running']), isNotNull(table.apifyRunId))`.\n\nKey file:\n- packages/db/src/models/accommodation-external/accommodation-external-reputation.model.ts (or equivalent path — locate before editing)\n\nAcceptance criteria:\n- Method is exported and typed.\n- `pnpm --filter @repo/db typecheck` passes.\n- Does NOT include rows where `apify_run_id IS NULL`.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-025"],
+            "subtasks": [],
+            "tags": ["database", "model"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Add updateRunStatus() model method to AccommodationExternalReputationModel",
+            "description": "Add `updateRunStatus()` to the model (same file as T-016).\n\n```ts\n/** Lightweight update: sets run_status to 'running' or 'idle' for a single row by id. */\nupdateRunStatus(id: string, status: 'running' | 'idle'): Promise<void>\n```\n\nImplementation: Drizzle `update(table).set({ runStatus: status }).where(eq(table.id, id))`.\n\nKey file:\n- packages/db/src/models/accommodation-external/accommodation-external-reputation.model.ts\n\nAcceptance criteria:\n- Method is exported and typed.\n- `pnpm --filter @repo/db typecheck` passes.\n- Only `runStatus` column is touched (no other column side effects).",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-025"],
+            "subtasks": [],
+            "tags": ["database", "model"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Extend upsertReputation() payload type to accept new run-state columns",
+            "description": "Locate `upsertReputation()` in the reputation model (same file as T-016). The payload type must be extended to accept the new columns as optional fields:\n\n- `runStatus?: 'idle' | 'pending' | 'running'`\n- `apifyRunId?: string | null`\n- `apifyDatasetId?: string | null`\n- `runStartedAt?: Date | null`\n\nAll optional — existing call sites that don't pass these fields continue to work unchanged (the DB columns have defaults or are nullable).\n\nKey file:\n- packages/db/src/models/accommodation-external/accommodation-external-reputation.model.ts\n\nAcceptance criteria:\n- Existing callers of `upsertReputation()` compile without changes.\n- New callers can pass the run-state fields.\n- `pnpm --filter @repo/db typecheck` passes.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-019", "T-025"],
+            "subtasks": [],
+            "tags": ["database", "model"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Refactor AccommodationExternalReputationService.refresh() to inline/async split",
+            "description": "Modify `packages/service-core/src/services/accommodation-external-reputation/accommodation-external-reputation.service.ts`.\n\nRefactor `refresh()` to implement the inline/async split logic:\n\n```\nfor each enabled listing:\n  adapter = getReputationAdapter(platform, creds)\n  inlineResult = await adapter.fetch(listing)\n\n  if inlineResult has non-null rating OR adapter.startRun is undefined:\n    // Fast path resolved inline (Google, Generic, Booking JSON-LD success)\n    upsert(inlineResult, run_status='idle')\n    inlineSucceeded.push(platform)\n\n  else:\n    // Slow path — enqueue async\n    runResult = await adapter.startRun(listing)\n    if runResult:\n      upsert({ run_status='pending', apify_run_id=runResult.runId,\n               apify_dataset_id=runResult.datasetId, run_started_at=now() })\n      enqueuedAsync.push(platform)\n    else:\n      upsert({ fetch_status='error', fetch_message='startRun failed', run_status='idle' })\n      inlineFailed.push({ platform, error: 'startRun failed' })\n\nreturn { inlineSucceeded, enqueuedAsync, inlineFailed }\n```\n\nUpdate the return type of `refresh()` to `{ inlineSucceeded: ExternalPlatformEnum[], enqueuedAsync: ExternalPlatformEnum[], inlineFailed: { platform: ExternalPlatformEnum; error: string }[] }`.\n\nKey file:\n- packages/service-core/src/services/accommodation-external-reputation/accommodation-external-reputation.service.ts\n\nAcceptance criteria:\n- Rate limit check is still enforced (unchanged).\n- All-inline path (Google only) works without any DB pending rows.\n- Mixed path (Google inline + Airbnb async) produces correct returned shape.\n- `pnpm --filter @repo/service-core typecheck` passes.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-005", "T-006", "T-012", "T-013", "T-018"],
+            "blocks": ["T-020", "T-021"],
+            "subtasks": [
+                {
+                    "title": "Update refresh() loop to inline/async split",
+                    "completed": false
+                },
+                {
+                    "title": "Update return type to { inlineSucceeded, enqueuedAsync, inlineFailed }",
+                    "completed": false
+                },
+                {
+                    "title": "Confirm rate limit logic unchanged",
+                    "completed": false
+                }
+            ],
+            "tags": ["service-core", "service"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Write unit tests for AccommodationExternalReputationService.refresh()",
+            "description": "Create or extend the service test file for `AccommodationExternalReputationService`.\n\nTest cases:\n1. All-inline path (Google only): adapter has no `startRun`, fetch returns rating. Expect `inlineSucceeded=['GOOGLE']`, `enqueuedAsync=[]`, `inlineFailed=[]`. No DB pending rows.\n2. Mixed path (Google inline + Airbnb async): Google fetch returns rating; Airbnb fetch returns null + has `startRun`. `startRun` returns runResult. Expect `inlineSucceeded=['GOOGLE']`, `enqueuedAsync=['AIRBNB']`.\n3. All-async (Airbnb only): expect `inlineSucceeded=[]`, `enqueuedAsync=['AIRBNB']`, pending row written.\n4. startRun failure degrades: `startRun` returns null. Expect platform in `inlineFailed` with error message, `fetch_status='error'` upserted, `run_status='idle'`.\n5. Rate limit still enforced: second call within window returns 429-equivalent error.\n6. Booking JSON-LD success → inline path (no startRun called).\n7. Booking JSON-LD miss → async path (startRun called).\n\nAll external HTTP calls and DB operations are mocked.\n\nAcceptance criteria:\n- All 7 cases pass.\n- Coverage on `refresh()` >= 90%.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-019"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "service-core", "service"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Modify protected refresh route to return HTTP 202 when async platforms were enqueued",
+            "description": "Modify `apps/api/src/routes/accommodation-external-reputation/protected/refresh.ts`.\n\nChanges:\n1. Call the service's `refresh()` which now returns `{ inlineSucceeded, enqueuedAsync, inlineFailed }`.\n2. If `enqueuedAsync.length > 0`: return HTTP 202 with body `{ success: true, data: { inlineSucceeded, enqueuedAsync, inlineFailed } }`.\n3. If `enqueuedAsync.length === 0`: return HTTP 200 with body `{ success: true, data: { succeeded: inlineSucceeded, failed: inlineFailed } }` (preserving backward-compat shape for all-inline case).\n4. Auth, ownership check, 429, 403, 404 paths: UNCHANGED.\n\nKey file:\n- apps/api/src/routes/accommodation-external-reputation/protected/refresh.ts\n\nAcceptance criteria:\n- 202 returned when any platform was enqueued.\n- 200 returned when all platforms resolved inline.\n- Error codes (429/403/404) unchanged.\n- `pnpm --filter apps/api typecheck` passes.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-019"],
+            "blocks": ["T-024"],
+            "subtasks": [],
+            "tags": ["api", "route"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Create GET reputation-status route (protected/reputation-status.ts)",
+            "description": "Create `apps/api/src/routes/accommodation-external-reputation/protected/reputation-status.ts`.\n\nEndpoint: `GET /api/v1/protected/accommodations/:id/external-reputation/status`\n\nBehavior:\n1. Auth: `createProtectedRoute`, same ownership enforcement as the refresh route (actor must own the accommodation OR have `ACCOMMODATION_UPDATE_ANY` permission).\n2. Read all `accommodation_external_reputation` rows for the given accommodation ID from the model (no Apify calls).\n3. Build response:\n```ts\n{\n  success: true,\n  data: {\n    platforms: {\n      [platform]: {\n        runStatus: 'idle' | 'pending' | 'running',\n        fetchStatus: 'ok' | 'error' | 'blocked' | 'not_found',\n        rating: number | null,\n        reviewsCount: number | null,\n        aggregateFetchedAt: string | null  // ISO 8601\n      }\n    },\n    allSettled: boolean  // true when every platform has runStatus='idle'\n  }\n}\n```\n4. Errors: 403 if not owner, 404 if accommodation not found.\n\nKey file:\n- apps/api/src/routes/accommodation-external-reputation/protected/reputation-status.ts (new)\n\nAcceptance criteria:\n- Route is typed and uses `ResponseFactory` for responses.\n- Does NOT trigger any Apify HTTP calls.\n- `pnpm --filter apps/api typecheck` passes.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-023", "T-024"],
+            "subtasks": [],
+            "tags": ["api", "route"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Register reputation-status route in the protected router index",
+            "description": "Register the new GET reputation-status route in the protected router index file.\n\nLocate the router file that mounts `accommodation-external-reputation` protected routes (typically `apps/api/src/routes/accommodation-external-reputation/protected/index.ts` or a parent router file). Add:\n\n```ts\nimport { reputationStatusRoute } from './reputation-status';\n// mount it alongside the existing refresh route:\nrouter.get('/:id/external-reputation/status', reputationStatusRoute);\n```\n(adjust import name and mount syntax to match existing patterns in that file)\n\nKey file:\n- apps/api/src/routes/accommodation-external-reputation/protected/index.ts (or parent router)\n\nAcceptance criteria:\n- The GET endpoint is reachable at the correct URL.\n- `pnpm --filter apps/api typecheck` passes.\n- No existing route is displaced or shadowed.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-022"],
+            "blocks": ["T-024"],
+            "subtasks": [],
+            "tags": ["api", "routing"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Write integration tests for refresh (202/200/429/403) and status routes",
+            "description": "Create or extend `apps/api/test/.../accommodation-external-reputation.test.ts`.\n\nTest cases:\n\nRefresh endpoint (`POST /:id/external-reputation/refresh`):\n1. Owner triggers refresh with Apify-backed platforms → 202 returned, response body has `enqueuedAsync` non-empty.\n2. Owner triggers refresh with Google-only accommodation → 200 returned, `succeeded` non-empty.\n3. Second refresh within rate-limit window → 429 with `Retry-After` header.\n4. Non-owner attempts refresh → 403.\n5. Refresh on non-existent accommodation → 404.\n\nStatus endpoint (`GET /:id/external-reputation/status`):\n6. Owner reads status when all platforms idle → 200, `allSettled: true`.\n7. Owner reads status when Apify platform pending → 200, `allSettled: false`, that platform's `runStatus='pending'`.\n8. Non-owner reads status → 403.\n9. Status on non-existent accommodation → 404.\n\nMock service layer and DB; use existing route test patterns from the project.\n\nAcceptance criteria:\n- All 9 test cases pass.\n- `pnpm --filter apps/api test` passes.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-021", "T-023"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "api", "integration"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Create poll-apify-reputation-runs.job.ts cron handler",
+            "description": "Create `apps/api/src/cron/jobs/poll-apify-reputation-runs.job.ts`.\n\nImplement the cron handler following the pseudocode in the spec's Technical section:\n- Read `HOSPEDA_EXTREP_APIFY_RUN_TIMEOUT_MS` from env (default 600_000).\n- Call `getReputationAdapterCredentials()` from `apps/api/src/utils/reputation-credentials.ts` at the start of each tick (not cached).\n- Call `reputationModel.findPendingRuns()` to get all pending/running rows.\n- For each row: call `getApifyRunStatus()`; branch on status:\n  - SUCCEEDED: call `getApifyDatasetItems()` → `adapter.mapDatasetItems()` → `upsertReputation()` with `fetchStatus='ok'`, `runStatus='idle'`, cleared run IDs.\n  - FAILED / ABORTED / TIMED-OUT: `upsertReputation()` with `fetchStatus='error'`, `runStatus='idle'`, cleared run IDs.\n  - READY / RUNNING within timeout: `updateRunStatus(row.id, 'running')` if not already 'running'.\n  - READY / RUNNING past timeout: `upsertReputation()` with `fetchStatus='error'`, `fetchMessage='Apify run timed out'`, `runStatus='idle'`, cleared run IDs.\n- Return `{ success, message, processed, errors, durationMs }`.\n- Zero pending rows → return immediately with `processed: 0, errors: 0`.\n- Each row's error is caught individually; one failure does not abort the loop.\n\nKey file:\n- apps/api/src/cron/jobs/poll-apify-reputation-runs.job.ts (new)\n\nAcceptance criteria:\n- Handler is typed; does not import from `runApifyActor`.\n- `pnpm --filter apps/api typecheck` passes.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-004", "T-008", "T-009", "T-016", "T-017", "T-018"],
+            "blocks": ["T-026", "T-027"],
+            "subtasks": [
+                {
+                    "title": "Implement SUCCEEDED path (fetch items → mapDatasetItems → upsert ok)",
+                    "completed": false
+                },
+                {
+                    "title": "Implement FAILED/ABORTED/TIMED-OUT path (upsert error)",
+                    "completed": false
+                },
+                {
+                    "title": "Implement READY/RUNNING within-timeout path (updateRunStatus running)",
+                    "completed": false
+                },
+                {
+                    "title": "Implement timeout sweep path (upsert error with timed-out message)",
+                    "completed": false
+                },
+                {
+                    "title": "Implement 0-pending noop fast exit",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "cron"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Register poll-apify-reputation-runs in cron registry.ts AND schedules.manifest.ts",
+            "description": "CRITICAL: Both files must be updated in the SAME commit or the existing `test/cron/schedules-manifest.test.ts` will fail.\n\n1. `apps/api/src/cron/registry.ts`: import and register the new job:\n```ts\nimport { pollApifyReputationRunsJob } from './jobs/poll-apify-reputation-runs.job';\n// add to registry array:\npollApifyReputationRunsJob\n```\n\n2. `apps/api/src/cron/schedules.manifest.ts`: add the manifest entry:\n```ts\n{\n  name: 'poll-apify-reputation-runs',\n  displayName: 'Sondeo de runs de Apify (reputación)',\n  category: 'content',\n  schedule: '*/2 * * * *',\n  description: 'Checks the status of pending/running Apify actor runs for external reputation data and persists results when runs complete.'\n}\n```\n\nKey files:\n- apps/api/src/cron/registry.ts\n- apps/api/src/cron/schedules.manifest.ts\n\nAcceptance criteria:\n- Both files updated in the same change.\n- `test/cron/schedules-manifest.test.ts` passes.\n- `pnpm --filter apps/api typecheck` passes.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-025"],
+            "blocks": ["T-028"],
+            "subtasks": [],
+            "tags": ["api", "cron", "registry"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Write unit tests for poll-apify-reputation-runs cron job",
+            "description": "Create `apps/api/src/cron/jobs/test/poll-apify-reputation-runs.job.test.ts` (or matching test directory).\n\nTest cases:\n1. SUCCEEDED path: mock `findPendingRuns` returns 1 row; `getApifyRunStatus` returns `{ status: 'SUCCEEDED', defaultDatasetId: 'ds1' }`; `getApifyDatasetItems` returns items; adapter `mapDatasetItems` returns a result. Expect `upsertReputation` called with `fetchStatus='ok'`, `runStatus='idle'`, `apifyRunId=null`. Expect `processed=1, errors=0`.\n2. FAILED path: `getApifyRunStatus` returns `{ status: 'FAILED' }`. Expect `upsertReputation` called with `fetchStatus='error'`, `runStatus='idle'`. Expect `errors=1`.\n3. TIMED-OUT path: `getApifyRunStatus` returns `{ status: 'TIMED-OUT' }`. Same expectations as FAILED.\n4. ABORTED path: `getApifyRunStatus` returns `{ status: 'ABORTED' }`. Same as FAILED.\n5. RUNNING within timeout: `runStartedAt` is 1 min ago, `getApifyRunStatus` returns `{ status: 'RUNNING' }`. Expect `updateRunStatus` called with `'running'`. No upsertReputation for result.\n6. Timeout sweep: `runStartedAt` is 20 min ago (> default 10 min), Apify still `RUNNING`. Expect `upsertReputation` with `fetchMessage='Apify run timed out'`, `runStatus='idle'`.\n7. Zero pending rows noop: `findPendingRuns` returns `[]`. Expect no Apify calls, `processed=0, errors=0`, exits cleanly.\n8. Apify API unreachable: `getApifyRunStatus` returns null. Expect row skipped (no upsert), logged warning, loop continues.\n9. Per-row error isolation: first row throws, second row processes successfully. Expect `errors=1, processed=1`.\n\nAll mocks via vitest `vi.fn()` / `vi.mock()`.\n\nAcceptance criteria:\n- All 9 cases pass.\n- Coverage on the cron handler >= 90%.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-025"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "api", "cron"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Verify schedules-manifest sync test still passes after cron registration",
+            "description": "Run the existing `test/cron/schedules-manifest.test.ts` test (or equivalent) to confirm the registry/manifest parity check passes now that both `registry.ts` and `schedules.manifest.ts` were updated in T-026.\n\nSteps:\n1. `pnpm --filter apps/api test -- schedules-manifest` (or the exact vitest filter for that file).\n2. Confirm output shows all tests passing.\n3. If the test fails because the cron name is mismatched between registry and manifest, fix the mismatch in T-026's output before proceeding.\n\nKey file:\n- apps/api/src/cron/test/schedules-manifest.test.ts (or equivalent path — locate before running)\n\nAcceptance criteria:\n- The sync test reports all green.\n- No new entries exist in either file without a corresponding entry in the other.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-026"],
+            "blocks": ["T-035"],
+            "subtasks": [],
+            "tags": ["testing", "api", "cron"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-029",
+            "title": "Add reputation status i18n keys to es/en/pt locale files",
+            "description": "Add the following i18n keys to the web locale files (namespace `web` or confirm the existing convention for reputation strings from SPEC-237):\n\n```json\n{\n  \"externalReputation\": {\n    \"status\": {\n      \"pending\": \"Actualizando...\",\n      \"running\": \"Procesando...\",\n      \"error\": \"Falló\",\n      \"blocked\": \"Bloqueado\",\n      \"notFound\": \"No encontrado\"\n    },\n    \"refresh\": {\n      \"enqueued\": \"Actualizando en segundo plano...\",\n      \"inlineSuccess\": \"Actualizado\"\n    }\n  }\n}\n```\n\nAdd equivalent English keys to `en.json` and Portuguese keys to `pt.json` (translate appropriately).\n\nKey files:\n- packages/i18n/src/locales/es.json\n- packages/i18n/src/locales/en.json\n- packages/i18n/src/locales/pt.json\n\nConfirm exact key path by reading the existing SPEC-237 reputation keys already in these files.\n\nAcceptance criteria:\n- All three locale files updated.\n- `pnpm --filter @repo/i18n typecheck` (or equivalent test) passes.\n- Keys are nested consistently with existing reputation key namespace.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-031"],
+            "subtasks": [],
+            "tags": ["web", "i18n"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-030",
+            "title": "Create useReputationStatus polling hook (apps/web/src/hooks/use-reputation-status.ts)",
+            "description": "Create `apps/web/src/hooks/use-reputation-status.ts` (new file).\n\nImplement:\n```ts\nexport interface ReputationPlatformStatus {\n    runStatus: 'idle' | 'pending' | 'running';\n    fetchStatus: 'ok' | 'error' | 'blocked' | 'not_found';\n    rating: number | null;\n    reviewsCount: number | null;\n    aggregateFetchedAt: string | null;\n}\n\nexport interface UseReputationStatusResult {\n    platforms: Partial<Record<string, ReputationPlatformStatus>>;\n    allSettled: boolean;\n    loading: boolean;\n    error: string | null;\n}\n\nexport function useReputationStatus(\n    accommodationId: string,\n    enabled: boolean\n): UseReputationStatusResult\n```\n\nBehavior:\n- When `enabled = false` or `allSettled = true`: no polling, return current state.\n- When `enabled = true` and `allSettled = false`: poll `GET /api/v1/protected/accommodations/{accommodationId}/external-reputation/status` every 10 s using native `fetch` + `setInterval`.\n- On 4xx/5xx from the status endpoint: stop polling, set `error = 'no se pudo obtener el estado'`.\n- On network error: silently retry next tick (do not set error).\n- Cleans up `setInterval` on component unmount (React `useEffect` cleanup).\n- Uses native `fetch` ONLY — no TanStack Query (that is admin-only).\n\nKey file:\n- apps/web/src/hooks/use-reputation-status.ts (new)\n\nAcceptance criteria:\n- Hook starts polling on mount when enabled=true and allSettled=false.\n- Hook stops polling when allSettled=true.\n- Hook uses setInterval + native fetch (no library dependencies).\n- `pnpm --filter apps/web typecheck` passes.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-031", "T-033"],
+            "subtasks": [],
+            "tags": ["web", "hook", "polling"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-031",
+            "title": "Modify SPEC-237 owner reputation panel to use useReputationStatus and render per-platform status chips",
+            "description": "Locate the existing SPEC-237 owner reputation panel component:\n```bash\ngrep -rn \"external-reputation\\|externalReputation\\|ExternalReputation\" apps/web/src/ --include=\"*.astro\" --include=\"*.tsx\" -l\n```\n\nModify the component to:\n1. Import and call `useReputationStatus(accommodationId, enabled)` — `enabled` is true after the owner clicks refresh.\n2. Pass `runStatus` to each platform's display chip.\n3. Render per-platform state chips:\n   - `runStatus='pending' | 'running'`: spinner chip + i18n key `externalReputation.status.pending` / `.running`, previously-cached rating in muted style (stale indicator).\n   - `runStatus='idle' && fetchStatus='ok'`: show rating badge normally.\n   - `runStatus='idle' && fetchStatus='error'|'blocked'|'not_found'`: show error badge with `fetchMessage` as tooltip + i18n error key.\n4. After clicking refresh and receiving a 202: set `enabled=true` to start polling.\n5. After receiving a 200 (all inline): do NOT start polling.\n6. All status chip text via `@repo/i18n` (keys added in T-029).\n7. `aria-live=\"polite\"` on the status chip container.\n8. Spinner animation wrapped in CSS `@media (prefers-reduced-motion: reduce)` suppression.\n\nKey files:\n- apps/web/src/components/.../<RepeatationPanelComponent>.tsx (locate via grep)\n\nAcceptance criteria:\n- No Tailwind classes (vanilla CSS / CSS modules only).\n- All strings via i18n keys.\n- `pnpm --filter apps/web typecheck` passes.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-029", "T-030"],
+            "blocks": ["T-032"],
+            "subtasks": [
+                {
+                    "title": "Import and wire useReputationStatus hook",
+                    "completed": false
+                },
+                {
+                    "title": "Render pending/running spinner chip with stale rating",
+                    "completed": false
+                },
+                {
+                    "title": "Render idle+ok rating badge",
+                    "completed": false
+                },
+                {
+                    "title": "Render idle+error badge with tooltip",
+                    "completed": false
+                },
+                {
+                    "title": "Set enabled=true on 202 response, false on 200",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "component", "ui"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-032",
+            "title": "Create ReputationStatus.module.css co-located with the reputation panel component",
+            "description": "Create `ReputationStatus.module.css` (or the appropriate `.module.css` name matching the component file) co-located alongside the modified owner reputation panel component.\n\nStyles to include:\n- `.statusChip` — base chip style (border-radius, padding, font-size).\n- `.statusPending` / `.statusRunning` — visual treatment for in-flight state (muted color, optional border).\n- `.statusOk` — normal rating display.\n- `.statusError` — error badge treatment (warning color).\n- `.spinner` — CSS keyframe animation for the loading indicator.\n- `@media (prefers-reduced-motion: reduce)` block: set `.spinner` animation to `none` or `duration: 0`.\n- Stale-rating muted style (e.g. opacity 0.5 on the rating text when in pending/running state).\n\nAll class names use CSS Modules (`.module.css`), no Tailwind.\n\nKey file:\n- apps/web/src/components/.../<path>/ReputationStatus.module.css (new, co-located)\n\nAcceptance criteria:\n- CSS module compiles without errors.\n- Spinner animation has a `prefers-reduced-motion` fallback.\n- All status states have distinct visual styles.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-031"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["web", "css", "a11y"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-033",
+            "title": "Write unit tests for useReputationStatus hook",
+            "description": "Create `apps/web/src/hooks/test/use-reputation-status.test.ts` (or `.tsx`).\n\nTest cases using vitest + `@testing-library/react` (or the project's existing hook testing pattern):\n\n1. Does NOT poll when `enabled=false`.\n2. Polls immediately when `enabled=true` (mocked `fetch` called on mount).\n3. Repeats polling every 10 s (advance fake timers by 10 s, assert fetch called again).\n4. Stops polling when `allSettled=true` is returned from the status endpoint.\n5. On 4xx response: sets `error` string, stops polling.\n6. On 5xx response: sets `error` string, stops polling.\n7. On network error: does NOT set error (transient), continues polling.\n8. Cleanup: `setInterval` is cleared on unmount (no memory leak).\n\nAll tests mock `fetch` via `vi.fn()`; use `vi.useFakeTimers()` for timer control.\n\nAcceptance criteria:\n- All 8 cases pass.\n- No real HTTP calls in tests.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-030"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "web", "hook"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-034",
+            "title": "Write regression test: weekly cron enqueues via startRun, not runApifyActor",
+            "description": "Create a regression test that verifies the existing weekly `refresh-external-reputation` cron job (from SPEC-237) now calls `startRun()` for Apify-backed platforms instead of `runApifyActor()`.\n\nTest location: `apps/api/src/cron/jobs/test/refresh-external-reputation.job.regression.test.ts` (or extend the existing test for that job).\n\nTest case:\n- Mock `runApifyActor` with a spy.\n- Mock `startApifyRun` with a spy returning a valid run result.\n- Trigger the weekly cron handler for an accommodation that has an Airbnb listing.\n- Assert: `runApifyActor` spy was NEVER called.\n- Assert: `startApifyRun` spy WAS called for the Airbnb platform.\n- Assert: DB row for Airbnb has `run_status='pending'`, `apify_run_id` set.\n\nThis guards against future regressions where the sync endpoint is accidentally restored.\n\nAcceptance criteria:\n- Test passes.\n- `runApifyActor` call count in the test = 0.\n- `startApifyRun` call count >= 1.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-019", "T-025"],
+            "blocks": ["T-035"],
+            "subtasks": [],
+            "tags": ["testing", "regression", "cron"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-035",
+            "title": "Run full pnpm test + typecheck + lint suite and fix any regressions",
+            "description": "Run the full quality suite across all affected packages and fix any issues found:\n\n1. `pnpm typecheck` — fix any TypeScript errors in @repo/db, @repo/schemas, @repo/service-core, apps/api, apps/web.\n2. `pnpm lint` — fix any Biome lint errors. Pay attention to:\n   - `useDefaultParameterLast` (params with defaults after required)\n   - `noExplicitAny` (use proper types)\n   - `useExhaustiveDependencies` (React hooks deps)\n   - `noUnusedVariables` (prefix with `_`)\n3. `pnpm test` — run full test suite, fix any broken tests. Common failure points:\n   - Schema parse tests if new required fields were accidentally added.\n   - Mock-based tests that assert old method signatures.\n   - The schedules-manifest sync test (should be green from T-028).\n\nKey scopes to check:\n- `pnpm --filter @repo/db typecheck`\n- `pnpm --filter @repo/schemas typecheck`\n- `pnpm --filter @repo/service-core test`\n- `pnpm --filter apps/api test`\n- `pnpm --filter apps/web test`\n\nAcceptance criteria:\n- `pnpm typecheck` exits 0.\n- `pnpm lint` exits 0.\n- `pnpm test` exits 0 with no failing tests.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-028", "T-034"],
+            "blocks": ["T-036", "T-037"],
+            "subtasks": [],
+            "tags": ["testing", "ci", "quality"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-036",
+            "title": "Verify schema drift guard passes (migration committed in T-003)",
+            "description": "Confirm the schema drift guard passes — i.e. that the Drizzle TS schema and the latest committed migration file are in sync.\n\nSteps:\n1. Run `pnpm --filter @repo/db db:generate` — it should output \"No changes detected\" (or equivalent) meaning the schema and the migration are in sync.\n2. If new SQL is generated, the migration from T-003 was incomplete — commit the additional migration file before proceeding.\n3. Run the CI drift guard script if one exists: `scripts/check-schema-drift.sh` or equivalent.\n\nKey files checked:\n- packages/db/src/schemas/ (all schema files)\n- packages/db/src/migrations/ (migration files)\n\nAcceptance criteria:\n- `db:generate` produces no new migration file.\n- Drift guard script exits 0.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-003", "T-035"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["database", "ci", "migration"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-037",
+            "title": "Verify pnpm env:check:registry passes for new env vars",
+            "description": "Confirm the env registry CI gate passes after the new env vars were added in T-004.\n\n`pnpm env:check:registry` runs three per-app vitest suites that validate all app env schemas are in sync with the `@repo/config` registry.\n\nSteps:\n1. `pnpm env:check:registry`\n2. If it fails, locate the mismatch between `packages/config/src/env-registry.*.ts` and `apps/api/src/utils/env.ts`, fix it.\n\nAcceptance criteria:\n- `pnpm env:check:registry` exits 0.\n- No env var is in the registry without a corresponding Zod validator in the app schema.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-004", "T-035"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["config", "env", "ci"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-038",
+            "title": "Update apps/api/docs/route-architecture.md to document the new status endpoint",
+            "description": "Update `apps/api/docs/route-architecture.md` to note the new GET status endpoint.\n\nAdd an entry in the protected routes section:\n- `GET /api/v1/protected/accommodations/:id/external-reputation/status` — Returns per-platform `runStatus` + `fetchStatus` + rating for polling the async reputation refresh. Returns `allSettled: boolean`.\n\nKeep the addition concise (1-3 lines) matching the existing format of route documentation in that file.\n\nKey file:\n- apps/api/docs/route-architecture.md\n\nAcceptance criteria:\n- New endpoint is documented.\n- No existing documentation is removed or altered.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-022"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["docs"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-039",
+            "title": "Note owner ops required: set HOSPEDA_EXTREP_POLL_SCHEDULE + HOSPEDA_EXTREP_APIFY_RUN_TIMEOUT_MS in Coolify",
+            "description": "Document the operational requirements introduced by the two new env vars added in T-004.\n\nUpdate `apps/api/.env.example` (if not already done in T-004) with comments explaining each var:\n- `HOSPEDA_EXTREP_POLL_SCHEDULE` — cron expression, default `*/2 * * * *`.\n- `HOSPEDA_EXTREP_APIFY_RUN_TIMEOUT_MS` — milliseconds before a stuck run is swept, default `600000`.\n\nCreate (or update) a note in the PR description / progress.md reminding the owner:\n1. Set `HOSPEDA_EXTREP_POLL_SCHEDULE` in Coolify for `hospeda-api-staging` and `hospeda-api-prod` (the defaults are fine for most deployments — only set if custom scheduling is needed).\n2. Set `HOSPEDA_EXTREP_APIFY_RUN_TIMEOUT_MS` in Coolify if the default 10 min timeout needs adjustment.\n3. The existing `HOSPEDA_APIFY_TOKEN` (from SPEC-237) must already be set — without it, `startRun()` returns null and all Apify platforms degrade to `fetch_status='error'`.\n\nKey file:\n- apps/api/.env.example (update comments)\n- .qtm/tasks/SPEC-250-external-reputation-async-refresh/progress.md (new note, or add to this file)\n\nAcceptance criteria:\n- `.env.example` has both vars with descriptive comments.\n- Ops note is documented somewhere visible (progress.md or PR template notes).",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-004"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["docs", "ops", "env"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-20T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 39,
+        "pending": 39,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 1.79
+    }
+}

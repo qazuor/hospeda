@@ -58,6 +58,25 @@ export interface LeadNotificationPort {
     notifyNewLead: (lead: CommerceLead) => Promise<void>;
 }
 
+/**
+ * Minimal port for the owner-provisioning step used by {@link CommerceLeadService.approveAndProvision}.
+ *
+ * Decouples the lead service from the concrete `CommerceOwnerProvisioningService`
+ * (which the API layer constructs per-request to capture Better Auth headers).
+ * The concrete service is structurally assignable to this port.
+ */
+export interface CommerceOwnerProvisioner {
+    /**
+     * Provisions a COMMERCE_OWNER account from a lead (creates the user + sends
+     * the credential email). Returns the created user's id on success.
+     */
+    provisionCommerceOwner: (
+        actor: Actor,
+        input: { lead: CommerceLead },
+        ctx?: ServiceContext
+    ) => Promise<ServiceOutput<{ userId: string; email: string; name: string }>>;
+}
+
 // ---------------------------------------------------------------------------
 // Input / output types
 // ---------------------------------------------------------------------------
@@ -86,6 +105,29 @@ export interface MarkLeadHandledInput {
     readonly adminNote?: string;
 }
 
+/** Input for the combined approve-and-provision admin action (SPEC-249 Part D). */
+export interface ApproveAndProvisionInput {
+    /** UUID of the lead to approve and provision. */
+    readonly id: string;
+    /** UUID of the admin user performing the action. */
+    readonly handledById: string;
+    /** Optional admin note explaining the decision. */
+    readonly adminNote?: string;
+}
+
+/** Result of {@link CommerceLeadService.approveAndProvision}. */
+export interface ApproveAndProvisionResult {
+    /** The updated lead (status 'approved', linked to the provisioned owner). */
+    readonly lead: CommerceLead;
+    /** The provisioned COMMERCE_OWNER user id. */
+    readonly userId: string;
+    /**
+     * `true` when a new owner account was created during this call;
+     * `false` when the lead was already provisioned (idempotent no-op).
+     */
+    readonly provisioned: boolean;
+}
+
 // ---------------------------------------------------------------------------
 // Validation schemas (internal)
 // ---------------------------------------------------------------------------
@@ -100,6 +142,12 @@ const listLeadsInputSchema = z.object({
 const markHandledInputSchema = z.object({
     id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     status: z.enum(['approved', 'rejected']),
+    handledById: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    adminNote: z.string().max(1000).optional()
+});
+
+const approveAndProvisionInputSchema = z.object({
+    id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     handledById: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     adminNote: z.string().max(1000).optional()
 });
@@ -326,6 +374,115 @@ export class CommerceLeadService extends BaseService {
                     execCtx?.tx
                 );
                 return updated as CommerceLead;
+            }
+        });
+    }
+
+    // -----------------------------------------------------------------------
+    // approveAndProvision — admin (requires COMMERCE_EDIT_ALL) — SPEC-249 Part D
+    // -----------------------------------------------------------------------
+
+    /**
+     * Approves a lead AND provisions its COMMERCE_OWNER account in one action.
+     *
+     * Requires `COMMERCE_EDIT_ALL`. Orchestration order is deliberate:
+     * 1. **Idempotency guard** — if the lead already has `provisionedUserId`,
+     *    return it as a no-op (`provisioned: false`); never double-provision.
+     * 2. **Provision first** — create the owner account + send credentials via
+     *    the injected {@link CommerceOwnerProvisioner}. If this fails, the lead
+     *    is left unhandled so the admin can retry cleanly (no orphan `approved`
+     *    lead without an owner).
+     * 3. **Then mark approved + link** — set `status: 'approved'`, `handledAt`,
+     *    `handledById`, and `provisionedUserId` in a single update.
+     *
+     * The provisioner is passed per-call (not held on the service) because the
+     * API layer constructs `CommerceOwnerProvisioningService` per-request to
+     * capture the Better Auth request headers.
+     *
+     * @param actor - The admin actor performing the action.
+     * @param input - `{ id, handledById, adminNote? }`.
+     * @param provisioner - The owner-provisioning port (per-request instance).
+     * @param ctx - Optional service execution context.
+     * @returns `ServiceOutput<ApproveAndProvisionResult>`.
+     * @throws `NOT_FOUND` when the lead does not exist; `FORBIDDEN` without permission.
+     */
+    public async approveAndProvision(
+        actor: Actor,
+        input: ApproveAndProvisionInput,
+        provisioner: CommerceOwnerProvisioner,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<ApproveAndProvisionResult>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'approveAndProvision',
+            input: { actor, ...input },
+            schema: approveAndProvisionInputSchema,
+            ctx,
+            execute: async (validated, a, execCtx) => {
+                if (!hasPermission(a, PermissionEnum.COMMERCE_EDIT_ALL)) {
+                    throw new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        'Permission denied: COMMERCE_EDIT_ALL required to approve and provision commerce leads'
+                    );
+                }
+
+                const existing = (await this._model.findById(
+                    validated.id,
+                    execCtx?.tx
+                )) as CommerceLead | null;
+                if (!existing) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `Commerce lead not found: ${validated.id}`
+                    );
+                }
+
+                // (1) Idempotency guard — already provisioned, never re-provision.
+                if (existing.provisionedUserId) {
+                    return {
+                        lead: existing,
+                        userId: existing.provisionedUserId,
+                        provisioned: false
+                    };
+                }
+
+                // (2) Provision first — if this fails, the lead stays unhandled.
+                const provisionResult = await provisioner.provisionCommerceOwner(
+                    a,
+                    { lead: existing },
+                    execCtx
+                );
+                if (provisionResult.error || !provisionResult.data) {
+                    throw new ServiceError(
+                        provisionResult.error?.code ?? ServiceErrorCode.INTERNAL_ERROR,
+                        provisionResult.error?.message ?? 'Owner provisioning failed'
+                    );
+                }
+                const { userId } = provisionResult.data;
+
+                // (3) Mark approved + link the provisioned owner in one update.
+                const updatePayload: CommerceLeadAdminUpdateInput = {
+                    id: validated.id,
+                    status: 'approved',
+                    handledAt: new Date(),
+                    handledById: validated.handledById,
+                    provisionedUserId: userId,
+                    ...(validated.adminNote !== undefined ? { adminNote: validated.adminNote } : {})
+                };
+                const parsed = CommerceLeadAdminUpdateInputSchema.safeParse(updatePayload);
+                if (!parsed.success) {
+                    throw new ServiceError(
+                        ServiceErrorCode.VALIDATION_ERROR,
+                        `Invalid update payload: ${parsed.error.message}`
+                    );
+                }
+
+                const updated = (await this._model.update(
+                    { id: validated.id },
+                    parsed.data as Partial<CommerceLead>,
+                    execCtx?.tx
+                )) as CommerceLead;
+
+                return { lead: updated, userId, provisioned: true };
             }
         });
     }

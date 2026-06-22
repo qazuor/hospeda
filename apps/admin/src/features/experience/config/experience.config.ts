@@ -11,7 +11,7 @@
 import { createEntityListPage } from '@/components/entity-list';
 import { EntityType } from '@/components/table/DataTable';
 import { createCommerceListConfig } from '@/features/commerce';
-import { ExperienceAdminSchema, ExperienceTypeEnum, PermissionEnum } from '@repo/schemas';
+import { ExperienceAdminListItemSchema, ExperienceTypeEnum, PermissionEnum } from '@repo/schemas';
 import type { z } from 'zod';
 import { createExperienceColumns } from './experience.columns';
 
@@ -24,8 +24,16 @@ import { createExperienceColumns } from './experience.columns';
  * Picks the subset of fields actually rendered in columns.
  */
 export type ExperienceListItem = Pick<
-    z.infer<typeof ExperienceAdminSchema>,
-    'id' | 'name' | 'type' | 'destinationId' | 'isFeatured' | 'ownerId' | 'createdAt'
+    z.infer<typeof ExperienceAdminListItemSchema>,
+    | 'id'
+    | 'name'
+    | 'type'
+    | 'destinationId'
+    | 'isFeatured'
+    | 'ownerId'
+    | 'createdAt'
+    | 'destination'
+    | 'owner'
 > & {
     /** Lifecycle state string rendered in the status column. */
     readonly lifecycleStatus?: string | null;
@@ -91,9 +99,14 @@ export const experienceListConfig = createCommerceListConfig<ExperienceListItem>
     apiEndpoint: '/api/v1/admin/experiences',
     basePath: '/experiences',
     detailPath: '/experiences/[id]',
-    // TYPE-WORKAROUND: ExperienceAdminSchema carries branded effects from @repo/schemas;
+    // Use the admin LIST schema, which keeps the eager-loaded `owner` and
+    // `destination` relation summaries. The base admin schema strips them, so the
+    // grid could only show raw FK UUIDs in the Destino / Propietario columns.
+    // TYPE-WORKAROUND: schema carries branded effects from @repo/schemas;
     // structurally compatible with the list-item shape, brand-only mismatch.
-    listItemSchema: ExperienceAdminSchema as unknown as import('zod').ZodSchema<ExperienceListItem>,
+    listItemSchema: ExperienceAdminListItemSchema as unknown as import(
+        'zod'
+    ).ZodSchema<ExperienceListItem>,
     createColumns: createExperienceColumns,
     extraFilters: [
         {

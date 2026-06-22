@@ -1,0 +1,2 @@
+ALTER TABLE "commerce_leads" ADD COLUMN "provisioned_user_id" uuid;--> statement-breakpoint
+ALTER TABLE "commerce_leads" ADD CONSTRAINT "commerce_leads_provisioned_user_id_users_id_fk" FOREIGN KEY ("provisioned_user_id") REFERENCES "public"."users"("id") ON DELETE set null ON UPDATE no action;

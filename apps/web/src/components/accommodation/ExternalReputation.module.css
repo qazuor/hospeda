@@ -2,7 +2,13 @@
  * Styles for the "Reputación en otras plataformas" section on the
  * accommodation detail page.
  * Uses design tokens only — no Tailwind utility classes (web-app convention).
+ *
+ * Layout: two stacked blocks inside the section.
+ *   Block 1 (.chips) — row of compact score chips, one per platform.
+ *   Block 2 (.reviewsBlock) — featured Google review snippets with heading.
  */
+
+/* ── Section wrapper ─────────────────────────────────────────────────────── */
 
 .section {
     display: flex;
@@ -26,86 +32,78 @@
     margin-top: calc(-1 * var(--space-4, 16px));
 }
 
-/* Grid of platform cards */
-.platforms {
+/* ── Block 1: Score chips row ────────────────────────────────────────────── */
+
+/* Narrow: stack chips vertically */
+.chips {
     display: flex;
     flex-direction: column;
-    gap: var(--space-4, 16px);
+    gap: var(--space-3, 12px);
 }
 
-/* Individual platform card */
-.platformCard {
-    padding: var(--space-5, 20px);
+/* Wide: horizontal wrapping row — chips share equal width and aligned height */
+@media (min-width: 640px) {
+    .chips {
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: stretch;
+    }
+}
+
+/* Individual chip — compact card, no snippets inside */
+.chip {
+    flex: 1 1 200px;
+    min-width: 0;
+    padding: var(--space-4, 16px) var(--space-5, 20px);
     border: 1px solid var(--border, oklch(0.9 0 0));
     border-radius: var(--radius-button, 8px);
     background-color: var(--card);
     display: flex;
     flex-direction: column;
-    gap: var(--space-4, 16px);
+    gap: var(--space-3, 12px);
 }
 
-/* Platform header */
-.platformHeader {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2, 8px);
-}
-
-.platformName {
+/* AC-4.5: platform name as heading inside chip */
+.chipPlatformName {
     font-family: var(--font-heading);
     font-weight: 600;
     font-size: 1rem;
     color: var(--core-foreground);
 }
 
-/* Aggregate badge */
-.aggregateBadge {
+/* Rating area: star icon + big number stacked/inline */
+.chipRating {
     display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: var(--space-3, 12px);
+    flex-direction: column;
+    gap: var(--space-1, 4px);
 }
 
-.ratingBadge {
+/* Star icon + number on one line */
+.chipRatingValue {
     display: inline-flex;
     align-items: center;
-    gap: var(--space-1, 4px);
-    background-color: var(--surface-warm, var(--muted));
-    border-radius: var(--radius-button, 8px);
-    padding: var(--space-1, 4px) var(--space-2, 8px);
+    gap: var(--space-2, 8px);
 }
 
-.ratingValue {
+/* Big prominent rating number */
+.chipRatingNumber {
     font-family: var(--font-heading);
     font-weight: 700;
-    font-size: 1rem;
+    font-size: 1.75rem;
     color: var(--core-foreground);
     font-variant-numeric: tabular-nums;
+    line-height: 1;
 }
 
-.ratingLabel {
+/* Review count — muted, smaller */
+.chipReviewCount {
     font-family: var(--font-sans);
-    font-size: 0.75rem;
+    font-size: 0.85rem;
     color: var(--core-muted-foreground);
 }
 
-.reviewCount {
-    font-family: var(--font-sans);
-    font-size: 0.875rem;
-    color: var(--core-muted-foreground);
-}
-
-/* AC-4.5: source attribution label */
-.sourceAttribution {
-    font-family: var(--font-sans);
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--core-muted-foreground);
-    margin-left: auto;
-}
-
-.noData {
+/* No data state */
+.chipNoData {
     font-family: var(--font-sans);
     font-size: 0.875rem;
     color: var(--core-muted-foreground);
@@ -113,8 +111,8 @@
     margin: 0;
 }
 
-/* Deep link CTA */
-.deepLink {
+/* Deep link at the bottom of the chip */
+.chipDeepLink {
     display: inline-flex;
     align-items: center;
     gap: var(--space-1, 4px);
@@ -123,13 +121,43 @@
     font-weight: 500;
     color: var(--brand-primary);
     text-decoration: none;
+    margin-top: auto;
     transition: color 0.2s ease, text-decoration 0.2s ease;
     align-self: flex-start;
 }
 
-.deepLink:hover {
+.chipDeepLink:hover {
     text-decoration: underline;
     color: color-mix(in srgb, var(--brand-primary) 90%, black);
+}
+
+/* ── Block 2: Featured reviews (Google snippets) ─────────────────────────── */
+
+.reviewsBlock {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4, 16px);
+}
+
+.reviewsBlockHeader {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: var(--space-2, 8px);
+}
+
+.reviewsBlockTitle {
+    font-family: var(--font-heading);
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--core-foreground);
+    margin: 0;
+}
+
+.reviewsBlockVia {
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    color: var(--core-muted-foreground);
 }
 
 /* TTL expired subtle note */
@@ -143,7 +171,8 @@
     border-left: 3px solid var(--border, oklch(0.9 0 0));
 }
 
-/* AC-5.1: "why only Google" explainer — always rendered */
+/* ── Footer: AC-5.1 "why only Google" explainer ─────────────────────────── */
+
 .googleOnlyNote {
     font-family: var(--font-sans);
     font-size: 0.8rem;
@@ -154,12 +183,4 @@
     border-left: 3px solid var(--border, oklch(0.9 0 0));
     border-radius: 0 var(--radius-button, 8px) var(--radius-button, 8px) 0;
     background-color: var(--muted, oklch(0.97 0 0 / 0.5));
-}
-
-@media (min-width: 640px) {
-    .platforms {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: var(--space-4, 16px);
-    }
 }

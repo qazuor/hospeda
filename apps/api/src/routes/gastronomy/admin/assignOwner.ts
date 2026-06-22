@@ -2,10 +2,9 @@
  * POST /api/v1/admin/gastronomies/:id/assign-owner
  * Set or replace the COMMERCE_OWNER of a gastronomy listing — Admin endpoint.
  *
- * Uses `GastronomyService.update()` with `{ ownerId }` as the payload,
- * since no dedicated `setOwner` / `assignOwner` method exists on the service.
- * The PATCH body is intentionally narrow (only `ownerId`) to prevent forged
- * fields from reaching the update path.
+ * Uses the dedicated `GastronomyService.assignOwner()` action. The generic
+ * `update()` path intentionally omits `ownerId` (ownership is immutable there),
+ * so routing assignment through it silently dropped the change.
  */
 import { GastronomyAdminSchema, PermissionEnum } from '@repo/schemas';
 import { GastronomyService, ServiceError } from '@repo/service-core';
@@ -27,9 +26,7 @@ const AssignOwnerBodySchema = z.object({
  * POST /api/v1/admin/gastronomies/:id/assign-owner
  * Assign owner to gastronomy listing — Admin endpoint.
  *
- * Delegates to `GastronomyService.update(actor, id, { ownerId })`.
- * No dedicated service method exists for assign-owner; using `update` with a
- * narrow payload is the established commerce-entity pattern.
+ * Delegates to `GastronomyService.assignOwner(actor, id, ownerId)`.
  * Requires COMMERCE_EDIT_ALL permission.
  */
 export const adminAssignGastronomyOwnerRoute = createAdminRoute({
@@ -53,16 +50,9 @@ export const adminAssignGastronomyOwnerRoute = createAdminRoute({
         const actor = getActorFromContext(ctx);
         const { ownerId } = AssignOwnerBodySchema.parse(body);
 
-        // Delegate to the generic update path — the service enforces COMMERCE_EDIT_ALL
-        // via `_canUpdate` → `checkGastronomyCanEditAll`.
-        // TYPE-WORKAROUND: GastronomyUpdateInput omits ownerId (server-managed after
-        // creation via the generic PATCH path); we pass it explicitly here through the
-        // admin assign-owner action, which is the only sanctioned path to change ownership.
-        const result = await gastronomyService.update(
-            actor,
-            params.id as string,
-            { ownerId } as Parameters<typeof gastronomyService.update>[2]
-        );
+        // Dedicated ownership action: writes the owner FK directly. The generic
+        // update() path omits ownerId by design, so it cannot be used here.
+        const result = await gastronomyService.assignOwner(actor, params.id as string, ownerId);
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

@@ -39,8 +39,11 @@ function buildSource(overrides?: Partial<ExternalReputationSource>): ExternalRep
 // ============================================================================
 
 describe('buildExternalReputationBlock', () => {
-    describe('Rule 1: unverified listings are excluded', () => {
-        it('should return empty items when the only listing is unverified', () => {
+    describe('verified does NOT gate display (out of MVP scope)', () => {
+        // Regression: `verified` was used as a hard gate, but nothing ever sets
+        // it true, so the block was always empty and the feature never rendered.
+        // Visibility is owner-controlled via the master toggle + showLink/showReviews.
+        it('shows an unverified listing when its toggles are enabled', () => {
             // Arrange
             const sources = [buildSource({ verified: false })];
 
@@ -48,10 +51,10 @@ describe('buildExternalReputationBlock', () => {
             const block = buildExternalReputationBlock(sources, SNIPPETS_TTL_MS);
 
             // Assert
-            expect(block.items).toHaveLength(0);
+            expect(block.items).toHaveLength(1);
         });
 
-        it('should include only verified listings when mixed', () => {
+        it('shows both verified and unverified listings (verified is not a filter)', () => {
             // Arrange
             const sources = [
                 buildSource({ platform: ExternalPlatformEnum.GOOGLE, verified: true }),
@@ -62,8 +65,10 @@ describe('buildExternalReputationBlock', () => {
             const block = buildExternalReputationBlock(sources, SNIPPETS_TTL_MS);
 
             // Assert
-            expect(block.items).toHaveLength(1);
-            expect(block.items[0]?.platform).toBe(ExternalPlatformEnum.GOOGLE);
+            expect(block.items).toHaveLength(2);
+            const platforms = block.items.map((i) => i.platform);
+            expect(platforms).toContain(ExternalPlatformEnum.GOOGLE);
+            expect(platforms).toContain(ExternalPlatformEnum.BOOKING);
         });
     });
 
@@ -319,11 +324,19 @@ describe('buildExternalReputationBlock', () => {
             expect(booking?.url).toBe('https://www.booking.com/hotel/ar/test.html');
         });
 
-        it('should return empty block when all sources are excluded', () => {
-            // Arrange
+        it('should return empty block when all sources are fully hidden', () => {
+            // Arrange — the only remaining exclusion rule is "both toggles off".
             const sources: ExternalReputationSource[] = [
-                buildSource({ verified: false }),
-                buildSource({ showLink: false, showReviews: false })
+                buildSource({
+                    platform: ExternalPlatformEnum.GOOGLE,
+                    showLink: false,
+                    showReviews: false
+                }),
+                buildSource({
+                    platform: ExternalPlatformEnum.BOOKING,
+                    showLink: false,
+                    showReviews: false
+                })
             ];
 
             // Act
