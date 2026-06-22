@@ -323,9 +323,10 @@ describe('validateEntityMediaPermission — commerce verticals', () => {
                 expect(result).toEqual({ allowed: true });
             });
 
-            it('allows owner with COMMERCE_MEDIA_EDIT_OWN', () => {
+            it('allows owner with COMMERCE_EDIT_OWN', () => {
+                // SPEC-253 D2=b: COMMERCE_MEDIA_EDIT_OWN replaced by COMMERCE_EDIT_OWN
                 const ownerId = crypto.randomUUID();
-                const actor = makeActor([PermissionEnum.COMMERCE_MEDIA_EDIT_OWN], ownerId);
+                const actor = makeActor([PermissionEnum.COMMERCE_EDIT_OWN], ownerId);
                 const result = validateEntityMediaPermission({
                     actor,
                     entityType,
@@ -334,11 +335,8 @@ describe('validateEntityMediaPermission — commerce verticals', () => {
                 expect(result).toEqual({ allowed: true });
             });
 
-            it('rejects COMMERCE_MEDIA_EDIT_OWN actor who is NOT the owner', () => {
-                const actor = makeActor(
-                    [PermissionEnum.COMMERCE_MEDIA_EDIT_OWN],
-                    crypto.randomUUID()
-                );
+            it('rejects COMMERCE_EDIT_OWN actor who is NOT the owner', () => {
+                const actor = makeActor([PermissionEnum.COMMERCE_EDIT_OWN], crypto.randomUUID());
                 const result = validateEntityMediaPermission({
                     actor,
                     entityType,
