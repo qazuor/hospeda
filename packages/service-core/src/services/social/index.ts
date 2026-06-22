@@ -17,3 +17,10 @@ export {
     SocialSettingService,
     type SocialSettingUpdateByKeyResult
 } from './social-setting.service';
+export {
+    SocialImagePipelineService,
+    type GptImagePayload,
+    type OpenAiFileRef,
+    type ProcessImageInput,
+    type ProcessImageResult
+} from './social-image-pipeline.service';

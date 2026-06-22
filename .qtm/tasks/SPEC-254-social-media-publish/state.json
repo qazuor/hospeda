@@ -934,7 +934,7 @@
             "id": "T-027",
             "title": "Create SocialImagePipelineService",
             "description": "Create `packages/service-core/src/services/social/social-image-pipeline.service.ts`.\n\nInterface:\n```ts\npipelineUpload({ mode, imagePayload, postId, altText?, mimeType? }): Promise<ImagePipelineResult>\n```\n\nLogic:\n1. Detect mode: `public_url` → extract `url`; `openai_file_refs` → iterate array extracting each `downloadUrl`\n2. For each download URL: `fetch(url, { signal: AbortSignal.timeout(15_000) })` (15s timeout per resolved decision #2)\n3. Upload to Cloudinary via `getMediaProvider().upload(stream, { folder: 'social', resourceType: 'image' })`\n4. On success: create `social_assets` row (cloudinary_url, cloudinary_public_id, original_url, width, height from upload result)\n5. On failure (download timeout or Cloudinary error): log WARN; return `{ status: 'failed', warning: 'Media upload failed; manual upload required' }`; do NOT throw (draft creation continues per spec)\n6. Create `social_post_media` join row linking postId to the new asset\n\nAlso add `duration_seconds?: number` to `UploadResult` type in `packages/media/src/types.ts`.\n\nTest requirements:\n- Unit tests: public_url mode success, openai_file_refs mode (array), download timeout → warning returned, Cloudinary failure → warning returned, post-media row created on success\n- File: `packages/service-core/src/services/social/__tests__/social-image-pipeline.test.ts`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-025", "T-013"],
             "blocks": ["T-028"],
@@ -959,14 +959,14 @@
             "tags": ["service-core", "media", "cloudinary"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
             }
         },
         {
@@ -1911,9 +1911,9 @@
     ],
     "summary": {
         "total": 52,
-        "pending": 28,
+        "pending": 27,
         "inProgress": 0,
-        "completed": 24,
+        "completed": 25,
         "blocked": 0,
         "averageComplexity": 2.3
     }

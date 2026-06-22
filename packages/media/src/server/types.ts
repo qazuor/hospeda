@@ -10,6 +10,11 @@ export interface UploadResult {
     readonly width: number;
     /** Image height in pixels. */
     readonly height: number;
+    /**
+     * Duration in seconds for video assets. Undefined for images.
+     * Added for SPEC-254 social media pipeline (T-025).
+     */
+    readonly durationSeconds?: number;
 }
 
 /**
