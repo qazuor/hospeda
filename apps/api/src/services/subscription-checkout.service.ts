@@ -34,7 +34,8 @@ import {
     sql,
     withTransaction
 } from '@repo/db';
-import { ProductDomainEnum } from '@repo/schemas';
+import { ProductDomainEnum, PromoEffectKindEnum } from '@repo/schemas';
+import { PromoCodeService } from '@repo/service-core';
 import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger.js';
 
@@ -364,19 +365,81 @@ export async function initiatePaidMonthlySubscription(
     const { customerId, planSlug, billing, urls, promoCode } = input;
 
     // Resolve the promo code BEFORE the qzpay call so an invalid code does
-    // not leave a half-created subscription behind. For monthly subs, the
-    // only honored type is `free_trial_extension` (SPEC-126 D9 + master
-    // plan Decision 4); discount-type promos must be rejected here.
+    // not leave a half-created subscription behind.
+    //
+    // SPEC-262 T-005: For trial_extension effects we now read `extraDays` from
+    // the DB-persisted effect (via PromoCodeService) rather than the hardcoded
+    // config (resolveFreeTrialExtensionPromo). This ensures that changes to
+    // trial periods made in the admin (once the admin form lands in T-009/T-010)
+    // are honored at checkout without a deploy.
+    //
+    // For codes NOT in the DB (or without a trial_extension effect), we fall
+    // back to the config-backed resolveFreeTrialExtensionPromo for backward
+    // compat (covers FREEMONTH before the backfill migration in T-003 runs).
+    //
+    // TODO(SPEC-262 T-008): when the full route rewrite ships, retire the
+    // config-backed fallback and require all trial-extension codes to be in
+    // the DB with effect_kind='trial_extension'.
     let freeTrialDays: number | undefined;
     if (promoCode !== undefined && promoCode.length > 0) {
-        const resolved = resolveFreeTrialExtensionPromo(promoCode);
-        if (!resolved) {
-            throw new SubscriptionCheckoutError(
-                'INVALID_PROMO_CODE',
-                `Promo code '${promoCode}' is not a valid free-trial extension`
-            );
+        // --- DB-backed path (SPEC-262 T-005) ---
+        const promoService = new PromoCodeService();
+        const promoResult = await promoService.getByCode(promoCode);
+
+        if (promoResult.success && promoResult.data) {
+            const dbCode = promoResult.data;
+
+            if (!dbCode.active) {
+                throw new SubscriptionCheckoutError(
+                    'INVALID_PROMO_CODE',
+                    `Promo code '${promoCode}' is not active`
+                );
+            }
+
+            if (dbCode.effect?.kind === PromoEffectKindEnum.TRIAL_EXTENSION) {
+                // DB-persisted trial extension — use extraDays from the effect.
+                freeTrialDays = dbCode.effect.extraDays;
+            } else if (dbCode.effect?.kind === PromoEffectKindEnum.COMP) {
+                // Comp codes handled separately at subscription creation time.
+                // The checkout service does not create an MP preapproval for comp
+                // (AC-2.1 / Model β). For now, freeTrialDays stays undefined and
+                // the subscription will be created with status='comp' by the
+                // caller after the qzpay call. Full comp-at-checkout wiring is
+                // T-008.
+                freeTrialDays = undefined;
+            } else if (dbCode.effect?.kind === PromoEffectKindEnum.DISCOUNT) {
+                // Discount codes are not honored at monthly subscription creation
+                // (SPEC-126 D9 / master plan Decision 4 — only trial extensions
+                // apply to monthly recurring at signup). Fall through to error.
+                throw new SubscriptionCheckoutError(
+                    'INVALID_PROMO_CODE',
+                    `Promo code '${promoCode}' is a discount code and cannot be applied at monthly subscription signup. Use a trial extension code.`
+                );
+            } else {
+                // DB code exists but has no typed effect (legacy row, not yet
+                // backfilled). Fall through to the config-backed path below.
+                const resolved = resolveFreeTrialExtensionPromo(promoCode);
+                if (!resolved) {
+                    throw new SubscriptionCheckoutError(
+                        'INVALID_PROMO_CODE',
+                        `Promo code '${promoCode}' is not a valid free-trial extension`
+                    );
+                }
+                freeTrialDays = resolved.extraTrialDays;
+            }
+        } else {
+            // Code not in DB — fall back to config-backed resolution.
+            // This covers the period before the admin create-promo-code route
+            // is updated (T-008) or before FREEMONTH is backfilled (T-003).
+            const resolved = resolveFreeTrialExtensionPromo(promoCode);
+            if (!resolved) {
+                throw new SubscriptionCheckoutError(
+                    'INVALID_PROMO_CODE',
+                    `Promo code '${promoCode}' is not a valid free-trial extension`
+                );
+            }
+            freeTrialDays = resolved.extraTrialDays;
         }
-        freeTrialDays = resolved.extraTrialDays;
     }
 
     const plan = await resolvePlanBySlug(billing, planSlug);
