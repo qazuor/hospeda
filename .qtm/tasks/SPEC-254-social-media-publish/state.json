@@ -1082,7 +1082,7 @@
             "id": "T-031",
             "title": "Extend rate-limit middleware for AI inbound and Make callback routes",
             "description": "Edit `apps/api/src/middlewares/rate-limit.ts` to extend `getEndpointType()` (or the per-route config mechanism) to recognize:\n- `/api/v1/ai/social/*` → endpoint type `'ai-inbound'` with a conservative rate limit (e.g., 60 req/hour per key)\n- `/api/v1/integrations/make/social/*` → endpoint type `'make-callback'` with a moderate limit (e.g., 300 req/hour)\n\nAlternatively, use the `customRateLimit` option on `createApiKeyRoute` if that pattern already exists. Do not break existing rate limit behavior for other routes.\n\nTest requirements:\n- Unit test: `getEndpointType()` returns correct type for new path patterns\n- File: `apps/api/src/__tests__/middlewares/rate-limit.test.ts` (extend)",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-029"],
             "blocks": ["T-040"],
