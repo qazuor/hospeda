@@ -512,8 +512,8 @@
             "description": "Create seed files in `packages/seed/src/required/` using `createSeedFactory` + JSON fixture files in `packages/seed/src/data/social/`:\n- `social-platforms.seed.ts` + `social-platforms.data.json` (3 rows: INSTAGRAM, FACEBOOK, X)\n- `social-platform-formats.seed.ts` + `social-platform-formats.data.json` (13 rows per spec: INSTAGRAM×FEED_POST, INSTAGRAM×REEL, INSTAGRAM×STORY, INSTAGRAM×CAROUSEL, FACEBOOK×PHOTO_POST, FACEBOOK×VIDEO_POST, FACEBOOK×STORY, X×TEXT_POST, X×IMAGE_POST, X×VIDEO_POST, plus enabled/makeChannelKey/requiresMedia per each)\n- `social-campaigns.seed.ts` (at least 1 default row: `institucional-hospeda`)\n- `social-content-batches.seed.ts` (at least 1 default row: `hospeda-launch-2026-06`)\n- `social-audiences.seed.ts` (at least 1 row: `turistas`)\n- `social-hashtag-sets.seed.ts` (at least 1 row: `verano`)\n- `social-hashtags.seed.ts` (at least 2 sample hashtags)\n- `social-post-footers.seed.ts` (1 default row: `hospeda-default` with `is_default=true`)\n- `social-settings.seed.ts` (keys: `make_webhook_url`, `default_timezone`, `max_hashtags_per_platform_json`, `dispatch_cron_interval_minutes`)\n\nAll seed files must be idempotent (upsert by unique key). `social_platforms` is seed-only — no create endpoint per resolved decision #4.\n\nTest requirements:\n- Integration test: run all seeds against a test DB and assert expected row counts\n- File: `packages/seed/src/__tests__/social-seeds.test.ts`",
             "status": "pending",
             "complexity": 3,
-            "blockedBy": ["T-012", "T-014"],
-            "blocks": ["T-016"],
+            "blockedBy": ["T-012", "T-014", "T-016", "T-017"],
+            "blocks": ["T-018"],
             "subtasks": [
                 {
                     "title": "Create 9 seed files with JSON fixtures",
@@ -545,9 +545,9 @@
             "id": "T-016",
             "title": "Create catalog CRUD services for hashtag, hashtag-set, footer, campaign, batch, audience",
             "description": "Create 6 service modules in `packages/service-core/src/services/social/`, each with:\n- `<entity>.service.ts` — extends BaseCrudService; implements list, getById, create, update, softDelete. Uses Result<T> return type.\n- `<entity>.permissions.ts` — maps CRUD operations to the relevant PermissionEnum values (from T-003)\n- `<entity>.normalizers.ts` — e.g., hashtag normalization: toLowerCase + ensure `#` prefix for `normalized_hashtag`\n\nSpecial behavior per entity:\n- HashtagService: normalize to lowercase + `#` prefix, check uniqueness of `normalized_hashtag`, return CONFLICT if duplicate\n- HashtagSetService: standard CRUD\n- FooterService: standard CRUD\n- CampaignService: standard CRUD\n- BatchService: standard CRUD\n- AudienceService: standard CRUD\n\nAll list methods use `safeIlike()` for search (never raw `ilike()`). All support `page`+`pageSize` pagination.\n\nTest requirements:\n- Unit tests for HashtagService: normalization (`#playa` → `#playa`, `playa` → `#playa`), uniqueness conflict, softDelete, list with search\n- Unit tests for other services: create, update, softDelete, list pagination\n- File: `packages/service-core/src/services/social/__tests__/catalog-services.test.ts`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
-            "blockedBy": ["T-014", "T-015"],
+            "blockedBy": ["T-014"],
             "blocks": ["T-017", "T-018", "T-030"],
             "subtasks": [
                 {
@@ -574,14 +574,14 @@
             "tags": ["service-core", "catalog"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-21T00:00:00.000Z",
+                "completed": "2026-06-21T00:00:00.000Z"
             }
         },
         {
@@ -1911,9 +1911,9 @@
     ],
     "summary": {
         "total": 52,
-        "pending": 36,
+        "pending": 35,
         "inProgress": 0,
-        "completed": 16,
+        "completed": 17,
         "blocked": 0,
         "averageComplexity": 2.3
     }
