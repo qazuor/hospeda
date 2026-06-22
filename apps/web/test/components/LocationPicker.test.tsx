@@ -1,3 +1,4 @@
+import { useGeocodingSearch } from '@/hooks/useGeocoding';
 /**
  * @file LocationPicker.test.tsx
  * @description Tests for LocationPicker component.
@@ -8,6 +9,13 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
+
+// Mock Spinner CSS module
+vi.mock('../../src/components/shared/feedback/Spinner.module.css', () => ({
+    default: new Proxy({} as Record<string, string>, {
+        get: (_target, prop) => String(prop)
+    })
+}));
 
 // Hoisted mocks — must be defined before any imports that use them
 const { mockMapComponent } = vi.hoisted(() => ({
@@ -118,5 +126,28 @@ describe('LocationPicker', () => {
         render(<LocationPicker {...defaultProps} />);
 
         expect(screen.getByTestId('mock-map')).toBeInTheDocument();
+    });
+
+    it('shows Spinner (not ⏳) when isSearching is true (SPEC-228 T-017)', () => {
+        vi.mocked(useGeocodingSearch).mockReturnValueOnce({
+            suggestions: [],
+            isLoading: true,
+            error: null
+        });
+
+        render(<LocationPicker {...defaultProps} />);
+
+        // No hourglass emoji
+        expect(document.body.textContent).not.toContain('⏳');
+        // Spinner renders a role="status" live region
+        expect(screen.getByRole('status')).toBeInTheDocument();
+        // Label text is in a sr-only span inside the status role (resolved i18n
+        // value uses the ellipsis character).
+        expect(screen.getByText('Buscando…')).toBeInTheDocument();
+    });
+
+    it('does not show Spinner when isSearching is false', () => {
+        render(<LocationPicker {...defaultProps} />);
+        expect(screen.queryByRole('status')).not.toBeInTheDocument();
     });
 });

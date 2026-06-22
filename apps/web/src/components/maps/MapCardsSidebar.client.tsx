@@ -20,6 +20,7 @@ import type { ComponentType } from 'react';
 import { useEffect, useState } from 'react';
 
 import { FavoriteButton } from '@/components/shared/favorite/FavoriteButton.client';
+import { Spinner } from '@/components/shared/feedback/Spinner';
 import type { SupportedLocale } from '@/lib/i18n';
 import type { IconProps } from '@repo/icons';
 import { GalleryIcon, LocationIcon, StarIcon } from '@repo/icons';
@@ -92,10 +93,17 @@ interface MapCardsSidebarProps {
     readonly locale?: SupportedLocale;
     /** Whether the visitor is signed-in — drives FavoriteButton behavior. */
     readonly isAuthenticated?: boolean;
+    /**
+     * A1 (SPEC-228): true while `useViewportSearch` is fetching new results for
+     * the current viewport. Shows a loading overlay over the (stale) card list.
+     */
+    readonly isFetching?: boolean;
     readonly i18n: {
         readonly resultsHeading: string;
         readonly resultsCount: (n: number) => string;
         readonly emptyState: string;
+        /** Spinner label for the in-flight overlay (A1). */
+        readonly loading?: string;
         readonly openSheet: string;
         /**
          * "Ver {{count}} resultados" template used on the floating sheet
@@ -172,6 +180,7 @@ export function MapCardsSidebar({
     onCardSelect,
     locale = 'es',
     isAuthenticated = false,
+    isFetching = false,
     i18n
 }: MapCardsSidebarProps) {
     const [isMobile, setIsMobile] = useState(false);
@@ -478,6 +487,18 @@ export function MapCardsSidebar({
         </ul>
     );
 
+    // A1 (SPEC-228): overlay shown while a viewport refetch is in flight, so
+    // the user sees "updating" instead of stale cards. The Spinner carries the
+    // i18n label (role=status) so the in-flight state is announced.
+    const loadingOverlay = isFetching ? (
+        <div className={sidebarStyles.loadingOverlay}>
+            <Spinner
+                size="lg"
+                label={i18n.loading}
+            />
+        </div>
+    ) : null;
+
     if (isMobile) {
         return (
             <>
@@ -501,6 +522,7 @@ export function MapCardsSidebar({
                     // biome-ignore lint/a11y/useSemanticElements: native <dialog> does not compose with the slide-in bottom-sheet animation
                     role="dialog"
                     aria-label={i18n.resultsHeading}
+                    aria-busy={isFetching}
                 >
                     <div
                         className={sidebarStyles.sheetHandle}
@@ -523,6 +545,7 @@ export function MapCardsSidebar({
                         </button>
                     </div>
                     <div className={sidebarStyles.sheetScroll}>{cards}</div>
+                    {loadingOverlay}
                 </div>
                 {isSheetOpen ? (
                     <button
@@ -540,12 +563,14 @@ export function MapCardsSidebar({
         <aside
             className={sidebarStyles.sidebar}
             aria-label={i18n.resultsHeading}
+            aria-busy={isFetching}
         >
             <div className={sidebarStyles.sidebarHeader}>
                 <h2 className={sidebarStyles.sidebarTitle}>{i18n.resultsHeading}</h2>
                 <p className={sidebarStyles.sidebarSubtitle}>{i18n.resultsCount(items.length)}</p>
             </div>
             <div className={sidebarStyles.sidebarScroll}>{cards}</div>
+            {loadingOverlay}
         </aside>
     );
 }

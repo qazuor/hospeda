@@ -33,6 +33,7 @@ import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
 import ContributionBanner from '@/components/contributions/ContributionBanner.astro';
 import EventCardHorizontal from '@/components/shared/cards/EventCardHorizontal.astro';
+import EventCardHorizontalSkeleton from '@/components/skeletons/EventCardHorizontalSkeleton.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import Pagination from '@/components/shared/feedback/Pagination.astro';
@@ -475,13 +476,25 @@ const itemListEntries = cards.map((card) => ({
 	)}
 
 	{!hasError && cards.length > 0 && (
-		<div class="events-grid">
-			{cards.map((card, i) => (
-				<div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
-					<EventCardHorizontal data={card} locale={locale} isAuthenticated={isAuthenticated} />
-				</div>
-			))}
-		</div>
+		<>
+			<div class="events-grid">
+				{cards.map((card, i) => (
+					<div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
+						<EventCardHorizontal data={card} locale={locale} isAuthenticated={isAuthenticated} />
+					</div>
+				))}
+			</div>
+			{/*
+			 * Skeleton swaps in while a filter navigation is in flight
+			 * (html[data-filters-loading]). Stays in the DOM so it renders
+			 * instantly when the flag flips — no JS needed at swap time.
+			 */}
+			<div class="events-grid-skeleton" aria-hidden="true">
+				{Array.from({ length: 9 }).map(() => (
+					<EventCardHorizontalSkeleton />
+				))}
+			</div>
+		</>
 	)}
 
 	<!-- Editor-recruitment banner (SPEC-191 FR-8): after the grid, before
@@ -512,6 +525,25 @@ const itemListEntries = cards.map((card) => ({
 
 <style>
 	.events-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(min(420px, 100%), 1fr));
+		gap: var(--space-card-gap);
+	}
+
+	/*
+	 * Filter navigation feedback: while filtering, hide the (now stale) real
+	 * grid and surface the skeleton so the user sees instant "loading"
+	 * feedback instead of a dimmed list with the old results showing through.
+	 */
+	.events-grid-skeleton {
+		display: none;
+	}
+
+	:global([data-filters-loading]) .events-grid {
+		display: none;
+	}
+
+	:global([data-filters-loading]) .events-grid-skeleton {
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(min(420px, 100%), 1fr));
 		gap: var(--space-card-gap);

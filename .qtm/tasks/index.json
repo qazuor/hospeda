@@ -891,6 +891,22 @@
             "archivedAt": "2026-06-22T16:00:00Z",
             "archiveNote": "Shipped via PR #1737; T-015 full live smoke GO.",
             "note": "AI post generation (admin). Buffered generateObject; loose-gen schema + strict server validation."
+        },
+        {
+            "specId": "SPEC-228",
+            "title": "Web loading-states consistency & coverage",
+            "status": "in-progress",
+            "progress": "22/22",
+            "path": "SPEC-228-web-loading-states-consistency",
+            "branch": "spec/SPEC-228-web-loading-states-consistency",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-228-web-loading-states-consistency",
+            "base": "staging",
+            "createdAt": "2026-06-20T00:00:00.000Z",
+            "tasksAtomizedAt": "2026-06-20T00:00:00.000Z",
+            "taskCount": 22,
+            "averageComplexity": 2.1,
+            "archived": false,
+            "note": "Canonical web loading toolkit (Spinner/SkeletonCard/LoadingButton + convention doc) then migrate audited sites by priority. 22 tasks, 4 phases. Critical path T-001->T-003->T-010->T-013->T-022. Foundation T-001/T-002 independent; Astro skeleton-swaps (T-007/T-008) need only T-002."
         }
     ],
     "standalone": {

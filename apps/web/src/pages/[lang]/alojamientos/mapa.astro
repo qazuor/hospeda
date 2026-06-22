@@ -13,6 +13,7 @@ import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
+import MapPlaceholder from '@/components/MapPlaceholder.astro';
 import { AccommodationsListingMap } from '@/components/maps/AccommodationsListingMap.client';
 import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
 import type { FilterGroup } from '@/components/shared/filters/FilterSidebar.client';
@@ -446,13 +447,20 @@ const newColors = getBadgeStatusColor({ status: 'new' });
 					openSheetCountOne: t('maps.sidebar.openSheetCount_one', 'Ver {{count}} resultado'),
 					openSheetCountOther: t('maps.sidebar.openSheetCount_other', 'Ver {{count}} resultados'),
 					closeSheet: t('maps.sidebar.closeSheet', 'Cerrar'),
+					loading: t('maps.sidebar.loading', 'Cargando resultados…'),
 				}}
 				i18nStrings={{
 					attribution: t('maps.attribution'),
 					approximateDisclaimer: t('maps.approximateDisclaimer'),
 					viewDetails: t('maps.viewDetails', 'Ver más'),
 				}}
-			/>
+			>
+				<MapPlaceholder
+					slot="fallback"
+					address={t('maps.region', 'Concepción del Uruguay, Entre Ríos')}
+					title={t('maps.loadingTitle', 'Cargando mapa de alojamientos')}
+				/>
+			</AccommodationsListingMap>
 		</div>
 	)}
 </ListingLayout>

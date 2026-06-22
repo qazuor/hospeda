@@ -80,7 +80,8 @@
         "title": "Reviews",
         "submit": "Leave a review",
         "empty": "No reviews yet. Be the first to share your experience!",
-        "more": "+ {{n}} more reviews"
+        "more": "+ {{n}} more reviews",
+        "loading": "Loading reviews…"
     },
     "faq": {
         "heading": "Frequently asked questions"

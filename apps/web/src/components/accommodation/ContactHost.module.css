@@ -179,3 +179,10 @@
 .viewExistingLink:hover {
     color: var(--brand-primary-lm05);
 }
+
+/* Loading content wrapper — centers Spinner + label inline inside a button */
+.loadingContent {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+}

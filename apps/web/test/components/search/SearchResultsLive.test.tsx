@@ -24,6 +24,18 @@ vi.mock('../../../src/components/search/SearchResultsLive.module.css', () => ({
     })
 }));
 
+vi.mock('../../../src/components/shared/feedback/LoadingButton.module.css', () => ({
+    default: new Proxy({} as Record<string, string>, {
+        get: (_target, prop) => String(prop)
+    })
+}));
+
+vi.mock('../../../src/components/shared/feedback/Spinner.module.css', () => ({
+    default: new Proxy({} as Record<string, string>, {
+        get: (_target, prop) => String(prop)
+    })
+}));
+
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
 const EMPTY_RESULTS: PublicSearchResponse = {
@@ -175,6 +187,26 @@ describe('SearchResultsLive', () => {
         it('is not loading when query is empty', () => {
             renderSRL();
             expect(screen.queryByText(/Buscando/)).not.toBeInTheDocument();
+        });
+    });
+
+    describe('Submit button — SPEC-228 T-022 async contract', () => {
+        it('renders the submit button with idle label', () => {
+            renderSRL();
+            // LoadingButton renders children when not loading
+            expect(screen.getByRole('button', { name: /buscar/i })).toBeInTheDocument();
+        });
+
+        it('submit button never shows "..." text regardless of loading state', () => {
+            renderSRL();
+            const btn = screen.getByRole('button', { name: /buscar/i });
+            expect(btn.textContent).not.toContain('...');
+        });
+
+        it('submit button is not aria-busy when idle', () => {
+            renderSRL();
+            const btn = screen.getByRole('button', { name: /buscar/i });
+            expect(btn).not.toHaveAttribute('aria-busy', 'true');
         });
     });
 

@@ -18,6 +18,7 @@
         "openSheet": "Ver cartões",
         "openSheetCount_one": "Ver {{count}} resultado",
         "openSheetCount_other": "Ver {{count}} resultados",
-        "closeSheet": "Fechar"
+        "closeSheet": "Fechar",
+        "loading": "Carregando resultados…"
     }
 }

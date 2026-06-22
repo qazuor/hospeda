@@ -26,6 +26,7 @@
  * @module SearchChatPanel
  */
 
+import { Spinner } from '@/components/shared/feedback/Spinner';
 import { buildLoginRedirect } from '@/lib/auth-redirect';
 import { formatPrice } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -505,7 +506,7 @@ export function SearchChatPanel({
                             : t('aiSearch.chat.send', 'Enviar mensaje')
                     }
                 >
-                    {chat.isStreaming ? '⏳' : '↑'}
+                    {chat.isStreaming ? <Spinner size="sm" /> : '↑'}
                 </button>
             </form>
         </section>

@@ -35,6 +35,14 @@ vi.mock('../../../src/components/accommodation/ContactHost.module.css', () => ({
     default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
 }));
 
+vi.mock('../../../src/components/shared/feedback/Spinner.module.css', () => ({
+    default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
+}));
+
+vi.mock('../../../src/components/shared/feedback/LoadingButton.module.css', () => ({
+    default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
+}));
+
 // ---------------------------------------------------------------------------
 // Fixtures
 // ---------------------------------------------------------------------------
@@ -350,6 +358,173 @@ describe('ContactHost', () => {
     // -------------------------------------------------------------------------
     // initialMessage prop (search context handoff from listing)
     // -------------------------------------------------------------------------
+
+    // -------------------------------------------------------------------------
+    // T-011 (SPEC-228): aria-busy, Spinner on submit, requestAccess guard
+    // -------------------------------------------------------------------------
+
+    describe('T-011 — submit loading state (SPEC-228)', () => {
+        it('T-011: submit button has aria-busy=true while submitting', async () => {
+            // Arrange: never-resolving fetch so we stay in the submitting phase
+            vi.stubGlobal('fetch', vi.fn().mockReturnValue(new Promise(() => {})));
+
+            render(
+                <ContactHost
+                    accommodation={ACTIVE_ACCOMMODATION}
+                    currentUser={null}
+                    existingConversationId={null}
+                    locale={LOCALE}
+                />
+            );
+
+            fireEvent.change(screen.getByLabelText(/name/i, { exact: false }), {
+                target: { value: 'Ana' }
+            });
+            fireEvent.change(screen.getByLabelText(/email/i, { exact: false }), {
+                target: { value: 'ana@test.com' }
+            });
+            fireEvent.change(screen.getByRole('textbox', { name: /message/i }), {
+                target: { value: 'Hola, me interesa' }
+            });
+
+            await act(async () => {
+                fireEvent.submit(document.querySelector('form')!);
+            });
+
+            const submitBtn = screen.getByRole('button');
+            expect(submitBtn).toHaveAttribute('aria-busy', 'true');
+        });
+
+        it('T-011: submit button shows Spinner (not "...") while submitting', async () => {
+            vi.stubGlobal('fetch', vi.fn().mockReturnValue(new Promise(() => {})));
+
+            render(
+                <ContactHost
+                    accommodation={ACTIVE_ACCOMMODATION}
+                    currentUser={null}
+                    existingConversationId={null}
+                    locale={LOCALE}
+                />
+            );
+
+            fireEvent.change(screen.getByLabelText(/name/i, { exact: false }), {
+                target: { value: 'Ana' }
+            });
+            fireEvent.change(screen.getByLabelText(/email/i, { exact: false }), {
+                target: { value: 'ana@test.com' }
+            });
+            fireEvent.change(screen.getByRole('textbox', { name: /message/i }), {
+                target: { value: 'Hola, me interesa' }
+            });
+
+            await act(async () => {
+                fireEvent.submit(document.querySelector('form')!);
+            });
+
+            // Must not show literal '...' text
+            expect(document.body.textContent).not.toContain('...');
+            // Spinner (decorative, no label) renders with aria-hidden="true" and class "spinner"
+            const spinnerEl = document.querySelector('[aria-hidden="true"].spinner');
+            expect(spinnerEl).toBeInTheDocument();
+        });
+
+        it('T-011: submit button shows label text "Enviando…" while submitting', async () => {
+            vi.stubGlobal('fetch', vi.fn().mockReturnValue(new Promise(() => {})));
+
+            render(
+                <ContactHost
+                    accommodation={ACTIVE_ACCOMMODATION}
+                    currentUser={null}
+                    existingConversationId={null}
+                    locale={LOCALE}
+                />
+            );
+
+            fireEvent.change(screen.getByLabelText(/name/i, { exact: false }), {
+                target: { value: 'Ana' }
+            });
+            fireEvent.change(screen.getByLabelText(/email/i, { exact: false }), {
+                target: { value: 'ana@test.com' }
+            });
+            fireEvent.change(screen.getByRole('textbox', { name: /message/i }), {
+                target: { value: 'Hola, me interesa' }
+            });
+
+            await act(async () => {
+                fireEvent.submit(document.querySelector('form')!);
+            });
+
+            expect(screen.getByText('Enviando…')).toBeInTheDocument();
+        });
+    });
+
+    describe('T-011 — requestAccess double-submit guard (SPEC-228)', () => {
+        it('T-011: requestAccess button shows loading state while in-flight', async () => {
+            // First set up duplicate state
+            vi.stubGlobal(
+                'fetch',
+                vi
+                    .fn()
+                    // First call: submit form → 409 duplicate
+                    .mockResolvedValueOnce({
+                        ok: false,
+                        status: 409,
+                        headers: { get: () => null },
+                        json: async () => ({ error: { reason: 'CONVERSATION_DUPLICATE' } })
+                    })
+                    // Second call: requestAccess → deferred (never resolves, so we stay in loading)
+                    .mockReturnValueOnce(new Promise(() => {}))
+            );
+
+            render(
+                <ContactHost
+                    accommodation={ACTIVE_ACCOMMODATION}
+                    currentUser={null}
+                    existingConversationId={null}
+                    locale={LOCALE}
+                />
+            );
+
+            // Fill and submit form to get to duplicate state
+            fireEvent.change(screen.getByLabelText(/name/i, { exact: false }), {
+                target: { value: 'Ana' }
+            });
+            fireEvent.change(screen.getByLabelText(/email/i, { exact: false }), {
+                target: { value: 'ana@test.com' }
+            });
+            fireEvent.change(screen.getByRole('textbox', { name: /message/i }), {
+                target: { value: 'Hola' }
+            });
+
+            await act(async () => {
+                fireEvent.submit(document.querySelector('form')!);
+            });
+
+            // Wait for duplicate notice to appear
+            await waitFor(() => {
+                expect(screen.getByRole('alert')).toBeInTheDocument();
+            });
+
+            // Click requestAccess button (second button in DOM)
+            const buttons = screen.getAllByRole('button');
+            const requestAccessBtn = buttons.find((b) =>
+                b.textContent?.includes('conversations.actions.requestAccess')
+            );
+            expect(requestAccessBtn).toBeTruthy();
+
+            await act(async () => {
+                fireEvent.click(requestAccessBtn!);
+            });
+
+            // Assert: button now shows loading state
+            await waitFor(() => {
+                expect(screen.getByText('Solicitando…')).toBeInTheDocument();
+            });
+            const loadingBtn = screen.getByRole('button', { name: /Solicitando/i });
+            expect(loadingBtn).toBeDisabled();
+            expect(loadingBtn).toHaveAttribute('aria-busy', 'true');
+        });
+    });
 
     describe('initialMessage prop', () => {
         it('Mode A: pre-fills the message textarea when initialMessage is provided', () => {

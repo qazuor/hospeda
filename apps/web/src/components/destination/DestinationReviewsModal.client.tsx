@@ -10,6 +10,8 @@
  * elements whose `data-destination-id` matches the `destinationId` prop.
  */
 
+import { SkeletonCardList } from '@/components/shared/feedback/SkeletonCard';
+import { Spinner } from '@/components/shared/feedback/Spinner';
 import { Dialog, DialogBody, DialogHeader } from '@/components/shared/ui/Dialog.client';
 import { GradientButton } from '@/components/ui/GradientButtonReact';
 import { destinationsApi } from '@/lib/api/endpoints';
@@ -212,13 +214,29 @@ export function DestinationReviewsModal({
                         </p>
                     )}
 
-                    {loading && (
+                    {loading && reviews.length === 0 && (
                         <div
-                            className={styles.spinner}
+                            className={styles.spinnerWrapper}
                             aria-live="polite"
-                            aria-label="Cargando"
                         >
-                            ...
+                            <Spinner
+                                label={t(
+                                    'destination.detail.reviews.modal.loading',
+                                    'Cargando reseñas…'
+                                )}
+                            />
+                            <SkeletonCardList
+                                count={3}
+                                cardHeight="5rem"
+                                gap="0.75rem"
+                            />
+                        </div>
+                    )}
+
+                    {loading && reviews.length > 0 && (
+                        <div className={styles.spinnerWrapper}>
+                            {/* Decorative — the load-more button's aria-busy + changing label announce. */}
+                            <Spinner />
                         </div>
                     )}
 
@@ -240,17 +258,26 @@ export function DestinationReviewsModal({
                         </div>
                     )}
 
-                    {!loading && !error && hasMore && reviews.length > 0 && (
+                    {!error && hasMore && reviews.length > 0 && (
                         <GradientButton
                             as="button"
-                            label={t(
-                                'destination.detail.reviews.modal.loadMore',
-                                'Cargar más reseñas'
-                            )}
+                            label={
+                                loading
+                                    ? t(
+                                          'destination.detail.reviews.modal.loading',
+                                          'Cargando reseñas…'
+                                      )
+                                    : t(
+                                          'destination.detail.reviews.modal.loadMore',
+                                          'Cargar más reseñas'
+                                      )
+                            }
                             variant="outline-primary"
                             size="sm"
                             shape="rounded"
                             className={styles.loadMoreBtn}
+                            disabled={loading}
+                            aria-busy={loading}
                             onClick={() => setPage((p) => p + 1)}
                         />
                     )}

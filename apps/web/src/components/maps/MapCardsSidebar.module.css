@@ -1,5 +1,6 @@
 /* ----- Desktop sidebar ----- */
 .sidebar {
+    position: relative;
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -7,6 +8,19 @@
     border-radius: var(--radius-card, 16px);
     box-shadow: var(--shadow-card, 0 6px 24px rgb(0 0 0 / 0.08));
     overflow: hidden;
+}
+
+/* A1 (SPEC-228): in-flight overlay covering the (stale) card list while a
+   viewport refetch is running. */
+.loadingOverlay {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--core-card-a90);
+    border-radius: inherit;
 }
 
 .sidebarHeader {

@@ -135,11 +135,10 @@
     font-variant-numeric: tabular-nums;
 }
 
-.spinner {
-    text-align: center;
+.spinnerWrapper {
+    display: flex;
+    justify-content: center;
     padding: var(--space-4, 16px);
-    color: var(--core-muted-foreground);
-    font-family: var(--font-sans);
 }
 
 .error {

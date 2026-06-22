@@ -389,5 +389,41 @@ describe('ImageGallery', () => {
             fireEvent.click(overlay as HTMLElement);
             expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
         });
+
+        // ── T-015: lightbox fade class (SPEC-228) ────────────────────────────
+
+        it('T-015: lightbox image has the lightboxImgFade class for fade transition', () => {
+            openLightbox();
+            const dialog = screen.getByRole('dialog');
+            // Find the main lightbox image (not thumbnails)
+            const allImgs = within(dialog).getAllByRole('img');
+            // The main lightbox image is identified by having the lightboxImg class
+            // (and the new lightboxImgFade class added in T-015)
+            const mainImg = allImgs.find(
+                (img) =>
+                    img.className.includes('lightboxImg') || img.getAttribute('src') === '/img1.jpg'
+            );
+            expect(mainImg).toBeDefined();
+            // The fade class should be present on the lightbox image
+            expect(mainImg?.className).toContain('lightboxImgFade');
+        });
+
+        it('T-015: lightboxImgFade class is re-applied when navigating to next image', () => {
+            openLightbox();
+            const dialog = screen.getByRole('dialog');
+
+            // Navigate to next image
+            const nextBtn = screen.getByRole('button', { name: /imagen siguiente/i });
+            fireEvent.click(nextBtn);
+
+            // The image element should still have the fade class (React remounts with key)
+            const allImgs = within(dialog).getAllByRole('img');
+            const mainImg = allImgs.find(
+                (img) =>
+                    img.className.includes('lightboxImg') || img.getAttribute('src') === '/img2.jpg'
+            );
+            expect(mainImg).toBeDefined();
+            expect(mainImg?.className).toContain('lightboxImgFade');
+        });
     });
 });

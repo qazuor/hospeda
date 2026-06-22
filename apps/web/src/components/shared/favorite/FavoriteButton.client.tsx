@@ -203,6 +203,14 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
      */
     const [isHydrating, setIsHydrating] = useState<boolean>(needsHydration && isAuthenticated);
 
+    // SPEC-228 T-018: No visual spinner added during `isHydrating`.
+    // Reasoning: `isHydrating` flips via an async network call (checkStatus) — delay is
+    // potentially perceptible (~50–300ms). However, the button is already `disabled`,
+    // carries `aria-busy={true}`, and its `aria-label` reads "Verificando favorito…".
+    // Adding a Spinner would overlay the heart icon in a tiny (<22px) space, degrading the
+    // compact card UX. The existing disabled + aria-busy + aria-label contract satisfies
+    // WCAG AA (AT announces the busy state) without a visual disruption. Skipped.
+
     /**
      * Guard ref to ensure the check fires exactly once on mount.
      * useEffect with an empty dep array already guarantees single-shot, but
