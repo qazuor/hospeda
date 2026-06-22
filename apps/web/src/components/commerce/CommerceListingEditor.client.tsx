@@ -34,6 +34,11 @@ import type { Image, OpeningHours } from '@repo/schemas';
 import { type JSX, useCallback, useState } from 'react';
 import { AmenitiesFeaturesField } from './AmenitiesFeaturesField';
 import styles from './CommerceListingEditor.module.css';
+import {
+    type CommerceI18nValues,
+    CommerceTranslationPanel,
+    parseCommerceI18nValues
+} from './CommerceTranslationPanel.client';
 import { MediaField } from './MediaField';
 import { OpeningHoursField } from './OpeningHoursField';
 
@@ -201,6 +206,11 @@ export function CommerceListingEditor({
         () => new Set((data.featureIds as string[] | undefined) ?? [])
     );
 
+    // T-023: i18n fields state (nameI18n, summaryI18n, descriptionI18n, richDescriptionI18n)
+    const [i18nValues, setI18nValues] = useState<CommerceI18nValues>(() =>
+        parseCommerceI18nValues(data)
+    );
+
     const [dirty, setDirty] = useState<ReadonlySet<string>>(new Set());
     const [status, setStatus] = useState<SaveStatus>({ kind: 'idle' });
 
@@ -270,6 +280,15 @@ export function CommerceListingEditor({
         [markDirty]
     );
 
+    /** Handle i18n panel changes — marks all four i18n fields dirty at once. */
+    const handleI18nChange = useCallback(
+        (updated: CommerceI18nValues) => {
+            setI18nValues(updated);
+            markDirty('i18n');
+        },
+        [markDirty]
+    );
+
     /** Validate summary: if non-empty, must be 10–300 chars. */
     const validateSummary = useCallback(
         (value: string): boolean => {
@@ -317,6 +336,13 @@ export function CommerceListingEditor({
         }
         if (dirty.has('summary')) {
             payload.summary = summary || undefined;
+        }
+        // T-023: include i18n fields when any locale was edited
+        if (dirty.has('i18n')) {
+            payload.nameI18n = i18nValues.nameI18n;
+            payload.summaryI18n = i18nValues.summaryI18n;
+            payload.descriptionI18n = i18nValues.descriptionI18n;
+            payload.richDescriptionI18n = i18nValues.richDescriptionI18n;
         }
         if (dirty.has('richDescription')) {
             payload.richDescription = richDescription;
@@ -374,6 +400,7 @@ export function CommerceListingEditor({
         dirty,
         listingType,
         summary,
+        i18nValues,
         richDescription,
         contact,
         social,
@@ -594,6 +621,13 @@ export function CommerceListingEditor({
                     classes={styles}
                 />
             </section>
+
+            {/* T-023: i18n editing panel */}
+            <CommerceTranslationPanel
+                locale={locale}
+                initialValues={i18nValues}
+                onChange={handleI18nChange}
+            />
 
             {(amenities.length > 0 || features.length > 0) && (
                 <section className={styles.section}>
