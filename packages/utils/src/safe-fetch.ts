@@ -114,6 +114,16 @@ export interface SafeFetchInput {
      * Caller must NOT include `Host` — it is derived from the URL.
      */
     readonly headers?: Readonly<Record<string, string>>;
+    /**
+     * Resolve-only (HEAD-like) mode: follow the redirect chain (running every
+     * SSRF check on each hop, exactly as the default mode) and return the
+     * terminal URL WITHOUT reading its body. `maxBytes` is not applied to the
+     * terminal response, so a large or hostile terminal page (e.g. an anti-bot
+     * Google Maps page) cannot turn into a `SafeFetchBlocked` body-cap result.
+     * On success `body` is the empty string and `finalUrl` is the resolved URL.
+     * @default false
+     */
+    readonly resolveOnly?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -256,10 +266,17 @@ function buildPinnedAgent(pinnedAddress: string, family: 4 | 6): Agent {
             lookup: (
                 _hostname: string,
                 _options: unknown,
-                callback: (err: Error | null, address: string, family: number) => void
+                callback: (
+                    err: Error | null,
+                    addresses: { address: string; family: number }[]
+                ) => void
             ) => {
                 // Always return the pre-validated IP — never re-resolve.
-                callback(null, pinnedAddress, family);
+                // undici >= 7.x expects the dns.lookup `{ all: true }` shape:
+                // an array of { address, family } records (NOT the legacy
+                // `callback(err, address, family)` positional form, which makes
+                // undici read `undefined` as the IP → "Invalid IP address").
+                callback(null, [{ address: pinnedAddress, family }]);
             }
         }
     });
@@ -350,10 +367,17 @@ async function readBodyCapped(
  * @returns A {@link SafeFetchResult} — never throws.
  */
 export async function safeExternalFetch(input: SafeFetchInput): Promise<SafeFetchResult> {
-    const { url, timeoutMs = 8_000, maxBytes = 3_000_000, maxRedirects = 3, headers = {} } = input;
+    const {
+        url,
+        timeoutMs = 8_000,
+        maxBytes = 3_000_000,
+        maxRedirects = 3,
+        headers = {},
+        resolveOnly = false
+    } = input;
 
     try {
-        return await _doFetch({ url, timeoutMs, maxBytes, maxRedirects, headers });
+        return await _doFetch({ url, timeoutMs, maxBytes, maxRedirects, headers, resolveOnly });
     } catch (err) {
         // Internal `throwBlocked` calls land here — they are plain objects, not
         // Error instances, shaped as SafeFetchBlocked.
@@ -389,10 +413,11 @@ interface FetchParams {
     readonly maxBytes: number;
     readonly maxRedirects: number;
     readonly headers: Readonly<Record<string, string>>;
+    readonly resolveOnly: boolean;
 }
 
 async function _doFetch(params: FetchParams): Promise<SafeFetchResult> {
-    const { timeoutMs, maxBytes, maxRedirects, headers } = params;
+    const { timeoutMs, maxBytes, maxRedirects, headers, resolveOnly } = params;
     let currentUrl = params.url;
     let hopsRemaining = maxRedirects;
 
@@ -430,64 +455,96 @@ async function _doFetch(params: FetchParams): Promise<SafeFetchResult> {
                     signal: abortController.signal,
                     dispatcher: pinnedAgent
                 });
+                // --- Handle redirects manually (inside the try so the body is
+                // consumed BEFORE the finally destroys the dispatcher) ---
+                const isRedirect =
+                    response.statusCode === 301 ||
+                    response.statusCode === 302 ||
+                    response.statusCode === 303 ||
+                    response.statusCode === 307 ||
+                    response.statusCode === 308;
+
+                if (isRedirect) {
+                    // Consume the body so the connection can be reused / closed.
+                    await response.body.dump().catch(() => undefined);
+
+                    const location = response.headers.location;
+                    const locationStr = Array.isArray(location) ? location[0] : location;
+
+                    if (!locationStr) {
+                        throwBlocked(
+                            `Redirect response missing Location header (status ${response.statusCode})`
+                        );
+                    }
+
+                    if (hopsRemaining <= 0) {
+                        throwBlocked(`Exceeded maximum redirect limit of ${maxRedirects}`);
+                    }
+
+                    // Resolve relative Location against the current URL.
+                    let nextUrl: string;
+                    try {
+                        nextUrl = new URL(locationStr, currentUrl).href;
+                    } catch {
+                        throwBlocked(`Invalid Location header: ${locationStr}`);
+                    }
+
+                    hopsRemaining--;
+                    currentUrl = nextUrl;
+                    continue; // Loop back: re-run ALL checks on the next URL.
+                }
+
+                // --- Resolve-only: return the terminal URL without reading
+                // the body. Dump/discard the stream so the connection closes
+                // cleanly BEFORE the finally destroys the dispatcher (undici-7
+                // invalidates a still-pending body otherwise). maxBytes is NOT
+                // applied here, so a large terminal page does not become a
+                // body-cap block. ---
+                if (resolveOnly) {
+                    await response.body.dump().catch(() => undefined);
+
+                    return {
+                        ok: true,
+                        status: response.statusCode,
+                        body: '',
+                        finalUrl: currentUrl
+                    };
+                }
+
+                // --- Stream body with cap ---
+                const body = await readBodyCapped(response.body, maxBytes, abortController);
+
+                return {
+                    ok: true,
+                    status: response.statusCode,
+                    body,
+                    finalUrl: currentUrl
+                };
             } catch (fetchErr) {
+                // A SafeFetchBlocked thrown by the body handling (e.g. the
+                // maxBytes cap in readBodyCapped, which calls abort() before
+                // throwing) must propagate verbatim — it already carries its own
+                // reason. Only a genuine timeout/abort with no blocked payload is
+                // reclassified as a timeout below.
+                if (
+                    fetchErr !== null &&
+                    typeof fetchErr === 'object' &&
+                    (fetchErr as { blocked?: unknown }).blocked === true
+                ) {
+                    throw fetchErr;
+                }
                 if (abortController.signal.aborted) {
                     throwBlocked(`Request timed out after ${timeoutMs} ms`);
                 }
                 throw fetchErr;
             } finally {
-                // Destroy the per-hop agent; a new one is built for each hop
-                // so each hop's IP is independently pinned.
+                // Destroy the per-hop agent AFTER its response body has been
+                // consumed. undici >= 7 invalidates a still-pending response body
+                // if the dispatcher is destroyed first ("The client is
+                // destroyed"). A new agent is built for each hop so each hop's IP
+                // is independently pinned.
                 pinnedAgent.destroy().catch(() => undefined);
             }
-
-            // --- Handle redirects manually ---
-            const isRedirect =
-                response.statusCode === 301 ||
-                response.statusCode === 302 ||
-                response.statusCode === 303 ||
-                response.statusCode === 307 ||
-                response.statusCode === 308;
-
-            if (isRedirect) {
-                // Consume the body so the connection can be reused / closed.
-                await response.body.dump().catch(() => undefined);
-
-                const location = response.headers.location;
-                const locationStr = Array.isArray(location) ? location[0] : location;
-
-                if (!locationStr) {
-                    throwBlocked(
-                        `Redirect response missing Location header (status ${response.statusCode})`
-                    );
-                }
-
-                if (hopsRemaining <= 0) {
-                    throwBlocked(`Exceeded maximum redirect limit of ${maxRedirects}`);
-                }
-
-                // Resolve relative Location against the current URL.
-                let nextUrl: string;
-                try {
-                    nextUrl = new URL(locationStr, currentUrl).href;
-                } catch {
-                    throwBlocked(`Invalid Location header: ${locationStr}`);
-                }
-
-                hopsRemaining--;
-                currentUrl = nextUrl;
-                continue; // Loop back: re-run ALL checks on the next URL.
-            }
-
-            // --- Stream body with cap ---
-            const body = await readBodyCapped(response.body, maxBytes, abortController);
-
-            return {
-                ok: true,
-                status: response.statusCode,
-                body,
-                finalUrl: currentUrl
-            };
         }
     } finally {
         clearTimeout(timer);

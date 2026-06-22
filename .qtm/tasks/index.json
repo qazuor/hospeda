@@ -708,10 +708,12 @@
         {
             "specId": "SPEC-222",
             "title": "Accommodation import from URL",
-            "status": "in-progress",
-            "progress": "27/28",
+            "status": "completed",
+            "progress": "28/28",
             "path": "SPEC-222-accommodation-import-from-url",
-            "archived": false
+            "archived": true,
+            "archivedAt": "2026-06-22T15:10:22Z",
+            "archiveNote": "Smoke + legal copy shipped (smoke PR #1748). PostHog import-analytics events moved to SPEC-258 (A7). Short-link resolution follow-up = SPEC-257."
         },
         {
             "specId": "SPEC-244",
@@ -807,6 +809,47 @@
             "taskCount": 39,
             "averageComplexity": 1.79,
             "note": "39 tasks across 5 phases (setup 4, core 16, integration 13, testing 4, docs 2). Critical path T-001->T-002->T-018->T-025->T-026->T-028->T-035->T-036 (8 hops). Apify async API + polling cron. NOT to be implemented yet (owner: generate only)."
+        },
+        {
+            "specId": "SPEC-257",
+            "title": "Accommodation import short-link resolution + adapter enrichment",
+            "status": "in-progress",
+            "progress": "19/19",
+            "path": "SPEC-257-import-short-link-resolution",
+            "parent": "SPEC-222",
+            "branch": "spec/SPEC-257-import-short-link-resolution",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-257-import-short-link-resolution",
+            "base": "staging",
+            "createdAt": "2026-06-22T02:36:01Z",
+            "tasksAtomizedAt": "2026-06-22T02:36:01Z",
+            "taskCount": 19,
+            "averageComplexity": 2.36,
+            "note": "11 tasks across 5 phases (setup 1, core 4, integration 4, testing 1, docs 1). SPEC-222 short-link follow-up."
+        },
+        {
+            "specId": "SPEC-258",
+            "title": "Accommodation import — coverage gaps, limbo fields, UX surfacing & scraper resilience",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-258-import-coverage-ux-resilience",
+            "parent": "SPEC-257",
+            "branch": "spec/SPEC-258-import-coverage-ux-resilience",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-258-import-coverage-ux-resilience",
+            "base": "staging",
+            "createdAt": "2026-06-22T14:53:31Z",
+            "note": "Doc-only spec; tasks NOT atomized yet. 3 workstreams: coverage, UX surfacing, scraper resilience."
+        },
+        {
+            "specId": "SPEC-259",
+            "title": "Systematic Chrome smoke testing of staging features (post-e2fb184)",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-259-staging-smoke-testing",
+            "branch": "spec/SPEC-259-staging-smoke-testing",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-259-staging-smoke-testing",
+            "base": "staging",
+            "createdAt": "2026-06-22T15:39:13Z",
+            "note": "Campaign spec; tasks atomized when smoke starts. 4 phases: SPEC-230,203,239,249."
         }
     ],
     "standalone": {

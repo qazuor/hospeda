@@ -15,6 +15,7 @@ import { describe, expect, it } from 'vitest';
 import type { RawExtraction } from '../../../src/services/accommodation-import/adapter.types.js';
 import {
     CONFIDENCE_BY_SOURCE,
+    mapAccommodationType,
     mapRawToDraft
 } from '../../../src/services/accommodation-import/mapping.js';
 
@@ -587,5 +588,55 @@ describe('mapRawToDraft', () => {
             }
             expect(new Set(methodsUsed).size).toBe(methodsUsed.length); // no duplicates
         });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// mapAccommodationType (SPEC-257)
+// ---------------------------------------------------------------------------
+
+describe('mapAccommodationType', () => {
+    it.each([
+        ['Entire cottage', 'COUNTRY_HOUSE'],
+        ['casa de campo', 'COUNTRY_HOUSE'],
+        ['Entire cabin', 'CABIN'],
+        ['Cabaña', 'CABIN'],
+        ['Entire home/apt', 'APARTMENT'],
+        ['Departamento', 'APARTMENT'],
+        ['Private room', 'ROOM'],
+        ['Habitación privada', 'ROOM'],
+        ['Hotel room', 'HOTEL'],
+        ['Hostel', 'HOSTEL'],
+        ['Apart Hotel', 'APART_HOTEL'],
+        ['Bed and breakfast', 'BED_AND_BREAKFAST'],
+        ['Casa', 'HOUSE'],
+        ['Villa', 'HOUSE'],
+        ['Estancia', 'ESTANCIA'],
+        ['Camping', 'CAMPING']
+    ])('maps "%s" to %s', (input, expected) => {
+        expect(mapAccommodationType(input)).toBe(expected);
+    });
+
+    it('passes through an exact enum value', () => {
+        expect(mapAccommodationType('CABIN')).toBe('CABIN');
+        expect(mapAccommodationType('apartment')).toBe('APARTMENT');
+    });
+
+    it('returns undefined for an unmappable string', () => {
+        expect(mapAccommodationType('spaceship')).toBeUndefined();
+        expect(mapAccommodationType('')).toBeUndefined();
+    });
+
+    it('prioritizes apart-hotel over the generic hotel/apartment rules', () => {
+        expect(mapAccommodationType('Aparthotel downtown')).toBe('APART_HOTEL');
+    });
+
+    it('prefills the draft type from a free-text platform value (e2e via mapRawToDraft)', () => {
+        const raw: RawExtraction = {
+            sourcePlatform: 'airbnb',
+            type: { value: 'Entire cottage', source: 'official_api' }
+        };
+        const { draft } = mapRawToDraft({ raw });
+        expect(draft.type?.value).toBe('COUNTRY_HOUSE');
     });
 });

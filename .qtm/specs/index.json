@@ -1275,12 +1275,14 @@
             "title": "Accommodation import from URL",
             "type": "feature",
             "complexity": "high",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-222-accommodation-import-from-url",
             "created": "2026-06-13T12:00:00Z",
             "tags": ["accommodations", "import", "scraping", "ai", "web", "admin", "feature"],
-            "archived": false,
-            "note": "Import accommodation data from an external listing URL (Booking/Airbnb/etc) to pre-fill the create/edit form. JSON-LD/OG parsing primary + ai-core generate-object fallback. Human reviews draft before save. Drafted 2026-06-13, ready to implement."
+            "archived": true,
+            "note": "Import accommodation data from an external listing URL (Booking/Airbnb/etc) to pre-fill the create/edit form. JSON-LD/OG parsing primary + ai-core generate-object fallback. Human reviews draft before save. Drafted 2026-06-13, ready to implement.",
+            "archivedAt": "2026-06-22T15:10:22Z",
+            "archiveNote": "Smoke + legal copy shipped (smoke PR #1748). PostHog import-analytics events moved to SPEC-258 (A7). Short-link resolution follow-up = SPEC-257."
         },
         {
             "specId": "SPEC-223",
@@ -1559,6 +1561,73 @@
                 "async",
                 "accommodation",
                 "SPEC-237-followup"
+            ]
+        },
+        {
+            "specId": "SPEC-257",
+            "title": "Accommodation import short-link resolution + adapter enrichment",
+            "slug": "import-short-link-resolution",
+            "type": "improvement",
+            "complexity": "medium",
+            "status": "in-progress",
+            "path": "SPEC-257-import-short-link-resolution",
+            "created": "2026-06-22T02:36:01Z",
+            "base": "staging",
+            "origin": "SPEC-222 Chrome smoke follow-up: Google maps.app.goo.gl short links do not resolve e2e (body-cap loses finalUrl); Booking Share-XXX = WAF (UX copy); Airbnb adapter missing summary/amenities/beds.",
+            "dependsOn": ["SPEC-222"],
+            "tags": [
+                "accommodation-import",
+                "safe-fetch",
+                "utils",
+                "service-core",
+                "i18n",
+                "airbnb",
+                "google-places",
+                "spec-222-followup"
+            ]
+        },
+        {
+            "specId": "SPEC-258",
+            "title": "Accommodation import — coverage gaps, limbo fields, UX surfacing & scraper resilience",
+            "slug": "import-coverage-ux-resilience",
+            "type": "improvement",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-258-import-coverage-ux-resilience",
+            "created": "2026-06-22T14:53:31Z",
+            "base": "staging",
+            "origin": "SPEC-257 follow-up: close per-source coverage limbo, surface imported fields in the create UX, and add scraper anti-bot resilience.",
+            "dependsOn": ["SPEC-257"],
+            "tags": [
+                "accommodation-import",
+                "service-core",
+                "web",
+                "ux",
+                "resilience",
+                "spec-257-followup"
+            ]
+        },
+        {
+            "specId": "SPEC-259",
+            "title": "Systematic Chrome smoke testing of staging features (post-e2fb184)",
+            "slug": "staging-smoke-testing",
+            "type": "testing",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-259-staging-smoke-testing",
+            "created": "2026-06-22T15:39:13Z",
+            "base": "staging",
+            "origin": "Campaign: real Chrome e2e smoke of features merged since e2fb184 lacking a complete smoke (SPEC-230, 203, 239, 249).",
+            "dependsOn": [],
+            "tags": [
+                "smoke-testing",
+                "qa",
+                "chrome",
+                "web",
+                "admin",
+                "commerce",
+                "billing",
+                "campaign"
             ]
         }
     ]

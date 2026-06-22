@@ -246,7 +246,11 @@ export function CreatePropertyMiniForm({
             }
 
             setImportMeta(nextMeta);
-            setImportedOnce(true);
+            // Only surface the "review the imported data" notice when at least one
+            // field was actually pre-filled. A source:'none' / blocked-site response
+            // returns an empty draft, so showing the notice then is misleading
+            // (it invites the host to review data that does not exist).
+            setImportedOnce(Object.keys(nextMeta).length > 0);
 
             // Destination hint: surface when the response carries locality or candidates.
             if (response.destinationHint) {
@@ -258,6 +262,13 @@ export function CreatePropertyMiniForm({
                         scrapedLocality: hint.scrapedLocality,
                         candidates: hint.candidates
                     });
+                }
+                // Auto-select the best-matching destination (the search ranks
+                // candidates, so [0] is the closest). The City picker stays fully
+                // editable — the host can change it if the guess is wrong.
+                const best = hint.candidates[0];
+                if (best) {
+                    setCity({ id: best.id, label: best.name });
                 }
             }
 
@@ -709,10 +720,15 @@ export function CreatePropertyMiniForm({
                             </span>
                         ) : null}
                         <span className={styles.destinationHintCallout}>
-                            {t(
-                                'host.importFromUrl.prefill.destinationHint.hint',
-                                'Elegí el destino manualmente en el campo Ciudad.'
-                            )}
+                            {destinationHint.candidates.length > 0
+                                ? t(
+                                      'host.importFromUrl.prefill.destinationHint.autoSelected',
+                                      'Autoseleccionamos el destino detectado. Revisalo y cambialo si no es correcto.'
+                                  )
+                                : t(
+                                      'host.importFromUrl.prefill.destinationHint.hint',
+                                      'Elegí el destino manualmente en el campo Ciudad.'
+                                  )}
                         </span>
                     </div>
                 ) : null}

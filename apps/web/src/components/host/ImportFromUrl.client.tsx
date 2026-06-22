@@ -51,8 +51,7 @@ export function ImportFromUrl({ locale, onImported }: ImportFromUrlProps) {
 
     const submitDisabled = isSubmitting || !legalConfirmed;
 
-    async function handleSubmit(event: React.FormEvent<HTMLFormElement>): Promise<void> {
-        event.preventDefault();
+    async function handleSubmit(): Promise<void> {
         setError(null);
         setNotice(null);
 
@@ -112,11 +111,14 @@ export function ImportFromUrl({ locale, onImported }: ImportFromUrlProps) {
 
     return (
         <section className={styles.importFromUrl}>
-            <form
-                className="form"
-                onSubmit={(event) => void handleSubmit(event)}
-                noValidate
-            >
+            {/*
+             * NOT a <form>: this island is embedded inside the parent
+             * CreatePropertyMiniForm's <form>, and nested forms are invalid HTML
+             * (the browser un-nests them, making a type="submit" button here
+             * trigger the PARENT form's submit instead of the import). The
+             * import is driven by an explicit button onClick + Enter handler.
+             */}
+            <div className="form">
                 <div className="form-field">
                     <label
                         className="form-label"
@@ -132,6 +134,12 @@ export function ImportFromUrl({ locale, onImported }: ImportFromUrlProps) {
                         value={url}
                         placeholder={t('host.importFromUrl.fields.urlPlaceholder', 'https://...')}
                         onChange={(event) => setUrl(event.target.value)}
+                        onKeyDown={(event) => {
+                            if (event.key === 'Enter' && !submitDisabled) {
+                                event.preventDefault();
+                                void handleSubmit();
+                            }
+                        }}
                         disabled={isSubmitting}
                     />
                 </div>
@@ -213,15 +221,16 @@ export function ImportFromUrl({ locale, onImported }: ImportFromUrlProps) {
                 ) : null}
 
                 <button
-                    type="submit"
+                    type="button"
                     className="btn-gradient"
+                    onClick={() => void handleSubmit()}
                     disabled={submitDisabled}
                 >
                     {isSubmitting
                         ? t('host.importFromUrl.actions.submitting', 'Importando...')
                         : t('host.importFromUrl.actions.submit', 'Importar')}
                 </button>
-            </form>
+            </div>
         </section>
     );
 }

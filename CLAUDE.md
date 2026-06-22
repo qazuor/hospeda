@@ -230,6 +230,19 @@ This rule was approved as part of SPEC-143 phase 4 polish (engram `#532` decisio
 5. The only path to change `main` / `staging`: branch → PR (targeting that protected branch) → wait for CI green → `gh pr merge --merge` (preserves history via `--no-ff`).
 6. Hotfix exception: if `main` needs an emergency fix and `staging` has soak-time work that cannot be promoted, branch from `main`, fix, PR to `main`, then back-merge `main` → `staging` via PR.
 
+#### Dependabot security exception
+
+Dependabot opens two distinct kinds of PR, and they target different branches by design:
+
+- **Version updates** (the grouped weekly bumps in `.github/dependabot.yml`) honor `target-branch: 'staging'` and land on `staging`. They follow the normal 6-step flow.
+- **Security updates** (driven by Dependabot security alerts) ignore `target-branch` entirely — GitHub ALWAYS opens them against the default branch `main`. This is expected platform behavior, not a misconfiguration.
+
+Operative rule (verifiable without judgment):
+
+1. A `dependabot` PR whose base is `main` IS, by construction, a security update (because every version update goes to `staging`). It may be merged to `main` via PR — provided **CI is fully green** (build + typecheck + tests + e2e + audit) — as an extension of the hotfix exception above. Never automerge; the merge stays a human decision.
+2. After EVERY merge to `main`, back-merging `main` → `staging` is MANDATORY. The `sync-main-to-staging.yml` workflow opens that PR automatically; if it does not run, do it by hand. Skipping this does not avoid the problem — it MOVES the baseline-mismatch red from `main` to `staging` (a feature PR on `staging` then fails `pnpm audit` for a fix that only exists on `main`).
+3. A security PR can be born red purely because `main` lags `staging` on an unrelated fix (e.g. a transitive `undici` override). That red is a baseline artifact, not the bumped dependency. Promote the missing fix into `main` first (or rebase the PR after the back-merge lands), then re-check.
+
 ### Branch Workflow (since 2026-05-12)
 
 ALL new work follows this 6-step flow (full reference: [`.claude/docs/git-branch-workflow.md`](.claude/docs/git-branch-workflow.md)):
