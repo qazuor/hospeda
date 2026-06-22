@@ -749,12 +749,15 @@
         {
             "specId": "SPEC-246",
             "title": "Revalidation log entity_id tracking + re-enable ACC-02 E2E",
-            "status": "in-progress",
+            "status": "completed",
             "progress": "0/0",
             "path": "SPEC-246-revalidation-log-entity-id-tracking",
             "branch": "spec/SPEC-246-revalidation-log-entity-id-tracking",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-246-revalidation-log-entity-id-tracking",
-            "base": "staging"
+            "base": "staging",
+            "archived": true,
+            "archivedAt": "2026-06-22T21:49:54Z",
+            "archiveNote": "Shipped via PR #1769 (merge 47419d453); CI green incl. E2E P0 Suite. Completed without formal task atomization (small bugfix, implemented directly). Follow-up: destination/event/post/reviews still leave entity_id NULL."
         },
         {
             "specId": "SPEC-237",
