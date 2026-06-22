@@ -41,12 +41,18 @@ catch it).
 This also revealed a **latent repo-wide risk**: `"zod": "^4.0.8"` lets any future
 `pnpm install`/`update` promote `zod` to 4.4.x and break the build, independent of this PR.
 
-Fix applied here: a `pnpm.overrides` entry **`"zod": "4.3.6"`** in the root `package.json`,
-pinning `zod` to the version the codebase currently supports (the same version `staging`
-resolved to). This is intentionally **not** the `.safeExtend()` migration — adopting the zod
-4.4.x API is owned by **SPEC-132 (Zod 4 migration)**, which the owner deferred to post-launch.
-The override should be **removed as part of SPEC-132** once `api.schema.ts` is migrated off
-`.merge()` on refined schemas.
+Fix applied here: a `pnpm.overrides` entry **`"zod@>=4.0.0 <5": "4.3.6"`** in the root
+`package.json`, pinning the zod **4.x** branch to the version the codebase currently supports
+(the same version `staging` resolved to). The selector is **deliberately scoped to 4.x**: an
+unscoped `"zod": "4.3.6"` also crushed the zod **3.x** consumers in the tree (`zod@3.24.1`,
+`zod@3.25.76`), which broke `apps/admin/vite.config.ts` with
+`z.function(...).args is not a function` (the zod-3 function API was removed in zod 4). Scoping
+to `>=4.0.0 <5` leaves zod 3.x untouched while still blocking the 4.4.x promotion.
+
+This is intentionally **not** the `.safeExtend()` migration — adopting the zod 4.4.x API is
+owned by **SPEC-132 (Zod 4 migration)**, which the owner deferred to post-launch. The override
+should be **removed as part of SPEC-132** once `api.schema.ts` is migrated off `.merge()` on
+refined schemas.
 
 ## Remaining advisories (accepted for now)
 
