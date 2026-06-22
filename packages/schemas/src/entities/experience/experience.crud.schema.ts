@@ -89,14 +89,27 @@ export type ExperienceAdminCreateOutput = z.infer<typeof ExperienceAdminCreateOu
 /**
  * Schema for owner-managed operational updates to an experience listing.
  *
- * Deliberately restricted to the sections a COMMERCE_OWNER may edit via
- * their own scoped permissions. Identity fields (name, slug, type, priceFrom,
- * priceUnit, destinationId) are **intentionally absent** — unknown keys are
- * stripped (Zod's default behaviour) so forged identity fields in the payload
- * are silently dropped before reaching the service layer.
+ * Deliberately restricted to the fields a COMMERCE_OWNER may edit via the
+ * single `COMMERCE_EDIT_OWN` permission (SPEC-253 D2=b). Identity fields that
+ * remain admin-only (`name`, `slug`, `description`, `destinationId`) are
+ * **intentionally absent** — unknown keys are stripped (Zod's default behaviour)
+ * so forged identity fields in the payload are silently dropped before reaching
+ * the service layer.
  *
- * Permitted operational sections (AC-4.1 from SPEC-240):
- * - `openingHours`    — schedule (gated by `COMMERCE_EDIT_OWN`, SPEC-253 D2=b)
+ * Per SPEC-253 §3, the following fields are now owner-editable:
+ * - `type`             — experience sub-category (SPEC-253 D1: YES; removed from
+ *                        identity-strip guard, AC-5)
+ * - `summary`          — short marketing summary
+ * - `priceFrom`        — starting price in integer centavos (experience-only;
+ *                        0 when `isPriceOnRequest` is true)
+ * - `priceUnit`        — billing unit (per_day/per_hour/per_person/per_group)
+ * - `nameI18n`         — localized name translations (SPEC-212 pattern)
+ * - `summaryI18n`      — localized summary translations
+ * - `descriptionI18n`  — localized description translations
+ * - `richDescriptionI18n` — localized rich-text translations
+ *
+ * Previously-permitted operational sections (unchanged):
+ * - `openingHours`    — schedule (gated by `COMMERCE_EDIT_OWN`)
  * - `contactInfo`     — contact details (gated by `COMMERCE_EDIT_OWN`)
  * - `socialNetworks`  — social links (gated by `COMMERCE_EDIT_OWN`)
  * - `media`           — featured image, gallery, videos (gated by `COMMERCE_EDIT_OWN`)
@@ -107,16 +120,25 @@ export type ExperienceAdminCreateOutput = z.infer<typeof ExperienceAdminCreateOu
  *
  * NOT permitted for owner (admin-only):
  * - `name`, `slug` (legal identity)
- * - `type`, `priceFrom`, `priceUnit`, `destinationId` (core classification)
+ * - `description` (base description — owner edits the i18n variants)
+ * - `destinationId`, lifecycle/visibility/moderation/`isFeatured`/`ownerId`
  * - `hasActiveSubscription` (subscription lifecycle, admin-only toggle)
  */
 export const ExperienceOwnerUpdateInputSchema = ExperienceSchema.pick({
+    type: true,
+    summary: true,
     openingHours: true,
     contactInfo: true,
     socialNetworks: true,
     media: true,
     isPriceOnRequest: true,
-    richDescription: true
+    priceFrom: true,
+    priceUnit: true,
+    richDescription: true,
+    nameI18n: true,
+    summaryI18n: true,
+    descriptionI18n: true,
+    richDescriptionI18n: true
 })
     .partial()
     .extend({
