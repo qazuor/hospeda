@@ -94,7 +94,7 @@ rank|spec|name|avance|prioridad|estado|estado_manual|estado_real|descripcion|por
 93|SPEC-241|Host trades/services directory (24h emergency trades for hosts)|-|-|done|backlog|index staging: status=completed archived=True|-|-|-|-|-|-|-|-
 94|SPEC-242|Tarjeta Hospeda (benefits card for guests)|-|-|blocked|backlog|index staging: status=draft archived=False|-|-|-|-|-|-|SPEC-239, SPEC-240, SPEC-243|-
 95|SPEC-243|Hospeda mobile app (React Native / Expo)|-|-|in progress|backlog|index staging: status=in-progress archived=False (Sub-0 Foundation active, no external deps)|-|-|-|-|-|-|SPEC-239, SPEC-240, SPEC-242|-
-96|SPEC-246|Revalidation log entity_id tracking + re-enable ACC-02 E2E|-|P3|in progress|backlog|index staging: status=in-progress archived=False|-|-|-|-|-|-|-|-
+96|SPEC-246|Revalidation log entity_id tracking + re-enable ACC-02 E2E|-|P3|done|backlog|index staging: status=completed archived=True|-|-|-|-|-|-|-|-
 96|SPEC-244|Test suite order-independence hardening|-|-|backlog|-|index staging: status=draft archived=False (follow-up of SPEC-222; test-infra hardening, no unmet hard deps)|-|-|-|-|-|-|SPEC-222, SPEC-238|-
 97|SPEC-245|Mobile Testing Infrastructure|-|-|backlog|-|index staging: status=draft archived=False (SPEC-243 Sub-0/3/4 merged so the app exists to test; dep practically satisfied)|-|-|-|-|-|-|SPEC-243|-
 98|SPEC-248|Multi-unit accommodation capacity model|-|-|backlog|-|index staging: status=draft-exploration; surfaced in SPEC-217 smoke (interim cap raised in PR #1733); hotels/complexes rent per unit; owner product OQs pending before task gen|-|-|-|-|-|-|SPEC-217|-
