@@ -1,6 +1,6 @@
 # TODOs: Frictionless dev/test user setup
 
-Spec: SPEC-264 | Status: in-progress | Progress: 5/7
+Spec: SPEC-264 | Status: in-progress | Progress: 6/8
 
 ## Setup
 
@@ -18,6 +18,7 @@ Spec: SPEC-264 | Status: in-progress | Progress: 5/7
 
 - [x] T-004: Wire markUserReady into testUsers.seed.ts (complexity: 3) [blocked by T-002]
 - [x] T-005: Add db:seed:ready-user ad-hoc CLI script (complexity: 3) [blocked by T-002]
+- [x] T-008: Suppress cookie-consent banner in apps/e2e web tests (complexity: 3)
 
 ## Docs
 

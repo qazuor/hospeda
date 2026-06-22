@@ -55,10 +55,15 @@ or behind a non-DB switch. Therefore the seed can make a user "ready" purely by
   (all entries published before seed time are treated as seen).
 - SC-4: Running `pnpm db:seed:ready-user <email>` against a manually created user makes
   that user pass SC-1..SC-3 too.
-- SC-5: No file under `apps/*` is modified. The change is contained to `packages/seed`
-  and the two `package.json` wiring entries.
+- SC-5: No **application source** under `apps/web`, `apps/admin`, or `apps/api` is
+  modified. The seed change is contained to `packages/seed` + the two `package.json`
+  wiring entries. (Exception: the e2e cookie-consent suppression in T-008 touches
+  `apps/e2e` test infrastructure only — never app runtime code, and adds no conditional
+  "dev mode" branch to any gate.)
 - SC-6: Running the helper on a user that already has `settings` does NOT discard any
   existing settings keys (read-modify-write, not replace).
+- SC-7: In the `apps/e2e` suite, web-facing tests do NOT hit the cookie-consent banner
+  (the `cookie-consent` cookie is pre-seeded before first navigation).
 
 ## 2. User Stories & Acceptance Criteria
 
@@ -231,6 +236,26 @@ port-injection + in-memory stub pattern of
 - idempotent: a second run keeps the same `baselineAt`
 - the produced `settings` object parses cleanly against `UserSettingsSchema`
 
+### 3.5 Cookie-consent banner (e2e only — NOT seed-fixable)
+
+The web cookie-consent banner is gated by a **pure browser cookie** (`cookie-consent`,
+`apps/web/src/lib/cookie-consent.ts`), with no user-row/DB persistence — it shows for
+anonymous and logged-in visitors alike. The seed therefore CANNOT suppress it. For
+**manual** local browsing this is a one-time click (cookie persists 1 year); no work
+needed. For **automated e2e** (fresh browser context every run) it reappears, so:
+
+- Add `seedCookieConsent(page)` to `apps/e2e/fixtures/` (new `browser-helpers.ts` or
+  appended to `api-helpers.ts`), mirroring the proven helper at
+  `apps/web/tests/visual-snapshots/capture-baseline.visual.ts:112` — uses
+  `page.addInitScript()` to set `cookie-consent` (version 2 shape) before first
+  navigation, so `getConsent()` reads it on hydration and the banner never opens.
+- Call it from a `test.beforeEach(({ page }) => seedCookieConsent(page))` in each
+  web-facing spec in `apps/e2e/tests/` (admin specs don't need it). Cookie `domain:
+  'localhost', path: '/', sameSite: 'Lax'`.
+- Rejected: a base `test.extend` fixture (would introduce a new pattern not present in
+  the suite today) and an `apps/web` dev flag to skip rendering (the same conditional-
+  prod-code anti-pattern rejected for the seed gates).
+
 ### Key files
 
 | File | Change |
@@ -275,6 +300,7 @@ None new. Uses `@repo/db` (`UserModel`), `@repo/schemas` (`User`, `UserSettingsS
 
 - T-004: Wire `markUserReady` into `testUsers.seed.ts` for the 13 users.
 - T-005: Add `scripts/mark-user-ready.ts` ad-hoc CLI + `seed:ready-user` / `db:seed:ready-user` wiring.
+- T-008: Suppress the cookie-consent banner in `apps/e2e` web-facing tests via a `seedCookieConsent()` helper + per-spec `test.beforeEach` (see 3.5).
 
 ### Docs
 
