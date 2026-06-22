@@ -71,16 +71,8 @@ function makeExperienceEntity(overrides: Partial<Record<string, unknown>> = {}):
 const ownerActor: Actor = {
     id: OWNER_ID,
     role: RoleEnum.COMMERCE_OWNER,
-    permissions: [
-        PermissionEnum.COMMERCE_SCHEDULE_EDIT_OWN,
-        PermissionEnum.COMMERCE_CONTACT_EDIT_OWN,
-        PermissionEnum.COMMERCE_SOCIAL_EDIT_OWN,
-        PermissionEnum.COMMERCE_MEDIA_EDIT_OWN,
-        PermissionEnum.COMMERCE_PRICE_RANGE_EDIT_OWN,
-        PermissionEnum.COMMERCE_RICH_DESCRIPTION_EDIT_OWN,
-        PermissionEnum.COMMERCE_AMENITIES_EDIT_OWN,
-        PermissionEnum.COMMERCE_FEATURES_EDIT_OWN
-    ]
+    // SPEC-253 D2=b: single COMMERCE_EDIT_OWN replaces 10 per-section perms
+    permissions: [PermissionEnum.COMMERCE_EDIT_OWN]
 };
 
 const staffActor: Actor = {
@@ -97,7 +89,8 @@ const staffActor: Actor = {
 const otherUserActor: Actor = {
     id: OTHER_USER,
     role: RoleEnum.COMMERCE_OWNER,
-    permissions: [PermissionEnum.COMMERCE_SCHEDULE_EDIT_OWN]
+    // SPEC-253 D2=b: COMMERCE_EDIT_OWN gives owner rights but entity.ownerId != OTHER_USER
+    permissions: [PermissionEnum.COMMERCE_EDIT_OWN]
 };
 
 // ---------------------------------------------------------------------------
@@ -218,8 +211,8 @@ describe('ExperienceService.updateOwn — ownership gate', () => {
 // updateOwn — per-section permission gates
 // ---------------------------------------------------------------------------
 
-describe('ExperienceService.updateOwn — per-section permission gates', () => {
-    it('should return FORBIDDEN when owner lacks the section permission', async () => {
+describe('ExperienceService.updateOwn — single COMMERCE_EDIT_OWN gate (SPEC-253 D2=b)', () => {
+    it('should return FORBIDDEN when owner lacks COMMERCE_EDIT_OWN (no per-section gates)', async () => {
         const entity = makeExperienceEntity();
         const service = makeService(entity);
         const actorNoPerm: Actor = {
@@ -227,7 +220,7 @@ describe('ExperienceService.updateOwn — per-section permission gates', () => {
             role: RoleEnum.COMMERCE_OWNER,
             permissions: [] // no permissions at all
         };
-        // isPriceOnRequest → COMMERCE_PRICE_RANGE_EDIT_OWN gate
+        // SPEC-253 Block B: TODO assert new editable field behavior here.
         const result = await service.updateOwn(ENTITY_ID, { isPriceOnRequest: true }, actorNoPerm);
         expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
     });

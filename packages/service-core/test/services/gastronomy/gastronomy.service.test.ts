@@ -62,17 +62,8 @@ function makeGastronomyEntity(overrides: Partial<Record<string, unknown>> = {}):
 const ownerActor: Actor = {
     id: OWNER_ID,
     role: RoleEnum.COMMERCE_OWNER,
-    permissions: [
-        PermissionEnum.COMMERCE_SCHEDULE_EDIT_OWN,
-        PermissionEnum.COMMERCE_CONTACT_EDIT_OWN,
-        PermissionEnum.COMMERCE_SOCIAL_EDIT_OWN,
-        PermissionEnum.COMMERCE_MEDIA_EDIT_OWN,
-        PermissionEnum.COMMERCE_MENU_EDIT_OWN,
-        PermissionEnum.COMMERCE_PRICE_RANGE_EDIT_OWN,
-        PermissionEnum.COMMERCE_RICH_DESCRIPTION_EDIT_OWN,
-        PermissionEnum.COMMERCE_AMENITIES_EDIT_OWN,
-        PermissionEnum.COMMERCE_FEATURES_EDIT_OWN
-    ]
+    // SPEC-253 D2=b: single COMMERCE_EDIT_OWN replaces 10 per-section perms
+    permissions: [PermissionEnum.COMMERCE_EDIT_OWN]
 };
 
 const staffActor: Actor = {
@@ -89,7 +80,8 @@ const staffActor: Actor = {
 const otherUserActor: Actor = {
     id: OTHER_USER,
     role: RoleEnum.COMMERCE_OWNER,
-    permissions: [PermissionEnum.COMMERCE_SCHEDULE_EDIT_OWN]
+    // SPEC-253 D2=b: COMMERCE_EDIT_OWN gives owner rights but entity.ownerId != OTHER_USER
+    permissions: [PermissionEnum.COMMERCE_EDIT_OWN]
 };
 
 // ---------------------------------------------------------------------------
@@ -200,12 +192,11 @@ describe('GastronomyService.updateOwn', () => {
         expect(result.error).toBeUndefined();
     });
 
-    it('should allow an owner with the section editOwn permission to update operational fields (US-5)', async () => {
-        // The owner holds COMMERCE_PRICE_RANGE_EDIT_OWN (an operational section
-        // permission) and owns the listing. updateOwn enforces per-section gating,
-        // then the base update()'s owner-aware _canUpdate (checkCanEditOwnOrAll)
-        // accepts the owner — no COMMERCE_EDIT_ALL is required. This is the core
-        // US-5 behavior: owners can edit operational fields on their own listing.
+    it('should allow an owner with COMMERCE_EDIT_OWN to update operational fields (US-5)', async () => {
+        // SPEC-253 D2=b: single COMMERCE_EDIT_OWN gate replaces per-section gating.
+        // The owner holds COMMERCE_EDIT_OWN and owns the listing. updateOwn enforces
+        // the single gate, then the base update()'s _canUpdate (checkCanEditOwnOrAll)
+        // accepts the owner — no COMMERCE_EDIT_ALL is required. Core US-5 behavior.
         const entity = makeGastronomyEntity();
         const service = makeService(entity);
         const result = await service.updateOwn(
@@ -216,10 +207,10 @@ describe('GastronomyService.updateOwn', () => {
         expect(result.error).toBeUndefined();
     });
 
-    it('should return FORBIDDEN when owner lacks the specific section permission (per-section gate)', async () => {
+    it('should return FORBIDDEN when owner lacks COMMERCE_EDIT_OWN (single gate)', async () => {
         const entity = makeGastronomyEntity();
         const service = makeService(entity);
-        // Actor is the owner but has NO permissions (not COMMERCE_PRICE_RANGE_EDIT_OWN, not COMMERCE_EDIT_ALL)
+        // Actor is the owner but has NO permissions (not COMMERCE_EDIT_OWN, not COMMERCE_EDIT_ALL)
         const actorNoPerm: Actor = {
             id: OWNER_ID,
             role: RoleEnum.COMMERCE_OWNER,
@@ -227,10 +218,10 @@ describe('GastronomyService.updateOwn', () => {
         };
         const result = await service.updateOwn(
             ENTITY_ID,
-            { priceRange: PriceRangeEnum.MID }, // valid schema; per-section check fires before base update
+            { priceRange: PriceRangeEnum.MID }, // valid schema; single perm check fires before base update
             actorNoPerm
         );
-        // Per-section gate fires first and rejects with FORBIDDEN
+        // SPEC-253 Block B: TODO assert new editable field behavior here.
         expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
     });
 
