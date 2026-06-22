@@ -26,7 +26,9 @@ import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslations } from '@/hooks/use-translations';
+import { translateAdminApiError } from '@/lib/errors';
 import { EntitlementKey, LimitKey } from '@repo/billing';
+import type { ApiErrorShape } from '@repo/i18n';
 import { LoaderIcon } from '@repo/icons';
 import { useForm } from '@tanstack/react-form';
 import { useEffect } from 'react';
@@ -88,10 +90,11 @@ export function AddonDialog({
             } catch (error) {
                 addToast({
                     title: t('admin-billing.addons.catalogDialog.errorTitle'),
-                    message:
-                        error instanceof Error
-                            ? error.message
-                            : t('admin-billing.addons.catalogDialog.errorMessage'),
+                    message: translateAdminApiError({
+                        error: error as ApiErrorShape,
+                        t,
+                        fallback: t('admin-billing.addons.catalogDialog.errorMessage')
+                    }),
                     variant: 'error'
                 });
             }
