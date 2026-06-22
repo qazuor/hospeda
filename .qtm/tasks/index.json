@@ -738,10 +738,12 @@
     {
       "specId": "SPEC-222",
       "title": "Accommodation import from URL",
-      "status": "in-progress",
-      "progress": "27/28",
+      "status": "completed",
+      "progress": "28/28",
       "path": "SPEC-222-accommodation-import-from-url",
-      "archived": false
+      "archived": true,
+      "archivedAt": "2026-06-22T15:10:22Z",
+      "archiveNote": "Smoke + legal copy shipped (smoke PR #1748). PostHog import-analytics events moved to SPEC-258 (A7). Short-link resolution follow-up = SPEC-257."
     },
     {
       "specId": "SPEC-244",

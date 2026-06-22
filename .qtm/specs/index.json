@@ -1631,7 +1631,7 @@
       "title": "Accommodation import from URL",
       "type": "feature",
       "complexity": "high",
-      "status": "in-progress",
+      "status": "completed",
       "path": "SPEC-222-accommodation-import-from-url",
       "created": "2026-06-13T12:00:00Z",
       "tags": [
@@ -1643,8 +1643,10 @@
         "admin",
         "feature"
       ],
-      "archived": false,
-      "note": "Import accommodation data from an external listing URL (Booking/Airbnb/etc) to pre-fill the create/edit form. JSON-LD/OG parsing primary + ai-core generate-object fallback. Human reviews draft before save. Drafted 2026-06-13, ready to implement."
+      "archived": true,
+      "note": "Import accommodation data from an external listing URL (Booking/Airbnb/etc) to pre-fill the create/edit form. JSON-LD/OG parsing primary + ai-core generate-object fallback. Human reviews draft before save. Drafted 2026-06-13, ready to implement.",
+      "archivedAt": "2026-06-22T15:10:22Z",
+      "archiveNote": "Smoke + legal copy shipped (smoke PR #1748). PostHog import-analytics events moved to SPEC-258 (A7). Short-link resolution follow-up = SPEC-257."
     },
     {
       "specId": "SPEC-223",
