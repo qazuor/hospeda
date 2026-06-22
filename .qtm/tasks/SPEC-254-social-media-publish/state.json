@@ -899,7 +899,7 @@
             "id": "T-026",
             "title": "Implement GET /api/v1/ai/social/catalog route and handler",
             "description": "Create `apps/api/src/routes/ai/social/catalog.route.ts` using `createApiKeyRoute` with `{ headerName: 'x-hospeda-ai-key', envVarKey: 'HOSPEDA_AI_SOCIAL_KEY', errorCode: 'UNAUTHORIZED' }`.\n\nHandler logic:\n- Query all active catalog entities (hashtags, hashtagSets, footers, platformFormats, campaigns, batches, audiences) from the DB models\n- Fetch `social_settings` for defaults (timezone, campaignSlug, batchSlug, maxHashtagsPerPlatform)\n- Assemble response per the catalog response shape in the spec\n- Apply `active = true` filter to every collection (soft-deleted records excluded)\n- Register route under `/api/v1/ai/social/catalog`\n\nTest requirements:\n- Integration tests: valid key → 200 with catalog data, invalid key → 401, all returned records have active=true\n- File: `apps/api/src/__tests__/routes/ai/social/catalog.test.ts`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-025", "T-013"],
             "blocks": ["T-027"],
@@ -920,14 +920,14 @@
             "tags": ["api", "routes", "ai"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-20T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
             }
         },
         {
@@ -1911,9 +1911,9 @@
     ],
     "summary": {
         "total": 52,
-        "pending": 29,
+        "pending": 28,
         "inProgress": 0,
-        "completed": 23,
+        "completed": 24,
         "blocked": 0,
         "averageComplexity": 2.3
     }
