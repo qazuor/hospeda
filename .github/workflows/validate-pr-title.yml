@@ -1,0 +1,72 @@
+name: Validate PR Title
+
+# Enforces the work-tag convention on PR titles. Every PR must declare which
+# unit of work it belongs to, before the conventional-commit type:
+#   [SPEC-NNN] type(scope): description    -> formal spec work
+#   [NOSPEC:<slug>] type(scope): description -> small change outside the spec process
+# The <slug> is a short kebab-case identifier so multiple no-spec PRs are
+# distinguishable at a glance. See CLAUDE.md -> Git Conventions -> PR titles.
+#
+# Bot-authored PRs (dependabot, github-actions back-sync merges) are exempt:
+# the job is skipped for them, which reports as a neutral/skipped check and
+# does not block the merge.
+
+on:
+  pull_request:
+    branches:
+      - staging
+      - main
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
+
+# Least-privilege: the job only needs to read the PR title from the event payload.
+permissions:
+  contents: read
+
+jobs:
+  validate-title:
+    name: Validate PR Title
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    if: github.actor != 'dependabot[bot]' && github.actor != 'github-actions[bot]'
+
+    steps:
+      - name: Check title matches work-tag convention
+        env:
+          # Read via env (not inline interpolation) to avoid shell injection
+          # from an attacker-controlled PR title.
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          echo "PR title: $PR_TITLE"
+
+          # Conventional-commit types accepted by this repo (commitlint set).
+          TYPES='build|chore|ci|del|docs|feat|fix|misc|perf|refactor|revert|style|test|types|workflow'
+
+          # [SPEC-NNN] or [NOSPEC:<kebab-slug>], then a conventional commit.
+          PATTERN="^\[(SPEC-[0-9]+|NOSPEC:[a-z0-9]([a-z0-9-]*[a-z0-9])?)\] (${TYPES})(\([a-z0-9._-]+\))?!?: .+"
+
+          if [[ "$PR_TITLE" =~ $PATTERN ]]; then
+            echo "✅ PR title is valid."
+            exit 0
+          fi
+
+          echo "❌ Invalid PR title."
+          echo ""
+          echo "The title must start with a work tag, then a conventional commit:"
+          echo "  [SPEC-NNN] type(scope): description"
+          echo "  [NOSPEC:<slug>] type(scope): description"
+          echo ""
+          echo "Examples:"
+          echo "  [SPEC-228] feat(web): unify loading states"
+          echo "  [NOSPEC:footer-copy] fix(web): typo in footer"
+          echo ""
+          echo "Rules:"
+          echo "  - [SPEC-NNN]: NNN is the spec number (digits only)."
+          echo "  - [NOSPEC:<slug>]: <slug> is lowercase kebab-case (a-z, 0-9, hyphen)."
+          echo "  - type is one of: ${TYPES//|/, }"
+          echo ""
+          echo "Edit the PR title and re-run this check (it re-runs on every title edit)."
+          exit 1
