@@ -26,7 +26,7 @@
  *     static UUID: 56c9958b-3ca5-46c1-af8a-d7ba12b7f051  (id-mappings.json)
  *     slug   : la-cerveceria-del-rio
  *
- * Tags: @p0 @commerce
+ * Tags: @p1 @commerce
  *
  * Preconditions:
  *   - e2e:seed has run (`pnpm --filter hospeda-e2e e2e:seed`).
@@ -121,7 +121,7 @@ async function authenticateContext(
 // Suite
 // ---------------------------------------------------------------------------
 
-test.describe('COMMERCE-02: access-control negative paths @p0 @commerce', () => {
+test.describe('COMMERCE-02: access-control negative paths @p1 @commerce', () => {
     // ── Case 1: Tourist (USER) blocked from commerce index ───────────────────
 
     test('tourist (USER role) is redirected away from /mi-cuenta/comercio/ to /mi-cuenta/', async ({

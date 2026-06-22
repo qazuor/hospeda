@@ -4,7 +4,7 @@
  *
  * Actors: gastro-owner-julieta@local.test (role COMMERCE_OWNER, seeded by
  *   @repo/seed example pipeline: gastronomies.seed + experiences.seed).
- * Tags: @p0 @commerce
+ * Tags: @p1 @commerce
  *
  * Preconditions:
  *   - e2e:seed has run (`pnpm --filter hospeda-e2e e2e:seed`).
@@ -91,7 +91,7 @@ async function authenticateContext(
 // Suite
 // ---------------------------------------------------------------------------
 
-test.describe('COMMERCE-01: commerce owner edits listings — both verticals @p0 @commerce', () => {
+test.describe('COMMERCE-01: commerce owner edits listings — both verticals @p1 @commerce', () => {
     /**
      * Tracks the gastronomy menuUrl value before the test so we can
      * restore it in afterEach (the seeded DB is shared; leaving a
