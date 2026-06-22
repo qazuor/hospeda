@@ -18,6 +18,7 @@
  * Hydration: caller MUST use `client:load`.
  */
 
+import { refreshBetterAuthSession } from '@/lib/auth-client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { ChangePasswordInputSchema } from '@repo/schemas';
@@ -186,6 +187,14 @@ export function ChangePasswordForm({ locale }: ChangePasswordFormProps) {
                         )
                 );
             }
+
+            // Refresh the Better Auth cookie cache BEFORE redirecting so the
+            // middleware's must-change-password gate reads the now-cleared
+            // `mustChangePassword` value instead of the stale cached `true`.
+            // Without this, the redirect to /mi-cuenta/ bounces the user straight
+            // back to this gate until the 5-minute cookie-cache TTL expires (or
+            // they re-login). The endpoint already cleared the DB column.
+            await refreshBetterAuthSession();
 
             // Show success banner first, then redirect to account page after 1.5 s.
             setIsSuccess(true);

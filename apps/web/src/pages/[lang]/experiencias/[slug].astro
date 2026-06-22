@@ -152,6 +152,11 @@ const seoDescription =
         ]}
     />
 
+    <!-- Hero (rendered inside the wave band, like destinos/alojamientos) -->
+    <Fragment slot="page-header">
+        <ExperienceHero experience={experience} locale={locale} />
+    </Fragment>
+
     <div class="exp-detail">
         <!-- Gallery -->
         {galleryImages.length > 0 && (
@@ -164,9 +169,6 @@ const seoDescription =
                 />
             </div>
         )}
-
-        <!-- Hero: name, type badge, pricing, rating -->
-        <ExperienceHero experience={experience} locale={locale} />
 
         <!-- Description, opening hours, social networks -->
         <ExperienceInfo experience={experience} locale={locale} />
