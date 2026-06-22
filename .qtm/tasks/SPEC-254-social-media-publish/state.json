@@ -1776,7 +1776,7 @@
             "id": "T-049",
             "title": "Create social-publish-dispatch cron job",
             "description": "Create `apps/api/src/cron/jobs/social-publish-dispatch.job.ts`.\n\nJob logic:\n1. Log start with `@repo/logger`\n2. Read `make_webhook_url` from `social_settings` (live read, not cached). If empty or placeholder: log WARN 'Make webhook URL not configured, skipping dispatch'; record in cron_runs with status=SKIPPED; return.\n3. Call `SocialPublishDispatchService.findEligibleTargets()`\n4. For each eligible target: call `SocialPublishDispatchService.dispatchTarget(target.id)` sequentially (not concurrent — to avoid race conditions with the DB optimistic lock)\n5. Log completion with count of dispatched/failed/skipped\n6. Write to `cron_runs` table with `jobName = 'social-publish-dispatch'`, `status` (COMPLETED/FAILED), `itemsProcessed` count\n\nSchedule: every 5 minutes by default; configurable via `social_settings.dispatch_cron_interval_minutes`.\n\nRegister the job in `apps/api/src/cron/jobs/index.ts`.\n\nTest requirements:\n- Unit tests: empty make_webhook_url → job skips, no eligible targets → 0 dispatched, dispatch error is caught per-target (one failure doesn't stop others)\n- File: `apps/api/src/__tests__/cron/social-publish-dispatch.test.ts`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-048", "T-025"],
             "blocks": ["T-050"],

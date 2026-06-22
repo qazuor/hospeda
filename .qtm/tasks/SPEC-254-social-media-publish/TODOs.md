@@ -1,6 +1,6 @@
 # SPEC-254: Social Automation Backend
 
-## Progress: 40/52 tasks (77%) — Make callback ROUTES (T-048) done: POST /api/v1/integrations/make/social/jobs/:targetId/{claim,result} via createApiKeyRoute (x-hospeda-make-key + HOSPEDA_MAKE_INBOUND_KEY, timingSafeEqual 401). T-047 callback methods THROW ServiceError (handlers let it propagate). Next = T-049 (social-publish-dispatch cron) — last of publishing chain
+## Progress: 41/52 tasks (79%) — social-publish-dispatch CRON (T-049) done: advisory lock 43032, missing-key guard, dryRun, sequential dispatch loop. **PUBLISHING CHAIN COMPLETE (T-044→049). ENTIRE SPEC-254 BACKEND DONE.** Remaining = admin UI (T-039-042, tanstack-start-engineer) + T-038 integration test (needs worktree DB up). Owner Coolify: set 4 HOSPEDA_* keys on staging+prod before phase-4 deploy
 
 **Average Complexity:** 2.3/3 (max)
 **Critical Path:** T-001 -> T-002 -> T-004 -> T-005 -> T-006 -> T-007 -> T-008 -> T-009 -> T-010 -> T-011 -> T-013 -> T-014 -> T-016 -> T-017 -> T-018 -> T-019 -> T-027 -> T-028 -> T-029 -> T-032 -> T-033 -> T-034 -> T-035 -> T-036 -> T-037 -> T-044 -> T-045 -> T-046 -> T-047 -> T-048 -> T-049 -> T-050 -> T-051 -> T-052 (34 steps)
@@ -258,7 +258,7 @@
   - Blocked by: T-047, T-025, T-043
   - Blocks: T-049
 
-- [ ] **T-049** (complexity: 2) - Create social-publish-dispatch cron job
+- [x] **T-049** (complexity: 2) - Create social-publish-dispatch cron job
   - Every 5 minutes; live webhook URL check; sequential per-target dispatch; cron_runs logging.
   - Blocked by: T-048, T-025
   - Blocks: T-050
