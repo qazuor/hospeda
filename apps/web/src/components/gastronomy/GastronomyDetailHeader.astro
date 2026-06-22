@@ -83,7 +83,7 @@ const isNew = gastronomy.createdAt
             </span>
             {gastronomy.reviewsCount > 0 && (
                 <span class="gastro-detail-header__reviews-count">
-                    · {tPlural('review.totalReviews', gastronomy.reviewsCount)}
+                    · {tPlural('review.list.totalReviews', gastronomy.reviewsCount, { count: gastronomy.reviewsCount })}
                 </span>
             )}
         </div>
