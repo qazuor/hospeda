@@ -288,9 +288,17 @@ async function fetchTextSearch(
     name: string,
     coords: PlacesLatLng | null,
     apiKey: string,
-    timeoutMs: number
+    timeoutMs: number,
+    languageCode?: string
 ): Promise<PlaceObject | null> {
     const body: Record<string, unknown> = { textQuery: name };
+
+    // Localise displayName / formattedAddress / types to the user's locale when
+    // provided. The Places API (New) accepts a BCP-47 `languageCode` and returns
+    // the place data in that language where Google has it (SPEC-257 piece D).
+    if (languageCode) {
+        body.languageCode = languageCode;
+    }
 
     if (coords !== null) {
         body.locationBias = {
@@ -525,13 +533,20 @@ export class GooglePlacesAdapter implements ImportSourceAdapter {
         if (placeId) {
             let placeObject: PlaceObject;
 
+            // Localise the place details to the user's locale when provided
+            // (SPEC-257 piece D). Place Details (New) takes languageCode as a
+            // query parameter.
+            const detailsUrl = ctx.locale
+                ? `${PLACES_API_BASE}/${placeId}?languageCode=${encodeURIComponent(ctx.locale)}`
+                : `${PLACES_API_BASE}/${placeId}`;
+
             try {
                 const controller = new AbortController();
                 const timeoutId = setTimeout(() => controller.abort(), ctx.timeoutMs);
 
                 let response: Response;
                 try {
-                    response = await fetch(`${PLACES_API_BASE}/${placeId}`, {
+                    response = await fetch(detailsUrl, {
                         method: 'GET',
                         headers: {
                             'X-Goog-Api-Key': apiKey,
@@ -582,7 +597,13 @@ export class GooglePlacesAdapter implements ImportSourceAdapter {
         }
 
         const coords = extractCoordsFromPath(url);
-        const textSearchResult = await fetchTextSearch(placeName, coords, apiKey, ctx.timeoutMs);
+        const textSearchResult = await fetchTextSearch(
+            placeName,
+            coords,
+            apiKey,
+            ctx.timeoutMs,
+            ctx.locale
+        );
 
         if (!textSearchResult) {
             // Text Search returned no results or failed — degrade gracefully.

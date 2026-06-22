@@ -313,7 +313,9 @@ describe('GooglePlacesAdapter', () => {
             // Assert — fetch was called with the right URL
             expect(mockFetch).toHaveBeenCalledOnce();
             const [calledUrl] = mockFetch.mock.calls[0] as [string, RequestInit];
-            expect(calledUrl).toBe(`https://places.googleapis.com/v1/places/${placeId}`);
+            expect(calledUrl).toBe(
+                `https://places.googleapis.com/v1/places/${placeId}?languageCode=es`
+            );
         });
 
         it('should pass the API key in the X-Goog-Api-Key header', async () => {
@@ -441,7 +443,9 @@ describe('GooglePlacesAdapter', () => {
             // Assert — correct Place ID extracted from path token
             expect(mockFetch).toHaveBeenCalledOnce();
             const [calledUrl] = mockFetch.mock.calls[0] as [string, RequestInit];
-            expect(calledUrl).toBe(`https://places.googleapis.com/v1/places/${placeId}`);
+            expect(calledUrl).toBe(
+                `https://places.googleapis.com/v1/places/${placeId}?languageCode=es`
+            );
         });
     });
 
@@ -790,8 +794,81 @@ describe('GooglePlacesAdapter', () => {
             // Assert — Place Details GET call, not POST :searchText
             expect(mockFetch).toHaveBeenCalledOnce();
             const [calledUrl, init] = mockFetch.mock.calls[0] as [string, RequestInit];
-            expect(calledUrl).toBe(`https://places.googleapis.com/v1/places/${placeId}`);
+            expect(calledUrl).toBe(
+                `https://places.googleapis.com/v1/places/${placeId}?languageCode=es`
+            );
             expect((init as { method?: string }).method).toBe('GET');
+        });
+
+        it('should send languageCode in the Text Search body from ctx.locale (SPEC-257)', async () => {
+            // Arrange
+            const mockFetch = mockFetchOk(makeTextSearchResponse());
+            vi.stubGlobal('fetch', mockFetch);
+            const url = makeFtidUrl();
+            const ctx: ImportContext = { ...makeCtx(), locale: 'es' };
+
+            // Act
+            await adapter.extract(url, ctx);
+
+            // Assert
+            const [, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+            const body = JSON.parse(init?.body as string) as { languageCode?: string };
+            expect(body.languageCode).toBe('es');
+        });
+
+        it('should NOT send languageCode in the Text Search body when ctx.locale is absent (SPEC-257)', async () => {
+            // Arrange
+            const mockFetch = mockFetchOk(makeTextSearchResponse());
+            vi.stubGlobal('fetch', mockFetch);
+            const url = makeFtidUrl();
+            const ctx: ImportContext = { ...makeCtx(), locale: undefined };
+
+            // Act
+            await adapter.extract(url, ctx);
+
+            // Assert
+            const [, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+            const body = JSON.parse(init?.body as string) as { languageCode?: string };
+            expect(body.languageCode).toBeUndefined();
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // extract() — SPEC-257 piece D: localise results via languageCode
+    // -----------------------------------------------------------------------
+    describe('extract() — SPEC-257 locale', () => {
+        it('should append languageCode to the Place Details URL from ctx.locale', async () => {
+            // Arrange
+            const placeId = 'ChIJN1t_tDeuEmsRUsoyG83frY4';
+            const mockFetch = mockFetchOk(makePlacesResponse());
+            vi.stubGlobal('fetch', mockFetch);
+            const url = new URL(`https://www.google.com/maps/place/Hotel?place_id=${placeId}`);
+            const ctx: ImportContext = { ...makeCtx(), locale: 'pt' };
+
+            // Act
+            await adapter.extract(url, ctx);
+
+            // Assert
+            const [calledUrl] = mockFetch.mock.calls[0] as [string, RequestInit];
+            expect(calledUrl).toBe(
+                `https://places.googleapis.com/v1/places/${placeId}?languageCode=pt`
+            );
+        });
+
+        it('should NOT add languageCode to Place Details when ctx.locale is absent', async () => {
+            // Arrange
+            const placeId = 'ChIJN1t_tDeuEmsRUsoyG83frY4';
+            const mockFetch = mockFetchOk(makePlacesResponse());
+            vi.stubGlobal('fetch', mockFetch);
+            const url = new URL(`https://www.google.com/maps/place/Hotel?place_id=${placeId}`);
+            const ctx: ImportContext = { ...makeCtx(), locale: undefined };
+
+            // Act
+            await adapter.extract(url, ctx);
+
+            // Assert
+            const [calledUrl] = mockFetch.mock.calls[0] as [string, RequestInit];
+            expect(calledUrl).toBe(`https://places.googleapis.com/v1/places/${placeId}`);
         });
     });
 

@@ -373,10 +373,10 @@ describe('AirbnbAdapter', () => {
             // Act
             await adapter.extract(url, ctx);
 
-            // Assert
+            // Assert — makeCtx() has locale 'es', so the URL carries ?locale=es
             expect(mockRunApifyActor).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    actorInput: { startUrls: [{ url: url.href }] }
+                    actorInput: { startUrls: [{ url: `${url.href}?locale=es` }] }
                 })
             );
         });
@@ -556,6 +556,44 @@ describe('AirbnbAdapter', () => {
             expect(result).not.toHaveProperty('summary');
             expect(result).not.toHaveProperty('amenityNames');
             expect(result.extraInfo?.beds).toBeUndefined();
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // extract() — SPEC-257 piece D: localise the scraped page via ?locale
+    // -----------------------------------------------------------------------
+
+    describe('extract() — SPEC-257 locale', () => {
+        it('should append the user locale to the listing URL passed to the actor', async () => {
+            // Arrange
+            mockRunApifyActor.mockResolvedValue([]);
+            const url = new URL('https://www.airbnb.com.ar/rooms/77777');
+            const ctx: ImportContext = { ...makeCtx(), locale: 'es' };
+
+            // Act
+            await adapter.extract(url, ctx);
+
+            // Assert — the actor receives the URL with ?locale=es
+            const callArg = mockRunApifyActor.mock.calls[0]?.[0];
+            const passedUrl = (callArg?.actorInput as { startUrls: { url: string }[] }).startUrls[0]
+                ?.url;
+            expect(passedUrl).toContain('locale=es');
+        });
+
+        it('should not add a locale param when ctx.locale is absent', async () => {
+            // Arrange
+            mockRunApifyActor.mockResolvedValue([]);
+            const url = new URL('https://www.airbnb.com/rooms/1');
+            const ctx: ImportContext = { ...makeCtx(), locale: undefined };
+
+            // Act
+            await adapter.extract(url, ctx);
+
+            // Assert
+            const callArg = mockRunApifyActor.mock.calls[0]?.[0];
+            const passedUrl = (callArg?.actorInput as { startUrls: { url: string }[] }).startUrls[0]
+                ?.url;
+            expect(passedUrl).not.toContain('locale=');
         });
     });
 });

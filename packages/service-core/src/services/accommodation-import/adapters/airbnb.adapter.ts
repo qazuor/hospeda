@@ -427,6 +427,28 @@ function mapItemToRawExtraction(raw: AirbnbItem): RawExtraction {
 }
 
 // ---------------------------------------------------------------------------
+// Locale helper
+// ---------------------------------------------------------------------------
+
+/**
+ * Appends a `locale` query parameter to an Airbnb listing URL so the page (and
+ * therefore the scraped content) is served in the user's language. Airbnb honours
+ * `?locale=<code>` independently of the chosen Apify actor, so this is the most
+ * robust way to localise the import (SPEC-257 piece D). Returns the original href
+ * unchanged when no locale is provided.
+ *
+ * @param url - The parsed Airbnb listing URL.
+ * @param locale - BCP-47 locale code from {@link ImportContext.locale}.
+ * @returns The listing URL string, with `locale` applied when present.
+ */
+function withAirbnbLocale(url: URL, locale: string | undefined): string {
+    if (!locale) return url.href;
+    const localised = new URL(url.href);
+    localised.searchParams.set('locale', locale);
+    return localised.href;
+}
+
+// ---------------------------------------------------------------------------
 // AirbnbAdapter
 // ---------------------------------------------------------------------------
 
@@ -519,7 +541,7 @@ export class AirbnbAdapter implements ImportSourceAdapter {
         const dataset = await runApifyActor({
             token,
             actor,
-            actorInput: { startUrls: [{ url: url.href }] },
+            actorInput: { startUrls: [{ url: withAirbnbLocale(url, ctx.locale) }] },
             timeoutMs: ctx.timeoutMs
         });
 
