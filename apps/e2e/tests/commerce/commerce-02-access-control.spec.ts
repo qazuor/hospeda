@@ -45,6 +45,7 @@
 
 import { expect, test } from '@playwright/test';
 import { signInExistingUser } from '../../fixtures/api-helpers.ts';
+import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 
 // ---------------------------------------------------------------------------
 // Environment
@@ -122,6 +123,10 @@ async function authenticateContext(
 // ---------------------------------------------------------------------------
 
 test.describe('COMMERCE-02: access-control negative paths @p1 @commerce', () => {
+    test.beforeEach(async ({ page }) => {
+        await seedCookieConsent(page);
+    });
+
     // ── Case 1: Tourist (USER) blocked from commerce index ───────────────────
 
     test('tourist (USER role) is redirected away from /mi-cuenta/comercio/ to /mi-cuenta/', async ({

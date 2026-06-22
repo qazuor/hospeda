@@ -940,6 +940,21 @@
             "note": "Canonical web loading toolkit (Spinner/SkeletonCard/LoadingButton + convention doc) then migrate audited sites by priority. 22 tasks, 4 phases. Critical path T-001->T-003->T-010->T-013->T-022. Foundation T-001/T-002 independent; Astro skeleton-swaps (T-007/T-008) need only T-002.",
             "archivedAt": "2026-06-22",
             "archiveNote": "Merged to staging via PR #1739 (merge commit d17adf9d9). 22/22 tasks: canonical loading toolkit (Spinner/SkeletonCard/LoadingButton) + 15 island migrations + Astro skeleton-swaps + CI guard. Browser smoke + full CI green."
+        },
+        {
+            "specId": "SPEC-264",
+            "title": "Frictionless dev/test user setup",
+            "status": "in-progress",
+            "progress": "8/8",
+            "path": "SPEC-264-frictionless-dev-test-users",
+            "branch": "spec/SPEC-264-frictionless-dev-test-users",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-264-frictionless-dev-test-users",
+            "base": "staging",
+            "createdAt": "2026-06-22T00:00:00.000Z",
+            "tasksAtomizedAt": "2026-06-22T00:00:00.000Z",
+            "taskCount": 8,
+            "averageComplexity": 3.0,
+            "note": "Seed writes real domain state to make dev/test users ready (profile_completed + welcome-tour sentinel + whatsNew baseline + pw-change cleared). Zero apps/* changes. markUserReady helper + testUsers.seed wiring + db:seed:ready-user ad-hoc CLI. Scope: 13 test users + script (NOT example users). Rejected env-var bypass and is_test_account flag."
         }
     ],
     "standalone": {

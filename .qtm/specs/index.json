@@ -1715,6 +1715,19 @@
             "base": "staging",
             "dependsOn": ["SPEC-252"],
             "tags": ["e2e", "playwright", "testing", "commerce", "ci", "dev-infra"]
+        },
+        {
+            "specId": "SPEC-264",
+            "title": "Frictionless dev/test user setup",
+            "slug": "frictionless-dev-test-users",
+            "type": "improvement",
+            "complexity": "medium",
+            "status": "in-progress",
+            "path": "SPEC-264-frictionless-dev-test-users",
+            "created": "2026-06-22T00:00:00Z",
+            "base": "staging",
+            "dependsOn": [],
+            "tags": ["seed", "dev-experience", "testing", "onboarding", "test-users"]
         }
     ]
 }

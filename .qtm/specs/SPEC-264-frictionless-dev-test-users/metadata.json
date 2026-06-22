@@ -1,0 +1,12 @@
+{
+    "specId": "SPEC-264",
+    "title": "Frictionless dev/test user setup",
+    "type": "improvement",
+    "complexity": "medium",
+    "status": "draft",
+    "created": "2026-06-22",
+    "approved": "2026-06-22",
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["seed", "dev-experience", "testing", "onboarding", "test-users"]
+}
