@@ -779,7 +779,7 @@
         {
             "specId": "SPEC-183",
             "title": "API Error i18n Standardization",
-            "status": "approved",
+            "status": "in-progress",
             "complexity": "medium",
             "path": "SPEC-183-api-error-i18n-standardization",
             "created": "2026-06-02T00:00:00.000Z",
