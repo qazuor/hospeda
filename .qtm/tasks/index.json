@@ -850,6 +850,21 @@
             "base": "staging",
             "createdAt": "2026-06-22T15:39:13Z",
             "note": "Campaign spec; tasks atomized when smoke starts. 4 phases: SPEC-230,203,239,249."
+        },
+        {
+            "specId": "SPEC-260",
+            "title": "AI Usage Dashboard",
+            "status": "draft",
+            "progress": "0/23",
+            "path": "SPEC-260-ai-usage-dashboard",
+            "branch": "spec/SPEC-260-ai-usage-dashboard",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-260-ai-usage-dashboard",
+            "base": "staging",
+            "createdAt": "2026-06-22T00:00:00Z",
+            "tasksAtomizedAt": "2026-06-22T00:00:00Z",
+            "taskCount": 23,
+            "averageComplexity": 2.39,
+            "note": "23 tasks across 5 phases (setup 1, core 7, integration 11, testing 3, docs 1). Admin AI usage dashboard; extends existing metering with by-model/by-provider/feature-cross/daily aggregations + recharts UI. Re-numbered from SPEC-259 (collision with parallel staging-smoke-testing)."
         }
     ],
     "standalone": {

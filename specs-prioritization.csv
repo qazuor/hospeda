@@ -106,3 +106,4 @@ rank|spec|name|avance|prioridad|estado|estado_manual|estado_real|descripcion|por
 105|SPEC-258|Accommodation import — coverage gaps, limbo fields, UX surfacing & scraper resilience|-|-|backlog|-|-|-|-|-|-|-|-|SPEC-257|-
 104|SPEC-257|Accommodation import short-link resolution + adapter enrichment|-|-|in progress|-|-|-|-|-|-|-|-|SPEC-222|-
 106|SPEC-259|Systematic Chrome smoke testing of staging features (post-e2fb184)|-|-|backlog|-|-|-|-|-|-|-|-|-|-
+107|SPEC-260|AI Usage Dashboard|-|-|backlog|-|index staging: status=draft archived=False (extends existing AI metering SPEC-173; no unmet deps)|-|-|-|-|-|-|SPEC-173|-
