@@ -27,7 +27,36 @@
  *   - FORBIDDEN when actor lacks permission
  *   - Notes correctly appended when existing notes is non-null
  *
- * SPEC-254 T-033.
+ * schedule (T-034):
+ *   - Happy path APPROVED→SCHEDULED: correct fields + nextRunAt=scheduledAt + audit POST_SCHEDULED
+ *   - Reschedule SCHEDULED→SCHEDULED: audit POST_RESCHEDULED with old/new scheduledAt
+ *   - VALIDATION_ERROR when scheduledAt is in the past
+ *   - INVALID_STATE when status not APPROVED/SCHEDULED
+ *   - FORBIDDEN
+ *   - NOT_FOUND
+ *
+ * markReady (T-034):
+ *   - Happy path APPROVED→READY_TO_PUBLISH: nextRunAt≈now + audit POST_MARKED_READY
+ *   - INVALID_STATE when not APPROVED
+ *   - FORBIDDEN
+ *
+ * pause (T-034):
+ *   - Happy path: paused=true + audit POST_PAUSED
+ *   - INVALID_STATE when PUBLISHED
+ *   - INVALID_STATE when FAILED
+ *   - FORBIDDEN
+ *
+ * unpause (T-034):
+ *   - Happy path: paused=false + audit POST_UNPAUSED
+ *   - FORBIDDEN
+ *
+ * archive (T-034):
+ *   - Happy path: status=ARCHIVED + deletedAt set + deletedById + audit POST_ARCHIVED
+ *   - INVALID_STATE when PUBLISHING
+ *   - FORBIDDEN
+ *   - NOT_FOUND
+ *
+ * SPEC-254 T-033 / T-034.
  */
 
 import {
@@ -42,8 +71,13 @@ import type { SocialAuditLogService } from '../../../src/services/social/social-
 import { SocialAuditEvent } from '../../../src/services/social/social-audit-log.service';
 import type {
     ApprovePostInput,
+    ArchivePostInput,
+    MarkReadyPostInput,
+    PausePostInput,
     RejectPostInput,
-    RequestChangesInput
+    RequestChangesInput,
+    SchedulePostInput,
+    UnpausePostInput
 } from '../../../src/services/social/social-post.service';
 import { SocialPostService } from '../../../src/services/social/social-post.service';
 import type { Actor } from '../../../src/types';
@@ -71,8 +105,38 @@ function buildActor(hasApprove: boolean): Actor {
     };
 }
 
+function buildActorWithSchedule(hasPerm: boolean): Actor {
+    return {
+        id: ACTOR_ID,
+        role: RoleEnum.ADMIN,
+        permissions: hasPerm ? [PermissionEnum.SOCIAL_POST_SCHEDULE] : []
+    };
+}
+
+function buildActorWithPause(hasPerm: boolean): Actor {
+    return {
+        id: ACTOR_ID,
+        role: RoleEnum.ADMIN,
+        permissions: hasPerm ? [PermissionEnum.SOCIAL_POST_PAUSE] : []
+    };
+}
+
+function buildActorWithArchive(hasPerm: boolean): Actor {
+    return {
+        id: ACTOR_ID,
+        role: RoleEnum.ADMIN,
+        permissions: hasPerm ? [PermissionEnum.SOCIAL_POST_ARCHIVE] : []
+    };
+}
+
 const actorWithPerm = buildActor(true);
 const actorWithoutPerm = buildActor(false);
+const actorWithSchedulePerm = buildActorWithSchedule(true);
+const actorWithoutSchedulePerm = buildActorWithSchedule(false);
+const actorWithPausePerm = buildActorWithPause(true);
+const actorWithoutPausePerm = buildActorWithPause(false);
+const actorWithArchivePerm = buildActorWithArchive(true);
+const actorWithoutArchivePerm = buildActorWithArchive(false);
 
 // ---------------------------------------------------------------------------
 // Post / row fixtures
@@ -812,6 +876,575 @@ describe('SocialPostService.requestChanges', () => {
             const updateData = updateCall?.[1] as Record<string, unknown>;
             expect(updateData?.notes).toContain(existingNote);
             expect(updateData?.notes).toContain('New feedback');
+        });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Tests — schedule (T-034)
+// ---------------------------------------------------------------------------
+
+describe('SocialPostService.schedule', () => {
+    describe('happy path — first schedule (APPROVED → SCHEDULED)', () => {
+        it('should set status=SCHEDULED, scheduledAt, timezone, nextRunAt=scheduledAt, and call audit POST_SCHEDULED', async () => {
+            // Arrange
+            const auditLog = buildAuditLogMock();
+            const postModel = createModelMock();
+            postModel.findOne.mockResolvedValue(
+                buildPostRow({ status: SocialPostStatusEnum.APPROVED })
+            );
+            postModel.update.mockResolvedValue(
+                buildPostRow({ status: SocialPostStatusEnum.SCHEDULED })
+            );
+            const { service } = buildService({ postModel, auditLog });
+            const futureDate = new Date(Date.now() + 60_000);
+            const input: SchedulePostInput = {
+                actor: actorWithSchedulePerm,
+                postId: POST_ID,
+                scheduledAt: futureDate,
+                timezone: 'America/Argentina/Buenos_Aires'
+            };
+
+            // Act
+            const result = await service.schedule(input);
+
+            // Assert — return value
+            expect(result.error).toBeUndefined();
+            expect(result.data).toMatchObject({
+                id: POST_ID,
+                status: SocialPostStatusEnum.SCHEDULED,
+                scheduledAt: futureDate
+            });
+
+            // Assert — correct fields passed to model
+            expect(postModel.update).toHaveBeenCalledWith(
+                { id: POST_ID },
+                expect.objectContaining({
+                    status: SocialPostStatusEnum.SCHEDULED,
+                    scheduledAt: futureDate,
+                    timezone: 'America/Argentina/Buenos_Aires',
+                    nextRunAt: futureDate,
+                    updatedById: ACTOR_ID
+                })
+            );
+
+            // Assert — audit called with POST_SCHEDULED
+            expect(auditLog.log).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    actorId: ACTOR_ID,
+                    eventType: SocialAuditEvent.POST_SCHEDULED,
+                    entityType: 'social_post',
+                    entityId: POST_ID,
+                    oldValue: expect.objectContaining({ status: SocialPostStatusEnum.APPROVED }),
+                    newValue: expect.objectContaining({
+                        status: SocialPostStatusEnum.SCHEDULED,
+                        scheduledAt: futureDate
+                    })
+                })
+            );
+        });
+    });
+
+    describe('happy path — reschedule (SCHEDULED → SCHEDULED)', () => {
+        it('should replace scheduledAt and audit POST_RESCHEDULED with old/new values', async () => {
+            // Arrange
+            const auditLog = buildAuditLogMock();
+            const oldScheduledAt = new Date(Date.now() + 3_600_000);
+            const postModel = createModelMock();
+            postModel.findOne.mockResolvedValue(
+                buildPostRow({
+                    status: SocialPostStatusEnum.SCHEDULED,
+                    scheduledAt: oldScheduledAt
+                })
+            );
+            postModel.update.mockResolvedValue(
+                buildPostRow({ status: SocialPostStatusEnum.SCHEDULED })
+            );
+            const { service } = buildService({ postModel, auditLog });
+            const newScheduledAt = new Date(Date.now() + 7_200_000);
+            const input: SchedulePostInput = {
+                actor: actorWithSchedulePerm,
+                postId: POST_ID,
+                scheduledAt: newScheduledAt,
+                timezone: 'UTC'
+            };
+
+            // Act
+            const result = await service.schedule(input);
+
+            // Assert
+            expect(result.error).toBeUndefined();
+            expect(result.data?.status).toBe(SocialPostStatusEnum.SCHEDULED);
+
+            // Assert — audit called with POST_RESCHEDULED
+            expect(auditLog.log).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    eventType: SocialAuditEvent.POST_RESCHEDULED,
+                    oldValue: expect.objectContaining({ scheduledAt: oldScheduledAt }),
+                    newValue: expect.objectContaining({ scheduledAt: newScheduledAt })
+                })
+            );
+        });
+    });
+
+    describe('VALIDATION_ERROR — scheduledAt in the past', () => {
+        it('should return VALIDATION_ERROR when scheduledAt is in the past', async () => {
+            // Arrange
+            const postModel = createModelMock();
+            postModel.findOne.mockResolvedValue(
+                buildPostRow({ status: SocialPostStatusEnum.APPROVED })
+            );
+            const { service } = buildService({ postModel });
+            const pastDate = new Date(Date.now() - 60_000);
+            const input: SchedulePostInput = {
+                actor: actorWithSchedulePerm,
+                postId: POST_ID,
+                scheduledAt: pastDate,
+                timezone: 'UTC'
+            };
+
+            // Act
+            const result = await service.schedule(input);
+
+            // Assert
+            expect(result.data).toBeUndefined();
+            expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+            expect(result.error?.message).toContain('scheduledAt must be in the future');
+        });
+    });
+
+    describe('INVALID_STATE', () => {
+        it('should return VALIDATION_ERROR with reason INVALID_STATE when status is not APPROVED or SCHEDULED', async () => {
+            // Arrange
+            const postModel = createModelMock();
+            postModel.findOne.mockResolvedValue(
+                buildPostRow({ status: SocialPostStatusEnum.PUBLISHED })
+            );
+            const { service } = buildService({ postModel });
+            const futureDate = new Date(Date.now() + 60_000);
+            const input: SchedulePostInput = {
+                actor: actorWithSchedulePerm,
+                postId: POST_ID,
+                scheduledAt: futureDate,
+                timezone: 'UTC'
+            };
+
+            // Act
+            const result = await service.schedule(input);
+
+            // Assert
+            expect(result.data).toBeUndefined();
+            expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+            expect(result.error?.reason).toBe('INVALID_STATE');
+        });
+    });
+
+    describe('FORBIDDEN', () => {
+        it('should return FORBIDDEN when actor lacks SOCIAL_POST_SCHEDULE', async () => {
+            // Arrange
+            const { service } = buildService();
+            const futureDate = new Date(Date.now() + 60_000);
+            const input: SchedulePostInput = {
+                actor: actorWithoutSchedulePerm,
+                postId: POST_ID,
+                scheduledAt: futureDate,
+                timezone: 'UTC'
+            };
+
+            // Act
+            const result = await service.schedule(input);
+
+            // Assert
+            expect(result.data).toBeUndefined();
+            expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+        });
+    });
+
+    describe('NOT_FOUND', () => {
+        it('should return NOT_FOUND when post does not exist', async () => {
+            // Arrange
+            const postModel = createModelMock();
+            postModel.findOne.mockResolvedValue(null);
+            const { service } = buildService({ postModel });
+            const futureDate = new Date(Date.now() + 60_000);
+            const input: SchedulePostInput = {
+                actor: actorWithSchedulePerm,
+                postId: POST_ID,
+                scheduledAt: futureDate,
+                timezone: 'UTC'
+            };
+
+            // Act
+            const result = await service.schedule(input);
+
+            // Assert
+            expect(result.data).toBeUndefined();
+            expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+        });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Tests — markReady (T-034)
+// ---------------------------------------------------------------------------
+
+describe('SocialPostService.markReady', () => {
+    describe('happy path', () => {
+        it('should set status=READY_TO_PUBLISH, nextRunAt≈now, and call audit POST_MARKED_READY', async () => {
+            // Arrange
+            const auditLog = buildAuditLogMock();
+            const postModel = createModelMock();
+            postModel.findOne.mockResolvedValue(
+                buildPostRow({ status: SocialPostStatusEnum.APPROVED })
+            );
+            postModel.update.mockResolvedValue(
+                buildPostRow({ status: SocialPostStatusEnum.READY_TO_PUBLISH })
+            );
+            const { service } = buildService({ postModel, auditLog });
+            const beforeCall = Date.now();
+            const input: MarkReadyPostInput = { actor: actorWithSchedulePerm, postId: POST_ID };
+
+            // Act
+            const result = await service.markReady(input);
+            const afterCall = Date.now();
+
+            // Assert — return value
+            expect(result.error).toBeUndefined();
+            expect(result.data).toMatchObject({
+                id: POST_ID,
+                status: SocialPostStatusEnum.READY_TO_PUBLISH
+            });
+
+            // Assert — nextRunAt is approximately now
+            const updateCall = (postModel.update as ReturnType<typeof vi.fn>).mock.calls[0];
+            const updateData = updateCall?.[1] as Record<string, unknown>;
+            const nextRunAt = updateData?.nextRunAt as Date;
+            expect(nextRunAt).toBeInstanceOf(Date);
+            expect(nextRunAt.getTime()).toBeGreaterThanOrEqual(beforeCall);
+            expect(nextRunAt.getTime()).toBeLessThanOrEqual(afterCall + 5);
+
+            // Assert — audit called with POST_MARKED_READY
+            expect(auditLog.log).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    actorId: ACTOR_ID,
+                    eventType: SocialAuditEvent.POST_MARKED_READY,
+                    entityType: 'social_post',
+                    entityId: POST_ID
+                })
+            );
+        });
+    });
+
+    describe('INVALID_STATE', () => {
+        it('should return VALIDATION_ERROR with reason INVALID_STATE when post is not APPROVED', async () => {
+            // Arrange
+            const postModel = createModelMock();
+            postModel.findOne.mockResolvedValue(
+                buildPostRow({ status: SocialPostStatusEnum.SCHEDULED })
+            );
+            const { service } = buildService({ postModel });
+            const input: MarkReadyPostInput = { actor: actorWithSchedulePerm, postId: POST_ID };
+
+            // Act
+            const result = await service.markReady(input);
+
+            // Assert
+            expect(result.data).toBeUndefined();
+            expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+            expect(result.error?.reason).toBe('INVALID_STATE');
+            expect(result.error?.message).toContain('APPROVED');
+        });
+    });
+
+    describe('FORBIDDEN', () => {
+        it('should return FORBIDDEN when actor lacks SOCIAL_POST_SCHEDULE', async () => {
+            // Arrange
+            const { service } = buildService();
+            const input: MarkReadyPostInput = {
+                actor: actorWithoutSchedulePerm,
+                postId: POST_ID
+            };
+
+            // Act
+            const result = await service.markReady(input);
+
+            // Assert
+            expect(result.data).toBeUndefined();
+            expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+        });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Tests — pause (T-034)
+// ---------------------------------------------------------------------------
+
+describe('SocialPostService.pause', () => {
+    describe('happy path', () => {
+        it('should set paused=true and call audit POST_PAUSED', async () => {
+            // Arrange
+            const auditLog = buildAuditLogMock();
+            const postModel = createModelMock();
+            postModel.findOne.mockResolvedValue(
+                buildPostRow({ status: SocialPostStatusEnum.APPROVED, paused: false })
+            );
+            postModel.update.mockResolvedValue(buildPostRow({ paused: true }));
+            const { service } = buildService({ postModel, auditLog });
+            const input: PausePostInput = { actor: actorWithPausePerm, postId: POST_ID };
+
+            // Act
+            const result = await service.pause(input);
+
+            // Assert — return value
+            expect(result.error).toBeUndefined();
+            expect(result.data).toMatchObject({ id: POST_ID, paused: true });
+
+            // Assert — model updated with paused=true
+            expect(postModel.update).toHaveBeenCalledWith(
+                { id: POST_ID },
+                expect.objectContaining({ paused: true, updatedById: ACTOR_ID })
+            );
+
+            // Assert — audit called with POST_PAUSED
+            expect(auditLog.log).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    actorId: ACTOR_ID,
+                    eventType: SocialAuditEvent.POST_PAUSED,
+                    entityType: 'social_post',
+                    entityId: POST_ID
+                })
+            );
+        });
+    });
+
+    describe('INVALID_STATE — PUBLISHED', () => {
+        it('should return VALIDATION_ERROR with reason INVALID_STATE when post is PUBLISHED', async () => {
+            // Arrange
+            const postModel = createModelMock();
+            postModel.findOne.mockResolvedValue(
+                buildPostRow({ status: SocialPostStatusEnum.PUBLISHED })
+            );
+            const { service } = buildService({ postModel });
+            const input: PausePostInput = { actor: actorWithPausePerm, postId: POST_ID };
+
+            // Act
+            const result = await service.pause(input);
+
+            // Assert
+            expect(result.data).toBeUndefined();
+            expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+            expect(result.error?.reason).toBe('INVALID_STATE');
+            expect(result.error?.message).toContain('PUBLISHED');
+        });
+    });
+
+    describe('INVALID_STATE — FAILED', () => {
+        it('should return VALIDATION_ERROR with reason INVALID_STATE when post is FAILED', async () => {
+            // Arrange
+            const postModel = createModelMock();
+            postModel.findOne.mockResolvedValue(
+                buildPostRow({ status: SocialPostStatusEnum.FAILED })
+            );
+            const { service } = buildService({ postModel });
+            const input: PausePostInput = { actor: actorWithPausePerm, postId: POST_ID };
+
+            // Act
+            const result = await service.pause(input);
+
+            // Assert
+            expect(result.data).toBeUndefined();
+            expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+            expect(result.error?.reason).toBe('INVALID_STATE');
+            expect(result.error?.message).toContain('FAILED');
+        });
+    });
+
+    describe('FORBIDDEN', () => {
+        it('should return FORBIDDEN when actor lacks SOCIAL_POST_PAUSE', async () => {
+            // Arrange
+            const { service } = buildService();
+            const input: PausePostInput = { actor: actorWithoutPausePerm, postId: POST_ID };
+
+            // Act
+            const result = await service.pause(input);
+
+            // Assert
+            expect(result.data).toBeUndefined();
+            expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+        });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Tests — unpause (T-034)
+// ---------------------------------------------------------------------------
+
+describe('SocialPostService.unpause', () => {
+    describe('happy path', () => {
+        it('should set paused=false and call audit POST_UNPAUSED', async () => {
+            // Arrange
+            const auditLog = buildAuditLogMock();
+            const postModel = createModelMock();
+            postModel.findOne.mockResolvedValue(
+                buildPostRow({ status: SocialPostStatusEnum.APPROVED, paused: true })
+            );
+            postModel.update.mockResolvedValue(buildPostRow({ paused: false }));
+            const { service } = buildService({ postModel, auditLog });
+            const input: UnpausePostInput = { actor: actorWithPausePerm, postId: POST_ID };
+
+            // Act
+            const result = await service.unpause(input);
+
+            // Assert — return value
+            expect(result.error).toBeUndefined();
+            expect(result.data).toMatchObject({ id: POST_ID, paused: false });
+
+            // Assert — model updated with paused=false
+            expect(postModel.update).toHaveBeenCalledWith(
+                { id: POST_ID },
+                expect.objectContaining({ paused: false, updatedById: ACTOR_ID })
+            );
+
+            // Assert — audit called with POST_UNPAUSED
+            expect(auditLog.log).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    actorId: ACTOR_ID,
+                    eventType: SocialAuditEvent.POST_UNPAUSED,
+                    entityType: 'social_post',
+                    entityId: POST_ID
+                })
+            );
+        });
+    });
+
+    describe('FORBIDDEN', () => {
+        it('should return FORBIDDEN when actor lacks SOCIAL_POST_PAUSE', async () => {
+            // Arrange
+            const { service } = buildService();
+            const input: UnpausePostInput = { actor: actorWithoutPausePerm, postId: POST_ID };
+
+            // Act
+            const result = await service.unpause(input);
+
+            // Assert
+            expect(result.data).toBeUndefined();
+            expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+        });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Tests — archive (T-034)
+// ---------------------------------------------------------------------------
+
+describe('SocialPostService.archive', () => {
+    describe('happy path', () => {
+        it('should set status=ARCHIVED, deletedAt, deletedById, and call audit POST_ARCHIVED', async () => {
+            // Arrange
+            const auditLog = buildAuditLogMock();
+            const postModel = createModelMock();
+            postModel.findOne.mockResolvedValue(
+                buildPostRow({ status: SocialPostStatusEnum.APPROVED })
+            );
+            postModel.update.mockResolvedValue(
+                buildPostRow({ status: SocialPostStatusEnum.ARCHIVED })
+            );
+            const { service } = buildService({ postModel, auditLog });
+            const beforeCall = Date.now();
+            const input: ArchivePostInput = { actor: actorWithArchivePerm, postId: POST_ID };
+
+            // Act
+            const result = await service.archive(input);
+            const afterCall = Date.now();
+
+            // Assert — return value
+            expect(result.error).toBeUndefined();
+            expect(result.data).toMatchObject({
+                id: POST_ID,
+                status: SocialPostStatusEnum.ARCHIVED
+            });
+
+            // Assert — single update call with status + soft-delete fields
+            expect(postModel.update).toHaveBeenCalledWith(
+                { id: POST_ID },
+                expect.objectContaining({
+                    status: SocialPostStatusEnum.ARCHIVED,
+                    deletedById: ACTOR_ID,
+                    updatedById: ACTOR_ID
+                })
+            );
+
+            // Assert — deletedAt is approximately now
+            const updateCall = (postModel.update as ReturnType<typeof vi.fn>).mock.calls[0];
+            const updateData = updateCall?.[1] as Record<string, unknown>;
+            const deletedAt = updateData?.deletedAt as Date;
+            expect(deletedAt).toBeInstanceOf(Date);
+            expect(deletedAt.getTime()).toBeGreaterThanOrEqual(beforeCall);
+            expect(deletedAt.getTime()).toBeLessThanOrEqual(afterCall + 5);
+
+            // Assert — audit called with POST_ARCHIVED
+            expect(auditLog.log).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    actorId: ACTOR_ID,
+                    eventType: SocialAuditEvent.POST_ARCHIVED,
+                    entityType: 'social_post',
+                    entityId: POST_ID,
+                    newValue: expect.objectContaining({ status: SocialPostStatusEnum.ARCHIVED })
+                })
+            );
+        });
+    });
+
+    describe('INVALID_STATE — PUBLISHING', () => {
+        it('should return VALIDATION_ERROR with reason INVALID_STATE when post is PUBLISHING', async () => {
+            // Arrange
+            const postModel = createModelMock();
+            postModel.findOne.mockResolvedValue(
+                buildPostRow({ status: SocialPostStatusEnum.PUBLISHING })
+            );
+            const { service } = buildService({ postModel });
+            const input: ArchivePostInput = { actor: actorWithArchivePerm, postId: POST_ID };
+
+            // Act
+            const result = await service.archive(input);
+
+            // Assert
+            expect(result.data).toBeUndefined();
+            expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+            expect(result.error?.reason).toBe('INVALID_STATE');
+            expect(result.error?.message).toContain('currently being published');
+        });
+    });
+
+    describe('FORBIDDEN', () => {
+        it('should return FORBIDDEN when actor lacks SOCIAL_POST_ARCHIVE', async () => {
+            // Arrange
+            const { service } = buildService();
+            const input: ArchivePostInput = { actor: actorWithoutArchivePerm, postId: POST_ID };
+
+            // Act
+            const result = await service.archive(input);
+
+            // Assert
+            expect(result.data).toBeUndefined();
+            expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+        });
+    });
+
+    describe('NOT_FOUND', () => {
+        it('should return NOT_FOUND when post does not exist', async () => {
+            // Arrange
+            const postModel = createModelMock();
+            postModel.findOne.mockResolvedValue(null);
+            const { service } = buildService({ postModel });
+            const input: ArchivePostInput = { actor: actorWithArchivePerm, postId: POST_ID };
+
+            // Act
+            const result = await service.archive(input);
+
+            // Assert
+            expect(result.data).toBeUndefined();
+            expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
         });
     });
 });

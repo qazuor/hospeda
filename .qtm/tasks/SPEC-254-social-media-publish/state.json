@@ -1187,7 +1187,7 @@
             "id": "T-034",
             "title": "Extend SocialPostService — scheduling, markReady, pause, unpause, archive",
             "description": "Add to `social-post.service.ts`:\n\n`schedule(postId, actorId, { scheduledAt, timezone, recurrenceType?, recurrenceParamsJson? })`:\n- Assert post is APPROVED or already SCHEDULED\n- Assert scheduledAt is in the future → 422 if past\n- If recurrenceType is WEEKLY, assert recurrenceParamsJson.weekday is valid SocialWeekday → 422 if missing\n- Set status=SCHEDULED, scheduled_at, timezone, next_run_at=scheduled_at, recurrence fields\n- Log POST_SCHEDULED (or POST_RESCHEDULED if was already SCHEDULED, with old/new scheduledAt)\n\n`markReady(postId, actorId)`:\n- Assert post is APPROVED\n- Set status=READY_TO_PUBLISH, next_run_at=now()\n- Log POST_MARKED_READY\n\n`pause(postId, actorId)`:\n- Assert status in (APPROVED, SCHEDULED, READY_TO_PUBLISH) and paused=false; else 422\n- Assert status not in (PUBLISHED, FAILED) → 422\n- Set paused=true; log POST_PAUSED\n\n`unpause(postId, actorId)`:\n- Assert paused=true → 422 if not paused\n- Set paused=false; log POST_UNPAUSED\n\n`archive(postId, actorId)`:\n- Assert status !== PUBLISHING → 422 if in PUBLISHING\n- Set status=ARCHIVED, deleted_at=now()\n- Log POST_ARCHIVED\n\nTest requirements:\n- Unit tests: schedule rejects past dates, schedule WEEKLY without weekday → 422, markReady requires APPROVED, pause rejects PUBLISHED/FAILED, archive blocks on PUBLISHING\n- File: `packages/service-core/src/services/social/__tests__/social-post-service-state.test.ts`",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-033"],
             "blocks": ["T-035"],

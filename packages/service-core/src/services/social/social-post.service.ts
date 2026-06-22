@@ -35,7 +35,12 @@ import { ServiceError } from '../../types';
 import { serviceLogger } from '../../utils/service-logger';
 import { SocialAuditEvent, SocialAuditLogService } from './social-audit-log.service';
 import type { SocialAuditLogService as SocialAuditLogServiceType } from './social-audit-log.service';
-import { checkCanApprovePost } from './social.permissions';
+import {
+    checkCanApprovePost,
+    checkCanArchivePost,
+    checkCanPausePost,
+    checkCanSchedulePost
+} from './social.permissions';
 
 // ---------------------------------------------------------------------------
 // Output types
@@ -51,6 +56,48 @@ export interface SocialPostTransitionData {
     readonly status: string;
     /** Approval status after the transition. */
     readonly approvalStatus: string;
+}
+
+/**
+ * Data returned by scheduling state-transition methods.
+ */
+export interface SocialPostScheduleData {
+    /** UUID of the affected post. */
+    readonly id: string;
+    /** Status after the transition. */
+    readonly status: string;
+    /** Scheduled datetime after the transition. */
+    readonly scheduledAt: Date | null;
+}
+
+/**
+ * Data returned by markReady.
+ */
+export interface SocialPostReadyData {
+    /** UUID of the affected post. */
+    readonly id: string;
+    /** Status after the transition. */
+    readonly status: string;
+}
+
+/**
+ * Data returned by pause/unpause methods.
+ */
+export interface SocialPostPauseData {
+    /** UUID of the affected post. */
+    readonly id: string;
+    /** Paused flag after the transition. */
+    readonly paused: boolean;
+}
+
+/**
+ * Data returned by archive.
+ */
+export interface SocialPostArchiveData {
+    /** UUID of the affected post. */
+    readonly id: string;
+    /** Status after the transition (always ARCHIVED). */
+    readonly status: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -95,6 +142,60 @@ export interface RequestChangesInput {
     readonly feedback: string;
 }
 
+/**
+ * Input for {@link SocialPostService.schedule}.
+ */
+export interface SchedulePostInput {
+    /** Actor performing the action — must hold SOCIAL_POST_SCHEDULE. */
+    readonly actor: import('../../types').Actor;
+    /** UUID of the post to schedule. */
+    readonly postId: string;
+    /** Future datetime at which the post should be published. Must be strictly after now. */
+    readonly scheduledAt: Date;
+    /** IANA timezone string (e.g. "America/Argentina/Buenos_Aires"). */
+    readonly timezone: string;
+}
+
+/**
+ * Input for {@link SocialPostService.markReady}.
+ */
+export interface MarkReadyPostInput {
+    /** Actor performing the action — must hold SOCIAL_POST_SCHEDULE. */
+    readonly actor: import('../../types').Actor;
+    /** UUID of the post to mark ready. */
+    readonly postId: string;
+}
+
+/**
+ * Input for {@link SocialPostService.pause}.
+ */
+export interface PausePostInput {
+    /** Actor performing the action — must hold SOCIAL_POST_PAUSE. */
+    readonly actor: import('../../types').Actor;
+    /** UUID of the post to pause. */
+    readonly postId: string;
+}
+
+/**
+ * Input for {@link SocialPostService.unpause}.
+ */
+export interface UnpausePostInput {
+    /** Actor performing the action — must hold SOCIAL_POST_PAUSE. */
+    readonly actor: import('../../types').Actor;
+    /** UUID of the post to unpause. */
+    readonly postId: string;
+}
+
+/**
+ * Input for {@link SocialPostService.archive}.
+ */
+export interface ArchivePostInput {
+    /** Actor performing the action — must hold SOCIAL_POST_ARCHIVE. */
+    readonly actor: import('../../types').Actor;
+    /** UUID of the post to archive. */
+    readonly postId: string;
+}
+
 // ---------------------------------------------------------------------------
 // Service
 // ---------------------------------------------------------------------------
@@ -110,13 +211,13 @@ export interface RequestChangesInput {
  * - Emits an audit log row on every successful transition.
  *
  * ## Error codes used
- * | ServiceErrorCode     | Machine string       | HTTP | When                                      |
- * |----------------------|----------------------|------|-------------------------------------------|
- * | FORBIDDEN            | FORBIDDEN            | 403  | Actor lacks SOCIAL_POST_APPROVE           |
- * | NOT_FOUND            | NOT_FOUND            | 404  | Post does not exist (or is soft-deleted)  |
- * | VALIDATION_ERROR     | VALIDATION_ERROR     | 422  | reason / feedback is blank                |
- * | VALIDATION_ERROR     | INVALID_STATE        | 422  | Post is not in the expected state         |
- * | VALIDATION_ERROR     | MISSING_MEDIA        | 422  | No media but a target requires media      |
+ * | ServiceErrorCode     | Machine string       | HTTP | When                                          |
+ * |----------------------|----------------------|------|-----------------------------------------------|
+ * | FORBIDDEN            | FORBIDDEN            | 403  | Actor lacks the required permission           |
+ * | NOT_FOUND            | NOT_FOUND            | 404  | Post does not exist (or is soft-deleted)      |
+ * | VALIDATION_ERROR     | VALIDATION_ERROR     | 422  | reason / feedback blank or scheduledAt past   |
+ * | VALIDATION_ERROR     | INVALID_STATE        | 422  | Post is not in the expected state             |
+ * | VALIDATION_ERROR     | MISSING_MEDIA        | 422  | No media but a target requires media          |
  *
  * For INVALID_STATE and MISSING_MEDIA there is no dedicated ServiceErrorCode member,
  * so VALIDATION_ERROR is reused as the `code` (the closest existing 422 code).
@@ -124,7 +225,7 @@ export interface RequestChangesInput {
  * which propagates to the API error response payload and lets the route (T-036) map
  * each case to the correct response shape without parsing the human message.
  *
- * SPEC-254 T-033.
+ * SPEC-254 T-033 / T-034.
  */
 export class SocialPostService {
     private readonly postModel: SocialPostModelType;
@@ -541,6 +642,530 @@ export class SocialPostService {
                 error: {
                     code: ServiceErrorCode.INTERNAL_ERROR,
                     message: `Unexpected error during requestChanges: ${message}`
+                }
+            };
+        }
+    }
+
+    /**
+     * Schedules an approved post for future publication, or reschedules a post
+     * that is already in SCHEDULED state.
+     *
+     * Steps:
+     * 1. Permission check — SOCIAL_POST_SCHEDULE required.
+     * 2. Load the post (non-soft-deleted).
+     * 3. Validate `scheduledAt` is strictly in the future.
+     * 4. State guard — post must be APPROVED (first schedule) or SCHEDULED (reschedule).
+     * 5. DB update — status=SCHEDULED (if APPROVED), scheduledAt, timezone, nextRunAt, updatedById.
+     * 6. Audit log — POST_SCHEDULED (first time) or POST_RESCHEDULED (update).
+     *
+     * @param input - Actor, postId, scheduledAt, and timezone.
+     * @returns ServiceOutput with `{ id, status, scheduledAt }` on success.
+     */
+    public async schedule(
+        input: SchedulePostInput
+    ): Promise<ServiceOutput<SocialPostScheduleData>> {
+        const { actor, postId, scheduledAt, timezone } = input;
+
+        try {
+            // Step 1: Permission
+            checkCanSchedulePost(actor);
+
+            // Step 2: Load post
+            const post = await this.postModel.findOne({ id: postId, deletedAt: null });
+            if (!post) {
+                throw new ServiceError(ServiceErrorCode.NOT_FOUND, `Post not found: ${postId}`);
+            }
+
+            // Step 3: Validate scheduledAt is in the future
+            if (scheduledAt <= new Date()) {
+                throw new ServiceError(
+                    ServiceErrorCode.VALIDATION_ERROR,
+                    'scheduledAt must be in the future'
+                );
+            }
+
+            // Step 4: State guard
+            const isFirstSchedule = post.status === SocialPostStatusEnum.APPROVED;
+            const isReschedule = post.status === SocialPostStatusEnum.SCHEDULED;
+
+            if (!isFirstSchedule && !isReschedule) {
+                throw new ServiceError(
+                    ServiceErrorCode.VALIDATION_ERROR,
+                    'Post must be APPROVED or SCHEDULED to schedule',
+                    undefined,
+                    'INVALID_STATE'
+                );
+            }
+
+            // Step 5: Update post
+            const updated = await this.postModel.update(
+                { id: postId },
+                {
+                    status: SocialPostStatusEnum.SCHEDULED,
+                    scheduledAt,
+                    timezone,
+                    nextRunAt: scheduledAt,
+                    updatedById: actor.id
+                }
+            );
+
+            if (!updated) {
+                throw new ServiceError(
+                    ServiceErrorCode.INTERNAL_ERROR,
+                    `Failed to update post: ${postId}`
+                );
+            }
+
+            // Step 6: Audit log
+            if (isFirstSchedule) {
+                await this.auditLog.log({
+                    actorId: actor.id,
+                    eventType: SocialAuditEvent.POST_SCHEDULED,
+                    entityType: 'social_post',
+                    entityId: postId,
+                    oldValue: { status: SocialPostStatusEnum.APPROVED },
+                    newValue: { status: SocialPostStatusEnum.SCHEDULED, scheduledAt }
+                });
+            } else {
+                await this.auditLog.log({
+                    actorId: actor.id,
+                    eventType: SocialAuditEvent.POST_RESCHEDULED,
+                    entityType: 'social_post',
+                    entityId: postId,
+                    oldValue: { scheduledAt: post.scheduledAt },
+                    newValue: { scheduledAt }
+                });
+            }
+
+            serviceLogger.info(
+                { postId, actorId: actor.id, isReschedule },
+                'SocialPostService.schedule: post scheduled'
+            );
+
+            return {
+                data: {
+                    id: postId,
+                    status: SocialPostStatusEnum.SCHEDULED,
+                    scheduledAt
+                }
+            };
+        } catch (err) {
+            if (err instanceof ServiceError) {
+                return {
+                    error: {
+                        code: err.code,
+                        message: err.message,
+                        details: err.details,
+                        reason: err.reason
+                    }
+                };
+            }
+            const message = err instanceof Error ? err.message : String(err);
+            serviceLogger.error(
+                { postId, error: message },
+                'SocialPostService.schedule: unexpected error'
+            );
+            return {
+                error: {
+                    code: ServiceErrorCode.INTERNAL_ERROR,
+                    message: `Unexpected error during schedule: ${message}`
+                }
+            };
+        }
+    }
+
+    /**
+     * Marks an approved post as READY_TO_PUBLISH so the dispatch cron picks it
+     * up on the next run without waiting for a scheduled datetime.
+     *
+     * Steps:
+     * 1. Permission check — SOCIAL_POST_SCHEDULE required.
+     * 2. Load the post (non-soft-deleted).
+     * 3. State guard — post must be APPROVED.
+     * 4. DB update — status=READY_TO_PUBLISH, nextRunAt=now, updatedById.
+     * 5. Audit log — POST_MARKED_READY.
+     *
+     * @param input - Actor and postId.
+     * @returns ServiceOutput with `{ id, status }` on success.
+     */
+    public async markReady(input: MarkReadyPostInput): Promise<ServiceOutput<SocialPostReadyData>> {
+        const { actor, postId } = input;
+
+        try {
+            // Step 1: Permission
+            checkCanSchedulePost(actor);
+
+            // Step 2: Load post
+            const post = await this.postModel.findOne({ id: postId, deletedAt: null });
+            if (!post) {
+                throw new ServiceError(ServiceErrorCode.NOT_FOUND, `Post not found: ${postId}`);
+            }
+
+            // Step 3: State guard — must be APPROVED
+            if (post.status !== SocialPostStatusEnum.APPROVED) {
+                throw new ServiceError(
+                    ServiceErrorCode.VALIDATION_ERROR,
+                    'Post must be APPROVED to mark ready',
+                    undefined,
+                    'INVALID_STATE'
+                );
+            }
+
+            // Step 4: Update post
+            const now = new Date();
+            const updated = await this.postModel.update(
+                { id: postId },
+                {
+                    status: SocialPostStatusEnum.READY_TO_PUBLISH,
+                    nextRunAt: now,
+                    updatedById: actor.id
+                }
+            );
+
+            if (!updated) {
+                throw new ServiceError(
+                    ServiceErrorCode.INTERNAL_ERROR,
+                    `Failed to update post: ${postId}`
+                );
+            }
+
+            // Step 5: Audit log
+            await this.auditLog.log({
+                actorId: actor.id,
+                eventType: SocialAuditEvent.POST_MARKED_READY,
+                entityType: 'social_post',
+                entityId: postId,
+                oldValue: { status: SocialPostStatusEnum.APPROVED },
+                newValue: { status: SocialPostStatusEnum.READY_TO_PUBLISH }
+            });
+
+            serviceLogger.info(
+                { postId, actorId: actor.id },
+                'SocialPostService.markReady: post marked ready to publish'
+            );
+
+            return {
+                data: {
+                    id: postId,
+                    status: SocialPostStatusEnum.READY_TO_PUBLISH
+                }
+            };
+        } catch (err) {
+            if (err instanceof ServiceError) {
+                return {
+                    error: {
+                        code: err.code,
+                        message: err.message,
+                        details: err.details,
+                        reason: err.reason
+                    }
+                };
+            }
+            const message = err instanceof Error ? err.message : String(err);
+            serviceLogger.error(
+                { postId, error: message },
+                'SocialPostService.markReady: unexpected error'
+            );
+            return {
+                error: {
+                    code: ServiceErrorCode.INTERNAL_ERROR,
+                    message: `Unexpected error during markReady: ${message}`
+                }
+            };
+        }
+    }
+
+    /**
+     * Pauses a post, preventing the dispatch cron from publishing it until unpaused.
+     *
+     * Steps:
+     * 1. Permission check — SOCIAL_POST_PAUSE required.
+     * 2. Load the post (non-soft-deleted).
+     * 3. State guard — PUBLISHED and FAILED posts cannot be paused.
+     * 4. DB update — paused=true, updatedById.
+     * 5. Audit log — POST_PAUSED.
+     *
+     * @param input - Actor and postId.
+     * @returns ServiceOutput with `{ id, paused }` on success.
+     */
+    public async pause(input: PausePostInput): Promise<ServiceOutput<SocialPostPauseData>> {
+        const { actor, postId } = input;
+
+        try {
+            // Step 1: Permission
+            checkCanPausePost(actor);
+
+            // Step 2: Load post
+            const post = await this.postModel.findOne({ id: postId, deletedAt: null });
+            if (!post) {
+                throw new ServiceError(ServiceErrorCode.NOT_FOUND, `Post not found: ${postId}`);
+            }
+
+            // Step 3: State guard — PUBLISHED and FAILED cannot be paused
+            if (
+                post.status === SocialPostStatusEnum.PUBLISHED ||
+                post.status === SocialPostStatusEnum.FAILED
+            ) {
+                throw new ServiceError(
+                    ServiceErrorCode.VALIDATION_ERROR,
+                    'Cannot pause a post in PUBLISHED or FAILED state',
+                    undefined,
+                    'INVALID_STATE'
+                );
+            }
+
+            // Step 4: Update post
+            const updated = await this.postModel.update(
+                { id: postId },
+                {
+                    paused: true,
+                    updatedById: actor.id
+                }
+            );
+
+            if (!updated) {
+                throw new ServiceError(
+                    ServiceErrorCode.INTERNAL_ERROR,
+                    `Failed to update post: ${postId}`
+                );
+            }
+
+            // Step 5: Audit log
+            await this.auditLog.log({
+                actorId: actor.id,
+                eventType: SocialAuditEvent.POST_PAUSED,
+                entityType: 'social_post',
+                entityId: postId,
+                oldValue: { paused: false },
+                newValue: { paused: true }
+            });
+
+            serviceLogger.info(
+                { postId, actorId: actor.id },
+                'SocialPostService.pause: post paused'
+            );
+
+            return {
+                data: {
+                    id: postId,
+                    paused: true
+                }
+            };
+        } catch (err) {
+            if (err instanceof ServiceError) {
+                return {
+                    error: {
+                        code: err.code,
+                        message: err.message,
+                        details: err.details,
+                        reason: err.reason
+                    }
+                };
+            }
+            const message = err instanceof Error ? err.message : String(err);
+            serviceLogger.error(
+                { postId, error: message },
+                'SocialPostService.pause: unexpected error'
+            );
+            return {
+                error: {
+                    code: ServiceErrorCode.INTERNAL_ERROR,
+                    message: `Unexpected error during pause: ${message}`
+                }
+            };
+        }
+    }
+
+    /**
+     * Unpauses a previously paused post, allowing the dispatch cron to resume
+     * publishing it.
+     *
+     * Steps:
+     * 1. Permission check — SOCIAL_POST_PAUSE required.
+     * 2. Load the post (non-soft-deleted).
+     * 3. DB update — paused=false, updatedById.
+     * 4. Audit log — POST_UNPAUSED.
+     *
+     * @param input - Actor and postId.
+     * @returns ServiceOutput with `{ id, paused }` on success.
+     */
+    public async unpause(input: UnpausePostInput): Promise<ServiceOutput<SocialPostPauseData>> {
+        const { actor, postId } = input;
+
+        try {
+            // Step 1: Permission
+            checkCanPausePost(actor);
+
+            // Step 2: Load post
+            const post = await this.postModel.findOne({ id: postId, deletedAt: null });
+            if (!post) {
+                throw new ServiceError(ServiceErrorCode.NOT_FOUND, `Post not found: ${postId}`);
+            }
+
+            // Step 3: Update post
+            const updated = await this.postModel.update(
+                { id: postId },
+                {
+                    paused: false,
+                    updatedById: actor.id
+                }
+            );
+
+            if (!updated) {
+                throw new ServiceError(
+                    ServiceErrorCode.INTERNAL_ERROR,
+                    `Failed to update post: ${postId}`
+                );
+            }
+
+            // Step 4: Audit log
+            await this.auditLog.log({
+                actorId: actor.id,
+                eventType: SocialAuditEvent.POST_UNPAUSED,
+                entityType: 'social_post',
+                entityId: postId,
+                oldValue: { paused: true },
+                newValue: { paused: false }
+            });
+
+            serviceLogger.info(
+                { postId, actorId: actor.id },
+                'SocialPostService.unpause: post unpaused'
+            );
+
+            return {
+                data: {
+                    id: postId,
+                    paused: false
+                }
+            };
+        } catch (err) {
+            if (err instanceof ServiceError) {
+                return {
+                    error: {
+                        code: err.code,
+                        message: err.message,
+                        details: err.details,
+                        reason: err.reason
+                    }
+                };
+            }
+            const message = err instanceof Error ? err.message : String(err);
+            serviceLogger.error(
+                { postId, error: message },
+                'SocialPostService.unpause: unexpected error'
+            );
+            return {
+                error: {
+                    code: ServiceErrorCode.INTERNAL_ERROR,
+                    message: `Unexpected error during unpause: ${message}`
+                }
+            };
+        }
+    }
+
+    /**
+     * Archives a post by setting `status = ARCHIVED` and soft-deleting the row
+     * (`deletedAt`, `deletedById`). Archived posts are excluded from default
+     * admin list queries.
+     *
+     * Posts in PUBLISHING state cannot be archived — the dispatch is already in
+     * flight and archiving would corrupt the publish flow.
+     *
+     * Steps:
+     * 1. Permission check — SOCIAL_POST_ARCHIVE required.
+     * 2. Load the post (non-soft-deleted).
+     * 3. State guard — PUBLISHING posts cannot be archived.
+     * 4. DB update (single call) — status=ARCHIVED, deletedAt=now, deletedById, updatedById.
+     * 5. Audit log — POST_ARCHIVED.
+     *
+     * @param input - Actor and postId.
+     * @returns ServiceOutput with `{ id, status }` on success.
+     */
+    public async archive(input: ArchivePostInput): Promise<ServiceOutput<SocialPostArchiveData>> {
+        const { actor, postId } = input;
+
+        try {
+            // Step 1: Permission
+            checkCanArchivePost(actor);
+
+            // Step 2: Load post
+            const post = await this.postModel.findOne({ id: postId, deletedAt: null });
+            if (!post) {
+                throw new ServiceError(ServiceErrorCode.NOT_FOUND, `Post not found: ${postId}`);
+            }
+
+            // Step 3: State guard — PUBLISHING cannot be archived (dispatch in flight)
+            if (post.status === SocialPostStatusEnum.PUBLISHING) {
+                throw new ServiceError(
+                    ServiceErrorCode.VALIDATION_ERROR,
+                    'Cannot archive a post that is currently being published',
+                    undefined,
+                    'INVALID_STATE'
+                );
+            }
+
+            // Step 4: Single atomic update — status + soft-delete
+            const now = new Date();
+            const updated = await this.postModel.update(
+                { id: postId },
+                {
+                    status: SocialPostStatusEnum.ARCHIVED,
+                    deletedAt: now,
+                    deletedById: actor.id,
+                    updatedById: actor.id
+                }
+            );
+
+            if (!updated) {
+                throw new ServiceError(
+                    ServiceErrorCode.INTERNAL_ERROR,
+                    `Failed to update post: ${postId}`
+                );
+            }
+
+            // Step 5: Audit log
+            await this.auditLog.log({
+                actorId: actor.id,
+                eventType: SocialAuditEvent.POST_ARCHIVED,
+                entityType: 'social_post',
+                entityId: postId,
+                oldValue: { status: post.status },
+                newValue: { status: SocialPostStatusEnum.ARCHIVED, deletedAt: now }
+            });
+
+            serviceLogger.info(
+                { postId, actorId: actor.id },
+                'SocialPostService.archive: post archived and soft-deleted'
+            );
+
+            return {
+                data: {
+                    id: postId,
+                    status: SocialPostStatusEnum.ARCHIVED
+                }
+            };
+        } catch (err) {
+            if (err instanceof ServiceError) {
+                return {
+                    error: {
+                        code: err.code,
+                        message: err.message,
+                        details: err.details,
+                        reason: err.reason
+                    }
+                };
+            }
+            const message = err instanceof Error ? err.message : String(err);
+            serviceLogger.error(
+                { postId, error: message },
+                'SocialPostService.archive: unexpected error'
+            );
+            return {
+                error: {
+                    code: ServiceErrorCode.INTERNAL_ERROR,
+                    message: `Unexpected error during archive: ${message}`
                 }
             };
         }

@@ -43,5 +43,14 @@ export {
     type ApprovePostInput,
     type RejectPostInput,
     type RequestChangesInput,
-    type SocialPostTransitionData
+    type SocialPostTransitionData,
+    type SchedulePostInput,
+    type MarkReadyPostInput,
+    type PausePostInput,
+    type UnpausePostInput,
+    type ArchivePostInput,
+    type SocialPostScheduleData,
+    type SocialPostReadyData,
+    type SocialPostPauseData,
+    type SocialPostArchiveData
 } from './social-post.service';

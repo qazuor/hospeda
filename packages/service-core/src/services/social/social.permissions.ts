@@ -178,3 +178,51 @@ export const checkCanApprovePost = (actor: Actor): void => {
         );
     }
 };
+
+/**
+ * Asserts that the actor holds SOCIAL_POST_SCHEDULE permission.
+ * Gates schedule and markReady operations on social posts.
+ *
+ * @param actor - The acting user.
+ * @throws {ServiceError} FORBIDDEN if the actor lacks the permission.
+ */
+export const checkCanSchedulePost = (actor: Actor): void => {
+    if (!hasPermission(actor, PermissionEnum.SOCIAL_POST_SCHEDULE)) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied: SOCIAL_POST_SCHEDULE required'
+        );
+    }
+};
+
+/**
+ * Asserts that the actor holds SOCIAL_POST_PAUSE permission.
+ * Gates pause and unpause operations on social posts.
+ *
+ * @param actor - The acting user.
+ * @throws {ServiceError} FORBIDDEN if the actor lacks the permission.
+ */
+export const checkCanPausePost = (actor: Actor): void => {
+    if (!hasPermission(actor, PermissionEnum.SOCIAL_POST_PAUSE)) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied: SOCIAL_POST_PAUSE required'
+        );
+    }
+};
+
+/**
+ * Asserts that the actor holds SOCIAL_POST_ARCHIVE permission.
+ * Gates archive operations on social posts (soft-delete + status=ARCHIVED).
+ *
+ * @param actor - The acting user.
+ * @throws {ServiceError} FORBIDDEN if the actor lacks the permission.
+ */
+export const checkCanArchivePost = (actor: Actor): void => {
+    if (!hasPermission(actor, PermissionEnum.SOCIAL_POST_ARCHIVE)) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied: SOCIAL_POST_ARCHIVE required'
+        );
+    }
+};
