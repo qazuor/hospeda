@@ -10,7 +10,7 @@ import { setTimeout as sleep } from 'node:timers/promises';
  * gracefully kills the spawned processes.
  *
  * Spawned processes inherit the parent env plus a strict E2E override:
- *   - `HOSPEDA_DATABASE_URL` -> postgres on :5433 (hospeda_e2e)
+ *   - `HOSPEDA_DATABASE_URL` -> postgres on :15433 (hospeda_e2e)
  *   - `NODE_ENV` -> 'test'
  *   - `HOSPEDA_*` URLs -> e2e-local triplet
  *
@@ -40,11 +40,12 @@ export interface PreviewHandle {
     readonly teardown: () => Promise<void>;
 }
 
-const DEFAULT_API_PORT = 3001;
-const DEFAULT_WEB_PORT = 4321;
-const DEFAULT_ADMIN_PORT = 3000;
-const DEFAULT_DB_URL = 'postgresql://hospeda_user:hospeda_pass@localhost:5433/hospeda_e2e';
-const DEFAULT_REDIS_URL = 'redis://localhost:6380';
+// Defaults match apps/e2e/.env.e2e (SSOT for E2E ports).
+const DEFAULT_API_PORT = 18001;
+const DEFAULT_WEB_PORT = 18321;
+const DEFAULT_ADMIN_PORT = 18000;
+const DEFAULT_DB_URL = 'postgresql://hospeda_user:hospeda_pass@localhost:15433/hospeda_e2e';
+const DEFAULT_REDIS_URL = 'redis://localhost:16380';
 const DEFAULT_READY_TIMEOUT_MS = 60_000;
 const HEALTH_POLL_INTERVAL_MS = 1_000;
 

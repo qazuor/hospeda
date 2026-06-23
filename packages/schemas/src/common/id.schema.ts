@@ -34,6 +34,9 @@ export type AccommodationIdType = z.infer<typeof AccommodationIdSchema>;
 export const AccommodationFaqIdSchema = BaseIdSchema;
 export type AccommodationFaqIdType = z.infer<typeof AccommodationFaqIdSchema>;
 
+export const AccommodationMediaIdSchema = BaseIdSchema;
+export type AccommodationMediaIdType = z.infer<typeof AccommodationMediaIdSchema>;
+
 export const AccommodationIaDataIdSchema = BaseIdSchema;
 export type AccommodationIaDataIdType = z.infer<typeof AccommodationIaDataIdSchema>;
 

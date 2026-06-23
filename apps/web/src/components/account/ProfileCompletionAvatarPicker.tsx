@@ -19,6 +19,7 @@
  * Not a `.client.tsx` — mounts inside the already-hydrated parent island.
  */
 
+import { translateApiError } from '@/lib/api-errors';
 import { useRef, useState } from 'react';
 import styles from './ProfileCompletion.module.css';
 
@@ -33,7 +34,11 @@ const MAX_FILE_BYTES = 5 * 1024 * 1024;
 interface UploadResponse {
     readonly success?: boolean;
     readonly data?: { readonly url?: string };
-    readonly error?: { readonly message?: string };
+    readonly error?: {
+        readonly code?: string | null;
+        readonly message?: string | null;
+        readonly reason?: string | null;
+    };
 }
 
 /** Props for the avatar picker. */
@@ -120,13 +125,21 @@ export function ProfileCompletionAvatarPicker({
             });
 
             if (!response.ok) {
-                let message = t(
+                const localFallback = t(
                     'account.profileCompletion.avatar.errors.uploadFailed',
                     'No pudimos subir la imagen. Probá de nuevo.'
                 );
+                let message = localFallback;
                 try {
                     const errBody = (await response.json()) as UploadResponse;
-                    if (errBody.error?.message) message = errBody.error.message;
+                    // Adapt the component's required-fallback `t` signature to the
+                    // optional-fallback `TranslationFn` expected by translateApiError.
+                    const tAdapted = (key: string, fb?: string) => t(key, fb ?? '');
+                    message = translateApiError({
+                        error: errBody.error,
+                        t: tAdapted,
+                        fallback: localFallback
+                    });
                 } catch {
                     // ignore JSON parse errors
                 }

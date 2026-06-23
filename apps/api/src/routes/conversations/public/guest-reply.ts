@@ -8,6 +8,7 @@
  */
 import {
     CreateMessageSchema,
+    MessageGuestPublicSchema,
     MessageSenderTypeEnum,
     PermissionEnum,
     RoleEnum,
@@ -190,7 +191,12 @@ async function handler(c: Context): Promise<Response> {
             );
         }
 
-        return createResponse(messageResult.data, c, 201);
+        // Strip all internal / audit fields via MessageGuestPublicSchema before
+        // serializing. Zod .parse() on an object schema drops unknown keys by
+        // default, so any field not declared in the schema is silently removed.
+        const safeMessage = MessageGuestPublicSchema.parse(messageResult.data);
+
+        return createResponse(safeMessage, c, 201, MessageGuestPublicSchema);
     } catch (error) {
         return handleRouteError(error, c);
     }

@@ -106,7 +106,20 @@ describe('POST /api/v1/public/conversations/guest/:token/messages', () => {
     it('route is registered and reachable (not 404)', async () => {
         mockValidateToken.mockResolvedValueOnce({ data: VALID_TOKEN_ROW, error: undefined });
         mockCreateMessage.mockResolvedValueOnce({
-            data: { id: 'msg-001', body: 'hello', conversationId: CONVERSATION_ID },
+            data: {
+                id: '550e8400-e29b-41d4-a716-446655440010',
+                body: 'hello',
+                senderType: 'GUEST',
+                createdAt: new Date().toISOString(),
+                conversationId: CONVERSATION_ID,
+                userId: null,
+                status: 'VISIBLE',
+                updatedAt: new Date().toISOString(),
+                deletedAt: null,
+                createdById: null,
+                updatedById: null,
+                deletedById: null
+            },
             error: undefined
         });
 
@@ -119,10 +132,23 @@ describe('POST /api/v1/public/conversations/guest/:token/messages', () => {
 
     it('returns 201 with created message on valid token and clean body', async () => {
         // Arrange
+        // Include all fields MessageGuestPublicSchema requires after SPEC-210 PR3
+        // schema stripping (senderType + createdAt are mandatory; the schema strips
+        // conversationId / userId / status / audit timestamps).
         const createdMessage = {
-            id: 'msg-001',
+            id: '550e8400-e29b-41d4-a716-446655440011',
             body: 'Hello owner!',
-            conversationId: CONVERSATION_ID
+            senderType: 'GUEST',
+            createdAt: new Date().toISOString(),
+            // Extra fields that will be stripped by MessageGuestPublicSchema
+            conversationId: CONVERSATION_ID,
+            userId: null,
+            status: 'VISIBLE',
+            updatedAt: new Date().toISOString(),
+            deletedAt: null,
+            createdById: null,
+            updatedById: null,
+            deletedById: null
         };
         mockValidateToken.mockResolvedValueOnce({ data: VALID_TOKEN_ROW, error: undefined });
         mockCreateMessage.mockResolvedValueOnce({ data: createdMessage, error: undefined });

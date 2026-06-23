@@ -685,6 +685,128 @@ describe('SPEC-239 — Gastronomy commerce admin-sells lifecycle (integration)',
     );
 
     // -----------------------------------------------------------------------
+    // T-8b: Review WITHOUT the granular `rating` breakdown must succeed.
+    //
+    // Regression (SPEC-259 Chrome smoke): the `gastronomy_reviews.rating` jsonb
+    // column was NOT NULL with no default, but GastronomyReviewCreateInputSchema
+    // marks `rating` optional (a reviewer may submit only the scalar
+    // `overallRating`). Submitting a rating-less review therefore violated the
+    // NOT NULL constraint and surfaced as a 500. Migration 0023 drops NOT NULL
+    // on the column; this test reproduces the failing path against the real DB.
+    // T-8 above always sends a full breakdown, which is why it never caught it.
+    // -----------------------------------------------------------------------
+
+    it.skipIf(!dbAvailable)(
+        'T-8b: review without granular rating breakdown is created (PENDING), no NOT NULL violation',
+        async () => {
+            await withServiceTestTransaction(async (tx) => {
+                // Arrange: PUBLIC listing + tourist reviewer
+                const { gastronomyId } = await seedGastronomy(tx, {
+                    visibility: 'PUBLIC',
+                    lifecycleState: 'ACTIVE'
+                });
+                const touristUserId = await seedTouristUser(tx);
+                const touristActor = createTouristActor(touristUserId);
+                const ctx: ServiceContext = { tx };
+
+                // Act: submit a review with ONLY the required scalar rating —
+                // no per-dimension `rating` object.
+                const createResult = await reviewService.create(
+                    touristActor,
+                    {
+                        gastronomyId,
+                        overallRating: 4,
+                        title: 'Solid spot',
+                        content: 'Tasty and reasonably priced, would return.'
+                    },
+                    ctx
+                );
+
+                // Assert: created successfully (no NOT NULL / 500), state PENDING
+                expect(createResult.error).toBeUndefined();
+                expect(createResult.data).toBeDefined();
+                if (!createResult.data) throw new Error('expected review data');
+                const data = createResult.data as Record<string, unknown>;
+                expect(data.id).toBeTruthy();
+                expect(data.moderationState).toBe(ModerationStatusEnum.PENDING);
+                // The breakdown is absent (null/undefined) — never an empty-object sentinel.
+                expect(data.rating ?? null).toBeNull();
+                // Effective per-review rating falls back to the scalar overallRating
+                // (not 0) so the review never renders as ★0.0.
+                expect(Number(data.averageRating)).toBe(4);
+            });
+        }
+    );
+
+    // -----------------------------------------------------------------------
+    // T-8c: listForModeration surfaces PENDING reviews filtered by state.
+    //
+    // Regression (SPEC-259 Chrome smoke): the admin "Reseñas" moderation tab
+    // showed "no pending reviews" because the list route 400'd on `?status=`.
+    // The dedicated service method must filter by `moderationState` (NOT the
+    // base adminList `status`/lifecycleState semantics) and require the
+    // COMMERCE_MODERATE_REVIEW permission.
+    // -----------------------------------------------------------------------
+
+    it.skipIf(!dbAvailable)(
+        'T-8c: listForModeration returns PENDING reviews and enforces permission',
+        async () => {
+            await withServiceTestTransaction(async (tx) => {
+                const { gastronomyId } = await seedGastronomy(tx, {
+                    visibility: 'PUBLIC',
+                    lifecycleState: 'ACTIVE'
+                });
+                const touristUserId = await seedTouristUser(tx);
+                const touristActor = createTouristActor(touristUserId);
+                const ctx: ServiceContext = { tx };
+
+                // Arrange: a freshly-created review is PENDING.
+                const createResult = await reviewService.create(
+                    touristActor,
+                    { gastronomyId, overallRating: 5, title: 'Great' },
+                    ctx
+                );
+                expect(createResult.error).toBeUndefined();
+                const reviewId = (createResult.data as Record<string, unknown>).id as string;
+
+                // Act: list PENDING reviews as an admin moderator.
+                const pendingResult = await reviewService.listForModeration(
+                    adminActor,
+                    { moderationState: ModerationStatusEnum.PENDING },
+                    ctx
+                );
+
+                // Assert: the new review is in the PENDING queue.
+                expect(pendingResult.error).toBeUndefined();
+                const pendingIds = (pendingResult.data?.items ?? []).map(
+                    (r) => (r as Record<string, unknown>).id
+                );
+                expect(pendingIds).toContain(reviewId);
+
+                // Act/Assert: filtering by APPROVED excludes the pending review.
+                const approvedResult = await reviewService.listForModeration(
+                    adminActor,
+                    { moderationState: ModerationStatusEnum.APPROVED },
+                    ctx
+                );
+                expect(approvedResult.error).toBeUndefined();
+                const approvedIds = (approvedResult.data?.items ?? []).map(
+                    (r) => (r as Record<string, unknown>).id
+                );
+                expect(approvedIds).not.toContain(reviewId);
+
+                // Act/Assert: a non-moderator actor is forbidden.
+                const forbidden = await reviewService.listForModeration(
+                    touristActor,
+                    { moderationState: ModerationStatusEnum.PENDING },
+                    ctx
+                );
+                expect(forbidden.error?.code).toBe('FORBIDDEN');
+            });
+        }
+    );
+
+    // -----------------------------------------------------------------------
     // T-9: Reconciliation is idempotent — no unnecessary write on second call
     // -----------------------------------------------------------------------
 

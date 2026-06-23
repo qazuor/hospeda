@@ -48,8 +48,9 @@ vi.mock('../../src/lib/qzpay-logger.js', () => ({
 
 const mockRetrieve = vi.fn();
 const mockSearch = vi.fn();
+const mockAdapterSubsUpdate = vi.fn();
 const mockCreateMercadoPagoAdapter = vi.fn((..._args: unknown[]) => ({
-    subscriptions: { retrieve: mockRetrieve },
+    subscriptions: { retrieve: mockRetrieve, update: mockAdapterSubsUpdate },
     payments: { search: mockSearch }
 }));
 
@@ -58,11 +59,31 @@ vi.mock('@repo/billing', () => ({
 }));
 
 const mockExecute = vi.fn();
+// mockGetDbExecute is used by reconcileActiveDiscountAmounts which calls getDb().execute()
+// directly (outside withTransaction). Default: return no rows (reconciler skips).
+const mockGetDbExecute = vi.fn().mockResolvedValue({ rows: [] });
 vi.mock('@repo/db', () => ({
     sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ strings, values }),
+    getDb: vi.fn(() => ({ execute: mockGetDbExecute })),
     withTransaction: async <T>(fn: (tx: { execute: Mock }) => Promise<T>): Promise<T> => {
         return fn({ execute: mockExecute });
     }
+}));
+
+// @repo/service-core functions used by reconcileActiveDiscountAmounts.
+// Default: no-op stubs. Tests override per-case.
+const mockResolveFullPlanPrice = vi.fn().mockResolvedValue(null);
+const mockGetPromoCodeById = vi.fn().mockResolvedValue({ success: false });
+const mockCalculatePromoCodeEffect = vi.fn().mockReturnValue({ type: 'noop' });
+vi.mock('@repo/service-core', () => ({
+    resolveFullPlanPriceCentavos: (...args: unknown[]) => mockResolveFullPlanPrice(...args),
+    getPromoCodeById: (...args: unknown[]) => mockGetPromoCodeById(...args),
+    calculatePromoCodeEffect: (...args: unknown[]) => mockCalculatePromoCodeEffect(...args)
+}));
+
+// @sentry/node is used by reconcileActiveDiscountAmounts to capture MP mutation failures.
+vi.mock('@sentry/node', () => ({
+    captureException: vi.fn()
 }));
 
 const mockFindDuePending = vi.fn();
@@ -916,6 +937,123 @@ describe('subscription-poll cron job', () => {
                 (call) => (call[0] as { status?: string }).status === 'succeeded'
             );
             expect(terminalUpdate).toBeDefined();
+        });
+    });
+
+    // ---------------------------------------------------------------------------
+    // SPEC-262 S1: reconcileActiveDiscountAmounts — reads auto_recurring.transaction_amount
+    // ---------------------------------------------------------------------------
+    //
+    // These tests cover the discount reconciler that runs after each poll batch.
+    // The reconciler loads active subs with promo_code_id + mp_subscription_id via
+    // getDb().execute() (NOT withTransaction), then retrieves the live MP preapproval
+    // via paymentAdapter.subscriptions.retrieve(), and re-issues
+    // paymentAdapter.subscriptions.update() only when the live amount drifts from
+    // the expected amount by more than ±1 ARS (major units).
+    //
+    // Key S1 bug: the old code read `livePreapproval.transaction_amount` (top-level,
+    // exists on PAYMENT objects), but MP preapproval (subscription) objects store the
+    // recurring amount under `auto_recurring.transaction_amount`. Reading the wrong
+    // field yields `undefined` → mapped to -1 → every tick triggered a spurious
+    // mutation, and a sync-check test against the real field shape would have caught it.
+    describe('SPEC-262 S1: reconcileActiveDiscountAmounts', () => {
+        // Sub fixture shared across reconciler tests.
+        const RECONCILE_SUB = {
+            id: 'sub-promo-1',
+            plan_id: 'plan-pro',
+            mp_subscription_id: 'mp-sub-promo-1',
+            promo_code_id: 'pc-1',
+            promo_effect_remaining_cycles: 2 // finite, still active
+        };
+
+        // Full plan price: 10000 centavos = 100 ARS major.
+        // 50% discount → expected = 5000 centavos = 50 ARS major.
+        const FULL_PRICE_CENTAVOS = 10000;
+        const DISCOUNT_PERCENT = 50;
+        const EXPECTED_DISCOUNTED_MAJOR = 50;
+
+        function setupReconcilerMocks(liveAmountMajor: number): void {
+            // Make the reconciler's getDb().execute() return one discounted sub row.
+            mockGetDbExecute.mockResolvedValueOnce({ rows: [RECONCILE_SUB] });
+            // resolveFullPlanPriceCentavos returns the full price.
+            mockResolveFullPlanPrice.mockResolvedValueOnce(FULL_PRICE_CENTAVOS);
+            // getPromoCodeById returns a 50% discount code.
+            mockGetPromoCodeById.mockResolvedValueOnce({
+                success: true,
+                data: {
+                    id: 'pc-1',
+                    effect: {
+                        kind: 'discount',
+                        valueKind: 'percentage',
+                        value: DISCOUNT_PERCENT,
+                        durationCycles: 3
+                    }
+                }
+            });
+            // calculatePromoCodeEffect returns the discounted amount in centavos.
+            mockCalculatePromoCodeEffect.mockReturnValueOnce({
+                type: 'apply-discount',
+                finalAmount: FULL_PRICE_CENTAVOS * (1 - DISCOUNT_PERCENT / 100) // 5000
+            });
+            // mockRetrieve returns the MP preapproval shaped with auto_recurring
+            // (as the real MP API returns). The reconciler reads
+            // auto_recurring.transaction_amount — NOT top-level transaction_amount.
+            mockRetrieve.mockResolvedValueOnce({
+                id: RECONCILE_SUB.mp_subscription_id,
+                status: 'active',
+                auto_recurring: {
+                    transaction_amount: liveAmountMajor
+                }
+                // NOTE: top-level transaction_amount intentionally ABSENT here
+                // (it does not exist on preapproval objects). If the reconciler
+                // read the top-level field it would see `undefined` → -1, and
+                // the in-sync case below would trigger a spurious update.
+            });
+        }
+
+        beforeEach(() => {
+            // Ensure no polling jobs interfere with the reconciler-only tests.
+            mockFindDuePending.mockResolvedValue([]);
+            mockAdapterSubsUpdate.mockResolvedValue(undefined);
+        });
+
+        it('S1 in-sync: when live auto_recurring.transaction_amount matches expected, subscriptions.update is NOT called', async () => {
+            // Arrange: live amount == expected discounted amount (no drift).
+            setupReconcilerMocks(EXPECTED_DISCOUNTED_MAJOR); // live = 50 ARS = expected
+
+            // Act: run the cron (no polling jobs, just the reconciler).
+            await subscriptionPollJob.handler(buildContext({ dryRun: false }));
+
+            // Assert: NO update was issued — the amounts are in sync.
+            // This is the critical regression test: if the code reads the wrong field
+            // (top-level transaction_amount = undefined → -1), it would see drift of
+            // |(-1) - 50| = 51 > 1 and call update() erroneously.
+            expect(mockAdapterSubsUpdate).not.toHaveBeenCalled();
+        });
+
+        it('S1 drift: when live auto_recurring.transaction_amount differs from expected by > 1 ARS, subscriptions.update IS called with the correct amount', async () => {
+            // Arrange: live amount is the FULL price (100), expected is discounted (50).
+            // This simulates a case where the restore fired but the discount-apply
+            // should still be in effect (or vice versa).
+            setupReconcilerMocks(100); // live = 100 ARS (full), expected = 50 ARS (discounted)
+
+            // Act
+            await subscriptionPollJob.handler(buildContext({ dryRun: false }));
+
+            // Assert: update was called to correct the drift.
+            expect(mockAdapterSubsUpdate).toHaveBeenCalledOnce();
+            expect(mockAdapterSubsUpdate).toHaveBeenCalledWith(RECONCILE_SUB.mp_subscription_id, {
+                transactionAmount: EXPECTED_DISCOUNTED_MAJOR
+            });
+        });
+
+        it('S1 dry-run: reconciler is skipped entirely in dry-run mode', async () => {
+            // The reconciler must never issue MP mutations in dry-run.
+            setupReconcilerMocks(100); // drift would trigger update — but dry-run skips it
+
+            await subscriptionPollJob.handler(buildContext({ dryRun: true }));
+
+            expect(mockAdapterSubsUpdate).not.toHaveBeenCalled();
         });
     });
 });

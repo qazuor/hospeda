@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { SuccessSchema } from '../../../api/result.schema.js';
 import {
+    BaseFaqPublicSchema,
     BaseFaqSchema,
     FaqCreatePayloadSchema,
     FaqReorderPayloadSchema,
@@ -24,6 +25,38 @@ export const ExperienceFaqSchema = BaseFaqSchema.extend({
 
 /** TypeScript type for {@link ExperienceFaqSchema}. */
 export type ExperienceFaq = z.infer<typeof ExperienceFaqSchema>;
+
+// ----------------------------------------------------------------------------
+// Public Access Schema (SPEC-210)
+// ----------------------------------------------------------------------------
+
+/**
+ * Experience FAQ Public Schema — safe subset for public API responses (SPEC-210).
+ *
+ * Field set: id, experienceId, question, answer, category, displayOrder.
+ * Deliberately EXCLUDES audit fields (createdAt, updatedAt, createdById, updatedById,
+ * deletedAt, deletedById), lifecycleState, and all internal metadata.
+ * Used as the responseSchema for GET /api/v1/public/experiences/:experienceId/faqs.
+ */
+export const ExperienceFaqPublicSchema = BaseFaqPublicSchema.extend({
+    /** FAQ entity ID (UUID). */
+    id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+
+    /** The experience listing this FAQ belongs to. */
+    experienceId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
+});
+
+/** TypeScript type for {@link ExperienceFaqPublicSchema}. */
+export type ExperienceFaqPublic = z.infer<typeof ExperienceFaqPublicSchema>;
+
+/**
+ * Output schema for listing experience FAQs — public variant (SPEC-210).
+ * Replaces ExperienceFaqListOutputSchema on the public endpoint.
+ */
+export const ExperienceFaqPublicListOutputSchema = z.object({
+    faqs: z.array(ExperienceFaqPublicSchema)
+});
+export type ExperienceFaqPublicListOutput = z.infer<typeof ExperienceFaqPublicListOutputSchema>;
 
 // ----------------------------------------------------------------------------
 // Command Input Schemas

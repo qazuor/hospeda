@@ -18,7 +18,13 @@
 import type { QZPaySubscriptionPollingJob, QZPayWebhookEvent } from '@qazuor/qzpay-core';
 import type { QZPayMercadoPagoAdapter } from '@qazuor/qzpay-mercadopago';
 import { createMercadoPagoAdapter } from '@repo/billing';
-import { sql, withTransaction } from '@repo/db';
+import { getDb, sql, withTransaction } from '@repo/db';
+import {
+    calculatePromoCodeEffect,
+    getPromoCodeById,
+    resolveFullPlanPriceCentavos
+} from '@repo/service-core';
+import * as Sentry from '@sentry/node';
 import { qzpayLogger } from '../../lib/qzpay-logger.js';
 import { getQZPayBilling } from '../../middlewares/billing.js';
 import {
@@ -410,6 +416,160 @@ async function runOneTimePaymentPoll(params: {
 }
 
 /**
+ * SPEC-262 S1 — Discount-aware amount reconciler (real safety net).
+ *
+ * For each ACTIVE subscription that has a promo_code_id set, retrieve the live
+ * MercadoPago `transaction_amount` and compare it to the EXPECTED amount:
+ * - Expected = discounted price if `promo_effect_remaining_cycles > 0` or `=== null`
+ *   (forever), otherwise expected = full plan price.
+ * - If the live amount drifts from the expected (e.g. restore failed after 3 retries
+ *   and left the preapproval at the discounted rate, or something else mutated the
+ *   preapproval externally), re-issue the correct MP mutation.
+ *
+ * This is best-effort (never throws, errors go to Sentry + warn log). It is invoked
+ * once per cron tick from the existing subscription-poll job handler, after the main
+ * polling batch, so it piggy-backs on the already-running scheduled task without
+ * requiring a separate cron.
+ *
+ * Tolerance: ±1 ARS major (0.01 peso) to absorb floating-point rounding.
+ */
+async function reconcileActiveDiscountAmounts(params: {
+    paymentAdapter: QZPayMercadoPagoAdapter;
+    logger: CronLogger;
+}): Promise<void> {
+    const { paymentAdapter, logger } = params;
+
+    // Load all active subscriptions with a promo link and a live preapproval.
+    const db = getDb();
+    let rows: Array<{
+        id: string;
+        plan_id: string | null;
+        mp_subscription_id: string;
+        promo_code_id: string;
+        promo_effect_remaining_cycles: number | null;
+    }>;
+
+    try {
+        const result = await db.execute(
+            sql`SELECT id, plan_id, mp_subscription_id, promo_code_id, promo_effect_remaining_cycles
+                FROM billing_subscriptions
+                WHERE status = 'active'
+                  AND promo_code_id IS NOT NULL
+                  AND mp_subscription_id IS NOT NULL
+                  AND deleted_at IS NULL`
+        );
+        rows = (result.rows ?? []) as typeof rows;
+    } catch (dbErr) {
+        logger.warn('subscription-poll reconcile: failed to load discounted subscriptions', {
+            error: dbErr instanceof Error ? dbErr.message : String(dbErr)
+        });
+        return;
+    }
+
+    for (const row of rows) {
+        try {
+            // Determine expected amount.
+            const fullPriceCentavos = await resolveFullPlanPriceCentavos(db, row.plan_id);
+            if (fullPriceCentavos === null) {
+                continue; // Can't reconcile without a known price — skip silently.
+            }
+
+            const remaining = row.promo_effect_remaining_cycles;
+            let expectedAmountMajor: number;
+
+            if (remaining === null || remaining > 0) {
+                // Active discount (forever or finite with cycles remaining).
+                const promoResult = await getPromoCodeById(row.promo_code_id);
+                if (!promoResult.success || !promoResult.data?.effect) {
+                    continue;
+                }
+                const mutation = calculatePromoCodeEffect(
+                    promoResult.data.effect,
+                    fullPriceCentavos
+                );
+                if (mutation.type !== 'apply-discount') {
+                    continue;
+                }
+                expectedAmountMajor = mutation.finalAmount / 100;
+            } else {
+                // remaining === 0: discount exhausted, expected = full price.
+                expectedAmountMajor = fullPriceCentavos / 100;
+            }
+
+            // Retrieve live MP amount.
+            const livePreapproval = await paymentAdapter.subscriptions.retrieve(
+                row.mp_subscription_id
+            );
+            // The MP preapproval (subscription) object stores the recurring amount
+            // under `auto_recurring.transaction_amount` (MAJOR units), NOT at the
+            // top level — top-level `transaction_amount` only exists on payment
+            // objects. Reading the wrong path yields undefined → -1 → a spurious
+            // mutation on every tick. See spike doc §2.2.
+            // TYPE-WORKAROUND: the qzpay adapter returns the raw MP preapproval as
+            // its typed SDK shape; we read dynamic `auto_recurring` fields not on
+            // that type, so a Record cast is required to access them safely.
+            const liveRecord = livePreapproval as unknown as Record<string, unknown>;
+            const autoRecurring =
+                typeof liveRecord.auto_recurring === 'object' && liveRecord.auto_recurring !== null
+                    ? (liveRecord.auto_recurring as Record<string, unknown>)
+                    : {};
+            const liveAmountMajor: number =
+                typeof autoRecurring.transaction_amount === 'number'
+                    ? autoRecurring.transaction_amount
+                    : -1;
+
+            // Tolerance ±1 ARS major (avoid rounding false positives).
+            if (Math.abs(liveAmountMajor - expectedAmountMajor) <= 1) {
+                continue; // In sync — nothing to do.
+            }
+
+            // Amount drifted: re-issue the correct mutation (best-effort).
+            logger.warn('subscription-poll reconcile: MP amount drift detected, re-issuing', {
+                subscriptionId: row.id,
+                mpSubscriptionId: row.mp_subscription_id,
+                liveAmountMajor,
+                expectedAmountMajor,
+                remaining
+            });
+            try {
+                await paymentAdapter.subscriptions.update(row.mp_subscription_id, {
+                    transactionAmount: expectedAmountMajor
+                });
+                logger.info('subscription-poll reconcile: amount drift corrected', {
+                    subscriptionId: row.id,
+                    mpSubscriptionId: row.mp_subscription_id,
+                    correctedAmountMajor: expectedAmountMajor
+                });
+            } catch (mpErr) {
+                const message = mpErr instanceof Error ? mpErr.message : String(mpErr);
+                logger.warn('subscription-poll reconcile: MP mutation failed (best-effort)', {
+                    subscriptionId: row.id,
+                    error: message
+                });
+                Sentry.captureException(
+                    new Error(`Promo reconcile MP mutation failed: ${message}`),
+                    {
+                        extra: {
+                            subscriptionId: row.id,
+                            mpSubscriptionId: row.mp_subscription_id,
+                            liveAmountMajor,
+                            expectedAmountMajor
+                        },
+                        tags: { module: 'subscription-poll', operation: 'reconcileDiscountAmount' }
+                    }
+                );
+            }
+        } catch (rowErr) {
+            // Per-sub errors must not abort the whole batch.
+            logger.warn('subscription-poll reconcile: unexpected error for sub', {
+                subscriptionId: row.id,
+                error: rowErr instanceof Error ? rowErr.message : String(rowErr)
+            });
+        }
+    }
+}
+
+/**
  * Process a single polling job: lock it, branch on resourceType to
  * query the right MP endpoint, transition the subscription if
  * appropriate, and persist the next state on the job.
@@ -479,6 +639,15 @@ async function processOneJob(
 
     // 3. Branch on resourceType. Both branches return a PollOutcome;
     //    the persist-next-state step below is shared.
+    //
+    // SPEC-262 T-007: this job only ACTIVATES pending-provider subscriptions
+    // (flips pending → active by polling MP for the first charge). It never
+    // recomputes or "corrects" the recurring `transaction_amount` of an
+    // already-active subscription, so it cannot clobber an intentionally-
+    // discounted amount. The discount-aware amount reconciler lives in
+    // `reconcileActiveDiscountAmounts` (invoked once per cron tick after this
+    // batch loop, outside the advisory lock). Comp subs never create a
+    // preapproval and never enqueue a polling job, so they never reach here.
     try {
         const outcome =
             locked.resourceType === 'one_time_payment'
@@ -669,6 +838,16 @@ export const subscriptionPollJob: CronJobDefinition = {
 
         processed = wrapped.processed;
         errors = wrapped.errors;
+
+        // SPEC-262 S1: discount-aware amount reconciler runs after the main
+        // polling batch (best-effort — never throws, errors go to Sentry).
+        // This is the real safety net for the case where restoreFullPriceMutation
+        // exhausted its 3 retries and left the preapproval at the discounted amount.
+        // It also covers any other external drift (e.g. manual MP edits).
+        // Skipped in dry-run mode (no real MP mutations in dry-run).
+        if (!dryRun) {
+            await reconcileActiveDiscountAmounts({ paymentAdapter, logger });
+        }
 
         return {
             success: errors === 0,

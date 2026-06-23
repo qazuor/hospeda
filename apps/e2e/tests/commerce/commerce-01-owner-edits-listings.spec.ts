@@ -4,7 +4,7 @@
  *
  * Actors: gastro-owner-julieta@local.test (role COMMERCE_OWNER, seeded by
  *   @repo/seed example pipeline: gastronomies.seed + experiences.seed).
- * Tags: @p1 @commerce
+ * Tags: @p0 @commerce
  *
  * Preconditions:
  *   - e2e:seed has run (`pnpm --filter hospeda-e2e e2e:seed`).
@@ -41,6 +41,7 @@
 
 import { expect, test } from '@playwright/test';
 import { signInExistingUser } from '../../fixtures/api-helpers.ts';
+import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 import { execSQL } from '../../fixtures/db-helpers.ts';
 import { setReactInputValue } from '../../fixtures/react19-input-helpers.ts';
 
@@ -92,7 +93,7 @@ async function authenticateContext(
 // Suite
 // ---------------------------------------------------------------------------
 
-test.describe('COMMERCE-01: commerce owner edits listings — both verticals @p1 @commerce', () => {
+test.describe('COMMERCE-01: commerce owner edits listings — both verticals @p0 @commerce', () => {
     /**
      * Tracks the gastronomy menuUrl value before the test so we can
      * restore it in afterEach (the seeded DB is shared; leaving a
@@ -101,6 +102,10 @@ test.describe('COMMERCE-01: commerce owner edits listings — both verticals @p1
      */
     let originalMenuUrl: string | null = null;
     let originalRichDescription: string | null = null;
+
+    test.beforeEach(async ({ page }) => {
+        await seedCookieConsent(page);
+    });
 
     test.afterEach(async () => {
         // Restore the gastronomy menuUrl to the seeded value.

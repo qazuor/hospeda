@@ -1,17 +1,23 @@
 /**
- * Booking.com Reputation Adapter (SPEC-237 T-006)
+ * Booking.com Reputation Adapter (SPEC-237 T-006, updated SPEC-250)
  *
  * Fetches the current aggregate rating and review count from Booking.com
- * using a two-tier strategy:
+ * using a two-phase strategy:
  *
- * 1. **Primary — direct fetch + JSON-LD `aggregateRating`**: Uses
- *    `safeExternalFetch` to retrieve the Booking.com listing page and parses
- *    the `aggregateRating` schema.org block from the embedded JSON-LD.  Zero
- *    cost when successful.
+ * **Phase A — inline (fast path)**:
+ * `fetch()` uses `safeExternalFetch` to retrieve the Booking.com listing page
+ * and parses the `aggregateRating` schema.org block from the embedded JSON-LD.
+ * Zero cost when successful (~1 s).  Returns the result immediately.
  *
- * 2. **Fallback — Apify actor**: When the primary fetch is blocked or yields
- *    no aggregate rating, falls back to the shared {@link runApifyActor}
- *    helper.  Requires `apifyToken` and `apifyBookingActor` credentials.
+ * If the JSON-LD path yields all-null aggregates, `fetch()` returns an
+ * empty result.  The service layer then detects the all-null result, sees that
+ * `startRun` is available, and calls it to enqueue an async Apify run.
+ *
+ * **Phase B — async (Apify path, SPEC-250)**:
+ * `startRun(listing)` enqueues an Apify actor run asynchronously via
+ * {@link startApifyRun} and returns `{ runId, datasetId }`.  The polling cron
+ * job (`poll-apify-reputation-runs`) calls `mapDatasetItems(items, listing)`
+ * once the run succeeds to extract the aggregate reputation values.
  *
  * **AC-7.1 legal constraint**: Booking.com's ToS prohibits automated
  * extraction and redistribution of review text.  This adapter MUST NEVER
@@ -25,7 +31,7 @@
 
 import type { AccommodationExternalListing } from '@repo/schemas';
 import { safeExternalFetch } from '@repo/utils';
-import { runApifyActor } from '../../accommodation-import/adapters/apify-client.js';
+import { startApifyRun } from '../../accommodation-import/adapters/apify-client.js';
 import type { ReputationAdapter, ReputationFetchResult } from './adapter.types.js';
 import { emptyReputationResult } from './adapter.types.js';
 
@@ -215,10 +221,13 @@ function toNumber(raw: number | string | null | undefined): number | null {
  * Fetches aggregate `rating` and `reviewsCount`.  `snippets` is ALWAYS `null`
  * (AC-7.1 legal guard — Booking.com prohibits text extraction).
  *
- * **Extraction flow:**
- * 1. `safeExternalFetch` the listing page + parse JSON-LD `aggregateRating`.
- * 2. On block/miss → Apify actor fallback (when credentials present).
- * 3. On all failure → {@link emptyReputationResult}.
+ * **Extraction flow (SPEC-250 two-phase):**
+ * 1. `fetch()` tries `safeExternalFetch` + JSON-LD `aggregateRating` (fast inline path).
+ * 2. If JSON-LD succeeds, returns the result inline (run_status='idle').
+ * 3. If JSON-LD misses, `fetch()` returns an all-null result.  The service
+ *    detects the all-null aggregate + `startRun` presence and calls `startRun()`.
+ * 4. `startRun()` enqueues an async Apify actor run and returns `{ runId, datasetId }`.
+ * 5. The polling cron calls `mapDatasetItems()` once the run succeeds.
  *
  * @example
  * ```ts
@@ -234,26 +243,33 @@ export class BookingReputationAdapter implements ReputationAdapter {
     readonly #credentials: BookingReputationCredentials;
 
     /**
-     * @param credentials - Apify credentials for the fallback path.
+     * @param credentials - Apify credentials for the async Apify path.
      *   When omitted or empty, only the primary JSON-LD path is attempted.
+     *   If JSON-LD also misses, the adapter degrades to an all-null result.
      */
     constructor(credentials: BookingReputationCredentials) {
         this.#credentials = credentials;
     }
 
     /**
-     * Fetches reputation data for a Booking.com listing.
+     * Fetches reputation data for a Booking.com listing using the fast JSON-LD path.
      *
-     * Always returns `snippets: null` regardless of what either source returns.
+     * Attempts to parse the `aggregateRating` schema.org block from the HTML
+     * page returned by `safeExternalFetch`.  If the page is blocked or contains
+     * no `aggregateRating`, returns an all-null result.  The service layer will
+     * then call `startRun()` to enqueue an async Apify run.
+     *
+     * The Apify fallback that previously lived in this method has been extracted
+     * to `startRun()` and `mapDatasetItems()` (SPEC-250 Phase 3).
+     *
+     * Always returns `snippets: null` (AC-7.1 legal constraint).
      *
      * @param listing - The external listing record (provides URL).
-     * @returns Reputation data with `snippets: null`.
+     * @returns Reputation data (all-null when JSON-LD unavailable), with `snippets: null`.
      */
     async fetch(listing: AccommodationExternalListing): Promise<ReputationFetchResult> {
         try {
-            // -----------------------------------------------------------------
-            // Step 1: Primary — SSRF-safe fetch + JSON-LD aggregateRating
-            // -----------------------------------------------------------------
+            // Primary — SSRF-safe fetch + JSON-LD aggregateRating
             const fetchResult = await safeExternalFetch({
                 url: listing.url,
                 timeoutMs: 10_000,
@@ -274,38 +290,89 @@ export class BookingReputationAdapter implements ReputationAdapter {
                 }
             }
 
-            // -----------------------------------------------------------------
-            // Step 2: Fallback — Apify actor
-            // -----------------------------------------------------------------
-            const token = this.#credentials.apifyToken;
-            const actor = this.#credentials.apifyBookingActor;
-
-            if (!token || !actor) {
-                return emptyReputationResult();
-            }
-
-            const dataset = await runApifyActor({
-                token,
-                actor,
-                actorInput: { startUrls: [{ url: listing.url }] },
-                // Apify run-sync blocks until the scrape finishes; real Booking
-                // runs observed at ~60-90s, so 30s aborted before any result.
-                timeoutMs: 120_000
-            });
-
-            if (dataset.length === 0) {
-                return emptyReputationResult();
-            }
-
-            const item = dataset[0] as BookingReputationItem;
-            return buildBookingResult({
-                rating: toNumber(item.rating ?? item.reviewScore ?? item.guestRating),
-                reviewsCount: toNumber(item.reviewsCount ?? item.numberOfReviews ?? item.reviews),
-                deepLink: typeof item.url === 'string' && item.url ? item.url : listing.url
-            });
+            // JSON-LD path missed or blocked — return all-null so the service
+            // can fall through to the async Apify path via startRun().
+            return emptyReputationResult();
         } catch {
             return emptyReputationResult();
         }
+    }
+
+    /**
+     * Phase A — enqueues an async Apify actor run for this Booking.com listing.
+     *
+     * Builds the same actor input used by the previous sync fallback
+     * (`startUrls` with the listing URL) and calls {@link startApifyRun}.
+     * Returns `{ runId, datasetId }` on success so the caller can persist
+     * them for the polling cron job.
+     *
+     * **Degradation contract**: returns `null` (never throws) when:
+     * - `apifyToken` or `apifyBookingActor` credentials are absent.
+     * - {@link startApifyRun} returns `null` (API error, network failure, etc.).
+     *
+     * @param listing - The external listing record (provides URL for actor input).
+     * @returns `{ runId, datasetId }` on success, or `null` on failure.
+     */
+    async startRun(
+        listing: AccommodationExternalListing
+    ): Promise<{ runId: string; datasetId: string } | null> {
+        const token = this.#credentials.apifyToken;
+        const actor = this.#credentials.apifyBookingActor;
+
+        if (!token || !actor) {
+            return null;
+        }
+
+        // Reuse the same actorInput that the previous sync fallback used.
+        // OQ-2 resolution: the async /runs endpoint accepts the identical body
+        // as the legacy run-sync-get-dataset-items endpoint (verified against
+        // Apify REST API v2 reference, 2026-06-20).
+        const result = await startApifyRun({
+            token,
+            actor,
+            actorInput: { startUrls: [{ url: listing.url }] }
+        });
+
+        if (!result) {
+            return null;
+        }
+
+        return { runId: result.runId, datasetId: result.defaultDatasetId };
+    }
+
+    /**
+     * Phase B — maps raw Apify dataset items to a {@link ReputationFetchResult}.
+     *
+     * **Pure function — no HTTP calls.**  Called by the polling cron job after
+     * `getApifyDatasetItems()` retrieves the completed run's output.
+     *
+     * Extracts `rating`, `reviewsCount`, and `deepLink` from the first dataset
+     * item using the same field priority order as the previous sync fallback:
+     * - `rating`: `item.rating ?? item.reviewScore ?? item.guestRating`
+     * - `reviewsCount`: `item.reviewsCount ?? item.numberOfReviews ?? item.reviews`
+     * - `deepLink`: `item.url` when present and non-empty, otherwise `listing.url`
+     *
+     * Always sets `snippets: null` (AC-7.1 legal constraint).
+     *
+     * @param items - Raw dataset items from `getApifyDatasetItems()`.
+     * @param listing - The external listing record (used as fallback `deepLink`).
+     * @returns A fully-populated {@link ReputationFetchResult}.
+     */
+    mapDatasetItems(
+        items: unknown[],
+        listing: AccommodationExternalListing
+    ): ReputationFetchResult {
+        if (items.length === 0) {
+            return emptyReputationResult();
+        }
+
+        const item = items[0] as BookingReputationItem;
+
+        return buildBookingResult({
+            rating: toNumber(item.rating ?? item.reviewScore ?? item.guestRating),
+            reviewsCount: toNumber(item.reviewsCount ?? item.numberOfReviews ?? item.reviews),
+            deepLink: typeof item.url === 'string' && item.url ? item.url : listing.url
+        });
     }
 }
 

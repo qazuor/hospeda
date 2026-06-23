@@ -303,3 +303,86 @@ async function checkUserRedemptionLimitExceeded({
         return false; // Fail-open: don't block validation on DB errors
     }
 }
+
+// ---------------------------------------------------------------------------
+// Subscription ownership assertion (SPEC-262 B1 security fix)
+// ---------------------------------------------------------------------------
+
+/**
+ * Result type for {@link assertSubscriptionOwnership}.
+ * Discriminated on `success` so callers can pattern-match without instanceof.
+ */
+export type AssertSubscriptionOwnershipResult =
+    | { readonly success: true }
+    | {
+          readonly success: false;
+          readonly error: {
+              readonly code: 'NOT_FOUND' | 'PERMISSION_DENIED';
+              readonly message: string;
+          };
+      };
+
+/**
+ * Verify that `subscriptionId` belongs to `billingCustomerId`.
+ *
+ * Called by the /apply route before the T-007 seam path and before
+ * `service.apply()` when a `subscriptionId` is supplied, to prevent
+ * cross-customer subscription mutation (SPEC-262 B1).
+ *
+ * Bypass rule: when `actorHasAdmin` is true (caller holds
+ * `ACCESS_API_ADMIN`) the ownership check is skipped and the function
+ * returns `{ success: true }` immediately.
+ *
+ * Fail-closed: if the subscription row is not found → NOT_FOUND.
+ * If found but owned by a different customer → PERMISSION_DENIED.
+ * DB errors bubble up as thrown exceptions (not silently pass-through).
+ *
+ * @param params.subscriptionId   - The subscription UUID to verify.
+ * @param params.billingCustomerId - The caller's own billing customer UUID.
+ * @param params.actorHasAdmin    - True when actor holds ACCESS_API_ADMIN.
+ * @returns A typed Result indicating success or the specific failure reason.
+ */
+export async function assertSubscriptionOwnership({
+    subscriptionId,
+    billingCustomerId,
+    actorHasAdmin
+}: {
+    readonly subscriptionId: string;
+    readonly billingCustomerId: string;
+    readonly actorHasAdmin: boolean;
+}): Promise<AssertSubscriptionOwnershipResult> {
+    // Admin actors can operate on any subscription — skip ownership check.
+    if (actorHasAdmin) {
+        return { success: true };
+    }
+
+    const db = getDb();
+
+    const [row] = await db
+        .select({ customerId: billingSubscriptions.customerId })
+        .from(billingSubscriptions)
+        .where(eq(billingSubscriptions.id, subscriptionId))
+        .limit(1);
+
+    if (!row) {
+        return {
+            success: false,
+            error: {
+                code: 'NOT_FOUND',
+                message: 'Subscription not found'
+            }
+        };
+    }
+
+    if (row.customerId !== billingCustomerId) {
+        return {
+            success: false,
+            error: {
+                code: 'PERMISSION_DENIED',
+                message: 'Subscription does not belong to you'
+            }
+        };
+    }
+
+    return { success: true };
+}

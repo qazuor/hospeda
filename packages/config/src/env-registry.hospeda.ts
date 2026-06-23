@@ -1718,6 +1718,115 @@ export const HOSPEDA_ENV_VARS = [
             'Expresión cron estándar de 5 campos para el job de actualización de snippets de reputación externa. Por defecto "0 2 * * 1" (semanal, lunes 02:00 UTC). Ajustá la frecuencia según la cuota de Google Places y la cantidad de alojamientos.'
     },
 
+    // -------------------------------------------------------------------------
+    // Social Automation (SPEC-254)
+    // -------------------------------------------------------------------------
+    {
+        name: 'HOSPEDA_AI_SOCIAL_KEY',
+        description:
+            'Inbound API key the Custom GPT sends in the `x-hospeda-ai-key` header when calling the social-draft endpoints. Validates that requests originate from the authorised Custom GPT and not arbitrary callers.',
+        descriptionEs:
+            'API key entrante que el Custom GPT envía en el header `x-hospeda-ai-key` al llamar los endpoints de borrador social. Valida que las solicitudes provienen del Custom GPT autorizado y no de callers arbitrarios.',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'replace-with-random-32-char-key-for-gpt',
+        apps: ['api'],
+        category: 'social-automation',
+        howToObtain:
+            'Generate a random shared secret: `openssl rand -base64 32`. Set the same value in the Custom GPT action authentication header (`x-hospeda-ai-key`) and here. Rotate by updating both the GPT action config and this env var simultaneously.',
+        howToObtainEs:
+            'Generá un secreto compartido aleatorio: `openssl rand -base64 32`. Configurá el mismo valor en el header de autenticación de la acción del Custom GPT (`x-hospeda-ai-key`) y acá. Para rotar, actualizá la config de la acción del GPT y esta variable al mismo tiempo.'
+    },
+    {
+        name: 'HOSPEDA_OPERATOR_PIN_HASH',
+        description:
+            'Bcrypt/argon2 hash of the operator PIN used to authorise social-draft submission via the Custom GPT. The raw PIN is never stored — only the hash. Validated on the GPT drafts endpoint when `operator_pin` is submitted.',
+        descriptionEs:
+            'Hash bcrypt/argon2 del PIN del operador usado para autorizar el envío de borradores sociales a través del Custom GPT. El PIN crudo nunca se guarda — solo el hash. Se valida en el endpoint de borradores del GPT cuando se envía `operator_pin`.',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: '$2b$12$replace-with-a-real-bcrypt-hash-of-your-pin',
+        apps: ['api'],
+        category: 'social-automation',
+        howToObtain:
+            "Choose a numeric PIN (e.g. 6 digits), then hash it: `node -e \"const bcrypt=require('bcrypt'); bcrypt.hash('YOUR_PIN',12).then(h=>console.log(h))\"`. Store only the resulting hash here, never the raw PIN. Rotate by generating a new PIN + new hash.",
+        howToObtainEs:
+            "Elegí un PIN numérico (ej: 6 dígitos), luego hashealo: `node -e \"const bcrypt=require('bcrypt'); bcrypt.hash('TU_PIN',12).then(h=>console.log(h))\"`. Guardá solo el hash resultante acá, nunca el PIN crudo. Para rotar, generá un nuevo PIN y un nuevo hash."
+    },
+    {
+        name: 'HOSPEDA_MAKE_API_KEY',
+        description:
+            'Outbound API key our backend sends to Make.com in the `x-make-apikey` header when pushing social-publish jobs. Authenticates the Hospeda API against the Make.com scenario webhook.',
+        descriptionEs:
+            'API key saliente que nuestro backend envía a Make.com en el header `x-make-apikey` al enviar jobs de publicación social. Autentica la API de Hospeda contra el webhook del escenario de Make.com.',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'replace-with-your-make-scenario-webhook-api-key',
+        apps: ['api'],
+        category: 'social-automation',
+        howToObtain:
+            'In Make.com, open the scenario webhook trigger → Authentication → add a custom header `x-make-apikey` with a value of your choice (generate with `openssl rand -hex 32`). Set that same value here.',
+        howToObtainEs:
+            'En Make.com, abrí el trigger webhook del escenario → Authentication → agregá un header custom `x-make-apikey` con un valor a tu elección (generalo con `openssl rand -hex 32`). Poné ese mismo valor acá.'
+    },
+    {
+        name: 'HOSPEDA_MAKE_INBOUND_KEY',
+        description:
+            'Inbound key Make.com sends back in the `x-hospeda-make-key` header on claim and result callbacks. Validates that incoming callbacks originate from our Make.com scenario and not arbitrary senders.',
+        descriptionEs:
+            'Key entrante que Make.com envía de vuelta en el header `x-hospeda-make-key` en los callbacks de claim y resultado. Valida que los callbacks entrantes provienen de nuestro escenario de Make.com y no de remitentes arbitrarios.',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'replace-with-your-make-inbound-callback-key',
+        apps: ['api'],
+        category: 'social-automation',
+        howToObtain:
+            'Generate a shared secret: `openssl rand -hex 32`. Configure it in the Make.com HTTP module that sends callbacks to Hospeda as a custom header `x-hospeda-make-key`. Set the same value here.',
+        howToObtainEs:
+            'Generá un secreto compartido: `openssl rand -hex 32`. Configuralo en el módulo HTTP de Make.com que envía callbacks a Hospeda como header custom `x-hospeda-make-key`. Poné el mismo valor acá.'
+    },
+    // External reputation async polling (SPEC-250)
+    {
+        name: 'HOSPEDA_EXTREP_POLL_SCHEDULE',
+        description:
+            'Cron expression for the poll-apify-reputation-runs background job that checks the status of pending/running Apify actor runs and persists results. Default "*/2 * * * *" runs every 2 minutes.',
+        descriptionEs:
+            'Expresión cron para el job poll-apify-reputation-runs que verifica el estado de los runs de Apify pendientes/en curso y persiste los resultados. Por defecto "*/2 * * * *" corre cada 2 minutos.',
+        type: 'string',
+        required: false,
+        secret: false,
+        defaultValue: '*/2 * * * *',
+        exampleValue: '*/2 * * * *',
+        apps: ['api'],
+        category: 'integrations',
+        howToObtain:
+            'Standard 5-field cron expression for the Apify reputation polling job. Default "*/2 * * * *" (every 2 minutes). Adjust based on how quickly you want async run results to propagate; lower intervals reduce latency at the cost of more Apify status-check calls.',
+        howToObtainEs:
+            'Expresión cron estándar de 5 campos para el job de polling de reputación de Apify. Por defecto "*/2 * * * *" (cada 2 minutos). Ajustá según la velocidad deseada de propagación de resultados; intervalos más bajos reducen la latencia a costa de más llamadas de status check a Apify.'
+    },
+    {
+        name: 'HOSPEDA_EXTREP_APIFY_RUN_TIMEOUT_MS',
+        description:
+            'Milliseconds before the poll-apify-reputation-runs job sweeps a pending/running Apify actor run as timed out and marks it with fetch_status="error". Default 600000 (10 minutes).',
+        descriptionEs:
+            'Milisegundos antes de que el job poll-apify-reputation-runs marque un run de Apify pendiente/en curso como timed-out y lo registre con fetch_status="error". Por defecto 600000 (10 minutos).',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '600000',
+        exampleValue: '600000',
+        apps: ['api'],
+        category: 'integrations',
+        howToObtain:
+            'Integer number of milliseconds. Default 600000 (10 min). Raise it if your Apify actors regularly take longer; lower it if you want stuck runs to fail fast. Must be a positive integer.',
+        howToObtainEs:
+            'Número entero de milisegundos. Por defecto 600000 (10 min). Subilo si tus actores de Apify tardan más; bajalo si querés que los runs trabados fallen rápido. Debe ser un entero positivo.'
+    },
+
     {
         name: 'HOSPEDA_NOINDEX_HOSTS',
         description:

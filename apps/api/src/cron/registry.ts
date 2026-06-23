@@ -26,8 +26,10 @@ import {
     notificationLogPurgeJob,
     notificationScheduleJob,
     pageRevalidationJob,
+    pollApifyReputationRunsJob,
     refreshExternalReputationJob,
     searchIndexRefreshJob,
+    socialPublishDispatchJob,
     subscriptionPollJob,
     trialExpiryJob,
     trialPreEndNotifJob,
@@ -66,7 +68,9 @@ export const cronJobs: CronJobDefinition[] = [
     cronRunPurgeJob,
     appLogPurgeJob,
     entityViewsPurgeJob,
-    refreshExternalReputationJob
+    refreshExternalReputationJob,
+    socialPublishDispatchJob,
+    pollApifyReputationRunsJob
 ];
 
 /**

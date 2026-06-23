@@ -24,7 +24,9 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useTranslations } from '@/hooks/use-translations';
+import { translateAdminApiError } from '@/lib/errors';
 import { formatNumber } from '@repo/i18n';
+import type { ApiErrorShape } from '@repo/i18n';
 import { LoaderIcon } from '@repo/icons';
 import { useForm } from '@tanstack/react-form';
 import { useEffect } from 'react';
@@ -97,10 +99,11 @@ export function ManualOverrideDialog({
             } catch (error) {
                 addToast({
                     title: t('admin-billing.exchangeRates.manualOverrideDialog.errorTitle'),
-                    message:
-                        error instanceof Error
-                            ? error.message
-                            : t('admin-billing.exchangeRates.manualOverrideDialog.errorMessage'),
+                    message: translateAdminApiError({
+                        error: error as ApiErrorShape,
+                        t,
+                        fallback: t('admin-billing.exchangeRates.manualOverrideDialog.errorMessage')
+                    }),
                     variant: 'error'
                 });
             }

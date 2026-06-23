@@ -769,7 +769,27 @@ export function CommerceListingEditor({
                 </section>
             )}
 
+            {status.kind === 'success' && (
+                <output className={styles.success}>
+                    {t('commerce.owner.editor.success', 'Cambios guardados.')}
+                </output>
+            )}
+            {status.kind === 'error' && (
+                <p
+                    className={styles.error}
+                    role="alert"
+                >
+                    {status.message}
+                </p>
+            )}
+
             <div className={styles.actions}>
+                <a
+                    className={styles.cancel}
+                    href={`/${locale}/mi-cuenta/comercio/`}
+                >
+                    {t('commerce.owner.editor.cancel', 'Cancelar')}
+                </a>
                 <button
                     type="submit"
                     className={styles.save}
@@ -779,20 +799,6 @@ export function CommerceListingEditor({
                         ? t('commerce.owner.editor.saving', 'Guardando...')
                         : t('commerce.owner.editor.save', 'Guardar cambios')}
                 </button>
-
-                {status.kind === 'success' && (
-                    <output className={styles.success}>
-                        {t('commerce.owner.editor.success', 'Cambios guardados.')}
-                    </output>
-                )}
-                {status.kind === 'error' && (
-                    <p
-                        className={styles.error}
-                        role="alert"
-                    >
-                        {status.message}
-                    </p>
-                )}
             </div>
         </form>
     );

@@ -32,6 +32,7 @@ import { rEntityTag } from '../tag/r_entity_tag.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
 import { accommodationFaqs } from './accommodation_faq.dbschema.ts';
 import { accommodationIaData } from './accommodation_iaData.dbschema.ts';
+import { accommodationMedia } from './accommodation_media.dbschema.ts';
 import { accommodationReviews } from './accommodation_review.dbschema.ts';
 import { rAccommodationAmenity } from './r_accommodation_amenity.dbschema.ts';
 import { rAccommodationFeature } from './r_accommodation_feature.dbschema.ts';
@@ -178,6 +179,7 @@ export const accommodationsRelations = relations(accommodations, ({ one, many })
     features: many(rAccommodationFeature, { relationName: 'accommodationToFeature' }),
     reviews: many(accommodationReviews),
     faqs: many(accommodationFaqs),
+    media: many(accommodationMedia),
     iaData: many(accommodationIaData),
     tags: many(rEntityTag),
     externalListings: many(accommodationExternalListings)

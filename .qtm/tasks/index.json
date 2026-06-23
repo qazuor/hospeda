@@ -257,10 +257,10 @@
         {
             "specId": "SPEC-183",
             "title": "API Error i18n Standardization",
-            "status": "approved",
-            "progress": "0/14",
+            "status": "completed",
+            "progress": "14/14",
             "path": "SPEC-183-api-error-i18n-standardization",
-            "worktree": "/home/qazuor/projects/WEBS/hospeda-spec-183-api-error-i18n-standardization",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-183-api-error-i18n-standardization",
             "branch": "spec/SPEC-183-api-error-i18n-standardization",
             "base": "staging",
             "driver": "Linear BETA-63",
@@ -269,7 +269,9 @@
             "taskCount": 14,
             "averageComplexity": 2.1,
             "note": "14 tasks across 4 phases (avg complexity 2.1). Centralizes translateApiError from apps/web/src/lib/api-errors.ts into @repo/i18n (T-001..T-004); web shim re-export preserves all existing callers. Phase 2 (T-005..T-006): migrate ~5 remaining genuine API-error sites in web. Phase 3 (T-007..T-010): wire admin dialogs/forms (PlanDialog, AddonDialog, RefundDialog, exchange-rate x3, sponsorship x5, CronJobsPanel). Phase 4 (T-011..T-014): add 5 missing common.apiError keys (INVALID_PAGINATION_PARAMS, NOT_IMPLEMENTED, CONFIGURATION_ERROR, QUOTA_EXCEEDED, ENTITLEMENT_REQUIRED) + CI guard test + docs + index closeout. Excluded: cache internals, error-boundaries, logger, native JS errors. Zero breaking changes to existing callers.",
-            "archived": false
+            "archived": true,
+            "archivedAt": "2026-06-22",
+            "completionRef": "#1771"
         },
         {
             "specId": "SPEC-185",
@@ -531,8 +533,8 @@
         {
             "specId": "SPEC-210",
             "title": "Public Response Tier Enforcement — make schema-tier serialization mandatory and fail-closed so public endpoints can never leak undeclared DB columns",
-            "status": "draft",
-            "progress": "0/13",
+            "status": "completed",
+            "progress": "13/13",
             "path": "SPEC-210-public-response-tier-enforcement",
             "archived": false
         },
@@ -749,9 +751,15 @@
         {
             "specId": "SPEC-246",
             "title": "Revalidation log entity_id tracking + re-enable ACC-02 E2E",
-            "status": "draft",
+            "status": "completed",
             "progress": "0/0",
-            "path": "SPEC-246-revalidation-log-entity-id-tracking"
+            "path": "SPEC-246-revalidation-log-entity-id-tracking",
+            "branch": "spec/SPEC-246-revalidation-log-entity-id-tracking",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-246-revalidation-log-entity-id-tracking",
+            "base": "staging",
+            "archived": true,
+            "archivedAt": "2026-06-22T21:49:54Z",
+            "archiveNote": "Shipped via PR #1769 (merge 47419d453); CI green incl. E2E P0 Suite. Completed without formal task atomization (small bugfix, implemented directly). Follow-up: destination/event/post/reviews still leave entity_id NULL."
         },
         {
             "specId": "SPEC-237",
@@ -813,8 +821,8 @@
         {
             "specId": "SPEC-250",
             "title": "Asynchronous external reputation refresh (Apify async API + polling)",
-            "status": "draft",
-            "progress": "0/39",
+            "status": "completed",
+            "progress": "39/39",
             "path": "SPEC-250-external-reputation-async-refresh",
             "parent": "SPEC-237",
             "branch": "spec/SPEC-250-external-reputation-async-refresh",
@@ -824,7 +832,10 @@
             "tasksAtomizedAt": "2026-06-20T00:00:00.000Z",
             "taskCount": 39,
             "averageComplexity": 1.79,
-            "note": "39 tasks across 5 phases (setup 4, core 16, integration 13, testing 4, docs 2). Critical path T-001->T-002->T-018->T-025->T-026->T-028->T-035->T-036 (8 hops). Apify async API + polling cron. NOT to be implemented yet (owner: generate only)."
+            "note": "39 tasks across 5 phases (setup 4, core 16, integration 13, testing 4, docs 2). Critical path T-001->T-002->T-018->T-025->T-026->T-028->T-035->T-036 (8 hops). Apify async API + polling cron. In progress 2026-06-22; OQ-1/3/4 resolved by owner.",
+            "archived": true,
+            "archivedAt": "2026-06-23T00:00:00.000Z",
+            "archiveNote": "Merged to staging via PR #1779 (merge ef0846f0e). All 9 phases shipped + CI green."
         },
         {
             "specId": "SPEC-257",
@@ -858,14 +869,17 @@
         {
             "specId": "SPEC-259",
             "title": "Systematic Chrome smoke testing of staging features (post-e2fb184)",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "completed",
+            "progress": "5/5",
+            "archived": true,
+            "archivedAt": "2026-06-23",
             "path": "SPEC-259-staging-smoke-testing",
             "branch": "spec/SPEC-259-staging-smoke-testing",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-259-staging-smoke-testing",
             "base": "staging",
             "createdAt": "2026-06-22T15:39:13Z",
-            "note": "Campaign spec; tasks atomized when smoke starts. 4 phases: SPEC-230,203,239,249."
+            "note": "Campaign spec. 5 phases smoked e2e (Chrome, real): SPEC-230, 203, 249, 239, 223. Fixes shipped: PR #1781 (SPEC-249 CI), PR #1795 (SPEC-223 US-6 error mapping). SPEC-223 ran against local Ollama.",
+            "archiveNote": "Smoke campaign complete; all 5 phases verified, 2 fixes merged to staging."
         },
         {
             "specId": "SPEC-260",
@@ -886,7 +900,7 @@
             "specId": "SPEC-262",
             "title": "Billing Promo-Code Typed Effect Engine",
             "status": "in-progress",
-            "progress": "1/15",
+            "progress": "9/15",
             "path": "SPEC-262-billing-promo-code-effect-engine",
             "branch": "spec/SPEC-262-billing-promo-code-effect-engine",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-262-billing-promo-code-effect-engine",
@@ -900,8 +914,11 @@
         {
             "specId": "SPEC-261",
             "title": "Stabilize commerce-owner E2E and promote back to @p0",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "completed",
+            "progress": "9/9",
+            "archived": true,
+            "archivedAt": "2026-06-23T07:38:11Z",
+            "archiveNote": "Merged to staging via PR #1794. Dedicated E2E ports + SSOT; commerce-01/02 promoted to @p0. Real root cause was the cookie-consent backdrop, not dirty-tracking.",
             "path": "SPEC-261-commerce-e2e-stabilization"
         },
         {
@@ -940,6 +957,92 @@
             "note": "Canonical web loading toolkit (Spinner/SkeletonCard/LoadingButton + convention doc) then migrate audited sites by priority. 22 tasks, 4 phases. Critical path T-001->T-003->T-010->T-013->T-022. Foundation T-001/T-002 independent; Astro skeleton-swaps (T-007/T-008) need only T-002.",
             "archivedAt": "2026-06-22",
             "archiveNote": "Merged to staging via PR #1739 (merge commit d17adf9d9). 22/22 tasks: canonical loading toolkit (Spinner/SkeletonCard/LoadingButton) + 15 island migrations + Astro skeleton-swaps + CI guard. Browser smoke + full CI green."
+        },
+        {
+            "specId": "SPEC-264",
+            "title": "Frictionless dev/test user setup",
+            "status": "in-progress",
+            "progress": "8/8",
+            "path": "SPEC-264-frictionless-dev-test-users",
+            "branch": "spec/SPEC-264-frictionless-dev-test-users",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-264-frictionless-dev-test-users",
+            "base": "staging",
+            "createdAt": "2026-06-22T00:00:00.000Z",
+            "tasksAtomizedAt": "2026-06-22T00:00:00.000Z",
+            "taskCount": 8,
+            "averageComplexity": 3.0,
+            "note": "Seed writes real domain state to make dev/test users ready (profile_completed + welcome-tour sentinel + whatsNew baseline + pw-change cleared). Zero apps/* changes. markUserReady helper + testUsers.seed wiring + db:seed:ready-user ad-hoc CLI. Scope: 13 test users + script (NOT example users). Rejected env-var bypass and is_test_account flag."
+        },
+        {
+            "specId": "SPEC-265",
+            "title": "AI accommodation search — UI/UX improvements (transparency, onboarding, chat control, layout)",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-265-ai-search-ux",
+            "branch": "spec/SPEC-265-ai-search-ux",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-265-ai-search-ux",
+            "base": "staging",
+            "createdAt": "2026-06-22T21:55:01Z",
+            "note": "Doc-only spec; tasks NOT atomized yet. 4 workstreams: transparency (confidence), onboarding, chat control/errors, layout decision. 'Bridge to full listing' explicitly out of scope."
+        },
+        {
+            "specId": "SPEC-160",
+            "title": "Newsletter Engagement Tracking (Open / Click)",
+            "status": "completed",
+            "progress": "5/5",
+            "archived": true,
+            "archivedAt": "2026-06-22",
+            "archiveNote": "Shipped via PR #1776 (merge c298c005a -> staging). 4/5 tasks completed + T-004 cancelled (won't-do: keep pct math client-side). Progress shown full (4 completed + 1 cancelled = all resolved).",
+            "path": "SPEC-160-newsletter-engagement-tracking",
+            "branch": "spec/SPEC-160-newsletter-engagement-tracking",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-160-newsletter-engagement-tracking",
+            "base": "staging",
+            "createdAt": "2026-06-22T22:25:42.000Z",
+            "tasksAtomizedAt": "2026-06-22T22:25:42.000Z",
+            "taskCount": 5
+        },
+        {
+            "specId": "SPEC-266",
+            "title": "Amenities & features catalog by vertical (scoping + i18n source-of-truth)",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-266-amenities-feature-catalog-by-vertical",
+            "branch": "docs/SPEC-266-amenities-feature-catalog-by-vertical",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-266-amenities-feature-catalog-by-vertical",
+            "base": "staging",
+            "createdAt": "2026-06-23T02:10:00Z",
+            "note": "Doc-only spec; tasks NOT atomized yet. Scope amenities/features catalog by vertical (Options A/B/C, decide at planning) + absorb BETA-90 (drop name column -> i18n by slug). SPEC-249 follow-up."
+        },
+        {
+            "specId": "SPEC-254",
+            "title": "Social Automation Backend",
+            "status": "completed",
+            "progress": "52/52",
+            "path": "SPEC-254-social-media-publish",
+            "branch": "spec/SPEC-254-phase-1-data-model",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-254-social-media-publish",
+            "base": "staging",
+            "createdAt": "2026-06-20T00:00:00.000Z",
+            "tasksAtomizedAt": "2026-06-20T00:00:00.000Z",
+            "taskCount": 52,
+            "averageComplexity": 2.3,
+            "note": "52 tasks across 4 phases (setup 14, core 23, integration 11, testing 3, cleanup 1). Shipped as chained PRs per phase. DB schema chain T-001->T-013 is critical path. Follow-ups SPEC-255/256.",
+            "archived": true,
+            "archivedAt": "2026-06-23"
+        },
+        {
+            "specId": "SPEC-204",
+            "title": "Accommodation gallery migration to relational table",
+            "status": "in-progress",
+            "progress": "11/29",
+            "path": "SPEC-204-accommodation-gallery-relational-migration",
+            "branch": "spec/SPEC-204-accommodation-gallery-relational-migration",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-204-accommodation-gallery-relational-migration",
+            "base": "staging",
+            "createdAt": "2026-06-22T00:00:00.000Z",
+            "tasksAtomizedAt": "2026-06-22T00:00:00.000Z",
+            "taskCount": 29,
+            "note": "Formalized + atomized 2026-06-22. Storage model = direct table-per-entity (accommodation_media, real FK); polymorphic + junction rejected. 3-phase dual-write (P1 create+backfill+write-both, P2 switch reads, P3 retire JSONB). Accommodation only; pattern reusable for other 5 gallery entities later. Spec still draft (not in-progress) until impl starts."
         }
     ],
     "standalone": {

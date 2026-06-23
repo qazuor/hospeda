@@ -1,0 +1,1 @@
+ALTER TYPE "public"."subscription_status_enum" ADD VALUE 'comp';

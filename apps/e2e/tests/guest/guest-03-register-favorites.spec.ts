@@ -18,6 +18,7 @@
 
 import { expect, test } from '@playwright/test';
 import { forceVerifyEmail, signupUser } from '../../fixtures/api-helpers.ts';
+import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
 import { extractFirstLink, waitForEmail } from '../../fixtures/mailpit-client.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
@@ -26,6 +27,10 @@ const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
 
 test.describe('GUEST-03: guest registration + favorites @p0 @guest @auth', () => {
     let userId: string | null = null;
+
+    test.beforeEach(async ({ page }) => {
+        await seedCookieConsent(page);
+    });
 
     test.afterEach(async () => {
         if (userId) {

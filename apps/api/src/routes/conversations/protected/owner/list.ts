@@ -9,7 +9,12 @@
  */
 
 import { AccommodationModel, MessageModel, UserModel, accommodations, getDb } from '@repo/db';
-import { ConversationStatusEnum, PermissionEnum, ServiceErrorCode } from '@repo/schemas';
+import {
+    ConversationStatusEnum,
+    OwnerConversationListItemSchema,
+    PermissionEnum,
+    ServiceErrorCode
+} from '@repo/schemas';
 import { ConversationService } from '@repo/service-core';
 import { eq } from 'drizzle-orm';
 import { getActorFromContext } from '../../../../utils/actor';
@@ -89,7 +94,9 @@ router.get('/', async (c) => {
             return createPaginatedResponse(
                 [],
                 calculatePagination({ page, pageSize, total: 0 }),
-                c
+                c,
+                200,
+                OwnerConversationListItemSchema
             );
         }
 
@@ -202,7 +209,13 @@ router.get('/', async (c) => {
             };
         });
 
-        return createPaginatedResponse(items as unknown[], pagination, c);
+        return createPaginatedResponse(
+            items as unknown[],
+            pagination,
+            c,
+            200,
+            OwnerConversationListItemSchema
+        );
     } catch (error) {
         return handleRouteError(error, c);
     }

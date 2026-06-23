@@ -6,8 +6,8 @@
     "summary": {
         "total": 15,
         "byStatus": {
-            "pending": 14,
-            "completed": 1
+            "pending": 6,
+            "completed": 9
         },
         "byPhase": {
             "spike": 1,
@@ -46,7 +46,7 @@
             "id": "T-002",
             "title": "Add typed effect columns to @repo/db promo-code + subscription schemas",
             "description": "Structural DB changes (via `pnpm db:generate` + `pnpm db:migrate` \u2014 structural carril):\n\n`billing_promo_codes` \u2014 add explicit typed columns (OQ-2 decision):\n- `effect_kind varchar(30) NOT NULL DEFAULT 'discount'` \u2014 values: 'discount' | 'trial_extension' | 'comp'\n- `value_kind varchar(20)` \u2014 values: 'percentage' | 'fixed'; NULL for non-discount effects\n- `value integer` \u2014 discount value (centavos for fixed, integer 0-100 for percentage); NULL for non-discount\n- `duration_cycles integer` \u2014 NULL = forever; positive integer for N cycles; NULL for trial_extension/comp\n- `extra_days integer` \u2014 NULL for non-trial-extension effects\n\n`billing_subscriptions` \u2014 add:\n- `promo_effect_remaining_cycles integer` \u2014 countdown for multi-cycle discounts; NULL when no active discount or discount is forever\n\nDrizzle model files affected:\n- `packages/db/src/schema/billing/billing-promo-codes.schema.ts`\n- `packages/db/src/schema/billing/billing-subscriptions.schema.ts`\n\nGenerate migration with `pnpm db:generate`. Commit the generated migration file.\n\nAcceptance criteria:\n- AC-1.1 (effect fields readable via API after persist)\n- AC-2.4 (comp state explicit in DB)\n- `pnpm db:generate` produces no additional drift after this task\n- `pnpm typecheck` passes",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-003", "T-004", "T-005"],
@@ -68,7 +68,7 @@
             "id": "T-003",
             "title": "Add DB CHECK constraints + backfill SQL (extras carril 018)",
             "description": "Hand-written idempotent SQL for `packages/db/src/migrations/extras/018-promo-code-effect-constraints.sql` (extras carril \u2014 re-applied by `pnpm db:apply-extras`):\n\nCHECK constraints on `billing_promo_codes`:\n- When `effect_kind = 'discount'`: `value_kind` NOT NULL, `value` NOT NULL, `value >= 0`, percentage `value <= 100`\n- When `effect_kind = 'trial_extension'`: `extra_days` NOT NULL, `extra_days > 0`, `value` IS NULL, `value_kind` IS NULL\n- When `effect_kind = 'comp'`: `value` IS NULL, `value_kind` IS NULL, `extra_days` IS NULL, `duration_cycles` IS NULL\n- `duration_cycles > 0` when NOT NULL\n\nData backfill (idempotent, dry-run count step first):\n- All existing rows where `effect_kind` IS NULL \u2192 set `effect_kind = 'discount'`, `value_kind` = existing `type` (mapped 'percentage'\u2192'percentage', 'fixed'\u2192'fixed'), `value` from existing discount value col, `duration_cycles = 1` (one-shot, AC-4.1)\n- `HOSPEDA_FREE` (code = 'HOSPEDA_FREE') \u2192 `effect_kind = 'comp'` (OQ-1 \u03b2; fixes AC-2.3 latent bug)\n- `FREEMONTH` \u2192 `effect_kind = 'trial_extension'`, `extra_days = 30`\n- `LANZAMIENTO50` \u2192 `effect_kind = 'discount'`, `value_kind = 'percentage'`, `value = 50`, `duration_cycles = 3`\n- `BIENVENIDO30` \u2192 `effect_kind = 'discount'`, `value_kind = 'percentage'`, `value = 30`, `duration_cycles = 1`\n\nAlso: subscription reconciliation \u2014 any `billing_subscriptions` row with `promo_code_id` pointing to HOSPEDA_FREE \u2192 set `status = 'comp'` if currently `active` (comp supersedes active billing).\n\nSQL must be idempotent (use `DO $$ IF NOT EXISTS ... $$` or `ON CONFLICT DO NOTHING` pattern; re-running produces zero rows changed).\n\nAcceptance criteria:\n- AC-2.3 (HOSPEDA_FREE migrated, no longer a latent bug)\n- AC-4.1 (legacy codes preserved as duration_cycles=1)\n- CHECK constraints reject impossible combos at DB level (AC-1.2, AC-1.3 enforcement layer)\n- `pnpm db:apply-extras` succeeds idempotently (second run = 0 rows changed)",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002"],
             "blocks": ["T-004", "T-008"],
@@ -90,7 +90,7 @@
             "id": "T-004",
             "title": "Extend @repo/schemas promo-code Zod schemas for typed effects",
             "description": "Extend schemas in `packages/schemas/src/api/billing/promo-code.schema.ts`:\n\n- Add `PromoEffectKindEnum` and `ValueKindEnum` enums\n- Replace the current `discountType: 'percentage' | 'fixed'` flat field with a discriminated union `effect` discriminated on `kind`:\n  - `discount`: `{ kind: 'discount', valueKind: 'percentage' | 'fixed', value: number, durationCycles: number | null }`\n    - refines: percentage value \u2264 100 (AC-1.2), durationCycles > 0 when not null (AC-1.3)\n  - `trial_extension`: `{ kind: 'trial_extension', extraDays: number }` (positive integer)\n  - `comp`: `{ kind: 'comp' }` (no extra params)\n- Update `CreatePromoCodeSchema` (admin create/edit input) and `PromoCodeResponseSchema` (API response / admin form hydration)\n- Keep backward-compat: existing one-shot codes serialize as `{ kind: 'discount', valueKind: ..., value: ..., durationCycles: 1 }`\n- Export inferred `CreatePromoCodeInput`, `PromoCodeResponse`, `PromoEffect` types\n- Unit tests: valid combos parse, invalid (percentage > 100, negative days, durationCycles = 0, comp with value) are rejected\n\nAcceptance criteria:\n- AC-1.2, AC-1.3, AC-5.1\u2013AC-5.4 (schema is the single source of truth for admin form validation)\n- AC-4.3 (one-shot response shape unchanged for clients using durationCycles=1)\n- `pnpm typecheck` passes across all packages",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002", "T-003"],
             "blocks": ["T-005", "T-006", "T-009", "T-010"],
@@ -112,7 +112,7 @@
             "id": "T-005",
             "title": "Extend service-core promo-code CRUD + effect-engine branching",
             "description": "Changes to `packages/service-core/src/services/billing/promo-code/`:\n\n1. `promo-code.crud.ts` \u2014 update `mapDbToPromoCode` to read the new typed columns and populate the `effect` discriminated union on the DTO. Legacy rows (effect_kind = 'discount', duration_cycles = 1) map identically to the current shape.\n\n2. `promo-code.service.ts` (PromoCode facade) \u2014 expose `createPromoCode`/`updatePromoCode` accepting the new `CreatePromoCodeInput` discriminated union; persist `effect_kind`, `value_kind`, `value`, `duration_cycles`, `extra_days` to the DB columns.\n\n3. `promo-code.redemption.ts::applyPromoCode` \u2014 branch by `effect.kind` instead of assuming money discount:\n   - `discount`: existing `finalAmount` computation (unchanged for durationCycles=1, AC-4.3); set `promo_effect_remaining_cycles = duration_cycles - 1` on the subscription (NULL when durationCycles is null = forever)\n   - `trial_extension` at checkout: translate to `freeTrialDays` for qzpay subscription-create (existing path, now reads from persisted DB effect, NOT from `@repo/billing` config)\n   - `comp`: create subscription with `status = 'comp'`, no MP preapproval created\n\n4. Retire / stub `resolveFreeTrialExtensionPromo()` in `@repo/billing` \u2014 it now reads from the DB-persisted effect via the promo-code service. Keep the function signature for now but delegate to the DB lookup.\n\nUnit tests (AAA pattern, real DB fixtures or seeded test data):\n- discount durationCycles=1 \u2192 finalAmount identical to current (AC-4.1 regression lock)\n- discount durationCycles=3 \u2192 remaining_cycles set to 2 after first cycle\n- comp \u2192 status='comp', no MP preapproval param emitted\n- trial_extension at checkout \u2192 freeTrialDays populated correctly\n\nAcceptance criteria: AC-1.4, AC-2.1, AC-3.2, AC-4.1, AC-4.3",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002", "T-004"],
             "blocks": ["T-006", "T-007", "T-008", "T-009"],
@@ -120,13 +120,13 @@
             "tags": ["core", "service-core", "billing", "engine"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-22T18:17:18.089Z",
-                "started": null,
+                "started": "2026-06-22T18:17:00.000Z",
                 "completed": null
             }
         },
@@ -134,7 +134,7 @@
             "id": "T-006",
             "title": "Implement trial-extension-on-existing-subscription service operation",
             "description": "New operation in `packages/service-core/src/services/billing/promo-code/promo-code.trial-extension.ts` (or extend `promo-code.service.ts`):\n\n`extendExistingSubscriptionTrial({ subscriptionId, promoCodeId, actorId })` \u2014 RO-RO:\n1. Load subscription; verify it is in `trialing` status (reject with typed `VALIDATION_ERROR` if not \u2014 AC-3.4)\n2. Load promo code; verify `effect.kind === 'trial_extension'` (typed error otherwise)\n3. If annual sub (`mp_subscription_id = null`) and NOT in trial \u2192 reject typed error (AC-3.5); if annual AND in trial \u2192 proceed to extend `trial_end` only\n4. Push `billing_subscriptions.trial_end` by `effect.extraDays` days (arithmetic in UTC)\n5. For monthly subs with live `mp_subscription_id`: call the MP preapproval adjustment (or note it as a TODO pointing to T-007 finding, since the exact mechanism is part of the spike domain). Persist the new `trial_end` regardless and emit a reconciliation flag for the webhook path.\n6. Record usage in `billing_promo_code_usage`\n7. Return typed result with new `trial_end` and any MP reconciliation status\n\nUnit tests:\n- trialing sub \u2192 trial_end pushed by extraDays, usage row created (AC-3.1)\n- active (non-trialing) sub \u2192 VALIDATION_ERROR, no state change (AC-3.4)\n- annual sub in trial \u2192 trial_end pushed (AC-3.5 affirm path)\n- annual sub past trial \u2192 VALIDATION_ERROR (AC-3.5 reject path)\n- non-trial-extension effect code \u2192 typed error\n\nOwnership/permission guard is enforced at the API route layer (T-009); this service trusts the caller has verified authorization.\n\nAcceptance criteria: AC-3.1, AC-3.4, AC-3.5",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-004", "T-005"],
             "blocks": ["T-009"],
@@ -142,21 +142,21 @@
             "tags": ["core", "service-core", "billing", "trial"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-22T18:17:18.089Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-23T00:30:00.000Z",
+                "completed": "2026-06-23T00:45:00.000Z"
             }
         },
         {
             "id": "T-007",
             "title": "Implement multi-cycle discount renewal decrement (case 3, post-spike)",
-            "description": "**BLOCKED by T-001 (spike outcome must be Outcome A \u2014 MP can mutate amount).**\nIf spike finds Outcome B, STOP and surface redesign to owner before implementing anything in this task.\n\nBased on Outcome A (spike doc confirms amount-mutation works):\n\n1. `packages/service-core/src/services/billing/promo-code/promo-code.renewal.ts` (new file):\n   `resolveRenewalPromoEffect({ subscriptionId })` \u2014 called by the webhook/poll path:\n   a. Load subscription; check `promo_code_id` and `promo_effect_remaining_cycles`\n   b. If `remaining_cycles IS NULL` and `effect.kind = 'discount'` and `duration_cycles IS NULL` \u2192 forever discount (apply indefinitely)\n   c. If `remaining_cycles > 0` \u2192 apply discount, decrement `remaining_cycles` by 1\n   d. If `remaining_cycles = 0` \u2192 effect exhausted; full price; clear `promo_code_id` link (or mark exhausted)\n   e. For comp subs (`status = 'comp'`): amount = 0; no preapproval interaction needed (OQ-1 \u03b2 removes case 1 from this path)\n\n2. MP preapproval amount mutation (per spike doc mechanism):\n   - Before each discounted cycle: PATCH preapproval with discounted `transaction_amount`\n   - After cycle confirmed paid (webhook): restore `transaction_amount` to base price for the next cycle (or only if remaining_cycles will hit 0)\n   - Timing constraints from spike doc must be honored\n   - If MP PATCH fails: emit Sentry error, do NOT silently charge full price without alerting\n\n3. Wire into the webhook handler path (`apps/api/src/routes/billing/webhooks/` or the subscription-poll job) \u2014 call `resolveRenewalPromoEffect` before emitting the charge amount.\n\n4. `dunning.job.ts` and `subscription-poll.job.ts` must NOT correct a comp/discounted subscription back to full price \u2014 add guards.\n\nUnit tests:\n- Cycle 1 (remaining=2): amount discounted, remaining decremented to 1 (AC-1.5 first cycle)\n- Cycle 3 (remaining=0): amount full, effect exhausted (AC-1.5 stop cycle)\n- Forever (remaining=NULL, duration_cycles=NULL): amount discounted, remaining stays NULL (AC-2.2)\n- Comp: amount=0, no MP mutation called (AC-2.1, AC-2.2)\n- Cron guard: dunning does not flag a comp/discounted cycle as delinquent (risk mitigations \u00a713)\n\nAcceptance criteria: AC-1.5, AC-2.1, AC-2.2, AC-3.3 (MP date adjustment), AC-4.2",
-            "status": "pending",
+            "description": "**BLOCKED by T-001 (spike outcome must be Outcome A \u2014 MP can mutate amount).**\nIf spike finds Outcome B, STOP and surface redesign to owner before implementing anything in this task.\n\nBased on Outcome A (spike doc confirms amount-mutation works):\n\n1. `packages/service-core/src/services/billing/promo-code/promo-code.renewal.ts` (new file):\n   `resolveRenewalPromoEffect({ subscriptionId })` \u2014 called by the webhook/poll path:\n   a. Load subscription; check `promo_code_id` and `promo_effect_remaining_cycles`\n   b. If `remaining_cycles IS NULL` and `effect.kind = 'discount'` and `duration_cycles IS NULL` \u2192 forever discount (apply indefinitely)\n   c. If `remaining_cycles > 0` \u2192 apply discount, decrement `remaining_cycles` by 1\n   d. If `remaining_cycles = 0` \u2192 effect exhausted; full price; clear `promo_code_id` link (or mark exhausted)\n   e. For comp subs (`status = 'comp'`): amount = 0; no preapproval interaction needed (OQ-1 \u03b2 removes case 1 from this path)\n\n2. MP preapproval amount mutation (per spike doc mechanism):\n   - Before each discounted cycle: PATCH preapproval with discounted `transaction_amount`\n   - After cycle confirmed paid (webhook): restore `transaction_amount` to base price for the next cycle (or only if remaining_cycles will hit 0)\n   - Timing constraints from spike doc must be honored\n   - If MP PATCH fails: emit Sentry error, do NOT silently charge full price without alerting\n\n3. Wire into the webhook handler path (`apps/api/src/routes/billing/webhooks/` or the subscription-poll job) \u2014 call `resolveRenewalPromoEffect` before emitting the charge amount.\n\n4. `dunning.job.ts` and `subscription-poll.job.ts` must NOT correct a comp/discounted subscription back to full price \u2014 add guards.\n\nUnit tests:\n- Cycle 1 (remaining=2): amount discounted, remaining decremented to 1 (AC-1.5 first cycle)\n- Cycle 3 (remaining=0): amount full, effect exhausted (AC-1.5 stop cycle)\n- Forever (remaining=NULL, duration_cycles=NULL): amount discounted, remaining stays NULL (AC-2.2)\n- Comp: amount=0, no MP mutation called (AC-2.1, AC-2.2)\n- Cron guard: dunning does not flag a comp/discounted cycle as delinquent (risk mitigations \u00a713)\n\nAcceptance criteria: AC-1.5, AC-2.1, AC-2.2, AC-3.3 (MP date adjustment), AC-4.2\n\n**IMPLEMENTATION NOTE (post-spike, event-driven per spike \u00a75):** service-core `resolveRenewalPromoEffect` DECIDES (apply-discount | restore-full | comp | noop) + persists the decremented counter; apps/api EXECUTES the MP mutation. Webhook tree = `apps/api/src/routes/webhooks/mercadopago/` (NOT billing/webhooks); wired into `subscription-payment-handler.ts` `subscription_authorized_payment.{created,updated}` handler. Fail-closed initial discount apply (`applyInitialDiscountMutation`) + best-effort-with-retry restore (`restoreFullPriceMutation`) in `apps/api/src/services/promo-renewal-mp.service.ts`. Initial-apply seam for existing subs = `apps/api/src/services/promo-discount-apply.service.ts` (TODO(T-008/T-009) wiring). dunning guard added; subscription-poll is discount-aware by construction (only activates pending subs; documented).",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001", "T-005"],
             "blocks": ["T-011"],
@@ -164,21 +164,21 @@
             "tags": ["core", "service-core", "billing", "renewal", "mercadopago"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-22T18:17:18.089Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-23T01:00:00.000Z",
+                "completed": "2026-06-23T01:30:00.000Z"
             }
         },
         {
             "id": "T-008",
             "title": "Update admin API routes: promo-code create/edit + /apply endpoint",
             "description": "Changes to `apps/api/src/routes/billing/promo-codes.ts` (and admin sub-router):\n\n1. **Admin create/edit** (`POST /api/v1/admin/billing/promo-codes`, `PATCH .../billing/promo-codes/:id`):\n   - Remove the hardcoded `discountType: 'percentage' | 'fixed'` input constraint\n   - Accept `CreatePromoCodeInput` discriminated union from `@repo/schemas`\n   - Validate via Zod (AC-1.2, AC-1.3, AC-5.4 \u2014 422 on invalid effect params)\n   - Persist via updated `promo-code.service.ts`\n   - Permission guard: `BILLING_PROMO_CODE_MANAGE` (AC-6.1)\n\n2. **Protected /apply** (`POST /api/v1/protected/billing/promo-codes/apply`):\n   - Branch by `effect.kind` (read from DB via service) instead of assuming money discount\n   - `discount`: existing response shape unchanged (`discountAmount`, `finalAmount` \u2014 AC-4.3)\n   - `trial_extension` at checkout: return effect info (extraDays, new projected trial_end)\n   - `comp`: return comp indication\n   - Ownership guard: `customerId` must be own customer or `ACCESS_API_ADMIN` (AC-6.2)\n\nIntegration tests (real DB, mock MP):\n- Admin create discount (success 201 + 422 bad value + 422 durationCycles=0 + 403 no permission)\n- Admin create trial_extension (success + 422 negative days)\n- Admin create comp (success)\n- /apply discount \u2192 unchanged response shape (AC-4.3)\n- /apply comp \u2192 comp indication returned\n- /apply 403 (other customer's customerId)\n\nAcceptance criteria: AC-1.1, AC-1.2, AC-1.3, AC-4.3, AC-5.4, AC-6.1, AC-6.2",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-005", "T-003"],
             "blocks": ["T-010", "T-011"],
@@ -186,21 +186,21 @@
             "tags": ["integration", "api", "hono", "billing"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-22T18:17:18.089Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-23T04:30:00.000Z",
+                "completed": "2026-06-23T05:00:00.000Z"
             }
         },
         {
             "id": "T-009",
             "title": "Add API route: apply trial extension to existing subscription",
             "description": "New route: `POST /api/v1/admin/billing/subscriptions/:subscriptionId/apply-trial-extension`\n\n- Accept `{ promoCodeId: string }` body (validate with Zod)\n- Auth: `BILLING_PROMO_CODE_MANAGE` permission required\n- Delegate to `extendExistingSubscriptionTrial()` from T-006\n- Map typed service errors to HTTP responses:\n  - `VALIDATION_ERROR` (non-trial sub) \u2192 422\n  - `NOT_FOUND` \u2192 404\n  - Unrelated customer without admin permission \u2192 403 (AC-6.2)\n- On success: return updated subscription with new `trial_end`\n\nIntegration tests:\n- trialing sub + valid code \u2192 200 + updated trial_end (AC-3.1)\n- active (non-trial) sub \u2192 422 (AC-3.4)\n- 403 without BILLING_PROMO_CODE_MANAGE\n- non-trial-extension code \u2192 422\n- annual sub in trial \u2192 200 (AC-3.5 accept)\n- annual sub past trial \u2192 422 (AC-3.5 reject)\n\nAcceptance criteria: AC-3.1, AC-3.4, AC-3.5, AC-6.1",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-004", "T-005", "T-006"],
             "blocks": ["T-011"],
@@ -208,14 +208,14 @@
             "tags": ["integration", "api", "hono", "billing", "trial"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-22T18:17:18.089Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-23T08:00:00.000Z",
+                "completed": "2026-06-23T08:30:00.000Z"
             }
         },
         {

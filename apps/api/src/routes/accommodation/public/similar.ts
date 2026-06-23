@@ -3,7 +3,7 @@
  * Returns accommodations similar to the given one, matched by type or destination.
  */
 import { accommodations, getDb } from '@repo/db';
-import { ServiceErrorCode } from '@repo/schemas';
+import { AccommodationPublicSchema, ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import { type SQL, and, desc, eq, ne, or } from 'drizzle-orm';
 import type { Context } from 'hono';
@@ -26,7 +26,7 @@ export const publicGetSimilarRoute = createPublicRoute({
     requestQuery: {
         limit: z.coerce.number().int().min(1).max(12).default(6).optional()
     },
-    responseSchema: z.array(z.record(z.string(), z.unknown())),
+    responseSchema: z.array(AccommodationPublicSchema),
     handler: async (
         _ctx: Context,
         params: Record<string, unknown>,

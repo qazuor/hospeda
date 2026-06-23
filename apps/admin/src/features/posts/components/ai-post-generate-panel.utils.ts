@@ -7,10 +7,12 @@
  *
  * ## Error code contract (as emitted by the API route):
  *
- * - `MODERATION_FAILED` → HTTP 422 → `errorModeration`
- * - `AI_CEILING_HIT`   → HTTP 429 → `errorCeiling`
- * - `exhausted` codes  → HTTP 503 → `errorExhausted`
- * - anything else      → `errorGeneric`
+ * - `MODERATION_FAILED`  → HTTP 422 → `errorModeration`
+ * - `AI_CEILING_HIT`     → HTTP 429 → `errorCeiling`
+ * - `ENGINE_EXHAUSTED`   → HTTP 502 → `errorExhausted`
+ * - other service-down codes (`FEATURE_DISABLED`, `NO_ENABLED_PROVIDER`,
+ *   `PROVIDER_UNCONFIGURED`, `FEATURE_NOT_CONFIGURED`) → HTTP 503 → `errorExhausted`
+ * - anything else        → `errorGeneric`
  */
 
 // ---------------------------------------------------------------------------
@@ -86,10 +88,12 @@ export const AI_POST_GENERATE_ENDPOINT = AI_POST_GENERATE_PATH;
  * Code-to-key mapping mirrors the exact codes emitted by the API route:
  * - `MODERATION_FAILED` (HTTP 422) → `errorModeration`
  * - `AI_CEILING_HIT`   (HTTP 429) → `errorCeiling`
- * - `exhausted` codes  (HTTP 503) → `errorExhausted`
+ * - `ENGINE_EXHAUSTED` (HTTP 502) → `errorExhausted`
+ * - other service-down codes (HTTP 503) → `errorExhausted`
  *
  * HTTP status is used as a secondary signal so the correct key is still
- * returned even if the response body is missing or malformed.
+ * returned even if the response body is missing or malformed. Note the
+ * exhausted case is HTTP 502 (upstream gateway), not 503.
  *
  * @param status - HTTP status code from the fetch response.
  * @param code   - Error code extracted from `json.error.code`.
@@ -98,6 +102,14 @@ export const AI_POST_GENERATE_ENDPOINT = AI_POST_GENERATE_PATH;
 export function mapErrorKey(status: number, code: string): string {
     if (status === 422 || code === 'MODERATION_FAILED') return 'errorModeration';
     if (status === 429 || code === 'AI_CEILING_HIT') return 'errorCeiling';
-    if (status === 503 || code === 'exhausted') return 'errorExhausted';
+    // "Service unavailable" family. `ENGINE_EXHAUSTED` (all providers failed) is
+    // mapped to HTTP 502 by the API (`mapAiEngineErrorToHttpStatus`), NOT 503, so
+    // the bare `status === 503` check missed it and fell through to `errorGeneric`
+    // (SPEC-223 smoke found this). The 503 branch still covers the other
+    // service-down codes (FEATURE_DISABLED, NO_ENABLED_PROVIDER,
+    // PROVIDER_UNCONFIGURED, FEATURE_NOT_CONFIGURED).
+    if (status === 502 || status === 503 || code === 'ENGINE_EXHAUSTED') {
+        return 'errorExhausted';
+    }
     return 'errorGeneric';
 }

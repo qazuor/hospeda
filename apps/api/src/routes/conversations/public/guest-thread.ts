@@ -4,9 +4,18 @@
  * Returns the conversation thread for an anonymous guest identified by their
  * access token. Updates `lastReadAtByGuest` inside `getThread`.
  *
+ * The response is narrowed to {@link GuestThreadResponseSchema} before
+ * serialization so internal / PII fields never leak to anonymous callers.
+ *
  * Rate limit: 20 requests / 10 minutes (IP-based; loose because users may reload).
  */
-import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
+import { AccommodationModel, UserModel } from '@repo/db';
+import {
+    GuestThreadResponseSchema,
+    PermissionEnum,
+    RoleEnum,
+    ServiceErrorCode
+} from '@repo/schemas';
 import { AccessTokenService, ConversationService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -19,6 +28,12 @@ import {
     createResponse,
     handleRouteError
 } from '../../../utils/response-helpers';
+
+/** Accommodation model instance reused across requests. */
+const accommodationModel = new AccommodationModel();
+
+/** User model instance reused across requests. */
+const userModel = new UserModel();
 
 /** Minimal system actor for public endpoints that invoke services. */
 const PUBLIC_SYSTEM_ACTOR = {
@@ -143,15 +158,43 @@ async function handler(c: Context): Promise<Response> {
             );
         }
 
-        return createResponse(
-            {
-                conversation: threadResult.data.conversation,
-                messages: threadResult.data.messages,
-                hasMore: threadResult.data.hasMore
-            },
-            c,
-            200
-        );
+        const { conversation, messages, hasMore } = threadResult.data;
+
+        // Enrich the conversation with display-friendly fields that are NOT
+        // in the DB row. This mirrors the enrichment in the protected thread
+        // route (apps/api/src/routes/conversations/protected/thread.ts) so the
+        // web guest thread page can render the accommodation name and owner name
+        // without a separate round trip.
+        const accommodation = (conversation as { accommodationId: string }).accommodationId
+            ? await accommodationModel.findById(
+                  (conversation as { accommodationId: string }).accommodationId
+              )
+            : null;
+        const owner =
+            accommodation && (accommodation as { ownerId?: string }).ownerId
+                ? await userModel.findById((accommodation as { ownerId: string }).ownerId)
+                : null;
+
+        const enrichedConversation = {
+            ...conversation,
+            accommodationName: (accommodation as { name?: string } | null)?.name ?? null,
+            accommodationSlug: (accommodation as { slug?: string } | null)?.slug ?? null,
+            ownerName:
+                (owner as { displayName?: string } | null)?.displayName ??
+                (owner as { firstName?: string } | null)?.firstName ??
+                null
+        };
+
+        // Strip all internal / PII fields via GuestThreadResponseSchema before
+        // serializing. Zod .parse() on an object schema drops unknown keys by
+        // default, so any field not declared in the schema is silently removed.
+        const safePayload = GuestThreadResponseSchema.parse({
+            conversation: enrichedConversation,
+            messages,
+            hasMore
+        });
+
+        return createResponse(safePayload, c, 200, GuestThreadResponseSchema);
     } catch (error) {
         return handleRouteError(error, c);
     }

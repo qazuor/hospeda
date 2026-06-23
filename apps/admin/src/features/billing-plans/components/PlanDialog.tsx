@@ -34,6 +34,8 @@ import { useForm } from '@tanstack/react-form';
 import { useEffect } from 'react';
 import type { CreatePlanPayload, ParsedPlanRecord } from '../types';
 
+import { translateAdminApiError } from '@/lib/errors';
+import type { ApiErrorShape } from '@repo/i18n';
 import { ENTITLEMENT_GROUP_KEYS, getEntitlementName } from './plan-entitlement-groups';
 
 interface PlanDialogProps {
@@ -110,10 +112,11 @@ export function PlanDialog({
             } catch (error) {
                 addToast({
                     title: t('admin-billing.plans.dialog.errorTitle'),
-                    message:
-                        error instanceof Error
-                            ? error.message
-                            : t('admin-billing.plans.dialog.errorMessage'),
+                    message: translateAdminApiError({
+                        error: error as ApiErrorShape,
+                        t,
+                        fallback: t('admin-billing.plans.dialog.errorMessage')
+                    }),
                     variant: 'error'
                 });
             }

@@ -38,7 +38,6 @@ import {
 } from '@repo/db';
 import {
     type CountResponse,
-    type EntityFilters,
     type Experience,
     ExperienceAdminCreateInputSchema,
     ExperienceAdminSearchSchema,
@@ -81,9 +80,6 @@ import {
 } from './experience.permissions';
 import { projectExperienceOwnerAvatar, projectExperiencePublic } from './experience.projections';
 import type { ExperienceHookState } from './experience.types';
-
-/** Entity-specific filter fields for experience admin search. */
-type _ExperienceEntityFilters = EntityFilters<typeof ExperienceAdminSearchSchema>;
 
 /**
  * Business-logic service for experience commerce listings.

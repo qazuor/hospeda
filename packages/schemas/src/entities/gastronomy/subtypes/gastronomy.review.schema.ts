@@ -57,9 +57,11 @@ export const GastronomyReviewSchema = z.object({
     /**
      * Granular rating breakdown using commerce-specific dimensions:
      * food / service / ambiance / value.
-     * Optional: the reviewer may submit an overall rating without breakdown.
+     * Nullish: the reviewer may submit an overall rating without breakdown,
+     * so the underlying `rating` column is nullable and reads back NULL when
+     * absent — the entity schema must accept both `null` and `undefined`.
      */
-    rating: CommerceRatingSchema.optional(),
+    rating: CommerceRatingSchema.nullish(),
 
     /**
      * Computed average of all granular rating categories (0.00–5.00).

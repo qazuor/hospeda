@@ -38,3 +38,7 @@ export {
     toBcp47Locale
 } from './formatting';
 export type { FormatDateInput, FormatNumberInput, FormatCurrencyInput } from './formatting';
+
+// API error translation
+export { translateApiError } from './api-errors';
+export type { ApiErrorShape, TranslationFn, SupportedLocale } from './api-errors';

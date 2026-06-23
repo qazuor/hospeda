@@ -38,7 +38,6 @@ import {
 } from '@repo/db';
 import {
     type CountResponse,
-    type EntityFilters,
     type Gastronomy,
     GastronomyAdminCreateInputSchema,
     GastronomyAdminSearchSchema,
@@ -81,9 +80,6 @@ import {
 } from './gastronomy.permissions';
 import { projectGastronomyOwnerAvatar, projectGastronomyPublic } from './gastronomy.projections';
 import type { GastronomyHookState } from './gastronomy.types';
-
-/** Entity-specific filter fields for gastronomy admin search. */
-type _GastronomyEntityFilters = EntityFilters<typeof GastronomyAdminSearchSchema>;
 
 /**
  * Business-logic service for gastronomy commerce listings.

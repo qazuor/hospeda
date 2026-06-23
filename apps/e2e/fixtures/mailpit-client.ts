@@ -9,7 +9,8 @@ import { setTimeout as sleep } from 'node:timers/promises';
  * @see https://mailpit.axllent.org/docs/api-v1/
  */
 
-const DEFAULT_MAILPIT_URL = 'http://localhost:8025';
+// Port matches apps/e2e/.env.e2e (SSOT). Override via HOSPEDA_E2E_MAILPIT_URL.
+const DEFAULT_MAILPIT_URL = process.env.HOSPEDA_E2E_MAILPIT_URL ?? 'http://localhost:18025';
 const DEFAULT_TIMEOUT_MS = 15_000;
 const POLL_INTERVAL_MS = 500;
 

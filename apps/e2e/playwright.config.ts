@@ -19,8 +19,11 @@ const isPR = mode === 'pr';
 const isNightly = mode === 'nightly';
 const isCI = isPR || isNightly;
 
-const WEB_BASE_URL = process.env.HOSPEDA_E2E_WEB_URL ?? 'http://localhost:4321';
-const ADMIN_BASE_URL = process.env.HOSPEDA_E2E_ADMIN_URL ?? 'http://localhost:3000';
+// Default URLs derived from apps/e2e/.env.e2e E2E dedicated ports.
+// Override via env vars if running against a different port.
+const WEB_BASE_URL = process.env.HOSPEDA_E2E_WEB_URL ?? 'http://localhost:18321';
+const ADMIN_BASE_URL = process.env.HOSPEDA_E2E_ADMIN_URL ?? 'http://localhost:18000';
+const API_BASE_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:18001';
 
 // Repo root: two levels above apps/e2e/playwright.config.ts.
 // All `pnpm --filter` commands need cwd = repo root to resolve the workspace.
@@ -78,7 +81,7 @@ export default defineConfig({
             // In CI the pipeline starts the API before invoking Playwright so
             // reuseExistingServer:true is always safe there too.
             command: 'pnpm --filter hospeda-api start',
-            url: 'http://localhost:3001/health',
+            url: `${API_BASE_URL}/health`,
             reuseExistingServer: true,
             cwd: REPO_ROOT,
             timeout: 120_000,
@@ -89,16 +92,32 @@ export default defineConfig({
                 HOSPEDA_DATABASE_URL:
                     process.env.HOSPEDA_E2E_DATABASE_URL ??
                     process.env.HOSPEDA_DATABASE_URL ??
-                    'postgresql://hospeda_user:hospeda_pass@localhost:5436/hospeda_e2e',
+                    'postgresql://hospeda_user:hospeda_pass@localhost:15433/hospeda_e2e',
+                // Pin the API to the fixed E2E port and trusted origins.
+                // `pnpm --filter hospeda-api start` runs the production build, which
+                // derives Better Auth `trustedOrigins` + Hono CORS from these env
+                // vars (parseTrustedOrigins in apps/api/src/lib/auth-trusted-origins.ts).
+                // Without pinning them here the API inherits apps/api/.env.local, whose
+                // values point at worktree-isolated dev ports — so the suite's fixed
+                // origins get rejected with 403 INVALID_ORIGIN.
+                // CI already injects these as job-level env; this mirrors that locally.
+                // Ports are defined in apps/e2e/.env.e2e (SSOT).
+                API_PORT: '18001',
+                HOSPEDA_SITE_URL: WEB_BASE_URL,
+                HOSPEDA_ADMIN_URL: ADMIN_BASE_URL,
+                API_CORS_ORIGINS: `${WEB_BASE_URL},${ADMIN_BASE_URL}`,
                 // Disable all rate-limit tiers. Parallel workers all come from
                 // 127.0.0.1 and would fill the auth bucket after a handful of
                 // sign-ups otherwise. These flags are read by getRateLimitConfig()
                 // on every request (no startup cache), so disabling them here fully
                 // disables enforcement regardless of NODE_ENV.
-                API_RATE_LIMIT_ENABLED: 'false',
-                API_RATE_LIMIT_AUTH_ENABLED: 'false',
-                API_RATE_LIMIT_PUBLIC_ENABLED: 'false',
-                API_RATE_LIMIT_ADMIN_ENABLED: 'false'
+                // NOTE: the API parses these with z.coerce.boolean() === Boolean(str),
+                // so ANY non-empty string (even 'false') is TRUE. The empty string is
+                // the only value that coerces to false → OFF. Do NOT set these to 'false'.
+                API_RATE_LIMIT_ENABLED: '',
+                API_RATE_LIMIT_AUTH_ENABLED: '',
+                API_RATE_LIMIT_PUBLIC_ENABLED: '',
+                API_RATE_LIMIT_ADMIN_ENABLED: ''
             }
         },
         {
@@ -107,7 +126,7 @@ export default defineConfig({
             // server it reused (only ones it started). The CI runner pre-starts
             // the web server before invoking Playwright so this is always safe.
             // In local dev the server is managed by `wt:up` or manually.
-            command: 'pnpm --filter hospeda-web preview --port 4321',
+            command: 'pnpm --filter hospeda-web preview --port 18321',
             url: WEB_BASE_URL,
             reuseExistingServer: true,
             cwd: REPO_ROOT,
@@ -118,13 +137,16 @@ export default defineConfig({
         {
             // Admin — TanStack Start server, built artifact at apps/admin/.output/server/index.mjs
             // reuseExistingServer: true always — same rationale as the web server above.
+            // The Nitro node-server reads PORT from the environment (defaults to 3000);
+            // pin it to the dedicated E2E admin port so the health-check URL matches.
             command: 'pnpm --filter admin start',
-            url: 'http://localhost:3000/healthz',
+            url: `${ADMIN_BASE_URL}/healthz`,
             reuseExistingServer: true,
             cwd: REPO_ROOT,
             timeout: 120_000,
             stdout: 'pipe',
-            stderr: 'pipe'
+            stderr: 'pipe',
+            env: { PORT: '18000' }
         }
     ],
 

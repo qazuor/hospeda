@@ -111,6 +111,15 @@ pnpm env:check
 | `HOSPEDA_SENTRY_RELEASE` | string | no | no | - | Sentry release identifier |
 | `HOSPEDA_SENTRY_PROJECT` | string | no | no | - | Sentry project name |
 
+### Social Automation (HOSPEDA_)
+
+| Variable | Type | Required | Secret | Default | Description |
+|----------|------|----------|--------|---------|-------------|
+| `HOSPEDA_AI_SOCIAL_KEY` | string | no | yes | - | Inbound key Custom GPT sends in `x-hospeda-ai-key` (SPEC-254) |
+| `HOSPEDA_OPERATOR_PIN_HASH` | string | no | yes | - | Bcrypt hash of operator PIN for GPT draft authorization (SPEC-254) |
+| `HOSPEDA_MAKE_API_KEY` | string | no | yes | - | Outbound key sent to Make.com in `x-make-apikey` for publish jobs (SPEC-254) |
+| `HOSPEDA_MAKE_INBOUND_KEY` | string | no | yes | - | Inbound key Make.com sends in `x-hospeda-make-key` on callbacks (SPEC-254) |
+
 ### Testing / Debugging (HOSPEDA_)
 
 | Variable | Type | Required | Secret | Default | Description |

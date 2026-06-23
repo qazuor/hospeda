@@ -254,6 +254,44 @@ describe('RevalidationService.scheduleRevalidation -- fire-and-forget', () => {
         expect(paths.some((p: string) => p.includes('/alojamientos/hotel-a/'))).toBe(true);
         expect(paths.some((p: string) => p.includes('/alojamientos/hotel-b/'))).toBe(true);
     });
+
+    it('debounces distinct destinations on independent timers (no shared bucket)', async () => {
+        // Regression for SPEC-246: destination/event/post no longer supply a UUID
+        // to entity_id (extractEntityId returns undefined for them), but the debounce
+        // bucket key must still be per-entity (slug) so distinct entities of the same
+        // type don't collapse into one shared bucket and reset each other's timer.
+        // This asserts timer ISOLATION, which the path-accumulation test above cannot:
+        // a collapsed bucket would still revalidate both paths, just on a reset timer.
+        (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
+            findByEntityType: vi
+                .fn()
+                .mockImplementation((entityType: string) =>
+                    Promise.resolve(makeEnabledConfig(entityType, 1))
+                )
+        }));
+
+        const adapter = makeMockAdapter();
+        const service = createTestService(adapter);
+
+        // dest-a scheduled at t=0 -> its 1000ms debounce window ends at t=1000.
+        service.scheduleRevalidation({ entityType: 'destination', slug: 'dest-a' });
+        await vi.advanceTimersByTimeAsync(600);
+
+        // dest-b arrives mid-window at t=600. With a shared bucket this resets the
+        // single timer (pushing the fire to t=1600); with per-entity buckets dest-a
+        // keeps its own t=1000 deadline.
+        service.scheduleRevalidation({ entityType: 'destination', slug: 'dest-b' });
+        await vi.advanceTimersByTimeAsync(500); // now at t=1100
+
+        const firedPaths = (adapter.revalidate as ReturnType<typeof vi.fn>).mock.calls.map(
+            (args: unknown[]) => (args[0] as { path: string }).path
+        );
+
+        // dest-a must have already fired on its own timer (t=1000), independent of dest-b.
+        expect(firedPaths.some((p: string) => p.includes('/destinos/dest-a/'))).toBe(true);
+        // dest-b must NOT have fired yet (its window ends at t=1600).
+        expect(firedPaths.some((p: string) => p.includes('/destinos/dest-b/'))).toBe(false);
+    });
 });
 
 // ---------------------------------------------------------------------------
@@ -1019,5 +1057,151 @@ describe('RevalidationService.scheduleRevalidationBatch', () => {
         const uniquePaths = new Set(paths);
         // Paths for hotel-y should be deduplicated (no double revalidation)
         expect(paths.length).toBe(uniquePaths.size);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// SPEC-246: entity_id threading regression (AC-3)
+// ---------------------------------------------------------------------------
+
+describe('SPEC-246: entity_id is threaded through to logModel.create', () => {
+    beforeEach(() => {
+        vi.useFakeTimers();
+        vi.clearAllMocks();
+        (RevalidationConfigModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
+            findByEntityType: vi
+                .fn()
+                .mockImplementation((entityType: string) =>
+                    Promise.resolve(makeEnabledConfig(entityType, 1))
+                )
+        }));
+        (createLogger as ReturnType<typeof vi.fn>).mockReturnValue({
+            error: vi.fn(),
+            warn: vi.fn(),
+            info: vi.fn(),
+            debug: vi.fn()
+        });
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+        vi.restoreAllMocks();
+    });
+
+    it('scheduleRevalidation with accommodation id propagates entityId to logModel.create', async () => {
+        // Arrange
+        const knownUuid = '550e8400-e29b-41d4-a716-446655440001';
+        const mockCreate = vi.fn().mockResolvedValue(undefined);
+        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
+            create: mockCreate
+        }));
+
+        const adapter = makeMockAdapter();
+        const service = createTestService(adapter);
+
+        // Act — fire a scheduleRevalidation with a known UUID
+        service.scheduleRevalidation({
+            entityType: 'accommodation',
+            id: knownUuid,
+            slug: 'hotel-uuid-test'
+        });
+
+        // Advance fake timers past the debounce window (config seeds 1 s in test setup)
+        await vi.runAllTimersAsync();
+
+        // Allow pending async log-write microtasks to drain
+        await Promise.resolve();
+        await Promise.resolve();
+
+        // Assert — logModel.create must have been called with entityId === knownUuid
+        expect(mockCreate).toHaveBeenCalled();
+        const logArg = mockCreate.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(logArg.entityId).toBe(knownUuid);
+    });
+
+    it('scheduleRevalidation without id leaves entityId null in logModel.create', async () => {
+        // Arrange — call site omits `id` (slug-only, as legacy hooks do)
+        const mockCreate = vi.fn().mockResolvedValue(undefined);
+        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
+            create: mockCreate
+        }));
+
+        const adapter = makeMockAdapter();
+        const service = createTestService(adapter);
+
+        // Act
+        service.scheduleRevalidation({
+            entityType: 'accommodation',
+            slug: 'hotel-no-id'
+        });
+
+        await vi.runAllTimersAsync();
+        await Promise.resolve();
+        await Promise.resolve();
+
+        // Assert — entityId must be null (not undefined, not slug)
+        expect(mockCreate).toHaveBeenCalled();
+        const logArg = mockCreate.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(logArg.entityId).toBeNull();
+    });
+
+    it('pins entityId first-write-wins when a later same-entity call omits id', async () => {
+        // Regression: two calls for the same entity (same slug → same debounce
+        // bucket) inside the window. The first carries the UUID, the second omits
+        // it (as _afterCreate/publish do). The pinned UUID must survive — the
+        // id-less second call must NOT overwrite it to null.
+        const knownUuid = '550e8400-e29b-41d4-a716-446655440099';
+        const mockCreate = vi.fn().mockResolvedValue(undefined);
+        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
+            create: mockCreate
+        }));
+
+        const adapter = makeMockAdapter();
+        const service = createTestService(adapter);
+
+        // Act — first call carries the UUID, second (same slug) does not.
+        service.scheduleRevalidation({
+            entityType: 'accommodation',
+            id: knownUuid,
+            slug: 'hotel-race'
+        });
+        service.scheduleRevalidation({ entityType: 'accommodation', slug: 'hotel-race' });
+
+        await vi.runAllTimersAsync();
+        await Promise.resolve();
+        await Promise.resolve();
+
+        // Assert — the UUID from the first call must not be clobbered.
+        expect(mockCreate).toHaveBeenCalled();
+        const logArg = mockCreate.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(logArg.entityId).toBe(knownUuid);
+    });
+
+    it('adopts entityId when the first same-entity call lacks it and a later one supplies it', async () => {
+        // Inverse of the above: first call is id-less, a later call in the window
+        // brings the UUID. The bucket should adopt it (first non-undefined wins).
+        const knownUuid = '550e8400-e29b-41d4-a716-446655440077';
+        const mockCreate = vi.fn().mockResolvedValue(undefined);
+        (RevalidationLogModel as ReturnType<typeof vi.fn>).mockImplementation(() => ({
+            create: mockCreate
+        }));
+
+        const adapter = makeMockAdapter();
+        const service = createTestService(adapter);
+
+        service.scheduleRevalidation({ entityType: 'accommodation', slug: 'hotel-race2' });
+        service.scheduleRevalidation({
+            entityType: 'accommodation',
+            id: knownUuid,
+            slug: 'hotel-race2'
+        });
+
+        await vi.runAllTimersAsync();
+        await Promise.resolve();
+        await Promise.resolve();
+
+        expect(mockCreate).toHaveBeenCalled();
+        const logArg = mockCreate.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(logArg.entityId).toBe(knownUuid);
     });
 });

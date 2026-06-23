@@ -26,7 +26,8 @@
  * - **Card H** (`editor.comments.recent`): 🟡 backend pending. Comment-listing
  *   endpoint must be verified/built (EDITOR-Q1). Source registered as
  *   `editor.comments.recent` once the endpoint lands.
- * - **Card C — open rate**: 🔴 PHASE 2 (no email-open tracking today).
+ * - **Card C — open rate**: shipped in SPEC-160 T-001 (last-sent campaign open
+ *   rate appended as 4th tile in `editor.newsletter.subscribers` queryFn).
  * - **Card E — views per post** / **Card F — views per event**: 🔴 PHASE 2
  *   (cross-entity view tracking, global decision).
  *
@@ -36,6 +37,7 @@
  * @see SPEC-155 T-019
  */
 
+import { fetchCampaignMetrics } from '@/hooks/newsletter/use-campaign-metrics';
 import { fetchApi } from '@/lib/api/client';
 import {
     DASHBOARD_STALE_TIME_MS,
@@ -105,6 +107,8 @@ interface CampaignItem {
     readonly subject: string;
     readonly status: string;
     readonly scheduledAt?: string;
+    /** ISO timestamp of when the campaign was sent; null/undefined when not yet sent. */
+    readonly sentAt?: string | null;
 }
 
 // ============================================================================
@@ -309,8 +313,8 @@ registerDataSource('editor.events.upcoming', (ctx) => ({
  * (Activos / En verificación / Dados de baja).
  *
  * Multi-KPI tile pattern: every number on the card carries an explicit
- * label instead of a single counter floating without context. Open rate
- * is PHASE 2 (no email-open tracking today, SPEC-160).
+ * label instead of a single counter floating without context. A 4th tile
+ * shows the open rate of the most recently sent campaign (SPEC-160 T-001).
  *
  * Requires `NEWSLETTER_SUBSCRIBER_VIEW` permission (granted to EDITOR per 03c).
  *
@@ -321,6 +325,22 @@ registerDataSource('editor.events.upcoming', (ctx) => ({
  *   - GET /api/v1/admin/newsletter/subscribers?subscriberStatus=active&pageSize=1
  *   - GET /api/v1/admin/newsletter/subscribers?subscriberStatus=pending_verification&pageSize=1
  *   - GET /api/v1/admin/newsletter/subscribers?subscriberStatus=unsubscribed&pageSize=1
+ *
+ * Open rate (SPEC-160 T-001):
+ *   The 4th tile shows the open rate of the most recently SENT campaign.
+ *   Resolution order:
+ *   1. Fetch a pool of up to 10 SENT campaigns (campaignStatus=sent&pageSize=10,
+ *      sorted by createdAt:desc — the only server-side sort the endpoint supports).
+ *   2. Pick the one with the greatest `sentAt` value client-side.
+ *      Rationale: `sentAt` is the semantically correct anchor for "last sent";
+ *      `createdAt` and `sentAt` are usually close but may diverge for campaigns
+ *      drafted well before they are dispatched. A pool of 10 is sufficient for
+ *      day-to-day usage while keeping the payload tiny.
+ *   3. Fetch its metrics (opened / delivered) and compute openRate = opened / delivered.
+ *   The subscriber tiles are primary: if step 1-3 fails for any reason the
+ *   three subscriber tiles still render and the open-rate tile shows `—`.
+ *   - GET /api/v1/admin/newsletter/campaigns?campaignStatus=sent&pageSize=10
+ *   - GET /api/v1/admin/newsletter/campaigns/{id}/metrics  (for the most recent)
  */
 registerDataSource('editor.newsletter.subscribers', (ctx) => ({
     queryKey: buildDashboardQueryKey('editor.newsletter.subscribers', ctx),
@@ -341,9 +361,64 @@ registerDataSource('editor.newsletter.subscribers', (ctx) => ({
         const pending = pendingResult.data.data?.pagination?.total ?? 0;
         const unsubscribed = unsubscribedResult.data.data?.pagination?.total ?? 0;
 
+        // ── Open rate (secondary) ────────────────────────────────────────────
+        // Wrapped in try/catch so a failure here NEVER breaks the 3 primary
+        // subscriber tiles above. On any error or missing data, openRateValue
+        // stays undefined and the open-rate tile renders `—` (see below).
+        let openRateValue: number | undefined;
+        try {
+            const campaignsResult = await fetchApi<AdminListApiResponse<CampaignItem>>({
+                // Fetch a small pool of SENT campaigns sorted by createdAt:desc.
+                // We then pick the one with the max `sentAt` client-side because
+                // the API only supports createdAt sorting (not sentAt sorting).
+                path: '/api/v1/admin/newsletter/campaigns?campaignStatus=sent&pageSize=10'
+            });
+            const sentCampaigns = campaignsResult.data.data?.items ?? [];
+            if (sentCampaigns.length > 0) {
+                // Pick the campaign with the greatest sentAt value. Fall back to
+                // the first item (already newest-createdAt) if sentAt is absent.
+                const latest = sentCampaigns.reduce<CampaignItem>((best, current) => {
+                    const bestTime = best.sentAt ? new Date(best.sentAt).getTime() : 0;
+                    const currentTime = current.sentAt ? new Date(current.sentAt).getTime() : 0;
+                    return currentTime > bestTime ? current : best;
+                }, sentCampaigns[0]);
+
+                const metrics = await fetchCampaignMetrics(latest.id);
+                // API already provides openRate (opened/delivered with 0 guard), but
+                // we re-derive it from raw counts so the tile's computation is explicit
+                // and not coupled to any future change in the service's computed field.
+                openRateValue =
+                    metrics.delivered > 0
+                        ? Math.round((metrics.opened / metrics.delivered) * 100)
+                        : 0;
+            }
+        } catch {
+            // Non-critical: leave openRateValue undefined so the tile renders `—`.
+            // Logging is intentionally skipped — dashboard data-sources are
+            // fire-and-forget and logging on every background refresh would be noisy.
+        }
+
+        // ── KPI tiles ────────────────────────────────────────────────────────
         // Tile labels keep their full descriptive form; KpiWidget tiles in a
         // 1×1 card visually truncate but expose the complete text via a
         // native `title` tooltip on hover.
+        //
+        // The open-rate tile is ALWAYS appended so Card C consistently shows the
+        // metric slot. `openRateValue` stays `undefined` when no campaign has
+        // ever been sent OR when the secondary fetch failed; in both cases
+        // KpiGridTile renders a neutral `—` (it checks `typeof value === 'number'`).
+        // This satisfies AC-2 (neutral empty state instead of a percentage).
+        const openRateTile = {
+            key: 'openRate',
+            label: { es: 'Tasa de apertura', en: 'Open rate', pt: 'Taxa de abertura' },
+            // `undefined` → KpiGridTile renders '—' (empty state).
+            value: openRateValue,
+            accent: 'sky',
+            icon: 'mail',
+            unitSuffix: typeof openRateValue === 'number' ? '%' : undefined,
+            href: '/marketing/newsletter/campaigns'
+        };
+
         return {
             kpis: [
                 {
@@ -373,7 +448,8 @@ registerDataSource('editor.newsletter.subscribers', (ctx) => ({
                     accent: 'sand',
                     icon: 'user',
                     href: '/marketing/newsletter/subscribers?subscriberStatus=unsubscribed'
-                }
+                },
+                openRateTile
             ]
         };
     },
@@ -994,11 +1070,6 @@ registerDataSource('editor.events.views', (ctx) => ({
     },
     staleTime: DASHBOARD_STALE_TIME_MS
 }));
-
-// ============================================================================
-// NOTE — remaining deferred slots (NO resolver registration)
-// ============================================================================
-// Card C — open rate: PHASE 2 (no email-open tracking). Deferred.
 
 // ============================================================================
 // NOTE — WHATS NEW RECENT (SPEC-175 T-016)

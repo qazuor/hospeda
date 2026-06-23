@@ -614,6 +614,32 @@ export const ApiEnvBaseSchema = z.object({
     /** Maximum characters of scraped page text sent to the AI Strategy B enrichment step */
     HOSPEDA_IMPORT_AI_MAX_CHARS: z.coerce.number().default(12000),
 
+    // Social Automation (SPEC-254)
+    // All four vars are optional for now — the GPT/Make routes that consume them
+    // are NOT mounted yet (Phase 2 / Phase 4). Making them required here would
+    // break API boot in every environment before the feature is wired. Flip each
+    // to .min(1) (required) when the consuming route is mounted.
+    /**
+     * Inbound API key the Custom GPT sends in `x-hospeda-ai-key`.
+     * Required when the social GPT drafts route is mounted (SPEC-254 Phase 2).
+     */
+    HOSPEDA_AI_SOCIAL_KEY: z.string().optional(),
+    /**
+     * Bcrypt/argon2 hash of the operator PIN for the GPT drafts endpoint.
+     * Required when the social GPT drafts route is mounted (SPEC-254 Phase 2).
+     */
+    HOSPEDA_OPERATOR_PIN_HASH: z.string().optional(),
+    /**
+     * Outbound key sent in `x-make-apikey` when pushing publish jobs to Make.com.
+     * Required when the Make.com publish route is mounted (SPEC-254 Phase 4).
+     */
+    HOSPEDA_MAKE_API_KEY: z.string().optional(),
+    /**
+     * Inbound key Make.com sends in `x-hospeda-make-key` on claim/result callbacks.
+     * Required when the Make.com callback route is mounted (SPEC-254 Phase 4).
+     */
+    HOSPEDA_MAKE_INBOUND_KEY: z.string().optional(),
+
     // External reputation / review aggregation (SPEC-237)
     /**
      * How many days a Google Places snippet is considered fresh before the background
@@ -634,7 +660,20 @@ export const ApiEnvBaseSchema = z.object({
      * Cron expression for the background job that refreshes stale Google Places snippets.
      * Default "0 2 * * 1" runs every Monday at 02:00 UTC.
      */
-    HOSPEDA_EXTREP_CRON_SCHEDULE: z.string().default('0 2 * * 1')
+    HOSPEDA_EXTREP_CRON_SCHEDULE: z.string().default('0 2 * * 1'),
+
+    // External reputation async polling (SPEC-250)
+    /**
+     * Cron expression for the poll-apify-reputation-runs job that checks the status
+     * of pending/running Apify actor runs and persists results.
+     * Default: every 2 minutes (step-2 cron). See env.example for the exact value.
+     */
+    HOSPEDA_EXTREP_POLL_SCHEDULE: z.string().default('*/2 * * * *'),
+    /**
+     * Milliseconds before the poller sweeps a pending/running Apify run as timed out
+     * and marks it fetch_status='error'. Default 600000 (10 minutes).
+     */
+    HOSPEDA_EXTREP_APIFY_RUN_TIMEOUT_MS: z.coerce.number().int().min(1).default(600_000)
 });
 
 /**

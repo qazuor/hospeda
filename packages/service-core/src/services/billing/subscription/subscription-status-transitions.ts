@@ -120,6 +120,12 @@ const VALID_TRANSITIONS: ReadonlyMap<
     [
         SubscriptionStatusEnum.ABANDONED,
         new Set<SubscriptionStatusFull>() // terminal state — user must restart checkout flow
+    ],
+    [
+        SubscriptionStatusEnum.COMP,
+        new Set<SubscriptionStatusFull>([
+            SubscriptionStatusEnum.CANCELLED // admin revokes the complimentary (free-forever) grant (SPEC-262)
+        ])
     ]
 ]);
 

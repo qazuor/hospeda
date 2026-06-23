@@ -301,6 +301,24 @@ export function createDbMock() {
             }
         },
 
+        // Mock AccommodationMediaModel (SPEC-204) — instantiated in the
+        // AccommodationService constructor, so it must exist on the mock or
+        // initApp() fails to load (breaking collection for every route test).
+        AccommodationMediaModel: class MockAccommodationMediaModel {
+            async findByAccommodation(_accommodationId: string) {
+                return { items: [], total: 0 };
+            }
+            async findFeatured(_accommodationId: string) {
+                return null;
+            }
+            async create(_data: unknown, _tx?: unknown) {
+                return null;
+            }
+            async hardDelete(_filters: unknown, _tx?: unknown) {
+                return undefined;
+            }
+        },
+
         // Mock DestinationModel — same module-scope instantiation in reviews.ts.
         DestinationModel: class MockDestinationModel {
             async findById(_id: string) {
@@ -553,6 +571,21 @@ export function createDbMock() {
             updatedAt: 'updated_at'
         },
 
+        // SPEC-204 T-008: plan-photo-restriction.service dual-writes archive/restore
+        // state into `accommodation_media` in the same transaction. Route tests that
+        // load initApp() need this table stub present so the SUT import doesn't throw
+        // "[vitest] No 'accommodationMedia' export is defined on the '@repo/db' mock".
+        accommodationMedia: {
+            accommodationId: 'accommodation_id',
+            url: 'url',
+            state: 'state',
+            archivedAt: 'archived_at',
+            isFeatured: 'is_featured',
+            sortOrder: 'sort_order',
+            updatedAt: 'updated_at',
+            deletedAt: 'deleted_at'
+        },
+
         // Owner promotions table stubs (SPEC-167 T-008: plan-restriction.service imports
         // ownerPromotions.id / ownerPromotions.deletedAt for inArray/isNull WHERE clauses)
         ownerPromotions: {
@@ -735,6 +768,26 @@ export function createDbMock() {
         SponsorshipLevelModel: GenericMockModel,
         SponsorshipModel: GenericMockModel,
         SponsorshipPackageModel: GenericMockModel,
+        // Social automation models (SPEC-254). Route modules instantiate the
+        // social services eagerly at import time, so the app cannot load under
+        // the @repo/db mock unless every social model is a constructable stub.
+        SocialAiRequestModel: GenericMockModel,
+        SocialAssetModel: GenericMockModel,
+        SocialAudienceModel: GenericMockModel,
+        SocialAuditLogModel: GenericMockModel,
+        SocialCampaignModel: GenericMockModel,
+        SocialContentBatchModel: GenericMockModel,
+        SocialHashtagModel: GenericMockModel,
+        SocialHashtagSetModel: GenericMockModel,
+        SocialPlatformFormatModel: GenericMockModel,
+        SocialPlatformModel: GenericMockModel,
+        SocialPostFooterModel: GenericMockModel,
+        SocialPostHashtagModel: GenericMockModel,
+        SocialPostMediaModel: GenericMockModel,
+        SocialPostModel: GenericMockModel,
+        SocialPostTargetModel: GenericMockModel,
+        SocialPublishLogModel: GenericMockModel,
+        SocialSettingModel: GenericMockModel,
 
         // SPEC-159 T-011: EntityViewModel singleton. Required so EntityViewService can
         // instantiate at module scope when the service-core barrel is loaded by any job

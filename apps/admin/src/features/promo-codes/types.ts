@@ -1,7 +1,16 @@
+import type { PromoEffect } from '@repo/schemas';
+
 /**
- * Promo code discount type
+ * Promo code discount type (legacy `type` field + the `valueKind` of a typed
+ * `discount` effect).
  */
 export type DiscountType = 'percentage' | 'fixed';
+
+/**
+ * The kind of typed effect a promo code produces (SPEC-262). Mirrors the
+ * `PromoEffectKindEnum` values in `@repo/schemas`.
+ */
+export type EffectKind = 'discount' | 'trial_extension' | 'comp';
 
 /**
  * Promo code status (derived client-side from active + expiry)
@@ -38,6 +47,12 @@ export interface PromoCode {
     readonly minAmount: number | null;
     readonly status: PromoCodeStatus;
     readonly createdAt?: string;
+    /**
+     * Full typed effect (SPEC-262). Present on codes created/migrated after the
+     * effect-engine migration; absent (`undefined`) on legacy codes fetched
+     * before the backfill. The form falls back to `type` + `value` when absent.
+     */
+    readonly effect?: PromoEffect;
 }
 
 /**
@@ -54,13 +69,29 @@ export interface PromoCodeFilters {
 /**
  * Create promo code payload — matches the API request contract
  * (`CreatePromoCodeSchema` in @repo/schemas). The form holds nullable fields
- * for controlled inputs; the hook strips empties before sending.
+ * for controlled inputs; the hook strips empties and assembles the typed
+ * `effect` discriminated union before sending.
+ *
+ * SPEC-262: the former flat `discountType` / `discountValue` fields are
+ * replaced by the typed-effect form state below (`effectKind` + per-kind
+ * params). The hook's `toCreateRequestBody` assembles these into the `effect`
+ * object the API now requires.
  */
 export interface CreatePromoCodePayload {
     code: string;
     description: string;
-    discountType: DiscountType;
+    /** Which typed effect this code produces. */
+    effectKind: EffectKind;
+    /** `discount` only — whether `discountValue` is a percentage or fixed amount. */
+    valueKind: DiscountType;
+    /** `discount` only — percentage (1-100) or fixed amount in cents. */
     discountValue: number;
+    /** `discount` only — billing cycles to apply the discount (null = forever). */
+    durationCycles: number | null;
+    /** `discount` only — UI toggle mirroring `durationCycles === null`. */
+    durationForever: boolean;
+    /** `trial_extension` only — calendar days to extend the trial (> 0). */
+    extraDays: number;
     maxUses: number | null;
     maxUsesPerUser: number | null;
     /** ISO date (or null) the code starts being valid */

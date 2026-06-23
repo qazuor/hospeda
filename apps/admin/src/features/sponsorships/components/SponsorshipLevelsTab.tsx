@@ -14,7 +14,9 @@ import {
 } from '@/features/sponsorships/hooks/useSponsorshipQueries';
 import type { SponsorshipLevel } from '@/features/sponsorships/types';
 import { useTranslations } from '@/hooks/use-translations';
+import { translateAdminApiError } from '@/lib/errors';
 import { formatCurrency } from '@repo/i18n';
+import type { ApiErrorShape } from '@repo/i18n';
 import { AddIcon } from '@repo/icons';
 import { useState } from 'react';
 
@@ -155,7 +157,9 @@ export function SponsorshipLevelsTab() {
                         <p className="text-muted-foreground">
                             {t('admin-billing.sponsorships.errors.loadLevels')}
                         </p>
-                        <p className="mt-2 text-destructive text-sm">{error.message}</p>
+                        <p className="mt-2 text-destructive text-sm">
+                            {translateAdminApiError({ error: error as ApiErrorShape, t })}
+                        </p>
                     </div>
                 </CardContent>
             </Card>

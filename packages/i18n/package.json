@@ -31,6 +31,7 @@
         "react": ">=18.2.0 || ^19"
     },
     "devDependencies": {
+        "@repo/schemas": "workspace:*",
         "@repo/typescript-config": "workspace:*",
         "@types/node": "^25.9.3",
         "@types/react": "^19.1.1",

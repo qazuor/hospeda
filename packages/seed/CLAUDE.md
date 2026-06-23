@@ -18,6 +18,7 @@ pnpm seed --required           # Only required data
 pnpm seed --example            # Only example data
 pnpm seed --reset --required --example  # Full reset with all data
 pnpm seed:test-users           # Re-seed only the SPEC-143 test users matrix
+pnpm seed:ready-user <email>   # Mark one existing user ready (no onboarding friction) — SPEC-264
 
 # Testing
 pnpm test              # Run all tests
@@ -66,6 +67,27 @@ The seed inserts directly into `users` + `account` + `billing_customers` + `bill
 When `loadEntitlements()` runs on login, the active subscription drives `userLimits` and `userEntitlements`, so limit-enforcement endpoints behave exactly as they would for a real paying user.
 
 Source: [`src/test-users/`](src/test-users/) (orchestrator + seed function). Design doc: [`.qtm/specs/SPEC-143-billing-testing-coverage/docs/local-test-users-seed-plan.md`](../../.qtm/specs/SPEC-143-billing-testing-coverage/docs/local-test-users-seed-plan.md).
+
+### Ready out of the box — no onboarding friction (SPEC-264)
+
+The 13 test users are seeded **ready to use immediately**: no "complete your profile" redirect, no admin welcome tour, no what's-new modal, no forced password change. This is done by writing the **real domain state** the onboarding gates already read — there is **no dev-only bypass code in `apps/*`**; all gates are data-driven DB columns.
+
+The canonical helper is [`src/test-users/markUserReady.ts`](src/test-users/markUserReady.ts) (`markUserReady({ email, model })`). It is the single source of truth for "what makes a user ready" and sets:
+
+- `profileCompleted = true` (web profile gate)
+- `settings.onboarding.adminTours["host.welcome"] = 9999` — a drift-proof sentinel; the gate compares `stored >= tour.version`, so a large value stays "seen" across catalog bumps (the seed cannot import the `apps/admin` tour catalog)
+- `settings.onboarding.whatsNew.baselineAt = now` (all current entries treated as seen; idempotent — re-runs keep the original baseline)
+- `mustChangePassword = false` (defensive; already the default)
+
+It does a read-modify-write merge, so it never clobbers pre-existing `settings`.
+
+**Ready-up a hand-created user** (e.g. one you signed up manually) without re-seeding:
+
+```bash
+pnpm db:seed:ready-user <email>     # e.g. pnpm db:seed:ready-user host-basico@local.test
+```
+
+> Note: the web **cookie-consent** banner is NOT covered here — it is a pure browser cookie with no user-row state, so the seed cannot touch it. In manual local browsing it is a one-time click (persists ~1 year); for e2e it is pre-seeded via `apps/e2e/fixtures/browser-helpers.ts` (`seedCookieConsent`).
 
 ## Role Permission Gotchas
 
