@@ -161,6 +161,7 @@ import { protectedWhatsNewRoutes } from './whats-new';
 import { ApiInfoSchema } from '@repo/schemas';
 import { mustChangePasswordGate } from '../middlewares/must-change-password';
 import { pastDueGraceMiddleware } from '../middlewares/past-due-grace.middleware';
+import { socialFeatureTagMiddleware } from '../middlewares/social-feature-tag';
 import { createSimpleRoute } from '../utils/route-factory';
 import {
     adminConversationsRouter,
@@ -491,6 +492,14 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/ai/prompts', adminAiPromptsRoutes);
         app.route('/api/v1/admin/ai/usage', adminAiUsageRoutes);
         app.route('/api/v1/admin/ai/translate', adminAiTranslateRoute);
+
+        // SPEC-254 T-052: tag every social-automation route for Sentry grouping.
+        // Registered at the mount-point prefixes (before the routes below) so the
+        // `feature: 'social-automation'` tag is set in ONE place, not on each of
+        // the 60+ social route files.
+        app.use('/api/v1/ai/social/*', socialFeatureTagMiddleware());
+        app.use('/api/v1/integrations/make/social/*', socialFeatureTagMiddleware());
+        app.use('/api/v1/admin/social/*', socialFeatureTagMiddleware());
 
         // AI social catalog (SPEC-254 T-026): machine-authenticated (x-hospeda-ai-key), no session.
         // Returns the full GPT-safe catalog the Custom GPT fetches before drafting a post.
