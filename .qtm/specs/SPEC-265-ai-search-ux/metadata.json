@@ -1,12 +1,22 @@
 {
-  "specId": "SPEC-265",
-  "title": "AI accommodation search — UI/UX improvements (transparency, onboarding, chat control, layout)",
-  "type": "improvement",
-  "complexity": "medium",
-  "status": "draft",
-  "created": "2026-06-22T21:55:01Z",
-  "approved": null,
-  "completed": null,
-  "planFileRef": null,
-  "tags": ["ai-search", "web", "ux", "ui", "transparency", "onboarding", "i18n", "spec-199-followup", "spec-212-followup"]
+    "specId": "SPEC-265",
+    "title": "AI accommodation search — UI/UX improvements (transparency, onboarding, chat control, layout)",
+    "type": "improvement",
+    "complexity": "medium",
+    "status": "draft",
+    "created": "2026-06-22T21:55:01Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": [
+        "ai-search",
+        "web",
+        "ux",
+        "ui",
+        "transparency",
+        "onboarding",
+        "i18n",
+        "spec-199-followup",
+        "spec-212-followup"
+    ]
 }

@@ -11,6 +11,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChangePasswordForm } from '../../src/components/auth/ChangePasswordForm.client';
+import { refreshBetterAuthSession } from '../../src/lib/auth-client';
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 
@@ -24,6 +25,12 @@ vi.mock('../../src/components/auth/ChangePasswordForm.module.css', () => ({
     default: new Proxy({} as Record<string, string>, {
         get: (_target, prop) => String(prop)
     })
+}));
+
+// Mock the Better Auth session refresh so we can assert it runs on success
+// (the must-change-password gate fix) without performing a real network call.
+vi.mock('../../src/lib/auth-client', () => ({
+    refreshBetterAuthSession: vi.fn().mockResolvedValue(undefined)
 }));
 
 // Keep real @repo/schemas validation so we can verify field-level enforcement.
@@ -67,6 +74,7 @@ function fillFields(opts: { current?: string; newPwd?: string; confirm?: string 
 describe('ChangePasswordForm', () => {
     beforeEach(() => {
         global.fetch = vi.fn();
+        vi.mocked(refreshBetterAuthSession).mockClear();
     });
 
     // ── 1. Renders all three password fields ─────────────────────────────────
@@ -264,6 +272,41 @@ describe('ChangePasswordForm', () => {
                     screen.getByText(/contraseña actualizada correctamente/i)
                 ).toBeInTheDocument();
             });
+        });
+
+        it('refreshes the Better Auth session on success (regression: must-change-password gate)', async () => {
+            // Without refreshing the cookie cache, the middleware keeps reading the
+            // stale mustChangePassword=true and bounces the user back to this gate
+            // after the redirect until the 5-minute cache TTL expires.
+            vi.mocked(global.fetch).mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({ success: true })
+            } as Response);
+
+            renderForm();
+            fillFields();
+            fireEvent.click(screen.getByRole('button', { name: /cambiar contraseña/i }));
+
+            await waitFor(() => {
+                expect(refreshBetterAuthSession).toHaveBeenCalledTimes(1);
+            });
+        });
+
+        it('does NOT refresh the session when the change fails', async () => {
+            vi.mocked(global.fetch).mockResolvedValueOnce({
+                ok: false,
+                status: 500,
+                json: async () => ({ error: { message: 'Internal server error' } })
+            } as Response);
+
+            renderForm();
+            fillFields();
+            fireEvent.click(screen.getByRole('button', { name: /cambiar contraseña/i }));
+
+            await waitFor(() => {
+                expect(screen.getAllByRole('alert').length).toBeGreaterThan(0);
+            });
+            expect(refreshBetterAuthSession).not.toHaveBeenCalled();
         });
 
         it('redirects to /es/mi-cuenta/ after 1.5 s on success', async () => {

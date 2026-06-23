@@ -686,6 +686,39 @@
                     "invalidType": "El máximo de usos tiene un tipo de dato inválido",
                     "positive": "El máximo de usos debe ser un número positivo"
                 }
+            },
+            "effect": {
+                "discount": {
+                    "durationCycles": {
+                        "int": "La cantidad de ciclos debe ser un número entero",
+                        "invalidType": "La cantidad de ciclos tiene un tipo de dato inválido",
+                        "min": "La cantidad de ciclos debe ser mayor a 0"
+                    },
+                    "value": {
+                        "int": "El valor del descuento debe ser un número entero",
+                        "invalidType": "El valor del descuento tiene un tipo de dato inválido",
+                        "min": "El valor del descuento no puede ser negativo",
+                        "percentageMax": "El descuento porcentual no puede superar el 100%"
+                    }
+                },
+                "trialExtension": {
+                    "extraDays": {
+                        "int": "Los días de extensión deben ser un número entero",
+                        "invalidType": "Los días de extensión tienen un tipo de dato inválido",
+                        "min": "Los días de extensión deben ser mayores a 0"
+                    }
+                }
+            },
+            "effectKind": {
+                "invalid": "El tipo de efecto no es válido"
+            },
+            "valueKind": {
+                "invalid": "El tipo de valor no es válido"
+            },
+            "response": {
+                "type": {
+                    "invalid": "El tipo de respuesta no es válido"
+                }
             }
         },
         "query": {
