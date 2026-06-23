@@ -137,7 +137,7 @@
 
 .extrasSection {
     margin-top: var(--space-6, 1.5rem);
-    border: 1px solid var(--border-default, #e5e7eb);
+    border: 1px solid var(--core-foreground-a15, #e5e7eb);
     border-radius: var(--radius-md);
     overflow: hidden;
 }
@@ -174,7 +174,7 @@
 
 .extrasBody {
     padding: var(--space-4, 1rem);
-    border-top: 1px solid var(--border-default, #e5e7eb);
+    border-top: 1px solid var(--core-foreground-a15, #e5e7eb);
     display: flex;
     flex-direction: column;
     gap: var(--space-4, 1rem);
@@ -191,8 +191,8 @@
     align-items: center;
     gap: var(--space-2, 0.5rem);
     padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
-    background-color: var(--surface-subtle, #f9fafb);
-    border: 1px solid var(--border-default, #e5e7eb);
+    background-color: var(--surface-warm, #f9fafb);
+    border: 1px solid var(--core-foreground-a15, #e5e7eb);
     border-radius: var(--radius-md);
     font-family: var(--font-sans);
     font-size: var(--text-sm, 0.875rem);
