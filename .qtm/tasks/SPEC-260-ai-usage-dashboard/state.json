@@ -497,7 +497,7 @@
             "id": "T-022",
             "title": "Accessibility pass",
             "description": "Ensure tables use semantic markup and charts have an accessible text alternative (the adjacent table is canonical). Verify keyboard focus order on filters.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-019"],
             "blocks": [],
