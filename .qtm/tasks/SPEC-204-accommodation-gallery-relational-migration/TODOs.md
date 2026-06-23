@@ -1,6 +1,6 @@
 # SPEC-204: Accommodation gallery migration to relational table
 
-## Progress: 5/29 tasks (17%)
+## Progress: 6/29 tasks (21%)
 
 **Average Complexity:** 2.5/3 (max)
 **Storage model:** direct table-per-entity (`accommodation_media`, real FK) — polymorphic + junction rejected
@@ -28,7 +28,7 @@
   - Blocked by: T-001 · Blocks: T-006, T-007, T-008, T-009
 - [x] **T-005** (cx 2) — Add `AccommodationMediaItem` Zod schema
   - Blocked by: none · Blocks: T-007, T-009
-- [ ] **T-006** (cx 3) — Backfill from JSONB (featured/gallery/archivedGallery → rows, idempotent, no data loss)
+- [x] **T-006** (cx 3) — Backfill from JSONB (featured/gallery/archivedGallery → rows, idempotent, no data loss) — 104 accom → 1625 rows, idempotent ✓
   - Blocked by: T-002, T-003, T-004 · Blocks: T-010, T-012
 - [ ] **T-007** (cx 3) — Write-both on accommodation create/update (table + JSONB transactional)
   - Blocked by: T-004, T-005 · Blocks: T-011, T-012, T-014

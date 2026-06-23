@@ -58,7 +58,7 @@
                 },
                 {
                     "title": "verify drift guard passes",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["db", "migration", "P1"],
@@ -66,7 +66,7 @@
             "qualityGate": {
                 "lint": null,
                 "typecheck": null,
-                "tests": null
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-22T00:00:00.000Z",
@@ -101,7 +101,7 @@
             "qualityGate": {
                 "lint": null,
                 "typecheck": null,
-                "tests": null
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-22T00:00:00.000Z",
@@ -175,22 +175,22 @@
             "id": "T-006",
             "title": "Backfill accommodation_media from JSONB",
             "description": "Idempotent backfill (service/script): for each accommodation, read media JSONB -> insert rows: featuredImage -> is_featured=true; gallery[] -> state='visible' with sort_order=index; archivedGallery[] -> state='archived' with archived_at. Preserve publicId+attribution+moderationState. Re-runnable without duplicating. Tests in T-010.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002", "T-003", "T-004"],
             "blocks": ["T-010", "T-012"],
             "subtasks": [
                 {
                     "title": "map featuredImage/gallery/archivedGallery to rows",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "preserve all ImageSchema fields",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "idempotent (no dup rows on re-run)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["db", "migration", "backfill", "P1"],
@@ -198,12 +198,12 @@
             "qualityGate": {
                 "lint": null,
                 "typecheck": null,
-                "tests": null
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-22T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-23T02:37:01.000Z",
+                "completed": "2026-06-23T02:41:02.000Z"
             }
         },
         {
@@ -906,9 +906,9 @@
     ],
     "summary": {
         "total": 29,
-        "pending": 24,
+        "pending": 23,
         "inProgress": 0,
-        "completed": 5,
+        "completed": 6,
         "blocked": 0,
         "averageComplexity": 2.5
     }
