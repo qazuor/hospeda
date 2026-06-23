@@ -434,6 +434,7 @@ export class SocialDraftIngestionService {
                     pillar: payload.pillar,
                     audienceId: audienceId ?? undefined,
                     generatedCaptionBase: payload.captionBase,
+                    // TYPE-WORKAROUND: serialize the typed GPT draft payload into the jsonb audit column (Record<string, unknown>).
                     rawRequestJson: payload as unknown as Record<string, unknown>,
                     status: 'success'
                 });

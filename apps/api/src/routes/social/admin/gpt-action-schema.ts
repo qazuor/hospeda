@@ -168,6 +168,7 @@ export function buildGptActionSchema(apiBaseUrl?: string): Record<string, unknow
         servers: [{ url: serverUrl, description: 'Hospeda public API' }]
     });
 
+    // TYPE-WORKAROUND: return the assembled OpenAPI document as a plain JSON record for the HTTP response.
     return document as unknown as Record<string, unknown>;
 }
 

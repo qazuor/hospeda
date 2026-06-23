@@ -811,6 +811,7 @@ export class SocialPublishDispatchService {
 
         await this.targetModel.update(
             { id: targetId },
+            // TYPE-WORKAROUND: serialize the typed Make payload into the jsonb target column (Record<string, unknown>).
             { makePayloadJson: payload as unknown as Record<string, unknown> }
         );
 
@@ -860,6 +861,7 @@ export class SocialPublishDispatchService {
                 publishFormat,
                 status: SocialPublishResultStatusEnum.RETRYING,
                 message: 'Dispatched to Make; awaiting callback',
+                // TYPE-WORKAROUND: serialize the typed Make payload into the jsonb publish-log column (Record<string, unknown>).
                 requestPayloadJson: payload as unknown as Record<string, unknown>
             });
 
@@ -902,6 +904,7 @@ export class SocialPublishDispatchService {
                 publishFormat,
                 status: SocialPublishResultStatusEnum.FAILED,
                 message: failureMessage,
+                // TYPE-WORKAROUND: serialize the typed Make payload into the jsonb publish-log column (Record<string, unknown>).
                 requestPayloadJson: payload as unknown as Record<string, unknown>
             });
 
@@ -947,6 +950,7 @@ export class SocialPublishDispatchService {
             publishFormat,
             status: SocialPublishResultStatusEnum.FAILED,
             message: failureMessage,
+            // TYPE-WORKAROUND: serialize the typed Make payload into the jsonb publish-log column (Record<string, unknown>).
             requestPayloadJson: payload as unknown as Record<string, unknown>
         });
 

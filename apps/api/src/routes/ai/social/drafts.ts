@@ -152,6 +152,7 @@ export const socialDraftsRoute = createApiKeyRoute({
         const service = new SocialDraftIngestionService({});
 
         const result = await service.ingestDraft({
+            // TYPE-WORKAROUND: the api-key route hands the validated body as unknown; narrow it to the draft input schema.
             payload: body as unknown as import('@repo/schemas').CreateSocialDraft,
             actorId: actor.id
         });
