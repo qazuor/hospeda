@@ -105,6 +105,14 @@ interface ConfigCacheEntry {
 interface PendingEntityDebounce {
     readonly paths: Set<string>;
     readonly entityType: string;
+    /**
+     * Canonical UUID written to `revalidation_log.entity_id` when the bucket
+     * fires. Pinned on the first call in the window that supplies one
+     * (first-write-wins), so a later id-less call for the same entity cannot
+     * null it out. Mutable: only reassigned while still undefined.
+     */
+    entityId: string | undefined;
+    /** Mutable: reassigned on each clearTimeout/setTimeout debounce reset cycle. */
     timer: ReturnType<typeof setTimeout>;
 }
 
@@ -296,6 +304,9 @@ export class RevalidationService {
      * @param params.reason - Optional human-readable reason (stored in log metadata)
      * @param params.trigger - Trigger source for the log entry (defaults to 'hook')
      * @param params.entityType - Entity type for log attribution (defaults to 'manual')
+     * @param params.entityId - Canonical UUID of the entity that triggered revalidation.
+     *   When provided, written to `revalidation_log.entity_id` for precise audit querying.
+     *   Undefined results in a NULL `entity_id` (expected for types that don't yet supply it).
      * @returns Array of results, one per revalidated path
      */
     async revalidatePaths(params: {
@@ -304,8 +315,16 @@ export class RevalidationService {
         readonly reason?: string;
         readonly trigger?: RevalidationTrigger;
         readonly entityType?: string;
+        readonly entityId?: string;
     }): Promise<ReadonlyArray<RevalidatePathResult>> {
-        const { paths, triggeredBy, reason, trigger = 'hook', entityType = 'manual' } = params;
+        const {
+            paths,
+            triggeredBy,
+            reason,
+            trigger = 'hook',
+            entityType = 'manual',
+            entityId
+        } = params;
 
         if (paths.length === 0) return [];
 
@@ -322,6 +341,7 @@ export class RevalidationService {
             void this.writeLog({
                 path: result.path,
                 entityType,
+                entityId,
                 trigger,
                 triggeredBy,
                 status: result.success ? 'success' : 'failed',
@@ -356,12 +376,18 @@ export class RevalidationService {
             const effectiveDebounceMs = config.debounceSeconds * 1000;
             const paths = getAffectedPaths(event, this.localesConfig);
 
-            // Derive entity ID from the event when available (slug serves as entity identifier)
+            // Two distinct identifiers, deliberately decoupled:
+            // - debounceKeyId: per-entity bucket key (slug) so edits to different
+            //   entities of the same type don't collapse into one debounce bucket.
+            // - entityId: canonical UUID written to revalidation_log.entity_id
+            //   (undefined for types whose hook doesn't forward `id` yet).
+            const debounceKeyId = this.extractDebounceKeyId(event);
             const entityId = this.extractEntityId(event);
 
             this.debounceEntity({
                 paths,
                 entityType: event.entityType,
+                debounceKeyId,
                 entityId,
                 debounceMs: effectiveDebounceMs,
                 reason
@@ -375,10 +401,54 @@ export class RevalidationService {
 
     /**
      * Extracts a stable entity identifier from the change event.
-     * Uses the slug or relevant identifier field when available.
+     *
+     * For accommodation events, returns the canonical UUID (`event.id`) when
+     * available — this is what gets written to `revalidation_log.entity_id`.
+     * Returning undefined (e.g. when a call site doesn't supply `id` yet) is
+     * expected and results in a NULL `entity_id` in the log row (no mixing of
+     * UUIDs and slugs in the same column).
+     *
+     * For other entity types (destination, event, post), the hook does not yet
+     * forward `id`, so this returns undefined. Follow-up work per SPEC-246
+     * will add `id` propagation to those hooks.
+     *
      * Returns undefined when no specific entity instance is identifiable.
      */
     private extractEntityId(event: EntityChangeData): string | undefined {
+        switch (event.entityType) {
+            case 'accommodation':
+                // Prefer the canonical UUID; falls back to undefined if not supplied.
+                // Slug is intentionally NOT used here to avoid mixing identifiers.
+                return event.id;
+            case 'destination':
+            case 'event':
+            case 'post':
+            case 'accommodation_review':
+            case 'destination_review':
+                // These hooks don't yet forward a canonical UUID — addressed as
+                // follow-up. Returning undefined keeps entity_id NULL rather than
+                // writing a slug into the UUID column.
+                return undefined;
+            case 'tag':
+            case 'amenity':
+                return undefined;
+        }
+    }
+
+    /**
+     * Extracts the per-entity debounce bucket key from the change event.
+     *
+     * Uses the entity slug (or the parent slug for reviews) so that edits to
+     * different entities of the same type are debounced independently. This is
+     * intentionally separate from {@link extractEntityId} (which yields the
+     * canonical UUID for the audit log): the bucket key must stay unique per
+     * entity even for types that don't yet forward a UUID, otherwise all
+     * entities of a type would collapse into a single shared debounce bucket.
+     *
+     * Returns undefined when no per-entity identifier is available (e.g. tag,
+     * amenity), in which case the bucket falls back to the entity type alone.
+     */
+    private extractDebounceKeyId(event: EntityChangeData): string | undefined {
         switch (event.entityType) {
             case 'accommodation':
             case 'destination':
@@ -397,26 +467,35 @@ export class RevalidationService {
 
     /**
      * Debounces revalidation for an entity.
-     * Uses `${entityType}:${entityId}` as key when entityId is available,
-     * falling back to just `${entityType}`.
+     * Uses `${entityType}:${debounceKeyId}` as key when a per-entity id (slug) is
+     * available, falling back to just `${entityType}`. The bucket key is kept
+     * separate from `entityId` (the UUID written to the log) so distinct entities
+     * of the same type never share a debounce bucket.
      * Accumulates all paths for the entity and fires a single batch revalidation
      * when the debounce timer expires.
      */
     private debounceEntity(params: {
         readonly paths: readonly string[];
         readonly entityType: string;
+        readonly debounceKeyId: string | undefined;
         readonly entityId: string | undefined;
         readonly debounceMs: number;
         readonly reason?: string;
     }): void {
-        const { paths, entityType, entityId, debounceMs, reason } = params;
-        const key = entityId ? `${entityType}:${entityId}` : entityType;
+        const { paths, entityType, debounceKeyId, entityId, debounceMs, reason } = params;
+        const key = debounceKeyId ? `${entityType}:${debounceKeyId}` : entityType;
 
         const existing = this.pendingTimers.get(key);
         if (existing !== undefined) {
             // Accumulate new paths into the existing debounce entry
             for (const path of paths) {
                 existing.paths.add(path);
+            }
+            // First-write-wins: keep the UUID from the first call in the window
+            // that supplied one, so a later id-less call (e.g. _afterCreate) for
+            // the same entity cannot null it out.
+            if (existing.entityId === undefined && entityId !== undefined) {
+                existing.entityId = entityId;
             }
             clearTimeout(existing.timer);
 
@@ -428,7 +507,8 @@ export class RevalidationService {
                     paths: allPaths,
                     reason,
                     trigger: 'hook',
-                    entityType
+                    entityType,
+                    entityId: existing.entityId
                 }).catch((error: unknown) => {
                     this.logger.error(
                         `[RevalidationService] Unhandled error in debounced revalidation for key "${key}": ${error instanceof Error ? error.message : String(error)}`
@@ -436,11 +516,13 @@ export class RevalidationService {
                 });
             }, debounceMs);
         } else {
-            // Create a new debounce entry
+            // Create a new debounce entry. entityId is pinned here; later calls
+            // in the same window only set it when still undefined (see above).
             const pathSet = new Set(paths);
             const entry: PendingEntityDebounce = {
                 paths: pathSet,
                 entityType,
+                entityId,
                 timer: setTimeout(() => {
                     this.pendingTimers.delete(key);
                     const allPaths = Array.from(pathSet);
@@ -448,7 +530,8 @@ export class RevalidationService {
                         paths: allPaths,
                         reason,
                         trigger: 'hook',
-                        entityType
+                        entityType,
+                        entityId: entry.entityId
                     }).catch((error: unknown) => {
                         this.logger.error(
                             `[RevalidationService] Unhandled error in debounced revalidation for key "${key}": ${error instanceof Error ? error.message : String(error)}`
@@ -490,10 +573,14 @@ export class RevalidationService {
 
     /**
      * Writes one log entry to `revalidation_log`. Best-effort -- errors are swallowed.
+     *
+     * @param params.entityId - Canonical UUID of the entity that triggered revalidation.
+     *   Written to `revalidation_log.entity_id`. Pass undefined to leave the column NULL.
      */
     private async writeLog(params: {
         readonly path: string;
         readonly entityType: string;
+        readonly entityId?: string;
         readonly trigger: RevalidationTrigger;
         readonly triggeredBy?: string;
         readonly status: 'success' | 'failed' | 'skipped';
@@ -505,6 +592,7 @@ export class RevalidationService {
             await this.logModel.create({
                 path: params.path,
                 entityType: params.entityType,
+                entityId: params.entityId ?? null,
                 trigger: params.trigger,
                 triggeredBy: params.triggeredBy ?? 'system',
                 status: params.status,

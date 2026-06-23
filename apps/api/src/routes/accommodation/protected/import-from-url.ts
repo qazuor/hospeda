@@ -48,7 +48,6 @@ import type { AiService } from '@repo/ai-core';
 import { getMonthlyCallCount, recordAiUsage } from '@repo/ai-core';
 import {
     type AccommodationImportRequest,
-    type AiFeature,
     type LanguageEnum,
     PermissionEnum,
     ServiceErrorCode
@@ -63,7 +62,11 @@ import {
 import type { Actor } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getPostHogClient } from '../../../lib/posthog';
-import { AI_ENTITLEMENT_BY_FEATURE, AI_LIMIT_BY_FEATURE } from '../../../middlewares/ai-quota';
+import {
+    AI_ENTITLEMENT_BY_FEATURE,
+    AI_LIMIT_BY_FEATURE,
+    type QuotaGatedAiFeature
+} from '../../../middlewares/ai-quota';
 import {
     entitlementMiddleware,
     getRemainingLimit,
@@ -89,7 +92,7 @@ import {
 // ---------------------------------------------------------------------------
 
 /** AI feature key for prompt resolution, provider routing, and quota metering. */
-const FEATURE: AiFeature = 'accommodation_import';
+const FEATURE: QuotaGatedAiFeature = 'accommodation_import';
 
 /** Locale applied when the request omits one (Argentine market default). */
 const DEFAULT_LOCALE: LanguageEnum = 'es';

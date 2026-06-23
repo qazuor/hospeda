@@ -217,6 +217,12 @@ export function EntityCreatePageBase({
                         initialValues={{}}
                         userPermissions={userPermissions as PermissionEnum[]}
                         onSave={handleSave}
+                        // Route programmatic provider writes (e.g. the AI
+                        // post-generate panel's `setFieldValue`) back into the
+                        // local `values` state so create-mode inputs populate.
+                        // Normal typing already calls `handleFieldChange`
+                        // directly from the section, so this does not double-fire.
+                        onFieldChange={handleFieldChange}
                         zodSchema={zodSchema}
                     >
                         <EntityPageHeader

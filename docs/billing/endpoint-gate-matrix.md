@@ -125,6 +125,7 @@
 | `POST /api/v1/admin/ai/translate` | `ai/admin/translate.ts` | none | - | n/a | Admin single-entity translate ("Translate now" in the admin TranslationSection); gated by adminAuthMiddleware([AI_SETTINGS_MANAGE]). Staff bypass entitlements (INV-6) so there is no billing gate. Mounted at /api/v1/admin/ai/translate via routes/index.ts (SPEC-212). |
 | `POST /api/v1/admin/ai/translate/batch` | `ai/admin/translate.ts` | none | - | n/a | Admin batch translation; gated by adminAuthMiddleware([AI_SETTINGS_MANAGE]). Staff bypass entitlements (INV-6) so there is no billing gate. Mounted at /api/v1/admin/ai/translate via routes/index.ts (SPEC-212 T-009). |
 | `PUT /api/v1/admin/ai/translate/override` | `ai/admin/translate.ts` | none | - | n/a | Admin manual translation override; gated by adminAuthMiddleware([AI_SETTINGS_MANAGE]); no billing gate (SPEC-212 T-010). |
+| `POST /api/v1/admin/ai/post-generate` | `ai/admin/post-generate.ts` | none | - | n/a | Admin write; gated by adminAuthMiddleware([POST_CREATE]). Generates AI post draft (title, summary, content) from topic + key points. No billing entitlement gate (staff bypass INV-6); cost ceiling enforced inside AI engine (SPEC-223 T-005). |
 | **AUTH — PROTECTED / PUBLIC** | | | | | |
 | `GET /api/v1/public/auth/me` | `auth/me.ts` | none | - | n/a | Session identity read; no entitlement needed |
 | `POST /api/v1/protected/auth/change-password` | `auth/change-password.ts` | none | - | n/a | Account management; auth-only sufficient |
@@ -618,6 +619,7 @@
 | `GET /api/v1/admin/views/top` | `views/admin/top.ts` | none | - | n/a | admin-tier route; gated by ANALYTICS_VIEW permission, no billing gate needed |
 | `GET /api/v1/admin/views/daily-series` | `views/admin/daily-series.ts` | none | - | n/a | admin-tier route; gated by ANALYTICS_VIEW permission, no billing gate needed |
 | **GASTRONOMY — PROTECTED** | | | | | |
+| `GET /api/v1/protected/gastronomies/mine` | `gastronomy/protected/listMine.ts` | none | - | n/a | Owner read of own listings; listOwn hard-scopes to ownerId = actor.id, no billing gate — read of own data (SPEC-249 T-006) |
 | `GET /api/v1/protected/gastronomies/{id}` | `gastronomy/protected/getById.ts` | none | - | n/a | Read own listing; auth + ownership check in handler (SPEC-239) |
 | `PATCH /api/v1/protected/gastronomies/{id}` | `gastronomy/protected/patch.ts` | none | - | n/a | Owner-scoped edit; auth + ownership check. Commerce-subscription gating deferred to SPEC-239 billing API (T-048+) |
 | `POST /api/v1/protected/gastronomies/{id}/faqs` | `gastronomy/protected/addFaq.ts` | none | - | n/a | Owner-scoped FAQ write; auth + ownership check (SPEC-239) |
@@ -656,6 +658,7 @@
 | `GET /api/v1/public/experiences/{id}/faqs` | `experience/public/getFaqs.ts` | none | - | n/a | Public FAQ read; no auth, no billing gate (SPEC-240 T-019) |
 | `GET /api/v1/public/experiences/{id}/reviews` | `experience/public/getReviews.ts` | none | - | n/a | Public approved-review list; no auth, no billing gate (SPEC-240 T-019) |
 | **EXPERIENCES — PROTECTED** | | | | | |
+| `GET /api/v1/protected/experiences/mine` | `experience/protected/listMine.ts` | none | - | n/a | Owner read of own listings; listOwn hard-scopes to ownerId = actor.id, no billing gate — read of own data (SPEC-249 T-007) |
 | `GET /api/v1/protected/experiences/{id}` | `experience/protected/getById.ts` | none | - | n/a | Read own listing; auth + ownership check in handler (SPEC-240 T-020) |
 | `PATCH /api/v1/protected/experiences/{id}` | `experience/protected/patch.ts` | none | - | n/a | Owner-scoped edit; auth + ownership check. Commerce-subscription gating deferred (SPEC-240 T-020) |
 | `POST /api/v1/protected/experiences/{id}/faqs` | `experience/protected/addFaq.ts` | none | - | n/a | Owner-scoped FAQ write; auth + ownership check (SPEC-240 T-020) |
@@ -690,6 +693,7 @@
 | `GET /api/v1/admin/commerce/leads` | `commerce/admin/list-leads.ts` | none | - | n/a | Admin read; PermissionEnum-gated (COMMERCE_VIEW_ALL) (SPEC-239 T-047) |
 | `POST /api/v1/admin/commerce/leads/{id}/handle` | `commerce/admin/mark-handled.ts` | none | - | n/a | Admin lead handling + owner-provisioning; PermissionEnum-gated (COMMERCE_EDIT_ALL) (SPEC-239 T-047) |
 | `POST /api/v1/admin/commerce/leads/{id}/provision-owner` | `commerce/admin/provision-owner.ts` | none | - | n/a | Admin commerce owner provisioning; PermissionEnum-gated (COMMERCE_EDIT_ALL) (SPEC-239 T-050) |
+| `POST /api/v1/admin/commerce/leads/{id}/approve-and-provision` | `commerce/admin/approve-and-provision.ts` | none | - | n/a | Admin combined approve+provision action; idempotent via lead.provisionedUserId; PermissionEnum-gated (COMMERCE_EDIT_ALL) (SPEC-249 Part D / T-018) |
 | `POST /api/v1/admin/commerce/listings/{entityType}/{entityId}/start-subscription` | `commerce/admin/start-subscription.ts` | none | - | n/a | Admin commerce subscription provisioning; PermissionEnum-gated (COMMERCE_EDIT_ALL) (SPEC-239 T-048) |
 
 ---

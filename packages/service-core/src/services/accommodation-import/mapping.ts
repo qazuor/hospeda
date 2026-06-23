@@ -19,10 +19,59 @@
 import {
     type AccommodationImportDraft,
     AccommodationImportDraftSchema,
+    AccommodationTypeEnum,
     type FieldSource
 } from '@repo/schemas';
 
 import type { RawCandidateField, RawExtraction } from './adapter.types.js';
+
+/**
+ * Keyword heuristics to map a free-text platform accommodation type (e.g.
+ * Airbnb's "Entire cottage" / "casa de campo", Booking's "Apartment") to an
+ * {@link AccommodationTypeEnum}. Ordered most-specific first so, e.g., an
+ * apart-hotel is not caught by the broad "hotel"/"apart" rules, and a
+ * bedroom-bearing line is not misread. Matches English, Spanish and Portuguese.
+ */
+const ACCOMMODATION_TYPE_KEYWORDS: ReadonlyArray<readonly [RegExp, AccommodationTypeEnum]> = [
+    [/apart[\s-]?hotel|aparthotel/i, AccommodationTypeEnum.APART_HOTEL],
+    [/bed\s*(and|&|y)\s*breakfast|\bb\s*&\s*b\b|\bbnb\b/i, AccommodationTypeEnum.BED_AND_BREAKFAST],
+    [/hostel|hostal/i, AccommodationTypeEnum.HOSTEL],
+    [/motel/i, AccommodationTypeEnum.MOTEL],
+    [/resort/i, AccommodationTypeEnum.RESORT],
+    [/hotel/i, AccommodationTypeEnum.HOTEL],
+    [/camping|glamping|\bcamp\b/i, AccommodationTypeEnum.CAMPING],
+    [/estancia|finca|\bfarm\b|ranch|chacra/i, AccommodationTypeEnum.ESTANCIA],
+    [/cabin|caba[ñn]a|chalet|lodge|bungalow/i, AccommodationTypeEnum.CABIN],
+    [/cottage|country\s*house|casa\s*de\s*campo|quinta/i, AccommodationTypeEnum.COUNTRY_HOUSE],
+    [
+        /apart(ment)?|\bapt\b|depto|departamento|condo|loft|piso|monoambiente/i,
+        AccommodationTypeEnum.APARTMENT
+    ],
+    [/\broom\b|habitaci[oó]n|cuarto|quarto/i, AccommodationTypeEnum.ROOM],
+    [/house|casa|home|villa/i, AccommodationTypeEnum.HOUSE]
+];
+
+const ACCOMMODATION_TYPE_VALUES = new Set<string>(Object.values(AccommodationTypeEnum));
+
+/**
+ * Maps a raw platform type string to an {@link AccommodationTypeEnum} value.
+ * Returns the value unchanged when it is already a valid enum member, applies
+ * the keyword heuristics otherwise, and returns `undefined` when nothing
+ * matches (so the type is left for the host to pick).
+ *
+ * @param raw - Free-text type as scraped from the source platform.
+ * @returns The mapped enum value string, or `undefined`.
+ */
+export function mapAccommodationType(raw: string): string | undefined {
+    const trimmed = raw.trim();
+    if (trimmed.length === 0) return undefined;
+    const upper = trimmed.toUpperCase();
+    if (ACCOMMODATION_TYPE_VALUES.has(upper)) return upper;
+    for (const [pattern, type] of ACCOMMODATION_TYPE_KEYWORDS) {
+        if (pattern.test(trimmed)) return type;
+    }
+    return undefined;
+}
 
 // ---------------------------------------------------------------------------
 // CONFIDENCE_BY_SOURCE
@@ -372,7 +421,12 @@ export const mapRawToDraft = (input: { readonly raw: RawExtraction }): {
     if (raw.type !== undefined) {
         const coerced = toTrimmedString(raw.type.value);
         if (coerced !== undefined) {
-            const mapped = tryMapField(raw.type, coerced, shape.type.unwrap(), usedSources);
+            // Normalize the free-text platform type ("Entire cottage", "casa de
+            // campo", ...) to an AccommodationTypeEnum value before validation,
+            // so the host's type picker is prefilled (SPEC-257). Falls back to
+            // the raw string when no mapping applies (then validation drops it).
+            const candidate = mapAccommodationType(coerced) ?? coerced;
+            const mapped = tryMapField(raw.type, candidate, shape.type.unwrap(), usedSources);
             if (mapped !== undefined) {
                 // The value is validated by AccommodationTypeEnumSchema inside the
                 // importedField; casting is safe because safeParse confirmed it.

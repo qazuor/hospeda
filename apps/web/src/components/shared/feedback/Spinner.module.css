@@ -1,0 +1,51 @@
+/**
+ * Spinner.module.css — canonical loading ring.
+ * Colors/sizing use design tokens from @repo/design-tokens. Honors
+ * prefers-reduced-motion (the ring stops spinning but stays visible).
+ */
+
+.spinner {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 0;
+    color: var(--brand-primary);
+}
+
+.ring {
+    box-sizing: border-box;
+    display: block;
+    width: var(--spinner-size, 1.25rem);
+    height: var(--spinner-size, 1.25rem);
+    border: var(--spinner-thickness, 2px) solid var(--brand-primary-a25);
+    border-top-color: currentColor;
+    border-radius: var(--radius-pill, 9999px);
+    animation: spinner-spin var(--duration-normal, 0.4s) linear infinite;
+}
+
+.sm {
+    --spinner-size: 1rem;
+    --spinner-thickness: 2px;
+}
+
+.md {
+    --spinner-size: 1.25rem;
+    --spinner-thickness: 2px;
+}
+
+.lg {
+    --spinner-size: 2.25rem;
+    --spinner-thickness: 3px;
+}
+
+@keyframes spinner-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ring {
+        animation: none;
+    }
+}

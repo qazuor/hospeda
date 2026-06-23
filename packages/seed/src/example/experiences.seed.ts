@@ -234,32 +234,27 @@ export async function seedExperiences(context: SeedContext): Promise<void> {
         }
 
         // ------------------------------------------------------------------
-        // 3. Ensure COMMERCE_OWNER seed user exists
+        // 3. Resolve the logueable COMMERCE_OWNER who owns the experiences.
+        //    We reuse gastro-owner-julieta@local.test — the first commerce owner
+        //    seeded by gastronomies.seed.ts (which runs before experiences in the
+        //    pipeline).  That user already has:
+        //      • a Better Auth `accounts` credential row (password = Password123!)
+        //      • profile_completed = true (set by gastronomies.seed.ts)
+        //    so E2E tests can sign in and reach the commerce area without hitting
+        //    the profile-completion middleware gate.
         // ------------------------------------------------------------------
-        const ownerEmail = 'commerce-owner-seed@hospeda.test';
+        const ownerEmail = 'gastro-owner-julieta@local.test';
         const { rows: ownerRows } = await pool.query<DbRow>(
             'SELECT id FROM users WHERE email = $1 LIMIT 1',
             [ownerEmail]
         );
-        let commerceOwnerId: string;
-        if (ownerRows[0]) {
-            commerceOwnerId = ownerRows[0].id;
-            logger.info(`[experiences] Reusing COMMERCE_OWNER: ${ownerEmail} (${commerceOwnerId})`);
-        } else {
-            const { rows: created } = await pool.query<DbRow>(
-                `INSERT INTO users
-                   (slug, email, email_verified, display_name, first_name, last_name,
-                    role, visibility, lifecycle_state, created_by_id, updated_by_id)
-                 VALUES
-                   ('commerce-owner-seed', $1, true, 'Seed Commerce Owner', 'Seed', 'Owner',
-                    'COMMERCE_OWNER', 'PUBLIC', 'ACTIVE', $2, $2)
-                 RETURNING id`,
-                [ownerEmail, superAdminId]
+        if (!ownerRows[0]) {
+            throw new Error(
+                `[experiences] COMMERCE_OWNER "${ownerEmail}" not found. seedGastronomies() must run before seedExperiences() — check the seed pipeline order.`
             );
-            if (!created[0]) throw new Error('Failed to insert COMMERCE_OWNER user');
-            commerceOwnerId = created[0].id;
-            logger.info(`[experiences] Created COMMERCE_OWNER: ${ownerEmail} (${commerceOwnerId})`);
         }
+        const commerceOwnerId = ownerRows[0].id;
+        logger.info(`[experiences] Using COMMERCE_OWNER: ${ownerEmail} (${commerceOwnerId})`);
 
         // ------------------------------------------------------------------
         // 4. Insert experiences (idempotent — ON CONFLICT DO NOTHING)

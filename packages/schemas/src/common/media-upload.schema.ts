@@ -33,7 +33,9 @@ export const ENTITY_GALLERY_CAPS = {
     accommodation: 50,
     destination: 20,
     event: 10,
-    post: 15
+    post: 15,
+    gastronomy: 30,
+    experience: 30
 } as const;
 
 /**
@@ -91,6 +93,8 @@ export const MediaEntityTypeSchema = z.enum([
     'destination',
     'event',
     'post',
+    'gastronomy',
+    'experience',
     'user',
     'postSponsor',
     'eventOrganizer',
@@ -134,7 +138,14 @@ const UserIdSchema = z.string().uuid({ message: 'userId must be a valid UUID' })
  * Narrowing the discriminant at this level prevents `role: 'gallery'` from
  * being paired with an entity type that has no gallery concept (user, avatars).
  */
-const GalleryEntityTypeSchema = z.enum(['accommodation', 'destination', 'event', 'post']);
+const GalleryEntityTypeSchema = z.enum([
+    'accommodation',
+    'destination',
+    'event',
+    'post',
+    'gastronomy',
+    'experience'
+]);
 
 /**
  * Entity-type subset for featured-image uploads. Same shape as gallery —
@@ -356,6 +367,14 @@ export const ENTITY_FOLDER_MAP = {
     post: ({ environment, entityId }) => {
         if (!entityId) throw new Error('ENTITY_FOLDER_MAP.post requires entityId');
         return `hospeda/${environment}/posts/${entityId}`;
+    },
+    gastronomy: ({ environment, entityId }) => {
+        if (!entityId) throw new Error('ENTITY_FOLDER_MAP.gastronomy requires entityId');
+        return `hospeda/${environment}/gastronomies/${entityId}`;
+    },
+    experience: ({ environment, entityId }) => {
+        if (!entityId) throw new Error('ENTITY_FOLDER_MAP.experience requires entityId');
+        return `hospeda/${environment}/experiences/${entityId}`;
     },
     user: ({ environment, userId, entityId }) => {
         const id = userId ?? entityId;

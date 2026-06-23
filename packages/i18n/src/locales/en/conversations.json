@@ -7,6 +7,7 @@
         "reopen": "Reopen",
         "reply": "Reply",
         "requestAccess": "Request access",
+        "requestAccessLoading": "Requesting…",
         "unarchive": "Unarchive",
         "viewConversation": "View conversation"
     },
@@ -83,6 +84,7 @@
         "requestAccessTitle": "Access your conversation",
         "requestNewLinkCta": "Request a new link",
         "submit": "Send message",
+        "submitting": "Sending…",
         "verifyExpiredBody": "The verification link has expired or has already been used. You can request a new one by entering your email.",
         "verifyExpiredTitle": "Expired link",
         "viewExisting": "View existing conversation",
@@ -135,6 +137,7 @@
         "readByOwner": "Read by host",
         "replyPlaceholder": "Write your reply...",
         "send": "Send",
+        "sending": "Sending…",
         "systemMessage": "System message",
         "title": "Conversation with {senderName}"
     }

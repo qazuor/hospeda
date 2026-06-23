@@ -161,7 +161,12 @@
         "bookmark_count": "Guardado por {{count}} personas",
         "bookmark_count_one": "Guardado por {{count}} persona",
         "bookmark_count_other": "Guardado por {{count}} personas",
-        "bookmark_count_zero": "Sé el primero en guardarlo"
+        "bookmark_count_zero": "Sé el primero en guardarlo",
+        "reviews": {
+            "modal": {
+                "loading": "Cargando reseñas…"
+            }
+        }
     },
     "detailPage": {
         "seoDescription": "Descubre {name} en {province}. Guía completa con alojamientos, eventos, atracciones y cómo llegar.",

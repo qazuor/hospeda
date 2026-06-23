@@ -35,6 +35,7 @@ import type { CommerceLead } from '@repo/schemas';
 import { useState } from 'react';
 import {
     type CommerceLeadsQueryParams,
+    useApproveAndProvisionMutation,
     useCommerceLeadsQuery,
     useMarkLeadHandledMutation,
     useProvisionOwnerMutation
@@ -236,6 +237,100 @@ function ProvisionDialog({ lead, onClose }: ProvisionDialogProps) {
 }
 
 // ---------------------------------------------------------------------------
+// Approve & provision dialog (SPEC-249 Part D)
+// ---------------------------------------------------------------------------
+
+type ApproveProvisionDialogProps = {
+    readonly lead: CommerceLead;
+    readonly onClose: () => void;
+};
+
+/**
+ * Combined "Approve & provision" confirmation dialog. Approves the lead AND
+ * creates its COMMERCE_OWNER account in a single action. Optional admin note.
+ * Server-side idempotent via `lead.provisionedUserId`.
+ */
+function ApproveProvisionDialog({ lead, onClose }: ApproveProvisionDialogProps) {
+    const { t } = useTranslations();
+    const { addToast } = useToast();
+    const mutation = useApproveAndProvisionMutation();
+
+    const [adminNote, setAdminNote] = useState('');
+
+    const handleConfirm = async () => {
+        const result = await mutation.mutateAsync({
+            id: lead.id,
+            adminNote: adminNote.trim() || undefined
+        });
+
+        addToast({
+            variant: 'success',
+            message: result.provisioned
+                ? t('admin-entities.commerceLeads.approveProvision.successMessage', {
+                      email: lead.email
+                  })
+                : t('admin-entities.commerceLeads.approveProvision.alreadyProvisionedMessage')
+        });
+
+        onClose();
+    };
+
+    return (
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>
+                    {t('admin-entities.commerceLeads.approveProvision.title')}
+                </DialogTitle>
+                <DialogDescription>
+                    {t('admin-entities.commerceLeads.approveProvision.description', {
+                        businessName: lead.businessName,
+                        email: lead.email
+                    })}
+                </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-1 py-2">
+                <Label htmlFor="approve-provision-note">
+                    {t('admin-entities.commerceLeads.approveProvision.noteLabel')}
+                </Label>
+                <Textarea
+                    id="approve-provision-note"
+                    value={adminNote}
+                    onChange={(e) => setAdminNote(e.target.value)}
+                    placeholder={t('admin-entities.commerceLeads.approveProvision.notePlaceholder')}
+                    rows={3}
+                    maxLength={1000}
+                />
+            </div>
+
+            {mutation.isError && (
+                <p className="text-destructive text-sm">
+                    {t('admin-entities.commerceLeads.approveProvision.error')}
+                </p>
+            )}
+
+            <DialogFooter>
+                <Button
+                    variant="outline"
+                    onClick={onClose}
+                    disabled={mutation.isPending}
+                >
+                    {t('admin-entities.actions.cancel')}
+                </Button>
+                <Button
+                    onClick={handleConfirm}
+                    disabled={mutation.isPending}
+                >
+                    {mutation.isPending
+                        ? t('admin-entities.commerceLeads.approveProvision.submitting')
+                        : t('admin-entities.commerceLeads.approveProvision.confirm')}
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+    );
+}
+
+// ---------------------------------------------------------------------------
 // Row actions
 // ---------------------------------------------------------------------------
 
@@ -251,9 +346,10 @@ function RowActions({ lead }: RowActionsProps) {
     const { t } = useTranslations();
     const [handleOpen, setHandleOpen] = useState(false);
     const [provisionOpen, setProvisionOpen] = useState(false);
+    const [approveProvisionOpen, setApproveProvisionOpen] = useState(false);
 
     const isHandled = lead.status === 'approved' || lead.status === 'rejected';
-    const isAlreadyProvisioned = lead.handledById != null && lead.status === 'approved';
+    const isAlreadyProvisioned = lead.provisionedUserId != null;
 
     return (
         <div className="flex items-center gap-2">
@@ -277,6 +373,26 @@ function RowActions({ lead }: RowActionsProps) {
                     />
                 )}
             </Dialog>
+
+            {/* Combined "Approve & provision" — only for leads not yet handled */}
+            {!isHandled && (
+                <Dialog
+                    open={approveProvisionOpen}
+                    onOpenChange={setApproveProvisionOpen}
+                >
+                    <DialogTrigger asChild>
+                        <Button size="sm">
+                            {t('admin-entities.commerceLeads.actions.approveProvision')}
+                        </Button>
+                    </DialogTrigger>
+                    {approveProvisionOpen && (
+                        <ApproveProvisionDialog
+                            lead={lead}
+                            onClose={() => setApproveProvisionOpen(false)}
+                        />
+                    )}
+                </Dialog>
+            )}
 
             {/* Provision dialog — only show when approved and not yet provisioned */}
             {lead.status === 'approved' && !isAlreadyProvisioned && (

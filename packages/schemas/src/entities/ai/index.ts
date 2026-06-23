@@ -30,3 +30,6 @@ export * from './ai-search-intent.schema.js';
 
 // Request body + SSE event schemas for the conversational AI search child spec (SPEC-212)
 export * from './ai-search-chat.schema.js';
+
+// Request body and draft schemas for the AI post-generation feature (SPEC-223)
+export * from './ai-post-generate.schema.js';

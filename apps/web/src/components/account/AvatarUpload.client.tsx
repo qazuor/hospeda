@@ -4,6 +4,7 @@
  * Handles file validation, preview, upload to the media endpoint, and profile update.
  */
 
+import { translateApiError } from '@/lib/api-errors';
 import { getInitials } from '@/lib/avatar-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -27,7 +28,11 @@ interface UploadResult {
 interface ApiResponse<T> {
     readonly success: boolean;
     readonly data: T;
-    readonly error?: { readonly message: string };
+    readonly error?: {
+        readonly code?: string | null;
+        readonly message?: string | null;
+        readonly reason?: string | null;
+    };
 }
 
 interface AvatarUploadProps {
@@ -133,7 +138,11 @@ export function AvatarUpload({
                 let message = t('account.avatar.errors.uploadFailed');
                 try {
                     const errBody = (await uploadResponse.json()) as ApiResponse<unknown>;
-                    if (errBody.error?.message) message = errBody.error.message;
+                    message = translateApiError({
+                        error: errBody.error,
+                        t,
+                        fallback: message
+                    });
                 } catch {
                     // ignore JSON parse errors
                 }
@@ -159,7 +168,11 @@ export function AvatarUpload({
                 let message = t('account.avatar.errors.updateFailed');
                 try {
                     const errBody = (await patchResponse.json()) as ApiResponse<unknown>;
-                    if (errBody.error?.message) message = errBody.error.message;
+                    message = translateApiError({
+                        error: errBody.error,
+                        t,
+                        fallback: message
+                    });
                 } catch {
                     // ignore JSON parse errors
                 }

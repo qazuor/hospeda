@@ -103,26 +103,25 @@ describe('buildDestinationHint', () => {
             );
         });
 
-        it('should forward country when provided', async () => {
-            // Arrange
-            const searchFn = vi.fn().mockResolvedValue({
-                data: { items: [], total: 0 }
-            });
+        it('should NOT pass country to the search even when provided (SPEC-257)', async () => {
+            // Arrange — the destinations table has no `country` column; passing a
+            // country filter throws a DbError ("unknown columns") and returns zero
+            // candidates. The resolver must search by locality name alone.
+            const searchFn = vi.fn().mockResolvedValue({ data: { items: [], total: 0 } });
             const destinationService = makeDestinationServiceMock(searchFn);
 
             // Act
             await buildDestinationHint({
-                locality: 'Rosario',
-                country: 'AR',
+                locality: 'Concepción del Uruguay',
+                country: 'Argentina',
                 destinationService,
                 actor: fakeActor
             });
 
-            // Assert
-            expect(searchFn).toHaveBeenCalledWith(
-                fakeActor,
-                expect.objectContaining({ country: 'AR' })
-            );
+            // Assert — no country key forwarded to the search
+            const passed = searchFn.mock.calls[0]?.[1] as Record<string, unknown>;
+            expect(passed).not.toHaveProperty('country');
+            expect(passed).toMatchObject({ q: 'Concepción del Uruguay', searchScope: 'name' });
         });
     });
 

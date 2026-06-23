@@ -1,6 +1,6 @@
 import { adminLogger } from '@/utils/logger';
 import { useTranslations } from '@repo/i18n';
-import { useForm } from '@tanstack/react-form';
+import { useForm, useStore } from '@tanstack/react-form';
 import * as React from 'react';
 import { validateFieldWithZod, validateFormWithZod } from '../../../lib/validation/validate-form';
 import {
@@ -66,10 +66,44 @@ export const EntityFormProvider: React.FC<EntityFormProviderProps> = ({
         }
     });
 
+    // Reactive form values.
+    //
+    // TanStack Form does NOT re-render consumers when the store mutates unless
+    // they subscribe to it (see TanStack Form "Reactivity" docs). Reading
+    // `form.state.values` directly inside the context value is a non-reactive
+    // SNAPSHOT: an external `form.setFieldValue` (e.g. the AI post-generate
+    // panel applying a draft) updates the store but does NOT re-render this
+    // provider, so the controlled inputs keep showing the stale value.
+    //
+    // Subscribing here via `useStore` makes `values` track every store write —
+    // external programmatic writes AND user typing — without relying on the
+    // incidental `setDirtyFields` re-render that previously masked the gap.
+    //
+    // TYPE-WORKAROUND: `ReactFormApi` (the public `form` type) does not expose
+    // `.store` even though the runtime `FormApi` from `useForm` always has it.
+    // Same cast pattern used in PostQualityScore / AccommodationQualityScore.
+    type FormStore = Parameters<typeof useStore>[0];
+    type FormStoreState = { readonly values: Record<string, unknown> };
+    const formStore = (form as unknown as { readonly store: FormStore }).store;
+    const values = useStore(formStore, (state) => (state as FormStoreState).values);
+
     // Autosave timer ref
     const autosaveTimerRef = React.useRef<NodeJS.Timeout | null>(null);
 
     // Form actions
+    //
+    // `setFieldValue` is the single programmatic write path into the form (used
+    // e.g. by the AI post-generate panel via `useEntityFormContext`). It always
+    // writes the TanStack store AND notifies the optional `onFieldChange`
+    // callback. This callback matters for CREATE flows: `EntityCreatePageBase`
+    // keeps its own local `values` state as the submit source of truth and its
+    // sections do NOT route typing through this `setFieldValue`. Without the
+    // callback, a programmatic write would update the (unread-in-create) store
+    // but never the local `values`, leaving inputs empty. The create page wires
+    // `onFieldChange` to its `handleFieldChange` so programmatic writes land in
+    // local state too. Normal typing in create does NOT pass through here (the
+    // input's onChange calls the section's `onFieldChange` directly), so there
+    // is no double-fire.
     const setFieldValue = React.useCallback(
         (fieldId: string, value: unknown) => {
             form.setFieldValue(fieldId, value);
@@ -77,7 +111,7 @@ export const EntityFormProvider: React.FC<EntityFormProviderProps> = ({
             // Mark field as dirty
             setDirtyFields((prev) => ({ ...prev, [fieldId]: true }));
 
-            // Call external callback
+            // Notify external callback (e.g. create page's local-state sync)
             onFieldChange?.(fieldId, value);
 
             // Handle autosave
@@ -283,7 +317,7 @@ export const EntityFormProvider: React.FC<EntityFormProviderProps> = ({
         () => ({
             // State
             config,
-            values: form.state.values as Record<string, unknown>,
+            values,
             errors,
             dirtyFields,
             mode: formMode,
@@ -314,6 +348,7 @@ export const EntityFormProvider: React.FC<EntityFormProviderProps> = ({
         [
             config,
             form,
+            values,
             errors,
             dirtyFields,
             formMode,

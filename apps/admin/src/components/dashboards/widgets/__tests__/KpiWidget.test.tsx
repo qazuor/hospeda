@@ -609,5 +609,79 @@ describe('KpiWidget', () => {
             expect(valueEl).toHaveTextContent('42');
             expect(screen.queryByTestId('kpi-grid')).not.toBeInTheDocument();
         });
+
+        // ── SPEC-160: open-rate tile render contract ───────────────────────
+        // The EDITOR Card C open-rate tile drives these two render guarantees
+        // for grid-mode tiles. The data-source test (editor-newsletter-open-rate)
+        // asserts the resolver emits `value: 40, unitSuffix: '%'` (AC-1) or
+        // `value: undefined` (AC-2); these tests verify KpiGridTile renders them.
+
+        it('renders a grid tile value together with its percentage unit suffix (SPEC-160 AC-1)', async () => {
+            mockResolveForScope.mockReturnValue({
+                found: true,
+                options: stubQueryOptions({
+                    value: 0,
+                    kpis: [
+                        {
+                            key: 'openRate',
+                            label: {
+                                es: 'Tasa de apertura',
+                                en: 'Open rate',
+                                pt: 'Taxa de abertura'
+                            },
+                            value: 40,
+                            unitSuffix: '%'
+                        }
+                    ]
+                })
+            });
+
+            render(
+                <TestWrapper>
+                    <KpiWidget widget={makeWidget()} />
+                </TestWrapper>
+            );
+
+            await screen.findByTestId('kpi-grid');
+            const valueEl = screen.getByTestId('kpi-grid-item-value');
+            // The tile shows the number and its '%' suffix as a single '40%' read.
+            expect(valueEl).toHaveTextContent('40');
+            expect(valueEl).toHaveTextContent('%');
+        });
+
+        it('renders a neutral — placeholder for a grid tile whose value is undefined (SPEC-160 AC-2)', async () => {
+            mockResolveForScope.mockReturnValue({
+                found: true,
+                options: stubQueryOptions({
+                    value: 0,
+                    kpis: [
+                        {
+                            key: 'openRate',
+                            label: {
+                                es: 'Tasa de apertura',
+                                en: 'Open rate',
+                                pt: 'Taxa de abertura'
+                            },
+                            // No campaign ever sent → undefined value → empty state.
+                            value: undefined,
+                            unitSuffix: undefined
+                        }
+                    ]
+                })
+            });
+
+            render(
+                <TestWrapper>
+                    <KpiWidget widget={makeWidget()} />
+                </TestWrapper>
+            );
+
+            await screen.findByTestId('kpi-grid');
+            const valueEl = screen.getByTestId('kpi-grid-item-value');
+            // Neutral em-dash placeholder, NOT a '0%' that would imply real data.
+            expect(valueEl).toHaveTextContent('—');
+            // No spurious unit suffix when there is no value.
+            expect(valueEl).not.toHaveTextContent('%');
+        });
     });
 });

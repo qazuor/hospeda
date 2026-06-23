@@ -184,10 +184,18 @@
     padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
 }
 
+/* ─── Submit row (spinner + button) ──────────────────────────────────────── */
+
+.submitRow {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-2, 0.5rem);
+}
+
 /* ─── Submit button ───────────────────────────────────────────────────────── */
 
 .submit {
-    align-self: flex-end;
     font-family: var(--font-sans);
     font-size: var(--text-body-sm, 0.875rem);
     font-weight: 600;

@@ -3,7 +3,7 @@
  * Get accommodations filtered by destination
  */
 
-import { AccommodationListWrapperSchema, ServiceErrorCode } from '@repo/schemas';
+import { AccommodationPublicSchema, ServiceErrorCode } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -85,7 +85,7 @@ export const getByDestinationRoute = createPublicRoute({
     description: 'Retrieve all accommodations for a specific destination',
     tags: ['Accommodations'],
     requestParams: { destinationId: z.string().uuid() },
-    responseSchema: AccommodationListWrapperSchema,
+    responseSchema: z.object({ accommodations: z.array(AccommodationPublicSchema) }),
     handler: async (c: Context) => getByDestinationHandler(c)
 });
 

@@ -37,8 +37,14 @@ export const gastronomyReviews = pgTable(
             .references(() => users.id, { onDelete: 'set null' }),
         title: text('title'),
         content: text('content'),
-        /** Granular rating breakdown (food/service/ambiance/value). */
-        rating: jsonb('rating').$type<Record<string, unknown>>().notNull(),
+        /**
+         * Granular rating breakdown (food/service/ambiance/value).
+         * Nullable: a reviewer may submit only the required scalar
+         * `overallRating` without the per-dimension breakdown (SPEC-239 smoke
+         * fix — the create-input schema marks this optional, so the column must
+         * allow NULL to avoid a NOT NULL violation on rating-less reviews).
+         */
+        rating: jsonb('rating').$type<Record<string, unknown>>(),
         /** Computed average of all rating categories (0.00–5.00). mode:'number' for JS coercion. */
         averageRating: numeric('average_rating', { precision: 3, scale: 2, mode: 'number' })
             .notNull()

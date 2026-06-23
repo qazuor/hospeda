@@ -2,7 +2,7 @@
  * Public get posts by related accommodation endpoint
  * Returns posts related to a specific accommodation
  */
-import { AccommodationIdSchema, PostListItemSchema } from '@repo/schemas';
+import { AccommodationIdSchema, PostPublicSchema } from '@repo/schemas';
 import { PostService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -23,7 +23,7 @@ export const publicGetPostsByRelatedAccommodationRoute = createPublicListRoute({
     description: 'Returns posts related to a specific accommodation',
     tags: ['Posts'],
     requestParams: { accommodationId: AccommodationIdSchema },
-    responseSchema: PostListItemSchema,
+    responseSchema: PostPublicSchema,
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams({});

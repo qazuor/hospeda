@@ -2,6 +2,7 @@
     "label": "Search",
     "submit": "Search",
     "loading": "Searching...",
+    "searching": "Searching…",
     "resultsFor": "Results for \"{{query}}\"",
     "popular": "Popular searches",
     "groups": {

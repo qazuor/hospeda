@@ -13,6 +13,7 @@
  * Rendered inside a modal overlay by `SubscriptionDashboard` (T-009).
  */
 
+import { Spinner } from '@/components/shared/feedback/Spinner';
 import { billingApi } from '@/lib/api/endpoints-protected';
 import type { PublicPlanData } from '@/lib/billing/fetch-plans';
 import { formatDate } from '@/lib/format-utils';
@@ -93,7 +94,7 @@ function FlowResult({ response, locale, onDismiss }: FlowResultProps) {
                     className={styles.resultIcon}
                     aria-hidden="true"
                 >
-                    ⏳
+                    <Spinner size="sm" />
                 </div>
                 <h2 className={styles.resultTitle}>
                     {t(

@@ -3,11 +3,14 @@
  * @description Tests for the ConversationReply component's replyUrl prop
  * (SPEC-206 PR2). Verifies that an optional replyUrl prop overrides the
  * default endpoint URL construction.
+ *
+ * Also contains T-012 (SPEC-228) regression tests verifying the canonical
+ * Spinner replaces the literal '...' text and aria-busy is set while sending.
  */
 
-import { render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ConversationReply } from '../../../src/components/account/ConversationReply.client';
 
 // Mock getApiUrl to return a predictable base URL
@@ -146,5 +149,105 @@ describe('ConversationReply — replyUrl prop (SPEC-206)', () => {
         );
 
         fetchSpy.mockRestore();
+    });
+});
+
+// ─── T-012 (SPEC-228): aria-busy + Spinner replaces '...' while sending ──────
+
+describe('ConversationReply — T-012 send loading state (SPEC-228)', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('T-012: submit button has aria-busy=true while sending', async () => {
+        // Never-resolving fetch keeps the component in the sending phase
+        vi.spyOn(globalThis, 'fetch').mockReturnValue(new Promise(() => {}));
+
+        render(
+            <ConversationReply
+                mode="auth"
+                conversationId="conv-busy"
+                locale="es"
+            />
+        );
+
+        const textarea = screen.getByPlaceholderText(/escribí tu respuesta/i);
+        fireEvent.change(textarea, { target: { value: 'Mensaje de prueba' } });
+
+        await act(async () => {
+            fireEvent.submit(document.querySelector('form')!);
+        });
+
+        const btn = screen.getByRole('button');
+        expect(btn).toHaveAttribute('aria-busy', 'true');
+    });
+
+    it('T-012: submit button does NOT show "..." while sending', async () => {
+        vi.spyOn(globalThis, 'fetch').mockReturnValue(new Promise(() => {}));
+
+        render(
+            <ConversationReply
+                mode="auth"
+                conversationId="conv-no-ellipsis"
+                locale="es"
+            />
+        );
+
+        const textarea = screen.getByPlaceholderText(/escribí tu respuesta/i);
+        fireEvent.change(textarea, { target: { value: 'Mensaje de prueba' } });
+
+        await act(async () => {
+            fireEvent.submit(document.querySelector('form')!);
+        });
+
+        expect(document.body.textContent).not.toContain('...');
+    });
+
+    it('T-012: submit button shows "Enviando…" text while sending', async () => {
+        vi.spyOn(globalThis, 'fetch').mockReturnValue(new Promise(() => {}));
+
+        render(
+            <ConversationReply
+                mode="auth"
+                conversationId="conv-label"
+                locale="es"
+            />
+        );
+
+        const textarea = screen.getByPlaceholderText(/escribí tu respuesta/i);
+        fireEvent.change(textarea, { target: { value: 'Mensaje de prueba' } });
+
+        await act(async () => {
+            fireEvent.submit(document.querySelector('form')!);
+        });
+
+        expect(screen.getByText('Enviando…')).toBeInTheDocument();
+    });
+
+    it('T-012: submit button shows "Enviar" when idle (not sending)', () => {
+        render(
+            <ConversationReply
+                mode="auth"
+                conversationId="conv-idle"
+                locale="es"
+            />
+        );
+
+        expect(screen.getByRole('button', { name: /enviar/i })).toBeInTheDocument();
+        expect(document.body.textContent).not.toContain('...');
+    });
+
+    it('T-012: submit button has aria-busy=false when idle', () => {
+        render(
+            <ConversationReply
+                mode="auth"
+                conversationId="conv-idle2"
+                locale="es"
+            />
+        );
+
+        const btn = screen.getByRole('button');
+        // aria-busy is false (falsy) when idle — React renders aria-busy="false"
+        expect(btn).not.toHaveAttribute('aria-busy', 'true');
     });
 });

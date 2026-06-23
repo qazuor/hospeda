@@ -220,6 +220,39 @@ export abstract class BaseCommerceListingService<
     }
 
     // -----------------------------------------------------------------------
+    // Junction read — current amenity/feature associations
+    // -----------------------------------------------------------------------
+
+    /**
+     * Reads the currently-associated amenity and feature IDs for a listing.
+     *
+     * The commerce read schemas (public/protected) do NOT carry the
+     * junction relations, so the owner editor needs this to seed its
+     * multi-select with the current selection. Returns plain ID arrays
+     * (symmetric with the `amenityIds` / `featureIds` write inputs).
+     *
+     * This is a standalone read (no transaction): it is meant to be called
+     * by single-entity read paths (e.g. the protected getById route) rather
+     * than on every getById, to avoid two extra queries on hot paths.
+     *
+     * @param entityId - The commerce listing ID.
+     * @returns `{ amenityIds, featureIds }` — sorted arrays of catalog UUIDs.
+     */
+    public async loadJunctionIds(
+        entityId: string
+    ): Promise<{ amenityIds: string[]; featureIds: string[] }> {
+        const fk = this._entityFkColumn;
+        const [amenityRows, featureRows] = await Promise.all([
+            this._amenityJunctionModel.findAll({ [fk]: entityId }),
+            this._featureJunctionModel.findAll({ [fk]: entityId })
+        ]);
+        return {
+            amenityIds: amenityRows.items.map((row) => row.amenityId as string),
+            featureIds: featureRows.items.map((row) => row.featureId as string)
+        };
+    }
+
+    // -----------------------------------------------------------------------
     // Public-tier projections — override in subclasses when needed
     // -----------------------------------------------------------------------
 
@@ -667,6 +700,59 @@ export abstract class BaseCommerceListingService<
             const error = new ServiceError(
                 ServiceErrorCode.INTERNAL_ERROR,
                 `Failed to assign owner for ${this.entityName} ${listingId}: ${err instanceof Error ? err.message : String(err)}`,
+                err
+            );
+            return { error };
+        }
+    }
+
+    // -----------------------------------------------------------------------
+    // Owner-tier read: listOwn
+    // -----------------------------------------------------------------------
+
+    /**
+     * Lists every non-deleted commerce listing owned by the given actor.
+     *
+     * Owner-tier read backing the web self-service area (SPEC-249). Ownership IS
+     * the gate: the query is hard-scoped to `ownerId = actor.id`, so an actor
+     * only ever sees their own listings regardless of role, and across any
+     * visibility / lifecycle state (owners manage hidden and draft listings too,
+     * unlike the public `_executeSearch` which forces PUBLIC + ACTIVE).
+     *
+     * A page size of 100 comfortably covers the admin-sells model, where an
+     * owner holds a handful of listings; pagination can move to the route layer
+     * if that assumption ever changes.
+     *
+     * @param actor - The authenticated actor whose listings to return.
+     * @param tx - Optional Drizzle transaction client.
+     * @returns `ServiceOutput<{ listings: TEntity[] }>` with the owner's listings.
+     */
+    public async listOwn(
+        actor: Actor,
+        tx?: DrizzleClient
+    ): Promise<ServiceOutput<{ listings: TEntity[] }>> {
+        try {
+            if (!actor?.id) {
+                return {
+                    error: new ServiceError(
+                        ServiceErrorCode.FORBIDDEN,
+                        'listOwn requires an authenticated actor'
+                    )
+                };
+            }
+
+            const result = await this.model.findAll(
+                { ownerId: actor.id, deletedAt: null },
+                { page: 1, pageSize: 100 },
+                undefined,
+                tx
+            );
+
+            return { data: { listings: result.items as TEntity[] } };
+        } catch (err) {
+            const error = new ServiceError(
+                ServiceErrorCode.INTERNAL_ERROR,
+                `Failed to list own ${this.entityName} listings: ${err instanceof Error ? err.message : String(err)}`,
                 err
             );
             return { error };

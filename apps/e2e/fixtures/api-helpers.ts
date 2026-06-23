@@ -493,6 +493,51 @@ export async function createSubscription(options: {
 }
 
 /**
+ * Signs in an already-existing user (seeded or previously created) and
+ * returns their session cookie. Use this for tests that authenticate as a
+ * known seeded account (e.g. the commerce-owner Julieta) rather than
+ * creating a fresh user per test.
+ *
+ * The underlying mechanism is identical to the sign-in step inside
+ * `signupUser`: POST to `/api/auth/sign-in/email` with the required Better
+ * Auth CSRF `Origin` header.
+ *
+ * @param options.email    - Existing user's email address.
+ * @param options.password - Existing user's password.
+ * @returns The session cookie string to use in `cookie` request headers or
+ *   `page.context().addCookies()`.
+ */
+export async function signInExistingUser(
+    options: {
+        readonly email: string;
+        readonly password: string;
+    },
+    config?: ApiHelperConfig
+): Promise<string> {
+    const { apiBaseUrl, webBaseUrl } = resolveBaseUrls(config);
+    const signinResponse = await fetch(`${apiBaseUrl}/api/auth/sign-in/email`, {
+        method: 'POST',
+        headers: {
+            'content-type': 'application/json',
+            // Better Auth CSRF guard requires a trusted Origin on state-changing
+            // endpoints. Direct fetch() calls do not send Origin automatically.
+            Origin: webBaseUrl
+        },
+        body: JSON.stringify({ email: options.email, password: options.password })
+    });
+    if (!signinResponse.ok) {
+        throw new Error(
+            `signInExistingUser: sign-in failed ${signinResponse.status} ${signinResponse.statusText} — ${await signinResponse.text()}`
+        );
+    }
+    const sessionCookie = extractSessionCookie(signinResponse.headers.get('set-cookie'));
+    if (!sessionCookie) {
+        throw new Error('signInExistingUser: sign-in response missing session cookie');
+    }
+    return sessionCookie;
+}
+
+/**
  * Creates a conversation row linking guest and host on a specific
  * accommodation. Used by MSG-01 and resilience tests that need a
  * pre-existing conversation.

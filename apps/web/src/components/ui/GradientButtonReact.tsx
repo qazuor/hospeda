@@ -4,6 +4,7 @@
  * Uses the same .btn-gradient CSS classes from components.css as the Astro version.
  */
 
+import { Spinner } from '@/components/shared/feedback/Spinner';
 import type { ReactNode } from 'react';
 
 export interface GradientButtonProps {
@@ -21,6 +22,16 @@ export interface GradientButtonProps {
     readonly trailingIcon?: ReactNode;
     readonly disabled?: boolean;
     readonly type?: 'button' | 'submit' | 'reset';
+    /**
+     * When true the button enters its loading state: it is `disabled`, carries
+     * `aria-busy="true"`, renders an inline {@link Spinner} as the leading icon,
+     * and (when `loadingLabel` is set) swaps its visible label. Honors the same
+     * loading contract as `LoadingButton` in `shared/feedback/`. Only meaningful
+     * when `as="button"`. Defaults to `false`.
+     */
+    readonly loading?: boolean;
+    /** Visible label shown while `loading` (already i18n-resolved). */
+    readonly loadingLabel?: string;
     /**
      * Arbitrary `aria-*` attributes as a plain record.
      * Keys are used without the `aria-` prefix; it is added automatically.
@@ -51,6 +62,8 @@ export function GradientButton({
     trailingIcon,
     disabled,
     type = 'button',
+    loading = false,
+    loadingLabel,
     aria
 }: GradientButtonProps) {
     const classes = [
@@ -64,6 +77,7 @@ export function GradientButton({
         .join(' ');
 
     // Build aria-* spread. The 'label' key is dropped — label prop renders visible text.
+    // `loading` forces aria-busy regardless of any caller-supplied `busy` key.
     const ariaAttrs: Record<string, string> = {};
     if (aria) {
         for (const [key, value] of Object.entries(aria)) {
@@ -71,18 +85,25 @@ export function GradientButton({
             ariaAttrs[`aria-${key}`] = String(value);
         }
     }
+    if (loading) {
+        ariaAttrs['aria-busy'] = 'true';
+    }
+
+    // Leading slot shows a Spinner while loading, otherwise the caller's icon.
+    const resolvedLeadingIcon = loading ? <Spinner size="sm" /> : leadingIcon;
+    const visibleLabel = loading && loadingLabel ? loadingLabel : label;
 
     const content = (
         <>
-            {leadingIcon && (
+            {resolvedLeadingIcon && (
                 <span
                     className="gradient-btn__icon gradient-btn__icon--leading"
                     aria-hidden="true"
                 >
-                    {leadingIcon}
+                    {resolvedLeadingIcon}
                 </span>
             )}
-            <span className="gradient-btn__label">{label}</span>
+            <span className="gradient-btn__label">{visibleLabel}</span>
             {trailingIcon && (
                 <span
                     className="gradient-btn__icon gradient-btn__icon--trailing"
@@ -100,7 +121,7 @@ export function GradientButton({
                 type={type}
                 className={classes}
                 onClick={onClick}
-                disabled={disabled}
+                disabled={disabled || loading}
                 {...ariaAttrs}
             >
                 {content}
@@ -108,12 +129,16 @@ export function GradientButton({
         );
     }
 
+    // When rendered as an anchor, `loading` neutralizes navigation: an anchor
+    // cannot be `disabled`, so we drop `href` (a hrefless <a> is not a link)
+    // and mark it `aria-disabled` to keep the contract honest.
     return (
         <a
-            href={href}
+            href={loading ? undefined : href}
             className={classes}
             target={target}
             rel={rel}
+            aria-disabled={loading ? 'true' : undefined}
             {...ariaAttrs}
         >
             {content}

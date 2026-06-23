@@ -187,7 +187,15 @@ export const ExperienceProtectedSchema = ExperienceSchema.pick({
     richDescription: z
         .string()
         .max(5000, { message: 'zodError.commerce.richDescription.max' })
-        .nullish()
+        .nullish(),
+    /**
+     * Currently-associated amenity catalog IDs (junction read-back, SPEC-249).
+     * Populated by the protected getById route so the owner editor can seed
+     * its amenity multi-select; omitted on tiers that do not load junctions.
+     */
+    amenityIds: z.array(z.string().uuid()).optional(),
+    /** Currently-associated feature catalog IDs (junction read-back, SPEC-249). */
+    featureIds: z.array(z.string().uuid()).optional()
 });
 
 /** TypeScript type for {@link ExperienceProtectedSchema}. */

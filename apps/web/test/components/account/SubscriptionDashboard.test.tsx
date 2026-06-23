@@ -15,7 +15,7 @@
  * - Invoice download action
  */
 
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     SubscriptionDashboard,
@@ -1037,5 +1037,124 @@ describe('SubscriptionDashboard — FIX 5: "Cambiar plan" button styling', () =>
             expect(btn.className).toContain('btnSecondary');
             expect(btn.className).not.toContain('upgradeLink');
         });
+    });
+});
+
+// ─── plan-change flow: result step survives the post-success background refresh ─
+
+/**
+ * Two-plan fixture: 'pro' is the current plan (higher tier), 'basic' is a
+ * downgrade target (lower sortOrder). Used to drive the PlanChangeFlow through a
+ * downgrade that resolves to a `scheduled` change.
+ */
+const PRO_AND_BASIC_PLANS = [
+    {
+        id: 'pro-uuid',
+        slug: 'pro',
+        name: 'Plan Pro',
+        description: 'Pro plan',
+        category: 'owner',
+        monthlyPriceArs: 9900,
+        annualPriceArs: null,
+        monthlyPriceUsdRef: 9,
+        hasTrial: false,
+        trialDays: 0,
+        isDefault: false,
+        sortOrder: 2,
+        isActive: true,
+        entitlements: [] as readonly string[],
+        limits: {} as Readonly<Record<string, number>>,
+        createdAt: '2026-01-01T00:00:00Z',
+        updatedAt: '2026-01-01T00:00:00Z'
+    },
+    {
+        id: 'basic-uuid',
+        slug: 'basic',
+        name: 'Plan Básico',
+        description: 'Basic plan',
+        category: 'owner',
+        monthlyPriceArs: 5000,
+        annualPriceArs: null,
+        monthlyPriceUsdRef: 5,
+        hasTrial: false,
+        trialDays: 0,
+        isDefault: false,
+        sortOrder: 1,
+        isActive: true,
+        entitlements: [] as readonly string[],
+        limits: {} as Readonly<Record<string, number>>,
+        createdAt: '2026-01-01T00:00:00Z',
+        updatedAt: '2026-01-01T00:00:00Z'
+    }
+] as const;
+
+describe('SubscriptionDashboard — plan-change result step survives background refresh', () => {
+    // Regression for the SPEC-203 smoke finding: onChanged() used fetchData()
+    // (isLoading=true) which unmounted the dashboard and reset PlanChangeFlow's
+    // internal step back to 'picker' — a just-confirmed change looked like nothing
+    // happened. The fix mirrors the cancel modal: onChanged() must refresh silently.
+    it('shows the scheduled result step and does NOT revert to the picker after a successful downgrade', async () => {
+        // First load: active pro. Post-change silent refresh: pro + scheduled change.
+        mockGetSubscription
+            .mockResolvedValueOnce({ ok: true, data: { subscription: ACTIVE_SUBSCRIPTION } })
+            .mockResolvedValue({
+                ok: true,
+                data: {
+                    subscription: {
+                        ...ACTIVE_SUBSCRIPTION,
+                        scheduledPlanChange: {
+                            newPlanId: 'basic',
+                            effectiveAt: '2026-05-01T00:00:00Z'
+                        }
+                    }
+                }
+            });
+        mockListInvoices.mockResolvedValue({
+            ok: true,
+            data: { items: [], pagination: { page: 1, pageSize: 1, total: 0, totalPages: 0 } }
+        });
+        // No excess → flow submits the change directly without the keepIds panel.
+        mockPreviewDowngrade.mockResolvedValue({ ok: true, data: { hasExcess: false } });
+        mockChangePlan.mockResolvedValue({
+            ok: true,
+            data: { status: 'scheduled', effectiveAt: '2026-05-01T00:00:00Z' }
+        });
+
+        render(
+            <SubscriptionDashboard
+                locale="es"
+                user={USER_ROLE}
+                plans={PRO_AND_BASIC_PLANS}
+            />
+        );
+
+        // Open the plan-change flow.
+        await waitFor(() => {
+            expect(
+                screen.getByRole('button', { name: /cambiar plan de suscripción/i })
+            ).toBeInTheDocument();
+        });
+        fireEvent.click(screen.getByRole('button', { name: /cambiar plan de suscripción/i }));
+
+        // Picker is open — pick the only downgrade target (Basic, monthly).
+        await waitFor(() => {
+            expect(screen.getByText(/elegí el plan al que querés cambiar/i)).toBeInTheDocument();
+        });
+        await act(async () => {
+            fireEvent.click(screen.getByRole('button', { name: /^mensual$/i }));
+        });
+
+        // The result step must render the scheduled-change copy and stay mounted.
+        await waitFor(() => {
+            const dialog = screen.getByRole('dialog');
+            expect(within(dialog).getByText(/cambio programado/i)).toBeInTheDocument();
+        });
+
+        // It must NOT have reverted to the picker (the bug's symptom).
+        expect(screen.queryByText(/elegí el plan al que querés cambiar/i)).not.toBeInTheDocument();
+        // Result step's close button is present.
+        expect(
+            within(screen.getByRole('dialog')).getByRole('button', { name: /cerrar/i })
+        ).toBeInTheDocument();
     });
 });

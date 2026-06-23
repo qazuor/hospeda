@@ -69,6 +69,27 @@ export interface GastronomyReviewModerateInput {
     reason?: string;
 }
 
+/**
+ * Computes the effective scalar rating (0–5, 2-decimal) for a review submission.
+ *
+ * - With a granular `rating` breakdown → mean of the four commerce dimensions
+ *   (food / service / ambiance / value), all required when the breakdown is
+ *   present.
+ * - Without a breakdown → the required scalar `overallRating`.
+ *
+ * @param input - The validated create input.
+ * @returns The effective scalar rating to persist as `averageRating`.
+ */
+function computeEffectiveRating(input: GastronomyReviewCreateInput): number {
+    const breakdown = input.rating;
+    if (breakdown) {
+        const mean =
+            (breakdown.food + breakdown.service + breakdown.ambiance + breakdown.value) / 4;
+        return Math.round(mean * 100) / 100;
+    }
+    return input.overallRating;
+}
+
 // ---------------------------------------------------------------------------
 // Service
 // ---------------------------------------------------------------------------
@@ -270,10 +291,19 @@ export class GastronomyReviewService extends BaseCrudService<
             );
         }
 
+        // Compute the per-review effective scalar rating so the review (and the
+        // listing aggregate) never reads back 0 for a breakdown-less submission.
+        // With a granular breakdown → mean of the four dimensions; otherwise →
+        // the required scalar `overallRating`. (The DB `average_rating` column
+        // defaults to 0 and is never otherwise populated on create, so without
+        // this every service-created review would render as ★0.0.)
+        const averageRating = computeEffectiveRating(data);
+
         // Force PENDING regardless of any caller-supplied value.
         return {
             userId: actor.id,
-            moderationState: ModerationStatusEnum.PENDING
+            moderationState: ModerationStatusEnum.PENDING,
+            averageRating
         } as Partial<GastronomyReview>;
     }
 
@@ -468,6 +498,67 @@ export class GastronomyReviewService extends BaseCrudService<
     }
 
     /**
+     * Lists reviews for the admin moderation queue, optionally filtered by
+     * moderation state.
+     *
+     * Unlike the public search ({@link _executeSearch}, which force-filters to
+     * ACTIVE + APPROVED), this surfaces PENDING and REJECTED reviews so a
+     * moderator can act on them. It deliberately does NOT go through the base
+     * `adminList` path: that path reserves the `status` param for
+     * `lifecycleState`, whereas the moderation UI needs to filter by
+     * `moderationState`.
+     *
+     * Permission: `COMMERCE_MODERATE_REVIEW`.
+     *
+     * @param actor - The admin actor performing the listing.
+     * @param params - Optional moderation-state filter and pagination.
+     * @param ctx - Optional service context for transaction propagation.
+     * @returns `ServiceOutput` with the paginated review list.
+     */
+    public async listForModeration(
+        actor: Actor,
+        params: {
+            moderationState?: ModerationStatusEnum;
+            page?: number;
+            pageSize?: number;
+        } = {},
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<PaginatedListOutput<GastronomyReview>>> {
+        try {
+            if (!hasPermission(actor, PermissionEnum.COMMERCE_MODERATE_REVIEW)) {
+                return {
+                    error: {
+                        code: ServiceErrorCode.FORBIDDEN,
+                        message:
+                            'Permission denied: COMMERCE_MODERATE_REVIEW required to list reviews for moderation'
+                    }
+                };
+            }
+
+            const page = Math.max(1, params.page ?? 1);
+            const pageSize = Math.min(Math.max(1, params.pageSize ?? 20), 100);
+
+            const where: Record<string, unknown> = { deletedAt: null };
+            if (params.moderationState) {
+                where.moderationState = params.moderationState;
+            }
+
+            const result = await this.model.findAll(where, { page, pageSize }, undefined, ctx?.tx);
+            return { data: result as unknown as PaginatedListOutput<GastronomyReview> }; // TYPE-WORKAROUND: base list result narrowed to the gastronomy review entity type (Drizzle row vs Zod entity, same bridge as accommodation services)
+        } catch (err) {
+            if (err instanceof ServiceError) {
+                return { error: { code: err.code, message: err.message } };
+            }
+            return {
+                error: {
+                    code: ServiceErrorCode.INTERNAL_ERROR,
+                    message: err instanceof Error ? err.message : String(err)
+                }
+            };
+        }
+    }
+
+    /**
      * Lists all APPROVED + ACTIVE reviews for a specific gastronomy listing.
      *
      * Force-filtered — no PENDING / REJECTED reviews are returned.
@@ -542,15 +633,19 @@ export class GastronomyReviewService extends BaseCrudService<
                 ctx?.tx
             );
 
-            // Extract the rating breakdown from each APPROVED review row.
+            // Extract the rating breakdown from each APPROVED review row. When a
+            // review has no per-dimension breakdown, fall back to its scalar
+            // `overallRating` for every dimension so it still contributes its
+            // true score to the listing aggregate instead of dragging it to 0.
             const ratingRows = approvedReviews.map((r) => {
                 const raw = r as Record<string, unknown>;
                 const rating = raw.rating as Record<string, number | null> | null | undefined;
+                const fallback = (raw.overallRating as number | undefined) ?? null;
                 return {
-                    food: rating?.food ?? null,
-                    service: rating?.service ?? null,
-                    ambiance: rating?.ambiance ?? null,
-                    value: rating?.value ?? null
+                    food: rating?.food ?? fallback,
+                    service: rating?.service ?? fallback,
+                    ambiance: rating?.ambiance ?? fallback,
+                    value: rating?.value ?? fallback
                 };
             });
 

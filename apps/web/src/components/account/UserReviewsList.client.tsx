@@ -9,6 +9,7 @@
  * Hydration: caller must use `client:load`.
  */
 
+import { SkeletonCardList } from '@/components/shared/feedback/SkeletonCard';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -282,8 +283,13 @@ export function UserReviewsList({ locale, apiUrl }: UserReviewsListProps) {
                 className={styles.loadingWrap}
                 aria-live="polite"
                 aria-busy="true"
+                aria-label={t('common.loading', 'Cargando…')}
             >
-                {t('common.loading', 'Cargando…')}
+                <SkeletonCardList
+                    count={4}
+                    cardHeight="9rem"
+                    gap="var(--space-card-gap, 1rem)"
+                />
             </div>
         );
     }

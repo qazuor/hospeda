@@ -76,6 +76,7 @@ import { protectedExternalReputationRoutes } from './accommodation-external-repu
 import { publicExternalReputationRoutes } from './accommodation-external-reputation/public/index.js';
 import {
     adminAiCredentialsRoutes,
+    adminAiPostGenerateRoute,
     adminAiPromptsRoutes,
     adminAiSettingsRoutes,
     adminAiTranslateRoute,
@@ -492,6 +493,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/ai/prompts', adminAiPromptsRoutes);
         app.route('/api/v1/admin/ai/usage', adminAiUsageRoutes);
         app.route('/api/v1/admin/ai/translate', adminAiTranslateRoute);
+        app.route('/api/v1/admin/ai/post-generate', adminAiPostGenerateRoute);
 
         // SPEC-254 T-052: tag every social-automation route for Sentry grouping.
         // Registered at the mount-point prefixes (before the routes below) so the

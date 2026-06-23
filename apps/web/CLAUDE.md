@@ -344,6 +344,16 @@ Only `/mi-cuenta/*` routes require authentication. Middleware checks the session
 
 All other routes (including `/suscriptores/*`) are public.
 
+### Commerce owner self-service (`/mi-cuenta/comercio`, SPEC-249)
+
+`COMMERCE_OWNER` users edit the **operational** fields of their own gastronomy /
+experience listings under `/[lang]/mi-cuenta/comercio`. Identity/core fields
+(name, slug, type, destination, lifecycle/visibility) are read-only and
+server-stripped — owners only maintain content (description, contact, hours,
+media, amenities, price). Admins create the listing and provision the owner; the
+owner maintains it. Full reference:
+[docs/commerce-owner-self-service.md](docs/commerce-owner-self-service.md).
+
 ### Auth UI
 
 Auth components come from `@repo/auth-ui`. Do NOT build custom auth forms.

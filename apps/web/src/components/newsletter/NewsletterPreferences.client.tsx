@@ -25,6 +25,7 @@
  * All copy comes from `account.newsletter.*` keys via `@repo/i18n`.
  */
 
+import { Spinner } from '@/components/shared/feedback/Spinner';
 import { type ApiErrorShape, translateApiError } from '@/lib/api-errors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -278,7 +279,11 @@ export function NewsletterPreferences({ locale, apiUrl }: NewsletterPreferencesP
                 className={styles.wrapper}
                 aria-busy="true"
             >
-                <p className={styles.loading}>{t('newsletter.error', 'Cargando…')}</p>
+                <p className={styles.loading}>
+                    {/* Decorative — the visible text + the section's aria-busy already announce. */}
+                    <Spinner size="sm" />
+                    {t('account.newsletter.loading', 'Cargando…')}
+                </p>
             </section>
         );
     }

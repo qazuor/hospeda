@@ -129,6 +129,14 @@ export const DEFAULT_PROMO_CODES: PromoCodeDefinition[] = [
  * code into a `freeTrialDays` input on the qzpay subscription create
  * call. Discount-type promos remain out of scope here per master plan
  * Decision 4 (only free-trial extensions apply to monthly recurring).
+ *
+ * @deprecated SPEC-262 T-005: `subscription-checkout.service.ts` now
+ * reads `extraDays` from the DB-persisted `trial_extension` effect
+ * (via `PromoCodeService.getByCode`) and only falls back to this
+ * config-backed function for legacy rows that have not yet been
+ * backfilled by extras/020. Remove this fallback once T-003 backfill
+ * has run in production and all `trial_extension` codes are in the DB.
+ * TODO(SPEC-262 T-008): retire once the full route rewrite ships.
  */
 export function resolveFreeTrialExtensionPromo(
     code: string,

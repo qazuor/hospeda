@@ -105,7 +105,7 @@ describe('AdminUploadRequestSchema', () => {
             });
             if (parsed.role === 'featured') {
                 expectTypeOf(parsed.entityType).toEqualTypeOf<
-                    'accommodation' | 'destination' | 'event' | 'post'
+                    'accommodation' | 'destination' | 'event' | 'post' | 'gastronomy' | 'experience'
                 >();
                 expectTypeOf(parsed.entityId).toEqualTypeOf<string>();
             }
@@ -1045,5 +1045,37 @@ describe('getGalleryCap', () => {
             expect(typeof cap).toBe('number');
             expect(cap).toBeGreaterThan(0);
         }
+    });
+});
+
+// ============================================================================
+// Commerce media support (SPEC-249 T-015a)
+// ============================================================================
+
+describe('Commerce media entity types', () => {
+    it('MediaEntityTypeSchema accepts gastronomy and experience', () => {
+        expect(MediaEntityTypeSchema.safeParse('gastronomy').success).toBe(true);
+        expect(MediaEntityTypeSchema.safeParse('experience').success).toBe(true);
+    });
+
+    it('defines gallery caps for both commerce verticals', () => {
+        expect(ENTITY_GALLERY_CAPS.gastronomy).toBe(30);
+        expect(ENTITY_GALLERY_CAPS.experience).toBe(30);
+        expect(getGalleryCap('gastronomy')).toBe(30);
+        expect(getGalleryCap('experience')).toBe(30);
+    });
+
+    it('resolves storage folders for commerce verticals', () => {
+        expect(ENTITY_FOLDER_MAP.gastronomy({ environment: 'test', entityId: 'g1' })).toBe(
+            'hospeda/test/gastronomies/g1'
+        );
+        expect(ENTITY_FOLDER_MAP.experience({ environment: 'test', entityId: 'e1' })).toBe(
+            'hospeda/test/experiences/e1'
+        );
+    });
+
+    it('throws when a commerce folder resolver is missing entityId', () => {
+        expect(() => ENTITY_FOLDER_MAP.gastronomy({ environment: 'test' })).toThrow();
+        expect(() => ENTITY_FOLDER_MAP.experience({ environment: 'test' })).toThrow();
     });
 });

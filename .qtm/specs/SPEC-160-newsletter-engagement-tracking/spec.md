@@ -1,7 +1,7 @@
 ---
 specId: SPEC-160
 title: Newsletter Engagement Tracking (Open / Click)
-status: draft
+status: in-progress
 complexity: low
 owner: qazuor
 created: 2026-05-26

@@ -15,8 +15,10 @@ import {
     SelectValue
 } from '@/components/ui/select';
 import { useTranslations } from '@/hooks/use-translations';
+import { translateAdminApiError } from '@/lib/errors';
 import { formatDateWithTime } from '@/lib/format-helpers';
 import { formatNumber } from '@repo/i18n';
+import type { ApiErrorShape } from '@repo/i18n';
 import { useState } from 'react';
 import { useExchangeRateHistoryQuery } from '../hooks';
 import type { ExchangeRate, ExchangeRateHistoryFilters } from '../types';
@@ -292,11 +294,13 @@ export function RateHistoryView() {
                                         className="px-4 py-8 text-center text-destructive"
                                     >
                                         {t('admin-billing.exchangeRates.historyView.error')}{' '}
-                                        {error instanceof Error
-                                            ? error.message
-                                            : t(
-                                                  'admin-billing.exchangeRates.historyView.unknownError'
-                                              )}
+                                        {translateAdminApiError({
+                                            error: error as ApiErrorShape,
+                                            t,
+                                            fallback: t(
+                                                'admin-billing.exchangeRates.historyView.unknownError'
+                                            )
+                                        })}
                                     </td>
                                 </tr>
                             )}
