@@ -971,12 +971,10 @@ export class AccommodationService extends BaseCrudService<
             // Store as-is so `_afterUpdate` can distinguish undefined (no-op) from [] (clear all).
             ctx.hookState.pendingAmenityIds = data.amenityIds;
             ctx.hookState.pendingFeatureIds = data.featureIds;
-            // SPEC-204 T-007: capture media value for shadow-write into accommodation_media.
-            // undefined → media absent in payload → no-op (rows left untouched).
-            ctx.hookState.pendingMedia = (data as Record<string, unknown>).media as
-                | import('@repo/schemas').Media
-                | null
-                | undefined;
+            // SPEC-204 DIRECT CUTOVER: pendingMedia is no longer captured for update.
+            // The accommodation_media table is the sole source of truth for photos;
+            // UPDATE only writes videos to the JSONB blob. Gallery management is done
+            // via granular media endpoints, not via the bulk update path.
         }
 
         // SPEC-198.1: capture and strip aiAssistedFields (write-only, not a DB column).
@@ -1011,6 +1009,10 @@ export class AccommodationService extends BaseCrudService<
      *
      * SPEC-172: also syncs amenity/feature junctions when `pendingAmenityIds` or
      * `pendingFeatureIds` are present in `ctx.hookState` (set by `_beforeUpdate`).
+     *
+     * SPEC-204 DIRECT CUTOVER: does NOT sync `accommodation_media` on update.
+     * The relational table is the sole source of truth for photos; gallery
+     * management goes through dedicated media endpoints, not the bulk update path.
      *
      * @param entity - The updated accommodation entity.
      * @param _actor - The actor performing the update.
@@ -1055,22 +1057,9 @@ export class AccommodationService extends BaseCrudService<
                 tx: ctx.tx
             });
         }
-        // SPEC-204 T-007: shadow-write media into accommodation_media.
-        // undefined → no-op (media field was absent in the update payload).
-        if (ctx.hookState?.pendingMedia !== undefined) {
-            if (!ctx.tx) {
-                throw new ServiceError(
-                    ServiceErrorCode.INTERNAL_ERROR,
-                    'Media sync requires an active transaction; call update() from within withServiceTransaction'
-                );
-            }
-            await syncAccommodationMedia({
-                accommodationId: entity.id,
-                media: ctx.hookState.pendingMedia as import('@repo/schemas').Media | null,
-                mediaModel: this._accommodationMediaModel,
-                tx: ctx.tx
-            });
-        }
+        // SPEC-204 DIRECT CUTOVER: accommodation_media is NOT synced on update.
+        // Photo gallery management is handled exclusively via granular media endpoints.
+        // Videos remain in the JSONB blob and are written by the regular update path.
 
         const destinationSlug = entity.destinationId
             ? await this._resolveDestinationSlug(entity.destinationId)
@@ -1460,56 +1449,56 @@ export class AccommodationService extends BaseCrudService<
             }
         }
 
-        // INV-5 / B-1: preserve server-managed archivedGallery on any media update.
+        // SPEC-204 DIRECT CUTOVER — media blob on update carries ONLY videos.
         //
-        // `archivedGallery` is written exclusively by the downgrade-restriction cron
-        // (plan-photo-restriction.service) and MUST NOT be cleared by a host edit.
-        // The client input schema (`BaseMediaFields.media`) does not expose this field,
-        // so Zod strips it before the payload reaches here. We carry it forward from
-        // the current DB row whenever `data.media` is present.
+        // The relational `accommodation_media` table is the sole source of truth for
+        // photos (gallery, featuredImage, archivedGallery). Sending photo fields from
+        // a bulk update would overwrite the blob's photo-related keys and create a
+        // divergence with the table. We therefore strip those fields from any incoming
+        // `media` object before passing it to `super.update()`.
         //
-        // B-2: preserve server-managed `videos` on any host media edit that omits
-        // the `videos` key. The web editor only sends featuredImage+gallery; clients
-        // that don't manage videos must not wipe the existing videos array. An
-        // explicit `videos` key in the payload (including `[]` to clear) is respected.
+        // B-2 (videos preservation): videos remain in the JSONB blob. The web editor
+        // sends only featuredImage+gallery, so `videos` is typically absent from
+        // client payloads. Without the guard the existing videos array would be wiped
+        // by the shallow JSONB merge. We carry it forward from the current DB row
+        // whenever the payload omits the `videos` key entirely.
+        //   - Absent `videos` key in payload → carry forward from existing row.
+        //   - Explicit `videos: []` in payload → respected (clears the list).
         //
         // Fetch only when needed: if `data.media` is undefined the DB write won't
         // touch the media column at all, so no action is required.
         let normalizedData = data;
         if (data.media !== undefined) {
-            const existing = await this.model.findById(id, resolvedCtx?.tx);
-            const existingArchivedGallery = existing?.media?.archivedGallery;
-            const existingVideos = existing?.media?.videos;
-            // Carry forward archivedGallery when the existing row has it.
-            const shouldCarryArchivedGallery = existingArchivedGallery !== undefined;
-            // Carry forward videos only when the payload does NOT include a `videos` key
-            // (undefined = client omitted it, meaning "no change").
+            // Strip photo fields — they are managed exclusively via media endpoints.
+            const {
+                gallery: _gallery,
+                featuredImage: _featuredImage,
+                archivedGallery: _archivedGallery,
+                ...videosOnlyMedia
+            } = data.media as Record<string, unknown>;
+            // Carry forward existing videos when the payload omits the `videos` key.
+            const existingVideos = (await this.model.findById(id, resolvedCtx?.tx))?.media?.videos;
             const shouldCarryVideos =
                 existingVideos !== undefined &&
-                !('videos' in ((data.media as Record<string, unknown>) ?? {}));
-            if (shouldCarryArchivedGallery || shouldCarryVideos) {
-                normalizedData = {
-                    ...data,
-                    media: {
-                        ...data.media,
-                        ...(shouldCarryArchivedGallery
-                            ? { archivedGallery: existingArchivedGallery }
-                            : {}),
-                        ...(shouldCarryVideos ? { videos: existingVideos } : {})
-                    }
-                } as AccommodationUpdateInput;
-            }
+                !('videos' in (data.media as Record<string, unknown>));
+            normalizedData = {
+                ...data,
+                media: {
+                    ...videosOnlyMedia,
+                    ...(shouldCarryVideos ? { videos: existingVideos } : {})
+                }
+            } as AccommodationUpdateInput;
         }
 
-        // SPEC-172 / SPEC-204: if junction sync fields or a media payload are present
-        // and no external tx exists, open a transaction so accommodation update +
-        // junction sync + accommodation_media shadow-write are fully atomic.
+        // SPEC-172: if junction sync fields are present and no external tx exists,
+        // open a transaction so the accommodation update + junction sync are atomic.
+        // Media no longer needs a tx here: the JSONB write goes through model.update()
+        // directly and is atomic by itself.
         const { amenityIds, featureIds } = normalizedData as {
             amenityIds?: readonly string[];
             featureIds?: readonly string[];
         };
-        const needsMediaSync = (normalizedData as Record<string, unknown>).media !== undefined;
-        const needsTx = amenityIds !== undefined || featureIds !== undefined || needsMediaSync;
+        const needsTx = amenityIds !== undefined || featureIds !== undefined;
 
         if (needsTx && !resolvedCtx?.tx) {
             return withServiceTransaction(

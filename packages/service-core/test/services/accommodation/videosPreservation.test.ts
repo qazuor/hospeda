@@ -33,8 +33,11 @@ import { createMockBaseModel } from '../../factories/baseServiceFactory';
 import { createLoggerMock, makeMediaModelStub } from '../../utils/modelMockFactory';
 
 /**
- * FIX 1 (SPEC-204): AccommodationService.update() now opens a transaction when
- * `media` is present. Mock withServiceTransaction so update tests work without DB.
+ * SPEC-204 DIRECT CUTOVER: AccommodationService.update() no longer opens a
+ * transaction for media-only payloads. Junction sync (amenityIds/featureIds)
+ * still wraps in a tx, but a videos-only blob write does not. The
+ * withServiceTransaction mock below is retained for payloads that do include
+ * junction fields, but is not exercised by the videos-preservation cases here.
  */
 vi.mock('../../../src/utils/transaction', () => ({
     withServiceTransaction: vi.fn(
