@@ -838,8 +838,8 @@ export interface GuestMessageItem {
 export interface GuestConversationData {
     readonly id: string;
     readonly status: string;
-    readonly accommodationName: string;
-    readonly ownerName: string;
+    readonly accommodationName: string | null;
+    readonly ownerName: string | null;
     readonly lastReadAtByOwner: string | null;
     readonly createdAt: string;
 }
