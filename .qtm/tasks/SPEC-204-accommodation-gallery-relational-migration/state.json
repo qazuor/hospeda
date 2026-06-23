@@ -428,28 +428,29 @@
             "id": "T-014",
             "title": "enforcePhotoLimit counts table rows",
             "description": "Update apps/api/src/middlewares/limit-enforcement.ts enforcePhotoLimit to count accommodation_media rows WHERE state='visible' instead of parsing JSONB. Preserve MAX_PHOTOS_PER_ACCOMMODATION semantics. Tests in T-016.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-007"],
             "blocks": ["T-016"],
             "subtasks": [
                 {
                     "title": "count rows instead of JSONB parse",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "billing", "P2"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": true,
+                "typecheck": true,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-06-22T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-06-23T14:00:00.000Z",
+                "completed": "2026-06-23T14:05:00.000Z"
+            },
+            "notes": "Replaced getById+JSONB-parse with accommodationMediaModel.findByAccommodation({accommodationId, state:'visible'}).total — cheaper (no entity+relations load) and reads the table directly. Resilience preserved: a count-query failure is swallowed by the method-level catch (logs + next()). No unit tests for this middleware; functional coverage is T-016 (integration). apps/api typecheck clean."
         },
         {
             "id": "T-015",
@@ -907,9 +908,9 @@
     ],
     "summary": {
         "total": 29,
-        "pending": 16,
+        "pending": 15,
         "inProgress": 0,
-        "completed": 13,
+        "completed": 14,
         "blocked": 0,
         "averageComplexity": 2.5
     }
