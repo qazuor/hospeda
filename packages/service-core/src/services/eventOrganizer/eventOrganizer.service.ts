@@ -28,7 +28,6 @@ import type {
 } from '../../types';
 import { ServiceError } from '../../types';
 import { checkCanFindOptions, hasPermission } from '../../utils';
-import * as helpers from './eventOrganizer.helpers';
 import { normalizeCreateInput, normalizeUpdateInput } from './eventOrganizer.normalizers';
 import {
     checkCanAdminList,
@@ -67,8 +66,6 @@ export class EventOrganizerService extends BaseCrudService<
         create: normalizeCreateInput,
         update: normalizeUpdateInput
     };
-    protected readonly helpers = helpers;
-
     constructor(ctx: ServiceConfig, model?: EventOrganizerModel) {
         super(ctx, EventOrganizerService.ENTITY_NAME);
         this.model = model ?? new EventOrganizerModel();

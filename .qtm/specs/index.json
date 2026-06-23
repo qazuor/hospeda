@@ -1579,7 +1579,7 @@
             "title": "Asynchronous external reputation refresh (Apify async API + polling)",
             "type": "improvement",
             "complexity": "high",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-250-external-reputation-async-refresh",
             "created": "2026-06-20T00:00:00.000Z",
             "base": "staging",
@@ -1592,7 +1592,10 @@
                 "async",
                 "accommodation",
                 "SPEC-237-followup"
-            ]
+            ],
+            "archived": true,
+            "archivedAt": "2026-06-23",
+            "completionRef": "PR #1779 (merge ef0846f0e)"
         },
         {
             "specId": "SPEC-257",
@@ -1781,6 +1784,32 @@
                 "beta-90",
                 "spec-249-followup"
             ]
+        },
+        {
+            "specId": "SPEC-254",
+            "title": "Social Automation Backend",
+            "type": "feature",
+            "complexity": "high",
+            "status": "completed",
+            "path": "SPEC-254-social-media-publish",
+            "created": "2026-06-20T00:00:00.000Z",
+            "base": "staging",
+            "origin": "Design session 2026-06-20: replaces Airtable-based social automation (Custom GPT drafts -> backend -> admin review -> Make publish). Phases 1-4 core. Renumbered from SPEC-250. Follow-ups: SPEC-255 Airtable migration, SPEC-256 Custom-GPT-in-platform spike.",
+            "tags": [
+                "social",
+                "automation",
+                "api",
+                "admin",
+                "cron",
+                "make",
+                "gpt",
+                "cloudinary",
+                "backend",
+                "permissions"
+            ],
+            "archived": true,
+            "archivedAt": "2026-06-23",
+            "archiveNote": "Merged to staging via PR #1782 (52/52). Migration renumbered to 0026 after staging advanced."
         }
     ]
 }

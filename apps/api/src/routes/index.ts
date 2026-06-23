@@ -83,6 +83,7 @@ import {
     adminAiUsageRoutes
 } from './ai/index.js';
 import { protectedAiRoutes } from './ai/protected/index.js';
+import { aiSocialCatalogRoute, aiSocialDraftsRoute } from './ai/social/index.js';
 import { adminAppLogRoutes } from './app-logs';
 // ─── Non-entity route imports ─────────────────────────────────────────────────
 import { adminAuthRoutes, authRoutes, protectedAuthRoutes } from './auth';
@@ -100,6 +101,10 @@ import { publicFeedbackRoutes } from './feedback';
 import { adminGeocodingRoutes, protectedGeocodingRoutes } from './geocoding';
 import { dbHealthRoutes, healthRoutes, liveRoutes, readyRoutes } from './health';
 import { mediaHealthRoutes } from './health/media';
+import {
+    makeClaimCallbackRoute,
+    makeResultCallbackRoute
+} from './integrations/make/social/jobs/index.js';
 import { adminMediaRoutes } from './media/admin';
 import { protectedMediaRoutes } from './media/protected';
 import { metricsRoutes } from './metrics';
@@ -115,6 +120,21 @@ import { publicPlatformSettingsRoutes } from './platform-settings/public/index.j
 import { protectedProfileRoutes } from './profile';
 import { revalidationRouter } from './revalidation';
 import { publicSearchRoutes } from './search/public';
+import {
+    adminGetGptActionSchemaRoute,
+    adminSocialAudienceRoutes,
+    adminSocialAuditLogRoutes,
+    adminSocialBatchRoutes,
+    adminSocialCampaignRoutes,
+    adminSocialDashboardRoutes,
+    adminSocialFooterRoutes,
+    adminSocialHashtagRoutes,
+    adminSocialHashtagSetRoutes,
+    adminSocialPlatformFormatRoutes,
+    adminSocialPostTransitionRoutes,
+    adminSocialPublishLogRoutes,
+    adminSocialSettingRoutes
+} from './social/index';
 import { adminSponsorshipRoutes, protectedSponsorshipRoutes } from './sponsorship';
 import { adminSponsorshipLevelRoutes } from './sponsorship-level';
 import { adminSponsorshipPackageRoutes } from './sponsorship-package';
@@ -142,6 +162,7 @@ import { protectedWhatsNewRoutes } from './whats-new';
 import { ApiInfoSchema } from '@repo/schemas';
 import { mustChangePasswordGate } from '../middlewares/must-change-password';
 import { pastDueGraceMiddleware } from '../middlewares/past-due-grace.middleware';
+import { socialFeatureTagMiddleware } from '../middlewares/social-feature-tag';
 import { createSimpleRoute } from '../utils/route-factory';
 import {
     adminConversationsRouter,
@@ -474,8 +495,62 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/ai/translate', adminAiTranslateRoute);
         app.route('/api/v1/admin/ai/post-generate', adminAiPostGenerateRoute);
 
+        // SPEC-254 T-052: tag every social-automation route for Sentry grouping.
+        // Registered at the mount-point prefixes (before the routes below) so the
+        // `feature: 'social-automation'` tag is set in ONE place, not on each of
+        // the 60+ social route files.
+        app.use('/api/v1/ai/social/*', socialFeatureTagMiddleware());
+        app.use('/api/v1/integrations/make/social/*', socialFeatureTagMiddleware());
+        app.use('/api/v1/admin/social/*', socialFeatureTagMiddleware());
+
+        // AI social catalog (SPEC-254 T-026): machine-authenticated (x-hospeda-ai-key), no session.
+        // Returns the full GPT-safe catalog the Custom GPT fetches before drafting a post.
+        app.route('/api/v1/ai/social/catalog', aiSocialCatalogRoute);
+
+        // AI social draft submission (SPEC-254 T-029): API-key + operator_pin gated.
+        // Custom GPT submits a structured social post draft for admin review.
+        app.route('/api/v1/ai/social/drafts', aiSocialDraftsRoute);
+
+        // Make.com inbound callbacks (SPEC-254 T-048): authenticated via x-hospeda-make-key.
+        // POST /claim — Make picks up a dispatched job and records its run ID (US-12).
+        // POST /result — Make reports the publish outcome SUCCESS/FAILED (US-13).
+        app.route('/api/v1/integrations/make/social/jobs', makeClaimCallbackRoute);
+        app.route('/api/v1/integrations/make/social/jobs', makeResultCallbackRoute);
+
         // Media (entity image uploads + asset deletion)
         app.route('/api/v1/admin/media', adminMediaRoutes);
+
+        // Social catalog admin routes (SPEC-254 T-018)
+        // Catalog entity management: hashtags, hashtag-sets, footers, campaigns, batches, audiences.
+        app.route('/api/v1/admin/social/hashtags', adminSocialHashtagRoutes);
+        app.route('/api/v1/admin/social/hashtag-sets', adminSocialHashtagSetRoutes);
+        app.route('/api/v1/admin/social/footers', adminSocialFooterRoutes);
+        app.route('/api/v1/admin/social/campaigns', adminSocialCampaignRoutes);
+        app.route('/api/v1/admin/social/batches', adminSocialBatchRoutes);
+        app.route('/api/v1/admin/social/audiences', adminSocialAudienceRoutes);
+
+        // Social config admin routes (SPEC-254 T-019)
+        // Platform-format config (seed-only, list + patch) and settings (list + patch-by-key).
+        app.route('/api/v1/admin/social/platform-formats', adminSocialPlatformFormatRoutes);
+        app.route('/api/v1/admin/social/settings', adminSocialSettingRoutes);
+
+        // Social post routes (SPEC-254 T-036 transitions + T-037 CRUD)
+        // Transition paths: /{id}/approve, /{id}/reject, etc.
+        // CRUD paths: / (list), /{id} (detail, PATCH).
+        app.route('/api/v1/admin/social/posts', adminSocialPostTransitionRoutes);
+
+        // Social dashboard (SPEC-254 T-037)
+        app.route('/api/v1/admin/social/dashboard', adminSocialDashboardRoutes);
+
+        // Social publish logs (SPEC-254 T-037)
+        app.route('/api/v1/admin/social/publish-logs', adminSocialPublishLogRoutes);
+
+        // Social audit log (SPEC-254 T-037)
+        app.route('/api/v1/admin/social/audit-log', adminSocialAuditLogRoutes);
+
+        // GPT Action schema export (SPEC-254 T-030)
+        // Returns the OpenAPI 3.1 document the operator pastes into the Custom GPT Actions config.
+        app.route('/api/v1/admin/social/gpt-action-schema', adminGetGptActionSchemaRoute);
 
         apiLogger.debug('✅ Admin routes registered successfully');
 

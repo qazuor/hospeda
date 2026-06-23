@@ -400,7 +400,6 @@ export class NewsletterSubscriberService extends BaseService {
     private readonly hmacSecret: string;
     private readonly hmacSecretPrev?: string;
     private readonly verificationTtlHours: number;
-    private readonly softCapDays: number;
     private readonly dispatcher: NewsletterNotificationDispatcher;
 
     /**
@@ -414,7 +413,6 @@ export class NewsletterSubscriberService extends BaseService {
         this.hmacSecret = options.hmacSecret;
         this.hmacSecretPrev = options.hmacSecretPrev;
         this.verificationTtlHours = options.verificationTtlHours ?? 72;
-        this.softCapDays = options.softCapDays ?? 7;
         this.dispatcher = options.notificationDispatcher ?? NO_OP_DISPATCHER;
     }
 

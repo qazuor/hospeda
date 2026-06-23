@@ -62,7 +62,17 @@ export enum PermissionCategoryEnum {
     MODERATION = 'MODERATION',
     /** Commerce listings (gastronomy, experience). Added in SPEC-239. */
     COMMERCE = 'COMMERCE',
-    HOST_TRADE = 'HOST_TRADE'
+    HOST_TRADE = 'HOST_TRADE',
+    /** Social media publish pipeline (SPEC-254). */
+    SOCIAL_POST = 'SOCIAL_POST',
+    SOCIAL_HASHTAG = 'SOCIAL_HASHTAG',
+    SOCIAL_CAMPAIGN = 'SOCIAL_CAMPAIGN',
+    SOCIAL_BATCH = 'SOCIAL_BATCH',
+    SOCIAL_AUDIENCE = 'SOCIAL_AUDIENCE',
+    SOCIAL_PLATFORM = 'SOCIAL_PLATFORM',
+    SOCIAL_FOOTER = 'SOCIAL_FOOTER',
+    SOCIAL_SETTINGS = 'SOCIAL_SETTINGS',
+    SOCIAL_AUDIT = 'SOCIAL_AUDIT'
 }
 
 // PermissionEnum defines all possible built-in permissions for the Hospeda platform.
@@ -871,5 +881,32 @@ export enum PermissionEnum {
     HOST_TRADE_DELETE = 'hostTrade.delete', // Admin: soft-delete a trade entry.
     HOST_TRADE_RESTORE = 'hostTrade.restore', // Admin: restore a soft-deleted trade entry.
     HOST_TRADE_HARD_DELETE = 'hostTrade.hardDelete', // Admin: permanently delete a trade entry.
-    HOST_TRADE_VIEW_ALL = 'hostTrade.viewAll' // Admin: list all trades including inactive/soft-deleted.
+    HOST_TRADE_VIEW_ALL = 'hostTrade.viewAll', // Admin: list all trades including inactive/soft-deleted.
+
+    // SOCIAL: Social media publish pipeline permissions (SPEC-254).
+    // Governs the full editorial lifecycle: GPT draft ingestion → admin review → scheduling → Make.com dispatch.
+    SOCIAL_POST_VIEW = 'socialPost.view', // Allows viewing social posts in the admin panel (list + detail).
+    SOCIAL_POST_CREATE = 'socialPost.create', // Allows creating social post drafts manually (outside GPT flow).
+    SOCIAL_POST_UPDATE = 'socialPost.update', // Allows updating social post content (caption, hashtags, targets).
+    SOCIAL_POST_APPROVE = 'socialPost.approve', // Allows approving, rejecting, or requesting changes on social posts in NEEDS_REVIEW state.
+    SOCIAL_POST_SCHEDULE = 'socialPost.schedule', // Allows scheduling an approved post (set scheduledAt / mark-ready / recurrence config).
+    SOCIAL_POST_PAUSE = 'socialPost.pause', // Allows pausing and unpausing approved, scheduled, or ready-to-publish posts.
+    SOCIAL_POST_ARCHIVE = 'socialPost.archive', // Allows archiving (soft-deleting) a social post.
+    SOCIAL_POST_HARD_DELETE = 'socialPost.hardDelete', // Allows permanently deleting a social post. Also gates ?includeDeleted=true on list.
+    SOCIAL_POST_VIEW_LOGS = 'socialPost.viewLogs', // Allows viewing per-post publish log entries on the post detail page.
+    SOCIAL_HASHTAG_VIEW = 'socialHashtag.view', // Allows viewing the hashtag catalog (list + detail).
+    SOCIAL_HASHTAG_MANAGE = 'socialHashtag.manage', // Allows creating, updating, deactivating, and soft-deleting hashtags; also gates hashtag promotion from draft suggestions.
+    SOCIAL_HASHTAG_SET_MANAGE = 'socialHashtagSet.manage', // Allows creating, updating, and soft-deleting hashtag sets.
+    SOCIAL_FOOTER_MANAGE = 'socialFooter.manage', // Allows creating, updating, and soft-deleting reusable post footer templates.
+    SOCIAL_CAMPAIGN_MANAGE = 'socialCampaign.manage', // Allows creating, updating, and soft-deleting social content campaigns.
+    SOCIAL_BATCH_MANAGE = 'socialBatch.manage', // Allows creating, updating, and soft-deleting social content batches / publishing sprints.
+    SOCIAL_AUDIENCE_MANAGE = 'socialAudience.manage', // Allows creating, updating, and soft-deleting audience descriptors used for targeting.
+    SOCIAL_PLATFORM_MANAGE = 'socialPlatform.manage', // Allows enabling/disabling platforms and updating platform-format settings (caption limits, make_channel_key, mvp_enabled).
+    SOCIAL_PLATFORM_FORMAT_VIEW = 'socialPlatformFormat.view', // Allows viewing platform-format configuration rows (read-only).
+    SOCIAL_ASSET_VIEW = 'socialAsset.view', // Allows viewing social media assets (Cloudinary URLs, metadata).
+    SOCIAL_ASSET_MANAGE = 'socialAsset.manage', // Allows uploading, updating metadata, and soft-deleting social assets.
+    SOCIAL_SETTINGS_MANAGE = 'socialSettings.manage', // Allows reading and updating social automation settings (make webhook URL, defaults, etc.); also gates the GPT action schema export endpoint.
+    SOCIAL_PUBLISH_LOG_VIEW = 'socialPublishLog.view', // Allows querying the social_publish_logs table (dispatch history, failure details).
+    SOCIAL_AUDIT_LOG_VIEW = 'socialAuditLog.view', // Allows querying the social_audit_log table (semantic event trail with actor + old/new values).
+    SOCIAL_DISPATCH_MANAGE = 'socialDispatch.manage' // Allows manually triggering or resetting dispatch jobs and managing the Make.com integration state.
 }
