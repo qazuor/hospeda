@@ -1542,12 +1542,15 @@
             "slug": "commerce-owner-editor-extended-fields",
             "type": "feature",
             "complexity": "medium",
-            "status": "in-progress",
+            "status": "completed",
             "created": "2026-06-20T00:00:00.000Z",
             "base": "staging",
             "origin": "SPEC-249 close-out (2026-06-20): owner expanded the editable field set + collapsed per-section perms to a single COMMERCE_EDIT_OWN",
             "dependsOn": ["SPEC-249"],
-            "tags": ["commerce", "gastronomy", "experience", "web", "owner", "permissions", "i18n"]
+            "tags": ["commerce", "gastronomy", "experience", "web", "owner", "permissions", "i18n"],
+            "archived": true,
+            "archivedAt": "2026-06-23",
+            "archiveNote": "Shipped + validated via PR #1822 (merged to staging 2026-06-23). Root-cause fix was the missing 0029 enum migration (recreate permission_enum: drop 10 legacy commerce.*.editOwn, add commerce.editOwn) + interleaved data-migration re-granting commerce.editOwn. Task tracking was informal (31/31)."
         },
         {
             "specId": "SPEC-251",
