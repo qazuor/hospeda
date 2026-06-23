@@ -340,9 +340,45 @@
     },
     "miniForm": {
         "fields": {
+            "name": "Accommodation name",
+            "summary": "Short description",
+            "summaryHint": "One line summary. You can expand it later in the panel.",
             "type": "Accommodation type",
-            "typePlaceholder": "Choose an option"
+            "typePlaceholder": "Choose an option",
+            "typeEmpty": "No types match"
         },
+        "importedExtras": {
+            "sectionTitle": "What we imported",
+            "fields": {
+                "description": "Full description",
+                "maxGuests": "Max guests",
+                "bedrooms": "Bedrooms",
+                "beds": "Beds",
+                "bathrooms": "Bathrooms",
+                "basePrice": "Base price per night",
+                "street": "Street",
+                "number": "Number",
+                "phone": "Phone",
+                "website": "Website",
+                "coordinatesLabel": "Imported location",
+                "amenitiesCount": "{{count}} imported amenities"
+            }
+        },
+        "errors": {
+            "name": "Name must be at least 3 characters.",
+            "summary": "Short description must be at least 10 characters.",
+            "type": "Choose an accommodation type.",
+            "destinationId": "Choose the city where your accommodation is located.",
+            "serviceUnavailable": "We couldn't reach the billing service right now. Please try again in a minute.",
+            "submit": "We couldn't create the accommodation. Please try again.",
+            "missingId": "We didn't receive the accommodation ID. Please try again.",
+            "network": "We couldn't connect to the server. Check your connection and try again."
+        },
+        "actions": {
+            "submit": "Create and continue in the panel",
+            "submitting": "Creating..."
+        },
+        "disclaimer": "We'll create a draft with this information. Then we'll take you to the panel to complete photos, prices and more.",
         "types": {
             "APARTMENT": "Apartment",
             "HOUSE": "House",

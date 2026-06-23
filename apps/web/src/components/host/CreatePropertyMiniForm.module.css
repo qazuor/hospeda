@@ -130,3 +130,88 @@
     font-style: italic;
     margin-top: var(--space-1, 0.25rem);
 }
+
+/* ---------------------------------------------------------------------------
+ * Imported extras section — progressive disclosure (SPEC-258 B-web)
+ * --------------------------------------------------------------------------- */
+
+.extrasSection {
+    margin-top: var(--space-6, 1.5rem);
+    border: 1px solid var(--border-default, #e5e7eb);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+}
+
+.extrasToggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: var(--font-sans);
+    font-size: var(--text-sm, 0.875rem);
+    font-weight: 600;
+    color: var(--core-muted-foreground);
+    text-align: left;
+}
+
+.extrasToggle:hover {
+    background-color: var(--surface-warm);
+}
+
+.extrasToggleIcon {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+    transition: transform var(--duration-normal, 0.4s) ease;
+}
+
+.extrasToggleIcon--open {
+    transform: rotate(180deg);
+}
+
+.extrasBody {
+    padding: var(--space-4, 1rem);
+    border-top: 1px solid var(--border-default, #e5e7eb);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4, 1rem);
+}
+
+.extrasRow {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-3, 0.75rem);
+}
+
+.extrasReadOnly {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    background-color: var(--surface-subtle, #f9fafb);
+    border: 1px solid var(--border-default, #e5e7eb);
+    border-radius: var(--radius-md);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm, 0.875rem);
+    color: var(--core-muted-foreground);
+}
+
+.extrasReadOnlyIcon {
+    flex-shrink: 0;
+}
+
+.extrasAmenityChip {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1, 0.25rem);
+    padding: var(--space-1, 0.25rem) var(--space-3, 0.75rem);
+    background-color: var(--brand-primary-a10);
+    border: 1px solid var(--brand-primary-a30);
+    border-radius: var(--radius-pill, 9999px);
+    font-family: var(--font-sans);
+    font-size: var(--text-sm, 0.875rem);
+    color: var(--brand-primary);
+}
