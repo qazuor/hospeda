@@ -276,4 +276,38 @@ describe('AiPostGeneratePanel', () => {
         // setFieldValue must NOT have been called
         expect(mockSetFieldValue).not.toHaveBeenCalled();
     });
+
+    // 5. 502 ENGINE_EXHAUSTED shows the "service unavailable" error (not generic).
+    // Regression: the API maps all-providers-failed to HTTP 502 + code
+    // ENGINE_EXHAUSTED, but mapErrorKey only checked status 503 / code
+    // 'exhausted', so the panel showed the generic error (SPEC-223 smoke).
+    it('shows the exhausted error on 502 ENGINE_EXHAUSTED, not the generic one', async () => {
+        fetchMock.mockResolvedValue({
+            ok: false,
+            status: 502,
+            json: async () => ({
+                success: false,
+                error: { code: 'ENGINE_EXHAUSTED', message: 'ENGINE_EXHAUSTED' }
+            })
+        });
+
+        renderPanel();
+        fillForm('Carnaval 2024', 'Récord de asistencia');
+        clickGenerate();
+
+        await waitFor(() => {
+            expect(screen.getByTestId('ai-post-error')).toBeInTheDocument();
+        });
+
+        // Must resolve to the specific "service unavailable" key, NOT errorGeneric.
+        expect(screen.getByTestId('ai-post-error')).toHaveTextContent(
+            'posts.aiGenerate.errorExhausted'
+        );
+        expect(screen.getByTestId('ai-post-error')).not.toHaveTextContent(
+            'posts.aiGenerate.errorGeneric'
+        );
+
+        // No draft populated.
+        expect(screen.queryByTestId('ai-post-draft-preview')).not.toBeInTheDocument();
+    });
 });
