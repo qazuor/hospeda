@@ -49,31 +49,55 @@ export const OpenAiFileIdRefSchema = z
 export const OpenAiFileRefSchema = OpenAiFileIdRefSchema;
 
 /**
- * GPT image payload — discriminated on `mode`.
+ * GPT image payload — flat object validated with `superRefine`.
  *
- * - `public_url`: direct HTTPS URL.
- * - `openai_file_refs`: one or more OpenAI file reference objects injected by
- *    OpenAI at runtime. Only the first entry is processed in phase 1 per spec
- *    resolved decision. The field is named `openaiFileIdRefs` to match the
- *    exact property name that triggers OpenAI's automatic file reference
- *    injection in Custom GPT Actions.
+ * Declared as a SINGLE flat object (NOT a discriminated union / oneOf) so that
+ * the generated JSON Schema stays flat. `openaiFileIdRefs` has been moved to
+ * the TOP LEVEL of the enclosing `CreateSocialDraftSchema` object (a sibling of
+ * `image`, `operatorPin`, `targets`, etc.) because OpenAI Custom GPT Actions
+ * only auto-populate a field named `openaiFileIdRefs` when it is a DIRECT
+ * property of the request-body root object — any nesting (inside a sub-object
+ * or a union branch) silently prevents injection.
+ *
+ * Modes:
+ * - `public_url`: the GPT provides a direct HTTPS URL via the `url` field.
+ * - `openai_file_refs`: OpenAI injects one or more file reference objects into
+ *   the root `openaiFileIdRefs` field at runtime. Only the first entry is
+ *   processed (phase 1). The field name `openaiFileIdRefs` is required EXACTLY
+ *   as-is to trigger OpenAI's automatic file reference injection.
+ *
+ * @see https://platform.openai.com/docs/actions/sending-files
  */
-export const GptImagePayloadSchema = z.discriminatedUnion('mode', [
-    z.object({
-        mode: z.literal('public_url'),
-        url: z.string().url({ message: 'zodError.socialDraft.image.url.invalid' }),
-        altText: z.string().optional(),
-        mimeType: z.string().optional()
-    }),
-    z.object({
-        mode: z.literal('openai_file_refs'),
-        openaiFileIdRefs: z.array(OpenAiFileIdRefSchema).min(1, {
-            message: 'zodError.socialDraft.image.openaiFileIdRefs.required'
-        }),
-        altText: z.string().optional(),
-        mimeType: z.string().optional()
-    })
-]);
+export const GptImagePayloadBaseSchema = z.object({
+    mode: z.enum(['public_url', 'openai_file_refs']),
+    /**
+     * Used when `mode === 'public_url'`.
+     * Direct HTTPS URL of the image to download and re-upload to Cloudinary.
+     */
+    url: z.string().url({ message: 'zodError.socialDraft.image.url.invalid' }).optional(),
+    /** Optional alt text for accessibility. */
+    altText: z.string().optional(),
+    /** Optional MIME type hint (e.g., "image/jpeg"). Used for media type inference. */
+    mimeType: z.string().optional()
+});
+
+/**
+ * GPT image payload schema with cross-field validation.
+ *
+ * Uses `superRefine` so the shape stays a flat `ZodObject` at the JSON Schema
+ * level. `openaiFileIdRefs` is NOT part of this schema — it lives at the root
+ * of `CreateSocialDraftSchema`. The cross-field check between `image.mode` and
+ * root `openaiFileIdRefs` is performed there.
+ */
+export const GptImagePayloadSchema = GptImagePayloadBaseSchema.superRefine((val, ctx) => {
+    if (val.mode === 'public_url' && !val.url) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['url'],
+            message: 'zodError.socialDraft.image.url.invalid'
+        });
+    }
+});
 
 // ---------------------------------------------------------------------------
 // Per-target schema
@@ -107,25 +131,14 @@ export type SocialDraftWarning = z.infer<typeof SocialDraftWarningSchema>;
 // ---------------------------------------------------------------------------
 
 /**
- * Full request body schema for `POST /api/v1/ai/social/drafts`.
+ * Base object shape for `POST /api/v1/ai/social/drafts` before cross-field
+ * refinement. Exported so `gpt-action-schema.ts` can call `.extend()` on it
+ * to produce the doc-only variant without re-running the superRefine logic.
  *
- * The `operatorPin` is validated in the route handler BEFORE calling the
- * service. All other fields are threaded through to the ingestion service.
- *
- * Validation rules:
- * - `draftId` and `captionBase` are required.
- * - Slug references (`campaignSlug`, `batchSlug`, etc.) are optional strings;
- *   the service resolves them to IDs and falls back to null on miss.
- * - `targets` must contain at least one entry (the service may still reject
- *   all of them if none match an enabled platform-format row, yielding 422).
- * - `curatedHashtags` are strings that must look like hashtags (start with #).
- * - `customHashtagSuggestions` are stored verbatim; no catalog lookup.
- * - `operatorPin` is required and validated against `HOSPEDA_OPERATOR_PIN_HASH`
- *   in the route before the service is called.
- *
- * @see SPEC-254 US-2 for full acceptance criteria.
+ * @see {@link CreateSocialDraftSchema} for the refined version with cross-field
+ *   validation.
  */
-export const CreateSocialDraftSchema = z.object({
+export const CreateSocialDraftBaseSchema = z.object({
     /** Operator PIN — validated in the route against HOSPEDA_OPERATOR_PIN_HASH. */
     operatorPin: z.string().min(1, { message: 'zodError.socialDraft.operatorPin.required' }),
 
@@ -183,6 +196,11 @@ export const CreateSocialDraftSchema = z.object({
     /**
      * Optional image payload. When present the image pipeline downloads
      * and re-uploads to Cloudinary. Failure is non-fatal (draft still created).
+     *
+     * NOTE: `openaiFileIdRefs` is intentionally NOT part of this sub-object.
+     * It lives as a TOP-LEVEL sibling of `image` in `CreateSocialDraftSchema`
+     * so that OpenAI Custom GPT Actions can auto-populate it. Nesting it inside
+     * `image` silently prevents the injection.
      */
     image: GptImagePayloadSchema.optional(),
 
@@ -195,8 +213,63 @@ export const CreateSocialDraftSchema = z.object({
         .array(SocialDraftTargetSchema)
         .min(1, { message: 'zodError.socialDraft.targets.required' }),
 
+    /**
+     * OpenAI file reference objects injected at runtime by OpenAI Custom GPT
+     * Actions. Declared at the REQUEST-BODY ROOT (NOT inside `image`) because
+     * OpenAI only auto-populates `openaiFileIdRefs` when it is a DIRECT
+     * top-level property of the enclosing JSON object.
+     *
+     * The field name `openaiFileIdRefs` is required EXACTLY as-is — it is the
+     * sentinel name OpenAI uses to recognise the file-injection slot.
+     *
+     * At runtime OpenAI injects an array of objects shaped like
+     * `{ download_link, id, name, mime_type }` even though the OpenAPI schema
+     * declares items as `{ type: 'string' }` per their convention.
+     *
+     * Used when `image.mode === 'openai_file_refs'`. The service reads
+     * `openaiFileIdRefs[0].download_link` as the image download URL.
+     *
+     * @see https://platform.openai.com/docs/actions/sending-files
+     */
+    openaiFileIdRefs: z.array(OpenAiFileIdRefSchema).optional(),
+
     /** Free-form notes from the operator (scheduling hints, context, etc.). */
     notes: z.string().optional()
+});
+
+/**
+ * Full request body schema for `POST /api/v1/ai/social/drafts`.
+ *
+ * Extends `CreateSocialDraftBaseSchema` with a cross-field `superRefine` that
+ * enforces: when `image.mode === 'openai_file_refs'`, the root
+ * `openaiFileIdRefs` array must be non-empty.
+ *
+ * The `operatorPin` is validated in the route handler BEFORE calling the
+ * service. All other fields are threaded through to the ingestion service.
+ *
+ * Validation rules:
+ * - `draftId` and `captionBase` are required.
+ * - Slug references (`campaignSlug`, `batchSlug`, etc.) are optional strings;
+ *   the service resolves them to IDs and falls back to null on miss.
+ * - `targets` must contain at least one entry (the service may still reject
+ *   all of them if none match an enabled platform-format row, yielding 422).
+ * - `curatedHashtags` are strings that must look like hashtags (start with #).
+ * - `customHashtagSuggestions` are stored verbatim; no catalog lookup.
+ * - `operatorPin` is required and validated against `HOSPEDA_OPERATOR_PIN_HASH`
+ *   in the route before the service is called.
+ * - When `image.mode === 'openai_file_refs'`, root `openaiFileIdRefs` must be
+ *   non-empty.
+ *
+ * @see SPEC-254 US-2 for full acceptance criteria.
+ */
+export const CreateSocialDraftSchema = CreateSocialDraftBaseSchema.superRefine((val, ctx) => {
+    if (val.image?.mode === 'openai_file_refs' && (val.openaiFileIdRefs?.length ?? 0) === 0) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['openaiFileIdRefs'],
+            message: 'zodError.socialDraft.image.openaiFileIdRefs.required'
+        });
+    }
 });
 
 /** TypeScript type inferred from {@link CreateSocialDraftSchema}. */
