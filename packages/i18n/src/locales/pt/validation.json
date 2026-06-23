@@ -586,6 +586,10 @@
                     "invalidType": "[PT] El customer id tiene un tipo de dato inválido",
                     "min": "[PT] El customer id debe tener al menos {{min}} caracteres",
                     "invalid": "O ID do cliente não é válido"
+                },
+                "subscriptionId": {
+                    "invalid": "O ID da assinatura não é válido",
+                    "invalidType": "[PT] El subscription id tiene un tipo de dato inválido"
                 }
             },
             "create": {

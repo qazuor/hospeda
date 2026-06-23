@@ -236,7 +236,10 @@ export async function resolveRenewalPromoEffect(
                 WHERE id = ${subscriptionId}
                 LIMIT 1`
         );
-        const subRow = (subResult.rows?.[0] ?? null) as RenewalSubscriptionRow | null;
+        // TYPE-WORKAROUND: db.execute() returns rows typed as Record<string, unknown>
+        // (raw SQL — the extras-carril columns are not on the QZPay Drizzle schema), so a
+        // direct cast to the concrete row shape is rejected (TS2352); go via unknown.
+        const subRow = (subResult.rows?.[0] ?? null) as unknown as RenewalSubscriptionRow | null;
 
         if (!subRow) {
             return {
