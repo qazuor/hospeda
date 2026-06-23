@@ -453,7 +453,7 @@
             "id": "T-020",
             "title": "Reconciliation test (totals == /by-feature)",
             "description": "Add a test asserting the new aggregates' totals equal the existing /by-feature totals for the same window (same source table) within 0 micro-USD, to catch aggregation drift.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-008", "T-009"],
             "blocks": [],
