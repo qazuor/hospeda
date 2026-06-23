@@ -406,7 +406,7 @@ describe('BookingAdapter', () => {
         it('should call runApifyActor when primary fetch is blocked and creds are present', async () => {
             // Arrange
             mockSafeExternalFetch.mockResolvedValue(fetchBlocked());
-            mockRunApifyActor.mockResolvedValue([BOOKING_APIFY_ITEM_FULL]);
+            mockRunApifyActor.mockResolvedValue({ items: [BOOKING_APIFY_ITEM_FULL] });
             const ctx = makeCtx();
             const url = new URL('https://www.booking.com/hotel/ar/x');
 
@@ -440,7 +440,7 @@ describe('BookingAdapter', () => {
         it('should map Apify dataset item fields correctly', async () => {
             // Arrange
             mockSafeExternalFetch.mockResolvedValue(fetchBlocked());
-            mockRunApifyActor.mockResolvedValue([BOOKING_APIFY_ITEM_FULL]);
+            mockRunApifyActor.mockResolvedValue({ items: [BOOKING_APIFY_ITEM_FULL] });
 
             // Act
             const result = await adapter.extract(
@@ -471,7 +471,7 @@ describe('BookingAdapter', () => {
         it('should strip rating/review fields from Apify dataset item', async () => {
             // Arrange — BOOKING_APIFY_ITEM_FULL has rating, reviews, etc.
             mockSafeExternalFetch.mockResolvedValue(fetchBlocked());
-            mockRunApifyActor.mockResolvedValue([BOOKING_APIFY_ITEM_FULL]);
+            mockRunApifyActor.mockResolvedValue({ items: [BOOKING_APIFY_ITEM_FULL] });
 
             // Act
             const result = await adapter.extract(
@@ -513,7 +513,10 @@ describe('BookingAdapter', () => {
             );
 
             // Assert
-            expect(result).toEqual({ sourcePlatform: 'booking' });
+            expect(result).toEqual({
+                sourcePlatform: 'booking',
+                failureCode: 'credentials_missing'
+            });
             expect(mockRunApifyActor).not.toHaveBeenCalled();
         });
 
@@ -529,7 +532,10 @@ describe('BookingAdapter', () => {
             );
 
             // Assert
-            expect(result).toEqual({ sourcePlatform: 'booking' });
+            expect(result).toEqual({
+                sourcePlatform: 'booking',
+                failureCode: 'credentials_missing'
+            });
             expect(mockRunApifyActor).not.toHaveBeenCalled();
         });
 
@@ -541,7 +547,7 @@ describe('BookingAdapter', () => {
             // Act + Assert — must not throw
             await expect(
                 adapter.extract(new URL('https://www.booking.com/hotel/ar/x'), ctx)
-            ).resolves.toEqual({ sourcePlatform: 'booking' });
+            ).resolves.toEqual({ sourcePlatform: 'booking', failureCode: 'credentials_missing' });
         });
     });
 
@@ -553,7 +559,9 @@ describe('BookingAdapter', () => {
         it('should call runApifyActor when JSON-LD yields only 1 useful field (< threshold)', async () => {
             // Arrange — HTML_WITH_SPARSE_JSONLD has only "name" → 1 useful field
             mockSafeExternalFetch.mockResolvedValue(fetchOk(HTML_WITH_SPARSE_JSONLD));
-            mockRunApifyActor.mockResolvedValue([{ name: 'Hotel Fallback', description: 'Desc' }]);
+            mockRunApifyActor.mockResolvedValue({
+                items: [{ name: 'Hotel Fallback', description: 'Desc' }]
+            });
             const ctx = makeCtx();
 
             // Act
@@ -577,7 +585,7 @@ describe('BookingAdapter', () => {
         it('should return degraded result when fetch is blocked and Apify returns empty array', async () => {
             // Arrange
             mockSafeExternalFetch.mockResolvedValue(fetchBlocked());
-            mockRunApifyActor.mockResolvedValue([]);
+            mockRunApifyActor.mockResolvedValue({ items: [] });
             const ctx = makeCtx();
 
             // Act
@@ -587,7 +595,7 @@ describe('BookingAdapter', () => {
             );
 
             // Assert
-            expect(result).toEqual({ sourcePlatform: 'booking' });
+            expect(result).toEqual({ sourcePlatform: 'booking', failureCode: 'source_blocked' });
         });
 
         it('should not throw when safeExternalFetch itself rejects unexpectedly', async () => {
@@ -622,7 +630,7 @@ describe('BookingAdapter', () => {
         it('should map type from top-level `type` field (not propertyType)', async () => {
             // Arrange — real probe: `type: "hotel"` (no propertyType key)
             mockSafeExternalFetch.mockResolvedValue(fetchBlocked());
-            mockRunApifyActor.mockResolvedValue([BOOKING_REAL_PROBE_ITEM]);
+            mockRunApifyActor.mockResolvedValue({ items: [BOOKING_REAL_PROBE_ITEM] });
 
             // Act
             const result = await adapter.extract(
@@ -639,7 +647,7 @@ describe('BookingAdapter', () => {
         it('should extract scrapedLocality from nested address.city object', async () => {
             // Arrange — real probe: `address: { full, country: "ar", city: "..." }`
             mockSafeExternalFetch.mockResolvedValue(fetchBlocked());
-            mockRunApifyActor.mockResolvedValue([BOOKING_REAL_PROBE_ITEM]);
+            mockRunApifyActor.mockResolvedValue({ items: [BOOKING_REAL_PROBE_ITEM] });
 
             // Act
             const result = await adapter.extract(
@@ -654,7 +662,7 @@ describe('BookingAdapter', () => {
         it('should extract scrapedCountry from nested address.country object', async () => {
             // Arrange — real probe: `address.country: "ar"`
             mockSafeExternalFetch.mockResolvedValue(fetchBlocked());
-            mockRunApifyActor.mockResolvedValue([BOOKING_REAL_PROBE_ITEM]);
+            mockRunApifyActor.mockResolvedValue({ items: [BOOKING_REAL_PROBE_ITEM] });
 
             // Act
             const result = await adapter.extract(
@@ -669,7 +677,7 @@ describe('BookingAdapter', () => {
         it('should extract coordinates from nested location.lat/lng strings', async () => {
             // Arrange — real probe: `location: { lat: "-32.487803", lng: "-58.233167" }`
             mockSafeExternalFetch.mockResolvedValue(fetchBlocked());
-            mockRunApifyActor.mockResolvedValue([BOOKING_REAL_PROBE_ITEM]);
+            mockRunApifyActor.mockResolvedValue({ items: [BOOKING_REAL_PROBE_ITEM] });
 
             // Act
             const result = await adapter.extract(
@@ -688,7 +696,7 @@ describe('BookingAdapter', () => {
             // Arrange — real probe has "Non-smoking rooms" and "Flat-screen TV"
             // duplicated across "Great for your stay" and "General" / "Media & Technology"
             mockSafeExternalFetch.mockResolvedValue(fetchBlocked());
-            mockRunApifyActor.mockResolvedValue([BOOKING_REAL_PROBE_ITEM]);
+            mockRunApifyActor.mockResolvedValue({ items: [BOOKING_REAL_PROBE_ITEM] });
 
             // Act
             const result = await adapter.extract(
@@ -714,7 +722,7 @@ describe('BookingAdapter', () => {
         it('should map images from plain string array', async () => {
             // Arrange — real probe: `images: ["https://...", "https://..."]`
             mockSafeExternalFetch.mockResolvedValue(fetchBlocked());
-            mockRunApifyActor.mockResolvedValue([BOOKING_REAL_PROBE_ITEM]);
+            mockRunApifyActor.mockResolvedValue({ items: [BOOKING_REAL_PROBE_ITEM] });
 
             // Act
             const result = await adapter.extract(
@@ -732,13 +740,15 @@ describe('BookingAdapter', () => {
         it('should return empty amenityNames when all facility groups have empty arrays', async () => {
             // Arrange
             mockSafeExternalFetch.mockResolvedValue(fetchBlocked());
-            mockRunApifyActor.mockResolvedValue([
-                {
-                    name: 'Hotel Empty',
-                    type: 'hotel',
-                    facilities: [{ name: 'Parking', facilities: [], overview: 'No parking.' }]
-                }
-            ]);
+            mockRunApifyActor.mockResolvedValue({
+                items: [
+                    {
+                        name: 'Hotel Empty',
+                        type: 'hotel',
+                        facilities: [{ name: 'Parking', facilities: [], overview: 'No parking.' }]
+                    }
+                ]
+            });
 
             // Act
             const result = await adapter.extract(
@@ -777,7 +787,7 @@ describe('BookingAdapter', () => {
 { "@context": "https://schema.org", "@type": "WebSite", "name": "Booking" }
 </script></head><body></body></html>`;
             mockSafeExternalFetch.mockResolvedValue(fetchOk(htmlNonLodging));
-            mockRunApifyActor.mockResolvedValue([]);
+            mockRunApifyActor.mockResolvedValue({ items: [] });
 
             // Act
             const result = await adapter.extract(
@@ -819,7 +829,7 @@ describe('BookingAdapter', () => {
         it('should emit per-night price and USD currency when actor returns total price', async () => {
             // Arrange
             mockSafeExternalFetch.mockResolvedValue(fetchBlocked());
-            mockRunApifyActor.mockResolvedValue([BOOKING_PROBE_WITH_PRICE]);
+            mockRunApifyActor.mockResolvedValue({ items: [BOOKING_PROBE_WITH_PRICE] });
 
             // Act
             const result = await adapter.extract(
@@ -836,7 +846,7 @@ describe('BookingAdapter', () => {
         it('should not emit price when actor returns null price (no dates sent)', async () => {
             // Arrange — BOOKING_REAL_PROBE_ITEM has `price: null`
             mockSafeExternalFetch.mockResolvedValue(fetchBlocked());
-            mockRunApifyActor.mockResolvedValue([BOOKING_REAL_PROBE_ITEM]);
+            mockRunApifyActor.mockResolvedValue({ items: [BOOKING_REAL_PROBE_ITEM] });
 
             // Act
             const result = await adapter.extract(

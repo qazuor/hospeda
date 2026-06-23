@@ -30,6 +30,8 @@
  * @module services/accommodation-import/adapters/apify-client
  */
 
+import type { ImportFailureCode } from '@repo/schemas';
+
 // ---------------------------------------------------------------------------
 // runApifyActor
 // ---------------------------------------------------------------------------
@@ -57,38 +59,23 @@ export interface RunApifyActorInput {
 }
 
 /**
- * Runs an Apify actor synchronously and returns the full dataset items array.
+ * Result returned by {@link runApifyActor}.
  *
- * Calls `POST https://api.apify.com/v2/acts/{actor}/run-sync-get-dataset-items`
- * where `{actor}` is the configured `owner/actor` slug transformed to its tilde
- * form `owner~actor` (a literal slash 404s) and the token travels in an
- * `Authorization: Bearer` header.  The request body is `actorInput` serialised
- * as JSON.  Returns `[]` for a malformed actor slug.
- *
- * The `run-sync-get-dataset-items` endpoint blocks until the actor run
- * finishes and streams back the dataset as a top-level JSON array, so the
- * response body is parsed directly as `unknown[]`.
- *
- * **Degradation contract**: returns `[]` (never throws) on:
- * - non-2xx HTTP response
- * - `fetch` rejection (network error, DNS failure, etc.)
- * - `AbortController` timeout expiry (`timeoutMs` exceeded)
- * - JSON parse failure
- *
- * @param input - Actor run parameters.
- * @returns The dataset items array, or `[]` on any failure.
- *
- * @example
- * ```ts
- * const items = await runApifyActor({
- *   token: 'apify_api_xxx',
- *   actor: 'apify/airbnb-scraper',
- *   actorInput: { startUrls: [{ url: 'https://www.airbnb.com/rooms/12345' }] },
- *   timeoutMs: 30_000,
- * });
- * // items: unknown[]  — each element is one dataset record
- * ```
+ * On success (including a genuine 2xx empty dataset), `items` holds the
+ * dataset array and `failureCode` is absent. On any failure, `items` is
+ * empty and `failureCode` carries the machine-readable classification.
  */
+export interface RunApifyActorResult {
+    /** Dataset items returned by the actor. Empty on any failure. */
+    readonly items: unknown[];
+    /**
+     * Machine-readable failure classification. Absent when the actor call
+     * completed with 2xx (even if the dataset was empty — that is a
+     * content-level result, not a transport failure).
+     */
+    readonly failureCode?: ImportFailureCode | undefined;
+}
+
 /**
  * Apify actor slug shape: `owner/actor-name`, each part limited to safe slug
  * characters. Validated before path interpolation as defence-in-depth — even
@@ -97,13 +84,54 @@ export interface RunApifyActorInput {
  */
 const APIFY_ACTOR_SLUG_RE = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/;
 
-export async function runApifyActor(input: RunApifyActorInput): Promise<unknown[]> {
+/**
+ * Runs an Apify actor synchronously and returns the dataset items with a
+ * machine-readable failure code when applicable.
+ *
+ * Calls `POST https://api.apify.com/v2/acts/{actor}/run-sync-get-dataset-items`
+ * where `{actor}` is the configured `owner/actor` slug transformed to its tilde
+ * form `owner~actor` (a literal slash 404s) and the token travels in an
+ * `Authorization: Bearer` header. The request body is `actorInput` serialised
+ * as JSON. Returns `{ items: [], failureCode: 'provider_error' }` for a
+ * malformed actor slug.
+ *
+ * The `run-sync-get-dataset-items` endpoint blocks until the actor run
+ * finishes and streams back the dataset as a top-level JSON array, so the
+ * response body is parsed directly as `unknown[]`.
+ *
+ * **Failure code mapping:**
+ * - Invalid actor slug (regex fail) → `provider_error`
+ * - HTTP 401 or 403 → `credentials_missing`
+ * - HTTP 429 → `source_blocked`
+ * - Other non-2xx → `provider_error`
+ * - Non-array JSON body → `provider_error`
+ * - `AbortError` (timeout) → `timeout`
+ * - Other `fetch` rejection → `provider_error`
+ * - 2xx + array (including empty `[]`) → `{ items: data }` with NO failureCode
+ *
+ * **Never throws.**
+ *
+ * @param input - Actor run parameters.
+ * @returns `{ items, failureCode? }` — items is `[]` on any failure.
+ *
+ * @example
+ * ```ts
+ * const { items, failureCode } = await runApifyActor({
+ *   token: 'apify_api_xxx',
+ *   actor: 'apify/airbnb-scraper',
+ *   actorInput: { startUrls: [{ url: 'https://www.airbnb.com/rooms/12345' }] },
+ *   timeoutMs: 30_000,
+ * });
+ * if (failureCode) { // handle degraded case }
+ * ```
+ */
+export async function runApifyActor(input: RunApifyActorInput): Promise<RunApifyActorResult> {
     const { token, actor, actorInput, timeoutMs } = input;
 
     // Defence-in-depth: reject any actor slug that is not a clean owner/name
     // pair before interpolating it into the request path.
     if (!APIFY_ACTOR_SLUG_RE.test(actor)) {
-        return [];
+        return { items: [], failureCode: 'provider_error' };
     }
 
     // Build the URL. The Apify REST API addresses an actor as a SINGLE path
@@ -131,8 +159,15 @@ export async function runApifyActor(input: RunApifyActorInput): Promise<unknown[
         });
 
         if (!response.ok) {
-            // Non-2xx (e.g. 401 bad token, 404 unknown actor, 429 rate-limit) — degrade
-            return [];
+            // Map HTTP error status to a failure code.
+            // 401/403 → credentials problem; 429 → anti-bot / rate-limited; else → provider error.
+            const failureCode: ImportFailureCode =
+                response.status === 401 || response.status === 403
+                    ? 'credentials_missing'
+                    : response.status === 429
+                      ? 'source_blocked'
+                      : 'provider_error';
+            return { items: [], failureCode };
         }
 
         const data = (await response.json()) as unknown;
@@ -140,13 +175,17 @@ export async function runApifyActor(input: RunApifyActorInput): Promise<unknown[
         // The endpoint returns a top-level JSON array; guard against malformed
         // responses that return an object instead.
         if (!Array.isArray(data)) {
-            return [];
+            return { items: [], failureCode: 'provider_error' };
         }
 
-        return data;
-    } catch {
-        // fetch rejection, AbortError (timeout), JSON parse error — all degrade
-        return [];
+        // 2xx + array (including empty []) — success at transport level.
+        // The caller decides whether an empty array means nothing_found or source_blocked.
+        return { items: data };
+    } catch (err) {
+        // AbortError → timeout; anything else → provider_error.
+        const failureCode: ImportFailureCode =
+            err instanceof Error && err.name === 'AbortError' ? 'timeout' : 'provider_error';
+        return { items: [], failureCode };
     } finally {
         clearTimeout(timer);
     }

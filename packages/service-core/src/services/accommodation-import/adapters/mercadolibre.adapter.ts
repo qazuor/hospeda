@@ -334,18 +334,16 @@ export class MercadoLibreAdapter implements ImportSourceAdapter {
      *   `source: 'official_api'`, or an empty extraction on degradation.
      */
     async extract(url: URL, ctx: ImportContext): Promise<RawExtraction> {
-        const empty: RawExtraction = { sourcePlatform: 'mercadolibre' };
-
         // 1. Credential degradation (US-11)
         const token = ctx.credentials.mercadoLibreToken;
         if (!token) {
-            return empty;
+            return { sourcePlatform: 'mercadolibre', failureCode: 'credentials_missing' };
         }
 
-        // 2. Parse item ID from URL
+        // 2. Parse item ID from URL — not found means the URL is not a valid ML listing.
         const itemId = parseItemId(url);
         if (!itemId) {
-            return empty;
+            return { sourcePlatform: 'mercadolibre', failureCode: 'nothing_found' };
         }
 
         // 3. Call official ML Items API
@@ -363,18 +361,34 @@ export class MercadoLibreAdapter implements ImportSourceAdapter {
             });
 
             if (!response.ok) {
-                return empty;
+                // Map HTTP error status to a failure code.
+                const { status } = response;
+                const failureCode =
+                    status === 401 || status === 403
+                        ? ('credentials_missing' as const)
+                        : status === 429
+                          ? ('source_blocked' as const)
+                          : status === 404
+                            ? ('nothing_found' as const)
+                            : ('provider_error' as const);
+                return { sourcePlatform: 'mercadolibre', failureCode };
             }
 
             item = (await response.json()) as MlItem;
-        } catch {
-            // Network error, AbortError (timeout), JSON parse failure — all degrade
-            return empty;
+        } catch (err) {
+            // AbortError → timeout; anything else → provider_error.
+            const failureCode =
+                err instanceof Error && err.name === 'AbortError'
+                    ? ('timeout' as const)
+                    : ('provider_error' as const);
+            return { sourcePlatform: 'mercadolibre', failureCode };
         } finally {
             clearTimeout(timer);
         }
 
-        // 4. Map ML item fields to RawExtraction
+        // 4. Map ML item fields to RawExtraction.
+        // If the mapped item has no useful data (e.g. item exists but is not an accommodation)
+        // the orchestrator will apply the nothing_found fallback downstream.
         return mapMlItemToRawExtraction(item);
     }
 }

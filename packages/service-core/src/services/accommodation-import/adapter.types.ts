@@ -13,7 +13,12 @@
  * @module services/accommodation-import/adapter-types
  */
 
-import type { AccommodationImportDraft, FieldSource, ImportSource } from '@repo/schemas';
+import type {
+    AccommodationImportDraft,
+    FieldSource,
+    ImportFailureCode,
+    ImportSource
+} from '@repo/schemas';
 
 // ---------------------------------------------------------------------------
 // RawExtraction
@@ -177,6 +182,16 @@ export interface RawExtraction {
      * Used alongside `scrapedLocality` to narrow destination candidates.
      */
     readonly scrapedCountry?: string | undefined;
+
+    /**
+     * Machine-readable failure cause when this extraction yielded nothing.
+     *
+     * Set by adapters on their degraded empty-extraction returns so the
+     * orchestrator can propagate the specific failure classification to the
+     * API response. Absent on success or partial extractions that did return
+     * some usable data.
+     */
+    readonly failureCode?: ImportFailureCode | undefined;
 }
 
 // ---------------------------------------------------------------------------
