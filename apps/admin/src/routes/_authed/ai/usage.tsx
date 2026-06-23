@@ -1,5 +1,5 @@
 /**
- * AI Usage Dashboard Page (SPEC-260 T-014)
+ * AI Usage Dashboard Page (SPEC-260 T-014/T-018)
  *
  * Entry point for the AI usage reporting surface. Displays consumption
  * metrics across models, providers, features, and time — all driven by
@@ -9,13 +9,10 @@
  *   GET /api/v1/admin/ai/usage/by-feature-model
  *   GET /api/v1/admin/ai/usage/daily
  *
- * This file owns the route definition, guard, search-param validation, and
- * filter top-bar. Placeholder sections mark where T-015/T-016/T-017 will
- * insert totals cards, tables, and charts.
- *
  * Route: /ai/usage
  * Guard: AI_SETTINGS_MANAGE permission (SUPER_ADMIN only in practice)
  * Search params: AiUsageDailySearchSchema (superset of all four endpoint filters)
+ * i18n: all user-facing strings via admin-pages.ai.usage.* (T-018)
  */
 
 import { Button } from '@/components/ui/button';
@@ -40,6 +37,7 @@ import {
     AiUsageTotalsCard
 } from '@/features/ai-usage';
 import type { AiUsageDailySearch } from '@/features/ai-usage';
+import { useTranslations } from '@/hooks/use-translations';
 import { requireAiAccess } from '@/lib/ai-access';
 import { FilterIcon, RotateCcwIcon } from '@repo/icons';
 import { createFileRoute } from '@tanstack/react-router';
@@ -55,61 +53,48 @@ export const Route = createFileRoute('/_authed/ai/usage')({
 });
 
 // ---------------------------------------------------------------------------
-// Constants
+// Static data (values are identifiers, not translated; labels come from t())
 // ---------------------------------------------------------------------------
 
-/** AI feature options for the filter dropdown. */
-const AI_FEATURES = [
-    { value: 'text_improve', label: 'Text Improve' },
-    { value: 'chat', label: 'Chat' },
-    { value: 'search', label: 'Search' },
-    { value: 'support', label: 'Support' },
-    { value: 'translate', label: 'Translate' },
-    { value: 'accommodation_import', label: 'Accommodation Import' },
-    { value: 'post_generate', label: 'Post Generate' }
+/** AI feature filter options — values are enum identifiers, labels via t(). */
+const AI_FEATURE_VALUES = [
+    'text_improve',
+    'chat',
+    'search',
+    'support',
+    'translate',
+    'accommodation_import',
+    'post_generate'
 ] as const;
 
-/** Well-known AI provider options. New providers auto-appear once data flows in. */
-const KNOWN_PROVIDERS = [
-    { value: 'openai', label: 'OpenAI' },
-    { value: 'anthropic', label: 'Anthropic' },
-    { value: 'stub', label: 'Stub (test)' }
-] as const;
+/** Well-known AI provider filter options — values are identifiers, labels via t(). */
+const KNOWN_PROVIDER_VALUES = ['openai', 'anthropic', 'stub'] as const;
 
 /** Current UTC year — used as the default year for the month picker. */
 const CURRENT_YEAR = new Date().getUTCFullYear();
 
-/** Month options 1–12 for the month picker. */
-const MONTHS = [
-    { value: 1, label: 'January' },
-    { value: 2, label: 'February' },
-    { value: 3, label: 'March' },
-    { value: 4, label: 'April' },
-    { value: 5, label: 'May' },
-    { value: 6, label: 'June' },
-    { value: 7, label: 'July' },
-    { value: 8, label: 'August' },
-    { value: 9, label: 'September' },
-    { value: 10, label: 'October' },
-    { value: 11, label: 'November' },
-    { value: 12, label: 'December' }
-] as const;
+/** Month number options 1–12 — labels come from t(). */
+const MONTH_VALUES = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] as const;
 
 // ---------------------------------------------------------------------------
 // Page component
 // ---------------------------------------------------------------------------
 
 /**
- * AI Usage Dashboard page.
+ * AI Usage Dashboard page (SPEC-260 T-014/T-018).
  *
  * Renders the filter top-bar (month/date-range window + feature / provider /
- * model selects + reset) and placeholder sections for T-015..T-017.
+ * model selects + reset) and the T-015/T-016/T-017 sections.
  *
  * Filter state lives exclusively in URL search params via TanStack Router's
  * `validateSearch` + `useSearch()` + `navigate({ search: ... })` so every
  * filter combination produces a shareable, bookmarkable URL.
+ *
+ * All user-facing strings are resolved via `useTranslations()` under the
+ * `admin-pages.ai.usage.*` namespace.
  */
 export function AiUsagePage() {
+    const { t } = useTranslations();
     const search = Route.useSearch();
     const navigate = Route.useNavigate();
 
@@ -119,8 +104,7 @@ export function AiUsagePage() {
 
     /**
      * Whether the user has selected explicit date-range mode (since/until)
-     * vs. calendar-month mode (year+month). We detect this by checking whether
-     * either `since` or `until` is defined in the current search params.
+     * vs. calendar-month mode (year+month).
      */
     const isDateRangeMode = Boolean(search.since ?? search.until);
 
@@ -184,10 +168,11 @@ export function AiUsagePage() {
             {/* Page header */}
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="font-semibold text-2xl tracking-tight">AI Usage Dashboard</h1>
+                    <h1 className="font-semibold text-2xl tracking-tight">
+                        {t('admin-pages.ai.usage.title')}
+                    </h1>
                     <p className="mt-1 text-muted-foreground text-sm">
-                        Monitor AI consumption by feature, model, and provider. All costs in µUSD (1
-                        USD = 1,000,000 µUSD).
+                        {t('admin-pages.ai.usage.subtitle')}
                     </p>
                 </div>
             </div>
@@ -201,14 +186,16 @@ export function AiUsagePage() {
                 <CardHeader className="pb-3">
                     <CardTitle className="flex items-center gap-2 text-base">
                         <FilterIcon className="h-4 w-4" />
-                        Filters
+                        {t('admin-pages.ai.usage.filter.title')}
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="flex flex-wrap gap-4">
                         {/* Time-window mode toggle */}
                         <div className="flex flex-col gap-1.5">
-                            <Label className="text-xs">Window mode</Label>
+                            <Label className="text-xs">
+                                {t('admin-pages.ai.usage.filter.windowMode')}
+                            </Label>
                             <div className="flex gap-2">
                                 <Button
                                     type="button"
@@ -216,7 +203,7 @@ export function AiUsagePage() {
                                     variant={isDateRangeMode ? 'outline' : 'default'}
                                     onClick={() => setWindowMode('month')}
                                 >
-                                    Month
+                                    {t('admin-pages.ai.usage.filter.month')}
                                 </Button>
                                 <Button
                                     type="button"
@@ -224,7 +211,7 @@ export function AiUsagePage() {
                                     variant={isDateRangeMode ? 'default' : 'outline'}
                                     onClick={() => setWindowMode('dateRange')}
                                 >
-                                    Date range
+                                    {t('admin-pages.ai.usage.filter.dateRange')}
                                 </Button>
                             </div>
                         </div>
@@ -237,7 +224,7 @@ export function AiUsagePage() {
                                         htmlFor="year-input"
                                         className="text-xs"
                                     >
-                                        Year
+                                        {t('admin-pages.ai.usage.filter.year')}
                                     </Label>
                                     <Input
                                         id="year-input"
@@ -257,7 +244,9 @@ export function AiUsagePage() {
                                 </div>
 
                                 <div className="flex flex-col gap-1.5">
-                                    <Label className="text-xs">Month</Label>
+                                    <Label className="text-xs">
+                                        {t('admin-pages.ai.usage.filter.monthLabel')}
+                                    </Label>
                                     <Select
                                         value={search.month ? String(search.month) : ''}
                                         onValueChange={(v) =>
@@ -265,15 +254,21 @@ export function AiUsagePage() {
                                         }
                                     >
                                         <SelectTrigger className="w-36">
-                                            <SelectValue placeholder="All months" />
+                                            <SelectValue
+                                                placeholder={t(
+                                                    'admin-pages.ai.usage.filter.allMonths'
+                                                )}
+                                            />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {MONTHS.map((m) => (
+                                            {MONTH_VALUES.map((m) => (
                                                 <SelectItem
-                                                    key={m.value}
-                                                    value={String(m.value)}
+                                                    key={m}
+                                                    value={String(m)}
                                                 >
-                                                    {m.label}
+                                                    {t(
+                                                        `admin-pages.ai.usage.months.${m}` as `admin-pages.ai.usage.months.${typeof m}`
+                                                    )}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
@@ -290,7 +285,7 @@ export function AiUsagePage() {
                                         htmlFor="since-input"
                                         className="text-xs"
                                     >
-                                        From (YYYY-MM-DD)
+                                        {t('admin-pages.ai.usage.filter.from')}
                                     </Label>
                                     <Input
                                         id="since-input"
@@ -308,7 +303,7 @@ export function AiUsagePage() {
                                         htmlFor="until-input"
                                         className="text-xs"
                                     >
-                                        To (YYYY-MM-DD)
+                                        {t('admin-pages.ai.usage.filter.to')}
                                     </Label>
                                     <Input
                                         id="until-input"
@@ -325,21 +320,27 @@ export function AiUsagePage() {
 
                         {/* Feature filter */}
                         <div className="flex flex-col gap-1.5">
-                            <Label className="text-xs">Feature</Label>
+                            <Label className="text-xs">
+                                {t('admin-pages.ai.usage.filter.feature')}
+                            </Label>
                             <Select
                                 value={search.feature ?? ''}
                                 onValueChange={(v) => setFilter('feature', v || undefined)}
                             >
                                 <SelectTrigger className="w-48">
-                                    <SelectValue placeholder="All features" />
+                                    <SelectValue
+                                        placeholder={t('admin-pages.ai.usage.filter.allFeatures')}
+                                    />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {AI_FEATURES.map((f) => (
+                                    {AI_FEATURE_VALUES.map((featureValue) => (
                                         <SelectItem
-                                            key={f.value}
-                                            value={f.value}
+                                            key={featureValue}
+                                            value={featureValue}
                                         >
-                                            {f.label}
+                                            {t(
+                                                `admin-pages.ai.usage.features.${featureValue}` as `admin-pages.ai.usage.features.${typeof featureValue}`
+                                            )}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -348,21 +349,27 @@ export function AiUsagePage() {
 
                         {/* Provider filter */}
                         <div className="flex flex-col gap-1.5">
-                            <Label className="text-xs">Provider</Label>
+                            <Label className="text-xs">
+                                {t('admin-pages.ai.usage.filter.provider')}
+                            </Label>
                             <Select
                                 value={search.provider ?? ''}
                                 onValueChange={(v) => setFilter('provider', v || undefined)}
                             >
                                 <SelectTrigger className="w-36">
-                                    <SelectValue placeholder="All providers" />
+                                    <SelectValue
+                                        placeholder={t('admin-pages.ai.usage.filter.allProviders')}
+                                    />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {KNOWN_PROVIDERS.map((p) => (
+                                    {KNOWN_PROVIDER_VALUES.map((providerValue) => (
                                         <SelectItem
-                                            key={p.value}
-                                            value={p.value}
+                                            key={providerValue}
+                                            value={providerValue}
                                         >
-                                            {p.label}
+                                            {t(
+                                                `admin-pages.ai.usage.providers.${providerValue}` as `admin-pages.ai.usage.providers.${typeof providerValue}`
+                                            )}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -375,13 +382,13 @@ export function AiUsagePage() {
                                 htmlFor="model-input"
                                 className="text-xs"
                             >
-                                Model
+                                {t('admin-pages.ai.usage.filter.model')}
                             </Label>
                             <Input
                                 id="model-input"
                                 type="text"
                                 className="w-48"
-                                placeholder="e.g. gpt-4o-mini"
+                                placeholder={t('admin-pages.ai.usage.filter.modelPlaceholder')}
                                 value={search.model ?? ''}
                                 onChange={(e) => setFilter('model', e.target.value || undefined)}
                             />
@@ -397,74 +404,44 @@ export function AiUsagePage() {
                                 className="gap-1.5"
                             >
                                 <RotateCcwIcon className="h-3.5 w-3.5" />
-                                Reset
+                                {t('admin-pages.ai.usage.filter.reset')}
                             </Button>
                         </div>
                     </div>
                 </CardContent>
             </Card>
 
-            {/* ----------------------------------------------------------------
-             * T-015: Totals summary cards
-             * Aggregated calls / tokens-in / tokens-out / cost across the
-             * selected window and filters. Derived from the by-model endpoint.
-             * --------------------------------------------------------------- */}
+            {/* T-015: Totals summary cards */}
             <section aria-label="Usage totals">
                 <AiUsageTotalsCard search={search} />
             </section>
 
-            {/* ----------------------------------------------------------------
-             * T-015: By-model breakdown table
-             * Per-model rollup: model | calls | tokensIn | tokensOut |
-             * costMicroUsd | cost/1k tokens — ordered by cost DESC.
-             * --------------------------------------------------------------- */}
+            {/* T-015: By-model breakdown table */}
             <section aria-label="Usage by model">
                 <AiUsageByModelTable search={search} />
             </section>
 
-            {/* ----------------------------------------------------------------
-             * T-015: By-provider breakdown table
-             * Per-provider rollup: provider | calls | tokensIn | tokensOut |
-             * cost — ordered by cost DESC.
-             * --------------------------------------------------------------- */}
+            {/* T-015: By-provider breakdown table */}
             <section aria-label="Usage by provider">
                 <AiUsageByProviderTable search={search} />
             </section>
 
-            {/* ----------------------------------------------------------------
-             * T-015: By-feature breakdown table
-             * Per-feature rollup derived client-side from the by-feature-model
-             * endpoint (no standalone /by-feature endpoint exists in SPEC-260).
-             * Groups rows by feature, sums metrics, orders by cost DESC.
-             * --------------------------------------------------------------- */}
+            {/* T-015: By-feature breakdown table */}
             <section aria-label="Usage by feature">
                 <AiUsageByFeatureTable search={search} />
             </section>
 
-            {/* ----------------------------------------------------------------
-             * T-016: Feature × model cost chart
-             * Grouped bar chart: X = feature, bars = one per model, value =
-             * estimated cost in USD. Pivoted from the by-feature-model endpoint.
-             * --------------------------------------------------------------- */}
+            {/* T-016: Feature × model cost chart */}
             <section aria-label="Cost by feature and model chart">
                 <AiUsageFeatureModelChart search={search} />
             </section>
 
-            {/* ----------------------------------------------------------------
-             * T-016: Feature × model cross table
-             * One row per (feature, model) pair ordered by cost DESC.
-             * Shares the TanStack Query cache entry with the chart above.
-             * --------------------------------------------------------------- */}
+            {/* T-016: Feature × model cross table */}
             <section aria-label="Usage by feature and model">
                 <AiUsageByFeatureModelTable search={search} />
             </section>
 
-            {/* ----------------------------------------------------------------
-             * T-017: Daily cost time-series chart
-             * Area chart of estimated cost per UTC calendar day (primary axis)
-             * overlaid with daily calls as a secondary dashed line (right axis).
-             * Sorted ASC by day; shows truncation notice when >100 days.
-             * --------------------------------------------------------------- */}
+            {/* T-017: Daily cost time-series chart */}
             <section aria-label="Daily usage chart">
                 <AiUsageDailyChart search={search} />
             </section>

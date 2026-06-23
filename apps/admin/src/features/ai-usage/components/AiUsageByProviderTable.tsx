@@ -19,6 +19,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAiUsageByProviderQuery } from '@/features/ai-usage/hooks';
 import type { AiUsageDailySearch } from '@/features/ai-usage/types';
+import { useTranslations } from '@/hooks/use-translations';
 import { LoaderIcon } from '@repo/icons';
 import { formatMicroUsd } from '@repo/utils';
 
@@ -47,42 +48,47 @@ export interface AiUsageByProviderTableProps {
  * @param props - {@link AiUsageByProviderTableProps}
  */
 export function AiUsageByProviderTable({ search }: AiUsageByProviderTableProps) {
+    const { t, tPlural } = useTranslations();
     const { data, isLoading, isError } = useAiUsageByProviderQuery(search);
 
     const description = isLoading
-        ? 'Loading...'
+        ? t('admin-pages.ai.usage.byProvider.loading')
         : isError
-          ? 'Failed to load data'
+          ? t('admin-pages.ai.usage.byProvider.loadError')
           : data && data.items.length > 0
-            ? `${data.items.length.toLocaleString()} provider${data.items.length === 1 ? '' : 's'} — ordered by cost`
-            : 'No data for the selected window';
+            ? tPlural('admin-pages.ai.usage.byProvider.desc', data.items.length)
+            : t('admin-pages.ai.usage.byProvider.empty');
 
     return (
         <Card>
             <CardHeader>
-                <CardTitle>By Provider</CardTitle>
+                <CardTitle>{t('admin-pages.ai.usage.byProvider.title')}</CardTitle>
                 <CardDescription>{description}</CardDescription>
             </CardHeader>
             <CardContent>
                 {isLoading ? (
                     <div className="py-10 text-center">
                         <LoaderIcon className="mx-auto h-6 w-6 animate-spin text-primary" />
-                        <p className="mt-3 text-muted-foreground text-sm">Loading provider data…</p>
+                        <p className="mt-3 text-muted-foreground text-sm">
+                            {t('admin-pages.ai.usage.byProvider.loading')}
+                        </p>
                     </div>
                 ) : isError ? (
                     <div className="py-10 text-center">
-                        <p className="text-destructive text-sm">Failed to load provider usage.</p>
+                        <p className="text-destructive text-sm">
+                            {t('admin-pages.ai.usage.byProvider.loadError')}
+                        </p>
                         <p className="mt-1 text-muted-foreground text-xs">
-                            Verify the API is reachable and try again.
+                            {t('admin-pages.ai.usage.byProvider.loadErrorHint')}
                         </p>
                     </div>
                 ) : !data || data.items.length === 0 ? (
                     <div className="py-10 text-center">
                         <p className="text-muted-foreground text-sm">
-                            No provider usage for the selected filters.
+                            {t('admin-pages.ai.usage.byProvider.empty')}
                         </p>
                         <p className="mt-1 text-muted-foreground text-xs">
-                            Adjust the time window or remove filters to see data.
+                            {t('admin-pages.ai.usage.byProvider.emptyHint')}
                         </p>
                     </div>
                 ) : (
@@ -90,11 +96,21 @@ export function AiUsageByProviderTable({ search }: AiUsageByProviderTableProps) 
                         <table className="w-full text-sm">
                             <thead>
                                 <tr className="border-b">
-                                    <th className="px-4 py-3 text-left font-medium">Provider</th>
-                                    <th className="px-4 py-3 text-right font-medium">Calls</th>
-                                    <th className="px-4 py-3 text-right font-medium">Tokens In</th>
-                                    <th className="px-4 py-3 text-right font-medium">Tokens Out</th>
-                                    <th className="px-4 py-3 text-right font-medium">Est. Cost</th>
+                                    <th className="px-4 py-3 text-left font-medium">
+                                        {t('admin-pages.ai.usage.table.colProvider')}
+                                    </th>
+                                    <th className="px-4 py-3 text-right font-medium">
+                                        {t('admin-pages.ai.usage.table.colCalls')}
+                                    </th>
+                                    <th className="px-4 py-3 text-right font-medium">
+                                        {t('admin-pages.ai.usage.table.colTokensIn')}
+                                    </th>
+                                    <th className="px-4 py-3 text-right font-medium">
+                                        {t('admin-pages.ai.usage.table.colTokensOut')}
+                                    </th>
+                                    <th className="px-4 py-3 text-right font-medium">
+                                        {t('admin-pages.ai.usage.table.colEstCost')}
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>

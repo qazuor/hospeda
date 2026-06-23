@@ -22,6 +22,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAiUsageByFeatureModelQuery } from '@/features/ai-usage/hooks';
 import type { AiUsageDailySearch } from '@/features/ai-usage/types';
+import { useTranslations } from '@/hooks/use-translations';
 import { LoaderIcon } from '@repo/icons';
 import { formatMicroUsd } from '@repo/utils';
 
@@ -50,6 +51,8 @@ export interface AiUsageByFeatureModelTableProps {
  * @param props - {@link AiUsageByFeatureModelTableProps}
  */
 export function AiUsageByFeatureModelTable({ search }: AiUsageByFeatureModelTableProps) {
+    const { t, tPlural } = useTranslations();
+
     // pageSize: 100 matches AiUsageByFeatureTable → shared TanStack Query cache entry.
     const { data, isLoading, isError } = useAiUsageByFeatureModelQuery({
         year: search.year,
@@ -62,17 +65,17 @@ export function AiUsageByFeatureModelTable({ search }: AiUsageByFeatureModelTabl
     });
 
     const description = isLoading
-        ? 'Loading...'
+        ? t('admin-pages.ai.usage.featureModel.loading')
         : isError
-          ? 'Failed to load data'
+          ? t('admin-pages.ai.usage.featureModel.loadError')
           : data && data.items.length > 0
-            ? `${data.items.length.toLocaleString()} pair${data.items.length === 1 ? '' : 's'} — ordered by cost`
-            : 'No data for the selected window';
+            ? tPlural('admin-pages.ai.usage.featureModel.desc', data.items.length)
+            : t('admin-pages.ai.usage.featureModel.empty');
 
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Feature × Model</CardTitle>
+                <CardTitle>{t('admin-pages.ai.usage.featureModel.tableTitle')}</CardTitle>
                 <CardDescription>{description}</CardDescription>
             </CardHeader>
             <CardContent>
@@ -80,25 +83,25 @@ export function AiUsageByFeatureModelTable({ search }: AiUsageByFeatureModelTabl
                     <div className="py-10 text-center">
                         <LoaderIcon className="mx-auto h-6 w-6 animate-spin text-primary" />
                         <p className="mt-3 text-muted-foreground text-sm">
-                            Loading feature × model data…
+                            {t('admin-pages.ai.usage.featureModel.loading')}
                         </p>
                     </div>
                 ) : isError ? (
                     <div className="py-10 text-center">
                         <p className="text-destructive text-sm">
-                            Failed to load feature × model usage.
+                            {t('admin-pages.ai.usage.featureModel.loadError')}
                         </p>
                         <p className="mt-1 text-muted-foreground text-xs">
-                            Verify the API is reachable and try again.
+                            {t('admin-pages.ai.usage.featureModel.loadErrorHint')}
                         </p>
                     </div>
                 ) : !data || data.items.length === 0 ? (
                     <div className="py-10 text-center">
                         <p className="text-muted-foreground text-sm">
-                            No feature × model usage for the selected filters.
+                            {t('admin-pages.ai.usage.featureModel.empty')}
                         </p>
                         <p className="mt-1 text-muted-foreground text-xs">
-                            Adjust the time window or remove filters to see data.
+                            {t('admin-pages.ai.usage.featureModel.emptyHint')}
                         </p>
                     </div>
                 ) : (
@@ -106,12 +109,24 @@ export function AiUsageByFeatureModelTable({ search }: AiUsageByFeatureModelTabl
                         <table className="w-full text-sm">
                             <thead>
                                 <tr className="border-b">
-                                    <th className="px-4 py-3 text-left font-medium">Feature</th>
-                                    <th className="px-4 py-3 text-left font-medium">Model</th>
-                                    <th className="px-4 py-3 text-right font-medium">Calls</th>
-                                    <th className="px-4 py-3 text-right font-medium">Tokens In</th>
-                                    <th className="px-4 py-3 text-right font-medium">Tokens Out</th>
-                                    <th className="px-4 py-3 text-right font-medium">Est. Cost</th>
+                                    <th className="px-4 py-3 text-left font-medium">
+                                        {t('admin-pages.ai.usage.table.colFeature')}
+                                    </th>
+                                    <th className="px-4 py-3 text-left font-medium">
+                                        {t('admin-pages.ai.usage.table.colModel')}
+                                    </th>
+                                    <th className="px-4 py-3 text-right font-medium">
+                                        {t('admin-pages.ai.usage.table.colCalls')}
+                                    </th>
+                                    <th className="px-4 py-3 text-right font-medium">
+                                        {t('admin-pages.ai.usage.table.colTokensIn')}
+                                    </th>
+                                    <th className="px-4 py-3 text-right font-medium">
+                                        {t('admin-pages.ai.usage.table.colTokensOut')}
+                                    </th>
+                                    <th className="px-4 py-3 text-right font-medium">
+                                        {t('admin-pages.ai.usage.table.colEstCost')}
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>

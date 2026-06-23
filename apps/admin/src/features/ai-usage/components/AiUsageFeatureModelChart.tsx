@@ -51,6 +51,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAiUsageByFeatureModelQuery } from '@/features/ai-usage/hooks';
 import type { AiUsageDailySearch } from '@/features/ai-usage/types';
+import { useTranslations } from '@/hooks/use-translations';
 import { LoaderIcon } from '@repo/icons';
 import type { AiUsageByFeatureModelRow } from '@repo/schemas';
 import { formatMicroUsd } from '@repo/utils';
@@ -210,6 +211,8 @@ function yAxisTickFormatter(value: number): string {
  * @param props - {@link AiUsageFeatureModelChartProps}
  */
 export function AiUsageFeatureModelChart({ search }: AiUsageFeatureModelChartProps) {
+    const { t, tPlural } = useTranslations();
+
     // Same query key as AiUsageByFeatureTable + AiUsageByFeatureModelTable → cache hit.
     const { data, isLoading, isError } = useAiUsageByFeatureModelQuery({
         year: search.year,
@@ -226,30 +229,37 @@ export function AiUsageFeatureModelChart({ search }: AiUsageFeatureModelChartPro
     const hasData = chartData.length > 0 && models.length > 0;
 
     const description = isLoading
-        ? 'Loading...'
+        ? t('admin-pages.ai.usage.featureModel.chartLoading')
         : isError
-          ? 'Failed to load data'
+          ? t('admin-pages.ai.usage.featureModel.chartLoadError')
           : hasData
-            ? `Cost distribution across ${chartData.length} feature${chartData.length === 1 ? '' : 's'} and ${models.length} model${models.length === 1 ? '' : 's'}`
-            : 'No data for the selected window';
+            ? tPlural('admin-pages.ai.usage.featureModel.chartDesc', models.length, {
+                  features: chartData.length,
+                  models: models.length
+              })
+            : t('admin-pages.ai.usage.featureModel.chartEmpty');
 
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Cost by Feature × Model</CardTitle>
+                <CardTitle>{t('admin-pages.ai.usage.featureModel.chartTitle')}</CardTitle>
                 <CardDescription>{description}</CardDescription>
             </CardHeader>
             <CardContent>
                 {isLoading ? (
                     <div className="py-10 text-center">
                         <LoaderIcon className="mx-auto h-6 w-6 animate-spin text-primary" />
-                        <p className="mt-3 text-muted-foreground text-sm">Loading chart data…</p>
+                        <p className="mt-3 text-muted-foreground text-sm">
+                            {t('admin-pages.ai.usage.featureModel.chartLoading')}
+                        </p>
                     </div>
                 ) : isError ? (
                     <div className="py-10 text-center">
-                        <p className="text-destructive text-sm">Failed to load chart data.</p>
+                        <p className="text-destructive text-sm">
+                            {t('admin-pages.ai.usage.featureModel.chartLoadError')}
+                        </p>
                         <p className="mt-1 text-muted-foreground text-xs">
-                            Verify the API is reachable and try again.
+                            {t('admin-pages.ai.usage.featureModel.loadErrorHint')}
                         </p>
                     </div>
                 ) : hasData ? (
@@ -299,10 +309,10 @@ export function AiUsageFeatureModelChart({ search }: AiUsageFeatureModelChartPro
                 ) : (
                     <div className="py-10 text-center">
                         <p className="text-muted-foreground text-sm">
-                            No cost data for the selected filters.
+                            {t('admin-pages.ai.usage.featureModel.chartEmpty')}
                         </p>
                         <p className="mt-1 text-muted-foreground text-xs">
-                            Adjust the time window or remove filters to see the chart.
+                            {t('admin-pages.ai.usage.featureModel.emptyHint')}
                         </p>
                     </div>
                 )}

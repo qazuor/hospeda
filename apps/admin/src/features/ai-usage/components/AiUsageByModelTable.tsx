@@ -20,6 +20,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAiUsageByModelQuery } from '@/features/ai-usage/hooks';
 import type { AiUsageDailySearch } from '@/features/ai-usage/types';
+import { useTranslations } from '@/hooks/use-translations';
 import { LoaderIcon } from '@repo/icons';
 import { formatMicroUsd } from '@repo/utils';
 
@@ -69,42 +70,47 @@ function costPer1kTokens(costMicroUsd: number, tokensIn: number, tokensOut: numb
  * @param props - {@link AiUsageByModelTableProps}
  */
 export function AiUsageByModelTable({ search }: AiUsageByModelTableProps) {
+    const { t, tPlural } = useTranslations();
     const { data, isLoading, isError } = useAiUsageByModelQuery(search);
 
     const description = isLoading
-        ? 'Loading...'
+        ? t('admin-pages.ai.usage.byModel.loading')
         : isError
-          ? 'Failed to load data'
+          ? t('admin-pages.ai.usage.byModel.loadError')
           : data && data.items.length > 0
-            ? `${data.items.length.toLocaleString()} model${data.items.length === 1 ? '' : 's'} — ordered by cost`
-            : 'No data for the selected window';
+            ? tPlural('admin-pages.ai.usage.byModel.desc', data.items.length)
+            : t('admin-pages.ai.usage.byModel.empty');
 
     return (
         <Card>
             <CardHeader>
-                <CardTitle>By Model</CardTitle>
+                <CardTitle>{t('admin-pages.ai.usage.byModel.title')}</CardTitle>
                 <CardDescription>{description}</CardDescription>
             </CardHeader>
             <CardContent>
                 {isLoading ? (
                     <div className="py-10 text-center">
                         <LoaderIcon className="mx-auto h-6 w-6 animate-spin text-primary" />
-                        <p className="mt-3 text-muted-foreground text-sm">Loading model data…</p>
+                        <p className="mt-3 text-muted-foreground text-sm">
+                            {t('admin-pages.ai.usage.byModel.loading')}
+                        </p>
                     </div>
                 ) : isError ? (
                     <div className="py-10 text-center">
-                        <p className="text-destructive text-sm">Failed to load model usage.</p>
+                        <p className="text-destructive text-sm">
+                            {t('admin-pages.ai.usage.byModel.loadError')}
+                        </p>
                         <p className="mt-1 text-muted-foreground text-xs">
-                            Verify the API is reachable and try again.
+                            {t('admin-pages.ai.usage.byModel.loadErrorHint')}
                         </p>
                     </div>
                 ) : !data || data.items.length === 0 ? (
                     <div className="py-10 text-center">
                         <p className="text-muted-foreground text-sm">
-                            No model usage for the selected filters.
+                            {t('admin-pages.ai.usage.byModel.empty')}
                         </p>
                         <p className="mt-1 text-muted-foreground text-xs">
-                            Adjust the time window or remove filters to see data.
+                            {t('admin-pages.ai.usage.byModel.emptyHint')}
                         </p>
                     </div>
                 ) : (
@@ -112,13 +118,23 @@ export function AiUsageByModelTable({ search }: AiUsageByModelTableProps) {
                         <table className="w-full text-sm">
                             <thead>
                                 <tr className="border-b">
-                                    <th className="px-4 py-3 text-left font-medium">Model</th>
-                                    <th className="px-4 py-3 text-right font-medium">Calls</th>
-                                    <th className="px-4 py-3 text-right font-medium">Tokens In</th>
-                                    <th className="px-4 py-3 text-right font-medium">Tokens Out</th>
-                                    <th className="px-4 py-3 text-right font-medium">Est. Cost</th>
+                                    <th className="px-4 py-3 text-left font-medium">
+                                        {t('admin-pages.ai.usage.table.colModel')}
+                                    </th>
                                     <th className="px-4 py-3 text-right font-medium">
-                                        Cost / 1k tokens
+                                        {t('admin-pages.ai.usage.table.colCalls')}
+                                    </th>
+                                    <th className="px-4 py-3 text-right font-medium">
+                                        {t('admin-pages.ai.usage.table.colTokensIn')}
+                                    </th>
+                                    <th className="px-4 py-3 text-right font-medium">
+                                        {t('admin-pages.ai.usage.table.colTokensOut')}
+                                    </th>
+                                    <th className="px-4 py-3 text-right font-medium">
+                                        {t('admin-pages.ai.usage.table.colEstCost')}
+                                    </th>
+                                    <th className="px-4 py-3 text-right font-medium">
+                                        {t('admin-pages.ai.usage.table.colCostPer1k')}
                                     </th>
                                 </tr>
                             </thead>

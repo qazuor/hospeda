@@ -28,6 +28,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAiUsageByFeatureModelQuery } from '@/features/ai-usage/hooks';
 import type { AiUsageDailySearch } from '@/features/ai-usage/types';
+import { useTranslations } from '@/hooks/use-translations';
 import { LoaderIcon } from '@repo/icons';
 import type { AiUsageByFeatureModelRow } from '@repo/schemas';
 import { formatMicroUsd } from '@repo/utils';
@@ -105,6 +106,8 @@ function groupByFeature(rows: readonly AiUsageByFeatureModelRow[]): readonly Fea
  * @param props - {@link AiUsageByFeatureTableProps}
  */
 export function AiUsageByFeatureTable({ search }: AiUsageByFeatureTableProps) {
+    const { t, tPlural } = useTranslations();
+
     // Re-use by-feature-model with a large pageSize to capture all cross rows.
     // TanStack Query caches by queryKey — T-016's table will use the same cache entry.
     const { data, isLoading, isError } = useAiUsageByFeatureModelQuery({
@@ -120,39 +123,43 @@ export function AiUsageByFeatureTable({ search }: AiUsageByFeatureTableProps) {
     const rows = data ? groupByFeature(data.items) : [];
 
     const description = isLoading
-        ? 'Loading...'
+        ? t('admin-pages.ai.usage.byFeature.loading')
         : isError
-          ? 'Failed to load data'
+          ? t('admin-pages.ai.usage.byFeature.loadError')
           : rows.length > 0
-            ? `${rows.length.toLocaleString()} feature${rows.length === 1 ? '' : 's'} — ordered by cost`
-            : 'No data for the selected window';
+            ? tPlural('admin-pages.ai.usage.byFeature.desc', rows.length)
+            : t('admin-pages.ai.usage.byFeature.empty');
 
     return (
         <Card>
             <CardHeader>
-                <CardTitle>By Feature</CardTitle>
+                <CardTitle>{t('admin-pages.ai.usage.byFeature.title')}</CardTitle>
                 <CardDescription>{description}</CardDescription>
             </CardHeader>
             <CardContent>
                 {isLoading ? (
                     <div className="py-10 text-center">
                         <LoaderIcon className="mx-auto h-6 w-6 animate-spin text-primary" />
-                        <p className="mt-3 text-muted-foreground text-sm">Loading feature data…</p>
+                        <p className="mt-3 text-muted-foreground text-sm">
+                            {t('admin-pages.ai.usage.byFeature.loading')}
+                        </p>
                     </div>
                 ) : isError ? (
                     <div className="py-10 text-center">
-                        <p className="text-destructive text-sm">Failed to load feature usage.</p>
+                        <p className="text-destructive text-sm">
+                            {t('admin-pages.ai.usage.byFeature.loadError')}
+                        </p>
                         <p className="mt-1 text-muted-foreground text-xs">
-                            Verify the API is reachable and try again.
+                            {t('admin-pages.ai.usage.byFeature.loadErrorHint')}
                         </p>
                     </div>
                 ) : rows.length === 0 ? (
                     <div className="py-10 text-center">
                         <p className="text-muted-foreground text-sm">
-                            No feature usage for the selected filters.
+                            {t('admin-pages.ai.usage.byFeature.empty')}
                         </p>
                         <p className="mt-1 text-muted-foreground text-xs">
-                            Adjust the time window or remove filters to see data.
+                            {t('admin-pages.ai.usage.byFeature.emptyHint')}
                         </p>
                     </div>
                 ) : (
@@ -160,11 +167,21 @@ export function AiUsageByFeatureTable({ search }: AiUsageByFeatureTableProps) {
                         <table className="w-full text-sm">
                             <thead>
                                 <tr className="border-b">
-                                    <th className="px-4 py-3 text-left font-medium">Feature</th>
-                                    <th className="px-4 py-3 text-right font-medium">Calls</th>
-                                    <th className="px-4 py-3 text-right font-medium">Tokens In</th>
-                                    <th className="px-4 py-3 text-right font-medium">Tokens Out</th>
-                                    <th className="px-4 py-3 text-right font-medium">Est. Cost</th>
+                                    <th className="px-4 py-3 text-left font-medium">
+                                        {t('admin-pages.ai.usage.table.colFeature')}
+                                    </th>
+                                    <th className="px-4 py-3 text-right font-medium">
+                                        {t('admin-pages.ai.usage.table.colCalls')}
+                                    </th>
+                                    <th className="px-4 py-3 text-right font-medium">
+                                        {t('admin-pages.ai.usage.table.colTokensIn')}
+                                    </th>
+                                    <th className="px-4 py-3 text-right font-medium">
+                                        {t('admin-pages.ai.usage.table.colTokensOut')}
+                                    </th>
+                                    <th className="px-4 py-3 text-right font-medium">
+                                        {t('admin-pages.ai.usage.table.colEstCost')}
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>

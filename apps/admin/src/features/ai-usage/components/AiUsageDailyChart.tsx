@@ -13,7 +13,7 @@
  * `pageSize` is capped at 100 by `AiUsagePaginationSchema`. A calendar month
  * (≤31 zero-filled days) fits comfortably; wide custom date-ranges may truncate.
  * When `pagination.total > pagination.pageSize`, a caption is shown under the
- * chart: "Showing first N days — narrow the window to see the full range."
+ * chart via the `admin-pages.ai.usage.daily.truncationNotice` i18n key.
  * Multi-page fetching is explicitly deferred to a future task (T-019 polish).
  *
  * ## Sort guarantee
@@ -33,6 +33,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAiUsageDailyQuery } from '@/features/ai-usage/hooks';
 import type { AiUsageDailySearch } from '@/features/ai-usage/types';
+import { useTranslations } from '@/hooks/use-translations';
 import { LoaderIcon } from '@repo/icons';
 import type { AiUsageDailyRow } from '@repo/schemas';
 import { formatMicroUsd } from '@repo/utils';
@@ -146,6 +147,8 @@ function formatCostTick(value: number): string {
  * @param props - {@link AiUsageDailyChartProps}
  */
 export function AiUsageDailyChart({ search }: AiUsageDailyChartProps) {
+    const { t, tPlural } = useTranslations();
+
     // Pass the full search object — the hook already strips to accepted params
     // (window: year/month/since/until, feature/model/provider/userId, page/pageSize).
     // Use pageSize: MAX_DAILY_PAGE_SIZE to capture as many days as possible.
@@ -163,30 +166,34 @@ export function AiUsageDailyChart({ search }: AiUsageDailyChartProps) {
     const hasData = chartRows.length > 0;
 
     const description = isLoading
-        ? 'Loading...'
+        ? t('admin-pages.ai.usage.daily.loading')
         : isError
-          ? 'Failed to load data'
+          ? t('admin-pages.ai.usage.daily.loadError')
           : hasData
-            ? `${chartRows.length} day${chartRows.length === 1 ? '' : 's'} — cost over time`
-            : 'No data for the selected window';
+            ? tPlural('admin-pages.ai.usage.daily.desc', chartRows.length)
+            : t('admin-pages.ai.usage.daily.empty');
 
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Daily Cost</CardTitle>
+                <CardTitle>{t('admin-pages.ai.usage.daily.title')}</CardTitle>
                 <CardDescription>{description}</CardDescription>
             </CardHeader>
             <CardContent>
                 {isLoading ? (
                     <div className="py-10 text-center">
                         <LoaderIcon className="mx-auto h-6 w-6 animate-spin text-primary" />
-                        <p className="mt-3 text-muted-foreground text-sm">Loading daily data…</p>
+                        <p className="mt-3 text-muted-foreground text-sm">
+                            {t('admin-pages.ai.usage.daily.loading')}
+                        </p>
                     </div>
                 ) : isError ? (
                     <div className="py-10 text-center">
-                        <p className="text-destructive text-sm">Failed to load daily usage.</p>
+                        <p className="text-destructive text-sm">
+                            {t('admin-pages.ai.usage.daily.loadError')}
+                        </p>
                         <p className="mt-1 text-muted-foreground text-xs">
-                            Verify the API is reachable and try again.
+                            {t('admin-pages.ai.usage.daily.loadErrorHint')}
                         </p>
                     </div>
                 ) : hasData ? (
@@ -257,17 +264,22 @@ export function AiUsageDailyChart({ search }: AiUsageDailyChartProps) {
                                         if (name === 'costUsd') {
                                             return [
                                                 formatMicroUsd(Math.round(value * 1_000_000)),
-                                                'Est. Cost'
+                                                t('admin-pages.ai.usage.daily.legendEstCost')
                                             ];
                                         }
-                                        return [value.toLocaleString(), 'Calls'];
+                                        return [
+                                            value.toLocaleString(),
+                                            t('admin-pages.ai.usage.daily.legendCalls')
+                                        ];
                                     }}
                                     labelFormatter={formatXAxisTick}
                                 />
 
                                 <Legend
                                     formatter={(value: string) =>
-                                        value === 'costUsd' ? 'Est. Cost (USD)' : 'Calls'
+                                        value === 'costUsd'
+                                            ? t('admin-pages.ai.usage.daily.legendEstCost')
+                                            : t('admin-pages.ai.usage.daily.legendCalls')
                                     }
                                 />
 
@@ -302,21 +314,22 @@ export function AiUsageDailyChart({ search }: AiUsageDailyChartProps) {
                          * only the first 100 days are shown. The user should narrow
                          * the window (month mode or shorter date-range) to see all days.
                          * Multi-page fetching is deferred to T-019. */}
-                        {isTruncated && (
+                        {isTruncated && data && (
                             <p className="mt-2 text-center text-muted-foreground text-xs">
-                                Showing first {MAX_DAILY_PAGE_SIZE} of{' '}
-                                {data.pagination.total.toLocaleString()} days — narrow the window
-                                for the full range.
+                                {t('admin-pages.ai.usage.daily.truncationNotice', {
+                                    shown: MAX_DAILY_PAGE_SIZE,
+                                    total: data.pagination.total.toLocaleString()
+                                })}
                             </p>
                         )}
                     </>
                 ) : (
                     <div className="py-10 text-center">
                         <p className="text-muted-foreground text-sm">
-                            No daily usage for the selected filters.
+                            {t('admin-pages.ai.usage.daily.empty')}
                         </p>
                         <p className="mt-1 text-muted-foreground text-xs">
-                            Adjust the time window or remove filters to see the chart.
+                            {t('admin-pages.ai.usage.daily.emptyHint')}
                         </p>
                     </div>
                 )}

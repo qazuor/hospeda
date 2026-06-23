@@ -19,6 +19,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAiUsageByModelQuery } from '@/features/ai-usage/hooks';
 import type { AiUsageDailySearch } from '@/features/ai-usage/types';
+import { useTranslations } from '@/hooks/use-translations';
 import type { AiUsageByModelRow } from '@repo/schemas';
 import { formatMicroUsd } from '@repo/utils';
 
@@ -94,6 +95,12 @@ function MetricCard({ label, value, sublabel }: MetricCardProps) {
 }
 
 // ---------------------------------------------------------------------------
+// Skeleton keys (stable array avoids Biome noArrayIndexKey)
+// ---------------------------------------------------------------------------
+
+const SKELETON_KEYS = ['calls', 'tokens-in', 'tokens-out', 'cost'] as const;
+
+// ---------------------------------------------------------------------------
 // Main component
 // ---------------------------------------------------------------------------
 
@@ -107,6 +114,8 @@ function MetricCard({ label, value, sublabel }: MetricCardProps) {
  * @param props - {@link AiUsageTotalsCardProps}
  */
 export function AiUsageTotalsCard({ search }: AiUsageTotalsCardProps) {
+    const { t } = useTranslations();
+
     // Re-use the by-model hook with a large pageSize to capture as many rows as
     // possible without a dedicated /totals endpoint. The hook is shared with the
     // by-model table below (TanStack Query caches by identical key).
@@ -116,10 +125,9 @@ export function AiUsageTotalsCard({ search }: AiUsageTotalsCardProps) {
     });
 
     if (isLoading) {
-        const skeletonKeys = ['calls', 'tokens-in', 'tokens-out', 'cost'] as const;
         return (
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-                {skeletonKeys.map((key) => (
+                {SKELETON_KEYS.map((key) => (
                     <Card key={key}>
                         <CardHeader className="pb-2">
                             <div className="h-4 w-24 animate-pulse rounded bg-muted" />
@@ -137,9 +145,11 @@ export function AiUsageTotalsCard({ search }: AiUsageTotalsCardProps) {
         return (
             <Card>
                 <CardContent className="py-8 text-center">
-                    <p className="text-destructive text-sm">Failed to load usage totals.</p>
+                    <p className="text-destructive text-sm">
+                        {t('admin-pages.ai.usage.totals.loadError')}
+                    </p>
                     <p className="mt-1 text-muted-foreground text-xs">
-                        Check that the API is reachable and retry.
+                        {t('admin-pages.ai.usage.totals.loadErrorHint')}
                     </p>
                 </CardContent>
             </Card>
@@ -152,24 +162,26 @@ export function AiUsageTotalsCard({ search }: AiUsageTotalsCardProps) {
     return (
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
             <MetricCard
-                label="Total Calls"
+                label={t('admin-pages.ai.usage.totals.title')}
                 value={totals.calls.toLocaleString()}
-                sublabel="AI requests in window"
+                sublabel={t('admin-pages.ai.usage.totals.subtitle')}
             />
             <MetricCard
-                label="Tokens In"
+                label={t('admin-pages.ai.usage.totals.tokensIn')}
                 value={totals.tokensIn.toLocaleString()}
-                sublabel="Prompt tokens consumed"
+                sublabel={t('admin-pages.ai.usage.totals.subtitleTokensIn')}
             />
             <MetricCard
-                label="Tokens Out"
+                label={t('admin-pages.ai.usage.totals.tokensOut')}
                 value={totals.tokensOut.toLocaleString()}
-                sublabel="Completion tokens generated"
+                sublabel={t('admin-pages.ai.usage.totals.subtitleTokensOut')}
             />
             <MetricCard
-                label="Est. Cost"
+                label={t('admin-pages.ai.usage.totals.estCost')}
                 value={formatMicroUsd(totals.costMicroUsd)}
-                sublabel={`${totalTokens.toLocaleString()} total tokens`}
+                sublabel={t('admin-pages.ai.usage.totals.subtitleCost', {
+                    total: totalTokens.toLocaleString()
+                })}
             />
         </div>
     );
