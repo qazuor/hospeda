@@ -24,6 +24,7 @@
 
 import { expect, test } from '@playwright/test';
 import { createUser } from '../../fixtures/api-helpers.ts';
+import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
@@ -42,6 +43,10 @@ function extractCount(body: CountApiResponse): number {
 
 test.describe('E2E-06: public save counter @p1 @favorites @counter @spec-098', () => {
     const userIds: string[] = [];
+
+    test.beforeEach(async ({ page }) => {
+        await seedCookieConsent(page);
+    });
 
     test.afterEach(async () => {
         if (userIds.length > 0) {

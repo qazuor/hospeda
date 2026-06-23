@@ -26,7 +26,10 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
+import { useTranslations } from '@/hooks/use-translations';
+import { translateAdminApiError } from '@/lib/errors';
 import { adminLogger } from '@/utils/logger';
+import type { ApiErrorShape } from '@repo/i18n';
 import { useState } from 'react';
 import { useCreateSponsorshipPackageMutation } from '../hooks/useSponsorshipQueries';
 
@@ -62,6 +65,7 @@ export function CreateSponsorshipPackageDialog({
     onOpenChange
 }: CreateSponsorshipPackageDialogProps) {
     const { addToast } = useToast();
+    const { t } = useTranslations();
     const mutation = useCreateSponsorshipPackageMutation();
     const [values, setValues] = useState<FormState>(INITIAL_STATE);
     const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
@@ -126,10 +130,11 @@ export function CreateSponsorshipPackageDialog({
             adminLogger.error('[CreateSponsorshipPackageDialog] Submit failed', error);
             addToast({
                 title: 'Error al crear el paquete',
-                message:
-                    error instanceof Error
-                        ? error.message
-                        : 'No pudimos crear el paquete. Probá de nuevo.',
+                message: translateAdminApiError({
+                    error: error as ApiErrorShape,
+                    t,
+                    fallback: 'No pudimos crear el paquete. Probá de nuevo.'
+                }),
                 variant: 'error'
             });
         }

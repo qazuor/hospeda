@@ -40,6 +40,7 @@ import {
     signupUser,
     startHostOnboarding
 } from '../../fixtures/api-helpers.ts';
+import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
 import { extractFirstLink, waitForEmail } from '../../fixtures/mailpit-client.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
@@ -53,6 +54,10 @@ const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
 test.describe('HOST-01: web→admin onboarding handoff @p0 @host @onboarding @billing @cross-app', () => {
     let createdUserId: string | null = null;
     let _createdAccommodationId: string | null = null;
+
+    test.beforeEach(async ({ page }) => {
+        await seedCookieConsent(page);
+    });
 
     test.afterEach(async () => {
         if (createdUserId) {

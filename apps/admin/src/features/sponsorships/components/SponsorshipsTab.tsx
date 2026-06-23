@@ -14,6 +14,8 @@ import {
 } from '@/features/sponsorships/hooks/useSponsorshipQueries';
 import type { Sponsorship } from '@/features/sponsorships/types';
 import { useTranslations } from '@/hooks/use-translations';
+import { translateAdminApiError } from '@/lib/errors';
+import type { ApiErrorShape } from '@repo/i18n';
 import { AddIcon, CheckIcon, CloseIcon } from '@repo/icons';
 import { LifecycleStatusEnum, SponsorshipStatusEnum } from '@repo/schemas';
 import { useState } from 'react';
@@ -201,7 +203,9 @@ export function SponsorshipsTab() {
                         <p className="text-muted-foreground">
                             {t('admin-billing.sponsorships.errors.loadSponsorships')}
                         </p>
-                        <p className="mt-2 text-destructive text-sm">{error.message}</p>
+                        <p className="mt-2 text-destructive text-sm">
+                            {translateAdminApiError({ error: error as ApiErrorShape, t })}
+                        </p>
                     </div>
                 </CardContent>
             </Card>

@@ -347,23 +347,36 @@ entitlements of the plan it was comped on (comp = "plan X, never charged", not
 
 ### 9. Data Model Changes & Migration
 
-**Two migration carriles apply (project rule).** Structural changes (new columns /
-widened semantics on `billing_promo_codes` and `billing_subscriptions`) go through
-`pnpm db:generate` + `pnpm db:migrate`. Any Drizzle-invisible objects (CHECK
-constraints on effect params, partial indexes, data backfills) go to
-`packages/db/src/migrations/extras/` as hand-written idempotent SQL re-applied by
-`pnpm db:apply-extras` (next free number is `018-*`).
+**Migration reality (CORRECTED in T-002 — important).** `billing_promo_codes` and
+`billing_subscriptions` are owned by the EXTERNAL package `@qazuor/qzpay-drizzle`;
+their Drizzle schema lives outside this repo, so `pnpm db:generate` NEVER emits
+migrations for these tables. ALL column additions to them therefore go through the
+**extras carril** (`packages/db/src/migrations/extras/`, idempotent
+`ADD COLUMN IF NOT EXISTS`, re-applied by `pnpm db:apply-extras`), exactly like the
+existing `extras/016` / `017` precedent. This is the OPPOSITE of the "structural →
+db:generate" default for repo-owned tables. T-002 added the columns in
+`extras/018` (promo_codes) and `extras/019` (subscriptions); CHECK constraints +
+backfill follow in `extras/020-*` (T-003).
 
-**Promo-code side (`billing_promo_codes`).** Persist the effect. `type` is a
-`varchar(50)` (no enum to extend). Either widen `type` + use the existing `config`
-jsonb for params, or add explicit columns (`effect_kind`, `value_kind`,
-`duration_cycles`, `extra_days`) — decided as task T (OQ-2). Whichever is chosen,
-add CHECK/validation so impossible combinations cannot be persisted.
+**Promo-code side (`billing_promo_codes`, extras/018).** Explicit typed columns
+(OQ-2): `effect_kind varchar(30) NOT NULL DEFAULT 'discount'`, `value_kind
+varchar(20)` nullable, `duration_cycles integer` nullable, `extra_days integer`
+nullable. NOTE: a `value integer NOT NULL` column ALREADY EXISTS (qzpay-owned) and
+carries the discount amount — it is REUSED for `discount` effects together with the
+new `value_kind` discriminator; no new `value` column is added. CHECK constraints
+for impossible combos are added in extras/020 (T-003).
 
-**Subscription side (`billing_subscriptions`).** Add remaining-cycle tracking for
-multi-cycle discounts and, if Model β is adopted, the `comp` state marker. Existing
-columns `promo_code_id`, `trial_end`, `metadata`, `status` (varchar, not enum) are
-reused. The `status` value set may gain `comp` (varchar, so no enum migration).
+**Subscription side (`billing_subscriptions`, extras/019).** `promo_effect_remaining_cycles
+integer` nullable for multi-cycle discount countdown. The `comp` Model-β state: the
+column `status` is `varchar(50)` and does NOT use a pg enum, so `'comp'` can be
+written directly. HOWEVER the repo also declares an ORPHAN pg enum
+`subscription_status_enum` (derived from the TS `SubscriptionStatusEnum` via
+`enumToTuple`, used by no column). Adding `COMP` to the TS enum — needed for code
+type-safety — makes `db:generate` emit `ALTER TYPE ... ADD VALUE 'comp'` (migration
+`0023`). This IS applied: it follows the project's established pattern (5 prior
+`ADD VALUE` migrations: 0005/0009/0012/0016/0017) and is safe on PostgreSQL 17.
+So `comp` touches BOTH carriles: the TS enum + its pg-enum migration (db:generate),
+and the subscription column lives in the external table (varchar, no change needed).
 
 **Data migration (backward-compat, AC-4 / AC-2.3).**
 

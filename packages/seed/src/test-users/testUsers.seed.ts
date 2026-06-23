@@ -19,6 +19,7 @@ import { STATUS_ICONS } from '../utils/icons.js';
 import { logger } from '../utils/logger.js';
 import type { SeedContext } from '../utils/seedContext.js';
 import { summaryTracker } from '../utils/summaryTracker.js';
+import { markUserReady } from './markUserReady.js';
 
 /**
  * Number of bcrypt salt rounds for hashing test user passwords.
@@ -556,6 +557,17 @@ export async function seedTestUsers(_context: SeedContext): Promise<void> {
                 logger.success({
                     msg: `${STATUS_ICONS.Success}  Created user ${spec.email} (${spec.role}, id: ${userId})`
                 });
+            }
+
+            // ── Mark user ready (SPEC-264) ───────────────────────────────────
+            // Writes the domain state that onboarding gates read so the user is
+            // immediately usable after seeding without any manual click-through:
+            // profileCompleted=true, host.welcome tour seen, whatsNew baselined.
+            const readyResult = await markUserReady({ email: spec.email, model: userModel });
+            if (!readyResult.ok) {
+                logger.warn(
+                    `${STATUS_ICONS.Warning}  markUserReady: user not found for ${spec.email} — onboarding state NOT written`
+                );
             }
 
             // ── Ensure account row (Better Auth credentials) ─────────────────

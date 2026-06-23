@@ -1,5 +1,5 @@
 {
-    "id": "39b88693-86e9-458e-b1c2-340fe81c1ab7",
+    "id": "0f04188b-246f-4a99-a540-c09c97b04364",
     "prevId": "a9738d59-e501-4e12-98e1-b40c81941c40",
     "version": "7",
     "dialect": "postgresql",
@@ -2033,32 +2033,6 @@
                     "primaryKey": false,
                     "notNull": false
                 },
-                "run_status": {
-                    "name": "run_status",
-                    "type": "external_reputation_run_status_enum",
-                    "typeSchema": "public",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "default": "'idle'"
-                },
-                "apify_run_id": {
-                    "name": "apify_run_id",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": false
-                },
-                "apify_dataset_id": {
-                    "name": "apify_dataset_id",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": false
-                },
-                "run_started_at": {
-                    "name": "run_started_at",
-                    "type": "timestamp with time zone",
-                    "primaryKey": false,
-                    "notNull": false
-                },
                 "created_at": {
                     "name": "created_at",
                     "type": "timestamp with time zone",
@@ -2137,21 +2111,6 @@
                         }
                     ],
                     "isUnique": true,
-                    "concurrently": false,
-                    "method": "btree",
-                    "with": {}
-                },
-                "accommodation_external_reputation_runStatus_idx": {
-                    "name": "accommodation_external_reputation_runStatus_idx",
-                    "columns": [
-                        {
-                            "expression": "run_status",
-                            "isExpression": false,
-                            "asc": true,
-                            "nulls": "last"
-                        }
-                    ],
-                    "isUnique": false,
                     "concurrently": false,
                     "method": "btree",
                     "with": {}
@@ -8743,7 +8702,7 @@
                     "name": "rating",
                     "type": "jsonb",
                     "primaryKey": false,
-                    "notNull": true
+                    "notNull": false
                 },
                 "average_rating": {
                     "name": "average_rating",
@@ -20316,11 +20275,6 @@
             "name": "external_reputation_fetch_status_enum",
             "schema": "public",
             "values": ["ok", "blocked", "not_found", "error"]
-        },
-        "public.external_reputation_run_status_enum": {
-            "name": "external_reputation_run_status_enum",
-            "schema": "public",
-            "values": ["idle", "pending", "running"]
         },
         "public.gastronomy_type_enum": {
             "name": "gastronomy_type_enum",

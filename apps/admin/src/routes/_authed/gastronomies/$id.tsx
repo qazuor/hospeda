@@ -40,12 +40,20 @@ export const Route = createFileRoute('/_authed/gastronomies/$id')({
 // Reviews moderation sub-tab
 // ---------------------------------------------------------------------------
 
-/** Minimal review shape returned by the pending-reviews endpoint. */
+/**
+ * Minimal review shape returned by the pending-reviews endpoint.
+ *
+ * Field names mirror the `GastronomyReviewSchema` response: `overallRating`
+ * is the scalar star rating, `rating` is the optional per-dimension breakdown
+ * object (food/service/ambiance/value) — NOT a scalar, so it must never be
+ * rendered directly — `reviewerName` and `title`/`content` carry the text.
+ */
 interface PendingReview {
     readonly id: string;
-    readonly authorName?: string;
-    readonly comment?: string;
-    readonly rating?: number;
+    readonly reviewerName?: string | null;
+    readonly title?: string | null;
+    readonly content?: string | null;
+    readonly overallRating?: number;
 }
 
 /**
@@ -87,17 +95,19 @@ function GastronomyReviewsPanel({
                 <Card key={review.id}>
                     <CardHeader>
                         <CardTitle className="text-base">
-                            {review.authorName ?? t('admin-entities.gastronomy.reviews.anonymous')}
-                            {review.rating !== undefined && (
+                            {review.reviewerName ??
+                                t('admin-entities.gastronomy.reviews.anonymous')}
+                            {review.overallRating !== undefined && (
                                 <span className="ml-2 text-muted-foreground text-sm">
-                                    ★ {review.rating}
+                                    ★ {review.overallRating}
                                 </span>
                             )}
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        {review.comment && (
-                            <p className="mb-4 text-muted-foreground text-sm">{review.comment}</p>
+                        {review.title && <p className="mb-1 font-medium text-sm">{review.title}</p>}
+                        {review.content && (
+                            <p className="mb-4 text-muted-foreground text-sm">{review.content}</p>
                         )}
                         <div className="flex gap-2">
                             <Button
@@ -209,23 +219,28 @@ function GastronomyViewPage() {
 
     return (
         <div className="space-y-4">
-            <div className="flex justify-end">
-                <DeleteRowButton
-                    entityId={id}
-                    entityName={gastronomy?.name ?? id}
-                    entityLabel={t('admin-entities.entities.gastronomy.singular')}
-                    permission={PermissionEnum.COMMERCE_DELETE}
-                    useDeleteMutation={useDeleteGastronomyMutation}
-                    variant="full"
-                    entityGender="f"
-                    onDeleted={() => navigate({ to: '/gastronomies' })}
+            {/* px-6 mirrors the EntityPageBase content inset so the delete row
+                and assign-owner card align with the entity card below instead of
+                sitting full-bleed against the page edges. */}
+            <div className="space-y-4 px-6 pt-6">
+                <div className="flex justify-end">
+                    <DeleteRowButton
+                        entityId={id}
+                        entityName={gastronomy?.name ?? id}
+                        entityLabel={t('admin-entities.entities.gastronomy.singular')}
+                        permission={PermissionEnum.COMMERCE_DELETE}
+                        useDeleteMutation={useDeleteGastronomyMutation}
+                        variant="full"
+                        entityGender="f"
+                        onDeleted={() => navigate({ to: '/gastronomies' })}
+                    />
+                </div>
+
+                <GastronomyAssignOwner
+                    gastronomyId={id}
+                    currentOwnerId={gastronomy?.ownerId}
                 />
             </div>
-
-            <GastronomyAssignOwner
-                gastronomyId={id}
-                currentOwnerId={gastronomy?.ownerId}
-            />
 
             <EntityPageBase
                 entityType="gastronomy"

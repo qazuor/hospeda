@@ -98,6 +98,17 @@ Out of scope:
 - Any change to the env-hardening surface (that shipped in PR #1712).
 - Path-only revalidation semantics for entities that legitimately have no id.
 
+### Follow-up: entity_id for destination / event / post / reviews
+
+Only `accommodation` populates `entity_id` in this spec. The other entity types
+(`destination`, `event`, `post`) and the review types (`accommodation_review`,
+`destination_review`) do not yet forward their `id` field to `scheduleRevalidation`.
+Adding `id` to those call sites is a follow-up task: each hook must pass
+`id: entity.id` alongside the existing `slug` (or review parent slug), and
+`extractEntityId` will need to be extended accordingly. Until that follow-up lands,
+`revalidation_log.entity_id` remains NULL for those entity types — which is
+expected behavior, not a regression.
+
 ## 4. Acceptance criteria
 
 - **AC-1**: After an entity update that triggers revalidation, at least one
