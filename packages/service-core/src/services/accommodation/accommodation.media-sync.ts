@@ -127,6 +127,9 @@ export async function syncAccommodationMedia({
     // We use hardDelete instead of softDelete because:
     //  a) The shadow table has no consumer yet (P1); stale rows are just waste.
     //  b) Consistency with junction-sync which also hard-deletes before re-insert.
+    // Note: hardDelete removes ALL rows matching the filter, including any that
+    // were previously soft-deleted (deleted_at IS NOT NULL). This is acceptable
+    // in P1 — there is no audit requirement for the shadow table at this stage.
     await mediaModel.hardDelete({ accommodationId }, tx);
 
     // media === null means "clear all rows" — delete is done, nothing to insert.
@@ -196,10 +199,10 @@ export async function syncAccommodationMedia({
     if (rows.length === 0) return;
 
     // Step 2: bulk insert all new rows.
-    // BaseModel.create() takes one row at a time; for a batch we call the underlying
-    // Drizzle client directly via mediaModel.raw() is not ideal — use a loop.
-    // Accommodation photos are typically ≤25 per write so N inserts is acceptable.
-    // A future optimisation can use a single INSERT ... VALUES (...),(...) if needed.
+    // BaseModel.create() takes one row at a time; we iterate rather than using a
+    // single batch INSERT because accommodation photos are typically ≤25 per write
+    // and the overhead is negligible. A future optimisation can consolidate into
+    // a single INSERT ... VALUES (...),(...) if profiling shows it matters.
     for (const row of rows) {
         await mediaModel.create(row as Parameters<typeof mediaModel.create>[0], tx);
     }
