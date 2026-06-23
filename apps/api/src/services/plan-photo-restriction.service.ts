@@ -34,9 +34,11 @@
 
 import {
     type DrizzleClient,
+    accommodationMedia,
     accommodations,
     and,
     eq,
+    inArray,
     isNull,
     sql,
     withTransaction
@@ -166,6 +168,25 @@ export async function archiveAccommodationPhotos(
             .where(
                 and(eq(accommodations.id, input.accommodationId), isNull(accommodations.deletedAt))
             );
+
+        // SPEC-204 T-008: dual-write — flip the moved photos to 'archived' in the
+        // relational shadow table, in the SAME transaction. P1: JSONB stays the read
+        // source, so this keeps accommodation_media consistent without changing reads.
+        // Matched by `url` (the 167 identity key); sort_order is preserved.
+        const archivedUrls = toArchive.map((img) => img.url);
+        if (archivedUrls.length > 0) {
+            await tx
+                .update(accommodationMedia)
+                .set({ state: 'archived', archivedAt: new Date(), updatedAt: new Date() })
+                .where(
+                    and(
+                        eq(accommodationMedia.accommodationId, input.accommodationId),
+                        inArray(accommodationMedia.url, archivedUrls),
+                        eq(accommodationMedia.state, 'visible'),
+                        isNull(accommodationMedia.deletedAt)
+                    )
+                );
+        }
 
         const movedCount = toArchive.length;
         const totalCount = newGallery.length + newArchivedGallery.length;
@@ -322,6 +343,24 @@ export async function restoreAccommodationPhotos(
             .where(
                 and(eq(accommodations.id, input.accommodationId), isNull(accommodations.deletedAt))
             );
+
+        // SPEC-204 T-008: dual-write — flip the restored photos back to 'visible' in
+        // the relational shadow table, in the SAME transaction. archived_at is cleared
+        // so the row re-joins the active gallery. Matched by `url` (167 identity key).
+        const restoredUrls = toRestore.map((img) => img.url);
+        if (restoredUrls.length > 0) {
+            await tx
+                .update(accommodationMedia)
+                .set({ state: 'visible', archivedAt: null, updatedAt: new Date() })
+                .where(
+                    and(
+                        eq(accommodationMedia.accommodationId, input.accommodationId),
+                        inArray(accommodationMedia.url, restoredUrls),
+                        eq(accommodationMedia.state, 'archived'),
+                        isNull(accommodationMedia.deletedAt)
+                    )
+                );
+        }
 
         const movedCount = toRestore.length;
         const totalCount = newGallery.length + remainingArchived.length;
