@@ -267,6 +267,8 @@
         "zodError.billing.promoCode.apply.code.min",
         "zodError.billing.promoCode.apply.customerId.invalid",
         "zodError.billing.promoCode.apply.customerId.invalidType",
+        "zodError.billing.promoCode.apply.subscriptionId.invalid",
+        "zodError.billing.promoCode.apply.subscriptionId.invalidType",
         "zodError.billing.promoCode.create.code.format",
         "zodError.billing.promoCode.create.code.invalidType",
         "zodError.billing.promoCode.create.code.max",
@@ -1559,7 +1561,7 @@
         "zodError.validation.sanitization.failed",
         "zodError.validation.zod.failed"
     ],
-    "total": 1558,
+    "total": 1560,
     "byNamespace": {
         "accommodation": 50,
         "accommodationAmenity": 4,
@@ -1571,7 +1573,7 @@
         "adminView": 3,
         "amenity": 44,
         "attraction": 26,
-        "billing": 201,
+        "billing": 203,
         "commerce": 14,
         "commerceLead": 13,
         "common": 220,

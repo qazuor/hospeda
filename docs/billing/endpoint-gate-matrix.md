@@ -212,7 +212,7 @@
 | `PUT /api/v1/protected/billing/promo-codes/{id}` | `billing/promo-codes.ts` | none | - | n/a | Promo-code self-management; PermissionEnum-gated |
 | `DELETE /api/v1/protected/billing/promo-codes/{id}` | `billing/promo-codes.ts` | none | - | n/a | Promo-code self-management; PermissionEnum-gated |
 | `POST /api/v1/protected/billing/promo-codes/validate` | `billing/promo-codes.ts` | none | - | n/a | Promo-code validation; no entitlement gate |
-| `POST /api/v1/protected/billing/promo-codes/apply` | `billing/promo-codes.ts` | none | - | n/a | Promo-code apply; no entitlement gate |
+| `POST /api/v1/protected/billing/promo-codes/apply` | `billing/promo-codes.apply.ts` | none | - | n/a | Promo-code apply; no entitlement gate; ownership-guarded (own customer + own subscription, or ACCESS_API_ADMIN) — SPEC-262 T-008 |
 | `GET /api/v1/protected/billing/settings` | `billing/settings.ts` | none | - | n/a | Self-billing settings read; PermissionEnum.BILLING_VIEW_OWN |
 | `PATCH /api/v1/protected/billing/settings` | `billing/settings.ts` | none | - | n/a | Self-billing settings update; PermissionEnum.BILLING_VIEW_OWN |
 | `POST /api/v1/protected/billing/settings/reset` | `billing/settings.ts` | none | - | n/a | Self-billing settings reset; PermissionEnum.BILLING_VIEW_OWN |

@@ -5,15 +5,17 @@
  * Provides endpoints for:
  * - CRUD operations (admin only)
  * - Validation (authenticated)
- * - Application to checkout (authenticated)
+ * - Application to checkout (authenticated, via promo-codes.apply.ts)
  *
- * All routes are mounted under /api/v1/protected/billing/promo-codes
+ * Route tiers:
+ * - Admin: GET/POST/PUT/DELETE /api/v1/admin/billing/promo-codes
+ * - Protected: POST /api/v1/protected/billing/promo-codes/validate
+ * - Protected: POST /api/v1/protected/billing/promo-codes/apply (promo-codes.apply.ts)
  *
  * @module routes/billing/promo-codes
  */
 
 import {
-    ApplyPromoCodeSchema,
     CreatePromoCodeSchema,
     ListPromoCodesQuerySchema,
     PermissionEnum,
@@ -36,11 +38,12 @@ import {
     createAdminRoute,
     createProtectedRoute
 } from '../../utils/route-factory';
+import { applyPromoCodeRoute } from './promo-codes.apply.js';
 
 /**
  * List all promo codes (admin only)
  *
- * GET /api/v1/protected/billing/promo-codes
+ * GET /api/v1/admin/billing/promo-codes
  */
 export const listPromoCodesRoute = createAdminListRoute({
     method: 'get',
@@ -87,13 +90,22 @@ export const listPromoCodesRoute = createAdminListRoute({
 /**
  * Create promo code (admin only)
  *
- * POST /api/v1/protected/billing/promo-codes
+ * POST /api/v1/admin/billing/promo-codes
+ *
+ * Accepts the typed `effect` discriminated union (SPEC-262 T-004/T-005).
+ * The Zod schema enforces effect-kind invariants (AC-1.2, AC-1.3, AC-5.4):
+ * - discount: percentage value ≤ 100, durationCycles > 0 when not null
+ * - trial_extension: extraDays > 0
+ * - comp: no additional params
+ *
+ * Permission guard: BILLING_PROMO_CODE_MANAGE (AC-6.1).
  */
 export const createPromoCodeRoute = createAdminRoute({
     method: 'post',
     path: '/',
     summary: 'Create promo code',
-    description: 'Creates a new promo code. Admin only.',
+    description:
+        'Creates a new promo code with a typed effect (discount / trial_extension / comp). Admin only.',
     tags: ['Billing - Promo Codes'],
     requiredPermissions: [PermissionEnum.BILLING_PROMO_CODE_MANAGE],
     requestBody: CreatePromoCodeSchema,
@@ -104,18 +116,17 @@ export const createPromoCodeRoute = createAdminRoute({
 
         apiLogger.info('Creating promo code');
 
-        // SPEC-262 T-005: `body.effect` (discriminated union from CreatePromoCodeSchema)
-        // replaces the legacy flat `discountType` / `discountValue` fields.
-        // The service's CreatePromoCodeInput now accepts `effect` directly.
-        // Full validation polish and /apply route branching are T-008 work.
+        // SPEC-262 T-008: `body.effect` (discriminated union from CreatePromoCodeSchema)
+        // is validated by Zod before reaching this handler. Invalid effect params
+        // (durationCycles=0, negative extraDays, percentage > 100) are rejected at
+        // the schema layer with a 422 response (AC-1.2, AC-1.3, AC-5.4).
         const result = await service.create(
             {
                 code: body.code as string,
-                // New typed effect (SPEC-262) — primary path.
-                // Cast through PromoEffect: the route-factory body is typed as
-                // `z.infer<typeof CreatePromoCodeSchema>` but the generic narrows
-                // it to `unknown` at the call site. The Zod schema has already
-                // validated the shape, so this cast is safe.
+                // Typed effect (SPEC-262 T-005 primary path).
+                // Cast: the route-factory body is typed `Record<string, unknown>` at
+                // the call site; the Zod schema has already validated the shape so
+                // this cast is safe.
                 effect: body.effect as PromoEffect | undefined,
                 description: body.description as string | undefined,
                 expiryDate: body.expiryDate as Date | undefined,
@@ -159,7 +170,7 @@ export const createPromoCodeRoute = createAdminRoute({
 /**
  * Get promo code by ID (admin only)
  *
- * GET /api/v1/protected/billing/promo-codes/:id
+ * GET /api/v1/admin/billing/promo-codes/:id
  */
 export const getPromoCodeRoute = createAdminRoute({
     method: 'get',
@@ -179,7 +190,6 @@ export const getPromoCodeRoute = createAdminRoute({
 
         const result = await service.getById(params.id as string);
 
-        // Check for error or missing data
         if (!result.success || !result.data) {
             const statusMap: Record<string, number> = {
                 NOT_FOUND: 404,
@@ -200,13 +210,20 @@ export const getPromoCodeRoute = createAdminRoute({
 /**
  * Update promo code (admin only)
  *
- * PUT /api/v1/protected/billing/promo-codes/:id
+ * PUT /api/v1/admin/billing/promo-codes/:id
+ *
+ * Only mutable fields are accepted. The `effect` and its parameters are
+ * immutable once created (UpdatePromoCodeSchema uses `.strict()` to reject
+ * any attempt to change them).
+ *
+ * Permission guard: BILLING_PROMO_CODE_MANAGE (AC-6.1).
  */
 export const updatePromoCodeRoute = createAdminRoute({
     method: 'put',
     path: '/{id}',
     summary: 'Update promo code',
-    description: 'Updates a promo code. Admin only.',
+    description:
+        'Updates mutable fields of a promo code (description, expiry, maxUses, isActive). Effect params are immutable. Admin only.',
     tags: ['Billing - Promo Codes'],
     requiredPermissions: [PermissionEnum.BILLING_PROMO_CODE_MANAGE],
     requestParams: {
@@ -255,7 +272,9 @@ export const updatePromoCodeRoute = createAdminRoute({
 /**
  * Delete promo code (admin only)
  *
- * DELETE /api/v1/protected/billing/promo-codes/:id
+ * DELETE /api/v1/admin/billing/promo-codes/:id
+ *
+ * Soft-deletes (sets active = false). Permission guard: BILLING_PROMO_CODE_MANAGE (AC-6.1).
  */
 export const deletePromoCodeRoute = createAdminRoute({
     method: 'delete',
@@ -349,76 +368,9 @@ export const validatePromoCodeRoute = createProtectedRoute({
     }
 });
 
-/**
- * Apply promo code to checkout (authenticated)
- *
- * POST /api/v1/protected/billing/promo-codes/apply
- */
-export const applyPromoCodeRoute = createProtectedRoute({
-    method: 'post',
-    path: '/apply',
-    summary: 'Apply promo code',
-    description: 'Applies a promo code to a checkout session. Requires authentication.',
-    tags: ['Billing - Promo Codes'],
-    requestBody: ApplyPromoCodeSchema,
-    responseSchema: z.object({
-        id: z.string(),
-        promoCode: z.string().nullable(),
-        // Add other checkout fields as needed
-        amount: z.number(),
-        discountAmount: z.number()
-    }),
-    handler: async (c, _params, body) => {
-        const service = new PromoCodeService();
-        const actor = getActorFromContext(c);
-
-        apiLogger.info('Applying promo code');
-
-        // Get billing customer ID from context
-        const billingCustomerId = c.get('billingCustomerId');
-
-        if (!billingCustomerId) {
-            throw new HTTPException(422, {
-                message: 'Billing customer not found. Please contact support.'
-            });
-        }
-
-        // Verify ownership: ensure user is applying promo code to their own billing account
-        if (
-            !actor.permissions?.includes(PermissionEnum.ACCESS_API_ADMIN) &&
-            body.customerId !== billingCustomerId
-        ) {
-            throw new HTTPException(403, { message: 'Forbidden: admin access required' });
-        }
-
-        const result = await service.apply(
-            body.code as string,
-            body.customerId as string,
-            body.amount as number | undefined,
-            { livemode: env.NODE_ENV === 'production' }
-        );
-
-        if (result.success === false) {
-            const statusMap: Record<string, number> = {
-                NOT_FOUND: 404,
-                VALIDATION_ERROR: 400,
-                PERMISSION_DENIED: 403,
-                INTERNAL_ERROR: 500
-            };
-            const status = statusMap[result.error?.code ?? ''] ?? 500;
-            throw new HTTPException(status as 400 | 403 | 404 | 500, {
-                message: result.error?.message ?? 'Unknown error applying promo code'
-            });
-        }
-
-        return {
-            id: body.customerId as string,
-            promoCode: body.code as string,
-            amount: result.data.finalAmount,
-            discountAmount: result.data.discountAmount
-        };
-    }
-});
+// ---------------------------------------------------------------------------
+// Router assembly
+// ---------------------------------------------------------------------------
 
 /**
  * Admin promo codes router
@@ -442,6 +394,9 @@ adminPromoCodesRouter.route('/', deletePromoCodeRoute);
  * Bundles the 2 user-self verbs (validate/apply). Mounted by
  * `apps/api/src/routes/billing/index.ts` under
  * `/api/v1/protected/billing/promo-codes`.
+ *
+ * The apply route is defined in `promo-codes.apply.ts` to keep this file
+ * within the 500-line limit.
  */
 export const userPromoCodesRouter = createRouter();
 

@@ -23,7 +23,10 @@ vi.mock('../../src/services/billing/promo-code/promo-code.crud.js', () => ({
 
 import * as dbModule from '@repo/db';
 import * as promoCrudModule from '../../src/services/billing/promo-code/promo-code.crud.js';
-import { validatePromoCode } from '../../src/services/billing/promo-code/promo-code.validation.js';
+import {
+    assertSubscriptionOwnership,
+    validatePromoCode
+} from '../../src/services/billing/promo-code/promo-code.validation.js';
 
 const mockGetDb = dbModule.getDb as ReturnType<typeof vi.fn>;
 const mockGetPromoCodeByCode = promoCrudModule.getPromoCodeByCode as ReturnType<typeof vi.fn>;
@@ -314,5 +317,92 @@ describe('validatePromoCode', () => {
             expect(mockGetDb).toHaveBeenCalled();
             expect(result.valid).toBe(true);
         });
+    });
+});
+
+// ────────────────────────────────────────────────────────────────────────────
+// assertSubscriptionOwnership (SPEC-262 B1 security fix)
+// ────────────────────────────────────────────────────────────────────────────
+
+describe('assertSubscriptionOwnership', () => {
+    const SUBSCRIPTION_ID = 'sub-uuid-0000-0000-0000-000000000001';
+    const BILLING_CUSTOMER_ID = 'cust-uuid-0000-0000-0000-000000000001';
+    const OTHER_CUSTOMER_ID = 'cust-uuid-0000-0000-0000-000000000002';
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    // TC-1: admin bypass — DB must NOT be queried
+    it('TC-1 returns { success: true } immediately when actorHasAdmin=true without querying DB', async () => {
+        // Arrange — getDb is NOT configured (would throw if called)
+
+        // Act
+        const result = await assertSubscriptionOwnership({
+            subscriptionId: SUBSCRIPTION_ID,
+            billingCustomerId: BILLING_CUSTOMER_ID,
+            actorHasAdmin: true
+        });
+
+        // Assert
+        expect(result.success).toBe(true);
+        expect(mockGetDb).not.toHaveBeenCalled();
+    });
+
+    // TC-2: subscription owned by caller → success
+    it('TC-2 returns { success: true } when subscription belongs to the caller', async () => {
+        // Arrange — DB returns a row with customerId matching billingCustomerId
+        mockGetDb.mockReturnValue(buildMockDb([{ customerId: BILLING_CUSTOMER_ID }]));
+
+        // Act
+        const result = await assertSubscriptionOwnership({
+            subscriptionId: SUBSCRIPTION_ID,
+            billingCustomerId: BILLING_CUSTOMER_ID,
+            actorHasAdmin: false
+        });
+
+        // Assert
+        expect(result.success).toBe(true);
+        expect(mockGetDb).toHaveBeenCalled();
+    });
+
+    // TC-3: subscription owned by a different customer, non-admin → PERMISSION_DENIED
+    it('TC-3 returns PERMISSION_DENIED when subscription belongs to a different customer', async () => {
+        // Arrange — DB returns a row with a DIFFERENT customerId
+        mockGetDb.mockReturnValue(buildMockDb([{ customerId: OTHER_CUSTOMER_ID }]));
+
+        // Act
+        const result = await assertSubscriptionOwnership({
+            subscriptionId: SUBSCRIPTION_ID,
+            billingCustomerId: BILLING_CUSTOMER_ID,
+            actorHasAdmin: false
+        });
+
+        // Assert
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error.code).toBe('PERMISSION_DENIED');
+            expect(typeof result.error.message).toBe('string');
+        }
+    });
+
+    // TC-4: subscription row not found → NOT_FOUND
+    it('TC-4 returns NOT_FOUND when the subscription row does not exist', async () => {
+        // Arrange — DB returns empty array
+        mockGetDb.mockReturnValue(buildMockDb([]));
+
+        // Act
+        const result = await assertSubscriptionOwnership({
+            subscriptionId: SUBSCRIPTION_ID,
+            billingCustomerId: BILLING_CUSTOMER_ID,
+            actorHasAdmin: false
+        });
+
+        // Assert
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error.code).toBe('NOT_FOUND');
+            expect(typeof result.error.message).toBe('string');
+        }
     });
 });

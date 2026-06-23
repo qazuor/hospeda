@@ -742,6 +742,10 @@
                     "invalid": "Customer ID is not valid",
                     "invalidType": "[EN] El customer id tiene un tipo de dato inválido",
                     "min": "[EN] El customer id debe tener al menos {{min}} caracteres"
+                },
+                "subscriptionId": {
+                    "invalid": "Subscription ID is not valid",
+                    "invalidType": "[EN] El subscription id tiene un tipo de dato inválido"
                 }
             },
             "create": {
