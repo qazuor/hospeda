@@ -3,6 +3,55 @@
  * @module utils/currency
  */
 
+// ---------------------------------------------------------------------------
+// formatMicroUsd
+// ---------------------------------------------------------------------------
+
+/**
+ * Converts an integer micro-USD amount to a human-readable USD display string.
+ *
+ * The unit is micro-USD (µUSD): 1 USD = 1,000,000 µUSD.  All cost values in
+ * `ai_usage.costEstimateMicroUsd` are stored in this unit.
+ *
+ * **Precision strategy.** The dashboard must show sub-cent amounts faithfully
+ * (e.g. `90000 µUSD = $0.09`, `184000 µUSD = $0.184`).  This function uses
+ * up to 6 decimal places and strips trailing zeros so that:
+ * - Whole cents display cleanly:   `90000  → "$0.09"`
+ * - Sub-cent amounts are precise:  `184000 → "$0.184"`
+ * - Zero displays simply:          `0      → "$0"`
+ * - Large amounts stay readable:   `5000000 → "$5"`
+ *
+ * This is intentionally NOT `Intl.NumberFormat` — that rounds to 2 decimal
+ * places and would misrepresent sub-cent AI costs.
+ *
+ * @param microUsd - Integer micro-USD amount (1 USD = 1,000,000 µUSD).
+ *   Must be a finite number; non-finite values return `"$0"`.
+ * @returns Formatted string such as `"$0.09"`, `"$0.184"`, or `"$5"`.
+ *
+ * @example
+ * ```ts
+ * formatMicroUsd(90000)    // "$0.09"
+ * formatMicroUsd(184000)   // "$0.184"
+ * formatMicroUsd(0)        // "$0"
+ * formatMicroUsd(5000000)  // "$5"
+ * formatMicroUsd(1234567)  // "$1.234567"
+ * ```
+ */
+export function formatMicroUsd(microUsd: number): string {
+    if (!Number.isFinite(microUsd)) {
+        return '$0';
+    }
+
+    const usd = microUsd / 1_000_000;
+
+    // Format to 6 decimal places (maximum precision for µUSD → USD).
+    // Then strip trailing zeros and a lone trailing decimal point.
+    const raw = usd.toFixed(6);
+    const stripped = raw.replace(/\.?0+$/, '');
+
+    return `$${stripped}`;
+}
+
 /**
  * Format a number as currency
  * @param amount - Amount to format

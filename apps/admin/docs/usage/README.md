@@ -75,6 +75,15 @@ Follow these steps to get oriented:
 - Image management
 - Bulk import/export
 
+### System Tools (SUPER_ADMIN)
+
+**[AI Usage Dashboard Guide](../ai-usage-guide.md)**
+
+- Monitor AI cost, calls, and token volumes
+- Breakdowns by model, provider, feature, feature×model, and day
+- Filter by time window (month or date range), feature, provider, model
+- Understand cost units (µUSD), known limitations, and reconciliation invariant
+
 ---
 
 ## 🗺️ Common Tasks
