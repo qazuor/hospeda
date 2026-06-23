@@ -79,10 +79,11 @@ describe('GastronomyOwnerUpdateInputSchema', () => {
         expect('slug' in result).toBe(false);
     });
 
-    it('should strip identity field "type" (unknown key)', () => {
+    it('should preserve editable field "type" (SPEC-253: owner may change listing type)', () => {
         const data = { type: 'BAR', priceRange: 'BUDGET' };
         const result = GastronomyOwnerUpdateInputSchema.parse(data);
-        expect('type' in result).toBe(false);
+        expect('type' in result).toBe(true);
+        expect(result.type).toBe('BAR');
     });
 
     it('should strip identity field "destinationId" (unknown key)', () => {
