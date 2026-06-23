@@ -1,0 +1,13 @@
+{
+    "specId": "SPEC-270",
+    "title": "Web accessibility audit & improvements — WCAG 2.1 AA compliance",
+    "type": "improvement",
+    "complexity": "medium",
+    "status": "draft",
+    "created": "2026-06-23T00:00:00Z",
+    "startedAt": null,
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["accessibility", "web", "audit", "wcag", "a11y", "aria", "keyboard", "screen-reader"]
+}
