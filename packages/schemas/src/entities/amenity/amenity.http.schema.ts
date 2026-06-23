@@ -14,6 +14,7 @@ import {
 import { i18nText } from '../../common/i18n.schema.js';
 import { AmenitiesTypeEnumSchema } from '../../enums/index.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
+import { ApplicableVerticalSchema } from './amenity.schema.js';
 
 /**
  * HTTP-compatible amenity search schema with automatic coercion
@@ -27,6 +28,9 @@ export const AmenitySearchHttpSchema = BaseHttpSearchSchema.extend({
 
     // Type filter
     type: AmenitiesTypeEnumSchema.optional(),
+
+    /** Filter by applicable vertical (SPEC-266 T-005) */
+    applicableVertical: ApplicableVerticalSchema.optional(),
 
     // Boolean filters with HTTP coercion
     isActive: createBooleanQueryParam('Filter by amenity active status'),
@@ -143,7 +147,8 @@ export const httpToDomainAmenitySearch = (httpParams: AmenitySearchHttp): Amenit
     hasIcon: httpParams.hasIcon,
     hasDescription: httpParams.hasDescription,
     createdAfter: httpParams.createdAfter,
-    createdBefore: httpParams.createdBefore
+    createdBefore: httpParams.createdBefore,
+    applicableVertical: httpParams.applicableVertical
 
     // Note: Many HTTP search fields like isActive, isPopular, isFeatured, etc.
     // don't exist in the domain search schema - these are filtered at service layer
