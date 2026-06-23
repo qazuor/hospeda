@@ -20,13 +20,17 @@ The system MUST support two tax regimes (Monotributo and Responsable Inscripto) 
 
 1. **Dual regime support**: Monotributo (Factura C, no IVA breakdown) at launch, Responsable Inscripto (Factura B with IVA breakdown) when volumes exceed Monotributo caps
 2. **Auto-invoice model**: Every successful payment automatically generates a fiscal invoice via ARCA. No manual invoicing
-3. **Consumidor Final by default**: Users are treated as Consumidor Final unless they provide CUIT/CUIL and request Factura A
-4. **CUIT/CUIL optional for consumers**: Not required for Factura B/C under the ARS threshold (~$75,760 per operation as of 2025). Required for Factura A
+3. **Consumidor Final by default**: Users are treated as Consumidor Final unless they provide CUIT/CUIL and opt in to Factura A. Amount-threshold guard (configurable, ~ARS $75,760/2025) requires DNI/CUIT when exceeded. Factura A is available for Responsable Inscripto recipients (B2B) who supply CUIT + IVA condition
+4. **CUIT/CUIL optional for consumers**: Not required for Factura B/C under the ARS threshold. Required for Factura A
 5. **Prices are IVA-inclusive**: Current plan prices already include IVA. The system reverse-calculates the net amount for invoice purposes
-6. **Integration library**: `@afipsdk/afip.js` (primary, MIT, 100k+ downloads) with `@nicoo01x/arca-sdk` as evaluated alternative
-7. **Free plans excluded**: Plans with price $0 (tourist-free) do NOT generate fiscal invoices. ARCA does not accept zero-amount invoices
+6. **Integration library**: `@afipsdk/afip.js` via the **afipsdk.com SaaS proxy** (NOT a free self-hosted library). All traffic is proxied through afipsdk.com servers to ARCA. Free tier: 1 CUIT, 1,000 req/month. Paid tiers: Pro $25/mo (10 CUIT, 10k req), Growth $80/mo, Startup $250/mo. Terms: "as-is, no SLA". The adapter requires a valid `access_token` from afipsdk.com (env var: `HOSPEDA_AFIPSDK_ACCESS_TOKEN`). For dev/testing without a company CUIT, afipsdk.com provides a shared dev CUIT `20409378472` (no certificate needed in dev mode). A direct-to-ARCA alternate adapter exists behind the same port using `@nicoo01x/arca-sdk` with your own certificate
+7. **Free plans and promo-$0 excluded**: Plans with price $0 AND payments reduced to $0 by promo codes do NOT generate fiscal invoices. ARCA rejects zero-amount vouchers. Log and skip
 8. **Add-on purchases included**: Paid add-on purchases also generate fiscal invoices, following the same flow as subscription payments
-9. **Kill switch**: A `fiscal_invoicing_enabled` setting allows disabling auto-invoicing without code changes
+9. **Kill switch — ships without invoicing**: Company has no CUIT yet. Code is complete but fiscal invoicing ships disabled. `fiscal_invoicing_enabled` (a billing_settings key) controls this. Set to `false` at launch; enabled when CUIT is obtained and afipsdk.com account is active
+10. **Dedicated `@repo/fiscal` package**: All fiscal logic lives in `packages/fiscal` (new package). NOT inside `packages/billing`. The billing package (QZPay billing records) and fiscal package (AFIP/ARCA tax documents) are separate concerns. `@repo/fiscal` reads from QZPay's billing_invoices/billing_payments and writes to its own `fiscal_invoices`/`fiscal_credit_notes` tables
+11. **Port/adapter architecture**: A stable `InvoicingService` port interface with swappable adapters (afipsdk.com proxy as primary, direct-ARCA as documented alternate). The port receives a generic abstract "billable event" (amount, recipient, IVA condition, concept, service period) — NOT coupled to accommodation
+12. **Multi-source scope**: Fiscal invoicing covers accommodation + commerce (`product_domain` from SPEC-239) + tourist accounts (consumidor final). The design must also accommodate (not necessarily fully working at launch) sponsorship and future "partners". The MP webhook trigger filters by `product_domain` and is extensible. Implementation at launch targets accommodation + commerce + tourist; sponsorship/partners are designed-for but deferred
+13. **Cloudflare R2 for PDF storage**: Invoice PDFs stored in Cloudflare R2 (NOT AWS S3, NOT `@repo/media` which is Cloudinary/images-only). R2 is S3-compatible; use `@aws-sdk/client-s3` + `@aws-sdk/s3-request-presigner` pointed at the R2 endpoint. New dedicated storage integration in `packages/fiscal/src/storage/`
 
 ### References
 
@@ -78,23 +82,26 @@ Every term used in this spec is defined here. A developer with zero knowledge of
 | Component | Current State | Gap |
 |-----------|--------------|-----|
 | Plan prices | Stored as integer centavos in `packages/billing/src/config/plans.config.ts`. 9 plans across 3 categories (owner, complex, tourist) | No tax fields, no net/gross distinction |
-| `billing_invoices` table | Exists via QZPay schemas. Columns: `id`, `customer_id`, `subscription_id`, `number`, `status`, `subtotal`, `discount`, `tax`, `total`, `amount_paid`, `amount_remaining`, `currency`, `due_date`, `paid_at`, `voided_at`, `period_start`, `period_end`, `stripe_invoice_id`, `mp_invoice_id`, `livemode`, `metadata`, `version`, `created_at`, `updated_at`, `deleted_at` | No ARCA-specific fields (CAE, CbteTipo, PtoVta, etc.) |
-| `billing_invoice_lines` table | Exists. Columns: `id`, `invoice_id`, `description`, `quantity`, `unit_amount`, `amount`, `currency`, `price_id`, `period_start`, `period_end`, `proration`, `metadata` | No IVA rate, no IVA amount per line |
+| `billing_invoices` table | Exists via QZPay schemas (re-exported at `packages/db/src/billing/schemas.ts`). **INFORMATIONAL ONLY — column list is owned by `@qazuor/qzpay-drizzle`; inspect the published package types, do not trust this list.** Typical columns include `id`, `customer_id`, `subscription_id`, `number`, `status`, `subtotal`, `discount`, `tax`, `total`, `amount_paid`, `amount_remaining`, `currency`, `due_date`, `paid_at`, `voided_at`, `period_start`, `period_end`, `mp_invoice_id`, `livemode`, `metadata`, `version`, `created_at`, `updated_at`, `deleted_at` | No ARCA-specific fields (CAE, CbteTipo, PtoVta, etc.) |
+| `billing_invoice_lines` table | Exists via QZPay schemas. **INFORMATIONAL ONLY — column list is owned by `@qazuor/qzpay-drizzle`.** Typical columns include `id`, `invoice_id`, `description`, `quantity`, `unit_amount`, `amount`, `currency`, `price_id`, `period_start`, `period_end`, `proration`, `metadata` | No IVA rate, no IVA amount per line |
 | `billing_settings` table | Key-value store. Schema: `id` (UUID), `key` (varchar 100, unique), `value` (JSONB), `updatedBy` (UUID), `createdAt`, `updatedAt`. File: `packages/db/src/schemas/billing/billing_settings.dbschema.ts` | No tax configuration entries |
-| `billing_payments` table | Columns: `id`, `customer_id`, `subscription_id`, `invoice_id`, `amount`, `currency`, `base_amount`, `base_currency`, `exchange_rate`, `status`, `provider`, `provider_payment_ids`, `payment_method_id`, `refunded_amount`, `failure_code`, `failure_message`, `idempotency_key`, `livemode`, `metadata`, `version`, `created_at`, `updated_at`, `deleted_at` | No link to fiscal invoice |
-| `billing_refunds` table | Columns: `id`, `payment_id`, `amount`, `currency`, `status`, `reason`, `provider_refund_id`, `livemode`, `metadata`, `created_at`. **NOTE**: Does NOT have `customer_id` .. must JOIN through `billing_payments` to get it | No link to credit note |
-| `@repo/utils/currency.ts` | Has `calculateTax(amount, taxRate)` and `calculateTotalWithTax(amount, taxRate)`. These calculate tax FROM a base amount (amount * rate/100). Does NOT follow RO-RO pattern | Does NOT do reverse-calculation from IVA-inclusive prices (which is what we need) |
-| `PricingCard` component | `apps/web/src/components/shared/PricingCard.astro` shows prices with `plan.price.toLocaleString('es-AR')` | No "(IVA incluido)" text, no IVA breakdown |
-| `InvoiceHistory` component | `apps/web/src/components/account/InvoiceHistory.client.tsx` shows date, description, amount, status | No fiscal invoice data, no PDF download |
+| `billing_payments` table | Exists via QZPay schemas. **INFORMATIONAL ONLY — column list is owned by `@qazuor/qzpay-drizzle`.** Typical columns include `id`, `customer_id`, `subscription_id`, `invoice_id`, `amount`, `currency`, `base_amount`, `base_currency`, `exchange_rate`, `status`, `provider`, `provider_payment_ids`, `payment_method_id`, `refunded_amount`, `failure_code`, `failure_message`, `idempotency_key`, `livemode`, `metadata`, `version`, `created_at`, `updated_at`, `deleted_at` | No link to fiscal invoice |
+| `billing_refunds` table | Exists via QZPay schemas. **INFORMATIONAL ONLY — column list is owned by `@qazuor/qzpay-drizzle`.** Typical columns include `id`, `payment_id`, `amount`, `currency`, `status`, `reason`, `provider_refund_id`, `livemode`, `metadata`, `created_at`. **NOTE**: Does NOT have `customer_id` — must JOIN through `billing_payments` to get it | No link to credit note |
+| `@repo/utils/currency.ts` | Has `calculateTax(amount, taxRate)` and `calculateTotalWithTax(amount, taxRate)`. These calculate tax FROM a base amount (amount * rate/100). **Does NOT follow RO-RO pattern** (forward-only functions). **Reverse-IVA util does NOT exist yet** | Does NOT do reverse-calculation from IVA-inclusive prices (which is what we need) |
+| `PricingCardsGrid` component | `apps/web/src/components/billing/PricingCardsGrid.astro` renders pricing cards. `apps/web/src/components/shared/PricingCard.astro` does NOT EXIST in the codebase | No "(IVA incluido)" text, no IVA breakdown |
+| `InvoiceHistory` component | `apps/web/src/components/account/InvoiceHistory.client.tsx` — DOES NOT EXIST in the codebase | Entire component is new work |
+| Cloud storage | `packages/media/` exists (Cloudinary, image assets only). R2/S3 for fiscal PDFs does NOT exist | New `packages/fiscal/src/storage/` integration needed using `@aws-sdk/client-s3` + R2 endpoint |
+| `product_domain` | SPEC-239 added `product_domain` column to `billing_subscriptions` (extras/016) and `billing_plans` (extras/017). Values: `'accommodation'` / `'commerce'`. `commerce_listing_subscriptions` table exists at `packages/db/src/schemas/commerce/commerce_listing_subscription.dbschema.ts` | Fiscal trigger must filter/branch by `product_domain` |
+| `CREDIT_NOTE_*` permissions | `PermissionEnum` entries `CREDIT_NOTE_VIEW`, `CREDIT_NOTE_CREATE`, `CREDIT_NOTE_DOWNLOAD` ALREADY EXIST in `packages/schemas/src/enums/permission.enum.ts` but are not wired to anything | Reuse for fiscal credit notes; ADD `FISCAL_INVOICE_*` and `TAX_CONFIG_*` (these do NOT exist) |
 | `InvoiceStatusEnum` | File: `packages/schemas/src/enums/invoice-status.enum.ts`. Values: `DRAFT`, `ISSUED`, `SENT`, `PAID`, `PARTIAL_PAID`, `OVERDUE`, `CANCELLED`, `VOIDED` | This is for QZPay billing invoices, NOT fiscal invoices. Fiscal invoices use a separate `ArcaStatusEnum` |
-| User profile | 28 columns + 4 JSONB nested objects (contactInfo, location, socialNetworks, profile). Web edit form: only name + bio. File: `packages/db/src/schemas/user/user.dbschema.ts` | No CUIT/CUIL field, no DNI field, no `condicionIva` field |
+| User profile | 28 columns + 4 JSONB nested objects (contactInfo, location, socialNetworks, profile). Web edit form: only name + bio. File: `packages/db/src/schemas/user/user.dbschema.ts`. **No cuit, cuil, dni, condicionIva, razonSocial columns exist yet** | No CUIT/CUIL field, no DNI field, no `condicionIva` field — all are new |
 | Environment variables | `HOSPEDA_` prefix pattern for server-side | No ARCA certificate or credential variables |
 | Email system | Resend provider with React Email templates in `packages/email/`. NotificationService in `packages/notifications/` with retry support | No fiscal invoice email template |
-| Cloud storage | **Does NOT exist**. No S3, R2, or any file storage integration | Required for PDF storage and serving |
-| MercadoPago webhook | Handler at `apps/api/src/routes/webhooks/mercadopago/`. `processPaymentUpdated()` in `payment-logic.ts` sends notifications and confirms add-ons | No fiscal invoice trigger |
-| Cron jobs | 7 existing jobs in `apps/api/src/cron/jobs/`: dunning, notification-schedule, trial-expiry, addon-expiry, exchange-rate-fetch, search-index-refresh, webhook-retry | No fiscal invoice retry job |
-| Admin billing pages | 14 existing routes under `apps/admin/src/routes/_authed/billing/`. Permissions use `PermissionEnum` (e.g., `invoice.view`, `payment.refund`, `billing.readAll`) | No fiscal invoice pages, no tax config page, billing menu not in admin navigation |
-| Admin permissions | `PermissionEnum` in `packages/schemas/src/enums/permission.enum.ts`. Categories: INVOICE, INVOICE_LINE, PAYMENT, PAYMENT_METHOD, SUBSCRIPTION, SUBSCRIPTION_ITEM, BILLING | No FISCAL_INVOICE, CREDIT_NOTE, or TAX_CONFIG categories |
+| Cloud storage | `packages/media/` exists (Cloudinary, image assets only). **R2/S3 storage for fiscal PDFs does NOT exist** — `@repo/media` is images-only and must NOT be reused | Required for PDF storage and serving. New `packages/fiscal/src/storage/` module with `@aws-sdk/client-s3` pointed at R2 endpoint |
+| MercadoPago webhook | Handler at `apps/api/src/routes/webhooks/mercadopago/`. `processPaymentUpdated()` in `payment-logic.ts` sends notifications and confirms add-ons. **Has NO fiscal invoice trigger and no `product_domain` filter yet** | No fiscal invoice trigger; trigger must filter by `product_domain` (`accommodation`, `commerce`, `tourist` proceed; others are logged and skipped) |
+| Cron jobs | 31 existing job files in `apps/api/src/cron/jobs/` (including dunning, trial-expiry, addon-expiry, exchange-rate-fetch, search-index-refresh, webhook-retry, and 25 more) | No fiscal invoice retry job |
+| Admin billing pages | 12 existing files under `apps/admin/src/routes/_authed/billing/`. Permissions use `PermissionEnum` (e.g., `invoice.view`, `payment.refund`, `billing.readAll`) | No fiscal invoice pages, no tax config page, billing menu not in admin navigation |
+| Admin permissions | `PermissionEnum` in `packages/schemas/src/enums/permission.enum.ts`. Categories: INVOICE, INVOICE_LINE, PAYMENT, PAYMENT_METHOD, SUBSCRIPTION, SUBSCRIPTION_ITEM, BILLING. `CREDIT_NOTE_VIEW`, `CREDIT_NOTE_CREATE`, `CREDIT_NOTE_DOWNLOAD` ALREADY EXIST (not yet wired). `CREDIT_NOTE` category ALREADY EXISTS in `PermissionCategoryEnum` | No FISCAL_INVOICE or TAX_CONFIG categories. CREDIT_NOTE exists but is not wired to any routes |
 
 ### What Does NOT Exist
 
@@ -131,33 +138,39 @@ Every term used in this spec is defined here. A developer with zero knowledge of
          +-------------------------+-------------------------+
                                    |
                     +--------------v--------------+
-                    |   packages/billing          |
+                    |   packages/fiscal           |
+                    |   (NEW dedicated package)   |
                     |                             |
+                    | - InvoicingService PORT      |
+                    | - afipsdk.com adapter        |
+                    |   (primary, SaaS proxy)      |
+                    | - direct-ARCA adapter        |
+                    |   (alternate, own cert)      |
                     | - Tax calculation service   |
-                    | - ARCA adapter (afip.js)    |
                     | - Invoice PDF generator     |
                     | - Credit note service       |
                     | - QR code generator         |
                     | - CUIT/CUIL/DNI validator   |
+                    | - R2 storage integration    |
                     +--------------+--------------+
                                    |
               +--------------------+--------------------+
               |                                         |
 +--------------v--------------+          +--------------v--------------+
-|   packages/db               |          |   Cloud Storage (R2/S3)    |
+|   packages/db               |          |   Cloudflare R2             |
 |                             |          |                             |
 | - fiscal_invoices table     |          | - Invoice PDFs              |
 | - fiscal_credit_notes table |          | - Credit note PDFs          |
-| - Updated user schema       |          |                             |
+| - Updated user schema       |          | (packages/fiscal/storage/)  |
 | - billing_settings entries  |          +-----------------------------+
+| - QZPay tables (read-only)  |
 +--------------+--------------+
-              |
-    +---------v---------+
-    |   ARCA (external) |
-    |                   |
-    | - WSAA (auth)     |
-    | - WSFEv1 (invoices|
-    +-------------------+
+              |              |
+    +---------v---------+  +-v-----------------------+
+    |   ARCA (external) |  |   afipsdk.com proxy     |
+    |   (via proxy or   |  |   (SaaS: routes traffic |
+    |   direct SOAP)    |  |   to ARCA on your behalf|
+    +-------------------+  +-------------------------+
 ```
 
 ### Data Flow: Payment to Fiscal Invoice
@@ -166,6 +179,7 @@ Every term used in this spec is defined here. A developer with zero knowledge of
 1. MercadoPago webhook -> payment confirmed
 2. API webhook handler (payment-logic.ts) calls billing service
 3. Billing service records payment in billing_payments
+3a. Check product_domain from billing_subscription. Skip if domain is not in [accommodation, commerce, tourist]. Log and skip for sponsorship/partners (not implemented at launch)
 4. Billing service checks fiscal_invoicing_enabled flag
 5. If enabled AND payment.amount > 0:
    a. Read tax_regime from billing_settings
@@ -209,49 +223,64 @@ Every term used in this spec is defined here. A developer with zero knowledge of
 
 These MUST be completed before starting Phase 1. They are external setup steps, not code tasks.
 
-### 5.1 Cloud Storage Setup
+### 5.1 Cloud Storage Setup (Cloudflare R2 — Decision Finalized)
 
-The platform currently has NO cloud storage. Choose one:
+Cloudflare R2 is the chosen provider (free egress, S3-compatible, already in the Cloudflare ecosystem). AWS S3 is NOT used for fiscal PDFs.
 
-**Option A: Cloudflare R2 (Recommended)**
-- Free egress, S3-compatible API
-- Already on Cloudflare ecosystem (if using Cloudflare DNS)
-- Use `@aws-sdk/client-s3` with R2 endpoint
-
-**Option B: AWS S3**
-- Use `@aws-sdk/client-s3`
-- Standard approach, well-documented
-
-**Required implementation:**
-- Create a `packages/storage/` package (or add to `packages/utils/`)
+**Required implementation** (inside `packages/fiscal/src/storage/`):
+- Use `@aws-sdk/client-s3` + `@aws-sdk/s3-request-presigner` with the R2 endpoint
 - Expose: `uploadFile({ bucket, key, body, contentType })`, `getSignedUrl({ bucket, key, expiresIn })`, `deleteFile({ bucket, key })`
+- This is a SEPARATE integration from `packages/media/` (Cloudinary, image assets). Do NOT reuse or extend `@repo/media`
 - PDF bucket name: `hospeda-fiscal-invoices`
 - Key pattern: `invoices/{year}/{month}/{fiscal_invoice_id}.pdf` or `credit-notes/{year}/{month}/{credit_note_id}.pdf`
-- Signed URLs expire after 1 hour (for security, as invoices contain financial data)
+- Signed URLs expire after 1 hour
 
-### 5.2 ARCA Certificate Generation
+**R2 env vars** (register in `packages/config` env registry + Zod in `apps/api/src/utils/env.ts` + add to `apps/api/.env.example`):
+```
+HOSPEDA_R2_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
+HOSPEDA_R2_ACCESS_KEY_ID=<r2-access-key>
+HOSPEDA_R2_SECRET_ACCESS_KEY=<r2-secret-key>
+HOSPEDA_R2_BUCKET_FISCAL=hospeda-fiscal-invoices
+HOSPEDA_R2_REGION=auto
+```
 
-Step-by-step process (done by the business owner, not a developer):
+**Bucket creation**: Done in Cloudflare dashboard. Set CORS to allow the API domain. Set lifecycle rules for PDFs (optional retention policy).
 
+### 5.2 afipsdk.com Account and Access Token
+
+afipsdk.com is a SaaS proxy service (NOT a free self-hosted library). All ARCA communication goes through their servers. Before writing any code:
+
+1. Register at https://afipsdk.com and create an account
+2. Select the free tier (1 CUIT, 1,000 req/month — sufficient for ~200-400 req/mo expected at launch)
+3. Obtain your `access_token` from the afipsdk.com dashboard
+4. For dev/testing WITHOUT a real company CUIT: afipsdk.com provides a shared dev CUIT `20409378472` — no certificate required in dev mode
+5. Once the company obtains its real CUIT: register it in afipsdk.com and update the config
+
+**New env var** (register in `packages/config` env registry + Zod in `apps/api/src/utils/env.ts` + add to `apps/api/.env.example`; set via `hops env-set` or Coolify UI — NEVER commit to git):
+```
+HOSPEDA_AFIPSDK_ACCESS_TOKEN=<your-afipsdk.com-access-token>
+HOSPEDA_ARCA_CUIT=20409378472               # Shared dev CUIT for testing; replace with real CUIT in prod
+```
+
+**Direct-ARCA alternate (documented, not primary)**: If migrating away from afipsdk.com, the port interface (`InvoicingService`) supports swapping in a `@nicoo01x/arca-sdk` adapter that calls ARCA SOAP directly with your own X.509 certificate. This path requires:
+- Obtaining your own certificate from ARCA portal (Clave Fiscal nivel 3+)
+- Managing WSAA token refresh yourself
+- Different env vars (CERT_BASE64/KEY_BASE64 pattern)
+
+Until the company has its own CUIT and certificate, this alternate path is NOT used.
+
+**Certificate generation (future reference — for direct-ARCA adapter only)**:
 1. Log in to ARCA portal with Clave Fiscal nivel 3+: `https://auth.arca.gob.ar/`
 2. Go to "Administracion de Certificados Digitales"
 3. Create a new certificate for "Web Services"
-4. Download the `.crt` (certificate) and `.key` (private key) files
-5. For **homologacion** (testing): Use the ARCA testing portal
-6. For **production**: Use the ARCA production portal
-7. Store certificate files securely (NEVER commit to git)
-
-For Vercel deployment:
-```bash
-# Convert certificate files to base64
-cat cert.crt | base64 -w 0 > cert.b64
-cat key.key | base64 -w 0 > key.b64
-# Add as Vercel environment variables:
-# HOSPEDA_ARCA_CERT_BASE64=<contents of cert.b64>
-# HOSPEDA_ARCA_KEY_BASE64=<contents of key.b64>
-```
+4. Download the `.crt` and `.key` files
+5. Store securely — NEVER commit to git
+6. On Coolify/VPS: `hops env-set api HOSPEDA_ARCA_CERT_BASE64 "$(cat cert.crt | base64 -w 0)"`
+   (NOT Vercel — Hospeda deploys on Coolify on a self-hosted VPS)
 
 ### 5.3 Punto de Venta Registration
+
+> **Note**: Punto de Venta registration in ARCA is only relevant for the direct-ARCA adapter. When using the afipsdk.com proxy, the Punto de Venta is still configured in your account but the proxy handles the ARCA registration. Confirm with afipsdk.com dashboard.
 
 1. In ARCA portal, go to "ABM Puntos de Venta"
 2. Register a new Punto de Venta with type "Web Services"
@@ -585,58 +614,53 @@ pnpm db:generate
 
 This creates a new migration file in `packages/db/src/migrations/`. Review the generated SQL before applying with `pnpm db:migrate`.
 
+> **Migration numbering**: The next Drizzle migration file will be `0028_*.sql` (latest is `0027_wise_odin.sql`). Review the generated SQL carefully before applying. Run `pnpm db:apply-extras` after `pnpm db:migrate` (extras run idempotently). New billing_settings seed entries for tax/fiscal config should be added as an extras file: `packages/db/src/migrations/extras/021-fiscal-invoicing-settings.sql`.
+
 ---
 
 ## 7. Environment Variables
 
-New environment variables required (following `HOSPEDA_` prefix convention):
+New environment variables required (following `HOSPEDA_` prefix convention for server-side vars). ALL must be:
+1. Registered in `packages/config/src/env-registry.*.ts` with full metadata
+2. Added with Zod validation in `apps/api/src/utils/env.ts`
+3. Added with a safe placeholder to `apps/api/.env.example`
+4. Set in Coolify via `hops env-set api KEY VALUE` or the Coolify UI
 
 ```bash
-# ARCA Integration
-HOSPEDA_ARCA_ENVIRONMENT=homologacion         # 'homologacion' or 'production'
-HOSPEDA_ARCA_CUIT=20409378472                  # Hospeda's CUIT (digits only)
-HOSPEDA_ARCA_CERT_PATH=/secrets/arca/cert.crt  # Path to X.509 certificate (local dev)
-HOSPEDA_ARCA_KEY_PATH=/secrets/arca/key.key    # Path to private key (local dev)
-HOSPEDA_ARCA_CERT_BASE64=                      # Base64-encoded certificate (Vercel production)
-HOSPEDA_ARCA_KEY_BASE64=                       # Base64-encoded private key (Vercel production)
-HOSPEDA_ARCA_PUNTO_VENTA=2                     # Registered Punto de Venta number
-HOSPEDA_ARCA_TOKEN_CACHE_TTL_MS=43200000       # WSAA token cache TTL (12h default)
+# afipsdk.com SaaS Proxy (primary ARCA integration)
+HOSPEDA_AFIPSDK_ACCESS_TOKEN=            # Access token from afipsdk.com dashboard (required)
+HOSPEDA_ARCA_ENVIRONMENT=homologacion    # 'homologacion' or 'production' (controls afipsdk.com routing)
+HOSPEDA_ARCA_CUIT=20409378472            # Hospeda's CUIT (use shared dev CUIT for dev/testing)
+HOSPEDA_ARCA_PUNTO_VENTA=2               # Registered Punto de Venta number
 
 # Optional overrides (defaults in code)
-HOSPEDA_ARCA_MAX_RETRIES=3                     # Max retries on ARCA failures
-HOSPEDA_ARCA_RETRY_DELAY_MS=2000               # Delay between retries in ms
+HOSPEDA_ARCA_MAX_RETRIES=3               # Max retries on ARCA failures
+HOSPEDA_ARCA_RETRY_DELAY_MS=2000         # Delay between retries in ms
 
-# Cloud Storage (for PDF files)
-HOSPEDA_STORAGE_PROVIDER=r2                    # 'r2' or 's3'
-HOSPEDA_STORAGE_ENDPOINT=                      # R2/S3 endpoint URL
-HOSPEDA_STORAGE_ACCESS_KEY_ID=                 # Access key
-HOSPEDA_STORAGE_SECRET_ACCESS_KEY=             # Secret key
-HOSPEDA_STORAGE_BUCKET_FISCAL=hospeda-fiscal-invoices  # Bucket for fiscal PDFs
-HOSPEDA_STORAGE_REGION=auto                    # Region (use 'auto' for R2)
+# Cloudflare R2 (PDF storage — separate from @repo/media/Cloudinary)
+HOSPEDA_R2_ENDPOINT=                     # R2 endpoint: https://<account-id>.r2.cloudflarestorage.com
+HOSPEDA_R2_ACCESS_KEY_ID=                # R2 access key
+HOSPEDA_R2_SECRET_ACCESS_KEY=            # R2 secret key
+HOSPEDA_R2_BUCKET_FISCAL=hospeda-fiscal-invoices  # Bucket for fiscal PDFs
+HOSPEDA_R2_REGION=auto                   # Always 'auto' for R2
 ```
 
-**Certificate handling**: In production (Vercel), certificates are stored as base64-encoded environment variables (`HOSPEDA_ARCA_CERT_BASE64`, `HOSPEDA_ARCA_KEY_BASE64`). The ARCA adapter checks `certBase64` first, falls back to `certPath`. To decode at runtime:
-
-```typescript
-// In arca-adapter.ts:
-function loadCertificate(config: ArcaAdapterConfig): { cert: string; key: string } {
-    if (config.certBase64 && config.keyBase64) {
-        return {
-            cert: Buffer.from(config.certBase64, 'base64').toString('utf-8'),
-            key: Buffer.from(config.keyBase64, 'base64').toString('utf-8'),
-        };
-    }
-    if (config.certPath && config.keyPath) {
-        return {
-            cert: fs.readFileSync(config.certPath, 'utf-8'),
-            key: fs.readFileSync(config.keyPath, 'utf-8'),
-        };
-    }
-    throw new Error('ARCA certificate not configured. Set CERT_BASE64/KEY_BASE64 or CERT_PATH/KEY_PATH');
-}
+**Certificate-related variables (only if switching to direct-ARCA adapter in the future):**
+```bash
+HOSPEDA_ARCA_CERT_BASE64=               # Base64-encoded X.509 certificate (direct-ARCA adapter only)
+HOSPEDA_ARCA_KEY_BASE64=                # Base64-encoded private key (direct-ARCA adapter only)
 ```
 
-Add ALL new variables to `apps/api/.env.example` and `apps/api/docs/ENVIRONMENT_VARIABLES.md`.
+**Deployment note**: Hospeda runs on Coolify (self-hosted VPS), NOT Vercel. To set env vars:
+```bash
+# From the VPS via SSH:
+hops env-set api HOSPEDA_AFIPSDK_ACCESS_TOKEN "your-token"
+hops env-set api HOSPEDA_R2_ACCESS_KEY_ID "key"
+# etc. Then redeploy:
+hops redeploy api
+```
+
+> After adding any new env var, stop and inform the user: "I added env var X to the registry — please set it in Coolify for `hospeda-api-*` and trigger a redeploy."
 
 ---
 
@@ -649,13 +673,27 @@ Add to `packages/schemas/src/enums/permission.enum.ts`:
 ```typescript
 // Add to PermissionCategoryEnum:
 FISCAL_INVOICE = 'fiscalInvoice',
-FISCAL_CREDIT_NOTE = 'fiscalCreditNote',
+// NOTE: Do NOT add FISCAL_CREDIT_NOTE — the existing CREDIT_NOTE category already serves this purpose
 TAX_CONFIG = 'taxConfig',
 ```
 
-### 8.2 New PermissionEnum Entries
+### 8.2 Reuse Existing and Add New PermissionEnum Entries
+
+**REUSE (already exist — DO NOT re-add)**:
+The following entries are ALREADY in `packages/schemas/src/enums/permission.enum.ts` but are not yet wired to any routes:
+- `CREDIT_NOTE_VIEW = 'creditNote.view'`
+- `CREDIT_NOTE_CREATE = 'creditNote.create'`
+- `CREDIT_NOTE_DOWNLOAD = 'creditNote.download'`
+
+Wire these to the fiscal credit note routes (§15.1) instead of creating new ones.
+
+**ADD NEW** (these do NOT exist yet):
 
 ```typescript
+// Add to PermissionCategoryEnum:
+FISCAL_INVOICE = 'fiscalInvoice',
+TAX_CONFIG = 'taxConfig',
+
 // Add to PermissionEnum:
 
 // Fiscal Invoice permissions
@@ -664,16 +702,13 @@ FISCAL_INVOICE_CREATE = 'fiscalInvoice.create',
 FISCAL_INVOICE_RETRY = 'fiscalInvoice.retry',
 FISCAL_INVOICE_DOWNLOAD = 'fiscalInvoice.download',
 
-// Fiscal Credit Note permissions
-FISCAL_CREDIT_NOTE_VIEW = 'fiscalCreditNote.view',
-FISCAL_CREDIT_NOTE_CREATE = 'fiscalCreditNote.create',
-FISCAL_CREDIT_NOTE_DOWNLOAD = 'fiscalCreditNote.download',
-
 // Tax Configuration permissions
 TAX_CONFIG_VIEW = 'taxConfig.view',
 TAX_CONFIG_UPDATE = 'taxConfig.update',
 TAX_CONFIG_TEST_ARCA = 'taxConfig.testArca',
 ```
+
+**Note**: Do NOT add `FISCAL_CREDIT_NOTE` category — the existing `CREDIT_NOTE` category (already in `PermissionCategoryEnum`) serves this purpose.
 
 ### 8.3 Permission Usage Map
 
@@ -683,9 +718,9 @@ TAX_CONFIG_TEST_ARCA = 'taxConfig.testArca',
 | GET `/fiscal/invoices/:id` | `fiscalInvoice.view` |
 | GET `/fiscal/invoices/:id/pdf` | `fiscalInvoice.download` |
 | POST `/fiscal/invoices/:id/retry` | `fiscalInvoice.retry` |
-| GET `/fiscal/credit-notes` | `fiscalCreditNote.view` |
-| GET `/fiscal/credit-notes/:id` | `fiscalCreditNote.view` |
-| POST `/fiscal/credit-notes` | `fiscalCreditNote.create` |
+| GET `/fiscal/credit-notes` | `creditNote.view` (existing CREDIT_NOTE_VIEW) |
+| GET `/fiscal/credit-notes/:id` | `creditNote.view` (existing CREDIT_NOTE_VIEW) |
+| POST `/fiscal/credit-notes` | `creditNote.create` (existing CREDIT_NOTE_CREATE) |
 | GET `/fiscal/tax-regime` | `taxConfig.view` |
 | PUT `/fiscal/tax-regime` | `taxConfig.update` |
 | GET `/fiscal/arca/health` | `taxConfig.view` |
@@ -970,21 +1005,27 @@ Add validation refinement to the schema:
 
 ---
 
-## 10. ARCA Adapter (`packages/billing/src/adapters/arca/`)
+## 10. Fiscal Adapter (`packages/fiscal/src/adapters/`)
 
 ### 10.1 File Structure
 
 ```
-packages/billing/src/adapters/arca/
-  index.ts                   # Public exports
-  arca-adapter.ts            # Main adapter class
-  arca-adapter.types.ts      # TypeScript interfaces
-  arca-adapter.config.ts     # Configuration and constants
-  arca-adapter.test.ts       # Unit tests (mocked ARCA responses)
-  wsfe-request-builder.ts    # Builds WSFEv1 request payloads
-  wsfe-response-parser.ts    # Parses WSFEv1 responses
-  qr-code-generator.ts       # Generates invoice QR codes
-  cae-validator.ts           # Validates CAE format and expiration
+packages/fiscal/src/adapters/
+  index.ts                         # Public exports
+  invoicing-service.port.ts        # InvoicingService PORT interface (stable)
+  afipsdk/
+    index.ts
+    afipsdk-adapter.ts             # afipsdk.com SaaS proxy adapter (primary)
+    afipsdk-adapter.types.ts       # TypeScript interfaces
+    afipsdk-adapter.config.ts      # Configuration and constants
+    afipsdk-adapter.test.ts        # Unit tests (mocked port responses)
+    wsfe-request-builder.ts        # Builds WSFEv1 request payloads
+    wsfe-response-parser.ts        # Parses WSFEv1 responses
+    qr-code-generator.ts           # Generates invoice QR codes
+    cae-validator.ts               # Validates CAE format and expiration
+  direct-arca/
+    index.ts                       # Alternate adapter (documented, not primary at launch)
+    direct-arca-adapter.ts         # Uses @nicoo01x/arca-sdk + own certificate
 ```
 
 ### 10.2 Configuration Constants
@@ -1060,9 +1101,55 @@ export const CAE_VALIDITY_DAYS_SERVICES = 10;
 export const CREDIT_NOTE_DEADLINE_DAYS = 15;
 ```
 
+### 10.2a InvoicingService Port Interface
+
+File: `packages/fiscal/src/adapters/invoicing-service.port.ts`
+
+```typescript
+/**
+ * Abstract port for fiscal invoicing.
+ * Concrete adapters (afipsdk.com, direct-ARCA) implement this interface.
+ * Consumers (FiscalInvoiceService) depend ONLY on this interface.
+ *
+ * The billable event is generic — not coupled to accommodation.
+ * The product_domain field enables multi-source routing.
+ */
+export interface BillableEvent {
+    readonly billingPaymentId: string;
+    readonly billingCustomerId: string;
+    readonly userId: string;
+    readonly productDomain: 'accommodation' | 'commerce' | 'tourist' | string;
+    readonly impTotal: number;          // centavos, must be > 0
+    readonly fchServDesde: string;      // YYYY-MM-DD
+    readonly fchServHasta: string;      // YYYY-MM-DD
+    readonly fchVtoPago: string;        // YYYY-MM-DD
+    readonly recipientEmail?: string;
+    readonly recipientName?: string;
+    readonly description?: string;
+}
+
+export interface InvoiceResult {
+    readonly cae: string;
+    readonly caeVencimiento: string;
+    readonly cbteNumero: number;
+    readonly resultado: 'A' | 'R';
+    readonly observaciones?: ReadonlyArray<{ readonly Code: number; readonly Msg: string }>;
+    readonly errores?: ReadonlyArray<{ readonly Code: number; readonly Msg: string }>;
+}
+
+export interface InvoicingService {
+    /** Create a fiscal invoice for a confirmed payment event */
+    createInvoice(event: BillableEvent): Promise<InvoiceResult>;
+    /** Get the last authorized invoice number for a given voucher type */
+    getLastInvoiceNumber(params: { readonly puntoVenta: number; readonly cbteTipo: number }): Promise<number>;
+    /** Check ARCA service health */
+    healthCheck(): Promise<boolean>;
+}
+```
+
 ### 10.3 Adapter Interface
 
-File: `arca-adapter.types.ts`
+File: `afipsdk-adapter.types.ts`
 
 ```typescript
 /** Configuration for the ARCA adapter */
@@ -1135,18 +1222,20 @@ export interface ArcaAdapter {
 
 ### 10.4 afip.js Initialization and Method Mapping
 
-The adapter wraps `@afipsdk/afip.js`. Here is how to initialize and use it:
+The afipsdk.com adapter wraps `@afipsdk/afip.js`. Here is how to initialize and use it:
 
 ```typescript
 import Afip from '@afipsdk/afip.js';
 
 // Initialization (done ONCE at adapter creation)
+// NOTE: @afipsdk/afip.js requires an access_token from afipsdk.com (SaaS proxy).
+// All ARCA traffic is routed through afipsdk.com servers.
+// Dev mode with shared CUIT 20409378472 does NOT require a certificate.
 const afip = new Afip({
     CUIT: config.cuit,                    // Hospeda's CUIT (digits only)
-    cert: loadedCert,                     // Certificate content (string, not path)
-    key: loadedKey,                       // Private key content (string, not path)
+    access_token: config.accessToken,     // Required: afipsdk.com access token
     production: config.environment === 'production',
-    // afip.js handles WSAA token caching internally
+    // Note: cert/key are only needed for the direct-ARCA adapter
 });
 ```
 
@@ -1291,7 +1380,7 @@ export async function generateInvoiceQrCode(params: {
 
 ## 11. Tax Calculation Service
 
-File: `packages/billing/src/services/tax-calculation.service.ts`
+File: `packages/fiscal/src/services/tax-calculation.service.ts`
 
 ### 11.1 Core Calculations
 
@@ -1402,7 +1491,7 @@ function determineCreditNoteType(params: {
 
 ## 12. Fiscal Invoice Service
 
-File: `packages/billing/src/services/fiscal-invoice.service.ts`
+File: `packages/fiscal/src/services/fiscal-invoice.service.ts`
 
 ### 12.1 Create Fiscal Invoice Flow
 
@@ -1411,7 +1500,7 @@ This is the complete step-by-step flow. Each step is numbered so a developer can
 ```
 Step 1: Receive CreateFiscalInvoiceInput (validated by Zod schema from Section 9.6)
 Step 2: Check fiscal_invoicing_config.enabled from billing_settings. If false, return early with { skipped: true }
-Step 3: Validate impTotal > 0. If 0, return early (free plans don't generate invoices)
+Step 3: Validate impTotal > 0. If 0, return early (free plans AND promo-code $0 payments don't generate invoices). Log the skip with reason
 Step 4: Load tax_regime from billing_settings (validate with TaxRegimeSchema)
 Step 5: Load arca_config from billing_settings (validate with ArcaConfigSchema)
 Step 6: Load user profile (for CUIT, DNI, condicionIva, wantsFacturaA, razonSocial)
@@ -1521,7 +1610,8 @@ Step 13: If rejected/error: same handling as invoice creation (Steps 16-17 of Se
 
 | Scenario | Behavior |
 |----------|----------|
-| Free plan payment ($0) | Skip fiscal invoice creation entirely |
+| Free plan payment ($0) | Skip fiscal invoice creation entirely. Log and skip |
+| Promo-code reduces payment to $0 | Skip fiscal invoice creation. ARCA rejects zero-amount vouchers. Log and skip |
 | Add-on purchase | Generate fiscal invoice with same flow as subscription payment |
 | Multiple credit notes for same invoice | Allowed. Sum of all credit note amounts must not exceed original invoice total |
 | Regime change with pending 'error' invoices | Retry uses the `tax_regime` stored in the fiscal_invoice record at creation time, NOT the current regime |
@@ -1532,7 +1622,7 @@ Step 13: If rejected/error: same handling as invoice creation (Steps 16-17 of Se
 
 ## 13. Invoice PDF Generation
 
-File: `packages/billing/src/services/invoice-pdf.service.ts`
+File: `packages/fiscal/src/services/invoice-pdf.service.ts`
 
 ### 13.1 PDF Library
 
@@ -1696,9 +1786,9 @@ All new endpoints follow the existing three-tier route architecture.
 | GET | `/invoices/:id` | Get fiscal invoice detail | `fiscalInvoice.view` |
 | GET | `/invoices/:id/pdf` | Get signed URL for invoice PDF download | `fiscalInvoice.download` |
 | POST | `/invoices/:id/retry` | Retry a failed invoice (status = 'error') | `fiscalInvoice.retry` |
-| GET | `/credit-notes` | List all credit notes (paginated, filterable) | `fiscalCreditNote.view` |
-| GET | `/credit-notes/:id` | Get credit note detail | `fiscalCreditNote.view` |
-| POST | `/credit-notes` | Create a credit note for an invoice | `fiscalCreditNote.create` |
+| GET | `/credit-notes` | List all credit notes (paginated, filterable) | `creditNote.view` (existing CREDIT_NOTE_VIEW) |
+| GET | `/credit-notes/:id` | Get credit note detail | `creditNote.view` (existing CREDIT_NOTE_VIEW) |
+| POST | `/credit-notes` | Create a credit note for an invoice | `creditNote.create` (existing CREDIT_NOTE_CREATE) |
 | GET | `/tax-regime` | Get current tax regime configuration | `taxConfig.view` |
 | PUT | `/tax-regime` | Update tax regime (Mono <-> RI switch) | `taxConfig.update` |
 | GET | `/invoicing-config` | Get fiscal invoicing enabled/disabled config | `taxConfig.view` |
@@ -1773,16 +1863,24 @@ void (async () => {
         const fiscalConfig = await billingSettingsModel.findByKey('fiscal_invoicing_config');
         if (!fiscalConfig?.value?.enabled) return;
 
-        // 2. Skip zero-amount payments
+        // 2. Skip zero-amount payments (free plans + promo-code $0 cases)
         const paymentAmount = extractPaymentAmount(data); // existing helper
         if (!paymentAmount || paymentAmount <= 0) return;
 
-        // 3. Get subscription and customer info
-        // NOTE: extractPaymentInfo() already gives us the amount.
-        // We need additional data that requires DB queries:
+        // 2b. Filter by product_domain — skip domains not yet implemented
         const payment = await billingPaymentsModel.findByProviderIds(data);
         if (!payment) return;
 
+        const sub = payment.subscriptionId ? await billingSubscriptionsModel.findById(payment.subscriptionId) : null;
+        const domain = sub?.productDomain ?? 'accommodation';
+        if (!['accommodation', 'commerce', 'tourist'].includes(domain)) {
+            logger.info('Fiscal invoice skipped: product_domain not in scope', { domain, paymentId: payment.id });
+            return;
+        }
+
+        // 3. Get subscription and customer info
+        // NOTE: extractPaymentInfo() already gives us the amount.
+        // payment was already fetched above (step 2b). Continue with customer lookup:
         const customer = await billingCustomersModel.findById(payment.customerId);
         if (!customer?.metadata?.userId) return;
 
@@ -1840,9 +1938,10 @@ void (async () => {
 4. Cache on client for session duration (localStorage with 1h TTL, same pattern as exchange rates)
 5. If the endpoint fails, default to `showIvaBreakdown: false` (show "(IVA incluido)" only)
 
-**PricingCard changes** (file: `apps/web/src/components/shared/PricingCard.astro`):
+**PricingCardsGrid changes** (file: `apps/web/src/components/billing/PricingCardsGrid.astro`):
+Note: `apps/web/src/components/shared/PricingCard.astro` does NOT EXIST. The real component is `PricingCardsGrid.astro`.
 
-Add new props:
+Add new props to `PricingCardsGrid.astro`:
 ```typescript
 interface Props {
     readonly plan: Plan;
@@ -1894,7 +1993,7 @@ When submitting, include the new fields in the API call to update user profile.
 
 **File**: `apps/web/src/components/account/InvoiceHistory.client.tsx`
 
-Currently shows QZPay billing invoices. Add a SECOND section or tab below for fiscal invoices:
+**NOTE**: This file does NOT exist yet — it is a NEW file to be created. There is no existing QZPay invoice history component at this path. Create a new component that shows fiscal invoices:
 
 ```
 Mis Comprobantes Fiscales
@@ -1994,7 +2093,7 @@ Add billing section to `apps/admin/src/lib/menu.ts`:
         {
             titleKey: 'admin-menu.billing.creditNotes',
             to: '/billing/credit-notes',
-            permission: PermissionEnum.FISCAL_CREDIT_NOTE_VIEW,
+            permission: PermissionEnum.CREDIT_NOTE_VIEW,  // Uses existing CREDIT_NOTE_VIEW permission
         },
         {
             titleKey: 'admin-menu.billing.taxConfig',
@@ -2242,9 +2341,9 @@ Add to `packages/i18n/src/locales/`:
 ## 18. Migration Strategy
 
 ### Phase 0: Prerequisites (no code changes)
-1. Set up cloud storage (R2 or S3) - see Section 5.1
-2. Generate ARCA homologacion certificates - see Section 5.2
-3. Register Punto de Venta in ARCA homologacion - see Section 5.3
+1. Set up Cloudflare R2 bucket — see Section 5.1
+2. Set up afipsdk.com account and obtain access_token — see Section 5.2. R2 bucket creation — see Section 5.1
+3. Register Punto de Venta in afipsdk.com dashboard — see Section 5.3
 
 ### Phase 1: Database & Configuration (no user-facing changes)
 1. Create Drizzle schemas for `fiscal_invoices` and `fiscal_credit_notes` (Section 6.1, 6.2)
@@ -2257,7 +2356,7 @@ Add to `packages/i18n/src/locales/`:
 
 ### Phase 2: Core Services (no user-facing changes)
 1. Implement Zod validation schemas (Section 9)
-2. Implement ARCA adapter with `@afipsdk/afip.js` (Section 10)
+2. Implement `@repo/fiscal` package structure with `InvoicingService` port and afipsdk.com adapter (Section 10)
 3. Implement tax calculation service with `reverseCalculateIva()` (Section 11)
 4. Implement fiscal invoice service (Section 12)
 5. Implement QR code generator (Section 10.6)
@@ -2354,7 +2453,7 @@ Before production go-live, ALL these must pass against ARCA's homologacion envir
 1. **Certificate storage**: ARCA certificates contain private keys. NEVER commit to git. Store as encrypted environment variables (base64) or use a secrets manager. Certificates go in env vars, NOT in `billing_settings` (to prevent API exposure)
 2. **CUIT/CUIL/DNI data**: Personal tax IDs are PII. Apply same data protection policies as email/phone
 3. **Invoice PDFs**: Contain financial data. Serve via signed URLs with short expiration (1 hour). Store the cloud storage key in DB, generate signed URL on-demand. NEVER expose direct storage URLs
-4. **Admin endpoints**: All fiscal operations require admin role + specific `PermissionEnum` permissions (Section 8.3). Read operations require `fiscalInvoice.view`. Write operations require `fiscalInvoice.retry`, `fiscalCreditNote.create`, or `taxConfig.update`
+4. **Admin endpoints**: All fiscal operations require admin role + specific `PermissionEnum` permissions (Section 8.3). Read operations require `fiscalInvoice.view`. Write operations require `fiscalInvoice.retry`, `creditNote.create` (existing), or `taxConfig.update`
 5. **Audit trail**: Every fiscal invoice creation, retry, and credit note issuance MUST be logged. The `fiscal_invoices` and `fiscal_credit_notes` tables themselves serve as audit trail with `created_at`, `created_by`, `arca_result`, and `arca_errors` columns
 6. **Rate limiting**: ARCA has rate limits. The mutex/semaphore in the adapter (Section 10.5 point 4) prevents concurrent calls. For additional protection, limit to max ~10 requests/second
 7. **Environment isolation**: NEVER use production certificates in homologacion or vice versa. The adapter validates certificate by checking that `arca_config.environment` matches the env var `HOSPEDA_ARCA_ENVIRONMENT`
@@ -2367,12 +2466,13 @@ Before production go-live, ALL these must pass against ARCA's homologacion envir
 
 | Package | Purpose | License | Add To | Why This One |
 |---------|---------|---------|--------|-------------|
-| `@afipsdk/afip.js` | ARCA SOAP integration (WSAA + WSFEv1) | MIT | `packages/billing` | 100k+ downloads, battle-tested since 2017, TypeScript support, handles certificate auth and token caching |
-| `qrcode` | QR code generation for invoices | MIT | `packages/billing` | Most popular QR library, 10M+ weekly downloads |
-| `@types/qrcode` | Type definitions for qrcode | MIT | `packages/billing` (devDep) | TypeScript support |
-| `@react-pdf/renderer` | Server-side PDF generation | MIT | `packages/billing` | React-based, works with existing JSX tooling, good layout control, server-side rendering |
-| `@aws-sdk/client-s3` | Cloud storage (S3/R2 compatible) | Apache-2.0 | `packages/billing` or new `packages/storage` | Standard S3 client, works with both AWS S3 and Cloudflare R2 |
-| `@aws-sdk/s3-request-presigner` | Signed URL generation | Apache-2.0 | Same as above | Required for generating pre-signed download URLs |
+| `@afipsdk/afip.js` | ARCA integration via afipsdk.com SaaS proxy (requires `access_token` from afipsdk.com). Routes all ARCA calls (WSAA + WSFEv1) through afipsdk.com servers. Free tier: 1 CUIT, 1,000 req/mo. NOT self-hosted, NOT MIT-for-free. | MIT (library license) | `packages/fiscal` | Easiest path to ARCA without managing own certificates. Dev mode supports shared CUIT 20409378472 |
+| `@nicoo01x/arca-sdk` | Alternate direct-ARCA adapter (documented but NOT primary at launch). Used only if migrating away from afipsdk.com. Requires own X.509 certificate. | Check license | `packages/fiscal` (alternate adapter only) | Swap in behind the InvoicingService port without touching the rest of the code |
+| `qrcode` | QR code generation for invoices | MIT | `packages/fiscal` | Most popular QR library, 10M+ weekly downloads |
+| `@types/qrcode` | Type definitions for qrcode | MIT | `packages/fiscal` (devDep) | TypeScript support |
+| `@react-pdf/renderer` | Server-side PDF generation | MIT | `packages/fiscal` | React-based, works with existing JSX tooling, good layout control, server-side rendering |
+| `@aws-sdk/client-s3` | Cloudflare R2 PDF storage (S3-compatible API, pointed at R2 endpoint) | Apache-2.0 | `packages/fiscal` | Standard S3 client, works with Cloudflare R2 via endpoint override |
+| `@aws-sdk/s3-request-presigner` | Signed URL generation | Apache-2.0 | `packages/fiscal` | Required for generating pre-signed download URLs |
 
 ### Existing Dependencies Used
 
@@ -2457,20 +2557,29 @@ Complete list of files to create or modify:
 | `packages/schemas/src/entities/billing/cuit.schema.ts` | CUIT/CUIL validation schema |
 | `packages/schemas/src/entities/billing/dni.schema.ts` | DNI validation schema |
 | `packages/schemas/src/entities/billing/fiscal-invoice.schema.ts` | Fiscal invoice Zod schemas |
-| `packages/billing/src/adapters/arca/index.ts` | ARCA adapter exports |
-| `packages/billing/src/adapters/arca/arca-adapter.ts` | ARCA adapter implementation |
-| `packages/billing/src/adapters/arca/arca-adapter.types.ts` | ARCA adapter TypeScript interfaces |
-| `packages/billing/src/adapters/arca/arca-adapter.config.ts` | ARCA constants |
-| `packages/billing/src/adapters/arca/arca-adapter.test.ts` | ARCA adapter tests |
-| `packages/billing/src/adapters/arca/wsfe-request-builder.ts` | WSFEv1 request builder |
-| `packages/billing/src/adapters/arca/wsfe-response-parser.ts` | WSFEv1 response parser |
-| `packages/billing/src/adapters/arca/qr-code-generator.ts` | QR code generation |
-| `packages/billing/src/adapters/arca/cae-validator.ts` | CAE format validation |
-| `packages/billing/src/services/tax-calculation.service.ts` | IVA calculation service |
-| `packages/billing/src/services/fiscal-invoice.service.ts` | Fiscal invoice orchestration |
-| `packages/billing/src/services/invoice-pdf.service.ts` | PDF generation |
+| `packages/fiscal/package.json` | New @repo/fiscal package definition |
+| `packages/fiscal/tsconfig.json` | TypeScript config for @repo/fiscal |
+| `packages/fiscal/src/index.ts` | Package exports |
+| `packages/fiscal/src/adapters/invoicing-service.port.ts` | InvoicingService port interface (stable contract) |
+| `packages/fiscal/src/adapters/index.ts` | Adapter exports |
+| `packages/fiscal/src/adapters/afipsdk/index.ts` | afipsdk.com adapter exports |
+| `packages/fiscal/src/adapters/afipsdk/afipsdk-adapter.ts` | Primary afipsdk.com SaaS proxy adapter |
+| `packages/fiscal/src/adapters/afipsdk/afipsdk-adapter.types.ts` | Adapter TypeScript interfaces |
+| `packages/fiscal/src/adapters/afipsdk/afipsdk-adapter.config.ts` | ARCA constants |
+| `packages/fiscal/src/adapters/afipsdk/afipsdk-adapter.test.ts` | Adapter tests (mocked port responses) |
+| `packages/fiscal/src/adapters/afipsdk/wsfe-request-builder.ts` | WSFEv1 request builder |
+| `packages/fiscal/src/adapters/afipsdk/wsfe-response-parser.ts` | WSFEv1 response parser |
+| `packages/fiscal/src/adapters/afipsdk/qr-code-generator.ts` | QR code generation |
+| `packages/fiscal/src/adapters/afipsdk/cae-validator.ts` | CAE format validation |
+| `packages/fiscal/src/adapters/direct-arca/index.ts` | Direct-ARCA alternate adapter (documented, not primary) |
+| `packages/fiscal/src/adapters/direct-arca/direct-arca-adapter.ts` | Uses @nicoo01x/arca-sdk + own certificate |
+| `packages/fiscal/src/storage/r2-storage.ts` | Cloudflare R2 storage integration (separate from @repo/media) |
+| `packages/fiscal/src/services/tax-calculation.service.ts` | IVA calculation service |
+| `packages/fiscal/src/services/fiscal-invoice.service.ts` | Fiscal invoice orchestration |
+| `packages/fiscal/src/services/invoice-pdf.service.ts` | PDF generation |
 | `packages/email/src/templates/FiscalInvoiceEmail.tsx` | Invoice email template |
 | `packages/email/src/templates/FiscalCreditNoteEmail.tsx` | Credit note email template |
+| `apps/web/src/components/account/InvoiceHistory.client.tsx` | New fiscal invoice history component (does NOT currently exist) |
 | `apps/api/src/routes/admin/billing/fiscal/index.ts` | Admin fiscal route mount |
 | `apps/api/src/routes/admin/billing/fiscal/invoices.routes.ts` | Admin invoice endpoints |
 | `apps/api/src/routes/admin/billing/fiscal/credit-notes.routes.ts` | Admin credit note endpoints |
@@ -2492,7 +2601,7 @@ Complete list of files to create or modify:
 |------|--------|
 | `packages/db/src/schemas/billing/index.ts` | Export new schemas |
 | `packages/db/src/schemas/user/user.dbschema.ts` | Add cuit, dni, condicionIva, razonSocial, wantsFacturaA columns |
-| `packages/schemas/src/enums/permission.enum.ts` | Add FISCAL_INVOICE, FISCAL_CREDIT_NOTE, TAX_CONFIG permissions |
+| `packages/schemas/src/enums/permission.enum.ts` | Add FISCAL_INVOICE and TAX_CONFIG categories + FISCAL_INVOICE_*/TAX_CONFIG_* entries. CREDIT_NOTE_* already exist — wire to routes |
 | `packages/schemas/src/entities/user/user.crud.schema.ts` | Add tax fields to UpdateUserSchema |
 | `packages/i18n/src/locales/es/billing.json` | Add tax and fiscal invoice strings |
 | `packages/i18n/src/locales/en/billing.json` | Add tax and fiscal invoice strings |
@@ -2502,9 +2611,8 @@ Complete list of files to create or modify:
 | `apps/api/src/cron/registry.ts` | Register fiscal-invoice-retry job |
 | `apps/api/src/cron/bootstrap.ts` | Bootstrap fiscal-invoice-retry job |
 | `apps/api/src/cron/types.ts` | Add fiscal-invoice-retry job type |
-| `apps/web/src/components/shared/PricingCard.astro` | Add IVA display props |
+| `apps/web/src/components/billing/PricingCardsGrid.astro` | Add IVA display support (note: `PricingCard.astro` does NOT exist) |
 | `apps/web/src/components/account/ProfileEditForm.client.tsx` | Add tax data section |
-| `apps/web/src/components/account/InvoiceHistory.client.tsx` | Add fiscal invoices section |
 | `apps/admin/src/lib/menu.ts` | Add billing menu section with fiscal pages |
 | `apps/api/.env.example` | Add ARCA and storage env vars |
 
@@ -2547,7 +2655,21 @@ The implementation is complete when ALL of the following are true:
 19. The system handles ARCA downtime gracefully (invoices are retried automatically via cron)
 20. Invoices stuck in 'error' for >48h trigger admin notifications
 21. All i18n strings exist for es, en, and pt
-22. New admin permissions (fiscalInvoice.*, fiscalCreditNote.*, taxConfig.*) are defined and enforced
+22. New admin permissions (fiscalInvoice.*, taxConfig.*) are defined and enforced; existing creditNote.* permissions are wired to credit note routes
 23. CUIT validation uses Modulo 11 algorithm correctly
 24. DNI field is available for over-threshold Consumidor Final transactions
 25. Concurrent payment processing does not create duplicate invoice numbers (mutex verified)
+26. The `@repo/fiscal` package is correctly isolated from `@repo/billing`. No fiscal-specific code lives in packages/billing
+27. The `InvoicingService` port is the only coupling point between the fiscal service and ARCA adapters. Swapping adapters requires only changing the adapter binding
+28. PDF storage uses Cloudflare R2 via `packages/fiscal/src/storage/` (NOT `@repo/media`)
+29. Promo-code payments reduced to $0 are logged and skipped (no fiscal invoice created)
+30. Fiscal invoice trigger filters correctly by `product_domain` (accommodation, commerce, tourist proceed; others are logged and skipped)
+
+---
+
+## Revision History
+
+| Date | Trigger | Changes | Result |
+|------|---------|---------|--------|
+| 2026-03-06 | Initial draft | Spec created from SPEC-021 deferral (ADR-008) | Draft |
+| 2026-06-23 | spec-realign (owner session) | Corrected afipsdk-as-proxy premise (SaaS proxy, not free self-hosted); relocated fiscal logic to new `@repo/fiscal` package with port/adapter pattern; rewrote §3 current-state to match codebase (12 admin billing pages, 31 cron jobs, corrected component paths, Coolify not Vercel); multi-source scope (accommodation+commerce+tourist, design-for sponsorship/partners); R2 storage finalized (not S3); promo-$0 skip added; default Consumidor Final + configurable threshold guard + Factura A opt-in clarified; reuse CREDIT_NOTE_* perms + add FISCAL_INVOICE_*/TAX_CONFIG_*; migrations renumbered 0028 Drizzle / extras 021; product_domain filter in webhook trigger; no-CUIT ships-disabled posture; afipsdk.com account steps replace ARCA cert steps for primary path | Spec realigned to current codebase and approved decisions |
