@@ -1,5 +1,5 @@
 {
-    "id": "377285a5-4920-4eab-8562-364a844679f8",
+    "id": "9e9a22eb-2972-4af3-b20b-7ccf1b68baaf",
     "prevId": "0f04188b-246f-4a99-a540-c09c97b04364",
     "version": "7",
     "dialect": "postgresql",
@@ -892,221 +892,6 @@
                     "columnsFrom": ["deleted_by_id"],
                     "columnsTo": ["id"],
                     "onDelete": "set null",
-                    "onUpdate": "no action"
-                }
-            },
-            "compositePrimaryKeys": {},
-            "uniqueConstraints": {},
-            "policies": {},
-            "checkConstraints": {},
-            "isRLSEnabled": false
-        },
-        "public.accommodation_media": {
-            "name": "accommodation_media",
-            "schema": "",
-            "columns": {
-                "id": {
-                    "name": "id",
-                    "type": "uuid",
-                    "primaryKey": true,
-                    "notNull": true,
-                    "default": "gen_random_uuid()"
-                },
-                "accommodation_id": {
-                    "name": "accommodation_id",
-                    "type": "uuid",
-                    "primaryKey": false,
-                    "notNull": true
-                },
-                "url": {
-                    "name": "url",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": true
-                },
-                "caption": {
-                    "name": "caption",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": false
-                },
-                "description": {
-                    "name": "description",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": false
-                },
-                "alt": {
-                    "name": "alt",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": false
-                },
-                "public_id": {
-                    "name": "public_id",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": false
-                },
-                "attribution": {
-                    "name": "attribution",
-                    "type": "jsonb",
-                    "primaryKey": false,
-                    "notNull": false
-                },
-                "moderation_state": {
-                    "name": "moderation_state",
-                    "type": "moderation_status_enum",
-                    "typeSchema": "public",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "default": "'PENDING'"
-                },
-                "state": {
-                    "name": "state",
-                    "type": "accommodation_media_state_enum",
-                    "typeSchema": "public",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "default": "'visible'"
-                },
-                "is_featured": {
-                    "name": "is_featured",
-                    "type": "boolean",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "default": false
-                },
-                "sort_order": {
-                    "name": "sort_order",
-                    "type": "integer",
-                    "primaryKey": false,
-                    "notNull": true
-                },
-                "archived_at": {
-                    "name": "archived_at",
-                    "type": "timestamp with time zone",
-                    "primaryKey": false,
-                    "notNull": false
-                },
-                "created_at": {
-                    "name": "created_at",
-                    "type": "timestamp with time zone",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "default": "now()"
-                },
-                "updated_at": {
-                    "name": "updated_at",
-                    "type": "timestamp with time zone",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "default": "now()"
-                },
-                "deleted_at": {
-                    "name": "deleted_at",
-                    "type": "timestamp with time zone",
-                    "primaryKey": false,
-                    "notNull": false
-                }
-            },
-            "indexes": {
-                "accommodationMedia_accommodationId_idx": {
-                    "name": "accommodationMedia_accommodationId_idx",
-                    "columns": [
-                        {
-                            "expression": "accommodation_id",
-                            "isExpression": false,
-                            "asc": true,
-                            "nulls": "last"
-                        }
-                    ],
-                    "isUnique": false,
-                    "concurrently": false,
-                    "method": "btree",
-                    "with": {}
-                },
-                "accommodationMedia_state_idx": {
-                    "name": "accommodationMedia_state_idx",
-                    "columns": [
-                        {
-                            "expression": "state",
-                            "isExpression": false,
-                            "asc": true,
-                            "nulls": "last"
-                        }
-                    ],
-                    "isUnique": false,
-                    "concurrently": false,
-                    "method": "btree",
-                    "with": {}
-                },
-                "accommodationMedia_isFeatured_idx": {
-                    "name": "accommodationMedia_isFeatured_idx",
-                    "columns": [
-                        {
-                            "expression": "is_featured",
-                            "isExpression": false,
-                            "asc": true,
-                            "nulls": "last"
-                        }
-                    ],
-                    "isUnique": false,
-                    "concurrently": false,
-                    "method": "btree",
-                    "with": {}
-                },
-                "accommodationMedia_accommodationId_state_sortOrder_idx": {
-                    "name": "accommodationMedia_accommodationId_state_sortOrder_idx",
-                    "columns": [
-                        {
-                            "expression": "accommodation_id",
-                            "isExpression": false,
-                            "asc": true,
-                            "nulls": "last"
-                        },
-                        {
-                            "expression": "state",
-                            "isExpression": false,
-                            "asc": true,
-                            "nulls": "last"
-                        },
-                        {
-                            "expression": "sort_order",
-                            "isExpression": false,
-                            "asc": true,
-                            "nulls": "last"
-                        }
-                    ],
-                    "isUnique": false,
-                    "concurrently": false,
-                    "method": "btree",
-                    "with": {}
-                },
-                "accommodationMedia_deletedAt_idx": {
-                    "name": "accommodationMedia_deletedAt_idx",
-                    "columns": [
-                        {
-                            "expression": "deleted_at",
-                            "isExpression": false,
-                            "asc": true,
-                            "nulls": "last"
-                        }
-                    ],
-                    "isUnique": false,
-                    "concurrently": false,
-                    "method": "btree",
-                    "with": {}
-                }
-            },
-            "foreignKeys": {
-                "accommodation_media_accommodation_id_accommodations_id_fk": {
-                    "name": "accommodation_media_accommodation_id_accommodations_id_fk",
-                    "tableFrom": "accommodation_media",
-                    "tableTo": "accommodations",
-                    "columnsFrom": ["accommodation_id"],
-                    "columnsTo": ["id"],
-                    "onDelete": "cascade",
                     "onUpdate": "no action"
                 }
             },
@@ -21436,7 +21221,8 @@
                 "cancelled",
                 "expired",
                 "pending_provider",
-                "abandoned"
+                "abandoned",
+                "comp"
             ]
         },
         "public.tag_color_enum": {
@@ -21468,11 +21254,6 @@
             "name": "visibility_enum",
             "schema": "public",
             "values": ["PUBLIC", "PRIVATE", "RESTRICTED"]
-        },
-        "public.accommodation_media_state_enum": {
-            "name": "accommodation_media_state_enum",
-            "schema": "public",
-            "values": ["visible", "archived"]
         }
     },
     "schemas": {},

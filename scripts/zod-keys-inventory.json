@@ -56,6 +56,7 @@
         "zodError.accommodationAmenity.isOptional.required",
         "zodError.accommodationExternalListing.url.invalidUrl",
         "zodError.accommodationExternalReputation.fetchStatus.invalid",
+        "zodError.accommodationExternalReputation.runStatus.invalid",
         "zodError.accommodationFeature.comments.max",
         "zodError.accommodationFeature.comments.min",
         "zodError.accommodationFeature.hostReWriteName.max",

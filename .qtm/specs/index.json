@@ -602,7 +602,10 @@
             "title": "Newsletter Engagement Tracking (Open / Click)",
             "type": "feature",
             "complexity": "low",
-            "status": "draft",
+            "status": "completed",
+            "archived": true,
+            "archivedAt": "2026-06-22",
+            "archiveNote": "Shipped via PR #1776 (merge c298c005a -> staging). Frontend-only: EDITOR Card C open-rate tile for the last-sent campaign (apps/admin dashboard-sources/editor.ts 4th tile + KpiWidget undefined->'—' render). Tasks 4/5 completed + T-004 cancelled (won't-do: keep open/click-rate pct math client-side in use-campaign-metrics; API-computed pct fields were duplication with no consumer). Backend already shipped under SPEC-101.",
             "path": "SPEC-160-newsletter-engagement-tracking",
             "created": "2026-05-26T00:00:00Z",
             "discoveredDuring": "Admin dashboard redefinition session 2026-05-26. EDITOR open-rate widget deferred to phase 2: newsletter_campaigns stores no engagement metrics (only totalRecipients/sentAt). Needs open/click tracking, likely via Brevo webhooks.",
@@ -611,7 +614,12 @@
             "firstAllocatedViaEngramProtocol": true,
             "revised": "2026-05-30T00:00:00.000Z",
             "note": "Re-scoped 2026-05-30: the open/click tracking backend (newsletter_campaign_deliveries table, NewsletterTrackingService applyOpened/applyClick, Brevo webhook handler, NewsletterCampaignService.computeMetrics, GET /admin/newsletter/campaigns/{id}/metrics endpoint, use-campaign-metrics hook) ALREADY shipped under SPEC-101. Remaining work is frontend-only: EDITOR dashboard Card C widget (apps/admin/src/lib/dashboard-sources/editor.ts:29 still says PHASE 2) plus optionally exposing openRate/clickRate percentages in the API response. Complexity downgraded high->low.",
-            "tags": ["newsletter", "analytics", "open-rate", "ctr", "frontend", "phase-2"]
+            "tags": ["newsletter", "analytics", "open-rate", "ctr", "frontend", "phase-2"],
+            "branch": "spec/SPEC-160-newsletter-engagement-tracking",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-160-newsletter-engagement-tracking",
+            "base": "staging",
+            "tasksAtomizedAt": "2026-06-22T22:25:42.000Z",
+            "taskCount": 5
         },
         {
             "specId": "SPEC-162",
@@ -1571,7 +1579,7 @@
             "title": "Asynchronous external reputation refresh (Apify async API + polling)",
             "type": "improvement",
             "complexity": "high",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-250-external-reputation-async-refresh",
             "created": "2026-06-20T00:00:00.000Z",
             "base": "staging",
@@ -1744,6 +1752,35 @@
             "origin": "SPEC-199/212 follow-up: improve AI natural-language search UI/UX — surface interpretation (confidence), onboarding example queries, chat control + error clarity, and a layout/placement decision.",
             "dependsOn": [],
             "tags": ["ai-search", "web", "ux", "ui", "spec-199-followup", "spec-212-followup"]
+        },
+        {
+            "specId": "SPEC-266",
+            "title": "Amenities & features catalog by vertical (scoping + i18n source-of-truth)",
+            "slug": "amenities-feature-catalog-by-vertical",
+            "type": "improvement",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-266-amenities-feature-catalog-by-vertical",
+            "created": "2026-06-23T02:10:00Z",
+            "base": "staging",
+            "origin": "SPEC-249 follow-up: commerce verticals (gastronomy/experience) reuse the accommodation-only amenities/features catalog unfiltered. Scope the catalog by vertical + make i18n the SoT for display names. Absorbs BETA-90.",
+            "dependsOn": [],
+            "tags": [
+                "amenities",
+                "features",
+                "catalog",
+                "commerce",
+                "gastronomy",
+                "experiences",
+                "accommodations",
+                "i18n",
+                "db",
+                "schemas",
+                "admin",
+                "web",
+                "beta-90",
+                "spec-249-followup"
+            ]
         }
     ]
 }

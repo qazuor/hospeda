@@ -173,8 +173,22 @@
         {
             "idx": 24,
             "version": "7",
-            "when": 1782180059850,
-            "tag": "0024_aberrant_shriek",
+            "when": 1782169489751,
+            "tag": "0024_fuzzy_doctor_strange",
+            "breakpoints": true
+        },
+        {
+            "idx": 25,
+            "version": "7",
+            "when": 1782180132045,
+            "tag": "0025_safe_smiling_tiger",
+            "breakpoints": true
+        },
+        {
+            "idx": 26,
+            "version": "7",
+            "when": 1782187574431,
+            "tag": "0026_robust_marten_broadcloak",
             "breakpoints": true
         }
     ]

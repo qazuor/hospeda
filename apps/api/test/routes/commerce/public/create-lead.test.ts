@@ -71,7 +71,7 @@ describe('POST /api/v1/public/commerce/leads (SPEC-239 T-047)', () => {
     // -------------------------------------------------------------------------
 
     describe('Honeypot spam guard', () => {
-        it('returns a success response with empty data when honeypot field is populated', async () => {
+        it('returns a success facade with the nil-UUID sentinel id when honeypot field is populated', async () => {
             // Arrange — a bot filled in the hidden _hp field
             const botPayload = {
                 ...VALID_LEAD_PAYLOAD,
@@ -88,20 +88,21 @@ describe('POST /api/v1/public/commerce/leads (SPEC-239 T-047)', () => {
                 body: JSON.stringify(botPayload)
             });
 
-            // Assert — honeypot returns a success facade to confuse scrapers.
-            // The route factory wraps the response in {success, data}; an empty
-            // object `{}` from the handler produces {success: true, data: {}}.
-            // The route factory returns 201 for POST methods by default.
+            // Assert — the honeypot returns a success facade that is
+            // indistinguishable from a real submission so scrapers cannot detect
+            // the rejection. Per SPEC-210 the create-lead response is `{ id }`
+            // only, and the honeypot path returns the nil-UUID sentinel as that
+            // id (no real lead is persisted). The route factory returns 200/201
+            // for POST methods.
             expect([200, 201]).toContain(res.status);
             const body = (await res.json()) as {
                 success?: boolean;
                 data?: Record<string, unknown>;
             };
             expect(body.success).toBe(true);
-            // No real lead was created — the data must NOT contain a persisted record id.
-            // The response schema applies Zod defaults (e.g. status -> 'pending') to the
-            // empty {} handler return, so we cannot assert data == {} strictly.
-            expect(body.data).not.toHaveProperty('id');
+            // Same shape as a real success (`{ id }`), but the all-zeros sentinel.
+            expect(body.data).toHaveProperty('id', '00000000-0000-0000-0000-000000000000');
+            // No audit/PII fields leak from the honeypot path.
             expect(body.data).not.toHaveProperty('createdAt');
         });
 

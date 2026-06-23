@@ -694,6 +694,39 @@
                     "invalidType": "O máximo de usos tem um tipo de dado inválido",
                     "positive": "O máximo de usos deve ser um número positivo"
                 }
+            },
+            "effect": {
+                "discount": {
+                    "durationCycles": {
+                        "int": "A quantidade de ciclos deve ser um número inteiro",
+                        "invalidType": "A quantidade de ciclos tem um tipo de dado inválido",
+                        "min": "A quantidade de ciclos deve ser maior que 0"
+                    },
+                    "value": {
+                        "int": "O valor do desconto deve ser um número inteiro",
+                        "invalidType": "O valor do desconto tem um tipo de dado inválido",
+                        "min": "O valor do desconto não pode ser negativo",
+                        "percentageMax": "O desconto percentual não pode exceder 100%"
+                    }
+                },
+                "trialExtension": {
+                    "extraDays": {
+                        "int": "Os dias de extensão devem ser um número inteiro",
+                        "invalidType": "Os dias de extensão têm um tipo de dado inválido",
+                        "min": "Os dias de extensão devem ser maiores que 0"
+                    }
+                }
+            },
+            "effectKind": {
+                "invalid": "O tipo de efeito não é válido"
+            },
+            "valueKind": {
+                "invalid": "O tipo de valor não é válido"
+            },
+            "response": {
+                "type": {
+                    "invalid": "O tipo de resposta não é válido"
+                }
             }
         },
         "query": {
@@ -3723,6 +3756,9 @@
     "accommodationExternalReputation": {
         "fetchStatus": {
             "invalid": "[PT] El estado de obtención no es válido"
+        },
+        "runStatus": {
+            "invalid": "O status de atualização é inválido"
         }
     }
 }

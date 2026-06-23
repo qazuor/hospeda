@@ -4,13 +4,17 @@
  * Access-level schemas for the conversation feature (SPEC-085).
  *
  * Covers:
- * - `AccessTokenSchema`           — DB row mirror for `conversation_access_tokens`
- * - `VerificationTokenPayloadSchema` — JWT payload exchanged during email verification
- * - `RequestAccessSchema`         — body for the "request access link" endpoint
- * - `GuestConversationResponseSchema` — anonymous thread view (conversation + messages)
+ * - `AccessTokenSchema`               — DB row mirror for `conversation_access_tokens`
+ * - `VerificationTokenPayloadSchema`  — JWT payload exchanged during email verification
+ * - `RequestAccessSchema`             — body for the "request access link" endpoint
+ * - `MessageGuestPublicSchema`        — public message fields safe to return to anonymous guests
+ * - `ConversationGuestPublicSchema`   — public conversation fields safe to return to anonymous guests
+ * - `GuestThreadResponseSchema`       — full thread response wrapper for guest endpoints (SPEC-210)
+ * - `GuestConversationResponseSchema` — anonymous thread view (conversation + messages, legacy)
  */
 
 import { z } from 'zod';
+import { ConversationSchema } from './conversation.schema.js';
 import { MessageSchema } from './message.schema.js';
 
 // ============================================================================
@@ -116,15 +120,187 @@ export const RequestAccessSchema = z
 export type RequestAccess = z.infer<typeof RequestAccessSchema>;
 
 // ============================================================================
-// GuestConversationResponseSchema
+// MessageGuestPublicSchema (SPEC-210)
+// ============================================================================
+
+/**
+ * Public message fields safe to expose to anonymous guests.
+ *
+ * Picked from {@link MessageSchema}. Only display-safe fields are included.
+ *
+ * Included fields:
+ * - `id`          — message UUID (needed for list rendering keys and client-side
+ *                    cursor tracking)
+ * - `body`        — message text content
+ * - `senderType`  — distinguishes guest / owner / system messages for styling
+ * - `createdAt`   — message timestamp shown to the guest
+ *
+ * Excluded fields (all audit / internal / PII):
+ * - `conversationId` — foreign key, not needed by the guest client
+ * - `userId`         — links to the authenticated user, never exposed publicly
+ * - `status`         — internal moderation state
+ * - `updatedAt`      — internal audit field
+ * - `deletedAt`      — soft-delete timestamp, internal only
+ * - `createdById`    — audit actor, internal only
+ * - `updatedById`    — audit actor, internal only
+ * - `deletedById`    — audit actor, internal only
+ *
+ * @example
+ * ```ts
+ * const safe = MessageGuestPublicSchema.parse(rawMessageRow);
+ * ```
+ */
+export const MessageGuestPublicSchema = MessageSchema.pick({
+    id: true,
+    body: true,
+    senderType: true,
+    createdAt: true
+});
+
+/** TypeScript type inferred from {@link MessageGuestPublicSchema}. */
+export type MessageGuestPublic = z.infer<typeof MessageGuestPublicSchema>;
+
+// ============================================================================
+// ConversationGuestPublicSchema (SPEC-210)
+// ============================================================================
+
+/**
+ * Public conversation fields safe to expose to anonymous guests.
+ *
+ * Built by picking safe fields from {@link ConversationSchema} and extending
+ * with route-enriched display fields that are NOT in the DB row
+ * (`accommodationName`, `accommodationSlug`, `ownerName`).
+ *
+ * Included fields from ConversationSchema:
+ * - `id`                — conversation UUID
+ * - `status`            — lifecycle status (PENDING_OWNER, OPEN, CLOSED, etc.)
+ * - `accommodationId`   — FK to accommodation (guest already knows this from the
+ *                          initiation flow; needed to link back to the listing)
+ * - `lastReadAtByOwner` — lets the guest see if the owner has read the thread
+ * - `createdAt`         — conversation creation date shown in the thread header
+ *
+ * Route-enriched fields (added by the guest-thread handler, not in DB row):
+ * - `accommodationName` — display name of the accommodation (nullable: null if
+ *                          the accommodation was deleted after conversation start)
+ * - `accommodationSlug` — URL slug of the accommodation (nullable: same reason)
+ * - `ownerName`         — display / first name of the property owner (nullable:
+ *                          null if the owner account was deleted)
+ *
+ * Excluded fields (all PII / internal / audit):
+ * - `anonymousEmail`          — guest PII, must never be returned publicly
+ * - `anonymousPhone`          — guest PII, must never be returned publicly
+ * - `anonymousEmailVerified`  — internal verification flag
+ * - `userId`                  — links to authenticated user record
+ * - `anonymousName`           — the guest's own name; not exposed in this
+ *                               response (unrelated to `ownerName`, which is the
+ *                               accommodation owner's display name)
+ * - `blockReason`             — internal moderation detail
+ * - `blockedAt`               — internal moderation timestamp
+ * - `archivedByOwner`         — owner-private archive state
+ * - `archivedByGuest`         — internal archive state (not needed by guest view)
+ * - `lastReadAtByGuest`       — internal tracking; the route updates it on load
+ * - `closedAt`                — internal lifecycle timestamp
+ * - `locale`                  — internal locale preference
+ * - `firstGuestMessageAt`     — internal analytics timestamp
+ * - `firstOwnerReplyAt`       — internal analytics timestamp
+ * - `lastActivityAt`          — internal analytics timestamp
+ * - `lastGuestMessageAt`      — internal analytics timestamp
+ * - `lastOwnerMessageAt`      — internal analytics timestamp
+ * - `guestMessageCount`       — internal counter
+ * - `ownerMessageCount`       — internal counter
+ * - `updatedAt`               — audit field
+ * - `deletedAt`               — soft-delete timestamp
+ * - `createdById`             — audit actor
+ * - `updatedById`             — audit actor
+ * - `deletedById`             — audit actor
+ *
+ * @example
+ * ```ts
+ * const safe = ConversationGuestPublicSchema.parse({ ...rawRow, accommodationName, ownerName, accommodationSlug });
+ * ```
+ */
+export const ConversationGuestPublicSchema = ConversationSchema.pick({
+    id: true,
+    status: true,
+    accommodationId: true,
+    lastReadAtByOwner: true,
+    createdAt: true
+}).extend({
+    /**
+     * Display name of the accommodation.
+     * Populated by the route via an `AccommodationModel.findById` lookup.
+     * Nullable because the accommodation may have been deleted after the
+     * conversation was started.
+     */
+    accommodationName: z.string().nullable(),
+
+    /**
+     * URL slug of the accommodation.
+     * Populated by the route via an `AccommodationModel.findById` lookup.
+     * Nullable for the same reason as `accommodationName`.
+     */
+    accommodationSlug: z.string().nullable(),
+
+    /**
+     * Display name of the property owner (displayName ?? firstName).
+     * Populated by the route via a `UserModel.findById` lookup on the
+     * accommodation's `ownerId`.
+     * Nullable because the owner account may have been deleted.
+     */
+    ownerName: z.string().nullable()
+});
+
+/** TypeScript type inferred from {@link ConversationGuestPublicSchema}. */
+export type ConversationGuestPublic = z.infer<typeof ConversationGuestPublicSchema>;
+
+// ============================================================================
+// GuestThreadResponseSchema (SPEC-210)
+// ============================================================================
+
+/**
+ * Full response wrapper returned by `GET /api/v1/public/conversations/guest/:token`.
+ *
+ * Wraps the public conversation snapshot, the current page of public messages,
+ * and the cursor-pagination `hasMore` flag. The route also uses this schema to
+ * strip all internal fields before serializing the HTTP response.
+ *
+ * @example
+ * ```ts
+ * const response = GuestThreadResponseSchema.parse({ conversation, messages, hasMore });
+ * ```
+ */
+export const GuestThreadResponseSchema = z.object({
+    /** Public conversation snapshot — display-safe fields only. */
+    conversation: ConversationGuestPublicSchema,
+
+    /** Current page of messages — display-safe fields only. */
+    messages: z.array(MessageGuestPublicSchema),
+
+    /**
+     * `true` when older messages exist beyond the current page.
+     * The web client uses this to render the "load older" link.
+     */
+    hasMore: z.boolean()
+});
+
+/** TypeScript type inferred from {@link GuestThreadResponseSchema}. */
+export type GuestThreadResponse = z.infer<typeof GuestThreadResponseSchema>;
+
+// ============================================================================
+// GuestConversationResponseSchema (legacy — superseded by GuestThreadResponseSchema)
 // ============================================================================
 
 /**
  * Response shape for the anonymous guest thread view.
  *
  * Returned by `GET /api/v1/public/conversations/thread` when the guest
- * authenticates via a magic-link token.  Includes conversation metadata,
+ * authenticates via a magic-link token. Includes conversation metadata,
  * a paginated list of messages, and soft-delete / archive state.
+ *
+ * @deprecated Superseded by {@link GuestThreadResponseSchema} (SPEC-210).
+ * Retained because it is still imported in the schemas test suite
+ * (`packages/schemas/test/entities/conversation/conversation.access.schema.test.ts`).
+ * Remove once those tests are migrated.
  *
  * @example
  * ```ts

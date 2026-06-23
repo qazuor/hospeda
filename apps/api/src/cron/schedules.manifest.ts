@@ -239,5 +239,13 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         schedule: '0 2 * * 1',
         description:
             'Weekly refresh of cached external platform reputation data (ratings, review counts, Google snippets) for accommodations with enabled external listings.'
+    },
+    {
+        name: 'poll-apify-reputation-runs',
+        displayName: 'Sondeo de runs de Apify (reputación)',
+        category: 'content',
+        schedule: '*/2 * * * *',
+        description:
+            'Checks the status of pending/running Apify actor runs for external reputation data and persists results when runs complete.'
     }
 ];
