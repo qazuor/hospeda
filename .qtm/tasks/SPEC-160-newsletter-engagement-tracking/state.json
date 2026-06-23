@@ -8,7 +8,7 @@
             "id": "T-001",
             "title": "Add getEditorOpenRateCard() data-source and remove stale PHASE 2 comment",
             "description": "In apps/admin/src/lib/dashboard-sources/editor.ts (~line 29), implement a data-source that resolves the most-recently-sent campaign (sentAt not null, latest) and returns its open rate via the existing use-campaign-metrics hook (apps/admin/src/hooks/newsletter/use-campaign-metrics.ts). Reuse the hook rather than duplicating fetch logic (AC-4). Remove the stale '🔴 PHASE 2 (no email-open tracking today)' comment and any text implying open-rate tracking is unavailable (AC-3). Do NOT modify backend (NewsletterTrackingService, webhook handler, computeMetrics). Tests: unit test the data-source resolves last-sent campaign id and maps openRate; cover the no-sends path returning a neutral value. Test file: apps/admin/src/lib/dashboard-sources/test/editor-open-rate.test.ts (or colocated test dir matching repo convention).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-002", "T-003"],
@@ -17,66 +17,100 @@
                     "title": "Resolve last-sent campaign (sentAt not null, latest)",
                     "completed": false
                 },
-                { "title": "Call use-campaign-metrics and expose openRate%", "completed": false },
-                { "title": "Remove stale PHASE 2 comment in editor.ts (AC-3)", "completed": false },
-                { "title": "Unit test data-source happy path + no-sends path", "completed": false }
+                {
+                    "title": "Call use-campaign-metrics and expose openRate%",
+                    "completed": false
+                },
+                {
+                    "title": "Remove stale PHASE 2 comment in editor.ts (AC-3)",
+                    "completed": false
+                },
+                {
+                    "title": "Unit test data-source happy path + no-sends path",
+                    "completed": false
+                }
             ],
             "tags": ["admin", "dashboard", "newsletter", "data-source"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-06-22T22:25:42.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-22T22:58:14.000Z",
+                "completed": "2026-06-22T23:16:24.000Z"
             }
         },
         {
             "id": "T-002",
             "title": "Render EDITOR Card C open-rate widget",
             "description": "Wire the getEditorOpenRateCard() result into the EDITOR dashboard Card C component so it displays the open rate of the most recently sent campaign, formatted as 'N%' with zero decimal places (AC-1). Follow the existing dashboard card rendering pattern in apps/admin (match sibling cards in editor dashboard). Tests: component/render assertion that a sent campaign with known metrics shows the expected 'N%' string. Reuses the data-source from T-001.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": ["T-005"],
             "subtasks": [
-                { "title": "Bind data-source output to Card C widget", "completed": false },
-                { "title": "Format as 'N%' with 0 decimals (AC-1)", "completed": false }
+                {
+                    "title": "Bind data-source output to Card C widget",
+                    "completed": false
+                },
+                {
+                    "title": "Format as 'N%' with 0 decimals (AC-1)",
+                    "completed": false
+                }
             ],
             "tags": ["admin", "dashboard", "ui"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-06-22T22:25:42.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-22T23:16:24.000Z",
+                "completed": "2026-06-22T23:16:24.000Z"
             }
         },
         {
             "id": "T-003",
             "title": "Implement Card C empty-state for no-sends",
             "description": "When no campaign has ever been sent (sentAt null for all), Card C must render a neutral empty-state (e.g. '—') instead of a percentage and must not throw (AC-2). Handle the empty/undefined metrics path gracefully in both the data-source consumer and the widget. Tests: render assertion that with zero sent campaigns the card shows the neutral placeholder and no error is thrown.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": ["T-005"],
             "subtasks": [
-                { "title": "Render neutral '—' when no sent campaign (AC-2)", "completed": false },
-                { "title": "Guard against throw on empty metrics", "completed": false }
+                {
+                    "title": "Render neutral '—' when no sent campaign (AC-2)",
+                    "completed": false
+                },
+                {
+                    "title": "Guard against throw on empty metrics",
+                    "completed": false
+                }
             ],
             "tags": ["admin", "dashboard", "ui", "edge-case"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-06-22T22:25:42.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-22T23:16:24.000Z",
+                "completed": "2026-06-22T23:16:24.000Z"
             }
         },
         {
             "id": "T-004",
             "title": "[DECISION] Optionally expose computed openRatePct/clickRatePct in metrics API",
             "description": "Nice-to-have (spec §3.2, §7 T-03). DECISION REQUIRED before implementing: keep percentage math client-side in use-campaign-metrics (current behavior, default) OR add computed openRatePct/clickRatePct fields to CampaignMetricsSchema in @repo/schemas and the GET /admin/newsletter/campaigns/{id}/metrics response, then remove the client-side math from the hook. If approved: update schema, endpoint mapping in apps/api/src/routes/newsletter/admin/campaigns.ts, the hook, and the hook's tests. If rejected: close as won't-do. Out of scope unless explicitly decided. Does NOT block the must-have card (T-001..T-003).",
-            "status": "pending",
+            "status": "cancelled",
+            "cancellationNote": "Won't-do (owner deferred to agent judgment): keep the open/click-rate percentage math client-side in use-campaign-metrics. The hook already computes it with a divide-by-zero guard; adding computed openRatePct/clickRatePct fields to CampaignMetricsSchema + the metrics endpoint is duplication with no consumer benefit (KISS/YAGNI). Revisit only if a non-admin consumer needs the precomputed pct.",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
@@ -96,7 +130,11 @@
             ],
             "tags": ["api", "schema", "decision", "optional"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-22T22:25:42.000Z",
                 "started": null,
@@ -107,30 +145,44 @@
             "id": "T-005",
             "title": "Tests and coverage gate for Card C",
             "description": "Cross-cutting tests verifying AC-1 (open rate visible, 'N%') and AC-2 (empty-state) end to end at the dashboard/data-source level, ensuring overall coverage does not drop below 90% (AC-5). If T-004 shipped the API change, update use-campaign-metrics tests accordingly. Run scoped (admin newsletter dashboard) — never the full suite at once.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002", "T-003"],
             "blocks": [],
             "subtasks": [
-                { "title": "Assert AC-1 render path", "completed": false },
-                { "title": "Assert AC-2 empty-state path", "completed": false },
-                { "title": "Verify coverage >= 90% (AC-5)", "completed": false }
+                {
+                    "title": "Assert AC-1 render path",
+                    "completed": false
+                },
+                {
+                    "title": "Assert AC-2 empty-state path",
+                    "completed": false
+                },
+                {
+                    "title": "Verify coverage >= 90% (AC-5)",
+                    "completed": false
+                }
             ],
             "tags": ["testing", "admin"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-06-22T22:25:42.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-23T00:06:55.000Z",
+                "completed": "2026-06-23T00:06:55.000Z"
             }
         }
     ],
     "summary": {
         "total": 5,
-        "pending": 5,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 4,
+        "cancelled": 1,
         "blocked": 0,
         "averageComplexity": 2.2
     }
