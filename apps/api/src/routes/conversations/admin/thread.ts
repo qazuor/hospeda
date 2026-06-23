@@ -10,7 +10,13 @@
 
 import { getDb } from '@repo/db';
 import { accommodations } from '@repo/db';
-import { PermissionEnum, RoleEnum, ServiceErrorCode, ThreadQuerySchema } from '@repo/schemas';
+import {
+    PermissionEnum,
+    RoleEnum,
+    ServiceErrorCode,
+    ThreadQuerySchema,
+    ThreadResponseSchema
+} from '@repo/schemas';
 import { ConversationService } from '@repo/service-core';
 import { eq } from 'drizzle-orm';
 import { getActorFromContext } from '../../../utils/actor';
@@ -149,7 +155,7 @@ router.get('/:id', async (c) => {
         const nextCursor =
             hasMore && messages.length > 0 ? (messages[0]?.createdAt?.toISOString() ?? null) : null;
 
-        return createResponse({ conversation, messages, nextCursor }, c, 200);
+        return createResponse({ conversation, messages, nextCursor }, c, 200, ThreadResponseSchema);
     } catch (error) {
         return handleRouteError(error, c);
     }

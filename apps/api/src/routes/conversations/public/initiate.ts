@@ -15,6 +15,7 @@ import {
 } from '@repo/schemas';
 import { ConversationService } from '@repo/service-core';
 import type { Context } from 'hono';
+import { z } from 'zod';
 import { createConversationMailer } from '../../../lib/conversation-mailer';
 import {
     createKeyedRateLimitMiddleware,
@@ -53,6 +54,18 @@ function buildConversationService(): ConversationService {
         }
     );
 }
+
+/**
+ * Response schema for the conversation initiation endpoint.
+ * Declares the concrete shape returned on the 200 success path.
+ * conversationId may be absent if the service omits it on the resent path.
+ *
+ * SPEC-210 PR5 — required by the fail-closed stripWithSchema backstop.
+ */
+const InitiateResponseSchema = z.object({
+    status: z.enum(['pending_verification', 'resent']),
+    conversationId: z.string().uuid().optional()
+});
 
 /** IP rate limiter: 10 requests per 10 minutes. */
 const ipRateLimiter = createPerRouteRateLimitMiddleware({
@@ -190,7 +203,8 @@ async function handler(c: Context): Promise<Response> {
                 conversationId: result.data.conversationId
             },
             c,
-            200
+            200,
+            InitiateResponseSchema
         );
     } catch (error) {
         return handleRouteError(error, c);
