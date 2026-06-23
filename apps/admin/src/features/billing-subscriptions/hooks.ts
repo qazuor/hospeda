@@ -1,4 +1,5 @@
 import { fetchApi } from '@/lib/api/client';
+import type { SubscriptionPromoEffectResponse } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 
@@ -333,5 +334,34 @@ export function useSubscriptionEventsQuery(params: {
             fetchSubscriptionEvents(params.subscriptionId, params.page ?? 1, params.pageSize ?? 10),
         enabled: params.enabled ?? true,
         staleTime: 60_000
+    });
+}
+
+/**
+ * Fetch the active promo effect for a subscription.
+ *
+ * Calls `GET /api/v1/admin/billing/subscriptions/:id/promo-effect` and returns
+ * the parsed {@link SubscriptionPromoEffectResponse}.
+ */
+async function fetchSubscriptionPromoEffect(id: string): Promise<SubscriptionPromoEffectResponse> {
+    const result = await fetchApi<{ success: boolean; data: SubscriptionPromoEffectResponse }>({
+        path: `/api/v1/admin/billing/subscriptions/${id}/promo-effect`
+    });
+    return result.data.data;
+}
+
+/**
+ * Hook to fetch the active promo effect for a subscription.
+ *
+ * @param id - Subscription UUID to query.
+ * @param enabled - Gate: when false the query does not fire (e.g. dialog closed).
+ */
+export function useSubscriptionPromoEffectQuery(id: string, enabled: boolean) {
+    return useQuery({
+        queryKey: [...subscriptionQueryKeys.subscriptions.detail(id), 'promo-effect'],
+        queryFn: () => fetchSubscriptionPromoEffect(id),
+        staleTime: 60_000,
+        enabled: enabled && !!id,
+        retry: 1
     });
 }
