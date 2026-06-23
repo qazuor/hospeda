@@ -20,7 +20,7 @@ export {
 export {
     SocialImagePipelineService,
     type GptImagePayload,
-    type OpenAiFileRef,
+    type OpenAiFileIdRef,
     type ProcessImageInput,
     type ProcessImageResult
 } from './social-image-pipeline.service';

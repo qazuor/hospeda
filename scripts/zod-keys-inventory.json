@@ -1276,7 +1276,8 @@
         "zodError.socialContentBatch.slug.required",
         "zodError.socialDraft.captionBase.required",
         "zodError.socialDraft.draftId.required",
-        "zodError.socialDraft.image.fileRefs.required",
+        "zodError.socialDraft.image.openaiFileIdRefs.invalidUrl",
+        "zodError.socialDraft.image.openaiFileIdRefs.required",
         "zodError.socialDraft.image.url.invalid",
         "zodError.socialDraft.operatorPin.required",
         "zodError.socialDraft.targets.required",
@@ -1566,7 +1567,7 @@
         "zodError.validation.sanitization.failed",
         "zodError.validation.zod.failed"
     ],
-    "total": 1565,
+    "total": 1566,
     "byNamespace": {
         "accommodation": 52,
         "accommodationAmenity": 4,
@@ -1630,7 +1631,7 @@
         "socialAuditLog": 5,
         "socialCampaign": 3,
         "socialContentBatch": 3,
-        "socialDraft": 7,
+        "socialDraft": 8,
         "socialHashtag": 5,
         "socialHashtagSet": 4,
         "socialPlatform": 2,
