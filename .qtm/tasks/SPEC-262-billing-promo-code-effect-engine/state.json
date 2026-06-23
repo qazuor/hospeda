@@ -6,8 +6,8 @@
     "summary": {
         "total": 15,
         "byStatus": {
-            "pending": 10,
-            "completed": 5
+            "pending": 9,
+            "completed": 6
         },
         "byPhase": {
             "spike": 1,
@@ -134,7 +134,7 @@
             "id": "T-006",
             "title": "Implement trial-extension-on-existing-subscription service operation",
             "description": "New operation in `packages/service-core/src/services/billing/promo-code/promo-code.trial-extension.ts` (or extend `promo-code.service.ts`):\n\n`extendExistingSubscriptionTrial({ subscriptionId, promoCodeId, actorId })` \u2014 RO-RO:\n1. Load subscription; verify it is in `trialing` status (reject with typed `VALIDATION_ERROR` if not \u2014 AC-3.4)\n2. Load promo code; verify `effect.kind === 'trial_extension'` (typed error otherwise)\n3. If annual sub (`mp_subscription_id = null`) and NOT in trial \u2192 reject typed error (AC-3.5); if annual AND in trial \u2192 proceed to extend `trial_end` only\n4. Push `billing_subscriptions.trial_end` by `effect.extraDays` days (arithmetic in UTC)\n5. For monthly subs with live `mp_subscription_id`: call the MP preapproval adjustment (or note it as a TODO pointing to T-007 finding, since the exact mechanism is part of the spike domain). Persist the new `trial_end` regardless and emit a reconciliation flag for the webhook path.\n6. Record usage in `billing_promo_code_usage`\n7. Return typed result with new `trial_end` and any MP reconciliation status\n\nUnit tests:\n- trialing sub \u2192 trial_end pushed by extraDays, usage row created (AC-3.1)\n- active (non-trialing) sub \u2192 VALIDATION_ERROR, no state change (AC-3.4)\n- annual sub in trial \u2192 trial_end pushed (AC-3.5 affirm path)\n- annual sub past trial \u2192 VALIDATION_ERROR (AC-3.5 reject path)\n- non-trial-extension effect code \u2192 typed error\n\nOwnership/permission guard is enforced at the API route layer (T-009); this service trusts the caller has verified authorization.\n\nAcceptance criteria: AC-3.1, AC-3.4, AC-3.5",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-004", "T-005"],
             "blocks": ["T-009"],
@@ -142,14 +142,14 @@
             "tags": ["core", "service-core", "billing", "trial"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-22T18:17:18.089Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-23T00:30:00.000Z",
+                "completed": "2026-06-23T00:45:00.000Z"
             }
         },
         {
