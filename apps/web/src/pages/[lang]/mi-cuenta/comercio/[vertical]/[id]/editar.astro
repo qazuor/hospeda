@@ -62,17 +62,21 @@ const apiUrl = getApiUrl();
 let amenities: ReturnType<typeof transformAmenityList> = [];
 let features: ReturnType<typeof transformAmenityList> = [];
 try {
+    // SPEC-266: filter catalog to the listing's actual vertical so a brewery
+    // (gastronomy) only sees gastronomy-scoped amenities/features, and an
+    // experience listing sees experience-scoped ones. The `[vertical]` route
+    // param is already validated above as 'gastronomy' | 'experience'.
     const [amenitiesRes, featuresRes] = await Promise.all([
-        fetch(`${apiUrl}/api/v1/public/amenities?pageSize=100`),
-        fetch(`${apiUrl}/api/v1/public/features?pageSize=100`)
+        fetch(`${apiUrl}/api/v1/public/amenities?pageSize=100&applicableVertical=${vertical}`),
+        fetch(`${apiUrl}/api/v1/public/features?pageSize=100&applicableVertical=${vertical}`)
     ]);
     if (amenitiesRes.ok) {
         const body = (await amenitiesRes.json()) as { data?: { items?: Record<string, unknown>[] } };
-        amenities = transformAmenityList({ items: body.data?.items ?? [], locale });
+        amenities = transformAmenityList({ items: body.data?.items ?? [] });
     }
     if (featuresRes.ok) {
         const body = (await featuresRes.json()) as { data?: { items?: Record<string, unknown>[] } };
-        features = transformAmenityList({ items: body.data?.items ?? [], locale });
+        features = transformAmenityList({ items: body.data?.items ?? [] });
     }
 } catch {
     // Catalog unavailable — the editor renders without the amenities/features group.

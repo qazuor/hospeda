@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "026-feature-exclusive_kids_area",
-    "name": {
-        "es": "Sector exclusivo para niños",
-        "en": "Sector exclusivo para niños",
-        "pt": "Sector exclusivo para niños"
-    },
     "slug": "exclusive_kids_area",
     "description": {
         "es": "Área especialmente diseñada y equipada solo para niños con juegos, seguridad y supervisión apropiada",
         "en": "Área especialmente diseñada y equipada solo para niños con juegos, seguridad y supervisión apropiada",
         "pt": "Área especialmente diseñada y equipada solo para niños con juegos, seguridad y supervisión apropiada"
     },
+    "applicableVerticals": ["accommodation"],
     "icon": "KidsGamesIcon",
     "isBuiltin": true,
     "isFeatured": false,

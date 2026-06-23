@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "058-feature-tourism_certification",
-    "name": {
-        "es": "Certificación turística",
-        "en": "Certificación turística",
-        "pt": "Certificación turística"
-    },
     "slug": "tourism_certification",
     "description": {
         "es": "Reconocimiento oficial de calidad turística otorgado por organismos nacionales o internacionales",
         "en": "Reconocimiento oficial de calidad turística otorgado por organismos nacionales o internacionales",
         "pt": "Reconocimiento oficial de calidad turística otorgado por organismos nacionales o internacionales"
     },
+    "applicableVerticals": ["accommodation"],
     "icon": "TouristInfoIcon",
     "isBuiltin": true,
     "isFeatured": false,

@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "093-feature-outdoor_activity",
+    "slug": "outdoor_activity",
+    "description": {
+        "es": "Actividad desarrollada completamente al aire libre en entornos naturales",
+        "en": "Actividad desarrollada completamente al aire libre en entornos naturales",
+        "pt": "Actividad desarrollada completamente al aire libre en entornos naturales"
+    },
+    "applicableVerticals": ["experience"],
+    "icon": "NaturalEnvironmentIcon",
+    "isBuiltin": false,
+    "isFeatured": true,
+    "displayWeight": 65,
+    "lifecycleState": "ACTIVE"
+}

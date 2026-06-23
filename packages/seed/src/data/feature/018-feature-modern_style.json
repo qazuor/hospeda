@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "018-feature-modern_style",
-    "name": {
-        "es": "Estilo moderno",
-        "en": "Estilo moderno",
-        "pt": "Estilo moderno"
-    },
     "slug": "modern_style",
     "description": {
         "es": "Arquitectura contemporánea con líneas limpias, materiales modernos y diseño minimalista actual",
         "en": "Arquitectura contemporánea con líneas limpias, materiales modernos y diseño minimalista actual",
         "pt": "Arquitectura contemporánea con líneas limpias, materiales modernos y diseño minimalista actual"
     },
+    "applicableVerticals": ["accommodation"],
     "icon": "ModernStyleIcon",
     "isBuiltin": true,
     "isFeatured": false,

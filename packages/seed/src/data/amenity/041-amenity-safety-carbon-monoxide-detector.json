@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "041-amenity-safety-carbon-monoxide-detector",
-    "name": {
-        "es": "carbon_monoxide_detector",
-        "en": "carbon_monoxide_detector",
-        "pt": "carbon_monoxide_detector"
-    },
     "slug": "carbon_monoxide_detector",
     "description": {
         "es": "Detector de monóxido",
         "en": "Detector de monóxido",
         "pt": "Detector de monóxido"
     },
+    "applicableVerticals": ["accommodation"],
     "type": "SAFETY",
     "icon": "SmokeDetectorIcon",
     "isBuiltin": false,

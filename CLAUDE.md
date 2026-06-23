@@ -404,6 +404,7 @@ Full details: [docs/guides/dependency-policy.md](docs/guides/dependency-policy.m
 
 ## Common Gotchas
 
+- **Amenity/feature catalog (SPEC-266)**: the `name` column was DROPPED. Display labels come from `@repo/i18n` (`accommodations.amenityNames.<slug>` / `accommodations.featureNames.<slug>`), keyed by `slug`. The amenity/feature slug regex now allows underscores (`^[a-z0-9]+(?:[-_][a-z0-9]+)*$`) — the slug IS the i18n key. Both tables carry `applicable_verticals text[]`; public catalog endpoints (`/api/v1/public/amenities|features`) accept `?applicableVertical=accommodation|gastronomy|experience` to scope results. **BETA-90** (remove `name` → i18n by slug) is ABSORBED by SPEC-266 — do not plan it separately.
 - **Biome `useDefaultParameterLast`**: Params with defaults MUST come after required params
 - **Biome `noExplicitAny`**: `biome-ignore` on interface/type properties does NOT work.. use proper types
 - **Biome `useExhaustiveDependencies`**: Pass whole objects (e.g. `[config]`) not individual properties

@@ -1,5 +1,5 @@
 {
-    "id": "094b5a28-b9bd-4fd4-8b48-6df8f6b2a164",
+    "id": "f009d670-4ca9-42f0-ba20-92e2f869bd72",
     "prevId": "bc047feb-68b8-406e-aaaf-1600f398643c",
     "version": "7",
     "dialect": "postgresql",
@@ -1426,12 +1426,6 @@
                     "primaryKey": false,
                     "notNull": true
                 },
-                "name": {
-                    "name": "name",
-                    "type": "jsonb",
-                    "primaryKey": false,
-                    "notNull": true
-                },
                 "description": {
                     "name": "description",
                     "type": "jsonb",
@@ -1471,6 +1465,13 @@
                     "typeSchema": "public",
                     "primaryKey": false,
                     "notNull": true
+                },
+                "applicable_verticals": {
+                    "name": "applicable_verticals",
+                    "type": "text[]",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "'{}'"
                 },
                 "lifecycle_state": {
                     "name": "lifecycle_state",
@@ -1615,12 +1616,6 @@
                     "primaryKey": false,
                     "notNull": true
                 },
-                "name": {
-                    "name": "name",
-                    "type": "jsonb",
-                    "primaryKey": false,
-                    "notNull": true
-                },
                 "description": {
                     "name": "description",
                     "type": "jsonb",
@@ -1653,6 +1648,13 @@
                     "primaryKey": false,
                     "notNull": true,
                     "default": 50
+                },
+                "applicable_verticals": {
+                    "name": "applicable_verticals",
+                    "type": "text[]",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "'{}'"
                 },
                 "lifecycle_state": {
                     "name": "lifecycle_state",
@@ -24656,7 +24658,16 @@
                 "moderation.threshold.update",
                 "moderation.threshold.restore",
                 "moderation.threshold.hardDelete",
-                "commerce.editOwn",
+                "commerce.schedule.editOwn",
+                "commerce.contact.editOwn",
+                "commerce.social.editOwn",
+                "commerce.media.editOwn",
+                "commerce.menu.editOwn",
+                "commerce.priceRange.editOwn",
+                "commerce.richDescription.editOwn",
+                "commerce.amenities.editOwn",
+                "commerce.features.editOwn",
+                "commerce.faqs.editOwn",
                 "commerce.create",
                 "commerce.viewAll",
                 "commerce.editAll",

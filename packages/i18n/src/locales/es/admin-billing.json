@@ -964,7 +964,16 @@
             "cancelled": "Cancelada",
             "pastDue": "Pago pendiente",
             "expired": "Expirada",
-            "paused": "Pausada"
+            "paused": "Pausada",
+            "comp": "Cortesía"
+        },
+        "promoEffect": {
+            "title": "Promoción activa",
+            "discountForCycles": "Descuento: -{value} por {count} ciclo(s) más",
+            "discountForever": "Descuento: -{value} indefinido",
+            "complimentary": "Cortesía (sin cobro)",
+            "trialExtended": "Trial extendido +{days} día(s)",
+            "exhausted": "Promoción agotada"
         },
         "filtersTitle": "Filtros",
         "searchLabel": "Buscar por usuario",

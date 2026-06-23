@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "082-feature-vegan_options",
+    "slug": "vegan_options",
+    "description": {
+        "es": "Opciones de menú totalmente veganas sin ingredientes de origen animal",
+        "en": "Opciones de menú totalmente veganas sin ingredientes de origen animal",
+        "pt": "Opciones de menú totalmente veganas sin ingredientes de origen animal"
+    },
+    "applicableVerticals": ["gastronomy"],
+    "icon": "TreeIcon",
+    "isBuiltin": false,
+    "isFeatured": true,
+    "displayWeight": 55,
+    "lifecycleState": "ACTIVE"
+}

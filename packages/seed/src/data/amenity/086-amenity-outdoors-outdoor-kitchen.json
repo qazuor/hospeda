@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "086-amenity-outdoors-outdoor-kitchen",
-    "name": {
-        "es": "outdoor_kitchen",
-        "en": "outdoor_kitchen",
-        "pt": "outdoor_kitchen"
-    },
     "slug": "outdoor_kitchen",
     "description": {
         "es": "Cocina exterior",
         "en": "Cocina exterior",
         "pt": "Cocina exterior"
     },
+    "applicableVerticals": ["accommodation"],
     "type": "OUTDOORS",
     "icon": "OutdoorKitchenIcon",
     "isBuiltin": false,

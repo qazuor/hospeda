@@ -455,10 +455,12 @@ describe('toAccommodationDetailPageProps', () => {
                 image: '/img/owner.jpg',
                 createdAt: '2024-06-01T00:00:00.000Z'
             },
+            // SPEC-266: the catalog `name` column was dropped; the API returns
+            // `slug` and the transform stores it in `name` as the i18n key.
             amenities: [
                 {
                     amenityId: 'am-1',
-                    name: 'WiFi',
+                    slug: 'wifi',
                     icon: 'wifi',
                     isOptional: false,
                     additionalCost: null
@@ -467,7 +469,7 @@ describe('toAccommodationDetailPageProps', () => {
             features: [
                 {
                     featureId: 'ft-1',
-                    name: 'Pool',
+                    slug: 'pool',
                     icon: 'pool',
                     hostReWriteName: 'Pileta',
                     comments: 'Heated'
@@ -627,7 +629,8 @@ describe('toAccommodationDetailPageProps', () => {
             expect(result.amenities).toHaveLength(1);
             expect(result.amenities[0]).toEqual({
                 amenityId: 'am-1',
-                name: 'WiFi',
+                // SPEC-266: `name` holds the slug (used as the i18n lookup key).
+                name: 'wifi',
                 icon: 'wifi',
                 isOptional: false,
                 additionalCost: null,
@@ -640,7 +643,8 @@ describe('toAccommodationDetailPageProps', () => {
             expect(result.features).toHaveLength(1);
             expect(result.features[0]).toEqual({
                 featureId: 'ft-1',
-                name: 'Pool',
+                // SPEC-266: `name` holds the slug (used as the i18n lookup key).
+                name: 'pool',
                 icon: 'pool',
                 hostReWriteName: 'Pileta',
                 comments: 'Heated',

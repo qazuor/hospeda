@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "037-amenity-accessibility-wheelchair-accessible",
-    "name": {
-        "es": "wheelchair_accessible",
-        "en": "wheelchair_accessible",
-        "pt": "wheelchair_accessible"
-    },
     "slug": "wheelchair_accessible",
     "description": {
         "es": "Acceso para personas con movilidad reducida",
         "en": "Acceso para personas con movilidad reducida",
         "pt": "Acceso para personas con movilidad reducida"
     },
+    "applicableVerticals": ["accommodation", "gastronomy", "experience"],
     "type": "ACCESSIBILITY",
     "icon": "AccessibilityFriendlyIcon",
     "isBuiltin": false,

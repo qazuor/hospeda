@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "012-feature-family_suitable",
-    "name": {
-        "es": "Apto para familias",
-        "en": "Apto para familias",
-        "pt": "Apto para familias"
-    },
     "slug": "family_suitable",
     "description": {
         "es": "Instalaciones y servicios especialmente diseñados para familias con niños, con medidas de seguridad y entretenimiento apropiadas",
         "en": "Instalaciones y servicios especialmente diseñados para familias con niños, con medidas de seguridad y entretenimiento apropiadas",
         "pt": "Instalaciones y servicios especialmente diseñados para familias con niños, con medidas de seguridad y entretenimiento apropiadas"
     },
+    "applicableVerticals": ["accommodation"],
     "icon": "FamilySuitableIcon",
     "isBuiltin": true,
     "isFeatured": false,

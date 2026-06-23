@@ -1,0 +1,25 @@
+{
+    "specId": "SPEC-272",
+    "title": "Occupancy calendar — manual management + external sync (Google Calendar, Airbnb, Booking)",
+    "type": "feature",
+    "complexity": "high",
+    "status": "draft",
+    "created": "2026-06-23T00:00:00Z",
+    "startedAt": null,
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": [
+        "accommodation",
+        "calendar",
+        "occupancy",
+        "availability",
+        "sync",
+        "google-calendar",
+        "airbnb",
+        "booking",
+        "host",
+        "web",
+        "admin"
+    ]
+}

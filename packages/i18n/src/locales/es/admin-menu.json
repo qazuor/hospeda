@@ -86,5 +86,13 @@
         "debug": "Debug",
         "business": "De Negocio",
         "views": "Vistas"
+    },
+    "ai": {
+        "title": "Inteligencia Artificial",
+        "usage": "Consumo de IA",
+        "settings": "Configuración",
+        "credentials": "Credenciales",
+        "prompts": "Prompts",
+        "playground": "Playground"
     }
 }

@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "094-amenity-services-takeaway",
+    "slug": "takeaway",
+    "description": {
+        "es": "Pedidos para llevar disponibles",
+        "en": "Pedidos para llevar disponibles",
+        "pt": "Pedidos para llevar disponibles"
+    },
+    "applicableVerticals": ["gastronomy"],
+    "type": "SERVICES",
+    "icon": "LuggageStorageIcon",
+    "isBuiltin": false,
+    "isFeatured": true,
+    "displayWeight": 65
+}

@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "110-amenity-safety-lockers-available",
+    "slug": "lockers_available",
+    "description": {
+        "es": "Casilleros seguros disponibles para guardar objetos personales durante la actividad",
+        "en": "Casilleros seguros disponibles para guardar objetos personales durante la actividad",
+        "pt": "Casilleros seguros disponibles para guardar objetos personales durante la actividad"
+    },
+    "applicableVerticals": ["experience"],
+    "type": "SAFETY",
+    "icon": "SafeIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 45
+}

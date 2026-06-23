@@ -5,6 +5,7 @@ import { useFeaturePage } from '@/features/features/hooks/useFeaturePage';
 import { useDeleteFeatureMutation } from '@/features/features/hooks/useFeatureQuery';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
+import { defaultLocale, trans } from '@repo/i18n';
 import { PermissionEnum } from '@repo/schemas';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
@@ -21,20 +22,34 @@ export const Route = createFileRoute('/_authed/content/accommodation-features/$i
 /**
  * Feature View Page Component
  */
+/**
+ * Resolves the feature display label from its slug via @repo/i18n.
+ * Key: `accommodations.featureNames.<slug>` in the default locale.
+ * Falls back to the entity id when no translation or slug is available.
+ */
+function resolveFeatureLabel(slug: string | null | undefined, fallback: string): string {
+    if (!slug) return fallback;
+    const key = `accommodations.featureNames.${slug}`;
+    const translated = trans[defaultLocale as keyof typeof trans]?.[key];
+    if (translated && !translated.startsWith('[MISSING:')) return translated;
+    return slug;
+}
+
 function FeatureViewPage() {
     const { id } = Route.useParams();
     const navigate = useNavigate();
     const { t } = useTranslations();
     const entityData = useFeaturePage(id);
 
-    const feature = entityData.entity as { name?: string } | undefined;
+    const feature = entityData.entity as { slug?: string | null } | undefined;
+    const displayName = resolveFeatureLabel(feature?.slug, id);
 
     return (
         <div className="space-y-4">
             <div className="flex justify-end">
                 <DeleteRowButton
                     entityId={id}
-                    entityName={feature?.name || id}
+                    entityName={displayName}
                     entityLabel={t('admin-entities.entities.feature.singular')}
                     permission={PermissionEnum.FEATURE_DELETE}
                     useDeleteMutation={useDeleteFeatureMutation}

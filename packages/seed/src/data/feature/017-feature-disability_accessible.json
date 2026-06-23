@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "017-feature-disability_accessible",
-    "name": {
-        "es": "Apto para personas con discapacidad",
-        "en": "Apto para personas con discapacidad",
-        "pt": "Apto para personas con discapacidad"
-    },
     "slug": "disability_accessible",
     "description": {
         "es": "Completamente accesible con rampas, baños adaptados, puertas amplias y todas las facilidades para personas con movilidad reducida",
         "en": "Completamente accesible con rampas, baños adaptados, puertas amplias y todas las facilidades para personas con movilidad reducida",
         "pt": "Completamente accesible con rampas, baños adaptados, puertas amplias y todas las facilidades para personas con movilidad reducida"
     },
+    "applicableVerticals": ["accommodation", "gastronomy", "experience"],
     "icon": "AccessibilityFriendlyIcon",
     "isBuiltin": true,
     "isFeatured": false,

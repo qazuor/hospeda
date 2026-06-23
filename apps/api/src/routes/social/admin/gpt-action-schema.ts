@@ -38,6 +38,55 @@ import { env } from '../../../utils/env';
 import { createAdminRoute } from '../../../utils/route-factory';
 
 // ---------------------------------------------------------------------------
+// GPT-action-schema override for openaiFileIdRefs
+//
+// OpenAI's Custom GPT Actions convention requires the `openaiFileIdRefs`
+// property to be declared as `type: 'array', items: { type: 'string' }` in
+// the OpenAPI schema so that the platform recognises it as the file-injection
+// slot. At RUNTIME OpenAI injects objects (with download_link, id, name,
+// mime_type), but the schema declaration must use string items.
+//
+// We therefore build a modified draft schema for the OpenAPI document only —
+// the canonical CreateSocialDraftSchema (used for runtime validation) stays
+// accurate with full object shapes.
+// ---------------------------------------------------------------------------
+
+/** Image payload variant for the GPT action schema document only. */
+const GptImagePayloadDocSchema = z.discriminatedUnion('mode', [
+    z.object({
+        mode: z.literal('public_url'),
+        url: z.string().url(),
+        altText: z.string().optional(),
+        mimeType: z.string().optional()
+    }),
+    z.object({
+        mode: z.literal('openai_file_refs'),
+        /**
+         * OpenAI auto-populates this field at runtime with the uploaded/generated
+         * image file references (download links). Declared as string items per
+         * OpenAI's GPT Actions convention; actual runtime objects contain
+         * { download_link, id, name, mime_type }.
+         */
+        openaiFileIdRefs: z
+            .array(z.string())
+            .min(1)
+            .openapi({
+                items: { type: 'string' },
+                description:
+                    'Auto-populated by OpenAI at runtime with the uploaded/generated image ' +
+                    'file references (download links).'
+            }),
+        altText: z.string().optional(),
+        mimeType: z.string().optional()
+    })
+]);
+
+/** CreateSocialDraftSchema variant for OpenAPI doc generation only. */
+const CreateSocialDraftDocSchema = CreateSocialDraftSchema.extend({
+    image: GptImagePayloadDocSchema.optional()
+});
+
+// ---------------------------------------------------------------------------
 // OpenAPI 3.1 document builder
 // ---------------------------------------------------------------------------
 
@@ -126,7 +175,7 @@ export function buildGptActionSchema(apiBaseUrl?: string): Record<string, unknow
                 description: 'Social draft payload',
                 content: {
                     'application/json': {
-                        schema: CreateSocialDraftSchema
+                        schema: CreateSocialDraftDocSchema
                     }
                 }
             }

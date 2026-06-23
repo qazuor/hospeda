@@ -12,10 +12,11 @@ import { createUniqueSlug } from '@repo/utils';
  * `[{ accommodationId, amenityId, isOptional, additionalCost, amenity: Amenity }, ...]`.
  *
  * Downstream response schemas pick different subsets of those fields:
- * - `AccommodationPublicSchema.amenities` picks `{ amenityId, name, icon, isOptional, additionalCost }`
- *   — a merge of junction (`amenityId`, `isOptional`, `additionalCost`) and entity (`name`, `icon`).
+ * - `AccommodationPublicSchema.amenities` picks `{ amenityId, slug, icon, isOptional, additionalCost }`
+ *   — a merge of junction (`amenityId`, `isOptional`, `additionalCost`) and entity (`slug`, `icon`).
+ *   SPEC-266: the catalog `name` column was dropped; `slug` is the i18n key.
  * - `AccommodationProtectedSchema.amenities` / `AccommodationAdminSchema.amenities` pick the
- *   entity-only shape (`{ id, slug, name, icon, ... }`).
+ *   entity-only shape (`{ id, slug, icon, ... }`).
  *
  * By merging `{ ...joinRow, ...joinRow[nestedKey] }` per row we produce a flat
  * object that satisfies all three schemas — Zod's `.pick()` strips whatever each
@@ -50,7 +51,7 @@ export function flattenAccommodationJoinRelations<T extends Accommodation | null
                     return rest;
                 }
                 // Merge nested entity fields on top of join fields. Entity fields
-                // (name, icon, ...) win for keys that exist in both; join-only
+                // (slug, icon, ...) win for keys that exist in both; join-only
                 // fields (amenityId, isOptional, additionalCost) survive intact.
                 const { [nestedKey]: _drop, ...joinFields } = rec;
                 return { ...joinFields, ...(nested as Record<string, unknown>) };

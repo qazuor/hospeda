@@ -407,6 +407,25 @@ const EntityViewSectionComponent = React.forwardRef<HTMLDivElement, EntityViewSe
                         />
                     );
 
+                case FieldTypeEnum.SELECT_MULTIPLE: {
+                    // Read-only view for array-of-strings multi-select fields (e.g. applicableVerticals).
+                    // Resolves option labels from typeConfig.options for display. Falls back to raw value.
+                    const multiConfig = field.typeConfig as SelectFieldConfig | undefined;
+                    const multiOptions = multiConfig?.options ?? [];
+                    const selectedValues: string[] = Array.isArray(fieldValue)
+                        ? (fieldValue as string[])
+                        : [];
+                    const labels = selectedValues.map(
+                        (v) => multiOptions.find((o) => o.value === v)?.label ?? v
+                    );
+                    return wrap(
+                        <TextViewField
+                            {...baseFieldProps}
+                            value={labels.length > 0 ? labels.join(', ') : ''}
+                        />
+                    );
+                }
+
                 case FieldTypeEnum.JSON: {
                     // Structured object/array fields (e.g. commerce openingHours)
                     // are shown read-only as pretty-printed JSON. Rendering the raw

@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "032-amenity-outdoors-umbrella-gazebo",
-    "name": {
-        "es": "umbrella_gazebo",
-        "en": "umbrella_gazebo",
-        "pt": "umbrella_gazebo"
-    },
     "slug": "umbrella_gazebo",
     "description": {
         "es": "Sombrilla / Gazebo",
         "en": "Sombrilla / Gazebo",
         "pt": "Sombrilla / Gazebo"
     },
+    "applicableVerticals": ["accommodation"],
     "type": "OUTDOORS",
     "icon": "BeachUmbrellaIcon",
     "isBuiltin": false,

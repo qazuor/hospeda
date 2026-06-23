@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "108-amenity-safety-insurance-included",
+    "slug": "insurance_included",
+    "description": {
+        "es": "Seguro de accidentes o responsabilidad civil incluido en el precio",
+        "en": "Seguro de accidentes o responsabilidad civil incluido en el precio",
+        "pt": "Seguro de accidentes o responsabilidad civil incluido en el precio"
+    },
+    "applicableVerticals": ["experience"],
+    "type": "SAFETY",
+    "icon": "SafeIcon",
+    "isBuiltin": false,
+    "isFeatured": true,
+    "displayWeight": 80
+}

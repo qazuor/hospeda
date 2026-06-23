@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "004-amenity-kitchen-full-kitchen",
-    "name": {
-        "es": "full_kitchen",
-        "en": "full_kitchen",
-        "pt": "full_kitchen"
-    },
     "slug": "full_kitchen",
     "description": {
         "es": "Cocina completa",
         "en": "Cocina completa",
         "pt": "Cocina completa"
     },
+    "applicableVerticals": ["accommodation"],
     "type": "KITCHEN",
     "icon": "KitchenIcon",
     "isBuiltin": false,

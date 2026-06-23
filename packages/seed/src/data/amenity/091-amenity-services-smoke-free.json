@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "091-amenity-services-smoke-free",
+    "slug": "smoke_free",
+    "description": {
+        "es": "Espacio libre de humo de tabaco en todas las áreas",
+        "en": "Espacio libre de humo de tabaco en todas las áreas",
+        "pt": "Espacio libre de humo de tabaco en todas las áreas"
+    },
+    "applicableVerticals": ["accommodation", "gastronomy", "experience"],
+    "type": "SERVICES",
+    "icon": "SmokeDetectorIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 30
+}

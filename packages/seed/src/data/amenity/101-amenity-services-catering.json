@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "101-amenity-services-catering",
+    "slug": "catering",
+    "description": {
+        "es": "Servicio de catering para eventos y reuniones",
+        "en": "Servicio de catering para eventos y reuniones",
+        "pt": "Servicio de catering para eventos y reuniones"
+    },
+    "applicableVerticals": ["gastronomy"],
+    "type": "SERVICES",
+    "icon": "FullBoardIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 35
+}

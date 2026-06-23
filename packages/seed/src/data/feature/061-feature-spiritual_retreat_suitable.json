@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "061-feature-spiritual_retreat_suitable",
-    "name": {
-        "es": "Apto para retiros espirituales",
-        "en": "Apto para retiros espirituales",
-        "pt": "Apto para retiros espirituales"
-    },
     "slug": "spiritual_retreat_suitable",
     "description": {
         "es": "Ambiente de paz y tranquilidad ideal para meditación, yoga y actividades de crecimiento personal",
         "en": "Ambiente de paz y tranquilidad ideal para meditación, yoga y actividades de crecimiento personal",
         "pt": "Ambiente de paz y tranquilidad ideal para meditación, yoga y actividades de crecimiento personal"
     },
+    "applicableVerticals": ["accommodation"],
     "icon": "YogaMeditationIcon",
     "isBuiltin": true,
     "isFeatured": false,

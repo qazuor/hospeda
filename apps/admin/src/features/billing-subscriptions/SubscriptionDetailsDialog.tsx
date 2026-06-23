@@ -11,19 +11,15 @@ import {
 } from '@/components/ui/dialog';
 import {
     usePaymentHistoryQuery,
-    useSubscriptionEventsQuery
+    useSubscriptionEventsQuery,
+    useSubscriptionPromoEffectQuery
 } from '@/features/billing-subscriptions/hooks';
 import { useTranslations } from '@/hooks/use-translations';
 import type { TranslationKey } from '@repo/i18n';
-import {
-    CalendarIcon,
-    CreditCardIcon,
-    LoaderIcon,
-    PlayIcon,
-    PowerOffIcon,
-    XCircleIcon
-} from '@repo/icons';
+import { CalendarIcon, CreditCardIcon, PlayIcon, PowerOffIcon, XCircleIcon } from '@repo/icons';
 import { useState } from 'react';
+import { SubscriptionPaymentHistoryBlock } from './SubscriptionPaymentHistoryBlock';
+import { SubscriptionPromoEffectPanel } from './SubscriptionPromoEffectPanel';
 import type { PaymentHistory, Subscription, SubscriptionStatus } from './types';
 import { formatArs, formatDate, getPlanBySlug, getStatusLabel, getStatusVariant } from './utils';
 
@@ -70,6 +66,11 @@ export function SubscriptionDetailsDialog({
         pageSize: 10,
         enabled: activeTab === 'historial' && !!subscription?.id
     });
+
+    const { data: promoEffect, isLoading: isLoadingPromoEffect } = useSubscriptionPromoEffectQuery(
+        subscription?.id ?? '',
+        isOpen && !!subscription?.id
+    );
 
     if (!subscription) return null;
 
@@ -226,6 +227,13 @@ export function SubscriptionDetailsDialog({
                                 </div>
                             </div>
 
+                            {/* Active promo effect */}
+                            <SubscriptionPromoEffectPanel
+                                effect={promoEffect ?? null}
+                                isLoading={isLoadingPromoEffect}
+                                trialEnd={subscription.trialEnd}
+                            />
+
                             {/* Entitlements */}
                             {plan && (
                                 <div>
@@ -255,95 +263,10 @@ export function SubscriptionDetailsDialog({
                             )}
 
                             {/* Payment history */}
-                            <div>
-                                <h3 className="mb-2 font-medium text-sm">
-                                    {t('admin-billing.subscriptions.paymentHistory.title')}
-                                </h3>
-                                {isLoadingPayments ? (
-                                    <div className="rounded-md border p-6 text-center">
-                                        <LoaderIcon className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
-                                        <p className="mt-2 text-muted-foreground text-xs">
-                                            {t(
-                                                'admin-billing.subscriptions.paymentHistory.loading'
-                                            )}
-                                        </p>
-                                    </div>
-                                ) : paymentHistory.length === 0 ? (
-                                    <div className="rounded-md border p-6 text-center">
-                                        <p className="text-muted-foreground text-sm">
-                                            {t('admin-billing.subscriptions.paymentHistory.empty')}
-                                        </p>
-                                        <p className="mt-1 text-muted-foreground text-xs">
-                                            {t(
-                                                'admin-billing.subscriptions.paymentHistory.emptyHint'
-                                            )}
-                                        </p>
-                                    </div>
-                                ) : (
-                                    <div className="overflow-hidden rounded-md border bg-card">
-                                        <table className="w-full text-sm">
-                                            <thead className="bg-muted">
-                                                <tr>
-                                                    <th className="px-3 py-2 text-left font-medium">
-                                                        {t(
-                                                            'admin-billing.subscriptions.paymentHistory.dateColumn'
-                                                        )}
-                                                    </th>
-                                                    <th className="px-3 py-2 text-right font-medium">
-                                                        {t(
-                                                            'admin-billing.subscriptions.paymentHistory.amountColumn'
-                                                        )}
-                                                    </th>
-                                                    <th className="px-3 py-2 text-center font-medium">
-                                                        {t(
-                                                            'admin-billing.subscriptions.paymentHistory.statusColumn'
-                                                        )}
-                                                    </th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {paymentHistory.map((payment) => (
-                                                    <tr
-                                                        key={payment.id}
-                                                        className="border-t"
-                                                    >
-                                                        <td className="px-3 py-2">
-                                                            {formatDate(payment.date, locale)}
-                                                        </td>
-                                                        <td className="px-3 py-2 text-right">
-                                                            {formatArs(payment.amount, locale)}
-                                                        </td>
-                                                        <td className="px-3 py-2 text-center">
-                                                            <Badge
-                                                                variant={
-                                                                    payment.status === 'paid'
-                                                                        ? 'default'
-                                                                        : payment.status ===
-                                                                            'pending'
-                                                                          ? 'secondary'
-                                                                          : 'destructive'
-                                                                }
-                                                            >
-                                                                {payment.status === 'paid'
-                                                                    ? t(
-                                                                          'admin-billing.subscriptions.paymentHistory.statusPaid'
-                                                                      )
-                                                                    : payment.status === 'pending'
-                                                                      ? t(
-                                                                            'admin-billing.subscriptions.paymentHistory.statusPending'
-                                                                        )
-                                                                      : t(
-                                                                            'admin-billing.subscriptions.paymentHistory.statusFailed'
-                                                                        )}
-                                                            </Badge>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                )}
-                            </div>
+                            <SubscriptionPaymentHistoryBlock
+                                paymentHistory={paymentHistory}
+                                isLoading={isLoadingPayments}
+                            />
 
                             {/* Actions */}
                             <div className="flex flex-wrap gap-2">

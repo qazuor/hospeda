@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "067-amenity-general-appliances-gym",
-    "name": {
-        "es": "gym",
-        "en": "gym",
-        "pt": "gym"
-    },
     "slug": "gym",
     "description": {
         "es": "Gimnasio completo",
         "en": "Gimnasio completo",
         "pt": "Gimnasio completo"
     },
+    "applicableVerticals": ["accommodation"],
     "type": "GENERAL_APPLIANCES",
     "icon": "GymIcon",
     "isBuiltin": false,

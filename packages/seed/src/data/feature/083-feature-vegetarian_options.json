@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "083-feature-vegetarian_options",
+    "slug": "vegetarian_options",
+    "description": {
+        "es": "Opciones vegetarianas en el menú para quienes no consumen carne",
+        "en": "Opciones vegetarianas en el menú para quienes no consumen carne",
+        "pt": "Opciones vegetarianas en el menú para quienes no consumen carne"
+    },
+    "applicableVerticals": ["gastronomy"],
+    "icon": "OrganicGardenIcon",
+    "isBuiltin": false,
+    "isFeatured": true,
+    "displayWeight": 55,
+    "lifecycleState": "ACTIVE"
+}

@@ -4,6 +4,7 @@ import { BaseAuditFields } from '../../common/audit.schema.js';
 import { i18nText } from '../../common/i18n.schema.js';
 import { AccommodationIdSchema, FeatureIdSchema } from '../../common/id.schema.js';
 import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
+import { ApplicableVerticalSchema } from '../amenity/amenity.schema.js';
 
 /**
  * Feature Schema - Main Entity Schema
@@ -25,13 +26,21 @@ export const FeatureSchema = z.object({
         })
         .min(3, { message: 'zodError.feature.slug.min' })
         .max(100, { message: 'zodError.feature.slug.max' })
-        .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, {
+        .regex(/^[a-z0-9]+(?:[-_][a-z0-9]+)*$/, {
             message: 'zodError.feature.slug.pattern'
         }),
 
-    name: i18nText({ min: 2, max: 100 }),
-
     description: i18nText({ min: 10, max: 500 }).nullish(),
+
+    /**
+     * Verticals this feature is applicable to (SPEC-266).
+     * At least one vertical required. NOT NULL in DB.
+     */
+    applicableVerticals: z
+        .array(ApplicableVerticalSchema, {
+            message: 'zodError.feature.applicableVerticals.required'
+        })
+        .min(1, { message: 'zodError.feature.applicableVerticals.min' }),
 
     icon: z
         .string({

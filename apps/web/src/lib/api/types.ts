@@ -237,11 +237,19 @@ export interface MediaImage {
 
 /**
  * Amenity item for the editor's multi-checkbox group.
- * Fetched from the public amenities endpoint.
+ * Fetched from the public amenities/features endpoint.
+ *
+ * SPEC-266: the `name` column was removed from the catalog API. Display
+ * labels are now resolved via `@repo/i18n` using the `slug` as the key:
+ *   - Amenities: `accommodations.amenityNames.<slug>`
+ *   - Features:  `accommodations.featureNames.<slug>`
+ *
+ * `slug` is the canonical identifier for i18n label resolution.
  */
 export interface AmenityData {
     readonly id: string;
-    readonly name: string;
+    /** Catalog slug — used as the i18n key for label resolution (SPEC-266). */
+    readonly slug: string;
     readonly category: string | null;
 }
 

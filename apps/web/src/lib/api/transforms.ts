@@ -760,24 +760,19 @@ export function toAccommodationDetailPageProps({
         // nested entity (API shape varies), then order DESC so the detail
         // page renders the most important amenities/features first.
         //
-        // SPEC-172 PR4: amenity/feature `name` is now a JSONB i18n object
-        // `{ es, en, pt }` from PR2. We resolve it to a plain string here
-        // using the page locale so that downstream components (AmenitiesGrid,
-        // FeaturesGrid) receive a stable string and translateAmenity() can
-        // build the `accommodations.amenityNames.<key>` i18n lookup as before.
-        // The `name.es` value contains the slug-like catalog name (e.g. 'wifi',
-        // 'pool') used as the i18n key — resolving with locale + es fallback
-        // preserves this behavior while correctly surfacing the translated
-        // catalog name for en/pt locales that have a matching amenityNames entry.
+        // SPEC-266: amenity/feature `name` column was dropped from the catalog.
+        // The API now returns `slug` instead. The `name` field in DetailAmenity /
+        // DetailFeature is repurposed to hold the slug so that AmenitiesGrid's
+        // `translateAmenity(amenity.name)` and FeaturesGrid's `translateFeature`
+        // use it as the i18n lookup key:
+        //   `accommodations.amenityNames.<slug>` / `accommodations.featureNames.<slug>`
         amenities: (amenitiesArr ?? [])
             .map((a) => {
                 const nestedAmenity = a.amenity as Record<string, unknown> | undefined;
                 return {
                     amenityId: String(a.amenityId || ''),
-                    name: resolveI18nText(
-                        a.name as I18nTextLike | string | null | undefined,
-                        locale
-                    ),
+                    // SPEC-266: store slug as `name` — used as i18n key in AmenitiesGrid
+                    name: String(a.slug ?? nestedAmenity?.slug ?? ''),
                     icon: a.icon ? String(a.icon) : null,
                     isOptional: Boolean(a.isOptional),
                     additionalCost: a.additionalCost != null ? Number(a.additionalCost) : null,
@@ -790,10 +785,8 @@ export function toAccommodationDetailPageProps({
                 const nestedFeature = f.feature as Record<string, unknown> | undefined;
                 return {
                     featureId: String(f.featureId || ''),
-                    name: resolveI18nText(
-                        f.name as I18nTextLike | string | null | undefined,
-                        locale
-                    ),
+                    // SPEC-266: store slug as `name` — used as i18n key in FeaturesGrid
+                    name: String(f.slug ?? nestedFeature?.slug ?? ''),
                     icon: f.icon ? String(f.icon) : null,
                     hostReWriteName: f.hostReWriteName ? String(f.hostReWriteName) : null,
                     comments: f.comments ? String(f.comments) : null,
@@ -1571,44 +1564,31 @@ function extractIdList(
 }
 
 /**
- * Resolves a possibly-localized name into a plain string.
+ * Transforms a list of raw amenity or feature catalog objects into AmenityData[].
  *
- * The public amenities endpoint returns `name` as an i18n object
- * (`{ es, en, pt }`), while other endpoints return a plain string. Calling
- * `String()` on the object yields "[object Object]", so resolve the locale
- * (falling back to es → en → first available) before stringifying.
- */
-function resolveLocalizedName(raw: unknown, locale: string): string {
-    if (typeof raw === 'string') {
-        return raw;
-    }
-    if (raw && typeof raw === 'object') {
-        const map = raw as Record<string, unknown>;
-        const value = map[locale] ?? map.es ?? map.en ?? Object.values(map)[0];
-        return typeof value === 'string' ? value : '';
-    }
-    return '';
-}
-
-/**
- * Transforms a list of raw amenity objects into AmenityData[].
+ * SPEC-266: the `name` column was dropped from the amenities/features catalog.
+ * The display label is now resolved via the `accommodations` i18n namespace:
+ * - For `kind = 'amenity'`: key `accommodations.amenityNames.<slug>`
+ * - For `kind = 'feature'`: key `accommodations.featureNames.<slug>`
+ * The `slug` field from the API response is stored in `AmenityData.slug` so
+ * that client-side components can re-resolve the label with the correct locale.
  *
- * @param items - Raw amenity objects from the public amenities endpoint
- * @param locale - Locale used to resolve the i18n `name` field (default `es`)
+ * @param items - Raw catalog objects from the public amenities / features endpoint
  * @returns Typed AmenityData array for the editor's checkbox group
  */
 export function transformAmenityList({
-    items,
-    locale = 'es'
+    items
 }: {
     readonly items: readonly Record<string, unknown>[];
-    readonly locale?: string;
 }): readonly AmenityData[] {
-    return items.map((item) => ({
-        id: String(item.id ?? ''),
-        name: resolveLocalizedName(item.name, locale),
-        category: item.category != null ? String(item.category) : null
-    }));
+    return items.map((item) => {
+        const slug = String(item.slug ?? '');
+        return {
+            id: String(item.id ?? ''),
+            slug,
+            category: item.category != null ? String(item.category) : null
+        };
+    });
 }
 
 /**

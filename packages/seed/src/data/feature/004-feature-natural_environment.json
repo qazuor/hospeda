@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "004-feature-natural_environment",
-    "name": {
-        "es": "Entorno natural",
-        "en": "Entorno natural",
-        "pt": "Entorno natural"
-    },
     "slug": "natural_environment",
     "description": {
         "es": "Rodeado completamente por naturaleza preservada, bosques, montañas o ecosistemas nativos sin intervención urbana",
         "en": "Rodeado completamente por naturaleza preservada, bosques, montañas o ecosistemas nativos sin intervención urbana",
         "pt": "Rodeado completamente por naturaleza preservada, bosques, montañas o ecosistemas nativos sin intervención urbana"
     },
+    "applicableVerticals": ["accommodation"],
     "icon": "NaturalEnvironmentIcon",
     "isBuiltin": true,
     "isFeatured": false,

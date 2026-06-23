@@ -19,7 +19,9 @@ import {
 // Helpers
 // ---------------------------------------------------------------------------
 
-const validI18nName = { es: 'Acceso a internet', en: 'Internet access', pt: 'Acesso à internet' };
+const baseApplicableVerticals: ('accommodation' | 'gastronomy' | 'experience')[] = [
+    'accommodation'
+];
 
 // ---------------------------------------------------------------------------
 // FeatureSearchHttpSchema — query string parsing
@@ -31,9 +33,9 @@ describe('FeatureSearchHttpSchema — safeParse', () => {
         expect(result.success).toBe(true);
     });
 
-    it('should accept name and category string filters', () => {
+    it('should accept slug and category string filters', () => {
         const result = FeatureSearchHttpSchema.safeParse({
-            name: 'WiFi',
+            slug: 'wifi',
             category: 'connectivity'
         });
         expect(result.success).toBe(true);
@@ -110,21 +112,19 @@ describe('httpToDomainFeatureSearch', () => {
         expect(result.isUnused).toBe(true);
     });
 
-    it('should pass through text filters', () => {
+    it('should pass through slug and description filters', () => {
         // Arrange
         const parsed = FeatureSearchHttpSchema.parse({
-            name: 'Pool',
-            nameContains: 'ool',
-            slug: 'pool'
+            slug: 'pool',
+            descriptionContains: 'outdoor'
         });
 
         // Act
         const result = httpToDomainFeatureSearch(parsed);
 
         // Assert
-        expect(result.name).toBe('Pool');
-        expect(result.nameContains).toBe('ool');
         expect(result.slug).toBe('pool');
+        expect(result.descriptionContains).toBe('outdoor');
     });
 
     it('should handle empty input gracefully', () => {
@@ -145,10 +145,10 @@ describe('httpToDomainFeatureSearch', () => {
 // ---------------------------------------------------------------------------
 
 describe('httpToDomainFeatureCreate', () => {
-    it('should map i18n name to domain create input', () => {
+    it('should map applicableVerticals to domain create input', () => {
         // Arrange
         const httpData = {
-            name: validI18nName,
+            applicableVerticals: baseApplicableVerticals,
             priority: 60,
             isAvailable: true,
             isPremium: false,
@@ -160,14 +160,14 @@ describe('httpToDomainFeatureCreate', () => {
         const result = httpToDomainFeatureCreate(httpData);
 
         // Assert
-        expect(result.name).toEqual(validI18nName);
+        expect(result.applicableVerticals).toEqual(['accommodation']);
         expect(result.displayWeight).toBe(50);
     });
 
     it('should set isBuiltin to false and isFeatured to false by default', () => {
         // Arrange
         const httpData = {
-            name: validI18nName,
+            applicableVerticals: baseApplicableVerticals,
             priority: 50,
             isAvailable: true,
             isPremium: false,
@@ -186,7 +186,7 @@ describe('httpToDomainFeatureCreate', () => {
     it('should pass optional slug through when provided', () => {
         // Arrange
         const httpData = {
-            name: validI18nName,
+            applicableVerticals: baseApplicableVerticals,
             slug: 'internet-access',
             priority: 50,
             isAvailable: true,
@@ -211,7 +211,7 @@ describe('httpToDomainFeatureCreate', () => {
             pt: 'Descrição longa o suficiente para passar na validação'
         };
         const httpData = {
-            name: validI18nName,
+            applicableVerticals: baseApplicableVerticals,
             description: validDescription,
             priority: 50,
             isAvailable: true,
@@ -230,7 +230,7 @@ describe('httpToDomainFeatureCreate', () => {
     it('should pass icon through when provided', () => {
         // Arrange
         const httpData = {
-            name: validI18nName,
+            applicableVerticals: baseApplicableVerticals,
             icon: 'wifi',
             priority: 50,
             isAvailable: true,
@@ -252,15 +252,21 @@ describe('httpToDomainFeatureCreate', () => {
 // ---------------------------------------------------------------------------
 
 describe('httpToDomainFeatureUpdate', () => {
-    it('should map partial update with only name', () => {
+    it('should map partial update with only applicableVerticals', () => {
         // Arrange
-        const httpData = { name: validI18nName };
+        const httpData = {
+            applicableVerticals: ['accommodation', 'gastronomy'] as (
+                | 'accommodation'
+                | 'gastronomy'
+                | 'experience'
+            )[]
+        };
 
         // Act
         const result = httpToDomainFeatureUpdate(httpData);
 
         // Assert
-        expect(result.name).toEqual(validI18nName);
+        expect(result.applicableVerticals).toEqual(['accommodation', 'gastronomy']);
         expect(result.slug).toBeUndefined();
         expect(result.icon).toBeUndefined();
     });
@@ -274,7 +280,7 @@ describe('httpToDomainFeatureUpdate', () => {
 
         // Assert
         expect(result.slug).toBe('updated-slug');
-        expect(result.name).toBeUndefined();
+        expect(result.applicableVerticals).toBeUndefined();
     });
 
     it('should map displayWeight update', () => {
@@ -296,7 +302,7 @@ describe('httpToDomainFeatureUpdate', () => {
         const result = httpToDomainFeatureUpdate(httpData);
 
         // Assert
-        expect(result.name).toBeUndefined();
+        expect(result.applicableVerticals).toBeUndefined();
         expect(result.slug).toBeUndefined();
         expect(result.description).toBeUndefined();
         expect(result.icon).toBeUndefined();

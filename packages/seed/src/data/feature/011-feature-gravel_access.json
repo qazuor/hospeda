@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "011-feature-gravel_access",
-    "name": {
-        "es": "Acceso de ripio",
-        "en": "Acceso de ripio",
-        "pt": "Acceso de ripio"
-    },
     "slug": "gravel_access",
     "description": {
         "es": "Camino de acceso de grava o ripio bien mantenido, transitable con vehículos convencionales",
         "en": "Camino de acceso de grava o ripio bien mantenido, transitable con vehículos convencionales",
         "pt": "Camino de acceso de grava o ripio bien mantenido, transitable con vehículos convencionales"
     },
+    "applicableVerticals": ["accommodation"],
     "icon": "GravelAccessIcon",
     "isBuiltin": true,
     "isFeatured": false,

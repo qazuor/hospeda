@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "027-amenity-outdoors-terrace",
-    "name": {
-        "es": "terrace",
-        "en": "terrace",
-        "pt": "terrace"
-    },
     "slug": "terrace",
     "description": {
         "es": "Terraza privada",
         "en": "Terraza privada",
         "pt": "Terraza privada"
     },
+    "applicableVerticals": ["accommodation", "gastronomy", "experience"],
     "type": "OUTDOORS",
     "icon": "TerraceIcon",
     "isBuiltin": false,

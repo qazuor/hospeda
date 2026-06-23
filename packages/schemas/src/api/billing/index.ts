@@ -17,3 +17,4 @@ export * from './subscription-pause.schema.js';
 export * from './subscription-status.schema.js';
 export * from './trial.schema.js';
 export * from './downgrade-preview.schema.js';
+export * from './subscription-promo-effect.schema.js';

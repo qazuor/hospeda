@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "015-amenity-outdoors-pool",
-    "name": {
-        "es": "pool",
-        "en": "pool",
-        "pt": "pool"
-    },
     "slug": "pool",
     "description": {
         "es": "Piscina privada",
         "en": "Piscina privada",
         "pt": "Piscina privada"
     },
+    "applicableVerticals": ["accommodation"],
     "type": "OUTDOORS",
     "icon": "PoolIcon",
     "isBuiltin": false,

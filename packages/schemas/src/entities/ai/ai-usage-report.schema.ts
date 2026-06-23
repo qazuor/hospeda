@@ -110,3 +110,99 @@ export const AiUsageByFeatureRowSchema = AiUsageTotalsSchema.extend({
 
 /** A single per-feature aggregate row for AI usage. */
 export type AiUsageByFeatureRow = z.infer<typeof AiUsageByFeatureRowSchema>;
+
+// ---------------------------------------------------------------------------
+// AiUsageByModelRowSchema — per-model rollup (SPEC-260)
+// ---------------------------------------------------------------------------
+
+/**
+ * One row in a per-model aggregate report (SPEC-260).
+ *
+ * `model` is typed as `string` to stay decoupled from the model identifier
+ * enum and to accommodate new provider models without schema churn.
+ * Expected values follow provider conventions (e.g. `'gpt-4o-mini'`,
+ * `'claude-3-5-haiku-20241022'`).
+ */
+export const AiUsageByModelRowSchema = AiUsageTotalsSchema.extend({
+    /**
+     * AI model identifier string (e.g. `'gpt-4o-mini'`, `'claude-3-5-haiku-20241022'`).
+     * Non-empty; value comes directly from the `ai_usage.model` column.
+     */
+    model: z.string().min(1)
+});
+
+/** A single per-model aggregate row for AI usage. */
+export type AiUsageByModelRow = z.infer<typeof AiUsageByModelRowSchema>;
+
+// ---------------------------------------------------------------------------
+// AiUsageByProviderRowSchema — per-provider rollup (SPEC-260)
+// ---------------------------------------------------------------------------
+
+/**
+ * One row in a per-provider aggregate report (SPEC-260).
+ *
+ * `provider` is typed as `string` to stay forward-compatible with new
+ * provider integrations.  Expected values: `'openai'`, `'anthropic'`,
+ * `'stub'`.
+ */
+export const AiUsageByProviderRowSchema = AiUsageTotalsSchema.extend({
+    /**
+     * AI provider identifier (e.g. `'openai'`, `'anthropic'`, `'stub'`).
+     * Non-empty; value comes directly from the `ai_usage.provider` column.
+     */
+    provider: z.string().min(1)
+});
+
+/** A single per-provider aggregate row for AI usage. */
+export type AiUsageByProviderRow = z.infer<typeof AiUsageByProviderRowSchema>;
+
+// ---------------------------------------------------------------------------
+// AiUsageByFeatureModelRowSchema — feature × model cross rollup (SPEC-260)
+// ---------------------------------------------------------------------------
+
+/**
+ * One row in a feature × model cross aggregate report (SPEC-260).
+ *
+ * Enables side-by-side comparison of two models used for the same feature
+ * (e.g. `chat` + `gpt-4o-mini` vs. `chat` + `claude-3-5-haiku-20241022`).
+ * Both `feature` and `model` are typed as `string` to stay forward-compatible.
+ */
+export const AiUsageByFeatureModelRowSchema = AiUsageTotalsSchema.extend({
+    /**
+     * AI feature identifier (e.g. `'text_improve'`, `'chat'`).
+     * Non-empty; value comes directly from the `ai_usage.feature` column.
+     */
+    feature: z.string().min(1),
+    /**
+     * AI model identifier string (e.g. `'gpt-4o-mini'`).
+     * Non-empty; value comes directly from the `ai_usage.model` column.
+     */
+    model: z.string().min(1)
+});
+
+/** A single feature × model cross aggregate row for AI usage. */
+export type AiUsageByFeatureModelRow = z.infer<typeof AiUsageByFeatureModelRowSchema>;
+
+// ---------------------------------------------------------------------------
+// AiUsageDailyRowSchema — daily time-series rollup (SPEC-260)
+// ---------------------------------------------------------------------------
+
+/**
+ * One row in a daily time-series aggregate report (SPEC-260).
+ *
+ * `day` is formatted as `'YYYY-MM-DD'` (UTC), matching the
+ * `to_char(date_trunc('day', created_at), 'YYYY-MM-DD')` SQL pattern.
+ * Days with zero activity are NOT emitted by the storage layer — the
+ * reporting wrapper fills missing days with zeros for continuous chart axes.
+ */
+export const AiUsageDailyRowSchema = AiUsageTotalsSchema.extend({
+    /**
+     * UTC calendar day in `'YYYY-MM-DD'` format.
+     *
+     * @example '2026-06-15'
+     */
+    day: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "day must be 'YYYY-MM-DD' format")
+});
+
+/** A single daily aggregate row for AI usage. */
+export type AiUsageDailyRow = z.infer<typeof AiUsageDailyRowSchema>;

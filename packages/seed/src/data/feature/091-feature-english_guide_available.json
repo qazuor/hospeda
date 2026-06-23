@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "091-feature-english_guide_available",
+    "slug": "english_guide_available",
+    "description": {
+        "es": "Guía disponible en idioma inglés para visitantes internacionales",
+        "en": "Guía disponible en idioma inglés para visitantes internacionales",
+        "pt": "Guía disponible en idioma inglés para visitantes internacionales"
+    },
+    "applicableVerticals": ["experience"],
+    "icon": "BilingualServiceIcon",
+    "isBuiltin": false,
+    "isFeatured": true,
+    "displayWeight": 60,
+    "lifecycleState": "ACTIVE"
+}

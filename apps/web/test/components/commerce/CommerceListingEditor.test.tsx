@@ -275,11 +275,16 @@ describe('CommerceListingEditor', () => {
                         amenityIds: ['a1']
                     } as unknown as CommerceListingDetail
                 }
+                // SPEC-266: catalog items carry `slug` (no `name`). The amenity
+                // label resolves via translateAmenityName, which humanizes the
+                // slug when no i18n key exists (`wifi` → `Wifi`, `terraza` →
+                // `Terraza`). Features render `t(featureNames.<slug>, slug)`,
+                // which falls back to the raw slug.
                 amenities={[
-                    { id: 'a1', name: 'Wifi', category: null },
-                    { id: 'a2', name: 'Terraza', category: null }
+                    { id: 'a1', slug: 'wifi', category: null },
+                    { id: 'a2', slug: 'terraza', category: null }
                 ]}
-                features={[{ id: 'f1', name: 'Pet friendly', category: null }]}
+                features={[{ id: 'f1', slug: 'pet_friendly', category: null }]}
             />
         );
 
@@ -289,7 +294,7 @@ describe('CommerceListingEditor', () => {
 
         // Select a second amenity and a feature.
         fireEvent.click(screen.getByLabelText('Terraza'));
-        fireEvent.click(screen.getByLabelText('Pet friendly'));
+        fireEvent.click(screen.getByLabelText('pet_friendly'));
         fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
         await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));

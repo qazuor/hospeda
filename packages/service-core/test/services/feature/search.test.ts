@@ -13,11 +13,9 @@ describe('FeatureService.search', () => {
     let featureModelMock: ReturnType<typeof createModelMock>;
     let loggerMock: ReturnType<typeof createLoggerMock>;
     let actor: Actor;
-    const feature = FeatureFactoryBuilder.create({
-        name: { es: 'Test Feature', en: 'Test Feature', pt: 'Test Feature' }
-    });
+    const feature = FeatureFactoryBuilder.create({});
     const paginated = { items: [feature], total: 1 };
-    const searchParams = { name: 'Test Feature', page: 1, pageSize: 10 };
+    const searchParams = { slug: 'test-feature', page: 1, pageSize: 10 };
 
     beforeEach(() => {
         featureModelMock = createModelMock(['findAll']);

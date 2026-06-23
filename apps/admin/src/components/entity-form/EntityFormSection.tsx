@@ -26,6 +26,7 @@ import type { ImageValue } from '@/components/entity-form/fields/ImageField';
 import type { VideoEntry } from '@/components/entity-form/fields/VideoGalleryField';
 import type { SelectFieldConfig } from '@/components/entity-form/types/field-config.types';
 import { getFieldColSpanClass } from '@/components/entity-form/utils/field-grid.utils';
+import { Checkbox, Label as ShadLabel } from '@/components/ui-wrapped';
 import type { I18nText } from '@repo/schemas';
 
 // Heavy field components — lazy-loaded so tiptap/leaflet/upload don't sit in
@@ -573,6 +574,50 @@ const EntityFormSectionComponent = React.forwardRef<HTMLDivElement, EntityFormSe
                                 }
                             />
                         );
+
+                    case FieldTypeEnum.SELECT_MULTIPLE: {
+                        // Checkbox-group implementation for arrays of fixed options.
+                        // typeConfig must be SelectFieldConfig with options[].
+                        const multiConfig = field.typeConfig as SelectFieldConfig | undefined;
+                        const multiOptions = multiConfig?.options ?? [];
+                        const selectedValues: string[] = Array.isArray(fieldValue)
+                            ? (fieldValue as string[])
+                            : [];
+                        return (
+                            <div className="flex flex-wrap gap-4">
+                                {multiOptions.map((opt) => {
+                                    const checked = selectedValues.includes(opt.value);
+                                    const checkId = `${field.id}-${opt.value}`;
+                                    return (
+                                        <div
+                                            key={opt.value}
+                                            className="flex items-center gap-2"
+                                        >
+                                            <Checkbox
+                                                id={checkId}
+                                                checked={checked}
+                                                disabled={disabled}
+                                                onCheckedChange={(v) => {
+                                                    const next = v
+                                                        ? [...selectedValues, opt.value]
+                                                        : selectedValues.filter(
+                                                              (s) => s !== opt.value
+                                                          );
+                                                    onFieldChange(field.id, next);
+                                                }}
+                                            />
+                                            <ShadLabel
+                                                htmlFor={checkId}
+                                                className="cursor-pointer font-normal text-sm"
+                                            >
+                                                {opt.label}
+                                            </ShadLabel>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        );
+                    }
 
                     default:
                         // Fallback for unknown field types

@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "089-feature-kid_friendly",
+    "slug": "kid_friendly",
+    "description": {
+        "es": "Actividad apta y segura para niños desde corta edad",
+        "en": "Actividad apta y segura para niños desde corta edad",
+        "pt": "Actividad apta y segura para niños desde corta edad"
+    },
+    "applicableVerticals": ["experience"],
+    "icon": "FamilySuitableIcon",
+    "isBuiltin": false,
+    "isFeatured": true,
+    "displayWeight": 65,
+    "lifecycleState": "ACTIVE"
+}

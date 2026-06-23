@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "053-feature-digital_detox_zone",
-    "name": {
-        "es": "Zona sin conexión digital",
-        "en": "Zona sin conexión digital",
-        "pt": "Zona sin conexión digital"
-    },
     "slug": "digital_detox_zone",
     "description": {
         "es": "Área libre de dispositivos electrónicos y señales digitales para desconexión total y relajación",
         "en": "Área libre de dispositivos electrónicos y señales digitales para desconexión total y relajación",
         "pt": "Área libre de dispositivos electrónicos y señales digitales para desconexión total y relajación"
     },
+    "applicableVerticals": ["accommodation"],
     "icon": "DigitalDetoxIcon",
     "isBuiltin": true,
     "isFeatured": false,

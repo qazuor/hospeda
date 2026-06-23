@@ -5,8 +5,17 @@
     "created": "2026-06-22T00:00:00Z",
     "summary": {
         "total": 23,
-        "byStatus": { "pending": 23 },
-        "byPhase": { "setup": 1, "core": 7, "integration": 11, "testing": 3, "docs": 1 },
+        "byStatus": {
+            "completed": 8,
+            "pending": 15
+        },
+        "byPhase": {
+            "setup": 1,
+            "core": 7,
+            "integration": 11,
+            "testing": 3,
+            "docs": 1
+        },
         "averageComplexity": 2.39
     },
     "tasks": [
@@ -14,7 +23,7 @@
             "id": "T-001",
             "title": "Add AI usage row schemas in @repo/schemas",
             "description": "Add AiUsageByModelRowSchema, AiUsageByProviderRowSchema, AiUsageByFeatureModelRowSchema, AiUsageDailyRowSchema (next to AiUsageByFeatureRowSchema) plus inferred types. These are the single source of truth for API response validation and admin client types. Row shape: { <dimension fields>, calls, tokensIn, tokensOut, costMicroUsd }; daily adds day:'YYYY-MM-DD'. Unit tests for parse/reject.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [
@@ -33,316 +42,500 @@
             "subtasks": [],
             "tags": ["setup", "schemas", "zod", "types"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": "2026-06-22T00:00:00Z",
+                "completed": "2026-06-22T22:57:12Z"
+            }
         },
         {
             "id": "T-002",
             "title": "Add formatMicroUsd helper",
             "description": "Add a shared formatMicroUsd(micro:number):string formatter (e.g. 90000 -> $0.09, 184000 -> $0.184). Check @repo/utils for an existing money formatter and reuse; otherwise add a local admin util. Unit tests for zero, small, and large values. Cost is stored as integer micro-USD (1e6 = $1); never format inline.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-015", "T-016", "T-017"],
             "subtasks": [],
             "tags": ["core", "admin", "formatting", "utils"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": "2026-06-22T00:00:00Z",
+                "completed": "2026-06-22T22:57:12Z"
+            }
         },
         {
             "id": "T-003",
             "title": "aggregateAiUsageByModel storage query",
             "description": "Add aggregateAiUsageByModel to packages/ai-core/src/storage/usage.queries.ts mirroring aggregateAiUsageByFeature: select count + sum(tokensIn/tokensOut/costEstimateMicroUsd), groupBy(aiUsage.model), order by cost desc, map to Number. Optional feature/provider filters + window via buildConditions. Unit test against seeded fixtures; empty -> [].",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001", "T-007"],
             "blocks": ["T-008"],
             "subtasks": [],
             "tags": ["core", "ai-core", "drizzle", "storage"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": "2026-06-22T00:00:00Z",
+                "completed": "2026-06-22T23:07:12Z"
+            }
         },
         {
             "id": "T-004",
             "title": "aggregateAiUsageByProvider storage query",
             "description": "Add aggregateAiUsageByProvider to usage.queries.ts: groupBy(aiUsage.provider), optional feature filter + window. Same map-to-Number pattern. Unit test.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001", "T-007"],
             "blocks": ["T-008"],
             "subtasks": [],
             "tags": ["core", "ai-core", "drizzle", "storage"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": "2026-06-22T00:00:00Z",
+                "completed": "2026-06-22T23:07:12Z"
+            }
         },
         {
             "id": "T-005",
             "title": "aggregateAiUsageByFeatureModel storage query (the cross)",
             "description": "Add aggregateAiUsageByFeatureModel to usage.queries.ts: groupBy(aiUsage.feature, aiUsage.model) -> one row per (feature, model). Window filter. This is the query that powers per-feature model comparison. Unit test asserting one row per combination present.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001"],
             "blocks": ["T-008"],
             "subtasks": [],
             "tags": ["core", "ai-core", "drizzle", "storage"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": "2026-06-22T00:00:00Z",
+                "completed": "2026-06-22T23:07:12Z"
+            }
         },
         {
             "id": "T-006",
             "title": "aggregateAiUsageDaily storage query",
             "description": "Add aggregateAiUsageDaily to usage.queries.ts: groupBy(date_trunc('day', aiUsage.createdAt)) ordered ascending, return day as 'YYYY-MM-DD' (UTC). Optional feature/model/provider filters. Boundary unit tests (rows at month/window edges land in the correct UTC day).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001", "T-007"],
             "blocks": ["T-008"],
             "subtasks": [],
             "tags": ["core", "ai-core", "drizzle", "storage", "timeseries"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": "2026-06-22T00:00:00Z",
+                "completed": "2026-06-22T23:07:12Z"
+            }
         },
         {
             "id": "T-007",
             "title": "Extend buildConditions for model/provider filters",
             "description": "Extend buildConditions (or add a sibling) in usage.queries.ts to optionally filter by model and provider in addition to existing since/until/userId/feature. Unit test the new predicates compose with AND.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": ["T-003", "T-004", "T-006"],
             "subtasks": [],
             "tags": ["core", "ai-core", "drizzle", "storage"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": "2026-06-22T00:00:00Z",
+                "completed": "2026-06-22T23:07:12Z"
+            }
         },
         {
             "id": "T-008",
             "title": "Public reporting wrappers + daily zero-fill",
             "description": "Add getUsageByModel, getUsageByProvider, getUsageByFeatureModel, getDailyUsage to packages/ai-core/src/usage/reporting/usage-reporting.ts mirroring getUsageByFeature (resolve window via getUtcMonthRange when year+month given; validate output against the new schemas). getDailyUsage fills missing days in the window with zeros (continuous axis). Export from reporting/index.ts, usage/index.ts, and package root. Unit tests incl. zero-fill continuity.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003", "T-004", "T-005", "T-006"],
             "blocks": ["T-009", "T-010", "T-011", "T-012", "T-020"],
             "subtasks": [],
             "tags": ["core", "ai-core", "reporting"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": "2026-06-22T00:00:00Z",
+                "completed": "2026-06-22T23:07:12Z"
+            }
         },
         {
             "id": "T-009",
             "title": "GET /admin/ai/usage/by-model endpoint",
             "description": "Add GET /by-model to apps/api/src/routes/ai/usage/index.ts via createAdminListRoute, reusing YearSchema/MonthSchema + since<=until refine, optional feature/provider params, page/pageSize, permission AI_SETTINGS_MANAGE. Calls getUsageByModel. Integration tests: 200 shape, 403 without permission, 422 invalid params, pagination, unknown-param rejection.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-008", "T-001"],
             "blocks": ["T-013", "T-020"],
             "subtasks": [],
             "tags": ["integration", "api", "hono"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-010",
             "title": "GET /admin/ai/usage/by-provider endpoint",
             "description": "Add GET /by-provider (optional feature filter) following the same factory/guard/validation pattern as by-model. Integration tests (200/403/422/pagination).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-008", "T-001"],
             "blocks": ["T-013"],
             "subtasks": [],
             "tags": ["integration", "api", "hono"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-011",
             "title": "GET /admin/ai/usage/by-feature-model endpoint",
             "description": "Add GET /by-feature-model returning per-(feature,model) rows. Same pattern. Integration tests.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-008", "T-001"],
             "blocks": ["T-013"],
             "subtasks": [],
             "tags": ["integration", "api", "hono"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-012",
             "title": "GET /admin/ai/usage/daily endpoint",
             "description": "Add GET /daily (optional feature/model/provider filters) returning the zero-filled day series. Same pattern. Integration tests incl. window-edge days.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-008", "T-001"],
             "blocks": ["T-013"],
             "subtasks": [],
             "tags": ["integration", "api", "hono", "timeseries"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-013",
             "title": "TanStack Query hooks + URL search-param filters",
             "description": "Add TanStack Query hooks (one per endpoint) keyed by resolved filters, and serialize filters (feature/model/provider/month/date-range) to TanStack Router search params for shareable views. Types come from @repo/schemas.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-009", "T-010", "T-011", "T-012"],
             "blocks": ["T-014"],
             "subtasks": [],
             "tags": ["integration", "admin", "tanstack-query", "tanstack-router"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-014",
             "title": "usage.tsx page scaffold + route guard + nav link",
             "description": "Create apps/admin/src/routes/_authed/ai/usage.tsx with a beforeLoad guard identical to ai/settings.tsx, the filter top-bar (month picker / date-range toggle, feature/provider/model selects, reset), and add a nav entry to the AI section of the admin sidebar.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-013"],
             "blocks": ["T-015", "T-016", "T-017", "T-018"],
             "subtasks": [],
             "tags": ["integration", "admin", "tanstack-router", "ui"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-015",
             "title": "Totals card + by-feature/by-model/by-provider tables",
             "description": "Render the totals card (calls/tokensIn/tokensOut/cost) and the three breakdown tables ordered by cost desc, using formatMicroUsd and locale thousands separators. By-model table includes derived cost per 1k tokens.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-014", "T-002"],
             "blocks": ["T-019"],
             "subtasks": [],
             "tags": ["integration", "admin", "ui", "tables"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-016",
             "title": "Feature x model table + grouped bar chart",
             "description": "Render the by-(feature,model) table and a recharts grouped bar chart (cost per feature, one segment per model) so models can be compared within a feature. Uses formatMicroUsd; chart labels present (color not the only signal).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-014", "T-002"],
             "blocks": ["T-019"],
             "subtasks": [],
             "tags": ["integration", "admin", "ui", "recharts"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-017",
             "title": "Daily cost chart",
             "description": "Render a recharts line/area chart of daily total cost across the window (one point per UTC day, zero days continuous), reflecting the active feature filter.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-014", "T-002"],
             "blocks": ["T-019"],
             "subtasks": [],
             "tags": ["integration", "admin", "ui", "recharts", "timeseries"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-018",
             "title": "i18n keys ai.usage.* (es/en/pt)",
             "description": "Add all dashboard copy under an ai.usage.* namespace in @repo/i18n for es/en/pt (labels, table headers, empty states, filter controls). i18n completeness test must pass.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-014"],
             "blocks": ["T-019"],
             "subtasks": [],
             "tags": ["integration", "i18n"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-019",
             "title": "Per-block empty/loading/error states",
             "description": "Give each query block its own skeleton, an explicit empty state (AC-1.5 copy), and an error state with retry. One failing block must not blank the whole page.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-015", "T-016", "T-017", "T-018"],
             "blocks": ["T-021", "T-022"],
             "subtasks": [],
             "tags": ["integration", "admin", "ui", "ux"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-020",
             "title": "Reconciliation test (totals == /by-feature)",
             "description": "Add a test asserting the new aggregates' totals equal the existing /by-feature totals for the same window (same source table) within 0 micro-USD, to catch aggregation drift.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-008", "T-009"],
             "blocks": [],
             "subtasks": [],
             "tags": ["testing", "ai-core", "reconciliation"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-021",
             "title": "Admin page component tests",
             "description": "Component tests for usage.tsx: renders totals + tables from mocked query data, empty state (AC-1.5), filter change updates query keys, one-block error does not blank the page.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-019"],
             "blocks": ["T-023"],
             "subtasks": [],
             "tags": ["testing", "admin", "component"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-022",
             "title": "Accessibility pass",
             "description": "Ensure tables use semantic markup and charts have an accessible text alternative (the adjacent table is canonical). Verify keyboard focus order on filters.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-019"],
             "blocks": [],
             "subtasks": [],
             "tags": ["testing", "admin", "accessibility"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
         },
         {
             "id": "T-023",
             "title": "Docs: admin usage surface note",
             "description": "Short admin doc / CLAUDE note describing the new AI usage dashboard, the endpoints, and that it only reads (does not change metering or ceilings).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-021"],
             "blocks": [],
             "subtasks": [],
             "tags": ["docs"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
-            "timestamps": { "created": "2026-06-22T00:00:00Z", "started": null, "completed": null }
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
         }
     ]
 }
