@@ -1007,27 +1007,17 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
     ],
 
     // ---------------------------------------------------------------------------
-    // COMMERCE_OWNER — Gastronomía / commerce listings operator (SPEC-239)
+    // COMMERCE_OWNER — Gastronomía / commerce listings operator (SPEC-239 / SPEC-253)
     //
     // Mirrors the HOST role but scoped to commerce vertical.
-    // Identity fields (name, slug, type, destinationId) are admin-controlled on
-    // create and cannot be changed by the owner; the 10 *_EDIT_OWN permissions
-    // cover every operational section the owner may self-manage after onboarding.
+    // A single COMMERCE_EDIT_OWN permission covers all owner-accessible sections
+    // (operational fields, FAQs, i18n, etc.) — the 10 per-section permissions
+    // were collapsed in SPEC-253 D2=b full-removal decision.
     // ---------------------------------------------------------------------------
     [RoleEnum.COMMERCE_OWNER]: [
-        // GASTRONOMY: Operational section permissions (own listings only).
-        // Identity (name/slug/type/destination) is NOT editable by the owner —
-        // those gates belong to admin-tier COMMERCE_EDIT_ALL.
-        PermissionEnum.COMMERCE_SCHEDULE_EDIT_OWN,
-        PermissionEnum.COMMERCE_CONTACT_EDIT_OWN,
-        PermissionEnum.COMMERCE_SOCIAL_EDIT_OWN,
-        PermissionEnum.COMMERCE_MEDIA_EDIT_OWN,
-        PermissionEnum.COMMERCE_MENU_EDIT_OWN,
-        PermissionEnum.COMMERCE_PRICE_RANGE_EDIT_OWN,
-        PermissionEnum.COMMERCE_RICH_DESCRIPTION_EDIT_OWN,
-        PermissionEnum.COMMERCE_AMENITIES_EDIT_OWN,
-        PermissionEnum.COMMERCE_FEATURES_EDIT_OWN,
-        PermissionEnum.COMMERCE_FAQS_EDIT_OWN,
+        // Single owner write permission (SPEC-253 D2=b): replaces the 10
+        // per-section COMMERCE_*_EDIT_OWN permissions removed from PermissionEnum.
+        PermissionEnum.COMMERCE_EDIT_OWN,
 
         // USER: Basic profile permissions
         PermissionEnum.USER_VIEW_PROFILE,

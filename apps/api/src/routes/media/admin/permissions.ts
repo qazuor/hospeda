@@ -33,8 +33,8 @@ const ENTITY_UPDATE_PERMISSIONS: Record<MediaEntityType, readonly PermissionEnum
     destination: [PermissionEnum.DESTINATION_UPDATE],
     event: [PermissionEnum.EVENT_UPDATE],
     post: [PermissionEnum.POST_UPDATE],
-    gastronomy: [PermissionEnum.COMMERCE_MEDIA_EDIT_OWN, PermissionEnum.COMMERCE_EDIT_ALL],
-    experience: [PermissionEnum.COMMERCE_MEDIA_EDIT_OWN, PermissionEnum.COMMERCE_EDIT_ALL]
+    gastronomy: [PermissionEnum.COMMERCE_EDIT_OWN, PermissionEnum.COMMERCE_EDIT_ALL],
+    experience: [PermissionEnum.COMMERCE_EDIT_OWN, PermissionEnum.COMMERCE_EDIT_ALL]
 };
 
 /**

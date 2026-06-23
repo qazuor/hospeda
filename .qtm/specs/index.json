@@ -1979,7 +1979,7 @@
             "slug": "commerce-owner-editor-extended-fields",
             "type": "feature",
             "complexity": "medium",
-            "status": "draft",
+            "status": "in-progress",
             "created": "2026-06-20T00:00:00.000Z",
             "base": "staging",
             "origin": "SPEC-249 close-out (2026-06-20): owner expanded the editable field set + collapsed per-section perms to a single COMMERCE_EDIT_OWN",

@@ -23,7 +23,7 @@
  *
  * Permissions use the generic COMMERCE_* enum values from @repo/schemas so
  * that both admin (COMMERCE_EDIT_ALL) and owner-scoped edits
- * (COMMERCE_CONTACT_EDIT_OWN, etc.) are correctly gated.
+ * (COMMERCE_EDIT_OWN — single permission, SPEC-253 D2=b) are correctly gated.
  *
  * Field types are taken from the real `FieldTypeEnum`.  If a needed type
  * (e.g. a structured opening-hours editor) does not yet exist, the closest
@@ -179,7 +179,7 @@ export function createCommerceIdentitySection(): ConsolidatedSectionConfig {
                 placeholder: 'Agrega una descripción rica con formato…',
                 permissions: {
                     view: [PermissionEnum.COMMERCE_VIEW_ALL],
-                    edit: [PermissionEnum.COMMERCE_RICH_DESCRIPTION_EDIT_OWN]
+                    edit: [PermissionEnum.COMMERCE_EDIT_OWN]
                 },
                 typeConfig: {
                     type: 'RICH_TEXT',
@@ -344,8 +344,8 @@ export function createCommerceIdentitySection(): ConsolidatedSectionConfig {
  *   - Amenities: AMENITY_SELECT (multi-select).
  *   - Features: FEATURE_SELECT (multi-select).
  *
- * Permissions: COMMERCE_VIEW_ALL to view; per-section COMMERCE_*_EDIT_OWN to
- * edit (admin gets COMMERCE_EDIT_ALL as a superset via the permission check).
+ * Permissions: COMMERCE_VIEW_ALL to view; COMMERCE_EDIT_OWN (owner) or
+ * COMMERCE_EDIT_ALL (admin) to edit (SPEC-253 D2=b: per-section perms removed).
  *
  * @returns A `ConsolidatedSectionConfig` for the commerce operational section.
  */
@@ -358,9 +358,8 @@ export function createCommerceOperationalSection(): ConsolidatedSectionConfig {
         modes: ['view', 'edit', 'create'],
         permissions: {
             view: [PermissionEnum.COMMERCE_VIEW_ALL],
-            // Any owner-level section permission grants edit on the section;
-            // field-level permissions further restrict individual fields.
-            edit: [PermissionEnum.COMMERCE_CONTACT_EDIT_OWN, PermissionEnum.COMMERCE_EDIT_ALL]
+            // SPEC-253 D2=b: single COMMERCE_EDIT_OWN replaces per-section perms.
+            edit: [PermissionEnum.COMMERCE_EDIT_OWN, PermissionEnum.COMMERCE_EDIT_ALL]
         },
         fields: [
             // ------------------------------------------------------------------
@@ -376,10 +375,7 @@ export function createCommerceOperationalSection(): ConsolidatedSectionConfig {
                 placeholder: '+54 11 1234-5678',
                 permissions: {
                     view: [PermissionEnum.COMMERCE_VIEW_ALL],
-                    edit: [
-                        PermissionEnum.COMMERCE_CONTACT_EDIT_OWN,
-                        PermissionEnum.COMMERCE_EDIT_ALL
-                    ]
+                    edit: [PermissionEnum.COMMERCE_EDIT_OWN, PermissionEnum.COMMERCE_EDIT_ALL]
                 },
                 typeConfig: { maxLength: 30 }
             },
@@ -393,10 +389,7 @@ export function createCommerceOperationalSection(): ConsolidatedSectionConfig {
                 placeholder: 'contacto@comercio.com',
                 permissions: {
                     view: [PermissionEnum.COMMERCE_VIEW_ALL],
-                    edit: [
-                        PermissionEnum.COMMERCE_CONTACT_EDIT_OWN,
-                        PermissionEnum.COMMERCE_EDIT_ALL
-                    ]
+                    edit: [PermissionEnum.COMMERCE_EDIT_OWN, PermissionEnum.COMMERCE_EDIT_ALL]
                 },
                 typeConfig: { maxLength: 255 }
             },
@@ -410,10 +403,7 @@ export function createCommerceOperationalSection(): ConsolidatedSectionConfig {
                 placeholder: 'https://www.comercio.com',
                 permissions: {
                     view: [PermissionEnum.COMMERCE_VIEW_ALL],
-                    edit: [
-                        PermissionEnum.COMMERCE_CONTACT_EDIT_OWN,
-                        PermissionEnum.COMMERCE_EDIT_ALL
-                    ]
+                    edit: [PermissionEnum.COMMERCE_EDIT_OWN, PermissionEnum.COMMERCE_EDIT_ALL]
                 },
                 typeConfig: { maxLength: 255 }
             },
@@ -427,10 +417,7 @@ export function createCommerceOperationalSection(): ConsolidatedSectionConfig {
                 placeholder: '+54 11 1234-5678',
                 permissions: {
                     view: [PermissionEnum.COMMERCE_VIEW_ALL],
-                    edit: [
-                        PermissionEnum.COMMERCE_CONTACT_EDIT_OWN,
-                        PermissionEnum.COMMERCE_EDIT_ALL
-                    ]
+                    edit: [PermissionEnum.COMMERCE_EDIT_OWN, PermissionEnum.COMMERCE_EDIT_ALL]
                 },
                 typeConfig: { maxLength: 30 }
             },
@@ -448,10 +435,7 @@ export function createCommerceOperationalSection(): ConsolidatedSectionConfig {
                 placeholder: 'https://facebook.com/tupagina',
                 permissions: {
                     view: [PermissionEnum.COMMERCE_VIEW_ALL],
-                    edit: [
-                        PermissionEnum.COMMERCE_SOCIAL_EDIT_OWN,
-                        PermissionEnum.COMMERCE_EDIT_ALL
-                    ]
+                    edit: [PermissionEnum.COMMERCE_EDIT_OWN, PermissionEnum.COMMERCE_EDIT_ALL]
                 },
                 typeConfig: { maxLength: 255 }
             },
@@ -465,10 +449,7 @@ export function createCommerceOperationalSection(): ConsolidatedSectionConfig {
                 placeholder: 'https://instagram.com/tuperfil',
                 permissions: {
                     view: [PermissionEnum.COMMERCE_VIEW_ALL],
-                    edit: [
-                        PermissionEnum.COMMERCE_SOCIAL_EDIT_OWN,
-                        PermissionEnum.COMMERCE_EDIT_ALL
-                    ]
+                    edit: [PermissionEnum.COMMERCE_EDIT_OWN, PermissionEnum.COMMERCE_EDIT_ALL]
                 },
                 typeConfig: { maxLength: 255 }
             },
@@ -482,10 +463,7 @@ export function createCommerceOperationalSection(): ConsolidatedSectionConfig {
                 placeholder: 'https://twitter.com/tuperfil',
                 permissions: {
                     view: [PermissionEnum.COMMERCE_VIEW_ALL],
-                    edit: [
-                        PermissionEnum.COMMERCE_SOCIAL_EDIT_OWN,
-                        PermissionEnum.COMMERCE_EDIT_ALL
-                    ]
+                    edit: [PermissionEnum.COMMERCE_EDIT_OWN, PermissionEnum.COMMERCE_EDIT_ALL]
                 },
                 typeConfig: { maxLength: 255 }
             },
@@ -503,7 +481,7 @@ export function createCommerceOperationalSection(): ConsolidatedSectionConfig {
                 placeholder: 'Seleccioná la imagen principal…',
                 permissions: {
                     view: [PermissionEnum.COMMERCE_VIEW_ALL],
-                    edit: [PermissionEnum.COMMERCE_MEDIA_EDIT_OWN, PermissionEnum.COMMERCE_EDIT_ALL]
+                    edit: [PermissionEnum.COMMERCE_EDIT_OWN, PermissionEnum.COMMERCE_EDIT_ALL]
                 },
                 typeConfig: {
                     type: 'IMAGE',
@@ -525,7 +503,7 @@ export function createCommerceOperationalSection(): ConsolidatedSectionConfig {
                 placeholder: 'Arrastrá imágenes aquí o hacé clic para seleccionar…',
                 permissions: {
                     view: [PermissionEnum.COMMERCE_VIEW_ALL],
-                    edit: [PermissionEnum.COMMERCE_MEDIA_EDIT_OWN, PermissionEnum.COMMERCE_EDIT_ALL]
+                    edit: [PermissionEnum.COMMERCE_EDIT_OWN, PermissionEnum.COMMERCE_EDIT_ALL]
                 },
                 typeConfig: {
                     type: 'GALLERY',
@@ -546,7 +524,7 @@ export function createCommerceOperationalSection(): ConsolidatedSectionConfig {
                 description: 'Videos de YouTube o Vimeo para el comercio',
                 permissions: {
                     view: [PermissionEnum.COMMERCE_VIEW_ALL],
-                    edit: [PermissionEnum.COMMERCE_MEDIA_EDIT_OWN, PermissionEnum.COMMERCE_EDIT_ALL]
+                    edit: [PermissionEnum.COMMERCE_EDIT_OWN, PermissionEnum.COMMERCE_EDIT_ALL]
                 },
                 typeConfig: {
                     type: 'VIDEO_GALLERY',
@@ -589,10 +567,7 @@ export function createCommerceOperationalSection(): ConsolidatedSectionConfig {
                 description: 'Servicios y comodidades del comercio',
                 permissions: {
                     view: [PermissionEnum.COMMERCE_VIEW_ALL],
-                    edit: [
-                        PermissionEnum.COMMERCE_AMENITIES_EDIT_OWN,
-                        PermissionEnum.COMMERCE_EDIT_ALL
-                    ]
+                    edit: [PermissionEnum.COMMERCE_EDIT_OWN, PermissionEnum.COMMERCE_EDIT_ALL]
                 },
                 typeConfig: {
                     multiple: true,
@@ -609,10 +584,7 @@ export function createCommerceOperationalSection(): ConsolidatedSectionConfig {
                 description: 'Características destacadas del comercio',
                 permissions: {
                     view: [PermissionEnum.COMMERCE_VIEW_ALL],
-                    edit: [
-                        PermissionEnum.COMMERCE_FEATURES_EDIT_OWN,
-                        PermissionEnum.COMMERCE_EDIT_ALL
-                    ]
+                    edit: [PermissionEnum.COMMERCE_EDIT_OWN, PermissionEnum.COMMERCE_EDIT_ALL]
                 },
                 typeConfig: {
                     multiple: true,

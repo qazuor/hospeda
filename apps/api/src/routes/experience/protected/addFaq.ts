@@ -2,7 +2,7 @@
  * POST /api/v1/protected/experiences/:id/faqs
  * Add a new FAQ to an experience listing (T-020)
  *
- * Gated on COMMERCE_FAQS_EDIT_OWN (listing owner) or COMMERCE_EDIT_ALL (staff).
+ * Gated on COMMERCE_EDIT_OWN (listing owner) or COMMERCE_EDIT_ALL (staff).
  * displayOrder is auto-assigned by addExperienceFaq() as max(existing)+1.
  */
 import {

@@ -43,20 +43,15 @@ const staffActor: Actor = {
         PermissionEnum.COMMERCE_EDIT_ALL,
         PermissionEnum.COMMERCE_DELETE,
         PermissionEnum.COMMERCE_VIEW_ALL,
-        PermissionEnum.COMMERCE_MODERATE_REVIEW,
-        PermissionEnum.COMMERCE_FAQS_EDIT_OWN
+        PermissionEnum.COMMERCE_MODERATE_REVIEW
     ]
 };
 
 const ownerActor: Actor = {
     id: OWNER_ID,
     role: RoleEnum.COMMERCE_OWNER,
-    permissions: [
-        PermissionEnum.COMMERCE_CREATE,
-        PermissionEnum.COMMERCE_SCHEDULE_EDIT_OWN,
-        PermissionEnum.COMMERCE_CONTACT_EDIT_OWN,
-        PermissionEnum.COMMERCE_FAQS_EDIT_OWN
-    ]
+    // SPEC-253 D2=b: single COMMERCE_EDIT_OWN replaces the per-section perms
+    permissions: [PermissionEnum.COMMERCE_EDIT_OWN]
 };
 
 const noPermActor: Actor = {
@@ -104,45 +99,25 @@ describe('checkExperienceCanEditAll', () => {
 });
 
 // ---------------------------------------------------------------------------
-// checkExperienceCanEditOwn
+// checkExperienceCanEditOwn (SPEC-253 D2=b: single COMMERCE_EDIT_OWN)
 // ---------------------------------------------------------------------------
 
 describe('checkExperienceCanEditOwn', () => {
-    it('should not throw for the listing owner with the section permission', () => {
-        expect(() =>
-            checkExperienceCanEditOwn(ownerActor, entity, PermissionEnum.COMMERCE_SCHEDULE_EDIT_OWN)
-        ).not.toThrow();
+    it('should not throw for the listing owner with COMMERCE_EDIT_OWN', () => {
+        expect(() => checkExperienceCanEditOwn(ownerActor, entity)).not.toThrow();
     });
 
-    it('should throw FORBIDDEN for a non-owner actor', () => {
-        expect(() =>
-            checkExperienceCanEditOwn(
-                noPermActor,
-                entity,
-                PermissionEnum.COMMERCE_SCHEDULE_EDIT_OWN
-            )
-        ).toThrow(ServiceError);
+    it('should throw FORBIDDEN for a non-owner actor with no permissions', () => {
+        expect(() => checkExperienceCanEditOwn(noPermActor, entity)).toThrow(ServiceError);
     });
 
-    it('should throw FORBIDDEN for owner of a different listing (not their entity)', () => {
+    it('should throw FORBIDDEN for owner of a different listing (entity mismatch)', () => {
         // ownerActor.id === OWNER_ID, but entityOtherOwner.ownerId !== OWNER_ID
-        expect(() =>
-            checkExperienceCanEditOwn(
-                ownerActor,
-                entityOtherOwner,
-                PermissionEnum.COMMERCE_SCHEDULE_EDIT_OWN
-            )
-        ).toThrow(ServiceError);
+        expect(() => checkExperienceCanEditOwn(ownerActor, entityOtherOwner)).toThrow(ServiceError);
     });
 
-    it('should not throw for staff with COMMERCE_EDIT_ALL bypassing own-check', () => {
-        expect(() =>
-            checkExperienceCanEditOwn(
-                staffActor,
-                entityOtherOwner,
-                PermissionEnum.COMMERCE_SCHEDULE_EDIT_OWN
-            )
-        ).not.toThrow();
+    it('should not throw for staff with COMMERCE_EDIT_ALL (bypasses ownership check)', () => {
+        expect(() => checkExperienceCanEditOwn(staffActor, entityOtherOwner)).not.toThrow();
     });
 });
 
@@ -234,19 +209,25 @@ describe('checkExperienceCanModerateReview', () => {
 });
 
 // ---------------------------------------------------------------------------
-// checkExperienceCanEditFaqs
+// checkExperienceCanEditFaqs (SPEC-253 D2=b: COMMERCE_FAQS_EDIT_OWN -> COMMERCE_EDIT_OWN)
 // ---------------------------------------------------------------------------
 
 describe('checkExperienceCanEditFaqs', () => {
-    it('should not throw for the listing owner with COMMERCE_FAQS_EDIT_OWN', () => {
+    it('should not throw for the listing owner with COMMERCE_EDIT_OWN', () => {
         expect(() => checkExperienceCanEditFaqs(ownerActor, entity)).not.toThrow();
     });
 
-    it('should throw FORBIDDEN for a non-owner without COMMERCE_FAQS_EDIT_OWN', () => {
+    it('should throw FORBIDDEN for a non-owner with no permissions', () => {
         expect(() => checkExperienceCanEditFaqs(noPermActor, entity)).toThrow(ServiceError);
     });
 
-    it('should not throw for staff with COMMERCE_EDIT_ALL', () => {
+    it('should not throw for staff with COMMERCE_EDIT_ALL (any entity)', () => {
         expect(() => checkExperienceCanEditFaqs(staffActor, entityOtherOwner)).not.toThrow();
+    });
+
+    it('should throw FORBIDDEN for COMMERCE_EDIT_OWN actor who is NOT the owner', () => {
+        expect(() => checkExperienceCanEditFaqs(ownerActor, entityOtherOwner)).toThrow(
+            ServiceError
+        );
     });
 });

@@ -9,7 +9,7 @@
  * ## Permission model
  *
  * - **Owner ops** (add / update / remove / reorder):
- *   Gated on `COMMERCE_FAQS_EDIT_OWN` for listing owners, or
+ *   Gated on `COMMERCE_EDIT_OWN` for listing owners, or
  *   `COMMERCE_EDIT_ALL` for staff (via `checkGastronomyCanEditFaqs`).
  * - **Admin list** (`adminGetFaqs`):
  *   Gated on `COMMERCE_VIEW_ALL` (staff) or `COMMERCE_VIEW_ALL` as
@@ -80,7 +80,7 @@ async function requireGastronomy(
 /**
  * Adds a FAQ entry to a gastronomy listing.
  *
- * Permission: `COMMERCE_FAQS_EDIT_OWN` (listing owner) or `COMMERCE_EDIT_ALL` (staff).
+ * Permission: `COMMERCE_EDIT_OWN` (listing owner) or `COMMERCE_EDIT_ALL` (staff).
  * `displayOrder` is auto-assigned as `max(existing) + 1` or 0 when no FAQs exist yet.
  *
  * @param model - GastronomyModel instance.
@@ -149,7 +149,7 @@ export async function addGastronomyFaq(
 /**
  * Updates an existing FAQ entry on a gastronomy listing.
  *
- * Permission: `COMMERCE_FAQS_EDIT_OWN` (listing owner) or `COMMERCE_EDIT_ALL` (staff).
+ * Permission: `COMMERCE_EDIT_OWN` (listing owner) or `COMMERCE_EDIT_ALL` (staff).
  * The FAQ must belong to the specified gastronomy (enforced by `gastronomyId` check).
  *
  * @param model - GastronomyModel instance.
@@ -217,7 +217,7 @@ export async function updateGastronomyFaq(
 /**
  * Removes (soft-deletes) a FAQ from a gastronomy listing.
  *
- * Permission: `COMMERCE_FAQS_EDIT_OWN` (listing owner) or `COMMERCE_EDIT_ALL` (staff).
+ * Permission: `COMMERCE_EDIT_OWN` (listing owner) or `COMMERCE_EDIT_ALL` (staff).
  * The FAQ must belong to the specified gastronomy.
  *
  * @param model - GastronomyModel instance.
@@ -348,7 +348,7 @@ export async function listGastronomyFaqs(
  *    `order` belongs to this gastronomy (unknown IDs → VALIDATION_ERROR).
  * 3. Apply each `displayOrder` value individually via `faqModel.update`.
  *
- * Permission: `COMMERCE_FAQS_EDIT_OWN` (listing owner) or `COMMERCE_EDIT_ALL` (staff).
+ * Permission: `COMMERCE_EDIT_OWN` (listing owner) or `COMMERCE_EDIT_ALL` (staff).
  *
  * @param model - GastronomyModel instance.
  * @param actor - The actor performing the action.

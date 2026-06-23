@@ -800,8 +800,8 @@
         {
             "specId": "SPEC-253",
             "title": "Commerce owner editor — extended fields + single COMMERCE_EDIT_OWN permission",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "in-progress",
+            "progress": "31/31",
             "path": "SPEC-253-commerce-owner-editor-extended-fields"
         },
         {

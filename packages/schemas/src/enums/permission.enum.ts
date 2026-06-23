@@ -854,18 +854,11 @@ export enum PermissionEnum {
     MODERATION_THRESHOLD_RESTORE = 'moderation.threshold.restore', // Allows restoring a soft-deleted moderation threshold.
     MODERATION_THRESHOLD_HARD_DELETE = 'moderation.threshold.hardDelete', // Allows permanently deleting a moderation threshold.
 
-    // COMMERCE: Owner-scoped section edit permissions (SPEC-239)
-    // These allow a COMMERCE_OWNER to edit specific sections of their own commerce listing.
-    COMMERCE_SCHEDULE_EDIT_OWN = 'commerce.schedule.editOwn', // Allows editing own commerce listing's opening hours / schedule.
-    COMMERCE_CONTACT_EDIT_OWN = 'commerce.contact.editOwn', // Allows editing own commerce listing's contact information.
-    COMMERCE_SOCIAL_EDIT_OWN = 'commerce.social.editOwn', // Allows editing own commerce listing's social network links.
-    COMMERCE_MEDIA_EDIT_OWN = 'commerce.media.editOwn', // Allows editing own commerce listing's media gallery.
-    COMMERCE_MENU_EDIT_OWN = 'commerce.menu.editOwn', // Allows editing own commerce listing's menu items.
-    COMMERCE_PRICE_RANGE_EDIT_OWN = 'commerce.priceRange.editOwn', // Allows editing own commerce listing's price range tier.
-    COMMERCE_RICH_DESCRIPTION_EDIT_OWN = 'commerce.richDescription.editOwn', // Allows editing own commerce listing's rich-text description.
-    COMMERCE_AMENITIES_EDIT_OWN = 'commerce.amenities.editOwn', // Allows editing own commerce listing's amenities.
-    COMMERCE_FEATURES_EDIT_OWN = 'commerce.features.editOwn', // Allows editing own commerce listing's features.
-    COMMERCE_FAQS_EDIT_OWN = 'commerce.faqs.editOwn', // Allows editing own commerce listing's FAQ entries.
+    // COMMERCE: Owner-scoped edit permission (SPEC-253)
+    // Replaces the 10 per-section COMMERCE_*_EDIT_OWN permissions (removed in SPEC-253 D2=b).
+    // A COMMERCE_OWNER holding this permission may edit all owner-accessible sections of
+    // their own commerce listing (operational fields, FAQs, i18n, etc.).
+    COMMERCE_EDIT_OWN = 'commerce.editOwn', // Allows a COMMERCE_OWNER to edit their own commerce listing (single owner write permission, SPEC-253).
 
     // COMMERCE: Admin-level permissions (SPEC-239)
     COMMERCE_CREATE = 'commerce.create', // Allows creating a new commerce listing.

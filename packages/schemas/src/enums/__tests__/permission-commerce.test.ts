@@ -2,57 +2,18 @@ import { describe, expect, it } from 'vitest';
 import { PermissionCategoryEnum, PermissionEnum } from '../permission.enum.js';
 
 // ============================================================================
-// SPEC-239 COMMERCE permissions and COMMERCE category
+// SPEC-253 COMMERCE permissions and COMMERCE category
+// (Replaces SPEC-239 test — 10 per-section perms removed, COMMERCE_EDIT_OWN added)
 // ============================================================================
 
-describe('SPEC-239 COMMERCE permissions', () => {
+describe('SPEC-253 COMMERCE permissions', () => {
     it('should have COMMERCE category in PermissionCategoryEnum', () => {
         expect(PermissionCategoryEnum.COMMERCE).toBe('COMMERCE');
     });
 
-    describe('owner-scoped section edit permissions (10)', () => {
-        it('should have COMMERCE_SCHEDULE_EDIT_OWN', () => {
-            expect(PermissionEnum.COMMERCE_SCHEDULE_EDIT_OWN).toBe('commerce.schedule.editOwn');
-        });
-
-        it('should have COMMERCE_CONTACT_EDIT_OWN', () => {
-            expect(PermissionEnum.COMMERCE_CONTACT_EDIT_OWN).toBe('commerce.contact.editOwn');
-        });
-
-        it('should have COMMERCE_SOCIAL_EDIT_OWN', () => {
-            expect(PermissionEnum.COMMERCE_SOCIAL_EDIT_OWN).toBe('commerce.social.editOwn');
-        });
-
-        it('should have COMMERCE_MEDIA_EDIT_OWN', () => {
-            expect(PermissionEnum.COMMERCE_MEDIA_EDIT_OWN).toBe('commerce.media.editOwn');
-        });
-
-        it('should have COMMERCE_MENU_EDIT_OWN', () => {
-            expect(PermissionEnum.COMMERCE_MENU_EDIT_OWN).toBe('commerce.menu.editOwn');
-        });
-
-        it('should have COMMERCE_PRICE_RANGE_EDIT_OWN', () => {
-            expect(PermissionEnum.COMMERCE_PRICE_RANGE_EDIT_OWN).toBe(
-                'commerce.priceRange.editOwn'
-            );
-        });
-
-        it('should have COMMERCE_RICH_DESCRIPTION_EDIT_OWN', () => {
-            expect(PermissionEnum.COMMERCE_RICH_DESCRIPTION_EDIT_OWN).toBe(
-                'commerce.richDescription.editOwn'
-            );
-        });
-
-        it('should have COMMERCE_AMENITIES_EDIT_OWN', () => {
-            expect(PermissionEnum.COMMERCE_AMENITIES_EDIT_OWN).toBe('commerce.amenities.editOwn');
-        });
-
-        it('should have COMMERCE_FEATURES_EDIT_OWN', () => {
-            expect(PermissionEnum.COMMERCE_FEATURES_EDIT_OWN).toBe('commerce.features.editOwn');
-        });
-
-        it('should have COMMERCE_FAQS_EDIT_OWN', () => {
-            expect(PermissionEnum.COMMERCE_FAQS_EDIT_OWN).toBe('commerce.faqs.editOwn');
+    describe('owner write permission (single, SPEC-253 D2=b)', () => {
+        it('should have COMMERCE_EDIT_OWN with correct value', () => {
+            expect(PermissionEnum.COMMERCE_EDIT_OWN).toBe('commerce.editOwn');
         });
     });
 
@@ -78,12 +39,38 @@ describe('SPEC-239 COMMERCE permissions', () => {
         });
     });
 
-    it('should have exactly 15 new COMMERCE entries', () => {
+    it('should have exactly 6 COMMERCE entries (COMMERCE_EDIT_OWN + 5 admin)', () => {
         // Arrange
         const commercePerms = Object.values(PermissionEnum).filter((v) =>
             v.startsWith('commerce.')
         );
-        // Assert
-        expect(commercePerms).toHaveLength(15);
+        // Assert: 1 owner (COMMERCE_EDIT_OWN) + 5 admin-level = 6 total
+        // (was 15 in SPEC-239: 10 per-section + 5 admin; collapsed in SPEC-253 D2=b)
+        expect(commercePerms).toHaveLength(6);
+    });
+
+    it('should NOT contain any of the removed per-section COMMERCE_*_EDIT_OWN perms', () => {
+        const removedValues = [
+            'commerce.schedule.editOwn',
+            'commerce.contact.editOwn',
+            'commerce.social.editOwn',
+            'commerce.media.editOwn',
+            'commerce.menu.editOwn',
+            'commerce.priceRange.editOwn',
+            'commerce.richDescription.editOwn',
+            'commerce.amenities.editOwn',
+            'commerce.features.editOwn',
+            'commerce.faqs.editOwn'
+        ];
+        const allValues = Object.values(PermissionEnum);
+        for (const removed of removedValues) {
+            expect(allValues).not.toContain(removed);
+        }
+    });
+
+    it('owner with COMMERCE_EDIT_OWN can gate on the single permission (AC-2)', () => {
+        // The value must be distinct from any admin perm to ensure correct gating.
+        expect(PermissionEnum.COMMERCE_EDIT_OWN).not.toBe(PermissionEnum.COMMERCE_EDIT_ALL);
+        expect(PermissionEnum.COMMERCE_EDIT_OWN).not.toBe(PermissionEnum.COMMERCE_CREATE);
     });
 });
