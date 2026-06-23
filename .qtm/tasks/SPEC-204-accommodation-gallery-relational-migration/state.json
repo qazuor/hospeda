@@ -210,31 +210,31 @@
             "id": "T-007",
             "title": "Write-both on accommodation create/update",
             "description": "When media is written via accommodation create/update, also upsert accommodation_media rows transactionally (table + JSONB both updated; reads still from JSONB in P1). Sync gallery order, featured, and items. Tests in T-011.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-004", "T-005"],
             "blocks": ["T-011", "T-012", "T-014"],
             "subtasks": [
                 {
                     "title": "upsert rows in the same transaction as JSONB write",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "reconcile add/remove/reorder/featured",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service", "api", "P1"],
             "phase": "core",
             "qualityGate": {
                 "lint": null,
-                "typecheck": null,
+                "typecheck": true,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-06-22T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-23T02:44:46.000Z",
+                "completed": "2026-06-23T02:52:37.000Z"
             }
         },
         {
@@ -333,7 +333,7 @@
         {
             "id": "T-011",
             "title": "Integration test: write-both consistency",
-            "description": "On accommodation create/update with media changes, assert table rows and JSONB stay consistent (items, order, featured, archived). Cover add/remove/reorder/setFeatured paths.",
+            "description": "On accommodation create/update with media changes, assert table rows and JSONB stay consistent (items, order, featured, archived). Cover add/remove/reorder/setFeatured paths. NOTE(T-007): _accommodationMediaModel is new-ed in the constructor (not injected) — to mock it in T-011, add a constructor param mirroring _amenityModel/_rAmenityModel injection. Verify: create w/ media → rows; media update → replace; non-media update → rows untouched.",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-007"],
@@ -906,9 +906,9 @@
     ],
     "summary": {
         "total": 29,
-        "pending": 23,
+        "pending": 22,
         "inProgress": 0,
-        "completed": 6,
+        "completed": 7,
         "blocked": 0,
         "averageComplexity": 2.5
     }
