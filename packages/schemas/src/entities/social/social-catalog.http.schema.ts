@@ -13,8 +13,8 @@ export const CatalogHashtagSchema = z.object({
     hashtag: z.string(),
     normalizedHashtag: z.string(),
     category: z.string(),
-    platform: SocialPlatformEnumSchema.optional(),
-    audienceId: z.string().uuid().optional(),
+    platform: SocialPlatformEnumSchema.nullable().optional(),
+    audienceId: z.string().uuid().nullable().optional(),
     priority: z.number().int(),
     active: z.boolean()
 });
@@ -26,7 +26,7 @@ export const CatalogHashtagSetSchema = z.object({
     id: z.string().uuid(),
     name: z.string(),
     slug: z.string(),
-    platform: SocialPlatformEnumSchema.optional(),
+    platform: SocialPlatformEnumSchema.nullable().optional(),
     hashtagsText: z.string(),
     priority: z.number().int(),
     active: z.boolean()
@@ -40,7 +40,7 @@ export const CatalogFooterSchema = z.object({
     name: z.string(),
     slug: z.string(),
     content: z.string(),
-    platform: SocialPlatformEnumSchema.optional(),
+    platform: SocialPlatformEnumSchema.nullable().optional(),
     active: z.boolean(),
     isDefault: z.boolean(),
     priority: z.number().int()
@@ -56,12 +56,12 @@ export const CatalogPlatformFormatSchema = z.object({
     mediaType: SocialMediaTypeEnumSchema,
     enabled: z.boolean(),
     mvpEnabled: z.boolean(),
-    recommendedRatio: z.string().optional(),
-    recommendedSize: z.string().optional(),
-    maxCaptionLength: z.number().int().positive().optional(),
+    recommendedRatio: z.string().nullable().optional(),
+    recommendedSize: z.string().nullable().optional(),
+    maxCaptionLength: z.number().int().nonnegative().nullable().optional(),
     requiresPublicUrl: z.boolean(),
     requiresMedia: z.boolean(),
-    makeChannelKey: z.string().optional()
+    makeChannelKey: z.string().nullable().optional()
 });
 
 /**
@@ -71,10 +71,10 @@ export const CatalogCampaignSchema = z.object({
     id: z.string().uuid(),
     name: z.string(),
     slug: z.string(),
-    description: z.string().optional(),
+    description: z.string().nullable().optional(),
     active: z.boolean(),
-    startsAt: z.coerce.date().optional(),
-    endsAt: z.coerce.date().optional()
+    startsAt: z.coerce.date().nullable().optional(),
+    endsAt: z.coerce.date().nullable().optional()
 });
 
 /**
@@ -84,10 +84,10 @@ export const CatalogBatchSchema = z.object({
     id: z.string().uuid(),
     name: z.string(),
     slug: z.string(),
-    description: z.string().optional(),
+    description: z.string().nullable().optional(),
     active: z.boolean(),
-    startsAt: z.coerce.date().optional(),
-    endsAt: z.coerce.date().optional()
+    startsAt: z.coerce.date().nullable().optional(),
+    endsAt: z.coerce.date().nullable().optional()
 });
 
 /**
@@ -97,7 +97,7 @@ export const CatalogAudienceSchema = z.object({
     id: z.string().uuid(),
     name: z.string(),
     slug: z.string(),
-    description: z.string().optional(),
+    description: z.string().nullable().optional(),
     active: z.boolean()
 });
 

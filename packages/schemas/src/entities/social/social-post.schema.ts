@@ -90,3 +90,33 @@ export const SocialPostSchema = z.object({
 
 /** TypeScript type inferred from {@link SocialPostSchema}. */
 export type SocialPost = z.infer<typeof SocialPostSchema>;
+
+/**
+ * Minimal projection returned by the admin list endpoint
+ * (`GET /api/v1/admin/social/posts`).
+ *
+ * The list query does NOT hydrate the full {@link SocialPostSchema} entity —
+ * it returns a lightweight row for table rendering (title, status, target
+ * platforms, thumbnail, schedule). Mirrors `SocialPostListItem` in
+ * `@repo/service-core` (`SocialPostService.list`). Using the full entity schema
+ * as the list response contract is incorrect: the projection omits most entity
+ * fields, so validation would reject every row once the list is non-empty.
+ */
+export const SocialPostListItemSchema = z.object({
+    id: z.string().uuid({ message: 'zodError.socialPost.id.uuid' }),
+    title: z.string(),
+    slug: z.string(),
+    status: SocialPostStatusEnumSchema,
+    approvalStatus: SocialApprovalStatusEnumSchema,
+    paused: z.boolean(),
+    /** Target platforms derived from `social_post_targets`. */
+    platforms: z.array(z.string()),
+    /** Cloudinary URL of the first media asset, or null when there is none. */
+    thumbnailUrl: z.string().nullable(),
+    /** Scheduled publication datetime, or null. */
+    scheduledAt: z.coerce.date().nullable(),
+    createdAt: z.coerce.date()
+});
+
+/** TypeScript type inferred from {@link SocialPostListItemSchema}. */
+export type SocialPostListItem = z.infer<typeof SocialPostListItemSchema>;

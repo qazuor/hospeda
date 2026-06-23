@@ -21,8 +21,8 @@
             "platform": "Plataforma",
             "post": "Post",
             "error": "Error",
-            "retries": "{{count}} reintento",
-            "retries_plural": "{{count}} reintentos",
+            "retries_one": "{{count}} reintento",
+            "retries_other": "{{count}} reintentos",
             "viewPost": "Ver post"
         },
         "webhookAlert": {
@@ -41,8 +41,8 @@
             "empty": "No hay posts sociales",
             "emptyFiltered": "No hay posts que coincidan con los filtros aplicados",
             "clearFilters": "Limpiar filtros",
-            "results": "{{count}} resultado",
-            "results_plural": "{{count}} resultados",
+            "results_one": "{{count}} resultado",
+            "results_other": "{{count}} resultados",
             "prevPage": "Anterior",
             "nextPage": "Siguiente",
             "pagination": "Página {{page}} de {{totalPages}} ({{total}} total)"
@@ -241,8 +241,8 @@
     "hashtags": {
         "title": "Catálogo de Hashtags",
         "createBtn": "Nuevo hashtag",
-        "results": "{{count}} resultado",
-        "results_plural": "{{count}} resultados",
+        "results_one": "{{count}} resultado",
+        "results_other": "{{count}} resultados",
         "filters": {
             "search": "Buscar",
             "searchPlaceholder": "Buscar hashtag...",
@@ -304,8 +304,8 @@
     "footers": {
         "title": "Catálogo de Footers",
         "createBtn": "Nuevo footer",
-        "results": "{{count}} resultado",
-        "results_plural": "{{count}} resultados",
+        "results_one": "{{count}} resultado",
+        "results_other": "{{count}} resultados",
         "filters": {
             "search": "Buscar",
             "searchPlaceholder": "Buscar footer...",
@@ -368,8 +368,8 @@
     "campaigns": {
         "title": "Catálogo de Campañas",
         "createBtn": "Nueva campaña",
-        "results": "{{count}} resultado",
-        "results_plural": "{{count}} resultados",
+        "results_one": "{{count}} resultado",
+        "results_other": "{{count}} resultados",
         "filters": {
             "search": "Buscar",
             "searchPlaceholder": "Buscar campaña...",
@@ -426,8 +426,8 @@
     "batches": {
         "title": "Catálogo de Batches",
         "createBtn": "Nuevo batch",
-        "results": "{{count}} resultado",
-        "results_plural": "{{count}} resultados",
+        "results_one": "{{count}} resultado",
+        "results_other": "{{count}} resultados",
         "filters": {
             "search": "Buscar",
             "searchPlaceholder": "Buscar batch...",
@@ -484,8 +484,8 @@
     "audiences": {
         "title": "Catálogo de Audiencias",
         "createBtn": "Nueva audiencia",
-        "results": "{{count}} resultado",
-        "results_plural": "{{count}} resultados",
+        "results_one": "{{count}} resultado",
+        "results_other": "{{count}} resultados",
         "filters": {
             "search": "Buscar",
             "searchPlaceholder": "Buscar audiencia...",
