@@ -151,3 +151,272 @@ export async function runApifyActor(input: RunApifyActorInput): Promise<unknown[
         clearTimeout(timer);
     }
 }
+
+// ---------------------------------------------------------------------------
+// startApifyRun
+// ---------------------------------------------------------------------------
+
+/**
+ * Input parameters for {@link startApifyRun}.
+ */
+export interface StartApifyRunInput {
+    /** Apify API token. */
+    readonly token: string;
+    /**
+     * Apify actor slug in `owner/actor-name` form
+     * (e.g. `apify/airbnb-scraper`).
+     * Transformed to tilde form for the request path.
+     */
+    readonly actor: string;
+    /**
+     * JSON body sent to the actor as its run configuration.
+     * The exact shape is actor-specific.
+     */
+    readonly actorInput: Record<string, unknown>;
+}
+
+/**
+ * Result returned by a successful {@link startApifyRun} call.
+ */
+export interface StartApifyRunResult {
+    /** The Apify run ID, used to poll status via {@link getApifyRunStatus}. */
+    readonly runId: string;
+    /** The dataset ID associated with this run, used to fetch items via {@link getApifyDatasetItems}. */
+    readonly defaultDatasetId: string;
+}
+
+/**
+ * Starts an Apify actor run asynchronously and returns the run ID and dataset ID.
+ *
+ * Calls `POST https://api.apify.com/v2/acts/{actor}/runs` with the provided
+ * `actorInput` as the JSON request body.  The actor slug is transformed from
+ * the `owner/actor` form to the `owner~actor` tilde form required by the Apify
+ * REST API.  The token travels in an `Authorization: Bearer` header, never in
+ * the URL.
+ *
+ * **Trusted host**: `api.apify.com` is an official-API tier endpoint exempt
+ * from `safeExternalFetch` per AC-10.2.
+ *
+ * **Degradation contract**: returns `null` (never throws) on:
+ * - non-201 HTTP response
+ * - `fetch` rejection (network error, DNS failure, etc.)
+ * - Response body missing `data.id` or `data.defaultDatasetId`
+ * - Malformed actor slug
+ *
+ * @param input - Actor run parameters.
+ * @returns `{ runId, defaultDatasetId }` on success, or `null` on any failure.
+ *
+ * @example
+ * ```ts
+ * const result = await startApifyRun({
+ *   token: 'apify_api_xxx',
+ *   actor: 'apify/airbnb-scraper',
+ *   actorInput: { startUrls: [{ url: 'https://www.airbnb.com/rooms/12345' }] },
+ * });
+ * if (result) {
+ *   console.log(result.runId, result.defaultDatasetId);
+ * }
+ * ```
+ */
+export async function startApifyRun(
+    input: StartApifyRunInput
+): Promise<StartApifyRunResult | null> {
+    const { token, actor, actorInput } = input;
+
+    if (!APIFY_ACTOR_SLUG_RE.test(actor)) {
+        return null;
+    }
+
+    const actorPath = actor.replace('/', '~');
+    const url = `https://api.apify.com/v2/acts/${actorPath}/runs`;
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify(actorInput)
+        });
+
+        if (response.status !== 201) {
+            return null;
+        }
+
+        const body = (await response.json()) as {
+            data?: { id?: string; defaultDatasetId?: string };
+        };
+
+        const runId = body?.data?.id;
+        const defaultDatasetId = body?.data?.defaultDatasetId;
+
+        if (!runId || !defaultDatasetId) {
+            return null;
+        }
+
+        return { runId, defaultDatasetId };
+    } catch {
+        // fetch rejection or JSON parse error — degrade
+        return null;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// getApifyRunStatus
+// ---------------------------------------------------------------------------
+
+/**
+ * The set of terminal and non-terminal statuses an Apify actor run may report.
+ *
+ * - `READY` / `RUNNING`: the run is still in progress.
+ * - `SUCCEEDED`: the run completed successfully; dataset items are available.
+ * - `FAILED` / `TIMED-OUT` / `ABORTED`: the run ended without producing usable data.
+ */
+export type ApifyRunStatus = 'READY' | 'RUNNING' | 'SUCCEEDED' | 'FAILED' | 'TIMED-OUT' | 'ABORTED';
+
+/**
+ * Result returned by a successful {@link getApifyRunStatus} call.
+ */
+export interface GetApifyRunStatusResult {
+    /** Current Apify run status. */
+    readonly status: ApifyRunStatus;
+    /** Dataset ID associated with the run (needed to fetch items on SUCCEEDED). */
+    readonly defaultDatasetId: string;
+}
+
+/**
+ * Input parameters for {@link getApifyRunStatus}.
+ */
+export interface GetApifyRunStatusInput {
+    /** Apify API token. */
+    readonly token: string;
+    /** Apify run ID returned by {@link startApifyRun}. */
+    readonly runId: string;
+}
+
+/**
+ * Fetches the current status of an Apify actor run.
+ *
+ * Calls `GET https://api.apify.com/v2/actor-runs/{runId}` with an
+ * `Authorization: Bearer` header.  Returns `{ status, defaultDatasetId }` when
+ * the response is 200 and the body contains both fields; returns `null`
+ * otherwise.
+ *
+ * **Degradation contract**: returns `null` (never throws) on:
+ * - non-200 HTTP response
+ * - `fetch` rejection (network error, DNS failure, etc.)
+ * - Response body missing `data.status` or `data.defaultDatasetId`
+ *
+ * @param input - Run status query parameters.
+ * @returns `{ status, defaultDatasetId }` on success, or `null` on any failure.
+ *
+ * @example
+ * ```ts
+ * const result = await getApifyRunStatus({ token: 'apify_api_xxx', runId: 'abc123' });
+ * if (result?.status === 'SUCCEEDED') {
+ *   const items = await getApifyDatasetItems({ token, datasetId: result.defaultDatasetId });
+ * }
+ * ```
+ */
+export async function getApifyRunStatus(
+    input: GetApifyRunStatusInput
+): Promise<GetApifyRunStatusResult | null> {
+    const { token, runId } = input;
+
+    const url = `https://api.apify.com/v2/actor-runs/${encodeURIComponent(runId)}`;
+
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+
+        if (response.status !== 200) {
+            return null;
+        }
+
+        const body = (await response.json()) as {
+            data?: { status?: string; defaultDatasetId?: string };
+        };
+
+        const status = body?.data?.status;
+        const defaultDatasetId = body?.data?.defaultDatasetId;
+
+        if (!status || !defaultDatasetId) {
+            return null;
+        }
+
+        return { status: status as ApifyRunStatus, defaultDatasetId };
+    } catch {
+        // fetch rejection or JSON parse error — degrade
+        return null;
+    }
+}
+
+// ---------------------------------------------------------------------------
+// getApifyDatasetItems
+// ---------------------------------------------------------------------------
+
+/**
+ * Input parameters for {@link getApifyDatasetItems}.
+ */
+export interface GetApifyDatasetItemsInput {
+    /** Apify API token. */
+    readonly token: string;
+    /** Dataset ID returned by a successful Apify run. */
+    readonly datasetId: string;
+}
+
+/**
+ * Fetches all items from an Apify dataset.
+ *
+ * Calls `GET https://api.apify.com/v2/datasets/{datasetId}/items` with an
+ * `Authorization: Bearer` header.  Returns the response body parsed as an
+ * `unknown[]` array on success.
+ *
+ * **Degradation contract**: returns `[]` (never throws) on:
+ * - non-200 HTTP response
+ * - `fetch` rejection (network error, DNS failure, etc.)
+ * - Response body is not a JSON array
+ *
+ * @param input - Dataset query parameters.
+ * @returns The array of dataset items, or `[]` on any failure.
+ *
+ * @example
+ * ```ts
+ * const items = await getApifyDatasetItems({ token: 'apify_api_xxx', datasetId: 'ds_abc' });
+ * // items: unknown[] — each element is one dataset record
+ * ```
+ */
+export async function getApifyDatasetItems(input: GetApifyDatasetItemsInput): Promise<unknown[]> {
+    const { token, datasetId } = input;
+
+    const url = `https://api.apify.com/v2/datasets/${encodeURIComponent(datasetId)}/items`;
+
+    try {
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+
+        if (response.status !== 200) {
+            return [];
+        }
+
+        const body = (await response.json()) as unknown;
+
+        if (!Array.isArray(body)) {
+            return [];
+        }
+
+        return body;
+    } catch {
+        // fetch rejection or JSON parse error — degrade
+        return [];
+    }
+}

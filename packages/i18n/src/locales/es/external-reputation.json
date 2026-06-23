@@ -44,6 +44,18 @@
     "errors": {
         "fetchFailed": "No se pudieron cargar las reseñas externas. Intentá de nuevo más tarde.",
         "notFound": "No se encontraron datos de reputación para esta plataforma.",
-        "blocked": "El acceso a los datos de esta plataforma fue bloqueado temporalmente."
+        "blocked": "El acceso a los datos de esta plataforma fue bloqueado temporalmente.",
+        "statusFailed": "No se pudo obtener el estado de actualización."
+    },
+    "status": {
+        "pending": "Actualizando...",
+        "running": "Procesando...",
+        "error": "Falló",
+        "blocked": "Bloqueado",
+        "notFound": "No encontrado"
+    },
+    "refresh": {
+        "enqueued": "Actualizando en segundo plano...",
+        "inlineSuccess": "Actualizado"
     }
 }

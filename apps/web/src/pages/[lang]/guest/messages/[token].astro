@@ -61,7 +61,7 @@ const canReply = !closedStatuses.includes(conversation.status.toUpperCase());
 
 let showOwnerReadReceipt = false;
 if (conversation.lastReadAtByOwner) {
-    const lastGuestMsg = [...messages].reverse().find((m) => m.senderType === 'guest');
+    const lastGuestMsg = [...messages].reverse().find((m) => m.senderType?.toLowerCase() === 'guest');
     if (lastGuestMsg) {
         showOwnerReadReceipt =
             new Date(conversation.lastReadAtByOwner) >= new Date(lastGuestMsg.createdAt);
@@ -108,7 +108,7 @@ const olderCursor = hasMore && oldestMessage ? oldestMessage.createdAt : null;
                     <li
                         class:list={[
                             'guest-thread__message',
-                            `guest-thread__message--${msg.senderType}`
+                            `guest-thread__message--${msg.senderType?.toLowerCase() ?? 'system'}`
                         ]}
                     >
                         <div class="guest-thread__bubble">

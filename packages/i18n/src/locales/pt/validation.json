@@ -3748,6 +3748,9 @@
     "accommodationExternalReputation": {
         "fetchStatus": {
             "invalid": "[PT] El estado de obtención no es válido"
+        },
+        "runStatus": {
+            "invalid": "O status de atualização é inválido"
         }
     }
 }

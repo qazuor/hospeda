@@ -2,7 +2,7 @@
  * Public get news posts endpoint
  * Returns news posts with optional date filters
  */
-import { PostListItemSchema, PostNewsHttpSchema } from '@repo/schemas';
+import { PostNewsHttpSchema, PostPublicSchema } from '@repo/schemas';
 import { PostService, ServiceError } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -22,7 +22,7 @@ export const publicGetNewsPostsRoute = createPublicListRoute({
     description: 'Returns news posts with optional date filters',
     tags: ['Posts'],
     requestQuery: PostNewsHttpSchema.shape,
-    responseSchema: PostListItemSchema,
+    responseSchema: PostPublicSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { fromDate, toDate } = (query || {}) as {

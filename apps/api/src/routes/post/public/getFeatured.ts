@@ -2,7 +2,7 @@
  * Public get featured posts endpoint
  * Returns featured posts with pagination
  */
-import { PostFeaturedHttpSchema, PostListItemSchema } from '@repo/schemas';
+import { PostFeaturedHttpSchema, PostPublicSchema } from '@repo/schemas';
 import { PostService, ServiceError } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -22,7 +22,7 @@ export const publicGetFeaturedPostsRoute = createPublicListRoute({
     description: 'Returns featured posts with pagination',
     tags: ['Posts'],
     requestQuery: PostFeaturedHttpSchema.shape,
-    responseSchema: PostListItemSchema,
+    responseSchema: PostPublicSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { fromDate, toDate } = (query || {}) as {
