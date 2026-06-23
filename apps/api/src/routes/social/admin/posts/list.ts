@@ -5,7 +5,11 @@
  * Returns a paginated list of social posts with optional filters.
  * Delegates to SocialPostService.listPosts.
  */
-import { PermissionEnum, SocialPostAdminSearchSchema, SocialPostSchema } from '@repo/schemas';
+import {
+    PermissionEnum,
+    SocialPostAdminSearchSchema,
+    SocialPostListItemSchema
+} from '@repo/schemas';
 import { ServiceError, SocialPostService } from '@repo/service-core';
 import { getActorFromContext } from '../../../../utils/actor';
 import { apiLogger } from '../../../../utils/logger';
@@ -30,7 +34,7 @@ export const adminListSocialPostsRoute = createAdminListRoute({
     tags: ['Social Posts'],
     requiredPermissions: [PermissionEnum.SOCIAL_POST_VIEW],
     requestQuery: SocialPostAdminSearchSchema.omit({ page: true, pageSize: true }).shape,
-    responseSchema: SocialPostSchema,
+    responseSchema: SocialPostListItemSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});

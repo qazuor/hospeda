@@ -19,12 +19,16 @@ export const SocialHashtagSchema = z.object({
     /** Category label for grouping (e.g. "nature", "travel", "gastronomy") */
     category: z.string().min(1, { message: 'zodError.socialHashtag.category.required' }),
     /** Optional platform restriction — null means applies to all platforms */
-    platform: SocialPlatformEnumSchema.optional(),
+    platform: SocialPlatformEnumSchema.nullable().optional(),
     /** Optional audience association */
-    audienceId: z.string().uuid({ message: 'zodError.socialHashtag.audienceId.uuid' }).optional(),
+    audienceId: z
+        .string()
+        .uuid({ message: 'zodError.socialHashtag.audienceId.uuid' })
+        .nullable()
+        .optional(),
     priority: z.number().int().default(0),
     active: z.boolean().default(true),
-    notes: z.string().optional(),
+    notes: z.string().nullable().optional(),
     ...BaseAuditFields
 });
 

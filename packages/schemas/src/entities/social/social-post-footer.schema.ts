@@ -15,11 +15,11 @@ export const SocialPostFooterSchema = z.object({
     /** Footer body text. May contain emoji and links. */
     content: z.string().min(1, { message: 'zodError.socialPostFooter.content.required' }),
     /** Optional platform restriction — null means applies to all platforms */
-    platform: SocialPlatformEnumSchema.optional(),
+    platform: SocialPlatformEnumSchema.nullable().optional(),
     active: z.boolean().default(true),
     isDefault: z.boolean().default(false),
     priority: z.number().int().default(0),
-    notes: z.string().optional(),
+    notes: z.string().nullable().optional(),
     ...BaseAuditFields
 });
 

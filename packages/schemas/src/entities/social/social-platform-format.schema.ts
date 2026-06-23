@@ -20,18 +20,22 @@ export const SocialPlatformFormatSchema = z.object({
     /** Whether this format is enabled for the MVP phase */
     mvpEnabled: z.boolean().default(false),
     /** Aspect ratio recommendation, e.g. "1:1", "9:16" */
-    recommendedRatio: z.string().optional(),
+    recommendedRatio: z.string().nullable().optional(),
     /** Pixel dimensions recommendation, e.g. "1080x1080" */
-    recommendedSize: z.string().optional(),
-    /** Maximum caption length in characters (platform limit) */
-    maxCaptionLength: z.number().int().positive().optional(),
+    recommendedSize: z.string().nullable().optional(),
+    /**
+     * Maximum caption length in characters (platform limit). `0` is valid for
+     * formats with no caption (e.g. STORY), so this is non-negative, not strictly
+     * positive.
+     */
+    maxCaptionLength: z.number().int().nonnegative().nullable().optional(),
     /** Whether this format requires a reachable public URL for the media */
     requiresPublicUrl: z.boolean().default(false),
     /** Whether this format requires at least one media asset */
     requiresMedia: z.boolean().default(false),
     /** Make.com scenario channel key for routing dispatch */
-    makeChannelKey: z.string().optional(),
-    notes: z.string().optional(),
+    makeChannelKey: z.string().nullable().optional(),
+    notes: z.string().nullable().optional(),
     ...BaseAuditFields
 });
 

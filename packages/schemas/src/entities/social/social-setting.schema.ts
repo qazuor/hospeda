@@ -13,8 +13,12 @@ export const SocialSettingSchema = z.object({
     id: z.string().uuid({ message: 'zodError.socialSetting.id.uuid' }),
     /** Unique setting key, e.g. "make_webhook_url" */
     key: z.string().min(1, { message: 'zodError.socialSetting.key.required' }),
-    /** Setting value — always stored as text; coercion happens in the service */
-    value: z.string().min(1, { message: 'zodError.socialSetting.value.required' }),
+    /**
+     * Setting value — always stored as text; coercion happens in the service.
+     * May be an empty string for settings that are intentionally unset (e.g.
+     * `make_webhook_url` before the Make.com integration is configured).
+     */
+    value: z.string(),
     /**
      * Value type hint for the admin UI:
      * "string" | "number" | "boolean" | "json" | "secret"
@@ -25,7 +29,7 @@ export const SocialSettingSchema = z.object({
         })
         .default('string'),
     active: z.boolean().default(true),
-    description: z.string().optional(),
+    description: z.string().nullable().optional(),
     createdAt: z.coerce.date({ message: 'zodError.common.createdAt.required' }),
     updatedAt: z.coerce.date({ message: 'zodError.common.updatedAt.required' })
 });
