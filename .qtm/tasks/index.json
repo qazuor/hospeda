@@ -975,6 +975,19 @@
             "base": "staging",
             "createdAt": "2026-06-22T21:55:01Z",
             "note": "Doc-only spec; tasks NOT atomized yet. 4 workstreams: transparency (confidence), onboarding, chat control/errors, layout decision. 'Bridge to full listing' explicitly out of scope."
+        },
+        {
+            "specId": "SPEC-160",
+            "title": "Newsletter Engagement Tracking (Open / Click)",
+            "status": "in-progress",
+            "progress": "4/5",
+            "path": "SPEC-160-newsletter-engagement-tracking",
+            "branch": "spec/SPEC-160-newsletter-engagement-tracking",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-160-newsletter-engagement-tracking",
+            "base": "staging",
+            "createdAt": "2026-06-22T22:25:42.000Z",
+            "tasksAtomizedAt": "2026-06-22T22:25:42.000Z",
+            "taskCount": 5
         }
     ],
     "standalone": {

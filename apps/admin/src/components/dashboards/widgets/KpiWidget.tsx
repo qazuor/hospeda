@@ -130,8 +130,12 @@ export interface KpiGridItem {
     readonly key: string;
     /** Tri-locale display label for this metric. */
     readonly label: I18nLabel;
-    /** Numeric value for this metric. */
-    readonly value: number;
+    /**
+     * Numeric value for this metric. When `undefined`, the tile renders a
+     * neutral `—` placeholder (see `KpiGridTile`), used for empty states such
+     * as "no data yet" without omitting the tile from the grid.
+     */
+    readonly value?: number;
     /** Optional internal link to the matching list page. */
     readonly href?: string;
     /**

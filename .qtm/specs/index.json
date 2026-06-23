@@ -602,7 +602,7 @@
             "title": "Newsletter Engagement Tracking (Open / Click)",
             "type": "feature",
             "complexity": "low",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-160-newsletter-engagement-tracking",
             "created": "2026-05-26T00:00:00Z",
             "discoveredDuring": "Admin dashboard redefinition session 2026-05-26. EDITOR open-rate widget deferred to phase 2: newsletter_campaigns stores no engagement metrics (only totalRecipients/sentAt). Needs open/click tracking, likely via Brevo webhooks.",
@@ -611,7 +611,12 @@
             "firstAllocatedViaEngramProtocol": true,
             "revised": "2026-05-30T00:00:00.000Z",
             "note": "Re-scoped 2026-05-30: the open/click tracking backend (newsletter_campaign_deliveries table, NewsletterTrackingService applyOpened/applyClick, Brevo webhook handler, NewsletterCampaignService.computeMetrics, GET /admin/newsletter/campaigns/{id}/metrics endpoint, use-campaign-metrics hook) ALREADY shipped under SPEC-101. Remaining work is frontend-only: EDITOR dashboard Card C widget (apps/admin/src/lib/dashboard-sources/editor.ts:29 still says PHASE 2) plus optionally exposing openRate/clickRate percentages in the API response. Complexity downgraded high->low.",
-            "tags": ["newsletter", "analytics", "open-rate", "ctr", "frontend", "phase-2"]
+            "tags": ["newsletter", "analytics", "open-rate", "ctr", "frontend", "phase-2"],
+            "branch": "spec/SPEC-160-newsletter-engagement-tracking",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-160-newsletter-engagement-tracking",
+            "base": "staging",
+            "tasksAtomizedAt": "2026-06-22T22:25:42.000Z",
+            "taskCount": 5
         },
         {
             "specId": "SPEC-162",
