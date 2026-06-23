@@ -1,0 +1,915 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-204",
+    "title": "Accommodation gallery migration to relational table",
+    "created": "2026-06-22T00:00:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Create accommodation_media Drizzle table schema",
+            "description": "Add packages/db/src/schemas/accommodation/accommodation_media.dbschema.ts. Columns: id (uuid PK), accommodation_id (uuid NOT NULL, FK accommodations.id ON DELETE CASCADE), url, caption, description, alt, public_id, attribution, moderation_state (ModerationStatusPgEnum), state enum ('visible'|'archived'), is_featured (bool default false), sort_order (int), archived_at (ts nullable), created_at/updated_at/deleted_at. Mirror ImageSchema EXACTLY (publicId+attribution MUST be present). Structure columns via a reusable column helper so the shape can be re-instantiated per entity later (§8). Add Drizzle relation to accommodations. Tests: dbschema type-infers; relation resolves.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-004", "T-009"],
+            "subtasks": [
+                {
+                    "title": "dbschema file with all ImageSchema-mirroring columns",
+                    "completed": true
+                },
+                {
+                    "title": "state enum + is_featured + sort_order + archived_at",
+                    "completed": true
+                },
+                {
+                    "title": "FK to accommodations ON DELETE CASCADE + relation",
+                    "completed": true
+                },
+                {
+                    "title": "reusable column helper for future per-entity tables",
+                    "completed": true
+                }
+            ],
+            "tags": ["db", "schema", "P1"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": "2026-06-23T01:52:52.000Z",
+                "completed": "2026-06-23T01:58:36.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Generate structural migration for accommodation_media",
+            "description": "Run pnpm db:generate to produce the versioned migration for the new table; commit the generated SQL under packages/db/src/migrations/. Verify the drift guard is satisfied. Tests: pnpm db:migrate applies cleanly on a fresh DB; table exists with expected columns.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-003", "T-006"],
+            "subtasks": [
+                {
+                    "title": "db:generate + commit migration file",
+                    "completed": true
+                },
+                {
+                    "title": "verify drift guard passes",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "migration", "P1"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": "2026-06-23T02:00:39.000Z",
+                "completed": "2026-06-23T02:01:42.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Add extras-carril invariants (partial unique index + CHECK)",
+            "description": "Hand-write an idempotent extras-carril SQL (packages/db/src/migrations/extras/NNN-accommodation-media.constraints.sql): partial unique index UNIQUE(accommodation_id) WHERE is_featured = true; CHECK NOT (is_featured AND state='archived'). Re-applied by db:apply-extras. Tests: inserting a 2nd featured row for the same accommodation fails; archiving a featured row fails.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-020"],
+            "subtasks": [
+                {
+                    "title": "partial unique index WHERE is_featured",
+                    "completed": false
+                },
+                {
+                    "title": "CHECK featured implies not archived",
+                    "completed": false
+                },
+                {
+                    "title": "idempotent re-apply via db:apply-extras",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "migration", "extras", "P1"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Create AccommodationMediaModel (BaseModel)",
+            "description": "Add packages/db/src/models/accommodationMedia.model.ts extending BaseModel: CRUD by accommodation_id, ordered fetch by sort_order, state filters, soft-delete. Built parametrically so a future BaseMediaModel can be reused per entity (§8). Tests: model unit tests for create/list-by-accommodation/order/state-filter (in T-009).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-006", "T-007", "T-008", "T-009"],
+            "subtasks": [
+                {
+                    "title": "model class extending BaseModel",
+                    "completed": false
+                },
+                {
+                    "title": "ordered fetch + state filter helpers",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "model", "P1"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Add AccommodationMediaItem Zod schema",
+            "description": "In packages/schemas/src/common/media.schema.ts (or a colocated file), add AccommodationMediaItem mirroring ImageSchema + state ('visible'|'archived') + is_featured + sort_order + archived_at. Keep MediaSchema intact for read composition during the transition. Tests: schema parse round-trips incl publicId/attribution; rejects bad state.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-007", "T-009"],
+            "subtasks": [
+                {
+                    "title": "AccommodationMediaItem schema",
+                    "completed": false
+                },
+                {
+                    "title": "keep MediaSchema for composition",
+                    "completed": false
+                }
+            ],
+            "tags": ["schemas", "P1"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Backfill accommodation_media from JSONB",
+            "description": "Idempotent backfill (service/script): for each accommodation, read media JSONB -> insert rows: featuredImage -> is_featured=true; gallery[] -> state='visible' with sort_order=index; archivedGallery[] -> state='archived' with archived_at. Preserve publicId+attribution+moderationState. Re-runnable without duplicating. Tests in T-010.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-002", "T-003", "T-004"],
+            "blocks": ["T-010", "T-012"],
+            "subtasks": [
+                {
+                    "title": "map featuredImage/gallery/archivedGallery to rows",
+                    "completed": false
+                },
+                {
+                    "title": "preserve all ImageSchema fields",
+                    "completed": false
+                },
+                {
+                    "title": "idempotent (no dup rows on re-run)",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "migration", "backfill", "P1"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Write-both on accommodation create/update",
+            "description": "When media is written via accommodation create/update, also upsert accommodation_media rows transactionally (table + JSONB both updated; reads still from JSONB in P1). Sync gallery order, featured, and items. Tests in T-011.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-004", "T-005"],
+            "blocks": ["T-011", "T-012", "T-014"],
+            "subtasks": [
+                {
+                    "title": "upsert rows in the same transaction as JSONB write",
+                    "completed": false
+                },
+                {
+                    "title": "reconcile add/remove/reorder/featured",
+                    "completed": false
+                }
+            ],
+            "tags": ["service", "api", "P1"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Dual-write SPEC-167 archive/restore primitives",
+            "description": "Update apps/api/src/services/plan-photo-restriction.service.ts archive/restoreAccommodationPhotos to ALSO flip accommodation_media.state (+ archived_at) while still moving JSONB arrays in P1. Keep FIFO semantics. Tests: archive flips state+archived_at; restore (FIFO by archived_at) reverses both stores consistently.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-021"],
+            "subtasks": [
+                {
+                    "title": "archive: state='archived' + archived_at, mirror JSONB",
+                    "completed": false
+                },
+                {
+                    "title": "restore: FIFO by archived_at, mirror JSONB",
+                    "completed": false
+                }
+            ],
+            "tags": ["service", "billing", "P1"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Unit tests: model + schema",
+            "description": "Unit tests for AccommodationMediaModel (CRUD, order, state filter, soft-delete) and AccommodationMediaItem schema (parse round-trip incl publicId/attribution; state/is_featured validation). Files under packages/db and packages/schemas test dirs. AAA pattern.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-004", "T-005"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "model unit tests",
+                    "completed": false
+                },
+                {
+                    "title": "schema unit tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "P1"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Integration test: backfill correctness (no data loss)",
+            "description": "Seed accommodations with JSONB media (incl publicId+attribution, archivedGallery). Run backfill. Assert rows match exactly, order preserved, no field dropped, idempotent on re-run. Critical: publicId+attribution preserved.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-006"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "fixture with full ImageSchema fields",
+                    "completed": false
+                },
+                {
+                    "title": "assert no field loss + order + idempotency",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "P1"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Integration test: write-both consistency",
+            "description": "On accommodation create/update with media changes, assert table rows and JSONB stay consistent (items, order, featured, archived). Cover add/remove/reorder/setFeatured paths.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-007"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "create/update writes both stores",
+                    "completed": false
+                },
+                {
+                    "title": "order + featured + archived consistent",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "P1"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Read-composition helper (table -> media shape)",
+            "description": "Add a helper that composes media.gallery (ordered by sort_order, state='visible'), media.featuredImage (is_featured), and media.archivedGallery (state='archived') from accommodation_media rows. videos still read from JSONB. Output shape identical to current MediaSchema. Tests in T-015.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-006", "T-007"],
+            "blocks": ["T-013"],
+            "subtasks": [
+                {
+                    "title": "compose gallery/featured/archived from rows",
+                    "completed": false
+                },
+                {
+                    "title": "merge videos from JSONB unchanged",
+                    "completed": false
+                }
+            ],
+            "tags": ["service", "P2"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Switch accommodation read paths to the table",
+            "description": "Point getById/list/detail read boundary (accommodation service + transforms) at the composition helper instead of JSONB gallery/featuredImage. Keep writing both stores. The ~21 web/admin read-sites stay untouched (shape unchanged). Tests in T-015.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-012"],
+            "blocks": ["T-015", "T-017", "T-024"],
+            "subtasks": [
+                {
+                    "title": "service read boundary uses helper",
+                    "completed": false
+                },
+                {
+                    "title": "verify read-sites unchanged",
+                    "completed": false
+                }
+            ],
+            "tags": ["service", "api", "P2"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "enforcePhotoLimit counts table rows",
+            "description": "Update apps/api/src/middlewares/limit-enforcement.ts enforcePhotoLimit to count accommodation_media rows WHERE state='visible' instead of parsing JSONB. Preserve MAX_PHOTOS_PER_ACCOMMODATION semantics. Tests in T-016.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-016"],
+            "subtasks": [
+                {
+                    "title": "count rows instead of JSONB parse",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "billing", "P2"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Integration test: response shape stable after read switch",
+            "description": "Golden/snapshot test: media.gallery/featuredImage/archivedGallery output is byte-identical before vs after switching reads to the table (same order, same fields). Guards the ~21 read-sites.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-013"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "snapshot pre/post read switch",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "P2"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Integration test: enforcePhotoLimit row-count",
+            "description": "Verify limit enforcement at the boundary (at cap, over cap, archived excluded) using row counts. Cover MAX_PHOTOS_PER_ACCOMMODATION edge cases.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-014"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "at/over cap + archived-excluded cases",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "P2"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "API endpoint: add photo",
+            "description": "Granular admin endpoint to add a gallery photo (insert row, append sort_order, write-both during transition). Thin route -> service. Add docs/billing/endpoint-gate-matrix.md row (SPEC-145 guard). Tests in T-023.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-013"],
+            "blocks": ["T-019", "T-022", "T-023"],
+            "subtasks": [
+                {
+                    "title": "route + service add",
+                    "completed": false
+                },
+                {
+                    "title": "endpoint-gate-matrix row",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "admin", "P2"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "API endpoint: remove photo",
+            "description": "Granular admin endpoint to remove a gallery photo by id (soft-delete row, resequence sort_order, write-both). Add endpoint-gate-matrix row. Tests in T-023.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-013"],
+            "blocks": ["T-022", "T-023"],
+            "subtasks": [
+                {
+                    "title": "route + service remove + resequence",
+                    "completed": false
+                },
+                {
+                    "title": "endpoint-gate-matrix row",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "admin", "P2"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "API endpoint: reorder gallery",
+            "description": "Granular admin endpoint to reorder gallery (batch update sort_order from an ordered id list, transactional, write-both). Add endpoint-gate-matrix row. Tests in T-023.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-022", "T-023"],
+            "subtasks": [
+                {
+                    "title": "ordered id list -> sort_order batch update",
+                    "completed": false
+                },
+                {
+                    "title": "endpoint-gate-matrix row",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "admin", "P2"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "API endpoint: set featured",
+            "description": "Granular admin endpoint to set a photo as featured, enforcing the single-featured invariant (clear prior featured, set new; relies on partial unique index from T-003). Add endpoint-gate-matrix row. Tests in T-023.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-003", "T-013"],
+            "blocks": ["T-022", "T-023"],
+            "subtasks": [
+                {
+                    "title": "clear prior + set new featured atomically",
+                    "completed": false
+                },
+                {
+                    "title": "endpoint-gate-matrix row",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "admin", "P2"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "API endpoint: archive/restore photo",
+            "description": "Granular admin endpoint to archive/restore a photo (state flip + archived_at), reusing the T-008 primitives. Add endpoint-gate-matrix row. Tests in T-023.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-008", "T-013"],
+            "blocks": ["T-022", "T-023"],
+            "subtasks": [
+                {
+                    "title": "route -> 167 primitive (state flip)",
+                    "completed": false
+                },
+                {
+                    "title": "endpoint-gate-matrix row",
+                    "completed": false
+                }
+            ],
+            "tags": ["api", "admin", "billing", "P2"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Admin UI: migrate gallery editor to granular endpoints",
+            "description": "Replace the blob media PATCH in the admin accommodation gallery editor with calls to add/remove/reorder/setFeatured/archive endpoints. Optimistic UI + TanStack Query invalidation. Tests in T-023 (route-level) + manual smoke.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-017", "T-018", "T-019", "T-020", "T-021"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "wire each granular endpoint in the editor",
+                    "completed": false
+                },
+                {
+                    "title": "query invalidation + optimistic update",
+                    "completed": false
+                }
+            ],
+            "tags": ["admin", "ui", "P2"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "API route tests: granular media endpoints",
+            "description": "Route tests for add/remove/reorder/setFeatured/archive: auth (admin tier), invariants (single featured, featured-not-archived), resequencing, error envelopes. AAA pattern.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-017", "T-018", "T-019", "T-020", "T-021"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "auth + permission checks per route",
+                    "completed": false
+                },
+                {
+                    "title": "invariant + resequence assertions",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "P2"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Stop writing gallery/featuredImage/archivedGallery to JSONB",
+            "description": "P3 cutover: make accommodation_media the single source of truth; stop the JSONB write of gallery/featuredImage/archivedGallery in create/update and the 167 primitives (videos stay in JSONB). Tests: writes no longer mutate the retired JSONB keys.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-013", "T-022"],
+            "blocks": ["T-025"],
+            "subtasks": [
+                {
+                    "title": "remove JSONB writes for retired fields",
+                    "completed": false
+                },
+                {
+                    "title": "videos JSONB path untouched",
+                    "completed": false
+                }
+            ],
+            "tags": ["service", "P3"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Retire gallery/featuredImage/archivedGallery from MediaSchema",
+            "description": "Remove gallery/featuredImage/archivedGallery from MediaSchema / AccommodationEntityMediaFields (videos remain). Update types/consumers that still referenced the embedded fields. Tests: typecheck across web/admin/api; schema rejects the retired keys.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-024"],
+            "blocks": ["T-026", "T-028"],
+            "subtasks": [
+                {
+                    "title": "drop retired fields from schemas",
+                    "completed": false
+                },
+                {
+                    "title": "fix type fallout in consumers",
+                    "completed": false
+                }
+            ],
+            "tags": ["schemas", "P3"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Data migration: drop retired keys from existing JSONB",
+            "description": "Extras-carril idempotent SQL to strip gallery/featuredImage/archivedGallery from existing accommodations.media JSONB (keep videos). Run after T-025 ships and the table is source of truth. Tests: post-migration JSONB has only videos; row data intact.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-025"],
+            "blocks": ["T-028"],
+            "subtasks": [
+                {
+                    "title": "idempotent JSONB key strip (keep videos)",
+                    "completed": false
+                }
+            ],
+            "tags": ["db", "migration", "extras", "P3"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Update seed to populate accommodation_media",
+            "description": "packages/seed: seed accommodation gallery/featured/archived as accommodation_media rows (not JSONB). Keep videos in JSONB. Ensure db:fresh-dev test users' accommodations have media rows. Tests: seed run produces expected rows.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "seed rows for gallery/featured/archived",
+                    "completed": false
+                },
+                {
+                    "title": "videos remain in JSONB",
+                    "completed": false
+                }
+            ],
+            "tags": ["seed", "P3"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Regression test: full lifecycle post-retirement",
+            "description": "End-to-end: create accommodation, add/reorder/setFeatured/archive/restore photos, downgrade restrict/restore (167), enforce limit, read shape stable, JSONB has no gallery keys. Confirms the migration is complete and lossless.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-025", "T-026"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "full lifecycle assertions",
+                    "completed": false
+                },
+                {
+                    "title": "JSONB gallery-free + 167 restore works",
+                    "completed": false
+                }
+            ],
+            "tags": ["testing", "P3"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-029",
+            "title": "Docs: table, endpoints, migration carriles",
+            "description": "Update packages/db/CLAUDE.md (new table + two-carril notes), docs/guides/migrations.md if needed, and document the granular media endpoints. Confirm all new routes have endpoint-gate-matrix rows. Note the §8 reusable pattern for future per-entity migrations.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-022", "T-026"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "db + migrations docs",
+                    "completed": false
+                },
+                {
+                    "title": "endpoints + reusable pattern note",
+                    "completed": false
+                }
+            ],
+            "tags": ["docs"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 29,
+        "pending": 27,
+        "inProgress": 0,
+        "completed": 2,
+        "blocked": 0,
+        "averageComplexity": 2.5
+    }
+}

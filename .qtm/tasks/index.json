@@ -280,11 +280,7 @@
             "progress": "17/17",
             "path": "SPEC-185-admin-entity-lists-v2",
             "branch": "spec/SPEC-185-admin-entity-lists-v2",
-            "linearIssues": [
-                "BETA-75",
-                "BETA-72",
-                "BETA-76"
-            ],
+            "linearIssues": ["BETA-75", "BETA-72", "BETA-76"],
             "archived": true,
             "archivedAt": "2026-06-04",
             "archiveNote": "Closeout PR #1443 merged to staging (2621fa54f). All 17 tasks done; T-016 smoke fixed 3 defects, all verified live."
@@ -296,9 +292,7 @@
             "progress": "18/18",
             "path": "SPEC-186-web-dynamic-image-grid",
             "branch": "spec/SPEC-186-web-dynamic-image-grid",
-            "linearIssues": [
-                "BETA-53"
-            ],
+            "linearIssues": ["BETA-53"],
             "note": "Closed 2026-06-05: 18/18, browser smoke passed, 3 smoke-finding fixes (container-ratio height, viewAll CTA, data-astro-reload). Videos-in-lightbox deferred to follow-up spec.",
             "archived": true,
             "archivedAt": "2026-06-05"
@@ -310,9 +304,7 @@
             "progress": "25/25",
             "path": "SPEC-187-rich-text-entity-descriptions",
             "branch": "spec/SPEC-187-rich-text-entity-descriptions",
-            "linearIssues": [
-                "BETA-60"
-            ],
+            "linearIssues": ["BETA-60"],
             "archived": true,
             "archivedAt": "2026-06-08T15:13:03.505606",
             "archiveNote": "All 5 PRs merged to staging: P0 strip migration, P1 config flips+renderPlain, P2 richDescription vertical slice, P3 ADR-032+XSS+audit, P4 closeout."
@@ -326,9 +318,7 @@
             "branch": "spec/SPEC-189-optimize-seed-and-app-builds",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-189-optimize-seed-and-app-builds",
             "base": "staging",
-            "linearIssues": [
-                "BETA-54"
-            ],
+            "linearIssues": ["BETA-54"],
             "note": "12/12 completed. Front B (schemas/feedback decouple) + Front A (seed from src no-build). Build set: schemas dropped feedback+icons. Seed cold startup ~9s vs ~30-60s before.",
             "archived": true,
             "archivedAt": "2026-06-10"
@@ -340,9 +330,7 @@
             "progress": "14/14",
             "path": "SPEC-190-admin-bundle-perf-icons-and-codesplit",
             "branch": "spec/SPEC-190-admin-bundle-perf-icons-and-codesplit",
-            "linearIssues": [
-                "BETA-74"
-            ],
+            "linearIssues": ["BETA-74"],
             "note": "Tests added, pending smoke",
             "archived": true,
             "archivedAt": "2026-06-15",
@@ -355,11 +343,7 @@
             "progress": "16/16",
             "path": "SPEC-191-web-contribution-pages-and-banners",
             "branch": "spec/SPEC-191-web-contribution-pages-and-banners",
-            "linearIssues": [
-                "BETA-69",
-                "BETA-68",
-                "BETA-65"
-            ],
+            "linearIssues": ["BETA-69", "BETA-68", "BETA-65"],
             "archived": true,
             "note": "16/16 + smoke + follow-ups; shipped via PR #1447",
             "archivedAt": "2026-06-04"
@@ -372,9 +356,7 @@
             "path": "SPEC-192-billing-catalog-to-db",
             "parent": "SPEC-193",
             "branch": "spec/SPEC-192-billing-catalog-to-db",
-            "linearIssues": [
-                "BETA-58"
-            ],
+            "linearIssues": ["BETA-58"],
             "note": "PR #1428 merged 2026-06-04; staging smoke deferred to SPEC-193 batch (pending-staging-smoke.md)",
             "archived": true,
             "archivedAt": "2026-06-04"
@@ -486,10 +468,7 @@
             "archived": true,
             "archivedAt": "2026-06-13T00:00:00Z",
             "archiveNote": "All phases shipped (1/2/4 in #1542, Phase 3 owner-promotions CRUD in #1591)",
-            "tags": [
-                "host-migration",
-                "phase-1"
-            ]
+            "tags": ["host-migration", "phase-1"]
         },
         {
             "specId": "SPEC-206",
@@ -497,10 +476,7 @@
             "status": "completed",
             "progress": "1/1",
             "path": "SPEC-206-host-conversations",
-            "tags": [
-                "host-migration",
-                "phase-2"
-            ],
+            "tags": ["host-migration", "phase-2"],
             "archived": true,
             "archivedAt": "2026-06-15",
             "archiveNote": "Ghost-completed: epic shipped ad-hoc (inbox/threads/replies/archive for owner), PRs #1503/#1521/#1627/#1610 merged + on main. No formal spec.md (owner decision, like SPEC-208)."
@@ -514,10 +490,7 @@
             "archived": true,
             "archivedAt": "2026-06-15T00:00:00.000Z",
             "archiveNote": "Merged to staging via PR #1678. Follow-up fix/SPEC-207-i18n-hostdailyseries adds the i18n keys that landed after the merge commit.",
-            "tags": [
-                "host-migration",
-                "phase-3"
-            ]
+            "tags": ["host-migration", "phase-3"]
         },
         {
             "specId": "SPEC-208",
@@ -525,10 +498,7 @@
             "status": "completed",
             "progress": "1/1",
             "path": "SPEC-208-web-accommodation-editor",
-            "tags": [
-                "host-migration",
-                "phase-4"
-            ],
+            "tags": ["host-migration", "phase-4"],
             "archived": true,
             "archivedAt": "2026-06-10",
             "note": "Mirror of specs/index.json. Feature shipped via PRs #1509/#1513/#1516; prod-readiness remediation merged to staging (#1528/#1529/#1533-via-#1540/#1534) + local e2e 6/6 PASS. No state.json with atomic tasks (progress 1/1 nominal). Closed 2026-06-10."
@@ -1005,6 +975,20 @@
             "base": "staging",
             "createdAt": "2026-06-22T21:55:01Z",
             "note": "Doc-only spec; tasks NOT atomized yet. 4 workstreams: transparency (confidence), onboarding, chat control/errors, layout decision. 'Bridge to full listing' explicitly out of scope."
+        },
+        {
+            "specId": "SPEC-204",
+            "title": "Accommodation gallery migration to relational table",
+            "status": "in-progress",
+            "progress": "2/29",
+            "path": "SPEC-204-accommodation-gallery-relational-migration",
+            "branch": "spec/SPEC-204-accommodation-gallery-relational-migration",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-204-accommodation-gallery-relational-migration",
+            "base": "staging",
+            "createdAt": "2026-06-22T00:00:00.000Z",
+            "tasksAtomizedAt": "2026-06-22T00:00:00.000Z",
+            "taskCount": 29,
+            "note": "Formalized + atomized 2026-06-22. Storage model = direct table-per-entity (accommodation_media, real FK); polymorphic + junction rejected. 3-phase dual-write (P1 create+backfill+write-both, P2 switch reads, P3 retire JSONB). Accommodation only; pattern reusable for other 5 gallery entities later. Spec still draft (not in-progress) until impl starts."
         }
     ],
     "standalone": {
