@@ -26,8 +26,15 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { usePlansQuery } from '@/features/billing-plans';
-import type { CreatePromoCodePayload, DiscountType, PromoCode } from '@/features/promo-codes';
+import {
+    type CreatePromoCodePayload,
+    type DiscountType,
+    type EffectKind,
+    type PromoCode,
+    buildEffect
+} from '@/features/promo-codes';
 import { useTranslations } from '@/hooks/use-translations';
+import { PromoEffectSchema } from '@repo/schemas';
 import { useState } from 'react';
 
 interface PromoCodeFormDialogProps {
@@ -47,12 +54,74 @@ function fromDateInput(value: string): string | null {
     return value ? new Date(value).toISOString() : null;
 }
 
+/**
+ * Derive the flat effect-state fields from a promo code being edited.
+ *
+ * Prefers the typed `effect` (SPEC-262) when present; otherwise falls back to
+ * the legacy `type` + `value` shape (treated as a one-shot discount) so codes
+ * created before the effect migration still hydrate correctly.
+ */
+function deriveEffectState(
+    promoCode: PromoCode | null
+): Pick<
+    CreatePromoCodePayload,
+    | 'effectKind'
+    | 'valueKind'
+    | 'discountValue'
+    | 'durationCycles'
+    | 'durationForever'
+    | 'extraDays'
+> {
+    const effect = promoCode?.effect;
+    // Note: fields that don't apply to a given effect kind carry harmless
+    // sentinel defaults (the form hides those inputs and `effectKind` is the
+    // submit-time discriminant), so they never reach the assembled effect.
+    if (effect?.kind === 'trial_extension') {
+        return {
+            effectKind: 'trial_extension',
+            valueKind: 'percentage',
+            discountValue: 0,
+            durationCycles: 1,
+            durationForever: false,
+            extraDays: effect.extraDays
+        };
+    }
+    if (effect?.kind === 'comp') {
+        return {
+            effectKind: 'comp',
+            valueKind: 'percentage',
+            discountValue: 0,
+            durationCycles: 1,
+            durationForever: false,
+            extraDays: 30
+        };
+    }
+    if (effect?.kind === 'discount') {
+        return {
+            effectKind: 'discount',
+            valueKind: effect.valueKind,
+            discountValue: effect.value,
+            durationCycles: effect.durationCycles ?? 1,
+            durationForever: effect.durationCycles === null,
+            extraDays: 30
+        };
+    }
+    // Legacy fallback (no typed effect): one-shot discount from type + value.
+    return {
+        effectKind: 'discount',
+        valueKind: promoCode?.type ?? 'percentage',
+        discountValue: promoCode?.value ?? 0,
+        durationCycles: 1,
+        durationForever: false,
+        extraDays: 30
+    };
+}
+
 function buildInitialState(promoCode: PromoCode | null): CreatePromoCodePayload {
     return {
         code: promoCode?.code ?? '',
         description: promoCode?.description ?? '',
-        discountType: promoCode?.type ?? 'percentage',
-        discountValue: promoCode?.value ?? 0,
+        ...deriveEffectState(promoCode),
         maxUses: promoCode?.maxUses ?? null,
         maxUsesPerUser: promoCode?.maxUsesPerUser ?? null,
         validFrom: promoCode?.validFrom ?? null,
@@ -80,12 +149,24 @@ export function PromoCodeFormDialog({
     const [formData, setFormData] = useState<CreatePromoCodePayload>(() =>
         buildInitialState(promoCode)
     );
+    const [effectError, setEffectError] = useState<string | null>(null);
 
     const { data: plansData } = usePlansQuery({ isActive: true });
     const plans = plansData?.items ?? [];
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
+        // On edit the effect is immutable (UpdatePromoCodeSchema is strict and
+        // ignores effect fields), so only validate it on create.
+        if (!isEdit) {
+            const parsed = PromoEffectSchema.safeParse(buildEffect(formData));
+            if (!parsed.success) {
+                setEffectError(t('admin-billing.promoCodes.form.effect.validationError'));
+                return;
+            }
+        }
+        setEffectError(null);
         onSubmit({ ...formData, code: formData.code.toUpperCase() });
     };
 
@@ -152,58 +233,182 @@ export function PromoCodeFormDialog({
                         />
                     </div>
 
-                    {/* Type and Value */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="type">
-                                {t('admin-billing.promoCodes.form.discountTypeLabel')}
-                            </Label>
-                            <Select
-                                value={formData.discountType}
-                                onValueChange={(value) =>
-                                    setFormData({
-                                        ...formData,
-                                        discountType: value as DiscountType
-                                    })
-                                }
-                            >
-                                <SelectTrigger id="type">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="percentage">
-                                        {t('admin-billing.promoCodes.form.typePercentage')}
-                                    </SelectItem>
-                                    <SelectItem value="fixed">
-                                        {t('admin-billing.promoCodes.form.typeFixed')}
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
+                    {/* Effect kind (SPEC-262) — immutable once created */}
+                    <div className="space-y-2">
+                        <Label htmlFor="effectKind">
+                            {t('admin-billing.promoCodes.form.effect.kindLabel')}
+                        </Label>
+                        <Select
+                            value={formData.effectKind}
+                            onValueChange={(value) =>
+                                setFormData({
+                                    ...formData,
+                                    effectKind: value as EffectKind
+                                })
+                            }
+                            disabled={isEdit}
+                        >
+                            <SelectTrigger id="effectKind">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="discount">
+                                    {t('admin-billing.promoCodes.form.effect.kindDiscount')}
+                                </SelectItem>
+                                <SelectItem value="trial_extension">
+                                    {t('admin-billing.promoCodes.form.effect.kindTrialExtension')}
+                                </SelectItem>
+                                <SelectItem value="comp">
+                                    {t('admin-billing.promoCodes.form.effect.kindComp')}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                        {isEdit && (
+                            <p className="text-muted-foreground text-xs">
+                                {t('admin-billing.promoCodes.form.effect.immutableHint')}
+                            </p>
+                        )}
+                    </div>
 
-                        <div className="space-y-2">
-                            <Label htmlFor="discountValue">
-                                {t('admin-billing.promoCodes.form.valueLabel')}{' '}
-                                {formData.discountType === 'percentage'
-                                    ? t('admin-billing.promoCodes.form.valuePercentageSuffix')
-                                    : t('admin-billing.promoCodes.form.valueFixedSuffix')}
+                    {/* discount params */}
+                    {formData.effectKind === 'discount' && (
+                        <div className="space-y-4 rounded-md border p-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="valueKind">
+                                        {t('admin-billing.promoCodes.form.discountTypeLabel')}
+                                    </Label>
+                                    <Select
+                                        value={formData.valueKind}
+                                        onValueChange={(value) =>
+                                            setFormData({
+                                                ...formData,
+                                                valueKind: value as DiscountType
+                                            })
+                                        }
+                                        disabled={isEdit}
+                                    >
+                                        <SelectTrigger id="valueKind">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="percentage">
+                                                {t('admin-billing.promoCodes.form.typePercentage')}
+                                            </SelectItem>
+                                            <SelectItem value="fixed">
+                                                {t('admin-billing.promoCodes.form.typeFixed')}
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="discountValue">
+                                        {t('admin-billing.promoCodes.form.valueLabel')}{' '}
+                                        {formData.valueKind === 'percentage'
+                                            ? t(
+                                                  'admin-billing.promoCodes.form.valuePercentageSuffix'
+                                              )
+                                            : t('admin-billing.promoCodes.form.valueFixedSuffix')}
+                                    </Label>
+                                    <Input
+                                        id="discountValue"
+                                        type="number"
+                                        value={formData.discountValue}
+                                        onChange={(e) =>
+                                            setFormData({
+                                                ...formData,
+                                                discountValue: Number(e.target.value)
+                                            })
+                                        }
+                                        min={1}
+                                        max={formData.valueKind === 'percentage' ? 100 : undefined}
+                                        disabled={isEdit}
+                                        required
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 items-end gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="durationCycles">
+                                        {t(
+                                            'admin-billing.promoCodes.form.effect.durationCyclesLabel'
+                                        )}
+                                    </Label>
+                                    <Input
+                                        id="durationCycles"
+                                        type="number"
+                                        value={
+                                            formData.durationForever
+                                                ? ''
+                                                : (formData.durationCycles ?? '')
+                                        }
+                                        onChange={(e) =>
+                                            setFormData({
+                                                ...formData,
+                                                durationCycles: e.target.value
+                                                    ? Number(e.target.value)
+                                                    : null
+                                            })
+                                        }
+                                        min={1}
+                                        disabled={isEdit || formData.durationForever}
+                                    />
+                                </div>
+                                <div className="flex items-center justify-between pb-2">
+                                    <Label htmlFor="durationForever">
+                                        {t('admin-billing.promoCodes.form.effect.foreverLabel')}
+                                    </Label>
+                                    <Switch
+                                        id="durationForever"
+                                        checked={formData.durationForever}
+                                        onCheckedChange={(checked) =>
+                                            setFormData({ ...formData, durationForever: checked })
+                                        }
+                                        disabled={isEdit}
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* trial_extension params */}
+                    {formData.effectKind === 'trial_extension' && (
+                        <div className="space-y-2 rounded-md border p-4">
+                            <Label htmlFor="extraDays">
+                                {t('admin-billing.promoCodes.form.effect.extraDaysLabel')}
                             </Label>
                             <Input
-                                id="discountValue"
+                                id="extraDays"
                                 type="number"
-                                value={formData.discountValue}
+                                value={formData.extraDays}
                                 onChange={(e) =>
                                     setFormData({
                                         ...formData,
-                                        discountValue: Number(e.target.value)
+                                        extraDays: Number(e.target.value)
                                     })
                                 }
                                 min={1}
-                                max={formData.discountType === 'percentage' ? 100 : undefined}
+                                disabled={isEdit}
                                 required
                             />
+                            <p className="text-muted-foreground text-xs">
+                                {t('admin-billing.promoCodes.form.effect.extraDaysHint')}
+                            </p>
                         </div>
-                    </div>
+                    )}
+
+                    {/* comp note */}
+                    {formData.effectKind === 'comp' && (
+                        <div className="rounded-md border p-4">
+                            <p className="text-muted-foreground text-sm">
+                                {t('admin-billing.promoCodes.form.effect.compNote')}
+                            </p>
+                        </div>
+                    )}
+
+                    {effectError && <p className="text-destructive text-sm">{effectError}</p>}
 
                     {/* Usage limits */}
                     <div className="grid grid-cols-2 gap-4">

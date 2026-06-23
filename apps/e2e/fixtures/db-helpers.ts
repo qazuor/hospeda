@@ -26,7 +26,7 @@ function resolveE2eDbUrl(): string {
     return (
         process.env.HOSPEDA_E2E_DATABASE_URL ??
         process.env.HOSPEDA_DATABASE_URL ??
-        'postgresql://hospeda_user:hospeda_pass@localhost:5436/hospeda_e2e'
+        'postgresql://hospeda_user:hospeda_pass@localhost:15433/hospeda_e2e'
     );
 }
 

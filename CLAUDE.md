@@ -570,9 +570,39 @@ Each app/package has its own `CLAUDE.md` with detailed instructions:
 
 ## Spec Workflow + Worktrees
 
-Cuando se inicie una **nueva spec formal** en este repo (vía `/task-master:spec`, `/sdd-new`, o creando un dir nuevo en `.qtm/specs/SPEC-NNN-slug/`):
+Hay **DOS fases separadas**, y el worktree se crea SOLO en la segunda. Crear un
+worktree clona node_modules (cientos de MB) + una DB por worktree; hacerlo solo
+para escribir los docs de una spec desperdicia disco al pedo. Por eso el worktree
+se difiere hasta que realmente se arranca la implementación.
 
-1. **Por default crear worktree, sin preguntar** (la política global de `~/.claude/CLAUDE.md` "preguntar primero" NO aplica para specs formales — el usuario eligió default-on para este caso).
+#### Fase 1 — Crear la spec (NUNCA se crea worktree)
+
+Cuando el usuario pide una **spec nueva** (vía `/task-master:spec`, `/spec`, o creando
+un dir nuevo en `.qtm/specs/SPEC-NNN-slug/`):
+
+1. **NO crear worktree ni el branch de implementación.** Trabajar en una **branch
+   ligera de docs**, sin worktree. Una branch de git es gratis (unos KB); lo caro
+   es el worktree (node_modules + DB), y eso NO se crea en esta fase.
+2. **Allocar el número** con la skill `spec-allocation` ANTES de crear el dir.
+3. **Generar los docs** en `.qtm/specs/SPEC-NNN-slug/` y actualizar
+   `.qtm/specs/index.json`, `.qtm/tasks/index.json` y `specs-prioritization.csv`
+   (reglas de sync de índices más arriba).
+4. **Versionar y mergear sin worktree**: desde el working tree actual,
+   `git fetch origin staging` + `git checkout -b spec/SPEC-NNN-docs origin/staging`,
+   commitear SOLO los archivos de la spec, y abrir PR a `staging` con título
+   `[SPEC-NNN] docs(spec): ...`. La spec queda en staging sin haber materializado
+   un worktree.
+5. La spec existe y está versionada, pero **sin entorno de desarrollo todavía**.
+   Eso es deliberado: el entorno se arma recién al implementar.
+
+#### Fase 2 — Implementar la spec (RECIÉN acá se crea el worktree)
+
+Cuando se arranca la **implementación** de una spec ya creada (el usuario lo pide
+explícitamente, o se empieza a tocar código):
+
+1. **Crear worktree + branch de implementación por default, sin preguntar** (la
+   política global de `~/.claude/CLAUDE.md` "preguntar primero" NO aplica para
+   implementación de specs formales — el usuario eligió default-on para este caso).
 2. **Nombre**: `spec-<NNN>-<slug>` (ej: `spec-098-vps-migration`).
 3. **Path**: `../hospeda-spec-<NNN>-<slug>` (al lado del repo, no dentro).
 4. **Branch**: `spec/SPEC-<NNN>-<slug>` (sigue convención de specs del proyecto).
@@ -595,10 +625,12 @@ Bootstrap (una vez por máquina): `bash ~/.claude/skills/worktree/scripts/wt-db.
 
 > Sub-agentes: NO heredan el catálogo de skills. Si delegás trabajo de worktree, pasales en el prompt el path `~/.claude/skills/worktree/SKILL.md` y esta sección.
 
-### Excepciones (NO crear worktree, trabajar en directorio actual)
+### Excepciones (NO crear worktree ni siquiera al implementar)
 
-- Specs **deltas** o continuaciones de spec existente — ya tienen su worktree.
+Incluso en la Fase 2, NO crear worktree cuando:
+
+- Es una spec **delta** o continuación de una spec existente — ya tiene su worktree.
 - Specs marcadas como `status: draft-exploration` en frontmatter (todavía exploratorias, no formales).
-- Trabajo de SOLO documentación / lectura sobre la spec (sin edits a código).
+- Trabajo de SOLO documentación / lectura (sin edits a código) — incluida la Fase 1 (crear la spec), que por definición NUNCA crea worktree.
 
 Para cualquier OTRO trabajo que NO sea spec formal, aplica la política global "Worktree Policy" en `~/.claude/CLAUDE.md` (preguntar primero al usuario si quiere worktree).

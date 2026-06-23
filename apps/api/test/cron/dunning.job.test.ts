@@ -22,10 +22,27 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // Module mocks
 // ---------------------------------------------------------------------------
 
+// @sentry/node requires @sentry/opentelemetry at import time, which is not
+// available in the test environment. Stub it so transitive imports from
+// commerce-reconcile.service.ts (which uses service-core → renewal module)
+// don't fail.
+vi.mock('@sentry/node', () => ({
+    captureException: vi.fn(),
+    captureMessage: vi.fn()
+}));
+
+// commerce-reconcile.service imports @repo/service-core which transitively
+// imports @sentry/node. We mock the whole module since dunning tests don't
+// test commerce reconciliation (that's tested in its own suite).
+vi.mock('../../src/services/commerce-reconcile.service', () => ({
+    reconcileCommerceListingForSubscription: vi.fn().mockResolvedValue(undefined)
+}));
+
 const {
     mockGetQZPayBilling,
     mockCreateSubscriptionLifecycle,
     mockDbInsert,
+    mockDbExecute,
     mockLoadBillingSettings,
     mockWithTransaction,
     mockClearEntitlementCache,
@@ -33,6 +50,9 @@ const {
 } = vi.hoisted(() => {
     const mockValues = vi.fn().mockResolvedValue(undefined);
     const mockInsert = vi.fn().mockReturnValue({ values: mockValues });
+    // Default: advisory-lock acquire shape. SPEC-262 guard tests override this
+    // per-test to return a comp / discounted subscription row.
+    const dbExecute = vi.fn().mockResolvedValue({ rows: [{ acquired: true }] });
     const tx = {
         execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] })
     };
@@ -41,6 +61,7 @@ const {
         mockGetQZPayBilling: vi.fn(),
         mockCreateSubscriptionLifecycle: vi.fn(),
         mockDbInsert: mockInsert,
+        mockDbExecute: dbExecute,
         mockLoadBillingSettings: vi.fn().mockResolvedValue({
             gracePeriodDays: 7,
             maxPaymentRetries: 4,
@@ -81,7 +102,7 @@ vi.mock('../../src/utils/logger', () => ({
 vi.mock('@repo/db', () => ({
     getDb: vi.fn().mockReturnValue({
         insert: mockDbInsert,
-        execute: vi.fn().mockResolvedValue({ rows: [{ acquired: true }] })
+        execute: mockDbExecute
     }),
     withTransaction: mockWithTransaction,
     billingDunningAttempts: { _: 'billingDunningAttempts' },
@@ -176,6 +197,9 @@ function makeLifecycleMock(
 describe('dunningJob', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        // Restore the default advisory-lock acquire shape after clearAllMocks
+        // (which wipes the per-test SPEC-262 guard overrides).
+        mockDbExecute.mockResolvedValue({ rows: [{ acquired: true }] });
     });
 
     // -----------------------------------------------------------------------
@@ -448,6 +472,150 @@ describe('dunningJob', () => {
             expect(typeof configArg.processPayment).toBe('function');
             expect(typeof configArg.getDefaultPaymentMethod).toBe('function');
             expect(typeof configArg.onEvent).toBe('function');
+        });
+
+        // SPEC-262 T-007: processPayment must NOT charge a comp / actively
+        // multi-cycle-discounted subscription (AC-2.1, risk mitigations §13).
+        it('processPayment skips a comp subscription (no MP charge)', async () => {
+            // Arrange
+            const billing = makeBillingMock();
+            mockGetQZPayBilling.mockReturnValue(billing);
+            const lifecycle = makeLifecycleMock();
+            mockCreateSubscriptionLifecycle.mockReturnValue(lifecycle);
+
+            await dunningJob.handler(makeCronContext());
+            const [, , configArg] = mockCreateSubscriptionLifecycle.mock.calls[0]!;
+
+            // The guard reads billing_subscriptions; return a comp row.
+            mockDbExecute.mockResolvedValueOnce({
+                rows: [
+                    {
+                        status: 'comp',
+                        promo_code_id: 'pc-1',
+                        promo_effect_remaining_cycles: null
+                    }
+                ]
+            });
+            const processSpy = billing.payments.process as ReturnType<typeof vi.fn>;
+            processSpy.mockClear();
+
+            // Act — invoke the captured processPayment callback directly.
+            const result = await configArg.processPayment({
+                customerId: 'cust-1',
+                amount: 10000,
+                currency: 'ARS',
+                paymentMethodId: 'pm-1',
+                metadata: { subscriptionId: 'sub-comp', type: 'retry' }
+            });
+
+            // Assert — short-circuited as success, MP never charged.
+            expect(result.success).toBe(true);
+            expect(processSpy).not.toHaveBeenCalled();
+        });
+
+        it('processPayment skips an actively-discounted subscription (remaining cycles > 0)', async () => {
+            const billing = makeBillingMock();
+            mockGetQZPayBilling.mockReturnValue(billing);
+            const lifecycle = makeLifecycleMock();
+            mockCreateSubscriptionLifecycle.mockReturnValue(lifecycle);
+
+            await dunningJob.handler(makeCronContext());
+            const [, , configArg] = mockCreateSubscriptionLifecycle.mock.calls[0]!;
+
+            mockDbExecute.mockResolvedValueOnce({
+                rows: [
+                    {
+                        status: 'active',
+                        promo_code_id: 'pc-1',
+                        promo_effect_remaining_cycles: 2
+                    }
+                ]
+            });
+            const processSpy = billing.payments.process as ReturnType<typeof vi.fn>;
+            processSpy.mockClear();
+
+            const result = await configArg.processPayment({
+                customerId: 'cust-1',
+                amount: 10000,
+                currency: 'ARS',
+                paymentMethodId: 'pm-1',
+                metadata: { subscriptionId: 'sub-disc', type: 'retry' }
+            });
+
+            expect(result.success).toBe(true);
+            expect(processSpy).not.toHaveBeenCalled();
+        });
+
+        it('processPayment skips a forever-discount subscription (S2: remaining_cycles=null, promo_code_id set)', async () => {
+            // S2 fix: the previous guard required remaining_cycles !== null && > 0
+            // which silently skipped the forever-discount case (remaining=null + promo_code_id set).
+            const billing = makeBillingMock();
+            mockGetQZPayBilling.mockReturnValue(billing);
+            const lifecycle = makeLifecycleMock();
+            mockCreateSubscriptionLifecycle.mockReturnValue(lifecycle);
+
+            await dunningJob.handler(makeCronContext());
+            const [, , configArg] = mockCreateSubscriptionLifecycle.mock.calls[0]!;
+
+            // Forever discount: promo_code_id set, remaining = null (not comp).
+            mockDbExecute.mockResolvedValueOnce({
+                rows: [
+                    {
+                        status: 'active',
+                        promo_code_id: 'pc-forever',
+                        promo_effect_remaining_cycles: null
+                    }
+                ]
+            });
+            const processSpy = billing.payments.process as ReturnType<typeof vi.fn>;
+            processSpy.mockClear();
+
+            const result = await configArg.processPayment({
+                customerId: 'cust-1',
+                amount: 10000,
+                currency: 'ARS',
+                paymentMethodId: 'pm-1',
+                metadata: { subscriptionId: 'sub-forever', type: 'retry' }
+            });
+
+            // Forever-discount sub must be skipped (active-discount), NOT charged.
+            expect(result.success).toBe(true);
+            expect(processSpy).not.toHaveBeenCalled();
+        });
+
+        it('processPayment proceeds normally for a plain past-due subscription', async () => {
+            const billing = makeBillingMock();
+            mockGetQZPayBilling.mockReturnValue(billing);
+            const lifecycle = makeLifecycleMock();
+            mockCreateSubscriptionLifecycle.mockReturnValue(lifecycle);
+
+            await dunningJob.handler(makeCronContext());
+            const [, , configArg] = mockCreateSubscriptionLifecycle.mock.calls[0]!;
+
+            // Guard reads a plain active row with no discount → not skipped.
+            mockDbExecute.mockResolvedValueOnce({
+                rows: [
+                    {
+                        status: 'past_due',
+                        promo_code_id: null,
+                        promo_effect_remaining_cycles: null
+                    }
+                ]
+            });
+            const processSpy = billing.payments.process as ReturnType<typeof vi.fn>;
+            processSpy.mockClear();
+            processSpy.mockResolvedValue({ id: 'pay-1', status: 'succeeded' });
+
+            const result = await configArg.processPayment({
+                customerId: 'cust-1',
+                amount: 10000,
+                currency: 'ARS',
+                paymentMethodId: 'pm-1',
+                metadata: { subscriptionId: 'sub-pastdue', type: 'retry' }
+            });
+
+            expect(processSpy).toHaveBeenCalledOnce();
+            expect(result.success).toBe(true);
         });
     });
 

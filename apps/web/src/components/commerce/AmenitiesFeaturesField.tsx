@@ -1,3 +1,4 @@
+import type { AmenityData } from '@/lib/api/types';
 /**
  * @file AmenitiesFeaturesField.tsx
  * @description Controlled amenity + feature multi-select for the commerce owner
@@ -12,7 +13,7 @@
  *   - Features:  `accommodations.featureNames.<slug>`
  * The slug falls through as raw fallback when no i18n key is found.
  */
-import type { AmenityData } from '@/lib/api/types';
+import { translateAmenityName } from '@/lib/catalog-names';
 import type { JSX } from 'react';
 
 /** Translator function shape (matches the editor's `createTranslations().t`). */
@@ -70,7 +71,7 @@ export function AmenitiesFeaturesField({
                                     checked={selectedAmenityIds.has(amenity.id)}
                                     onChange={() => onToggleAmenity(amenity.id)}
                                 />
-                                {t(`accommodations.amenityNames.${amenity.slug}`, amenity.slug)}
+                                {translateAmenityName({ t, name: amenity.slug })}
                             </label>
                         ))}
                     </div>

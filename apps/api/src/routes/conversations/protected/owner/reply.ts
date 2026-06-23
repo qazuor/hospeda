@@ -10,6 +10,7 @@
 import { accommodations, conversations, getDb } from '@repo/db';
 import {
     CreateMessageSchema,
+    MessageSchema,
     MessageSenderTypeEnum,
     PermissionEnum,
     ServiceErrorCode
@@ -138,7 +139,7 @@ router.post('/:id/messages', async (c) => {
             );
         }
 
-        return createResponse(msgResult.data, c, 201);
+        return createResponse(msgResult.data, c, 201, MessageSchema);
     } catch (error) {
         return handleRouteError(error, c);
     }

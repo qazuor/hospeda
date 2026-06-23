@@ -4,19 +4,22 @@
  * Triggers a manual reputation refresh for all enabled platforms.
  *
  * SPEC-237 T-008 — protected owner route.
+ * SPEC-250 Phase 5 — updated to return 202 when Apify runs are enqueued async.
  * Permission: ACCOMMODATION_UPDATE_OWN (service enforces ownership).
  *
- * Rate-limit mapping:
- *   ServiceErrorCode.QUOTA_EXCEEDED → HTTP 429
- *   The Retry-After header is set when the service returns a windowSeconds hint
- *   in `error.details.retryAfter`.
+ * Status code mapping:
+ *   HTTP 202 — at least one platform enqueued asynchronously (enqueuedAsync.length > 0).
+ *   HTTP 200 — all platforms resolved inline (no async enqueue).
+ *   HTTP 429 — rate-limit window active; includes Retry-After header.
+ *   HTTP 403 — actor does not own the accommodation.
+ *   HTTP 404 — accommodation not found.
  */
 import {
     AccommodationExternalListingModel,
     AccommodationExternalReputationModel,
     AccommodationModel
 } from '@repo/db';
-import { AccommodationIdSchema, ServiceErrorCode } from '@repo/schemas';
+import { AccommodationIdSchema, ExternalPlatformEnumSchema, ServiceErrorCode } from '@repo/schemas';
 import { AccommodationExternalReputationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -39,15 +42,26 @@ const reputationService = new AccommodationExternalReputationService(
     }
 );
 
-/** Shape returned by a successful refresh call. */
-const RefreshResultSchema = z.object({
-    succeeded: z.array(z.string()),
-    failed: z.array(
-        z.object({
-            platform: z.string(),
-            error: z.string()
-        })
-    )
+/**
+ * Schema for a single inline failure entry within a refresh result.
+ * Describes a platform that could not be resolved either inline or via async enqueue.
+ */
+const RefreshFailureEntrySchema = z.object({
+    platform: ExternalPlatformEnumSchema,
+    error: z.string()
+});
+
+/**
+ * Shape returned by a successful refresh call (SPEC-250 Phase 5).
+ *
+ * - inlineSucceeded: platforms resolved synchronously; data persisted immediately.
+ * - enqueuedAsync: platforms for which an Apify run was enqueued; rows have run_status='pending'.
+ * - inlineFailed: platforms that failed both inline and async paths; rows have fetch_status='error'.
+ */
+export const RefreshResultSchema = z.object({
+    inlineSucceeded: z.array(ExternalPlatformEnumSchema),
+    enqueuedAsync: z.array(ExternalPlatformEnumSchema),
+    inlineFailed: z.array(RefreshFailureEntrySchema)
 });
 
 /**
@@ -55,7 +69,8 @@ const RefreshResultSchema = z.object({
  *
  * Triggers a manual fetch from all enabled external platforms.
  *
- * - Returns 200 with {@link RefreshResult} on success (including partial failures).
+ * - Returns **202** when at least one platform was enqueued asynchronously.
+ * - Returns **200** when all platforms resolved inline (no async enqueue).
  * - Returns 429 with a Retry-After hint when the rate-limit window is active.
  * - Returns 403 when the actor does not own the accommodation.
  * - Returns 404 when the accommodation does not exist.
@@ -65,14 +80,14 @@ export const protectedRefreshReputationRoute = createProtectedRoute({
     path: '/{id}/external-reputation/refresh',
     summary: 'Refresh external reputation',
     description:
-        'Triggers a manual fetch of reputation data from all enabled external platforms for the accommodation. Rate-limited per accommodation.',
+        'Triggers a manual fetch of reputation data from all enabled external platforms for the accommodation. Returns 202 when Apify runs are enqueued asynchronously, 200 when all resolved inline. Rate-limited per accommodation.',
     tags: ['Accommodations', 'External Reputation'],
     requestParams: {
         id: AccommodationIdSchema
     },
     responseSchema: RefreshResultSchema,
     // POST to refresh — treat as 200 (not 201) because it triggers an action,
-    // not a resource creation.
+    // not a resource creation. The 202 case is handled directly in the handler.
     successStatusCode: 200,
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
@@ -121,6 +136,28 @@ export const protectedRefreshReputationRoute = createProtectedRoute({
             );
         }
 
-        return result.data;
+        const data = result.data;
+
+        // HTTP 202: at least one platform was enqueued asynchronously.
+        // Return the response directly because createCRUDRoute only supports 200 | 201
+        // as typed status codes, and the route factory passes it to c.json() which
+        // accepts any number. We bypass the factory's status selection by returning
+        // a Response from the handler (the factory checks `result instanceof Response`).
+        if (data.enqueuedAsync.length > 0) {
+            return ctx.json(
+                {
+                    success: true,
+                    data,
+                    metadata: {
+                        timestamp: new Date().toISOString(),
+                        requestId: ctx.get('requestId') || 'unknown'
+                    }
+                },
+                202
+            );
+        }
+
+        // HTTP 200: all platforms resolved inline.
+        return data;
     }
 });

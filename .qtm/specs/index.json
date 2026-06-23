@@ -1078,7 +1078,7 @@
             "title": "Accommodation gallery migration to relational table",
             "type": "refactor",
             "complexity": "high",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-204-accommodation-gallery-relational-migration",
             "created": "2026-06-06T00:00:00Z",
             "dependsOn": ["SPEC-167"],
@@ -1185,12 +1185,13 @@
             "specId": "SPEC-210",
             "title": "Public Response Tier Enforcement — make schema-tier serialization mandatory and fail-closed so public endpoints can never leak undeclared DB columns",
             "type": "refactor",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": "high",
             "path": "SPEC-210-public-response-tier-enforcement",
             "base": "staging",
             "priority": "P1",
-            "archived": false
+            "archived": true,
+            "archivedAt": "2026-06-23T00:00:00.000Z"
         },
         {
             "specId": "SPEC-213",
@@ -1579,7 +1580,7 @@
             "title": "Asynchronous external reputation refresh (Apify async API + polling)",
             "type": "improvement",
             "complexity": "high",
-            "status": "draft",
+            "status": "completed",
             "path": "SPEC-250-external-reputation-async-refresh",
             "created": "2026-06-20T00:00:00.000Z",
             "base": "staging",
@@ -1592,7 +1593,10 @@
                 "async",
                 "accommodation",
                 "SPEC-237-followup"
-            ]
+            ],
+            "archived": true,
+            "archivedAt": "2026-06-23",
+            "completionRef": "PR #1779 (merge ef0846f0e)"
         },
         {
             "specId": "SPEC-257",
@@ -1644,7 +1648,9 @@
             "slug": "staging-smoke-testing",
             "type": "testing",
             "complexity": "high",
-            "status": "draft",
+            "status": "completed",
+            "archived": true,
+            "archivedAt": "2026-06-23",
             "path": "SPEC-259-staging-smoke-testing",
             "created": "2026-06-22T15:39:13Z",
             "base": "staging",
@@ -1667,7 +1673,7 @@
             "slug": "ai-usage-dashboard",
             "type": "feature",
             "complexity": "high",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-260-ai-usage-dashboard",
             "created": "2026-06-22T00:00:00Z",
             "base": "staging",
@@ -1719,7 +1725,9 @@
             "slug": "commerce-e2e-stabilization",
             "type": "chore",
             "complexity": "medium",
-            "status": "draft",
+            "status": "completed",
+            "archived": true,
+            "archivedAt": "2026-06-23T07:38:11Z",
             "path": "SPEC-261-commerce-e2e-stabilization",
             "created": "2026-06-22T00:00:00Z",
             "base": "staging",
@@ -1781,6 +1789,32 @@
                 "beta-90",
                 "spec-249-followup"
             ]
+        },
+        {
+            "specId": "SPEC-254",
+            "title": "Social Automation Backend",
+            "type": "feature",
+            "complexity": "high",
+            "status": "completed",
+            "path": "SPEC-254-social-media-publish",
+            "created": "2026-06-20T00:00:00.000Z",
+            "base": "staging",
+            "origin": "Design session 2026-06-20: replaces Airtable-based social automation (Custom GPT drafts -> backend -> admin review -> Make publish). Phases 1-4 core. Renumbered from SPEC-250. Follow-ups: SPEC-255 Airtable migration, SPEC-256 Custom-GPT-in-platform spike.",
+            "tags": [
+                "social",
+                "automation",
+                "api",
+                "admin",
+                "cron",
+                "make",
+                "gpt",
+                "cloudinary",
+                "backend",
+                "permissions"
+            ],
+            "archived": true,
+            "archivedAt": "2026-06-23",
+            "archiveNote": "Merged to staging via PR #1782 (52/52). Migration renumbered to 0026 after staging advanced."
         }
     ]
 }

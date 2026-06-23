@@ -1,0 +1,615 @@
+{
+    "dashboard": {
+        "title": "Dashboard Social",
+        "kpis": {
+            "totalPosts": "Posts totais",
+            "pendingReview": "Em revisão",
+            "scheduled": "Agendados",
+            "publishedLast30Days": "Publicados (30 dias)",
+            "failedActionNeeded": "Falharam"
+        },
+        "approvalQueue": {
+            "title": "Fila de aprovação",
+            "empty": "Nenhum post aguardando aprovação",
+            "approve": "Aprovar",
+            "approving": "Aprovando...",
+            "viewAll": "Ver todos"
+        },
+        "recentFailures": {
+            "title": "Falhas recentes",
+            "empty": "Nenhuma falha recente",
+            "platform": "Plataforma",
+            "post": "Post",
+            "error": "Erro",
+            "retries_one": "{{count}} tentativa",
+            "retries_other": "{{count}} tentativas",
+            "viewPost": "Ver post"
+        },
+        "webhookAlert": {
+            "title": "Webhook do Make não configurado",
+            "description": "A URL do webhook do Make não está configurada. Os posts não serão publicados automaticamente até que seja configurada.",
+            "configure": "Configurar agora"
+        },
+        "error": "Erro ao carregar o dashboard",
+        "loading": "Carregando dashboard..."
+    },
+    "posts": {
+        "title": "Posts Sociais",
+        "list": {
+            "loading": "Carregando posts sociais...",
+            "error": "Erro ao carregar posts sociais",
+            "empty": "Nenhum post social encontrado",
+            "emptyFiltered": "Nenhum post corresponde aos filtros aplicados",
+            "clearFilters": "Limpar filtros",
+            "results_one": "{{count}} resultado",
+            "results_other": "{{count}} resultados",
+            "prevPage": "Anterior",
+            "nextPage": "Próximo",
+            "pagination": "Página {{page}} de {{totalPages}} ({{total}} total)"
+        },
+        "table": {
+            "ariaLabel": "Lista de posts sociais",
+            "colTitle": "Título",
+            "colStatus": "Status",
+            "colApprovalStatus": "Aprovação",
+            "colPlatforms": "Plataformas",
+            "colScheduledAt": "Agendado para",
+            "colActions": "Ações",
+            "noScheduled": "Não agendado"
+        },
+        "filters": {
+            "search": "Buscar",
+            "searchPlaceholder": "Buscar por título...",
+            "status": "Status do pipeline",
+            "approvalStatus": "Status de aprovação",
+            "platform": "Plataforma",
+            "all": "Todos"
+        },
+        "status": {
+            "DRAFT": "Rascunho",
+            "NEEDS_REVIEW": "Em revisão",
+            "APPROVED": "Aprovado",
+            "SCHEDULED": "Agendado",
+            "READY_TO_PUBLISH": "Pronto para publicar",
+            "PUBLISHING": "Publicando",
+            "PUBLISHED": "Publicado",
+            "FAILED": "Falhou",
+            "PAUSED": "Pausado",
+            "ARCHIVED": "Arquivado"
+        },
+        "approvalStatus": {
+            "PENDING": "Pendente",
+            "APPROVED": "Aprovado",
+            "REJECTED": "Rejeitado",
+            "CHANGES_REQUESTED": "Alterações solicitadas"
+        },
+        "platforms": {
+            "INSTAGRAM": "Instagram",
+            "FACEBOOK": "Facebook",
+            "X": "X (Twitter)"
+        },
+        "actions": {
+            "approve": "Aprovar",
+            "approving": "Aprovando...",
+            "approveSuccess": "Post aprovado com sucesso",
+            "approveError": "Erro ao aprovar o post"
+        },
+        "detail": {
+            "notFound": "Post não encontrado",
+            "notFoundDesc": "O post que você está procurando não existe ou foi excluído.",
+            "loadingError": "Erro ao carregar o post",
+            "backToList": "Voltar à lista",
+            "paused": "Pausado",
+            "createdAt": "Criado",
+            "scheduledAt": "Agendado para",
+            "tabsLabel": "Seções do post",
+            "delete": {
+                "label": "Arquivar",
+                "editLabel": "Editar",
+                "confirmTitle": "Arquivar post",
+                "confirmDesc": "Esta ação arquivará o post e o excluirá das visualizações públicas. Pode ser restaurado a partir do banco de dados.",
+                "cancel": "Cancelar",
+                "confirm": "Arquivar",
+                "deleting": "Arquivando..."
+            },
+            "tabs": {
+                "content": "Conteúdo",
+                "media": "Mídia",
+                "targets": "Destinos",
+                "logs": "Logs",
+                "audit": "Auditoria"
+            },
+            "content": {
+                "caption": "Legenda base",
+                "finalCaption": "Legenda final",
+                "finalCaptionEmpty": "Sem legenda final",
+                "finalHashtags": "Hashtags finais",
+                "finalHashtagsEmpty": "Sem hashtags",
+                "footer": "Rodapé",
+                "footerEmpty": "Sem rodapé",
+                "pillar": "Pilar de conteúdo",
+                "pillarEmpty": "Sem pilar",
+                "notes": "Notas",
+                "notesEmpty": "Sem notas",
+                "internalNotes": "Notas internas",
+                "internalNotesEmpty": "Sem notas internas",
+                "campaign": "Campanha",
+                "batch": "Lote",
+                "audience": "Audiência",
+                "gptHashtags": "Hashtags sugeridas pelo GPT",
+                "gptHashtagsEmpty": "Sem sugestões do GPT",
+                "promoteButton": "Promover"
+            },
+            "media": {
+                "empty": "Sem mídia associada",
+                "pendingUpload": "Upload pendente",
+                "position": "Posição {{pos}}"
+            },
+            "targets": {
+                "empty": "Sem destinos de plataforma",
+                "platform": "Plataforma",
+                "format": "Formato",
+                "status": "Status",
+                "scheduledAt": "Agendado",
+                "publishedAt": "Publicado",
+                "externalUrl": "Ver publicação",
+                "lastError": "Último erro",
+                "noScheduled": "Não agendado",
+                "noPublished": "Não publicado",
+                "noError": "Sem erros"
+            },
+            "logs": {
+                "empty": "Sem histórico de publicação",
+                "platform": "Plataforma",
+                "format": "Formato",
+                "status": "Status",
+                "message": "Mensagem",
+                "createdAt": "Data",
+                "noMessage": "Sem mensagem"
+            },
+            "audit": {
+                "empty": "Sem eventos de auditoria",
+                "eventType": "Evento",
+                "actor": "Ator",
+                "createdAt": "Data",
+                "systemActor": "Sistema"
+            },
+            "actions": {
+                "approve": "Aprovar",
+                "approving": "Aprovando...",
+                "approveSuccess": "Post aprovado",
+                "approveError": "Erro ao aprovar",
+                "approveMissingMedia": "O post precisa de mídia antes de ser aprovado",
+                "approveInvalidState": "Transição de estado inválida",
+                "reject": "Rejeitar",
+                "rejecting": "Rejeitando...",
+                "rejectSuccess": "Post rejeitado",
+                "rejectError": "Erro ao rejeitar",
+                "rejectReason": "Motivo da rejeição",
+                "rejectReasonPlaceholder": "Informe o motivo...",
+                "requestChanges": "Solicitar alterações",
+                "requestingChanges": "Enviando...",
+                "requestChangesSuccess": "Alterações solicitadas",
+                "requestChangesError": "Erro ao solicitar alterações",
+                "requestChangesFeedback": "Comentários",
+                "requestChangesFeedbackPlaceholder": "Descreva as alterações necessárias...",
+                "schedule": "Agendar",
+                "scheduling": "Agendando...",
+                "scheduleSuccess": "Post agendado",
+                "scheduleError": "Erro ao agendar",
+                "scheduleAt": "Data e hora",
+                "scheduleTimezone": "Fuso horário",
+                "markReady": "Marcar como pronto",
+                "markingReady": "Marcando...",
+                "markReadySuccess": "Post pronto para publicar",
+                "markReadyError": "Erro ao marcar como pronto",
+                "pause": "Pausar",
+                "pausing": "Pausando...",
+                "pauseSuccess": "Post pausado",
+                "pauseError": "Erro ao pausar",
+                "unpause": "Retomar",
+                "unpausing": "Retomando...",
+                "unpauseSuccess": "Post retomado",
+                "unpauseError": "Erro ao retomar",
+                "archive": "Arquivar",
+                "archiving": "Arquivando...",
+                "archiveSuccess": "Post arquivado",
+                "archiveError": "Erro ao arquivar",
+                "approveAriaLabel": "Aprovar a publicação {title}",
+                "confirmTitle": "Confirmar ação",
+                "confirmCancel": "Cancelar",
+                "confirmAction": "Confirmar"
+            },
+            "promoteHashtag": {
+                "title": "Promover hashtag",
+                "desc": "Promova esta hashtag para o catálogo gerenciado.",
+                "hashtagLabel": "Hashtag",
+                "categoryLabel": "Categoria",
+                "categoryPlaceholder": "Ex: travel, gastronomy...",
+                "platformLabel": "Plataforma (opcional)",
+                "platformAll": "Todas as plataformas",
+                "priorityLabel": "Prioridade (opcional)",
+                "submit": "Promover",
+                "submitting": "Promovendo...",
+                "cancel": "Cancelar",
+                "successNew": "Hashtag {{hashtag}} adicionada ao catálogo",
+                "successExisting": "Hashtag {{hashtag}} já existe no catálogo",
+                "error": "Erro ao promover hashtag"
+            }
+        }
+    },
+    "hashtags": {
+        "title": "Catálogo de Hashtags",
+        "createBtn": "Nova hashtag",
+        "results_one": "{{count}} resultado",
+        "results_other": "{{count}} resultados",
+        "filters": {
+            "search": "Buscar",
+            "searchPlaceholder": "Buscar hashtag...",
+            "platform": "Plataforma",
+            "active": "Status",
+            "all": "Todos",
+            "activeOnly": "Somente ativos",
+            "inactiveOnly": "Somente inativos"
+        },
+        "list": {
+            "error": "Erro ao carregar hashtags",
+            "empty": "Nenhuma hashtag no catálogo",
+            "emptyFiltered": "Nenhuma hashtag corresponde aos filtros",
+            "clearFilters": "Limpar filtros",
+            "prevPage": "Anterior",
+            "nextPage": "Próximo",
+            "pagination": "Página {{page}} de {{totalPages}} ({{total}} total)"
+        },
+        "table": {
+            "ariaLabel": "Catálogo de hashtags",
+            "colHashtag": "Hashtag",
+            "colCategory": "Categoria",
+            "colPlatform": "Plataforma",
+            "colPriority": "Prioridade",
+            "colActive": "Ativo",
+            "colActions": "Ações",
+            "allPlatforms": "Todas",
+            "yes": "Sim",
+            "no": "Não",
+            "edit": "Editar",
+            "delete": "Excluir"
+        },
+        "form": {
+            "createTitle": "Nova hashtag",
+            "createDesc": "Adicione uma hashtag ao catálogo gerenciado.",
+            "editTitle": "Editar hashtag",
+            "editDesc": "Atualize os dados da hashtag.",
+            "hashtagLabel": "Hashtag",
+            "categoryLabel": "Categoria",
+            "platformLabel": "Plataforma",
+            "platformAll": "Todas as plataformas",
+            "priorityLabel": "Prioridade",
+            "activeLabel": "Ativo",
+            "notesLabel": "Notas",
+            "cancel": "Cancelar",
+            "saving": "Salvando...",
+            "saveCreate": "Criar",
+            "saveEdit": "Salvar",
+            "conflictError": "Já existe uma hashtag com esse texto normalizado. Altere a hashtag e tente novamente."
+        },
+        "delete": {
+            "title": "Excluir hashtag",
+            "desc": "Tem certeza que deseja excluir a hashtag {{name}}?",
+            "cancel": "Cancelar",
+            "confirm": "Excluir",
+            "deleting": "Excluindo..."
+        }
+    },
+    "footers": {
+        "title": "Catálogo de Footers",
+        "createBtn": "Novo footer",
+        "results_one": "{{count}} resultado",
+        "results_other": "{{count}} resultados",
+        "filters": {
+            "search": "Buscar",
+            "searchPlaceholder": "Buscar footer...",
+            "platform": "Plataforma",
+            "active": "Status",
+            "all": "Todos",
+            "activeOnly": "Somente ativos",
+            "inactiveOnly": "Somente inativos"
+        },
+        "list": {
+            "error": "Erro ao carregar footers",
+            "empty": "Nenhum footer no catálogo",
+            "emptyFiltered": "Nenhum footer corresponde aos filtros",
+            "clearFilters": "Limpar filtros",
+            "prevPage": "Anterior",
+            "nextPage": "Próximo",
+            "pagination": "Página {{page}} de {{totalPages}} ({{total}} total)"
+        },
+        "table": {
+            "ariaLabel": "Catálogo de footers",
+            "colName": "Nome",
+            "colContent": "Conteúdo",
+            "colPlatform": "Plataforma",
+            "colPriority": "Prioridade",
+            "colDefault": "Padrão",
+            "colActive": "Ativo",
+            "colActions": "Ações",
+            "allPlatforms": "Todas",
+            "yes": "Sim",
+            "no": "Não",
+            "edit": "Editar",
+            "delete": "Excluir"
+        },
+        "form": {
+            "createTitle": "Novo footer",
+            "createDesc": "Adicione um footer ao catálogo.",
+            "editTitle": "Editar footer",
+            "editDesc": "Atualize os dados do footer.",
+            "nameLabel": "Nome",
+            "contentLabel": "Conteúdo",
+            "platformLabel": "Plataforma",
+            "platformAll": "Todas as plataformas",
+            "priorityLabel": "Prioridade",
+            "activeLabel": "Ativo",
+            "isDefaultLabel": "Padrão",
+            "notesLabel": "Notas",
+            "cancel": "Cancelar",
+            "saving": "Salvando...",
+            "saveCreate": "Criar",
+            "saveEdit": "Salvar"
+        },
+        "delete": {
+            "title": "Excluir footer",
+            "desc": "Tem certeza que deseja excluir o footer {{name}}?",
+            "cancel": "Cancelar",
+            "confirm": "Excluir",
+            "deleting": "Excluindo..."
+        }
+    },
+    "campaigns": {
+        "title": "Catálogo de Campanhas",
+        "createBtn": "Nova campanha",
+        "results_one": "{{count}} resultado",
+        "results_other": "{{count}} resultados",
+        "filters": {
+            "search": "Buscar",
+            "searchPlaceholder": "Buscar campanha...",
+            "active": "Status",
+            "all": "Todos",
+            "activeOnly": "Somente ativas",
+            "inactiveOnly": "Somente inativas"
+        },
+        "list": {
+            "error": "Erro ao carregar campanhas",
+            "empty": "Nenhuma campanha no catálogo",
+            "emptyFiltered": "Nenhuma campanha corresponde aos filtros",
+            "clearFilters": "Limpar filtros",
+            "prevPage": "Anterior",
+            "nextPage": "Próximo",
+            "pagination": "Página {{page}} de {{totalPages}} ({{total}} total)"
+        },
+        "table": {
+            "ariaLabel": "Catálogo de campanhas",
+            "colName": "Nome",
+            "colDesc": "Descrição",
+            "colStartsAt": "Início",
+            "colEndsAt": "Fim",
+            "colActive": "Ativa",
+            "colActions": "Ações",
+            "yes": "Sim",
+            "no": "Não",
+            "edit": "Editar",
+            "delete": "Excluir"
+        },
+        "form": {
+            "createTitle": "Nova campanha",
+            "createDesc": "Crie uma nova campanha de conteúdo social.",
+            "editTitle": "Editar campanha",
+            "editDesc": "Atualize os dados da campanha.",
+            "nameLabel": "Nome",
+            "descLabel": "Descrição",
+            "startsAtLabel": "Data de início",
+            "endsAtLabel": "Data de fim",
+            "activeLabel": "Ativa",
+            "cancel": "Cancelar",
+            "saving": "Salvando...",
+            "saveCreate": "Criar",
+            "saveEdit": "Salvar"
+        },
+        "delete": {
+            "title": "Excluir campanha",
+            "desc": "Tem certeza que deseja excluir a campanha {{name}}?",
+            "cancel": "Cancelar",
+            "confirm": "Excluir",
+            "deleting": "Excluindo..."
+        }
+    },
+    "batches": {
+        "title": "Catálogo de Batches",
+        "createBtn": "Novo batch",
+        "results_one": "{{count}} resultado",
+        "results_other": "{{count}} resultados",
+        "filters": {
+            "search": "Buscar",
+            "searchPlaceholder": "Buscar batch...",
+            "active": "Status",
+            "all": "Todos",
+            "activeOnly": "Somente ativos",
+            "inactiveOnly": "Somente inativos"
+        },
+        "list": {
+            "error": "Erro ao carregar batches",
+            "empty": "Nenhum batch no catálogo",
+            "emptyFiltered": "Nenhum batch corresponde aos filtros",
+            "clearFilters": "Limpar filtros",
+            "prevPage": "Anterior",
+            "nextPage": "Próximo",
+            "pagination": "Página {{page}} de {{totalPages}} ({{total}} total)"
+        },
+        "table": {
+            "ariaLabel": "Catálogo de batches",
+            "colName": "Nome",
+            "colDesc": "Descrição",
+            "colStartsAt": "Início",
+            "colEndsAt": "Fim",
+            "colActive": "Ativo",
+            "colActions": "Ações",
+            "yes": "Sim",
+            "no": "Não",
+            "edit": "Editar",
+            "delete": "Excluir"
+        },
+        "form": {
+            "createTitle": "Novo batch",
+            "createDesc": "Crie um novo batch de conteúdo.",
+            "editTitle": "Editar batch",
+            "editDesc": "Atualize os dados do batch.",
+            "nameLabel": "Nome",
+            "descLabel": "Descrição",
+            "startsAtLabel": "Data de início",
+            "endsAtLabel": "Data de fim",
+            "activeLabel": "Ativo",
+            "cancel": "Cancelar",
+            "saving": "Salvando...",
+            "saveCreate": "Criar",
+            "saveEdit": "Salvar"
+        },
+        "delete": {
+            "title": "Excluir batch",
+            "desc": "Tem certeza que deseja excluir o batch {{name}}?",
+            "cancel": "Cancelar",
+            "confirm": "Excluir",
+            "deleting": "Excluindo..."
+        }
+    },
+    "audiences": {
+        "title": "Catálogo de Audiências",
+        "createBtn": "Nova audiência",
+        "results_one": "{{count}} resultado",
+        "results_other": "{{count}} resultados",
+        "filters": {
+            "search": "Buscar",
+            "searchPlaceholder": "Buscar audiência...",
+            "active": "Status",
+            "all": "Todos",
+            "activeOnly": "Somente ativas",
+            "inactiveOnly": "Somente inativas"
+        },
+        "list": {
+            "error": "Erro ao carregar audiências",
+            "empty": "Nenhuma audiência no catálogo",
+            "emptyFiltered": "Nenhuma audiência corresponde aos filtros",
+            "clearFilters": "Limpar filtros",
+            "prevPage": "Anterior",
+            "nextPage": "Próximo",
+            "pagination": "Página {{page}} de {{totalPages}} ({{total}} total)"
+        },
+        "table": {
+            "ariaLabel": "Catálogo de audiências",
+            "colName": "Nome",
+            "colSlug": "Slug",
+            "colDesc": "Descrição",
+            "colActive": "Ativa",
+            "colActions": "Ações",
+            "yes": "Sim",
+            "no": "Não",
+            "edit": "Editar",
+            "delete": "Excluir"
+        },
+        "form": {
+            "createTitle": "Nova audiência",
+            "createDesc": "Crie uma nova audiência-alvo.",
+            "editTitle": "Editar audiência",
+            "editDesc": "Atualize os dados da audiência.",
+            "nameLabel": "Nome",
+            "descLabel": "Descrição",
+            "activeLabel": "Ativa",
+            "cancel": "Cancelar",
+            "saving": "Salvando...",
+            "saveCreate": "Criar",
+            "saveEdit": "Salvar"
+        },
+        "delete": {
+            "title": "Excluir audiência",
+            "desc": "Tem certeza que deseja excluir a audiência {{name}}?",
+            "cancel": "Cancelar",
+            "confirm": "Excluir",
+            "deleting": "Excluindo..."
+        }
+    },
+    "platformFormats": {
+        "title": "Formatos de Plataforma",
+        "total": "{{count}} formatos",
+        "list": {
+            "error": "Erro ao carregar formatos de plataforma",
+            "empty": "Nenhum formato de plataforma configurado",
+            "prevPage": "Anterior",
+            "nextPage": "Próximo",
+            "pagination": "Página {{page}} de {{totalPages}} ({{total}} total)"
+        },
+        "table": {
+            "ariaLabel": "Formatos de plataforma",
+            "colPlatform": "Plataforma",
+            "colPublishFormat": "Formato",
+            "colMediaType": "Tipo de mídia",
+            "colEnabled": "Habilitado",
+            "colMvpEnabled": "MVP",
+            "colMaxCaptionLength": "Máx. caption",
+            "colMakeChannelKey": "Canal Make",
+            "colActions": "Ações",
+            "yes": "Sim",
+            "no": "Não",
+            "noLimit": "Sem limite",
+            "edit": "Editar"
+        },
+        "form": {
+            "editTitle": "Editar formato de plataforma",
+            "editDesc": "Atualize os parâmetros de configuração.",
+            "enabledLabel": "Habilitado",
+            "mvpEnabledLabel": "MVP habilitado",
+            "maxCaptionLengthLabel": "Comprimento máximo do caption",
+            "makeChannelKeyLabel": "Chave do canal Make",
+            "notesLabel": "Notas",
+            "cancel": "Cancelar",
+            "saving": "Salvando...",
+            "saveEdit": "Salvar",
+            "saveError": "Erro ao salvar o formato de plataforma",
+            "disableActiveTargetsWarning": "Atenção: este formato possui destinos ativos que o referenciam. Desabilitá-lo pode afetar publicações agendadas."
+        }
+    },
+    "settings": {
+        "title": "Configurações Sociais",
+        "total": "{{count}} parâmetros",
+        "list": {
+            "error": "Erro ao carregar as configurações",
+            "empty": "Nenhuma configuração encontrada",
+            "prevPage": "Anterior",
+            "nextPage": "Próximo",
+            "pagination": "Página {{page}} de {{totalPages}} ({{total}} total)"
+        },
+        "table": {
+            "ariaLabel": "Configurações sociais",
+            "colKey": "Chave",
+            "colType": "Tipo",
+            "colValue": "Valor",
+            "colDescription": "Descrição",
+            "colActions": "Ações",
+            "noDescription": "Sem descrição",
+            "edit": "Editar"
+        },
+        "form": {
+            "editTitle": "Editar configuração",
+            "editDesc": "Atualize o valor do parâmetro.",
+            "keyLabel": "Chave",
+            "typeLabel": "Tipo",
+            "descriptionLabel": "Descrição",
+            "valueLabel": "Valor",
+            "valueRequired": "O valor não pode ser vazio",
+            "secretHint": "Este parâmetro é secreto. Insira o novo valor para atualizá-lo.",
+            "secretPlaceholder": "Novo valor secreto...",
+            "cancel": "Cancelar",
+            "saving": "Salvando...",
+            "saveEdit": "Salvar",
+            "saveError": "Erro ao salvar a configuração"
+        }
+    }
+}

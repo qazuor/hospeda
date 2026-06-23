@@ -48,9 +48,6 @@ export interface EntityResolver {
     }) => Promise<EntityChangeData | null>;
 }
 
-/** Default debounce window in milliseconds (30 seconds) */
-const DEFAULT_DEBOUNCE_MS = 30_000;
-
 /** Default maximum number of entity types to revalidate per cron run */
 const DEFAULT_MAX_CRON_REVALIDATIONS = 500;
 
@@ -132,7 +129,6 @@ const CONFIG_CACHE_TTL_MS = 60_000; // 60 seconds
  */
 export class RevalidationService {
     private readonly adapter: RevalidationAdapter;
-    private readonly debounceMs: number;
     private readonly localesConfig: ReadonlyArray<string>;
     private readonly maxCronRevalidationsConfig: number;
     private readonly logRetentionDaysConfig: number;
@@ -145,7 +141,6 @@ export class RevalidationService {
 
     constructor(config: RevalidationServiceConfig) {
         this.adapter = config.adapter;
-        this.debounceMs = config.debounceMs ?? DEFAULT_DEBOUNCE_MS;
         this.localesConfig = config.locales;
         this.maxCronRevalidationsConfig =
             config.maxCronRevalidations ?? DEFAULT_MAX_CRON_REVALIDATIONS;

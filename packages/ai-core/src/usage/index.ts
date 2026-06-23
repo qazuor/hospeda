@@ -41,6 +41,18 @@ export {
     type GetMonthlyCallCountInput
 } from './reporting/index.js';
 
+// SPEC-260: new reporting wrappers — byModel, byProvider, byFeatureModel, daily
+export {
+    getUsageByModel,
+    getUsageByProvider,
+    getUsageByFeatureModel,
+    getDailyUsage,
+    type GetUsageByModelInput,
+    type GetUsageByProviderInput,
+    type GetUsageByFeatureModelInput,
+    type GetDailyUsageInput
+} from './reporting/index.js';
+
 // Cost-ceiling check (SPEC-173 T-017)
 export {
     checkCostCeiling,

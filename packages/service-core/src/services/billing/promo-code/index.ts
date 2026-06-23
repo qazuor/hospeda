@@ -21,3 +21,17 @@ export {
     type TrialExtensionMutation,
     type CompMutation
 } from './effect-reducer.js';
+export {
+    extendExistingSubscriptionTrial,
+    type ExtendExistingSubscriptionTrialInput,
+    type ExtendExistingSubscriptionTrialData,
+    type ExtendExistingSubscriptionTrialResult
+} from './promo-code.trial-extension.js';
+export {
+    resolveRenewalPromoEffect,
+    resolveFullPlanPriceCentavos,
+    type ResolveRenewalPromoEffectInput,
+    type ResolveRenewalPromoEffectResult,
+    type RenewalPromoDecision,
+    type RenewalPromoAction
+} from './promo-code.renewal.js';

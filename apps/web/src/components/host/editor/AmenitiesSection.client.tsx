@@ -12,6 +12,7 @@
  */
 
 import type { AccommodationEditData, AmenityData } from '@/lib/api/types';
+import { translateAmenityName } from '@/lib/catalog-names';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './AmenitiesSection.module.css';
@@ -68,7 +69,7 @@ export function AmenitiesSection({
                                     onChange={() => onToggleAmenity(amenity.id)}
                                 />
                                 <span className={styles.checkboxText}>
-                                    {t(`accommodations.amenityNames.${amenity.slug}`, amenity.slug)}
+                                    {translateAmenityName({ t, name: amenity.slug })}
                                 </span>
                             </label>
                         ))}

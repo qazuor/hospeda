@@ -1,5 +1,5 @@
 {
-    "id": "3722b197-baf4-4db4-9443-57ca058a80dd",
+    "id": "43c4a536-bea0-4c68-a2c0-91d5936498ee",
     "prevId": "9e9a22eb-2972-4af3-b20b-7ccf1b68baaf",
     "version": "7",
     "dialect": "postgresql",
@@ -1211,6 +1211,12 @@
                     "primaryKey": false,
                     "notNull": true
                 },
+                "name": {
+                    "name": "name",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": true
+                },
                 "description": {
                     "name": "description",
                     "type": "jsonb",
@@ -1250,13 +1256,6 @@
                     "typeSchema": "public",
                     "primaryKey": false,
                     "notNull": true
-                },
-                "applicable_verticals": {
-                    "name": "applicable_verticals",
-                    "type": "text[]",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "default": "'{}'"
                 },
                 "lifecycle_state": {
                     "name": "lifecycle_state",
@@ -1401,6 +1400,12 @@
                     "primaryKey": false,
                     "notNull": true
                 },
+                "name": {
+                    "name": "name",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": true
+                },
                 "description": {
                     "name": "description",
                     "type": "jsonb",
@@ -1433,13 +1438,6 @@
                     "primaryKey": false,
                     "notNull": true,
                     "default": 50
-                },
-                "applicable_verticals": {
-                    "name": "applicable_verticals",
-                    "type": "text[]",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "default": "'{}'"
                 },
                 "lifecycle_state": {
                     "name": "lifecycle_state",
@@ -2035,6 +2033,32 @@
                     "primaryKey": false,
                     "notNull": false
                 },
+                "run_status": {
+                    "name": "run_status",
+                    "type": "external_reputation_run_status_enum",
+                    "typeSchema": "public",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "'idle'"
+                },
+                "apify_run_id": {
+                    "name": "apify_run_id",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "apify_dataset_id": {
+                    "name": "apify_dataset_id",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "run_started_at": {
+                    "name": "run_started_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": false
+                },
                 "created_at": {
                     "name": "created_at",
                     "type": "timestamp with time zone",
@@ -2113,6 +2137,21 @@
                         }
                     ],
                     "isUnique": true,
+                    "concurrently": false,
+                    "method": "btree",
+                    "with": {}
+                },
+                "accommodation_external_reputation_runStatus_idx": {
+                    "name": "accommodation_external_reputation_runStatus_idx",
+                    "columns": [
+                        {
+                            "expression": "run_status",
+                            "isExpression": false,
+                            "asc": true,
+                            "nulls": "last"
+                        }
+                    ],
+                    "isUnique": false,
                     "concurrently": false,
                     "method": "btree",
                     "with": {}
@@ -20277,6 +20316,11 @@
             "name": "external_reputation_fetch_status_enum",
             "schema": "public",
             "values": ["ok", "blocked", "not_found", "error"]
+        },
+        "public.external_reputation_run_status_enum": {
+            "name": "external_reputation_run_status_enum",
+            "schema": "public",
+            "values": ["idle", "pending", "running"]
         },
         "public.gastronomy_type_enum": {
             "name": "gastronomy_type_enum",

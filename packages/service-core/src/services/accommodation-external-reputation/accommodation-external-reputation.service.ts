@@ -1,10 +1,11 @@
 /**
- * AccommodationExternalReputationService (SPEC-237 T-007)
+ * AccommodationExternalReputationService (SPEC-237 T-007, updated SPEC-250 Phase 4)
  *
  * Stateless-helper service (does NOT extend BaseCrudService) for the three
  * higher-level operations on external reputation data:
  *
- * - {@link refresh}: iterate enabled listings, call adapters, upsert cache rows.
+ * - {@link refresh}: iterate enabled listings, call adapters with inline/async split,
+ *   upsert cache rows or enqueue Apify runs (SPEC-250 Phase 4).
  * - {@link listForDisplay}: assemble the public-detail-page reputation block,
  *   applying master toggle, per-platform toggle filtering, and Google snippet TTL.
  * - {@link disableReputation}: admin takedown that silences all listing toggles.
@@ -20,7 +21,9 @@ import type {
 import { withTransaction } from '@repo/db';
 import type { AccommodationExternalListing } from '@repo/schemas';
 import {
+    type ExternalFetchStatus,
     type ExternalPlatformEnum,
+    type ExternalReputationRunStatus,
     PermissionEnum,
     ServiceErrorCode,
     buildExternalReputationBlock
@@ -37,6 +40,45 @@ import { getReputationAdapter } from './adapters/index.js';
 // ---------------------------------------------------------------------------
 
 /**
+ * Per-platform status summary returned by {@link AccommodationExternalReputationService.getRefreshStatus}.
+ *
+ * Contains the raw run state and latest data quality fields for a single platform.
+ * This is an internal-only view — it includes `runStatus` which is never exposed
+ * on public block schemas.
+ */
+export interface PlatformRefreshStatus {
+    /** Current async run state ('idle' | 'pending' | 'running'). Internal only. */
+    readonly runStatus: ExternalReputationRunStatus;
+    /** Outcome of the last completed fetch ('ok' | 'blocked' | 'not_found' | 'error'). */
+    readonly fetchStatus: ExternalFetchStatus;
+    /** Numeric rating from the platform, or null when unavailable. */
+    readonly rating: number | null | undefined;
+    /** Total review count from the platform, or null when unavailable. */
+    readonly reviewsCount: number | null | undefined;
+    /** ISO 8601 timestamp of the last successful aggregate fetch, or null. */
+    readonly aggregateFetchedAt: string | null;
+}
+
+/**
+ * Result returned by {@link AccommodationExternalReputationService.getRefreshStatus}.
+ *
+ * Provides a lightweight per-platform snapshot used by the owner panel's polling
+ * hook to decide whether to keep polling or stop.
+ */
+export interface RefreshStatusResult {
+    /**
+     * Per-platform status map.
+     * Only platforms that have at least one reputation row are included.
+     */
+    readonly platforms: Partial<Record<ExternalPlatformEnum, PlatformRefreshStatus>>;
+    /**
+     * True when every platform's runStatus is 'idle' (no active Apify runs).
+     * The UI polling hook should stop when this is true.
+     */
+    readonly allSettled: boolean;
+}
+
+/**
  * Describes a single platform fetch failure captured during {@link refresh}.
  */
 export interface RefreshFailureEntry {
@@ -47,16 +89,34 @@ export interface RefreshFailureEntry {
 }
 
 /**
- * Result returned by {@link AccommodationExternalReputationService.refresh}.
+ * Result returned by {@link AccommodationExternalReputationService.refresh}
+ * (SPEC-250 Phase 4 — inline/async split).
+ *
+ * Platforms are categorised into three buckets:
+ * - `inlineSucceeded`: resolved synchronously (Google JSON-LD, Booking JSON-LD fast path).
+ * - `enqueuedAsync`: an Apify actor run was successfully started (Booking Apify path, Airbnb).
+ * - `inlineFailed`: inline fetch failed AND async enqueue either was unavailable or failed.
  *
  * AC-2.3: partial failure is the expected model — one platform erroring must
  * NOT prevent other platforms from being refreshed.
  */
 export interface RefreshResult {
-    /** Platform values that were fetched and upserted successfully. */
-    readonly succeeded: readonly ExternalPlatformEnum[];
-    /** Platform values that errored, with their error messages. */
-    readonly failed: readonly RefreshFailureEntry[];
+    /**
+     * Platforms that resolved inline and whose data has been persisted immediately.
+     * The caller can present these as "updated now".
+     */
+    readonly inlineSucceeded: readonly ExternalPlatformEnum[];
+    /**
+     * Platforms for which an Apify actor run was successfully enqueued.
+     * The DB rows for these platforms have `run_status = 'pending'`.
+     * Results will appear after the polling cron resolves the runs.
+     */
+    readonly enqueuedAsync: readonly ExternalPlatformEnum[];
+    /**
+     * Platforms that could not be resolved either inline or via async enqueue.
+     * Their DB rows have been updated with `fetch_status = 'error'`.
+     */
+    readonly inlineFailed: readonly RefreshFailureEntry[];
 }
 
 // ---------------------------------------------------------------------------
@@ -162,7 +222,7 @@ export interface AccommodationExternalReputationServiceDeps {
 
 /**
  * Stateless helper service for accommodation external reputation data
- * (SPEC-237 T-007).
+ * (SPEC-237 T-007, updated SPEC-250 Phase 4).
  *
  * Does NOT extend `BaseCrudService` — reputation rows are written exclusively
  * by automated fetch jobs (no owner CRUD pipeline needed).
@@ -183,6 +243,9 @@ export interface AccommodationExternalReputationServiceDeps {
  *   },
  * });
  * const result = await svc.refresh(accommodationId, actor);
+ * if (result.data?.enqueuedAsync.length) {
+ *   // Return HTTP 202 — some platforms are pending async resolution
+ * }
  * ```
  */
 export class AccommodationExternalReputationService {
@@ -206,6 +269,20 @@ export class AccommodationExternalReputationService {
      * Fetches reputation data from all enabled (showReviews=true) external
      * platforms for the given accommodation and upserts the cached rows.
      *
+     * **Inline/async split (SPEC-250 Phase 4)**:
+     * For each enabled listing the service decides between two paths:
+     * - **Inline path**: the adapter's `fetch()` returns a non-null rating (or the
+     *   adapter has no `startRun` method). Data is persisted immediately with
+     *   `run_status = 'idle'`. The platform is added to `inlineSucceeded`.
+     * - **Async path**: `fetch()` returns all-null aggregates AND the adapter
+     *   implements `startRun()`. The service calls `startRun()`, and on success
+     *   persists `{ run_status='pending', apify_run_id, apify_dataset_id,
+     *   run_started_at }` atomically in a **single upsert** (OQ-1 resolution —
+     *   no partial-state window). The platform is added to `enqueuedAsync`.
+     * - **Failure path**: `startRun()` returns null, or an adapter throws. The DB
+     *   row is updated with `fetch_status='error'` and `run_status='idle'`. The
+     *   platform is added to `inlineFailed`.
+     *
      * **Rate limiting**: Before iterating listings, the service reads
      * `HOSPEDA_EXTREP_REFRESH_RATE_LIMIT` from `process.env` (format `N/S`,
      * e.g. `"1/600"` = 1 refresh per accommodation per 600 s). If the most
@@ -219,7 +296,7 @@ export class AccommodationExternalReputationService {
      *
      * **Partial failure (AC-2.3)**: one platform erroring writes
      * `fetchStatus='error'` for that row and continues to the next platform.
-     * The returned {@link RefreshResult} distinguishes `succeeded` from `failed`.
+     * The returned {@link RefreshResult} distinguishes the three outcome buckets.
      *
      * @param accommodationId - UUID of the accommodation to refresh.
      * @param actor - The actor requesting the refresh. Must own the accommodation
@@ -286,36 +363,103 @@ export class AccommodationExternalReputationService {
             );
             const enabledListings = allListings.filter((l) => l.showReviews && l.deletedAt == null);
 
-            const succeeded: ExternalPlatformEnum[] = [];
-            const failed: RefreshFailureEntry[] = [];
+            const inlineSucceeded: ExternalPlatformEnum[] = [];
+            const enqueuedAsync: ExternalPlatformEnum[] = [];
+            const inlineFailed: RefreshFailureEntry[] = [];
 
             for (const listing of enabledListings) {
                 try {
-                    const adapter = getReputationAdapter(
-                        listing.platform as ExternalPlatformEnum,
-                        this.adapterCredentials
-                    );
-                    const fetchResult = await adapter.fetch(listing);
+                    const platform = listing.platform as ExternalPlatformEnum;
+                    const adapter = getReputationAdapter(platform, this.adapterCredentials);
+                    const inlineResult = await adapter.fetch(listing);
 
-                    const now = new Date();
-                    await this.reputationModel.upsertReputation(
-                        {
-                            accommodationId,
-                            platform: listing.platform,
-                            listingId: listing.id,
-                            rating: fetchResult.rating,
-                            reviewsCount: fetchResult.reviewsCount,
-                            deepLink: fetchResult.deepLink,
-                            snippets: fetchResult.snippets ? [...fetchResult.snippets] : null,
-                            snippetsFetchedAt: fetchResult.snippets ? now : null,
-                            aggregateFetchedAt: now,
-                            fetchStatus: 'ok',
-                            fetchMessage: null
-                        },
-                        ctx?.tx
-                    );
+                    const hasInlineData = inlineResult.rating !== null;
+                    // Capture startRun so TypeScript narrows the type to a defined function
+                    // in the else branch (direct property check narrows correctly).
+                    const startRunFn = adapter.startRun;
 
-                    succeeded.push(listing.platform as ExternalPlatformEnum);
+                    if (hasInlineData || !startRunFn) {
+                        // --- Inline path ---
+                        // Either we got data from fetch(), or the adapter has no async path.
+                        const now = new Date();
+                        await this.reputationModel.upsertReputation(
+                            {
+                                accommodationId,
+                                platform: listing.platform,
+                                listingId: listing.id,
+                                rating: inlineResult.rating,
+                                reviewsCount: inlineResult.reviewsCount,
+                                deepLink: inlineResult.deepLink,
+                                snippets: inlineResult.snippets ? [...inlineResult.snippets] : null,
+                                snippetsFetchedAt: inlineResult.snippets ? now : null,
+                                aggregateFetchedAt: now,
+                                fetchStatus: 'ok',
+                                fetchMessage: null,
+                                runStatus: 'idle'
+                            },
+                            ctx?.tx
+                        );
+                        inlineSucceeded.push(platform);
+                    } else {
+                        // --- Async path ---
+                        // fetch() returned all-null and adapter.startRun is available.
+                        // OQ-1: atomically persist run_status='pending' + run IDs in a single upsert.
+                        const runResult = await startRunFn.call(
+                            adapter,
+                            listing as AccommodationExternalListing
+                        );
+
+                        if (runResult) {
+                            // Single atomic write: no partial-state window (OQ-1 resolution).
+                            await this.reputationModel.upsertReputation(
+                                {
+                                    accommodationId,
+                                    platform: listing.platform,
+                                    listingId: listing.id,
+                                    // Preserve any existing data quality fields unchanged.
+                                    // Drizzle skips undefined values in the SET clause on conflict.
+                                    rating: undefined,
+                                    reviewsCount: undefined,
+                                    deepLink: undefined,
+                                    snippets: undefined,
+                                    snippetsFetchedAt: undefined,
+                                    aggregateFetchedAt: undefined,
+                                    fetchStatus: undefined,
+                                    fetchMessage: undefined,
+                                    // Run-state fields: set atomically.
+                                    runStatus: 'pending',
+                                    apifyRunId: runResult.runId,
+                                    apifyDatasetId: runResult.datasetId,
+                                    runStartedAt: new Date()
+                                },
+                                ctx?.tx
+                            );
+                            enqueuedAsync.push(platform);
+                        } else {
+                            // startRun returned null — adapter degraded gracefully.
+                            await this.reputationModel.upsertReputation(
+                                {
+                                    accommodationId,
+                                    platform: listing.platform,
+                                    listingId: listing.id,
+                                    rating: null,
+                                    reviewsCount: null,
+                                    deepLink: null,
+                                    snippets: null,
+                                    snippetsFetchedAt: null,
+                                    aggregateFetchedAt: null,
+                                    fetchStatus: 'error',
+                                    fetchMessage: 'startRun failed',
+                                    runStatus: 'idle',
+                                    apifyRunId: null,
+                                    apifyDatasetId: null,
+                                    runStartedAt: null
+                                },
+                                ctx?.tx
+                            );
+                            inlineFailed.push({ platform, error: 'startRun failed' });
+                        }
+                    }
                 } catch (platformErr) {
                     const errorMessage =
                         platformErr instanceof Error ? platformErr.message : String(platformErr);
@@ -334,7 +478,8 @@ export class AccommodationExternalReputationService {
                                 snippetsFetchedAt: null,
                                 aggregateFetchedAt: null,
                                 fetchStatus: 'error',
-                                fetchMessage: errorMessage
+                                fetchMessage: errorMessage,
+                                runStatus: 'idle'
                             },
                             ctx?.tx
                         );
@@ -342,14 +487,14 @@ export class AccommodationExternalReputationService {
                         // Upsert of error row also failed — still continue.
                     }
 
-                    failed.push({
+                    inlineFailed.push({
                         platform: listing.platform as ExternalPlatformEnum,
                         error: errorMessage
                     });
                 }
             }
 
-            return { data: { succeeded, failed } };
+            return { data: { inlineSucceeded, enqueuedAsync, inlineFailed } };
         } catch (err) {
             if (err instanceof ServiceError) {
                 return { error: { code: err.code, message: err.message, details: err.details } };
@@ -518,6 +663,96 @@ export class AccommodationExternalReputationService {
             }, ctx?.tx);
 
             return { data: { disabled } };
+        } catch (err) {
+            if (err instanceof ServiceError) {
+                return { error: { code: err.code, message: err.message, details: err.details } };
+            }
+            return {
+                error: {
+                    code: ServiceErrorCode.INTERNAL_ERROR,
+                    message: `Unexpected error: ${err instanceof Error ? err.message : String(err)}`
+                }
+            };
+        }
+    }
+
+    // -------------------------------------------------------------------------
+    // getRefreshStatus
+    // -------------------------------------------------------------------------
+
+    /**
+     * Returns the current async refresh status for all platforms of the given
+     * accommodation without triggering any Apify calls.
+     *
+     * Used by the owner panel's polling hook
+     * (`GET /api/v1/protected/accommodations/:id/external-reputation/status`) to
+     * decide whether to continue polling (`allSettled = false`) or stop
+     * (`allSettled = true`).
+     *
+     * **Ownership enforcement** mirrors {@link refresh}:
+     * the actor must own the accommodation OR hold `ACCOMMODATION_UPDATE_ANY`.
+     *
+     * **Raw state**: the returned status includes `runStatus` (an internal
+     * coordination column). This method intentionally does NOT apply the
+     * public-display toggles (`showReviews`, `showLink`) — the owner panel
+     * needs the raw run state regardless of display settings.
+     *
+     * **Pure read**: this method never writes to the database or calls Apify.
+     *
+     * @param accommodationId - UUID of the accommodation.
+     * @param actor - The actor requesting the status. Must own the accommodation
+     *   or hold `ACCOMMODATION_UPDATE_ANY`.
+     * @param ctx - Optional service context (transaction).
+     * @returns `{ data: RefreshStatusResult }` on success; error otherwise.
+     */
+    async getRefreshStatus(
+        accommodationId: string,
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<RefreshStatusResult>> {
+        try {
+            await assertCanUpdateAccommodation(
+                actor,
+                accommodationId,
+                this.accommodationModel,
+                ctx?.tx
+            );
+
+            // Read all reputation rows for this accommodation — no display-toggle
+            // filtering applied here, because the owner sees raw run state.
+            // pageSize=200 safely covers all platforms (an accommodation has ≤5).
+            const { items: reputationRows } = await this.reputationModel.findAll(
+                { accommodationId },
+                { pageSize: 200 },
+                undefined,
+                ctx?.tx
+            );
+
+            const platforms: Partial<Record<ExternalPlatformEnum, PlatformRefreshStatus>> = {};
+            let allSettled = true;
+
+            for (const rep of reputationRows) {
+                const platform = rep.platform as ExternalPlatformEnum;
+                const runStatus = (rep.runStatus ?? 'idle') as ExternalReputationRunStatus;
+
+                if (runStatus !== 'idle') {
+                    allSettled = false;
+                }
+
+                platforms[platform] = {
+                    runStatus,
+                    fetchStatus: rep.fetchStatus as ExternalFetchStatus,
+                    rating: rep.rating,
+                    reviewsCount: rep.reviewsCount,
+                    aggregateFetchedAt: rep.aggregateFetchedAt
+                        ? rep.aggregateFetchedAt instanceof Date
+                            ? rep.aggregateFetchedAt.toISOString()
+                            : String(rep.aggregateFetchedAt)
+                        : null
+                };
+            }
+
+            return { data: { platforms, allSettled } };
         } catch (err) {
             if (err instanceof ServiceError) {
                 return { error: { code: err.code, message: err.message, details: err.details } };

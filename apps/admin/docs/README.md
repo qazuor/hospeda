@@ -53,6 +53,12 @@ For administrators and content managers:
 - **[User Management](./usage/user-management.md)** - Managing users and roles
 - **[Content Management](./usage/content-management.md)** - Managing content workflows
 
+### 🤖 AI & System
+
+- **[AI Usage Dashboard](./ai-usage-guide.md)** - Monitor AI cost/calls/tokens by model, provider, feature, and day (SUPER_ADMIN)
+- **[Billing Admin Guide](./billing-admin-guide.md)** - Subscriptions, plans, payments, promo codes
+- **[Cron Jobs Admin Guide](./cron-jobs-admin-guide.md)** - Scheduled background jobs
+
 ### 💻 Development Documentation
 
 For developers building features:

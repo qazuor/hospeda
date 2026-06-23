@@ -43,6 +43,15 @@ import {
     RecurrenceTypeEnum,
     RefundStatusEnum,
     RoleEnum,
+    SocialApprovalStatusEnum,
+    SocialAssetSourceEnum,
+    SocialMediaTypeEnum,
+    SocialPlatformEnum,
+    SocialPostStatusEnum,
+    SocialPublishFormatEnum,
+    SocialPublishResultStatusEnum,
+    SocialRecurrenceTypeEnum,
+    SocialSourceEnum,
     SponsorshipStatusEnum,
     SponsorshipTargetTypeEnum,
     SponsorshipTierEnum,
@@ -253,6 +262,19 @@ export const ExternalReputationFetchStatusPgEnum = pgEnum('external_reputation_f
 ]);
 
 /**
+ * Async run status for external reputation Apify actor runs.
+ * Tracks the lifecycle of an asynchronous Apify run for a given
+ * (accommodation, platform) row — separate from fetch_status so the
+ * public block builder never sees transient run state.
+ * Matches ExternalReputationRunStatusSchema in @repo/schemas.
+ */
+export const ExternalReputationRunStatusPgEnum = pgEnum('external_reputation_run_status_enum', [
+    'idle',
+    'pending',
+    'running'
+]);
+
+/**
  * PostgreSQL enum for experience sub-categories (SPEC-240).
  * Values: CAR_RENTAL, BIKE_RENTAL, KAYAK_RENTAL, QUAD_RENTAL, TOUR_GUIDE,
  * GUIDED_VISIT, EXCURSION, BOAT_TRIP, FISHING_CHARTER, BIRD_WATCHING,
@@ -268,3 +290,43 @@ export const ExperiencePriceUnitPgEnum = pgEnum(
     'experience_price_unit_enum',
     enumToTuple(ExperiencePriceUnitEnum)
 );
+
+// Social media publish pgEnums (SPEC-254)
+export const SocialApprovalStatusPgEnum = pgEnum(
+    'social_approval_status_enum',
+    enumToTuple(SocialApprovalStatusEnum)
+);
+
+export const SocialAssetSourcePgEnum = pgEnum(
+    'social_asset_source_enum',
+    enumToTuple(SocialAssetSourceEnum)
+);
+
+export const SocialMediaTypePgEnum = pgEnum(
+    'social_media_type_enum',
+    enumToTuple(SocialMediaTypeEnum)
+);
+
+export const SocialPlatformPgEnum = pgEnum('social_platform_enum', enumToTuple(SocialPlatformEnum));
+
+export const SocialPostStatusPgEnum = pgEnum(
+    'social_post_status_enum',
+    enumToTuple(SocialPostStatusEnum)
+);
+
+export const SocialPublishFormatPgEnum = pgEnum(
+    'social_publish_format_enum',
+    enumToTuple(SocialPublishFormatEnum)
+);
+
+export const SocialPublishResultStatusPgEnum = pgEnum(
+    'social_publish_result_status_enum',
+    enumToTuple(SocialPublishResultStatusEnum)
+);
+
+export const SocialRecurrenceTypePgEnum = pgEnum(
+    'social_recurrence_type_enum',
+    enumToTuple(SocialRecurrenceTypeEnum)
+);
+
+export const SocialSourcePgEnum = pgEnum('social_source_enum', enumToTuple(SocialSourceEnum));

@@ -1,6 +1,7 @@
 export * from './accommodation.model.ts';
 export * from './accommodationFaq.model.ts';
 export * from './accommodationIaData.model.ts';
+export * from './accommodationMedia.model.ts';
 export * from './accommodationReview.model.ts';
 export * from './amenity.model.ts';
 export * from './feature.model.ts';

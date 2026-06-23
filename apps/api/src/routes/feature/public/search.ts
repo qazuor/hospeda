@@ -3,7 +3,7 @@
  * Returns paginated list of features based on search criteria
  */
 import {
-    FeatureListItemSchema,
+    FeaturePublicSchema,
     type HttpFeatureSearch,
     HttpFeatureSearchSchema
 } from '@repo/schemas';
@@ -27,7 +27,7 @@ export const publicSearchFeaturesRoute = createPublicListRoute({
     description: 'Search and filter features by name, category, availability, and other criteria',
     tags: ['Features'],
     requestQuery: HttpFeatureSearchSchema.shape,
-    responseSchema: FeatureListItemSchema,
+    responseSchema: FeaturePublicSchema,
     handler: async (ctx: Context, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});

@@ -533,8 +533,8 @@
         {
             "specId": "SPEC-210",
             "title": "Public Response Tier Enforcement — make schema-tier serialization mandatory and fail-closed so public endpoints can never leak undeclared DB columns",
-            "status": "in-progress",
-            "progress": "0/13",
+            "status": "completed",
+            "progress": "13/13",
             "path": "SPEC-210-public-response-tier-enforcement",
             "archived": false
         },
@@ -821,8 +821,8 @@
         {
             "specId": "SPEC-250",
             "title": "Asynchronous external reputation refresh (Apify async API + polling)",
-            "status": "draft",
-            "progress": "0/39",
+            "status": "completed",
+            "progress": "39/39",
             "path": "SPEC-250-external-reputation-async-refresh",
             "parent": "SPEC-237",
             "branch": "spec/SPEC-250-external-reputation-async-refresh",
@@ -832,7 +832,10 @@
             "tasksAtomizedAt": "2026-06-20T00:00:00.000Z",
             "taskCount": 39,
             "averageComplexity": 1.79,
-            "note": "39 tasks across 5 phases (setup 4, core 16, integration 13, testing 4, docs 2). Critical path T-001->T-002->T-018->T-025->T-026->T-028->T-035->T-036 (8 hops). Apify async API + polling cron. NOT to be implemented yet (owner: generate only)."
+            "note": "39 tasks across 5 phases (setup 4, core 16, integration 13, testing 4, docs 2). Critical path T-001->T-002->T-018->T-025->T-026->T-028->T-035->T-036 (8 hops). Apify async API + polling cron. In progress 2026-06-22; OQ-1/3/4 resolved by owner.",
+            "archived": true,
+            "archivedAt": "2026-06-23T00:00:00.000Z",
+            "archiveNote": "Merged to staging via PR #1779 (merge ef0846f0e). All 9 phases shipped + CI green."
         },
         {
             "specId": "SPEC-257",
@@ -866,22 +869,25 @@
         {
             "specId": "SPEC-259",
             "title": "Systematic Chrome smoke testing of staging features (post-e2fb184)",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "completed",
+            "progress": "5/5",
+            "archived": true,
+            "archivedAt": "2026-06-23",
             "path": "SPEC-259-staging-smoke-testing",
             "branch": "spec/SPEC-259-staging-smoke-testing",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-259-staging-smoke-testing",
             "base": "staging",
             "createdAt": "2026-06-22T15:39:13Z",
-            "note": "Campaign spec; tasks atomized when smoke starts. 4 phases: SPEC-230,203,239,249."
+            "note": "Campaign spec. 5 phases smoked e2e (Chrome, real): SPEC-230, 203, 249, 239, 223. Fixes shipped: PR #1781 (SPEC-249 CI), PR #1795 (SPEC-223 US-6 error mapping). SPEC-223 ran against local Ollama.",
+            "archiveNote": "Smoke campaign complete; all 5 phases verified, 2 fixes merged to staging."
         },
         {
             "specId": "SPEC-260",
             "title": "AI Usage Dashboard",
-            "status": "draft",
-            "progress": "0/23",
+            "status": "in-progress",
+            "progress": "23/23",
             "path": "SPEC-260-ai-usage-dashboard",
-            "branch": "spec/SPEC-260-ai-usage-dashboard",
+            "branch": "feat/SPEC-260-ai-usage-dashboard",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-260-ai-usage-dashboard",
             "base": "staging",
             "createdAt": "2026-06-22T00:00:00Z",
@@ -894,7 +900,7 @@
             "specId": "SPEC-262",
             "title": "Billing Promo-Code Typed Effect Engine",
             "status": "in-progress",
-            "progress": "5/15",
+            "progress": "9/15",
             "path": "SPEC-262-billing-promo-code-effect-engine",
             "branch": "spec/SPEC-262-billing-promo-code-effect-engine",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-262-billing-promo-code-effect-engine",
@@ -908,8 +914,11 @@
         {
             "specId": "SPEC-261",
             "title": "Stabilize commerce-owner E2E and promote back to @p0",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "completed",
+            "progress": "9/9",
+            "archived": true,
+            "archivedAt": "2026-06-23T07:38:11Z",
+            "archiveNote": "Merged to staging via PR #1794. Dedicated E2E ports + SSOT; commerce-01/02 promoted to @p0. Real root cause was the cookie-consent backdrop, not dirty-tracking.",
             "path": "SPEC-261-commerce-e2e-stabilization"
         },
         {
@@ -995,17 +1004,45 @@
         {
             "specId": "SPEC-266",
             "title": "Amenities & features catalog by vertical (scoping + i18n source-of-truth)",
-            "status": "in-progress",
-            "progress": "13/13",
+            "status": "draft",
+            "progress": "0/0",
             "path": "SPEC-266-amenities-feature-catalog-by-vertical",
-            "branch": "spec/SPEC-266-amenities-feature-catalog-by-vertical",
+            "branch": "docs/SPEC-266-amenities-feature-catalog-by-vertical",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-266-amenities-feature-catalog-by-vertical",
             "base": "staging",
             "createdAt": "2026-06-23T02:10:00Z",
-            "tasksAtomizedAt": "2026-06-23T00:00:00Z",
-            "taskCount": 13,
-            "averageComplexity": 3.38,
-            "note": "13 tasks across 4 phases (core 4, integration 6, testing 2, docs 1). Single coordinated migration: drops name column + adds applicableVerticals text[] on amenities & features tables (BETA-90 absorbed). Option A decided: single catalog + text[] scope field. Critical path T-001->T-002->T-005->T-008->T-011->T-012->T-013 (7 steps). T-001 is the unblocked gate; T-003 and T-004 run in parallel after T-001."
+            "note": "Doc-only spec; tasks NOT atomized yet. Scope amenities/features catalog by vertical (Options A/B/C, decide at planning) + absorb BETA-90 (drop name column -> i18n by slug). SPEC-249 follow-up."
+        },
+        {
+            "specId": "SPEC-254",
+            "title": "Social Automation Backend",
+            "status": "completed",
+            "progress": "52/52",
+            "path": "SPEC-254-social-media-publish",
+            "branch": "spec/SPEC-254-phase-1-data-model",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-254-social-media-publish",
+            "base": "staging",
+            "createdAt": "2026-06-20T00:00:00.000Z",
+            "tasksAtomizedAt": "2026-06-20T00:00:00.000Z",
+            "taskCount": 52,
+            "averageComplexity": 2.3,
+            "note": "52 tasks across 4 phases (setup 14, core 23, integration 11, testing 3, cleanup 1). Shipped as chained PRs per phase. DB schema chain T-001->T-013 is critical path. Follow-ups SPEC-255/256.",
+            "archived": true,
+            "archivedAt": "2026-06-23"
+        },
+        {
+            "specId": "SPEC-204",
+            "title": "Accommodation gallery migration to relational table",
+            "status": "in-progress",
+            "progress": "11/29",
+            "path": "SPEC-204-accommodation-gallery-relational-migration",
+            "branch": "spec/SPEC-204-accommodation-gallery-relational-migration",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-204-accommodation-gallery-relational-migration",
+            "base": "staging",
+            "createdAt": "2026-06-22T00:00:00.000Z",
+            "tasksAtomizedAt": "2026-06-22T00:00:00.000Z",
+            "taskCount": 29,
+            "note": "Formalized + atomized 2026-06-22. Storage model = direct table-per-entity (accommodation_media, real FK); polymorphic + junction rejected. 3-phase dual-write (P1 create+backfill+write-both, P2 switch reads, P3 retire JSONB). Accommodation only; pattern reusable for other 5 gallery entities later. Spec still draft (not in-progress) until impl starts."
         }
     ],
     "standalone": {

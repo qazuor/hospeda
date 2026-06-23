@@ -1,0 +1,615 @@
+{
+    "dashboard": {
+        "title": "Social Dashboard",
+        "kpis": {
+            "totalPosts": "Total posts",
+            "pendingReview": "Pending review",
+            "scheduled": "Scheduled",
+            "publishedLast30Days": "Published (30 days)",
+            "failedActionNeeded": "Failed"
+        },
+        "approvalQueue": {
+            "title": "Approval queue",
+            "empty": "No posts pending approval",
+            "approve": "Approve",
+            "approving": "Approving...",
+            "viewAll": "View all"
+        },
+        "recentFailures": {
+            "title": "Recent failures",
+            "empty": "No recent failures",
+            "platform": "Platform",
+            "post": "Post",
+            "error": "Error",
+            "retries_one": "{{count}} retry",
+            "retries_other": "{{count}} retries",
+            "viewPost": "View post"
+        },
+        "webhookAlert": {
+            "title": "Make webhook not configured",
+            "description": "The Make webhook URL is not configured. Posts will not be published automatically until it is set up.",
+            "configure": "Configure now"
+        },
+        "error": "Error loading dashboard",
+        "loading": "Loading dashboard..."
+    },
+    "posts": {
+        "title": "Social Posts",
+        "list": {
+            "loading": "Loading social posts...",
+            "error": "Error loading social posts",
+            "empty": "No social posts found",
+            "emptyFiltered": "No posts match the applied filters",
+            "clearFilters": "Clear filters",
+            "results_one": "{{count}} result",
+            "results_other": "{{count}} results",
+            "prevPage": "Previous",
+            "nextPage": "Next",
+            "pagination": "Page {{page}} of {{totalPages}} ({{total}} total)"
+        },
+        "table": {
+            "ariaLabel": "Social posts list",
+            "colTitle": "Title",
+            "colStatus": "Status",
+            "colApprovalStatus": "Approval",
+            "colPlatforms": "Platforms",
+            "colScheduledAt": "Scheduled for",
+            "colActions": "Actions",
+            "noScheduled": "Not scheduled"
+        },
+        "filters": {
+            "search": "Search",
+            "searchPlaceholder": "Search by title...",
+            "status": "Pipeline status",
+            "approvalStatus": "Approval status",
+            "platform": "Platform",
+            "all": "All"
+        },
+        "status": {
+            "DRAFT": "Draft",
+            "NEEDS_REVIEW": "Needs Review",
+            "APPROVED": "Approved",
+            "SCHEDULED": "Scheduled",
+            "READY_TO_PUBLISH": "Ready to Publish",
+            "PUBLISHING": "Publishing",
+            "PUBLISHED": "Published",
+            "FAILED": "Failed",
+            "PAUSED": "Paused",
+            "ARCHIVED": "Archived"
+        },
+        "approvalStatus": {
+            "PENDING": "Pending",
+            "APPROVED": "Approved",
+            "REJECTED": "Rejected",
+            "CHANGES_REQUESTED": "Changes Requested"
+        },
+        "platforms": {
+            "INSTAGRAM": "Instagram",
+            "FACEBOOK": "Facebook",
+            "X": "X (Twitter)"
+        },
+        "actions": {
+            "approve": "Approve",
+            "approving": "Approving...",
+            "approveSuccess": "Post approved successfully",
+            "approveError": "Error approving post"
+        },
+        "detail": {
+            "notFound": "Post not found",
+            "notFoundDesc": "The post you are looking for does not exist or has been deleted.",
+            "loadingError": "Error loading post",
+            "backToList": "Back to list",
+            "paused": "Paused",
+            "createdAt": "Created",
+            "scheduledAt": "Scheduled for",
+            "tabsLabel": "Post sections",
+            "delete": {
+                "label": "Archive",
+                "editLabel": "Edit",
+                "confirmTitle": "Archive post",
+                "confirmDesc": "This will archive the post and exclude it from public views. It can be restored from the database.",
+                "cancel": "Cancel",
+                "confirm": "Archive",
+                "deleting": "Archiving..."
+            },
+            "tabs": {
+                "content": "Content",
+                "media": "Media",
+                "targets": "Targets",
+                "logs": "Logs",
+                "audit": "Audit"
+            },
+            "content": {
+                "caption": "Base caption",
+                "finalCaption": "Final caption",
+                "finalCaptionEmpty": "No final caption",
+                "finalHashtags": "Final hashtags",
+                "finalHashtagsEmpty": "No hashtags",
+                "footer": "Footer",
+                "footerEmpty": "No footer",
+                "pillar": "Content pillar",
+                "pillarEmpty": "No pillar",
+                "notes": "Notes",
+                "notesEmpty": "No notes",
+                "internalNotes": "Internal notes",
+                "internalNotesEmpty": "No internal notes",
+                "campaign": "Campaign",
+                "batch": "Batch",
+                "audience": "Audience",
+                "gptHashtags": "GPT-suggested hashtags",
+                "gptHashtagsEmpty": "No GPT suggestions",
+                "promoteButton": "Promote"
+            },
+            "media": {
+                "empty": "No media attached",
+                "pendingUpload": "Upload pending",
+                "position": "Position {{pos}}"
+            },
+            "targets": {
+                "empty": "No platform targets",
+                "platform": "Platform",
+                "format": "Format",
+                "status": "Status",
+                "scheduledAt": "Scheduled",
+                "publishedAt": "Published",
+                "externalUrl": "View post",
+                "lastError": "Last error",
+                "noScheduled": "Not scheduled",
+                "noPublished": "Not published",
+                "noError": "No errors"
+            },
+            "logs": {
+                "empty": "No publish history",
+                "platform": "Platform",
+                "format": "Format",
+                "status": "Status",
+                "message": "Message",
+                "createdAt": "Date",
+                "noMessage": "No message"
+            },
+            "audit": {
+                "empty": "No audit events",
+                "eventType": "Event",
+                "actor": "Actor",
+                "createdAt": "Date",
+                "systemActor": "System"
+            },
+            "actions": {
+                "approve": "Approve",
+                "approving": "Approving...",
+                "approveSuccess": "Post approved",
+                "approveError": "Error approving",
+                "approveMissingMedia": "The post needs media before it can be approved",
+                "approveInvalidState": "Invalid state transition",
+                "reject": "Reject",
+                "rejecting": "Rejecting...",
+                "rejectSuccess": "Post rejected",
+                "rejectError": "Error rejecting",
+                "rejectReason": "Rejection reason",
+                "rejectReasonPlaceholder": "Enter the reason...",
+                "requestChanges": "Request changes",
+                "requestingChanges": "Sending...",
+                "requestChangesSuccess": "Changes requested",
+                "requestChangesError": "Error requesting changes",
+                "requestChangesFeedback": "Feedback",
+                "requestChangesFeedbackPlaceholder": "Describe the required changes...",
+                "schedule": "Schedule",
+                "scheduling": "Scheduling...",
+                "scheduleSuccess": "Post scheduled",
+                "scheduleError": "Error scheduling",
+                "scheduleAt": "Date and time",
+                "scheduleTimezone": "Timezone",
+                "markReady": "Mark as ready",
+                "markingReady": "Marking...",
+                "markReadySuccess": "Post ready to publish",
+                "markReadyError": "Error marking as ready",
+                "pause": "Pause",
+                "pausing": "Pausing...",
+                "pauseSuccess": "Post paused",
+                "pauseError": "Error pausing",
+                "unpause": "Unpause",
+                "unpausing": "Unpausing...",
+                "unpauseSuccess": "Post unpaused",
+                "unpauseError": "Error unpausing",
+                "archive": "Archive",
+                "archiving": "Archiving...",
+                "archiveSuccess": "Post archived",
+                "archiveError": "Error archiving",
+                "approveAriaLabel": "Approve post {title}",
+                "confirmTitle": "Confirm action",
+                "confirmCancel": "Cancel",
+                "confirmAction": "Confirm"
+            },
+            "promoteHashtag": {
+                "title": "Promote hashtag",
+                "desc": "Promote this hashtag to the managed catalog.",
+                "hashtagLabel": "Hashtag",
+                "categoryLabel": "Category",
+                "categoryPlaceholder": "E.g. travel, gastronomy...",
+                "platformLabel": "Platform (optional)",
+                "platformAll": "All platforms",
+                "priorityLabel": "Priority (optional)",
+                "submit": "Promote",
+                "submitting": "Promoting...",
+                "cancel": "Cancel",
+                "successNew": "Hashtag {{hashtag}} added to catalog",
+                "successExisting": "Hashtag {{hashtag}} already exists in catalog",
+                "error": "Error promoting hashtag"
+            }
+        }
+    },
+    "hashtags": {
+        "title": "Hashtag Catalog",
+        "createBtn": "New hashtag",
+        "results_one": "{{count}} result",
+        "results_other": "{{count}} results",
+        "filters": {
+            "search": "Search",
+            "searchPlaceholder": "Search hashtag...",
+            "platform": "Platform",
+            "active": "Status",
+            "all": "All",
+            "activeOnly": "Active only",
+            "inactiveOnly": "Inactive only"
+        },
+        "list": {
+            "error": "Error loading hashtags",
+            "empty": "No hashtags in catalog",
+            "emptyFiltered": "No hashtags match the filters",
+            "clearFilters": "Clear filters",
+            "prevPage": "Previous",
+            "nextPage": "Next",
+            "pagination": "Page {{page}} of {{totalPages}} ({{total}} total)"
+        },
+        "table": {
+            "ariaLabel": "Hashtag catalog",
+            "colHashtag": "Hashtag",
+            "colCategory": "Category",
+            "colPlatform": "Platform",
+            "colPriority": "Priority",
+            "colActive": "Active",
+            "colActions": "Actions",
+            "allPlatforms": "All",
+            "yes": "Yes",
+            "no": "No",
+            "edit": "Edit",
+            "delete": "Delete"
+        },
+        "form": {
+            "createTitle": "New hashtag",
+            "createDesc": "Add a hashtag to the managed catalog.",
+            "editTitle": "Edit hashtag",
+            "editDesc": "Update the hashtag details.",
+            "hashtagLabel": "Hashtag",
+            "categoryLabel": "Category",
+            "platformLabel": "Platform",
+            "platformAll": "All platforms",
+            "priorityLabel": "Priority",
+            "activeLabel": "Active",
+            "notesLabel": "Notes",
+            "cancel": "Cancel",
+            "saving": "Saving...",
+            "saveCreate": "Create",
+            "saveEdit": "Save",
+            "conflictError": "A hashtag with this normalized text already exists. Change the hashtag and try again."
+        },
+        "delete": {
+            "title": "Delete hashtag",
+            "desc": "Are you sure you want to delete the hashtag {{name}}? This action is reversible.",
+            "cancel": "Cancel",
+            "confirm": "Delete",
+            "deleting": "Deleting..."
+        }
+    },
+    "footers": {
+        "title": "Footer Catalog",
+        "createBtn": "New footer",
+        "results_one": "{{count}} result",
+        "results_other": "{{count}} results",
+        "filters": {
+            "search": "Search",
+            "searchPlaceholder": "Search footer...",
+            "platform": "Platform",
+            "active": "Status",
+            "all": "All",
+            "activeOnly": "Active only",
+            "inactiveOnly": "Inactive only"
+        },
+        "list": {
+            "error": "Error loading footers",
+            "empty": "No footers in catalog",
+            "emptyFiltered": "No footers match the filters",
+            "clearFilters": "Clear filters",
+            "prevPage": "Previous",
+            "nextPage": "Next",
+            "pagination": "Page {{page}} of {{totalPages}} ({{total}} total)"
+        },
+        "table": {
+            "ariaLabel": "Footer catalog",
+            "colName": "Name",
+            "colContent": "Content",
+            "colPlatform": "Platform",
+            "colPriority": "Priority",
+            "colDefault": "Default",
+            "colActive": "Active",
+            "colActions": "Actions",
+            "allPlatforms": "All",
+            "yes": "Yes",
+            "no": "No",
+            "edit": "Edit",
+            "delete": "Delete"
+        },
+        "form": {
+            "createTitle": "New footer",
+            "createDesc": "Add a footer to the catalog.",
+            "editTitle": "Edit footer",
+            "editDesc": "Update the footer details.",
+            "nameLabel": "Name",
+            "contentLabel": "Content",
+            "platformLabel": "Platform",
+            "platformAll": "All platforms",
+            "priorityLabel": "Priority",
+            "activeLabel": "Active",
+            "isDefaultLabel": "Default",
+            "notesLabel": "Notes",
+            "cancel": "Cancel",
+            "saving": "Saving...",
+            "saveCreate": "Create",
+            "saveEdit": "Save"
+        },
+        "delete": {
+            "title": "Delete footer",
+            "desc": "Are you sure you want to delete footer {{name}}?",
+            "cancel": "Cancel",
+            "confirm": "Delete",
+            "deleting": "Deleting..."
+        }
+    },
+    "campaigns": {
+        "title": "Campaign Catalog",
+        "createBtn": "New campaign",
+        "results_one": "{{count}} result",
+        "results_other": "{{count}} results",
+        "filters": {
+            "search": "Search",
+            "searchPlaceholder": "Search campaign...",
+            "active": "Status",
+            "all": "All",
+            "activeOnly": "Active only",
+            "inactiveOnly": "Inactive only"
+        },
+        "list": {
+            "error": "Error loading campaigns",
+            "empty": "No campaigns in catalog",
+            "emptyFiltered": "No campaigns match the filters",
+            "clearFilters": "Clear filters",
+            "prevPage": "Previous",
+            "nextPage": "Next",
+            "pagination": "Page {{page}} of {{totalPages}} ({{total}} total)"
+        },
+        "table": {
+            "ariaLabel": "Campaign catalog",
+            "colName": "Name",
+            "colDesc": "Description",
+            "colStartsAt": "Start",
+            "colEndsAt": "End",
+            "colActive": "Active",
+            "colActions": "Actions",
+            "yes": "Yes",
+            "no": "No",
+            "edit": "Edit",
+            "delete": "Delete"
+        },
+        "form": {
+            "createTitle": "New campaign",
+            "createDesc": "Create a new social content campaign.",
+            "editTitle": "Edit campaign",
+            "editDesc": "Update the campaign details.",
+            "nameLabel": "Name",
+            "descLabel": "Description",
+            "startsAtLabel": "Start date",
+            "endsAtLabel": "End date",
+            "activeLabel": "Active",
+            "cancel": "Cancel",
+            "saving": "Saving...",
+            "saveCreate": "Create",
+            "saveEdit": "Save"
+        },
+        "delete": {
+            "title": "Delete campaign",
+            "desc": "Are you sure you want to delete campaign {{name}}?",
+            "cancel": "Cancel",
+            "confirm": "Delete",
+            "deleting": "Deleting..."
+        }
+    },
+    "batches": {
+        "title": "Batch Catalog",
+        "createBtn": "New batch",
+        "results_one": "{{count}} result",
+        "results_other": "{{count}} results",
+        "filters": {
+            "search": "Search",
+            "searchPlaceholder": "Search batch...",
+            "active": "Status",
+            "all": "All",
+            "activeOnly": "Active only",
+            "inactiveOnly": "Inactive only"
+        },
+        "list": {
+            "error": "Error loading batches",
+            "empty": "No batches in catalog",
+            "emptyFiltered": "No batches match the filters",
+            "clearFilters": "Clear filters",
+            "prevPage": "Previous",
+            "nextPage": "Next",
+            "pagination": "Page {{page}} of {{totalPages}} ({{total}} total)"
+        },
+        "table": {
+            "ariaLabel": "Batch catalog",
+            "colName": "Name",
+            "colDesc": "Description",
+            "colStartsAt": "Start",
+            "colEndsAt": "End",
+            "colActive": "Active",
+            "colActions": "Actions",
+            "yes": "Yes",
+            "no": "No",
+            "edit": "Edit",
+            "delete": "Delete"
+        },
+        "form": {
+            "createTitle": "New batch",
+            "createDesc": "Create a new content batch.",
+            "editTitle": "Edit batch",
+            "editDesc": "Update the batch details.",
+            "nameLabel": "Name",
+            "descLabel": "Description",
+            "startsAtLabel": "Start date",
+            "endsAtLabel": "End date",
+            "activeLabel": "Active",
+            "cancel": "Cancel",
+            "saving": "Saving...",
+            "saveCreate": "Create",
+            "saveEdit": "Save"
+        },
+        "delete": {
+            "title": "Delete batch",
+            "desc": "Are you sure you want to delete batch {{name}}?",
+            "cancel": "Cancel",
+            "confirm": "Delete",
+            "deleting": "Deleting..."
+        }
+    },
+    "audiences": {
+        "title": "Audience Catalog",
+        "createBtn": "New audience",
+        "results_one": "{{count}} result",
+        "results_other": "{{count}} results",
+        "filters": {
+            "search": "Search",
+            "searchPlaceholder": "Search audience...",
+            "active": "Status",
+            "all": "All",
+            "activeOnly": "Active only",
+            "inactiveOnly": "Inactive only"
+        },
+        "list": {
+            "error": "Error loading audiences",
+            "empty": "No audiences in catalog",
+            "emptyFiltered": "No audiences match the filters",
+            "clearFilters": "Clear filters",
+            "prevPage": "Previous",
+            "nextPage": "Next",
+            "pagination": "Page {{page}} of {{totalPages}} ({{total}} total)"
+        },
+        "table": {
+            "ariaLabel": "Audience catalog",
+            "colName": "Name",
+            "colSlug": "Slug",
+            "colDesc": "Description",
+            "colActive": "Active",
+            "colActions": "Actions",
+            "yes": "Yes",
+            "no": "No",
+            "edit": "Edit",
+            "delete": "Delete"
+        },
+        "form": {
+            "createTitle": "New audience",
+            "createDesc": "Create a new target audience.",
+            "editTitle": "Edit audience",
+            "editDesc": "Update the audience details.",
+            "nameLabel": "Name",
+            "descLabel": "Description",
+            "activeLabel": "Active",
+            "cancel": "Cancel",
+            "saving": "Saving...",
+            "saveCreate": "Create",
+            "saveEdit": "Save"
+        },
+        "delete": {
+            "title": "Delete audience",
+            "desc": "Are you sure you want to delete audience {{name}}?",
+            "cancel": "Cancel",
+            "confirm": "Delete",
+            "deleting": "Deleting..."
+        }
+    },
+    "platformFormats": {
+        "title": "Platform Formats",
+        "total": "{{count}} formats",
+        "list": {
+            "error": "Error loading platform formats",
+            "empty": "No platform formats configured",
+            "prevPage": "Previous",
+            "nextPage": "Next",
+            "pagination": "Page {{page}} of {{totalPages}} ({{total}} total)"
+        },
+        "table": {
+            "ariaLabel": "Platform formats",
+            "colPlatform": "Platform",
+            "colPublishFormat": "Format",
+            "colMediaType": "Media type",
+            "colEnabled": "Enabled",
+            "colMvpEnabled": "MVP",
+            "colMaxCaptionLength": "Max caption",
+            "colMakeChannelKey": "Make channel key",
+            "colActions": "Actions",
+            "yes": "Yes",
+            "no": "No",
+            "noLimit": "No limit",
+            "edit": "Edit"
+        },
+        "form": {
+            "editTitle": "Edit platform format",
+            "editDesc": "Update the configuration parameters.",
+            "enabledLabel": "Enabled",
+            "mvpEnabledLabel": "MVP enabled",
+            "maxCaptionLengthLabel": "Max caption length",
+            "makeChannelKeyLabel": "Make channel key",
+            "notesLabel": "Notes",
+            "cancel": "Cancel",
+            "saving": "Saving...",
+            "saveEdit": "Save",
+            "saveError": "Error saving platform format",
+            "disableActiveTargetsWarning": "Warning: this format has active targets referencing it. Disabling it may affect scheduled posts."
+        }
+    },
+    "settings": {
+        "title": "Social Settings",
+        "total": "{{count}} settings",
+        "list": {
+            "error": "Error loading settings",
+            "empty": "No settings found",
+            "prevPage": "Previous",
+            "nextPage": "Next",
+            "pagination": "Page {{page}} of {{totalPages}} ({{total}} total)"
+        },
+        "table": {
+            "ariaLabel": "Social settings",
+            "colKey": "Key",
+            "colType": "Type",
+            "colValue": "Value",
+            "colDescription": "Description",
+            "colActions": "Actions",
+            "noDescription": "No description",
+            "edit": "Edit"
+        },
+        "form": {
+            "editTitle": "Edit setting",
+            "editDesc": "Update the setting value.",
+            "keyLabel": "Key",
+            "typeLabel": "Type",
+            "descriptionLabel": "Description",
+            "valueLabel": "Value",
+            "valueRequired": "Value cannot be empty",
+            "secretHint": "This is a secret setting. Enter the new value to update it.",
+            "secretPlaceholder": "New secret value...",
+            "cancel": "Cancel",
+            "saving": "Saving...",
+            "saveEdit": "Save",
+            "saveError": "Error saving setting"
+        }
+    }
+}

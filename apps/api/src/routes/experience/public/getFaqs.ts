@@ -6,7 +6,7 @@
  * and returns active, non-deleted FAQs. Any authenticated or anonymous actor
  * that can view the listing can read its FAQs (open public).
  */
-import { ExperienceFaqListOutputSchema } from '@repo/schemas';
+import { ExperienceFaqPublicListOutputSchema } from '@repo/schemas';
 import { ExperienceService, ServiceError, listExperienceFaqs } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -34,7 +34,7 @@ export const publicGetExperienceFaqsRoute = createPublicRoute({
     requestParams: {
         experienceId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
-    responseSchema: ExperienceFaqListOutputSchema,
+    responseSchema: ExperienceFaqPublicListOutputSchema,
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
 

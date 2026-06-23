@@ -1,26 +1,32 @@
 # `hospeda-e2e` — End-to-End Test Suite (SPEC-092)
 
-This package contains the cross-app E2E test suite for the Hospeda platform. Tests run against **real builds** of `apps/api`, `apps/admin`, and `apps/web` connected to a dedicated Postgres (port 5433), Redis (port 6380), and Mailpit (ports 1025/8025) — see [`docker-compose.e2e.yml`](./docker-compose.e2e.yml).
+This package contains the cross-app E2E test suite for the Hospeda platform. Tests run against **real builds** of `apps/api`, `apps/admin`, and `apps/web` connected to a dedicated Postgres (port 15433), Redis (port 16380), and Mailpit (ports 11025/18025) — see [`docker-compose.e2e.yml`](./docker-compose.e2e.yml).
+
+**Dedicated ports / SSOT (SPEC-261).** The suite runs the apps on a dedicated HIGH port block — API `18001`, web `18321`, admin `18000`, Postgres `15433`, Redis `16380`, Mailpit `11025`/`18025` — chosen to sit ABOVE the worktree dev-server range (`wt-ports.sh` starts at `defaultPort+100` → 31xx/44xx) and BELOW the Linux ephemeral range (32768+), so a running worktree never collides with an E2E run. The single source of truth for all of these is [`apps/e2e/.env.e2e`](./.env.e2e); the `e2e:build` / `e2e:test*` scripts source it automatically (`set -a && . ./.env.e2e`), and CI loads the same file into `$GITHUB_ENV`. If you change a port, change it in `.env.e2e` (the `playwright.config.ts` fallbacks and the `docker-compose.e2e.yml` service mappings must be kept in sync — those cannot be sourced at evaluation time).
 
 > **Philosophy.** Every test exercises the real system as close to production as possible. Mocks exist only where real behaviour is impossible to reproduce in CI (e.g. inbound MercadoPago webhook callbacks without ngrok, deterministic QZPay failures via the `qzpay-test-control` flag).
 
 ## Quick start (local)
 
 ```bash
-# 1. Bring up the dependencies (Postgres :5433, Redis :6380, Mailpit)
+# 1. Bring up the dependencies (Postgres :15433, Redis :16380, Mailpit :11025/:18025)
 pnpm --filter hospeda-e2e e2e:up
 
 # 2. Install Playwright browsers (one-time)
 pnpm --filter hospeda-e2e e2e:install
 
-# 3. Apply migrations + seed the E2E DB
-HOSPEDA_E2E_DATABASE_URL=postgresql://hospeda_user:hospeda_pass@localhost:5433/hospeda_e2e \
-  pnpm --filter hospeda-e2e e2e:seed
+# 3. Apply migrations + extras + seed the E2E DB (URL = the SSOT port :15433)
+HOSPEDA_DATABASE_URL=postgresql://hospeda_user:hospeda_pass@localhost:15433/hospeda_e2e \
+  pnpm --filter @repo/db db:migrate
+bash packages/db/scripts/apply-postgres-extras.sh \
+  postgresql://hospeda_user:hospeda_pass@localhost:15433/hospeda_e2e
+pnpm --filter hospeda-e2e e2e:seed   # reads HOSPEDA_E2E_DATABASE_URL from .env.e2e
 
-# 4. Build the apps the suite drives
-pnpm exec turbo run build --filter=hospeda-api --filter=hospeda-admin --filter=hospeda-web
+# 4. Build the apps the suite drives (e2e:build sources .env.e2e so the web
+#    bundle bakes the dedicated E2E URLs, not the worktree's .env.local)
+pnpm --filter hospeda-e2e e2e:build
 
-# 5. Run the suite
+# 5. Run the suite (each e2e:test* script sources .env.e2e before Playwright)
 pnpm --filter hospeda-e2e e2e:test          # all tests
 pnpm --filter hospeda-e2e e2e:test:p0       # blocker tier only (~5-6 min)
 pnpm --filter hospeda-e2e e2e:test:p1       # high priority
@@ -46,7 +52,8 @@ Use `--debug` to step through interactively, `--headed` to watch the browser, `-
 ```
 apps/e2e/
 ├── playwright.config.ts          Workers / reporters / projects
-├── docker-compose.e2e.yml        PG :5433, Redis :6380, Mailpit
+├── .env.e2e                      SSOT for dedicated E2E ports/URLs (sourced by scripts + CI)
+├── docker-compose.e2e.yml        PG :15433, Redis :16380, Mailpit :11025/:18025
 ├── tests/
 │   ├── host/                     HOST-01..07: onboarding, billing, edge cases
 │   ├── accommodation/            ACC-01..04: publish/edit/unpublish/delete
@@ -58,6 +65,7 @@ apps/e2e/
 │   └── resilience/               RES-01..06: failures, idempotency, concurrency
 ├── fixtures/
 │   ├── api-helpers.ts            Real API calls: signup, onboarding, accommodations
+│   ├── browser-helpers.ts        seedCookieConsent — suppress the consent banner backdrop
 │   ├── db-helpers.ts             Direct SQL helpers (force trial expired, demote, etc.)
 │   ├── mailpit-client.ts         Wait for / read / clear emails via Mailpit API
 │   ├── mp-webhook-helper.ts      Sign + post simulated MP webhooks
@@ -109,6 +117,7 @@ Cleanup uses `SET LOCAL session_replication_role='replica'` to bypass the pre-ex
 | Fixture | Purpose | Notes |
 |---|---|---|
 | `api-helpers.ts` | Programmatic creation of users, accommodations, subscriptions, conversations | Hits real `/api` endpoints. Returns IDs + session cookies. |
+| `browser-helpers.ts` | `seedCookieConsent(page)` — seed the `cookie-consent` cookie via `addInitScript` so the banner never renders | Call in a `test.beforeEach` for any test that clicks/submits in the web UI. See pitfall #11. |
 | `db-helpers.ts` | Force fixture states the API can't expose (expired trial, past period_end) | Direct SQL via `pg.Pool`. Use sparingly. |
 | `mailpit-client.ts` | Wait for verification / reset / notification emails | Polls `http://localhost:8025/api/v1/messages`. |
 | `mp-webhook-helper.ts` | Simulated MP webhook POSTs (HMAC-signed) | Used by HOST-02/04/05, RES-04. Real MP sandbox checkout in HOST-02 nightly. |
@@ -243,6 +252,8 @@ const rows = await execSQL<AddonPurchaseRow>(`SELECT id, status, customer_id FRO
 8. **Soft delete may keep the row visible to admin.** The protected DELETE on accommodations sets `deleted_at`; the public surface returns `404`/`null` but the admin surface may still expose the row (with the deleted flag). When asserting "gone", target the public endpoint, not the admin one.
 9. **Rate limits hit during burst tests.** `createSimpleRoute({customRateLimit: ...})` is enforced before middleware-level pool exhaustion. RES-02's 100-concurrent-burst may saturate the rate limit window before the pool. Both 429 and 503 are accepted — explicitly avoid asserting "exactly 503".
 10. **Cookie cross-origin parsing.** `signupUser` returns `sessionCookie` as a single semicolon-joined header. When attaching to `page.context()`, split on `;` and trim whitespace before passing to `addCookies({name, value, url})`.
+11. **Cookie-consent banner silently blocks form submits (SPEC-261).** The web app renders a consent banner with a FULL-SCREEN backdrop whenever the `cookie-consent` cookie is absent. The backdrop intercepts pointer events even under `click({ force: true })` — `force` only bypasses Playwright's actionability checks, the real pointer still lands on the topmost element (the backdrop). Symptom: a `type="submit"` button is enabled, the click "succeeds", but the form `submit` event never fires and no request leaves the browser → `waitForResponse` for the mutation times out. This was misdiagnosed as a "dirty-tracking" bug. FIX: call `seedCookieConsent(page)` from `fixtures/browser-helpers.ts` in a `test.beforeEach` — it registers the cookie via `page.addInitScript`, so it is set before any navigation (including client-side transitions). (Consent is a JSON cookie, not localStorage — see `apps/web/src/lib/cookie-consent.ts`.)
+12. **Rate-limit flags use `z.coerce.boolean()` (footgun).** `API_RATE_LIMIT_*_ENABLED` are parsed with `z.coerce.boolean()` = `Boolean(string)` in `apps/api/src/utils/env.ts`, so ANY non-empty string — INCLUDING `"false"` — coerces to `true`. The ONLY value that disables a tier is the EMPTY string. `.env.e2e` and the `playwright.config.ts` API webServer `env` set these to `''` for exactly this reason; never "fix" them to `false`, that would ENABLE rate limiting and cause 429 flakes under parallel workers.
 
 ## Performance guidelines
 
@@ -264,7 +275,7 @@ const rows = await execSQL<AddonPurchaseRow>(`SELECT id, status, customer_id FRO
     pnpm exec playwright test path/to/test.spec.ts --headed --debug --trace=on
     ```
 
-6. **DB state at failure**: tests print user IDs to the test output. Connect to `localhost:5433` and inspect.
+6. **DB state at failure**: tests print user IDs to the test output. Connect to `localhost:15433` and inspect.
 
 ### Failure-pattern cheatsheet
 
@@ -277,6 +288,7 @@ const rows = await execSQL<AddonPurchaseRow>(`SELECT id, status, customer_id FRO
 | `qzpay-test-control endpoint not mounted` | Env gate missing on the API process | Restart API with `HOSPEDA_QZPAY_TEST_CONTROL_ENABLED=true` |
 | Webhook returns 401 | HMAC signature mismatch | Confirm `HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET` is set in BOTH the API process and this test process |
 | `lifecycle_state` returns `'DRAFT'` after PATCH `lifecycleState:'ACTIVE'` | Subscription gate blocked publish — paywall returned 402/403 | Inspect the response status; look for HOST-07b / HOST-04 expected behavior |
+| Save button enabled + clicked but `waitForResponse(PATCH)` times out, no request in the network log | Cookie-consent banner backdrop intercepting the click (pitfall #11) | Add `seedCookieConsent(page)` in a `test.beforeEach` (fixtures/browser-helpers.ts) |
 
 ## CI scripts (`scripts/ci/`)
 
