@@ -209,7 +209,10 @@ test.describe('COMMERCE-01: commerce owner edits listings — both verticals @p1
         // client:load the React component hydrates during script execution — if we
         // fill the input before that, onChange is not yet registered and the form
         // stays clean (dirty.size===0 → button disabled → click times out).
-        await page.goto(`${WEB_URL}/es/mi-cuenta/comercio/gastronomy/${gastronomyId}/editar`, {
+        // Astro is configured with trailingSlash:'always'. Without a trailing slash
+        // the SSR middleware returns a 404 page (not a redirect) pointing to the
+        // slash version. Always include the trailing slash in goto() calls.
+        await page.goto(`${WEB_URL}/es/mi-cuenta/comercio/gastronomy/${gastronomyId}/editar/`, {
             waitUntil: 'load'
         });
 
@@ -274,7 +277,8 @@ test.describe('COMMERCE-01: commerce owner edits listings — both verticals @p1
 
         // Same waitUntil:'load' rationale as the gastronomy step above — ensures
         // the Astro bundle has executed and React has hydrated before we interact.
-        await page.goto(`${WEB_URL}/es/mi-cuenta/comercio/experience/${experienceId}/editar`, {
+        // Trailing slash required — same Astro trailingSlash:'always' constraint.
+        await page.goto(`${WEB_URL}/es/mi-cuenta/comercio/experience/${experienceId}/editar/`, {
             waitUntil: 'load'
         });
 

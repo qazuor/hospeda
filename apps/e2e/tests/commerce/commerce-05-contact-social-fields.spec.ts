@@ -124,7 +124,9 @@ test.describe('COMMERCE-05: contact has no website; social includes linkedIn @p0
         await authenticateContext(context, sessionCookie);
 
         // ── Open gastronomy editor ───────────────────────────────────────────
-        await page.goto(`${WEB_URL}/es/mi-cuenta/comercio/gastronomy/${gastronomyId}/editar`, {
+        // Trailing slash required: Astro trailingSlash:'always' returns a 404
+        // (not a redirect) for URLs without trailing slash in SSR mode.
+        await page.goto(`${WEB_URL}/es/mi-cuenta/comercio/gastronomy/${gastronomyId}/editar/`, {
             waitUntil: 'load'
         });
 
@@ -167,7 +169,9 @@ test.describe('COMMERCE-05: contact has no website; social includes linkedIn @p0
         await authenticateContext(context, sessionCookie);
 
         // ── Open editor ──────────────────────────────────────────────────────
-        await page.goto(`${WEB_URL}/es/mi-cuenta/comercio/gastronomy/${gastronomyId}/editar`, {
+        // Trailing slash required: Astro trailingSlash:'always' returns a 404
+        // (not a redirect) for URLs without trailing slash in SSR mode.
+        await page.goto(`${WEB_URL}/es/mi-cuenta/comercio/gastronomy/${gastronomyId}/editar/`, {
             waitUntil: 'load'
         });
 
@@ -198,7 +202,9 @@ test.describe('COMMERCE-05: contact has no website; social includes linkedIn @p0
         expect(saved.ok(), `PATCH failed: ${saved.status()} ${saved.url()}`).toBe(true);
 
         // ── Re-open editor: assert linkedIn input is pre-filled ──────────────
-        await page.goto(`${WEB_URL}/es/mi-cuenta/comercio/gastronomy/${gastronomyId}/editar`, {
+        // Trailing slash required: Astro trailingSlash:'always' returns a 404
+        // (not a redirect) for URLs without trailing slash in SSR mode.
+        await page.goto(`${WEB_URL}/es/mi-cuenta/comercio/gastronomy/${gastronomyId}/editar/`, {
             waitUntil: 'load'
         });
 

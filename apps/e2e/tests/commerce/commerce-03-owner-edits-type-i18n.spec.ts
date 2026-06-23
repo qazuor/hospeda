@@ -172,7 +172,9 @@ test.describe('COMMERCE-03: owner edits type + i18n fields — persist on public
         await authenticateContext(context, sessionCookie);
 
         // ── Navigate to the gastronomy editor ────────────────────────────────
-        await page.goto(`${WEB_URL}/es/mi-cuenta/comercio/gastronomy/${gastronomyId}/editar`, {
+        // Trailing slash required: Astro trailingSlash:'always' returns 404 (not
+        // a redirect) for URLs without a trailing slash in SSR mode.
+        await page.goto(`${WEB_URL}/es/mi-cuenta/comercio/gastronomy/${gastronomyId}/editar/`, {
             waitUntil: 'load'
         });
 
@@ -236,7 +238,8 @@ test.describe('COMMERCE-03: owner edits type + i18n fields — persist on public
         await authenticateContext(context, sessionCookie);
 
         // ── Navigate to the gastronomy editor ────────────────────────────────
-        await page.goto(`${WEB_URL}/es/mi-cuenta/comercio/gastronomy/${gastronomyId}/editar`, {
+        // Trailing slash required — Astro trailingSlash:'always'.
+        await page.goto(`${WEB_URL}/es/mi-cuenta/comercio/gastronomy/${gastronomyId}/editar/`, {
             waitUntil: 'load'
         });
 
@@ -278,7 +281,7 @@ test.describe('COMMERCE-03: owner edits type + i18n fields — persist on public
         // Navigation to the same editor triggers a fresh SSR page with the
         // updated DB data. The island reads initialData.nameI18n.es which the
         // protected getById endpoint now returns.
-        await page.goto(`${WEB_URL}/es/mi-cuenta/comercio/gastronomy/${gastronomyId}/editar`, {
+        await page.goto(`${WEB_URL}/es/mi-cuenta/comercio/gastronomy/${gastronomyId}/editar/`, {
             waitUntil: 'load'
         });
 
@@ -302,7 +305,8 @@ test.describe('COMMERCE-03: owner edits type + i18n fields — persist on public
         await authenticateContext(context, sessionCookie);
 
         // ── Navigate to the experience editor ────────────────────────────────
-        await page.goto(`${WEB_URL}/es/mi-cuenta/comercio/experience/${experienceId}/editar`, {
+        // Trailing slash required — Astro trailingSlash:'always'.
+        await page.goto(`${WEB_URL}/es/mi-cuenta/comercio/experience/${experienceId}/editar/`, {
             waitUntil: 'load'
         });
 
