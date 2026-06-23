@@ -36,7 +36,11 @@ export class AmenityModel extends BaseModelImpl<Amenity> {
                     with: { accommodationAmenities: true }
                 });
                 logQuery(this.entityName, 'findWithRelations', { where, relations }, result);
-                return result as Amenity | null;
+                // TYPE-WORKAROUND: Drizzle infers `applicable_verticals` as `string[]` but
+                // Amenity.applicableVerticals is the narrower union type; the relation join also
+                // adds accommodationAmenities which Amenity does not include. Both mismatches
+                // require the double cast via unknown.
+                return result as unknown as Amenity | null;
             }
             const result = await this.findOne(where, tx);
             logQuery(this.entityName, 'findWithRelations', { where, relations }, result);

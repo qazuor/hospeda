@@ -176,6 +176,13 @@
             "when": 1782169489751,
             "tag": "0024_fuzzy_doctor_strange",
             "breakpoints": true
+        },
+        {
+            "idx": 25,
+            "version": "7",
+            "when": 1782189391336,
+            "tag": "0025_steep_crusher_hogan",
+            "breakpoints": true
         }
     ]
 }
