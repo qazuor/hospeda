@@ -241,31 +241,31 @@
             "id": "T-008",
             "title": "Dual-write SPEC-167 archive/restore primitives",
             "description": "Update apps/api/src/services/plan-photo-restriction.service.ts archive/restoreAccommodationPhotos to ALSO flip accommodation_media.state (+ archived_at) while still moving JSONB arrays in P1. Keep FIFO semantics. Tests: archive flips state+archived_at; restore (FIFO by archived_at) reverses both stores consistently.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-004"],
             "blocks": ["T-021"],
             "subtasks": [
                 {
                     "title": "archive: state='archived' + archived_at, mirror JSONB",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "restore: FIFO by archived_at, mirror JSONB",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service", "billing", "P1"],
             "phase": "core",
             "qualityGate": {
                 "lint": null,
-                "typecheck": null,
-                "tests": null
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-22T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-23T03:04:34.000Z",
+                "completed": "2026-06-23T03:08:21.000Z"
             }
         },
         {
@@ -906,9 +906,9 @@
     ],
     "summary": {
         "total": 29,
-        "pending": 22,
+        "pending": 21,
         "inProgress": 0,
-        "completed": 7,
+        "completed": 8,
         "blocked": 0,
         "averageComplexity": 2.5
     }

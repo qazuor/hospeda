@@ -1,6 +1,6 @@
 # SPEC-204: Accommodation gallery migration to relational table
 
-## Progress: 7/29 tasks (24%)
+## Progress: 8/29 tasks (28%)
 
 **Average Complexity:** 2.5/3 (max)
 **Storage model:** direct table-per-entity (`accommodation_media`, real FK) — polymorphic + junction rejected
@@ -32,7 +32,7 @@
   - Blocked by: T-002, T-003, T-004 · Blocks: T-010, T-012
 - [x] **T-007** (cx 3) — Write-both on accommodation create/update (table + JSONB transactional) — junction-sync pattern, atomic via ctx.tx
   - Blocked by: T-004, T-005 · Blocks: T-011, T-012, T-014
-- [ ] **T-008** (cx 3) — Dual-write SPEC-167 archive/restore primitives (state flip + JSONB)
+- [x] **T-008** (cx 3) — Dual-write SPEC-167 archive/restore primitives (state flip + JSONB) — selective flip by url, same tx, smoke ✓
   - Blocked by: T-004 · Blocks: T-021
 
 ### Testing
