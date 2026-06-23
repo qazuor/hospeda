@@ -30,10 +30,12 @@ import {
     SelectValue
 } from '@/components/ui/select';
 import {
+    AiUsageByFeatureModelTable,
     AiUsageByFeatureTable,
     AiUsageByModelTable,
     AiUsageByProviderTable,
     AiUsageDailySearchSchema,
+    AiUsageFeatureModelChart,
     AiUsageTotalsCard
 } from '@/features/ai-usage';
 import type { AiUsageDailySearch } from '@/features/ai-usage';
@@ -439,18 +441,21 @@ export function AiUsagePage() {
             </section>
 
             {/* ----------------------------------------------------------------
-             * PLACEHOLDER: Feature × model cross table (T-016)
-             * Will show per-(feature,model) pair rollup for side-by-side
-             * model comparison per feature. Includes a grouped bar chart.
+             * T-016: Feature × model cost chart
+             * Grouped bar chart: X = feature, bars = one per model, value =
+             * estimated cost in USD. Pivoted from the by-feature-model endpoint.
              * --------------------------------------------------------------- */}
-            <section
-                aria-label="Usage by feature and model"
-                data-placeholder="T-016-by-feature-model"
-            >
-                <div className="flex items-center justify-center rounded-lg border border-muted-foreground/30 border-dashed py-8 text-muted-foreground text-sm">
-                    {/* T-016: Insert <AiUsageByFeatureModelTable search={search} /> here */}
-                    Feature × model table + grouped bar chart (T-016)
-                </div>
+            <section aria-label="Cost by feature and model chart">
+                <AiUsageFeatureModelChart search={search} />
+            </section>
+
+            {/* ----------------------------------------------------------------
+             * T-016: Feature × model cross table
+             * One row per (feature, model) pair ordered by cost DESC.
+             * Shares the TanStack Query cache entry with the chart above.
+             * --------------------------------------------------------------- */}
+            <section aria-label="Usage by feature and model">
+                <AiUsageByFeatureModelTable search={search} />
             </section>
 
             {/* ----------------------------------------------------------------
