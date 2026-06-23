@@ -7,7 +7,15 @@
  * accommodations, destinations, events, and posts. Rate-limited at 30 req/min
  * per IP to prevent abuse.
  */
-import { events, accommodations, destinations, getDb, posts, safeIlike } from '@repo/db';
+import {
+    events,
+    accommodationMediaModel,
+    accommodations,
+    destinations,
+    getDb,
+    posts,
+    safeIlike
+} from '@repo/db';
 import { PublicSearchQuerySchema, PublicSearchResponseSchema } from '@repo/schemas';
 import { count, or } from 'drizzle-orm';
 import { createPerRouteRateLimitMiddleware } from '../../../middlewares/rate-limit';
@@ -19,16 +27,6 @@ const searchRateLimit = createPerRouteRateLimitMiddleware({
     requests: 30,
     windowMs: 60_000
 });
-
-/**
- * Extracts the URL of the featured (cover) image from the JSONB `media` column.
- * Returns `undefined` when no media or no featured image exists.
- */
-function extractCoverImageUrl(
-    media: { featuredImage?: { url?: string } } | null | undefined
-): string | undefined {
-    return media?.featuredImage?.url ?? undefined;
-}
 
 /**
  * GET /api/v1/public/search
@@ -68,13 +66,12 @@ export const publicSearchRoute = createPublicRoute({
             postRows,
             postCount
         ] = await Promise.all([
-            // Accommodations
+            // Accommodations — media is fetched separately below (SPEC-204)
             db
                 .select({
                     id: accommodations.id,
                     slug: accommodations.slug,
                     name: accommodations.name,
-                    media: accommodations.media,
                     type: accommodations.type
                 })
                 .from(accommodations)
@@ -141,6 +138,46 @@ export const publicSearchRoute = createPublicRoute({
                 .where(or(safeIlike(posts.title, q), safeIlike(posts.slug, q)))
         ]);
 
+        // ── SPEC-204: batch-load accommodation featured images from the
+        // relational accommodation_media table (one extra query, no N+1).
+        // Only visible rows are considered; the featured row has is_featured=true.
+        const accommodationIds = accommodationRows.map((r) => r.id);
+        const accommodationMediaMap =
+            accommodationIds.length > 0
+                ? await accommodationMediaModel.findByAccommodations({
+                      accommodationIds,
+                      state: 'visible'
+                  })
+                : new Map<string, { isFeatured: boolean; url: string }[]>();
+
+        /**
+         * Extracts the cover image URL for an accommodation from the relational
+         * media map loaded via `findByAccommodations`. Returns `undefined` when
+         * no featured visible row exists for this accommodation.
+         *
+         * @param accommodationId - The accommodation UUID.
+         * @returns The featured row's URL, or `undefined`.
+         */
+        function getAccommodationCoverUrl(accommodationId: string): string | undefined {
+            const rows = accommodationMediaMap.get(accommodationId);
+            if (!rows) return undefined;
+            const featured = rows.find((r) => r.isFeatured);
+            return featured?.url ?? undefined;
+        }
+
+        /**
+         * Extracts the cover image URL from a JSONB `media` column (used by
+         * destinations, events, and posts — not yet migrated to relational storage).
+         *
+         * @param media - Raw media JSONB value.
+         * @returns The featured image URL, or `undefined`.
+         */
+        function extractCoverImageUrl(
+            media: { featuredImage?: { url?: string } } | null | undefined
+        ): string | undefined {
+            return media?.featuredImage?.url ?? undefined;
+        }
+
         // ── Project to PublicSearchResultItem shape ────────────────────────────
         return {
             accommodations: {
@@ -148,9 +185,7 @@ export const publicSearchRoute = createPublicRoute({
                     id: row.id,
                     slug: row.slug,
                     name: row.name,
-                    coverImage: extractCoverImageUrl(
-                        row.media as { featuredImage?: { url?: string } } | null
-                    ),
+                    coverImage: getAccommodationCoverUrl(row.id),
                     type: row.type,
                     category: 'accommodation'
                 })),

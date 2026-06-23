@@ -2261,7 +2261,7 @@ export class AccommodationService extends BaseCrudService<
     public async getTopRated(
         actor: Actor,
         params: AccommodationTopRatedParams,
-        _ctx?: ServiceContext
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<AccommodationListWrapper>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getTopRated',
@@ -2287,10 +2287,17 @@ export class AccommodationService extends BaseCrudService<
                     // onlyFeatured: validated.onlyFeatured // Field not available in schema
                 });
 
-                const accommodations =
+                const normalized =
                     items.map(
                         (item) => normalizeAccommodationOutput(item, actor) as Accommodation
                     ) ?? [];
+
+                // SPEC-204 T-013: batch-read `media` from the relational table (no N+1).
+                const accommodations = await attachComposedMediaList({
+                    items: normalized,
+                    mediaModel: this._accommodationMediaModel,
+                    tx: ctx?.tx
+                });
 
                 // Return wrapped in AccommodationListWrapper format
                 return { accommodations };
@@ -2451,12 +2458,19 @@ export class AccommodationService extends BaseCrudService<
                     ctx?.tx
                 );
 
-                const accommodations = Array.isArray(result.items)
+                const normalized = Array.isArray(result.items)
                     ? result.items.map(
                           (item) =>
                               normalizeAccommodationOutput(item, validatedActor) as Accommodation
                       )
                     : [];
+
+                // SPEC-204 T-013: batch-read `media` from the relational table (no N+1).
+                const accommodations = await attachComposedMediaList({
+                    items: normalized,
+                    mediaModel: this._accommodationMediaModel,
+                    tx: ctx?.tx
+                });
 
                 // Return wrapped in AccommodationListWrapper format
                 return { accommodations };
@@ -2474,7 +2488,7 @@ export class AccommodationService extends BaseCrudService<
     public async getTopRatedByDestination(
         actor: Actor,
         data: AccommodationTopRatedParams,
-        _ctx?: ServiceContext
+        ctx?: ServiceContext
     ): Promise<ServiceOutput<AccommodationListWrapper>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getTopRatedByDestination',
@@ -2505,10 +2519,17 @@ export class AccommodationService extends BaseCrudService<
                     activeOnly: !hasVipAccess
                 });
 
-                const accommodations =
+                const normalized =
                     items.map(
                         (item) => normalizeAccommodationOutput(item, actor) as Accommodation
                     ) ?? [];
+
+                // SPEC-204 T-013: batch-read `media` from the relational table (no N+1).
+                const accommodations = await attachComposedMediaList({
+                    items: normalized,
+                    mediaModel: this._accommodationMediaModel,
+                    tx: ctx?.tx
+                });
 
                 // Return wrapped in AccommodationListWrapper format
                 return { accommodations };
@@ -2973,11 +2994,18 @@ export class AccommodationService extends BaseCrudService<
                     ctx?.tx
                 );
 
-                const accommodations = Array.isArray(result.items)
+                const normalized = Array.isArray(result.items)
                     ? result.items.map(
                           (item) => normalizeAccommodationOutput(item, actor) as Accommodation
                       )
                     : [];
+
+                // SPEC-204 T-013: batch-read `media` from the relational table (no N+1).
+                const accommodations = await attachComposedMediaList({
+                    items: normalized,
+                    mediaModel: this._accommodationMediaModel,
+                    tx: ctx?.tx
+                });
 
                 // Return wrapped in AccommodationListWrapper format
                 return { accommodations };
