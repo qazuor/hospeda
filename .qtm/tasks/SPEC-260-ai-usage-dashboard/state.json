@@ -431,7 +431,7 @@
             "id": "T-019",
             "title": "Per-block empty/loading/error states",
             "description": "Give each query block its own skeleton, an explicit empty state (AC-1.5 copy), and an error state with retry. One failing block must not blank the whole page.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-015", "T-016", "T-017", "T-018"],
             "blocks": ["T-021", "T-022"],
