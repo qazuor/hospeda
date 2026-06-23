@@ -3287,8 +3287,9 @@
             "required": "[PT] El draft id es obligatorio"
         },
         "image": {
-            "fileRefs": {
-                "required": "[PT] El file refs es obligatorio"
+            "openaiFileIdRefs": {
+                "required": "[PT] É necessária pelo menos uma referência de arquivo da OpenAI",
+                "invalidUrl": "[PT] A URL de download da OpenAI é inválida"
             },
             "url": {
                 "invalid": "[PT] El url no es válido"

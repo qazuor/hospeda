@@ -21,19 +21,42 @@ import { SocialPublishFormatEnumSchema } from '../../enums/social-publish-format
 // ---------------------------------------------------------------------------
 
 /**
- * An OpenAI file reference: an ID + a pre-signed download URL.
+ * An OpenAI file reference object injected at runtime by OpenAI into GPT Actions.
+ *
+ * OpenAI declares this field in the OpenAPI schema as `items: { type: 'string' }`
+ * per their convention, but at RUNTIME injects an array of objects shaped like
+ * this. The `download_link` is an HTTPS URL pointing to `files.oaiusercontent.com`
+ * that can be used to download the image.
+ *
+ * @see https://platform.openai.com/docs/actions/sending-files
  */
-export const OpenAiFileRefSchema = z.object({
-    fileId: z.string().min(1),
-    downloadUrl: z.string().url()
-});
+export const OpenAiFileIdRefSchema = z
+    .object({
+        download_link: z
+            .string()
+            .url({ message: 'zodError.socialDraft.image.openaiFileIdRefs.invalidUrl' }),
+        id: z.string().optional(),
+        name: z.string().optional(),
+        mime_type: z.string().optional()
+    })
+    .passthrough();
+
+/**
+ * @deprecated Use {@link OpenAiFileIdRefSchema} instead.
+ * Kept as an alias so external code that imported the old name does not break
+ * until it can be updated.
+ */
+export const OpenAiFileRefSchema = OpenAiFileIdRefSchema;
 
 /**
  * GPT image payload — discriminated on `mode`.
  *
  * - `public_url`: direct HTTPS URL.
- * - `openai_file_refs`: one or more OpenAI file references (only the first
- *    is processed in phase 1 per spec resolved decision).
+ * - `openai_file_refs`: one or more OpenAI file reference objects injected by
+ *    OpenAI at runtime. Only the first entry is processed in phase 1 per spec
+ *    resolved decision. The field is named `openaiFileIdRefs` to match the
+ *    exact property name that triggers OpenAI's automatic file reference
+ *    injection in Custom GPT Actions.
  */
 export const GptImagePayloadSchema = z.discriminatedUnion('mode', [
     z.object({
@@ -44,8 +67,8 @@ export const GptImagePayloadSchema = z.discriminatedUnion('mode', [
     }),
     z.object({
         mode: z.literal('openai_file_refs'),
-        fileRefs: z.array(OpenAiFileRefSchema).min(1, {
-            message: 'zodError.socialDraft.image.fileRefs.required'
+        openaiFileIdRefs: z.array(OpenAiFileIdRefSchema).min(1, {
+            message: 'zodError.socialDraft.image.openaiFileIdRefs.required'
         }),
         altText: z.string().optional(),
         mimeType: z.string().optional()
