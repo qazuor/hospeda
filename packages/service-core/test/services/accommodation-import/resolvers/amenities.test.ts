@@ -1,12 +1,12 @@
 /**
- * Tests for the amenity name resolver (SPEC-222 T-012)
+ * Tests for the amenity slug resolver (SPEC-222 T-012, updated SPEC-266 T-003)
  *
  * Covers:
- * - Two names that both resolve → two ids, empty unresolved.
- * - A name with no catalog match → goes to unresolved.
- * - A fuzzy/partial-only hit (returned item name !== exact input) → unresolved.
- * - Duplicate input names → resolved ids de-duped.
- * - `searchForList` throws for one name → that name unresolved, others still
+ * - Two slugs that both resolve → two ids, empty unresolved.
+ * - A slug with no catalog match → goes to unresolved.
+ * - A fuzzy/partial-only hit (returned item slug !== exact input) → unresolved.
+ * - Duplicate input slugs → resolved ids de-duped.
+ * - `searchForList` throws for one slug → that slug unresolved, others still
  *   processed, no throw.
  * - Empty `names` → `{ amenityIds: [], unresolved: [] }`.
  */
@@ -23,16 +23,19 @@ import type { Actor } from '../../../../src/types/index.js';
 
 /**
  * Builds a minimal AmenitySearchForListOutput with a single item whose
- * Spanish name is `esName` and whose id is `id`.
+ * slug is `slug` and whose id is `id`.
+ *
+ * The `name` JSONB column was dropped in SPEC-266 T-001. Resolution now
+ * matches against `slug` directly.
  */
-function makeSearchResult(id: string, esName: string): AmenitySearchForListOutput {
+function makeSearchResult(id: string, slug: string): AmenitySearchForListOutput {
     return {
         data: [
             {
                 id,
-                slug: esName.toLowerCase().replace(/\s+/g, '-'),
-                name: { es: esName, en: esName, pt: esName },
+                slug,
                 description: null,
+                applicableVerticals: ['accommodation'],
                 type: AmenitiesTypeEnum.CONNECTIVITY,
                 icon: null,
                 isBuiltin: false,
@@ -98,19 +101,19 @@ describe('resolveAmenities', () => {
         });
     });
 
-    describe('when both names resolve to catalog entries', () => {
+    describe('when both slugs resolve to catalog entries', () => {
         it('should return two ids and an empty unresolved array', async () => {
             // Arrange
             const wifiId = 'uuid-wifi-001';
             const poolId = 'uuid-pool-001';
             const searchForList = vi
                 .fn()
-                .mockImplementationOnce(async () => makeSearchResult(wifiId, 'WiFi'))
-                .mockImplementationOnce(async () => makeSearchResult(poolId, 'Piscina'));
+                .mockImplementationOnce(async () => makeSearchResult(wifiId, 'wifi'))
+                .mockImplementationOnce(async () => makeSearchResult(poolId, 'piscina'));
 
             // Act
             const result = await resolveAmenities({
-                names: ['WiFi', 'Piscina'],
+                names: ['wifi', 'piscina'],
                 amenityService: { searchForList },
                 actor: fakeActor
             });
@@ -121,58 +124,58 @@ describe('resolveAmenities', () => {
         });
     });
 
-    describe('when a name has no catalog match', () => {
-        it('should push the original name to unresolved', async () => {
+    describe('when a slug has no catalog match', () => {
+        it('should push the original slug to unresolved', async () => {
             // Arrange
             const searchForList = vi.fn().mockResolvedValue(emptySearchResult);
 
             // Act
             const result = await resolveAmenities({
-                names: ['UnknownAmenity'],
+                names: ['unknown_amenity'],
                 amenityService: { searchForList },
                 actor: fakeActor
             });
 
             // Assert
             expect(result.amenityIds).toEqual([]);
-            expect(result.unresolved).toEqual(['UnknownAmenity']);
+            expect(result.unresolved).toEqual(['unknown_amenity']);
         });
     });
 
-    describe('when a result item is a fuzzy/partial-only match (name does not equal input exactly)', () => {
-        it('should treat the name as unresolved instead of auto-resolving to the partial match', async () => {
-            // Arrange — search for "Pool" returns "Rooftop Pool" (ILIKE hit but NOT exact match)
+    describe('when a result item is a fuzzy/partial-only match (slug does not equal input exactly)', () => {
+        it('should treat the slug as unresolved instead of auto-resolving to the partial match', async () => {
+            // Arrange — search for "pool" returns "rooftop_pool" (ILIKE hit but NOT exact match)
             const searchForList = vi
                 .fn()
-                .mockResolvedValue(makeSearchResult('uuid-rooftop-pool', 'Rooftop Pool'));
+                .mockResolvedValue(makeSearchResult('uuid-rooftop-pool', 'rooftop_pool'));
 
             // Act
             const result = await resolveAmenities({
-                names: ['Pool'],
+                names: ['pool'],
                 amenityService: { searchForList },
                 actor: fakeActor
             });
 
-            // Assert — strict exact-CI rule rejects "Rooftop Pool" ≠ "Pool"
+            // Assert — strict exact-CI rule rejects "rooftop_pool" ≠ "pool"
             expect(result.amenityIds).toEqual([]);
-            expect(result.unresolved).toEqual(['Pool']);
+            expect(result.unresolved).toEqual(['pool']);
         });
     });
 
     describe('when input names contains duplicates', () => {
         it('should de-duplicate resolved ids so each id appears only once', async () => {
-            // Arrange — both "WiFi" and "WIFI" (case variant) resolve to the same catalog entry
+            // Arrange — "wifi" repeated twice maps to the same catalog entry
             const wifiId = 'uuid-wifi-001';
             const searchForList = vi
                 .fn()
-                // First call: exact match for "WiFi"
-                .mockResolvedValueOnce(makeSearchResult(wifiId, 'WiFi'))
-                // Second call: same id returned — different scraped casing, same catalog entry
-                .mockResolvedValueOnce(makeSearchResult(wifiId, 'Piscina')); // won't be called
+                // First call: exact match for "wifi"
+                .mockResolvedValueOnce(makeSearchResult(wifiId, 'wifi'))
+                // Second call would not be made due to de-dup at input level
+                .mockResolvedValueOnce(makeSearchResult(wifiId, 'piscina'));
 
-            // Act — same name repeated twice
+            // Act — same slug repeated twice
             const result = await resolveAmenities({
-                names: ['WiFi', 'WiFi'],
+                names: ['wifi', 'wifi'],
                 amenityService: { searchForList },
                 actor: fakeActor
             });
@@ -187,69 +190,69 @@ describe('resolveAmenities', () => {
             // Arrange
             const searchForList = vi.fn().mockResolvedValue(emptySearchResult);
 
-            // Act — same unknown name repeated three times
+            // Act — same unknown slug repeated three times
             const result = await resolveAmenities({
-                names: ['Ghost', 'Ghost', 'Ghost'],
+                names: ['ghost', 'ghost', 'ghost'],
                 amenityService: { searchForList },
                 actor: fakeActor
             });
 
             // Assert — searched once, unresolved once
             expect(searchForList).toHaveBeenCalledTimes(1);
-            expect(result.unresolved).toEqual(['Ghost']);
+            expect(result.unresolved).toEqual(['ghost']);
         });
     });
 
-    describe('when searchForList throws for one name', () => {
-        it('should push that name to unresolved, continue processing others, and not throw', async () => {
+    describe('when searchForList throws for one slug', () => {
+        it('should push that slug to unresolved, continue processing others, and not throw', async () => {
             // Arrange
             const parkingId = 'uuid-parking-001';
             const searchForList = vi
                 .fn()
-                // First name ("WiFi") — throws
+                // First slug ("wifi") — throws
                 .mockRejectedValueOnce(new Error('DB connection lost'))
-                // Second name ("Estacionamiento") — resolves successfully
-                .mockResolvedValueOnce(makeSearchResult(parkingId, 'Estacionamiento'));
+                // Second slug ("estacionamiento") — resolves successfully
+                .mockResolvedValueOnce(makeSearchResult(parkingId, 'estacionamiento'));
 
             // Act
             const result = await resolveAmenities({
-                names: ['WiFi', 'Estacionamiento'],
+                names: ['wifi', 'estacionamiento'],
                 amenityService: { searchForList },
                 actor: fakeActor
             });
 
-            // Assert — WiFi went to unresolved, Estacionamiento was resolved
+            // Assert — wifi went to unresolved, estacionamiento was resolved
             expect(result.amenityIds).toEqual([parkingId]);
-            expect(result.unresolved).toEqual(['WiFi']);
+            expect(result.unresolved).toEqual(['wifi']);
         });
     });
 
     describe('case-insensitive matching', () => {
-        it('should resolve "wifi" (lowercase input) against a catalog entry named "WiFi"', async () => {
+        it('should resolve "WiFi" (mixed case input) against a catalog entry with slug "wifi"', async () => {
             // Arrange
             const wifiId = 'uuid-wifi-001';
-            const searchForList = vi.fn().mockResolvedValue(makeSearchResult(wifiId, 'WiFi'));
+            const searchForList = vi.fn().mockResolvedValue(makeSearchResult(wifiId, 'wifi'));
 
-            // Act — input is all-lowercase
+            // Act — input is mixed-case
             const result = await resolveAmenities({
-                names: ['wifi'],
+                names: ['WiFi'],
                 amenityService: { searchForList },
                 actor: fakeActor
             });
 
-            // Assert — "wifi".toLowerCase() === "WiFi".toLowerCase() → match
+            // Assert — "WiFi".toLowerCase() === "wifi" → match
             expect(result.amenityIds).toEqual([wifiId]);
             expect(result.unresolved).toEqual([]);
         });
 
-        it('should resolve "  WiFi  " (padded input) against a catalog entry named "WiFi"', async () => {
+        it('should resolve "  wifi  " (padded input) against a catalog entry with slug "wifi"', async () => {
             // Arrange
             const wifiId = 'uuid-wifi-001';
-            const searchForList = vi.fn().mockResolvedValue(makeSearchResult(wifiId, 'WiFi'));
+            const searchForList = vi.fn().mockResolvedValue(makeSearchResult(wifiId, 'wifi'));
 
             // Act — input has leading/trailing whitespace
             const result = await resolveAmenities({
-                names: ['  WiFi  '],
+                names: ['  wifi  '],
                 amenityService: { searchForList },
                 actor: fakeActor
             });

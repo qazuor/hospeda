@@ -1,10 +1,4 @@
-import {
-    AccommodationModel,
-    FeatureModel,
-    RAccommodationFeatureModel,
-    escapeLikePattern,
-    sql
-} from '@repo/db';
+import { AccommodationModel, FeatureModel, RAccommodationFeatureModel } from '@repo/db';
 import type {
     Accommodation,
     AccommodationFeature,
@@ -28,7 +22,7 @@ import { BaseCrudRelatedService } from '../../base/base.crud.related.service';
 import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
 import type { ServiceOutput } from '../../types';
 import { type Actor, type ServiceConfig, type ServiceContext, ServiceError } from '../../types';
-import { generateFeatureSlug } from './feature.helpers';
+// generateFeatureSlug removed: JSONB name column dropped in SPEC-266 T-001.
 import { normalizeListInput, normalizeViewInput } from './feature.normalizers';
 import {
     checkCanAddFeatureToAccommodation,
@@ -97,18 +91,16 @@ export class FeatureService extends BaseCrudRelatedService<
     }
 
     /**
-     * Lifecycle hook: normalizes input and generates slug before creating a feature.
-     * If slug is not provided, generates a unique slug from the Spanish locale of the name.
+     * Lifecycle hook: normalizes input before creating a feature.
+     * Slug must be provided explicitly; auto-generation from name is no longer
+     * possible because the JSONB `name` column was dropped in SPEC-266 T-001.
      */
     protected async _beforeCreate(
         data: z.infer<typeof CreateFeatureSchema>,
         _actor: Actor,
         _ctx: ServiceContext
     ): Promise<Partial<Feature>> {
-        let slug = data.slug;
-        if (!slug && data.name) {
-            slug = await generateFeatureSlug(data.name, this.model);
-        }
+        const slug = data.slug;
 
         // Set default values for optional fields
         const isBuiltin = data.isBuiltin ?? false;
@@ -123,29 +115,16 @@ export class FeatureService extends BaseCrudRelatedService<
     }
 
     /**
-     * Lifecycle hook: normalizes input and generates slug before updating a feature.
-     * If name is updated and slug is not provided, generates a new unique slug.
-     * Comparison uses the Spanish locale (es) as the canonical locale.
+     * Lifecycle hook: normalizes input before updating a feature.
+     * Slug must be provided explicitly; auto-generation from name is no longer
+     * possible because the JSONB `name` column was dropped in SPEC-266 T-001.
      */
     protected async _beforeUpdate(
         data: z.infer<typeof UpdateFeatureSchema>,
         _actor: Actor,
         _ctx: ServiceContext
     ): Promise<Partial<Feature>> {
-        let slug = data.slug;
-        if (!slug && data.name) {
-            // Try to get the entity by id if present
-            let entity: Feature | undefined = undefined;
-            if ('id' in data && data.id) {
-                const found = await this.model.findById(data.id as Feature['id']);
-                entity = found ?? undefined;
-            }
-            // Compare by canonical locale (es) to detect a real name change
-            const nameChanged = !entity || data.name.es !== entity.name.es;
-            if (nameChanged) {
-                slug = await generateFeatureSlug(data.name, this.model);
-            }
-        }
+        const slug = data.slug;
         return { ...data, slug };
     }
 
@@ -203,20 +182,16 @@ export class FeatureService extends BaseCrudRelatedService<
         _actor: Actor,
         _ctx: ServiceContext
     ): Promise<{ items: Feature[]; total: number }> {
-        const { name, slug, isFeatured, isBuiltin } = params;
+        const { slug, isFeatured, isBuiltin } = params;
         const where: Record<string, unknown> = {};
-        // name is a plain text search term; the DB column is now JSONB.
-        // Do NOT pass name into buildWhereClause — use additionalConditions instead
-        // to query the Spanish locale via name->>'es' ILIKE %term%.
+        // The JSONB name column was dropped in SPEC-266 T-001. Text search is now
+        // done via the slug field (exact match). safeIlike on features.slug is
+        // available for callers that need partial slug matching.
         if (slug) where.slug = slug;
         if (typeof isFeatured === 'boolean') where.isFeatured = isFeatured;
         if (typeof isBuiltin === 'boolean') where.isBuiltin = isBuiltin;
 
-        const additionalConditions = name
-            ? [sql`name->>'es' ILIKE ${`%${escapeLikePattern(name)}%`}`]
-            : undefined;
-
-        const { items, total } = await this.model.findAll(where, undefined, additionalConditions);
+        const { items, total } = await this.model.findAll(where, undefined);
         return { items, total };
     }
 
@@ -225,19 +200,16 @@ export class FeatureService extends BaseCrudRelatedService<
         _actor: Actor,
         _ctx: ServiceContext
     ): Promise<{ count: number }> {
-        const { name, slug, isFeatured, isBuiltin } = params;
+        const { slug, isFeatured, isBuiltin } = params;
         const where: Record<string, unknown> = {};
-        // name is a plain text search term; the DB column is now JSONB.
-        // Do NOT pass name into buildWhereClause — use additionalConditions instead.
+        // The JSONB name column was dropped in SPEC-266 T-001. Text search is now
+        // done via the slug field (exact match). safeIlike on features.slug is
+        // available for callers that need partial slug matching.
         if (slug) where.slug = slug;
         if (typeof isFeatured === 'boolean') where.isFeatured = isFeatured;
         if (typeof isBuiltin === 'boolean') where.isBuiltin = isBuiltin;
 
-        const additionalConditions = name
-            ? [sql`name->>'es' ILIKE ${`%${escapeLikePattern(name)}%`}`]
-            : undefined;
-
-        const count = await this.model.count(where, { additionalConditions });
+        const count = await this.model.count(where);
         return { count };
     }
 
@@ -245,8 +217,9 @@ export class FeatureService extends BaseCrudRelatedService<
      * Searches for features with accommodation counts.
      * Uses a single batch COUNT query instead of N+1 individual queries.
      *
-     * The `name` filter is a plain text search term applied against the Spanish
-     * locale of the JSONB `name` column (`name->>'es' ILIKE %term%`).
+     * The JSONB `name` column was dropped in SPEC-266 T-001. Text search is now
+     * done via the `slug` field (exact match). Partial slug matching can be
+     * added by callers using `safeIlike(features.slug, term)` in additional conditions.
      *
      * @param actor - The actor performing the action
      * @param params - The search parameters with optional filters
@@ -256,7 +229,7 @@ export class FeatureService extends BaseCrudRelatedService<
     public async searchForList(
         actor: Actor,
         params: {
-            filters?: { name?: string; slug?: string; isFeatured?: boolean; isBuiltin?: boolean };
+            filters?: { slug?: string; isFeatured?: boolean; isBuiltin?: boolean };
             pagination?: { page?: number; pageSize?: number };
         } = {},
         _ctx?: ServiceContext
@@ -266,25 +239,19 @@ export class FeatureService extends BaseCrudRelatedService<
     }> {
         await this._canSearch(actor);
         const { pagination, filters = {} } = params;
-        const { name, slug, isFeatured, isBuiltin } = filters;
+        const { slug, isFeatured, isBuiltin } = filters;
         const page = pagination?.page ?? 1;
         const pageSize = pagination?.pageSize ?? 10;
 
         const where: Record<string, unknown> = {};
-        // name is a plain text search term; search against the es locale via JSONB extraction.
+        // The JSONB name column was dropped in SPEC-266 T-001. Text search is now
+        // done via the slug field (exact match). safeIlike on features.slug is
+        // available for callers that need partial slug matching.
         if (slug) where.slug = slug;
         if (typeof isFeatured === 'boolean') where.isFeatured = isFeatured;
         if (typeof isBuiltin === 'boolean') where.isBuiltin = isBuiltin;
 
-        const additionalConditions = name
-            ? [sql`name->>'es' ILIKE ${`%${escapeLikePattern(name)}%`}`]
-            : undefined;
-
-        const { items, total } = await this.model.findAll(
-            where,
-            { page, pageSize },
-            additionalConditions
-        );
+        const { items, total } = await this.model.findAll(where, { page, pageSize });
 
         // Batch fetch accommodation counts in a single query instead of N+1
         const featureIds = items.map((feature) => feature.id as string);
