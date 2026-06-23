@@ -5,7 +5,7 @@
 -- Drizzle cannot emit a partial unique index nor a cross-column CHECK, so they
 -- live in extras/ and are re-applied by `pnpm db:apply-extras` after every
 -- `pnpm db:migrate`. The accommodation_media table itself is created by the
--- structural migration 0024_aberrant_shriek.sql (carril 1).
+-- structural migration 0026_robust_marten_broadcloak.sql (carril 1).
 --
 -- Invariants (locked, SPEC-204 D2):
 --   1. At most ONE featured photo per accommodation
@@ -33,9 +33,11 @@ BEGIN
     RETURN;
   END IF;
 
-  CREATE UNIQUE INDEX IF NOT EXISTS uq_accommodation_media_single_featured
+  -- Drop first so we can recreate with the updated predicate (idempotent).
+  DROP INDEX IF EXISTS uq_accommodation_media_single_featured;
+  CREATE UNIQUE INDEX uq_accommodation_media_single_featured
     ON accommodation_media (accommodation_id)
-    WHERE is_featured = true;
+    WHERE is_featured = true AND deleted_at IS NULL;
   RAISE NOTICE 'uq_accommodation_media_single_featured: ensured.';
 END;
 $$;
