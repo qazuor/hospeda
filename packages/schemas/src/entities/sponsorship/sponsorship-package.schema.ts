@@ -65,6 +65,39 @@ export const SponsorshipPackageSchema = z.object({
 export type SponsorshipPackage = z.infer<typeof SponsorshipPackageSchema>;
 
 /**
+ * PUBLIC ACCESS SCHEMA for SponsorshipPackage
+ *
+ * Fail-closed allow-list: only explicitly picked fields are exposed.
+ * New base or audit fields added in the future are NOT auto-exposed.
+ *
+ * Included fields (catalog / display):
+ *   id, slug, name, description, priceAmount, priceCurrency,
+ *   includedPosts, includedEvents, isActive, sortOrder
+ *
+ * Excluded fields:
+ *   - Audit (NEVER expose to anonymous callers):
+ *     createdAt, updatedAt, createdById, updatedById, deletedAt, deletedById
+ *   - Internal FK (no public consumer):
+ *     eventLevelId
+ *
+ * Owner decision (SPEC-210 PR4): sponsorship package public = catalog/display fields only.
+ * eventLevelId is an internal FK reference and has no meaning to anonymous API consumers.
+ */
+export const SponsorshipPackagePublicSchema = SponsorshipPackageSchema.pick({
+    id: true,
+    slug: true,
+    name: true,
+    description: true,
+    priceAmount: true,
+    priceCurrency: true,
+    includedPosts: true,
+    includedEvents: true,
+    isActive: true,
+    sortOrder: true
+});
+export type SponsorshipPackagePublic = z.infer<typeof SponsorshipPackagePublicSchema>;
+
+/**
  * Create input for sponsorship package
  */
 export const SponsorshipPackageCreateInputSchema = SponsorshipPackageSchema.omit({
