@@ -29,7 +29,13 @@ import {
     SelectTrigger,
     SelectValue
 } from '@/components/ui/select';
-import { AiUsageDailySearchSchema } from '@/features/ai-usage';
+import {
+    AiUsageByFeatureTable,
+    AiUsageByModelTable,
+    AiUsageByProviderTable,
+    AiUsageDailySearchSchema,
+    AiUsageTotalsCard
+} from '@/features/ai-usage';
 import type { AiUsageDailySearch } from '@/features/ai-usage';
 import { requireAiAccess } from '@/lib/ai-access';
 import { FilterIcon, RotateCcwIcon } from '@repo/icons';
@@ -396,54 +402,46 @@ export function AiUsagePage() {
             </Card>
 
             {/* ----------------------------------------------------------------
-             * PLACEHOLDER: Totals summary cards (T-015)
-             * Will show aggregated calls / tokens-in / tokens-out / cost
-             * across the selected window and filters.
+             * T-015: Totals summary cards
+             * Aggregated calls / tokens-in / tokens-out / cost across the
+             * selected window and filters. Derived from the by-model endpoint.
              * --------------------------------------------------------------- */}
-            <section
-                aria-label="Usage totals"
-                data-placeholder="T-015-totals-cards"
-            >
-                <div className="flex items-center justify-center rounded-lg border border-muted-foreground/30 border-dashed py-8 text-muted-foreground text-sm">
-                    {/* T-015: Insert <AiUsageTotalsCards search={search} /> here */}
-                    Totals cards (T-015)
-                </div>
+            <section aria-label="Usage totals">
+                <AiUsageTotalsCard search={search} />
             </section>
 
             {/* ----------------------------------------------------------------
-             * PLACEHOLDER: By-model table (T-016)
-             * Will show per-model rollup: model | calls | tokensIn |
-             * tokensOut | costMicroUsd — ordered by cost DESC.
+             * T-015: By-model breakdown table
+             * Per-model rollup: model | calls | tokensIn | tokensOut |
+             * costMicroUsd | cost/1k tokens — ordered by cost DESC.
              * --------------------------------------------------------------- */}
-            <section
-                aria-label="Usage by model"
-                data-placeholder="T-016-by-model"
-            >
-                <div className="flex items-center justify-center rounded-lg border border-muted-foreground/30 border-dashed py-8 text-muted-foreground text-sm">
-                    {/* T-016: Insert <AiUsageByModelTable search={search} /> here */}
-                    By-model table (T-016)
-                </div>
+            <section aria-label="Usage by model">
+                <AiUsageByModelTable search={search} />
             </section>
 
             {/* ----------------------------------------------------------------
-             * PLACEHOLDER: By-provider table (T-016)
-             * Will show per-provider rollup: provider | calls | tokens |
+             * T-015: By-provider breakdown table
+             * Per-provider rollup: provider | calls | tokensIn | tokensOut |
              * cost — ordered by cost DESC.
              * --------------------------------------------------------------- */}
-            <section
-                aria-label="Usage by provider"
-                data-placeholder="T-016-by-provider"
-            >
-                <div className="flex items-center justify-center rounded-lg border border-muted-foreground/30 border-dashed py-8 text-muted-foreground text-sm">
-                    {/* T-016: Insert <AiUsageByProviderTable search={search} /> here */}
-                    By-provider table (T-016)
-                </div>
+            <section aria-label="Usage by provider">
+                <AiUsageByProviderTable search={search} />
+            </section>
+
+            {/* ----------------------------------------------------------------
+             * T-015: By-feature breakdown table
+             * Per-feature rollup derived client-side from the by-feature-model
+             * endpoint (no standalone /by-feature endpoint exists in SPEC-260).
+             * Groups rows by feature, sums metrics, orders by cost DESC.
+             * --------------------------------------------------------------- */}
+            <section aria-label="Usage by feature">
+                <AiUsageByFeatureTable search={search} />
             </section>
 
             {/* ----------------------------------------------------------------
              * PLACEHOLDER: Feature × model cross table (T-016)
              * Will show per-(feature,model) pair rollup for side-by-side
-             * model comparison per feature.
+             * model comparison per feature. Includes a grouped bar chart.
              * --------------------------------------------------------------- */}
             <section
                 aria-label="Usage by feature and model"
@@ -451,7 +449,7 @@ export function AiUsagePage() {
             >
                 <div className="flex items-center justify-center rounded-lg border border-muted-foreground/30 border-dashed py-8 text-muted-foreground text-sm">
                     {/* T-016: Insert <AiUsageByFeatureModelTable search={search} /> here */}
-                    Feature × model table (T-016)
+                    Feature × model table + grouped bar chart (T-016)
                 </div>
             </section>
 
