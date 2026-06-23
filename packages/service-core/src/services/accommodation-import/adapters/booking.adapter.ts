@@ -63,6 +63,29 @@ const USEFUL_FIELD_THRESHOLD = 2;
 const BROWSER_USER_AGENT =
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36';
 
+/**
+ * Lead time in days ahead of today used as the check-in date for the price probe.
+ */
+const PRICE_PROBE_LEAD_DAYS = 30;
+
+/**
+ * Length of the price probe stay in nights. The actor returns the total price
+ * for this many nights; we divide to get a per-night "from" figure.
+ */
+const PRICE_PROBE_NIGHTS = 2;
+
+/**
+ * Number of adults passed to the Booking.com actor for the price probe.
+ */
+const PRICE_PROBE_ADULTS = 2;
+
+/**
+ * ISO 4217 currency code requested from the actor.
+ * The actor may return a display symbol (e.g. "US$") — we ignore it and always
+ * store the currency we REQUESTED so the value is unambiguous.
+ */
+const PRICE_PROBE_CURRENCY = 'USD' as const;
+
 // ---------------------------------------------------------------------------
 // Booking.com Apify actor dataset item type
 //
@@ -82,6 +105,56 @@ interface BookingCoordinates {
 }
 
 /**
+ * A single facility entry inside a facility group, as returned by
+ * `voyager/booking-scraper`.
+ *
+ * Real probe shape (SPEC-258):
+ * ```json
+ * { "name": "Free WiFi", "additionalInfo": { "requiresAdditionalCharge": false, "isOffSite": false }, "id": 47 }
+ * ```
+ */
+interface BookingFacilityEntry {
+    readonly name?: string | null | undefined;
+    readonly additionalInfo?:
+        | {
+              readonly requiresAdditionalCharge?: boolean | null | undefined;
+              readonly isOffSite?: boolean | null | undefined;
+          }
+        | null
+        | undefined;
+    readonly id?: number | string | null | undefined;
+}
+
+/**
+ * A facility group as returned by `voyager/booking-scraper`.
+ *
+ * Real probe shape (SPEC-258):
+ * ```json
+ * { "name": "Great for your stay", "facilities": [{ "name": "Free WiFi", ... }], "overview": null, "id": null }
+ * ```
+ */
+interface BookingFacilityGroup {
+    readonly name?: string | null | undefined;
+    readonly facilities?: readonly BookingFacilityEntry[] | null | undefined;
+    readonly overview?: string | null | undefined;
+    readonly id?: number | string | null | undefined;
+}
+
+/**
+ * Nested address object as returned by `voyager/booking-scraper`.
+ *
+ * Real probe shape (SPEC-258):
+ * ```json
+ * { "full": "799 Almafuerte 799, 3260 Concepción del Uruguay, Argentina", "country": "ar", "city": "Concepción del Uruguay" }
+ * ```
+ */
+interface BookingAddress {
+    readonly full?: string | null | undefined;
+    readonly city?: string | null | undefined;
+    readonly country?: string | null | undefined;
+}
+
+/**
  * Image entry — actors may return plain URL strings or objects with a `url`
  * or `src` property.
  */
@@ -97,6 +170,13 @@ type BookingImageEntry =
  * are INTENTIONALLY ABSENT from this interface.  Because TypeScript only
  * surfaces declared keys on a typed object, mapping code in this file cannot
  * reference them — they are structurally unreachable.
+ *
+ * **Real shape note (SPEC-258)**: The `voyager/booking-scraper` actor returns:
+ * - `type: "hotel"` — a clean string (NOT `propertyType`).
+ * - `address: { full, city, country }` — an object, NOT a string.
+ * - `location: { lat, lng }` — nested coordinate strings.
+ * - `facilities: [{ name, facilities: [{ name, additionalInfo }] }]` — grouped amenities.
+ * - `price: null`, `currency: null`, `rooms: []` — without check-in/out dates.
  */
 interface BookingItem {
     // Name
@@ -112,24 +192,27 @@ interface BookingItem {
     readonly latitude?: number | string | null | undefined;
     readonly longitude?: number | string | null | undefined;
 
-    // Coordinates (nested form)
+    // Coordinates (nested form — voyager/booking-scraper uses `location: { lat, lng }`)
     readonly coordinates?: BookingCoordinates | null | undefined;
     readonly location?: BookingCoordinates | null | undefined;
 
-    // Address / locality
-    readonly address?: string | null | undefined;
+    // Address / locality.
+    // voyager/booking-scraper returns an object: { full, city, country }.
+    // Older/generic actors may return a plain string. Both are accepted.
+    readonly address?: string | BookingAddress | null | undefined;
     readonly city?: string | null | undefined;
     readonly localizedCity?: string | null | undefined;
 
-    // Country
+    // Country (top-level string, used as fallback when address object is absent)
     readonly country?: string | null | undefined;
     readonly countryCode?: string | null | undefined;
 
     // Images
     readonly photos?: readonly BookingImageEntry[] | null | undefined;
-    readonly images?: readonly BookingImageEntry[] | null | undefined;
+    readonly images?: readonly (string | BookingImageEntry)[] | null | undefined;
 
-    // Accommodation type
+    // Accommodation type.
+    // voyager/booking-scraper returns `type: "hotel"` at the top level.
     readonly propertyType?: string | null | undefined;
     readonly type?: string | null | undefined;
 
@@ -141,6 +224,17 @@ interface BookingItem {
     // Rooms
     readonly bedrooms?: number | string | null | undefined;
     readonly bathrooms?: number | string | null | undefined;
+
+    // Grouped facility/amenity list.
+    // voyager/booking-scraper shape: `[{ name, facilities: [{ name, additionalInfo }] }]`
+    readonly facilities?: readonly BookingFacilityGroup[] | null | undefined;
+
+    // Price — returned as a positive number when check-in/out dates are given.
+    // voyager/booking-scraper real probe shape (SPEC-258):
+    //   `"price": 157.3` — total for the whole stay (PRICE_PROBE_NIGHTS nights).
+    //   `"price": null`  — when no dates are given or listing is unavailable.
+    // Divide by PRICE_PROBE_NIGHTS to get a per-night figure.
+    readonly price?: number | string | null | undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -260,6 +354,137 @@ function countUsefulFields(raw: RawExtraction): number {
 // ---------------------------------------------------------------------------
 
 /**
+ * Extracts a locality string from the `address` field of a {@link BookingItem}.
+ *
+ * Handles two shapes:
+ * - **String** (generic actors): returned as-is.
+ * - **Object** (`voyager/booking-scraper` real shape: `{ full, city, country }`):
+ *   returns `city` when available, otherwise `full`.
+ *
+ * @param address - Raw value from the dataset item's `address` field.
+ * @returns Locality string, or `null` when not extractable.
+ */
+function extractLocalityFromAddress(
+    address: string | BookingAddress | null | undefined
+): string | null {
+    if (address == null) return null;
+    if (typeof address === 'string') return address.length > 0 ? address : null;
+    // Object shape — prefer city, fall back to full address string
+    if (typeof address.city === 'string' && address.city.length > 0) return address.city;
+    if (typeof address.full === 'string' && address.full.length > 0) return address.full;
+    return null;
+}
+
+/**
+ * Extracts a country string from the `address` field of a {@link BookingItem}.
+ *
+ * The `voyager/booking-scraper` actor returns `address.country` as a two-letter
+ * country code (e.g. `"ar"`). Falls back to the top-level `country` /
+ * `countryCode` fields for other actor shapes.
+ *
+ * @param address - Raw value from the dataset item's `address` field.
+ * @returns Country string, or `null` when not extractable.
+ */
+function extractCountryFromAddress(
+    address: string | BookingAddress | null | undefined
+): string | null {
+    if (address == null || typeof address === 'string') return null;
+    if (typeof address.country === 'string' && address.country.length > 0) return address.country;
+    return null;
+}
+
+/**
+ * Flattens the `facilities` array from a Booking.com actor item into a
+ * deduplicated list of amenity name strings.
+ *
+ * Real probe shape (SPEC-258, `voyager/booking-scraper`):
+ * ```json
+ * [
+ *   { "name": "Great for your stay", "facilities": [{ "name": "Free WiFi" }, { "name": "Bar" }] },
+ *   { "name": "Outdoors", "facilities": [{ "name": "Outdoor furniture" }] }
+ * ]
+ * ```
+ * Each group's `facilities[].name` is extracted. Group names themselves are NOT
+ * included — only the individual facility names.
+ *
+ * @param groups - Raw facilities array from the dataset item.
+ * @returns Deduplicated array of amenity name strings; empty when nothing is usable.
+ */
+function extractFacilityNames(
+    groups: readonly BookingFacilityGroup[] | null | undefined
+): string[] {
+    if (!groups || groups.length === 0) return [];
+    const names: string[] = [];
+    for (const group of groups) {
+        const items = group.facilities;
+        if (!Array.isArray(items)) continue;
+        for (const item of items) {
+            if (typeof item.name === 'string' && item.name.trim().length > 0) {
+                names.push(item.name.trim());
+            }
+        }
+    }
+    // Dedupe preserving order.
+    return [...new Set(names)];
+}
+
+/**
+ * Builds the check-in and check-out date strings (YYYY-MM-DD) for the price
+ * probe. Check-in is {@link PRICE_PROBE_LEAD_DAYS} days from today;
+ * check-out is {@link PRICE_PROBE_NIGHTS} nights later.
+ *
+ * Isolated into a pure helper so the single `new Date()` call is easy to audit.
+ *
+ * @returns `{ checkIn, checkOut }` as `YYYY-MM-DD` strings.
+ */
+function buildPriceProbeDates(): { readonly checkIn: string; readonly checkOut: string } {
+    const toYMD = (d: Date): string => d.toISOString().slice(0, 10);
+    const now = new Date();
+    const checkInDate = new Date(now);
+    checkInDate.setDate(now.getDate() + PRICE_PROBE_LEAD_DAYS);
+    const checkOutDate = new Date(checkInDate);
+    checkOutDate.setDate(checkInDate.getDate() + PRICE_PROBE_NIGHTS);
+    return { checkIn: toYMD(checkInDate), checkOut: toYMD(checkOutDate) };
+}
+
+/**
+ * Extracts a per-night price from a Booking.com actor item's `price` field.
+ *
+ * `voyager/booking-scraper` returns `price` as a positive number representing
+ * the TOTAL for the stay (not per-night). We divide by `nights` to normalize.
+ *
+ * Real probe shape (SPEC-258):
+ * - With dates: `"price": 157.3` (total for 2 nights → 78.65/night).
+ * - Without dates: `"price": null` → returns `null`.
+ *
+ * The caller tags the result `source: 'text'` (→ 50% confidence via
+ * CONFIDENCE_BY_SOURCE) because this is a date-specific parsed estimate,
+ * NOT the listing's authoritative base price.
+ *
+ * @param rawPrice - The raw `price` field from the dataset item.
+ * @param nights - Number of probe nights used to divide total into per-night.
+ * @returns A positive finite per-night price, or `null`.
+ */
+function extractPerNightPriceBooking(
+    rawPrice: number | string | null | undefined,
+    nights: number
+): number | null {
+    if (rawPrice == null) return null;
+    const total =
+        typeof rawPrice === 'number'
+            ? Number.isFinite(rawPrice)
+                ? rawPrice
+                : null
+            : (() => {
+                  const n = Number(String(rawPrice).replace(/[^0-9.]/g, ''));
+                  return Number.isFinite(n) ? n : null;
+              })();
+    if (total === null || total <= 0) return null;
+    const perNight = total / nights;
+    return Number.isFinite(perNight) && perNight > 0 ? perNight : null;
+}
+
+/**
  * Maps the first dataset item returned by the Apify Booking.com actor to a
  * {@link RawExtraction}.
  *
@@ -269,6 +494,10 @@ function countUsefulFields(raw: RawExtraction): number {
  * **Hard rule (SPEC-222)**: reviews, ratings, and related fields are
  * structurally excluded via the typed {@link BookingItem} interface — they
  * cannot appear in the returned extraction even if the actor sent them.
+ *
+ * **A4 (SPEC-258)**: Maps `type` → `result.type`, flattens `facilities`
+ * groups into `result.amenityNames`, and maps `price` (total) ÷ nights
+ * into a per-night "from" price when a positive number is present.
  *
  * @param raw - The first item from the Apify actor's dataset (typed narrowly).
  * @returns A populated {@link RawExtraction} tagged `source: 'official_api'`.
@@ -281,6 +510,8 @@ function mapApifyItemToRawExtraction(raw: BookingItem): RawExtraction {
         type?: RawExtraction['type'];
         location?: RawExtraction['location'];
         imageUrls?: readonly string[];
+        amenityNames?: readonly string[];
+        price?: RawExtraction['price'];
         scrapedLocality?: string;
         scrapedCountry?: string;
         extraInfo?: RawExtraction['extraInfo'];
@@ -298,6 +529,8 @@ function mapApifyItemToRawExtraction(raw: BookingItem): RawExtraction {
     }
 
     // -- type ------------------------------------------------------------------
+    // voyager/booking-scraper returns `type: "hotel"` at top level.
+    // Some actors may use `propertyType` instead.
     const typeRaw = raw.propertyType ?? raw.type;
     if (typeRaw) {
         result.type = { value: typeRaw, source: 'official_api' };
@@ -312,24 +545,56 @@ function mapApifyItemToRawExtraction(raw: BookingItem): RawExtraction {
     }
 
     // -- scrapedLocality -------------------------------------------------------
-    const locality = raw.address ?? raw.localizedCity ?? raw.city;
+    // voyager/booking-scraper: `address` is an object `{ full, city, country }`.
+    // Fall back to top-level `localizedCity` / `city` for other actor shapes.
+    const locality =
+        extractLocalityFromAddress(raw.address) ?? raw.localizedCity ?? raw.city ?? null;
     if (locality) {
         result.scrapedLocality = locality;
     }
 
     // -- scrapedCountry --------------------------------------------------------
-    const country = raw.country ?? raw.countryCode;
+    // voyager/booking-scraper: country lives inside `address.country`.
+    // Fall back to top-level `country` / `countryCode` for other actor shapes.
+    const country =
+        extractCountryFromAddress(raw.address) ?? raw.country ?? raw.countryCode ?? null;
     if (country) {
         result.scrapedCountry = country;
     }
 
     // -- imageUrls (try photos, then images) -----------------------------------
-    const resolvedUrls =
-        extractImageUrls(raw.photos).length > 0
-            ? extractImageUrls(raw.photos)
-            : extractImageUrls(raw.images);
-    if (resolvedUrls.length > 0) {
-        result.imageUrls = resolvedUrls;
+    // voyager/booking-scraper returns `images` as a plain string array.
+    const photoUrls = extractImageUrls(raw.photos);
+    const imageUrls =
+        photoUrls.length > 0
+            ? photoUrls
+            : extractImageUrls(raw.images as readonly BookingImageEntry[] | null | undefined);
+    if (imageUrls.length > 0) {
+        result.imageUrls = imageUrls;
+    }
+
+    // -- amenityNames (A4 — SPEC-258) ------------------------------------------
+    // voyager/booking-scraper exposes `facilities[].facilities[].name`.
+    // Flatten all groups and deduplicate.
+    const amenityNames = extractFacilityNames(raw.facilities);
+    if (amenityNames.length > 0) {
+        result.amenityNames = amenityNames;
+    }
+
+    // -- price (from-price probe — A price probe, SPEC-258) --------------------
+    // voyager/booking-scraper returns `price` as the TOTAL for the stay
+    // (PRICE_PROBE_NIGHTS nights) when check-in/check-out params are sent.
+    // We divide by PRICE_PROBE_NIGHTS to get a per-night orientative price.
+    // When dates are absent the actor returns null — skip in that case.
+    // Tagged `source: 'text'` (→ 50% confidence via CONFIDENCE_BY_SOURCE):
+    // this is a date-specific parsed estimate, not the listing's authoritative
+    // base price. Signals "plausible, requires host review" to the pipeline.
+    const perNightPrice = extractPerNightPriceBooking(raw.price, PRICE_PROBE_NIGHTS);
+    if (perNightPrice !== null) {
+        result.price = {
+            price: { value: perNightPrice, source: 'text' },
+            currency: { value: PRICE_PROBE_CURRENCY, source: 'text' }
+        };
     }
 
     // -- extraInfo (capacity, bedrooms, bathrooms) -----------------------------
@@ -386,6 +651,11 @@ function mapApifyItemToRawExtraction(raw: BookingItem): RawExtraction {
  * Rating/review fields are already stripped by `extractJsonLd` — this function
  * only maps the safe fields that are present in `JsonLdResult`.
  *
+ * **A4a (SPEC-258)**: forwards `jsonLd.lodgingType` → `result.type` via a
+ * raw string pass-through (the JSON-LD `@type` value, e.g. `"Hotel"`). The
+ * downstream mapping pipeline (`mapAccommodationType`) converts it to the
+ * internal enum value. This mirrors what `generic.adapter.ts` does.
+ *
  * @param jsonLd - The result returned by `extractJsonLd({ html })`.
  * @returns A partial {@link RawExtraction}; fields absent in `jsonLd` are omitted.
  */
@@ -394,6 +664,7 @@ function mapJsonLdToRawExtraction(jsonLd: ReturnType<typeof extractJsonLd>): Raw
         sourcePlatform: 'booking';
         name?: RawExtraction['name'];
         description?: RawExtraction['description'];
+        type?: RawExtraction['type'];
         location?: RawExtraction['location'];
         imageUrls?: readonly string[];
         scrapedLocality?: string;
@@ -406,6 +677,13 @@ function mapJsonLdToRawExtraction(jsonLd: ReturnType<typeof extractJsonLd>): Raw
 
     if (jsonLd.description) {
         result.description = { value: jsonLd.description, source: 'jsonld' };
+    }
+
+    // -- type (A4a) ------------------------------------------------------------
+    // Forward the schema.org @type from the JSON-LD node (e.g. "Hotel") so the
+    // downstream pipeline can map it to an AccommodationTypeEnum value.
+    if (jsonLd.lodgingType) {
+        result.type = { value: jsonLd.lodgingType, source: 'jsonld' };
     }
 
     // -- location (coordinates + street) --------------------------------------
@@ -581,10 +859,18 @@ export class BookingAdapter implements ImportSourceAdapter {
                 return empty;
             }
 
+            // Build date-based price probe so the actor returns a real price.
+            const { checkIn, checkOut } = buildPriceProbeDates();
             const dataset = await runApifyActor({
                 token,
                 actor,
-                actorInput: { startUrls: [{ url: url.href }] },
+                actorInput: {
+                    startUrls: [{ url: url.href }],
+                    checkIn,
+                    checkOut,
+                    adults: PRICE_PROBE_ADULTS,
+                    currency: PRICE_PROBE_CURRENCY
+                },
                 timeoutMs: ctx.timeoutMs
             });
 

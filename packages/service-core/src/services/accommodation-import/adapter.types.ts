@@ -130,7 +130,16 @@ export interface RawExtraction {
           }
         | undefined;
 
-    /** Candidate SEO metadata (mirrors `AccommodationImportDraft.seo`). */
+    /**
+     * Candidate SEO metadata (mirrors `AccommodationImportDraft.seo`).
+     *
+     * **A6 (SPEC-258) — intentionally NOT auto-derived on import.**
+     * SEO title and description are host-authored content: they require the
+     * host's own words, brand voice, and keyword intent. Auto-generating them
+     * from scraped text would produce generic copy that conflicts with the
+     * host's marketing strategy. Import adapters therefore leave this field
+     * absent; the host fills it manually in the panel after the import.
+     */
     readonly seo?:
         | {
               readonly title?: RawCandidateField | undefined;

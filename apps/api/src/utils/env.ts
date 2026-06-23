@@ -597,8 +597,14 @@ export const ApiEnvBaseSchema = z.object({
     // Accommodation import (SPEC-222)
     /** Apify API token for the Airbnb scraper actor and Booking.com fallback adapter */
     HOSPEDA_APIFY_TOKEN: z.string().optional(),
-    /** Apify actor ID/slug for the Airbnb scraper (swappable without a code deploy) */
-    HOSPEDA_APIFY_AIRBNB_ACTOR: z.string().optional(),
+    /**
+     * Apify actor ID/slug for the Airbnb rooms/detail scraper (swappable without a code deploy).
+     *
+     * Defaults to `tri_angle/airbnb-rooms-urls-scraper` — the actor that accepts
+     * /rooms/ detail URLs. Do NOT use `tri_angle/airbnb-scraper` (search scraper),
+     * which rejects detail URLs and returns an empty dataset.
+     */
+    HOSPEDA_APIFY_AIRBNB_ACTOR: z.string().default('tri_angle/airbnb-rooms-urls-scraper'),
     /** Apify actor ID/slug for the Booking.com scraper fallback (swappable without a code deploy) */
     HOSPEDA_APIFY_BOOKING_ACTOR: z.string().optional(),
     /** Google Places API (New) key for the Google Maps import tier */
