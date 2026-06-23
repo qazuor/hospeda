@@ -48,8 +48,10 @@ type CreateLeadRequest = z.infer<typeof CreateLeadRequestSchema>;
  *
  * Accepts a commerce lead submission from the public acquisition form.
  * Returns 200 with `{ id }` on success — only the new lead's UUID is disclosed.
- * On honeypot trigger, returns the same shape with an empty-string sentinel id so
- * bots cannot distinguish a rejection from a real submission (silent reject pattern).
+ * On honeypot trigger, returns the same shape with a nil-UUID sentinel id
+ * (all-zeros) so bots cannot distinguish a rejection from a real submission
+ * (silent reject pattern). A nil UUID is used because the response schema
+ * validates `id` as a UUID — an empty string would fail validation.
  */
 export const publicCreateLeadRoute = createPublicRoute({
     method: 'post',
