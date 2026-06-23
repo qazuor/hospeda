@@ -1,5 +1,5 @@
 /**
- * Integration tests for SPEC-237 T-008 protected external reputation routes.
+ * Integration tests for SPEC-237 T-008 + SPEC-250 Phase 5 protected external reputation routes.
  *
  * Routes under test:
  *   GET    /api/v1/protected/accommodations/:id/external-listings
@@ -8,16 +8,19 @@
  *   DELETE /api/v1/protected/accommodations/:id/external-listings/:listingId
  *   PATCH  /api/v1/protected/accommodations/:id/external-reputation/master-toggle
  *   POST   /api/v1/protected/accommodations/:id/external-reputation/refresh
+ *   GET    /api/v1/protected/accommodations/:id/external-reputation/status  (SPEC-250 Phase 5)
  *
  * Approach: vi.hoisted + vi.mock services + minimal Hono app with injected actor.
  * Does NOT hit the database — all models and services are mocked.
  *
  * Coverage:
- *   - 200/201/204 happy paths
+ *   - 200/201/202/204 happy paths
  *   - 401 unauthenticated (GUEST actor, no permissions)
  *   - 403 non-owner (actor authenticated but NOT the owner)
+ *   - 404 not found
  *   - 429 rate-limit on POST /refresh
  *   - 400 duplicate platform on POST /external-listings
+ *   - 202 on async enqueue (SPEC-250 Phase 5)
  */
 
 import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
@@ -71,7 +74,8 @@ const {
     mockUpdate,
     mockRemove,
     mockSetMasterToggle,
-    mockRefresh
+    mockRefresh,
+    mockGetRefreshStatus
 } = vi.hoisted(() => ({
     mockFindById: vi.fn(),
     mockFindByAccommodation: vi.fn(),
@@ -79,7 +83,8 @@ const {
     mockUpdate: vi.fn(),
     mockRemove: vi.fn(),
     mockSetMasterToggle: vi.fn(),
-    mockRefresh: vi.fn()
+    mockRefresh: vi.fn(),
+    mockGetRefreshStatus: vi.fn()
 }));
 
 // Mock AccommodationExternalListingModel + AccommodationExternalReputationModel
@@ -118,7 +123,8 @@ vi.mock('@repo/service-core', async (importActual) => {
             setMasterToggle: mockSetMasterToggle
         })),
         AccommodationExternalReputationService: vi.fn().mockImplementation(() => ({
-            refresh: mockRefresh
+            refresh: mockRefresh,
+            getRefreshStatus: mockGetRefreshStatus
         }))
     };
 });
@@ -168,6 +174,10 @@ const { protectedMasterToggleRoute } = await import(
 
 const { protectedRefreshReputationRoute } = await import(
     '../../../src/routes/accommodation-external-reputation/protected/refresh.js'
+);
+
+const { protectedReputationStatusRoute } = await import(
+    '../../../src/routes/accommodation-external-reputation/protected/reputation-status.js'
 );
 
 // ---------------------------------------------------------------------------
@@ -256,6 +266,20 @@ const guestActor: ActorOptions = {
 // Setup / teardown
 // ---------------------------------------------------------------------------
 
+/** Default mock data for the status endpoint (SPEC-250 Phase 5). */
+const MOCK_STATUS_RESULT = {
+    platforms: {
+        GOOGLE: {
+            runStatus: 'idle',
+            fetchStatus: 'ok',
+            rating: 4.5,
+            reviewsCount: 120,
+            aggregateFetchedAt: '2024-01-01T00:00:00.000Z'
+        }
+    },
+    allSettled: true
+};
+
 beforeEach(() => {
     mockFindById.mockResolvedValue(MOCK_ACCOMMODATION);
     mockFindByAccommodation.mockResolvedValue([MOCK_LISTING]);
@@ -263,7 +287,11 @@ beforeEach(() => {
     mockUpdate.mockResolvedValue({ data: MOCK_LISTING });
     mockRemove.mockResolvedValue({ data: true });
     mockSetMasterToggle.mockResolvedValue({ data: true });
-    mockRefresh.mockResolvedValue({ data: { succeeded: ['GOOGLE'], failed: [] } });
+    // SPEC-250 Phase 5: new RefreshResult shape (inlineSucceeded / enqueuedAsync / inlineFailed).
+    mockRefresh.mockResolvedValue({
+        data: { inlineSucceeded: ['GOOGLE'], enqueuedAsync: [], inlineFailed: [] }
+    });
+    mockGetRefreshStatus.mockResolvedValue({ data: MOCK_STATUS_RESULT });
 });
 
 afterEach(() => {
@@ -492,24 +520,82 @@ describe('PATCH /:id/external-reputation/master-toggle', () => {
 });
 
 // ---------------------------------------------------------------------------
-// POST /:id/external-reputation/refresh
+// POST /:id/external-reputation/refresh  (SPEC-237 T-008 + SPEC-250 Phase 5)
 // ---------------------------------------------------------------------------
 
 describe('POST /:id/external-reputation/refresh', () => {
-    it('returns 200 with RefreshResult on happy path', async () => {
+    it('returns 200 when all platforms resolved inline (enqueuedAsync empty)', async () => {
+        // Arrange: default mock has enqueuedAsync=[] — all inline.
         const app = buildApp(ownerActor, protectedRefreshReputationRoute);
+
+        // Act
         const res = await app.request(`/${ACCOMMODATION_ID}/external-reputation/refresh`, {
             method: 'POST',
             headers: { 'content-type': 'application/json' }
         });
+
+        // Assert
         expect(res.status).toBe(200);
         const body = await res.json();
         expect(body.success).toBe(true);
-        expect(body.data.succeeded).toEqual(['GOOGLE']);
-        expect(body.data.failed).toEqual([]);
+        expect(body.data.inlineSucceeded).toEqual(['GOOGLE']);
+        expect(body.data.enqueuedAsync).toEqual([]);
+        expect(body.data.inlineFailed).toEqual([]);
+    });
+
+    it('returns 202 when at least one platform is enqueued async (SPEC-250 Phase 5)', async () => {
+        // Arrange: service returns enqueuedAsync with AIRBNB.
+        mockRefresh.mockResolvedValue({
+            data: {
+                inlineSucceeded: ['GOOGLE'],
+                enqueuedAsync: ['AIRBNB'],
+                inlineFailed: []
+            }
+        });
+        const app = buildApp(ownerActor, protectedRefreshReputationRoute);
+
+        // Act
+        const res = await app.request(`/${ACCOMMODATION_ID}/external-reputation/refresh`, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' }
+        });
+
+        // Assert
+        expect(res.status).toBe(202);
+        const body = await res.json();
+        expect(body.success).toBe(true);
+        expect(body.data.inlineSucceeded).toEqual(['GOOGLE']);
+        expect(body.data.enqueuedAsync).toEqual(['AIRBNB']);
+        expect(body.data.inlineFailed).toEqual([]);
+    });
+
+    it('returns 202 when all platforms are enqueued async (no inline)', async () => {
+        // Arrange: service returns only async enqueues (AIRBNB + BOOKING).
+        mockRefresh.mockResolvedValue({
+            data: {
+                inlineSucceeded: [],
+                enqueuedAsync: ['AIRBNB', 'BOOKING'],
+                inlineFailed: []
+            }
+        });
+        const app = buildApp(ownerActor, protectedRefreshReputationRoute);
+
+        // Act
+        const res = await app.request(`/${ACCOMMODATION_ID}/external-reputation/refresh`, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' }
+        });
+
+        // Assert
+        expect(res.status).toBe(202);
+        const body = await res.json();
+        expect(body.data.enqueuedAsync).toHaveLength(2);
+        expect(body.data.enqueuedAsync).toContain('AIRBNB');
+        expect(body.data.enqueuedAsync).toContain('BOOKING');
     });
 
     it('returns 429 when QUOTA_EXCEEDED (rate-limit) with Retry-After header', async () => {
+        // Arrange
         mockRefresh.mockResolvedValue({
             error: {
                 code: ServiceErrorCode.QUOTA_EXCEEDED,
@@ -518,52 +604,169 @@ describe('POST /:id/external-reputation/refresh', () => {
             }
         });
         const app = buildApp(ownerActor, protectedRefreshReputationRoute);
+
+        // Act
         const res = await app.request(`/${ACCOMMODATION_ID}/external-reputation/refresh`, {
             method: 'POST',
             headers: { 'content-type': 'application/json' }
         });
+
+        // Assert
         expect(res.status).toBe(429);
         const retryAfter = res.headers.get('Retry-After');
         expect(retryAfter).toBeTruthy();
         expect(Number.parseInt(retryAfter ?? '0', 10)).toBeGreaterThan(0);
     });
 
-    it('returns 401 or 403 for a guest', async () => {
+    it('returns 401 or 403 for a guest (unauthenticated)', async () => {
+        // Arrange + Act
         const app = buildApp(guestActor, protectedRefreshReputationRoute);
         const res = await app.request(`/${ACCOMMODATION_ID}/external-reputation/refresh`, {
             method: 'POST',
             headers: { 'content-type': 'application/json' }
         });
+
+        // Assert
         expect([401, 403]).toContain(res.status);
     });
 
     it('returns 403 when the service returns FORBIDDEN (non-owner)', async () => {
+        // Arrange
         mockRefresh.mockResolvedValue({
             error: { code: ServiceErrorCode.FORBIDDEN, message: 'Not your accommodation' }
         });
         const app = buildApp(nonOwnerActor, protectedRefreshReputationRoute);
+
+        // Act
         const res = await app.request(`/${ACCOMMODATION_ID}/external-reputation/refresh`, {
             method: 'POST',
             headers: { 'content-type': 'application/json' }
         });
+
+        // Assert
         expect(res.status).toBe(403);
     });
 
-    it('returns 200 with partial failure in RefreshResult', async () => {
+    it('returns 200 with partial inline failure in RefreshResult', async () => {
+        // Arrange
         mockRefresh.mockResolvedValue({
             data: {
-                succeeded: [],
-                failed: [{ platform: 'BOOKING', error: 'timeout' }]
+                inlineSucceeded: [],
+                enqueuedAsync: [],
+                inlineFailed: [{ platform: 'BOOKING', error: 'timeout' }]
             }
         });
         const app = buildApp(ownerActor, protectedRefreshReputationRoute);
+
+        // Act
         const res = await app.request(`/${ACCOMMODATION_ID}/external-reputation/refresh`, {
             method: 'POST',
             headers: { 'content-type': 'application/json' }
         });
+
+        // Assert: all-inline (no enqueued) → 200 even with failures.
         expect(res.status).toBe(200);
         const body = await res.json();
-        expect(body.data.failed).toHaveLength(1);
-        expect(body.data.failed[0].platform).toBe('BOOKING');
+        expect(body.data.inlineFailed).toHaveLength(1);
+        expect(body.data.inlineFailed[0].platform).toBe('BOOKING');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// GET /:id/external-reputation/status  (SPEC-250 Phase 5)
+// ---------------------------------------------------------------------------
+
+describe('GET /:id/external-reputation/status', () => {
+    it('returns 200 with platforms and allSettled on happy path', async () => {
+        // Arrange: default mock returns allSettled=true with GOOGLE idle.
+        const app = buildApp(ownerActor, protectedReputationStatusRoute);
+
+        // Act
+        const res = await app.request(`/${ACCOMMODATION_ID}/external-reputation/status`);
+
+        // Assert
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        expect(body.success).toBe(true);
+        expect(body.data.allSettled).toBe(true);
+        expect(body.data.platforms).toBeDefined();
+        expect(body.data.platforms.GOOGLE).toMatchObject({
+            runStatus: 'idle',
+            fetchStatus: 'ok',
+            rating: 4.5,
+            reviewsCount: 120
+        });
+    });
+
+    it('returns 200 with allSettled=false when a platform is pending', async () => {
+        // Arrange: AIRBNB is pending — not yet settled.
+        mockGetRefreshStatus.mockResolvedValue({
+            data: {
+                platforms: {
+                    GOOGLE: {
+                        runStatus: 'idle',
+                        fetchStatus: 'ok',
+                        rating: 4.5,
+                        reviewsCount: 120,
+                        aggregateFetchedAt: '2024-01-01T00:00:00.000Z'
+                    },
+                    AIRBNB: {
+                        runStatus: 'pending',
+                        fetchStatus: 'ok',
+                        rating: null,
+                        reviewsCount: null,
+                        aggregateFetchedAt: null
+                    }
+                },
+                allSettled: false
+            }
+        });
+        const app = buildApp(ownerActor, protectedReputationStatusRoute);
+
+        // Act
+        const res = await app.request(`/${ACCOMMODATION_ID}/external-reputation/status`);
+
+        // Assert
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        expect(body.data.allSettled).toBe(false);
+        expect(body.data.platforms.AIRBNB.runStatus).toBe('pending');
+    });
+
+    it('returns 403 when the service returns FORBIDDEN (non-owner)', async () => {
+        // Arrange
+        mockGetRefreshStatus.mockResolvedValue({
+            error: { code: ServiceErrorCode.FORBIDDEN, message: 'Not your accommodation' }
+        });
+        const app = buildApp(nonOwnerActor, protectedReputationStatusRoute);
+
+        // Act
+        const res = await app.request(`/${ACCOMMODATION_ID}/external-reputation/status`);
+
+        // Assert
+        expect(res.status).toBe(403);
+    });
+
+    it('returns 404 when the accommodation does not exist', async () => {
+        // Arrange
+        mockGetRefreshStatus.mockResolvedValue({
+            error: { code: ServiceErrorCode.NOT_FOUND, message: 'Accommodation not found' }
+        });
+        const app = buildApp(ownerActor, protectedReputationStatusRoute);
+
+        // Act
+        const res = await app.request(`/${ACCOMMODATION_ID}/external-reputation/status`);
+
+        // Assert
+        expect(res.status).toBe(404);
+    });
+
+    it('returns 401 or 403 for a guest (unauthenticated)', async () => {
+        // Arrange + Act
+        const app = buildApp(guestActor, protectedReputationStatusRoute);
+        const res = await app.request(`/${ACCOMMODATION_ID}/external-reputation/status`);
+
+        // Assert
+        expect([401, 403]).toContain(res.status);
     });
 });

@@ -634,7 +634,20 @@ export const ApiEnvBaseSchema = z.object({
      * Cron expression for the background job that refreshes stale Google Places snippets.
      * Default "0 2 * * 1" runs every Monday at 02:00 UTC.
      */
-    HOSPEDA_EXTREP_CRON_SCHEDULE: z.string().default('0 2 * * 1')
+    HOSPEDA_EXTREP_CRON_SCHEDULE: z.string().default('0 2 * * 1'),
+
+    // External reputation async polling (SPEC-250)
+    /**
+     * Cron expression for the poll-apify-reputation-runs job that checks the status
+     * of pending/running Apify actor runs and persists results.
+     * Default: every 2 minutes (step-2 cron). See env.example for the exact value.
+     */
+    HOSPEDA_EXTREP_POLL_SCHEDULE: z.string().default('*/2 * * * *'),
+    /**
+     * Milliseconds before the poller sweeps a pending/running Apify run as timed out
+     * and marks it fetch_status='error'. Default 600000 (10 minutes).
+     */
+    HOSPEDA_EXTREP_APIFY_RUN_TIMEOUT_MS: z.coerce.number().int().min(1).default(600_000)
 });
 
 /**

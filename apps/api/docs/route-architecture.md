@@ -723,7 +723,8 @@ for the full design rationale.
 | `PATCH` | `/api/v1/protected/accommodations/:id/external-listings/:listingId` | `ACCOMMODATION_UPDATE_OWN` | Update display flags (`showReviews`, `showLink`, `showRating`) on an existing listing. |
 | `DELETE` | `/api/v1/protected/accommodations/:id/external-listings/:listingId` | `ACCOMMODATION_UPDATE_OWN` | Remove an external listing registration; cascades to its reputation cache row. |
 | `PATCH` | `/api/v1/protected/accommodations/:id/external-reputation/master-toggle` | `ACCOMMODATION_UPDATE_OWN` | Set `show_external_reputation` on the accommodation row. When `false`, the public detail page hides the entire external reputation block. |
-| `POST` | `/api/v1/protected/accommodations/:id/external-reputation/refresh` | `ACCOMMODATION_UPDATE_OWN` | Trigger an on-demand reputation refresh. Rate-limited per owner to prevent quota abuse — returns **429** with a `Retry-After` header when the window has not elapsed. |
+| `POST` | `/api/v1/protected/accommodations/:id/external-reputation/refresh` | `ACCOMMODATION_UPDATE_OWN` | Trigger an on-demand reputation refresh. Returns **202** when any platform was enqueued async (Apify-backed), **200** when all platforms resolved inline (Google only). Rate-limited per owner — returns **429** with a `Retry-After` header when the window has not elapsed. |
+| `GET` | `/api/v1/protected/accommodations/:id/external-reputation/status` | `ACCOMMODATION_UPDATE_OWN` | Lightweight poll endpoint returning per-platform `run_status` and `fetch_status`. Used by the owner panel to detect when async Apify runs have completed. Returns `{ platforms: [...] }` with current state for each registered listing. |
 
 ### Admin tier
 
@@ -741,6 +742,8 @@ to function on staging and production:
 | `HOSPEDA_GOOGLE_PLACES_API_KEY` | Google Places API (New) key for fetching ratings and review snippets. |
 | `HOSPEDA_APIFY_TOKEN` | Apify API token used by Booking/Airbnb/generic scrapers. |
 | `HOSPEDA_EXTREP_CRON_SCHEDULE` | Cron expression for the weekly refresh job. Defaults to `0 2 * * 1` (Monday 02:00 UTC). |
+| `HOSPEDA_EXTREP_POLL_SCHEDULE` | Cron expression for the `poll-apify-reputation-runs` job (SPEC-250). Defaults to `*/2 * * * *` (every 2 minutes). |
+| `HOSPEDA_EXTREP_APIFY_RUN_TIMEOUT_MS` | Milliseconds before the poller sweeps a stuck Apify run as timed out (SPEC-250). Defaults to `600000` (10 minutes). |
 
 ---
 
