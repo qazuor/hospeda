@@ -18,6 +18,7 @@ import {
     ListPromoCodesQuerySchema,
     PermissionEnum,
     PromoCodeResponseSchema,
+    type PromoEffect,
     UpdatePromoCodeSchema,
     ValidatePromoCodeSchema,
     ValidationResultSchema
@@ -103,11 +104,19 @@ export const createPromoCodeRoute = createAdminRoute({
 
         apiLogger.info('Creating promo code');
 
+        // SPEC-262 T-005: `body.effect` (discriminated union from CreatePromoCodeSchema)
+        // replaces the legacy flat `discountType` / `discountValue` fields.
+        // The service's CreatePromoCodeInput now accepts `effect` directly.
+        // Full validation polish and /apply route branching are T-008 work.
         const result = await service.create(
             {
                 code: body.code as string,
-                discountType: body.discountType as 'percentage' | 'fixed',
-                discountValue: body.discountValue as number,
+                // New typed effect (SPEC-262) — primary path.
+                // Cast through PromoEffect: the route-factory body is typed as
+                // `z.infer<typeof CreatePromoCodeSchema>` but the generic narrows
+                // it to `unknown` at the call site. The Zod schema has already
+                // validated the shape, so this cast is safe.
+                effect: body.effect as PromoEffect | undefined,
                 description: body.description as string | undefined,
                 expiryDate: body.expiryDate as Date | undefined,
                 validFrom: body.validFrom as Date | undefined,

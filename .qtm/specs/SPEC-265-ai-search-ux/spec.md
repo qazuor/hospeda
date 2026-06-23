@@ -126,7 +126,7 @@ relationship to the regular faceted `FilterSidebar`. Evaluate, during planning:
    (collapse, clearer "AI vs filters" framing, responsive behavior).
 2. **Dedicated surface** — move AI search to its own page/route (e.g.
    `/alojamientos/buscar-ia` or a modal/drawer) with more room for transparency
-   + onboarding affordances.
+   - onboarding affordances.
 3. **Hybrid** — entry point on the listing page that expands into a focused
    experience.
 
