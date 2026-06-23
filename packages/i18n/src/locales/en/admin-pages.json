@@ -530,6 +530,22 @@
                 "legendEstCost": "Est. Cost (USD)",
                 "legendCalls": "Calls",
                 "truncationNotice": "Showing first {{shown}} of {{total}} days — narrow the window for the full range."
+            },
+            "a11y": {
+                "sectionTotals": "Usage totals",
+                "sectionByModel": "Usage by model",
+                "sectionByProvider": "Usage by provider",
+                "sectionByFeature": "Usage by feature",
+                "sectionFeatureModelChart": "Cost by feature and model chart",
+                "sectionFeatureModelTable": "Usage by feature and model table",
+                "sectionDailyChart": "Daily usage chart",
+                "tableByModel": "AI usage table grouped by model",
+                "tableByProvider": "AI usage table grouped by provider",
+                "tableByFeature": "AI usage table grouped by feature",
+                "tableByFeatureModel": "AI usage table by feature and model",
+                "chartFeatureModel": "Grouped bar chart showing estimated cost per feature broken down by model",
+                "chartDaily": "Area chart showing estimated AI cost per day over time",
+                "loadingAnnouncement": "Loading data…"
             }
         }
     },

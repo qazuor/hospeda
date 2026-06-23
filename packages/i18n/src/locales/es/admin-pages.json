@@ -530,6 +530,22 @@
                 "legendEstCost": "Costo est. (USD)",
                 "legendCalls": "Llamadas",
                 "truncationNotice": "Mostrando los primeros {{shown}} de {{total}} días — reducí la ventana para ver el rango completo."
+            },
+            "a11y": {
+                "sectionTotals": "Totales de uso",
+                "sectionByModel": "Uso por modelo",
+                "sectionByProvider": "Uso por proveedor",
+                "sectionByFeature": "Uso por función",
+                "sectionFeatureModelChart": "Gráfico de costo por función y modelo",
+                "sectionFeatureModelTable": "Tabla de uso por función y modelo",
+                "sectionDailyChart": "Gráfico de uso diario",
+                "tableByModel": "Tabla de uso de IA agrupada por modelo",
+                "tableByProvider": "Tabla de uso de IA agrupada por proveedor",
+                "tableByFeature": "Tabla de uso de IA agrupada por función",
+                "tableByFeatureModel": "Tabla de uso de IA por función y modelo",
+                "chartFeatureModel": "Gráfico de barras agrupadas que muestra el costo estimado por función desglosado por modelo",
+                "chartDaily": "Gráfico de área que muestra el costo estimado de IA por día a lo largo del tiempo",
+                "loadingAnnouncement": "Cargando datos…"
             }
         }
     },

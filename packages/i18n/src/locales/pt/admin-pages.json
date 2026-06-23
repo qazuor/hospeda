@@ -530,6 +530,22 @@
                 "legendEstCost": "Custo est. (USD)",
                 "legendCalls": "Chamadas",
                 "truncationNotice": "Mostrando os primeiros {{shown}} de {{total}} dias — reduza a janela para ver o intervalo completo."
+            },
+            "a11y": {
+                "sectionTotals": "Totais de uso",
+                "sectionByModel": "Uso por modelo",
+                "sectionByProvider": "Uso por provedor",
+                "sectionByFeature": "Uso por funcionalidade",
+                "sectionFeatureModelChart": "Gráfico de custo por funcionalidade e modelo",
+                "sectionFeatureModelTable": "Tabela de uso por funcionalidade e modelo",
+                "sectionDailyChart": "Gráfico de uso diário",
+                "tableByModel": "Tabela de uso de IA agrupada por modelo",
+                "tableByProvider": "Tabela de uso de IA agrupada por provedor",
+                "tableByFeature": "Tabela de uso de IA agrupada por funcionalidade",
+                "tableByFeatureModel": "Tabela de uso de IA por funcionalidade e modelo",
+                "chartFeatureModel": "Gráfico de barras agrupadas mostrando o custo estimado por funcionalidade dividido por modelo",
+                "chartDaily": "Gráfico de área mostrando o custo estimado de IA por dia ao longo do tempo",
+                "loadingAnnouncement": "Carregando dados…"
             }
         }
     },
