@@ -1,5 +1,5 @@
 import type { AccommodationMedia } from '@repo/schemas';
-import { and, asc, eq, isNull } from 'drizzle-orm';
+import { and, asc, count, eq, isNull } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { accommodationMedia } from '../../schemas/accommodation/accommodation_media.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
@@ -121,15 +121,12 @@ export class AccommodationMediaModel extends BaseModelImpl<AccommodationMedia> {
                     .orderBy(asc(accommodationMedia.sortOrder))
                     .limit(pageSize)
                     .offset(offset),
-                db
-                    .select({ count: accommodationMedia.id })
-                    .from(accommodationMedia)
-                    .where(whereClause)
+                db.select({ count: count() }).from(accommodationMedia).where(whereClause)
             ]);
 
             const result = {
                 items: items as AccommodationMedia[],
-                total: countResult.length
+                total: Number(countResult[0]?.count ?? 0)
             };
             try {
                 logQuery(this.entityName, 'findByAccommodation', logContext, result);
