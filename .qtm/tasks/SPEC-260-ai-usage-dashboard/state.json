@@ -321,7 +321,7 @@
             "id": "T-014",
             "title": "usage.tsx page scaffold + route guard + nav link",
             "description": "Create apps/admin/src/routes/_authed/ai/usage.tsx with a beforeLoad guard identical to ai/settings.tsx, the filter top-bar (month picker / date-range toggle, feature/provider/model selects, reset), and add a nav entry to the AI section of the admin sidebar.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-013"],
             "blocks": ["T-015", "T-016", "T-017", "T-018"],
