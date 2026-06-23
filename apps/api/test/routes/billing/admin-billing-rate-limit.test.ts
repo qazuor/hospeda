@@ -138,12 +138,23 @@ describe('adminBillingRoutes — router-level rate limit (SPEC-064 T-050)', () =
     let app: Hono;
 
     beforeEach(async () => {
+        // The per-route limiter uses a tumbling window aligned to epoch
+        // (`windowStart = Math.floor(Date.now() / windowMs) * windowMs`). A test
+        // that fires N requests near a minute boundary can have the window roll
+        // over mid-loop, resetting the counter and letting a request that should
+        // be blocked slip through (flaky `expected 200 to be 429`). Freezing the
+        // clock at an instant aligned to a bucket start keeps every request in a
+        // single deterministic window. `toFake: ['Date']` leaves the real timers
+        // (and the limiter's cleanup interval) untouched.
+        vi.useFakeTimers({ toFake: ['Date'] });
+        vi.setSystemTime(new Date('2026-01-01T00:00:00.000Z'));
         await clearRateLimitStore();
         app = buildAdminBillingRouter();
     });
 
     afterEach(async () => {
         await clearRateLimitStore();
+        vi.useRealTimers();
     });
 
     it('should allow exactly 50 requests within the window', async () => {
