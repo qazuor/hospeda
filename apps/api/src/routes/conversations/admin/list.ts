@@ -19,11 +19,11 @@
  *   new service method and keeps the service interface stable (T-011 decision).
  */
 
-import { getDb } from '@repo/db';
+import { AccommodationModel, MessageModel, UserModel, getDb } from '@repo/db';
 import { accommodations } from '@repo/db';
 import {
+    AdminConversationListItemSchema,
     ConversationAdminSearchSchema,
-    ConversationSchema,
     PermissionEnum,
     RoleEnum,
     ServiceErrorCode
@@ -40,6 +40,10 @@ import {
     createPaginatedResponse,
     handleRouteError
 } from '../../../utils/response-helpers';
+
+const accommodationModel = new AccommodationModel();
+const messageModel = new MessageModel();
+const userModel = new UserModel();
 
 /** System-level actor used for service calls. */
 const SYSTEM_ACTOR = {
@@ -160,12 +164,85 @@ router.get('/', async (c) => {
             total: result.data.total
         });
 
+        // TYPE-WORKAROUND: listForOwner returns a generic item type that doesn't
+        // surface accommodationId/userId/anonymousName at the TS level; the runtime
+        // shape always carries these columns. Widening through unknown so we can
+        // access them without losing other keys during enrichment.
+        const itemsRaw = (result.data.items ?? []) as unknown as Array<{
+            id: string;
+            accommodationId: string;
+            userId: string | null;
+            anonymousName: string | null;
+            anonymousEmail: string | null;
+            [k: string]: unknown;
+        }>;
+
+        // Batch-resolve accommodation names (dedup'd, single findById per unique ID).
+        const uniqueAccommodationIds = [
+            ...new Set(itemsRaw.map((item) => item.accommodationId).filter(Boolean))
+        ];
+        const accById = new Map<string, { name?: string | null }>();
+        for (const id of uniqueAccommodationIds) {
+            const row = await accommodationModel.findById(id);
+            if (row) {
+                accById.set(id, { name: (row as { name?: string | null }).name });
+            }
+        }
+
+        // Batch-resolve registered user display names and emails (single findByIds call).
+        const registeredUserIds = [
+            ...new Set(itemsRaw.map((item) => item.userId).filter((id): id is string => !!id))
+        ];
+        const usersById = new Map<string, { name: string | null; email: string | null }>();
+        if (registeredUserIds.length > 0) {
+            const userRows = await userModel.findByIds(registeredUserIds);
+            for (const u of userRows) {
+                const userRow = u as {
+                    id: string;
+                    displayName?: string | null;
+                    firstName?: string | null;
+                    lastName?: string | null;
+                    email?: string | null;
+                };
+                const name =
+                    userRow.displayName?.trim() ||
+                    [userRow.firstName, userRow.lastName].filter(Boolean).join(' ').trim() ||
+                    null;
+                usersById.set(userRow.id, { name: name || null, email: userRow.email ?? null });
+            }
+        }
+
+        // Batch-fetch unread counts per conversation for the owner side (single round-trip).
+        const conversationIds = itemsRaw.map((item) => item.id);
+        const unreadMap =
+            conversationIds.length > 0
+                ? await messageModel.countUnreadForOwnerByConversation(conversationIds)
+                : new Map<string, number>();
+
+        const items = itemsRaw.map((item) => {
+            const acc = accById.get(item.accommodationId);
+            const userRecord = item.userId ? (usersById.get(item.userId) ?? null) : null;
+            return {
+                ...item,
+                guest: {
+                    anonName: item.anonymousName ?? null,
+                    name: userRecord?.name ?? null,
+                    email: item.anonymousEmail ?? userRecord?.email ?? null
+                },
+                accommodation: {
+                    id: item.accommodationId,
+                    name: acc?.name ?? null
+                },
+                unreadCountByOwner: unreadMap.get(item.id) ?? 0
+            };
+        });
+
         return createPaginatedResponse(
-            result.data.items as unknown[],
+            items as unknown[],
             pagination,
             c,
             200,
-            ConversationSchema
+            AdminConversationListItemSchema
         );
     } catch (error) {
         return handleRouteError(error, c);

@@ -284,6 +284,109 @@ export const OwnerConversationListItemSchema = ConversationSchema.extend({
 export type OwnerConversationListItem = z.infer<typeof OwnerConversationListItemSchema>;
 
 // ============================================================================
+// ADMIN CONVERSATION SCHEMAS
+// ============================================================================
+
+/**
+ * Identity block for a conversation guest as seen by admin actors.
+ *
+ * All fields are nullable:
+ * - Anonymous guests have `anonName` (from `anonymousName` DB column) but no
+ *   registered identity, so `name` and `email` may be null.
+ * - Registered guests have `name`/`email` resolved from the user table but
+ *   may have no `anonName`.
+ *
+ * Shape intentionally matches `GuestIdentity` in
+ * `apps/admin/src/features/conversations/types/index.ts`.
+ */
+export const AdminGuestIdentitySchema = z.object({
+    /** Anonymous display name supplied during initiation (anonymousName DB column). */
+    anonName: z.string().nullable(),
+    /** Resolved registered-user display name (displayName > firstName+lastName > email). */
+    name: z.string().nullable(),
+    /** Guest email: anonymousEmail column OR registered user email. */
+    email: z.string().nullable()
+});
+
+/** TypeScript type inferred from {@link AdminGuestIdentitySchema}. */
+export type AdminGuestIdentity = z.infer<typeof AdminGuestIdentitySchema>;
+
+/**
+ * Single item returned by `GET /api/v1/admin/conversations` (admin inbox list).
+ *
+ * Extends the base `ConversationSchema` with:
+ * - `guest` — enriched guest identity block
+ * - `accommodation` — accommodation id + display name stub
+ * - `unreadCountByOwner` — number of messages the owner has not yet read
+ *
+ * Shape matches `ConversationListItem` in
+ * `apps/admin/src/features/conversations/types/index.ts`.
+ */
+export const AdminConversationListItemSchema = ConversationSchema.extend({
+    /** Enriched guest identity (anonymous name, registered name, email). */
+    guest: AdminGuestIdentitySchema,
+    /** Accommodation stub with id and display name. */
+    accommodation: z.object({
+        id: z.string().uuid(),
+        name: z.string().nullable()
+    }),
+    /** Number of messages not yet read by the property owner. */
+    unreadCountByOwner: z.number().int().min(0)
+});
+
+/** TypeScript type inferred from {@link AdminConversationListItemSchema}. */
+export type AdminConversationListItem = z.infer<typeof AdminConversationListItemSchema>;
+
+/**
+ * Enriched conversation record inside the admin thread response.
+ *
+ * Identical shape to {@link AdminConversationListItemSchema} but typed
+ * separately so the thread endpoint can evolve independently.
+ *
+ * Shape matches `ConversationThread` in
+ * `apps/admin/src/features/conversations/types/index.ts`.
+ */
+export const AdminThreadConversationSchema = ConversationSchema.extend({
+    /** Enriched guest identity (anonymous name, registered name, email). */
+    guest: AdminGuestIdentitySchema,
+    /** Accommodation stub with id and display name. */
+    accommodation: z.object({
+        id: z.string().uuid(),
+        name: z.string().nullable()
+    }),
+    /** Number of messages not yet read by the property owner. */
+    unreadCountByOwner: z.number().int().min(0)
+});
+
+/** TypeScript type inferred from {@link AdminThreadConversationSchema}. */
+export type AdminThreadConversation = z.infer<typeof AdminThreadConversationSchema>;
+
+/**
+ * Full response body for `GET /api/v1/admin/conversations/:id` (admin thread).
+ *
+ * Uses `olderCursor` (NOT `nextCursor`) so the admin client can paginate toward
+ * older messages; the cursor value is `messages[0].createdAt` (ISO-8601).
+ *
+ * Shape matches `ConversationThreadResponse` in
+ * `apps/admin/src/features/conversations/types/index.ts`.
+ */
+export const AdminThreadResponseSchema = z.object({
+    /** Enriched conversation record. */
+    conversation: AdminThreadConversationSchema,
+    /** Page of messages in ascending chronological order (oldest first). */
+    messages: z.array(MessageSchema),
+    /**
+     * Cursor for fetching the preceding (older) page.
+     * ISO-8601 timestamp of the oldest message in the current page.
+     * `null` when the current page contains the oldest messages in the thread.
+     */
+    olderCursor: z.string().datetime().nullable()
+});
+
+/** TypeScript type inferred from {@link AdminThreadResponseSchema}. */
+export type AdminThreadResponse = z.infer<typeof AdminThreadResponseSchema>;
+
+// ============================================================================
 // UNREAD COUNT RESPONSE
 // ============================================================================
 
