@@ -4,8 +4,9 @@
 
 **Average Complexity:** 2.5/3 (max)
 **Storage model:** direct table-per-entity (`accommodation_media`, real FK) — polymorphic + junction rejected
-**Strategy:** 3-phase dual-write (P1 create+backfill+write-both → P2 switch reads → P3 retire JSONB)
-**Critical path:** T-001 → T-004 → T-006 → T-012 → T-013 → T-017 → T-022 → T-024 → T-025 → T-026 → T-028 (11 steps)
+**Strategy:** DIRECT CUTOVER (replan 2026-06-23, supersedes 3-phase dual-write — owner decision: no prod/real data, only regenerable seed). P1 done; collapse remaining P2+P3 into one photo cutover for accommodations: relational table is the SOLE source of truth, all raw-JSONB photo readers migrated, dual-write killed, JSONB blob shrinks to videos-only.
+**Cutover order (safe sequence):** (1) migrate all raw-JSONB photo readers → table [4 compose-bypass service readers: getByDestination/getByOwner/getTopRated/getTopRatedByDestination; search cover-image; bookmark enrichment; admin upload cap; billing x3]; (2) cut photo writes to table-only (kill replace-all dual-write); (3) granular endpoints T-017..T-021 (table-direct); (4) admin UI T-022 + seed T-027; (5) strip JSONB keys T-026 + retire MediaSchema photo fields T-025 + route/regression tests T-023/T-028 + docs T-029.
+**Follow-up specs:** accommodation videos (remate); gastronomy+experiences media (twins, shared spec); events/destinations/posts (analysis).
 **Parallel start:** T-001 (db table) and T-005 (Zod schema)
 
 ---
