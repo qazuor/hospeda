@@ -519,7 +519,7 @@
             "id": "T-023",
             "title": "Docs: admin usage surface note",
             "description": "Short admin doc / CLAUDE note describing the new AI usage dashboard, the endpoints, and that it only reads (does not change metering or ceilings).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-021"],
             "blocks": [],
