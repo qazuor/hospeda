@@ -475,7 +475,7 @@
             "id": "T-021",
             "title": "Admin page component tests",
             "description": "Component tests for usage.tsx: renders totals + tables from mocked query data, empty state (AC-1.5), filter change updates query keys, one-block error does not blank the page.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-019"],
             "blocks": ["T-023"],
