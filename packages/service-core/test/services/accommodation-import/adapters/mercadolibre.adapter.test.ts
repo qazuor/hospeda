@@ -191,7 +191,10 @@ describe('MercadoLibreAdapter', () => {
             const result = await adapter.extract(url, makeCtx(undefined));
 
             // Assert
-            expect(result).toStrictEqual<RawExtraction>({ sourcePlatform: 'mercadolibre' });
+            expect(result).toStrictEqual<RawExtraction>({
+                sourcePlatform: 'mercadolibre',
+                failureCode: 'credentials_missing'
+            });
             expect(fetchMock).not.toHaveBeenCalled();
         });
 
@@ -205,7 +208,10 @@ describe('MercadoLibreAdapter', () => {
             const result = await adapter.extract(url, makeCtx(''));
 
             // Assert
-            expect(result).toStrictEqual<RawExtraction>({ sourcePlatform: 'mercadolibre' });
+            expect(result).toStrictEqual<RawExtraction>({
+                sourcePlatform: 'mercadolibre',
+                failureCode: 'credentials_missing'
+            });
             expect(fetchMock).not.toHaveBeenCalled();
         });
     });
@@ -255,7 +261,10 @@ describe('MercadoLibreAdapter', () => {
             const result = await adapter.extract(url, makeCtx('tok_test'));
 
             // Assert
-            expect(result).toStrictEqual<RawExtraction>({ sourcePlatform: 'mercadolibre' });
+            expect(result).toStrictEqual<RawExtraction>({
+                sourcePlatform: 'mercadolibre',
+                failureCode: 'nothing_found'
+            });
             expect(fetchMock).not.toHaveBeenCalled();
         });
     });
@@ -415,7 +424,10 @@ describe('MercadoLibreAdapter', () => {
             const result = await adapter.extract(url, makeCtx('tok_test'));
 
             // Assert
-            expect(result).toStrictEqual<RawExtraction>({ sourcePlatform: 'mercadolibre' });
+            expect(result).toStrictEqual<RawExtraction>({
+                sourcePlatform: 'mercadolibre',
+                failureCode: 'nothing_found'
+            });
         });
 
         it('should return empty extraction on a 500 response without throwing', async () => {
@@ -427,7 +439,10 @@ describe('MercadoLibreAdapter', () => {
             const result = await adapter.extract(url, makeCtx('tok_test'));
 
             // Assert
-            expect(result).toStrictEqual<RawExtraction>({ sourcePlatform: 'mercadolibre' });
+            expect(result).toStrictEqual<RawExtraction>({
+                sourcePlatform: 'mercadolibre',
+                failureCode: 'provider_error'
+            });
         });
     });
 
@@ -445,7 +460,10 @@ describe('MercadoLibreAdapter', () => {
             const result = await adapter.extract(url, makeCtx('tok_test'));
 
             // Assert
-            expect(result).toStrictEqual<RawExtraction>({ sourcePlatform: 'mercadolibre' });
+            expect(result).toStrictEqual<RawExtraction>({
+                sourcePlatform: 'mercadolibre',
+                failureCode: 'provider_error'
+            });
         });
 
         it('should return empty extraction when fetch throws an AbortError (timeout) without rethrowing', async () => {
@@ -458,7 +476,10 @@ describe('MercadoLibreAdapter', () => {
             const result = await adapter.extract(url, makeCtx('tok_test'));
 
             // Assert
-            expect(result).toStrictEqual<RawExtraction>({ sourcePlatform: 'mercadolibre' });
+            expect(result).toStrictEqual<RawExtraction>({
+                sourcePlatform: 'mercadolibre',
+                failureCode: 'timeout'
+            });
         });
     });
 

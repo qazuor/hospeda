@@ -197,6 +197,13 @@ export interface AiGateState {
  * have name+summary+type — `partial: false` — yet still have been blocked from
  * AI enrichment of description/amenities/coordinates.)
  *
+ * No-op when the response already carries a machine-readable `failureCode`
+ * (SPEC-258 C.1): a classified failure leaves `message` undefined on purpose so
+ * the client renders the localized failure-mode text, and an AI-gate notice must
+ * not overwrite that contract. The collision is rare but reachable (e.g. the
+ * generic adapter returns `nothing_found` after the AI port was invoked and the
+ * plan/quota blocked it).
+ *
  * @param response - The pipeline response.
  * @param gate - The AI gate flag mutated by the `aiExtract` port.
  * @returns The response, possibly with an augmented `message`.
@@ -205,7 +212,7 @@ export function applyAiGateNotice(
     response: AccommodationImportResponse,
     gate: AiGateState
 ): AccommodationImportResponse {
-    if (gate.blockedReason === null) {
+    if (gate.blockedReason === null || response.failureCode !== undefined) {
         return response;
     }
     const note = gate.blockedReason === 'quota' ? MSG_AI_QUOTA : MSG_AI_ENTITLEMENT;

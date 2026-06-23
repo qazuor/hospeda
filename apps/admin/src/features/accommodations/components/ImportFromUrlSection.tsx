@@ -93,6 +93,8 @@ export function ImportFromUrlSection() {
     const [reviewNotice, setReviewNotice] = useState(false);
     const [serverMessage, setServerMessage] = useState<string | null>(null);
     const [destinationHintText, setDestinationHintText] = useState<string | null>(null);
+    /** Machine-readable failure message from a 200 response that carries failureCode (SPEC-258 C.1). */
+    const [failureError, setFailureError] = useState<string | null>(null);
 
     // Derived
     const isDisabled = !legalChecked || mutation.isPending;
@@ -101,6 +103,7 @@ export function ImportFromUrlSection() {
         setValidationError(null);
         setServerMessage(null);
         setDestinationHintText(null);
+        setFailureError(null);
 
         const parseResult = AccommodationImportRequestSchema.safeParse({
             url: url.trim(),
@@ -128,6 +131,18 @@ export function ImportFromUrlSection() {
                 url: parseResult.data.url,
                 legalConfirmed: true
             });
+
+            // Branch 2: 200 response with a machine-readable failureCode — render as error,
+            // do NOT prefill the form (SPEC-258 C.1).
+            if (response.failureCode) {
+                const camelKey = response.failureCode.replace(/_([a-z])/g, (_, letter: string) =>
+                    letter.toUpperCase()
+                );
+                setFailureError(
+                    t(`host.importFromUrl.errors.failure.${camelKey}` as Parameters<typeof t>[0])
+                );
+                return;
+            }
 
             // Prefill form fields from draft
             const newImportedFields: ImportedFieldsMap = {};
@@ -283,6 +298,18 @@ export function ImportFromUrlSection() {
                 >
                     <AlertCircleIcon className="h-4 w-4 shrink-0" />
                     {t('host.importFromUrl.errors.submit' as Parameters<typeof t>[0])}
+                </p>
+            )}
+
+            {/* Failure code error: 200 response that carries a machine-readable failure cause (SPEC-258 C.1) */}
+            {failureError && (
+                <p
+                    data-testid="import-failure-error"
+                    role="alert"
+                    className="flex items-center gap-1 text-destructive text-sm"
+                >
+                    <AlertCircleIcon className="h-4 w-4 shrink-0" />
+                    {failureError}
                 </p>
             )}
 

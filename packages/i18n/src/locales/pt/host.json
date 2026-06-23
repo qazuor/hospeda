@@ -14,7 +14,15 @@
             "urlInvalid": "A URL não é válida.",
             "legalRequired": "Você precisa confirmar o aviso legal.",
             "submit": "Não foi possível importar a acomodação. Tente novamente.",
-            "network": "Não foi possível conectar ao servidor."
+            "network": "Não foi possível conectar ao servidor.",
+            "failure": {
+                "invalidUrl": "Verifique se a URL é válida e corresponde a uma acomodação.",
+                "sourceBlocked": "A fonte está temporariamente indisponível. Aguarde alguns minutos e tente novamente, ou preencha os dados manualmente.",
+                "credentialsMissing": "Não conseguimos conectar à fonte no momento. Tente mais tarde ou preencha os dados manualmente.",
+                "providerError": "Houve um problema ao consultar a fonte. Tente novamente ou preencha os dados manualmente.",
+                "timeout": "A fonte demorou muito para responder. Tente novamente ou preencha os dados manualmente.",
+                "nothingFound": "Não encontramos dados de acomodação nessa URL. Você pode preencher os dados manualmente."
+            }
         },
         "prefill": {
             "sectionToggle": "Importar a partir de uma URL",

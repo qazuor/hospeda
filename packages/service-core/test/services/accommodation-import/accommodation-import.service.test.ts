@@ -334,6 +334,7 @@ describe('AccommodationImportService', () => {
             expect(result.draft).toEqual({});
             expect(result.source).toBe('none');
             expect(result.methodsUsed).toEqual([]);
+            expect(result.failureCode).toBe('provider_error');
             // No throw — the promise resolves
         });
 
@@ -350,6 +351,76 @@ describe('AccommodationImportService', () => {
                     fakeActor
                 )
             ).resolves.toBeDefined();
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // failureCode propagation from adapter
+    // -------------------------------------------------------------------------
+    describe('when adapter returns a RawExtraction with failureCode', () => {
+        it('should propagate failureCode: credentials_missing from the adapter', async () => {
+            // Arrange — adapter degraded with a specific code (e.g. missing API key)
+            fakeGeneric.extract.mockResolvedValue({
+                sourcePlatform: 'generic',
+                failureCode: 'credentials_missing'
+            } as RawExtraction);
+
+            const service = new AccommodationImportService(fakeCtx);
+
+            // Act
+            const result = await service.importFromUrl(
+                { url: 'https://example.com/listing/failcode', context: fakeContext },
+                fakeActor
+            );
+
+            // Assert — failureCode propagated from adapter; message absent
+            expect(result.failureCode).toBe('credentials_missing');
+            expect(result.message).toBeUndefined();
+            expect(result.source).toBe('none');
+            expect(result.draft).toEqual({});
+        });
+
+        it('should propagate failureCode: source_blocked from the adapter', async () => {
+            // Arrange
+            fakeAirbnb.supports.mockReturnValue(true);
+            fakeAirbnb.extract.mockResolvedValue({
+                sourcePlatform: 'airbnb',
+                failureCode: 'source_blocked'
+            } as RawExtraction);
+
+            const service = new AccommodationImportService(fakeCtx);
+
+            // Act
+            const result = await service.importFromUrl(
+                {
+                    url: 'https://www.airbnb.com/rooms/12345',
+                    context: fakeContext
+                },
+                fakeActor
+            );
+
+            // Assert
+            expect(result.failureCode).toBe('source_blocked');
+            expect(result.message).toBeUndefined();
+        });
+
+        it('should NOT override adapter failureCode with nothing_found when draft is empty', async () => {
+            // Arrange — adapter returned source_blocked; draft is empty
+            fakeGeneric.extract.mockResolvedValue({
+                sourcePlatform: 'generic',
+                failureCode: 'timeout'
+            } as RawExtraction);
+
+            const service = new AccommodationImportService(fakeCtx);
+
+            // Act
+            const result = await service.importFromUrl(
+                { url: 'https://example.com/listing/timeout-test', context: fakeContext },
+                fakeActor
+            );
+
+            // Assert — adapter code takes precedence; nothing_found must NOT overwrite it
+            expect(result.failureCode).toBe('timeout');
         });
     });
 
@@ -371,8 +442,8 @@ describe('AccommodationImportService', () => {
 
             // Assert
             expect(result.source).toBe('none');
-            expect(result.message).toBeDefined();
-            expect(typeof result.message).toBe('string');
+            expect(result.failureCode).toBe('nothing_found');
+            expect(result.message).toBeUndefined();
             expect(result.draft).toEqual({});
             expect(result.partial).toBe(true);
             expect(result.methodsUsed).toEqual([]);
@@ -397,7 +468,8 @@ describe('AccommodationImportService', () => {
             expect(result.source).toBe('none');
             expect(result.partial).toBe(true);
             expect(result.draft).toEqual({});
-            expect(result.message).toBeDefined();
+            expect(result.failureCode).toBe('invalid_url');
+            expect(result.message).toBeUndefined();
             // No adapter should have been called
             expect(fakeGeneric.extract).not.toHaveBeenCalled();
         });
