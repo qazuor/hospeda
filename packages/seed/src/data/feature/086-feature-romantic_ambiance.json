@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "086-feature-romantic_ambiance",
+    "slug": "romantic_ambiance",
+    "description": {
+        "es": "Ambiente romántico ideal para parejas con iluminación y decoración especial",
+        "en": "Ambiente romántico ideal para parejas con iluminación y decoración especial",
+        "pt": "Ambiente romántico ideal para parejas con iluminación y decoración especial"
+    },
+    "applicableVerticals": ["gastronomy"],
+    "icon": "CouplesFriendlyIcon",
+    "isBuiltin": false,
+    "isFeatured": true,
+    "displayWeight": 55,
+    "lifecycleState": "ACTIVE"
+}

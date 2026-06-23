@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "055-feature-satellite_wifi",
-    "name": {
-        "es": "Wi-Fi satelital",
-        "en": "Wi-Fi satelital",
-        "pt": "Wi-Fi satelital"
-    },
     "slug": "satellite_wifi",
     "description": {
         "es": "Conexión a internet de alta velocidad mediante tecnología satelital, ideal para zonas remotas",
         "en": "Conexión a internet de alta velocidad mediante tecnología satelital, ideal para zonas remotas",
         "pt": "Conexión a internet de alta velocidad mediante tecnología satelital, ideal para zonas remotas"
     },
+    "applicableVerticals": ["accommodation"],
     "icon": "WifiIcon",
     "isBuiltin": true,
     "isFeatured": false,

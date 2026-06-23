@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "040-amenity-safety-smoke-detector",
-    "name": {
-        "es": "smoke_detector",
-        "en": "smoke_detector",
-        "pt": "smoke_detector"
-    },
     "slug": "smoke_detector",
     "description": {
         "es": "Detector de humo",
         "en": "Detector de humo",
         "pt": "Detector de humo"
     },
+    "applicableVerticals": ["accommodation"],
     "type": "SAFETY",
     "icon": "SmokeDetectorIcon",
     "isBuiltin": false,

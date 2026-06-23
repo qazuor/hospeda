@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "037-feature-24h_security",
-    "name": {
-        "es": "Seguridad 24 horas",
-        "en": "Seguridad 24 horas",
-        "pt": "Seguridad 24 horas"
-    },
     "slug": "24h_security",
     "description": {
         "es": "Vigilancia y seguridad permanente las 24 horas con personal capacitado y sistemas de monitoreo",
         "en": "Vigilancia y seguridad permanente las 24 horas con personal capacitado y sistemas de monitoreo",
         "pt": "Vigilancia y seguridad permanente las 24 horas con personal capacitado y sistemas de monitoreo"
     },
+    "applicableVerticals": ["accommodation"],
     "icon": "Security24hIcon",
     "isBuiltin": true,
     "isFeatured": false,

@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "034-feature-covered_gallery",
-    "name": {
-        "es": "Galería techada",
-        "en": "Galería techada",
-        "pt": "Galería techada"
-    },
     "slug": "covered_gallery",
     "description": {
         "es": "Espacio cubierto al aire libre ideal para relajarse, comer o socializar protegido de las inclemencias del tiempo",
         "en": "Espacio cubierto al aire libre ideal para relajarse, comer o socializar protegido de las inclemencias del tiempo",
         "pt": "Espacio cubierto al aire libre ideal para relajarse, comer o socializar protegido de las inclemencias del tiempo"
     },
+    "applicableVerticals": ["accommodation"],
     "icon": "CoveredGalleryIcon",
     "isBuiltin": true,
     "isFeatured": false,

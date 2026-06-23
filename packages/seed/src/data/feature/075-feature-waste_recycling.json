@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "075-feature-waste_recycling",
-    "name": {
-        "es": "Reciclado de residuos",
-        "en": "Reciclado de residuos",
-        "pt": "Reciclado de residuos"
-    },
     "slug": "waste_recycling",
     "description": {
         "es": "Sistema completo de separación y reciclado de residuos como parte del compromiso ambiental del establecimiento",
         "en": "Sistema completo de separación y reciclado de residuos como parte del compromiso ambiental del establecimiento",
         "pt": "Sistema completo de separación y reciclado de residuos como parte del compromiso ambiental del establecimiento"
     },
+    "applicableVerticals": ["accommodation"],
     "icon": "WasteRecyclingIcon",
     "isBuiltin": true,
     "isFeatured": false,

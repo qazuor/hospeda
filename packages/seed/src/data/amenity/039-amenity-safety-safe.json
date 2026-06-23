@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "039-amenity-safety-safe",
-    "name": {
-        "es": "safe",
-        "en": "safe",
-        "pt": "safe"
-    },
     "slug": "safe",
     "description": {
         "es": "Caja fuerte",
         "en": "Caja fuerte",
         "pt": "Caja fuerte"
     },
+    "applicableVerticals": ["accommodation"],
     "type": "SAFETY",
     "icon": "SafeIcon",
     "isBuiltin": false,

@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "094-feature-pregnancy_safe",
+    "slug": "pregnancy_safe",
+    "description": {
+        "es": "Actividad segura y adaptada para mujeres embarazadas",
+        "en": "Actividad segura y adaptada para mujeres embarazadas",
+        "pt": "Actividad segura y adaptada para mujeres embarazadas"
+    },
+    "applicableVerticals": ["experience"],
+    "icon": "AccessibilityFriendlyIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 35,
+    "lifecycleState": "ACTIVE"
+}

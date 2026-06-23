@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "096-amenity-entertainment-live-music",
+    "slug": "live_music",
+    "description": {
+        "es": "Música en vivo en horarios especiales",
+        "en": "Música en vivo en horarios especiales",
+        "pt": "Música en vivo en horarios especiales"
+    },
+    "applicableVerticals": ["gastronomy"],
+    "type": "ENTERTAINMENT",
+    "icon": "TvIcon",
+    "isBuiltin": false,
+    "isFeatured": true,
+    "displayWeight": 60
+}

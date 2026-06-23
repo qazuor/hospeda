@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "096-feature-senior_friendly",
+    "slug": "senior_friendly",
+    "description": {
+        "es": "Actividad de baja intensidad física apta para adultos mayores",
+        "en": "Actividad de baja intensidad física apta para adultos mayores",
+        "pt": "Actividad de baja intensidad física apta para adultos mayores"
+    },
+    "applicableVerticals": ["experience"],
+    "icon": "SeniorFriendlyIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 40,
+    "lifecycleState": "ACTIVE"
+}

@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "090-feature-beginner_friendly",
+    "slug": "beginner_friendly",
+    "description": {
+        "es": "No se requiere experiencia previa, ideal para principiantes",
+        "en": "No se requiere experiencia previa, ideal para principiantes",
+        "pt": "No se requiere experiencia previa, ideal para principiantes"
+    },
+    "applicableVerticals": ["experience"],
+    "icon": "AccessibilityFriendlyIcon",
+    "isBuiltin": false,
+    "isFeatured": true,
+    "displayWeight": 70,
+    "lifecycleState": "ACTIVE"
+}

@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "104-amenity-general-appliances-equipment-included",
+    "slug": "equipment_included",
+    "description": {
+        "es": "Todo el equipamiento necesario para la actividad está incluido",
+        "en": "Todo el equipamiento necesario para la actividad está incluido",
+        "pt": "Todo el equipamiento necesario para la actividad está incluido"
+    },
+    "applicableVerticals": ["experience"],
+    "type": "GENERAL_APPLIANCES",
+    "icon": "KidsGamesIcon",
+    "isBuiltin": false,
+    "isFeatured": true,
+    "displayWeight": 80
+}

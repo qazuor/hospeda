@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "047-amenity-services-daily-cleaning",
-    "name": {
-        "es": "daily_cleaning",
-        "en": "daily_cleaning",
-        "pt": "daily_cleaning"
-    },
     "slug": "daily_cleaning",
     "description": {
         "es": "Servicio de limpieza diario",
         "en": "Servicio de limpieza diario",
         "pt": "Servicio de limpieza diario"
     },
+    "applicableVerticals": ["accommodation"],
     "type": "SERVICES",
     "icon": "DailyCleaningIcon",
     "isBuiltin": false,

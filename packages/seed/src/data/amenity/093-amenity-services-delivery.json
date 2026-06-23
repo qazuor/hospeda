@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "093-amenity-services-delivery",
+    "slug": "delivery",
+    "description": {
+        "es": "Servicio de entrega a domicilio disponible",
+        "en": "Servicio de entrega a domicilio disponible",
+        "pt": "Servicio de entrega a domicilio disponible"
+    },
+    "applicableVerticals": ["gastronomy"],
+    "type": "SERVICES",
+    "icon": "TransferServiceIcon",
+    "isBuiltin": false,
+    "isFeatured": true,
+    "displayWeight": 70
+}

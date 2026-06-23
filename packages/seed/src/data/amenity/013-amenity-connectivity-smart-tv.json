@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "013-amenity-connectivity-smart-tv",
-    "name": {
-        "es": "smart_tv",
-        "en": "smart_tv",
-        "pt": "smart_tv"
-    },
     "slug": "smart_tv",
     "description": {
         "es": "Smart TV / Streaming",
         "en": "Smart TV / Streaming",
         "pt": "Smart TV / Streaming"
     },
+    "applicableVerticals": ["accommodation"],
     "type": "CONNECTIVITY",
     "icon": "SmartTvIcon",
     "isBuiltin": false,

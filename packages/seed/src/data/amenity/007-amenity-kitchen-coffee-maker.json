@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "007-amenity-kitchen-coffee-maker",
-    "name": {
-        "es": "coffee_maker",
-        "en": "coffee_maker",
-        "pt": "coffee_maker"
-    },
     "slug": "coffee_maker",
     "description": {
         "es": "Cafetera disponible",
         "en": "Cafetera disponible",
         "pt": "Cafetera disponible"
     },
+    "applicableVerticals": ["accommodation"],
     "type": "KITCHEN",
     "icon": "CoffeeMakerIcon",
     "isBuiltin": false,

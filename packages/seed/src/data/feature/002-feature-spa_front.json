@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "002-feature-spa_front",
-    "name": {
-        "es": "Frente al balneario",
-        "en": "Frente al balneario",
-        "pt": "Frente al balneario"
-    },
     "slug": "spa_front",
     "description": {
         "es": "Ubicación privilegiada frente a balnearios termales o spas naturales, con acceso directo a las instalaciones de relajación",
         "en": "Ubicación privilegiada frente a balnearios termales o spas naturales, con acceso directo a las instalaciones de relajación",
         "pt": "Ubicación privilegiada frente a balnearios termales o spas naturales, con acceso directo a las instalaciones de relajación"
     },
+    "applicableVerticals": ["accommodation"],
     "icon": "SpaFrontIcon",
     "isBuiltin": true,
     "isFeatured": false,

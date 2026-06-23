@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "028-amenity-outdoors-balcony",
-    "name": {
-        "es": "balcony",
-        "en": "balcony",
-        "pt": "balcony"
-    },
     "slug": "balcony",
     "description": {
         "es": "Balcón privado",
         "en": "Balcón privado",
         "pt": "Balcón privado"
     },
+    "applicableVerticals": ["accommodation"],
     "type": "OUTDOORS",
     "icon": "BalconyIcon",
     "isBuiltin": false,

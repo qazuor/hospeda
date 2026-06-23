@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "081-amenity-bed-and-bath-soap-dispensers",
-    "name": {
-        "es": "soap_dispensers",
-        "en": "soap_dispensers",
-        "pt": "soap_dispensers"
-    },
     "slug": "soap_dispensers",
     "description": {
         "es": "Dispensador de gel y jabón",
         "en": "Dispensador de gel y jabón",
         "pt": "Dispensador de gel y jabón"
     },
+    "applicableVerticals": ["accommodation"],
     "type": "BED_AND_BATH",
     "icon": "SoapDispenserIcon",
     "isBuiltin": false,

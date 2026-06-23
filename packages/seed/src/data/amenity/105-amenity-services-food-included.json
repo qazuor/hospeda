@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "105-amenity-services-food-included",
+    "slug": "food_included",
+    "description": {
+        "es": "Alimentación o refrigerios incluidos en el precio de la experiencia",
+        "en": "Alimentación o refrigerios incluidos en el precio de la experiencia",
+        "pt": "Alimentación o refrigerios incluidos en el precio de la experiencia"
+    },
+    "applicableVerticals": ["experience"],
+    "type": "SERVICES",
+    "icon": "BreakfastIcon",
+    "isBuiltin": false,
+    "isFeatured": true,
+    "displayWeight": 70
+}

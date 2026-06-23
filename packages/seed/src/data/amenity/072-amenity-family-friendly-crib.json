@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "072-amenity-family-friendly-crib",
-    "name": {
-        "es": "crib",
-        "en": "crib",
-        "pt": "crib"
-    },
     "slug": "crib",
     "description": {
         "es": "Cuna / practicuna",
         "en": "Cuna / practicuna",
         "pt": "Cuna / practicuna"
     },
+    "applicableVerticals": ["accommodation"],
     "type": "FAMILY_FRIENDLY",
     "icon": "BabyMonitorIcon",
     "isBuiltin": false,

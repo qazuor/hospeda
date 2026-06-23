@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "009-feature-isolated_no_neighbors",
-    "name": {
-        "es": "Aislado sin vecinos",
-        "en": "Aislado sin vecinos",
-        "pt": "Aislado sin vecinos"
-    },
     "slug": "isolated_no_neighbors",
     "description": {
         "es": "Propiedad completamente privada sin construcciones cercanas, garantizando máxima privacidad y exclusividad",
         "en": "Propiedad completamente privada sin construcciones cercanas, garantizando máxima privacidad y exclusividad",
         "pt": "Propiedad completamente privada sin construcciones cercanas, garantizando máxima privacidad y exclusividad"
     },
+    "applicableVerticals": ["accommodation"],
     "icon": "IsolatedLocationIcon",
     "isBuiltin": true,
     "isFeatured": false,

@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "084-amenity-services-restaurant",
-    "name": {
-        "es": "restaurant",
-        "en": "restaurant",
-        "pt": "restaurant"
-    },
     "slug": "restaurant",
     "description": {
         "es": "Restaurante",
         "en": "Restaurante",
         "pt": "Restaurante"
     },
+    "applicableVerticals": ["accommodation"],
     "type": "SERVICES",
     "icon": "FullBoardIcon",
     "isBuiltin": false,
