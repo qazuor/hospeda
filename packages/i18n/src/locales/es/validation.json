@@ -132,15 +132,6 @@
             "max": "El resumen no puede superar los {{max}} caracteres",
             "min": "El resumen debe tener al menos {{min}} caracteres"
         },
-        "amenityIds": {
-            "invalidUuid": "El ID de servicio debe ser un UUID válido"
-        },
-        "featureIds": {
-            "invalidUuid": "El ID de característica debe ser un UUID válido"
-        },
-        "richDescription": {
-            "max": "La descripción enriquecida no puede superar los {{max}} caracteres"
-        },
         "media": {
             "state": {
                 "invalid": "El estado del medio debe ser 'visible' o 'archived'"

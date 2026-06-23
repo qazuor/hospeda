@@ -132,15 +132,6 @@
             "max": "[PT] El resumen no puede superar los {{max}} caracteres",
             "min": "[PT] El resumen debe tener al menos {{min}} caracteres"
         },
-        "amenityIds": {
-            "invalidUuid": "[PT] El ID de servicio debe ser un UUID válido"
-        },
-        "featureIds": {
-            "invalidUuid": "[PT] El ID de característica debe ser un UUID válido"
-        },
-        "richDescription": {
-            "max": "A descrição enriquecida não pode exceder {{max}} caracteres"
-        },
         "media": {
             "state": {
                 "invalid": "O estado da mídia deve ser 'visible' ou 'archived'"
