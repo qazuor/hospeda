@@ -167,6 +167,123 @@ export const ThreadResponseSchema = z.object({
 export type ThreadResponse = z.infer<typeof ThreadResponseSchema>;
 
 // ============================================================================
+// ENRICHED THREAD RESPONSES (authenticated owner/guest views)
+// ============================================================================
+//
+// The owner and protected (guest) thread routes return the full conversation
+// record PLUS route-level display enrichment that is NOT in the DB row. These
+// schemas declare those exact shapes so the fail-closed response pipeline
+// (SPEC-210 PR5) can validate without stripping the enrichment fields. They are
+// authenticated-tier responses: the goal is to satisfy the pipeline, not to
+// hide fields — so the conversation shape is the FULL record, not a narrowed
+// public projection.
+
+/**
+ * Conversation record enriched for the OWNER thread view.
+ *
+ * Adds the display fields populated by
+ * `apps/api/src/routes/conversations/protected/owner/thread.ts`:
+ * - `accommodationName` — accommodation display name (null if deleted)
+ * - `guestName` — resolved guest display name (anonymousName or user lookup;
+ *   null when unresolved)
+ */
+export const OwnerThreadConversationSchema = ConversationSchema.extend({
+    accommodationName: z.string().nullable(),
+    guestName: z.string().nullable()
+});
+
+/** TypeScript type inferred from {@link OwnerThreadConversationSchema}. */
+export type OwnerThreadConversation = z.infer<typeof OwnerThreadConversationSchema>;
+
+/**
+ * Response body for `GET /api/v1/protected/conversations/owner/:id` (owner thread).
+ * Wraps the enriched conversation, the message page, and the pagination cursor.
+ */
+export const OwnerThreadResponseSchema = z.object({
+    conversation: OwnerThreadConversationSchema,
+    messages: z.array(MessageSchema),
+    nextCursor: z.string().datetime().nullable()
+});
+
+/** TypeScript type inferred from {@link OwnerThreadResponseSchema}. */
+export type OwnerThreadResponse = z.infer<typeof OwnerThreadResponseSchema>;
+
+/**
+ * Conversation record enriched for the PROTECTED guest thread view.
+ *
+ * Adds the display fields populated by
+ * `apps/api/src/routes/conversations/protected/thread.ts`:
+ * - `accommodationName` — accommodation display name (null if deleted)
+ * - `accommodationSlug` — accommodation URL slug (null if deleted)
+ * - `ownerName` — property owner display/first name (null if owner deleted)
+ */
+export const ProtectedThreadConversationSchema = ConversationSchema.extend({
+    accommodationName: z.string().nullable(),
+    accommodationSlug: z.string().nullable(),
+    ownerName: z.string().nullable()
+});
+
+/** TypeScript type inferred from {@link ProtectedThreadConversationSchema}. */
+export type ProtectedThreadConversation = z.infer<typeof ProtectedThreadConversationSchema>;
+
+/**
+ * Response body for `GET /api/v1/protected/conversations/:id` (guest thread).
+ * Wraps the enriched conversation, the message page, and the pagination cursor.
+ */
+export const ProtectedThreadResponseSchema = z.object({
+    conversation: ProtectedThreadConversationSchema,
+    messages: z.array(MessageSchema),
+    nextCursor: z.string().datetime().nullable()
+});
+
+/** TypeScript type inferred from {@link ProtectedThreadResponseSchema}. */
+export type ProtectedThreadResponse = z.infer<typeof ProtectedThreadResponseSchema>;
+
+// ============================================================================
+// ENRICHED LIST ITEM RESPONSES (authenticated owner/guest list views)
+// ============================================================================
+
+/**
+ * Single list item for the PROTECTED guest conversation list.
+ *
+ * Adds the display fields populated per-item by
+ * `apps/api/src/routes/conversations/protected/list.ts`:
+ * - `accommodationName` — accommodation display name (null if deleted)
+ * - `accommodationSlug` — accommodation URL slug (null if deleted)
+ * - `lastMessageExcerpt` — first 200 chars of the last message (null if empty)
+ * - `unreadCount` — unread message count for the guest side
+ */
+export const ProtectedConversationListItemSchema = ConversationSchema.extend({
+    accommodationName: z.string().nullable(),
+    accommodationSlug: z.string().nullable(),
+    lastMessageExcerpt: z.string().nullable(),
+    unreadCount: z.number().int().min(0)
+});
+
+/** TypeScript type inferred from {@link ProtectedConversationListItemSchema}. */
+export type ProtectedConversationListItem = z.infer<typeof ProtectedConversationListItemSchema>;
+
+/**
+ * Single list item for the OWNER conversation list.
+ *
+ * Adds the display fields populated per-item by
+ * `apps/api/src/routes/conversations/protected/owner/list.ts`:
+ * - `accommodationName` — accommodation display name (null if deleted)
+ * - `guestName` — resolved guest display name (null when unresolved)
+ * - `lastMessageExcerpt` — first 200 chars of the last message (null if empty)
+ * - `unreadCount` — unread message count for the owner side
+ */
+export const OwnerConversationListItemSchema = ConversationSchema.extend({
+    accommodationName: z.string().nullable(),
+    guestName: z.string().nullable(),
+    lastMessageExcerpt: z.string().nullable(),
+    unreadCount: z.number().int().min(0)
+});
+
+/** TypeScript type inferred from {@link OwnerConversationListItemSchema}. */
+export type OwnerConversationListItem = z.infer<typeof OwnerConversationListItemSchema>;
+
+// ============================================================================
 // UNREAD COUNT RESPONSE
 // ============================================================================
 
