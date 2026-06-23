@@ -247,5 +247,13 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
         schedule: '*/2 * * * *',
         description:
             'Checks the status of pending/running Apify actor runs for external reputation data and persists results when runs complete.'
+    },
+    {
+        name: 'social-publish-dispatch',
+        displayName: 'Despacho de publicaciones sociales',
+        category: 'content',
+        schedule: '*/5 * * * *',
+        description:
+            'Dispatch approved social post targets to Make.com for publication (SPEC-254 US-11). Skipped when HOSPEDA_MAKE_API_KEY is absent.'
     }
 ];

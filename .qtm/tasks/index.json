@@ -1006,6 +1006,21 @@
             "base": "staging",
             "createdAt": "2026-06-23T02:10:00Z",
             "note": "Doc-only spec; tasks NOT atomized yet. Scope amenities/features catalog by vertical (Options A/B/C, decide at planning) + absorb BETA-90 (drop name column -> i18n by slug). SPEC-249 follow-up."
+        },
+        {
+            "specId": "SPEC-254",
+            "title": "Social Automation Backend",
+            "status": "in-progress",
+            "progress": "45/52",
+            "path": "SPEC-254-social-media-publish",
+            "branch": "spec/SPEC-254-phase-1-data-model",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-254-social-media-publish",
+            "base": "staging",
+            "createdAt": "2026-06-20T00:00:00.000Z",
+            "tasksAtomizedAt": "2026-06-20T00:00:00.000Z",
+            "taskCount": 52,
+            "averageComplexity": 2.3,
+            "note": "52 tasks across 4 phases (setup 14, core 23, integration 11, testing 3, cleanup 1). Shipped as chained PRs per phase. DB schema chain T-001->T-013 is critical path. Follow-ups SPEC-255/256."
         }
     ],
     "standalone": {

@@ -563,20 +563,39 @@ export const createPerRouteRateLimitMiddleware = ({
 };
 
 /** Supported rate limit endpoint categories */
-type RateLimitEndpointType = 'auth' | 'public' | 'admin' | 'billing' | 'webhook' | 'general';
+export type RateLimitEndpointType =
+    | 'auth'
+    | 'public'
+    | 'admin'
+    | 'billing'
+    | 'webhook'
+    | 'ai-inbound'
+    | 'make-callback'
+    | 'general';
 
 /**
  * Determines the endpoint type based on the request path and method.
  *
- * The order matters: more specific categories (billing, webhook) are checked
- * before broader ones (admin, public) so that a POST to a billing path under
- * `/admin/` still gets the restrictive billing limits.
+ * The order matters: more specific categories are checked before broader ones
+ * so that, for example, a POST to a billing path under `/admin/` still gets
+ * the restrictive billing limits, and machine-to-machine endpoints (`ai-inbound`,
+ * `make-callback`) are classified before the broad `admin`/`public` buckets.
+ *
+ * Classification order (first match wins):
+ *   1. `webhook`      — paths containing `/webhooks/` or `/webhook/`
+ *   2. `billing`      — POST requests on paths containing `/billing/`
+ *   3. `ai-inbound`   — `/api/v1/ai/*` (Custom GPT inbound calls)
+ *   4. `make-callback` — `/api/v1/integrations/make/*` (Make.com callbacks)
+ *   5. `auth`         — auth paths
+ *   6. `admin`        — `/api/v1/admin/*`
+ *   7. `public`       — `/api/v1/public/*`
+ *   8. `general`      — everything else
  *
  * @param path - The request path
  * @param method - The HTTP method (uppercase)
  * @returns The endpoint type for rate limiting configuration
  */
-const getEndpointType = (path: string, method: string): RateLimitEndpointType => {
+export const getEndpointType = (path: string, method: string): RateLimitEndpointType => {
     // Webhook endpoints get their own high-throughput bucket
     if (path.includes('/webhooks/') || path.includes('/webhook/')) {
         return 'webhook';
@@ -584,6 +603,16 @@ const getEndpointType = (path: string, method: string): RateLimitEndpointType =>
     // Financial POST operations on billing paths get restrictive limits
     if (path.includes('/billing/') && method === 'POST') {
         return 'billing';
+    }
+    // Custom GPT inbound calls: catalog GET, drafts POST, etc.
+    // Paths are /api/v1/ai/* — does NOT contain "/webhook" so no collision above.
+    if (path.startsWith('/api/v1/ai/')) {
+        return 'ai-inbound';
+    }
+    // Make.com callbacks: /claim, /result, dispatch, etc.
+    // Paths are /api/v1/integrations/make/* — no "/webhook" segment, no collision above.
+    if (path.startsWith('/api/v1/integrations/make/')) {
+        return 'make-callback';
     }
     if (
         path.startsWith('/api/auth/') ||
@@ -645,6 +674,26 @@ const getRateLimitConfig = (endpointType: RateLimitEndpointType) => {
                 headers: baseConfig.headers
             };
         case 'webhook':
+            return {
+                enabled: baseConfig.webhookEnabled,
+                windowMs: baseConfig.webhookWindowMs,
+                maxRequests: baseConfig.webhookMaxRequests,
+                message: baseConfig.webhookMessage,
+                headers: baseConfig.headers
+            };
+        case 'ai-inbound':
+            // Intentionally maps to the webhook bucket: high-throughput machine-to-machine
+            // traffic with the same traffic profile as webhooks. No new env vars required.
+            return {
+                enabled: baseConfig.webhookEnabled,
+                windowMs: baseConfig.webhookWindowMs,
+                maxRequests: baseConfig.webhookMaxRequests,
+                message: baseConfig.webhookMessage,
+                headers: baseConfig.headers
+            };
+        case 'make-callback':
+            // Intentionally maps to the webhook bucket: Make.com callbacks are machine-to-machine
+            // traffic with the same profile as webhooks. No new env vars / Coolify actions needed.
             return {
                 enabled: baseConfig.webhookEnabled,
                 windowMs: baseConfig.webhookWindowMs,

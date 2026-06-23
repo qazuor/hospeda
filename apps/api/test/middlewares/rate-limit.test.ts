@@ -116,6 +116,7 @@ import {
     cleanupExpiredEntries,
     clearRateLimitForIp,
     clearRateLimitStore,
+    getEndpointType,
     rateLimitMiddleware,
     resetRateLimitStore,
     stopCleanupInterval
@@ -989,6 +990,98 @@ describe('Rate Limit Middleware', () => {
 
             // Assert
             expect(res.status).toBe(200);
+        });
+    });
+
+    describe('getEndpointType', () => {
+        describe('ai-inbound classification', () => {
+            it('should return ai-inbound for a GET request to /api/v1/ai/ paths', () => {
+                // Arrange
+                const path = '/api/v1/ai/social/catalog';
+                const method = 'GET';
+
+                // Act
+                const result = getEndpointType(path, method);
+
+                // Assert
+                expect(result).toBe('ai-inbound');
+            });
+
+            it('should return ai-inbound for a POST request to /api/v1/ai/ paths', () => {
+                // Arrange
+                const path = '/api/v1/ai/social/drafts';
+                const method = 'POST';
+
+                // Act
+                const result = getEndpointType(path, method);
+
+                // Assert
+                expect(result).toBe('ai-inbound');
+            });
+        });
+
+        describe('make-callback classification', () => {
+            it('should return make-callback for a POST to /api/v1/integrations/make/claim', () => {
+                // Arrange
+                const path = '/api/v1/integrations/make/claim';
+                const method = 'POST';
+
+                // Act
+                const result = getEndpointType(path, method);
+
+                // Assert
+                expect(result).toBe('make-callback');
+            });
+
+            it('should return make-callback for a POST to /api/v1/integrations/make/result', () => {
+                // Arrange
+                const path = '/api/v1/integrations/make/result';
+                const method = 'POST';
+
+                // Act
+                const result = getEndpointType(path, method);
+
+                // Assert
+                expect(result).toBe('make-callback');
+            });
+        });
+
+        describe('regression guard — existing classifications unchanged', () => {
+            it('should return webhook for a path containing /webhooks/ (webhook check wins before ai-inbound)', () => {
+                // Arrange: hypothetical path that contains /webhooks/ and /ai/ — webhook wins
+                const path = '/api/v1/public/webhooks/mercadopago';
+                const method = 'POST';
+
+                // Act
+                const result = getEndpointType(path, method);
+
+                // Assert
+                expect(result).toBe('webhook');
+            });
+
+            it('should return admin for a GET to an admin path (not billing, not ai, not make)', () => {
+                // Arrange
+                const path = '/api/v1/admin/users';
+                const method = 'GET';
+
+                // Act
+                const result = getEndpointType(path, method);
+
+                // Assert
+                expect(result).toBe('admin');
+            });
+
+            it('should return public for a GET to a public path (not a known specific bucket)', () => {
+                // Arrange
+                const path = '/api/v1/public/data';
+                const method = 'GET';
+
+                // Act
+                const result = getEndpointType(path, method);
+
+                // Assert
+                expect(result).toBe('public');
+            });
         });
     });
 });

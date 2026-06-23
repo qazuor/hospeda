@@ -91,8 +91,10 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * 229 (SPEC-250): +2 async external reputation refresh vars:
  * - HOSPEDA_EXTREP_POLL_SCHEDULE (string, default '*​/2 * * * *')
  * - HOSPEDA_EXTREP_APIFY_RUN_TIMEOUT_MS (number, default 600000)
+ *
+ * 233 (SPEC-254): +4 social automation vars (GPT ingestion + Make publishing).
  */
-const EXPECTED_VAR_COUNT = 229;
+const EXPECTED_VAR_COUNT = 233;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;

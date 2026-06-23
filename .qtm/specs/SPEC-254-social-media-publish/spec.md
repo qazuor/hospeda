@@ -359,7 +359,7 @@ Dashboard (`/admin/social`):
 - **Pattern**: Layered monorepo service — shared DB models + Zod schemas in packages, service business logic in `@repo/service-core`, thin Hono routes in `apps/api`, React admin UI in `apps/admin`. External integrations (Cloudinary, Make.com) are wrapped behind service calls.
 - **Components (new)**:
   - 17 DB tables in `packages/db/src/schemas/social/` domain.
-  - 10 new TS enums in `packages/schemas/src/enums/social-*.enum.ts`.
+  - 9 new TS enums in `packages/schemas/src/enums/social-*.enum.ts`.
   - ~12 Zod schema entity directories in `packages/schemas/src/entities/social/`.
   - ~10 service modules in `packages/service-core/src/services/social/` (8 catalog CRUD services + 2 non-CRUD pipeline services: `SocialDraftIngestionService` and `SocialPublishDispatchService`).
   - 1 new inbound API-key middleware in `apps/api/src/middlewares/api-key.ts`.
@@ -407,11 +407,11 @@ All new tables land in the `social` domain directory. Every table has the global
 
 **Migration strategy**:
 
-- Carril 1 (structural): All 17 tables + all 10 pgEnums via `pnpm db:generate` → produces migration file `0022_social_automation.sql`. Run with `pnpm db:migrate`.
+- Carril 1 (structural): All 17 tables + all 9 pgEnums via `pnpm db:generate` → produces migration file `0022_social_automation.sql`. Run with `pnpm db:migrate`.
 - Carril 2 (extras): `packages/db/src/migrations/extras/018-social-indexes.kind.sql` — adds: `CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_social_posts_status ON social_posts(status)`, `idx_social_posts_next_run_at ON social_posts(next_run_at) WHERE next_run_at IS NOT NULL`, `idx_social_post_targets_status ON social_post_targets(status)`, `idx_social_audit_log_entity ON social_audit_log(entity_type, entity_id)`, `idx_social_publish_logs_post ON social_publish_logs(social_post_id, created_at DESC)`. All idempotent.
 - Extras `019-social-set-updated-at.trigger.sql`: registers the `set_updated_at` trigger for all new tables that have `updated_at` (i.e., all except the append-only trio).
 
-**Enum files (10 new, one file each in `packages/schemas/src/enums/`):**
+**Enum files (9 new, one file each in `packages/schemas/src/enums/`):**
 
 - `social-platform.enum.ts` → `SocialPlatform { INSTAGRAM, FACEBOOK, X }`
 - `social-publish-format.enum.ts` → `SocialPublishFormat { FEED_POST, PHOTO_POST, TEXT_POST, IMAGE_POST, VIDEO_POST, REEL, STORY, CAROUSEL }`
@@ -796,7 +796,7 @@ No new npm packages are required. All functionality uses existing codebase depen
 
 **Internal packages affected:**
 
-- `packages/schemas` — 10 new enum files, ~12 entity schema directories, new permission/category enum entries.
+- `packages/schemas` — 9 new enum files, ~12 entity schema directories, new permission/category enum entries.
 - `packages/db` — 17 new table schema files in `social/` domain, 2 new extras migration files, new migration file `0022`.
 - `packages/service-core` — ~10 new service modules in `social/` subdirectory.
 - `packages/seed` — new `social*.seed.ts` files registered in `runRequiredSeeds`.
@@ -843,9 +843,9 @@ No new npm packages are required. All functionality uses existing codebase depen
 
 ### Phase 1: Data Model + Catalog
 
-1. [ ] Add 10 new TS enums + Zod schemas to `packages/schemas/src/enums/social-*.enum.ts` (one file per enum).
+1. [ ] Add 9 new TS enums + Zod schemas to `packages/schemas/src/enums/social-*.enum.ts` (one file per enum).
 2. [ ] Export all from `packages/schemas/src/enums/index.ts`.
-3. [ ] Register all 10 pgEnums in `packages/db/src/schemas/enums.dbschema.ts` using `enumToTuple`.
+3. [ ] Register all 9 pgEnums in `packages/db/src/schemas/enums.dbschema.ts` using `enumToTuple`.
 4. [ ] Add ~25 new `PermissionEnum` values + 9 `PermissionCategoryEnum` values to `packages/schemas/src/enums/permission.enum.ts`.
 5. [ ] Create the 17 table schema files in `packages/db/src/schemas/social/` (one file per table, with `relations()` block in each file).
 6. [ ] Export all table schemas from `packages/db/src/schemas/index.ts`.
@@ -868,7 +868,7 @@ No new npm packages are required. All functionality uses existing codebase depen
 20. [ ] Add `createApiKeyRoute` factory to `apps/api/src/utils/route-factory-tiered.ts` — mirrors `createAdminRoute` but swaps `adminAuthMiddleware` for the api-key middleware instance. Accepts `apiKeyConfig` option.
 21. [ ] Implement `GET /api/v1/ai/social/catalog` route + handler (read-only query across catalog tables, returns active rows only).
 22. [ ] Create `SocialDraftIngestionService` in `packages/service-core/src/services/social/social-draft-ingestion.service.ts`. Responsibilities: validate draft payload, resolve slugs → IDs (campaign, batch, audience, footer, hashtag set), validate targets against `social_platform_formats`, enforce status override (NEEDS_REVIEW + PENDING + paused:false), store `social_posts` + `social_post_targets` + `social_post_hashtags`, store `social_ai_requests` log, trigger image pipeline.
-23. [ ] Create image pipeline helper `packages/service-core/src/services/social/social-image-pipeline.service.ts`. Responsibilities: detect `mode` (`public_url` | `openai_file_refs`), extract download URL, download with `fetch()` (timeout 20s), upload to Cloudinary via `getMediaProvider().upload()`, store `social_assets` rows, link via `social_post_media`.
+23. [ ] Create image pipeline helper `packages/service-core/src/services/social/social-image-pipeline.service.ts`. Responsibilities: detect `mode` (`public_url` | `openai_file_refs`), extract download URL, download with `fetch()` (timeout 15s — see resolved decision #2), upload to Cloudinary via `getMediaProvider().upload()`, store `social_assets` rows, link via `social_post_media`.
 24. [ ] Implement `POST /api/v1/ai/social/drafts` route + handler, calling `SocialDraftIngestionService`.
 25. [ ] Add `duration_seconds?: number` to `UploadResult` type in `packages/media/src/types.ts` (one-line change).
 26. [ ] Write unit tests: lenient hashtag validation (unknown hashtags → warnings, valid ones → linked), status override enforcement, duplicate `draft_id` → 409, image pipeline success/failure paths, operator_pin timingSafeEqual, missing api-key → 401.
@@ -916,10 +916,10 @@ No new npm packages are required. All functionality uses existing codebase depen
 9. The post list `?includeDeleted=true` gate is explicitly tied to `SOCIAL_POST_HARD_DELETE` permission, not just any admin — ensuring archived post visibility is a privileged action.
 10. The dashboard `makeWebhookConfigured` field is flagged as a live check (not cached) because the setting can be updated without a redeploy.
 
-**Open questions (flag for owner before implementation starts):**
+**Resolved decisions (owner, 2026-06-20):** The five open questions below were resolved with the owner. These are binding.
 
-1. **Operator PIN delivery**: How is `HOSPEDA_OPERATOR_PIN_HASH` shared with the Custom GPT operator? Is it stored in the GPT system prompt (security risk: it lives in OpenAI's infra), or is it passed via a separate out-of-band channel? The spec assumes the latter but does not dictate the delivery mechanism.
-2. **Image download timeout**: 20 seconds is proposed. Is this acceptable given that API gateway timeouts are typically 30 seconds? If the Hono server is behind Traefik with a 25-second upstream timeout, a 20-second download + Cloudinary upload could hit the wall.
-3. **Recurrence for targets that are partially PUBLISHED**: If a post has 3 targets and only 2 succeed (1 FAILED after 3 retries), the spec says `postStatus = PUBLISHED` and recurrence rearming fires. On the next cycle, does the cron re-dispatch the 1 FAILED target or skip it? The spec currently says "targets are reset to APPROVED status as part of the rearm step" — does this apply to previously FAILED targets too?
-4. **`social_platforms` seed**: Should the platform rows be immutable (seed-only, no UI to create/delete) or should admins be able to add platforms from the UI? The spec treats them as data-driven for config but says "adding a brand-new platform is a small code change" — which implies seed-only. The `PATCH` endpoint for platform-format handles enable/disable; confirm there is no `POST /admin/social/platforms` (create) endpoint.
-5. **AI request log retention**: `social_ai_requests` is append-only with no purge cron. At 5-20 requests/day, this is ~7,300 rows/year — manageable indefinitely. But `raw_request_json` and `raw_response_json` could be large (full GPT output). Confirm whether these should be truncated/sampled after a retention period.
+1. **Operator PIN delivery** → Out-of-band. The human operator TYPES the PIN into the GPT conversation at save time; it is NOT stored in the GPT system prompt (which lives in OpenAI's infra). The backend env holds ONLY the hash (`HOSPEDA_OPERATOR_PIN_HASH`); the raw PIN is never persisted.
+2. **Image download timeout** → 15 seconds (not 20). On download/upload failure the draft is still created with `cloudinary_url = null` and a media-pending warning, so the request never blocks on slow media.
+3. **Recurrence rearm of previously FAILED targets** → Clean slate. When a recurring post rearms for its next occurrence, ALL its targets are reset to `APPROVED` AND `retry_count = 0` — including targets that had exhausted retries in a prior cycle. Each occurrence is a fresh publish attempt.
+4. **`social_platforms` is seed-only** → Platforms are created via seed and configured/enabled/disabled via `PATCH` only. There is NO `POST /admin/social/platforms` (create) endpoint. Adding a brand-new platform is a deliberate code change + Make scenario, not an admin action.
+5. **AI request log retention** → Deferred. `social_ai_requests` stays append-only with full `raw_request_json` / `raw_response_json` payloads and no purge cron in this spec. Retention/truncation is revisited in a later spec if volume warrants it.

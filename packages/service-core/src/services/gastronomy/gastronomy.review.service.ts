@@ -22,12 +22,7 @@
  * @module gastronomy.review.service
  */
 
-import {
-    type GastronomyModel,
-    type GastronomyReviewModel,
-    gastronomyModel,
-    gastronomyReviewModel
-} from '@repo/db';
+import { type GastronomyReviewModel, gastronomyReviewModel } from '@repo/db';
 import {
     type CountResponse,
     type GastronomyReview,
@@ -137,14 +132,11 @@ export class GastronomyReviewService extends BaseCrudService<
     protected readonly searchSchema = GastronomySearchSchema;
 
     /** Injectable for unit tests. */
-    private _gastronomyModel: GastronomyModel;
-    /** Injectable for unit tests. */
     private _gastronomyService: GastronomyService;
 
     constructor(config: ServiceConfig) {
         super(config, GastronomyReviewService.ENTITY_NAME);
         this.model = gastronomyReviewModel;
-        this._gastronomyModel = gastronomyModel;
         this._gastronomyService = new GastronomyService(config);
     }
 

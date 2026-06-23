@@ -86,7 +86,9 @@ export const namespaces = [
     // External reputation from third-party platforms (SPEC-237)
     'external-reputation',
     // Experiences & Services commerce listings (SPEC-240)
-    'experience'
+    'experience',
+    // Social media post automation (SPEC-254)
+    'social'
 ] as const;
 
 export type Namespace = (typeof namespaces)[number];
@@ -184,6 +186,7 @@ import privacyEs from './locales/es/privacy.json';
 import revalidationEs from './locales/es/revalidation.json';
 import reviewEs from './locales/es/review.json';
 import searchEs from './locales/es/search.json';
+import socialEs from './locales/es/social.json';
 import tagsEs from './locales/es/tags.json';
 import termsEs from './locales/es/terms.json';
 import uiEs from './locales/es/ui.json';
@@ -243,6 +246,7 @@ import privacyEn from './locales/en/privacy.json';
 import revalidationEn from './locales/en/revalidation.json';
 import reviewEn from './locales/en/review.json';
 import searchEn from './locales/en/search.json';
+import socialEn from './locales/en/social.json';
 import tagsEn from './locales/en/tags.json';
 import termsEn from './locales/en/terms.json';
 import uiEn from './locales/en/ui.json';
@@ -302,6 +306,7 @@ import privacyPt from './locales/pt/privacy.json';
 import revalidationPt from './locales/pt/revalidation.json';
 import reviewPt from './locales/pt/review.json';
 import searchPt from './locales/pt/search.json';
+import socialPt from './locales/pt/social.json';
 import tagsPt from './locales/pt/tags.json';
 import termsPt from './locales/pt/terms.json';
 import uiPt from './locales/pt/ui.json';
@@ -369,7 +374,8 @@ const rawTranslations = {
         mobile: mobileEs,
         gastronomy: gastronomyEs,
         commerce: commerceEs,
-        experience: experienceEs
+        experience: experienceEs,
+        social: socialEs
     },
     en: {
         about: aboutEn,
@@ -428,7 +434,8 @@ const rawTranslations = {
         mobile: mobileEn,
         gastronomy: gastronomyEn,
         commerce: commerceEn,
-        experience: experienceEn
+        experience: experienceEn,
+        social: socialEn
     },
     pt: {
         about: aboutPt,
@@ -487,7 +494,8 @@ const rawTranslations = {
         mobile: mobilePt,
         gastronomy: gastronomyPt,
         commerce: commercePt,
-        experience: experiencePt
+        experience: experiencePt,
+        social: socialPt
     }
 };
 
