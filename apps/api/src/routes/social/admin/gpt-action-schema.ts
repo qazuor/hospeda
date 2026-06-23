@@ -51,35 +51,46 @@ import { createAdminRoute } from '../../../utils/route-factory';
 // accurate with full object shapes.
 // ---------------------------------------------------------------------------
 
-/** Image payload variant for the GPT action schema document only. */
-const GptImagePayloadDocSchema = z.discriminatedUnion('mode', [
-    z.object({
-        mode: z.literal('public_url'),
-        url: z.string().url(),
-        altText: z.string().optional(),
-        mimeType: z.string().optional()
-    }),
-    z.object({
-        mode: z.literal('openai_file_refs'),
+/**
+ * Image payload variant for the GPT action schema document only.
+ *
+ * Intentionally a FLAT object with NO oneOf/anyOf so that:
+ * 1. The `openaiFileIdRefs` property appears as a DIRECT top-level array in the
+ *    generated OpenAPI JSON, which is required for OpenAI to auto-populate it.
+ * 2. The `openaiFileIdRefs` items are declared as `type: 'string'` per OpenAI's
+ *    Custom GPT Actions convention (the platform recognises the field by name +
+ *    this type hint and injects the actual objects at runtime).
+ *
+ * The runtime `CreateSocialDraftSchema` in `@repo/schemas` uses `superRefine`
+ * for the same flat shape — this doc-only version omits `superRefine` because
+ * the OpenAPI generator does not need to execute validation logic.
+ */
+const GptImagePayloadDocSchema = z
+    .object({
+        mode: z.enum(['public_url', 'openai_file_refs']),
+        /** Used when `mode === 'public_url'`. Direct HTTPS URL of the image. */
+        url: z.string().url().optional(),
         /**
-         * OpenAI auto-populates this field at runtime with the uploaded/generated
-         * image file references (download links). Declared as string items per
-         * OpenAI's GPT Actions convention; actual runtime objects contain
-         * { download_link, id, name, mime_type }.
+         * Auto-populated by OpenAI at runtime with the uploaded/generated image
+         * file download links. Max 10. Declared as `array<string>` per OpenAI's
+         * GPT Actions convention; actual injected values are objects with
+         * `download_link`, `id`, `name`, `mime_type`.
          */
         openaiFileIdRefs: z
             .array(z.string())
-            .min(1)
+            .optional()
             .openapi({
                 items: { type: 'string' },
                 description:
-                    'Auto-populated by OpenAI at runtime with the uploaded/generated image ' +
-                    'file references (download links).'
+                    'Auto-populated by OpenAI at runtime with the uploaded/generated ' +
+                    'image file download links. Max 10.'
             }),
-        altText: z.string().optional(),
-        mimeType: z.string().optional()
+        /** Optional alt text for accessibility. */
+        altText: z.string().optional()
     })
-]);
+    .openapi({
+        required: ['mode']
+    });
 
 /** CreateSocialDraftSchema variant for OpenAPI doc generation only. */
 const CreateSocialDraftDocSchema = CreateSocialDraftSchema.extend({

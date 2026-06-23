@@ -49,31 +49,67 @@ export const OpenAiFileIdRefSchema = z
 export const OpenAiFileRefSchema = OpenAiFileIdRefSchema;
 
 /**
- * GPT image payload — discriminated on `mode`.
+ * GPT image payload — flat object validated with `superRefine`.
  *
- * - `public_url`: direct HTTPS URL.
- * - `openai_file_refs`: one or more OpenAI file reference objects injected by
- *    OpenAI at runtime. Only the first entry is processed in phase 1 per spec
- *    resolved decision. The field is named `openaiFileIdRefs` to match the
- *    exact property name that triggers OpenAI's automatic file reference
- *    injection in Custom GPT Actions.
+ * Declared as a SINGLE flat object (NOT a discriminated union / oneOf) so that
+ * the `openaiFileIdRefs` property appears at the TOP LEVEL of the JSON Schema.
+ * OpenAI Custom GPT Actions only auto-populate `openaiFileIdRefs` with file
+ * download links when that property is a direct (non-nested) array property of
+ * the enclosing object — nesting it inside a `oneOf`/`anyOf` branch silently
+ * prevents injection.
+ *
+ * Modes:
+ * - `public_url`: the GPT provides a direct HTTPS URL via the `url` field.
+ * - `openai_file_refs`: OpenAI injects one or more file reference objects into
+ *   `openaiFileIdRefs` at runtime. Only the first entry is processed (phase 1).
+ *   The field name `openaiFileIdRefs` is required EXACTLY as-is to trigger
+ *   OpenAI's automatic file reference injection in Custom GPT Actions.
+ *
+ * @see https://platform.openai.com/docs/actions/sending-files
  */
-export const GptImagePayloadSchema = z.discriminatedUnion('mode', [
-    z.object({
-        mode: z.literal('public_url'),
-        url: z.string().url({ message: 'zodError.socialDraft.image.url.invalid' }),
-        altText: z.string().optional(),
-        mimeType: z.string().optional()
-    }),
-    z.object({
-        mode: z.literal('openai_file_refs'),
-        openaiFileIdRefs: z.array(OpenAiFileIdRefSchema).min(1, {
+export const GptImagePayloadBaseSchema = z.object({
+    mode: z.enum(['public_url', 'openai_file_refs']),
+    /**
+     * Used when `mode === 'public_url'`.
+     * Direct HTTPS URL of the image to download and re-upload to Cloudinary.
+     */
+    url: z.string().url({ message: 'zodError.socialDraft.image.url.invalid' }).optional(),
+    /**
+     * Used when `mode === 'openai_file_refs'`.
+     * Declared here as a TOP-LEVEL property (NOT inside a oneOf) so OpenAI
+     * auto-populates it at runtime with the file reference objects.
+     * Max 10 references; only the first is processed.
+     */
+    openaiFileIdRefs: z.array(OpenAiFileIdRefSchema).optional(),
+    /** Optional alt text for accessibility. */
+    altText: z.string().optional(),
+    /** Optional MIME type hint (e.g., "image/jpeg"). Used for media type inference. */
+    mimeType: z.string().optional()
+});
+
+/**
+ * GPT image payload schema with cross-field validation.
+ *
+ * Uses `superRefine` (instead of `discriminatedUnion`) so the shape stays a
+ * flat `ZodObject` at the JSON Schema level, keeping `openaiFileIdRefs` as a
+ * direct top-level property rather than buried in a union branch.
+ */
+export const GptImagePayloadSchema = GptImagePayloadBaseSchema.superRefine((val, ctx) => {
+    if (val.mode === 'public_url' && !val.url) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['url'],
+            message: 'zodError.socialDraft.image.url.invalid'
+        });
+    }
+    if (val.mode === 'openai_file_refs' && (val.openaiFileIdRefs?.length ?? 0) === 0) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ['openaiFileIdRefs'],
             message: 'zodError.socialDraft.image.openaiFileIdRefs.required'
-        }),
-        altText: z.string().optional(),
-        mimeType: z.string().optional()
-    })
-]);
+        });
+    }
+});
 
 // ---------------------------------------------------------------------------
 // Per-target schema

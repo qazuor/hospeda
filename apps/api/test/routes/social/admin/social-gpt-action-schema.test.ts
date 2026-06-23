@@ -347,6 +347,100 @@ describe('buildGptActionSchema() — unit', () => {
             expect(enumArray).not.toContain('TEXT');
         }
     });
+
+    // -----------------------------------------------------------------------
+    // Flat image schema assertions — verifies the oneOf/anyOf removal required
+    // for OpenAI Custom GPT Actions to auto-populate openaiFileIdRefs.
+    // -----------------------------------------------------------------------
+
+    /**
+     * Recursively walks the document to locate the `image` property schema
+     * in the saveSocialDraft request body. Returns the raw schema node.
+     */
+    function findImageSchema(doc: Record<string, unknown>): Record<string, unknown> | null {
+        const paths = doc.paths as Record<string, Record<string, unknown>> | undefined;
+        const draftPost = paths?.['/api/v1/ai/social/drafts']?.post as
+            | Record<string, unknown>
+            | undefined;
+        if (!draftPost) return null;
+
+        // Walk requestBody -> content -> application/json -> schema -> properties -> image
+        const requestBody = draftPost.requestBody as Record<string, unknown> | undefined;
+        const content = requestBody?.content as Record<string, unknown> | undefined;
+        const jsonContent = content?.['application/json'] as Record<string, unknown> | undefined;
+        const schema = jsonContent?.schema as Record<string, unknown> | undefined;
+
+        // The schema may be a $ref — resolve one level if needed
+        const resolveRef = (node: Record<string, unknown>): Record<string, unknown> | null => {
+            if ('$ref' in node && typeof node.$ref === 'string') {
+                const refPath = (node.$ref as string).replace('#/', '').split('/');
+                let current: unknown = doc;
+                for (const segment of refPath) {
+                    if (typeof current !== 'object' || current === null) return null;
+                    current = (current as Record<string, unknown>)[segment];
+                }
+                return (current as Record<string, unknown>) ?? null;
+            }
+            return node;
+        };
+
+        const resolved = schema ? resolveRef(schema) : null;
+        const props = resolved?.properties as Record<string, unknown> | undefined;
+        const imageProp = props?.image as Record<string, unknown> | undefined;
+
+        if (!imageProp) return null;
+        // image may itself be a ref or wrapped in allOf/anyOf/oneOf — resolve the top level
+        if ('$ref' in imageProp) return resolveRef(imageProp);
+        return imageProp;
+    }
+
+    it('image schema has NO oneOf and NO anyOf (flat object required for OpenAI injection)', () => {
+        // Arrange / Act
+        const doc = buildGptActionSchema('https://api.example.com');
+        const imageSchema = findImageSchema(doc);
+
+        // Assert — image property must exist
+        expect(imageSchema).not.toBeNull();
+
+        // The generated schema must not contain oneOf or anyOf at any level of the
+        // image object, since that breaks OpenAI Custom GPT Actions file injection.
+        const json = JSON.stringify(imageSchema);
+        expect(json).not.toContain('"oneOf"');
+        expect(json).not.toContain('"anyOf"');
+    });
+
+    it('image schema has openaiFileIdRefs as a direct array property with items.type === "string"', () => {
+        // Arrange / Act
+        const doc = buildGptActionSchema('https://api.example.com');
+        const imageSchema = findImageSchema(doc);
+
+        expect(imageSchema).not.toBeNull();
+
+        // Navigate to properties.openaiFileIdRefs
+        const props = imageSchema?.properties as Record<string, unknown> | undefined;
+        const refsSchema = props?.openaiFileIdRefs as Record<string, unknown> | undefined;
+
+        // Must exist as a direct property (not inside a union branch)
+        expect(refsSchema).toBeDefined();
+
+        // Must be typed as array with string items per OpenAI convention
+        expect(refsSchema?.type).toBe('array');
+        const items = refsSchema?.items as Record<string, unknown> | undefined;
+        expect(items?.type).toBe('string');
+    });
+
+    it('image schema has mode as a required field', () => {
+        // Arrange / Act
+        const doc = buildGptActionSchema('https://api.example.com');
+        const imageSchema = findImageSchema(doc);
+
+        expect(imageSchema).not.toBeNull();
+
+        // mode must be in required
+        const required = imageSchema?.required as string[] | undefined;
+        expect(Array.isArray(required)).toBe(true);
+        expect(required).toContain('mode');
+    });
 });
 
 // ---------------------------------------------------------------------------
