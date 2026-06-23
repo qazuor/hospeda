@@ -268,10 +268,15 @@ describe('buildGptActionSchema() — unit', () => {
         // Assert — at least one enum array found
         expect(platformEnums.length).toBeGreaterThan(0);
 
-        // Every platform enum array must be exactly these 3 values (order-independent)
+        // Every platform enum array must be exactly these 3 values (order-independent).
+        // Catalog response schemas expose `platform` as nullable (a global hashtag,
+        // hashtag-set or footer has no specific platform), so the generated enum may
+        // include a trailing `null` marker. That is the nullability signal, not an
+        // invented platform value — strip it before asserting the real values.
         const expected = ['INSTAGRAM', 'FACEBOOK', 'X'];
         for (const enumArray of platformEnums) {
-            expect(enumArray.slice().sort()).toEqual(expected.slice().sort());
+            const realValues = enumArray.filter((value) => value !== null);
+            expect(realValues.slice().sort()).toEqual(expected.slice().sort());
         }
     });
 
