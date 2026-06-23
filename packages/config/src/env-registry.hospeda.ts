@@ -1789,6 +1789,43 @@ export const HOSPEDA_ENV_VARS = [
         howToObtainEs:
             'Generá un secreto compartido: `openssl rand -hex 32`. Configuralo en el módulo HTTP de Make.com que envía callbacks a Hospeda como header custom `x-hospeda-make-key`. Poné el mismo valor acá.'
     },
+    // External reputation async polling (SPEC-250)
+    {
+        name: 'HOSPEDA_EXTREP_POLL_SCHEDULE',
+        description:
+            'Cron expression for the poll-apify-reputation-runs background job that checks the status of pending/running Apify actor runs and persists results. Default "*/2 * * * *" runs every 2 minutes.',
+        descriptionEs:
+            'Expresión cron para el job poll-apify-reputation-runs que verifica el estado de los runs de Apify pendientes/en curso y persiste los resultados. Por defecto "*/2 * * * *" corre cada 2 minutos.',
+        type: 'string',
+        required: false,
+        secret: false,
+        defaultValue: '*/2 * * * *',
+        exampleValue: '*/2 * * * *',
+        apps: ['api'],
+        category: 'integrations',
+        howToObtain:
+            'Standard 5-field cron expression for the Apify reputation polling job. Default "*/2 * * * *" (every 2 minutes). Adjust based on how quickly you want async run results to propagate; lower intervals reduce latency at the cost of more Apify status-check calls.',
+        howToObtainEs:
+            'Expresión cron estándar de 5 campos para el job de polling de reputación de Apify. Por defecto "*/2 * * * *" (cada 2 minutos). Ajustá según la velocidad deseada de propagación de resultados; intervalos más bajos reducen la latencia a costa de más llamadas de status check a Apify.'
+    },
+    {
+        name: 'HOSPEDA_EXTREP_APIFY_RUN_TIMEOUT_MS',
+        description:
+            'Milliseconds before the poll-apify-reputation-runs job sweeps a pending/running Apify actor run as timed out and marks it with fetch_status="error". Default 600000 (10 minutes).',
+        descriptionEs:
+            'Milisegundos antes de que el job poll-apify-reputation-runs marque un run de Apify pendiente/en curso como timed-out y lo registre con fetch_status="error". Por defecto 600000 (10 minutos).',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '600000',
+        exampleValue: '600000',
+        apps: ['api'],
+        category: 'integrations',
+        howToObtain:
+            'Integer number of milliseconds. Default 600000 (10 min). Raise it if your Apify actors regularly take longer; lower it if you want stuck runs to fail fast. Must be a positive integer.',
+        howToObtainEs:
+            'Número entero de milisegundos. Por defecto 600000 (10 min). Subilo si tus actores de Apify tardan más; bajalo si querés que los runs trabados fallen rápido. Debe ser un entero positivo.'
+    },
 
     {
         name: 'HOSPEDA_NOINDEX_HOSTS',

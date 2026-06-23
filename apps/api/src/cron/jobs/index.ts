@@ -42,3 +42,4 @@ export { appLogPurgeJob } from './app-log-purge.job.js';
 export { entityViewsPurgeJob } from './entity-views-purge.job.js';
 export { refreshExternalReputationJob } from './refresh-external-reputation.job.js';
 export { socialPublishDispatchJob } from './social-publish-dispatch.job.js';
+export { pollApifyReputationRunsJob } from './poll-apify-reputation-runs.job.js';

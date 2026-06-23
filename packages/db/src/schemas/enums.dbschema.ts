@@ -262,6 +262,19 @@ export const ExternalReputationFetchStatusPgEnum = pgEnum('external_reputation_f
 ]);
 
 /**
+ * Async run status for external reputation Apify actor runs.
+ * Tracks the lifecycle of an asynchronous Apify run for a given
+ * (accommodation, platform) row — separate from fetch_status so the
+ * public block builder never sees transient run state.
+ * Matches ExternalReputationRunStatusSchema in @repo/schemas.
+ */
+export const ExternalReputationRunStatusPgEnum = pgEnum('external_reputation_run_status_enum', [
+    'idle',
+    'pending',
+    'running'
+]);
+
+/**
  * PostgreSQL enum for experience sub-categories (SPEC-240).
  * Values: CAR_RENTAL, BIKE_RENTAL, KAYAK_RENTAL, QUAD_RENTAL, TOUR_GUIDE,
  * GUIDED_VISIT, EXCURSION, BOAT_TRIP, FISHING_CHARTER, BIRD_WATCHING,

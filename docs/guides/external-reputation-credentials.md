@@ -25,11 +25,39 @@ There are two audiences:
 | `HOSPEDA_APIFY_TOKEN` | Booking/Airbnb aggregate (Apify fallback) | yes | SPEC-222 (import) |
 | `HOSPEDA_APIFY_BOOKING_ACTOR` | Booking aggregate via Apify | no | SPEC-222 |
 | `HOSPEDA_APIFY_AIRBNB_ACTOR` | Airbnb aggregate via Apify | no | SPEC-222 |
+| `HOSPEDA_EXTREP_CRON_SCHEDULE` | Weekly background refresh cron | no | — |
+| `HOSPEDA_EXTREP_POLL_SCHEDULE` | Async Apify polling cron (SPEC-250) | no | — |
+| `HOSPEDA_EXTREP_APIFY_RUN_TIMEOUT_MS` | Timeout sweep for stuck Apify runs (SPEC-250) | no | — |
 
-All four are **optional** at the Zod-env layer: the feature degrades gracefully
-when any is missing (the adapter returns an empty result, never throws). But for
-real data you need at minimum the Google key (for Google) and, for the Apify
-fallback, the token + the relevant actor slug.
+The credential vars (`HOSPEDA_GOOGLE_PLACES_API_KEY`, `HOSPEDA_APIFY_TOKEN`,
+`HOSPEDA_APIFY_BOOKING_ACTOR`, `HOSPEDA_APIFY_AIRBNB_ACTOR`) are **optional**
+at the Zod-env layer: the feature degrades gracefully when any is missing (the
+adapter returns an empty result, never throws). But for real data you need at
+minimum the Google key (for Google) and, for the Apify fallback, the token +
+the relevant actor slug.
+
+The scheduling and timeout vars have safe defaults and do not need to be set
+explicitly unless you want to change the defaults.
+
+### Async polling cron (SPEC-250)
+
+SPEC-250 introduced a two-phase async refresh pattern for Apify-backed platforms
+(Booking/Airbnb): the `POST .../refresh` endpoint enqueues runs and returns HTTP
+202 immediately; a dedicated polling cron job (`poll-apify-reputation-runs`)
+resolves results in the background.
+
+Two new env vars control the polling job:
+
+- **`HOSPEDA_EXTREP_POLL_SCHEDULE`** (default `*/2 * * * *`): cron schedule for
+  the polling job. Every 2 minutes keeps async results visible in the owner panel
+  within ~2 min of an Apify run completing. Adjust if your Apify volume is very
+  high or very low.
+- **`HOSPEDA_EXTREP_APIFY_RUN_TIMEOUT_MS`** (default `600000` — 10 min): if a
+  pending/running Apify run is older than this value when the poller checks it,
+  the row is swept to `fetch_status='error'` so the owner panel shows "falló"
+  instead of an infinite spinner. Booking actors regularly take 60-120 s; the
+  10-minute default is well above that. Raise it only if you switch to a slower
+  actor.
 
 Notes on coverage per platform:
 

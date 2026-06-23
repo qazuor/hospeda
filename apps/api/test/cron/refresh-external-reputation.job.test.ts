@@ -109,7 +109,9 @@ describe('Refresh External Reputation Cron Job', () => {
         vi.clearAllMocks();
         mockGetEnabledIds.mockResolvedValue([]);
         mockGetGoogleTs.mockResolvedValue(new Map());
-        mockRefresh.mockResolvedValue({ data: { succeeded: ['GOOGLE'], failed: [] } });
+        mockRefresh.mockResolvedValue({
+            data: { inlineSucceeded: ['GOOGLE'], enqueuedAsync: [], inlineFailed: [] }
+        });
     });
 
     afterEach(() => {
@@ -222,7 +224,9 @@ describe('Refresh External Reputation Cron Job', () => {
             const callOrder: string[] = [];
             mockRefresh.mockImplementation(async (accId: string) => {
                 callOrder.push(accId);
-                return { data: { succeeded: ['GOOGLE'], failed: [] } };
+                return {
+                    data: { inlineSucceeded: ['GOOGLE'], enqueuedAsync: [], inlineFailed: [] }
+                };
             });
 
             await refreshExternalReputationJob.handler(makeCtx());
@@ -243,9 +247,13 @@ describe('Refresh External Reputation Cron Job', () => {
             mockGetEnabledIds.mockResolvedValue([ACC_1, ACC_2, ACC_3]);
 
             mockRefresh
-                .mockResolvedValueOnce({ data: { succeeded: ['GOOGLE'], failed: [] } })
+                .mockResolvedValueOnce({
+                    data: { inlineSucceeded: ['GOOGLE'], enqueuedAsync: [], inlineFailed: [] }
+                })
                 .mockRejectedValueOnce(new Error('timeout'))
-                .mockResolvedValueOnce({ data: { succeeded: ['BOOKING'], failed: [] } });
+                .mockResolvedValueOnce({
+                    data: { inlineSucceeded: ['BOOKING'], enqueuedAsync: [], inlineFailed: [] }
+                });
 
             const ctx = makeCtx();
             const result = await refreshExternalReputationJob.handler(ctx);
@@ -262,8 +270,9 @@ describe('Refresh External Reputation Cron Job', () => {
 
             mockRefresh.mockResolvedValue({
                 data: {
-                    succeeded: [],
-                    failed: [
+                    inlineSucceeded: [],
+                    enqueuedAsync: [],
+                    inlineFailed: [
                         { platform: 'GOOGLE', error: 'API quota exceeded' },
                         { platform: 'BOOKING', error: 'timeout' }
                     ]
@@ -284,7 +293,9 @@ describe('Refresh External Reputation Cron Job', () => {
                 .mockResolvedValueOnce({
                     error: { code: 'QUOTA_EXCEEDED', message: 'Rate limited' }
                 })
-                .mockResolvedValueOnce({ data: { succeeded: ['GOOGLE'], failed: [] } });
+                .mockResolvedValueOnce({
+                    data: { inlineSucceeded: ['GOOGLE'], enqueuedAsync: [], inlineFailed: [] }
+                });
 
             const result = await refreshExternalReputationJob.handler(makeCtx());
 

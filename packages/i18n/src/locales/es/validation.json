@@ -151,6 +151,9 @@
     "accommodationExternalReputation": {
         "fetchStatus": {
             "invalid": "El estado de obtención no es válido"
+        },
+        "runStatus": {
+            "invalid": "El estado de actualización no es válido"
         }
     },
     "accommodationFeature": {

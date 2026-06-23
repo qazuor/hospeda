@@ -56,6 +56,7 @@
         "zodError.accommodationAmenity.isOptional.required",
         "zodError.accommodationExternalListing.url.invalidUrl",
         "zodError.accommodationExternalReputation.fetchStatus.invalid",
+        "zodError.accommodationExternalReputation.runStatus.invalid",
         "zodError.accommodationFeature.comments.max",
         "zodError.accommodationFeature.comments.min",
         "zodError.accommodationFeature.hostReWriteName.max",
@@ -1558,12 +1559,12 @@
         "zodError.validation.sanitization.failed",
         "zodError.validation.zod.failed"
     ],
-    "total": 1557,
+    "total": 1558,
     "byNamespace": {
         "accommodation": 50,
         "accommodationAmenity": 4,
         "accommodationExternalListing": 1,
-        "accommodationExternalReputation": 1,
+        "accommodationExternalReputation": 2,
         "accommodationFeature": 4,
         "accommodationReview": 3,
         "admin": 50,
