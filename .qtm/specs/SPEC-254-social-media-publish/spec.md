@@ -2,8 +2,9 @@
 spec-id: "SPEC-254"
 type: "feature"
 complexity: high
-status: draft
+status: completed
 created: "2026-06-20T00:00:00Z"
+completed: "2026-06-23T00:00:00Z"
 ---
 
 # SPEC-254: Social Automation Backend
