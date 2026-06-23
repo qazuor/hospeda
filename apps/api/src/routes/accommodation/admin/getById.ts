@@ -36,7 +36,6 @@ async function fetchAdminAmenities(accommodationId: string) {
         .select({
             id: amenities.id,
             slug: amenities.slug,
-            name: amenities.name,
             description: amenities.description,
             icon: amenities.icon,
             isBuiltin: amenities.isBuiltin,
@@ -73,7 +72,6 @@ async function fetchAdminFeatures(accommodationId: string) {
         .select({
             id: features.id,
             slug: features.slug,
-            name: features.name,
             description: features.description,
             icon: features.icon,
             isBuiltin: features.isBuiltin,

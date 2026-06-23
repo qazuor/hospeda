@@ -417,23 +417,23 @@ async function safeLoadFaqs(
  * direct. Returns `[]` on any error (graceful — the chat request must
  * not fail because the amenities join is missing or the DB is flaky).
  *
- * The `name` column is `I18nText` (jsonb) and is resolved to a single
- * string in the requested `locale`, falling back to the Spanish
- * translation when the requested locale is missing.
+ * The `name` column was dropped in SPEC-266 T-001. The amenity slug is used
+ * as the text token for the AI context. The `locale` parameter is kept in the
+ * signature for backward compatibility but is no longer used in the query.
  */
 async function safeLoadAmenities(
     accommodationId: string,
-    locale: 'es' | 'en' | 'pt'
+    _locale: 'es' | 'en' | 'pt'
 ): Promise<NameOnlyEntity[]> {
     try {
         const db = getDb();
         const rows = await db
-            .select({ name: amenities.name })
+            .select({ slug: amenities.slug })
             .from(rAccommodationAmenity)
             .innerJoin(amenities, eq(rAccommodationAmenity.amenityId, amenities.id))
             .where(eq(rAccommodationAmenity.accommodationId, accommodationId))
             .limit(CONTEXT_AMENITY_MAX);
-        return rows.map((r) => ({ name: r.name[locale] ?? r.name.es }));
+        return rows.map((r) => ({ name: r.slug ?? '' }));
     } catch (error) {
         apiLogger.warn(
             { accommodationId, error: error instanceof Error ? error.message : String(error) },
@@ -446,23 +446,23 @@ async function safeLoadAmenities(
 /**
  * Loads the first 20 features for the given accommodation via Drizzle
  * direct. Returns `[]` on any error (graceful — same rationale as
- * {@link safeLoadAmenities}). The `name` column is `I18nText` and is
- * resolved to a single string in the requested `locale`, falling back
- * to Spanish when the requested locale is missing.
+ * {@link safeLoadAmenities}). The `name` column was dropped in SPEC-266 T-001;
+ * the feature slug is used as the text token for the AI context. The `locale`
+ * parameter is kept in the signature for backward compatibility.
  */
 async function safeLoadFeatures(
     accommodationId: string,
-    locale: 'es' | 'en' | 'pt'
+    _locale: 'es' | 'en' | 'pt'
 ): Promise<NameOnlyEntity[]> {
     try {
         const db = getDb();
         const rows = await db
-            .select({ name: features.name })
+            .select({ slug: features.slug })
             .from(rAccommodationFeature)
             .innerJoin(features, eq(rAccommodationFeature.featureId, features.id))
             .where(eq(rAccommodationFeature.accommodationId, accommodationId))
             .limit(CONTEXT_FEATURE_MAX);
-        return rows.map((r) => ({ name: r.name[locale] ?? r.name.es }));
+        return rows.map((r) => ({ name: r.slug ?? '' }));
     } catch (error) {
         apiLogger.warn(
             { accommodationId, error: error instanceof Error ? error.message : String(error) },
