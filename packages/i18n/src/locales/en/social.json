@@ -21,8 +21,8 @@
             "platform": "Platform",
             "post": "Post",
             "error": "Error",
-            "retries": "{{count}} retry",
-            "retries_plural": "{{count}} retries",
+            "retries_one": "{{count}} retry",
+            "retries_other": "{{count}} retries",
             "viewPost": "View post"
         },
         "webhookAlert": {
@@ -41,8 +41,8 @@
             "empty": "No social posts found",
             "emptyFiltered": "No posts match the applied filters",
             "clearFilters": "Clear filters",
-            "results": "{{count}} result",
-            "results_plural": "{{count}} results",
+            "results_one": "{{count}} result",
+            "results_other": "{{count}} results",
             "prevPage": "Previous",
             "nextPage": "Next",
             "pagination": "Page {{page}} of {{totalPages}} ({{total}} total)"
@@ -241,8 +241,8 @@
     "hashtags": {
         "title": "Hashtag Catalog",
         "createBtn": "New hashtag",
-        "results": "{{count}} result",
-        "results_plural": "{{count}} results",
+        "results_one": "{{count}} result",
+        "results_other": "{{count}} results",
         "filters": {
             "search": "Search",
             "searchPlaceholder": "Search hashtag...",
@@ -304,8 +304,8 @@
     "footers": {
         "title": "Footer Catalog",
         "createBtn": "New footer",
-        "results": "{{count}} result",
-        "results_plural": "{{count}} results",
+        "results_one": "{{count}} result",
+        "results_other": "{{count}} results",
         "filters": {
             "search": "Search",
             "searchPlaceholder": "Search footer...",
@@ -368,8 +368,8 @@
     "campaigns": {
         "title": "Campaign Catalog",
         "createBtn": "New campaign",
-        "results": "{{count}} result",
-        "results_plural": "{{count}} results",
+        "results_one": "{{count}} result",
+        "results_other": "{{count}} results",
         "filters": {
             "search": "Search",
             "searchPlaceholder": "Search campaign...",
@@ -426,8 +426,8 @@
     "batches": {
         "title": "Batch Catalog",
         "createBtn": "New batch",
-        "results": "{{count}} result",
-        "results_plural": "{{count}} results",
+        "results_one": "{{count}} result",
+        "results_other": "{{count}} results",
         "filters": {
             "search": "Search",
             "searchPlaceholder": "Search batch...",
@@ -484,8 +484,8 @@
     "audiences": {
         "title": "Audience Catalog",
         "createBtn": "New audience",
-        "results": "{{count}} result",
-        "results_plural": "{{count}} results",
+        "results_one": "{{count}} result",
+        "results_other": "{{count}} results",
         "filters": {
             "search": "Search",
             "searchPlaceholder": "Search audience...",
