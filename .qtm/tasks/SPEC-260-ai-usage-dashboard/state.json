@@ -409,7 +409,7 @@
             "id": "T-018",
             "title": "i18n keys ai.usage.* (es/en/pt)",
             "description": "Add all dashboard copy under an ai.usage.* namespace in @repo/i18n for es/en/pt (labels, table headers, empty states, filter controls). i18n completeness test must pass.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-014"],
             "blocks": ["T-019"],
