@@ -1,5 +1,5 @@
 import type { AccommodationModel } from '@repo/db';
-import { DestinationTypeEnum, ServiceErrorCode } from '@repo/schemas';
+import { DestinationTypeEnum, ModerationStatusEnum, ServiceErrorCode } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as helpers from '../../../src/services/accommodation/accommodation.helpers';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
@@ -152,12 +152,12 @@ describe('AccommodationService.create', () => {
             media: {
                 featuredImage: {
                     url: 'https://cdn.example.com/b1-regression.jpg',
-                    moderationState: 'APPROVED' as const
+                    moderationState: ModerationStatusEnum.APPROVED
                 },
                 gallery: [
                     {
                         url: 'https://cdn.example.com/b1-gallery-0.jpg',
-                        moderationState: 'APPROVED' as const
+                        moderationState: ModerationStatusEnum.APPROVED
                     }
                 ]
             }
