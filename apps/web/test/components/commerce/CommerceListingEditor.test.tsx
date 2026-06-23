@@ -15,7 +15,12 @@ vi.mock('../../../src/components/commerce/CommerceListingEditor.module.css', () 
 }));
 
 vi.mock('../../../src/lib/i18n', () => ({
-    createTranslations: () => ({ t: (key: string, fallback?: string) => fallback ?? key })
+    // Mirror the real translator: a key with no translation resolves to
+    // `[MISSING:<key>]` (not the bare key). `catalog-names` relies on that
+    // sentinel to fall back to a humanized label, so the mock must reproduce it.
+    createTranslations: () => ({
+        t: (key: string, fallback?: string) => fallback ?? `[MISSING:${key}]`
+    })
 }));
 
 vi.mock('../../../src/lib/api/client', () => ({
