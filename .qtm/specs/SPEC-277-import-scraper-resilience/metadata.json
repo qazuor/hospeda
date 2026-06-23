@@ -1,0 +1,23 @@
+{
+    "specId": "SPEC-277",
+    "title": "Accommodation import — scraper resilience (retry, fallback chain, async, provider mitigation, manual path)",
+    "type": "improvement",
+    "complexity": "high",
+    "status": "draft",
+    "created": "2026-06-23T23:17:27Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "dependsOn": ["SPEC-258", "SPEC-250"],
+    "tags": [
+        "accommodation-import",
+        "service-core",
+        "web",
+        "resilience",
+        "airbnb",
+        "booking",
+        "apify",
+        "anti-bot",
+        "spec-258-followup"
+    ]
+}
