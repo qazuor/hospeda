@@ -40,6 +40,9 @@ jobs:
     timeout-minutes: 60
 
     services:
+      # NOTE: service container port mappings are evaluated before any steps
+      # run, so they CANNOT be sourced from apps/e2e/.env.e2e. Keep them in
+      # sync with the SSOT manually (apps/e2e/.env.e2e E2E_POSTGRES_PORT etc).
       postgres:
         image: postgres:15-alpine
         env:
@@ -47,7 +50,7 @@ jobs:
           POSTGRES_PASSWORD: hospeda_pass
           POSTGRES_DB: hospeda_e2e
         ports:
-          - 5433:5432
+          - 15433:5432
         options: >-
           --health-cmd pg_isready
           --health-interval 5s
@@ -57,7 +60,7 @@ jobs:
       redis:
         image: redis:7-alpine
         ports:
-          - 6380:6379
+          - 16380:6379
         options: >-
           --health-cmd "redis-cli ping"
           --health-interval 5s
@@ -67,8 +70,8 @@ jobs:
       mailpit:
         image: axllent/mailpit:latest
         ports:
-          - 1025:1025
-          - 8025:8025
+          - 11025:1025
+          - 18025:8025
         env:
           MP_MAX_MESSAGES: 5000
           MP_SMTP_AUTH_ACCEPT_ANY: 1
@@ -80,20 +83,12 @@ jobs:
           --health-retries 10
 
     env:
-      HOSPEDA_DATABASE_URL: postgresql://hospeda_user:hospeda_pass@localhost:5433/hospeda_e2e
-      HOSPEDA_E2E_DATABASE_URL: postgresql://hospeda_user:hospeda_pass@localhost:5433/hospeda_e2e
-      HOSPEDA_REDIS_URL: redis://localhost:6380
       HOSPEDA_BETTER_AUTH_SECRET: ${{ secrets.HOSPEDA_BETTER_AUTH_SECRET }}
-      HOSPEDA_BETTER_AUTH_URL: http://localhost:3001/api/auth
-      HOSPEDA_API_URL: http://localhost:3001
-      HOSPEDA_SITE_URL: http://localhost:4321
-      HOSPEDA_ADMIN_URL: http://localhost:3000
       HOSPEDA_REVALIDATION_SECRET: ci-placeholder-revalidation-secret-min-32-characters
       HOSPEDA_NEWSLETTER_HMAC_SECRET: ci-placeholder-newsletter-hmac-secret-min-32-chars
       PUBLIC_SENTRY_DSN: https://ci-placeholder.invalid
       PUBLIC_POSTHOG_KEY: phc_ci_placeholder
       HOSPEDA_MAILER_HOST: localhost
-      HOSPEDA_MAILER_PORT: '1025'
 
       # MercadoPago: local mode uses simulated webhook only (no real sandbox calls).
       HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN: TEST-local-stub-access-token
@@ -139,6 +134,15 @@ jobs:
         uses: actions/checkout@v7
         with:
           ref: ${{ steps.ref.outputs.ref }}
+
+      - name: Load E2E port/URL vars from SSOT
+        # Injects all non-secret vars from apps/e2e/.env.e2e into $GITHUB_ENV
+        # so every subsequent step (build, seed, playwright) sees the same ports.
+        # Secrets stay in the static env: block above.
+        # keep in sync with apps/e2e/.env.e2e
+        shell: bash
+        run: |
+          grep -vE '^\s*(#|$)' apps/e2e/.env.e2e >> "$GITHUB_ENV"
 
       - name: Setup Node.js
         uses: actions/setup-node@v6

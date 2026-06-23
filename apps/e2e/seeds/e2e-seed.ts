@@ -12,7 +12,7 @@
  *
  * Required env (read by @repo/seed indirectly via the global pool):
  *   HOSPEDA_E2E_DATABASE_URL — Postgres URL pointing to the E2E database
- *                              (defaults to localhost:5433/hospeda_e2e).
+ *                              (defaults to localhost:15433/hospeda_e2e).
  *
  * Optional:
  *   HOSPEDA_CLOUDINARY_*  — when set, the seed will upload images to the
@@ -35,14 +35,12 @@ import { exit } from 'node:process';
  * Default DB URL precedence:
  *   1. HOSPEDA_E2E_DATABASE_URL — explicit CI / wt:up override
  *   2. HOSPEDA_DATABASE_URL     — what the API server already uses
- *   3. Hardcoded fallback       — dev postgres (port 5436, which is where
- *                                 hospeda_e2e lives in this repo's dev setup;
- *                                 docker-compose.e2e.yml uses port 5433 for the
- *                                 standalone E2E container, but local dev runs
- *                                 everything through the main docker-compose at
- *                                 port 5436).
+ *   3. Hardcoded fallback       — E2E dedicated postgres port 15433 (defined
+ *                                 in apps/e2e/.env.e2e — the SSOT for E2E ports;
+ *                                 docker-compose.e2e.yml defaults to 15433 for
+ *                                 the standalone E2E container).
  */
-const DEFAULT_E2E_DB_URL = 'postgresql://hospeda_user:hospeda_pass@localhost:5436/hospeda_e2e';
+const DEFAULT_E2E_DB_URL = 'postgresql://hospeda_user:hospeda_pass@localhost:15433/hospeda_e2e';
 
 const dbUrl = process.env.HOSPEDA_E2E_DATABASE_URL ?? DEFAULT_E2E_DB_URL;
 

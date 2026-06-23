@@ -18,8 +18,9 @@ import { execSQL } from './db-helpers.ts';
  * cleanupTestUsers from support/test-cleanup.ts in afterEach.
  */
 
-const DEFAULT_API_BASE_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
-const DEFAULT_WEB_BASE_URL = process.env.HOSPEDA_E2E_WEB_URL ?? 'http://localhost:4321';
+// Ports match apps/e2e/.env.e2e (SSOT). Override via HOSPEDA_E2E_API_URL / HOSPEDA_E2E_WEB_URL.
+const DEFAULT_API_BASE_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:18001';
+const DEFAULT_WEB_BASE_URL = process.env.HOSPEDA_E2E_WEB_URL ?? 'http://localhost:18321';
 
 export type UserRole = 'USER' | 'HOST' | 'ADMIN' | 'SUPER_ADMIN';
 
@@ -91,7 +92,7 @@ interface SignupResponse {
  * state-changing auth endpoints. Direct `fetch()` calls (not from a real
  * browser) do not send Origin automatically, so we must add it explicitly.
  * The value must match a configured trustedOrigin — HOSPEDA_SITE_URL
- * (`http://localhost:4321`) is always in the list for local dev.
+ * (`http://localhost:18321`) is always in the list for local E2E dev.
  *
  * Note: `createUser()` callers that pass `verifyEmail: false` can safely
  * skip the SQL force-verify step that happens inside this function —
