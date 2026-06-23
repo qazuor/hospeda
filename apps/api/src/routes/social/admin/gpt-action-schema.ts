@@ -89,7 +89,11 @@ const GptImagePayloadDocSchema = z
         altText: z.string().optional()
     })
     .openapi({
-        required: ['mode']
+        // `openaiFileIdRefs` is marked required (matching the previous working
+        // schema) so the model ALWAYS emits the field — OpenAI only injects the
+        // file download links into a property the model actually includes in the
+        // call. `url` stays optional (only used for the public_url mode).
+        required: ['mode', 'openaiFileIdRefs']
     });
 
 /** CreateSocialDraftSchema variant for OpenAPI doc generation only. */
