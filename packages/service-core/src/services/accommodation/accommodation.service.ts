@@ -106,6 +106,7 @@ import {
     generateSlug
 } from './accommodation.helpers';
 import { syncAmenityJunction, syncFeatureJunction } from './accommodation.junction-sync';
+import { attachComposedMedia, attachComposedMediaList } from './accommodation.media-read';
 import { syncAccommodationMedia } from './accommodation.media-sync';
 import {
     normalizeAccommodationOutput,
@@ -388,14 +389,22 @@ export class AccommodationService extends BaseCrudService<
     protected override async _afterGetByField(
         entity: Accommodation | null,
         actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<Accommodation | null> {
         const flattened = flattenAccommodationJoinRelations(entity);
         const withCity = projectAccommodationCityDestination(flattened);
         const withOwnerAvatar = projectAccommodationOwnerAvatar(withCity);
         const salt = this.getLocationSalt();
-        if (!salt) return withOwnerAvatar;
-        return applyAccommodationLocationPrivacy(withOwnerAvatar, { actor, salt });
+        const withPrivacy = salt
+            ? applyAccommodationLocationPrivacy(withOwnerAvatar, { actor, salt })
+            : withOwnerAvatar;
+        // SPEC-204 T-013: read `media` from the relational accommodation_media
+        // table (shape-identical composition). Videos still come from JSONB.
+        return attachComposedMedia({
+            entity: withPrivacy,
+            mediaModel: this._accommodationMediaModel,
+            tx: ctx?.tx
+        });
     }
 
     /**
@@ -410,18 +419,23 @@ export class AccommodationService extends BaseCrudService<
     protected override async _afterList(
         result: PaginatedListOutput<Accommodation>,
         actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<PaginatedListOutput<Accommodation>> {
         if (!result?.items) return result;
         const flattened = flattenAccommodationJoinRelationsList(result.items);
         const withCity = projectAccommodationCityDestinationList(flattened);
         const withOwnerAvatar = projectAccommodationOwnerAvatarList(withCity);
         const salt = this.getLocationSalt();
-        if (!salt) return { ...result, items: withOwnerAvatar };
-        return {
-            ...result,
-            items: applyAccommodationLocationPrivacyList(withOwnerAvatar, { actor, salt })
-        };
+        const withPrivacy = salt
+            ? applyAccommodationLocationPrivacyList(withOwnerAvatar, { actor, salt })
+            : withOwnerAvatar;
+        // SPEC-204 T-013: batch-read `media` from the relational table (no N+1).
+        const items = await attachComposedMediaList({
+            items: withPrivacy,
+            mediaModel: this._accommodationMediaModel,
+            tx: ctx?.tx
+        });
+        return { ...result, items };
     }
 
     /**
@@ -436,18 +450,23 @@ export class AccommodationService extends BaseCrudService<
     protected override async _afterSearch(
         result: PaginatedListOutput<Accommodation>,
         actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<PaginatedListOutput<Accommodation>> {
         if (!result?.items) return result;
         const flattened = flattenAccommodationJoinRelationsList(result.items);
         const withCity = projectAccommodationCityDestinationList(flattened);
         const withOwnerAvatar = projectAccommodationOwnerAvatarList(withCity);
         const salt = this.getLocationSalt();
-        if (!salt) return { ...result, items: withOwnerAvatar };
-        return {
-            ...result,
-            items: applyAccommodationLocationPrivacyList(withOwnerAvatar, { actor, salt })
-        };
+        const withPrivacy = salt
+            ? applyAccommodationLocationPrivacyList(withOwnerAvatar, { actor, salt })
+            : withOwnerAvatar;
+        // SPEC-204 T-013: batch-read `media` from the relational table (no N+1).
+        const items = await attachComposedMediaList({
+            items: withPrivacy,
+            mediaModel: this._accommodationMediaModel,
+            tx: ctx?.tx
+        });
+        return { ...result, items };
     }
 
     // --- Permissions Hooks ---
@@ -2309,6 +2328,13 @@ export class AccommodationService extends BaseCrudService<
                     this.logger.warn(`Accommodation ${entity.id} has no location for summary.`);
                     return { accommodation: null };
                 }
+                // SPEC-204 T-013: compose `media` from the relational table so the
+                // summary cover image matches the relational source of truth.
+                const withMedia = await attachComposedMedia({
+                    entity: entity as Accommodation,
+                    mediaModel: this._accommodationMediaModel,
+                    tx: execCtx?.tx
+                });
                 const accommodation = {
                     id: entity.id,
                     type: entity.type,
@@ -2319,7 +2345,7 @@ export class AccommodationService extends BaseCrudService<
                     isFeatured: entity.isFeatured,
                     reviewsCount: 0,
                     averageRating: 0,
-                    media: entity.media,
+                    media: withMedia?.media ?? entity.media,
                     location: entity.location
                 };
                 return { accommodation };
