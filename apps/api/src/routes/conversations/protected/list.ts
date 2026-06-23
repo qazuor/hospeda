@@ -6,7 +6,7 @@
  */
 
 import { AccommodationModel, MessageModel } from '@repo/db';
-import { GuestInboxQuerySchema } from '@repo/schemas';
+import { GuestInboxQuerySchema, ProtectedConversationListItemSchema } from '@repo/schemas';
 import { ConversationService } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { createRouter } from '../../../utils/create-app';
@@ -133,7 +133,13 @@ router.get('/', async (c) => {
             };
         });
 
-        return createPaginatedResponse(items as unknown[], pagination, c);
+        return createPaginatedResponse(
+            items as unknown[],
+            pagination,
+            c,
+            200,
+            ProtectedConversationListItemSchema
+        );
     } catch (error) {
         return handleRouteError(error, c);
     }

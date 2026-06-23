@@ -889,6 +889,60 @@ See also: `apps/api/docs/cors-configuration.md` for the global CORS configuratio
 
 ---
 
+## Public-Response Contract (SPEC-210 PR5)
+
+Every public route (created via `createPublicRoute`, `createPublicListRoute`, or
+`createSimpleRoute`) MUST declare a concrete, non-permissive `responseSchema`.
+This is a compile-time requirement (TypeScript will reject the call if the field
+is omitted) and a runtime backstop enforced by `stripWithSchema`.
+
+### Rules
+
+1. **`responseSchema` is required.** Omitting it from `CreateOpenApiRouteInterface`
+   or `SimpleRouteInterface` is a TypeScript compile error.
+
+2. **`stripWithSchema` is fail-closed.** When called without a `responseSchema`
+   it throws `ServiceError(INTERNAL_ERROR)` immediately — it never returns data
+   unchanged. Routes that bypass the factory and call `createResponse` directly
+   (e.g. the raw conversation public routes) must pass the schema explicitly.
+
+3. **`createPaginatedResponse` is fail-closed.** Same policy as `stripWithSchema`:
+   throws `ServiceError(INTERNAL_ERROR)` when no `responseSchema` is supplied.
+
+4. **Schemas must be concrete.** `assertConcretePublicSchema` (exported from
+   `response-helpers.ts`) rejects permissive top-level schemas at boot time:
+   - `z.any()` — ZodAny
+   - `z.unknown()` — ZodUnknown
+   - `z.record(...)` at the top level — ZodRecord
+   - `z.object({}).passthrough()` — ZodObject with `unknownKeys === 'passthrough'`
+
+   Only the **top level** is checked. Nested `z.record()` inside a `z.object()`
+   field is valid (e.g. the `limits: z.record(z.string(), z.number())` field in
+   `billing/public/listPlans.ts`).
+
+### Raw-route pattern
+
+Routes that cannot use the factory (e.g. the public conversation routes which
+need custom rate limiters and inline body validation) must follow this pattern:
+
+```ts
+// 1. Define or import a concrete schema that matches the exact response shape.
+const MyResponseSchema = z.object({ status: z.string() });
+
+// 2. Pass it as the 4th arg to createResponse.
+return createResponse(payload, c, 200, MyResponseSchema);
+```
+
+### References
+
+- `SPEC-210` — Tier enforcement and public-response field-leak prevention
+- `SPEC-087` — Response-schema strict mode (drift is a server bug, not a fallback)
+- `SPEC-062` — Tier-appropriate field exposure at runtime
+- `src/utils/response-helpers.ts` — `stripWithSchema`, `createPaginatedResponse`, `assertConcretePublicSchema`
+- `src/utils/route-factory.ts` — `CreateOpenApiRouteInterface.responseSchema`
+
+---
+
 ## Related Documentation
 
 - `docs/development/route-factories.md` - factory API reference

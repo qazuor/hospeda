@@ -30,6 +30,16 @@ const RequestAccessSchema = z
     })
     .strict();
 
+/**
+ * Response schema for the request-access endpoint.
+ * Anti-enumeration: every code path returns this identical shape.
+ *
+ * SPEC-210 PR5 — required by the fail-closed stripWithSchema backstop.
+ */
+const RequestAccessResponseSchema = z.object({
+    status: z.literal('sent_if_exists')
+});
+
 /** IP rate limiter: 10 requests per 10 minutes. */
 const ipRateLimiter = createPerRouteRateLimitMiddleware({
     requests: 10,
@@ -61,13 +71,13 @@ async function validateBody(c: Context, next: () => Promise<void>): Promise<Resp
     try {
         rawBody = await c.req.json();
     } catch {
-        return createResponse({ status: 'sent_if_exists' }, c, 200);
+        return createResponse({ status: 'sent_if_exists' }, c, 200, RequestAccessResponseSchema);
     }
 
     const parseResult = RequestAccessSchema.safeParse(rawBody);
     if (!parseResult.success) {
         // Anti-enumeration: return the same 200 response on malformed input too
-        return createResponse({ status: 'sent_if_exists' }, c, 200);
+        return createResponse({ status: 'sent_if_exists' }, c, 200, RequestAccessResponseSchema);
     }
 
     // TYPE-WORKAROUND: storing the Zod-validated body on a non-standard ctx property to pass it to the handler without a ContextVariableMap entry; cast widens to a writable record.
@@ -92,7 +102,7 @@ async function handler(c: Context): Promise<Response> {
 
     // Anti-enumeration: if body extraction failed somehow, return sentinel
     if (!body?.email) {
-        return createResponse({ status: 'sent_if_exists' }, c, 200);
+        return createResponse({ status: 'sent_if_exists' }, c, 200, RequestAccessResponseSchema);
     }
 
     const normalizedEmail = body.email.toLowerCase().trim();
@@ -109,7 +119,7 @@ async function handler(c: Context): Promise<Response> {
     // requestAccessByEmail is anti-enumeration: never throws, silently handles all paths
     await conversationSvc.requestAccessByEmail(normalizedEmail);
 
-    return createResponse({ status: 'sent_if_exists' }, c, 200);
+    return createResponse({ status: 'sent_if_exists' }, c, 200, RequestAccessResponseSchema);
 }
 
 /** Public request-access router. */

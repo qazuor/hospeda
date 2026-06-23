@@ -131,6 +131,14 @@
         "summary": {
             "max": "[PT] El resumen no puede superar los {{max}} caracteres",
             "min": "[PT] El resumen debe tener al menos {{min}} caracteres"
+        },
+        "media": {
+            "state": {
+                "invalid": "O estado da mídia deve ser 'visible' ou 'archived'"
+            },
+            "sortOrder": {
+                "int": "A ordem de exibição deve ser um número inteiro"
+            }
         }
     },
     "accommodationAmenity": {

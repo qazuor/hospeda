@@ -194,7 +194,7 @@ async function handler(c: Context): Promise<Response> {
             hasMore
         });
 
-        return createResponse(safePayload, c, 200);
+        return createResponse(safePayload, c, 200, GuestThreadResponseSchema);
     } catch (error) {
         return handleRouteError(error, c);
     }

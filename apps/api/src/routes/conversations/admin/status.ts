@@ -14,6 +14,7 @@
 import { getDb } from '@repo/db';
 import { accommodations } from '@repo/db';
 import {
+    ConversationSchema,
     ConversationStatusEnum,
     PermissionEnum,
     ServiceErrorCode,
@@ -158,7 +159,7 @@ router.patch('/:id/status', async (c) => {
             );
         }
 
-        return createResponse(result.data, c, 200);
+        return createResponse(result.data, c, 200, ConversationSchema);
     } catch (error) {
         return handleRouteError(error, c);
     }

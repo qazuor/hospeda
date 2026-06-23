@@ -16,6 +16,7 @@
 
 import {
     CreateConversationAuthSchema,
+    InitiateAuthResponseSchema,
     MessageSenderTypeEnum,
     PermissionEnum,
     RoleEnum,
@@ -115,7 +116,12 @@ router.post('/', async (c) => {
             const messageId =
                 msgListResult.data?.messages?.[0]?.id ?? '00000000-0000-0000-0000-000000000000';
 
-            return createResponse({ conversationId, isNew: true, messageId }, c, 201);
+            return createResponse(
+                { conversationId, isNew: true, messageId },
+                c,
+                201,
+                InitiateAuthResponseSchema
+            );
         }
 
         // Existing conversation: append the new message.
@@ -137,7 +143,8 @@ router.post('/', async (c) => {
         return createResponse(
             { conversationId, isNew: false, messageId: msgResult.data.id },
             c,
-            201
+            201,
+            InitiateAuthResponseSchema
         );
     } catch (error) {
         return handleRouteError(error, c);

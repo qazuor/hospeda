@@ -9,7 +9,13 @@
  */
 
 import { AccommodationModel, ConversationModel, UserModel } from '@repo/db';
-import { PermissionEnum, RoleEnum, ServiceErrorCode, ThreadQuerySchema } from '@repo/schemas';
+import {
+    PermissionEnum,
+    ProtectedThreadResponseSchema,
+    RoleEnum,
+    ServiceErrorCode,
+    ThreadQuerySchema
+} from '@repo/schemas';
 import { ConversationService } from '@repo/service-core';
 
 const accommodationModel = new AccommodationModel();
@@ -181,7 +187,12 @@ router.get('/:id', async (c) => {
         const nextCursor =
             hasMore && messages.length > 0 ? (messages[0]?.createdAt?.toISOString() ?? null) : null;
 
-        return createResponse({ conversation: enrichedConversation, messages, nextCursor }, c, 200);
+        return createResponse(
+            { conversation: enrichedConversation, messages, nextCursor },
+            c,
+            200,
+            ProtectedThreadResponseSchema
+        );
     } catch (error) {
         return handleRouteError(error, c);
     }

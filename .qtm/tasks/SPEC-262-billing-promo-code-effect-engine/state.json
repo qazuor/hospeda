@@ -6,8 +6,8 @@
     "summary": {
         "total": 15,
         "byStatus": {
-            "pending": 8,
-            "completed": 7
+            "pending": 6,
+            "completed": 9
         },
         "byPhase": {
             "spike": 1,
@@ -200,7 +200,7 @@
             "id": "T-009",
             "title": "Add API route: apply trial extension to existing subscription",
             "description": "New route: `POST /api/v1/admin/billing/subscriptions/:subscriptionId/apply-trial-extension`\n\n- Accept `{ promoCodeId: string }` body (validate with Zod)\n- Auth: `BILLING_PROMO_CODE_MANAGE` permission required\n- Delegate to `extendExistingSubscriptionTrial()` from T-006\n- Map typed service errors to HTTP responses:\n  - `VALIDATION_ERROR` (non-trial sub) \u2192 422\n  - `NOT_FOUND` \u2192 404\n  - Unrelated customer without admin permission \u2192 403 (AC-6.2)\n- On success: return updated subscription with new `trial_end`\n\nIntegration tests:\n- trialing sub + valid code \u2192 200 + updated trial_end (AC-3.1)\n- active (non-trial) sub \u2192 422 (AC-3.4)\n- 403 without BILLING_PROMO_CODE_MANAGE\n- non-trial-extension code \u2192 422\n- annual sub in trial \u2192 200 (AC-3.5 accept)\n- annual sub past trial \u2192 422 (AC-3.5 reject)\n\nAcceptance criteria: AC-3.1, AC-3.4, AC-3.5, AC-6.1",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-004", "T-005", "T-006"],
             "blocks": ["T-011"],
@@ -208,14 +208,14 @@
             "tags": ["integration", "api", "hono", "billing", "trial"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-22T18:17:18.089Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-23T08:00:00.000Z",
+                "completed": "2026-06-23T08:30:00.000Z"
             }
         },
         {

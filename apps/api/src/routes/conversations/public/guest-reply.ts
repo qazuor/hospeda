@@ -196,7 +196,7 @@ async function handler(c: Context): Promise<Response> {
         // default, so any field not declared in the schema is silently removed.
         const safeMessage = MessageGuestPublicSchema.parse(messageResult.data);
 
-        return createResponse(safeMessage, c, 201);
+        return createResponse(safeMessage, c, 201, MessageGuestPublicSchema);
     } catch (error) {
         return handleRouteError(error, c);
     }
