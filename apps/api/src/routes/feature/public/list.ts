@@ -7,7 +7,7 @@
  * type the FeatureService search schema is built from.
  */
 import {
-    FeatureListItemSchema,
+    FeaturePublicSchema,
     FeatureSearchHttpSchema,
     type HttpFeatureSearch
 } from '@repo/schemas';
@@ -31,7 +31,7 @@ export const publicListFeaturesRoute = createPublicListRoute({
     description: 'Returns a paginated list of public features',
     tags: ['Features'],
     requestQuery: FeatureSearchHttpSchema.shape,
-    responseSchema: FeatureListItemSchema,
+    responseSchema: FeaturePublicSchema,
     handler: async (ctx: Context, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});

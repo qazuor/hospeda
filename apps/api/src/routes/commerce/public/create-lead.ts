@@ -16,7 +16,7 @@
  */
 
 import type { CommerceLeadCreateInput } from '@repo/schemas';
-import { CommerceLeadCreateInputSchema, CommerceLeadSchema } from '@repo/schemas';
+import { CommerceLeadCreateInputSchema, CommerceLeadCreateResponseSchema } from '@repo/schemas';
 import { CommerceLeadService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -47,8 +47,11 @@ type CreateLeadRequest = z.infer<typeof CreateLeadRequestSchema>;
  * POST /api/v1/public/commerce/leads
  *
  * Accepts a commerce lead submission from the public acquisition form.
- * Returns 200 on success so bots cannot distinguish a honeypot rejection
- * from a real submission (silent reject pattern).
+ * Returns 200 with `{ id }` on success — only the new lead's UUID is disclosed.
+ * On honeypot trigger, returns the same shape with a nil-UUID sentinel id
+ * (all-zeros) so bots cannot distinguish a rejection from a real submission
+ * (silent reject pattern). A nil UUID is used because the response schema
+ * validates `id` as a UUID — an empty string would fail validation.
  */
 export const publicCreateLeadRoute = createPublicRoute({
     method: 'post',
@@ -57,10 +60,11 @@ export const publicCreateLeadRoute = createPublicRoute({
     description:
         'Accepts a "Sumar mi negocio" form submission.  No authentication ' +
         'required.  Includes honeypot spam guard.  Returns 200 on both success ' +
-        'and honeypot rejection to prevent bot discovery.',
+        'and honeypot rejection to prevent bot discovery.  Response is limited ' +
+        'to { id } — no PII, status, or audit fields are disclosed.',
     tags: ['Commerce'],
     requestBody: CreateLeadRequestSchema,
-    responseSchema: CommerceLeadSchema.partial(),
+    responseSchema: CommerceLeadCreateResponseSchema,
     handler: async (
         ctx: Context,
         _params: Record<string, unknown>,
@@ -77,9 +81,9 @@ export const publicCreateLeadRoute = createPublicRoute({
                 { path: ctx.req.path },
                 '[commerce-lead] Honeypot triggered — discarding submission'
             );
-            // TYPE-WORKAROUND: returning an empty object satisfies the partial
-            // CommerceLeadSchema shape used for the silent rejection path.
-            return {} as z.infer<typeof CommerceLeadSchema>;
+            // Silent reject: return a fake id so the response shape matches the
+            // real success path and bots receive no distinguishing signal.
+            return { id: '00000000-0000-0000-0000-000000000000' };
         }
 
         // Strip the honeypot field before forwarding to service
@@ -95,7 +99,10 @@ export const publicCreateLeadRoute = createPublicRoute({
         }
 
         // biome-ignore lint/style/noNonNullAssertion: result.data is defined when result.error is absent
-        return result.data!;
+        const lead = result.data!;
+
+        // Return only the id — no PII, status, adminNote, or audit fields.
+        return { id: lead.id };
     },
     options: {
         // 5 submissions per IP per minute — legitimate users rarely resubmit
