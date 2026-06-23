@@ -1,9 +1,7 @@
+import type { AccommodationMedia } from '@repo/schemas';
 import { and, asc, eq, isNull } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
-import {
-    type SelectAccommodationMedia,
-    accommodationMedia
-} from '../../schemas/accommodation/accommodation_media.dbschema.ts';
+import { accommodationMedia } from '../../schemas/accommodation/accommodation_media.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
@@ -58,7 +56,7 @@ interface FindFeaturedInput {
  * @see packages/db/src/migrations/extras/ — T-003 partial-unique index on `is_featured`
  *   and CHECK constraint enforcing `is_featured ⇒ NOT archived`.
  */
-export class AccommodationMediaModel extends BaseModelImpl<SelectAccommodationMedia> {
+export class AccommodationMediaModel extends BaseModelImpl<AccommodationMedia> {
     protected table = accommodationMedia;
     public entityName = 'accommodationMedia';
 
@@ -98,7 +96,7 @@ export class AccommodationMediaModel extends BaseModelImpl<SelectAccommodationMe
      */
     async findByAccommodation(
         input: FindByAccommodationInput
-    ): Promise<{ items: SelectAccommodationMedia[]; total: number }> {
+    ): Promise<{ items: AccommodationMedia[]; total: number }> {
         const { accommodationId, state, page = 1, pageSize = 50, tx } = input;
         const db = this.getClient(tx);
         const logContext = { accommodationId, state, page, pageSize };
@@ -130,7 +128,7 @@ export class AccommodationMediaModel extends BaseModelImpl<SelectAccommodationMe
             ]);
 
             const result = {
-                items: items as SelectAccommodationMedia[],
+                items: items as AccommodationMedia[],
                 total: countResult.length
             };
             try {
@@ -157,7 +155,7 @@ export class AccommodationMediaModel extends BaseModelImpl<SelectAccommodationMe
      * @param input.tx              - Optional transaction client.
      * @returns The featured media row, or `null` if no featured image is set.
      */
-    async findFeatured(input: FindFeaturedInput): Promise<SelectAccommodationMedia | null> {
+    async findFeatured(input: FindFeaturedInput): Promise<AccommodationMedia | null> {
         const { accommodationId, tx } = input;
         const db = this.getClient(tx);
         const logContext = { accommodationId };
@@ -175,7 +173,7 @@ export class AccommodationMediaModel extends BaseModelImpl<SelectAccommodationMe
                 )
                 .limit(1);
 
-            const row = (result[0] as SelectAccommodationMedia) ?? null;
+            const row = (result[0] as AccommodationMedia) ?? null;
             try {
                 logQuery(this.entityName, 'findFeatured', logContext, row);
             } catch {}
