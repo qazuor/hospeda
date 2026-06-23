@@ -1,6 +1,6 @@
 # SPEC-204: Accommodation gallery migration to relational table
 
-## Progress: 2/29 tasks (7%)
+## Progress: 4/29 tasks (14%)
 
 **Average Complexity:** 2.5/3 (max)
 **Storage model:** direct table-per-entity (`accommodation_media`, real FK) — polymorphic + junction rejected
@@ -19,12 +19,12 @@
   - Blocked by: none · Blocks: T-002, T-004, T-009
 - [x] **T-002** (cx 2) — Generate structural migration
   - Blocked by: T-001 · Blocks: T-003, T-006
-- [ ] **T-003** (cx 2) — Extras-carril invariants (partial unique index `WHERE is_featured` + CHECK featured⇒not archived)
+- [x] **T-003** (cx 2) — Extras-carril invariants (partial unique index `WHERE is_featured` + CHECK featured⇒not archived)
   - Blocked by: T-002 · Blocks: T-020
 
 ### Core
 
-- [ ] **T-004** (cx 3) — Create `AccommodationMediaModel` (BaseModel)
+- [x] **T-004** (cx 3) — Create `AccommodationMediaModel` (BaseModel)
   - Blocked by: T-001 · Blocks: T-006, T-007, T-008, T-009
 - [ ] **T-005** (cx 2) — Add `AccommodationMediaItem` Zod schema
   - Blocked by: none · Blocks: T-007, T-009
