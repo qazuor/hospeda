@@ -86,21 +86,39 @@ export function AiUsageByProviderTable({ search }: AiUsageByProviderTableProps) 
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
+                            <caption className="sr-only">
+                                {t('admin-pages.ai.usage.a11y.tableByProvider')}
+                            </caption>
                             <thead>
                                 <tr className="border-b">
-                                    <th className="px-4 py-3 text-left font-medium">
+                                    <th
+                                        scope="col"
+                                        className="px-4 py-3 text-left font-medium"
+                                    >
                                         {t('admin-pages.ai.usage.table.colProvider')}
                                     </th>
-                                    <th className="px-4 py-3 text-right font-medium">
+                                    <th
+                                        scope="col"
+                                        className="px-4 py-3 text-right font-medium"
+                                    >
                                         {t('admin-pages.ai.usage.table.colCalls')}
                                     </th>
-                                    <th className="px-4 py-3 text-right font-medium">
+                                    <th
+                                        scope="col"
+                                        className="px-4 py-3 text-right font-medium"
+                                    >
                                         {t('admin-pages.ai.usage.table.colTokensIn')}
                                     </th>
-                                    <th className="px-4 py-3 text-right font-medium">
+                                    <th
+                                        scope="col"
+                                        className="px-4 py-3 text-right font-medium"
+                                    >
                                         {t('admin-pages.ai.usage.table.colTokensOut')}
                                     </th>
-                                    <th className="px-4 py-3 text-right font-medium">
+                                    <th
+                                        scope="col"
+                                        className="px-4 py-3 text-right font-medium"
+                                    >
                                         {t('admin-pages.ai.usage.table.colEstCost')}
                                     </th>
                                 </tr>

@@ -193,116 +193,121 @@ export function AiUsageDailyChart({ search }: AiUsageDailyChartProps) {
                     />
                 ) : hasData ? (
                     <>
-                        <ResponsiveContainer
-                            width="100%"
-                            height={300}
+                        <div
+                            role="img"
+                            aria-label={t('admin-pages.ai.usage.a11y.chartDaily')}
                         >
-                            <AreaChart
-                                data={[...chartRows] as unknown as Record<string, unknown>[]}
-                                margin={{ top: 8, right: 64, left: 8, bottom: 4 }}
+                            <ResponsiveContainer
+                                width="100%"
+                                height={300}
                             >
-                                <defs>
-                                    <linearGradient
-                                        id="costGradient"
-                                        x1="0"
-                                        y1="0"
-                                        x2="0"
-                                        y2="1"
-                                    >
-                                        <stop
-                                            offset="5%"
-                                            stopColor="#2563eb"
-                                            stopOpacity={0.25}
-                                        />
-                                        <stop
-                                            offset="95%"
-                                            stopColor="#2563eb"
-                                            stopOpacity={0}
-                                        />
-                                    </linearGradient>
-                                </defs>
+                                <AreaChart
+                                    data={[...chartRows] as unknown as Record<string, unknown>[]}
+                                    margin={{ top: 8, right: 64, left: 8, bottom: 4 }}
+                                >
+                                    <defs>
+                                        <linearGradient
+                                            id="costGradient"
+                                            x1="0"
+                                            y1="0"
+                                            x2="0"
+                                            y2="1"
+                                        >
+                                            <stop
+                                                offset="5%"
+                                                stopColor="#2563eb"
+                                                stopOpacity={0.25}
+                                            />
+                                            <stop
+                                                offset="95%"
+                                                stopColor="#2563eb"
+                                                stopOpacity={0}
+                                            />
+                                        </linearGradient>
+                                    </defs>
 
-                                <CartesianGrid
-                                    strokeDasharray="3 3"
-                                    vertical={false}
-                                />
+                                    <CartesianGrid
+                                        strokeDasharray="3 3"
+                                        vertical={false}
+                                    />
 
-                                <XAxis
-                                    dataKey="day"
-                                    tickFormatter={formatXAxisTick}
-                                    tick={{ fontSize: 11 }}
-                                    tickLine={false}
-                                />
+                                    <XAxis
+                                        dataKey="day"
+                                        tickFormatter={formatXAxisTick}
+                                        tick={{ fontSize: 11 }}
+                                        tickLine={false}
+                                    />
 
-                                {/* Left Y-axis: cost in USD */}
-                                <YAxis
-                                    yAxisId="cost"
-                                    tickFormatter={formatCostTick}
-                                    tick={{ fontSize: 11 }}
-                                    tickLine={false}
-                                    axisLine={false}
-                                    width={72}
-                                />
+                                    {/* Left Y-axis: cost in USD */}
+                                    <YAxis
+                                        yAxisId="cost"
+                                        tickFormatter={formatCostTick}
+                                        tick={{ fontSize: 11 }}
+                                        tickLine={false}
+                                        axisLine={false}
+                                        width={72}
+                                    />
 
-                                {/* Right Y-axis: calls */}
-                                <YAxis
-                                    yAxisId="calls"
-                                    orientation="right"
-                                    tick={{ fontSize: 11 }}
-                                    tickLine={false}
-                                    axisLine={false}
-                                    width={48}
-                                />
+                                    {/* Right Y-axis: calls */}
+                                    <YAxis
+                                        yAxisId="calls"
+                                        orientation="right"
+                                        tick={{ fontSize: 11 }}
+                                        tickLine={false}
+                                        axisLine={false}
+                                        width={48}
+                                    />
 
-                                <Tooltip
-                                    formatter={(value: number, name: string) => {
-                                        if (name === 'costUsd') {
+                                    <Tooltip
+                                        formatter={(value: number, name: string) => {
+                                            if (name === 'costUsd') {
+                                                return [
+                                                    formatMicroUsd(Math.round(value * 1_000_000)),
+                                                    t('admin-pages.ai.usage.daily.legendEstCost')
+                                                ];
+                                            }
                                             return [
-                                                formatMicroUsd(Math.round(value * 1_000_000)),
-                                                t('admin-pages.ai.usage.daily.legendEstCost')
+                                                value.toLocaleString(),
+                                                t('admin-pages.ai.usage.daily.legendCalls')
                                             ];
+                                        }}
+                                        labelFormatter={formatXAxisTick}
+                                    />
+
+                                    <Legend
+                                        formatter={(value: string) =>
+                                            value === 'costUsd'
+                                                ? t('admin-pages.ai.usage.daily.legendEstCost')
+                                                : t('admin-pages.ai.usage.daily.legendCalls')
                                         }
-                                        return [
-                                            value.toLocaleString(),
-                                            t('admin-pages.ai.usage.daily.legendCalls')
-                                        ];
-                                    }}
-                                    labelFormatter={formatXAxisTick}
-                                />
+                                    />
 
-                                <Legend
-                                    formatter={(value: string) =>
-                                        value === 'costUsd'
-                                            ? t('admin-pages.ai.usage.daily.legendEstCost')
-                                            : t('admin-pages.ai.usage.daily.legendCalls')
-                                    }
-                                />
+                                    <Area
+                                        yAxisId="cost"
+                                        type="monotone"
+                                        dataKey="costUsd"
+                                        name="costUsd"
+                                        stroke="#2563eb"
+                                        strokeWidth={2}
+                                        fill="url(#costGradient)"
+                                        dot={false}
+                                        connectNulls={false}
+                                    />
 
-                                <Area
-                                    yAxisId="cost"
-                                    type="monotone"
-                                    dataKey="costUsd"
-                                    name="costUsd"
-                                    stroke="#2563eb"
-                                    strokeWidth={2}
-                                    fill="url(#costGradient)"
-                                    dot={false}
-                                    connectNulls={false}
-                                />
-
-                                <Line
-                                    yAxisId="calls"
-                                    type="monotone"
-                                    dataKey="calls"
-                                    name="calls"
-                                    stroke="#16a34a"
-                                    strokeWidth={1.5}
-                                    dot={false}
-                                    connectNulls={false}
-                                    strokeDasharray="4 2"
-                                />
-                            </AreaChart>
-                        </ResponsiveContainer>
+                                    <Line
+                                        yAxisId="calls"
+                                        type="monotone"
+                                        dataKey="calls"
+                                        name="calls"
+                                        stroke="#16a34a"
+                                        strokeWidth={1.5}
+                                        dot={false}
+                                        connectNulls={false}
+                                        strokeDasharray="4 2"
+                                    />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        </div>
 
                         {/* Truncation notice — MVP limitation: pageSize capped at 100.
                          * When the selected window contains more days than one page,

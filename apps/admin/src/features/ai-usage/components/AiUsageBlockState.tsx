@@ -62,13 +62,33 @@ export interface AiUsageBlockStateProps {
  * Rendered inside a `<CardContent>` with `py-10 text-center` padding so all
  * blocks maintain consistent vertical rhythm when in a non-data state.
  *
+ * Accessibility:
+ * - `loading` variant uses `role="status"` and `aria-live="polite"` so screen
+ *   readers announce the loading state and dismiss it when data arrives.
+ * - `error` variant uses `role="alert"` so screen readers announce the failure
+ *   immediately without waiting for the user to encounter it.
+ * - `empty` variant uses no live region (informational, not time-critical).
+ *
  * @param props - {@link AiUsageBlockStateProps}
  */
 export function AiUsageBlockState({ status, title, hint }: AiUsageBlockStateProps) {
+    const liveProps =
+        status === 'loading'
+            ? ({ role: 'status', 'aria-live': 'polite' } as const)
+            : status === 'error'
+              ? ({ role: 'alert' } as const)
+              : {};
+
     return (
-        <div className="py-10 text-center">
+        <div
+            className="py-10 text-center"
+            {...liveProps}
+        >
             {status === 'loading' && (
-                <LoaderIcon className="mx-auto h-6 w-6 animate-spin text-primary" />
+                <LoaderIcon
+                    className="mx-auto h-6 w-6 animate-spin text-primary"
+                    aria-hidden="true"
+                />
             )}
             <p
                 className={[

@@ -192,15 +192,22 @@ export function AiUsagePage() {
                 <CardContent>
                     <div className="flex flex-wrap gap-4">
                         {/* Time-window mode toggle */}
-                        <div className="flex flex-col gap-1.5">
-                            <Label className="text-xs">
+                        <fieldset className="m-0 flex flex-col gap-1.5 border-0 p-0">
+                            <legend className="sr-only">
                                 {t('admin-pages.ai.usage.filter.windowMode')}
-                            </Label>
+                            </legend>
+                            <span
+                                className="font-medium text-xs"
+                                aria-hidden="true"
+                            >
+                                {t('admin-pages.ai.usage.filter.windowMode')}
+                            </span>
                             <div className="flex gap-2">
                                 <Button
                                     type="button"
                                     size="sm"
                                     variant={isDateRangeMode ? 'outline' : 'default'}
+                                    aria-pressed={!isDateRangeMode}
                                     onClick={() => setWindowMode('month')}
                                 >
                                     {t('admin-pages.ai.usage.filter.month')}
@@ -209,12 +216,13 @@ export function AiUsagePage() {
                                     type="button"
                                     size="sm"
                                     variant={isDateRangeMode ? 'default' : 'outline'}
+                                    aria-pressed={isDateRangeMode}
                                     onClick={() => setWindowMode('dateRange')}
                                 >
                                     {t('admin-pages.ai.usage.filter.dateRange')}
                                 </Button>
                             </div>
-                        </div>
+                        </fieldset>
 
                         {/* Month mode: year + month pickers */}
                         {!isDateRangeMode && (
@@ -244,7 +252,10 @@ export function AiUsagePage() {
                                 </div>
 
                                 <div className="flex flex-col gap-1.5">
-                                    <Label className="text-xs">
+                                    <Label
+                                        htmlFor="month-select"
+                                        className="text-xs"
+                                    >
                                         {t('admin-pages.ai.usage.filter.monthLabel')}
                                     </Label>
                                     <Select
@@ -253,7 +264,11 @@ export function AiUsagePage() {
                                             setFilter('month', v ? Number(v) : undefined)
                                         }
                                     >
-                                        <SelectTrigger className="w-36">
+                                        <SelectTrigger
+                                            id="month-select"
+                                            className="w-36"
+                                            aria-label={t('admin-pages.ai.usage.filter.monthLabel')}
+                                        >
                                             <SelectValue
                                                 placeholder={t(
                                                     'admin-pages.ai.usage.filter.allMonths'
@@ -320,14 +335,21 @@ export function AiUsagePage() {
 
                         {/* Feature filter */}
                         <div className="flex flex-col gap-1.5">
-                            <Label className="text-xs">
+                            <Label
+                                htmlFor="feature-select"
+                                className="text-xs"
+                            >
                                 {t('admin-pages.ai.usage.filter.feature')}
                             </Label>
                             <Select
                                 value={search.feature ?? ''}
                                 onValueChange={(v) => setFilter('feature', v || undefined)}
                             >
-                                <SelectTrigger className="w-48">
+                                <SelectTrigger
+                                    id="feature-select"
+                                    className="w-48"
+                                    aria-label={t('admin-pages.ai.usage.filter.feature')}
+                                >
                                     <SelectValue
                                         placeholder={t('admin-pages.ai.usage.filter.allFeatures')}
                                     />
@@ -349,14 +371,21 @@ export function AiUsagePage() {
 
                         {/* Provider filter */}
                         <div className="flex flex-col gap-1.5">
-                            <Label className="text-xs">
+                            <Label
+                                htmlFor="provider-select"
+                                className="text-xs"
+                            >
                                 {t('admin-pages.ai.usage.filter.provider')}
                             </Label>
                             <Select
                                 value={search.provider ?? ''}
                                 onValueChange={(v) => setFilter('provider', v || undefined)}
                             >
-                                <SelectTrigger className="w-36">
+                                <SelectTrigger
+                                    id="provider-select"
+                                    className="w-36"
+                                    aria-label={t('admin-pages.ai.usage.filter.provider')}
+                                >
                                     <SelectValue
                                         placeholder={t('admin-pages.ai.usage.filter.allProviders')}
                                     />
@@ -412,37 +441,37 @@ export function AiUsagePage() {
             </Card>
 
             {/* T-015: Totals summary cards */}
-            <section aria-label="Usage totals">
+            <section aria-label={t('admin-pages.ai.usage.a11y.sectionTotals')}>
                 <AiUsageTotalsCard search={search} />
             </section>
 
             {/* T-015: By-model breakdown table */}
-            <section aria-label="Usage by model">
+            <section aria-label={t('admin-pages.ai.usage.a11y.sectionByModel')}>
                 <AiUsageByModelTable search={search} />
             </section>
 
             {/* T-015: By-provider breakdown table */}
-            <section aria-label="Usage by provider">
+            <section aria-label={t('admin-pages.ai.usage.a11y.sectionByProvider')}>
                 <AiUsageByProviderTable search={search} />
             </section>
 
             {/* T-015: By-feature breakdown table */}
-            <section aria-label="Usage by feature">
+            <section aria-label={t('admin-pages.ai.usage.a11y.sectionByFeature')}>
                 <AiUsageByFeatureTable search={search} />
             </section>
 
             {/* T-016: Feature × model cost chart */}
-            <section aria-label="Cost by feature and model chart">
+            <section aria-label={t('admin-pages.ai.usage.a11y.sectionFeatureModelChart')}>
                 <AiUsageFeatureModelChart search={search} />
             </section>
 
             {/* T-016: Feature × model cross table */}
-            <section aria-label="Usage by feature and model">
+            <section aria-label={t('admin-pages.ai.usage.a11y.sectionFeatureModelTable')}>
                 <AiUsageByFeatureModelTable search={search} />
             </section>
 
             {/* T-017: Daily cost time-series chart */}
-            <section aria-label="Daily usage chart">
+            <section aria-label={t('admin-pages.ai.usage.a11y.sectionDailyChart')}>
                 <AiUsageDailyChart search={search} />
             </section>
         </div>

@@ -258,49 +258,54 @@ export function AiUsageFeatureModelChart({ search }: AiUsageFeatureModelChartPro
                         hint={t('admin-pages.ai.usage.featureModel.loadErrorHint')}
                     />
                 ) : hasData ? (
-                    <ResponsiveContainer
-                        width="100%"
-                        height={300}
+                    <div
+                        role="img"
+                        aria-label={t('admin-pages.ai.usage.a11y.chartFeatureModel')}
                     >
-                        <BarChart
-                            data={[...chartData] as Record<string, string | number>[]}
-                            margin={{ top: 8, right: 16, left: 8, bottom: 4 }}
+                        <ResponsiveContainer
+                            width="100%"
+                            height={300}
                         >
-                            <CartesianGrid
-                                strokeDasharray="3 3"
-                                vertical={false}
-                            />
-                            <XAxis
-                                dataKey="feature"
-                                tick={{ fontSize: 11 }}
-                                tickLine={false}
-                            />
-                            <YAxis
-                                tickFormatter={yAxisTickFormatter}
-                                tick={{ fontSize: 11 }}
-                                tickLine={false}
-                                axisLine={false}
-                                width={72}
-                            />
-                            <Tooltip
-                                formatter={(value: number, name: string) => [
-                                    tooltipFormatter(value),
-                                    name
-                                ]}
-                                labelStyle={{ fontWeight: 600 }}
-                            />
-                            <Legend wrapperStyle={{ fontSize: 12 }} />
-                            {models.map((model, i) => (
-                                <Bar
-                                    key={model}
-                                    dataKey={model}
-                                    name={model}
-                                    fill={modelColor(i)}
-                                    radius={[2, 2, 0, 0]}
+                            <BarChart
+                                data={[...chartData] as Record<string, string | number>[]}
+                                margin={{ top: 8, right: 16, left: 8, bottom: 4 }}
+                            >
+                                <CartesianGrid
+                                    strokeDasharray="3 3"
+                                    vertical={false}
                                 />
-                            ))}
-                        </BarChart>
-                    </ResponsiveContainer>
+                                <XAxis
+                                    dataKey="feature"
+                                    tick={{ fontSize: 11 }}
+                                    tickLine={false}
+                                />
+                                <YAxis
+                                    tickFormatter={yAxisTickFormatter}
+                                    tick={{ fontSize: 11 }}
+                                    tickLine={false}
+                                    axisLine={false}
+                                    width={72}
+                                />
+                                <Tooltip
+                                    formatter={(value: number, name: string) => [
+                                        tooltipFormatter(value),
+                                        name
+                                    ]}
+                                    labelStyle={{ fontWeight: 600 }}
+                                />
+                                <Legend wrapperStyle={{ fontSize: 12 }} />
+                                {models.map((model, i) => (
+                                    <Bar
+                                        key={model}
+                                        dataKey={model}
+                                        name={model}
+                                        fill={modelColor(i)}
+                                        radius={[2, 2, 0, 0]}
+                                    />
+                                ))}
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
                 ) : (
                     <AiUsageBlockState
                         status="empty"
