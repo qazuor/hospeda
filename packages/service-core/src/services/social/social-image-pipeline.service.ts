@@ -14,23 +14,33 @@ import type { ServiceLogger } from '../../utils/service-logger';
 // ---------------------------------------------------------------------------
 
 /**
- * An OpenAI file reference with a downloadable URL.
+ * An OpenAI file reference object injected at runtime by OpenAI into GPT Actions.
  *
- * @see https://platform.openai.com/docs/api-reference/files
+ * OpenAI declares this field as an array of strings in the OpenAPI schema
+ * (per their convention), but at RUNTIME injects an array of objects shaped
+ * like this. The `download_link` is an HTTPS URL pointing to
+ * `files.oaiusercontent.com` that can be used to download the file.
+ *
+ * @see https://platform.openai.com/docs/actions/sending-files
  */
-export interface OpenAiFileRef {
+export interface OpenAiFileIdRef {
+    /** HTTPS download URL injected by OpenAI (e.g., files.oaiusercontent.com/...). */
+    readonly download_link: string;
     /** OpenAI file ID (e.g., "file-abc123"). Stored in `social_assets.openai_file_ref`. */
-    readonly fileId: string;
-    /** Pre-signed download URL returned by the GPT when the image was generated. */
-    readonly downloadUrl: string;
+    readonly id?: string;
+    /** Original file name as reported by OpenAI. */
+    readonly name?: string;
+    /** MIME type as reported by OpenAI (e.g., "image/png"). */
+    readonly mime_type?: string;
 }
 
 /**
  * Discriminated union for the GPT image payload.
  *
  * - `public_url`: the GPT provides a direct public URL.
- * - `openai_file_refs`: the GPT provides one or more OpenAI file references,
- *   each of which carries its own pre-signed `downloadUrl`.
+ * - `openai_file_refs`: OpenAI injects one or more file reference objects into
+ *   the `openaiFileIdRefs` property (named EXACTLY `openaiFileIdRefs` to
+ *   trigger OpenAI's automatic injection). Only the first entry is processed.
  *
  * In both modes the backend downloads the bytes and re-uploads to Cloudinary.
  */
@@ -46,8 +56,13 @@ export type GptImagePayload =
       }
     | {
           readonly mode: 'openai_file_refs';
-          /** One or more file references. Only the first entry is processed today. */
-          readonly fileRefs: readonly OpenAiFileRef[];
+          /**
+           * One or more file reference objects injected by OpenAI at runtime.
+           * Named EXACTLY `openaiFileIdRefs` — this triggers OpenAI's automatic
+           * file reference population in Custom GPT Actions.
+           * Only the first entry is processed in phase 1.
+           */
+          readonly openaiFileIdRefs: readonly OpenAiFileIdRef[];
           /** Optional MIME type hint. */
           readonly mimeType?: string;
           /** Optional alt text. */
@@ -123,8 +138,8 @@ const MEDIA_FAILURE_WARNING = 'Media upload failed; manual upload required';
  *
  * ## Responsibilities
  * 1. Detect the image `mode` from the GPT payload (`public_url` | `openai_file_refs`).
- * 2. Extract the download URL (direct for `public_url`; `fileRefs[0].downloadUrl`
- *    for `openai_file_refs`).
+ * 2. Extract the download URL (direct for `public_url`;
+ *    `openaiFileIdRefs[0].download_link` for `openai_file_refs`).
  * 3. Download the image bytes with `fetch()` and a 15-second `AbortController` timeout.
  * 4. Upload the bytes to Cloudinary via the injected `ImageProvider`.
  * 5. Persist a `social_assets` row with the Cloudinary fields + metadata.
@@ -272,7 +287,9 @@ export class SocialImagePipelineService {
      * Extracts the download URL and relevant metadata from the GPT image payload.
      *
      * For `public_url` mode: the URL is taken from `image.url`.
-     * For `openai_file_refs` mode: the URL is taken from `fileRefs[0].downloadUrl`.
+     * For `openai_file_refs` mode: the URL is taken from
+     * `openaiFileIdRefs[0].download_link` and the file ID from
+     * `openaiFileIdRefs[0].id`.
      *
      * @param image - The discriminated-union image payload.
      * @returns Extracted download URL and optional metadata fields.
@@ -291,8 +308,8 @@ export class SocialImagePipelineService {
                 altText: image.altText ?? null
             };
         }
-        // openai_file_refs: use first ref
-        const firstRef = image.fileRefs[0];
+        // openai_file_refs: use first ref — download from download_link
+        const firstRef = image.openaiFileIdRefs[0];
         if (!firstRef) {
             // An empty array is not a valid payload, but we handle it gracefully.
             return {
@@ -303,8 +320,8 @@ export class SocialImagePipelineService {
             };
         }
         return {
-            downloadUrl: firstRef.downloadUrl,
-            openaiFileRef: firstRef.fileId,
+            downloadUrl: firstRef.download_link,
+            openaiFileRef: firstRef.id ?? null,
             mimeType: image.mimeType ?? null,
             altText: image.altText ?? null
         };

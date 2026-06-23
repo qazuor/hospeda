@@ -3287,8 +3287,9 @@
             "required": "El draft id es obligatorio"
         },
         "image": {
-            "fileRefs": {
-                "required": "El file refs es obligatorio"
+            "openaiFileIdRefs": {
+                "required": "Se requiere al menos una referencia de archivo de OpenAI",
+                "invalidUrl": "La URL de descarga de OpenAI no es válida"
             },
             "url": {
                 "invalid": "El url no es válido"
