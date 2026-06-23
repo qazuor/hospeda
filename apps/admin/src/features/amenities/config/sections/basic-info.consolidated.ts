@@ -3,7 +3,11 @@ import type { ConsolidatedSectionConfig } from '@/features/destinations/types/co
 import { AmenitiesTypeEnum, PermissionEnum } from '@repo/schemas';
 
 /**
- * Consolidated configuration for the Basic Info section of amenity
+ * Consolidated configuration for the Basic Info section of amenity.
+ *
+ * SPEC-266: `name` column dropped from the schema — display label is now
+ * resolved at runtime from `@repo/i18n` using `accommodations.amenityNames.<slug>`.
+ * `applicableVerticals` replaces it as a required field (min 1 vertical).
  */
 export const createBasicInfoConsolidatedSection = (): ConsolidatedSectionConfig => ({
     id: 'basic-info',
@@ -16,23 +20,6 @@ export const createBasicInfoConsolidatedSection = (): ConsolidatedSectionConfig 
         edit: [PermissionEnum.AMENITY_UPDATE]
     },
     fields: [
-        {
-            id: 'name',
-            type: FieldTypeEnum.I18N_TEXT,
-            required: true,
-            modes: ['view', 'edit', 'create'],
-            label: 'Nombre',
-            description: 'Nombre de la amenidad en cada idioma (ES / EN / PT)',
-            placeholder: 'Ej: Wi-Fi',
-            permissions: {
-                view: [PermissionEnum.AMENITY_CREATE],
-                edit: [PermissionEnum.AMENITY_UPDATE]
-            },
-            typeConfig: {
-                maxLength: 100,
-                minLength: 2
-            }
-        },
         {
             id: 'slug',
             type: FieldTypeEnum.TEXT,
@@ -130,6 +117,33 @@ export const createBasicInfoConsolidatedSection = (): ConsolidatedSectionConfig 
                     { value: AmenitiesTypeEnum.FAMILY_FRIENDLY, label: 'Familiar' },
                     { value: AmenitiesTypeEnum.WORK_FRIENDLY, label: 'Trabajo' },
                     { value: AmenitiesTypeEnum.GENERAL_APPLIANCES, label: 'Electrodomésticos' }
+                ]
+            }
+        },
+        {
+            /**
+             * SPEC-266: applicableVerticals — which verticals this amenity applies to.
+             * Rendered as a checkbox group via FieldTypeEnum.SELECT_MULTIPLE.
+             * Validated by AmenityCreateInputSchema (min 1 vertical required).
+             */
+            id: 'applicableVerticals',
+            type: FieldTypeEnum.SELECT_MULTIPLE,
+            required: true,
+            modes: ['view', 'edit', 'create'],
+            label: 'Verticales aplicables',
+            description:
+                'Verticales en los que esta amenidad puede usarse (mínimo 1). ' +
+                '"Alojamiento" incluye todas las propiedades de hospedaje; ' +
+                '"Gastronomía" aplica a restaurantes y bares; "Experiencia" a actividades.',
+            permissions: {
+                view: [PermissionEnum.AMENITY_CREATE],
+                edit: [PermissionEnum.AMENITY_UPDATE]
+            },
+            typeConfig: {
+                options: [
+                    { value: 'accommodation', label: 'Alojamiento' },
+                    { value: 'gastronomy', label: 'Gastronomía' },
+                    { value: 'experience', label: 'Experiencia' }
                 ]
             }
         }
