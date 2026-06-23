@@ -75,6 +75,12 @@ export class PlanCatalogMissError extends Error {
 /**
  * Minimal accommodation shape required by the excess helper.
  * Callers map their DB rows to this shape before passing to `getActiveAccommodationsForOwner`.
+ *
+ * SPEC-204 direct cutover: the `media` field is now populated from the relational
+ * `accommodation_media` table (via `findByAccommodations`) in the production
+ * `defaultExcessDeps` implementation. The interface shape is unchanged so that
+ * existing tests can continue injecting their own `media` objects through the DI
+ * contract without modification.
  */
 export interface AccommodationForExcess {
     readonly id: string;
@@ -162,7 +168,7 @@ export interface ComputeDowngradeExcessDeps {
  */
 export const defaultExcessDeps: ComputeDowngradeExcessDeps = {
     async getActiveAccommodationsForOwner(userId: string): Promise<AccommodationForExcess[]> {
-        const { accommodationModel } = await import('@repo/db');
+        const { accommodationModel, accommodationMediaModel } = await import('@repo/db');
         // Query accommodations for the owner: lifecycle=ACTIVE, not deleted.
         // planRestricted items are intentionally included — the service filters them.
         // Using findAll with a large pageSize to get all records (hosts rarely exceed 50).
@@ -170,15 +176,53 @@ export const defaultExcessDeps: ComputeDowngradeExcessDeps = {
             { ownerId: userId, lifecycleState: 'ACTIVE', deletedAt: null },
             { pageSize: 1000 }
         );
-        return (rows.items ?? []).map((a) => ({
-            id: a.id,
-            name: a.name,
-            updatedAt: a.updatedAt,
-            planRestricted: a.planRestricted ?? false,
-            description: a.description ?? '',
-            viewCount: null, // view data not trivially reachable — see spec §3 tiebreaker note
-            media: (a.media as AccommodationForExcess['media']) ?? null
-        }));
+        const items = rows.items ?? [];
+
+        // SPEC-204 direct cutover: read photo counts from the relational
+        // `accommodation_media` table instead of the JSONB `media` blob.
+        //
+        // Semantics preserved (byte-identical to the old JSONB path):
+        //   totalCount = gallery.length + (hasFeaturedImage ? 1 : 0)
+        //   overflowGallery = gallery items beyond gallerySlots (array-head ordering)
+        //
+        // `state: 'visible'` covers both the featured image row AND active gallery
+        // rows (the same definition used by `enforcePhotoLimit` in limit-enforcement.ts
+        // after it was migrated in SPEC-204 T-014).  Within the returned rows, rows
+        // with `isFeatured = true` become `media.featuredImage`; the rest (sorted by
+        // `sortOrder ASC`) become `media.gallery`.  This produces an identical shape
+        // to the old JSONB object, so the excess computation logic is unchanged.
+        //
+        // `findByAccommodations` issues ONE query for all accommodation IDs (no N+1).
+        const accommodationIds = items.map((a) => a.id);
+        const mediaMap =
+            accommodationIds.length > 0
+                ? await accommodationMediaModel.findByAccommodations({
+                      accommodationIds,
+                      state: 'visible'
+                  })
+                : new Map<string, import('@repo/schemas').AccommodationMedia[]>();
+
+        return items.map((a) => {
+            const mediaRows = mediaMap.get(a.id) ?? [];
+            // Rows are already sorted by sort_order ASC (findByAccommodations order guarantee).
+            const featuredRow = mediaRows.find((r) => r.isFeatured);
+            const galleryRows = mediaRows.filter((r) => !r.isFeatured);
+
+            const media: AccommodationForExcess['media'] = {
+                featuredImage: featuredRow ? { url: featuredRow.url } : null,
+                gallery: galleryRows.map((r) => ({ url: r.url }))
+            };
+
+            return {
+                id: a.id,
+                name: a.name,
+                updatedAt: a.updatedAt,
+                planRestricted: a.planRestricted ?? false,
+                description: a.description ?? '',
+                viewCount: null, // view data not trivially reachable — see spec §3 tiebreaker note
+                media
+            };
+        });
     },
 
     async getActivePromotionsForOwner(userId: string): Promise<PromotionForExcess[]> {
