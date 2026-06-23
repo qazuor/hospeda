@@ -365,7 +365,7 @@
             "id": "T-016",
             "title": "Feature x model table + grouped bar chart",
             "description": "Render the by-(feature,model) table and a recharts grouped bar chart (cost per feature, one segment per model) so models can be compared within a feature. Uses formatMicroUsd; chart labels present (color not the only signal).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-014", "T-002"],
             "blocks": ["T-019"],
