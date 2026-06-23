@@ -398,6 +398,141 @@
             }
         }
     },
+    "ai": {
+        "usage": {
+            "title": "Panel de Consumo de IA",
+            "subtitle": "Monitoreá el uso de IA por función, modelo y proveedor. Todos los costos en µUSD (1 USD = 1.000.000 µUSD).",
+            "filter": {
+                "title": "Filtros",
+                "windowMode": "Modo de ventana",
+                "month": "Mes",
+                "dateRange": "Rango de fechas",
+                "year": "Año",
+                "monthLabel": "Mes",
+                "allMonths": "Todos los meses",
+                "from": "Desde (AAAA-MM-DD)",
+                "to": "Hasta (AAAA-MM-DD)",
+                "feature": "Función",
+                "allFeatures": "Todas las funciones",
+                "provider": "Proveedor",
+                "allProviders": "Todos los proveedores",
+                "model": "Modelo",
+                "modelPlaceholder": "ej. gpt-4o-mini",
+                "reset": "Restablecer"
+            },
+            "months": {
+                "1": "Enero",
+                "2": "Febrero",
+                "3": "Marzo",
+                "4": "Abril",
+                "5": "Mayo",
+                "6": "Junio",
+                "7": "Julio",
+                "8": "Agosto",
+                "9": "Septiembre",
+                "10": "Octubre",
+                "11": "Noviembre",
+                "12": "Diciembre"
+            },
+            "features": {
+                "text_improve": "Mejora de texto",
+                "chat": "Chat",
+                "search": "Búsqueda",
+                "support": "Soporte",
+                "translate": "Traducción",
+                "accommodation_import": "Importación de alojamiento",
+                "post_generate": "Generación de publicación"
+            },
+            "providers": {
+                "openai": "OpenAI",
+                "anthropic": "Anthropic",
+                "stub": "Stub (prueba)"
+            },
+            "totals": {
+                "title": "Llamadas totales",
+                "tokensIn": "Tokens de entrada",
+                "tokensOut": "Tokens de salida",
+                "estCost": "Costo estimado",
+                "subtitle": "Solicitudes de IA en la ventana",
+                "subtitleTokensIn": "Tokens de prompt consumidos",
+                "subtitleTokensOut": "Tokens de completado generados",
+                "subtitleCost": "{{total}} tokens totales",
+                "loadError": "No se pudo cargar el resumen de uso.",
+                "loadErrorHint": "Verificá que la API sea accesible y reintentá."
+            },
+            "table": {
+                "colFeature": "Función",
+                "colModel": "Modelo",
+                "colProvider": "Proveedor",
+                "colCalls": "Llamadas",
+                "colTokensIn": "Tokens entrada",
+                "colTokensOut": "Tokens salida",
+                "colEstCost": "Costo est.",
+                "colCostPer1k": "Costo / 1k tokens"
+            },
+            "byFeature": {
+                "title": "Por función",
+                "desc_one": "{{count}} función — ordenado por costo",
+                "desc_other": "{{count}} funciones — ordenado por costo",
+                "loading": "Cargando datos por función…",
+                "loadError": "No se pudo cargar el uso por función.",
+                "loadErrorHint": "Verificá que la API sea accesible y reintentá.",
+                "empty": "Sin uso de funciones para los filtros seleccionados.",
+                "emptyHint": "Ajustá la ventana de tiempo o eliminá filtros para ver datos."
+            },
+            "byModel": {
+                "title": "Por modelo",
+                "desc_one": "{{count}} modelo — ordenado por costo",
+                "desc_other": "{{count}} modelos — ordenado por costo",
+                "loading": "Cargando datos por modelo…",
+                "loadError": "No se pudo cargar el uso por modelo.",
+                "loadErrorHint": "Verificá que la API sea accesible y reintentá.",
+                "empty": "Sin uso de modelos para los filtros seleccionados.",
+                "emptyHint": "Ajustá la ventana de tiempo o eliminá filtros para ver datos."
+            },
+            "byProvider": {
+                "title": "Por proveedor",
+                "desc_one": "{{count}} proveedor — ordenado por costo",
+                "desc_other": "{{count}} proveedores — ordenado por costo",
+                "loading": "Cargando datos por proveedor…",
+                "loadError": "No se pudo cargar el uso por proveedor.",
+                "loadErrorHint": "Verificá que la API sea accesible y reintentá.",
+                "empty": "Sin uso de proveedores para los filtros seleccionados.",
+                "emptyHint": "Ajustá la ventana de tiempo o eliminá filtros para ver datos."
+            },
+            "featureModel": {
+                "tableTitle": "Función × Modelo",
+                "chartTitle": "Costo por función × modelo",
+                "desc_one": "{{count}} par — ordenado por costo",
+                "desc_other": "{{count}} pares — ordenado por costo",
+                "chartDesc_one": "Distribución de costos en {{features}} función y {{models}} modelo",
+                "chartDesc_other": "Distribución de costos en {{features}} funciones y {{models}} modelos",
+                "loading": "Cargando datos función × modelo…",
+                "chartLoading": "Cargando datos del gráfico…",
+                "loadError": "No se pudo cargar el uso por función × modelo.",
+                "chartLoadError": "No se pudo cargar los datos del gráfico.",
+                "loadErrorHint": "Verificá que la API sea accesible y reintentá.",
+                "empty": "Sin uso de función × modelo para los filtros seleccionados.",
+                "chartEmpty": "Sin datos de costo para los filtros seleccionados.",
+                "emptyHint": "Ajustá la ventana de tiempo o eliminá filtros para ver datos.",
+                "legendEstCost": "Costo est. (USD)",
+                "legendCalls": "Llamadas"
+            },
+            "daily": {
+                "title": "Costo diario",
+                "desc_one": "{{count}} día — costo a lo largo del tiempo",
+                "desc_other": "{{count}} días — costo a lo largo del tiempo",
+                "loading": "Cargando datos diarios…",
+                "loadError": "No se pudo cargar el uso diario.",
+                "loadErrorHint": "Verificá que la API sea accesible y reintentá.",
+                "empty": "Sin uso diario para los filtros seleccionados.",
+                "emptyHint": "Ajustá la ventana de tiempo o eliminá filtros para ver el gráfico.",
+                "legendEstCost": "Costo est. (USD)",
+                "legendCalls": "Llamadas",
+                "truncationNotice": "Mostrando los primeros {{shown}} de {{total}} días — reducí la ventana para ver el rango completo."
+            }
+        }
+    },
     "access": {
         "permissions": {
             "categories": {
