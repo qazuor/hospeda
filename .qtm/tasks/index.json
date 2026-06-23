@@ -979,8 +979,11 @@
         {
             "specId": "SPEC-160",
             "title": "Newsletter Engagement Tracking (Open / Click)",
-            "status": "in-progress",
-            "progress": "4/5",
+            "status": "completed",
+            "progress": "5/5",
+            "archived": true,
+            "archivedAt": "2026-06-22",
+            "archiveNote": "Shipped via PR #1776 (merge c298c005a -> staging). 4/5 tasks completed + T-004 cancelled (won't-do: keep pct math client-side). Progress shown full (4 completed + 1 cancelled = all resolved).",
             "path": "SPEC-160-newsletter-engagement-tracking",
             "branch": "spec/SPEC-160-newsletter-engagement-tracking",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-160-newsletter-engagement-tracking",
