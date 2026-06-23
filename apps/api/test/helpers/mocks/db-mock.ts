@@ -301,6 +301,24 @@ export function createDbMock() {
             }
         },
 
+        // Mock AccommodationMediaModel (SPEC-204) — instantiated in the
+        // AccommodationService constructor, so it must exist on the mock or
+        // initApp() fails to load (breaking collection for every route test).
+        AccommodationMediaModel: class MockAccommodationMediaModel {
+            async findByAccommodation(_accommodationId: string) {
+                return { items: [], total: 0 };
+            }
+            async findFeatured(_accommodationId: string) {
+                return null;
+            }
+            async create(_data: unknown, _tx?: unknown) {
+                return null;
+            }
+            async hardDelete(_filters: unknown, _tx?: unknown) {
+                return undefined;
+            }
+        },
+
         // Mock DestinationModel — same module-scope instantiation in reviews.ts.
         DestinationModel: class MockDestinationModel {
             async findById(_id: string) {
