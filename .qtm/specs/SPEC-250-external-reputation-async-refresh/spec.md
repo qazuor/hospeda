@@ -2,7 +2,7 @@
 spec-id: "SPEC-250"
 type: "improvement"
 complexity: high
-status: in-progress
+status: completed
 created: "2026-06-20"
 tags: ["external-reputation", "apify", "cron", "async", "accommodation", "SPEC-237-followup"]
 ---
