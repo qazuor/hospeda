@@ -81,6 +81,9 @@ export function SubscriptionFilters({
                             <option value="expired">
                                 {t('admin-billing.subscriptions.statuses.expired')}
                             </option>
+                            <option value="comp">
+                                {t('admin-billing.subscriptions.statuses.comp')}
+                            </option>
                         </select>
                     </div>
                     <div>

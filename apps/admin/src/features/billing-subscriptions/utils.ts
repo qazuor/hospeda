@@ -38,7 +38,8 @@ export function getStatusVariant(
         cancelled: 'destructive',
         past_due: 'outline',
         expired: 'outline',
-        paused: 'secondary'
+        paused: 'secondary',
+        comp: 'secondary'
     };
     return variantMap[status];
 }
@@ -56,7 +57,8 @@ export function getStatusLabel(
         cancelled: t('admin-billing.subscriptions.statuses.cancelled'),
         past_due: t('admin-billing.subscriptions.statuses.pastDue'),
         expired: t('admin-billing.subscriptions.statuses.expired'),
-        paused: t('admin-billing.subscriptions.statuses.paused')
+        paused: t('admin-billing.subscriptions.statuses.paused'),
+        comp: t('admin-billing.subscriptions.statuses.comp')
     };
     return labels[status];
 }
