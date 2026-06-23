@@ -635,7 +635,7 @@
             "id": "T-028",
             "title": "Write E2E test: owner can edit type + i18n fields and changes persist on public ficha (SPEC-252 harness)",
             "description": "Using the SPEC-252 Playwright E2E harness (apps/e2e/):\n- Sign in as a commerce owner (julieta@local.test or equivalent from SPEC-252 seed).\n- Navigate to /[lang]/mi-cuenta/comercio/[vertical]/[id]/editar.\n- Change the type select to a different value.\n- Fill in the Spanish name in the TranslationPanel (es tab, nameI18n.es).\n- Save the form.\n- Navigate to the public ficha URL.\n- Assert: the type badge reflects the new value; the es locale nameI18n is displayed.\nTag: @p0. Covers AC-1 (persist + appear on public ficha).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-025"],
             "blocks": [],
@@ -651,13 +651,14 @@
                 "created": "2026-06-22T00:00:00.000Z",
                 "started": null,
                 "completed": null
-            }
+            },
+            "completedAt": "2026-06-23"
         },
         {
             "id": "T-029",
             "title": "Write E2E test: owner without COMMERCE_EDIT_OWN gets FORBIDDEN on PATCH updateOwn",
             "description": "Using the SPEC-252 Playwright E2E harness or direct API assertion:\n- Use a USER-role actor (no COMMERCE_EDIT_OWN) to call PATCH /{vertical}/protected/:id (updateOwn endpoint) directly via fetch.\n- Assert HTTP 403 FORBIDDEN response.\n- Also assert: a COMMERCE_OWNER actor WITH COMMERCE_EDIT_OWN gets HTTP 200.\n- Assert: a staff actor with COMMERCE_EDIT_ALL gets HTTP 200.\nTag: @p0. Covers AC-2 (permission gate).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-006", "T-007"],
             "blocks": [],
@@ -673,13 +674,14 @@
                 "created": "2026-06-22T00:00:00.000Z",
                 "started": null,
                 "completed": null
-            }
+            },
+            "completedAt": "2026-06-23"
         },
         {
             "id": "T-030",
             "title": "Write E2E test: contact has no website field; social includes linkedIn",
             "description": "Using the SPEC-252 Playwright E2E harness:\n- Navigate to the owner editor for a commerce listing.\n- Assert: no input with label/aria-label 'Sitio Web' or id 'website' in the contact section.\n- Assert: an input for 'LinkedIn' is present in the social section and can be filled.\n- Save with a linkedIn value; reload; assert the value persists.\nTag: @p0. Covers AC-4.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-020"],
             "blocks": [],
@@ -695,13 +697,14 @@
                 "created": "2026-06-22T00:00:00.000Z",
                 "started": null,
                 "completed": null
-            }
+            },
+            "completedAt": "2026-06-23"
         },
         {
             "id": "T-031",
             "title": "Final typecheck + full test run across affected packages",
             "description": "Run across all affected packages to confirm zero regressions:\n- pnpm typecheck (packages/schemas, packages/service-core, apps/api, apps/admin, apps/web)\n- pnpm test (vitest, all affected packages)\n- pnpm lint\nFix any remaining TypeScript errors from the enum removal (the dist/ files will be stale — ensure a fresh build of packages/schemas before running dependent package tests).\nBlock: all prior tasks (T-001..T-030) should be complete.\nAcceptance: zero TS errors, zero test failures, biome lint clean.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [
                 "T-002",
@@ -732,7 +735,8 @@
                 "created": "2026-06-22T00:00:00.000Z",
                 "started": null,
                 "completed": null
-            }
+            },
+            "completedAt": "2026-06-23"
         }
     ]
 }
