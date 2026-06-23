@@ -454,6 +454,12 @@ export interface AggregateAiUsageByModelInput {
      * When omitted, aggregates across all providers.
      */
     readonly provider?: string;
+    /**
+     * Filter to a specific user (UUID).
+     * When omitted, aggregates across all users.
+     * Owner decision (OQ#1, 2026-06-22): API-level passthrough for debugging.
+     */
+    readonly userId?: string;
     /** Optional Drizzle transaction client (falls back to `getDb()`). */
     readonly tx?: DrizzleClient;
 }
@@ -495,10 +501,10 @@ export interface AiUsageByModelAggRow {
 export async function aggregateAiUsageByModel(
     input: AggregateAiUsageByModelInput
 ): Promise<ReadonlyArray<AiUsageByModelAggRow>> {
-    const { since, until, feature, provider, tx } = input;
+    const { since, until, feature, provider, userId, tx } = input;
     const db = tx ?? getDb();
 
-    const conditions = buildConditions({ since, until, feature, provider });
+    const conditions = buildConditions({ since, until, feature, provider, userId });
 
     const rows = await db
         .select({
@@ -545,6 +551,12 @@ export interface AggregateAiUsageByProviderInput {
      * When omitted, aggregates across all features.
      */
     readonly feature?: string;
+    /**
+     * Filter to a specific user (UUID).
+     * When omitted, aggregates across all users.
+     * Owner decision (OQ#1, 2026-06-22): API-level passthrough for debugging.
+     */
+    readonly userId?: string;
     /** Optional Drizzle transaction client (falls back to `getDb()`). */
     readonly tx?: DrizzleClient;
 }
@@ -586,10 +598,10 @@ export interface AiUsageByProviderAggRow {
 export async function aggregateAiUsageByProvider(
     input: AggregateAiUsageByProviderInput
 ): Promise<ReadonlyArray<AiUsageByProviderAggRow>> {
-    const { since, until, feature, tx } = input;
+    const { since, until, feature, userId, tx } = input;
     const db = tx ?? getDb();
 
-    const conditions = buildConditions({ since, until, feature });
+    const conditions = buildConditions({ since, until, feature, userId });
 
     const rows = await db
         .select({
@@ -631,6 +643,12 @@ export interface AggregateAiUsageByFeatureModelInput {
      * When omitted, the query covers all rows from `since` (or all rows).
      */
     readonly until?: Date;
+    /**
+     * Filter to a specific user (UUID).
+     * When omitted, aggregates across all users.
+     * Owner decision (OQ#1, 2026-06-22): API-level passthrough for debugging.
+     */
+    readonly userId?: string;
     /** Optional Drizzle transaction client (falls back to `getDb()`). */
     readonly tx?: DrizzleClient;
 }
@@ -675,10 +693,10 @@ export interface AiUsageByFeatureModelAggRow {
 export async function aggregateAiUsageByFeatureModel(
     input: AggregateAiUsageByFeatureModelInput
 ): Promise<ReadonlyArray<AiUsageByFeatureModelAggRow>> {
-    const { since, until, tx } = input;
+    const { since, until, userId, tx } = input;
     const db = tx ?? getDb();
 
-    const conditions = buildConditions({ since, until });
+    const conditions = buildConditions({ since, until, userId });
 
     const rows = await db
         .select({
@@ -737,6 +755,12 @@ export interface AggregateAiUsageDailyInput {
      * When omitted, aggregates across all providers.
      */
     readonly provider?: string;
+    /**
+     * Filter to a specific user (UUID).
+     * When omitted, aggregates across all users.
+     * Owner decision (OQ#1, 2026-06-22): API-level passthrough for debugging.
+     */
+    readonly userId?: string;
     /** Optional Drizzle transaction client (falls back to `getDb()`). */
     readonly tx?: DrizzleClient;
 }
@@ -785,10 +809,10 @@ export interface AiUsageDailyAggRow {
 export async function aggregateAiUsageDaily(
     input: AggregateAiUsageDailyInput
 ): Promise<ReadonlyArray<AiUsageDailyAggRow>> {
-    const { since, until, feature, model, provider, tx } = input;
+    const { since, until, feature, model, provider, userId, tx } = input;
     const db = tx ?? getDb();
 
-    const conditions = buildConditions({ since, until, feature, model, provider });
+    const conditions = buildConditions({ since, until, feature, model, provider, userId });
 
     const rows = await db
         .select({

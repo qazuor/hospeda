@@ -240,6 +240,13 @@ export interface GetUsageByModelInput {
      * When omitted, aggregates across all providers.
      */
     readonly provider?: string;
+    /**
+     * Narrow results to a specific user (UUID).
+     * Optional API-level filter for debugging / per-user reusability.
+     * When omitted, aggregates across all users (default behavior).
+     * Owner decision (OQ#1, 2026-06-22): no UI surface, passthrough only.
+     */
+    readonly userId?: string;
 }
 
 /**
@@ -269,7 +276,8 @@ export async function getUsageByModel(
     const rows = await aggregateAiUsageByModel({
         ...resolvedWindow,
         feature: input.feature,
-        provider: input.provider
+        provider: input.provider,
+        userId: input.userId
     });
     return rows as readonly AiUsageByModelRow[];
 }
@@ -307,6 +315,13 @@ export interface GetUsageByProviderInput {
      * When omitted, aggregates across all features.
      */
     readonly feature?: string;
+    /**
+     * Narrow results to a specific user (UUID).
+     * Optional API-level filter for debugging / per-user reusability.
+     * When omitted, aggregates across all users (default behavior).
+     * Owner decision (OQ#1, 2026-06-22): no UI surface, passthrough only.
+     */
+    readonly userId?: string;
 }
 
 /**
@@ -331,7 +346,8 @@ export async function getUsageByProvider(
     const resolvedWindow = resolveWindow(input);
     const rows = await aggregateAiUsageByProvider({
         ...resolvedWindow,
-        feature: input.feature
+        feature: input.feature,
+        userId: input.userId
     });
     return rows as readonly AiUsageByProviderRow[];
 }
@@ -364,6 +380,13 @@ export interface GetUsageByFeatureModelInput {
      * Used when `year`/`month` are not provided.
      */
     readonly until?: Date;
+    /**
+     * Narrow results to a specific user (UUID).
+     * Optional API-level filter for debugging / per-user reusability.
+     * When omitted, aggregates across all users (default behavior).
+     * Owner decision (OQ#1, 2026-06-22): no UI surface, passthrough only.
+     */
+    readonly userId?: string;
 }
 
 /**
@@ -390,7 +413,10 @@ export async function getUsageByFeatureModel(
     input: GetUsageByFeatureModelInput
 ): Promise<readonly AiUsageByFeatureModelRow[]> {
     const resolvedWindow = resolveWindow(input);
-    const rows = await aggregateAiUsageByFeatureModel(resolvedWindow);
+    const rows = await aggregateAiUsageByFeatureModel({
+        ...resolvedWindow,
+        userId: input.userId
+    });
     return rows as readonly AiUsageByFeatureModelRow[];
 }
 
@@ -437,6 +463,13 @@ export interface GetDailyUsageInput {
      * When omitted, aggregates across all providers.
      */
     readonly provider?: string;
+    /**
+     * Narrow results to a specific user (UUID).
+     * Optional API-level filter for debugging / per-user reusability.
+     * When omitted, aggregates across all users (default behavior).
+     * Owner decision (OQ#1, 2026-06-22): no UI surface, passthrough only.
+     */
+    readonly userId?: string;
 }
 
 /**
@@ -475,7 +508,8 @@ export async function getDailyUsage(
         ...resolvedWindow,
         feature: input.feature,
         model: input.model,
-        provider: input.provider
+        provider: input.provider,
+        userId: input.userId
     });
 
     // Build a lookup map from day string to storage row for O(1) access.
