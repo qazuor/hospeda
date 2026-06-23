@@ -1221,30 +1221,42 @@ export class AccommodationService extends BaseCrudService<
                     validatedActor.id
                 );
 
-                const processedData = await this._beforeCreate(
-                    domainInput,
-                    validatedActor,
-                    execCtx
-                );
-
-                const payload = {
-                    ...domainInput,
-                    ...processedData,
-                    ownerId: validatedActor.id,
-                    lifecycleState: LifecycleStatusEnum.DRAFT,
-                    lastWarnedAt: null,
-                    createdById: validatedActor.id,
-                    updatedById: validatedActor.id
-                } as Partial<Accommodation>;
-
-                // Wrap the draft insert AND the USER -> HOST role promotion in
-                // a single short transaction. Promoting at draft creation
-                // (rather than at first publish) is required so the owner can
-                // access the admin panel right away (`ACCESS_PANEL_ADMIN` is
-                // granted to HOST). The trial subscription is still deferred
-                // to the first publish — see `publish()`.
+                // Wrap the draft insert, slug generation, amenity junction sync,
+                // and USER -> HOST role promotion in a single short transaction.
+                //
+                // _beforeCreate is called INSIDE the transaction (not before it) so
+                // that ctx.hookState.pendingAmenityIds is captured into the same
+                // txCtx that _afterCreate reads from. Calling _beforeCreate outside
+                // the transaction would write hookState into execCtx, but _afterCreate
+                // is called with txCtx (a separate ServiceContext), so the junction
+                // data would be silently lost — amenities would never be synced.
+                // (SPEC-258 B-API fix)
+                //
+                // Promoting at draft creation (rather than at first publish) is
+                // required so the owner can access the admin panel right away
+                // (`ACCESS_PANEL_ADMIN` is granted to HOST). The trial subscription
+                // is still deferred to the first publish — see `publish()`.
                 const result = await withServiceTransaction(
                     async (txCtx) => {
+                        // Run _beforeCreate inside the tx so that hookState mutations
+                        // (pendingAmenityIds, pendingFeatureIds, slug) are visible to
+                        // _afterCreate which runs in the same txCtx.
+                        const processedData = await this._beforeCreate(
+                            domainInput,
+                            validatedActor,
+                            txCtx
+                        );
+
+                        const payload = {
+                            ...domainInput,
+                            ...processedData,
+                            ownerId: validatedActor.id,
+                            lifecycleState: LifecycleStatusEnum.DRAFT,
+                            lastWarnedAt: null,
+                            createdById: validatedActor.id,
+                            updatedById: validatedActor.id
+                        } as Partial<Accommodation>;
+
                         const next = await this.model.create(payload, txCtx.tx);
                         if (!next) {
                             throw new ServiceError(
@@ -1264,8 +1276,9 @@ export class AccommodationService extends BaseCrudService<
                             );
                         }
                         // Run _afterCreate INSIDE the transaction so that role
-                        // promotion + media shadow-writes are atomic. If either
-                        // throws, the whole tx rolls back (FIX 2, SPEC-204).
+                        // promotion + amenity junction sync + media shadow-writes
+                        // are all atomic. If any step throws, the whole tx rolls
+                        // back (FIX 2, SPEC-204; extended by SPEC-258 B-API).
                         const after = await this._afterCreate(next, validatedActor, txCtx);
                         return after;
                     },

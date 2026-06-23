@@ -5,20 +5,24 @@
  *
  * Validates the three terminal states (`created`, `resumed`, `already_host`),
  * the idempotency contract (one DRAFT per USER), the privileged-role short-circuit,
- * and the defense-in-depth `ownerId = actor.id` override.
+ * the defense-in-depth `ownerId = actor.id` override, and the SPEC-258 B-API
+ * expansion: import-provided fields (capacity, location, price, contactInfo,
+ * amenityIds) are persisted in the draft and amenities are synced transactionally.
  */
 
-import type { AccommodationModel, UserModel } from '@repo/db';
+import type { AccommodationModel, RAccommodationAmenityModel, UserModel } from '@repo/db';
 import {
     AccommodationTypeEnum,
     DestinationTypeEnum,
     LifecycleStatusEnum,
+    PriceCurrencyEnum,
     RoleEnum,
     ServiceErrorCode
 } from '@repo/schemas';
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as helpers from '../../../src/services/accommodation/accommodation.helpers';
+import * as junctionSync from '../../../src/services/accommodation/accommodation.junction-sync';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import { createMockAccommodation } from '../../factories/accommodationFactory';
 import { createActor, createHostActor, createSuperAdminActor } from '../../factories/actorFactory';
@@ -37,6 +41,7 @@ vi.mock('../../../src/utils/transaction.js', () => ({
     })
 }));
 
+/** Minimal required draft input (name / summary / type / destinationId). */
 const VALID_DRAFT_INPUT = {
     name: 'Casa frente al rio',
     summary: 'Una casa amplia con vista al rio Uruguay y mucho parque',
@@ -45,6 +50,36 @@ const VALID_DRAFT_INPUT = {
     type: AccommodationTypeEnum.CABIN,
     destinationId: '8d8fe2db-2f7f-4a9b-8f3a-1234567890ab'
 } as const;
+
+/**
+ * Extended draft input that includes all optional import-provided fields
+ * introduced by SPEC-258 B-API (capacity, location, price, contactInfo, amenityIds).
+ * Not marked `as const` so `amenityIds` stays `string[]` (matches Zod schema type).
+ */
+const VALID_DRAFT_INPUT_WITH_IMPORT_DATA = {
+    ...VALID_DRAFT_INPUT,
+    // capacity
+    maxGuests: 6,
+    bedrooms: 3,
+    bathrooms: 2,
+    beds: 4,
+    // price
+    basePrice: 120,
+    currency: PriceCurrencyEnum.ARS,
+    // location
+    latitude: -32.4854,
+    longitude: -58.2357,
+    street: 'Calle Falsa',
+    number: '123',
+    // contact
+    phone: '+5493442123456',
+    website: 'https://casafrentealrio.com',
+    // amenities (mutable array — schema expects string[], not readonly)
+    amenityIds: [
+        'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+        'b2c3d4e5-f6a7-8901-bcde-f12345678901'
+    ] as string[]
+};
 
 function createUserModelMock(): UserModel {
     return createModelMock() as unknown as UserModel;
@@ -70,6 +105,19 @@ function buildService(
     // @ts-expect-error: override for test
     service._destinationModel = {
         findById: vi.fn().mockResolvedValue({ destinationType: DestinationTypeEnum.CITY })
+    };
+    // Stub amenity models so syncAmenityJunction does not throw when called
+    // with the fake transaction context. The junction sync itself is tested
+    // via the spy on the exported function.
+    // @ts-expect-error: override internal for test isolation
+    service._rAmenityModel = {
+        findAll: vi.fn().mockResolvedValue({ items: [] }),
+        create: vi.fn().mockResolvedValue(undefined),
+        hardDelete: vi.fn().mockResolvedValue(undefined)
+    } as unknown as RAccommodationAmenityModel;
+    // @ts-expect-error: override internal for test isolation
+    service._amenityModel = {
+        findById: vi.fn().mockResolvedValue({ id: 'amenity-exists' })
     };
     return service;
 }
@@ -302,6 +350,196 @@ describe('AccommodationService.createForOnboarding', () => {
             expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
             expect(result.error?.message).toMatch(/CITY/);
             expect(accommodationModel.create).not.toHaveBeenCalled();
+        });
+
+        it('returns VALIDATION_ERROR when amenityIds contains a non-UUID', async () => {
+            // Arrange
+            const actor = createActor({ id: 'user-008' });
+            // Act
+            const result = await service.createForOnboarding(actor, {
+                ...VALID_DRAFT_INPUT,
+                amenityIds: ['not-a-uuid']
+            });
+            // Assert
+            expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+            expect(accommodationModel.create).not.toHaveBeenCalled();
+        });
+
+        it('returns VALIDATION_ERROR when website URL is invalid', async () => {
+            // Arrange
+            const actor = createActor({ id: 'user-009' });
+            // Act
+            const result = await service.createForOnboarding(actor, {
+                ...VALID_DRAFT_INPUT,
+                website: 'not-a-valid-url'
+            });
+            // Assert
+            expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // SPEC-258 B-API — import-provided optional fields
+    // -------------------------------------------------------------------------
+
+    describe('SPEC-258 B-API: import-provided optional fields are persisted', () => {
+        beforeEach(() => {
+            asMock(userModel.findById as Mock).mockResolvedValue({
+                id: 'user-import',
+                role: RoleEnum.USER
+            });
+            (accommodationModel.findOne as Mock).mockResolvedValue(null);
+        });
+
+        it('persists extraInfo (capacity/bedrooms/bathrooms/beds) when provided', async () => {
+            // Arrange
+            const actor = createActor({ id: 'user-import' });
+            const created = createMockAccommodation({ id: 'acc-import', ownerId: 'user-import' });
+            (accommodationModel.create as Mock).mockResolvedValue(created);
+
+            // Act
+            const result = await service.createForOnboarding(
+                actor,
+                VALID_DRAFT_INPUT_WITH_IMPORT_DATA
+            );
+
+            // Assert
+            expect(result.error).toBeUndefined();
+            const payload = (accommodationModel.create as Mock).mock.calls[0]?.[0];
+            expect(payload.extraInfo).toBeDefined();
+            expect(payload.extraInfo.capacity).toBe(6);
+            expect(payload.extraInfo.bedrooms).toBe(3);
+            expect(payload.extraInfo.bathrooms).toBe(2);
+            expect(payload.extraInfo.beds).toBe(4);
+        });
+
+        it('persists price (basePrice/currency) when provided', async () => {
+            // Arrange
+            const actor = createActor({ id: 'user-import' });
+            const created = createMockAccommodation({ id: 'acc-import', ownerId: 'user-import' });
+            (accommodationModel.create as Mock).mockResolvedValue(created);
+
+            // Act
+            await service.createForOnboarding(actor, VALID_DRAFT_INPUT_WITH_IMPORT_DATA);
+
+            // Assert
+            const payload = (accommodationModel.create as Mock).mock.calls[0]?.[0];
+            expect(payload.price).toBeDefined();
+            expect(payload.price.price).toBe(120);
+            expect(payload.price.currency).toBe(PriceCurrencyEnum.ARS);
+        });
+
+        it('persists location (coordinates/street/number) when provided', async () => {
+            // Arrange
+            const actor = createActor({ id: 'user-import' });
+            const created = createMockAccommodation({ id: 'acc-import', ownerId: 'user-import' });
+            (accommodationModel.create as Mock).mockResolvedValue(created);
+
+            // Act
+            await service.createForOnboarding(actor, VALID_DRAFT_INPUT_WITH_IMPORT_DATA);
+
+            // Assert
+            const payload = (accommodationModel.create as Mock).mock.calls[0]?.[0];
+            expect(payload.location).toBeDefined();
+            expect(payload.location.coordinates.lat).toBe('-32.4854');
+            expect(payload.location.coordinates.long).toBe('-58.2357');
+            expect(payload.location.street).toBe('Calle Falsa');
+            expect(payload.location.number).toBe('123');
+        });
+
+        it('persists contactInfo (phone/website) when provided', async () => {
+            // Arrange
+            const actor = createActor({ id: 'user-import' });
+            const created = createMockAccommodation({ id: 'acc-import', ownerId: 'user-import' });
+            (accommodationModel.create as Mock).mockResolvedValue(created);
+
+            // Act
+            await service.createForOnboarding(actor, VALID_DRAFT_INPUT_WITH_IMPORT_DATA);
+
+            // Assert
+            const payload = (accommodationModel.create as Mock).mock.calls[0]?.[0];
+            expect(payload.contactInfo).toBeDefined();
+            expect(payload.contactInfo.mobilePhone).toBe('+5493442123456');
+            expect(payload.contactInfo.website).toBe('https://casafrentealrio.com');
+        });
+
+        it('calls syncAmenityJunction when amenityIds are provided', async () => {
+            // Arrange
+            const actor = createActor({ id: 'user-import' });
+            const created = createMockAccommodation({ id: 'acc-import', ownerId: 'user-import' });
+            (accommodationModel.create as Mock).mockResolvedValue(created);
+
+            // Spy on the exported syncAmenityJunction so we can verify it is called
+            // with the correct arguments without needing a real database connection.
+            const syncSpy = vi
+                .spyOn(junctionSync, 'syncAmenityJunction')
+                .mockResolvedValue(undefined);
+
+            // Act
+            const result = await service.createForOnboarding(
+                actor,
+                VALID_DRAFT_INPUT_WITH_IMPORT_DATA
+            );
+
+            // Assert
+            expect(result.error).toBeUndefined();
+            expect(syncSpy).toHaveBeenCalledTimes(1);
+            const syncCall = syncSpy.mock.calls[0]?.[0];
+            expect(syncCall?.accommodationId).toBe('acc-import');
+            expect(syncCall?.amenityIds).toEqual([
+                'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+                'b2c3d4e5-f6a7-8901-bcde-f12345678901'
+            ]);
+            expect(syncCall?.tx).toBeDefined();
+        });
+
+        it('does NOT call syncAmenityJunction when amenityIds are absent', async () => {
+            // Arrange
+            const actor = createActor({ id: 'user-import' });
+            const created = createMockAccommodation({ id: 'acc-import', ownerId: 'user-import' });
+            (accommodationModel.create as Mock).mockResolvedValue(created);
+
+            const syncSpy = vi
+                .spyOn(junctionSync, 'syncAmenityJunction')
+                .mockResolvedValue(undefined);
+
+            // Act — minimal payload without amenityIds
+            await service.createForOnboarding(actor, VALID_DRAFT_INPUT);
+
+            // Assert
+            expect(syncSpy).not.toHaveBeenCalled();
+        });
+
+        it('still works correctly with just the minimal required fields (regression)', async () => {
+            // Arrange
+            const actor = createActor({ id: 'user-minimal' });
+            asMock(userModel.findById as Mock).mockResolvedValue({
+                id: 'user-minimal',
+                role: RoleEnum.USER
+            });
+            (accommodationModel.findOne as Mock).mockResolvedValue(null);
+            const created = createMockAccommodation({
+                id: 'acc-minimal',
+                ownerId: 'user-minimal',
+                lifecycleState: LifecycleStatusEnum.DRAFT
+            });
+            (accommodationModel.create as Mock).mockResolvedValue(created);
+
+            // Act
+            const result = await service.createForOnboarding(actor, VALID_DRAFT_INPUT);
+
+            // Assert
+            expect(result.error).toBeUndefined();
+            expect(result.data?.status).toBe('created');
+            const payload = (accommodationModel.create as Mock).mock.calls[0]?.[0];
+            // These optional JSONB fields are absent when not provided
+            expect(payload.extraInfo).toBeUndefined();
+            expect(payload.location).toBeUndefined();
+            expect(payload.price).toBeUndefined();
+            expect(payload.contactInfo).toBeUndefined();
+            // Required forced fields are still set
+            expect(payload.lifecycleState).toBe(LifecycleStatusEnum.DRAFT);
+            expect(payload.ownerId).toBe('user-minimal');
         });
     });
 });

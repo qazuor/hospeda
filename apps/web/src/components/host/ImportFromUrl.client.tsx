@@ -31,13 +31,27 @@ export type ImportFromUrlProps = {
      * used standalone.
      */
     readonly onImported?: (response: AccommodationImportResponse) => void;
+    /**
+     * Called immediately before the import API call is fired (SPEC-258 A7).
+     * Receives the detected source string (from the submitted URL) — or
+     * `'unknown'` when the URL has not been inspected yet.
+     * Optional so the island can be used standalone.
+     */
+    readonly onAttempt?: (source: string) => void;
+    /**
+     * Called when the import API call fails or returns a non-ok response
+     * (SPEC-258 A7). Receives `'unknown'` as source since the response may
+     * not carry the detected platform on failure.
+     * Optional so the island can be used standalone.
+     */
+    readonly onError?: (source: string) => void;
 };
 
 /**
  * Renders the import-from-URL form: a URL input, a required legal-confirmation
  * checkbox, and a submit button gated on that checkbox.
  */
-export function ImportFromUrl({ locale, onImported }: ImportFromUrlProps) {
+export function ImportFromUrl({ locale, onImported, onAttempt, onError }: ImportFromUrlProps) {
     const { t } = createTranslations(locale);
     const urlInputId = useId();
     const legalCheckboxId = useId();
@@ -82,9 +96,12 @@ export function ImportFromUrl({ locale, onImported }: ImportFromUrlProps) {
         }
 
         setIsSubmitting(true);
+        // A7: fire attempt event before the API call
+        onAttempt?.('unknown');
         try {
             const result = await accommodationsImportApi.importFromUrl(parsed.data);
             if (!result.ok) {
+                onError?.('unknown');
                 setError(
                     t(
                         'host.importFromUrl.errors.submit',
@@ -101,6 +118,7 @@ export function ImportFromUrl({ locale, onImported }: ImportFromUrlProps) {
             webLogger.error('ImportFromUrl: import request failed', {
                 err: err instanceof Error ? err.message : String(err)
             });
+            onError?.('unknown');
             setError(
                 t('host.importFromUrl.errors.network', 'No pudimos conectar con el servidor.')
             );

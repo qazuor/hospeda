@@ -340,9 +340,45 @@
     },
     "miniForm": {
         "fields": {
+            "name": "Nome da acomodação",
+            "summary": "Descrição curta",
+            "summaryHint": "Uma frase de apresentação. Você pode expandir tudo no painel depois.",
             "type": "Tipo de acomodação",
-            "typePlaceholder": "Escolha uma opção"
+            "typePlaceholder": "Escolha uma opção",
+            "typeEmpty": "Nenhum tipo encontrado"
         },
+        "importedExtras": {
+            "sectionTitle": "O que importamos",
+            "fields": {
+                "description": "Descrição completa",
+                "maxGuests": "Hóspedes máx.",
+                "bedrooms": "Quartos",
+                "beds": "Camas",
+                "bathrooms": "Banheiros",
+                "basePrice": "Preço base por noite",
+                "street": "Rua",
+                "number": "Número",
+                "phone": "Telefone",
+                "website": "Site",
+                "coordinatesLabel": "Localização importada",
+                "amenitiesCount": "{{count}} comodidades importadas"
+            }
+        },
+        "errors": {
+            "name": "O nome deve ter pelo menos 3 caracteres.",
+            "summary": "A descrição curta deve ter pelo menos 10 caracteres.",
+            "type": "Escolha o tipo de acomodação.",
+            "destinationId": "Escolha a cidade onde está sua acomodação.",
+            "serviceUnavailable": "Não conseguimos contactar o serviço de cobrança agora. Tente novamente em um minuto.",
+            "submit": "Não conseguimos criar a acomodação. Tente novamente.",
+            "missingId": "Não recebemos o ID da acomodação criada. Tente novamente.",
+            "network": "Não conseguimos conectar ao servidor. Verifique sua conexão e tente novamente."
+        },
+        "actions": {
+            "submit": "Criar e continuar no painel",
+            "submitting": "Criando..."
+        },
+        "disclaimer": "Vamos criar um rascunho com esses dados. Depois te levamos ao painel para completar fotos, preços e mais.",
         "types": {
             "APARTMENT": "Apartamento",
             "HOUSE": "Casa",
