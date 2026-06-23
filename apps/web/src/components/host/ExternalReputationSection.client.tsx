@@ -3,7 +3,13 @@
  * @description Owner-facing section inside the AccommodationEditor for managing
  * external platform listings and triggering reputation refreshes (SPEC-237 T-013).
  *
- * Provides:
+ * SPEC-250 Phase 7 additions:
+ *  - Polls `GET /external-reputation/status` while async Apify runs are in flight.
+ *  - Renders per-platform status chips (pending/running/ok/error).
+ *  - Disables the refresh button while any platform has runStatus != 'idle' (OQ-4).
+ *  - Handles 202 (async enqueued) vs 200 (all inline) from the refresh endpoint.
+ *
+ * Original (SPEC-237 T-013):
  *  - Master toggle (showExternalReputation on/off)
  *  - "Add listing" form: platform select, URL, showLink/showReviews checkboxes
  *  - Per-listing row with PATCH (showLink/showReviews toggles) and DELETE
@@ -11,11 +17,15 @@
  *  - Always-visible Google-only explainer note
  */
 
+import { PlatformStatusChips } from '@/components/host/PlatformStatusChips';
+import type { PlatformStatusEntry } from '@/components/host/PlatformStatusChips';
 import { Spinner } from '@/components/shared/feedback/Spinner';
+import { useReputationStatus } from '@/hooks/use-reputation-status';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import styles from './ExternalReputationSection.module.css';
+import chipStyles from './ReputationStatus.module.css';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -110,6 +120,22 @@ export function ExternalReputationSection({
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [refreshError, setRefreshError] = useState<string | null>(null);
     const [rateLimitMinutes, setRateLimitMinutes] = useState<number | null>(null);
+    /**
+     * Whether the last refresh triggered an async enqueue (202) or resolved
+     * fully inline (200). Drives whether polling should be active.
+     */
+    const [asyncRefreshPending, setAsyncRefreshPending] = useState(false);
+    /** Brief feedback message after a refresh action (enqueued / inline success). */
+    const [refreshFeedback, setRefreshFeedback] = useState<'enqueued' | 'inlineSuccess' | null>(
+        null
+    );
+
+    // --- Status polling (SPEC-250 Phase 7) ---
+    const {
+        platforms: statusPlatforms,
+        allSettled,
+        error: statusError
+    } = useReputationStatus(accommodationId, asyncRefreshPending);
 
     // --- Master toggle state ---
     const [isTogglingMaster, setIsTogglingMaster] = useState(false);
@@ -265,6 +291,7 @@ export function ExternalReputationSection({
         setIsRefreshing(true);
         setRefreshError(null);
         setRateLimitMinutes(null);
+        setRefreshFeedback(null);
         try {
             const res = await fetch(
                 `${PROTECTED}/accommodations/${accommodationId}/external-reputation/refresh`,
@@ -276,7 +303,15 @@ export function ExternalReputationSection({
             if (res.status === 429) {
                 const minutes = retryAfterMinutes(res.headers.get('Retry-After'));
                 setRateLimitMinutes(minutes);
+            } else if (res.status === 202) {
+                // Async enqueue: Apify runs started in background — begin polling.
+                setAsyncRefreshPending(true);
+                setRefreshFeedback('enqueued');
+                await loadListings();
             } else if (res.ok) {
+                // All resolved inline (e.g. Google-only accommodation).
+                setAsyncRefreshPending(false);
+                setRefreshFeedback('inlineSuccess');
                 await loadListings();
             } else {
                 setRefreshError(
@@ -298,6 +333,13 @@ export function ExternalReputationSection({
         }
     }, [accommodationId, loadListings, t]);
 
+    // Stop polling once all platforms have settled.
+    useEffect(() => {
+        if (allSettled && asyncRefreshPending) {
+            setAsyncRefreshPending(false);
+        }
+    }, [allSettled, asyncRefreshPending]);
+
     // ---------------------------------------------------------------------------
     // Render helpers
     // ---------------------------------------------------------------------------
@@ -310,6 +352,20 @@ export function ExternalReputationSection({
             ),
         [t]
     );
+
+    /** Entries for PlatformStatusChips, built from the status polling data. */
+    const platformStatusEntries = useMemo<readonly PlatformStatusEntry[]>(() => {
+        return Object.entries(statusPlatforms).flatMap(([platform, status]) => {
+            if (status === undefined) return [];
+            return [
+                {
+                    platform,
+                    label: platformLabel(platform as ExternalPlatform),
+                    status
+                }
+            ];
+        });
+    }, [statusPlatforms, platformLabel]);
 
     // ---------------------------------------------------------------------------
     // Render
@@ -557,13 +613,48 @@ export function ExternalReputationSection({
                 </button>
             </div>
 
+            {/* Per-platform async run status chips (SPEC-250 Phase 7) */}
+            {platformStatusEntries.length > 0 && (
+                <PlatformStatusChips
+                    locale={locale}
+                    platforms={platformStatusEntries}
+                />
+            )}
+
+            {/* Status polling error (4xx/5xx from status endpoint) */}
+            {statusError && (
+                <div
+                    className={styles.errorBanner}
+                    role="alert"
+                >
+                    {t(
+                        'external-reputation.errors.statusFailed',
+                        'No se pudo obtener el estado de actualización.'
+                    )}
+                </div>
+            )}
+
+            {/* Async refresh feedback (enqueued / inline success) */}
+            {refreshFeedback === 'enqueued' && (
+                <div className={`${chipStyles.refreshStatus} ${chipStyles.refreshStatusEnqueued}`}>
+                    {t('external-reputation.refresh.enqueued', 'Actualizando en segundo plano...')}
+                </div>
+            )}
+            {refreshFeedback === 'inlineSuccess' && (
+                <div className={`${chipStyles.refreshStatus} ${chipStyles.refreshStatusSuccess}`}>
+                    {t('external-reputation.refresh.inlineSuccess', 'Actualizado')}
+                </div>
+            )}
+
             {/* Refresh button + last updated + rate-limit message */}
             <div className={styles.refreshRow}>
                 <button
                     type="button"
                     className={styles.refreshButton}
                     onClick={() => void handleRefresh()}
-                    disabled={isRefreshing}
+                    disabled={isRefreshing || !allSettled}
+                    aria-disabled={isRefreshing || !allSettled}
+                    data-testid="refresh-button"
                 >
                     {t('external-reputation.ownerConfig.refresh', 'Actualizar reseñas')}
                 </button>

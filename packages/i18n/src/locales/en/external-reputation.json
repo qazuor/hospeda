@@ -44,6 +44,18 @@
     "errors": {
         "fetchFailed": "Could not load external reviews. Please try again later.",
         "notFound": "No reputation data found for this platform.",
-        "blocked": "Access to this platform's data has been temporarily blocked."
+        "blocked": "Access to this platform's data has been temporarily blocked.",
+        "statusFailed": "Could not retrieve the update status."
+    },
+    "status": {
+        "pending": "Updating...",
+        "running": "Processing...",
+        "error": "Failed",
+        "blocked": "Blocked",
+        "notFound": "Not found"
+    },
+    "refresh": {
+        "enqueued": "Updating in the background...",
+        "inlineSuccess": "Updated"
     }
 }
