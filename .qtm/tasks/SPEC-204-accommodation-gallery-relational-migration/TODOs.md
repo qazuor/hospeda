@@ -1,6 +1,6 @@
 # SPEC-204: Accommodation gallery migration to relational table
 
-## Progress: 14/29 tasks (48%) — P1 COMPLETE · P2 in progress
+## Progress: 16/29 tasks (55%) — P1 COMPLETE · P2 in progress (core read-switch + tests done)
 
 **Average Complexity:** 2.5/3 (max)
 **Storage model:** direct table-per-entity (`accommodation_media`, real FK) — polymorphic + junction rejected
@@ -71,9 +71,9 @@
 
 ### Testing
 
-- [ ] **T-015** (cx 3) — Integration: response shape stable after read switch (golden)
+- [x] **T-015** (cx 3) — Integration: response shape stable after read switch (golden) — real-DB round-trip + gallery-from-table-not-stale-JSONB + videos-only + fidelity-guard; 67/67 integration green
   - Blocked by: T-013
-- [ ] **T-016** (cx 2) — Integration: enforcePhotoLimit row-count edge cases
+- [x] **T-016** (cx 2) — Integration: enforcePhotoLimit row-count edge cases — findByAccommodation(state:'visible').total excludes archived; empty=0; gallery-only counts all
   - Blocked by: T-014
 - [ ] **T-023** (cx 3) — API route tests: granular endpoints (auth + invariants)
   - Blocked by: T-017, T-018, T-019, T-020, T-021

@@ -456,55 +456,57 @@
             "id": "T-015",
             "title": "Integration test: response shape stable after read switch",
             "description": "Golden/snapshot test: media.gallery/featuredImage/archivedGallery output is byte-identical before vs after switching reads to the table (same order, same fields). Guards the ~21 read-sites.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-013"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "snapshot pre/post read switch",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "P2"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-22T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-06-23T14:25:00.000Z",
+                "completed": "2026-06-23T14:40:00.000Z"
+            },
+            "notes": "accommodation.media-read.integration.test.ts (real DB, rollback-per-test): T-015-a round-trip shape; T-015-b gallery from table NOT stale JSONB; T-015-c videos-only; T-015-d fidelity guard null. Tests attachComposedMedia directly with tx (same pattern as T-011 media-sync). Full service-core integration suite 67/67 green."
         },
         {
             "id": "T-016",
             "title": "Integration test: enforcePhotoLimit row-count",
             "description": "Verify limit enforcement at the boundary (at cap, over cap, archived excluded) using row counts. Cover MAX_PHOTOS_PER_ACCOMMODATION edge cases.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-014"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "at/over cap + archived-excluded cases",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "P2"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-22T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-06-23T14:40:00.000Z",
+                "completed": "2026-06-23T14:45:00.000Z"
+            },
+            "notes": "T-016-a/b/c in accommodation.media-read.integration.test.ts: validate the findByAccommodation(state:'visible').total count that enforcePhotoLimit (T-014) depends on — featured+gallery counted, archived EXCLUDED, empty=0. The at-cap/over-cap decision is billing checkLimit (covered there); this guards the count semantics SPEC-204 changed."
         },
         {
             "id": "T-017",
@@ -908,9 +910,9 @@
     ],
     "summary": {
         "total": 29,
-        "pending": 15,
+        "pending": 13,
         "inProgress": 0,
-        "completed": 14,
+        "completed": 16,
         "blocked": 0,
         "averageComplexity": 2.5
     }
