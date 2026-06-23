@@ -491,6 +491,10 @@
             "min": "[EN] El slug debe tener al menos {{min}} caracteres",
             "pattern": "[EN] El formato del slug no es válido",
             "required": "[EN] El slug es obligatorio"
+        },
+        "applicableVerticals": {
+            "min": "[EN] El applicable verticals debe tener al menos {{min}} caracteres",
+            "required": "[EN] El applicable verticals es obligatorio"
         }
     },
     "attraction": {
@@ -2562,6 +2566,10 @@
             "min": "[EN] El slug debe tener al menos {{min}} caracteres",
             "pattern": "[EN] El formato del slug no es válido",
             "required": "[EN] El slug es obligatorio"
+        },
+        "applicableVerticals": {
+            "min": "[EN] El applicable verticals debe tener al menos {{min}} caracteres",
+            "required": "[EN] El applicable verticals es obligatorio"
         }
     },
     "field": {

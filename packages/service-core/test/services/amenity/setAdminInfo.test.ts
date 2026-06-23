@@ -17,7 +17,6 @@ describe('AmenityService.setAdminInfo', () => {
     const adminInfo = { notes: 'test', favorite: false };
     const newAdminInfo = { notes: 'updated', favorite: true };
     const amenity = AmenityFactoryBuilder.create({
-        name: { es: 'Test Amenity', en: 'Test Amenity', pt: 'Test Amenity' },
         type: AmenitiesTypeEnum.GENERAL_APPLIANCES,
         adminInfo
     });

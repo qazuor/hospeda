@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "092-feature-portuguese_guide_available",
+    "slug": "portuguese_guide_available",
+    "description": {
+        "es": "Guía disponible en idioma portugués para visitantes brasileños",
+        "en": "Guía disponible en idioma portugués para visitantes brasileños",
+        "pt": "Guía disponible en idioma portugués para visitantes brasileños"
+    },
+    "applicableVerticals": ["experience"],
+    "icon": "BilingualServiceIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50,
+    "lifecycleState": "ACTIVE"
+}

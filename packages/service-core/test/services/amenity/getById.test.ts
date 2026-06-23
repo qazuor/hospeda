@@ -13,9 +13,7 @@ describe('AmenityService.getById', () => {
     let amenityModelMock: AmenityModel;
     let loggerMock: ReturnType<typeof createLoggerMock>;
     let actor: Actor;
-    const amenity = AmenityFactoryBuilder.create({
-        name: { es: 'Test Amenity', en: 'Test Amenity', pt: 'Test Amenity' }
-    });
+    const amenity = AmenityFactoryBuilder.create({});
 
     beforeEach(() => {
         amenityModelMock = createTypedModelMock(AmenityModel, ['findOne']);

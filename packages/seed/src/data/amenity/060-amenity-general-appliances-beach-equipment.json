@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "060-amenity-general-appliances-beach-equipment",
-    "name": {
-        "es": "beach_equipment",
-        "en": "beach_equipment",
-        "pt": "beach_equipment"
-    },
     "slug": "beach_equipment",
     "description": {
         "es": "Equipo de playa",
         "en": "Equipo de playa",
         "pt": "Equipo de playa"
     },
+    "applicableVerticals": ["accommodation"],
     "type": "GENERAL_APPLIANCES",
     "icon": "BeachEquipmentIcon",
     "isBuiltin": false,

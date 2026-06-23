@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "050-amenity-services-room-service",
-    "name": {
-        "es": "room_service",
-        "en": "room_service",
-        "pt": "room_service"
-    },
     "slug": "room_service",
     "description": {
         "es": "Room service",
         "en": "Room service",
         "pt": "Room service"
     },
+    "applicableVerticals": ["accommodation"],
     "type": "SERVICES",
     "icon": "RoomServiceIcon",
     "isBuiltin": false,

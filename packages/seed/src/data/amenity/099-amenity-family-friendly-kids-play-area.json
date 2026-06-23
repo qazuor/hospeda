@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "099-amenity-family-friendly-kids-play-area",
+    "slug": "kids_play_area",
+    "description": {
+        "es": "Área de juegos para niños dentro del establecimiento",
+        "en": "Área de juegos para niños dentro del establecimiento",
+        "pt": "Área de juegos para niños dentro del establecimiento"
+    },
+    "applicableVerticals": ["gastronomy"],
+    "type": "FAMILY_FRIENDLY",
+    "icon": "PlaygroundIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

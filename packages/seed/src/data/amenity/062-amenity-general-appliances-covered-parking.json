@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "062-amenity-general-appliances-covered-parking",
-    "name": {
-        "es": "covered_parking",
-        "en": "covered_parking",
-        "pt": "covered_parking"
-    },
     "slug": "covered_parking",
     "description": {
         "es": "Estacionamiento techado",
         "en": "Estacionamiento techado",
         "pt": "Estacionamiento techado"
     },
+    "applicableVerticals": ["accommodation"],
     "type": "GENERAL_APPLIANCES",
     "icon": "CoveredParkingIcon",
     "isBuiltin": false,

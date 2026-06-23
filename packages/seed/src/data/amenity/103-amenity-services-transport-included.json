@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "103-amenity-services-transport-included",
+    "slug": "transport_included",
+    "description": {
+        "es": "Transporte al punto de encuentro incluido en el precio de la experiencia",
+        "en": "Transporte al punto de encuentro incluido en el precio de la experiencia",
+        "pt": "Transporte al punto de encuentro incluido en el precio de la experiencia"
+    },
+    "applicableVerticals": ["experience"],
+    "type": "SERVICES",
+    "icon": "CarIcon",
+    "isBuiltin": false,
+    "isFeatured": true,
+    "displayWeight": 75
+}

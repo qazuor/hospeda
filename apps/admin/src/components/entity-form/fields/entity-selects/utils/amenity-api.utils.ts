@@ -19,10 +19,8 @@
 
 import type { SelectOption } from '@/components/entity-form/types/field-config.types';
 import { fetchApi } from '@/lib/api/client';
-import { resolveI18nText } from '@/utils/i18n-text';
 import { adminLogger } from '@/utils/logger';
 import { defaultLocale, trans } from '@repo/i18n';
-import type { I18nText } from '@repo/schemas';
 
 /** Maximum number of pages fetched as a defensive hard-cap (100 items/page = 2000 items). */
 const MAX_PAGES = 20;
@@ -69,11 +67,11 @@ const translateAmenityName = (slug: string): string => {
 const PAGE_SIZE = 100;
 
 /**
- * Shape of a single amenity item returned by the public list endpoint.
+ * Shape of a single amenity item returned by the admin list endpoint.
+ * SPEC-266: `name` column dropped; slug is the identity key for i18n.
  */
 interface PublicAmenityItem {
     readonly id: string;
-    readonly name: Partial<I18nText> | string | null | undefined;
     readonly slug?: string;
     readonly icon?: string | null;
     readonly type?: string;
@@ -100,32 +98,16 @@ interface PublicListResponse {
 }
 
 /**
- * Map a public amenity item to a SelectOption.
+ * Map an amenity item to a SelectOption.
  *
- * The display label is resolved by translating the snake_case slug via
+ * SPEC-266: `name` column dropped. Display label is now resolved via
  * `accommodations.amenityNames.<slug>` in @repo/i18n (default locale: 'es').
- * This matches the behaviour of AmenitiesGrid.astro on the web app. A humanize
- * fallback (Title Case) is used when the translation key is absent so the UI
- * never shows a raw slug or a `[MISSING: ...]` string.
+ * A humanize fallback (Title Case) is used when the translation key is absent.
  *
  * The `value` stays as the amenity UUID so form submission is unaffected.
- *
- * Resolution order for the slug:
- * 1. `item.slug` — explicit catalog slug (preferred: guaranteed snake_case).
- * 2. `item.name.es` — the es locale from the I18nText name object.
- * 3. `item.id` — last-resort fallback (humanize will just return the raw id).
  */
 const toSelectOption = (item: PublicAmenityItem): SelectOption => {
-    // Derive the snake_case slug used as the i18n key suffix.
-    const nameEs =
-        typeof item.name === 'object' && item.name !== null
-            ? resolveI18nText(item.name)
-            : ((item.name as string | undefined) ?? '');
-    // The i18n keys are keyed by the snake_case NAME (e.g. 'air_conditioning'),
-    // matching the web's AmenitiesGrid. The catalog `slug` strips underscores
-    // ('airconditioning') so it would miss the key — prefer name.es.
-    const slug = nameEs || item.slug || item.id;
-
+    const slug = item.slug ?? item.id;
     return {
         value: item.id,
         label: translateAmenityName(slug),

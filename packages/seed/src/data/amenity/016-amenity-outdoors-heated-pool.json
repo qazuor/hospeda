@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "016-amenity-outdoors-heated-pool",
-    "name": {
-        "es": "heated_pool",
-        "en": "heated_pool",
-        "pt": "heated_pool"
-    },
     "slug": "heated_pool",
     "description": {
         "es": "Piscina climatizada",
         "en": "Piscina climatizada",
         "pt": "Piscina climatizada"
     },
+    "applicableVerticals": ["accommodation"],
     "type": "OUTDOORS",
     "icon": "HeatedPoolIcon",
     "isBuiltin": false,

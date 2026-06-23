@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "074-feature-lgbtq_friendly",
-    "name": {
-        "es": "Alojamiento LGBTQ+ amigable",
-        "en": "Alojamiento LGBTQ+ amigable",
-        "pt": "Alojamiento LGBTQ+ amigable"
-    },
     "slug": "lgbtq_friendly",
     "description": {
         "es": "Ambiente inclusivo y respetuoso que celebra la diversidad sexual y de género con políticas anti-discriminación",
         "en": "Ambiente inclusivo y respetuoso que celebra la diversidad sexual y de género con políticas anti-discriminación",
         "pt": "Ambiente inclusivo y respetuoso que celebra la diversidad sexual y de género con políticas anti-discriminación"
     },
+    "applicableVerticals": ["accommodation"],
     "icon": "LGBTQFriendlyIcon",
     "isBuiltin": true,
     "isFeatured": false,

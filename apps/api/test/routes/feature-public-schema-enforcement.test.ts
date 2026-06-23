@@ -35,8 +35,18 @@ const FORBIDDEN_FIELDS = [
     'adminInfo'
 ] as const;
 
-/** Fields that must be present on every public feature item. */
-const REQUIRED_PUBLIC_FIELDS = ['id', 'slug', 'name', 'isFeatured', 'isBuiltin'] as const;
+/**
+ * Fields that must be present on every public feature item.
+ * SPEC-266: the catalog `name` column was dropped; `slug` is the canonical
+ * identifier and i18n key, and `applicableVerticals` is now a required field.
+ */
+const REQUIRED_PUBLIC_FIELDS = [
+    'id',
+    'slug',
+    'applicableVerticals',
+    'isFeatured',
+    'isBuiltin'
+] as const;
 
 /**
  * Raw feature object that includes all internal fields.
@@ -46,8 +56,9 @@ const RAW_FEATURE_WITH_FORBIDDEN_FIELDS = {
     // Public fields (required)
     id: '123e4567-e89b-12d3-a456-426614174001',
     slug: 'swimming-pool',
-    // name is i18nText({ min: 2, max: 100 }) — object with es/en/pt
-    name: { es: 'Piscina', en: 'Swimming Pool', pt: 'Piscina' },
+    // SPEC-266: `name` was dropped from the catalog; `slug` is the i18n key.
+    // applicableVerticals is now required (min 1).
+    applicableVerticals: ['accommodation'],
     // description is i18nText({ min: 10, max: 500 }).nullish()
     description: {
         es: 'Una piscina privada al aire libre disponible todo el año',
@@ -100,7 +111,8 @@ describe('FeaturePublicSchema — unit tests (no DB, always run) (SPEC-210)', ()
         const minimal = {
             id: '123e4567-e89b-12d3-a456-426614174002',
             slug: 'wifi',
-            name: { es: 'Wi-Fi', en: 'Wi-Fi', pt: 'Wi-Fi' },
+            // SPEC-266: `name` dropped; `applicableVerticals` now required (min 1).
+            applicableVerticals: ['accommodation'],
             isBuiltin: true,
             isFeatured: false,
             displayWeight: 10

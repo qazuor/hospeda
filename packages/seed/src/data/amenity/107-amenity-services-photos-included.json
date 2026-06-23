@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "107-amenity-services-photos-included",
+    "slug": "photos_included",
+    "description": {
+        "es": "Fotografías profesionales de la experiencia incluidas en el precio",
+        "en": "Fotografías profesionales de la experiencia incluidas en el precio",
+        "pt": "Fotografías profesionales de la experiencia incluidas en el precio"
+    },
+    "applicableVerticals": ["experience"],
+    "type": "SERVICES",
+    "icon": "SmartTvIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 50
+}

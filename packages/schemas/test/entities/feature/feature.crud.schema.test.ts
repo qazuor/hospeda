@@ -29,7 +29,7 @@ describe('Feature CRUD Schemas', () => {
 
             const result = FeatureCreateInputSchema.parse(validInput);
             expect(result.slug).toBeDefined();
-            expect(result.name).toBeDefined();
+            expect(result.applicableVerticals).toBeDefined();
             expect('id' in result).toBe(false); // Should be omitted
             expect('createdAt' in result).toBe(false); // Should be omitted
         });
@@ -48,23 +48,23 @@ describe('Feature CRUD Schemas', () => {
 
             const result = FeatureCreateInputSchema.parse(minimalInput);
             expect(result.slug).toBeDefined();
-            expect(result.name).toBeDefined();
+            expect(result.applicableVerticals).toBeDefined();
         });
 
         it('should reject create input with invalid slug', () => {
             const invalidInput = {
+                applicableVerticals: ['accommodation'],
                 slug: 'ab', // Too short
-                name: faker.lorem.words(2),
                 lifecycleState: 'ACTIVE'
             };
 
             expect(() => FeatureCreateInputSchema.parse(invalidInput)).toThrow(ZodError);
         });
 
-        it('should reject create input with invalid name', () => {
+        it('should reject create input with empty applicableVerticals', () => {
             const invalidInput = {
+                applicableVerticals: [], // min 1 required
                 slug: faker.lorem.slug(3),
-                name: 'A', // Too short
                 lifecycleState: 'ACTIVE'
             };
 
@@ -73,8 +73,8 @@ describe('Feature CRUD Schemas', () => {
 
         it('should reject create input with invalid lifecycle state', () => {
             const invalidInput = {
+                applicableVerticals: ['accommodation'],
                 slug: faker.lorem.slug(3),
-                name: faker.lorem.words(2),
                 lifecycleState: 'INVALID_STATE'
             };
 
@@ -91,7 +91,7 @@ describe('Feature CRUD Schemas', () => {
             const result = FeatureCreateOutputSchema.parse(createOutput);
             expect(result.id).toBeDefined();
             expect(result.slug).toBeDefined();
-            expect(result.name).toBeDefined();
+            expect(result.applicableVerticals).toBeDefined();
             expect(result.createdAt).toBeDefined();
             expect(result.updatedAt).toBeDefined();
         });
@@ -104,7 +104,7 @@ describe('Feature CRUD Schemas', () => {
             expect(() => FeatureUpdateInputSchema.parse(updateInput)).not.toThrow();
 
             const result = FeatureUpdateInputSchema.parse(updateInput);
-            expect(result.name).toBeDefined();
+            expect(result.applicableVerticals).toBeDefined();
         });
 
         it('should validate empty update input', () => {
@@ -119,12 +119,11 @@ describe('Feature CRUD Schemas', () => {
             expect(() => FeatureUpdateInputSchema.parse(partialUpdate)).not.toThrow();
 
             const result = FeatureUpdateInputSchema.parse(partialUpdate);
-            expect(result.name).toBeDefined();
+            expect(result.description).toBeDefined();
         });
 
         it('should reject update input with auto-generated fields', () => {
             const updateData = {
-                name: faker.lorem.words(2),
                 id: faker.string.uuid(),
                 createdAt: new Date()
             };
@@ -132,9 +131,9 @@ describe('Feature CRUD Schemas', () => {
             expect(() => FeatureUpdateInputSchema.parse(updateData)).toThrow(ZodError);
         });
 
-        it('should reject update input with invalid name', () => {
+        it('should reject update input with invalid applicableVerticals (empty array)', () => {
             const invalidUpdate = {
-                name: 'A' // Too short
+                applicableVerticals: [] // Too short (min 1)
             };
 
             expect(() => FeatureUpdateInputSchema.parse(invalidUpdate)).toThrow(ZodError);
@@ -150,10 +149,21 @@ describe('Feature CRUD Schemas', () => {
     });
 
     describe('FeaturePatchInputSchema', () => {
-        it('should validate patch input', () => {
-            const nameEs = faker.lorem.words(2);
+        it('should validate patch input with applicableVerticals', () => {
             const patchInput = {
-                name: { es: nameEs, en: nameEs, pt: nameEs }
+                applicableVerticals: ['accommodation', 'gastronomy'] as (
+                    | 'accommodation'
+                    | 'gastronomy'
+                    | 'experience'
+                )[]
+            };
+
+            expect(() => FeaturePatchInputSchema.parse(patchInput)).not.toThrow();
+        });
+
+        it('should validate patch input with slug', () => {
+            const patchInput = {
+                slug: 'updated-slug'
             };
 
             expect(() => FeaturePatchInputSchema.parse(patchInput)).not.toThrow();
@@ -166,9 +176,12 @@ describe('Feature CRUD Schemas', () => {
         });
 
         it('should reject patch input with auto-generated fields', () => {
-            const nameEs = faker.lorem.words(2);
             const patchData = {
-                name: { es: nameEs, en: nameEs, pt: nameEs },
+                applicableVerticals: ['accommodation'] as (
+                    | 'accommodation'
+                    | 'gastronomy'
+                    | 'experience'
+                )[],
                 id: faker.string.uuid()
             };
 
@@ -311,7 +324,7 @@ describe('Feature CRUD Schemas', () => {
             const result = FeatureRestoreOutputSchema.parse(restoreOutput);
             expect(result.id).toBeDefined();
             expect(result.slug).toBeDefined();
-            expect(result.name).toBeDefined();
+            expect(result.applicableVerticals).toBeDefined();
         });
     });
 });

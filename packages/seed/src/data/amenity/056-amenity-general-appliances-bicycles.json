@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "056-amenity-general-appliances-bicycles",
-    "name": {
-        "es": "bicycles",
-        "en": "bicycles",
-        "pt": "bicycles"
-    },
     "slug": "bicycles",
     "description": {
         "es": "Bicicletas disponibles",
         "en": "Bicicletas disponibles",
         "pt": "Bicicletas disponibles"
     },
+    "applicableVerticals": ["accommodation", "experience"],
     "type": "GENERAL_APPLIANCES",
     "icon": "BicyclesIcon",
     "isBuiltin": false,

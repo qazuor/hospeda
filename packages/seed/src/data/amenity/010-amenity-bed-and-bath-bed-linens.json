@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "010-amenity-bed-and-bath-bed-linens",
-    "name": {
-        "es": "bed_linens",
-        "en": "bed_linens",
-        "pt": "bed_linens"
-    },
     "slug": "bed_linens",
     "description": {
         "es": "Ropa de cama",
         "en": "Ropa de cama",
         "pt": "Ropa de cama"
     },
+    "applicableVerticals": ["accommodation"],
     "type": "BED_AND_BATH",
     "icon": "BedLinensIcon",
     "isBuiltin": false,

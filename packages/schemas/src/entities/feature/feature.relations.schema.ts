@@ -131,7 +131,6 @@ export const FeatureWithCategorySchema = FeatureSchema.extend({
             FeatureSchema.pick({
                 id: true,
                 slug: true,
-                name: true,
                 description: true,
                 icon: true
             }).extend({
@@ -154,7 +153,6 @@ export const FeatureWithSimilarSchema = FeatureSchema.extend({
             FeatureSchema.pick({
                 id: true,
                 slug: true,
-                name: true,
                 description: true,
                 icon: true
             }).extend({
@@ -172,7 +170,6 @@ export const FeatureWithSimilarSchema = FeatureSchema.extend({
             FeatureSchema.pick({
                 id: true,
                 slug: true,
-                name: true,
                 icon: true
             }).extend({
                 category: z.string().optional(),
@@ -188,7 +185,6 @@ export const FeatureWithSimilarSchema = FeatureSchema.extend({
             FeatureSchema.pick({
                 id: true,
                 slug: true,
-                name: true,
                 description: true,
                 icon: true
             }).extend({
@@ -206,7 +202,6 @@ export const FeatureWithSimilarSchema = FeatureSchema.extend({
             FeatureSchema.pick({
                 id: true,
                 slug: true,
-                name: true,
                 icon: true
             }).extend({
                 category: z.string().optional(),
@@ -372,7 +367,6 @@ export const FeatureWithFullRelationsSchema = FeatureSchema.extend({
             FeatureSchema.pick({
                 id: true,
                 slug: true,
-                name: true,
                 description: true,
                 icon: true
             }).extend({
@@ -390,7 +384,6 @@ export const FeatureWithFullRelationsSchema = FeatureSchema.extend({
             FeatureSchema.pick({
                 id: true,
                 slug: true,
-                name: true,
                 description: true,
                 icon: true
             }).extend({
@@ -408,7 +401,6 @@ export const FeatureWithFullRelationsSchema = FeatureSchema.extend({
             FeatureSchema.pick({
                 id: true,
                 slug: true,
-                name: true,
                 icon: true
             }).extend({
                 category: z.string().optional(),

@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "030-amenity-outdoors-patio",
-    "name": {
-        "es": "patio",
-        "en": "patio",
-        "pt": "patio"
-    },
     "slug": "patio",
     "description": {
         "es": "Patio interno",
         "en": "Patio interno",
         "pt": "Patio interno"
     },
+    "applicableVerticals": ["accommodation"],
     "type": "OUTDOORS",
     "icon": "SharedPatioIcon",
     "isBuiltin": false,

@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "036-feature-shared_space",
-    "name": {
-        "es": "Espacio compartido",
-        "en": "Espacio compartido",
-        "pt": "Espacio compartido"
-    },
     "slug": "shared_space",
     "description": {
         "es": "Áreas comunes diseñadas para la interacción social entre huéspedes, como salones, cocinas o jardines",
         "en": "Áreas comunes diseñadas para la interacción social entre huéspedes, como salones, cocinas o jardines",
         "pt": "Áreas comunes diseñadas para la interacción social entre huéspedes, como salones, cocinas o jardines"
     },
+    "applicableVerticals": ["accommodation"],
     "icon": "SharedSpaceIcon",
     "isBuiltin": true,
     "isFeatured": false,

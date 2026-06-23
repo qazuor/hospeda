@@ -8,14 +8,57 @@ import {
 import { WeightBarCell } from '@/components/entity-list/WeightBarCell';
 import type { ColumnConfig, ColumnTFunction } from '@/components/entity-list/types';
 import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
-import { resolveI18nText } from '@/utils/i18n-text';
+import { defaultLocale, trans } from '@repo/i18n';
 import { EditIcon } from '@repo/icons';
+import type { ApplicableVertical } from '@repo/schemas';
 import { PermissionEnum } from '@repo/schemas';
 import { Link } from '@tanstack/react-router';
 import { Fragment, createElement } from 'react';
 import { AmenityTypeBadge } from '../components/AmenityTypeBadge';
 import { useDeleteAmenityMutation, useUpdateAmenityMutation } from '../hooks/useAmenityQuery';
 import type { Amenity } from '../schemas/amenities.schemas';
+
+/**
+ * Converts a snake_case slug to a human-readable Title Case label.
+ * Used as fallback when the i18n translation key is missing.
+ */
+const humanizeSlug = (slug: string): string =>
+    slug
+        .split(/[-_]/)
+        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+
+/**
+ * Resolves an amenity display label from its slug via @repo/i18n.
+ * Key: `accommodations.amenityNames.<slug>` in the default locale.
+ * Falls back to humanizeSlug() so the UI never shows a raw slug or [MISSING:…].
+ */
+const resolveAmenityLabel = (slug: string | null | undefined, fallback: string): string => {
+    if (!slug) return fallback;
+    const key = `accommodations.amenityNames.${slug}`;
+    const translated = trans[defaultLocale as keyof typeof trans]?.[key];
+    if (translated && !translated.startsWith('[MISSING:')) return translated;
+    return humanizeSlug(slug);
+};
+
+/**
+ * Renders applicable-verticals badges for the list table.
+ * Each vertical maps to a colored badge so admins can see scope at a glance.
+ */
+const VERTICAL_BADGE_STYLES: Record<ApplicableVertical, string> = {
+    accommodation:
+        'inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-700/20 dark:bg-blue-900/20 dark:text-blue-400 dark:ring-blue-400/30',
+    gastronomy:
+        'inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium bg-green-50 text-green-700 ring-1 ring-inset ring-green-700/20 dark:bg-green-900/20 dark:text-green-400 dark:ring-green-400/30',
+    experience:
+        'inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium bg-purple-50 text-purple-700 ring-1 ring-inset ring-purple-700/20 dark:bg-purple-900/20 dark:text-purple-400 dark:ring-purple-400/30'
+};
+
+const VERTICAL_LABELS: Record<ApplicableVertical, string> = {
+    accommodation: 'Alojamiento',
+    gastronomy: 'Gastronomía',
+    experience: 'Experiencia'
+};
 
 const LIFECYCLE_OPTIONS = (t: ColumnTFunction): ReadonlyArray<InlineStateOption> => [
     {
@@ -37,9 +80,9 @@ const LIFECYCLE_OPTIONS = (t: ColumnTFunction): ReadonlyArray<InlineStateOption>
 
 export const createAmenitiesColumns = (t: ColumnTFunction): readonly ColumnConfig<Amenity>[] => [
     {
-        id: 'name',
+        id: 'slug',
         header: t('admin-entities.columns.name'),
-        accessorKey: 'name',
+        accessorKey: 'slug',
         enableSorting: true,
         columnType: ColumnType.WIDGET,
         entityOptions: {
@@ -48,7 +91,7 @@ export const createAmenitiesColumns = (t: ColumnTFunction): readonly ColumnConfi
         },
         linkHandler: (row) => ({ to: `/content/accommodation-amenities/${row.id}` }),
         widgetRenderer: (row) => {
-            const displayName = resolveI18nText(row.name);
+            const displayName = resolveAmenityLabel(row.slug, row.id);
             return createElement(
                 Link,
                 {
@@ -60,13 +103,6 @@ export const createAmenitiesColumns = (t: ColumnTFunction): readonly ColumnConfi
                 displayName
             );
         }
-    },
-    {
-        id: 'slug',
-        header: t('admin-entities.columns.slug'),
-        accessorKey: 'slug',
-        enableSorting: true,
-        columnType: ColumnType.STRING
     },
     {
         id: 'type',
@@ -83,13 +119,38 @@ export const createAmenitiesColumns = (t: ColumnTFunction): readonly ColumnConfi
         enableSorting: false,
         columnType: ColumnType.WIDGET,
         widgetRenderer: (row) => {
-            const text = resolveI18nText(row.description);
+            const desc = row.description;
+            const text = desc?.es || desc?.en || desc?.pt || '';
             if (!text) return createElement('span', { className: 'text-muted-foreground' }, '—');
             const truncated = text.length > 80 ? `${text.slice(0, 80)}…` : text;
             return createElement(
                 'span',
                 { className: 'text-sm text-foreground', title: text },
                 truncated
+            );
+        }
+    },
+    {
+        id: 'applicableVerticals',
+        header: 'Verticales',
+        accessorKey: 'applicableVerticals',
+        enableSorting: false,
+        columnType: ColumnType.WIDGET,
+        widgetRenderer: (row) => {
+            const verticals = row.applicableVerticals ?? [];
+            if (verticals.length === 0) {
+                return createElement('span', { className: 'text-muted-foreground text-xs' }, '—');
+            }
+            return createElement(
+                'div',
+                { className: 'flex flex-wrap gap-1' },
+                ...verticals.map((v: ApplicableVertical) =>
+                    createElement(
+                        'span',
+                        { key: v, className: VERTICAL_BADGE_STYLES[v] },
+                        VERTICAL_LABELS[v]
+                    )
+                )
             );
         }
     },
@@ -117,7 +178,7 @@ export const createAmenitiesColumns = (t: ColumnTFunction): readonly ColumnConfi
         widgetRenderer: (row) =>
             createElement(InlineFeaturedCell<Partial<Amenity>>, {
                 entityId: row.id,
-                entityName: resolveI18nText(row.name),
+                entityName: resolveAmenityLabel(row.slug, row.id),
                 entityLabelKey: 'admin-entities.entities.amenity.singular',
                 checked: row.isFeatured ?? false,
                 permission: PermissionEnum.AMENITY_FEATURED_TOGGLE,
@@ -148,7 +209,7 @@ export const createAmenitiesColumns = (t: ColumnTFunction): readonly ColumnConfi
         widgetRenderer: (row) =>
             createElement(InlineStateSelectCell<Partial<Amenity>>, {
                 entityId: row.id,
-                entityName: resolveI18nText(row.name),
+                entityName: resolveAmenityLabel(row.slug, row.id),
                 entityLabelKey: 'admin-entities.entities.amenity.singular',
                 field: 'lifecycleState',
                 currentValue: row.lifecycleState,
@@ -191,7 +252,7 @@ export const createAmenitiesColumns = (t: ColumnTFunction): readonly ColumnConfi
                 ),
                 createElement(DeleteRowButton, {
                     entityId: row.id,
-                    entityName: resolveI18nText(row.name),
+                    entityName: resolveAmenityLabel(row.slug, row.id),
                     entityLabel: t('admin-entities.entities.amenity.singular'),
                     permission: PermissionEnum.AMENITY_DELETE,
                     useDeleteMutation: useDeleteAmenityMutation,

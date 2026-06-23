@@ -15,7 +15,6 @@ describe('AmenityService.restore', () => {
     let loggerMock: ReturnType<typeof createLoggerMock>;
     let actor: Actor;
     const amenity = AmenityFactoryBuilder.create({
-        name: { es: 'Test Amenity', en: 'Test Amenity', pt: 'Test Amenity' },
         type: AmenitiesTypeEnum.GENERAL_APPLIANCES,
         deletedAt: new Date()
     });

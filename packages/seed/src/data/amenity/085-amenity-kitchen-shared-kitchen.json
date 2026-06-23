@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "085-amenity-kitchen-shared-kitchen",
-    "name": {
-        "es": "shared_kitchen",
-        "en": "shared_kitchen",
-        "pt": "shared_kitchen"
-    },
     "slug": "shared_kitchen",
     "description": {
         "es": "Cocina compartida",
         "en": "Cocina compartida",
         "pt": "Cocina compartida"
     },
+    "applicableVerticals": ["accommodation"],
     "type": "KITCHEN",
     "icon": "SharedKitchenIcon",
     "isBuiltin": false,

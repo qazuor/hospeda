@@ -13,11 +13,13 @@ export const AmenityPublicSchema = AmenitySchema.pick({
     // Identification
     id: true,
     slug: true,
-    name: true,
 
     // Content
     description: true,
     icon: true,
+
+    // Verticals (SPEC-266)
+    applicableVerticals: true,
 
     // Type
     type: true,
@@ -41,9 +43,9 @@ export const AmenityProtectedSchema = AmenitySchema.pick({
     // All public fields
     id: true,
     slug: true,
-    name: true,
     description: true,
     icon: true,
+    applicableVerticals: true,
     type: true,
     isFeatured: true,
     displayWeight: true,

@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "064-amenity-work-friendly-coworking-space",
-    "name": {
-        "es": "coworking_space",
-        "en": "coworking_space",
-        "pt": "coworking_space"
-    },
     "slug": "coworking_space",
     "description": {
         "es": "Espacio de coworking",
         "en": "Espacio de coworking",
         "pt": "Espacio de coworking"
     },
+    "applicableVerticals": ["accommodation"],
     "type": "WORK_FRIENDLY",
     "icon": "CoworkingSpaceIcon",
     "isBuiltin": false,

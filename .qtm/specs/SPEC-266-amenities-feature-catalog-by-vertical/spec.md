@@ -3,7 +3,7 @@ spec-id: SPEC-266
 title: Amenities & features catalog by vertical (scoping + i18n source-of-truth)
 type: improvement
 complexity: high
-status: draft
+status: in-progress
 created: 2026-06-23T02:10:00Z
 ---
 
@@ -116,8 +116,9 @@ real attribute set while reusing the genuinely shared ones".
 
 ## 4. Catalog-scoping approaches (DECIDE DURING PLANNING)
 
-> These are mutually exclusive at the data-model level. Do not pre-decide; the
-> recommendation is **Option A**, but the call is made when implementation starts.
+> **DECIDED (planning 2026-06-23): Option A + `applicableVerticals text[]`.** See §5
+> for the full resolution of every open question. The options below are kept for
+> historical context.
 
 ### Option A — Single catalog + multi-vertical scope (RECOMMENDED)
 
@@ -165,19 +166,39 @@ Pick by: (1) avoid duplicating shared items, (2) allow per-vertical taxonomies,
 (3) migration cost, (4) admin authoring ergonomics. A satisfies 1–2 best; C is
 cheapest but fails 2; B fails 1.
 
-## 5. Open questions (resolve at planning)
+## 5. Open questions — RESOLVED (planning 2026-06-23)
 
-1. **Approach**: A, B, or C? (recommendation: A.)
-2. If A: `applicableVerticals` as `text[]`/enum-array on the row, or an N:M table?
-3. **Identifier for i18n** (from BETA-90): normalize `slug` to underscores,
-   normalize keys to hyphens, or introduce a separate canonical `code`? This
-   becomes the i18n key AND the stable cross-vertical id.
-4. Do gastronomy/experience need both **amenities AND features**, or is one
-   dimension enough per vertical?
-5. Seed authoring: who curates the shared-core set and the per-vertical sets
-   (product input needed for the gastronomy/experience taxonomies)?
-6. Migration safety for existing accommodation listings' selected amenities (must
-   not lose current relations).
+1. **Approach**: **Option A** — single catalog + multi-vertical scope. Decided.
+2. **Scope shape**: **`applicableVerticals text[]`** on each catalog row, NOT an N:M
+   table. KISS — 3 values, no per-relation metadata.
+3. **i18n identifier**: the **`slug` (snake_case) is the canonical id AND the i18n
+   key**. Verified against the real seed: `slug == name.es == name.en ==
+   "air_conditioning"` already — the three are identical, and `name` is the i18n key
+   replicated, not a human label (the human text lives in `description`). Therefore:
+   drop the `name` column, resolve display from `@repo/i18n` by slug, **relax the slug
+   Zod regex to allow underscores** (`^[a-z0-9]+(?:[-_][a-z0-9]+)*$`), and create the
+   missing `featureNames` namespace. Underscores chosen → **zero data migration** (slug
+   already equals the key). These slugs are internal catalog ids, not public URLs.
+4. **One dimension or two?**: **Keep BOTH amenities AND features per vertical.**
+   CORRECTION to an earlier planning assumption: gastronomy/experience features are
+   NOT dead scaffold — they are wired end-to-end and ACTIVE. `GastronomyService` /
+   `ExperienceService` register `_featureJunctionModel` and sync it on every
+   create/update (`syncCommerceFeatureJunction` in `BaseCommerceListingService`); the
+   live `PATCH /api/v1/protected/{gastronomies,experiences}/:id` routes accept
+   `featureIds`; `CommerceListingEditor.client.tsx` toggles them; gated by
+   `COMMERCE_FEATURES_EDIT_OWN`; explicitly retained by SPEC-253. Dropping them would
+   regress shipped product. SPEC-266 therefore **scopes both dimensions by vertical; it
+   removes nothing.** Only the SEED is incomplete (gastro/experience seeds bypass the
+   service and never populate the junction rows) — the runtime path is live.
+   **Catalog boundary**: only BOOLEAN attributes belong in the amenity/feature catalog.
+   Value-bearing attributes (experience duration / difficulty / min-age / group-size,
+   gastronomy cuisine-type) are listing fields and are OUT of scope here.
+5. **Seed authoring**: engineering proposes the initial boolean taxonomy (shared-core
+   - per-vertical amenities & features); the product owner validates. Proposed set
+   under review at planning time; once validated it is recorded in §10.
+6. **Migration safety**: unchanged hard constraint — the curation/migration MUST
+   preserve every existing accommodation listing's selected amenities AND features
+   (no relation loss). Verified at cutover.
 
 ## 6. Relationship to BETA-90 (absorbed)
 
@@ -218,5 +239,64 @@ their raw `name` until `featureNames` exists (this spec).
 
 ## 9. Tasks
 
-Intentionally NOT atomized yet — atomize after the §4 approach and §5 open
-questions are decided.
+Atomized after planning (§4/§5 resolved, §10 taxonomy owner-approved, §11 phases
+defined — all 2026-06-23). See `.qtm/tasks/SPEC-266-amenities-feature-catalog-by-vertical/`.
+
+## 10. Validated taxonomy (owner-approved 2026-06-23)
+
+> BOOLEAN catalog attributes only. Value-bearing attributes are listing fields (out of
+> scope, see §5.4). Slugs are snake_case and double as the i18n key (§5.3). The
+> amenity-vs-feature split follows: **amenity = something the place OFFERS/HAS**;
+> **feature = a QUALITY or suitability**.
+
+### Shared-core — `applicableVerticals = ['accommodation','gastronomy','experience']`
+
+`wifi` · `parking` · `pet_friendly` · `wheelchair_accessible` · `air_conditioning` ·
+`outdoor_seating` · `smoke_free` · `accepts_cards`
+
+> Curation: existing accommodation catalog items are re-tagged to all 3 verticals; the
+> rest stay accommodation-only. `accepts_cards` is shared (all 3 verticals bill).
+
+### Gastronomy — `applicableVerticals = ['gastronomy']`
+
+**Amenities (10):** `delivery` · `takeaway` · `accepts_reservations` · `live_music` ·
+`happy_hour` · `bike_parking` · `kids_play_area` · `private_events` · `catering` ·
+`bar_service`
+**Features (9):** `gluten_free_options` · `vegan_options` · `vegetarian_options` ·
+`kids_menu` · `panoramic_view` · `family_friendly` · `romantic_ambiance` ·
+`organic_products` · `craft_beer`
+
+### Experience — `applicableVerticals = ['experience']`
+
+**Amenities (8):** `transport_included` · `equipment_included` · `food_included` ·
+`guide_included` · `photos_included` · `insurance_included` · `hotel_pickup` ·
+`lockers_available`
+**Features (8):** `kid_friendly` · `beginner_friendly` · `english_guide_available` ·
+`portuguese_guide_available` · `outdoor_activity` · `pregnancy_safe` ·
+`private_available` · `senior_friendly`
+
+### Out of catalog (listing fields, NOT this spec)
+
+- **Gastronomy**: cuisine-type (categorical), `priceRange` (exists).
+- **Experience**: duration, difficulty, min-age, max group size, exact guide language.
+
+## 11. Implementation phases
+
+Coordinated migration: the scoping field (§5.1/5.2) and the BETA-90 `name` drop (§5.3)
+touch the SAME two tables and MUST ship as ONE structural migration — never migrate
+`amenities`/`features` twice.
+
+1. **Schema + migration** — add `applicableVerticals text[]` to `amenities` &
+   `features`; drop `name`; relax slug regex to allow `_`. One Drizzle-generated
+   structural migration (hand-edit the data step where needed). `@repo/db`,
+   `@repo/schemas`.
+2. **i18n source of truth** — resolve display by slug everywhere; create the
+   `featureNames` namespace (es/en/pt); remove all `name`-based reads, including the
+   service search path (`name->>'es'` → slug). `@repo/i18n`, web, admin, service-core.
+3. **Seed** — re-tag shared-core accommodation items to all 3 verticals; author the
+   §10 gastronomy/experience amenity & feature items with their `applicableVerticals`.
+   `@repo/seed`.
+4. **Vertical filter** — public catalog endpoints accept `?vertical=`; BOTH editors
+   (accommodation + commerce) consume the filtered catalog. API, web.
+5. **Data-migration safety** — preserve every existing accommodation listing's selected
+   amenities AND features across the change (§5.6). `extras/` step if needed.

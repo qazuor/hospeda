@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "012-amenity-connectivity-cable-tv",
-    "name": {
-        "es": "cable_tv",
-        "en": "cable_tv",
-        "pt": "cable_tv"
-    },
     "slug": "cable_tv",
     "description": {
         "es": "TV por cable",
         "en": "TV por cable",
         "pt": "TV por cable"
     },
+    "applicableVerticals": ["accommodation"],
     "type": "CONNECTIVITY",
     "icon": "TvIcon",
     "isBuiltin": false,

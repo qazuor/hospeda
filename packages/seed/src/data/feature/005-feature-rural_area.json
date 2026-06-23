@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "005-feature-rural_area",
-    "name": {
-        "es": "Zona rural",
-        "en": "Zona rural",
-        "pt": "Zona rural"
-    },
     "slug": "rural_area",
     "description": {
         "es": "Ubicado en área campestre alejada de centros urbanos, ideal para desconectar y disfrutar de la tranquilidad del campo",
         "en": "Ubicado en área campestre alejada de centros urbanos, ideal para desconectar y disfrutar de la tranquilidad del campo",
         "pt": "Ubicado en área campestre alejada de centros urbanos, ideal para desconectar y disfrutar de la tranquilidad del campo"
     },
+    "applicableVerticals": ["accommodation"],
     "icon": "RuralAreaIcon",
     "isBuiltin": true,
     "isFeatured": false,

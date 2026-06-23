@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "066-amenity-general-appliances-spa",
-    "name": {
-        "es": "spa",
-        "en": "spa",
-        "pt": "spa"
-    },
     "slug": "spa",
     "description": {
         "es": "Spa y relajación",
         "en": "Spa y relajación",
         "pt": "Spa y relajación"
     },
+    "applicableVerticals": ["accommodation"],
     "type": "GENERAL_APPLIANCES",
     "icon": "SpaServicesIcon",
     "isBuiltin": false,

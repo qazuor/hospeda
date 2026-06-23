@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "006-amenity-kitchen-microwave",
-    "name": {
-        "es": "microwave",
-        "en": "microwave",
-        "pt": "microwave"
-    },
     "slug": "microwave",
     "description": {
         "es": "Microondas",
         "en": "Microondas",
         "pt": "Microondas"
     },
+    "applicableVerticals": ["accommodation"],
     "type": "KITCHEN",
     "icon": "MicrowaveIcon",
     "isBuiltin": false,

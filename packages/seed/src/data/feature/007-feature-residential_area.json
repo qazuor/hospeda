@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "007-feature-residential_area",
-    "name": {
-        "es": "Zona residencial",
-        "en": "Zona residencial",
-        "pt": "Zona residencial"
-    },
     "slug": "residential_area",
     "description": {
         "es": "Situado en barrio tranquilo y seguro, rodeado de viviendas familiares y ambiente hogareño",
         "en": "Situado en barrio tranquilo y seguro, rodeado de viviendas familiares y ambiente hogareño",
         "pt": "Situado en barrio tranquilo y seguro, rodeado de viviendas familiares y ambiente hogareño"
     },
+    "applicableVerticals": ["accommodation"],
     "icon": "ResidentialAreaIcon",
     "isBuiltin": true,
     "isFeatured": false,

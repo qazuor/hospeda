@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "042-feature-pet_friendly_area",
-    "name": {
-        "es": "Sector pet-friendly",
-        "en": "Sector pet-friendly",
-        "pt": "Sector pet-friendly"
-    },
     "slug": "pet_friendly_area",
     "description": {
         "es": "Zona especialmente acondicionada para mascotas con servicios, juegos y comodidades para animales",
         "en": "Zona especialmente acondicionada para mascotas con servicios, juegos y comodidades para animales",
         "pt": "Zona especialmente acondicionada para mascotas con servicios, juegos y comodidades para animales"
     },
+    "applicableVerticals": ["accommodation"],
     "icon": "PetAreaIcon",
     "isBuiltin": true,
     "isFeatured": false,
