@@ -26,10 +26,10 @@
  */
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { AiUsageBlockState } from '@/features/ai-usage/components/AiUsageBlockState';
 import { useAiUsageByFeatureModelQuery } from '@/features/ai-usage/hooks';
 import type { AiUsageDailySearch } from '@/features/ai-usage/types';
 import { useTranslations } from '@/hooks/use-translations';
-import { LoaderIcon } from '@repo/icons';
 import type { AiUsageByFeatureModelRow } from '@repo/schemas';
 import { formatMicroUsd } from '@repo/utils';
 
@@ -138,30 +138,22 @@ export function AiUsageByFeatureTable({ search }: AiUsageByFeatureTableProps) {
             </CardHeader>
             <CardContent>
                 {isLoading ? (
-                    <div className="py-10 text-center">
-                        <LoaderIcon className="mx-auto h-6 w-6 animate-spin text-primary" />
-                        <p className="mt-3 text-muted-foreground text-sm">
-                            {t('admin-pages.ai.usage.byFeature.loading')}
-                        </p>
-                    </div>
+                    <AiUsageBlockState
+                        status="loading"
+                        title={t('admin-pages.ai.usage.byFeature.loading')}
+                    />
                 ) : isError ? (
-                    <div className="py-10 text-center">
-                        <p className="text-destructive text-sm">
-                            {t('admin-pages.ai.usage.byFeature.loadError')}
-                        </p>
-                        <p className="mt-1 text-muted-foreground text-xs">
-                            {t('admin-pages.ai.usage.byFeature.loadErrorHint')}
-                        </p>
-                    </div>
+                    <AiUsageBlockState
+                        status="error"
+                        title={t('admin-pages.ai.usage.byFeature.loadError')}
+                        hint={t('admin-pages.ai.usage.byFeature.loadErrorHint')}
+                    />
                 ) : rows.length === 0 ? (
-                    <div className="py-10 text-center">
-                        <p className="text-muted-foreground text-sm">
-                            {t('admin-pages.ai.usage.byFeature.empty')}
-                        </p>
-                        <p className="mt-1 text-muted-foreground text-xs">
-                            {t('admin-pages.ai.usage.byFeature.emptyHint')}
-                        </p>
-                    </div>
+                    <AiUsageBlockState
+                        status="empty"
+                        title={t('admin-pages.ai.usage.byFeature.empty')}
+                        hint={t('admin-pages.ai.usage.byFeature.emptyHint')}
+                    />
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">

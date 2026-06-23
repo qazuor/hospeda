@@ -17,6 +17,7 @@
  */
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { AiUsageBlockState } from '@/features/ai-usage/components/AiUsageBlockState';
 import { useAiUsageByModelQuery } from '@/features/ai-usage/hooks';
 import type { AiUsageDailySearch } from '@/features/ai-usage/types';
 import { useTranslations } from '@/hooks/use-translations';
@@ -144,13 +145,12 @@ export function AiUsageTotalsCard({ search }: AiUsageTotalsCardProps) {
     if (isError || !data) {
         return (
             <Card>
-                <CardContent className="py-8 text-center">
-                    <p className="text-destructive text-sm">
-                        {t('admin-pages.ai.usage.totals.loadError')}
-                    </p>
-                    <p className="mt-1 text-muted-foreground text-xs">
-                        {t('admin-pages.ai.usage.totals.loadErrorHint')}
-                    </p>
+                <CardContent>
+                    <AiUsageBlockState
+                        status="error"
+                        title={t('admin-pages.ai.usage.totals.loadError')}
+                        hint={t('admin-pages.ai.usage.totals.loadErrorHint')}
+                    />
                 </CardContent>
             </Card>
         );

@@ -18,10 +18,10 @@
  */
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { AiUsageBlockState } from '@/features/ai-usage/components/AiUsageBlockState';
 import { useAiUsageByModelQuery } from '@/features/ai-usage/hooks';
 import type { AiUsageDailySearch } from '@/features/ai-usage/types';
 import { useTranslations } from '@/hooks/use-translations';
-import { LoaderIcon } from '@repo/icons';
 import { formatMicroUsd } from '@repo/utils';
 
 // ---------------------------------------------------------------------------
@@ -64,7 +64,8 @@ function costPer1kTokens(costMicroUsd: number, tokensIn: number, tokensOut: numb
 /**
  * Per-model usage breakdown table.
  *
- * Handles loading (spinner), error (message), and empty (hint) states.
+ * Delegates loading/error/empty states to {@link AiUsageBlockState} for
+ * consistent visual treatment across all AI usage dashboard blocks.
  * Rows are ordered by estimated cost DESC as returned by the API.
  *
  * @param props - {@link AiUsageByModelTableProps}
@@ -89,30 +90,22 @@ export function AiUsageByModelTable({ search }: AiUsageByModelTableProps) {
             </CardHeader>
             <CardContent>
                 {isLoading ? (
-                    <div className="py-10 text-center">
-                        <LoaderIcon className="mx-auto h-6 w-6 animate-spin text-primary" />
-                        <p className="mt-3 text-muted-foreground text-sm">
-                            {t('admin-pages.ai.usage.byModel.loading')}
-                        </p>
-                    </div>
+                    <AiUsageBlockState
+                        status="loading"
+                        title={t('admin-pages.ai.usage.byModel.loading')}
+                    />
                 ) : isError ? (
-                    <div className="py-10 text-center">
-                        <p className="text-destructive text-sm">
-                            {t('admin-pages.ai.usage.byModel.loadError')}
-                        </p>
-                        <p className="mt-1 text-muted-foreground text-xs">
-                            {t('admin-pages.ai.usage.byModel.loadErrorHint')}
-                        </p>
-                    </div>
+                    <AiUsageBlockState
+                        status="error"
+                        title={t('admin-pages.ai.usage.byModel.loadError')}
+                        hint={t('admin-pages.ai.usage.byModel.loadErrorHint')}
+                    />
                 ) : !data || data.items.length === 0 ? (
-                    <div className="py-10 text-center">
-                        <p className="text-muted-foreground text-sm">
-                            {t('admin-pages.ai.usage.byModel.empty')}
-                        </p>
-                        <p className="mt-1 text-muted-foreground text-xs">
-                            {t('admin-pages.ai.usage.byModel.emptyHint')}
-                        </p>
-                    </div>
+                    <AiUsageBlockState
+                        status="empty"
+                        title={t('admin-pages.ai.usage.byModel.empty')}
+                        hint={t('admin-pages.ai.usage.byModel.emptyHint')}
+                    />
                 ) : (
                     <div className="overflow-x-auto">
                         <table className="w-full text-sm">
