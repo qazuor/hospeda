@@ -234,6 +234,12 @@ export type ValidatePromoCode = z.infer<typeof ValidatePromoCodeSchema>;
 /**
  * Schema for applying a promo code to an active checkout session.
  * Links the code to a specific billing customer and optionally a base amount.
+ *
+ * SPEC-262 T-008: the optional `subscriptionId` field enables the route handler
+ * to detect an existing subscription with a live MercadoPago preapproval and
+ * route the `discount` effect through the fail-closed T-007 seam
+ * (`applyMultiCycleDiscountToExistingSubscription`) instead of the normal
+ * checkout-signup path.
  */
 export const ApplyPromoCodeSchema = z.object({
     /** The promo code to apply */
@@ -249,6 +255,22 @@ export const ApplyPromoCodeSchema = z.object({
         .number({ message: 'zodError.billing.promoCode.apply.amount.invalidType' })
         .int({ message: 'zodError.billing.promoCode.apply.amount.int' })
         .min(0, { message: 'zodError.billing.promoCode.apply.amount.min' })
+        .optional(),
+    /**
+     * Optional existing subscription ID.
+     *
+     * When supplied and the promo code has a `discount` effect, the route
+     * handler checks whether the subscription has a live MercadoPago
+     * `mp_subscription_id`. If so, the discount is applied through the
+     * fail-closed T-007 seam (MP amount mutation first, redeem only on
+     * success). If the subscription has no live preapproval (annual or
+     * pre-checkout), the normal `applyPromoCode` path is used.
+     *
+     * Not required for checkout-signup flows where no subscription exists yet.
+     */
+    subscriptionId: z
+        .string({ message: 'zodError.billing.promoCode.apply.subscriptionId.invalidType' })
+        .uuid({ message: 'zodError.billing.promoCode.apply.subscriptionId.invalid' })
         .optional()
 });
 

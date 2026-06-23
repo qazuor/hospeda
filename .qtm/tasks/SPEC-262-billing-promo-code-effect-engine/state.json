@@ -6,8 +6,8 @@
     "summary": {
         "total": 15,
         "byStatus": {
-            "pending": 9,
-            "completed": 6
+            "pending": 8,
+            "completed": 7
         },
         "byPhase": {
             "spike": 1,
@@ -178,7 +178,7 @@
             "id": "T-008",
             "title": "Update admin API routes: promo-code create/edit + /apply endpoint",
             "description": "Changes to `apps/api/src/routes/billing/promo-codes.ts` (and admin sub-router):\n\n1. **Admin create/edit** (`POST /api/v1/admin/billing/promo-codes`, `PATCH .../billing/promo-codes/:id`):\n   - Remove the hardcoded `discountType: 'percentage' | 'fixed'` input constraint\n   - Accept `CreatePromoCodeInput` discriminated union from `@repo/schemas`\n   - Validate via Zod (AC-1.2, AC-1.3, AC-5.4 \u2014 422 on invalid effect params)\n   - Persist via updated `promo-code.service.ts`\n   - Permission guard: `BILLING_PROMO_CODE_MANAGE` (AC-6.1)\n\n2. **Protected /apply** (`POST /api/v1/protected/billing/promo-codes/apply`):\n   - Branch by `effect.kind` (read from DB via service) instead of assuming money discount\n   - `discount`: existing response shape unchanged (`discountAmount`, `finalAmount` \u2014 AC-4.3)\n   - `trial_extension` at checkout: return effect info (extraDays, new projected trial_end)\n   - `comp`: return comp indication\n   - Ownership guard: `customerId` must be own customer or `ACCESS_API_ADMIN` (AC-6.2)\n\nIntegration tests (real DB, mock MP):\n- Admin create discount (success 201 + 422 bad value + 422 durationCycles=0 + 403 no permission)\n- Admin create trial_extension (success + 422 negative days)\n- Admin create comp (success)\n- /apply discount \u2192 unchanged response shape (AC-4.3)\n- /apply comp \u2192 comp indication returned\n- /apply 403 (other customer's customerId)\n\nAcceptance criteria: AC-1.1, AC-1.2, AC-1.3, AC-4.3, AC-5.4, AC-6.1, AC-6.2",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-005", "T-003"],
             "blocks": ["T-010", "T-011"],
@@ -186,14 +186,14 @@
             "tags": ["integration", "api", "hono", "billing"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-22T18:17:18.089Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-23T04:30:00.000Z",
+                "completed": "2026-06-23T05:00:00.000Z"
             }
         },
         {
