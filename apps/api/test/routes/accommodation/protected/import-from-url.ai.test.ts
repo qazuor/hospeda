@@ -234,4 +234,19 @@ describe('applyAiGateNotice', () => {
         // Assert
         expect(result.message).toBe(MSG_AI_ENTITLEMENT);
     });
+
+    it('does not attach a message when the response carries a failureCode (SPEC-258 C.1)', () => {
+        // Arrange: generic adapter classified the failure (e.g. nothing_found) AND the
+        // AI port was invoked then plan-blocked. The classified failure owns the message
+        // contract (message stays undefined), so the gate notice must not overwrite it.
+        const response = baseResponse({ source: 'none', failureCode: 'nothing_found' });
+        const gate: AiGateState = { blockedReason: 'quota' };
+
+        // Act
+        const result = applyAiGateNotice(response, gate);
+
+        // Assert
+        expect(result).toBe(response);
+        expect(result.message).toBeUndefined();
+    });
 });
