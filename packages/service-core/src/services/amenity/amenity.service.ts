@@ -1,4 +1,4 @@
-import { AccommodationModel, AmenityModel, RAccommodationAmenityModel } from '@repo/db';
+import { AccommodationModel, AmenityModel, RAccommodationAmenityModel, amenities } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import {
     type AccommodationAmenityRelation,
@@ -26,6 +26,7 @@ import {
     ServiceErrorCode,
     type VisibilityEnum
 } from '@repo/schemas';
+import { sql } from 'drizzle-orm';
 import type { z } from 'zod';
 import { BaseCrudRelatedService } from '../../base/base.crud.related.service';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
@@ -489,6 +490,7 @@ export class AmenityService extends BaseCrudRelatedService<
             searchInDescription: _searchInDescription,
             fuzzySearch: _fuzzySearch,
             groupByCategory: _groupByCategory,
+            applicableVertical,
             ...filterParams
         } = params;
         // BaseCrudRead.search strips page/pageSize/sortBy/sortOrder from params
@@ -500,7 +502,15 @@ export class AmenityService extends BaseCrudRelatedService<
         // The JSONB name column was dropped in SPEC-266 T-001. Text search is now
         // done via the slug field (exact match via filterParams) or the q parameter
         // (handled upstream). safeIlike on slug is available for future extension.
-        return this.model.findAll(filterParams, { page, pageSize });
+
+        // SPEC-266 T-005: array containment filter for applicable_verticals.
+        // buildWhereClause cannot handle text[] containment, so we build the
+        // SQL condition manually and pass it as additionalConditions.
+        const additionalConditions = applicableVertical
+            ? [sql`${applicableVertical} = ANY(${amenities.applicableVerticals})`]
+            : undefined;
+
+        return this.model.findAll(filterParams, { page, pageSize }, additionalConditions);
     }
 
     /**
@@ -532,13 +542,24 @@ export class AmenityService extends BaseCrudRelatedService<
             searchInDescription: _searchInDescription,
             fuzzySearch: _fuzzySearch,
             groupByCategory: _groupByCategory,
+            applicableVertical,
             ...filterParams
         } = params;
 
         // The JSONB name column was dropped in SPEC-266 T-001. Text search is now
         // done via the slug field (exact match via filterParams). safeIlike on
         // amenities.slug is available for callers that need partial slug matching.
-        const result = await this.model.findAll(filterParams, { page, pageSize });
+
+        // SPEC-266 T-005: array containment filter for applicable_verticals.
+        const additionalConditions = applicableVertical
+            ? [sql`${applicableVertical} = ANY(${amenities.applicableVerticals})`]
+            : undefined;
+
+        const result = await this.model.findAll(
+            filterParams,
+            { page, pageSize },
+            additionalConditions
+        );
 
         // Batch fetch accommodation counts in a single query instead of N+1
         const amenityIds = result.items.map((amenity) => amenity.id as string);
@@ -584,12 +605,19 @@ export class AmenityService extends BaseCrudRelatedService<
             searchInDescription: _searchInDescription,
             fuzzySearch: _fuzzySearch,
             groupByCategory: _groupByCategory,
+            applicableVertical,
             ...filterParams
         } = params;
         // The JSONB name column was dropped in SPEC-266 T-001. Text search is now
         // done via the slug field (exact match via filterParams). safeIlike on
         // amenities.slug is available for callers that need partial slug matching.
-        const count = await this.model.count(filterParams);
+
+        // SPEC-266 T-005: array containment filter for applicable_verticals.
+        const additionalConditions = applicableVertical
+            ? [sql`${applicableVertical} = ANY(${amenities.applicableVerticals})`]
+            : undefined;
+
+        const count = await this.model.count(filterParams, { additionalConditions });
         return { count };
     }
 

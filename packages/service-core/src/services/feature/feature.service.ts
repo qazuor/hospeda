@@ -1,4 +1,4 @@
-import { AccommodationModel, FeatureModel, RAccommodationFeatureModel } from '@repo/db';
+import { AccommodationModel, FeatureModel, RAccommodationFeatureModel, features } from '@repo/db';
 import type {
     Accommodation,
     AccommodationFeature,
@@ -17,6 +17,7 @@ import {
     ServiceErrorCode,
     FeatureUpdateInputSchema as UpdateFeatureSchema
 } from '@repo/schemas';
+import { sql } from 'drizzle-orm';
 import type { z } from 'zod';
 import { BaseCrudRelatedService } from '../../base/base.crud.related.service';
 import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
@@ -182,7 +183,7 @@ export class FeatureService extends BaseCrudRelatedService<
         _actor: Actor,
         _ctx: ServiceContext
     ): Promise<{ items: Feature[]; total: number }> {
-        const { slug, isFeatured, isBuiltin } = params;
+        const { slug, isFeatured, isBuiltin, applicableVertical } = params;
         const where: Record<string, unknown> = {};
         // The JSONB name column was dropped in SPEC-266 T-001. Text search is now
         // done via the slug field (exact match). safeIlike on features.slug is
@@ -191,7 +192,14 @@ export class FeatureService extends BaseCrudRelatedService<
         if (typeof isFeatured === 'boolean') where.isFeatured = isFeatured;
         if (typeof isBuiltin === 'boolean') where.isBuiltin = isBuiltin;
 
-        const { items, total } = await this.model.findAll(where, undefined);
+        // SPEC-266 T-005: array containment filter for applicable_verticals.
+        // buildWhereClause cannot handle text[] containment, so we build the
+        // SQL condition manually and pass it as additionalConditions.
+        const additionalConditions = applicableVertical
+            ? [sql`${applicableVertical} = ANY(${features.applicableVerticals})`]
+            : undefined;
+
+        const { items, total } = await this.model.findAll(where, undefined, additionalConditions);
         return { items, total };
     }
 
@@ -200,7 +208,7 @@ export class FeatureService extends BaseCrudRelatedService<
         _actor: Actor,
         _ctx: ServiceContext
     ): Promise<{ count: number }> {
-        const { slug, isFeatured, isBuiltin } = params;
+        const { slug, isFeatured, isBuiltin, applicableVertical } = params;
         const where: Record<string, unknown> = {};
         // The JSONB name column was dropped in SPEC-266 T-001. Text search is now
         // done via the slug field (exact match). safeIlike on features.slug is
@@ -209,7 +217,12 @@ export class FeatureService extends BaseCrudRelatedService<
         if (typeof isFeatured === 'boolean') where.isFeatured = isFeatured;
         if (typeof isBuiltin === 'boolean') where.isBuiltin = isBuiltin;
 
-        const count = await this.model.count(where);
+        // SPEC-266 T-005: array containment filter for applicable_verticals.
+        const additionalConditions = applicableVertical
+            ? [sql`${applicableVertical} = ANY(${features.applicableVerticals})`]
+            : undefined;
+
+        const count = await this.model.count(where, { additionalConditions });
         return { count };
     }
 
