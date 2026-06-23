@@ -44,6 +44,11 @@
 import type { QZPayBilling, QZPayScheduledPlanChange } from '@qazuor/qzpay-core';
 import { billingSubscriptions, getDb, sql } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
+import {
+    calculatePromoCodeEffect,
+    getPromoCodeById,
+    resolveFullPlanPriceCentavos
+} from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import { getQZPayBilling } from '../../middlewares/billing.js';
 import { clearEntitlementCache } from '../../middlewares/entitlement.js';
@@ -61,6 +66,82 @@ import type { CronJobDefinition, CronJobResult } from '../types.js';
  * ~1 hour of automatic recovery before paging ops.
  */
 const MAX_APPLY_ATTEMPTS = 5;
+
+/**
+ * SPEC-262 S3 — Compute the discount-aware MP amount for a plan change.
+ *
+ * When a subscription with an active multi-cycle discount undergoes a
+ * plan change (upgrade or downgrade), the discount must be PRESERVED —
+ * recalculated on the NEW plan's price. This function reads the sub's
+ * discount state and returns the correct `transaction_amount` (major units)
+ * to pass to `paymentAdapter.subscriptions.update`.
+ *
+ * @param subscriptionId - The local subscription ID.
+ * @param newPlanId - The target plan ID after the change.
+ * @param nominalAmountMajor - The full new-plan price in MP major units
+ *   (`targetTransactionAmountMajor` from the scheduled-change payload).
+ * @returns The effective major-unit amount (discounted if applicable, full otherwise).
+ * @internal
+ */
+async function resolveDiscountAwarePlanChangeAmount(
+    subscriptionId: string,
+    newPlanId: string,
+    nominalAmountMajor: number
+): Promise<number> {
+    const db = getDb();
+    try {
+        const result = await db.execute(
+            sql`SELECT promo_code_id, promo_effect_remaining_cycles
+                FROM billing_subscriptions
+                WHERE id = ${subscriptionId}
+                LIMIT 1`
+        );
+        const row = (result.rows?.[0] ?? null) as {
+            promo_code_id: string | null;
+            promo_effect_remaining_cycles: number | null;
+        } | null;
+
+        if (!row?.promo_code_id) {
+            return nominalAmountMajor; // No discount — use full price.
+        }
+
+        const remaining = row.promo_effect_remaining_cycles;
+        // Discount is active when remaining > 0 (finite) OR remaining === null (forever).
+        if (remaining !== null && remaining <= 0) {
+            return nominalAmountMajor; // Discount exhausted — use full price.
+        }
+
+        // Discount is active. Compute discounted amount on the NEW plan's price.
+        const fullPriceCentavos = await resolveFullPlanPriceCentavos(db, newPlanId);
+        if (fullPriceCentavos === null) {
+            return nominalAmountMajor; // Can't resolve new price — fall back to nominal.
+        }
+
+        const promoResult = await getPromoCodeById(row.promo_code_id);
+        if (!promoResult.success || !promoResult.data?.effect) {
+            return nominalAmountMajor;
+        }
+
+        const mutation = calculatePromoCodeEffect(promoResult.data.effect, fullPriceCentavos);
+        if (mutation.type !== 'apply-discount') {
+            return nominalAmountMajor;
+        }
+
+        return mutation.finalAmount / 100; // centavos → major units
+    } catch (err) {
+        // Fail-open: if we can't determine the discount state, use the nominal amount.
+        // A missed discount re-application is recoverable via the reconciler.
+        const message = err instanceof Error ? err.message : String(err);
+        Sentry.captureException(
+            new Error(`SPEC-262 S3: plan-change discount resolution failed: ${message}`),
+            {
+                extra: { subscriptionId, newPlanId },
+                tags: { module: 'apply-scheduled-plan-changes' }
+            }
+        );
+        return nominalAmountMajor;
+    }
+}
 
 /**
  * Soft cap on rows processed per tick. Plan changes are rare events
@@ -295,14 +376,34 @@ async function applyOne(
     }
 
     // STEP 2: propagate to MP preapproval — best-effort.
+    // SPEC-262 S3: if the sub has an active multi-cycle discount, the amount
+    // passed to MP must be the discounted amount on the NEW plan's price, NOT
+    // the nominal `targetTransactionAmountMajor` (which is the full new price).
+    // The counter and promo_code_id are preserved; only the amount changes.
     if (mpSubscriptionId) {
         const paymentAdapter = billing.getPaymentAdapter();
         if (paymentAdapter) {
             try {
+                const effectiveTransactionAmountMajor = await resolveDiscountAwarePlanChangeAmount(
+                    subscriptionId,
+                    newPlanId,
+                    targetTransactionAmountMajor
+                );
                 await paymentAdapter.subscriptions.update(mpSubscriptionId, {
                     planId: newPlanId,
-                    transactionAmount: targetTransactionAmountMajor
+                    transactionAmount: effectiveTransactionAmountMajor
                 });
+                if (effectiveTransactionAmountMajor !== targetTransactionAmountMajor) {
+                    logger.info(
+                        'Scheduled plan change: discount preserved on new plan price (S3)',
+                        {
+                            subscriptionId,
+                            newPlanId,
+                            nominalAmountMajor: targetTransactionAmountMajor,
+                            discountedAmountMajor: effectiveTransactionAmountMajor
+                        }
+                    );
+                }
             } catch (mpErr) {
                 logger.error(
                     'Scheduled plan change: MP propagation failed (local change persisted)',

@@ -33,6 +33,75 @@ import { apiLogger } from '../../utils/logger.js';
 import type { CronJobDefinition } from '../types.js';
 
 /**
+ * SPEC-262 T-007 dunning guard.
+ *
+ * Determine whether a subscription must be EXCLUDED from dunning because it is
+ * either complimentary (`status = 'comp'`, never charged — Model β) or in an
+ * intentionally-discounted multi-cycle window (`promo_effect_remaining_cycles`
+ * is non-null and > 0, OR the subscription has a forever discount). In both cases
+ * the subscription is below full price by design, so a failed full-price charge
+ * must NOT be treated as delinquency.
+ *
+ * Reads via raw SQL because `status`, `promo_code_id` and
+ * `promo_effect_remaining_cycles` (the latter two are extras-carril columns) are
+ * not on the QZPay Drizzle schema. Fail-open on a read error (returns null) so a
+ * transient DB hiccup never silently disables legitimate dunning.
+ *
+ * @param subscriptionId - The local subscription ID being processed.
+ * @returns A short reason string when the sub must be skipped, otherwise null.
+ */
+async function isCompOrActivelyDiscounted(
+    subscriptionId: string | undefined
+): Promise<string | null> {
+    if (!subscriptionId) {
+        return null;
+    }
+    try {
+        const db = getDb();
+        const result = await db.execute(
+            sql`SELECT status, promo_code_id, promo_effect_remaining_cycles
+                FROM billing_subscriptions
+                WHERE id = ${subscriptionId}
+                LIMIT 1`
+        );
+        const row = (result.rows?.[0] ?? null) as {
+            status: string;
+            promo_code_id: string | null;
+            promo_effect_remaining_cycles: number | null;
+        } | null;
+
+        if (!row) {
+            return null;
+        }
+        if (row.status === 'comp') {
+            return 'comp';
+        }
+        // Active multi-cycle discount: remaining cycles still pending (finite),
+        // OR a forever discount (promo_effect_remaining_cycles IS NULL but a
+        // promo_code_id is set — S2 fix: the previous guard incorrectly required
+        // remaining_cycles !== null, missing the forever-discount case).
+        if (row.promo_code_id !== null) {
+            if (
+                row.promo_effect_remaining_cycles === null ||
+                row.promo_effect_remaining_cycles > 0
+            ) {
+                return 'active-discount';
+            }
+        }
+        return null;
+    } catch (err) {
+        apiLogger.warn(
+            {
+                subscriptionId,
+                error: err instanceof Error ? err.message : String(err)
+            },
+            'Dunning: comp/discount guard read failed — proceeding with normal dunning (fail-open)'
+        );
+        return null;
+    }
+}
+
+/**
  * Record a dunning attempt in the billing_dunning_attempts table for auditing.
  * Best-effort: logs errors but does not throw to avoid disrupting the dunning flow.
  */
@@ -184,6 +253,29 @@ export const dunningJob: CronJobDefinition = {
                      * so we use billing.payments.process() which routes through the adapter.
                      */
                     processPayment: async (input) => {
+                        // SPEC-262 T-007: do NOT dun a complimentary or actively
+                        // multi-cycle-discounted subscription. A `comp` sub is
+                        // never charged (Model β); a sub with a live discount
+                        // (`promo_effect_remaining_cycles` > 0 OR forever-null
+                        // with a discount link) is intentionally below full price,
+                        // so a "failed full charge" must not be treated as
+                        // delinquency. Returning success short-circuits the retry
+                        // without touching MercadoPago.
+                        const guard = await isCompOrActivelyDiscounted(
+                            input.metadata.subscriptionId
+                        );
+                        if (guard) {
+                            apiLogger.info(
+                                {
+                                    subscriptionId: input.metadata.subscriptionId,
+                                    customerId: input.customerId,
+                                    reason: guard
+                                },
+                                'Dunning: skipping retry for comp/actively-discounted subscription'
+                            );
+                            return { success: true };
+                        }
+
                         try {
                             const payment = await billing.payments.process({
                                 customerId: input.customerId,
