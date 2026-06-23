@@ -5,6 +5,12 @@
  * amenities/features catalogs; the parent owns the selected-ID sets and dirty
  * tracking. The current selection is seeded from the protected listing detail
  * (`amenityIds` / `featureIds`, read back from the junction tables).
+ *
+ * SPEC-266: the `name` column was removed from the catalog. Display labels are
+ * resolved via the `accommodations` i18n namespace using each item's `slug`:
+ *   - Amenities: `accommodations.amenityNames.<slug>`
+ *   - Features:  `accommodations.featureNames.<slug>`
+ * The slug falls through as raw fallback when no i18n key is found.
  */
 import type { AmenityData } from '@/lib/api/types';
 import type { JSX } from 'react';
@@ -64,7 +70,7 @@ export function AmenitiesFeaturesField({
                                     checked={selectedAmenityIds.has(amenity.id)}
                                     onChange={() => onToggleAmenity(amenity.id)}
                                 />
-                                {amenity.name}
+                                {t(`accommodations.amenityNames.${amenity.slug}`, amenity.slug)}
                             </label>
                         ))}
                     </div>
@@ -87,7 +93,7 @@ export function AmenitiesFeaturesField({
                                     checked={selectedFeatureIds.has(feature.id)}
                                     onChange={() => onToggleFeature(feature.id)}
                                 />
-                                {feature.name}
+                                {t(`accommodations.featureNames.${feature.slug}`, feature.slug)}
                             </label>
                         ))}
                     </div>
