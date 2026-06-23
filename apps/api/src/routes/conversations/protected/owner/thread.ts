@@ -8,7 +8,12 @@
  */
 
 import { AccommodationModel, UserModel, accommodations, getDb } from '@repo/db';
-import { PermissionEnum, ServiceErrorCode, ThreadQuerySchema } from '@repo/schemas';
+import {
+    OwnerThreadResponseSchema,
+    PermissionEnum,
+    ServiceErrorCode,
+    ThreadQuerySchema
+} from '@repo/schemas';
 import { ConversationService } from '@repo/service-core';
 import { eq } from 'drizzle-orm';
 import { getActorFromContext } from '../../../../utils/actor';
@@ -194,7 +199,12 @@ router.get('/:id', async (c) => {
 
         const enrichedConversation = { ...convRaw, accommodationName, guestName };
 
-        return createResponse({ conversation: enrichedConversation, messages, nextCursor }, c, 200);
+        return createResponse(
+            { conversation: enrichedConversation, messages, nextCursor },
+            c,
+            200,
+            OwnerThreadResponseSchema
+        );
     } catch (error) {
         return handleRouteError(error, c);
     }

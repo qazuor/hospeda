@@ -23,6 +23,7 @@ import { getDb } from '@repo/db';
 import { accommodations } from '@repo/db';
 import {
     ConversationAdminSearchSchema,
+    ConversationSchema,
     PermissionEnum,
     RoleEnum,
     ServiceErrorCode
@@ -159,7 +160,13 @@ router.get('/', async (c) => {
             total: result.data.total
         });
 
-        return createPaginatedResponse(result.data.items as unknown[], pagination, c);
+        return createPaginatedResponse(
+            result.data.items as unknown[],
+            pagination,
+            c,
+            200,
+            ConversationSchema
+        );
     } catch (error) {
         return handleRouteError(error, c);
     }

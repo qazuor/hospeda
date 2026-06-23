@@ -5,7 +5,7 @@
  * authenticated guest. Used for the inbox badge.
  */
 
-import { PermissionEnum, RoleEnum } from '@repo/schemas';
+import { PermissionEnum, RoleEnum, UnreadCountResponseSchema } from '@repo/schemas';
 import { ConversationService } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { createRouter } from '../../../utils/create-app';
@@ -62,7 +62,7 @@ router.get('/unread-count', async (c) => {
             );
         }
 
-        return createResponse(result.data, c, 200);
+        return createResponse(result.data, c, 200, UnreadCountResponseSchema);
     } catch (error) {
         return handleRouteError(error, c);
     }
