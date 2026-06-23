@@ -272,31 +272,31 @@
             "id": "T-009",
             "title": "Unit tests: model + schema",
             "description": "Unit tests for AccommodationMediaModel (CRUD, order, state filter, soft-delete) and AccommodationMediaItem schema (parse round-trip incl publicId/attribution; state/is_featured validation). Files under packages/db and packages/schemas test dirs. AAA pattern. NOTE(T-005): add new i18n keys zodError.accommodation.media.state.invalid + zodError.accommodation.media.sortOrder.int to @repo/i18n catalog (used by AccommodationMediaSchema) so the i18n coverage guard passes before PR.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-004", "T-005"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "model unit tests",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "schema unit tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "P1"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-22T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-23T03:09:30.000Z",
+                "completed": "2026-06-23T03:19:20.000Z"
             }
         },
         {
@@ -906,9 +906,9 @@
     ],
     "summary": {
         "total": 29,
-        "pending": 21,
+        "pending": 20,
         "inProgress": 0,
-        "completed": 8,
+        "completed": 9,
         "blocked": 0,
         "averageComplexity": 2.5
     }
