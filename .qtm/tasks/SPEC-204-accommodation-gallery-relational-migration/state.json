@@ -396,32 +396,33 @@
             "id": "T-013",
             "title": "Switch accommodation read paths to the table",
             "description": "Point getById/list/detail read boundary (accommodation service + transforms) at the composition helper instead of JSONB gallery/featuredImage. Keep writing both stores. The ~21 web/admin read-sites stay untouched (shape unchanged). Tests in T-015.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-012"],
             "blocks": ["T-015", "T-017", "T-024"],
             "subtasks": [
                 {
                     "title": "service read boundary uses helper",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "verify read-sites unchanged",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service", "api", "P2"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-22T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-06-23T13:05:00.000Z",
+                "completed": "2026-06-23T13:55:00.000Z"
+            },
+            "notes": "Composes media via _afterGetByField/_afterList/_afterSearch/getSummary using batch finder findByAccommodations (no N+1). archived_at diff-and-preserve DEFERRED (no prod data; restore FIFO still reads JSONB in P2) -> see T-021/T-024. Read paths that bypass the standard hooks (getByDestination/getByOwner/getTopRated/getTopRatedByDestination + raw-JSONB readers: search cover, bookmark, billing) still read JSONB in P2 (safe via write-both) and are DEFERRED to T-024 cutover. 17 read-test files migrated to a shared makeMediaModelStub. Adversarial review passed (1 false-positive re: searchWithRelations _ctx, which is reserved-by-design)."
         },
         {
             "id": "T-014",
@@ -724,7 +725,7 @@
         {
             "id": "T-024",
             "title": "Stop writing gallery/featuredImage/archivedGallery to JSONB",
-            "description": "P3 cutover: make accommodation_media the single source of truth; stop the JSONB write of gallery/featuredImage/archivedGallery in create/update and the 167 primitives (videos stay in JSONB). Tests: writes no longer mutate the retired JSONB keys.",
+            "description": "P3 cutover: make accommodation_media the single source of truth; stop the JSONB write of gallery/featuredImage/archivedGallery in create/update and the 167 primitives (videos stay in JSONB). MUST ALSO migrate the read paths that T-013 deferred (they still read JSONB and will break once JSONB stops being written): getByDestination, getByOwner, getTopRated, getTopRatedByDestination (accommodation.service) + raw-JSONB readers: search cover-image (apps/api search), userBookmark.enrichment, billing limit/downgrade services (limit-enforcement, subscription-downgrade-excess, plan-downgrade-remediation, plan-photo-restriction, plan-upgrade-restoration). Tests: writes no longer mutate the retired JSONB keys; all read paths source media from the table.",
             "status": "pending",
             "complexity": 2,
             "blockedBy": ["T-013", "T-022"],
@@ -906,9 +907,9 @@
     ],
     "summary": {
         "total": 29,
-        "pending": 17,
+        "pending": 16,
         "inProgress": 0,
-        "completed": 12,
+        "completed": 13,
         "blocked": 0,
         "averageComplexity": 2.5
     }
