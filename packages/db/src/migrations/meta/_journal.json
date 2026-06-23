@@ -169,6 +169,13 @@
             "when": 1782156641985,
             "tag": "0023_charming_phantom_reporter",
             "breakpoints": true
+        },
+        {
+            "idx": 24,
+            "version": "7",
+            "when": 1782180059850,
+            "tag": "0024_aberrant_shriek",
+            "breakpoints": true
         }
     ]
 }
