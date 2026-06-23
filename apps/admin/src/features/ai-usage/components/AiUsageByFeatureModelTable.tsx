@@ -1,0 +1,176 @@
+/**
+ * AiUsageByFeatureModelTable — Feature × model cross breakdown table (SPEC-260 T-016).
+ *
+ * Renders a native `<table>` inside a Card, displaying one row per
+ * (feature, model) pair for the selected time window and filters.
+ *
+ * Columns:
+ *   - Feature (identifier string, e.g. `text_improve`)
+ *   - Model (identifier string, e.g. `gpt-4o-mini`)
+ *   - Calls (integer, locale-formatted)
+ *   - Tokens In (integer)
+ *   - Tokens Out (integer)
+ *   - Est. Cost (formatted µUSD → USD)
+ *
+ * Rows are ordered by cost DESC (the API returns them this way).
+ * Uses `pageSize: 100` so the TanStack Query cache entry is shared with
+ * `AiUsageByFeatureTable` (T-015) — zero extra network requests.
+ *
+ * @module features/ai-usage/components/AiUsageByFeatureModelTable
+ */
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { AiUsageBlockState } from '@/features/ai-usage/components/AiUsageBlockState';
+import { useAiUsageByFeatureModelQuery } from '@/features/ai-usage/hooks';
+import type { AiUsageDailySearch } from '@/features/ai-usage/types';
+import { useTranslations } from '@/hooks/use-translations';
+import { formatMicroUsd } from '@repo/utils';
+
+// ---------------------------------------------------------------------------
+// Props
+// ---------------------------------------------------------------------------
+
+/**
+ * Props for {@link AiUsageByFeatureModelTable}.
+ */
+export interface AiUsageByFeatureModelTableProps {
+    /** Current resolved search params from `Route.useSearch()`. */
+    readonly search: AiUsageDailySearch;
+}
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
+/**
+ * Feature × model cross breakdown table.
+ *
+ * One row per (feature, model) pair. Handles loading (spinner), error
+ * (message), and empty (hint) states.
+ *
+ * @param props - {@link AiUsageByFeatureModelTableProps}
+ */
+export function AiUsageByFeatureModelTable({ search }: AiUsageByFeatureModelTableProps) {
+    const { t, tPlural } = useTranslations();
+
+    // pageSize: 100 matches AiUsageByFeatureTable → shared TanStack Query cache entry.
+    const { data, isLoading, isError } = useAiUsageByFeatureModelQuery({
+        year: search.year,
+        month: search.month,
+        since: search.since,
+        until: search.until,
+        userId: search.userId,
+        page: 1,
+        pageSize: 100
+    });
+
+    const description = isLoading
+        ? t('admin-pages.ai.usage.featureModel.loading')
+        : isError
+          ? t('admin-pages.ai.usage.featureModel.loadError')
+          : data && data.items.length > 0
+            ? tPlural('admin-pages.ai.usage.featureModel.desc', data.items.length)
+            : t('admin-pages.ai.usage.featureModel.empty');
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>{t('admin-pages.ai.usage.featureModel.tableTitle')}</CardTitle>
+                <CardDescription>{description}</CardDescription>
+            </CardHeader>
+            <CardContent>
+                {isLoading ? (
+                    <AiUsageBlockState
+                        status="loading"
+                        title={t('admin-pages.ai.usage.featureModel.loading')}
+                    />
+                ) : isError ? (
+                    <AiUsageBlockState
+                        status="error"
+                        title={t('admin-pages.ai.usage.featureModel.loadError')}
+                        hint={t('admin-pages.ai.usage.featureModel.loadErrorHint')}
+                    />
+                ) : !data || data.items.length === 0 ? (
+                    <AiUsageBlockState
+                        status="empty"
+                        title={t('admin-pages.ai.usage.featureModel.empty')}
+                        hint={t('admin-pages.ai.usage.featureModel.emptyHint')}
+                    />
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <caption className="sr-only">
+                                {t('admin-pages.ai.usage.a11y.tableByFeatureModel')}
+                            </caption>
+                            <thead>
+                                <tr className="border-b">
+                                    <th
+                                        scope="col"
+                                        className="px-4 py-3 text-left font-medium"
+                                    >
+                                        {t('admin-pages.ai.usage.table.colFeature')}
+                                    </th>
+                                    <th
+                                        scope="col"
+                                        className="px-4 py-3 text-left font-medium"
+                                    >
+                                        {t('admin-pages.ai.usage.table.colModel')}
+                                    </th>
+                                    <th
+                                        scope="col"
+                                        className="px-4 py-3 text-right font-medium"
+                                    >
+                                        {t('admin-pages.ai.usage.table.colCalls')}
+                                    </th>
+                                    <th
+                                        scope="col"
+                                        className="px-4 py-3 text-right font-medium"
+                                    >
+                                        {t('admin-pages.ai.usage.table.colTokensIn')}
+                                    </th>
+                                    <th
+                                        scope="col"
+                                        className="px-4 py-3 text-right font-medium"
+                                    >
+                                        {t('admin-pages.ai.usage.table.colTokensOut')}
+                                    </th>
+                                    <th
+                                        scope="col"
+                                        className="px-4 py-3 text-right font-medium"
+                                    >
+                                        {t('admin-pages.ai.usage.table.colEstCost')}
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {data.items.map((row) => (
+                                    <tr
+                                        key={`${row.feature}:${row.model}`}
+                                        className="border-b hover:bg-muted/50"
+                                    >
+                                        <td className="px-4 py-3 font-mono text-xs">
+                                            {row.feature}
+                                        </td>
+                                        <td className="px-4 py-3 font-mono text-xs">{row.model}</td>
+                                        <td className="px-4 py-3 text-right tabular-nums">
+                                            {row.calls.toLocaleString()}
+                                        </td>
+                                        <td className="px-4 py-3 text-right tabular-nums">
+                                            {row.tokensIn.toLocaleString()}
+                                        </td>
+                                        <td className="px-4 py-3 text-right tabular-nums">
+                                            {row.tokensOut.toLocaleString()}
+                                        </td>
+                                        <td className="px-4 py-3 text-right font-medium tabular-nums">
+                                            {formatMicroUsd(row.costMicroUsd)}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+    );
+}

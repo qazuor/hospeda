@@ -12,9 +12,17 @@ export {
     getMonthlyUsage,
     getUsageByUser,
     getUsageByFeature,
+    getUsageByModel,
+    getUsageByProvider,
+    getUsageByFeatureModel,
+    getDailyUsage,
     type GetMonthlyUsageInput,
     type GetUsageByUserInput,
-    type GetUsageByFeatureInput
+    type GetUsageByFeatureInput,
+    type GetUsageByModelInput,
+    type GetUsageByProviderInput,
+    type GetUsageByFeatureModelInput,
+    type GetDailyUsageInput
 } from './usage-reporting.js';
 
 export {

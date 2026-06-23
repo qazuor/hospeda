@@ -1673,7 +1673,7 @@
             "slug": "ai-usage-dashboard",
             "type": "feature",
             "complexity": "high",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-260-ai-usage-dashboard",
             "created": "2026-06-22T00:00:00Z",
             "base": "staging",
