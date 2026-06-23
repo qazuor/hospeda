@@ -996,7 +996,7 @@
             "specId": "SPEC-266",
             "title": "Amenities & features catalog by vertical (scoping + i18n source-of-truth)",
             "status": "in-progress",
-            "progress": "4/13",
+            "progress": "13/13",
             "path": "SPEC-266-amenities-feature-catalog-by-vertical",
             "branch": "spec/SPEC-266-amenities-feature-catalog-by-vertical",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-266-amenities-feature-catalog-by-vertical",
