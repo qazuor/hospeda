@@ -311,6 +311,9 @@ export function createDbMock() {
             async findFeatured(_accommodationId: string) {
                 return null;
             }
+            async findByAccommodations(_input: unknown) {
+                return new Map();
+            }
             async create(_data: unknown, _tx?: unknown) {
                 return null;
             }

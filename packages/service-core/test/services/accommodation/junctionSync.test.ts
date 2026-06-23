@@ -67,7 +67,7 @@ import {
 } from '../../factories/accommodationFactory';
 import { createAdminActor } from '../../factories/actorFactory';
 import { createMockBaseModel } from '../../factories/baseServiceFactory';
-import { createLoggerMock } from '../../utils/modelMockFactory';
+import { createLoggerMock, makeMediaModelStub } from '../../utils/modelMockFactory';
 
 // ─── UUIDs used in tests (must be valid UUID v4) ────────────────────────────
 
@@ -82,27 +82,6 @@ const UUID_FEATURE_B = '8172442f-03f9-450f-86ca-7704c0cef27f';
 // ─── helpers ────────────────────────────────────────────────────────────────
 
 const mockLogger = createLoggerMock();
-
-/**
- * Minimal no-op stub for AccommodationMediaModel.
- * FIX 1 (SPEC-204): create() now calls syncAccommodationMedia in _afterCreate.
- * Inject a stub so tests that have media in the input don't need a real DB.
- */
-function makeMediaModelStub() {
-    return {
-        hardDelete: vi.fn().mockResolvedValue(undefined),
-        create: vi.fn().mockResolvedValue(undefined),
-        findById: vi.fn(),
-        findOne: vi.fn(),
-        update: vi.fn(),
-        softDelete: vi.fn(),
-        restore: vi.fn(),
-        count: vi.fn(),
-        findAll: vi.fn(),
-        findByAccommodation: vi.fn(),
-        findFeatured: vi.fn()
-    };
-}
 
 /** Creates a minimal mock for the junction models. */
 function createMockJunctionModel() {

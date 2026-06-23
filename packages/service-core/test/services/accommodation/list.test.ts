@@ -19,7 +19,11 @@ import { AccommodationService } from '../../../src/services/accommodation/accomm
 import { ServiceError } from '../../../src/types';
 import { createAccommodationWithMockIds } from '../../factories/accommodationFactory';
 import { createActor } from '../../factories/actorFactory';
-import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
+import {
+    createLoggerMock,
+    createModelMock,
+    makeMediaModelStub
+} from '../../utils/modelMockFactory';
 import { asMock } from '../../utils/test-utils';
 
 const mockLogger = createLoggerMock();
@@ -46,7 +50,16 @@ describe('AccommodationService.list', () => {
         model = createModelMock();
         service = new AccommodationService(
             { logger: mockLogger },
-            model as unknown as AccommodationModel
+            model as unknown as AccommodationModel,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            // biome-ignore lint/suspicious/noExplicitAny: test stub
+            makeMediaModelStub() as any
         );
         actor = createListActor();
         entities = [createEntity(), createEntity()];

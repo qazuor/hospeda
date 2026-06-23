@@ -22,8 +22,7 @@ import {
     expectSuccess,
     expectValidationError
 } from '../../helpers/assertions';
-import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
-import { createTypedModelMock } from '../../utils/modelMockFactory';
+import { createTypedModelMock, makeMediaModelStub } from '../../utils/modelMockFactory';
 
 const asMock = <T>(fn: T) => fn as unknown as import('vitest').Mock;
 
@@ -48,7 +47,22 @@ describe('AccommodationService.getSummary', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         modelMock = createTypedModelMock(AccommodationModel, ['findOne']);
-        service = createServiceTestInstance(AccommodationService, modelMock);
+        // SPEC-204 T-013: _afterGetByField now calls findByAccommodations on the
+        // media model. Inject a stub that returns an empty Map so the read hook
+        // preserves the entity's original `media` without needing a real DB.
+        service = new AccommodationService(
+            { logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() } as never },
+            modelMock,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            // biome-ignore lint/suspicious/noExplicitAny: test stub
+            makeMediaModelStub() as any
+        );
         actor = new ActorFactoryBuilder().host().build();
         accommodation = createMockAccommodation({ lifecycleState: LifecycleStatusEnum.ACTIVE });
         input = { id: accommodation.id };

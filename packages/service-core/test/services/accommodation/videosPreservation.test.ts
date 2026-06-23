@@ -30,7 +30,7 @@ import {
 } from '../../factories/accommodationFactory';
 import { createAdminActor } from '../../factories/actorFactory';
 import { createMockBaseModel } from '../../factories/baseServiceFactory';
-import { createLoggerMock } from '../../utils/modelMockFactory';
+import { createLoggerMock, makeMediaModelStub } from '../../utils/modelMockFactory';
 
 /**
  * FIX 1 (SPEC-204): AccommodationService.update() now opens a transaction when
@@ -84,27 +84,6 @@ beforeEach(() => {
         })
     );
 });
-
-/**
- * Minimal no-op stub for AccommodationMediaModel.
- * FIX 1 (SPEC-204): update() now opens a tx when `media` is present. These unit
- * tests don't have a real DB, so we inject a stub that swallows hardDelete/create.
- */
-function makeMediaModelStub() {
-    return {
-        hardDelete: vi.fn().mockResolvedValue(undefined),
-        create: vi.fn().mockResolvedValue(undefined),
-        findById: vi.fn(),
-        findOne: vi.fn(),
-        update: vi.fn(),
-        softDelete: vi.fn(),
-        restore: vi.fn(),
-        count: vi.fn(),
-        findAll: vi.fn(),
-        findByAccommodation: vi.fn(),
-        findFeatured: vi.fn()
-    };
-}
 
 function makeService(model: ReturnType<typeof createMockBaseModel>): AccommodationService {
     const svc = new AccommodationService(

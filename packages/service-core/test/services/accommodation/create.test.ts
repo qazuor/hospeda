@@ -6,7 +6,7 @@ import { AccommodationService } from '../../../src/services/accommodation/accomm
 import { createMockAccommodationCreateInput } from '../../factories/accommodationFactory';
 import { createActor, createAdminActor } from '../../factories/actorFactory';
 import { createMockBaseModel } from '../../factories/baseServiceFactory';
-import { createLoggerMock } from '../../utils/modelMockFactory';
+import { createLoggerMock, makeMediaModelStub } from '../../utils/modelMockFactory';
 
 /**
  * FIX 1 (SPEC-204): AccommodationService.create() now opens a transaction when
@@ -48,28 +48,6 @@ vi.mock('../../../src/utils/transaction', () => ({
         }
     )
 }));
-
-/**
- * Minimal no-op stub for AccommodationMediaModel.
- * FIX 1 (SPEC-204): create() now calls syncAccommodationMedia inside the (mocked)
- * transaction. These unit tests inject a stub that swallows hardDelete/create so
- * tests do not need a real DB connection.
- */
-function makeMediaModelStub() {
-    return {
-        hardDelete: vi.fn().mockResolvedValue(undefined),
-        create: vi.fn().mockResolvedValue(undefined),
-        findById: vi.fn(),
-        findOne: vi.fn(),
-        update: vi.fn(),
-        softDelete: vi.fn(),
-        restore: vi.fn(),
-        count: vi.fn(),
-        findAll: vi.fn(),
-        findByAccommodation: vi.fn(),
-        findFeatured: vi.fn()
-    };
-}
 
 // Mocks
 const mockLogger = createLoggerMock();

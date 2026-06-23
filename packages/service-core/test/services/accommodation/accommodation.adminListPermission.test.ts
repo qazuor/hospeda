@@ -15,7 +15,11 @@ import * as accommodationPermissions from '../../../src/services/accommodation/a
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import type { Actor } from '../../../src/types';
 import { ActorFactoryBuilder } from '../../factories/actorFactory';
-import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
+import {
+    createLoggerMock,
+    createModelMock,
+    makeMediaModelStub
+} from '../../utils/modelMockFactory';
 
 type CanAdminListAccessor = { _canAdminList: (actor: Actor) => Promise<void> };
 
@@ -29,7 +33,16 @@ describe('AccommodationService._canAdminList()', () => {
         model = createModelMock();
         service = new AccommodationService(
             { logger: mockLogger },
-            model as unknown as AccommodationModel
+            model as unknown as AccommodationModel,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            // biome-ignore lint/suspicious/noExplicitAny: test stub
+            makeMediaModelStub() as any
         );
         vi.restoreAllMocks();
     });
