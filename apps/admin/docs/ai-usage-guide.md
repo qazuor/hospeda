@@ -24,7 +24,7 @@ All data is read-only. No mutations are performed from this page.
 
 The `beforeLoad` guard delegates to `requireAiAccess()` in
 `apps/admin/src/lib/ai-access.ts`. Any user without `AI_SETTINGS_MANAGE` is
-redirected to `/403`.
+redirected to `/auth/forbidden`.
 
 ## API Endpoints Consumed
 
@@ -65,9 +65,13 @@ Switching between modes clears the other mode's params.
 
 | Filter | Param | Accepted by endpoints |
 |--------|-------|-----------------------|
-| Feature | `feature` | `by-feature-model`, `daily` |
-| Provider | `provider` | `by-provider`, `by-feature-model`, `daily` |
-| Model | `model` | `by-model`, `by-feature-model`, `daily` |
+| Feature | `feature` | `by-model`, `by-provider`, `daily` |
+| Provider | `provider` | `by-model`, `daily` |
+| Model | `model` | `daily` |
+
+(`by-feature-model` groups by both feature and model, so it accepts neither as a
+filter — only the time window and `userId`. Each endpoint that groups by a
+dimension does not also accept that dimension as a filter.)
 
 Each API endpoint only accepts its own subset of params. The TanStack Query hooks
 (`apps/admin/src/features/ai-usage/hooks.ts`) strip excess params before building

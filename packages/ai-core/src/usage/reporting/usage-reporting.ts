@@ -490,6 +490,13 @@ export interface GetDailyUsageInput {
  * month `[monthStart, monthEnd)`.  When `since`/`until` are given directly,
  * those dates are used as-is.
  *
+ * INVARIANT: `since` must be a UTC-midnight boundary (all current callers pass
+ * either `year`+`month` or `YYYY-MM-DD` strings, which coerce to midnight). The
+ * zero-fill floors `since` to its UTC day, but the storage query filters with
+ * the raw `since` (`gte(createdAt, since)`); a non-midnight `since` would make
+ * the first zero-filled day under-report rows that fell before that time. Pass
+ * midnight, or align the storage window to the floored day if that ever changes.
+ *
  * @param input - {@link GetDailyUsageInput}
  * @returns Immutable array of {@link AiUsageDailyRow} ordered by day ASC
  *   (`YYYY-MM-DD`), with zero rows inserted for any day with no activity.

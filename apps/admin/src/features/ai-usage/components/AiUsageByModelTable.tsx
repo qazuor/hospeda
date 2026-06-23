@@ -72,7 +72,11 @@ function costPer1kTokens(costMicroUsd: number, tokensIn: number, tokensOut: numb
  */
 export function AiUsageByModelTable({ search }: AiUsageByModelTableProps) {
     const { t, tPlural } = useTranslations();
-    const { data, isLoading, isError } = useAiUsageByModelQuery(search);
+    // Request pageSize 100 to match AiUsageTotalsCard's by-model query exactly:
+    // identical filters → one shared TanStack Query cache entry (no duplicate
+    // request) AND the table shows the same rows the totals card sums, so the
+    // displayed totals never exceed the visible rows (SF-1).
+    const { data, isLoading, isError } = useAiUsageByModelQuery({ ...search, pageSize: 100 });
 
     const description = isLoading
         ? t('admin-pages.ai.usage.byModel.loading')
