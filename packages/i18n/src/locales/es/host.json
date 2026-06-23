@@ -14,7 +14,15 @@
             "urlInvalid": "La URL no es válida.",
             "legalRequired": "Debés confirmar el aviso legal.",
             "submit": "No pudimos importar el alojamiento. Intentá de nuevo.",
-            "network": "No pudimos conectar con el servidor."
+            "network": "No pudimos conectar con el servidor.",
+            "failure": {
+                "invalidUrl": "Revisá que la URL sea válida y corresponda a un alojamiento.",
+                "sourceBlocked": "La fuente está temporalmente no disponible. Esperá unos minutos y probá de nuevo, o cargá los datos manualmente.",
+                "credentialsMissing": "No pudimos conectar con la fuente en este momento. Probá más tarde o cargá los datos manualmente.",
+                "providerError": "Hubo un problema al consultar la fuente. Probá de nuevo o cargá los datos manualmente.",
+                "timeout": "La fuente tardó demasiado en responder. Probá de nuevo o cargá los datos manualmente.",
+                "nothingFound": "No encontramos datos de alojamiento en esa URL. Podés cargar los datos manualmente."
+            }
         },
         "prefill": {
             "sectionToggle": "Importar desde una URL",

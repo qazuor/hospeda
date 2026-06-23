@@ -14,7 +14,15 @@
             "urlInvalid": "The URL is not valid.",
             "legalRequired": "You must confirm the legal notice.",
             "submit": "We couldn't import the accommodation. Please try again.",
-            "network": "We couldn't reach the server."
+            "network": "We couldn't reach the server.",
+            "failure": {
+                "invalidUrl": "Check that the URL is valid and points to an accommodation.",
+                "sourceBlocked": "The source is temporarily unavailable. Wait a few minutes and try again, or enter the details manually.",
+                "credentialsMissing": "We couldn't reach the source right now. Try again later or enter the details manually.",
+                "providerError": "There was a problem querying the source. Try again or enter the details manually.",
+                "timeout": "The source took too long to respond. Try again or enter the details manually.",
+                "nothingFound": "We couldn't find accommodation data at that URL. You can enter the details manually."
+            }
         },
         "prefill": {
             "sectionToggle": "Import from a URL",

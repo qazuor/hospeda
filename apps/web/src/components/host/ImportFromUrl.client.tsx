@@ -21,6 +21,16 @@ import styles from './ImportFromUrl.module.css';
 /** Platforms shown in the URL-acquisition help panel (US-7), in display order. */
 const HELP_PLATFORMS = ['airbnb', 'booking', 'mercadolibre', 'google'] as const;
 
+/**
+ * Converts a snake_case string to camelCase for i18n key mapping.
+ * Used to map `ImportFailureCode` values (snake_case) to their i18n keys (camelCase).
+ *
+ * @example snakeToCamel('invalid_url') // → 'invalidUrl'
+ */
+function snakeToCamel(value: string): string {
+    return value.replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase());
+}
+
 /** Props for the {@link ImportFromUrl} island. */
 export type ImportFromUrlProps = {
     /** Active UI locale (passed from Astro at hydration). */
@@ -39,12 +49,13 @@ export type ImportFromUrlProps = {
      */
     readonly onAttempt?: (source: string) => void;
     /**
-     * Called when the import API call fails or returns a non-ok response
-     * (SPEC-258 A7). Receives `'unknown'` as source since the response may
-     * not carry the detected platform on failure.
+     * Called when the import fails (SPEC-258 A7 / C.1). Receives the machine-
+     * readable `ImportFailureCode` (e.g. `'source_blocked'`) when the API
+     * returns a classified failure on a 200 response, or `'unknown'` when the
+     * HTTP call itself fails (non-ok) and no code is available.
      * Optional so the island can be used standalone.
      */
-    readonly onError?: (source: string) => void;
+    readonly onError?: (failureCodeOrUnknown: string) => void;
 };
 
 /**
@@ -108,6 +119,19 @@ export function ImportFromUrl({ locale, onImported, onAttempt, onError }: Import
                         'No pudimos importar el alojamiento. Intentá de nuevo.'
                     )
                 );
+                return;
+            }
+            // Branch 2: 200 response with a machine-readable failureCode — render as error,
+            // do NOT fire onImported (SPEC-258 C.1).
+            if (result.data.failureCode) {
+                const camelKey = snakeToCamel(result.data.failureCode);
+                setError(
+                    t(
+                        `host.importFromUrl.errors.failure.${camelKey}` as Parameters<typeof t>[0],
+                        result.data.failureCode
+                    )
+                );
+                onError?.(result.data.failureCode);
                 return;
             }
             if (result.data.message) {
