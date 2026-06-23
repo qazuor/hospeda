@@ -441,7 +441,10 @@ async function loadEntitlements(
         // productDomain as 'accommodation' (legacy rows and the column default).
         const activeSubscription = subscriptions.find(
             (sub: { status: string }) =>
-                (sub.status === 'active' || sub.status === 'trialing') &&
+                // SPEC-262 T-012 P2: 'comp' (free-forever) is an ACTIVE entitlement
+                // state — a comped subscriber retains the full entitlements of the
+                // plan they were comped on (see SubscriptionStatusEnum.COMP doc).
+                (sub.status === 'active' || sub.status === 'trialing' || sub.status === 'comp') &&
                 isAccommodationSubscription(sub)
         );
 

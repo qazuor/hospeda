@@ -494,17 +494,62 @@ export const PromoCodeResponseSchema = z.object({
 export type PromoCodeResponse = z.infer<typeof PromoCodeResponseSchema>;
 
 // ---------------------------------------------------------------------------
-// ValidationResultSchema (unchanged)
+// ValidationResultSchema — extended with typed effectPreview (SPEC-262 T-012)
 // ---------------------------------------------------------------------------
 
 /**
+ * Preview of the typed promo effect returned by the validate endpoint.
+ *
+ * Allows the web checkout UI to render a human-readable summary of the
+ * promo code's effect ("50% off for 3 months", "Free forever", "Trial +N days")
+ * BEFORE the user completes payment.
+ *
+ * All fields except `effectKind` are nullable because some effects do not
+ * carry monetary parameters (trial_extension, comp).
+ *
+ * NOTE: plain validators, no zodError.* messages — this is a response schema,
+ * intentionally kept out of the extract-zod-keys scanner (AC-T012-1).
+ */
+export const EffectPreviewSchema = z.object({
+    /** Discriminates the promo effect kind */
+    effectKind: z.enum(['discount', 'trial_extension', 'comp']),
+    /** Sub-kind of the discount value. `null` for non-discount effects. */
+    valueKind: z.enum(['percentage', 'fixed']).nullable(),
+    /** Discount value (percentage 0–100 or centavos). `null` for non-discount effects. */
+    value: z.number().nullable(),
+    /** Billing cycles the discount applies. `null` = forever or not applicable. */
+    durationCycles: z.number().nullable(),
+    /** Extra trial days for trial_extension. `null` for other effect kinds. */
+    extraDays: z.number().nullable(),
+    /**
+     * Discounted amount in centavos when `amount` was provided in the validate request.
+     * Same reducer as the charge path (`calculatePromoCodeEffect`).
+     * `null` for trial_extension / comp, or when `amount` was absent.
+     */
+    finalAmount: z.number().nullable()
+});
+
+/** TypeScript type inferred from {@link EffectPreviewSchema} */
+export type EffectPreview = z.infer<typeof EffectPreviewSchema>;
+
+/**
  * Result schema for a promo code validation check.
+ *
+ * SPEC-262 T-012: adds `effectPreview` so the web checkout can render a
+ * human-readable summary of the promo effect before the user pays.
+ * `discountAmount` is preserved unchanged for back-compat with existing callers.
  */
 export const ValidationResultSchema = z.object({
     valid: z.boolean(),
     errorCode: z.string().optional(),
     errorMessage: z.string().optional(),
-    discountAmount: z.number().optional()
+    /** Back-compat: discount amount preview in centavos (existing callers rely on this). */
+    discountAmount: z.number().optional(),
+    /**
+     * Typed effect preview (SPEC-262 T-012).
+     * Present only when the code is valid. Absent when `valid` is false.
+     */
+    effectPreview: EffectPreviewSchema.optional()
 });
 
 /** TypeScript type inferred from ValidationResultSchema */

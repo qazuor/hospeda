@@ -346,6 +346,7 @@
         "zodError.billing.settings.trialDurationDays.max",
         "zodError.billing.settings.trialDurationDays.min",
         "zodError.billing.settings.trialEnabled.invalidType",
+        "zodError.billing.startPaid.appliedEffect.invalid",
         "zodError.billing.startPaid.billingInterval.invalid",
         "zodError.billing.startPaid.checkoutUrl.invalid",
         "zodError.billing.startPaid.checkoutUrl.invalidType",
@@ -1567,7 +1568,7 @@
         "zodError.validation.sanitization.failed",
         "zodError.validation.zod.failed"
     ],
-    "total": 1566,
+    "total": 1567,
     "byNamespace": {
         "accommodation": 52,
         "accommodationAmenity": 4,
@@ -1579,7 +1580,7 @@
         "adminView": 3,
         "amenity": 46,
         "attraction": 26,
-        "billing": 203,
+        "billing": 204,
         "commerce": 14,
         "commerceLead": 13,
         "common": 220,

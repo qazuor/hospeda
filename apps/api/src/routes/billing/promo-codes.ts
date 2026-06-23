@@ -358,12 +358,14 @@ export const validatePromoCodeRoute = createProtectedRoute({
             amount: body.amount as number | undefined
         });
 
-        // Strip internal fields: only expose what the client needs
+        // Strip internal fields: only expose what the client needs.
+        // SPEC-262 T-012: include effectPreview when present (valid codes only).
         return {
             valid: result.valid,
             ...(result.errorCode !== undefined && { errorCode: result.errorCode }),
             ...(result.errorMessage !== undefined && { errorMessage: result.errorMessage }),
-            ...(result.discountAmount !== undefined && { discountAmount: result.discountAmount })
+            ...(result.discountAmount !== undefined && { discountAmount: result.discountAmount }),
+            ...(result.effectPreview !== undefined && { effectPreview: result.effectPreview })
         };
     }
 });
