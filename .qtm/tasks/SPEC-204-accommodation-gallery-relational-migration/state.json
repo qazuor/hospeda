@@ -303,62 +303,62 @@
             "id": "T-010",
             "title": "Integration test: backfill correctness (no data loss)",
             "description": "Seed accommodations with JSONB media (incl publicId+attribution, archivedGallery). Run backfill. Assert rows match exactly, order preserved, no field dropped, idempotent on re-run. Critical: publicId+attribution preserved.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-006"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "fixture with full ImageSchema fields",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "assert no field loss + order + idempotency",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "P1"],
             "phase": "testing",
             "qualityGate": {
                 "lint": null,
-                "typecheck": null,
-                "tests": null
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-22T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-23T03:44:13.000Z",
+                "completed": "2026-06-23T03:53:35.000Z"
             }
         },
         {
             "id": "T-011",
             "title": "Integration test: write-both consistency",
             "description": "On accommodation create/update with media changes, assert table rows and JSONB stay consistent (items, order, featured, archived). Cover add/remove/reorder/setFeatured paths. NOTE(T-007): _accommodationMediaModel is new-ed in the constructor (not injected) — to mock it in T-011, add a constructor param mirroring _amenityModel/_rAmenityModel injection. Verify: create w/ media → rows; media update → replace; non-media update → rows untouched.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-007"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "create/update writes both stores",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "order + featured + archived consistent",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "P1"],
             "phase": "testing",
             "qualityGate": {
                 "lint": null,
-                "typecheck": null,
-                "tests": null
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-22T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-23T03:44:13.000Z",
+                "completed": "2026-06-23T03:53:35.000Z"
             }
         },
         {
@@ -906,9 +906,9 @@
     ],
     "summary": {
         "total": 29,
-        "pending": 20,
+        "pending": 18,
         "inProgress": 0,
-        "completed": 9,
+        "completed": 11,
         "blocked": 0,
         "averageComplexity": 2.5
     }

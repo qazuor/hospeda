@@ -1,6 +1,6 @@
 # SPEC-204: Accommodation gallery migration to relational table
 
-## Progress: 9/29 tasks (31%)
+## Progress: 11/29 tasks (38%) — P1 COMPLETE
 
 **Average Complexity:** 2.5/3 (max)
 **Storage model:** direct table-per-entity (`accommodation_media`, real FK) — polymorphic + junction rejected
@@ -39,9 +39,9 @@
 
 - [x] **T-009** (cx 2) — Unit tests: model + schema (32 schema + 16 model ✓) + 2 i18n keys (es/en/pt)
   - Blocked by: T-004, T-005
-- [ ] **T-010** (cx 3) — Integration: backfill correctness (no data loss)
+- [x] **T-010** (cx 3) — Integration: backfill correctness (no data loss) — 6 tests ✓
   - Blocked by: T-006
-- [ ] **T-011** (cx 3) — Integration: write-both consistency
+- [x] **T-011** (cx 3) — Integration: write-both consistency — 7 tests ✓
   - Blocked by: T-007
 
 ---

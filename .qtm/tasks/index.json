@@ -980,7 +980,7 @@
             "specId": "SPEC-204",
             "title": "Accommodation gallery migration to relational table",
             "status": "in-progress",
-            "progress": "9/29",
+            "progress": "11/29",
             "path": "SPEC-204-accommodation-gallery-relational-migration",
             "branch": "spec/SPEC-204-accommodation-gallery-relational-migration",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-204-accommodation-gallery-relational-migration",
