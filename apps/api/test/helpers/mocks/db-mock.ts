@@ -571,6 +571,21 @@ export function createDbMock() {
             updatedAt: 'updated_at'
         },
 
+        // SPEC-204 T-008: plan-photo-restriction.service dual-writes archive/restore
+        // state into `accommodation_media` in the same transaction. Route tests that
+        // load initApp() need this table stub present so the SUT import doesn't throw
+        // "[vitest] No 'accommodationMedia' export is defined on the '@repo/db' mock".
+        accommodationMedia: {
+            accommodationId: 'accommodation_id',
+            url: 'url',
+            state: 'state',
+            archivedAt: 'archived_at',
+            isFeatured: 'is_featured',
+            sortOrder: 'sort_order',
+            updatedAt: 'updated_at',
+            deletedAt: 'deleted_at'
+        },
+
         // Owner promotions table stubs (SPEC-167 T-008: plan-restriction.service imports
         // ownerPromotions.id / ownerPromotions.deletedAt for inArray/isNull WHERE clauses)
         ownerPromotions: {
