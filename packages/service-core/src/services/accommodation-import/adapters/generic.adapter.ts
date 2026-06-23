@@ -23,6 +23,7 @@ import { safeExternalFetch } from '@repo/utils';
 import type { ImportContext, ImportSourceAdapter, RawExtraction } from '../adapter.types.js';
 import { extractJsonLd } from '../extractors/jsonld.js';
 import { extractOpenGraph, stripHtmlToText } from '../extractors/meta.js';
+import { mapAccommodationType } from '../mapping.js';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -86,6 +87,52 @@ function countUsefulFields(extraction: Partial<RawExtraction>): number {
     }
 
     return count;
+}
+
+/**
+ * Attempts to parse a numeric price value from a JSON-LD `priceRange` string.
+ *
+ * Only strings that contain a parseable positive number are accepted. Non-numeric
+ * band strings like `"$$"` or `"$$$"` (common on Yelp-style sites) are rejected
+ * and return `undefined` so that no price candidate is emitted.
+ *
+ * Parsing strategy:
+ * - Strip common currency symbols/codes and whitespace (`$`, `€`, `£`, `¥`, `ARS`).
+ * - Remove thousands separators, then accept ONLY a clean number (optional 1-2
+ *   decimal places). Ambiguous inputs (ranges, European format) are rejected.
+ * - Reject NaN, negative values, and zero.
+ *
+ * @param priceRange - The raw `priceRange` string from a JSON-LD node.
+ * @returns A positive finite number if a price was parsed, `undefined` otherwise.
+ */
+function parsePriceFromRange(priceRange: string): number | undefined {
+    // Strip currency symbols and known currency codes, then trim.
+    const stripped = priceRange.replace(/[€£¥]|ARS|USD|EUR|\$/gi, '').trim();
+
+    // Reject empty strings and pure symbol bands (e.g. "$$", "$$$$") that
+    // produce an empty string after stripping. These have no numeric value.
+    if (stripped.length === 0) {
+        return undefined;
+    }
+
+    // Remove thousands separators (commas) so "1,200" -> "1200", then accept ONLY
+    // a clean number with an optional 1-2 digit decimal. Anything ambiguous — a
+    // range ("120-200"), a European-format value ("1.200,50"), or any leftover
+    // non-numeric character — is rejected rather than mis-parsed. This matters:
+    // Number.parseFloat("1,200") silently yields 1 (a wrong price), which is worse
+    // than leaving it unset (under-resolve > mis-resolve).
+    const normalized = stripped.replace(/,/g, '');
+    if (!/^\d+(\.\d{1,2})?$/.test(normalized)) {
+        return undefined;
+    }
+
+    const n = Number.parseFloat(normalized);
+
+    if (!Number.isFinite(n) || n <= 0) {
+        return undefined;
+    }
+
+    return n;
 }
 
 /**
@@ -401,12 +448,40 @@ export class GenericAdapter implements ImportSourceAdapter {
         const scrapedLocality = jsonld.scrapedLocality;
         const scrapedCountry = jsonld.scrapedCountry;
 
+        // type: forward JSON-LD @type through the accommodation type heuristic.
+        // Only set when a confident mapping is found; leave unset otherwise so
+        // the host can pick the type manually without a wrong prefill.
+        const type =
+            jsonld.lodgingType !== undefined
+                ? (() => {
+                      const mapped = mapAccommodationType(jsonld.lodgingType);
+                      return mapped !== undefined
+                          ? { value: mapped, source: 'jsonld' as const }
+                          : undefined;
+                  })()
+                : undefined;
+
+        // price.price: parse a numeric value from JSON-LD priceRange.
+        // Non-numeric band strings (e.g. "$$", "$$$") are rejected — only real
+        // numbers produce a candidate so the host is not misled.
+        const pricePrice =
+            jsonld.priceRange !== undefined
+                ? (() => {
+                      const n = parsePriceFromRange(jsonld.priceRange);
+                      return n !== undefined ? { value: n, source: 'jsonld' as const } : undefined;
+                  })()
+                : undefined;
+
+        const price = pricePrice !== undefined ? { price: pricePrice } : undefined;
+
         return {
             sourcePlatform: 'generic',
             ...(name !== undefined && { name }),
             ...(summary !== undefined && { summary }),
             ...(description !== undefined && { description }),
+            ...(type !== undefined && { type }),
             ...(location !== undefined && { location }),
+            ...(price !== undefined && { price }),
             ...(contactInfo !== undefined && { contactInfo }),
             ...(imageUrls !== undefined && { imageUrls }),
             ...(scrapedLocality !== undefined && { scrapedLocality }),

@@ -700,4 +700,245 @@ describe('GenericAdapter', () => {
             expect(STRATEGY_B_THRESHOLD).toBe(2);
         });
     });
+
+    // -------------------------------------------------------------------------
+    // A5 (SPEC-258): @type → raw.type and priceRange → raw.price.price
+    // -------------------------------------------------------------------------
+
+    describe('A5 (SPEC-258) — @type → raw.type and priceRange → raw.price.price', () => {
+        /**
+         * HTML with a Hotel JSON-LD node to test @type → type mapping.
+         * Includes a numeric priceRange to test price forwarding.
+         */
+        const HOTEL_JSONLD_HTML = `<!DOCTYPE html>
+<html>
+<head>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Hotel",
+    "name": "Hotel Las Palmas",
+    "priceRange": "ARS 12000"
+  }
+  </script>
+</head>
+<body>Hotel Las Palmas</body>
+</html>`;
+
+        /**
+         * HTML with an Apartment JSON-LD node with a plain numeric priceRange.
+         */
+        const APARTMENT_JSONLD_HTML = `<!DOCTYPE html>
+<html>
+<head>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Apartment",
+    "name": "Depto Centro",
+    "priceRange": "120"
+  }
+  </script>
+</head>
+<body>Depto Centro</body>
+</html>`;
+
+        /**
+         * HTML with a non-numeric (band-style) priceRange that must NOT
+         * produce a price candidate.
+         */
+        const BAND_PRICE_JSONLD_HTML = `<!DOCTYPE html>
+<html>
+<head>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Hotel",
+    "name": "Hotel Caro",
+    "priceRange": "$$$"
+  }
+  </script>
+</head>
+<body>Hotel Caro</body>
+</html>`;
+
+        /**
+         * HTML with a JSON-LD type that has no heuristic mapping in
+         * mapAccommodationType (LodgingBusiness is too generic).
+         */
+        const LODGING_BUSINESS_JSONLD_HTML = `<!DOCTYPE html>
+<html>
+<head>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "LodgingBusiness",
+    "name": "El Alojamiento",
+    "description": "Un lugar para quedarse."
+  }
+  </script>
+</head>
+<body>El Alojamiento</body>
+</html>`;
+
+        /**
+         * HTML with a priceRange using a thousands separator ("$1,200"). Must
+         * parse to 1200 — NOT 1 (the parseFloat-without-comma-handling bug).
+         */
+        const THOUSANDS_PRICE_JSONLD_HTML = `<!DOCTYPE html>
+<html>
+<head>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Hotel",
+    "name": "Hotel Mil",
+    "priceRange": "$1,200"
+  }
+  </script>
+</head>
+<body>Hotel Mil</body>
+</html>`;
+
+        /**
+         * HTML with a range-style priceRange ("120-200"). Ambiguous (two values)
+         * → must NOT produce a price rather than silently parsing the low end.
+         */
+        const RANGE_PRICE_JSONLD_HTML = `<!DOCTYPE html>
+<html>
+<head>
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Hotel",
+    "name": "Hotel Rango",
+    "priceRange": "120-200"
+  }
+  </script>
+</head>
+<body>Hotel Rango</body>
+</html>`;
+
+        describe('@type → raw.type', () => {
+            it('should map JSON-LD @type "Hotel" to raw.type HOTEL tagged jsonld', async () => {
+                // Arrange
+                mockFetch.mockResolvedValue(successResult(HOTEL_JSONLD_HTML));
+                const ctx = makeCtx();
+                const url = new URL('https://example.com/hotel');
+
+                // Act
+                const result = await adapter.extract(url, ctx);
+
+                // Assert
+                expect(result.type).toStrictEqual({ value: 'HOTEL', source: 'jsonld' });
+            });
+
+            it('should map JSON-LD @type "Apartment" to raw.type APARTMENT tagged jsonld', async () => {
+                // Arrange
+                mockFetch.mockResolvedValue(successResult(APARTMENT_JSONLD_HTML));
+                const ctx = makeCtx();
+                const url = new URL('https://example.com/apartment');
+
+                // Act
+                const result = await adapter.extract(url, ctx);
+
+                // Assert
+                expect(result.type).toStrictEqual({ value: 'APARTMENT', source: 'jsonld' });
+            });
+
+            it('should leave raw.type undefined when @type has no heuristic mapping (e.g. LodgingBusiness)', async () => {
+                // Arrange — LodgingBusiness passes isLodgingNode but does not
+                // match any keyword in mapAccommodationType, so type stays unset.
+                mockFetch.mockResolvedValue(successResult(LODGING_BUSINESS_JSONLD_HTML));
+                const ctx = makeCtx();
+                const url = new URL('https://example.com/lodging');
+
+                // Act
+                const result = await adapter.extract(url, ctx);
+
+                // Assert — no type candidate emitted for unmapped schema types
+                expect(result.type).toBeUndefined();
+            });
+        });
+
+        describe('priceRange → raw.price.price', () => {
+            it('should parse "ARS 12000" into price.price = 12000 tagged jsonld', async () => {
+                // Arrange
+                mockFetch.mockResolvedValue(successResult(HOTEL_JSONLD_HTML));
+                const ctx = makeCtx();
+                const url = new URL('https://example.com/hotel');
+
+                // Act
+                const result = await adapter.extract(url, ctx);
+
+                // Assert
+                expect(result.price?.price).toStrictEqual({ value: 12000, source: 'jsonld' });
+            });
+
+            it('should parse a plain numeric priceRange "120" into price.price = 120 tagged jsonld', async () => {
+                // Arrange
+                mockFetch.mockResolvedValue(successResult(APARTMENT_JSONLD_HTML));
+                const ctx = makeCtx();
+                const url = new URL('https://example.com/apartment');
+
+                // Act
+                const result = await adapter.extract(url, ctx);
+
+                // Assert
+                expect(result.price?.price).toStrictEqual({ value: 120, source: 'jsonld' });
+            });
+
+            it('should NOT set price.price for a band-style priceRange like "$$$"', async () => {
+                // Arrange — "$$$" is a non-numeric band string
+                mockFetch.mockResolvedValue(successResult(BAND_PRICE_JSONLD_HTML));
+                const ctx = makeCtx();
+                const url = new URL('https://example.com/hotel-caro');
+
+                // Act
+                const result = await adapter.extract(url, ctx);
+
+                // Assert — no numeric price extracted from band strings
+                expect(result.price?.price).toBeUndefined();
+            });
+
+            it('should parse a thousands-separated priceRange "$1,200" into price.price = 1200 (not 1)', async () => {
+                // Arrange — "$1,200" must NOT degrade to 1 (parseFloat stops at the comma)
+                mockFetch.mockResolvedValue(successResult(THOUSANDS_PRICE_JSONLD_HTML));
+                const ctx = makeCtx();
+                const url = new URL('https://example.com/hotel-mil');
+
+                // Act
+                const result = await adapter.extract(url, ctx);
+
+                // Assert
+                expect(result.price?.price).toStrictEqual({ value: 1200, source: 'jsonld' });
+            });
+
+            it('should NOT set price.price for an ambiguous range priceRange like "120-200"', async () => {
+                // Arrange — a range has no single price; rejected rather than mis-parsed
+                mockFetch.mockResolvedValue(successResult(RANGE_PRICE_JSONLD_HTML));
+                const ctx = makeCtx();
+                const url = new URL('https://example.com/hotel-rango');
+
+                // Act
+                const result = await adapter.extract(url, ctx);
+
+                // Assert — no low-end price silently emitted
+                expect(result.price?.price).toBeUndefined();
+            });
+
+            it('should NOT set price.price when priceRange is absent from JSON-LD', async () => {
+                // Arrange — RICH_JSONLD_HTML has no priceRange field
+                mockFetch.mockResolvedValue(successResult(RICH_JSONLD_HTML));
+                const ctx = makeCtx();
+                const url = new URL('https://example.com/listing/1');
+
+                // Act
+                const result = await adapter.extract(url, ctx);
+
+                // Assert
+                expect(result.price?.price).toBeUndefined();
+            });
+        });
+    });
 });

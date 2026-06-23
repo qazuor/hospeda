@@ -30,6 +30,7 @@
  */
 
 import type { ImportContext, ImportSourceAdapter, RawExtraction } from '../adapter.types.js';
+import { mapAccommodationType } from '../mapping.js';
 
 // ---------------------------------------------------------------------------
 // Places API (New) response shape
@@ -659,6 +660,20 @@ function buildRawExtraction(place: PlaceObject): RawExtraction {
     // Contact info — prefer international phone when available
     const phone = place.internationalPhoneNumber ?? place.nationalPhoneNumber;
 
+    // Accommodation type: iterate place.types[] and return the first that maps
+    // to a known AccommodationTypeEnum via the shared heuristic. Only set when
+    // a confident match is found; leave unset when no type maps (avoids noise).
+    let mappedType: string | undefined;
+    if (place.types !== undefined) {
+        for (const t of place.types) {
+            const candidate = mapAccommodationType(t);
+            if (candidate !== undefined) {
+                mappedType = candidate;
+                break;
+            }
+        }
+    }
+
     const result: RawExtraction = {
         sourcePlatform: 'google',
 
@@ -668,6 +683,10 @@ function buildRawExtraction(place: PlaceObject): RawExtraction {
 
         ...(place.editorialSummary?.text
             ? { summary: { value: place.editorialSummary.text, source: 'official_api' } }
+            : {}),
+
+        ...(mappedType !== undefined
+            ? { type: { value: mappedType, source: 'official_api' as const } }
             : {}),
 
         ...(locationEntries ? { location: locationEntries } : {}),
