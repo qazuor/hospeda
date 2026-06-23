@@ -64,6 +64,25 @@ export const FaqUpdatePayloadSchema = FaqCreatePayloadSchema.partial();
 export type FaqUpdatePayloadType = z.infer<typeof FaqUpdatePayloadSchema>;
 
 /**
+ * Base FAQ Public Schema — safe subset for public API responses (SPEC-210).
+ *
+ * Picks ONLY the display fields from BaseFaqSchema.
+ * Intentionally EXCLUDES all audit fields (createdAt, updatedAt, createdById,
+ * updatedById, deletedAt, deletedById), lifecycle state, and any internal metadata.
+ * Consumers should NEVER rely on the excluded fields being present.
+ *
+ * Per-entity public schemas (ExperienceFaqPublicSchema, GastronomyFaqPublicSchema)
+ * extend this with their own `id` and parent FK field.
+ */
+export const BaseFaqPublicSchema = BaseFaqSchema.pick({
+    question: true,
+    answer: true,
+    category: true,
+    displayOrder: true
+});
+export type BaseFaqPublic = z.infer<typeof BaseFaqPublicSchema>;
+
+/**
  * FAQ fields (using BaseFaqSchema structure)
  */
 export const FaqFields = {
