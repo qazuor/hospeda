@@ -45,9 +45,7 @@
     color: var(--core-foreground);
     font-family: var(--font-sans);
     font-size: var(--text-body, 1rem);
-    transition:
-        border-color 150ms ease,
-        box-shadow 150ms ease;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
 }
 
 .textarea {
@@ -79,9 +77,7 @@
     font-size: var(--text-body-sm, 0.9375rem);
     color: var(--core-foreground);
     cursor: pointer;
-    transition:
-        border-color 150ms ease,
-        background-color 150ms ease;
+    transition: border-color 150ms ease, background-color 150ms ease;
 }
 
 .checkbox:hover {
@@ -259,9 +255,7 @@
     color: var(--core-muted-foreground, var(--core-foreground));
     font-size: var(--text-h3, 1.5rem);
     cursor: pointer;
-    transition:
-        border-color 150ms ease,
-        color 150ms ease;
+    transition: border-color 150ms ease, color 150ms ease;
 }
 
 .mediaAdd:hover:not(:disabled) {
