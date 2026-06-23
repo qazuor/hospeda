@@ -116,9 +116,22 @@ export const aiUsageQueryKeys = {
 async function fetchUsageByModel(
     filters: AiUsageByModelSearch
 ): Promise<PaginatedResponse<AiUsageByModelRow>> {
-    const params = buildAiUsageSearchParams(
-        filters as Readonly<Record<string, string | number | undefined>>
-    );
+    // Pick ONLY the params /by-model accepts. The page passes the superset
+    // AiUsageDailySearch (which includes `model`); sending an unaccepted param
+    // makes createAdminListRoute reject the request with 422. Destructuring drops
+    // any excess key (e.g. `model`) regardless of what the caller passes.
+    const { year, month, since, until, feature, provider, userId, page, pageSize } = filters;
+    const params = buildAiUsageSearchParams({
+        year,
+        month,
+        since,
+        until,
+        feature,
+        provider,
+        userId,
+        page,
+        pageSize
+    });
     const result = await fetchApi<{
         success: boolean;
         data: PaginatedResponse<AiUsageByModelRow>;
@@ -137,9 +150,19 @@ async function fetchUsageByModel(
 async function fetchUsageByProvider(
     filters: AiUsageByProviderSearch
 ): Promise<PaginatedResponse<AiUsageByProviderRow>> {
-    const params = buildAiUsageSearchParams(
-        filters as Readonly<Record<string, string | number | undefined>>
-    );
+    // /by-provider accepts feature + userId only (no `provider`/`model`).
+    // Destructure to drop any excess key the page-level superset may carry.
+    const { year, month, since, until, feature, userId, page, pageSize } = filters;
+    const params = buildAiUsageSearchParams({
+        year,
+        month,
+        since,
+        until,
+        feature,
+        userId,
+        page,
+        pageSize
+    });
     const result = await fetchApi<{
         success: boolean;
         data: PaginatedResponse<AiUsageByProviderRow>;
@@ -158,9 +181,18 @@ async function fetchUsageByProvider(
 async function fetchUsageByFeatureModel(
     filters: AiUsageByFeatureModelSearch
 ): Promise<PaginatedResponse<AiUsageByFeatureModelRow>> {
-    const params = buildAiUsageSearchParams(
-        filters as Readonly<Record<string, string | number | undefined>>
-    );
+    // /by-feature-model accepts window + userId only (it groups by feature AND
+    // model, so feature/model/provider are NOT filters). Drop any excess key.
+    const { year, month, since, until, userId, page, pageSize } = filters;
+    const params = buildAiUsageSearchParams({
+        year,
+        month,
+        since,
+        until,
+        userId,
+        page,
+        pageSize
+    });
     const result = await fetchApi<{
         success: boolean;
         data: PaginatedResponse<AiUsageByFeatureModelRow>;
@@ -179,9 +211,22 @@ async function fetchUsageByFeatureModel(
 async function fetchDailyUsage(
     filters: AiUsageDailySearch
 ): Promise<PaginatedResponse<AiUsageDailyRow>> {
-    const params = buildAiUsageSearchParams(
-        filters as Readonly<Record<string, string | number | undefined>>
-    );
+    // /daily accepts the full filter set (feature/model/provider/userId).
+    // Explicit destructure keeps this consistent with the other helpers and
+    // guarantees no stray key reaches the request.
+    const { year, month, since, until, feature, model, provider, userId, page, pageSize } = filters;
+    const params = buildAiUsageSearchParams({
+        year,
+        month,
+        since,
+        until,
+        feature,
+        model,
+        provider,
+        userId,
+        page,
+        pageSize
+    });
     const result = await fetchApi<{
         success: boolean;
         data: PaginatedResponse<AiUsageDailyRow>;
