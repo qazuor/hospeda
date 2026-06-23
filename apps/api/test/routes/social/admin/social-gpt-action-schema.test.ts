@@ -409,24 +409,95 @@ describe('buildGptActionSchema() — unit', () => {
         expect(json).not.toContain('"anyOf"');
     });
 
-    it('image schema has openaiFileIdRefs as a direct array property with items.type === "string"', () => {
+    it('image schema does NOT have openaiFileIdRefs (moved to request body root)', () => {
         // Arrange / Act
         const doc = buildGptActionSchema('https://api.example.com');
         const imageSchema = findImageSchema(doc);
 
         expect(imageSchema).not.toBeNull();
 
-        // Navigate to properties.openaiFileIdRefs
+        // openaiFileIdRefs must NOT be in the image object properties
+        // (it was moved to the request-body root so OpenAI can auto-populate it)
         const props = imageSchema?.properties as Record<string, unknown> | undefined;
-        const refsSchema = props?.openaiFileIdRefs as Record<string, unknown> | undefined;
+        expect(props?.openaiFileIdRefs).toBeUndefined();
+    });
 
-        // Must exist as a direct property (not inside a union branch)
+    it('openaiFileIdRefs is a TOP-LEVEL request-body property with items.type === "string"', () => {
+        // Arrange / Act
+        const doc = buildGptActionSchema('https://api.example.com');
+
+        // Navigate to the saveSocialDraft request body schema
+        const paths = doc.paths as Record<string, Record<string, unknown>> | undefined;
+        const draftPost = paths?.['/api/v1/ai/social/drafts']?.post as
+            | Record<string, unknown>
+            | undefined;
+
+        const requestBody = draftPost?.requestBody as Record<string, unknown> | undefined;
+        const content = requestBody?.content as Record<string, unknown> | undefined;
+        const jsonContent = content?.['application/json'] as Record<string, unknown> | undefined;
+        const schema = jsonContent?.schema as Record<string, unknown> | undefined;
+
+        // Resolve $ref if needed
+        const resolveRef = (node: Record<string, unknown>): Record<string, unknown> | null => {
+            if ('$ref' in node && typeof node.$ref === 'string') {
+                const refPath = (node.$ref as string).replace('#/', '').split('/');
+                let current: unknown = doc;
+                for (const segment of refPath) {
+                    if (typeof current !== 'object' || current === null) return null;
+                    current = (current as Record<string, unknown>)[segment];
+                }
+                return (current as Record<string, unknown>) ?? null;
+            }
+            return node;
+        };
+
+        const resolved = schema ? resolveRef(schema) : null;
+        const props = resolved?.properties as Record<string, unknown> | undefined;
+
+        // openaiFileIdRefs must exist as a DIRECT top-level property of the request body
+        const refsSchema = props?.openaiFileIdRefs as Record<string, unknown> | undefined;
         expect(refsSchema).toBeDefined();
 
         // Must be typed as array with string items per OpenAI convention
         expect(refsSchema?.type).toBe('array');
         const items = refsSchema?.items as Record<string, unknown> | undefined;
         expect(items?.type).toBe('string');
+    });
+
+    it('openaiFileIdRefs is NOT in the required array of the request body', () => {
+        // Arrange / Act
+        const doc = buildGptActionSchema('https://api.example.com');
+
+        const paths = doc.paths as Record<string, Record<string, unknown>> | undefined;
+        const draftPost = paths?.['/api/v1/ai/social/drafts']?.post as
+            | Record<string, unknown>
+            | undefined;
+
+        const requestBody = draftPost?.requestBody as Record<string, unknown> | undefined;
+        const content = requestBody?.content as Record<string, unknown> | undefined;
+        const jsonContent = content?.['application/json'] as Record<string, unknown> | undefined;
+        const schema = jsonContent?.schema as Record<string, unknown> | undefined;
+
+        const resolveRef = (node: Record<string, unknown>): Record<string, unknown> | null => {
+            if ('$ref' in node && typeof node.$ref === 'string') {
+                const refPath = (node.$ref as string).replace('#/', '').split('/');
+                let current: unknown = doc;
+                for (const segment of refPath) {
+                    if (typeof current !== 'object' || current === null) return null;
+                    current = (current as Record<string, unknown>)[segment];
+                }
+                return (current as Record<string, unknown>) ?? null;
+            }
+            return node;
+        };
+
+        const resolved = schema ? resolveRef(schema) : null;
+        const required = resolved?.required as string[] | undefined;
+
+        // openaiFileIdRefs must NOT be required — OpenAI injects it automatically
+        if (Array.isArray(required)) {
+            expect(required).not.toContain('openaiFileIdRefs');
+        }
     });
 
     it('image schema has mode as a required field', () => {
