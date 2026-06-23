@@ -387,7 +387,7 @@
             "id": "T-017",
             "title": "Daily cost chart",
             "description": "Render a recharts line/area chart of daily total cost across the window (one point per UTC day, zero days continuous), reflecting the active feature filter.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-014", "T-002"],
             "blocks": ["T-019"],
