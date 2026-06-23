@@ -32,8 +32,8 @@
  *
  * ## Why we do NOT touch AmenityService
  *
- * The synonym-driven slug lookup reuses the existing `searchForList` path
- * (searching by slug string, which ILIKE-matches the catalog `slug`). No new
+ * The synonym-driven slug lookup reuses the existing `searchForList` path with
+ * the `slug` filter (exact-match on the catalog `slug` column). No new
  * `getBySlug` helper was added to `AmenityService` — the search results already
  * carry `slug`, which is all we need for the second-pass match.
  *
@@ -137,7 +137,7 @@ async function searchAndMatch(
     let result: AmenitySearchForListOutput;
     try {
         const searchInput: AmenitySearchInput = {
-            name: searchTerm,
+            slug: searchTerm,
             page: 1,
             pageSize: 10
         };
