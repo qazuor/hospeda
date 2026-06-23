@@ -271,6 +271,11 @@ export const handleStartPaidSubscription = async (
         // COMMERCE subscription is never wrongly blocked here.
         const hasActiveAccommodationSub = existingSubscriptions.some((sub) => {
             if (!isAccommodationSubscription(sub)) return false;
+            // A soft-cancelled sub (cancelAtPeriodEnd=true) is intentionally NOT
+            // caught here — the dedicated SPEC-147 guard below handles it with the
+            // more specific SUBSCRIPTION_CANCEL_PENDING message. comp subs are
+            // perpetual (no cancelAtPeriodEnd) so they still match.
+            if (sub.cancelAtPeriodEnd === true) return false;
             // Cast to string — QZPay's type union does not include 'comp' (our
             // Hospeda-specific custom status) so a direct === comparison fails tsc.
             const status = sub.status as string;
