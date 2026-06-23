@@ -856,7 +856,7 @@
         {
             "specId": "SPEC-258",
             "title": "Accommodation import — coverage gaps, limbo fields, UX surfacing & scraper resilience",
-            "status": "draft",
+            "status": "completed",
             "progress": "0/0",
             "path": "SPEC-258-import-coverage-ux-resilience",
             "parent": "SPEC-257",
@@ -864,6 +864,9 @@
             "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-258-import-coverage-ux-resilience",
             "base": "staging",
             "createdAt": "2026-06-22T14:53:31Z",
+            "archived": true,
+            "archivedAt": "2026-06-23",
+            "archiveNote": "Doc-only spec, tasks never atomized (progress stays 0/0). Shipped via 4 PRs to staging: #1809 amenity-synonym resolver, #1816 workstream A coverage, #1821 workstream B persistence, #1824 workstream C.1 failure-mode differentiation. C.4 cache rejected; remaining C resilience carved out to SPEC-277.",
             "note": "Doc-only spec; tasks NOT atomized yet. 3 workstreams: coverage, UX surfacing, scraper resilience."
         },
         {
