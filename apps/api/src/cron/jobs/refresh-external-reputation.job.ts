@@ -228,15 +228,17 @@ export const refreshExternalReputationJob: CronJobDefinition = {
                     errors++;
                     errorDetails.push({ accommodationId, error: result.error.message });
                 } else {
-                    const { succeeded, failed } = result.data;
+                    // SPEC-250 Phase 4: refresh() now returns the inline/async split shape.
+                    const { inlineSucceeded, enqueuedAsync, inlineFailed } = result.data;
                     logger.info('Reputation refresh succeeded for accommodation', {
                         accommodationId,
-                        succeeded: succeeded.length,
-                        failed: failed.length
+                        inlineSucceeded: inlineSucceeded.length,
+                        enqueuedAsync: enqueuedAsync.length,
+                        inlineFailed: inlineFailed.length
                     });
-                    if (failed.length > 0) {
-                        errors += failed.length;
-                        for (const f of failed) {
+                    if (inlineFailed.length > 0) {
+                        errors += inlineFailed.length;
+                        for (const f of inlineFailed) {
                             errorDetails.push({
                                 accommodationId,
                                 error: `${f.platform}: ${f.error}`

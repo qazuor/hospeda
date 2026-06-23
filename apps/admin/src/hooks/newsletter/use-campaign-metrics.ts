@@ -84,7 +84,17 @@ interface CampaignErrorsResponse {
 // API helpers
 // ---------------------------------------------------------------------------
 
-async function fetchCampaignMetrics(id: string) {
+/**
+ * Fetches the metrics for a campaign from the admin API.
+ *
+ * Exported as a plain async function (no React hooks) so that non-hook
+ * callers — such as dashboard data-source resolvers — can reuse the same
+ * fetch without violating the "no hooks inside queryFn" rule.
+ *
+ * @param id  campaign UUID
+ * @returns   resolved `CampaignMetrics` object
+ */
+export async function fetchCampaignMetrics(id: string): Promise<CampaignMetrics> {
     const result = await fetchApi<CampaignMetricsResponse>({
         path: `/api/v1/admin/newsletter/campaigns/${id}/metrics`
     });

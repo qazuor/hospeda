@@ -8,6 +8,24 @@ import { ExternalPlatformEnumSchema } from '../../enums/external-platform.schema
 import { ExternalReviewSnippetSchema } from './accommodation-external-listing.schema.js';
 
 // ============================================================================
+// RUN STATUS
+// ============================================================================
+
+/**
+ * Async run status for Apify-backed external reputation fetches.
+ *
+ * - idle: No run in progress (default). Row holds either cached data or an error.
+ * - pending: A run has been enqueued with Apify but has not started yet.
+ * - running: Apify has confirmed the run is in progress.
+ *
+ * This status is INTERNAL ONLY — never exposed via public block schemas.
+ */
+export const ExternalReputationRunStatusSchema = z.enum(['idle', 'pending', 'running'], {
+    error: () => ({ message: 'zodError.accommodationExternalReputation.runStatus.invalid' })
+});
+export type ExternalReputationRunStatus = z.infer<typeof ExternalReputationRunStatusSchema>;
+
+// ============================================================================
 // FETCH STATUS
 // ============================================================================
 
@@ -93,6 +111,27 @@ export const AccommodationExternalReputationSchema = z.object({
      * Populated on non-ok statuses to aid debugging.
      */
     fetchMessage: z.string().nullish(),
+    /**
+     * Async run status for Apify-backed platforms.
+     * Internal coordination field — never exposed via public block schemas.
+     * Defaults to 'idle' (no run in progress).
+     */
+    runStatus: ExternalReputationRunStatusSchema.default('idle'),
+    /**
+     * Apify run ID returned by POST /v2/acts/{actor}/runs.
+     * Set when runStatus = 'pending'; null when idle or not applicable.
+     */
+    apifyRunId: z.string().nullish(),
+    /**
+     * Default dataset ID for the Apify run.
+     * Set by the polling cron after the run succeeds; null when idle.
+     */
+    apifyDatasetId: z.string().nullish(),
+    /**
+     * Wall-clock time when startRun() was called.
+     * Used by the timeout sweep in the polling cron.
+     */
+    runStartedAt: z.coerce.date().nullish(),
     /** Row creation timestamp (set by the DB on first upsert). */
     createdAt: z.coerce.date({
         message: 'zodError.common.createdAt.required'

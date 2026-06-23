@@ -1,12 +1,14 @@
 /**
- * Unit tests for BookingReputationAdapter (SPEC-237 T-006)
+ * Unit tests for BookingReputationAdapter (SPEC-237 T-006, updated SPEC-250)
  *
  * Key assertions:
  * - AC-7.1 legal guard: `snippets` is ALWAYS `null` even when the source
  *   payload contains review text / snippet data.
  * - JSON-LD primary path: parses `aggregateRating` from embedded LD+JSON.
- * - Apify fallback: used when primary fetch is blocked or yields no data.
- * - Credential degradation: no Apify token/actor → degrade without fetching.
+ * - JSON-LD miss: `fetch()` returns all-null (service goes async via startRun).
+ * - `startRun()`: calls startApifyRun with correct input; maps run/dataset IDs.
+ * - `startRun()` degrades to null when startApifyRun returns null or credentials absent.
+ * - `mapDatasetItems()`: pure mapping for representative Booking dataset items.
  * - Never throws.
  */
 
@@ -16,12 +18,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { BookingReputationAdapter } from '../../src/services/accommodation-external-reputation/adapters/booking-reputation.adapter.js';
 
 // ---------------------------------------------------------------------------
-// Mock safeExternalFetch and runApifyActor
+// Mock safeExternalFetch and startApifyRun
 // ---------------------------------------------------------------------------
 
-const { mockSafeExternalFetch, mockRunApifyActor } = vi.hoisted(() => ({
+const { mockSafeExternalFetch, mockStartApifyRun } = vi.hoisted(() => ({
     mockSafeExternalFetch: vi.fn(),
-    mockRunApifyActor: vi.fn()
+    mockStartApifyRun: vi.fn()
 }));
 
 vi.mock('@repo/utils', () => ({
@@ -29,7 +31,7 @@ vi.mock('@repo/utils', () => ({
 }));
 
 vi.mock('../../src/services/accommodation-import/adapters/apify-client.js', () => ({
-    runApifyActor: mockRunApifyActor
+    startApifyRun: mockStartApifyRun
 }));
 
 // ---------------------------------------------------------------------------
@@ -130,24 +132,15 @@ describe('BookingReputationAdapter', () => {
             expect(result.snippets).toBeNull();
         });
 
-        it('should return snippets:null when Apify actor returns review data', async () => {
-            // Arrange: Apify dataset includes reviewText / reviewsList — must be stripped
+        it('should return snippets:null from mapDatasetItems even when item has review data', () => {
+            // Arrange: dataset item includes review-text fields — must be stripped
             const adapter = new BookingReputationAdapter({
                 apifyToken: 'tok',
                 apifyBookingActor: 'apify/booking-scraper'
             });
             const listing = makeBookingListing();
 
-            // Primary fetch blocked
-            mockSafeExternalFetch.mockResolvedValueOnce({
-                ok: false,
-                status: 0,
-                error: 'blocked',
-                blocked: true
-            });
-
-            // Apify returns data WITH review text (should be stripped by adapter)
-            mockRunApifyActor.mockResolvedValueOnce([
+            const items = [
                 {
                     rating: 8.8,
                     reviewsCount: 300,
@@ -156,10 +149,10 @@ describe('BookingReputationAdapter', () => {
                     reviewText: 'Absolutely wonderful stay!',
                     reviewsList: [{ author: 'Guest B', text: 'Great location!', rating: 9 }]
                 }
-            ]);
+            ];
 
             // Act
-            const result = await adapter.fetch(listing);
+            const result = adapter.mapDatasetItems(items, listing);
 
             // Assert
             expect(result.snippets).toBeNull();
@@ -186,7 +179,7 @@ describe('BookingReputationAdapter', () => {
             expect(result.snippets).toBeNull();
         });
 
-        it('should NOT call Apify when JSON-LD provides sufficient data', async () => {
+        it('should NOT call startApifyRun when JSON-LD provides sufficient data', async () => {
             const adapter = new BookingReputationAdapter({
                 apifyToken: 'tok',
                 apifyBookingActor: 'apify/booking-scraper'
@@ -202,12 +195,13 @@ describe('BookingReputationAdapter', () => {
 
             await adapter.fetch(listing);
 
-            expect(mockRunApifyActor).not.toHaveBeenCalled();
+            expect(mockStartApifyRun).not.toHaveBeenCalled();
         });
     });
 
-    describe('fallback path — Apify actor', () => {
-        it('should use Apify when primary fetch is blocked', async () => {
+    describe('fetch() JSON-LD miss — returns all-null for service async fallthrough', () => {
+        it('should return all-null result when fetch is blocked', async () => {
+            // Arrange
             const adapter = new BookingReputationAdapter({
                 apifyToken: 'tok',
                 apifyBookingActor: 'apify/booking-scraper'
@@ -221,65 +215,44 @@ describe('BookingReputationAdapter', () => {
                 blocked: true
             });
 
-            mockRunApifyActor.mockResolvedValueOnce([{ rating: 8.1, reviewsCount: 175 }]);
-
+            // Act
             const result = await adapter.fetch(listing);
 
-            expect(mockRunApifyActor).toHaveBeenCalledOnce();
-            expect(result.rating).toBe(8.1);
-            expect(result.reviewsCount).toBe(175);
+            // Assert: all-null returned so service can call startRun()
+            expect(result.rating).toBeNull();
+            expect(result.reviewsCount).toBeNull();
+            expect(result.deepLink).toBeNull();
             expect(result.snippets).toBeNull();
+            // startApifyRun must NOT be called from fetch() — only from startRun()
+            expect(mockStartApifyRun).not.toHaveBeenCalled();
         });
 
-        it('should read the review count from `reviews` (voyager/booking-scraper shape)', async () => {
-            // voyager/booking-scraper returns the count under `reviews`, not
-            // `reviewsCount`/`numberOfReviews`.
-            const adapter = new BookingReputationAdapter({
-                apifyToken: 'tok',
-                apifyBookingActor: 'voyager/booking-scraper'
-            });
+        it('should return all-null when JSON-LD aggregateRating has no rating/count values', async () => {
+            // Arrange: JSON-LD present but aggregateRating has only bestRating (no values)
+            const adapter = new BookingReputationAdapter({});
             const listing = makeBookingListing();
 
-            mockSafeExternalFetch.mockResolvedValueOnce({
-                ok: false,
-                status: 0,
-                error: 'blocked',
-                blocked: true
-            });
-
-            mockRunApifyActor.mockResolvedValueOnce([{ rating: 8.8, reviews: 422, stars: 4 }]);
-
-            const result = await adapter.fetch(listing);
-
-            expect(result.rating).toBe(8.8);
-            expect(result.reviewsCount).toBe(422);
-            expect(result.snippets).toBeNull();
-        });
-
-        it('should return empty result when Apify returns empty dataset', async () => {
-            const adapter = new BookingReputationAdapter({
-                apifyToken: 'tok',
-                apifyBookingActor: 'apify/booking-scraper'
-            });
-            const listing = makeBookingListing();
+            const jsonLd = {
+                '@type': 'Hotel',
+                aggregateRating: { bestRating: 10 }
+            };
 
             mockSafeExternalFetch.mockResolvedValueOnce({
-                ok: false,
-                status: 0,
-                error: 'blocked',
-                blocked: true
+                ok: true,
+                status: 200,
+                body: `<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>`,
+                finalUrl: listing.url
             });
-            mockRunApifyActor.mockResolvedValueOnce([]);
 
+            // Act
             const result = await adapter.fetch(listing);
 
+            // Assert: falls through to empty — no usable rating data
             expect(result.rating).toBeNull();
             expect(result.reviewsCount).toBeNull();
         });
-    });
 
-    describe('credential degradation', () => {
-        it('should return empty result when no Apify credentials and primary fetch blocked', async () => {
+        it('should return all-null when no credentials and JSON-LD blocked', async () => {
             const adapter = new BookingReputationAdapter({});
             const listing = makeBookingListing();
 
@@ -292,9 +265,215 @@ describe('BookingReputationAdapter', () => {
 
             const result = await adapter.fetch(listing);
 
-            expect(mockRunApifyActor).not.toHaveBeenCalled();
+            expect(mockStartApifyRun).not.toHaveBeenCalled();
             expect(result.rating).toBeNull();
             expect(result.snippets).toBeNull();
+        });
+    });
+
+    describe('startRun() — Phase A async enqueue', () => {
+        it('should call startApifyRun with correct actor input and return runId + datasetId', async () => {
+            // Arrange
+            const adapter = new BookingReputationAdapter({
+                apifyToken: 'tok',
+                apifyBookingActor: 'apify/booking-scraper'
+            });
+            const listing = makeBookingListing();
+
+            mockStartApifyRun.mockResolvedValueOnce({
+                runId: 'run-abc-123',
+                defaultDatasetId: 'ds-xyz-456'
+            });
+
+            // Act
+            const result = await adapter.startRun(listing);
+
+            // Assert
+            expect(mockStartApifyRun).toHaveBeenCalledOnce();
+            expect(mockStartApifyRun).toHaveBeenCalledWith({
+                token: 'tok',
+                actor: 'apify/booking-scraper',
+                actorInput: { startUrls: [{ url: listing.url }] }
+            });
+            expect(result).toEqual({ runId: 'run-abc-123', datasetId: 'ds-xyz-456' });
+        });
+
+        it('should return null when apifyToken is absent', async () => {
+            // Arrange
+            const adapter = new BookingReputationAdapter({
+                apifyBookingActor: 'apify/booking-scraper'
+            });
+            const listing = makeBookingListing();
+
+            // Act
+            const result = await adapter.startRun(listing);
+
+            // Assert
+            expect(mockStartApifyRun).not.toHaveBeenCalled();
+            expect(result).toBeNull();
+        });
+
+        it('should return null when apifyBookingActor is absent', async () => {
+            // Arrange
+            const adapter = new BookingReputationAdapter({ apifyToken: 'tok' });
+            const listing = makeBookingListing();
+
+            // Act
+            const result = await adapter.startRun(listing);
+
+            // Assert
+            expect(mockStartApifyRun).not.toHaveBeenCalled();
+            expect(result).toBeNull();
+        });
+
+        it('should return null when startApifyRun returns null (Apify error)', async () => {
+            // Arrange
+            const adapter = new BookingReputationAdapter({
+                apifyToken: 'tok',
+                apifyBookingActor: 'apify/booking-scraper'
+            });
+            const listing = makeBookingListing();
+
+            mockStartApifyRun.mockResolvedValueOnce(null);
+
+            // Act
+            const result = await adapter.startRun(listing);
+
+            // Assert
+            expect(result).toBeNull();
+        });
+
+        it('should return null when both credentials are absent', async () => {
+            // Arrange
+            const adapter = new BookingReputationAdapter({});
+            const listing = makeBookingListing();
+
+            // Act
+            const result = await adapter.startRun(listing);
+
+            // Assert
+            expect(mockStartApifyRun).not.toHaveBeenCalled();
+            expect(result).toBeNull();
+        });
+    });
+
+    describe('mapDatasetItems() — Phase B pure mapping', () => {
+        it('should extract rating, reviewsCount and deepLink from a standard Booking dataset item', () => {
+            // Arrange
+            const adapter = new BookingReputationAdapter({});
+            const listing = makeBookingListing();
+            const items = [
+                {
+                    rating: 8.1,
+                    reviewsCount: 175,
+                    url: 'https://www.booking.com/hotel/ar/specific-path.html'
+                }
+            ];
+
+            // Act
+            const result = adapter.mapDatasetItems(items, listing);
+
+            // Assert
+            expect(result.rating).toBe(8.1);
+            expect(result.reviewsCount).toBe(175);
+            expect(result.deepLink).toBe('https://www.booking.com/hotel/ar/specific-path.html');
+            expect(result.snippets).toBeNull();
+        });
+
+        it('should read reviewsCount from `reviews` field (voyager/booking-scraper shape)', () => {
+            // Arrange
+            const adapter = new BookingReputationAdapter({});
+            const listing = makeBookingListing();
+            const items = [{ rating: 8.8, reviews: 422, stars: 4 }];
+
+            // Act
+            const result = adapter.mapDatasetItems(items, listing);
+
+            // Assert
+            expect(result.rating).toBe(8.8);
+            expect(result.reviewsCount).toBe(422);
+        });
+
+        it('should fall back to reviewScore when rating is absent', () => {
+            // Arrange
+            const adapter = new BookingReputationAdapter({});
+            const listing = makeBookingListing();
+            const items = [{ reviewScore: 7.5, numberOfReviews: 80 }];
+
+            // Act
+            const result = adapter.mapDatasetItems(items, listing);
+
+            // Assert
+            expect(result.rating).toBe(7.5);
+            expect(result.reviewsCount).toBe(80);
+        });
+
+        it('should fall back to guestRating when rating and reviewScore are absent', () => {
+            // Arrange
+            const adapter = new BookingReputationAdapter({});
+            const listing = makeBookingListing();
+            const items = [{ guestRating: 9.0, reviewsCount: 300 }];
+
+            // Act
+            const result = adapter.mapDatasetItems(items, listing);
+
+            // Assert
+            expect(result.rating).toBe(9.0);
+        });
+
+        it('should fall back to listing.url as deepLink when item has no url', () => {
+            // Arrange
+            const adapter = new BookingReputationAdapter({});
+            const listing = makeBookingListing();
+            const items = [{ rating: 8.5, reviewsCount: 100 }];
+
+            // Act
+            const result = adapter.mapDatasetItems(items, listing);
+
+            // Assert
+            expect(result.deepLink).toBe(listing.url);
+        });
+
+        it('should return empty result when items array is empty', () => {
+            // Arrange
+            const adapter = new BookingReputationAdapter({});
+            const listing = makeBookingListing();
+
+            // Act
+            const result = adapter.mapDatasetItems([], listing);
+
+            // Assert
+            expect(result.rating).toBeNull();
+            expect(result.reviewsCount).toBeNull();
+            expect(result.deepLink).toBeNull();
+            expect(result.snippets).toBeNull();
+        });
+
+        it('should parse string-typed rating via parseFloat', () => {
+            // Arrange
+            const adapter = new BookingReputationAdapter({});
+            const listing = makeBookingListing();
+            const items = [{ rating: '8.3', reviewsCount: 120 }];
+
+            // Act
+            const result = adapter.mapDatasetItems(items, listing);
+
+            // Assert
+            expect(result.rating).toBe(8.3);
+        });
+
+        it('should return null rating for non-numeric string', () => {
+            // Arrange
+            const adapter = new BookingReputationAdapter({});
+            const listing = makeBookingListing();
+            const items = [{ rating: 'n/a', reviewsCount: 50 }];
+
+            // Act
+            const result = adapter.mapDatasetItems(items, listing);
+
+            // Assert
+            expect(result.rating).toBeNull();
+            expect(result.reviewsCount).toBe(50);
         });
     });
 
@@ -382,9 +561,7 @@ describe('BookingReputationAdapter', () => {
     });
 
     describe('@graph loop fallthrough — no aggregateRating found', () => {
-        it('should return null when @graph array has items but none have aggregateRating (line 129)', async () => {
-            // Exercises line 129: the `}` after the @graph loop when loop completes without
-            // finding aggregateRating → falls through to line 131 (array check) → line 139 (null).
+        it('should return null when @graph array has items but none have aggregateRating', async () => {
             const adapter = new BookingReputationAdapter({});
             const listing = makeBookingListing();
 
@@ -413,9 +590,7 @@ describe('BookingReputationAdapter', () => {
             expect(result.reviewsCount).toBeNull();
         });
 
-        it('should return null when ratingValue and reviewCount are both undefined (line 158, 166)', async () => {
-            // Exercises the `ratingRaw !== undefined` false branch (→ null) and
-            // `countRaw !== undefined` false branch (→ null) in extractFromAggregateRating.
+        it('should return null when ratingValue and reviewCount are both undefined', async () => {
             const adapter = new BookingReputationAdapter({});
             const listing = makeBookingListing();
 
@@ -444,8 +619,7 @@ describe('BookingReputationAdapter', () => {
     });
 
     describe('extractFromAggregateRating — string-typed ratingValue / reviewCount', () => {
-        it('should parse string-typed ratingValue via parseFloat (lines 157-158)', async () => {
-            // Exercises the `typeof ratingRaw !== 'number'` branch in extractFromAggregateRating.
+        it('should parse string-typed ratingValue via parseFloat', async () => {
             const adapter = new BookingReputationAdapter({});
             const listing = makeBookingListing();
 
@@ -472,8 +646,7 @@ describe('BookingReputationAdapter', () => {
             expect(result.reviewsCount).toBe(512);
         });
 
-        it('should parse string-typed reviewCount via parseInt (lines 165-166)', async () => {
-            // Exercises the `typeof countRaw !== 'number'` branch in extractFromAggregateRating.
+        it('should parse string-typed reviewCount via parseInt', async () => {
             const adapter = new BookingReputationAdapter({});
             const listing = makeBookingListing();
 

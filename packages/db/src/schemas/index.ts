@@ -25,5 +25,7 @@ export * from './sponsorship/index.ts';
 export * from './tag/index.ts';
 export * from './user/index.ts';
 
+export * from './social/index.ts';
+
 // QZPay billing schemas (schema only - exported via billing module)
 export { qzpaySchema } from '@qazuor/qzpay-drizzle';

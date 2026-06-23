@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { SuccessSchema } from '../../../api/result.schema.js';
 import {
+    BaseFaqPublicSchema,
     BaseFaqSchema,
     FaqCreatePayloadSchema,
     FaqReorderPayloadSchema,
@@ -24,6 +25,38 @@ export const GastronomyFaqSchema = BaseFaqSchema.extend({
 
 /** TypeScript type for {@link GastronomyFaqSchema}. */
 export type GastronomyFaq = z.infer<typeof GastronomyFaqSchema>;
+
+// ----------------------------------------------------------------------------
+// Public Access Schema (SPEC-210)
+// ----------------------------------------------------------------------------
+
+/**
+ * Gastronomy FAQ Public Schema — safe subset for public API responses (SPEC-210).
+ *
+ * Field set: id, gastronomyId, question, answer, category, displayOrder.
+ * Deliberately EXCLUDES audit fields (createdAt, updatedAt, createdById, updatedById,
+ * deletedAt, deletedById), lifecycleState, and all internal metadata.
+ * Used as the responseSchema for GET /api/v1/public/gastronomies/:gastronomyId/faqs.
+ */
+export const GastronomyFaqPublicSchema = BaseFaqPublicSchema.extend({
+    /** FAQ entity ID (UUID). */
+    id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+
+    /** The gastronomy listing this FAQ belongs to. */
+    gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
+});
+
+/** TypeScript type for {@link GastronomyFaqPublicSchema}. */
+export type GastronomyFaqPublic = z.infer<typeof GastronomyFaqPublicSchema>;
+
+/**
+ * Output schema for listing gastronomy FAQs — public variant (SPEC-210).
+ * Replaces GastronomyFaqListOutputSchema on the public endpoint.
+ */
+export const GastronomyFaqPublicListOutputSchema = z.object({
+    faqs: z.array(GastronomyFaqPublicSchema)
+});
+export type GastronomyFaqPublicListOutput = z.infer<typeof GastronomyFaqPublicListOutputSchema>;
 
 // ----------------------------------------------------------------------------
 // Command Input Schemas

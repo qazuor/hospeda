@@ -3,7 +3,7 @@
  * Returns paginated list of public sponsorship packages
  */
 import {
-    SponsorshipPackageSchema,
+    SponsorshipPackagePublicSchema,
     type SponsorshipPackageSearchInput,
     SponsorshipPackageSearchSchema
 } from '@repo/schemas';
@@ -26,7 +26,7 @@ export const sponsorshipPackageListRoute = createPublicListRoute({
     description: 'Returns a paginated list of sponsorship packages',
     tags: ['Sponsorship Packages'],
     requestQuery: SponsorshipPackageSearchSchema.omit({ page: true, pageSize: true }).shape,
-    responseSchema: SponsorshipPackageSchema,
+    responseSchema: SponsorshipPackagePublicSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});

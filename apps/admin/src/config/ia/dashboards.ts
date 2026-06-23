@@ -671,8 +671,8 @@ const editorDashboard: DashboardInput = {
         },
 
         // Card C — Suscriptores Newsletter (Row 4 right, ½)
-        // 3-tile mini-grid (Activos / En verificación / Dados de baja)
-        // + deferred "Tasa de apertura" placeholder below the grid.
+        // 4-tile mini-grid: Activos / En verificación / Dados de baja / Tasa de apertura.
+        // Open rate tile is live as of SPEC-160 T-001 (last-sent campaign metrics).
         {
             id: 'editor-card-c',
             type: 'kpi',
@@ -691,15 +691,7 @@ const editorDashboard: DashboardInput = {
                 emptyDescription:
                     'Cuando los lectores se sumen a la newsletter, vas a ver el desglose acá.',
                 errorText: 'No pudimos cargar los suscriptores',
-                errorDescription: 'Probá actualizar el panel.',
-                deferredSlots: [
-                    {
-                        phaseSpec: 'SPEC-160',
-                        label: 'Tasa de apertura',
-                        description:
-                            'Tasa de apertura de campañas — disponible cuando se implemente el tracking de aperturas de email (SPEC-160).'
-                    }
-                ]
+                errorDescription: 'Probá actualizar el panel.'
             }
         },
 

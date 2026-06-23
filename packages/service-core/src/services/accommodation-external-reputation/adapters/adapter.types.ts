@@ -87,6 +87,11 @@ export interface ReputationFetchResult {
  * 3. Mapping the raw platform response to a {@link ReputationFetchResult}.
  * 4. Never throwing — all failures degrade to a result with `null` fields.
  *
+ * **Async two-phase extension (SPEC-250)**:
+ * Adapters backed by Apify additionally implement the optional `startRun` and
+ * `mapDatasetItems` methods to support the async polling pattern.  Adapters that
+ * resolve fully inline (e.g. Google via Places API) do NOT implement these.
+ *
  * @example
  * ```ts
  * const adapter: ReputationAdapter = new GoogleReputationAdapter();
@@ -103,10 +108,66 @@ export interface ReputationAdapter {
      * - Respect the AC-7.1 legal constraint: only Google may populate `snippets`.
      * - Use the `listing.url` and/or `listing.externalId` to resolve the platform resource.
      *
+     * For Apify-backed adapters (Booking fallback, Airbnb): `fetch()` handles only
+     * the fast inline path (e.g. JSON-LD for Booking).  If the inline path yields
+     * all-null aggregates and `startRun` is present, the service will call
+     * `startRun()` to enqueue an async Apify run instead.
+     *
      * @param listing - The external listing record (provides URL, externalId, platform).
      * @returns Resolved reputation data, always with all fields defined (nullable).
      */
     fetch(listing: AccommodationExternalListing): Promise<ReputationFetchResult>;
+
+    /**
+     * Phase A — enqueue an Apify actor run for this listing asynchronously.
+     *
+     * Implemented ONLY by adapters that use Apify as a data source
+     * (Booking fallback path, Airbnb full path).  Adapters without an Apify
+     * dependency (Google, Generic) do NOT implement this method.
+     *
+     * The service checks for the presence of this method before calling it:
+     * ```ts
+     * if (adapter.startRun) {
+     *   const run = await adapter.startRun(listing);
+     * }
+     * ```
+     *
+     * **Degradation contract**: returns `null` (never throws) on:
+     * - Missing credentials (token / actor slug not configured).
+     * - Apify API error (non-201 response, network failure, bad response shape).
+     *
+     * On success, returns `{ runId, datasetId }` so the caller can persist them
+     * for later polling by the cron job (`poll-apify-reputation-runs`).
+     *
+     * @param listing - The external listing record (provides URL for actor input).
+     * @returns `{ runId, datasetId }` on successful enqueue, or `null` on failure.
+     */
+    startRun?(
+        listing: AccommodationExternalListing
+    ): Promise<{ runId: string; datasetId: string } | null>;
+
+    /**
+     * Phase B — map raw Apify dataset items to a {@link ReputationFetchResult}.
+     *
+     * Implemented by the same adapters that implement {@link startRun}.  Called
+     * by the polling cron job (`poll-apify-reputation-runs`) AFTER the Apify run
+     * has reached `SUCCEEDED` status and the dataset items have been fetched via
+     * `getApifyDatasetItems()`.
+     *
+     * **MUST be a pure function** — no HTTP calls, no side effects.  The cron job
+     * calls this synchronously in its result-mapping step; any network I/O here
+     * would block the poller's tight loop.
+     *
+     * Respects the AC-7.1 legal constraint: MUST NOT populate `snippets`.
+     *
+     * @param items - Raw dataset items as returned by `getApifyDatasetItems()`.
+     * @param listing - The external listing record (used for fallback `deepLink`).
+     * @returns A fully-populated {@link ReputationFetchResult} (all fields nullable).
+     */
+    mapDatasetItems?(
+        items: unknown[],
+        listing: AccommodationExternalListing
+    ): ReputationFetchResult;
 }
 
 // ---------------------------------------------------------------------------

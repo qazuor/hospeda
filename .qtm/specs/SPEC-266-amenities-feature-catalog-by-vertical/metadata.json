@@ -1,0 +1,27 @@
+{
+    "specId": "SPEC-266",
+    "title": "Amenities & features catalog by vertical (scoping + i18n source-of-truth)",
+    "type": "improvement",
+    "complexity": "high",
+    "status": "draft",
+    "created": "2026-06-23T02:10:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": [
+        "amenities",
+        "features",
+        "catalog",
+        "commerce",
+        "gastronomy",
+        "experiences",
+        "accommodations",
+        "i18n",
+        "db",
+        "schemas",
+        "admin",
+        "web",
+        "beta-90",
+        "spec-249-followup"
+    ]
+}

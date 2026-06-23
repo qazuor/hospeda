@@ -41,6 +41,30 @@ vi.mock('../../../../src/utils/redis', () => ({
     getRedisClient: vi.fn().mockResolvedValue(undefined)
 }));
 
+// ── DB model mocks (added by SPEC-210 PR3 — guest-thread now enriches the
+//    conversation with accommodationName / accommodationSlug / ownerName) ────────
+//
+// vi.mock factories are hoisted before const declarations, so we use vi.hoisted()
+// to ensure the mock fns are available when the factory runs.
+
+const { mockFindAccommodation, mockFindUser } = vi.hoisted(() => ({
+    mockFindAccommodation: vi.fn(),
+    mockFindUser: vi.fn()
+}));
+
+vi.mock('@repo/db', async (importOriginal) => {
+    const original = await importOriginal<typeof import('@repo/db')>();
+    return {
+        ...original,
+        AccommodationModel: vi.fn().mockImplementation(() => ({
+            findById: mockFindAccommodation
+        })),
+        UserModel: vi.fn().mockImplementation(() => ({
+            findById: mockFindUser
+        }))
+    };
+});
+
 // ── Service mocks ─────────────────────────────────────────────────────────────
 
 const mockValidateToken = vi.fn();
@@ -66,15 +90,50 @@ import { guestThreadPublicConversationRoute } from '../../../../src/routes/conve
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const CONVERSATION_ID = '550e8400-e29b-41d4-a716-446655440001';
+const ACCOMMODATION_ID = '550e8400-e29b-41d4-a716-446655440000';
+const OWNER_ID = '550e8400-e29b-41d4-a716-446655440099';
 
+// SPEC-210 PR3: MOCK_CONVERSATION must include lastReadAtByOwner (required by
+// ConversationGuestPublicSchema) and accommodationId (used to look up enrichment).
 const MOCK_CONVERSATION = {
     id: CONVERSATION_ID,
     status: 'PENDING_OWNER',
-    accommodationId: '550e8400-e29b-41d4-a716-446655440000',
+    accommodationId: ACCOMMODATION_ID,
+    lastReadAtByOwner: null,
     createdAt: new Date().toISOString()
 };
 
-const MOCK_MESSAGES = [{ id: '550e8400-e29b-41d4-a716-446655440010', body: 'Hello!' }];
+// Accommodation + owner records returned by the DB mock enrichment lookups.
+const MOCK_ACCOMMODATION = {
+    id: ACCOMMODATION_ID,
+    name: 'Cabaña del Río',
+    slug: 'cabana-del-rio',
+    ownerId: OWNER_ID
+};
+
+const MOCK_OWNER = {
+    id: OWNER_ID,
+    displayName: 'Carlos',
+    firstName: 'Carlos'
+};
+
+// Messages must include senderType + createdAt for MessageGuestPublicSchema.
+const MOCK_MESSAGES = [
+    {
+        id: '550e8400-e29b-41d4-a716-446655440010',
+        body: 'Hello!',
+        senderType: 'GUEST',
+        createdAt: new Date().toISOString(),
+        conversationId: CONVERSATION_ID,
+        userId: null,
+        status: 'VISIBLE',
+        updatedAt: new Date().toISOString(),
+        deletedAt: null,
+        createdById: null,
+        updatedById: null,
+        deletedById: null
+    }
+];
 
 function buildApp(): Hono {
     const app = new Hono({ strict: false });
@@ -89,6 +148,9 @@ describe('GET /api/v1/public/conversations/guest/:token', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        // Default DB mock returns for enrichment (SPEC-210 PR3)
+        mockFindAccommodation.mockResolvedValue(MOCK_ACCOMMODATION);
+        mockFindUser.mockResolvedValue(MOCK_OWNER);
         app = buildApp();
     });
 

@@ -12,7 +12,11 @@ import {
     uuid
 } from 'drizzle-orm/pg-core';
 import { accommodations } from '../accommodation/accommodation.dbschema.ts';
-import { ExternalPlatformPgEnum, ExternalReputationFetchStatusPgEnum } from '../enums.dbschema.ts';
+import {
+    ExternalPlatformPgEnum,
+    ExternalReputationFetchStatusPgEnum,
+    ExternalReputationRunStatusPgEnum
+} from '../enums.dbschema.ts';
 import { accommodationExternalListings } from './accommodation_external_listings.dbschema.ts';
 
 /**
@@ -74,6 +78,29 @@ export const accommodationExternalReputation = pgTable(
          * Populated on non-ok statuses to aid debugging.
          */
         fetchMessage: text('fetch_message'),
+        /**
+         * Async run status for Apify-backed platforms.
+         * Tracks the lifecycle of an asynchronous Apify run (idle → pending → running → idle).
+         * Separate from fetchStatus so the public block builder never sees transient run state.
+         * Defaults to 'idle' (no run in progress).
+         */
+        runStatus: ExternalReputationRunStatusPgEnum('run_status').notNull().default('idle'),
+        /**
+         * Apify run ID returned by POST /v2/acts/{actor}/runs.
+         * Set when run_status = 'pending'; cleared to null after the run resolves.
+         */
+        apifyRunId: text('apify_run_id'),
+        /**
+         * Default dataset ID for the Apify run (returned when the run succeeds).
+         * Set by the polling cron before fetching dataset items; cleared on resolution.
+         */
+        apifyDatasetId: text('apify_dataset_id'),
+        /**
+         * Wall-clock time when startRun() was called.
+         * Used by the timeout sweep: if now() - run_started_at > HOSPEDA_EXTREP_APIFY_RUN_TIMEOUT_MS
+         * the poller marks the row as error and resets run_status to 'idle'.
+         */
+        runStartedAt: timestamp('run_started_at', { withTimezone: true }),
         /** Row creation timestamp (set by the DB on first upsert). */
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
         /** Timestamp of the last upsert (updated on every fetch run). */
@@ -98,7 +125,14 @@ export const accommodationExternalReputation = pgTable(
          */
         accommodation_external_reputation_accommodation_platform_uniq: uniqueIndex(
             'accommodation_external_reputation_accommodation_platform_uniq'
-        ).on(table.accommodationId, table.platform)
+        ).on(table.accommodationId, table.platform),
+        /**
+         * Index on run_status for the polling cron's WHERE run_status IN ('pending','running').
+         * The table may grow to thousands of rows; this keeps the poller's SELECT fast.
+         */
+        accommodation_external_reputation_runStatus_idx: index(
+            'accommodation_external_reputation_runStatus_idx'
+        ).on(table.runStatus)
     })
 );
 

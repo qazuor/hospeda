@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { DestinationSummarySchema } from './destination.query.schema.js';
 import { DestinationSchema } from './destination.schema.js';
 
 /**
@@ -155,3 +156,31 @@ export const DestinationAdminListItemSchema = DestinationAdminSchema.omit({
 });
 
 export type DestinationAdminListItem = z.infer<typeof DestinationAdminListItemSchema>;
+
+// ============================================================================
+// SUMMARY PUBLIC SCHEMA (SPEC-210)
+// ============================================================================
+
+/**
+ * Destination Summary Public Schema — explicit public-safe projection for the
+ * GET /api/v1/public/destinations/:id/summary endpoint (SPEC-210).
+ *
+ * DestinationSummarySchema is already a clean display projection (built with
+ * .pick() from DestinationSchema) and contains NO audit or internal fields.
+ * This named alias makes the public contract explicit and ensures the route's
+ * responseSchema is unambiguously tied to a public-tier schema.
+ *
+ * Included fields (all are display / navigation safe):
+ *   id, slug, name, summary, media, location, isFeatured,
+ *   accommodationsCount, destinationType, level, path,
+ *   reviewsCount, averageRating.
+ *
+ * Excluded fields (NOT present in the base projection, so not a risk):
+ *   All audit fields (createdAt, updatedAt, createdById, updatedById,
+ *   deletedAt, deletedById), lifecycleState, moderationState, adminInfo,
+ *   translationMeta, pathIds, parentDestinationId, description, tags,
+ *   attractions, reviews, climate, weatherCurrent, faqs, seo, visibility.
+ */
+export const DestinationSummaryPublicSchema = DestinationSummarySchema;
+
+export type DestinationSummaryPublic = z.infer<typeof DestinationSummaryPublicSchema>;

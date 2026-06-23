@@ -2,7 +2,7 @@
 spec-id: "SPEC-250"
 type: "improvement"
 complexity: high
-status: draft
+status: completed
 created: "2026-06-20"
 tags: ["external-reputation", "apify", "cron", "async", "accommodation", "SPEC-237-followup"]
 ---
@@ -846,15 +846,17 @@ The hook polls every 10 s when `enabled = true` and `allSettled = false`. Uses `
 
 7. **`getReputationAdapterCredentials()` called from poller**: the poller cron needs credentials (Apify token) to call `getApifyRunStatus` and `getApifyDatasetItems`. It should call `getReputationAdapterCredentials()` from `apps/api/src/utils/reputation-credentials.ts` at the start of each tick, not cached, so runtime env changes take effect without restart.
 
-### Open questions for owner input
+### Open questions for owner input — RESOLVED (2026-06-22)
 
-**OQ-1**: Should the polling cron also handle rows where `apify_run_id IS NULL` and `run_status = 'pending'` (orphan rows from a `startRun()` failure that set pending but didn't persist a run ID)? The current design assumes `apify_run_id IS NOT NULL` for pending rows, but if a crash occurs between setting `run_status='pending'` and persisting `apify_run_id`, the row is stuck. Mitigation options: (a) set `run_status='pending'` and `apify_run_id` in a single atomic upsert (preferred — prevents the partial-state window); (b) add a cron sweep for null-runId pending rows older than N minutes.
+**OQ-1 — RESOLVED: option (a), atomic upsert.** `startRun()`'s success path persists `run_status='pending'` AND `apify_run_id` (+ `apify_dataset_id`, `run_started_at`) in a single atomic upsert, eliminating the partial-state window at the source. No null-runId cron sweep is added. The poller's `findPendingRuns()` therefore safely assumes `apify_run_id IS NOT NULL`.
+Original question: Should the polling cron also handle rows where `apify_run_id IS NULL` and `run_status = 'pending'` (orphan rows from a `startRun()` failure that set pending but didn't persist a run ID)? Mitigation options: (a) set `run_status='pending'` and `apify_run_id` in a single atomic upsert (preferred); (b) add a cron sweep for null-runId pending rows older than N minutes.
 
-**OQ-2**: Apify actor input shapes for `startRun()`. The Booking and Airbnb actors each expect a specific `actorInput` JSON body. The SPEC-237 implementation already has this input shape in the existing `BookingReputationAdapter` and `AirbnbReputationAdapter` — just reuse the same input construction logic. However, confirm that the Apify async endpoint (`POST /v2/acts/{actor}/runs`) accepts the same input body format as the sync endpoint (`POST /v2/acts/{actor}/run-sync-get-dataset-items`). They should (both are just ways to start the same actor), but verify against Apify docs before implementing.
+**OQ-2 — to verify during implementation (technical, not an owner decision).** Confirm the Apify async endpoint (`POST /v2/acts/{actor}/runs`) accepts the same `actorInput` body as the sync endpoint (`run-sync-get-dataset-items`). Reuse the SPEC-237 input construction logic from the existing Booking/Airbnb adapters. Verified against the Apify REST API v2 reference during Phase 2.
 
-**OQ-3**: Rate-limiting the polling cron against Apify's API. If there are 50+ pending rows (e.g. after the weekly batch runs on a large deployment), the poller would fire 50+ HTTP requests in a single 2-min tick. Apify's rate limits are generous, but should the poller process rows in batches (e.g. max 20 per tick) or implement a small sleep between status checks? Default recommendation: no throttle for the initial implementation (at typical Hospeda scale, < 20 pending rows at a time), add throttle if Apify returns 429s.
+**OQ-3 — RESOLVED: no throttle for the initial implementation.** At typical Hospeda scale (< 20 pending rows at a time) the poller fires its status checks serially with no batching or sleep. Add a throttle only if Apify starts returning 429s. KISS/YAGNI.
+Original question: should the poller process rows in batches (max 20/tick) or sleep between status checks?
 
-**OQ-4**: Should `run_status = 'pending'` suppress the "refresh" button in the owner panel, preventing the owner from enqueuing a second run for the same platform while one is already in flight? Options: (a) block the button until `allSettled = true` (simplest UX), (b) allow it and let `startRun()` overwrite the existing `apify_run_id` (the old run's result is ignored when the poller resolves it — the dataset ID will be wrong). Recommendation: (a) block the button — simplest and safest.
+**OQ-4 — RESOLVED: option (a), block the button until `allSettled = true`.** While any platform has `run_status IN ('pending','running')`, the owner panel's refresh button is disabled, preventing a second run from being enqueued for an in-flight platform. Simplest and safest UX; avoids the orphaned-dataset-id problem of option (b).
 
 ---
 

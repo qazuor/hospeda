@@ -2,7 +2,7 @@
  * Public endpoint to get accommodations by feature
  * Returns paginated list of accommodations that have a specific feature
  */
-import { AccommodationListItemSchema, BaseHttpSearchSchema, FeatureIdSchema } from '@repo/schemas';
+import { AccommodationPublicSchema, BaseHttpSearchSchema, FeatureIdSchema } from '@repo/schemas';
 import { FeatureService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -23,7 +23,7 @@ export const publicGetAccommodationsByFeatureRoute = createPublicListRoute({
     description: 'Returns a list of accommodations that include a specific feature',
     tags: ['Features', 'Accommodations'],
     requestParams: { featureId: FeatureIdSchema },
-    responseSchema: AccommodationListItemSchema,
+    responseSchema: AccommodationPublicSchema,
     requestQuery: BaseHttpSearchSchema.shape,
     handler: async (ctx: Context, params, _body, query) => {
         const actor = getActorFromContext(ctx);

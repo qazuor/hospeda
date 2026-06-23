@@ -21,6 +21,7 @@ import { seedInternalTags } from './internalTags.seed.js';
 import { seedPostTags } from './postTags.seed.js';
 import { seedRevalidationConfig } from './revalidationConfig.seed.js';
 import { seedRolePermissions } from './rolePermissions.seed.js';
+import { seedSocialAutomation } from './socialAutomation.seed.js';
 import { seedSponsorshipLevels } from './sponsorshipLevels.seed.js';
 import { seedSponsorshipPackages } from './sponsorshipPackages.seed.js';
 import { seedSystemTags } from './systemTags.seed.js';
@@ -78,6 +79,7 @@ import { seedUsers } from './users.seed.js';
  * // 20. Revalidation config
  * // 21. AI prompt versions (default system prompts)
  * // 22. AI settings costCeilings defaults (SPEC-211 T-002)
+ * // 23. Social automation catalog (SPEC-254 T-015)
  * ```
  *
  * @throws {Error} When seeding fails and continueOnError is false
@@ -168,6 +170,11 @@ export async function runRequiredSeeds(context: SeedContext): Promise<void> {
         // 19. Seed AI settings costCeilings defaults (SPEC-211 T-002)
         //     Idempotent: skips if costCeilings is already set by an operator.
         await seedAiSettings();
+
+        // 20. Seed social automation catalog (SPEC-254 T-015)
+        //     Platforms, platform-formats, settings, campaign, batch, audiences,
+        //     footer, hashtag-sets, hashtags. All idempotent, model-direct.
+        await seedSocialAutomation();
 
         logger.info(`${separator}`);
         // biome-ignore lint/suspicious/noConsoleLog: seed script uses console.log for visual spacing in terminal output

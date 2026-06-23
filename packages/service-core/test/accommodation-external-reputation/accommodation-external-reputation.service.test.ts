@@ -1,11 +1,20 @@
 /**
- * Unit tests for AccommodationExternalReputationService (SPEC-237 T-007)
+ * Unit tests for AccommodationExternalReputationService
+ * (SPEC-237 T-007, updated SPEC-250 Phase 4)
  *
  * Covers:
- * - refresh: full success, partial failure (one platform errors), rate-limited
- * - listForDisplay: master-toggle OFF (empty), TTL-degrade (Google snippets stripped
- *   past TTL), per-platform toggle filtering
- * - disableReputation: permission check (ACCOMMODATION_UPDATE_ANY required)
+ * - refresh (SPEC-250 inline/async split):
+ *   - all-inline path (Google only → inlineSucceeded)
+ *   - mixed inline + async (Google inline, Airbnb enqueued)
+ *   - all-async (Airbnb only → enqueuedAsync, run_status='pending' persisted atomically)
+ *   - startRun failure → inlineFailed + fetch_status='error'
+ *   - inline adapter throws (catch path → inlineFailed, AC-2.3)
+ *   - upsert-of-error-row also fails (silent catch path)
+ *   - rate limit still enforced (429 path unchanged)
+ *   - NOT_FOUND when accommodation soft-deleted
+ *   - INTERNAL_ERROR on unexpected DB failure
+ * - listForDisplay: master-toggle OFF (empty), TTL-degrade, per-platform toggle filtering
+ * - disableReputation: permission check, transaction atomicity
  */
 
 import {
@@ -46,17 +55,22 @@ vi.mock('@repo/db', async (importOriginal) => {
 const mockGoogleFetch = vi.fn();
 const mockBookingFetch = vi.fn();
 const mockAirbnbFetch = vi.fn();
+const mockAirbnbStartRun = vi.fn();
+const mockBookingStartRun = vi.fn();
 const mockOtherFetch = vi.fn();
 
 vi.mock('../../src/services/accommodation-external-reputation/adapters/index.js', () => ({
     getReputationAdapter: vi.fn((platform: string) => {
         switch (platform) {
             case 'GOOGLE':
+                // Google: inline only, no startRun
                 return { fetch: mockGoogleFetch };
             case 'BOOKING':
-                return { fetch: mockBookingFetch };
+                // Booking: has both fetch (JSON-LD) and startRun (Apify fallback)
+                return { fetch: mockBookingFetch, startRun: mockBookingStartRun };
             case 'AIRBNB':
-                return { fetch: mockAirbnbFetch };
+                // Airbnb: fetch always returns empty, startRun enqueues Apify run
+                return { fetch: mockAirbnbFetch, startRun: mockAirbnbStartRun };
             default:
                 return { fetch: mockOtherFetch };
         }
@@ -72,6 +86,7 @@ const OWNER_ID = 'aaaaaaaa-aaaa-4aaa-aaaa-aaaaaaaaaaaa';
 const ADMIN_ID = 'bbbbbbbb-bbbb-4bbb-bbbb-bbbbbbbbbbbb';
 const LIST_GOOGLE_ID = '22222222-2222-4222-8222-222222222222';
 const LIST_BOOKING_ID = '33333333-3333-4333-8333-333333333333';
+const LIST_AIRBNB_ID = '66666666-6666-4666-8666-666666666666';
 const REP_GOOGLE_ID = '44444444-4444-4444-8444-444444444444';
 const REP_BOOKING_ID = '55555555-5555-4555-8555-555555555555';
 
@@ -143,6 +158,7 @@ function makeReputation(
         aggregateFetchedAt: new Date(),
         fetchStatus: 'ok',
         fetchMessage: null,
+        runStatus: 'idle',
         createdAt: new Date('2024-01-01T00:00:00Z'),
         updatedAt: new Date(),
         ...overrides
@@ -220,6 +236,8 @@ const ctx: ServiceConfig = {};
 describe('AccommodationExternalReputationService', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+
+        // Google: inline success
         mockGoogleFetch.mockResolvedValue({
             rating: 4.7,
             reviewsCount: 200,
@@ -237,6 +255,8 @@ describe('AccommodationExternalReputationService', () => {
             ],
             attributionUrl: null
         });
+
+        // Booking fetch: JSON-LD success (inline) by default
         mockBookingFetch.mockResolvedValue({
             rating: 9.2,
             reviewsCount: 500,
@@ -244,60 +264,46 @@ describe('AccommodationExternalReputationService', () => {
             snippets: null,
             attributionUrl: null
         });
+
+        // Airbnb fetch: always returns all-null (async path required)
+        mockAirbnbFetch.mockResolvedValue({
+            rating: null,
+            reviewsCount: null,
+            deepLink: null,
+            snippets: null,
+            attributionUrl: null
+        });
+
+        // Async startRun defaults — success path
+        mockAirbnbStartRun.mockResolvedValue({
+            runId: 'apify-run-airbnb-123',
+            datasetId: 'apify-dataset-airbnb-456'
+        });
+        mockBookingStartRun.mockResolvedValue({
+            runId: 'apify-run-booking-123',
+            datasetId: 'apify-dataset-booking-456'
+        });
+
         // Reset env
         process.env.HOSPEDA_EXTREP_REFRESH_RATE_LIMIT = undefined;
         process.env.HOSPEDA_EXTREP_GOOGLE_SNIPPET_TTL_DAYS = undefined;
     });
 
     // -------------------------------------------------------------------------
-    // refresh — full success
+    // refresh — SPEC-250 inline/async split
     // -------------------------------------------------------------------------
 
     describe('refresh', () => {
-        it('should fetch both platforms and return all succeeded — happy path', async () => {
+        // --- All-inline path ---
+
+        it('should resolve all inline and return inlineSucceeded when only Google listing (no startRun)', async () => {
+            // Arrange
             const accommodationModel = makeAccommodationModel();
-            const listingModel = makeListingModel();
-            const reputationModel = makeReputationModel({
-                // Simulate no previous fetch (rate limit not triggered)
-                findAll: vi.fn().mockResolvedValue({ items: [], total: 0 })
+            const listingModel = makeListingModel({
+                findByAccommodation: vi
+                    .fn()
+                    .mockResolvedValue([makeListing(LIST_GOOGLE_ID, ExternalPlatformEnum.GOOGLE)])
             });
-            const svc = new AccommodationExternalReputationService(ctx, {
-                listingModel: listingModel as never,
-                reputationModel: reputationModel as never,
-                accommodationModel: accommodationModel as never
-            });
-
-            const result = await svc.refresh(ACC_ID, makeOwnerActor());
-
-            expect(result.error).toBeUndefined();
-            expect(result.data?.succeeded).toContain(ExternalPlatformEnum.GOOGLE);
-            expect(result.data?.succeeded).toContain(ExternalPlatformEnum.BOOKING);
-            expect(result.data?.failed).toHaveLength(0);
-            expect(reputationModel.upsertReputation).toHaveBeenCalledTimes(2);
-        });
-
-        it('should return FORBIDDEN when actor does not own the accommodation', async () => {
-            const accommodationModel = makeAccommodationModel();
-            const listingModel = makeListingModel();
-            const reputationModel = makeReputationModel();
-            const svc = new AccommodationExternalReputationService(ctx, {
-                listingModel: listingModel as never,
-                reputationModel: reputationModel as never,
-                accommodationModel: accommodationModel as never
-            });
-
-            const result = await svc.refresh(ACC_ID, makeNonOwnerActor());
-
-            expect(result.data).toBeUndefined();
-            expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
-        });
-
-        it('should continue other platforms when one adapter errors (AC-2.3)', async () => {
-            // Google succeeds; Booking throws
-            mockBookingFetch.mockRejectedValue(new Error('Booking API timeout'));
-
-            const accommodationModel = makeAccommodationModel();
-            const listingModel = makeListingModel();
             const reputationModel = makeReputationModel({
                 findAll: vi.fn().mockResolvedValue({ items: [], total: 0 })
             });
@@ -307,19 +313,278 @@ describe('AccommodationExternalReputationService', () => {
                 accommodationModel: accommodationModel as never
             });
 
+            // Act
             const result = await svc.refresh(ACC_ID, makeOwnerActor());
 
+            // Assert
             expect(result.error).toBeUndefined();
-            expect(result.data?.succeeded).toContain(ExternalPlatformEnum.GOOGLE);
-            expect(result.data?.failed).toHaveLength(1);
-            expect(result.data?.failed[0]?.platform).toBe(ExternalPlatformEnum.BOOKING);
-            expect(result.data?.failed[0]?.error).toContain('Booking API timeout');
-            // Both upserts ran: 1 ok (Google) + 1 error row (Booking)
+            expect(result.data?.inlineSucceeded).toContain(ExternalPlatformEnum.GOOGLE);
+            expect(result.data?.enqueuedAsync).toHaveLength(0);
+            expect(result.data?.inlineFailed).toHaveLength(0);
+            expect(reputationModel.upsertReputation).toHaveBeenCalledTimes(1);
+            // Inline upsert must set run_status='idle'
+            expect(reputationModel.upsertReputation).toHaveBeenCalledWith(
+                expect.objectContaining({ runStatus: 'idle', fetchStatus: 'ok' }),
+                undefined
+            );
+        });
+
+        it('should resolve Booking inline when JSON-LD returns non-null rating', async () => {
+            // Arrange — Booking fetch returns a rating (JSON-LD fast path succeeds)
+            const accommodationModel = makeAccommodationModel();
+            const listingModel = makeListingModel({
+                findByAccommodation: vi
+                    .fn()
+                    .mockResolvedValue([makeListing(LIST_BOOKING_ID, ExternalPlatformEnum.BOOKING)])
+            });
+            const reputationModel = makeReputationModel({
+                findAll: vi.fn().mockResolvedValue({ items: [], total: 0 })
+            });
+            const svc = new AccommodationExternalReputationService(ctx, {
+                listingModel: listingModel as never,
+                reputationModel: reputationModel as never,
+                accommodationModel: accommodationModel as never
+            });
+
+            // Act
+            const result = await svc.refresh(ACC_ID, makeOwnerActor());
+
+            // Assert — Booking went inline (JSON-LD succeeded)
+            expect(result.error).toBeUndefined();
+            expect(result.data?.inlineSucceeded).toContain(ExternalPlatformEnum.BOOKING);
+            expect(result.data?.enqueuedAsync).toHaveLength(0);
+            expect(result.data?.inlineFailed).toHaveLength(0);
+            // startRun must NOT have been called (inline path took precedence)
+            expect(mockBookingStartRun).not.toHaveBeenCalled();
+        });
+
+        // --- Mixed inline + async ---
+
+        it('should return Google in inlineSucceeded and Airbnb in enqueuedAsync (mixed path)', async () => {
+            // Arrange — Google listing (inline) + Airbnb listing (async)
+            const accommodationModel = makeAccommodationModel();
+            const listingModel = makeListingModel({
+                findByAccommodation: vi
+                    .fn()
+                    .mockResolvedValue([
+                        makeListing(LIST_GOOGLE_ID, ExternalPlatformEnum.GOOGLE),
+                        makeListing(LIST_AIRBNB_ID, ExternalPlatformEnum.AIRBNB)
+                    ])
+            });
+            const reputationModel = makeReputationModel({
+                findAll: vi.fn().mockResolvedValue({ items: [], total: 0 })
+            });
+            const svc = new AccommodationExternalReputationService(ctx, {
+                listingModel: listingModel as never,
+                reputationModel: reputationModel as never,
+                accommodationModel: accommodationModel as never
+            });
+
+            // Act
+            const result = await svc.refresh(ACC_ID, makeOwnerActor());
+
+            // Assert
+            expect(result.error).toBeUndefined();
+            expect(result.data?.inlineSucceeded).toContain(ExternalPlatformEnum.GOOGLE);
+            expect(result.data?.enqueuedAsync).toContain(ExternalPlatformEnum.AIRBNB);
+            expect(result.data?.inlineFailed).toHaveLength(0);
+            // Two upserts: one inline (Google), one async enqueue (Airbnb)
             expect(reputationModel.upsertReputation).toHaveBeenCalledTimes(2);
         });
+
+        // --- All-async path ---
+
+        it('should enqueue Airbnb async and persist run_status=pending atomically (OQ-1)', async () => {
+            // Arrange — Airbnb only
+            const accommodationModel = makeAccommodationModel();
+            const listingModel = makeListingModel({
+                findByAccommodation: vi
+                    .fn()
+                    .mockResolvedValue([makeListing(LIST_AIRBNB_ID, ExternalPlatformEnum.AIRBNB)])
+            });
+            const reputationModel = makeReputationModel({
+                findAll: vi.fn().mockResolvedValue({ items: [], total: 0 })
+            });
+            const svc = new AccommodationExternalReputationService(ctx, {
+                listingModel: listingModel as never,
+                reputationModel: reputationModel as never,
+                accommodationModel: accommodationModel as never
+            });
+
+            // Act
+            const result = await svc.refresh(ACC_ID, makeOwnerActor());
+
+            // Assert
+            expect(result.error).toBeUndefined();
+            expect(result.data?.inlineSucceeded).toHaveLength(0);
+            expect(result.data?.enqueuedAsync).toContain(ExternalPlatformEnum.AIRBNB);
+            expect(result.data?.inlineFailed).toHaveLength(0);
+            // Exactly one upsert — OQ-1: atomic single write (not two separate writes)
+            expect(reputationModel.upsertReputation).toHaveBeenCalledTimes(1);
+            // The upsert must atomically set run_status='pending' + runId + datasetId + runStartedAt
+            expect(reputationModel.upsertReputation).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    runStatus: 'pending',
+                    apifyRunId: 'apify-run-airbnb-123',
+                    apifyDatasetId: 'apify-dataset-airbnb-456',
+                    runStartedAt: expect.any(Date)
+                }),
+                undefined
+            );
+        });
+
+        // --- startRun failure → inlineFailed ---
+
+        it('should add platform to inlineFailed and persist fetch_status=error when startRun returns null', async () => {
+            // Arrange — Airbnb startRun degrades to null
+            mockAirbnbStartRun.mockResolvedValue(null);
+
+            const accommodationModel = makeAccommodationModel();
+            const listingModel = makeListingModel({
+                findByAccommodation: vi
+                    .fn()
+                    .mockResolvedValue([makeListing(LIST_AIRBNB_ID, ExternalPlatformEnum.AIRBNB)])
+            });
+            const reputationModel = makeReputationModel({
+                findAll: vi.fn().mockResolvedValue({ items: [], total: 0 })
+            });
+            const svc = new AccommodationExternalReputationService(ctx, {
+                listingModel: listingModel as never,
+                reputationModel: reputationModel as never,
+                accommodationModel: accommodationModel as never
+            });
+
+            // Act
+            const result = await svc.refresh(ACC_ID, makeOwnerActor());
+
+            // Assert
+            expect(result.error).toBeUndefined();
+            expect(result.data?.inlineSucceeded).toHaveLength(0);
+            expect(result.data?.enqueuedAsync).toHaveLength(0);
+            expect(result.data?.inlineFailed).toHaveLength(1);
+            expect(result.data?.inlineFailed[0]?.platform).toBe(ExternalPlatformEnum.AIRBNB);
+            expect(result.data?.inlineFailed[0]?.error).toBe('startRun failed');
+            // Upsert must set fetch_status='error', run_status='idle'
+            expect(reputationModel.upsertReputation).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    fetchStatus: 'error',
+                    fetchMessage: 'startRun failed',
+                    runStatus: 'idle'
+                }),
+                undefined
+            );
+        });
+
+        // --- Booking: JSON-LD miss falls through to async ---
+
+        it('should enqueue Booking async when JSON-LD returns all-null', async () => {
+            // Arrange — Booking fetch returns all-null (JSON-LD missed or blocked)
+            mockBookingFetch.mockResolvedValue({
+                rating: null,
+                reviewsCount: null,
+                deepLink: null,
+                snippets: null,
+                attributionUrl: null
+            });
+
+            const accommodationModel = makeAccommodationModel();
+            const listingModel = makeListingModel({
+                findByAccommodation: vi
+                    .fn()
+                    .mockResolvedValue([makeListing(LIST_BOOKING_ID, ExternalPlatformEnum.BOOKING)])
+            });
+            const reputationModel = makeReputationModel({
+                findAll: vi.fn().mockResolvedValue({ items: [], total: 0 })
+            });
+            const svc = new AccommodationExternalReputationService(ctx, {
+                listingModel: listingModel as never,
+                reputationModel: reputationModel as never,
+                accommodationModel: accommodationModel as never
+            });
+
+            // Act
+            const result = await svc.refresh(ACC_ID, makeOwnerActor());
+
+            // Assert — Booking was enqueued async (not inline)
+            expect(result.data?.enqueuedAsync).toContain(ExternalPlatformEnum.BOOKING);
+            expect(result.data?.inlineSucceeded).toHaveLength(0);
+            expect(mockBookingStartRun).toHaveBeenCalledOnce();
+        });
+
+        // --- AC-2.3: Partial failure — adapter throws ---
+
+        it('should continue other platforms when one adapter throws (AC-2.3)', async () => {
+            // Arrange — Airbnb fetch throws; Google succeeds inline
+            mockAirbnbFetch.mockRejectedValue(new Error('Airbnb fetch timeout'));
+
+            const accommodationModel = makeAccommodationModel();
+            const listingModel = makeListingModel({
+                findByAccommodation: vi
+                    .fn()
+                    .mockResolvedValue([
+                        makeListing(LIST_GOOGLE_ID, ExternalPlatformEnum.GOOGLE),
+                        makeListing(LIST_AIRBNB_ID, ExternalPlatformEnum.AIRBNB)
+                    ])
+            });
+            const reputationModel = makeReputationModel({
+                findAll: vi.fn().mockResolvedValue({ items: [], total: 0 })
+            });
+            const svc = new AccommodationExternalReputationService(ctx, {
+                listingModel: listingModel as never,
+                reputationModel: reputationModel as never,
+                accommodationModel: accommodationModel as never
+            });
+
+            // Act
+            const result = await svc.refresh(ACC_ID, makeOwnerActor());
+
+            // Assert
+            expect(result.error).toBeUndefined();
+            expect(result.data?.inlineSucceeded).toContain(ExternalPlatformEnum.GOOGLE);
+            expect(result.data?.enqueuedAsync).toHaveLength(0);
+            expect(result.data?.inlineFailed).toHaveLength(1);
+            expect(result.data?.inlineFailed[0]?.platform).toBe(ExternalPlatformEnum.AIRBNB);
+            expect(result.data?.inlineFailed[0]?.error).toContain('Airbnb fetch timeout');
+            // Both upserts ran: 1 ok (Google) + 1 error row (Airbnb catch path)
+            expect(reputationModel.upsertReputation).toHaveBeenCalledTimes(2);
+        });
+
+        // --- Silent catch when upsert-of-error-row also fails ---
+
+        it('should continue gracefully when upsert-of-error-row also fails', async () => {
+            // Arrange — fetch throws; then error-row upsert also throws
+            mockGoogleFetch.mockRejectedValueOnce(new Error('adapter timeout'));
+
+            const accommodationModel = makeAccommodationModel();
+            const listingModel = makeListingModel({
+                findByAccommodation: vi
+                    .fn()
+                    .mockResolvedValue([makeListing(LIST_GOOGLE_ID, ExternalPlatformEnum.GOOGLE)])
+            });
+            const reputationModel = makeReputationModel({
+                findAll: vi.fn().mockResolvedValue({ items: [], total: 0 }),
+                upsertReputation: vi.fn().mockRejectedValue(new Error('upsert also failed'))
+            });
+            const svc = new AccommodationExternalReputationService(ctx, {
+                listingModel: listingModel as never,
+                reputationModel: reputationModel as never,
+                accommodationModel: accommodationModel as never
+            });
+
+            // Act
+            const result = await svc.refresh(ACC_ID, makeOwnerActor());
+
+            // Assert — must NOT bubble the upsert-of-error-row failure
+            expect(result.error).toBeUndefined();
+            expect(result.data?.inlineFailed).toHaveLength(1);
+            expect(result.data?.inlineSucceeded).toHaveLength(0);
+            expect(result.data?.enqueuedAsync).toHaveLength(0);
+        });
+
+        // --- Rate limit still enforced ---
 
         it('should return QUOTA_EXCEEDED (rate-limited) when the window has not passed', async () => {
-            // Set a tight rate limit and simulate a recent fetch
+            // Arrange
             process.env.HOSPEDA_EXTREP_REFRESH_RATE_LIMIT = '1/3600';
 
             const recentFetch = new Date(Date.now() - 60_000); // 1 minute ago — within 1-hour window
@@ -341,12 +606,13 @@ describe('AccommodationExternalReputationService', () => {
                 accommodationModel: accommodationModel as never
             });
 
+            // Act
             const result = await svc.refresh(ACC_ID, makeOwnerActor());
 
+            // Assert
             expect(result.data).toBeUndefined();
             expect(result.error?.code).toBe(ServiceErrorCode.QUOTA_EXCEEDED);
             expect(result.error?.details).toMatchObject({ reason: 'RATE_LIMIT_ERROR' });
-            // No fetch calls should have been made
             expect(reputationModel.upsertReputation).not.toHaveBeenCalled();
         });
 
@@ -355,7 +621,11 @@ describe('AccommodationExternalReputationService', () => {
 
             const oldFetch = new Date(Date.now() - 700_000); // ~11 min ago — outside 10-min window
             const accommodationModel = makeAccommodationModel();
-            const listingModel = makeListingModel();
+            const listingModel = makeListingModel({
+                findByAccommodation: vi
+                    .fn()
+                    .mockResolvedValue([makeListing(LIST_GOOGLE_ID, ExternalPlatformEnum.GOOGLE)])
+            });
             const reputationModel = makeReputationModel({
                 findAll: vi.fn().mockResolvedValue({
                     items: [
@@ -375,22 +645,23 @@ describe('AccommodationExternalReputationService', () => {
             const result = await svc.refresh(ACC_ID, makeOwnerActor());
 
             expect(result.error).toBeUndefined();
-            expect(result.data?.succeeded.length).toBeGreaterThan(0);
+            expect(
+                (result.data?.inlineSucceeded.length ?? 0) +
+                    (result.data?.enqueuedAsync.length ?? 0)
+            ).toBeGreaterThan(0);
         });
 
         it('should enforce rate-limit when aggregateFetchedAt is a string (DB-serialized date)', async () => {
-            // Exercises line 248: the `new Date(rep.aggregateFetchedAt)` branch when the
-            // value comes from the DB as an ISO string rather than a Date object.
             process.env.HOSPEDA_EXTREP_REFRESH_RATE_LIMIT = '1/3600';
 
-            const recentFetchIso = new Date(Date.now() - 60_000).toISOString(); // 1 min ago
+            const recentFetchIso = new Date(Date.now() - 60_000).toISOString();
             const accommodationModel = makeAccommodationModel();
             const listingModel = makeListingModel();
             const reputationModel = makeReputationModel({
                 findAll: vi.fn().mockResolvedValue({
                     items: [
                         makeReputation(REP_GOOGLE_ID, ExternalPlatformEnum.GOOGLE, LIST_GOOGLE_ID, {
-                            aggregateFetchedAt: recentFetchIso as never // string, not Date
+                            aggregateFetchedAt: recentFetchIso as never
                         })
                     ],
                     total: 1
@@ -404,46 +675,13 @@ describe('AccommodationExternalReputationService', () => {
 
             const result = await svc.refresh(ACC_ID, makeOwnerActor());
 
-            // Rate-limit must fire even when the date is a string
             expect(result.error?.code).toBe(ServiceErrorCode.QUOTA_EXCEEDED);
         });
 
-        it('should continue gracefully when upsert-of-error-row also fails (catch block line 322)', async () => {
-            // Exercises line 322-324: the silent `catch {}` when the error-row upsert throws.
-            // Adapter rejects → we try to write an error row → upsert ALSO rejects →
-            // caught silently → platform lands in `failed[]`, data is still returned.
-            process.env.HOSPEDA_EXTREP_REFRESH_RATE_LIMIT = '1/0'; // no limit
-            mockGoogleFetch.mockRejectedValueOnce(new Error('adapter timeout'));
-
-            const accommodationModel = makeAccommodationModel();
-            const listingModel = makeListingModel({
-                findByAccommodation: vi
-                    .fn()
-                    .mockResolvedValue([makeListing(LIST_GOOGLE_ID, ExternalPlatformEnum.GOOGLE)])
-            });
-            const reputationModel = makeReputationModel({
-                findAll: vi.fn().mockResolvedValue({ items: [], total: 0 }),
-                upsertReputation: vi.fn().mockRejectedValue(new Error('upsert also failed'))
-            });
-            const svc = new AccommodationExternalReputationService(ctx, {
-                listingModel: listingModel as never,
-                reputationModel: reputationModel as never,
-                accommodationModel: accommodationModel as never
-            });
-
-            const result = await svc.refresh(ACC_ID, makeOwnerActor());
-
-            // Must NOT bubble the upsert-of-error-row failure
-            expect(result.error).toBeUndefined();
-            expect(result.data?.failed).toHaveLength(1);
-            expect(result.data?.succeeded).toHaveLength(0);
-        });
-
         it('should include windowSeconds in rate-limit error details (L1 regression)', async () => {
-            // Arrange — rate limit window set to 3600s; simulate recent fetch
             process.env.HOSPEDA_EXTREP_REFRESH_RATE_LIMIT = '1/3600';
 
-            const recentFetch = new Date(Date.now() - 60_000); // 1 minute ago — within window
+            const recentFetch = new Date(Date.now() - 60_000);
             const accommodationModel = makeAccommodationModel();
             const listingModel = makeListingModel();
             const reputationModel = makeReputationModel({
@@ -462,10 +700,8 @@ describe('AccommodationExternalReputationService', () => {
                 accommodationModel: accommodationModel as never
             });
 
-            // Act
             const result = await svc.refresh(ACC_ID, makeOwnerActor());
 
-            // Assert — error details must carry windowSeconds so the route can set Retry-After
             expect(result.error?.code).toBe(ServiceErrorCode.QUOTA_EXCEEDED);
             expect(result.error?.details).toMatchObject({
                 reason: 'RATE_LIMIT_ERROR',
@@ -473,11 +709,25 @@ describe('AccommodationExternalReputationService', () => {
             });
         });
 
-        it('should return NOT_FOUND when the accommodation is soft-deleted (assertOwnershipOrAdmin lines 126-130)', async () => {
-            // Exercises lines 126-130: assertOwnershipOrAdmin throws NOT_FOUND when
-            // accommodation.deletedAt is not null.
-            process.env.HOSPEDA_EXTREP_REFRESH_RATE_LIMIT = undefined;
+        // --- Permission / ownership checks ---
 
+        it('should return FORBIDDEN when actor does not own the accommodation', async () => {
+            const accommodationModel = makeAccommodationModel();
+            const listingModel = makeListingModel();
+            const reputationModel = makeReputationModel();
+            const svc = new AccommodationExternalReputationService(ctx, {
+                listingModel: listingModel as never,
+                reputationModel: reputationModel as never,
+                accommodationModel: accommodationModel as never
+            });
+
+            const result = await svc.refresh(ACC_ID, makeNonOwnerActor());
+
+            expect(result.data).toBeUndefined();
+            expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+        });
+
+        it('should return NOT_FOUND when the accommodation is soft-deleted', async () => {
             const accommodationModel = makeAccommodationModel({
                 findById: vi
                     .fn()
@@ -497,10 +747,7 @@ describe('AccommodationExternalReputationService', () => {
             expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
         });
 
-        it('should return INTERNAL_ERROR when accommodationModel.findById throws unexpectedly in refresh', async () => {
-            // Exercises lines 338-340: the outer-catch INTERNAL_ERROR in refresh().
-            process.env.HOSPEDA_EXTREP_REFRESH_RATE_LIMIT = undefined;
-
+        it('should return INTERNAL_ERROR when accommodationModel.findById throws unexpectedly', async () => {
             const accommodationModel = makeAccommodationModel({
                 findById: vi.fn().mockRejectedValue(new Error('unexpected DB error in refresh'))
             });
@@ -596,7 +843,6 @@ describe('AccommodationExternalReputationService', () => {
         it('should strip Google snippets when snippetsFetchedAt is older than the TTL', async () => {
             process.env.HOSPEDA_EXTREP_GOOGLE_SNIPPET_TTL_DAYS = '7';
 
-            // Simulate snippetsFetchedAt = 10 days ago (older than 7-day TTL)
             const oldSnippetFetch = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000);
 
             const accommodationModel = makeAccommodationModel();
@@ -648,7 +894,6 @@ describe('AccommodationExternalReputationService', () => {
 
         it('should exclude a platform when showLink and showReviews are both false', async () => {
             const accommodationModel = makeAccommodationModel();
-            // Listing with both flags off
             const hiddenListing = makeListing(LIST_BOOKING_ID, ExternalPlatformEnum.BOOKING, {
                 verified: true,
                 showLink: false,
@@ -662,7 +907,6 @@ describe('AccommodationExternalReputationService', () => {
                 ExternalPlatformEnum.BOOKING,
                 LIST_BOOKING_ID
             );
-            // findForDisplay would normally already exclude this, but we also verify buildExternalReputationBlock
             const reputationModel = makeReputationModel({
                 findForDisplay: vi.fn().mockResolvedValue([bookingRep])
             });
@@ -675,12 +919,10 @@ describe('AccommodationExternalReputationService', () => {
             const result = await svc.listForDisplay(ACC_ID);
 
             expect(result.error).toBeUndefined();
-            // The listing has showLink=false + showReviews=false → stripped by buildExternalReputationBlock
             expect(result.data?.items).toHaveLength(0);
         });
 
         it('should return empty block when no reputation rows exist for the accommodation', async () => {
-            // Exercises lines 394-396: the `reputationRows.length === 0` early-return.
             const accommodationModel = makeAccommodationModel();
             const listingModel = makeListingModel();
             const reputationModel = makeReputationModel({
@@ -713,16 +955,11 @@ describe('AccommodationExternalReputationService', () => {
 
             const result = await svc.listForDisplay(ACC_ID);
 
-            // Public read must degrade gracefully — no error, empty items
             expect(result.error).toBeUndefined();
             expect(result.data?.items).toHaveLength(0);
         });
 
         it('shows unverified listings when display toggles are enabled (verified is not a filter)', async () => {
-            // The out-of-MVP `verified` gate was removed in the SPEC-237 staging-smoke
-            // fix (nothing ever set it true, so the public block was always empty).
-            // Visibility is now governed by showLink/showReviews + the master toggle,
-            // NOT by `verified`. An unverified listing with showReviews=true is shown.
             const accommodationModel = makeAccommodationModel();
             const unverifiedListing = makeListing(LIST_GOOGLE_ID, ExternalPlatformEnum.GOOGLE, {
                 verified: false,
@@ -836,9 +1073,6 @@ describe('AccommodationExternalReputationService', () => {
         });
 
         it('should pass ctx.tx to model calls when a ServiceContext is provided', async () => {
-            // Exercises the `ctx?.tx` "truthy" branch on lines 473/483/495 — when a
-            // real ServiceContext is provided, `ctx?.tx` accesses `.tx` (undefined here
-            // since no transaction is active, but the truthy ctx path IS taken).
             const accommodationModel = makeAccommodationModel();
             const activeListing = makeListing(LIST_GOOGLE_ID, ExternalPlatformEnum.GOOGLE);
             const listingModel = makeListingModel({
@@ -851,7 +1085,6 @@ describe('AccommodationExternalReputationService', () => {
                 accommodationModel: accommodationModel as never
             });
 
-            // Pass an explicit (empty) ServiceContext — ctx is truthy, ctx.tx is undefined
             const explicitCtx = {};
             const result = await svc.disableReputation(ACC_ID, makeAdminActor(), explicitCtx);
 
@@ -861,13 +1094,10 @@ describe('AccommodationExternalReputationService', () => {
         });
 
         it('should return INTERNAL_ERROR when listingModel.update throws a non-Error value (String branch)', async () => {
-            // Exercises the `String(err)` false branch of
-            // `err instanceof Error ? err.message : String(err)` in disableReputation.
             const accommodationModel = makeAccommodationModel();
             const activeListing = makeListing(LIST_GOOGLE_ID, ExternalPlatformEnum.GOOGLE);
             const listingModel = makeListingModel({
                 findByAccommodation: vi.fn().mockResolvedValue([activeListing]),
-                // Throw a plain string (not an Error instance)
                 // eslint-disable-next-line @typescript-eslint/prefer-promise-reject-errors
                 update: vi.fn().mockRejectedValue('plain string failure')
             });
@@ -886,7 +1116,6 @@ describe('AccommodationExternalReputationService', () => {
         });
 
         it('should propagate ServiceError code when listingModel.update throws a ServiceError', async () => {
-            // Exercises lines 502-503: the `err instanceof ServiceError` rethrow path.
             const accommodationModel = makeAccommodationModel();
             const activeListing = makeListing(LIST_GOOGLE_ID, ExternalPlatformEnum.GOOGLE);
             const svcErr = new ServiceError(
@@ -929,14 +1158,12 @@ describe('AccommodationExternalReputationService', () => {
 
             const result = await svc.disableReputation(ACC_ID, makeAdminActor());
 
-            expect(result.data?.disabled).toBe(1); // only the active one
+            expect(result.data?.disabled).toBe(1);
             expect(listingModel.update).toHaveBeenCalledTimes(1);
         });
 
         it('should roll back all updates when a mid-loop update throws (L6 regression — transaction atomicity)', async () => {
             // Arrange — two active listings; the second update throws.
-            // withTransaction is mocked to pass-through in unit tests, so we verify
-            // the service surfaces an error rather than returning a partial count.
             const accommodationModel = makeAccommodationModel();
             const listing1 = makeListing(LIST_GOOGLE_ID, ExternalPlatformEnum.GOOGLE);
             const listing2 = makeListing(LIST_BOOKING_ID, ExternalPlatformEnum.BOOKING);

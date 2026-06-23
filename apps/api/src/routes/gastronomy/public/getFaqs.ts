@@ -6,7 +6,7 @@
  * and returns active, non-deleted FAQs. Any authenticated or anonymous actor
  * that can view the listing can read its FAQs (open public).
  */
-import { GastronomyFaqListOutputSchema } from '@repo/schemas';
+import { GastronomyFaqPublicListOutputSchema } from '@repo/schemas';
 import { GastronomyService, ServiceError, listGastronomyFaqs } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
@@ -34,7 +34,7 @@ export const publicGetGastronomyFaqsRoute = createPublicRoute({
     requestParams: {
         gastronomyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
     },
-    responseSchema: GastronomyFaqListOutputSchema,
+    responseSchema: GastronomyFaqPublicListOutputSchema,
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
 

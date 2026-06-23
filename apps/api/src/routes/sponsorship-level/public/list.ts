@@ -3,7 +3,7 @@
  * Returns paginated list of public sponsorship levels
  */
 import {
-    SponsorshipLevelSchema,
+    SponsorshipLevelPublicSchema,
     type SponsorshipLevelSearchInput,
     SponsorshipLevelSearchSchema
 } from '@repo/schemas';
@@ -26,7 +26,7 @@ export const sponsorshipLevelListRoute = createPublicListRoute({
     description: 'Returns a paginated list of sponsorship levels',
     tags: ['Sponsorship Levels'],
     requestQuery: SponsorshipLevelSearchSchema.omit({ page: true, pageSize: true }).shape,
-    responseSchema: SponsorshipLevelSchema,
+    responseSchema: SponsorshipLevelPublicSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
