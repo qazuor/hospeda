@@ -3,7 +3,9 @@
  * @description Unit tests for the PlanPurchaseButton React island.
  *
  * Covers: unauthenticated redirect, loading state, checkout success, API errors,
- * network errors, double-submit prevention, error clearing, and correct POST payload.
+ * network errors, double-submit prevention, error clearing, correct POST payload,
+ * promo code field reveal, validate → preview, invalid code → error, and
+ * checkout forwarding the promoCode (including comp sentinel URL path).
  */
 
 import { act, render, screen, waitFor } from '@testing-library/react';
@@ -129,6 +131,18 @@ function mockSessionPending() {
     });
 }
 
+/**
+ * Get the main checkout button.
+ *
+ * After adding the promo section there are multiple buttons in the DOM when the
+ * user is authenticated. The primary CTA carries a stable
+ * `data-testid="plan-cta-button"`, so we select by that — robust against DOM
+ * order and against the promo buttons gaining their own aria-labels.
+ */
+function getMainButton(): HTMLElement {
+    return screen.getByTestId('plan-cta-button');
+}
+
 // ---------------------------------------------------------------------------
 // SPEC-131 skip flag
 // ---------------------------------------------------------------------------
@@ -193,8 +207,8 @@ describe('PlanPurchaseButton', () => {
             const user = userEvent.setup();
             render(<PlanPurchaseButton {...defaultProps} />);
 
-            // Act
-            const button = screen.getByRole('button');
+            // Act — unauthenticated: only one button in DOM (no promo section)
+            const button = getMainButton();
             await user.click(button);
 
             // Assert
@@ -212,7 +226,7 @@ describe('PlanPurchaseButton', () => {
             render(<PlanPurchaseButton {...defaultProps} />);
 
             // Act
-            await user.click(screen.getByRole('button'));
+            await user.click(getMainButton());
 
             // Assert
             expect(fetchMock).not.toHaveBeenCalled();
@@ -225,7 +239,7 @@ describe('PlanPurchaseButton', () => {
             render(<PlanPurchaseButton {...defaultProps} />);
 
             // Act
-            await user.click(screen.getByRole('button'));
+            await user.click(getMainButton());
 
             // Assert
             expect(window.location.href).toContain('/es/auth/signin/');
@@ -245,11 +259,11 @@ describe('PlanPurchaseButton', () => {
             const user = userEvent.setup();
             render(<PlanPurchaseButton {...defaultProps} />);
 
-            // Act
-            await user.click(screen.getByRole('button'));
+            // Act — multiple buttons present (main CTA + promo toggle); target main by aria-label
+            await user.click(getMainButton());
 
             // Assert
-            expect(screen.getByRole('button')).toBeDisabled();
+            expect(getMainButton()).toBeDisabled();
         });
 
         it('sets aria-busy="true" on the button during loading', async () => {
@@ -260,10 +274,10 @@ describe('PlanPurchaseButton', () => {
             render(<PlanPurchaseButton {...defaultProps} />);
 
             // Act
-            await user.click(screen.getByRole('button'));
+            await user.click(getMainButton());
 
             // Assert
-            expect(screen.getByRole('button')).toHaveAttribute('aria-busy', 'true');
+            expect(getMainButton()).toHaveAttribute('aria-busy', 'true');
         });
 
         it('shows processing text while loading', async () => {
@@ -274,7 +288,7 @@ describe('PlanPurchaseButton', () => {
             render(<PlanPurchaseButton {...defaultProps} />);
 
             // Act
-            await user.click(screen.getByRole('button'));
+            await user.click(getMainButton());
 
             // Assert — fallback text from mocked t() is the literal fallback arg
             expect(screen.getByText('Procesando...')).toBeInTheDocument();
@@ -288,7 +302,7 @@ describe('PlanPurchaseButton', () => {
             const { container } = render(<PlanPurchaseButton {...defaultProps} />);
 
             // Act
-            await user.click(screen.getByRole('button'));
+            await user.click(getMainButton());
 
             // Assert — spinner has aria-hidden="true" and the CSS class name
             const spinner = container.querySelector('[aria-hidden="true"]');
@@ -303,10 +317,10 @@ describe('PlanPurchaseButton', () => {
             render(<PlanPurchaseButton {...defaultProps} />);
 
             // Act
-            await user.click(screen.getByRole('button'));
+            await user.click(getMainButton());
 
             // Assert — aria-label uses the processingAriaLabel fallback
-            expect(screen.getByRole('button')).toHaveAttribute('aria-label', 'Procesando pago');
+            expect(getMainButton()).toHaveAttribute('aria-label', 'Procesando pago');
         });
     });
 
@@ -337,8 +351,8 @@ describe('PlanPurchaseButton', () => {
             const user = userEvent.setup();
             render(<PlanPurchaseButton {...defaultProps} />);
 
-            // Act
-            await user.click(screen.getByRole('button'));
+            // Act — target main CTA button (promo toggle is also in the DOM)
+            await user.click(getMainButton());
 
             // Assert
             await waitFor(() => {
@@ -368,11 +382,11 @@ describe('PlanPurchaseButton', () => {
             render(<PlanPurchaseButton {...defaultProps} />);
 
             // Act
-            await user.click(screen.getByRole('button'));
+            await user.click(getMainButton());
 
             // Assert — loading state cleared (finally block ran)
             await waitFor(() => {
-                expect(screen.getByRole('button')).not.toBeDisabled();
+                expect(getMainButton()).not.toBeDisabled();
             });
         });
 
@@ -398,7 +412,7 @@ describe('PlanPurchaseButton', () => {
             render(<PlanPurchaseButton {...defaultProps} />);
 
             // Act
-            await user.click(screen.getByRole('button'));
+            await user.click(getMainButton());
 
             // Assert
             await waitFor(() => {
@@ -423,7 +437,7 @@ describe('PlanPurchaseButton', () => {
             render(<PlanPurchaseButton {...defaultProps} />);
 
             // Act
-            await user.click(screen.getByRole('button'));
+            await user.click(getMainButton());
 
             // Assert
             await waitFor(() => {
@@ -441,11 +455,11 @@ describe('PlanPurchaseButton', () => {
             render(<PlanPurchaseButton {...defaultProps} />);
 
             // Act
-            await user.click(screen.getByRole('button'));
+            await user.click(getMainButton());
 
             // Assert
             await waitFor(() => {
-                expect(screen.getByRole('button')).not.toBeDisabled();
+                expect(getMainButton()).not.toBeDisabled();
             });
         });
 
@@ -457,7 +471,7 @@ describe('PlanPurchaseButton', () => {
             render(<PlanPurchaseButton {...defaultProps} />);
 
             // Act
-            await user.click(screen.getByRole('button'));
+            await user.click(getMainButton());
 
             // Assert
             await waitFor(() => {
@@ -473,7 +487,7 @@ describe('PlanPurchaseButton', () => {
             render(<PlanPurchaseButton {...defaultProps} />);
 
             // Act
-            await user.click(screen.getByRole('button'));
+            await user.click(getMainButton());
 
             // Assert
             await waitFor(() => {
@@ -495,7 +509,7 @@ describe('PlanPurchaseButton', () => {
             render(<PlanPurchaseButton {...defaultProps} />);
 
             // Act
-            await user.click(screen.getByRole('button'));
+            await user.click(getMainButton());
 
             // Assert
             await waitFor(() => {
@@ -513,11 +527,11 @@ describe('PlanPurchaseButton', () => {
             render(<PlanPurchaseButton {...defaultProps} />);
 
             // Act
-            await user.click(screen.getByRole('button'));
+            await user.click(getMainButton());
 
             // Assert
             await waitFor(() => {
-                expect(screen.getByRole('button')).not.toBeDisabled();
+                expect(getMainButton()).not.toBeDisabled();
             });
         });
     });
@@ -541,7 +555,7 @@ describe('PlanPurchaseButton', () => {
             const user = userEvent.setup();
             render(<PlanPurchaseButton {...defaultProps} />);
 
-            const button = screen.getByRole('button');
+            const button = getMainButton();
 
             // Act — first click starts request; second click ignored because button disabled
             await user.click(button);
@@ -595,13 +609,13 @@ describe('PlanPurchaseButton', () => {
             render(<PlanPurchaseButton {...defaultProps} />);
 
             // First click — produces error
-            await user.click(screen.getByRole('button'));
+            await user.click(getMainButton());
             await waitFor(() => {
                 expect(screen.getByRole('alert')).toBeInTheDocument();
             });
 
             // Act — second click should clear error
-            await user.click(screen.getByRole('button'));
+            await user.click(getMainButton());
 
             // Assert — error gone immediately (setError(null) runs synchronously at top of handleClick)
             await waitFor(() => {
@@ -659,7 +673,7 @@ describe('PlanPurchaseButton', () => {
             );
 
             // Act
-            await user.click(screen.getByRole('button'));
+            await user.click(getMainButton());
             await waitFor(() => {
                 expect(fetchMock).toHaveBeenCalled();
             });
@@ -693,7 +707,7 @@ describe('PlanPurchaseButton', () => {
             render(<PlanPurchaseButton {...defaultProps} />);
 
             // Act
-            await user.click(screen.getByRole('button'));
+            await user.click(getMainButton());
             await waitFor(() => {
                 expect(fetchMock).toHaveBeenCalled();
             });
@@ -726,7 +740,7 @@ describe('PlanPurchaseButton', () => {
             render(<PlanPurchaseButton {...defaultProps} />);
 
             // Act
-            await user.click(screen.getByRole('button'));
+            await user.click(getMainButton());
             await waitFor(() => {
                 expect(fetchMock).toHaveBeenCalled();
             });
@@ -756,7 +770,7 @@ describe('PlanPurchaseButton', () => {
             render(<PlanPurchaseButton {...defaultProps} />);
 
             // Act
-            await user.click(screen.getByRole('button'));
+            await user.click(getMainButton());
             await waitFor(() => {
                 expect(fetchMock).toHaveBeenCalled();
             });
@@ -834,7 +848,7 @@ describe('PlanPurchaseButton', () => {
             );
 
             // Assert — aria-label format: "{ctaText} — {formattedPrice}"
-            const button = screen.getByRole('button');
+            const button = getMainButton();
             expect(button).toHaveAttribute('aria-label');
             expect(button.getAttribute('aria-label')).toContain('Contratar');
         });
@@ -845,7 +859,7 @@ describe('PlanPurchaseButton', () => {
             render(<PlanPurchaseButton {...defaultProps} />);
 
             // Assert
-            expect(screen.getByRole('button')).toHaveAttribute('aria-busy', 'false');
+            expect(getMainButton()).toHaveAttribute('aria-busy', 'false');
         });
 
         it('is not disabled in idle state', () => {
@@ -854,7 +868,683 @@ describe('PlanPurchaseButton', () => {
             render(<PlanPurchaseButton {...defaultProps} />);
 
             // Assert
-            expect(screen.getByRole('button')).not.toBeDisabled();
+            expect(getMainButton()).not.toBeDisabled();
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // 10. Promo code — field reveal
+    // -----------------------------------------------------------------------
+
+    describe('promo code — field reveal', () => {
+        it('shows promo toggle link when user is authenticated', () => {
+            // Arrange
+            mockAuthenticated();
+            render(<PlanPurchaseButton {...defaultProps} />);
+
+            // Assert — the toggle text comes from the mocked t() which returns the fallback
+            expect(screen.getByText('¿Tenés un código de descuento?')).toBeInTheDocument();
+        });
+
+        it('does not show promo toggle when user is unauthenticated', () => {
+            // Arrange
+            mockUnauthenticated();
+            render(<PlanPurchaseButton {...defaultProps} />);
+
+            // Assert
+            expect(screen.queryByText('¿Tenés un código de descuento?')).not.toBeInTheDocument();
+        });
+
+        it('expands the promo input when the toggle is clicked', async () => {
+            // Arrange
+            mockAuthenticated();
+            const user = userEvent.setup();
+            render(<PlanPurchaseButton {...defaultProps} />);
+
+            // Act
+            await user.click(screen.getByText('¿Tenés un código de descuento?'));
+
+            // Assert
+            expect(screen.getByPlaceholderText('Ingresá tu código')).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: 'Aplicar' })).toBeInTheDocument();
+        });
+
+        it('shows the label for the promo input after expanding', async () => {
+            // Arrange
+            mockAuthenticated();
+            const user = userEvent.setup();
+            render(<PlanPurchaseButton {...defaultProps} />);
+
+            // Act
+            await user.click(screen.getByText('¿Tenés un código de descuento?'));
+
+            // Assert
+            expect(screen.getByText('Código de descuento')).toBeInTheDocument();
+        });
+
+        it('promo section is visible for a monthly plan with no annual price', () => {
+            // Default interval is 'monthly', so a plan without an annual price is
+            // still purchasable → the promo section stays visible.
+            mockAuthenticated();
+            render(
+                <PlanPurchaseButton
+                    {...defaultProps}
+                    annualPrice={null}
+                />
+            );
+
+            expect(screen.getByText('¿Tenés un código de descuento?')).toBeInTheDocument();
+        });
+
+        it('promo section is hidden when the annual interval is selected but the plan has no annual price', async () => {
+            // Wrapping the island in a [data-billing="annual"] ancestor makes the
+            // MutationObserver resolve the interval to 'annual' on mount. With
+            // annualPrice=null this yields isAnnualUnavailable=true, so
+            // showPromoSection=false and the toggle must NOT render.
+            mockAuthenticated();
+            render(
+                <div data-billing="annual">
+                    <PlanPurchaseButton
+                        {...defaultProps}
+                        annualPrice={null}
+                    />
+                </div>
+            );
+
+            await waitFor(() => {
+                expect(
+                    screen.queryByText('¿Tenés un código de descuento?')
+                ).not.toBeInTheDocument();
+            });
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // 11. Promo code — validate → preview
+    // -----------------------------------------------------------------------
+
+    describe('promo code — validate renders preview', () => {
+        it('shows preview text after a valid discount percentage code is applied', async () => {
+            // Arrange
+            mockAuthenticated();
+            const fetchMock = vi.fn().mockResolvedValue({
+                ok: true,
+                status: 200,
+                json: () =>
+                    Promise.resolve({
+                        data: {
+                            valid: true,
+                            effectPreview: {
+                                effectKind: 'discount',
+                                valueKind: 'percentage',
+                                value: 20,
+                                durationCycles: 3,
+                                extraDays: null,
+                                finalAmount: 96000
+                            }
+                        }
+                    })
+            });
+            vi.stubGlobal('fetch', fetchMock);
+            const user = userEvent.setup();
+            render(<PlanPurchaseButton {...defaultProps} />);
+
+            // Expand promo section
+            await user.click(screen.getByText('¿Tenés un código de descuento?'));
+
+            // Type code and click Apply
+            await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'WELCOME20');
+            await user.click(screen.getByRole('button', { name: 'Aplicar' }));
+
+            // Assert — the rendered preview text, not just element presence.
+            await waitFor(() => {
+                expect(screen.getByRole('status')).toHaveTextContent(
+                    '20% de descuento por 3 meses'
+                );
+            });
+        });
+
+        it('shows "Gratis para siempre" preview for comp code', async () => {
+            // Arrange
+            mockAuthenticated();
+            vi.stubGlobal(
+                'fetch',
+                vi.fn().mockResolvedValue({
+                    ok: true,
+                    status: 200,
+                    json: () =>
+                        Promise.resolve({
+                            data: {
+                                valid: true,
+                                effectPreview: {
+                                    effectKind: 'comp',
+                                    valueKind: null,
+                                    value: null,
+                                    durationCycles: null,
+                                    extraDays: null,
+                                    finalAmount: null
+                                }
+                            }
+                        })
+                })
+            );
+            const user = userEvent.setup();
+            render(<PlanPurchaseButton {...defaultProps} />);
+
+            await user.click(screen.getByText('¿Tenés un código de descuento?'));
+            await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'COMPFREE');
+            await user.click(screen.getByRole('button', { name: 'Aplicar' }));
+
+            // Assert — comp text from fallback
+            await waitFor(() => {
+                expect(screen.getByRole('status')).toHaveTextContent('Gratis para siempre');
+            });
+        });
+
+        it('shows the DISCOUNT amount (value), not the final price, for a fixed discount', async () => {
+            // Regression: a fixed discount preview must render `value` (the amount
+            // OFF) — NOT `finalAmount` (the resulting price). value=50000c ($500
+            // off) with finalAmount=150000c ($1500 to pay) must show "500".
+            mockAuthenticated();
+            vi.stubGlobal(
+                'fetch',
+                vi.fn().mockResolvedValue({
+                    ok: true,
+                    status: 200,
+                    json: () =>
+                        Promise.resolve({
+                            data: {
+                                valid: true,
+                                effectPreview: {
+                                    effectKind: 'discount',
+                                    valueKind: 'fixed',
+                                    value: 50000,
+                                    durationCycles: null,
+                                    extraDays: null,
+                                    finalAmount: 150000
+                                }
+                            }
+                        })
+                })
+            );
+            const user = userEvent.setup();
+            render(<PlanPurchaseButton {...defaultProps} />);
+
+            await user.click(screen.getByText('¿Tenés un código de descuento?'));
+            await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'FIXED500');
+            await user.click(screen.getByRole('button', { name: 'Aplicar' }));
+
+            await waitFor(() => {
+                expect(screen.getByRole('status')).toHaveTextContent('500');
+            });
+            // The final price (1.500) must NOT appear as if it were the discount.
+            expect(screen.getByRole('status')).not.toHaveTextContent('1.500');
+        });
+
+        it('shows the fixed-discount amount and cycle count for a multi-cycle fixed discount', async () => {
+            mockAuthenticated();
+            vi.stubGlobal(
+                'fetch',
+                vi.fn().mockResolvedValue({
+                    ok: true,
+                    status: 200,
+                    json: () =>
+                        Promise.resolve({
+                            data: {
+                                valid: true,
+                                effectPreview: {
+                                    effectKind: 'discount',
+                                    valueKind: 'fixed',
+                                    value: 50000,
+                                    durationCycles: 3,
+                                    extraDays: null,
+                                    finalAmount: 150000
+                                }
+                            }
+                        })
+                })
+            );
+            const user = userEvent.setup();
+            render(<PlanPurchaseButton {...defaultProps} />);
+
+            await user.click(screen.getByText('¿Tenés un código de descuento?'));
+            await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'FIXED500X3');
+            await user.click(screen.getByRole('button', { name: 'Aplicar' }));
+
+            await waitFor(() => {
+                expect(screen.getByRole('status')).toHaveTextContent(
+                    '$500 de descuento por 3 meses'
+                );
+            });
+        });
+
+        it('shows the trial-extension days for a trial_extension code', async () => {
+            mockAuthenticated();
+            vi.stubGlobal(
+                'fetch',
+                vi.fn().mockResolvedValue({
+                    ok: true,
+                    status: 200,
+                    json: () =>
+                        Promise.resolve({
+                            data: {
+                                valid: true,
+                                effectPreview: {
+                                    effectKind: 'trial_extension',
+                                    valueKind: null,
+                                    value: null,
+                                    durationCycles: null,
+                                    extraDays: 7,
+                                    finalAmount: null
+                                }
+                            }
+                        })
+                })
+            );
+            const user = userEvent.setup();
+            render(<PlanPurchaseButton {...defaultProps} />);
+
+            await user.click(screen.getByText('¿Tenés un código de descuento?'));
+            await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'FREEMONTH');
+            await user.click(screen.getByRole('button', { name: 'Aplicar' }));
+
+            await waitFor(() => {
+                expect(screen.getByRole('status')).toHaveTextContent(
+                    '7 días de prueba gratis adicionales'
+                );
+            });
+        });
+
+        it('clears an applied promo when the billing interval changes', async () => {
+            // Regression: a code previewed against the monthly price must not
+            // silently carry over to the annual checkout. Switching the interval
+            // resets the promo back to the idle input state.
+            mockAuthenticated();
+            vi.stubGlobal(
+                'fetch',
+                vi.fn().mockResolvedValue({
+                    ok: true,
+                    status: 200,
+                    json: () =>
+                        Promise.resolve({
+                            data: {
+                                valid: true,
+                                effectPreview: {
+                                    effectKind: 'comp',
+                                    valueKind: null,
+                                    value: null,
+                                    durationCycles: null,
+                                    extraDays: null,
+                                    finalAmount: null
+                                }
+                            }
+                        })
+                })
+            );
+            const user = userEvent.setup();
+            const { container } = render(
+                <div data-billing="monthly">
+                    <PlanPurchaseButton {...defaultProps} />
+                </div>
+            );
+
+            // Apply a promo on the monthly interval.
+            await user.click(screen.getByText('¿Tenés un código de descuento?'));
+            await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'COMPFREE');
+            await user.click(screen.getByRole('button', { name: 'Aplicar' }));
+            await waitFor(() => {
+                expect(screen.getByRole('status')).toHaveTextContent('Gratis para siempre');
+            });
+
+            // Flip the interval to annual (the plan has an annual price, so the
+            // promo section stays visible — but the applied preview must clear).
+            const root = container.querySelector('[data-billing]') as HTMLElement;
+            act(() => {
+                root.setAttribute('data-billing', 'annual');
+            });
+
+            await waitFor(() => {
+                expect(screen.queryByRole('status')).not.toBeInTheDocument();
+            });
+            // Back to the idle input state, ready for re-entry against the new price.
+            expect(screen.getByPlaceholderText('Ingresá tu código')).toBeInTheDocument();
+        });
+
+        it('shows "Quitar" button after valid code is applied', async () => {
+            // Arrange
+            mockAuthenticated();
+            vi.stubGlobal(
+                'fetch',
+                vi.fn().mockResolvedValue({
+                    ok: true,
+                    status: 200,
+                    json: () =>
+                        Promise.resolve({
+                            data: {
+                                valid: true,
+                                effectPreview: {
+                                    effectKind: 'comp',
+                                    valueKind: null,
+                                    value: null,
+                                    durationCycles: null,
+                                    extraDays: null,
+                                    finalAmount: null
+                                }
+                            }
+                        })
+                })
+            );
+            const user = userEvent.setup();
+            render(<PlanPurchaseButton {...defaultProps} />);
+
+            await user.click(screen.getByText('¿Tenés un código de descuento?'));
+            await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'COMPFREE');
+            await user.click(screen.getByRole('button', { name: 'Aplicar' }));
+
+            // Assert
+            await waitFor(() => {
+                expect(screen.getByRole('button', { name: 'Quitar' })).toBeInTheDocument();
+            });
+        });
+
+        it('resets to input state when "Quitar" is clicked', async () => {
+            // Arrange
+            mockAuthenticated();
+            vi.stubGlobal(
+                'fetch',
+                vi.fn().mockResolvedValue({
+                    ok: true,
+                    status: 200,
+                    json: () =>
+                        Promise.resolve({
+                            data: {
+                                valid: true,
+                                effectPreview: {
+                                    effectKind: 'comp',
+                                    valueKind: null,
+                                    value: null,
+                                    durationCycles: null,
+                                    extraDays: null,
+                                    finalAmount: null
+                                }
+                            }
+                        })
+                })
+            );
+            const user = userEvent.setup();
+            render(<PlanPurchaseButton {...defaultProps} />);
+
+            await user.click(screen.getByText('¿Tenés un código de descuento?'));
+            await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'COMPFREE');
+            await user.click(screen.getByRole('button', { name: 'Aplicar' }));
+            await waitFor(() => screen.getByRole('button', { name: 'Quitar' }));
+
+            // Act — remove
+            await user.click(screen.getByRole('button', { name: 'Quitar' }));
+
+            // Assert — input field returns
+            expect(screen.getByPlaceholderText('Ingresá tu código')).toBeInTheDocument();
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // 12. Promo code — invalid code → error
+    // -----------------------------------------------------------------------
+
+    describe('promo code — invalid code shows error', () => {
+        it('shows error message when validate returns valid: false', async () => {
+            // Arrange
+            mockAuthenticated();
+            vi.stubGlobal(
+                'fetch',
+                vi.fn().mockResolvedValue({
+                    ok: true,
+                    status: 200,
+                    json: () =>
+                        Promise.resolve({
+                            data: {
+                                valid: false,
+                                errorCode: 'PROMO_EXPIRED',
+                                errorMessage: 'El código ha vencido'
+                            }
+                        })
+                })
+            );
+            const user = userEvent.setup();
+            render(<PlanPurchaseButton {...defaultProps} />);
+
+            await user.click(screen.getByText('¿Tenés un código de descuento?'));
+            await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'EXPIRED');
+            await user.click(screen.getByRole('button', { name: 'Aplicar' }));
+
+            // Assert — error rendered with role="alert"
+            await waitFor(() => {
+                expect(screen.getByRole('alert')).toHaveTextContent('El código ha vencido');
+            });
+        });
+
+        it('shows generic error when validate API returns non-ok status', async () => {
+            // Arrange
+            mockAuthenticated();
+            vi.stubGlobal(
+                'fetch',
+                vi.fn().mockResolvedValue({
+                    ok: false,
+                    status: 500,
+                    json: () => Promise.resolve({ error: 'Internal server error' })
+                })
+            );
+            const user = userEvent.setup();
+            render(<PlanPurchaseButton {...defaultProps} />);
+
+            await user.click(screen.getByText('¿Tenés un código de descuento?'));
+            await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'BADCODE');
+            await user.click(screen.getByRole('button', { name: 'Aplicar' }));
+
+            // Assert
+            await waitFor(() => {
+                expect(screen.getByRole('alert')).toHaveTextContent(
+                    'No pudimos verificar el código. Intentá de nuevo.'
+                );
+            });
+        });
+
+        it('shows generic error when validate fetch throws', async () => {
+            // Arrange
+            mockAuthenticated();
+            vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network failure')));
+            const user = userEvent.setup();
+            render(<PlanPurchaseButton {...defaultProps} />);
+
+            await user.click(screen.getByText('¿Tenés un código de descuento?'));
+            await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'BADCODE');
+            await user.click(screen.getByRole('button', { name: 'Aplicar' }));
+
+            // Assert
+            await waitFor(() => {
+                expect(screen.getByRole('alert')).toBeInTheDocument();
+            });
+        });
+
+        it('uses fallback errorInvalid message when errorMessage is absent but valid is false', async () => {
+            // Arrange
+            mockAuthenticated();
+            vi.stubGlobal(
+                'fetch',
+                vi.fn().mockResolvedValue({
+                    ok: true,
+                    status: 200,
+                    json: () =>
+                        Promise.resolve({
+                            data: {
+                                valid: false
+                                // no errorMessage
+                            }
+                        })
+                })
+            );
+            const user = userEvent.setup();
+            render(<PlanPurchaseButton {...defaultProps} />);
+
+            await user.click(screen.getByText('¿Tenés un código de descuento?'));
+            await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'BADCODE');
+            await user.click(screen.getByRole('button', { name: 'Aplicar' }));
+
+            // Assert — fallback text from mocked t()
+            await waitFor(() => {
+                expect(screen.getByRole('alert')).toHaveTextContent(
+                    'El código ingresado no es válido. Revisalo e intentá de nuevo.'
+                );
+            });
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // 13. Promo code — forwarded to checkout
+    // -----------------------------------------------------------------------
+
+    describe.skipIf(SPEC_131_PENDING)('promo code — forwarded to checkout', () => {
+        it('includes promoCode in checkout POST body when a valid code was applied', async () => {
+            // Arrange
+            mockAuthenticated();
+
+            // First fetch call: validate endpoint returns valid code
+            // Second fetch call: checkout endpoint (getSubscription is also mocked in fetchCurrentPlanSlug)
+            const validateBody = {
+                data: {
+                    valid: true,
+                    effectPreview: {
+                        effectKind: 'discount',
+                        valueKind: 'percentage',
+                        value: 50,
+                        durationCycles: null,
+                        extraDays: null,
+                        finalAmount: 60000
+                    }
+                }
+            };
+            const checkoutBody = {
+                data: {
+                    checkoutUrl: 'https://mp.com/checkout/promo',
+                    localSubscriptionId: 'sub-uuid',
+                    expiresAt: new Date(Date.now() + 86400000).toISOString()
+                }
+            };
+
+            let callCount = 0;
+            const fetchMock = vi.fn().mockImplementation(() => {
+                callCount++;
+                // First call = validate, second call = checkout
+                const body = callCount === 1 ? validateBody : checkoutBody;
+                return Promise.resolve({
+                    ok: true,
+                    status: 200,
+                    json: () => Promise.resolve(body)
+                });
+            });
+            vi.stubGlobal('fetch', fetchMock);
+            const user = userEvent.setup();
+            render(<PlanPurchaseButton {...defaultProps} />);
+
+            // Expand and apply promo
+            await user.click(screen.getByText('¿Tenés un código de descuento?'));
+            await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'SUMMER50');
+            await user.click(screen.getByRole('button', { name: 'Aplicar' }));
+            await waitFor(() => screen.getByRole('status'));
+
+            // Click main checkout button
+            await user.click(screen.getByRole('button', { name: /Contratar/ }));
+
+            // Assert — the checkout fetch body contains the promoCode
+            await waitFor(() => {
+                expect(fetchMock).toHaveBeenCalledTimes(2);
+            });
+
+            const checkoutCall = fetchMock.mock.calls[1] as [string, RequestInit];
+            const body = JSON.parse(checkoutCall[1].body as string) as Record<string, unknown>;
+            expect(body.promoCode).toBe('SUMMER50');
+        });
+
+        it('navigates to comp sentinel URL when appliedEffect is comp', async () => {
+            // Arrange — server returns comp sentinel URL (not MP)
+            mockAuthenticated();
+            const sentinelUrl = 'https://hospeda.com.ar/es/suscriptores/comp-success';
+
+            let callCount = 0;
+            const fetchMock = vi.fn().mockImplementation(() => {
+                callCount++;
+                const body =
+                    callCount === 1
+                        ? {
+                              data: {
+                                  valid: true,
+                                  effectPreview: {
+                                      effectKind: 'comp',
+                                      valueKind: null,
+                                      value: null,
+                                      durationCycles: null,
+                                      extraDays: null,
+                                      finalAmount: null
+                                  }
+                              }
+                          }
+                        : {
+                              data: {
+                                  checkoutUrl: sentinelUrl,
+                                  localSubscriptionId: 'comp-sub-uuid',
+                                  expiresAt: new Date(Date.now() + 86400000).toISOString(),
+                                  appliedEffect: 'comp'
+                              }
+                          };
+                return Promise.resolve({
+                    ok: true,
+                    status: 200,
+                    json: () => Promise.resolve(body)
+                });
+            });
+            vi.stubGlobal('fetch', fetchMock);
+            const user = userEvent.setup();
+            render(<PlanPurchaseButton {...defaultProps} />);
+
+            await user.click(screen.getByText('¿Tenés un código de descuento?'));
+            await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'COMPFREE');
+            await user.click(screen.getByRole('button', { name: 'Aplicar' }));
+            await waitFor(() => screen.getByRole('status'));
+
+            await user.click(screen.getByRole('button', { name: /Contratar/ }));
+
+            // Assert — navigates to the sentinel URL (same as MP flow, just different target)
+            await waitFor(() => {
+                expect(window.location.href).toBe(sentinelUrl);
+            });
+        });
+
+        it('does not include promoCode in checkout body when no promo was applied', async () => {
+            // Arrange — no promo interaction; direct checkout click
+            mockAuthenticated();
+            const fetchMock = buildFetchMock({
+                ok: true,
+                body: {
+                    data: {
+                        checkoutUrl: 'https://mp.com/checkout/no-promo',
+                        localSubscriptionId: 'sub-x',
+                        expiresAt: new Date(Date.now() + 86400000).toISOString()
+                    }
+                }
+            });
+            vi.stubGlobal('fetch', fetchMock);
+            const user = userEvent.setup();
+            render(<PlanPurchaseButton {...defaultProps} />);
+
+            await user.click(screen.getByRole('button', { name: /Contratar/ }));
+
+            await waitFor(() => {
+                expect(fetchMock).toHaveBeenCalled();
+            });
+
+            const [, requestInit] = fetchMock.mock.calls[0] as [string, RequestInit];
+            const body = JSON.parse(requestInit.body as string) as Record<string, unknown>;
+            expect(body).not.toHaveProperty('promoCode');
         });
     });
 });
