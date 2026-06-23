@@ -202,6 +202,9 @@ export function AiUsageDailyChart({ search }: AiUsageDailyChartProps) {
                                 height={300}
                             >
                                 <AreaChart
+                                    // TYPE-WORKAROUND: recharts' data prop wants a mutable
+                                    // Record<string,unknown>[]; ChartRow (readonly, typed) doesn't
+                                    // structurally overlap, so cast via unknown.
                                     data={[...chartRows] as unknown as Record<string, unknown>[]}
                                     margin={{ top: 8, right: 64, left: 8, bottom: 4 }}
                                 >
