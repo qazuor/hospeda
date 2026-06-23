@@ -74,7 +74,9 @@ describe('AccommodationMediaModel', () => {
             // Arrange — findByAccommodation uses Promise.all([ items query, count query ])
             // Both SELECT calls go through the same `db` object but with different chains.
             const mockItems = [buildMediaRow()];
-            const mockCountRows = [{ id: MEDIA_ID }];
+            // FIX 4 (SPEC-204): count query now uses SQL count() aggregate which returns
+            // [{ count: N }] — not the items array. Update the stub to match.
+            const mockCountRows = [{ count: 1 }];
 
             let selectCallN = 0;
             const db = {
@@ -94,7 +96,7 @@ describe('AccommodationMediaModel', () => {
                             })
                         };
                     }
-                    // Count query: .from().where()  (resolves to array length)
+                    // Count query: .select({ count: count() }).from().where() → [{ count: N }]
                     return {
                         from: vi.fn().mockReturnValue({
                             where: vi.fn().mockResolvedValue(mockCountRows)
@@ -255,9 +257,10 @@ describe('AccommodationMediaModel', () => {
                             })
                         };
                     }
+                    // FIX 4 (SPEC-204): count query now returns [{ count: N }]
                     return {
                         from: vi.fn().mockReturnValue({
-                            where: vi.fn().mockResolvedValue([{ id: MEDIA_ID }])
+                            where: vi.fn().mockResolvedValue([{ count: 1 }])
                         })
                     };
                 })
