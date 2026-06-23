@@ -535,5 +535,81 @@
             "confirm": "Excluir",
             "deleting": "Excluindo..."
         }
+    },
+    "platformFormats": {
+        "title": "Formatos de Plataforma",
+        "total": "{{count}} formatos",
+        "list": {
+            "error": "Erro ao carregar formatos de plataforma",
+            "empty": "Nenhum formato de plataforma configurado",
+            "prevPage": "Anterior",
+            "nextPage": "Próximo",
+            "pagination": "Página {{page}} de {{totalPages}} ({{total}} total)"
+        },
+        "table": {
+            "ariaLabel": "Formatos de plataforma",
+            "colPlatform": "Plataforma",
+            "colPublishFormat": "Formato",
+            "colMediaType": "Tipo de mídia",
+            "colEnabled": "Habilitado",
+            "colMvpEnabled": "MVP",
+            "colMaxCaptionLength": "Máx. caption",
+            "colMakeChannelKey": "Canal Make",
+            "colActions": "Ações",
+            "yes": "Sim",
+            "no": "Não",
+            "noLimit": "Sem limite",
+            "edit": "Editar"
+        },
+        "form": {
+            "editTitle": "Editar formato de plataforma",
+            "editDesc": "Atualize os parâmetros de configuração.",
+            "enabledLabel": "Habilitado",
+            "mvpEnabledLabel": "MVP habilitado",
+            "maxCaptionLengthLabel": "Comprimento máximo do caption",
+            "makeChannelKeyLabel": "Chave do canal Make",
+            "notesLabel": "Notas",
+            "cancel": "Cancelar",
+            "saving": "Salvando...",
+            "saveEdit": "Salvar",
+            "saveError": "Erro ao salvar o formato de plataforma",
+            "disableActiveTargetsWarning": "Atenção: este formato possui destinos ativos que o referenciam. Desabilitá-lo pode afetar publicações agendadas."
+        }
+    },
+    "settings": {
+        "title": "Configurações Sociais",
+        "total": "{{count}} parâmetros",
+        "list": {
+            "error": "Erro ao carregar as configurações",
+            "empty": "Nenhuma configuração encontrada",
+            "prevPage": "Anterior",
+            "nextPage": "Próximo",
+            "pagination": "Página {{page}} de {{totalPages}} ({{total}} total)"
+        },
+        "table": {
+            "ariaLabel": "Configurações sociais",
+            "colKey": "Chave",
+            "colType": "Tipo",
+            "colValue": "Valor",
+            "colDescription": "Descrição",
+            "colActions": "Ações",
+            "noDescription": "Sem descrição",
+            "edit": "Editar"
+        },
+        "form": {
+            "editTitle": "Editar configuração",
+            "editDesc": "Atualize o valor do parâmetro.",
+            "keyLabel": "Chave",
+            "typeLabel": "Tipo",
+            "descriptionLabel": "Descrição",
+            "valueLabel": "Valor",
+            "valueRequired": "O valor não pode ser vazio",
+            "secretHint": "Este parâmetro é secreto. Insira o novo valor para atualizá-lo.",
+            "secretPlaceholder": "Novo valor secreto...",
+            "cancel": "Cancelar",
+            "saving": "Salvando...",
+            "saveEdit": "Salvar",
+            "saveError": "Erro ao salvar a configuração"
+        }
     }
 }

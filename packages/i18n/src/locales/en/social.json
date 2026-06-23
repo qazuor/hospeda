@@ -535,5 +535,81 @@
             "confirm": "Delete",
             "deleting": "Deleting..."
         }
+    },
+    "platformFormats": {
+        "title": "Platform Formats",
+        "total": "{{count}} formats",
+        "list": {
+            "error": "Error loading platform formats",
+            "empty": "No platform formats configured",
+            "prevPage": "Previous",
+            "nextPage": "Next",
+            "pagination": "Page {{page}} of {{totalPages}} ({{total}} total)"
+        },
+        "table": {
+            "ariaLabel": "Platform formats",
+            "colPlatform": "Platform",
+            "colPublishFormat": "Format",
+            "colMediaType": "Media type",
+            "colEnabled": "Enabled",
+            "colMvpEnabled": "MVP",
+            "colMaxCaptionLength": "Max caption",
+            "colMakeChannelKey": "Make channel key",
+            "colActions": "Actions",
+            "yes": "Yes",
+            "no": "No",
+            "noLimit": "No limit",
+            "edit": "Edit"
+        },
+        "form": {
+            "editTitle": "Edit platform format",
+            "editDesc": "Update the configuration parameters.",
+            "enabledLabel": "Enabled",
+            "mvpEnabledLabel": "MVP enabled",
+            "maxCaptionLengthLabel": "Max caption length",
+            "makeChannelKeyLabel": "Make channel key",
+            "notesLabel": "Notes",
+            "cancel": "Cancel",
+            "saving": "Saving...",
+            "saveEdit": "Save",
+            "saveError": "Error saving platform format",
+            "disableActiveTargetsWarning": "Warning: this format has active targets referencing it. Disabling it may affect scheduled posts."
+        }
+    },
+    "settings": {
+        "title": "Social Settings",
+        "total": "{{count}} settings",
+        "list": {
+            "error": "Error loading settings",
+            "empty": "No settings found",
+            "prevPage": "Previous",
+            "nextPage": "Next",
+            "pagination": "Page {{page}} of {{totalPages}} ({{total}} total)"
+        },
+        "table": {
+            "ariaLabel": "Social settings",
+            "colKey": "Key",
+            "colType": "Type",
+            "colValue": "Value",
+            "colDescription": "Description",
+            "colActions": "Actions",
+            "noDescription": "No description",
+            "edit": "Edit"
+        },
+        "form": {
+            "editTitle": "Edit setting",
+            "editDesc": "Update the setting value.",
+            "keyLabel": "Key",
+            "typeLabel": "Type",
+            "descriptionLabel": "Description",
+            "valueLabel": "Value",
+            "valueRequired": "Value cannot be empty",
+            "secretHint": "This is a secret setting. Enter the new value to update it.",
+            "secretPlaceholder": "New secret value...",
+            "cancel": "Cancel",
+            "saving": "Saving...",
+            "saveEdit": "Save",
+            "saveError": "Error saving setting"
+        }
     }
 }
