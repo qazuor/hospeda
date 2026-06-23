@@ -964,7 +964,16 @@
             "cancelled": "Cancelled",
             "pastDue": "Past Due",
             "expired": "Expired",
-            "paused": "Paused"
+            "paused": "Paused",
+            "comp": "Complimentary"
+        },
+        "promoEffect": {
+            "title": "Active promotion",
+            "discountForCycles": "Discount: -{value} for {count} more cycle(s)",
+            "discountForever": "Discount: -{value} forever",
+            "complimentary": "Complimentary (never billed)",
+            "trialExtended": "Trial extended +{days} day(s)",
+            "exhausted": "Promo exhausted"
         },
         "filtersTitle": "Filters",
         "searchLabel": "Search by user",
