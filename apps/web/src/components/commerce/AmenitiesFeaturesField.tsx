@@ -1,3 +1,4 @@
+import type { AmenityData } from '@/lib/api/types';
 /**
  * @file AmenitiesFeaturesField.tsx
  * @description Controlled amenity + feature multi-select for the commerce owner
@@ -6,7 +7,7 @@
  * tracking. The current selection is seeded from the protected listing detail
  * (`amenityIds` / `featureIds`, read back from the junction tables).
  */
-import type { AmenityData } from '@/lib/api/types';
+import { translateAmenityName } from '@/lib/catalog-names';
 import type { JSX } from 'react';
 
 /** Translator function shape (matches the editor's `createTranslations().t`). */
@@ -64,7 +65,7 @@ export function AmenitiesFeaturesField({
                                     checked={selectedAmenityIds.has(amenity.id)}
                                     onChange={() => onToggleAmenity(amenity.id)}
                                 />
-                                {amenity.name}
+                                {translateAmenityName({ t, name: amenity.name })}
                             </label>
                         ))}
                     </div>
