@@ -11,6 +11,7 @@ import { createOpenAPISchema } from './openapi-schema';
 import { ResponseFactory } from './response-factory';
 import {
     type PaginatedResult,
+    assertConcretePublicSchema,
     createPaginatedResponse,
     createResponse,
     handleRouteError
@@ -47,6 +48,12 @@ export interface SimpleRouteInterface {
     summary: string;
     description: string;
     tags: string[];
+    /**
+     * Zod schema that all routes MUST declare (SPEC-210 PR5).
+     * Passed to {@link createResponse} to strip sensitive fields before
+     * serialization. Must be a concrete schema — not `z.any()`, `z.unknown()`,
+     * `z.record()` at the top level, or `z.object({}).passthrough()`.
+     */
     responseSchema: z.ZodTypeAny;
     handler: (ctx: Context) => Promise<unknown> | unknown;
     options?: RouteOptions;
@@ -65,6 +72,20 @@ export interface CreateOpenApiRouteInterface {
     requestParams?: Record<string, z.ZodTypeAny>;
     requestBody?: z.ZodTypeAny;
     requestQuery?: Record<string, z.ZodTypeAny>;
+    /**
+     * Zod schema that every route MUST declare.
+     * Used by {@link createResponse} and {@link createPaginatedResponse} to strip
+     * unknown / admin-only fields before the response is serialized (SPEC-062).
+     *
+     * SPEC-210 PR5 — omitting this field is a compile error. At runtime,
+     * {@link stripWithSchema} throws `ServiceError(INTERNAL_ERROR)` when no
+     * schema is supplied, so a missing declaration fails fast rather than
+     * silently leaking fields.
+     *
+     * Must be a concrete schema (not `z.any()`, `z.unknown()`, `z.record()` at
+     * the top level, or `z.object({}).passthrough()`). Use
+     * {@link assertConcretePublicSchema} to enforce this at boot time.
+     */
     responseSchema: z.ZodTypeAny;
     /**
      * Override the success HTTP status code returned by the handler.
@@ -299,6 +320,12 @@ const applyRouteMiddlewares = (
  * Automatically converts z.date() schemas to OpenAPI-compatible string datetime
  */
 export const createSimpleRoute = (options: SimpleRouteInterface) => {
+    // SPEC-210 PR5 (T-004): fail at boot if the responseSchema is a
+    // permissive/passthrough schema that would leak internal fields. Simple
+    // routes are public/system-tier, so the same public-response contract
+    // applies. Runs once per route at construction time, never per request.
+    assertConcretePublicSchema(options.responseSchema);
+
     const app = createRouter();
 
     // Apply route-specific middlewares

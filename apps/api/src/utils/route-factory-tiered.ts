@@ -14,6 +14,7 @@ import {
 } from '../middlewares/authorization';
 import { ownershipMiddleware } from '../middlewares/ownership';
 import type { OwnershipConfig } from '../types/authorization';
+import { assertConcretePublicSchema } from './response-helpers';
 import type { CreateOpenApiRouteInterface } from './route-factory';
 import { createCRUDRoute, createListRoute } from './route-factory';
 
@@ -71,6 +72,11 @@ export interface AdminRouteOptions extends CreateOpenApiRouteInterface {
  */
 export const createPublicRoute = (options: PublicRouteOptions) => {
     const { publicTag = true, ...routeOptions } = options;
+
+    // SPEC-210 PR5 (T-004): fail at boot if the public responseSchema is a
+    // permissive/passthrough schema that would leak internal fields. Runs once
+    // per route at construction time, never on the request hot path.
+    assertConcretePublicSchema(options.responseSchema);
 
     // Add Public tag prefix if enabled
     const tags = publicTag
@@ -240,6 +246,11 @@ export interface AdminListRouteOptions extends CreateOpenApiRouteInterface {
  */
 export const createPublicListRoute = (options: PublicListRouteOptions) => {
     const { publicTag = true, ...routeOptions } = options;
+
+    // SPEC-210 PR5 (T-004): fail at boot if the public responseSchema is a
+    // permissive/passthrough schema that would leak internal fields. Runs once
+    // per route at construction time, never on the request hot path.
+    assertConcretePublicSchema(options.responseSchema);
 
     // Add Public tag prefix if enabled
     const tags = publicTag
