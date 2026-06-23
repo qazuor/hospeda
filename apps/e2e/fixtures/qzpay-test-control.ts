@@ -28,7 +28,8 @@
  * ```
  */
 
-const DEFAULT_API_BASE_URL = 'http://localhost:3001';
+// Port matches apps/e2e/.env.e2e (SSOT). Override via HOSPEDA_E2E_API_URL.
+const DEFAULT_API_BASE_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:18001';
 
 export type ControllableOperation =
     | 'startTrial'

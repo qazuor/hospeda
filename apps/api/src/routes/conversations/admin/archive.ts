@@ -7,6 +7,7 @@
 
 import {
     ArchiveConversationSchema,
+    ConversationSchema,
     PermissionEnum,
     RoleEnum,
     ServiceErrorCode
@@ -115,7 +116,7 @@ router.patch('/:id/archive', async (c) => {
             );
         }
 
-        return createResponse(result.data, c, 200);
+        return createResponse(result.data, c, 200, ConversationSchema);
     } catch (error) {
         return handleRouteError(error, c);
     }

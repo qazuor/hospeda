@@ -125,6 +125,18 @@ export interface AccommodationHookState extends Record<string, unknown> {
      */
     pendingAiAssistedFields?: readonly string[];
     /**
+     * Media value extracted from create/update input (SPEC-204, T-007 write-both).
+     * Stored here by `_beforeCreate`/`_beforeUpdate` so `_afterCreate`/`_afterUpdate`
+     * can mirror it into the `accommodation_media` relational table inside the
+     * same transaction (shadow copy; P1 reads still use JSONB).
+     *
+     * Three-way contract:
+     * - `undefined` → field was absent in the input (no-op; leave existing rows untouched).
+     * - `null`      → media was explicitly cleared; delete all rows.
+     * - defined     → full replace (delete-all then re-insert).
+     */
+    pendingMedia?: import('@repo/schemas').Media | null;
+    /**
      * Translatable field values captured from the entity BEFORE an update
      * (SPEC-212, AC-5). Set by `_beforeUpdate`, read by `_afterUpdate` to
      * emit a translate call only for fields whose Spanish source text changed.

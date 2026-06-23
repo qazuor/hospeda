@@ -212,7 +212,7 @@
 | `PUT /api/v1/protected/billing/promo-codes/{id}` | `billing/promo-codes.ts` | none | - | n/a | Promo-code self-management; PermissionEnum-gated |
 | `DELETE /api/v1/protected/billing/promo-codes/{id}` | `billing/promo-codes.ts` | none | - | n/a | Promo-code self-management; PermissionEnum-gated |
 | `POST /api/v1/protected/billing/promo-codes/validate` | `billing/promo-codes.ts` | none | - | n/a | Promo-code validation; no entitlement gate |
-| `POST /api/v1/protected/billing/promo-codes/apply` | `billing/promo-codes.ts` | none | - | n/a | Promo-code apply; no entitlement gate |
+| `POST /api/v1/protected/billing/promo-codes/apply` | `billing/promo-codes.apply.ts` | none | - | n/a | Promo-code apply; no entitlement gate; ownership-guarded (own customer + own subscription, or ACCESS_API_ADMIN) — SPEC-262 T-008 |
 | `GET /api/v1/protected/billing/settings` | `billing/settings.ts` | none | - | n/a | Self-billing settings read; PermissionEnum.BILLING_VIEW_OWN |
 | `PATCH /api/v1/protected/billing/settings` | `billing/settings.ts` | none | - | n/a | Self-billing settings update; PermissionEnum.BILLING_VIEW_OWN |
 | `POST /api/v1/protected/billing/settings/reset` | `billing/settings.ts` | none | - | n/a | Self-billing settings reset; PermissionEnum.BILLING_VIEW_OWN |
@@ -552,6 +552,7 @@
 | `GET /api/v1/admin/billing/promo-codes/{id}` | `billing/promo-codes.ts` | none | - | n/a | Admin read; PermissionEnum.BILLING_READ_ALL gated |
 | `PUT /api/v1/admin/billing/promo-codes/{id}` | `billing/promo-codes.ts` | none | - | n/a | Admin write; PermissionEnum.BILLING_MANAGE gated |
 | `DELETE /api/v1/admin/billing/promo-codes/{id}` | `billing/promo-codes.ts` | none | - | n/a | Admin write; PermissionEnum.BILLING_MANAGE gated |
+| `POST /api/v1/admin/billing/subscriptions/{subscriptionId}/apply-trial-extension` | `billing/admin/subscription-trial-extension.ts` | none | - | n/a | Admin write; PermissionEnum.BILLING_PROMO_CODE_MANAGE gated; VALIDATION_ERROR→422, NOT_FOUND→404, ownership/403, usage-limit→409 |
 | `POST /api/v1/admin/billing/customer-entitlements/grant` | `billing/admin/customer-entitlements.ts` | none | - | n/a | Admin mutation; PermissionEnum.BILLING_MANAGE gated; mutates billing_customer_entitlements |
 | `POST /api/v1/admin/billing/customer-entitlements/revoke` | `billing/admin/customer-entitlements.ts` | none | - | n/a | Admin mutation; PermissionEnum.BILLING_MANAGE gated; mutates billing_customer_entitlements; POST (not DELETE) because route-factory skips body parsing for DELETE |
 | `* /api/v1/admin/billing/* (qzpay-admin)` | `billing/admin/index.ts (qzpay)` | none | - | n/a | QZPay admin tier: subscriptions/payments/invoices/entitlements/limits; PermissionEnum.BILLING_READ_ALL + BILLING_MANAGE gated via adminBillingAuthMiddleware |
@@ -696,6 +697,57 @@
 | `POST /api/v1/admin/commerce/leads/{id}/provision-owner` | `commerce/admin/provision-owner.ts` | none | - | n/a | Admin commerce owner provisioning; PermissionEnum-gated (COMMERCE_EDIT_ALL) (SPEC-239 T-050) |
 | `POST /api/v1/admin/commerce/leads/{id}/approve-and-provision` | `commerce/admin/approve-and-provision.ts` | none | - | n/a | Admin combined approve+provision action; idempotent via lead.provisionedUserId; PermissionEnum-gated (COMMERCE_EDIT_ALL) (SPEC-249 Part D / T-018) |
 | `POST /api/v1/admin/commerce/listings/{entityType}/{entityId}/start-subscription` | `commerce/admin/start-subscription.ts` | none | - | n/a | Admin commerce subscription provisioning; PermissionEnum-gated (COMMERCE_EDIT_ALL) (SPEC-239 T-048) |
+| **SOCIAL AUTOMATION (SPEC-254)** | | | | | |
+| `GET /api/v1/admin/social/audiences` | `social/admin/audiences/list.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `GET /api/v1/admin/social/audiences/{id}` | `social/admin/audiences/getById.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `POST /api/v1/admin/social/audiences` | `social/admin/audiences/create.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `PATCH /api/v1/admin/social/audiences/{id}` | `social/admin/audiences/patch.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `DELETE /api/v1/admin/social/audiences/{id}` | `social/admin/audiences/delete.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `GET /api/v1/admin/social/audit-log` | `social/admin/audit-log/list.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `GET /api/v1/admin/social/batches` | `social/admin/batches/list.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `GET /api/v1/admin/social/batches/{id}` | `social/admin/batches/getById.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `POST /api/v1/admin/social/batches` | `social/admin/batches/create.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `PATCH /api/v1/admin/social/batches/{id}` | `social/admin/batches/patch.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `DELETE /api/v1/admin/social/batches/{id}` | `social/admin/batches/delete.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `GET /api/v1/admin/social/campaigns` | `social/admin/campaigns/list.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `GET /api/v1/admin/social/campaigns/{id}` | `social/admin/campaigns/getById.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `POST /api/v1/admin/social/campaigns` | `social/admin/campaigns/create.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `PATCH /api/v1/admin/social/campaigns/{id}` | `social/admin/campaigns/patch.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `DELETE /api/v1/admin/social/campaigns/{id}` | `social/admin/campaigns/delete.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `GET /api/v1/admin/social/dashboard` | `social/admin/dashboard/get.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `GET /api/v1/admin/social/footers` | `social/admin/footers/list.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `GET /api/v1/admin/social/footers/{id}` | `social/admin/footers/getById.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `POST /api/v1/admin/social/footers` | `social/admin/footers/create.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `PATCH /api/v1/admin/social/footers/{id}` | `social/admin/footers/patch.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `DELETE /api/v1/admin/social/footers/{id}` | `social/admin/footers/delete.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `GET /api/v1/admin/social/gpt-action-schema` | `social/admin/gpt-action-schema.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated (SOCIAL_SETTINGS_MANAGE), no entitlement gate |
+| `GET /api/v1/admin/social/hashtag-sets` | `social/admin/hashtag-sets/list.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `GET /api/v1/admin/social/hashtag-sets/{id}` | `social/admin/hashtag-sets/getById.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `POST /api/v1/admin/social/hashtag-sets` | `social/admin/hashtag-sets/create.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `PATCH /api/v1/admin/social/hashtag-sets/{id}` | `social/admin/hashtag-sets/patch.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `DELETE /api/v1/admin/social/hashtag-sets/{id}` | `social/admin/hashtag-sets/delete.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `GET /api/v1/admin/social/hashtags` | `social/admin/hashtags/list.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `GET /api/v1/admin/social/hashtags/{id}` | `social/admin/hashtags/getById.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `POST /api/v1/admin/social/hashtags` | `social/admin/hashtags/create.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `PATCH /api/v1/admin/social/hashtags/{id}` | `social/admin/hashtags/patch.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `DELETE /api/v1/admin/social/hashtags/{id}` | `social/admin/hashtags/delete.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `GET /api/v1/admin/social/platform-formats` | `social/admin/platform-formats/list.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `PATCH /api/v1/admin/social/platform-formats/{platform}` | `social/admin/platform-formats/patch.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `GET /api/v1/admin/social/posts` | `social/admin/posts/list.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `GET /api/v1/admin/social/posts/{id}` | `social/admin/posts/getById.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `PATCH /api/v1/admin/social/posts/{id}` | `social/admin/posts/patch.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `POST /api/v1/admin/social/posts/{id}/approve` | `social/admin/posts/approve.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `POST /api/v1/admin/social/posts/{id}/archive` | `social/admin/posts/archive.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `POST /api/v1/admin/social/posts/{id}/mark-ready` | `social/admin/posts/mark-ready.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `POST /api/v1/admin/social/posts/{id}/pause` | `social/admin/posts/pause.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `POST /api/v1/admin/social/posts/{id}/promote-hashtag` | `social/admin/posts/promote-hashtag.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `POST /api/v1/admin/social/posts/{id}/reject` | `social/admin/posts/reject.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `POST /api/v1/admin/social/posts/{id}/request-changes` | `social/admin/posts/request-changes.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `POST /api/v1/admin/social/posts/{id}/schedule` | `social/admin/posts/schedule.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `POST /api/v1/admin/social/posts/{id}/unpause` | `social/admin/posts/unpause.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `GET /api/v1/admin/social/publish-logs` | `social/admin/publish-logs/list.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `GET /api/v1/admin/social/settings` | `social/admin/settings/list.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `PATCH /api/v1/admin/social/settings/{key}` | `social/admin/settings/patch-by-key.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
 
 ---
 

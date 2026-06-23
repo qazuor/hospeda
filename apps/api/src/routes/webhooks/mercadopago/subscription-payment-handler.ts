@@ -26,7 +26,9 @@
 import type { QZPayCurrency, QZPayPaymentStatus } from '@qazuor/qzpay-core';
 import type { QZPayWebhookHandler } from '@qazuor/qzpay-hono';
 import { and, billingPayments, billingSubscriptions, eq, getDb, isNull, sql } from '@repo/db';
+import { resolveRenewalPromoEffect } from '@repo/service-core';
 import { getQZPayBilling } from '../../../middlewares/billing.js';
+import { restoreFullPriceMutation } from '../../../services/promo-renewal-mp.service.js';
 import { env } from '../../../utils/env.js';
 import { apiLogger } from '../../../utils/logger.js';
 import {
@@ -138,6 +140,111 @@ async function safeMarkProcessed(eventId: string | number): Promise<void> {
         apiLogger.warn(
             { eventId, error: err instanceof Error ? err.message : String(err) },
             'Failed to mark subscription_authorized_payment event as processed'
+        );
+    }
+}
+
+/**
+ * Apply the SPEC-262 multi-cycle promo discount decision after a recurring
+ * charge is confirmed.
+ *
+ * Calls `resolveRenewalPromoEffect` (service-core decides + persists the
+ * decremented `promo_effect_remaining_cycles`), then EXECUTES the MercadoPago
+ * mutation only when the discount has just been exhausted (`restore-full`).
+ *
+ * Never throws — a failure here must not block the webhook bucket (the charge
+ * already settled). The MP restore is best-effort-with-retry inside
+ * `restoreFullPriceMutation`, which reports to Sentry on exhaustion.
+ *
+ * @internal
+ */
+async function handleRenewalPromoEffect(params: {
+    localSubscriptionId: string;
+    mpSubscriptionId: string;
+    billing: NonNullable<ReturnType<typeof getQZPayBilling>>;
+    eventId: string | number;
+    requestId: string;
+}): Promise<void> {
+    const { localSubscriptionId, mpSubscriptionId, billing, eventId, requestId } = params;
+
+    try {
+        const decision = await resolveRenewalPromoEffect({ subscriptionId: localSubscriptionId });
+
+        if (!decision.success) {
+            apiLogger.warn(
+                {
+                    eventId,
+                    requestId,
+                    localSubscriptionId,
+                    error: decision.error.message
+                },
+                'MercadoPago webhook: failed to resolve renewal promo effect — skipping amount reconciliation'
+            );
+            return;
+        }
+
+        const data = decision.data;
+
+        // comp / noop / apply-discount (still discounted): no MP mutation needed.
+        // - comp: never charged, no preapproval to mutate.
+        // - apply-discount: the amount is already at the discounted value (set at
+        //   apply time); the counter was just decremented by service-core.
+        // - noop: no promo, non-discount effect, or already exhausted.
+        if (data.action !== 'restore-full') {
+            apiLogger.debug(
+                {
+                    eventId,
+                    requestId,
+                    localSubscriptionId,
+                    action: data.action,
+                    remainingCyclesAfter: data.remainingCyclesAfter ?? null
+                },
+                'MercadoPago webhook: renewal promo effect resolved — no MP amount mutation required'
+            );
+            return;
+        }
+
+        // restore-full: the last discounted cycle just charged. Raise the
+        // preapproval amount back to full price for the NEXT cycle (best-effort).
+        if (data.targetTransactionAmountMajor === undefined) {
+            apiLogger.error(
+                { eventId, requestId, localSubscriptionId },
+                'MercadoPago webhook: restore-full decision missing targetTransactionAmountMajor — skipping MP restore'
+            );
+            return;
+        }
+
+        const restoreResult = await restoreFullPriceMutation({
+            billing,
+            mpSubscriptionId,
+            targetTransactionAmountMajor: data.targetTransactionAmountMajor,
+            subscriptionId: localSubscriptionId
+        });
+
+        if (!restoreResult.success) {
+            // Already logged + Sentry-captured inside restoreFullPriceMutation.
+            apiLogger.warn(
+                {
+                    eventId,
+                    requestId,
+                    localSubscriptionId,
+                    mpSubscriptionId,
+                    error: restoreResult.error.message
+                },
+                'MercadoPago webhook: full-price restore failed (best-effort) — preapproval may stay discounted one extra cycle'
+            );
+        }
+    } catch (renewalErr) {
+        // Defensive: resolveRenewalPromoEffect already returns typed errors, but
+        // a thrown error must never bubble up and block the webhook ack.
+        apiLogger.error(
+            {
+                eventId,
+                requestId,
+                localSubscriptionId,
+                error: renewalErr instanceof Error ? renewalErr.message : String(renewalErr)
+            },
+            'MercadoPago webhook: unexpected error during renewal promo effect handling — webhook still acknowledged'
         );
     }
 }
@@ -311,6 +418,33 @@ export const handleSubscriptionAuthorizedPayment: QZPayWebhookHandler = async (c
             },
             'MercadoPago webhook: recurring payment recorded in billing_payments'
         );
+
+        // SPEC-262 T-007 (B2 fix): Only decrement the cycle counter when the
+        // charge SUCCEEDED. A rejected/failed/pending charge must not consume a
+        // discounted cycle — the next MP retry (different paymentId, passes the
+        // per-paymentId dedup) would decrement again → discount ends early.
+        // 'processing' (MP 'in_process'/'in_mediation') is NOT terminal: it can
+        // still transition to 'rejected', so decrementing on it and again on the
+        // eventual retry double-consumes a cycle. Gate strictly on 'succeeded'.
+        if (status === 'succeeded') {
+            // SPEC-262 T-007: multi-cycle promo discount renewal handling.
+            // Anchor the discounted-cycle countdown on this post-charge event
+            // (spike doc §5.2). service-core DECIDES + persists the decremented
+            // counter; this handler EXECUTES the MP restore when the discount is
+            // exhausted. Never blocks the webhook — the charge already happened.
+            //
+            // NIT: handleRenewalPromoEffect is fire-and-forget (void) so the
+            // internal restore-retry loop (up to 3×500ms) does NOT add latency
+            // to the webhook ACK path. The charge already settled; the restore
+            // is best-effort and Sentry-reported on exhaustion.
+            void handleRenewalPromoEffect({
+                localSubscriptionId: sub.id,
+                mpSubscriptionId: details.preapprovalId,
+                billing,
+                eventId: event.id,
+                requestId
+            });
+        }
     } catch (recordErr) {
         // Transient / unexpected error (DB hiccup, record() failure). Mark the
         // event failed so the dead-letter queue can retry it rather than

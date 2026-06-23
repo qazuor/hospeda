@@ -22,12 +22,7 @@
  * @module experience.review.service
  */
 
-import {
-    type ExperienceModel,
-    type ExperienceReviewModel,
-    experienceModel,
-    experienceReviewModel
-} from '@repo/db';
+import { type ExperienceReviewModel, experienceReviewModel } from '@repo/db';
 import {
     type CountResponse,
     type ExperienceReview,
@@ -116,14 +111,11 @@ export class ExperienceReviewService extends BaseCrudService<
     protected readonly searchSchema = ExperienceSearchSchema;
 
     /** Injectable for unit tests. */
-    private _experienceModel: ExperienceModel;
-    /** Injectable for unit tests. */
     private _experienceService: ExperienceService;
 
     constructor(config: ServiceConfig) {
         super(config, ExperienceReviewService.ENTITY_NAME);
         this.model = experienceReviewModel;
-        this._experienceModel = experienceModel;
         this._experienceService = new ExperienceService(config);
     }
 

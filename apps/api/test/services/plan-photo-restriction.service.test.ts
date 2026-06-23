@@ -56,6 +56,21 @@ vi.mock('@repo/db', () => {
         deletedAt: 'deleted_at'
     };
 
+    // SPEC-204 T-008: the service now dual-writes archive/restore state into the
+    // relational `accommodation_media` table in the same transaction.  We need to
+    // expose the column stubs so the SUT import doesn't throw
+    // "[vitest] No 'accommodationMedia' export is defined on the '@repo/db' mock".
+    // The FakeTx.update() accepts any table object (takes ...unknown[]), so the
+    // columns only need to satisfy the inArray/eq/isNull WHERE clause builders.
+    const accommodationMedia = {
+        accommodationId: 'accommodation_id',
+        url: 'url',
+        state: 'state',
+        archivedAt: 'archived_at',
+        updatedAt: 'updated_at',
+        deletedAt: 'deleted_at'
+    };
+
     // Minimal sql tagged-template stub — the service uses sql`...` to build the
     // FOR UPDATE query. The FakeTx.execute() receives the result and ignores it
     // (it returns rows from its own closure), so the stub only needs to return a
@@ -70,9 +85,11 @@ vi.mock('@repo/db', () => {
 
     return {
         accommodations,
+        accommodationMedia,
         sql,
         eq: vi.fn((_col: unknown, _val: unknown) => ({ __eq: true })),
         isNull: vi.fn((_col: unknown) => ({ __isNull: true })),
+        inArray: vi.fn((_col: unknown, _vals: unknown) => ({ __inArray: true })),
         and: vi.fn((...args: unknown[]) => ({ __and: args })),
         // withTransaction: execute callback with the provided existingTx (or a new
         // fake tx) — this matches the real withTransaction(existingTx passthrough).
@@ -163,7 +180,15 @@ function makeFakeTx(opts: FakeTxOptions): FakeTx {
             return tx;
         },
         set(payload: unknown) {
-            tx.setPayload = (payload as { media: Media }).media;
+            // SPEC-204 T-008: the SUT now calls update().set() twice per operation —
+            // once for the `accommodations.media` JSONB column and once for the
+            // `accommodationMedia` shadow table state flip.  Only capture setPayload
+            // when the payload carries a `media` key; ignore the shadow-table write
+            // so tests that assert on setPayload still receive the accommodation row.
+            const p = payload as { media?: Media };
+            if ('media' in p) {
+                tx.setPayload = p.media ?? null;
+            }
             tx.updateCalled = true;
             return tx;
         }

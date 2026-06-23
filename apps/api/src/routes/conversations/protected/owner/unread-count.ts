@@ -6,7 +6,7 @@
  */
 
 import { accommodations, getDb } from '@repo/db';
-import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
+import { PermissionEnum, ServiceErrorCode, UnreadCountResponseSchema } from '@repo/schemas';
 import { ConversationService } from '@repo/service-core';
 import { eq } from 'drizzle-orm';
 import { getActorFromContext } from '../../../../utils/actor';
@@ -75,7 +75,7 @@ router.get('/unread-count', async (c) => {
             );
         }
 
-        return createResponse(result.data, c, 200);
+        return createResponse(result.data, c, 200, UnreadCountResponseSchema);
     } catch (error) {
         return handleRouteError(error, c);
     }

@@ -42,11 +42,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock @sentry/node so tests can assert on captureMessage calls without
 // hitting the real Sentry transport.
-const { sentryCaptureMessage } = vi.hoisted(() => ({
-    sentryCaptureMessage: vi.fn()
+// SPEC-262 S3 addition: resolveDiscountAwarePlanChangeAmount uses captureException in
+// its fail-open catch block, so it must also be mocked (the original code only needed
+// captureMessage for the restriction-failure path — stale mock causing both failures).
+const { sentryCaptureMessage, sentryCaptureException } = vi.hoisted(() => ({
+    sentryCaptureMessage: vi.fn(),
+    sentryCaptureException: vi.fn()
 }));
 vi.mock('@sentry/node', () => ({
-    captureMessage: sentryCaptureMessage
+    captureMessage: sentryCaptureMessage,
+    captureException: sentryCaptureException
 }));
 
 vi.mock('../../src/middlewares/billing', () => ({
@@ -104,7 +109,12 @@ vi.mock('@repo/db', () => {
         return chain;
     }
     return {
-        getDb: vi.fn(() => ({ select: vi.fn(() => makeSelectChain()) })),
+        // execute() is used by resolveDiscountAwarePlanChangeAmount (SPEC-262 S3) to
+        // read promo_code_id. Returning no rows means "no active discount" → nominal amount.
+        getDb: vi.fn(() => ({
+            select: vi.fn(() => makeSelectChain()),
+            execute: vi.fn().mockResolvedValue({ rows: [] })
+        })),
         billingSubscriptions: {
             id: 'ID',
             customerId: 'CUSTOMER_ID',
