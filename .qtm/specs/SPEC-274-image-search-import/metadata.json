@@ -1,0 +1,25 @@
+{
+    "specId": "SPEC-274",
+    "title": "Image search & import (Unsplash/Pexels) for events and posts",
+    "type": "feature",
+    "complexity": "medium",
+    "status": "draft",
+    "created": "2026-06-23T00:00:00Z",
+    "startedAt": null,
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": [
+        "images",
+        "media",
+        "search",
+        "import",
+        "unsplash",
+        "pexels",
+        "stock",
+        "events",
+        "posts",
+        "admin",
+        "editor"
+    ]
+}
