@@ -36,6 +36,7 @@
 
 import { expect, test } from '@playwright/test';
 import { signInExistingUser } from '../../fixtures/api-helpers.ts';
+import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 import { execSQL } from '../../fixtures/db-helpers.ts';
 import { setReactInputValue, setReactSelectValue } from '../../fixtures/react19-input-helpers.ts';
 
@@ -158,6 +159,12 @@ test.describe('COMMERCE-03: owner edits type + i18n fields — persist on public
             "UPDATE gastronomies SET name_i18n = jsonb_set(COALESCE(name_i18n, '{}'::jsonb), '{es}', $1::jsonb) WHERE slug = $2",
             [JSON.stringify(originalGastronomyNameI18nEs ?? null), GASTRONOMY_SLUG]
         );
+    });
+
+    test.beforeEach(async ({ page }) => {
+        // Dismiss the cookie-consent banner so its backdrop does not intercept
+        // the editor's save-button click (the banner overlays the form).
+        await seedCookieConsent(page);
     });
 
     test('owner changes gastronomy type, persists via PATCH, public ficha reflects new type badge', async ({

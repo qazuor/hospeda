@@ -117,22 +117,29 @@ test.describe('COMMERCE-04: PATCH updateOwn permission gate @p0 @commerce', () =
         gastronomyId = row.id;
     });
 
-    test('USER without COMMERCE_EDIT_OWN gets 403 FORBIDDEN on PATCH updateOwn', async () => {
-        // Sign in as a plain tourist (no COMMERCE_EDIT_OWN permission).
+    test('non-owner USER gets NOT_FOUND on PATCH updateOwn (ownership-first, no info disclosure)', async () => {
+        // Sign in as a plain tourist (not the owner, no COMMERCE_EDIT_OWN permission).
         const sessionCookie = await signInExistingUser(
             { email: TOURIST.email, password: TOURIST.password },
             { apiBaseUrl: API_URL, webBaseUrl: WEB_URL }
         );
 
         // Attempt to PATCH the gastronomy owned by Julieta (not the tourist).
-        // A non-owner with no COMMERCE_EDIT_OWN should get 403.
+        // updateOwn enforces ownership BEFORE the permission gate and returns
+        // NOT_FOUND for non-owners to avoid information disclosure (SPEC-253 AC-2
+        // design; identical outcome to the COMMERCE_OWNER-wrong-listing case below).
+        // The 403 FORBIDDEN path (AC-2: an OWNER missing COMMERCE_EDIT_OWN) is not
+        // reachable via seeded roles and is covered by the unit test
+        // commerce.permissions.test.ts ("should forbid actor with no permissions").
         const response = await patchGastronomy({
             listingId: gastronomyId,
             sessionCookie,
-            body: { richDescription: 'Should be blocked by permission gate' }
+            body: { richDescription: 'Should be blocked by the ownership gate' }
         });
 
-        expect(response.status, `Expected 403 for tourist actor, got ${response.status}`).toBe(403);
+        expect(response.status, `Expected 404 for non-owner tourist, got ${response.status}`).toBe(
+            404
+        );
     });
 
     test('COMMERCE_OWNER with COMMERCE_EDIT_OWN on own listing gets 200 on PATCH updateOwn', async () => {

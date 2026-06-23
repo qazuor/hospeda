@@ -29,6 +29,7 @@
 
 import { expect, test } from '@playwright/test';
 import { signInExistingUser } from '../../fixtures/api-helpers.ts';
+import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 import { execSQL } from '../../fixtures/db-helpers.ts';
 import { setReactInputValue } from '../../fixtures/react19-input-helpers.ts';
 
@@ -110,6 +111,12 @@ test.describe('COMMERCE-05: contact has no website; social includes linkedIn @p0
                 [JSON.stringify(originalLinkedIn), GASTRONOMY_SLUG]
             );
         }
+    });
+
+    test.beforeEach(async ({ page }) => {
+        // Dismiss the cookie-consent banner so its backdrop does not intercept
+        // the editor's save-button click (the banner overlays the form).
+        await seedCookieConsent(page);
     });
 
     test('contact fieldset has no website input; social fieldset has linkedIn input', async ({
