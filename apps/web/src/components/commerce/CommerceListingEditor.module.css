@@ -189,7 +189,7 @@
 
 .error {
     background: var(--destructive-a15, rgba(185, 28, 28, 0.12));
-    border-color: var(--destructive-a30, rgba(185, 28, 28, 0.28));
+    border-color: var(--destructive-a35, rgba(185, 28, 28, 0.28));
     color: var(--destructive, #b91c1c);
 }
 
