@@ -1,4 +1,4 @@
-import { AccommodationIdSchema, AccommodationPublicSchema } from '@repo/schemas';
+import { AccommodationIdSchema, AccommodationSummarySchema } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
@@ -75,7 +75,7 @@ export const getSummaryRoute = createCRUDRoute({
     requestParams: {
         id: AccommodationIdSchema
     },
-    responseSchema: AccommodationPublicSchema.nullable(),
+    responseSchema: AccommodationSummarySchema.nullable(),
     handler: getSummaryHandler,
     options: {
         skipAuth: true, // Public endpoint
