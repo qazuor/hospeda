@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "095-feature-private_available",
+    "slug": "private_available",
+    "description": {
+        "es": "Modalidad privada disponible para grupos o contratación exclusiva",
+        "en": "Modalidad privada disponible para grupos o contratación exclusiva",
+        "pt": "Modalidad privada disponible para grupos o contratación exclusiva"
+    },
+    "applicableVerticals": ["experience"],
+    "icon": "IsolatedLocationIcon",
+    "isBuiltin": false,
+    "isFeatured": true,
+    "displayWeight": 55,
+    "lifecycleState": "ACTIVE"
+}

@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "098-amenity-outdoors-bike-parking",
+    "slug": "bike_parking",
+    "description": {
+        "es": "Estacionamiento para bicicletas disponible",
+        "en": "Estacionamiento para bicicletas disponible",
+        "pt": "Estacionamiento para bicicletas disponible"
+    },
+    "applicableVerticals": ["gastronomy"],
+    "type": "OUTDOORS",
+    "icon": "BicyclesIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 30
+}

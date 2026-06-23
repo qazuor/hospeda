@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "039-feature-perimeter_fence",
-    "name": {
-        "es": "Cerco perimetral",
-        "en": "Cerco perimetral",
-        "pt": "Cerco perimetral"
-    },
     "slug": "perimeter_fence",
     "description": {
         "es": "Cercado completo de la propiedad que garantiza privacidad, seguridad y delimitación clara del espacio",
         "en": "Cercado completo de la propiedad que garantiza privacidad, seguridad y delimitación clara del espacio",
         "pt": "Cercado completo de la propiedad que garantiza privacidad, seguridad y delimitación clara del espacio"
     },
+    "applicableVerticals": ["accommodation"],
     "icon": "PerimeterFenceIcon",
     "isBuiltin": true,
     "isFeatured": false,

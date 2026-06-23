@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "080-feature-workshop_training_space",
-    "name": {
-        "es": "Espacio para talleres y capacitaciones",
-        "en": "Espacio para talleres y capacitaciones",
-        "pt": "Espacio para talleres y capacitaciones"
-    },
     "slug": "workshop_training_space",
     "description": {
         "es": "Instalaciones equipadas para realizar cursos, talleres y actividades de aprendizaje grupal",
         "en": "Instalaciones equipadas para realizar cursos, talleres y actividades de aprendizaje grupal",
         "pt": "Instalaciones equipadas para realizar cursos, talleres y actividades de aprendizaje grupal"
     },
+    "applicableVerticals": ["accommodation"],
     "icon": "WorkshopSpaceIcon",
     "isBuiltin": true,
     "isFeatured": false,

@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "032-feature-camping_area",
-    "name": {
-        "es": "Sector de camping",
-        "en": "Sector de camping",
-        "pt": "Sector de camping"
-    },
     "slug": "camping_area",
     "description": {
         "es": "Área específicamente acondicionada para acampar con carpas, con servicios básicos y espacios naturales",
         "en": "Área específicamente acondicionada para acampar con carpas, con servicios básicos y espacios naturales",
         "pt": "Área específicamente acondicionada para acampar con carpas, con servicios básicos y espacios naturales"
     },
+    "applicableVerticals": ["accommodation"],
     "icon": "CampingAreaIcon",
     "isBuiltin": true,
     "isFeatured": false,

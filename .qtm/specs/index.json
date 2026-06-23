@@ -1770,7 +1770,7 @@
             "slug": "amenities-feature-catalog-by-vertical",
             "type": "improvement",
             "complexity": "high",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-266-amenities-feature-catalog-by-vertical",
             "created": "2026-06-23T02:10:00Z",
             "base": "staging",

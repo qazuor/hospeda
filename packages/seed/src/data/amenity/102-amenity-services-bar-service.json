@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "102-amenity-services-bar-service",
+    "slug": "bar_service",
+    "description": {
+        "es": "Servicio de bar con bebidas alcohólicas y no alcohólicas",
+        "en": "Servicio de bar con bebidas alcohólicas y no alcohólicas",
+        "pt": "Servicio de bar con bebidas alcohólicas y no alcohólicas"
+    },
+    "applicableVerticals": ["gastronomy"],
+    "type": "SERVICES",
+    "icon": "BarServiceIcon",
+    "isBuiltin": false,
+    "isFeatured": true,
+    "displayWeight": 55
+}

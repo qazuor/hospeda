@@ -3,8 +3,11 @@ import type { ConsolidatedSectionConfig } from '@/features/destinations/types/co
 import { PermissionEnum } from '@repo/schemas';
 
 /**
- * Basic Info section configuration for Feature entity
- * Contains: name, slug, description, icon
+ * Basic Info section configuration for Feature entity.
+ *
+ * SPEC-266: `name` column dropped from the schema — display label is now
+ * resolved at runtime from `@repo/i18n` using `accommodations.featureNames.<slug>`.
+ * `applicableVerticals` added as a required checkbox-group field (min 1 vertical).
  */
 export const createBasicInfoConsolidatedSection = (): ConsolidatedSectionConfig => ({
     id: 'basic-info',
@@ -17,23 +20,6 @@ export const createBasicInfoConsolidatedSection = (): ConsolidatedSectionConfig 
         edit: [PermissionEnum.FEATURE_UPDATE]
     },
     fields: [
-        {
-            id: 'name',
-            type: FieldTypeEnum.I18N_TEXT,
-            required: true,
-            modes: ['view', 'edit', 'create'],
-            label: 'Nombre',
-            description: 'Nombre de la característica en cada idioma (ES / EN / PT)',
-            placeholder: 'Ej: Vista al Mar',
-            permissions: {
-                view: [PermissionEnum.FEATURE_CREATE],
-                edit: [PermissionEnum.FEATURE_UPDATE]
-            },
-            typeConfig: {
-                maxLength: 100,
-                minLength: 2
-            }
-        },
         {
             id: 'slug',
             type: FieldTypeEnum.TEXT,
@@ -103,6 +89,33 @@ export const createBasicInfoConsolidatedSection = (): ConsolidatedSectionConfig 
                 min: 1,
                 max: 100,
                 step: 1
+            }
+        },
+        {
+            /**
+             * SPEC-266: applicableVerticals — which verticals this feature applies to.
+             * Rendered as a checkbox group via FieldTypeEnum.SELECT_MULTIPLE.
+             * Validated by FeatureCreateInputSchema (min 1 vertical required).
+             */
+            id: 'applicableVerticals',
+            type: FieldTypeEnum.SELECT_MULTIPLE,
+            required: true,
+            modes: ['view', 'edit', 'create'],
+            label: 'Verticales aplicables',
+            description:
+                'Verticales en los que esta característica puede usarse (mínimo 1). ' +
+                '"Alojamiento" incluye todas las propiedades de hospedaje; ' +
+                '"Gastronomía" aplica a restaurantes y bares; "Experiencia" a actividades.',
+            permissions: {
+                view: [PermissionEnum.FEATURE_CREATE],
+                edit: [PermissionEnum.FEATURE_UPDATE]
+            },
+            typeConfig: {
+                options: [
+                    { value: 'accommodation', label: 'Alojamiento' },
+                    { value: 'gastronomy', label: 'Gastronomía' },
+                    { value: 'experience', label: 'Experiencia' }
+                ]
             }
         }
     ]

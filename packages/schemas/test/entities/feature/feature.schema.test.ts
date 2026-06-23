@@ -116,7 +116,8 @@ describe('FeatureSchema', () => {
         it('should reject invalid slug format', () => {
             const invalidSlugCases = [
                 { ...createMinimalFeature(), slug: 'Invalid Slug With Spaces' },
-                { ...createMinimalFeature(), slug: 'invalid_slug_with_underscores' },
+                // underscores as SEPARATOR are now valid (SPEC-266); double underscores are NOT
+                { ...createMinimalFeature(), slug: 'invalid__double__underscore' },
                 { ...createMinimalFeature(), slug: 'InvalidSlugWithCaps' },
                 { ...createMinimalFeature(), slug: 'slug-with-special-chars!' },
                 { ...createMinimalFeature(), slug: 'ab' }, // too short
@@ -131,16 +132,17 @@ describe('FeatureSchema', () => {
             });
         });
 
-        it('should reject invalid name length', () => {
-            const invalidNameCases = [
-                { ...createMinimalFeature(), name: '' }, // empty
-                { ...createMinimalFeature(), name: 'A'.repeat(101) } // too long
+        it('should reject invalid applicableVerticals', () => {
+            // SPEC-266: applicableVerticals is the required field that replaced name
+            const invalidVerticalCases = [
+                { ...createMinimalFeature(), applicableVerticals: [] }, // empty — min 1
+                { ...createMinimalFeature(), applicableVerticals: ['unknown_vertical'] } // unknown value
             ];
 
-            invalidNameCases.forEach((testCase, index) => {
+            invalidVerticalCases.forEach((testCase, index) => {
                 expect(
                     () => FeatureSchema.parse(testCase),
-                    `Invalid name case ${index} should throw`
+                    `Invalid applicableVerticals case ${index} should throw`
                 ).toThrow(ZodError);
             });
         });
@@ -180,9 +182,8 @@ describe('FeatureSchema', () => {
 
         it('should reject invalid string fields', () => {
             const invalidStringCases = [
-                { ...createMinimalFeature(), name: 123 }, // number instead of string
                 { ...createMinimalFeature(), slug: 456 }, // number instead of string
-                { ...createMinimalFeature(), description: true } // boolean instead of string
+                { ...createMinimalFeature(), description: true } // boolean instead of object
             ];
 
             for (const [index, testCase] of invalidStringCases.entries()) {
@@ -384,11 +385,9 @@ describe('FeatureSchema', () => {
             // Type checks
             expect(typeof result.id).toBe('string');
             expect(typeof result.slug).toBe('string');
-            // name is now an I18nText object with es/en/pt locale keys
-            expect(typeof result.name).toBe('object');
-            expect(typeof result.name.es).toBe('string');
-            expect(typeof result.name.en).toBe('string');
-            expect(typeof result.name.pt).toBe('string');
+            // applicableVerticals replaces name (SPEC-266)
+            expect(Array.isArray(result.applicableVerticals)).toBe(true);
+            expect(result.applicableVerticals.length).toBeGreaterThan(0);
             expect(typeof result.lifecycleState).toBe('string');
             expect(result.createdAt).toBeInstanceOf(Date);
             expect(result.updatedAt).toBeInstanceOf(Date);

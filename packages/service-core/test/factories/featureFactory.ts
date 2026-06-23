@@ -6,9 +6,9 @@ import { getMockId } from './utilsFactory';
  * Factory builder for Feature, for use in tests.
  * Ensures all required fields are present and provides sensible defaults.
  *
- * The `name` and `description` fields are now I18nText objects (`{es, en, pt}`)
- * matching the JSONB DB column. All three locales default to the same test value
- * as a placeholder (real translations are a content task).
+ * The `name` JSONB column was dropped in SPEC-266 T-001. i18n labels are now
+ * resolved from the `accommodations.featureNames` i18n namespace keyed by `slug`.
+ * The `description` field remains as I18nText.
  */
 export class FeatureFactoryBuilder {
     private feature: Feature;
@@ -17,12 +17,12 @@ export class FeatureFactoryBuilder {
         this.feature = {
             id: getMockId('feature') as FeatureIdType,
             slug: 'test-feature',
-            name: { es: 'Test Feature', en: 'Test Feature', pt: 'Test Feature' },
             description: {
                 es: 'A test feature description',
                 en: 'A test feature description',
                 pt: 'A test feature description'
             },
+            applicableVerticals: ['accommodation'],
             icon: '⭐',
             isBuiltin: false,
             isFeatured: false,

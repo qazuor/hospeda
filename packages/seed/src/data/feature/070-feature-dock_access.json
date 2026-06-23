@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "070-feature-dock_access",
-    "name": {
-        "es": "Acceso a muelle",
-        "en": "Acceso a muelle",
-        "pt": "Acceso a muelle"
-    },
     "slug": "dock_access",
     "description": {
         "es": "Facilidad de acceso directo a embarcadero privado para actividades náuticas y deportes acuáticos",
         "en": "Facilidad de acceso directo a embarcadero privado para actividades náuticas y deportes acuáticos",
         "pt": "Facilidad de acceso directo a embarcadero privado para actividades náuticas y deportes acuáticos"
     },
+    "applicableVerticals": ["accommodation"],
     "icon": "DockAccessIcon",
     "isBuiltin": true,
     "isFeatured": false,

@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "019-feature-rustic_style",
-    "name": {
-        "es": "Estilo rústico",
-        "en": "Estilo rústico",
-        "pt": "Estilo rústico"
-    },
     "slug": "rustic_style",
     "description": {
         "es": "Construcción tradicional con materiales naturales como madera y piedra, manteniendo el encanto rural auténtico",
         "en": "Construcción tradicional con materiales naturales como madera y piedra, manteniendo el encanto rural auténtico",
         "pt": "Construcción tradicional con materiales naturales como madera y piedra, manteniendo el encanto rural auténtico"
     },
+    "applicableVerticals": ["accommodation"],
     "icon": "RusticStyleIcon",
     "isBuiltin": true,
     "isFeatured": false,

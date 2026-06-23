@@ -13,17 +13,18 @@ import {
  */
 
 /**
- * Create feature-specific entity fields.
- * name and description are I18nText objects ({es, en, pt}).
- * All locales default to the same Spanish value as a placeholder.
+ * Create feature-specific entity fields (SPEC-266: name removed, applicableVerticals added).
+ * description is an I18nText object ({es, en, pt}).
  */
 const createFeatureEntityFields = () => {
-    const nameEs = faker.lorem.words({ min: 2, max: 5 }).slice(0, 100);
     const descEs = faker.lorem.paragraph().slice(0, 490);
     return {
         slug: faker.lorem.slug(3),
-        name: { es: nameEs, en: nameEs, pt: nameEs },
         description: { es: descEs, en: descEs, pt: descEs },
+        applicableVerticals: faker.helpers.arrayElements(
+            ['accommodation', 'gastronomy', 'experience'] as const,
+            { min: 1, max: 3 }
+        ),
         icon: faker.helpers.maybe(() => faker.lorem.word(), { probability: 0.7 }),
         isBuiltin: faker.datatype.boolean(),
         isFeatured: faker.datatype.boolean()
@@ -38,19 +39,16 @@ export const createValidFeature = () => ({
     ...createBaseAdminFields()
 });
 
-export const createMinimalFeature = () => {
-    const nameEs = faker.lorem.words({ min: 2, max: 3 });
-    return {
-        id: faker.string.uuid(),
-        slug: faker.lorem.slug(3),
-        name: { es: nameEs, en: nameEs, pt: nameEs },
-        lifecycleState: 'ACTIVE',
-        createdAt: faker.date.past(),
-        updatedAt: faker.date.recent(),
-        createdById: faker.string.uuid(),
-        updatedById: faker.string.uuid()
-    };
-};
+export const createMinimalFeature = () => ({
+    id: faker.string.uuid(),
+    slug: faker.lorem.slug(3),
+    applicableVerticals: ['accommodation'] as const,
+    lifecycleState: 'ACTIVE',
+    createdAt: faker.date.past(),
+    updatedAt: faker.date.recent(),
+    createdById: faker.string.uuid(),
+    updatedById: faker.string.uuid()
+});
 
 export const createComplexFeature = () => {
     const descEs = faker.lorem.sentence().slice(0, 490);
@@ -68,13 +66,13 @@ export const createFeatureEdgeCases = () => [
     {
         ...createMinimalFeature(),
         slug: 'abc', // minimum 3 chars
-        name: { es: 'Wi', en: 'Wi', pt: 'Wi' } // minimum 2 chars per locale
+        applicableVerticals: ['accommodation'] as const
     },
     // Maximum length strings
     {
         ...createMinimalFeature(),
         slug: 'a'.repeat(100), // maximum 100 chars
-        name: { es: 'A'.repeat(100), en: 'A'.repeat(100), pt: 'A'.repeat(100) }, // maximum 100 chars
+        applicableVerticals: ['accommodation', 'gastronomy'] as const,
         description: { es: 'D'.repeat(500), en: 'D'.repeat(500), pt: 'D'.repeat(500) } // maximum 500 chars
     },
     // All optional fields present
@@ -90,7 +88,7 @@ export const createFeatureEdgeCases = () => [
 export const createInvalidFeature = () => ({
     // Missing required fields
     slug: 'ab', // too short (min 3)
-    name: '', // empty
+    applicableVerticals: [] as const, // empty (min 1)
     lifecycleState: 'INVALID_STATE', // invalid enum
     // Invalid types
     isBuiltin: 'not-boolean',
@@ -109,15 +107,10 @@ export const createFeatureWithInvalidFields = () => [
         ...createMinimalFeature(),
         slug: 'Invalid Slug With Spaces'
     },
-    // Too long strings — name/description are I18nText objects; each locale must violate max
+    // Too long strings — slug and description must violate max
     {
         ...createMinimalFeature(),
         slug: createTooLongString(101),
-        name: {
-            es: createTooLongString(101),
-            en: createTooLongString(101),
-            pt: createTooLongString(101)
-        },
         description: {
             es: createTooLongString(501),
             en: createTooLongString(501),
@@ -207,24 +200,24 @@ export const createMinimalFeatureCreateInput = () => {
 };
 
 export const createValidFeatureUpdateInput = () => {
-    const nameEs = faker.lorem.words({ min: 2, max: 5 }).slice(0, 100);
     const descEs = faker.lorem.paragraph().slice(0, 490);
     return {
-        name: { es: nameEs, en: nameEs, pt: nameEs },
         description: { es: descEs, en: descEs, pt: descEs },
         icon: faker.lorem.word(),
         isBuiltin: faker.datatype.boolean(),
         isFeatured: faker.datatype.boolean(),
+        applicableVerticals: faker.helpers.arrayElements(
+            ['accommodation', 'gastronomy', 'experience'] as const,
+            { min: 1, max: 2 }
+        ),
         // TODO usar el enum
         lifecycleState: faker.helpers.arrayElement(['DRAFT', 'ACTIVE', 'ARCHIVED'])
     };
 };
 
 export const createPartialFeatureUpdateInput = () => {
-    const nameEs = faker.lorem.words({ min: 2, max: 3 });
     const descEs = faker.lorem.sentence();
     return {
-        name: { es: nameEs, en: nameEs, pt: nameEs },
         description: { es: descEs, en: descEs, pt: descEs }
     };
 };
@@ -265,13 +258,12 @@ export const createValidFeatureListInput = () => ({
 
 export const createFeatureListOutput = () => {
     const features = Array.from({ length: faker.number.int({ min: 1, max: 5 }) }, () => {
-        const nameEs = faker.lorem.words({ min: 2, max: 5 });
         const descEs = faker.lorem.paragraph().slice(0, 490);
         return {
             id: faker.string.uuid(),
             slug: faker.lorem.slug(3),
-            name: { es: nameEs, en: nameEs, pt: nameEs },
             description: { es: descEs, en: descEs, pt: descEs },
+            applicableVerticals: ['accommodation'] as const,
             icon: faker.lorem.word(),
             isBuiltin: faker.datatype.boolean(),
             isFeatured: faker.datatype.boolean(),
@@ -324,10 +316,7 @@ export const createFeatureStatsOutput = () => ({
     mostUsedFeatures: [
         {
             id: faker.string.uuid(),
-            name: (() => {
-                const n = faker.lorem.words({ min: 2, max: 4 });
-                return { es: n, en: n, pt: n };
-            })(),
+            name: faker.lorem.words({ min: 2, max: 4 }),
             category: faker.lorem.word(),
             usageCount: faker.number.int({ min: 1, max: 100 }),
             priority: faker.number.int({ min: 0, max: 100 })

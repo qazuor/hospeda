@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "015-feature-ideal_for_groups",
-    "name": {
-        "es": "Ideal para grupos",
-        "en": "Ideal para grupos",
-        "pt": "Ideal para grupos"
-    },
     "slug": "ideal_for_groups",
     "description": {
         "es": "Capacidad y distribución de espacios optimizada para grupos grandes, con áreas comunes amplias y múltiples habitaciones",
         "en": "Capacidad y distribución de espacios optimizada para grupos grandes, con áreas comunes amplias y múltiples habitaciones",
         "pt": "Capacidad y distribución de espacios optimizada para grupos grandes, con áreas comunes amplias y múltiples habitaciones"
     },
+    "applicableVerticals": ["accommodation"],
     "icon": "GroupFriendlyIcon",
     "isBuiltin": true,
     "isFeatured": false,

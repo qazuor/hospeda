@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "001-feature-river_front",
-    "name": {
-        "es": "Frente al río",
-        "en": "Frente al río",
-        "pt": "Frente al río"
-    },
     "slug": "river_front",
     "description": {
         "es": "Propiedad ubicada directamente frente a un río, ofreciendo acceso directo al agua y vistas panorámicas al curso fluvial",
         "en": "Propiedad ubicada directamente frente a un río, ofreciendo acceso directo al agua y vistas panorámicas al curso fluvial",
         "pt": "Propiedad ubicada directamente frente a un río, ofreciendo acceso directo al agua y vistas panorámicas al curso fluvial"
     },
+    "applicableVerticals": ["accommodation"],
     "icon": "RiverFrontIcon",
     "isBuiltin": true,
     "isFeatured": false,

@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "092-amenity-services-accepts-cards",
+    "slug": "accepts_cards",
+    "description": {
+        "es": "Acepta tarjetas de crédito y débito como método de pago",
+        "en": "Acepta tarjetas de crédito y débito como método de pago",
+        "pt": "Acepta tarjetas de crédito y débito como método de pago"
+    },
+    "applicableVerticals": ["accommodation", "gastronomy", "experience"],
+    "type": "SERVICES",
+    "icon": "ShoppingServiceIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 35
+}

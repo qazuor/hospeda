@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "043-amenity-safety-fire-extinguisher",
-    "name": {
-        "es": "fire_extinguisher",
-        "en": "fire_extinguisher",
-        "pt": "fire_extinguisher"
-    },
     "slug": "fire_extinguisher",
     "description": {
         "es": "Extintor de incendios",
         "en": "Extintor de incendios",
         "pt": "Extintor de incendios"
     },
+    "applicableVerticals": ["accommodation"],
     "type": "SAFETY",
     "icon": "FireExtinguisherIcon",
     "isBuiltin": false,

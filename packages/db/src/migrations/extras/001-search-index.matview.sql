@@ -44,10 +44,11 @@ SELECT
     'spanish',
     coalesce(a.name, '')
     || ' ' || coalesce(a.description, '')
-    -- Amenity names (es locale only; en/pt are copies of es at time of writing)
-    || ' ' || coalesce(string_agg(DISTINCT am.name->>'es', ' '), '')
-    -- Feature names (es locale only)
-    || ' ' || coalesce(string_agg(DISTINCT ft.name->>'es', ' '), '')
+    -- Amenity slugs (SPEC-266: the name column was dropped; slug is the stable
+    -- identifier. Display labels now live in @repo/i18n and are not indexed here.)
+    || ' ' || coalesce(string_agg(DISTINCT am.slug, ' '), '')
+    -- Feature slugs (SPEC-266: same rationale as amenities above)
+    || ' ' || coalesce(string_agg(DISTINCT ft.slug, ' '), '')
   ) AS tsv
 FROM accommodations a
 LEFT JOIN r_accommodation_amenity raa

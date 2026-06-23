@@ -14,7 +14,8 @@ import {
 import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
 
 const input = {
-    name: { es: 'Test Feature', en: 'Test Feature', pt: 'Test Feature' },
+    slug: 'test-feature',
+    applicableVerticals: ['accommodation'] as ('gastronomy' | 'experience' | 'accommodation')[],
     icon: '⭐',
     description: {
         es: 'A test feature desc ok',
@@ -46,7 +47,7 @@ describe('FeatureService.create', () => {
         featureModelMock.create.mockResolvedValue(createdFeature);
         const result = await service.create(actor, input);
         expectSuccess(result);
-        expect(result.data).toMatchObject(input);
+        expect(result.data?.slug).toBe(input.slug);
     });
 
     it('should return FORBIDDEN if actor lacks ACCOMMODATION_FEATURES_EDIT permission', async () => {
@@ -56,8 +57,8 @@ describe('FeatureService.create', () => {
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
-        // empty es locale violates min:2
-        const result = await service.create(actor, { ...input, name: { es: '', en: '', pt: '' } });
+        // empty slug violates min:3
+        const result = await service.create(actor, { ...input, slug: '' });
         expectValidationError(result);
     });
 
@@ -67,7 +68,7 @@ describe('FeatureService.create', () => {
         expectInternalError(result);
     });
 
-    it('should generate a unique slug if name is duplicated', async () => {
+    it('should create with a unique slug', async () => {
         featureModelMock.findOne
             .mockResolvedValueOnce(null) // first slug is unique
             .mockResolvedValueOnce({ ...createdFeature, slug: 'test-feature' }) // second slug exists
@@ -78,11 +79,11 @@ describe('FeatureService.create', () => {
             ...createdFeature,
             slug: 'test-feature-2'
         });
-        // First creation — slug is derived from name.es
+        // First creation — slug matches input
         const result1 = await service.create(actor, input);
         expectSuccess(result1);
         expect(result1.data?.slug).toBe('test-feature');
-        // Second creation with same name — slug gets a suffix
+        // Second creation with same slug — model returns a suffixed slug
         const result2 = await service.create(actor, input);
         expectSuccess(result2);
         expect(result2.data?.slug).toMatch(/^test-feature(-\d+)?$/);
@@ -97,7 +98,12 @@ describe('FeatureService.create', () => {
             description: undefined
         });
         const minimalInput = {
-            name: { es: 'Minimal Feature', en: 'Minimal Feature', pt: 'Minimal Feature' },
+            slug: 'minimal-feature',
+            applicableVerticals: ['accommodation'] as (
+                | 'gastronomy'
+                | 'experience'
+                | 'accommodation'
+            )[],
             isFeatured: false
         };
         const result = await service.create(actor, minimalInput);
@@ -107,9 +113,9 @@ describe('FeatureService.create', () => {
     });
 
     it('should reject null for required fields', async () => {
-        // name is required — passing null triggers validation error
+        // slug is required — passing null triggers validation error
         // @ts-expect-error
-        const result = await service.create(actor, { ...input, name: null });
+        const result = await service.create(actor, { ...input, slug: null });
         expectValidationError(result);
     });
 });

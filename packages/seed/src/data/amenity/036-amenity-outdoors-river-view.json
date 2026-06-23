@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "036-amenity-outdoors-river-view",
-    "name": {
-        "es": "river_view",
-        "en": "river_view",
-        "pt": "river_view"
-    },
     "slug": "river_view",
     "description": {
         "es": "Vista al río",
         "en": "Vista al río",
         "pt": "Vista al río"
     },
+    "applicableVerticals": ["accommodation"],
     "type": "OUTDOORS",
     "icon": "RiverViewIcon",
     "isBuiltin": false,

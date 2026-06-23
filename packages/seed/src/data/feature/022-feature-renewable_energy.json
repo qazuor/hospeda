@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "022-feature-renewable_energy",
-    "name": {
-        "es": "Uso de energías renovables",
-        "en": "Uso de energías renovables",
-        "pt": "Uso de energías renovables"
-    },
     "slug": "renewable_energy",
     "description": {
         "es": "Sistema energético basado en fuentes renovables como solar, eólica o hidroeléctrica para un funcionamiento sustentable",
         "en": "Sistema energético basado en fuentes renovables como solar, eólica o hidroeléctrica para un funcionamiento sustentable",
         "pt": "Sistema energético basado en fuentes renovables como solar, eólica o hidroeléctrica para un funcionamiento sustentable"
     },
+    "applicableVerticals": ["accommodation"],
     "icon": "RenewableEnergyIcon",
     "isBuiltin": true,
     "isFeatured": false,

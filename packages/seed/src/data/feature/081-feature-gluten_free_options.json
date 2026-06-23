@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/feature.schema.json",
+    "id": "081-feature-gluten_free_options",
+    "slug": "gluten_free_options",
+    "description": {
+        "es": "Opciones en el menú libres de gluten para personas con celiaquía o intolerancia",
+        "en": "Opciones en el menú libres de gluten para personas con celiaquía o intolerancia",
+        "pt": "Opciones en el menú libres de gluten para personas con celiaquía o intolerancia"
+    },
+    "applicableVerticals": ["gastronomy"],
+    "icon": "EcologicalIcon",
+    "isBuiltin": false,
+    "isFeatured": true,
+    "displayWeight": 60,
+    "lifecycleState": "ACTIVE"
+}

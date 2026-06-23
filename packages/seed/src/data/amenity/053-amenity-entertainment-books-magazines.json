@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "053-amenity-entertainment-books-magazines",
-    "name": {
-        "es": "books_magazines",
-        "en": "books_magazines",
-        "pt": "books_magazines"
-    },
     "slug": "books_magazines",
     "description": {
         "es": "Libros y revistas",
         "en": "Libros y revistas",
         "pt": "Libros y revistas"
     },
+    "applicableVerticals": ["accommodation"],
     "type": "ENTERTAINMENT",
     "icon": "BooksAndMagazinesIcon",
     "isBuiltin": false,

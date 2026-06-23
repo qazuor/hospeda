@@ -8,7 +8,7 @@ import { createAverageRatingField } from '../../common/helpers.schema.js';
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
 import { createSearchMetadata } from '../../utils/openapi-metadata.factory.js';
 import { applyOpenApiMetadata } from '../../utils/openapi.utils.js';
-import { AmenitySchema } from './amenity.schema.js';
+import { AmenitySchema, ApplicableVerticalSchema } from './amenity.schema.js';
 
 /**
  * Amenity Query Schemas
@@ -28,10 +28,12 @@ import { AmenitySchema } from './amenity.schema.js';
  */
 export const AmenityFiltersSchema = z.object({
     // Basic filters
-    name: z.string().optional(),
     slug: z.string().optional(),
     type: z.string().optional(),
     icon: z.string().optional(),
+
+    /** Filter by applicable vertical (SPEC-266) */
+    applicableVertical: ApplicableVerticalSchema.optional(),
 
     // Content filters
     hasIcon: z.boolean().optional(),
@@ -42,9 +44,6 @@ export const AmenityFiltersSchema = z.object({
     createdBefore: z.date().optional(),
 
     // Pattern filters
-    nameStartsWith: z.string().min(1).max(50).optional(),
-    nameEndsWith: z.string().min(1).max(50).optional(),
-    nameContains: z.string().min(1).max(50).optional(),
     descriptionContains: z.string().min(1).max(100).optional()
 });
 export type AmenityFilters = z.infer<typeof AmenityFiltersSchema>;
@@ -59,10 +58,12 @@ export type AmenityFilters = z.infer<typeof AmenityFiltersSchema>;
  */
 export const AmenitySearchSchema = BaseSearchSchema.extend({
     // Basic filters (flattened from nested structure)
-    name: z.string().optional(),
     slug: z.string().optional(),
     type: z.string().optional(),
     icon: z.string().optional(),
+
+    /** Filter by applicable vertical (SPEC-266) */
+    applicableVertical: ApplicableVerticalSchema.optional(),
 
     // Content filters
     hasIcon: z.boolean().optional(),
@@ -73,9 +74,6 @@ export const AmenitySearchSchema = BaseSearchSchema.extend({
     createdBefore: z.date().optional(),
 
     // Pattern filters
-    nameStartsWith: z.string().min(1).max(50).optional(),
-    nameEndsWith: z.string().min(1).max(50).optional(),
-    nameContains: z.string().min(1).max(50).optional(),
     descriptionContains: z.string().min(1).max(100).optional(),
 
     // Search options (preserved from original)
@@ -97,10 +95,12 @@ export const HttpAmenitySearchSchema = HttpPaginationSchema.merge(HttpSortingSch
     q: z.string().optional(),
 
     // Basic filters
-    name: z.string().optional(),
     slug: z.string().optional(),
     type: z.string().optional(),
     icon: z.string().optional(),
+
+    /** Filter by applicable vertical (SPEC-266) */
+    applicableVertical: ApplicableVerticalSchema.optional(),
 
     // Boolean filters with coercion
     hasIcon: HttpQueryFields.hasIcon(),
@@ -114,9 +114,6 @@ export const HttpAmenitySearchSchema = HttpPaginationSchema.merge(HttpSortingSch
     createdBefore: HttpQueryFields.createdBefore(),
 
     // String pattern filters
-    nameStartsWith: z.string().min(1).max(50).optional(),
-    nameEndsWith: z.string().min(1).max(50).optional(),
-    nameContains: z.string().min(1).max(50).optional(),
     descriptionContains: z.string().min(1).max(100).optional()
 });
 
@@ -154,8 +151,8 @@ export const AmenitySearchSchemaWithMetadata = applyOpenApiMetadata(
 export const AmenityListItemSchema = AmenitySchema.pick({
     id: true,
     slug: true,
-    name: true,
     description: true,
+    applicableVerticals: true,
     type: true,
     icon: true,
     isBuiltin: true,
@@ -175,7 +172,7 @@ export type AmenityListItem = z.infer<typeof AmenityListItemSchema>;
  */
 export const AmenitySearchResultItemSchema = AmenityListItemSchema.extend({
     score: z.number().min(0).max(1).optional(),
-    matchedFields: z.array(z.enum(['name', 'description', 'category'])).optional()
+    matchedFields: z.array(z.enum(['slug', 'description', 'category'])).optional()
 });
 export type AmenitySearchResultItem = z.infer<typeof AmenitySearchResultItemSchema>;
 
@@ -273,8 +270,8 @@ export type AmenityGetForAccommodationInput = z.infer<typeof AmenityGetForAccomm
 export const AmenitySummarySchema = AmenitySchema.pick({
     id: true,
     slug: true,
-    name: true,
     description: true,
+    applicableVerticals: true,
     type: true,
     icon: true
 });

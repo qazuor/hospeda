@@ -1,7 +1,14 @@
 /**
  * @file AmenitiesSection.client.tsx
  * @description Form section for amenity and feature multi-checkbox selection.
- * Displays checkbox groups loaded from the public amenities/features endpoints.
+ * Displays checkbox groups loaded from the public amenities/features catalog
+ * filtered to the accommodation vertical.
+ *
+ * SPEC-266: the `name` column was removed from the catalog. Display labels
+ * are resolved client-side via `@repo/i18n` using:
+ *   - Amenities: `accommodations.amenityNames.<slug>`
+ *   - Features:  `accommodations.featureNames.<slug>`
+ * The `slug` falls through as the raw fallback when no i18n key is found.
  */
 
 import type { AccommodationEditData, AmenityData } from '@/lib/api/types';
@@ -23,6 +30,10 @@ export interface AmenitiesSectionProps {
 /**
  * Amenities and features form section.
  * Renders two checkbox groups: one for amenities, one for features.
+ *
+ * Labels are resolved at render time from the `accommodations` i18n namespace
+ * using each item's `slug` as the key, so they follow the active locale
+ * without requiring a page reload.
  */
 export function AmenitiesSection({
     locale,
@@ -58,7 +69,7 @@ export function AmenitiesSection({
                                     onChange={() => onToggleAmenity(amenity.id)}
                                 />
                                 <span className={styles.checkboxText}>
-                                    {translateAmenityName({ t, name: amenity.name })}
+                                    {translateAmenityName({ t, name: amenity.slug })}
                                 </span>
                             </label>
                         ))}
@@ -83,7 +94,9 @@ export function AmenitiesSection({
                                     checked={data.featureIds.includes(feature.id)}
                                     onChange={() => onToggleFeature(feature.id)}
                                 />
-                                <span className={styles.checkboxText}>{feature.name}</span>
+                                <span className={styles.checkboxText}>
+                                    {t(`accommodations.featureNames.${feature.slug}`, feature.slug)}
+                                </span>
                             </label>
                         ))}
                     </div>

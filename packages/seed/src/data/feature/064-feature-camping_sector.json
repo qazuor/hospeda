@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "064-feature-camping_sector",
-    "name": {
-        "es": "Sector para acampar",
-        "en": "Sector para acampar",
-        "pt": "Sector para acampar"
-    },
     "slug": "camping_sector",
     "description": {
         "es": "Área natural acondicionada para camping con servicios básicos y respeto por el medio ambiente",
         "en": "Área natural acondicionada para camping con servicios básicos y respeto por el medio ambiente",
         "pt": "Área natural acondicionada para camping con servicios básicos y respeto por el medio ambiente"
     },
+    "applicableVerticals": ["accommodation"],
     "icon": "CampingSectorIcon",
     "isBuiltin": true,
     "isFeatured": false,

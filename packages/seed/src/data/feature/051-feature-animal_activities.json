@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "051-feature-animal_activities",
-    "name": {
-        "es": "Actividades con animales",
-        "en": "Actividades con animales",
-        "pt": "Actividades con animales"
-    },
     "slug": "animal_activities",
     "description": {
         "es": "Experiencias de interacción directa con animales de granja, cabalgatas o actividades ecuestres",
         "en": "Experiencias de interacción directa con animales de granja, cabalgatas o actividades ecuestres",
         "pt": "Experiencias de interacción directa con animales de granja, cabalgatas o actividades ecuestres"
     },
+    "applicableVerticals": ["accommodation"],
     "icon": "AnimalActivitiesIcon",
     "isBuiltin": true,
     "isFeatured": false,

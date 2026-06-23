@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "073-amenity-family-friendly-high-chair",
-    "name": {
-        "es": "high_chair",
-        "en": "high_chair",
-        "pt": "high_chair"
-    },
     "slug": "high_chair",
     "description": {
         "es": "Silla alta para bebés",
         "en": "Silla alta para bebés",
         "pt": "Silla alta para bebés"
     },
+    "applicableVerticals": ["accommodation"],
     "type": "FAMILY_FRIENDLY",
     "icon": "HighChairIcon",
     "isBuiltin": false,

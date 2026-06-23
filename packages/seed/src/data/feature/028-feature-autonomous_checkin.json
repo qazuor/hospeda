@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "028-feature-autonomous_checkin",
-    "name": {
-        "es": "Check-in autónomo",
-        "en": "Check-in autónomo",
-        "pt": "Check-in autónomo"
-    },
     "slug": "autonomous_checkin",
     "description": {
         "es": "Sistema de ingreso independiente sin necesidad de personal, mediante códigos, llaves inteligentes o aplicaciones móviles",
         "en": "Sistema de ingreso independiente sin necesidad de personal, mediante códigos, llaves inteligentes o aplicaciones móviles",
         "pt": "Sistema de ingreso independiente sin necesidad de personal, mediante códigos, llaves inteligentes o aplicaciones móviles"
     },
+    "applicableVerticals": ["accommodation"],
     "icon": "SelfCheckInIcon",
     "isBuiltin": true,
     "isFeatured": false,

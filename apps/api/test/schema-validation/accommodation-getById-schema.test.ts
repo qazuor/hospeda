@@ -81,8 +81,9 @@ const ACCOMMODATION_WITH_RELATIONS = {
     amenities: [
         {
             amenityId: '44444444-4444-4444-8444-444444444444',
-            // Catalog name is i18nText since 4aa8ff2e3 (i18n catalog name/description)
-            name: { es: 'WiFi', en: 'WiFi', pt: 'WiFi' },
+            // SPEC-266: catalog `name` was dropped; `slug` is the canonical
+            // identifier and the i18n key (`accommodations.amenityNames.<slug>`).
+            slug: 'wifi',
             icon: 'wifi',
             isOptional: false,
             additionalCost: null
@@ -92,8 +93,9 @@ const ACCOMMODATION_WITH_RELATIONS = {
     features: [
         {
             featureId: '55555555-5555-4555-8555-555555555555',
-            // Catalog name is i18nText since 4aa8ff2e3 (i18n catalog name/description)
-            name: { es: 'Estacionamiento', en: 'Estacionamiento', pt: 'Estacionamiento' },
+            // SPEC-266: catalog `name` was dropped; `slug` is the canonical
+            // identifier and the i18n key (`accommodations.featureNames.<slug>`).
+            slug: 'parking',
             icon: 'parking',
             hostReWriteName: null,
             comments: null

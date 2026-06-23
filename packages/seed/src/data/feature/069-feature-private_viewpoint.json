@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "069-feature-private_viewpoint",
-    "name": {
-        "es": "Mirador privado",
-        "en": "Mirador privado",
-        "pt": "Mirador privado"
-    },
     "slug": "private_viewpoint",
     "description": {
         "es": "Punto elevado exclusivo del alojamiento con vistas panorámicas excepcionales del paisaje",
         "en": "Punto elevado exclusivo del alojamiento con vistas panorámicas excepcionales del paisaje",
         "pt": "Punto elevado exclusivo del alojamiento con vistas panorámicas excepcionales del paisaje"
     },
+    "applicableVerticals": ["accommodation"],
     "icon": "PrivateViewpointIcon",
     "isBuiltin": true,
     "isFeatured": false,
