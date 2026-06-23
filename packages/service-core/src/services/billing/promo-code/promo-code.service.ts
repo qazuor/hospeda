@@ -13,7 +13,7 @@
  */
 
 import type { QueryContext } from '@repo/db';
-import type { PromoEffect } from '@repo/schemas';
+import type { EffectPreview, PromoEffect } from '@repo/schemas';
 import {
     createPromoCode,
     deletePromoCode,
@@ -150,6 +150,10 @@ export interface PromoCodeValidationContext {
 
 /**
  * Validation result.
+ *
+ * SPEC-262 T-012: adds `effectPreview` so the validate endpoint can expose
+ * the typed effect for the web checkout UI (preview before paying).
+ * `discountAmount` is preserved unchanged for back-compat.
  */
 export interface PromoCodeValidationResult {
     /** Whether the code is valid */
@@ -158,8 +162,14 @@ export interface PromoCodeValidationResult {
     errorCode?: string;
     /** Error message if invalid */
     errorMessage?: string;
-    /** Discount amount preview (in cents) */
+    /** Discount amount preview (in cents). Back-compat — existing callers rely on this. */
     discountAmount?: number;
+    /**
+     * Typed effect preview (SPEC-262 T-012).
+     * Present only when `valid` is true. Allows the checkout UI to render
+     * "50% off for 3 months", "Free forever", "Trial +N days" before payment.
+     */
+    effectPreview?: EffectPreview;
 }
 
 /**
