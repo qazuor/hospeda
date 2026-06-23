@@ -1,6 +1,6 @@
 # SPEC-204: Accommodation gallery migration to relational table
 
-## Progress: 11/29 tasks (38%) — P1 COMPLETE
+## Progress: 12/29 tasks (41%) — P1 COMPLETE · P2 in progress
 
 **Average Complexity:** 2.5/3 (max)
 **Storage model:** direct table-per-entity (`accommodation_media`, real FK) — polymorphic + junction rejected
@@ -50,7 +50,7 @@
 
 ### Integration
 
-- [ ] **T-012** (cx 3) — Read-composition helper (rows → media shape, videos from JSONB)
+- [x] **T-012** (cx 3) — Read-composition helper (rows → media shape, videos from JSONB) — pure `composeAccommodationMedia`, omits absent keys (byte-identical shape), 8 unit tests ✓
   - Blocked by: T-006, T-007 · Blocks: T-013
 - [ ] **T-013** (cx 3) — Switch accommodation read paths to the table (shape unchanged, ~21 read-sites intact)
   - Blocked by: T-012 · Blocks: T-015, T-017, T-024
