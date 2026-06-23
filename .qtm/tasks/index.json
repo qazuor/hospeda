@@ -869,14 +869,17 @@
         {
             "specId": "SPEC-259",
             "title": "Systematic Chrome smoke testing of staging features (post-e2fb184)",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "completed",
+            "progress": "5/5",
+            "archived": true,
+            "archivedAt": "2026-06-23",
             "path": "SPEC-259-staging-smoke-testing",
             "branch": "spec/SPEC-259-staging-smoke-testing",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-259-staging-smoke-testing",
             "base": "staging",
             "createdAt": "2026-06-22T15:39:13Z",
-            "note": "Campaign spec; tasks atomized when smoke starts. 4 phases: SPEC-230,203,239,249."
+            "note": "Campaign spec. 5 phases smoked e2e (Chrome, real): SPEC-230, 203, 249, 239, 223. Fixes shipped: PR #1781 (SPEC-249 CI), PR #1795 (SPEC-223 US-6 error mapping). SPEC-223 ran against local Ollama.",
+            "archiveNote": "Smoke campaign complete; all 5 phases verified, 2 fixes merged to staging."
         },
         {
             "specId": "SPEC-260",

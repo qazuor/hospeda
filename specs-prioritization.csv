@@ -105,7 +105,7 @@ rank|spec|name|avance|prioridad|estado|estado_manual|estado_real|descripcion|por
 103|SPEC-253|Commerce owner editor — extended fields + single COMMERCE_EDIT_OWN permission|-|-|backlog|-|index staging: status=draft; expands SPEC-249 owner editor (type/summary/i18n/faqs/exp-price) + collapses per-section perms to COMMERCE_EDIT_OWN; dep SPEC-249 done|-|-|-|-|-|-|SPEC-249|-
 105|SPEC-258|Accommodation import — coverage gaps, limbo fields, UX surfacing & scraper resilience|-|-|backlog|-|-|-|-|-|-|-|-|SPEC-257|-
 104|SPEC-257|Accommodation import short-link resolution + adapter enrichment|-|-|in progress|-|-|-|-|-|-|-|-|SPEC-222|-
-106|SPEC-259|Systematic Chrome smoke testing of staging features (post-e2fb184)|-|-|backlog|-|-|-|-|-|-|-|-|-|-
+106|SPEC-259|Systematic Chrome smoke testing of staging features (post-e2fb184)|-|-|done|-|-|-|-|-|-|-|-|-|-
 107|SPEC-260|AI Usage Dashboard|-|-|backlog|-|index staging: status=draft archived=False (extends existing AI metering SPEC-173; no unmet deps)|-|-|-|-|-|-|SPEC-173|-
 108|SPEC-261|Stabilize commerce-owner E2E and promote back to @p0|-|-|done|-|index staging: status=draft; SPEC-252 follow-up — commerce E2E specs deprioritized @p0->@p1 (React-19 dirty-tracking won't trip in headless CI); needs a local Playwright trace to fix|-|-|-|-|-|-|SPEC-252|-
 109|SPEC-262|Billing Promo-Code Typed Effect Engine|5/15|-|in progress|-|index staging: status=in-progress; T-001..T-005 done (spike, schema, constraints+backfill, Zod, service effect-engine); adversarial review fixed comp checkout fail-open + atomicity; T-006/T-007 next|-|-|-|-|-|-|SPEC-143|-
