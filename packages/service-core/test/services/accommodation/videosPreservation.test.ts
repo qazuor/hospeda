@@ -32,6 +32,39 @@ import { createAdminActor } from '../../factories/actorFactory';
 import { createMockBaseModel } from '../../factories/baseServiceFactory';
 import { createLoggerMock } from '../../utils/modelMockFactory';
 
+/**
+ * FIX 1 (SPEC-204): AccommodationService.update() now opens a transaction when
+ * `media` is present. Mock withServiceTransaction so update tests work without DB.
+ */
+vi.mock('../../../src/utils/transaction', () => ({
+    withServiceTransaction: vi.fn(
+        async (
+            fn: (ctx: { tx: object; hookState: Record<string, unknown> }) => Promise<unknown>,
+            baseCtx?: { hookState?: Record<string, unknown> }
+        ) => {
+            // Provide a truthy tx stub so the !ctx.tx guards in _afterUpdate
+            // don't fire. The injected AccommodationMediaModel stub swallows all DB calls.
+            const ctx = { ...baseCtx, tx: {}, hookState: baseCtx?.hookState ?? {} };
+            try {
+                return await fn(ctx as never);
+            } catch (err) {
+                // runWithLoggingAndValidation re-throws ServiceError when ctx.tx is truthy.
+                // Detect via duck-type and wrap back into { error } for unit test assertions.
+                if (
+                    err !== null &&
+                    typeof err === 'object' &&
+                    'code' in err &&
+                    'name' in err &&
+                    (err as { name: string }).name === 'ServiceError'
+                ) {
+                    return { error: err };
+                }
+                throw err;
+            }
+        }
+    )
+}));
+
 // ---------------------------------------------------------------------------
 // Setup
 // ---------------------------------------------------------------------------
@@ -52,8 +85,41 @@ beforeEach(() => {
     );
 });
 
+/**
+ * Minimal no-op stub for AccommodationMediaModel.
+ * FIX 1 (SPEC-204): update() now opens a tx when `media` is present. These unit
+ * tests don't have a real DB, so we inject a stub that swallows hardDelete/create.
+ */
+function makeMediaModelStub() {
+    return {
+        hardDelete: vi.fn().mockResolvedValue(undefined),
+        create: vi.fn().mockResolvedValue(undefined),
+        findById: vi.fn(),
+        findOne: vi.fn(),
+        update: vi.fn(),
+        softDelete: vi.fn(),
+        restore: vi.fn(),
+        count: vi.fn(),
+        findAll: vi.fn(),
+        findByAccommodation: vi.fn(),
+        findFeatured: vi.fn()
+    };
+}
+
 function makeService(model: ReturnType<typeof createMockBaseModel>): AccommodationService {
-    const svc = new AccommodationService({ logger: mockLogger }, model as AccommodationModel);
+    const svc = new AccommodationService(
+        { logger: mockLogger },
+        model as AccommodationModel,
+        null,
+        undefined,
+        null,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        // biome-ignore lint/suspicious/noExplicitAny: test stub
+        makeMediaModelStub() as any
+    );
     // Stub the private destination model so _assertDestinationIsCity resolves.
     // @ts-expect-error: private override for test
     svc._destinationModel = {

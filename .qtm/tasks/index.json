@@ -1029,6 +1029,20 @@
             "note": "52 tasks across 4 phases (setup 14, core 23, integration 11, testing 3, cleanup 1). Shipped as chained PRs per phase. DB schema chain T-001->T-013 is critical path. Follow-ups SPEC-255/256.",
             "archived": true,
             "archivedAt": "2026-06-23"
+        },
+        {
+            "specId": "SPEC-204",
+            "title": "Accommodation gallery migration to relational table",
+            "status": "in-progress",
+            "progress": "11/29",
+            "path": "SPEC-204-accommodation-gallery-relational-migration",
+            "branch": "spec/SPEC-204-accommodation-gallery-relational-migration",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-204-accommodation-gallery-relational-migration",
+            "base": "staging",
+            "createdAt": "2026-06-22T00:00:00.000Z",
+            "tasksAtomizedAt": "2026-06-22T00:00:00.000Z",
+            "taskCount": 29,
+            "note": "Formalized + atomized 2026-06-22. Storage model = direct table-per-entity (accommodation_media, real FK); polymorphic + junction rejected. 3-phase dual-write (P1 create+backfill+write-both, P2 switch reads, P3 retire JSONB). Accommodation only; pattern reusable for other 5 gallery entities later. Spec still draft (not in-progress) until impl starts."
         }
     ],
     "standalone": {

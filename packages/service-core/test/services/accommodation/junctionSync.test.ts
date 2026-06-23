@@ -28,6 +28,39 @@ import type {
 import { DestinationTypeEnum, ServiceErrorCode } from '@repo/schemas';
 import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
+
+/**
+ * FIX 1 (SPEC-204): AccommodationService.create() now opens a transaction when
+ * `media` is present. Mock withServiceTransaction so the R-1 regression test
+ * (undefined amenityIds/featureIds, no ctx) works without a real DB.
+ * Tests that pass ctxWithTx directly bypass withServiceTransaction entirely.
+ */
+vi.mock('../../../src/utils/transaction', () => ({
+    withServiceTransaction: vi.fn(
+        async (
+            fn: (ctx: { tx: object; hookState: Record<string, unknown> }) => Promise<unknown>,
+            baseCtx?: { hookState?: Record<string, unknown> }
+        ) => {
+            const ctx = { ...baseCtx, tx: {}, hookState: baseCtx?.hookState ?? {} };
+            try {
+                return await fn(ctx as never);
+            } catch (err) {
+                // runWithLoggingAndValidation re-throws ServiceError when ctx.tx is truthy.
+                // Wrap back into { error } for unit test assertions.
+                if (
+                    err !== null &&
+                    typeof err === 'object' &&
+                    'code' in err &&
+                    'name' in err &&
+                    (err as { name: string }).name === 'ServiceError'
+                ) {
+                    return { error: err };
+                }
+                throw err;
+            }
+        }
+    )
+}));
 import {
     createMockAccommodation,
     createMockAccommodationCreateInput
@@ -49,6 +82,27 @@ const UUID_FEATURE_B = '8172442f-03f9-450f-86ca-7704c0cef27f';
 // ─── helpers ────────────────────────────────────────────────────────────────
 
 const mockLogger = createLoggerMock();
+
+/**
+ * Minimal no-op stub for AccommodationMediaModel.
+ * FIX 1 (SPEC-204): create() now calls syncAccommodationMedia in _afterCreate.
+ * Inject a stub so tests that have media in the input don't need a real DB.
+ */
+function makeMediaModelStub() {
+    return {
+        hardDelete: vi.fn().mockResolvedValue(undefined),
+        create: vi.fn().mockResolvedValue(undefined),
+        findById: vi.fn(),
+        findOne: vi.fn(),
+        update: vi.fn(),
+        softDelete: vi.fn(),
+        restore: vi.fn(),
+        count: vi.fn(),
+        findAll: vi.fn(),
+        findByAccommodation: vi.fn(),
+        findFeatured: vi.fn()
+    };
+}
 
 /** Creates a minimal mock for the junction models. */
 function createMockJunctionModel() {
@@ -117,7 +171,9 @@ function buildFixtures(): Fixtures {
         rAmenityModel as unknown as RAccommodationAmenityModel,
         rFeatureModel as unknown as RAccommodationFeatureModel,
         amenityModel as unknown as AmenityModel,
-        featureCatalogModel as unknown as FeatureModel
+        featureCatalogModel as unknown as FeatureModel,
+        // biome-ignore lint/suspicious/noExplicitAny: test stub
+        makeMediaModelStub() as any
     );
 
     // Stub internal dependencies that touch the real DB.

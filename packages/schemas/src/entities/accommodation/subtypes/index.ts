@@ -20,3 +20,6 @@ export * from './accommodation.ia.schema.js';
 
 // Rating schemas (types are exported from schemas)
 export * from './accommodation.rating.schema.js';
+
+// Media schemas (SPEC-204 relational gallery)
+export * from './accommodation.media.schema.js';
