@@ -343,7 +343,7 @@
             "id": "T-015",
             "title": "Totals card + by-feature/by-model/by-provider tables",
             "description": "Render the totals card (calls/tokensIn/tokensOut/cost) and the three breakdown tables ordered by cost desc, using formatMicroUsd and locale thousands separators. By-model table includes derived cost per 1k tokens.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-014", "T-002"],
             "blocks": ["T-019"],
