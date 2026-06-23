@@ -6,8 +6,8 @@
     "summary": {
         "total": 15,
         "byStatus": {
-            "pending": 14,
-            "completed": 1
+            "pending": 10,
+            "completed": 5
         },
         "byPhase": {
             "spike": 1,
@@ -46,7 +46,7 @@
             "id": "T-002",
             "title": "Add typed effect columns to @repo/db promo-code + subscription schemas",
             "description": "Structural DB changes (via `pnpm db:generate` + `pnpm db:migrate` \u2014 structural carril):\n\n`billing_promo_codes` \u2014 add explicit typed columns (OQ-2 decision):\n- `effect_kind varchar(30) NOT NULL DEFAULT 'discount'` \u2014 values: 'discount' | 'trial_extension' | 'comp'\n- `value_kind varchar(20)` \u2014 values: 'percentage' | 'fixed'; NULL for non-discount effects\n- `value integer` \u2014 discount value (centavos for fixed, integer 0-100 for percentage); NULL for non-discount\n- `duration_cycles integer` \u2014 NULL = forever; positive integer for N cycles; NULL for trial_extension/comp\n- `extra_days integer` \u2014 NULL for non-trial-extension effects\n\n`billing_subscriptions` \u2014 add:\n- `promo_effect_remaining_cycles integer` \u2014 countdown for multi-cycle discounts; NULL when no active discount or discount is forever\n\nDrizzle model files affected:\n- `packages/db/src/schema/billing/billing-promo-codes.schema.ts`\n- `packages/db/src/schema/billing/billing-subscriptions.schema.ts`\n\nGenerate migration with `pnpm db:generate`. Commit the generated migration file.\n\nAcceptance criteria:\n- AC-1.1 (effect fields readable via API after persist)\n- AC-2.4 (comp state explicit in DB)\n- `pnpm db:generate` produces no additional drift after this task\n- `pnpm typecheck` passes",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-003", "T-004", "T-005"],
@@ -68,7 +68,7 @@
             "id": "T-003",
             "title": "Add DB CHECK constraints + backfill SQL (extras carril 018)",
             "description": "Hand-written idempotent SQL for `packages/db/src/migrations/extras/018-promo-code-effect-constraints.sql` (extras carril \u2014 re-applied by `pnpm db:apply-extras`):\n\nCHECK constraints on `billing_promo_codes`:\n- When `effect_kind = 'discount'`: `value_kind` NOT NULL, `value` NOT NULL, `value >= 0`, percentage `value <= 100`\n- When `effect_kind = 'trial_extension'`: `extra_days` NOT NULL, `extra_days > 0`, `value` IS NULL, `value_kind` IS NULL\n- When `effect_kind = 'comp'`: `value` IS NULL, `value_kind` IS NULL, `extra_days` IS NULL, `duration_cycles` IS NULL\n- `duration_cycles > 0` when NOT NULL\n\nData backfill (idempotent, dry-run count step first):\n- All existing rows where `effect_kind` IS NULL \u2192 set `effect_kind = 'discount'`, `value_kind` = existing `type` (mapped 'percentage'\u2192'percentage', 'fixed'\u2192'fixed'), `value` from existing discount value col, `duration_cycles = 1` (one-shot, AC-4.1)\n- `HOSPEDA_FREE` (code = 'HOSPEDA_FREE') \u2192 `effect_kind = 'comp'` (OQ-1 \u03b2; fixes AC-2.3 latent bug)\n- `FREEMONTH` \u2192 `effect_kind = 'trial_extension'`, `extra_days = 30`\n- `LANZAMIENTO50` \u2192 `effect_kind = 'discount'`, `value_kind = 'percentage'`, `value = 50`, `duration_cycles = 3`\n- `BIENVENIDO30` \u2192 `effect_kind = 'discount'`, `value_kind = 'percentage'`, `value = 30`, `duration_cycles = 1`\n\nAlso: subscription reconciliation \u2014 any `billing_subscriptions` row with `promo_code_id` pointing to HOSPEDA_FREE \u2192 set `status = 'comp'` if currently `active` (comp supersedes active billing).\n\nSQL must be idempotent (use `DO $$ IF NOT EXISTS ... $$` or `ON CONFLICT DO NOTHING` pattern; re-running produces zero rows changed).\n\nAcceptance criteria:\n- AC-2.3 (HOSPEDA_FREE migrated, no longer a latent bug)\n- AC-4.1 (legacy codes preserved as duration_cycles=1)\n- CHECK constraints reject impossible combos at DB level (AC-1.2, AC-1.3 enforcement layer)\n- `pnpm db:apply-extras` succeeds idempotently (second run = 0 rows changed)",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002"],
             "blocks": ["T-004", "T-008"],
@@ -90,7 +90,7 @@
             "id": "T-004",
             "title": "Extend @repo/schemas promo-code Zod schemas for typed effects",
             "description": "Extend schemas in `packages/schemas/src/api/billing/promo-code.schema.ts`:\n\n- Add `PromoEffectKindEnum` and `ValueKindEnum` enums\n- Replace the current `discountType: 'percentage' | 'fixed'` flat field with a discriminated union `effect` discriminated on `kind`:\n  - `discount`: `{ kind: 'discount', valueKind: 'percentage' | 'fixed', value: number, durationCycles: number | null }`\n    - refines: percentage value \u2264 100 (AC-1.2), durationCycles > 0 when not null (AC-1.3)\n  - `trial_extension`: `{ kind: 'trial_extension', extraDays: number }` (positive integer)\n  - `comp`: `{ kind: 'comp' }` (no extra params)\n- Update `CreatePromoCodeSchema` (admin create/edit input) and `PromoCodeResponseSchema` (API response / admin form hydration)\n- Keep backward-compat: existing one-shot codes serialize as `{ kind: 'discount', valueKind: ..., value: ..., durationCycles: 1 }`\n- Export inferred `CreatePromoCodeInput`, `PromoCodeResponse`, `PromoEffect` types\n- Unit tests: valid combos parse, invalid (percentage > 100, negative days, durationCycles = 0, comp with value) are rejected\n\nAcceptance criteria:\n- AC-1.2, AC-1.3, AC-5.1\u2013AC-5.4 (schema is the single source of truth for admin form validation)\n- AC-4.3 (one-shot response shape unchanged for clients using durationCycles=1)\n- `pnpm typecheck` passes across all packages",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002", "T-003"],
             "blocks": ["T-005", "T-006", "T-009", "T-010"],
@@ -112,7 +112,7 @@
             "id": "T-005",
             "title": "Extend service-core promo-code CRUD + effect-engine branching",
             "description": "Changes to `packages/service-core/src/services/billing/promo-code/`:\n\n1. `promo-code.crud.ts` \u2014 update `mapDbToPromoCode` to read the new typed columns and populate the `effect` discriminated union on the DTO. Legacy rows (effect_kind = 'discount', duration_cycles = 1) map identically to the current shape.\n\n2. `promo-code.service.ts` (PromoCode facade) \u2014 expose `createPromoCode`/`updatePromoCode` accepting the new `CreatePromoCodeInput` discriminated union; persist `effect_kind`, `value_kind`, `value`, `duration_cycles`, `extra_days` to the DB columns.\n\n3. `promo-code.redemption.ts::applyPromoCode` \u2014 branch by `effect.kind` instead of assuming money discount:\n   - `discount`: existing `finalAmount` computation (unchanged for durationCycles=1, AC-4.3); set `promo_effect_remaining_cycles = duration_cycles - 1` on the subscription (NULL when durationCycles is null = forever)\n   - `trial_extension` at checkout: translate to `freeTrialDays` for qzpay subscription-create (existing path, now reads from persisted DB effect, NOT from `@repo/billing` config)\n   - `comp`: create subscription with `status = 'comp'`, no MP preapproval created\n\n4. Retire / stub `resolveFreeTrialExtensionPromo()` in `@repo/billing` \u2014 it now reads from the DB-persisted effect via the promo-code service. Keep the function signature for now but delegate to the DB lookup.\n\nUnit tests (AAA pattern, real DB fixtures or seeded test data):\n- discount durationCycles=1 \u2192 finalAmount identical to current (AC-4.1 regression lock)\n- discount durationCycles=3 \u2192 remaining_cycles set to 2 after first cycle\n- comp \u2192 status='comp', no MP preapproval param emitted\n- trial_extension at checkout \u2192 freeTrialDays populated correctly\n\nAcceptance criteria: AC-1.4, AC-2.1, AC-3.2, AC-4.1, AC-4.3",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-002", "T-004"],
             "blocks": ["T-006", "T-007", "T-008", "T-009"],
@@ -120,13 +120,13 @@
             "tags": ["core", "service-core", "billing", "engine"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-06-22T18:17:18.089Z",
-                "started": null,
+                "started": "2026-06-22T18:17:00.000Z",
                 "completed": null
             }
         },

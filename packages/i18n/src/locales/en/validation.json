@@ -686,6 +686,39 @@
                     "invalidType": "Max uses has an invalid data type",
                     "positive": "Max uses must be a positive number"
                 }
+            },
+            "effect": {
+                "discount": {
+                    "durationCycles": {
+                        "int": "The number of cycles must be an integer",
+                        "invalidType": "The number of cycles has an invalid data type",
+                        "min": "The number of cycles must be greater than 0"
+                    },
+                    "value": {
+                        "int": "The discount value must be an integer",
+                        "invalidType": "The discount value has an invalid data type",
+                        "min": "The discount value cannot be negative",
+                        "percentageMax": "The percentage discount cannot exceed 100%"
+                    }
+                },
+                "trialExtension": {
+                    "extraDays": {
+                        "int": "The extension days must be an integer",
+                        "invalidType": "The extension days have an invalid data type",
+                        "min": "The extension days must be greater than 0"
+                    }
+                }
+            },
+            "effectKind": {
+                "invalid": "The effect type is not valid"
+            },
+            "valueKind": {
+                "invalid": "The value type is not valid"
+            },
+            "response": {
+                "type": {
+                    "invalid": "The response type is not valid"
+                }
             }
         },
         "query": {

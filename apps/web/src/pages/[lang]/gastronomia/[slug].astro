@@ -20,9 +20,12 @@ import GastronomyDetailHeader from '@/components/gastronomy/GastronomyDetailHead
 import GastronomyDescription from '@/components/gastronomy/GastronomyDescription.astro';
 import OpeningHoursSection from '@/components/gastronomy/OpeningHoursSection.astro';
 import GastronomyContactBlock from '@/components/gastronomy/GastronomyContactBlock.astro';
+import { GastronomyReviewForm } from '@/components/gastronomy/GastronomyReviewForm.client';
 import FaqAccordion from '@/components/accommodation/FaqAccordion.astro';
 import { gastronomyApi } from '@/lib/api/endpoints';
 import { toGastronomyDetailPageProps } from '@/lib/api/transforms';
+import { getApiUrl } from '@/lib/env';
+import { buildLoginRedirect } from '@/lib/auth-redirect';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -118,6 +121,9 @@ const descriptionText = renderPlain({ raw: gastronomy.description });
 
 const canonicalPath = buildUrl({ locale, path: `gastronomia/${gastronomy.slug}/` });
 
+// Sign-in URL (with return path) for the anonymous review CTA.
+const reviewSignInHref = buildLoginRedirect({ locale, currentUrl: canonicalPath });
+
 // --- SEO ---
 // SEOHead (via DetailLayout) already appends " | Hospeda", so the fallback is the
 // bare name — appending it here too produced a duplicated "… | Hospeda | Hospeda".
@@ -152,6 +158,11 @@ const seoDescription =
         ]}
     />
 
+    <!-- Header (rendered inside the wave band, like destinos/alojamientos) -->
+    <Fragment slot="page-header">
+        <GastronomyDetailHeader gastronomy={gastronomy} locale={locale} />
+    </Fragment>
+
     <div class="gastro-detail">
         <!-- Gallery -->
         {galleryImages.length > 0 && (
@@ -164,9 +175,6 @@ const seoDescription =
                 />
             </div>
         )}
-
-        <!-- Header -->
-        <GastronomyDetailHeader gastronomy={gastronomy} locale={locale} />
 
         <!-- Description -->
         <GastronomyDescription
@@ -231,6 +239,19 @@ const seoDescription =
                 )}
             </section>
         )}
+
+        <!-- Leave a review (authenticated visitors submit; anonymous see a sign-in CTA) -->
+        <section class="gastro-detail__review-form">
+            <GastronomyReviewForm
+                client:visible
+                gastronomyId={gastronomy.id}
+                gastronomyName={gastronomy.name}
+                locale={locale}
+                apiUrl={getApiUrl()}
+                isAuthenticated={isAuthenticated}
+                signInHref={reviewSignInHref}
+            />
+        </section>
 
         <!-- FAQs -->
         {faqs.length > 0 && (
