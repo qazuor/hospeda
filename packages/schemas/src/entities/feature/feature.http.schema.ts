@@ -20,10 +20,12 @@ import { stripShapeDefaults } from '../../utils/utils.js';
  */
 export const FeatureSearchHttpSchema = BaseHttpSearchSchema.extend({
     // Basic filters with HTTP coercion
-    name: z.string().optional(),
     slug: z.string().optional(),
     category: z.string().optional(),
     icon: z.string().optional(),
+
+    /** Filter by applicable vertical (SPEC-266) */
+    applicableVertical: z.enum(['accommodation', 'gastronomy', 'experience']).optional(),
 
     // Boolean filters with HTTP coercion
     isAvailable: createBooleanQueryParam('Filter by feature availability status'),
@@ -46,9 +48,6 @@ export const FeatureSearchHttpSchema = BaseHttpSearchSchema.extend({
     createdBefore: z.coerce.date().optional(),
 
     // Text pattern filters
-    nameStartsWith: z.string().min(1).max(50).optional(),
-    nameEndsWith: z.string().min(1).max(50).optional(),
-    nameContains: z.string().min(1).max(50).optional(),
     descriptionContains: z.string().min(1).max(100).optional(),
 
     // Array filters with HTTP coercion
@@ -63,9 +62,13 @@ export type FeatureSearchHttp = z.infer<typeof FeatureSearchHttpSchema>;
  * can submit per-language values directly.
  */
 export const FeatureCreateHttpSchema = z.object({
-    name: i18nText({ min: 2, max: 100 }),
     slug: z.string().min(1, { message: 'zodError.feature.slug.required' }).max(100).optional(),
     description: i18nText({ min: 10, max: 500 }).optional(),
+    /** Verticals this feature is applicable to (SPEC-266). */
+    applicableVerticals: z
+        .array(z.enum(['accommodation', 'gastronomy', 'experience']))
+        .min(1)
+        .default(['accommodation']),
     category: z.string().min(1).max(50).optional(),
     icon: z.string().max(50).optional(),
     priority: z.coerce.number().int().min(0).max(100).default(50),
@@ -131,10 +134,10 @@ export function httpToDomainFeatureCreate(
     httpData: FeatureCreateHttp
 ): z.infer<typeof FeatureCreateInputSchema> {
     return {
-        // name and description are already I18nText objects from the HTTP form
-        name: httpData.name,
+        // description is already an I18nText object from the HTTP form
         slug: httpData.slug,
         description: httpData.description,
+        applicableVerticals: httpData.applicableVerticals,
         icon: httpData.icon,
         isBuiltin: false, // Default value
         isFeatured: false, // Default value
@@ -150,10 +153,10 @@ export function httpToDomainFeatureUpdate(
     httpData: FeatureUpdateHttp
 ): z.infer<typeof FeatureUpdateInputSchema> {
     return {
-        // name and description are already I18nText objects when provided
-        name: httpData.name,
+        // description is already an I18nText object when provided
         slug: httpData.slug,
         description: httpData.description,
+        applicableVerticals: httpData.applicableVerticals,
         icon: httpData.icon,
         displayWeight: httpData.displayWeight
     };

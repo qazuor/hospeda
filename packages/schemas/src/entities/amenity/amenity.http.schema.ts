@@ -21,7 +21,6 @@ import { stripShapeDefaults } from '../../utils/utils.js';
  */
 export const AmenitySearchHttpSchema = BaseHttpSearchSchema.extend({
     // Basic filters
-    name: z.string().optional(),
     slug: z.string().optional(),
     category: z.string().optional(),
     icon: z.string().optional(),
@@ -61,13 +60,16 @@ export type AmenitySearchHttp = z.infer<typeof AmenitySearchHttpSchema>;
 
 /**
  * HTTP-compatible amenity creation schema.
- * Accepts localized i18n objects for name and description so the admin form
+ * Accepts localized i18n objects for description so the admin form
  * can submit per-language values directly.
  */
 export const AmenityCreateHttpSchema = z.object({
-    name: i18nText({ min: 2, max: 100 }),
     slug: z.string().min(1, { message: 'zodError.amenity.slug.required' }).max(100).optional(),
     description: i18nText({ min: 10, max: 500 }).optional(),
+    applicableVerticals: z
+        .array(z.enum(['accommodation', 'gastronomy', 'experience']))
+        .min(1)
+        .default(['accommodation']),
     type: AmenitiesTypeEnumSchema,
     category: z.string().min(1).max(50).optional(),
     icon: z.string().max(50).optional(),
@@ -135,7 +137,6 @@ export const httpToDomainAmenitySearch = (httpParams: AmenitySearchHttp): Amenit
     q: httpParams.q,
 
     // Amenity-specific filters that exist in BOTH HTTP and domain schemas
-    name: httpParams.name,
     slug: httpParams.slug,
     type: httpParams.type,
     icon: httpParams.icon,
@@ -153,10 +154,10 @@ export const httpToDomainAmenitySearch = (httpParams: AmenitySearchHttp): Amenit
  * The admin form sends the i18n object directly; no wrapping needed.
  */
 export const httpToDomainAmenityCreate = (httpData: AmenityCreateHttp): AmenityCreateInput => ({
-    // name and description are already I18nText objects from the HTTP form
-    name: httpData.name,
+    // description is already an I18nText object from the HTTP form
     slug: httpData.slug,
     description: httpData.description,
+    applicableVerticals: httpData.applicableVerticals,
     type: httpData.type,
     icon: httpData.icon,
     isFeatured: httpData.isFeatured,
@@ -176,10 +177,10 @@ export const httpToDomainAmenityCreate = (httpData: AmenityCreateHttp): AmenityC
  */
 export const httpToDomainAmenityUpdate = (httpData: AmenityUpdateHttp): AmenityUpdateInput => ({
     // Map only fields that exist in domain schema.
-    // name and description are already I18nText objects when provided.
-    name: httpData.name,
+    // description is already an I18nText object when provided.
     slug: httpData.slug,
     description: httpData.description,
+    applicableVerticals: httpData.applicableVerticals,
     type: httpData.type,
     icon: httpData.icon,
     isFeatured: httpData.isFeatured,

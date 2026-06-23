@@ -379,16 +379,18 @@ describe('Amenity Query Schemas', () => {
 
         it('should pass unknown fields through (strip behavior)', () => {
             // Fields that were removed from the schema should be stripped silently
-            const filtersWithExtras = { name: 'test', minUsageCount: 5 };
+            const filtersWithExtras = { slug: 'test-slug', minUsageCount: 5 };
             const result = AmenityFiltersSchema.parse(filtersWithExtras);
-            expect(result.name).toBe('test');
+            expect(result.slug).toBe('test-slug');
             expect((result as Record<string, unknown>).minUsageCount).toBeUndefined();
         });
 
         it('should reject invalid string lengths', () => {
             const invalidFilters = [
-                { nameStartsWith: 'a'.repeat(51) }, // too long (max 50)
-                { descriptionContains: 'a'.repeat(101) } // too long (max 100)
+                // nameStartsWith/nameEndsWith/nameContains were removed (SPEC-266)
+                // Only descriptionContains has a max-length constraint in AmenityFiltersSchema
+                { descriptionContains: 'a'.repeat(101) }, // too long (max 100)
+                { descriptionContains: 'a'.repeat(200) } // much too long
             ];
 
             invalidFilters.forEach((filter, index) => {
@@ -412,11 +414,12 @@ describe('Amenity Query Schemas', () => {
                     {
                         ...createValidAmenity(),
                         id: '550e8400-e29b-41d4-a716-446655440001',
-                        name: {
-                            es: 'Different Amenity',
-                            en: 'Different Amenity',
-                            pt: 'Different Amenity'
-                        }
+                        slug: 'different-amenity',
+                        applicableVerticals: ['gastronomy'] as (
+                            | 'accommodation'
+                            | 'gastronomy'
+                            | 'experience'
+                        )[]
                     }
                 ]
             };
@@ -425,7 +428,7 @@ describe('Amenity Query Schemas', () => {
             const result = AmenityListWrapperSchema.parse(validWrapper);
             expect(result.amenities).toHaveLength(2);
             expect(result.amenities[0]).toHaveProperty('id');
-            expect(result.amenities[0]).toHaveProperty('name');
+            expect(result.amenities[0]).toHaveProperty('applicableVerticals');
             expect(result.amenities[0]).toHaveProperty('type');
         });
 
