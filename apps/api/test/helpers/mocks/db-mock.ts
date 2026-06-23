@@ -735,6 +735,26 @@ export function createDbMock() {
         SponsorshipLevelModel: GenericMockModel,
         SponsorshipModel: GenericMockModel,
         SponsorshipPackageModel: GenericMockModel,
+        // Social automation models (SPEC-254). Route modules instantiate the
+        // social services eagerly at import time, so the app cannot load under
+        // the @repo/db mock unless every social model is a constructable stub.
+        SocialAiRequestModel: GenericMockModel,
+        SocialAssetModel: GenericMockModel,
+        SocialAudienceModel: GenericMockModel,
+        SocialAuditLogModel: GenericMockModel,
+        SocialCampaignModel: GenericMockModel,
+        SocialContentBatchModel: GenericMockModel,
+        SocialHashtagModel: GenericMockModel,
+        SocialHashtagSetModel: GenericMockModel,
+        SocialPlatformFormatModel: GenericMockModel,
+        SocialPlatformModel: GenericMockModel,
+        SocialPostFooterModel: GenericMockModel,
+        SocialPostHashtagModel: GenericMockModel,
+        SocialPostMediaModel: GenericMockModel,
+        SocialPostModel: GenericMockModel,
+        SocialPostTargetModel: GenericMockModel,
+        SocialPublishLogModel: GenericMockModel,
+        SocialSettingModel: GenericMockModel,
 
         // SPEC-159 T-011: EntityViewModel singleton. Required so EntityViewService can
         // instantiate at module scope when the service-core barrel is loaded by any job
