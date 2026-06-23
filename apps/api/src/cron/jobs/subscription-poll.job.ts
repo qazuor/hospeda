@@ -505,6 +505,9 @@ async function reconcileActiveDiscountAmounts(params: {
             // top level — top-level `transaction_amount` only exists on payment
             // objects. Reading the wrong path yields undefined → -1 → a spurious
             // mutation on every tick. See spike doc §2.2.
+            // TYPE-WORKAROUND: the qzpay adapter returns the raw MP preapproval as
+            // its typed SDK shape; we read dynamic `auto_recurring` fields not on
+            // that type, so a Record cast is required to access them safely.
             const liveRecord = livePreapproval as unknown as Record<string, unknown>;
             const autoRecurring =
                 typeof liveRecord.auto_recurring === 'object' && liveRecord.auto_recurring !== null
