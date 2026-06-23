@@ -131,6 +131,14 @@
         },
         "richDescription": {
             "max": "Rich description cannot exceed {{max}} characters"
+        },
+        "media": {
+            "state": {
+                "invalid": "Media state must be 'visible' or 'archived'"
+            },
+            "sortOrder": {
+                "int": "Display order must be an integer"
+            }
         }
     },
     "accommodationAmenity": {

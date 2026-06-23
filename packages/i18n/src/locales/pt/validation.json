@@ -131,6 +131,14 @@
         },
         "richDescription": {
             "max": "A descrição enriquecida não pode exceder {{max}} caracteres"
+        },
+        "media": {
+            "state": {
+                "invalid": "O estado da mídia deve ser 'visible' ou 'archived'"
+            },
+            "sortOrder": {
+                "int": "A ordem de exibição deve ser um número inteiro"
+            }
         }
     },
     "accommodationAmenity": {

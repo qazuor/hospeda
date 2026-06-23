@@ -8046,6 +8046,8 @@ export type TranslationKey =
     | 'validation.accommodation.price.discounts.others.name.max'
     | 'validation.accommodation.price.discounts.others.name.min'
     | 'validation.accommodation.price.discounts.others.name.required'
+    | 'validation.accommodation.media.state.invalid'
+    | 'validation.accommodation.media.sortOrder.int'
     | 'validation.accommodation.richDescription.max'
     | 'validation.accommodation.slug.max'
     | 'validation.accommodation.slug.min'
