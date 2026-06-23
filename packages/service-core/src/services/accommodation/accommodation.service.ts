@@ -1,6 +1,7 @@
 import {
     AccommodationFaqModel,
     AccommodationIaDataModel,
+    AccommodationMediaModel,
     AccommodationModel,
     AmenityModel,
     DestinationModel,
@@ -105,6 +106,7 @@ import {
     generateSlug
 } from './accommodation.helpers';
 import { syncAmenityJunction, syncFeatureJunction } from './accommodation.junction-sync';
+import { syncAccommodationMedia } from './accommodation.media-sync';
 import {
     normalizeAccommodationOutput,
     normalizeCreateInput,
@@ -306,6 +308,13 @@ export class AccommodationService extends BaseCrudService<
     private readonly _featureCatalogModel: FeatureModel;
 
     /**
+     * Model for `accommodation_media`. Used by SPEC-204 T-007 write-both sync to
+     * mirror the JSONB media value into the relational table inside the same transaction.
+     * Initialized once at construction; the singleton is safe to reuse across requests.
+     */
+    private readonly _accommodationMediaModel: AccommodationMediaModel;
+
+    /**
      * Initializes a new instance of the AccommodationService.
      * @param ctx - The service context, containing the logger.
      * @param model - Optional AccommodationModel instance (for testing/mocking).
@@ -347,6 +356,8 @@ export class AccommodationService extends BaseCrudService<
         this._rFeatureModel = rFeatureModel ?? new RAccommodationFeatureModel();
         this._amenityModel = amenityModel ?? new AmenityModel();
         this._featureCatalogModel = featureCatalogModel ?? new FeatureModel();
+        // SPEC-204 T-007: shadow-write to accommodation_media on every create/update.
+        this._accommodationMediaModel = new AccommodationMediaModel();
     }
 
     /**
@@ -717,6 +728,12 @@ export class AccommodationService extends BaseCrudService<
             // Store as-is so `_afterCreate` can distinguish undefined (no-op) from [] (clear all).
             ctx.hookState.pendingAmenityIds = data.amenityIds;
             ctx.hookState.pendingFeatureIds = data.featureIds;
+            // SPEC-204 T-007: capture media value for shadow-write into accommodation_media.
+            // undefined → field absent in payload → no-op; null/object → full replace.
+            ctx.hookState.pendingMedia = (data as Record<string, unknown>).media as
+                | import('@repo/schemas').Media
+                | null
+                | undefined;
         }
 
         // Only generate a slug if one is not already provided
@@ -804,6 +821,22 @@ export class AccommodationService extends BaseCrudService<
                 featureIds: ctx.hookState.pendingFeatureIds,
                 junctionModel: this._rFeatureModel,
                 featureModel: this._featureCatalogModel,
+                tx: ctx.tx
+            });
+        }
+        // SPEC-204 T-007: shadow-write media into accommodation_media.
+        // undefined → no-op (media field was absent in the create payload).
+        if (ctx.hookState?.pendingMedia !== undefined) {
+            if (!ctx.tx) {
+                throw new ServiceError(
+                    ServiceErrorCode.INTERNAL_ERROR,
+                    'Media sync requires an active transaction; call create() from within withServiceTransaction'
+                );
+            }
+            await syncAccommodationMedia({
+                accommodationId: entity.id,
+                media: ctx.hookState.pendingMedia as import('@repo/schemas').Media | null,
+                mediaModel: this._accommodationMediaModel,
                 tx: ctx.tx
             });
         }
@@ -914,6 +947,12 @@ export class AccommodationService extends BaseCrudService<
             // Store as-is so `_afterUpdate` can distinguish undefined (no-op) from [] (clear all).
             ctx.hookState.pendingAmenityIds = data.amenityIds;
             ctx.hookState.pendingFeatureIds = data.featureIds;
+            // SPEC-204 T-007: capture media value for shadow-write into accommodation_media.
+            // undefined → media absent in payload → no-op (rows left untouched).
+            ctx.hookState.pendingMedia = (data as Record<string, unknown>).media as
+                | import('@repo/schemas').Media
+                | null
+                | undefined;
         }
 
         // SPEC-198.1: capture and strip aiAssistedFields (write-only, not a DB column).
@@ -989,6 +1028,22 @@ export class AccommodationService extends BaseCrudService<
                 featureIds: ctx.hookState.pendingFeatureIds,
                 junctionModel: this._rFeatureModel,
                 featureModel: this._featureCatalogModel,
+                tx: ctx.tx
+            });
+        }
+        // SPEC-204 T-007: shadow-write media into accommodation_media.
+        // undefined → no-op (media field was absent in the update payload).
+        if (ctx.hookState?.pendingMedia !== undefined) {
+            if (!ctx.tx) {
+                throw new ServiceError(
+                    ServiceErrorCode.INTERNAL_ERROR,
+                    'Media sync requires an active transaction; call update() from within withServiceTransaction'
+                );
+            }
+            await syncAccommodationMedia({
+                accommodationId: entity.id,
+                media: ctx.hookState.pendingMedia as import('@repo/schemas').Media | null,
+                mediaModel: this._accommodationMediaModel,
                 tx: ctx.tx
             });
         }
