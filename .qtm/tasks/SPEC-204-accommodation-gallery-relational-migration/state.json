@@ -144,31 +144,31 @@
             "id": "T-005",
             "title": "Add AccommodationMediaItem Zod schema",
             "description": "In packages/schemas/src/common/media.schema.ts (or a colocated file), add AccommodationMediaItem mirroring ImageSchema + state ('visible'|'archived') + is_featured + sort_order + archived_at. Keep MediaSchema intact for read composition during the transition. Tests: schema parse round-trips incl publicId/attribution; rejects bad state. NOTE(T-004): repoint AccommodationMediaModel generic from SelectAccommodationMedia to the new @repo/schemas AccommodationMedia type once created.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-007", "T-009"],
             "subtasks": [
                 {
                     "title": "AccommodationMediaItem schema",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "keep MediaSchema for composition",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["schemas", "P1"],
             "phase": "core",
             "qualityGate": {
                 "lint": null,
-                "typecheck": null,
+                "typecheck": true,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-06-22T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-23T02:12:29.000Z",
+                "completed": "2026-06-23T02:18:44.000Z"
             }
         },
         {
@@ -271,7 +271,7 @@
         {
             "id": "T-009",
             "title": "Unit tests: model + schema",
-            "description": "Unit tests for AccommodationMediaModel (CRUD, order, state filter, soft-delete) and AccommodationMediaItem schema (parse round-trip incl publicId/attribution; state/is_featured validation). Files under packages/db and packages/schemas test dirs. AAA pattern.",
+            "description": "Unit tests for AccommodationMediaModel (CRUD, order, state filter, soft-delete) and AccommodationMediaItem schema (parse round-trip incl publicId/attribution; state/is_featured validation). Files under packages/db and packages/schemas test dirs. AAA pattern. NOTE(T-005): add new i18n keys zodError.accommodation.media.state.invalid + zodError.accommodation.media.sortOrder.int to @repo/i18n catalog (used by AccommodationMediaSchema) so the i18n coverage guard passes before PR.",
             "status": "pending",
             "complexity": 2,
             "blockedBy": ["T-004", "T-005"],
@@ -906,9 +906,9 @@
     ],
     "summary": {
         "total": 29,
-        "pending": 25,
+        "pending": 24,
         "inProgress": 0,
-        "completed": 4,
+        "completed": 5,
         "blocked": 0,
         "averageComplexity": 2.5
     }
