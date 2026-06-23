@@ -34,6 +34,7 @@ import {
     AiUsageByFeatureTable,
     AiUsageByModelTable,
     AiUsageByProviderTable,
+    AiUsageDailyChart,
     AiUsageDailySearchSchema,
     AiUsageFeatureModelChart,
     AiUsageTotalsCard
@@ -459,18 +460,13 @@ export function AiUsagePage() {
             </section>
 
             {/* ----------------------------------------------------------------
-             * PLACEHOLDER: Daily time-series chart (T-017)
-             * Will render a line/area chart of calls, cost, and tokens
-             * per UTC calendar day over the selected window.
+             * T-017: Daily cost time-series chart
+             * Area chart of estimated cost per UTC calendar day (primary axis)
+             * overlaid with daily calls as a secondary dashed line (right axis).
+             * Sorted ASC by day; shows truncation notice when >100 days.
              * --------------------------------------------------------------- */}
-            <section
-                aria-label="Daily usage chart"
-                data-placeholder="T-017-daily-chart"
-            >
-                <div className="flex items-center justify-center rounded-lg border border-muted-foreground/30 border-dashed py-8 text-muted-foreground text-sm">
-                    {/* T-017: Insert <AiUsageDailyChart search={search} /> here */}
-                    Daily time-series chart (T-017)
-                </div>
+            <section aria-label="Daily usage chart">
+                <AiUsageDailyChart search={search} />
             </section>
         </div>
     );
