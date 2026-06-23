@@ -242,8 +242,8 @@
     font-weight: 600;
     cursor: pointer;
     white-space: nowrap;
-    transition: background-color var(--duration-fast, 0.15s) ease,
-        color var(--duration-fast, 0.15s) ease;
+    transition: background-color var(--duration-fast, 0.15s) ease, color var(--duration-fast, 0.15s)
+        ease;
 }
 
 .promoApplyButton:hover:not(:disabled) {
