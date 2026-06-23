@@ -326,6 +326,9 @@ export class AccommodationService extends BaseCrudService<
      * @param rFeatureModel - Optional junction model for `r_accommodation_feature` (for testing/mocking).
      * @param amenityModel - Optional catalog model for `amenities` (for testing/mocking).
      * @param featureCatalogModel - Optional catalog model for `features` (for testing/mocking).
+     * @param accommodationMediaModel - Optional media model for `accommodation_media` (for testing/mocking).
+     *   When omitted, a default `AccommodationMediaModel` is instantiated. Pass a mock in unit tests
+     *   to avoid requiring a real database connection when the payload includes a `media` field.
      */
     constructor(
         ctx: ServiceConfig,
@@ -336,7 +339,8 @@ export class AccommodationService extends BaseCrudService<
         rAmenityModel?: RAccommodationAmenityModel,
         rFeatureModel?: RAccommodationFeatureModel,
         amenityModel?: AmenityModel,
-        featureCatalogModel?: FeatureModel
+        featureCatalogModel?: FeatureModel,
+        accommodationMediaModel?: AccommodationMediaModel
     ) {
         super(ctx, AccommodationService.ENTITY_NAME);
         this.model = model ?? new AccommodationModel();
@@ -357,7 +361,8 @@ export class AccommodationService extends BaseCrudService<
         this._amenityModel = amenityModel ?? new AmenityModel();
         this._featureCatalogModel = featureCatalogModel ?? new FeatureModel();
         // SPEC-204 T-007: shadow-write to accommodation_media on every create/update.
-        this._accommodationMediaModel = new AccommodationMediaModel();
+        // Injectable for unit tests that need to mock DB operations (see FIX 1 note).
+        this._accommodationMediaModel = accommodationMediaModel ?? new AccommodationMediaModel();
     }
 
     /**
@@ -1238,7 +1243,7 @@ export class AccommodationService extends BaseCrudService<
                 // access the admin panel right away (`ACCESS_PANEL_ADMIN` is
                 // granted to HOST). The trial subscription is still deferred
                 // to the first publish — see `publish()`.
-                const created = await withServiceTransaction(
+                const result = await withServiceTransaction(
                     async (txCtx) => {
                         const next = await this.model.create(payload, txCtx.tx);
                         if (!next) {
@@ -1258,37 +1263,43 @@ export class AccommodationService extends BaseCrudService<
                                 txCtx.tx
                             );
                         }
-                        return next;
+                        // Run _afterCreate INSIDE the transaction so that role
+                        // promotion + media shadow-writes are atomic. If either
+                        // throws, the whole tx rolls back (FIX 2, SPEC-204).
+                        const after = await this._afterCreate(next, validatedActor, txCtx);
+                        return after;
                     },
                     undefined,
                     { timeoutMs: 5000 }
                 );
 
-                const after = await this._afterCreate(created, validatedActor, execCtx);
-                return { status: 'created', accommodation: after };
+                return { status: 'created', accommodation: result };
             }
         });
     }
 
     /**
      * Creates a new accommodation, wrapping the operation in a database transaction
-     * when `amenityIds` or `featureIds` are present in the input (SPEC-172).
+     * when `amenityIds`, `featureIds`, or `media` are present in the input
+     * (SPEC-172 / SPEC-204).
      *
-     * When junction sync fields are absent, delegates directly to `super.create()`
+     * When none of those fields are present, delegates directly to `super.create()`
      * which behaves exactly as before — this override is a transparent pass-through
-     * for callers that do not supply junction data.
+     * for callers that do not supply junction or media data.
      *
-     * When junction sync fields ARE present, a `withServiceTransaction` boundary is
-     * opened so that:
+     * When junction sync fields OR a media payload ARE present, a
+     * `withServiceTransaction` boundary is opened so that:
      * - The accommodation row insert
      * - The amenity junction inserts (via `_afterCreate` → `syncAmenityJunction`)
      * - The feature junction inserts (via `_afterCreate` → `syncFeatureJunction`)
+     * - The accommodation_media shadow-writes (via `_afterCreate` → `syncAccommodationMedia`)
      *
      * all commit or roll back atomically. An unknown catalog ID in either list causes
      * the whole transaction to roll back with `VALIDATION_ERROR`.
      *
      * @param actor - The actor performing the action.
-     * @param data - Create input, optionally including `amenityIds` and `featureIds`.
+     * @param data - Create input, optionally including `amenityIds`, `featureIds`,
+     *   and `media`.
      * @param ctx - Optional service context. When provided with a transaction, the
      *   operation participates in the existing transaction instead of opening a new one.
      */
@@ -1301,9 +1312,10 @@ export class AccommodationService extends BaseCrudService<
             amenityIds?: readonly string[];
             featureIds?: readonly string[];
         };
-        const needsJunctionSync = amenityIds !== undefined || featureIds !== undefined;
+        const needsMedia = (data as Record<string, unknown>).media !== undefined;
+        const needsTx = amenityIds !== undefined || featureIds !== undefined || needsMedia;
 
-        if (!needsJunctionSync) {
+        if (!needsTx) {
             return super.create(actor, data, ctx);
         }
 
@@ -1470,15 +1482,17 @@ export class AccommodationService extends BaseCrudService<
             }
         }
 
-        // SPEC-172: if junction sync fields are present and no external tx exists,
-        // open a transaction so accommodation update + junction sync are atomic.
+        // SPEC-172 / SPEC-204: if junction sync fields or a media payload are present
+        // and no external tx exists, open a transaction so accommodation update +
+        // junction sync + accommodation_media shadow-write are fully atomic.
         const { amenityIds, featureIds } = normalizedData as {
             amenityIds?: readonly string[];
             featureIds?: readonly string[];
         };
-        const needsJunctionSync = amenityIds !== undefined || featureIds !== undefined;
+        const needsMediaSync = (normalizedData as Record<string, unknown>).media !== undefined;
+        const needsTx = amenityIds !== undefined || featureIds !== undefined || needsMediaSync;
 
-        if (needsJunctionSync && !resolvedCtx?.tx) {
+        if (needsTx && !resolvedCtx?.tx) {
             return withServiceTransaction(
                 async (txCtx) => {
                     return super.update(actor, id, normalizedData, txCtx);
