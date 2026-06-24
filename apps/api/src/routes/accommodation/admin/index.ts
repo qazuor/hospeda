@@ -6,6 +6,7 @@ import { createRouter } from '../../../utils/create-app';
 import { adminAccommodationReviewRoutes } from '../reviews/admin/index.js';
 import { adminAddFaqRoute } from './addFaq';
 import { adminAddMediaRoute } from './addMedia';
+import { adminArchiveMediaRoute } from './archiveMedia';
 import { adminBatchAccommodationsRoute } from './batch';
 import { adminCreateAccommodationRoute } from './create';
 import { adminDeleteAccommodationRoute } from './delete';
@@ -21,6 +22,8 @@ import { adminRemoveMediaRoute } from './removeMedia';
 import { adminReorderAccommodationFaqsRoute } from './reorderFaqs';
 import { adminReorderMediaRoute } from './reorderMedia';
 import { adminRestoreAccommodationRoute } from './restore';
+import { adminRestoreMediaRoute } from './restoreMedia';
+import { adminSetFeaturedMediaRoute } from './setFeaturedMedia';
 import { adminUpdateAccommodationRoute } from './update';
 import { adminUpdateFaqRoute } from './updateFaq';
 
@@ -91,6 +94,16 @@ app.route('/', adminGetMediaRoute);
 // /:id/media/:mediaId to prevent Hono matching "reorder" as a UUID param.
 // This comment block is the ordering anchor for future media endpoints.
 app.route('/', adminAddMediaRoute);
+
+// PUT /:id/media/:mediaId/featured - Promote a photo as the featured image
+// POST /:id/media/:mediaId/archive  - Archive a visible photo
+// POST /:id/media/:mediaId/restore  - Restore an archived photo
+// IMPORTANT: These fixed-suffix paths (/.../featured, /.../archive, /.../restore)
+// MUST be registered BEFORE /:id/media/:mediaId (DELETE) so Hono does not
+// resolve "featured", "archive", or "restore" as a nested param segment.
+app.route('/', adminSetFeaturedMediaRoute);
+app.route('/', adminArchiveMediaRoute);
+app.route('/', adminRestoreMediaRoute);
 
 // DELETE /:id/media/:mediaId - Remove a photo from accommodation gallery
 app.route('/', adminRemoveMediaRoute);

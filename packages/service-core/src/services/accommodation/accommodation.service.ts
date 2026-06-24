@@ -52,6 +52,8 @@ import {
     type AccommodationListWrapper,
     type AccommodationMediaAddInput,
     AccommodationMediaAddInputSchema,
+    type AccommodationMediaArchiveInput,
+    AccommodationMediaArchiveInputSchema,
     type AccommodationMediaListInput,
     AccommodationMediaListInputSchema,
     type AccommodationMediaListOutput,
@@ -59,6 +61,10 @@ import {
     AccommodationMediaRemoveInputSchema,
     type AccommodationMediaReorderInput,
     AccommodationMediaReorderInputSchema,
+    type AccommodationMediaRestoreInput,
+    AccommodationMediaRestoreInputSchema,
+    type AccommodationMediaSetFeaturedInput,
+    AccommodationMediaSetFeaturedInputSchema,
     type AccommodationMediaSingleOutput,
     type AccommodationOptionsItem,
     type AccommodationRatingInput,
@@ -3378,6 +3384,262 @@ export class AccommodationService extends BaseCrudService<
                 });
 
                 return { media: items };
+            }
+        });
+    }
+
+    /**
+     * Promotes a single photo to the featured image of an accommodation (SPEC-204 T-020).
+     *
+     * Steps:
+     * 1. Gate on `_canUpdate` (ANY or OWN + ownership).
+     * 2. Verify the target media row exists AND belongs to this accommodation.
+     * 3. Guard: target row must be `state = 'visible'` — a DB CHECK constraint
+     *    forbids `is_featured = true AND state = 'archived'`, so we reject early
+     *    with a clear ServiceError rather than letting the DB raise.
+     * 4. In a TRANSACTION: clear the previous featured row (`is_featured = false`),
+     *    then set the target row `is_featured = true`. Clear-then-set order is
+     *    mandatory — setting the new one first would briefly violate the partial
+     *    unique index on (accommodation_id) WHERE is_featured.
+     *
+     * @param actor - The actor performing the action.
+     * @param data  - Input containing accommodationId and mediaId.
+     * @param ctx   - Optional service context for transaction propagation.
+     * @returns The updated media row wrapped in a `{ media }` envelope.
+     */
+    public async setFeaturedMedia(
+        actor: Actor,
+        data: AccommodationMediaSetFeaturedInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<AccommodationMediaSingleOutput>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'setFeaturedMedia',
+            input: { ...data, actor },
+            schema: AccommodationMediaSetFeaturedInputSchema,
+            execute: async (validated) => {
+                const accommodation = await this.model.findById(validated.accommodationId, ctx?.tx);
+                if (!accommodation) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+                }
+                await this._canUpdate(actor, accommodation);
+
+                const mediaModel = new AccommodationMediaModel();
+                const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
+                if (!mediaRow || mediaRow.accommodationId !== validated.accommodationId) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        'Media not found for this accommodation'
+                    );
+                }
+
+                // Guard: archived photos cannot be featured (DB CHECK constraint would fire).
+                // Reject early with a clear, actionable message.
+                if (mediaRow.state === 'archived') {
+                    throw new ServiceError(
+                        ServiceErrorCode.VALIDATION_ERROR,
+                        'Cannot feature an archived photo — restore it to visible first'
+                    );
+                }
+
+                // Transaction: clear-then-set to avoid briefly having two featured rows
+                // which would violate the partial unique index on
+                // (accommodation_id) WHERE is_featured = true AND deleted_at IS NULL.
+                const doSetFeatured = async (tx: DrizzleClient): Promise<void> => {
+                    // 1. Clear any existing featured row for this accommodation.
+                    const existing = await mediaModel.findFeatured({
+                        accommodationId: validated.accommodationId,
+                        tx
+                    });
+                    if (existing && existing.id !== validated.mediaId) {
+                        await mediaModel.update({ id: existing.id }, { isFeatured: false }, tx);
+                    }
+                    // 2. Promote the target row.
+                    await mediaModel.update({ id: validated.mediaId }, { isFeatured: true }, tx);
+                };
+
+                if (ctx?.tx) {
+                    await doSetFeatured(ctx.tx);
+                } else {
+                    await withTransaction(doSetFeatured);
+                }
+
+                // Re-fetch the updated row to return the current DB state.
+                const updated = await mediaModel.findById(validated.mediaId, ctx?.tx);
+                if (!updated) {
+                    throw new ServiceError(
+                        ServiceErrorCode.INTERNAL_ERROR,
+                        'Failed to retrieve updated media row after set-featured'
+                    );
+                }
+                return { media: updated };
+            }
+        });
+    }
+
+    /**
+     * Archives a single accommodation photo (SPEC-204 T-021a).
+     *
+     * Steps:
+     * 1. Gate on `_canUpdate` (ANY or OWN + ownership).
+     * 2. Verify the target media row exists AND belongs to this accommodation.
+     * 3. Guard: only `state = 'visible'` rows can be archived (idempotency guard
+     *    — already-archived rows are rejected).
+     * 4. Guard: featured photos cannot be archived — the DB CHECK constraint
+     *    enforces `NOT (is_featured AND state = 'archived')`. We reject early with
+     *    an actionable message telling the caller to unfeature first.
+     * 5. Flip `state = 'archived'` and `archivedAt = NOW()`.
+     *
+     * NOTE: this is the per-photo admin archive endpoint — distinct from the
+     * billing downgrade archive in plan-photo-restriction logic (which works by
+     * URL/count on the full gallery). Do NOT confuse the two.
+     *
+     * @param actor - The actor performing the action.
+     * @param data  - Input containing accommodationId and mediaId.
+     * @param ctx   - Optional service context for transaction propagation.
+     * @returns The archived media row wrapped in a `{ media }` envelope.
+     */
+    public async archiveMedia(
+        actor: Actor,
+        data: AccommodationMediaArchiveInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<AccommodationMediaSingleOutput>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'archiveMedia',
+            input: { ...data, actor },
+            schema: AccommodationMediaArchiveInputSchema,
+            execute: async (validated) => {
+                const accommodation = await this.model.findById(validated.accommodationId, ctx?.tx);
+                if (!accommodation) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+                }
+                await this._canUpdate(actor, accommodation);
+
+                const mediaModel = new AccommodationMediaModel();
+                const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
+                if (!mediaRow || mediaRow.accommodationId !== validated.accommodationId) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        'Media not found for this accommodation'
+                    );
+                }
+
+                // Guard: only visible rows can be archived.
+                if (mediaRow.state !== 'visible') {
+                    throw new ServiceError(
+                        ServiceErrorCode.VALIDATION_ERROR,
+                        'Photo is already archived'
+                    );
+                }
+
+                // Guard: featured photos cannot be archived — the CHECK constraint
+                // `NOT (is_featured AND state = 'archived')` would fire at the DB.
+                // Reject early with an actionable message.
+                if (mediaRow.isFeatured) {
+                    throw new ServiceError(
+                        ServiceErrorCode.VALIDATION_ERROR,
+                        'Cannot archive the featured photo — unfeature it first'
+                    );
+                }
+
+                const archived = await mediaModel.update(
+                    { id: validated.mediaId },
+                    { state: 'archived', archivedAt: new Date() },
+                    ctx?.tx
+                );
+                if (!archived) {
+                    throw new ServiceError(
+                        ServiceErrorCode.INTERNAL_ERROR,
+                        'Failed to retrieve updated media row after archive'
+                    );
+                }
+                return { media: archived };
+            }
+        });
+    }
+
+    /**
+     * Restores an archived accommodation photo (SPEC-204 T-021b).
+     *
+     * Steps:
+     * 1. Gate on `_canUpdate` (ANY or OWN + ownership).
+     * 2. Verify the target media row exists AND belongs to this accommodation.
+     * 3. Guard: only `state = 'archived'` rows can be restored.
+     * 4. Flip `state = 'visible'`, clear `archivedAt = NULL`, and assign
+     *    `sortOrder = max(current visible sortOrder) + 1` (append at end).
+     *
+     * Plan cap on restore: intentionally NOT enforced here. The plan cap is a
+     * billing-layer concern enforced at the upload/add routes (where new binary
+     * assets are registered). Restoring a previously-visible photo that already
+     * exists in the DB is treated as a management action, not a new addition.
+     * This mirrors how addFaq/restore works elsewhere in this service. If product
+     * decides to enforce the cap on restore in the future, it must be added
+     * explicitly — the handler was intentionally left without an inline cap check.
+     *
+     * @param actor - The actor performing the action.
+     * @param data  - Input containing accommodationId and mediaId.
+     * @param ctx   - Optional service context for transaction propagation.
+     * @returns The restored media row wrapped in a `{ media }` envelope.
+     */
+    public async restoreMedia(
+        actor: Actor,
+        data: AccommodationMediaRestoreInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<AccommodationMediaSingleOutput>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'restoreMedia',
+            input: { ...data, actor },
+            schema: AccommodationMediaRestoreInputSchema,
+            execute: async (validated) => {
+                const accommodation = await this.model.findById(validated.accommodationId, ctx?.tx);
+                if (!accommodation) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+                }
+                await this._canUpdate(actor, accommodation);
+
+                const mediaModel = new AccommodationMediaModel();
+                const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
+                if (!mediaRow || mediaRow.accommodationId !== validated.accommodationId) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        'Media not found for this accommodation'
+                    );
+                }
+
+                // Guard: only archived rows can be restored.
+                if (mediaRow.state !== 'archived') {
+                    throw new ServiceError(
+                        ServiceErrorCode.VALIDATION_ERROR,
+                        'Photo is not archived'
+                    );
+                }
+
+                // Compute next sortOrder: append at end of current visible gallery.
+                const existing = await mediaModel.findAll(
+                    {
+                        accommodationId: validated.accommodationId,
+                        state: 'visible',
+                        deletedAt: null
+                    },
+                    { pageSize: 1, sortBy: 'sortOrder', sortOrder: 'desc' },
+                    undefined,
+                    ctx?.tx
+                );
+                const topOrder = existing.items[0]?.sortOrder ?? -1;
+                const nextSortOrder =
+                    typeof topOrder === 'number' && topOrder >= 0 ? topOrder + 1 : 0;
+
+                const restored = await mediaModel.update(
+                    { id: validated.mediaId },
+                    { state: 'visible', archivedAt: null, sortOrder: nextSortOrder },
+                    ctx?.tx
+                );
+                if (!restored) {
+                    throw new ServiceError(
+                        ServiceErrorCode.INTERNAL_ERROR,
+                        'Failed to retrieve updated media row after restore'
+                    );
+                }
+                return { media: restored };
             }
         });
     }

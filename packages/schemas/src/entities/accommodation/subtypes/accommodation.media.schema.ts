@@ -332,3 +332,74 @@ export const AccommodationMediaListInputSchema = z.object({
 
 /** Inferred type for the list-media service input. */
 export type AccommodationMediaListInput = z.infer<typeof AccommodationMediaListInputSchema>;
+
+// ----------------------------------------------------------------------------
+// Set Featured Input Schema (SPEC-204 T-020)
+// ----------------------------------------------------------------------------
+
+/**
+ * Service input schema for setting the featured photo of an accommodation.
+ *
+ * Targets a specific `accommodation_media` row by ID and promotes it to
+ * `is_featured = true`. The previous featured row (if any) is cleared in the
+ * same transaction.
+ *
+ * DB invariants enforced (018-accommodation-media.constraints.sql):
+ * - At most ONE featured row per accommodation (partial unique index).
+ * - A featured photo can never be `state = 'archived'` (CHECK constraint).
+ * The service validates that the target row is `state = 'visible'` before
+ * writing to avoid tripping the CHECK constraint.
+ */
+export const AccommodationMediaSetFeaturedInputSchema = z.object({
+    /** UUID of the parent accommodation (from URL param `/:id`). */
+    accommodationId: AccommodationIdSchema,
+    /** UUID of the media row to promote as featured (from URL param `/:mediaId`). */
+    mediaId: AccommodationMediaIdSchema
+});
+
+/** Inferred type for the set-featured service input. */
+export type AccommodationMediaSetFeaturedInput = z.infer<
+    typeof AccommodationMediaSetFeaturedInputSchema
+>;
+
+// ----------------------------------------------------------------------------
+// Archive Photo Input Schema (SPEC-204 T-021a)
+// ----------------------------------------------------------------------------
+
+/**
+ * Service input schema for archiving a single accommodation photo.
+ *
+ * Flips `state = 'archived'` and sets `archivedAt = NOW()` on the target row.
+ * A FEATURED photo cannot be archived — the DB CHECK constraint enforces
+ * `NOT (is_featured AND state = 'archived')`. The service rejects the request
+ * before reaching the DB when `isFeatured = true`.
+ */
+export const AccommodationMediaArchiveInputSchema = z.object({
+    /** UUID of the parent accommodation (from URL param `/:id`). */
+    accommodationId: AccommodationIdSchema,
+    /** UUID of the media row to archive (from URL param `/:mediaId`). */
+    mediaId: AccommodationMediaIdSchema
+});
+
+/** Inferred type for the archive-media service input. */
+export type AccommodationMediaArchiveInput = z.infer<typeof AccommodationMediaArchiveInputSchema>;
+
+// ----------------------------------------------------------------------------
+// Restore Photo Input Schema (SPEC-204 T-021b)
+// ----------------------------------------------------------------------------
+
+/**
+ * Service input schema for restoring an archived accommodation photo.
+ *
+ * Flips `state = 'visible'`, clears `archivedAt = NULL`, and appends the row at
+ * the END of the current visible gallery (`sortOrder = max visible + 1`).
+ */
+export const AccommodationMediaRestoreInputSchema = z.object({
+    /** UUID of the parent accommodation (from URL param `/:id`). */
+    accommodationId: AccommodationIdSchema,
+    /** UUID of the archived media row to restore (from URL param `/:mediaId`). */
+    mediaId: AccommodationMediaIdSchema
+});
+
+/** Inferred type for the restore-media service input. */
+export type AccommodationMediaRestoreInput = z.infer<typeof AccommodationMediaRestoreInputSchema>;
