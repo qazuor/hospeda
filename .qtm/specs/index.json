@@ -1903,7 +1903,7 @@
             "title": "Web accessibility audit & improvements — WCAG 2.1 AA, concrete findings + fix catalog",
             "type": "improvement",
             "complexity": "medium",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-270-web-accessibility-audit",
             "created": "2026-06-23T00:00:00Z",
             "base": "staging",

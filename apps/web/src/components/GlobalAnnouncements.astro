@@ -62,7 +62,7 @@ const cspNonce = Astro.locals.cspNonce ?? '';
                 data-announcement-id={item.id}
                 data-starts-at={item.startsAt ?? ''}
                 data-ends-at={item.endsAt ?? ''}
-                role="status"
+                role={item.variant === 'danger' ? 'alert' : 'status'}
             >
                 <p class="global-announcement__text">{pickAnnouncementText(item, locale)}</p>
                 {item.dismissible && (

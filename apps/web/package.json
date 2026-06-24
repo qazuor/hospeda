@@ -19,6 +19,7 @@
         "check-tokens": "node scripts/check-css-tokens.cjs",
         "check:relative-colors": "node scripts/check-css-relative-colors.cjs",
         "lighthouse": "lhci autorun --config=./lighthouserc.json",
+        "a11y:sweep": "tsx scripts/a11y-sweep/sweep.ts",
         "clean": "rm -rf node_modules dist .astro"
     },
     "dependencies": {
@@ -63,6 +64,7 @@
     },
     "devDependencies": {
         "@astrojs/check": "^0.9.4",
+        "@axe-core/playwright": "^4.10.2",
         "@playwright/test": "^1.60.0",
         "@repo/typescript-config": "workspace:*",
         "@testing-library/jest-dom": "^6.9.1",

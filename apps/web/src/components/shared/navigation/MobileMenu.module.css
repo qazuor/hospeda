@@ -93,7 +93,6 @@
 }
 
 .navLink:focus-visible {
-    outline: none;
     color: var(--brand-accent);
 }
 
@@ -121,7 +120,6 @@
 }
 
 .searchLink:focus-visible {
-    outline: none;
     box-shadow: 0 0 0 2px var(--brand-accent);
 }
 
@@ -143,7 +141,7 @@
     width: 100%;
     max-width: 260px;
     margin-inline: auto;
-    min-height: 40px;
+    min-height: 44px;
     padding: 0.5rem 1.25rem;
     border-radius: var(--radius-button);
     background-color: var(--brand-primary);
@@ -160,7 +158,6 @@
 }
 
 .authButton:focus-visible {
-    outline: none;
     box-shadow: 0 0 0 2px var(--brand-accent);
 }
 
@@ -185,7 +182,6 @@
 }
 
 .userRow:focus-visible {
-    outline: none;
     box-shadow: 0 0 0 2px var(--brand-accent);
 }
 
@@ -260,7 +256,6 @@
 }
 
 .accountLink:focus-visible {
-    outline: none;
     box-shadow: 0 0 0 2px var(--brand-accent);
 }
 
@@ -287,7 +282,6 @@
 }
 
 .signOutButton:focus-visible {
-    outline: none;
     box-shadow: 0 0 0 2px var(--brand-accent);
 }
 
@@ -330,7 +324,7 @@
     max-width: 260px;
     margin-inline: auto;
     margin-bottom: 0.625rem;
-    min-height: 40px;
+    min-height: 44px;
     padding: 0.5rem 1.25rem;
     border-radius: var(--radius-pill);
     background-color: var(--brand-accent);
@@ -347,6 +341,5 @@
 }
 
 .ctaLink:focus-visible {
-    outline: none;
     box-shadow: 0 0 0 2px var(--brand-primary);
 }

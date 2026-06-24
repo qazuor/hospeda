@@ -1095,6 +1095,20 @@
             "base": "staging",
             "createdAt": "2026-06-24T00:00:00Z",
             "note": "Doc-only spec; tasks NOT atomized yet. Formalizes Linear BETA-96: the ML import tier uses a static 6h access token with no refresh. Replace with OAuth 2.0 authorization-code + refresh-token rotation + token service (concurrency-safe). Unblocks SPEC-258 A3 (ML field enrichment). 5 open questions for the owner before atomizing."
+        },
+        {
+            "specId": "SPEC-270",
+            "title": "Web accessibility audit — WCAG 2.1 AA",
+            "status": "in-progress",
+            "progress": "7/7",
+            "path": "SPEC-270-web-accessibility-audit",
+            "branch": "spec/SPEC-270-web-accessibility-audit",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-270-web-accessibility-audit",
+            "base": "staging",
+            "createdAt": "2026-06-23T00:00:00.000Z",
+            "tasksAtomizedAt": "2026-06-24T00:00:00.000Z",
+            "taskCount": 7,
+            "archived": false
         }
     ],
     "standalone": {
