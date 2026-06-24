@@ -7,9 +7,24 @@ status: draft
 created: 2026-06-23T00:00:00Z
 effort_estimate_hours: 16-24
 tags: [web, host, commerce, whats-new, welcome-tour, onboarding, ux, mi-cuenta]
+decided: 2026-06-23
+model_fit: basic
 ---
 
 # SPEC-275: Web — What's New + Welcome Tour for hosts/commerce
+
+> ## ✅ DECISIONS RESOLVED (2026-06-23)
+>
+> Es un PORT de features que ya existen en admin (SPEC-174 tour, SPEC-175 what's new),
+> reusando el backend tal cual. Decisiones que faltaban, ya cerradas:
+>
+> - **Tour library: `driver.js` v1.4.0** — la MISMA que usa el admin
+>   (`apps/admin/package.json`). Es vanilla JS (~5KB), funciona en React islands de web.
+>   Se reusa el formato de config de steps de SPEC-174. NO se evalúan otras libs.
+> - **Markdown render del What's New: portar el del admin** (`render-markdown.ts`), no
+>   crear uno nuevo (consistencia de render entre admin y web).
+> - **Backend: cero endpoints nuevos** — `GET/PATCH /api/v1/protected/whats-new` y la
+>   settings API ya existen y filtran por rol.
 
 ## Part 1 — Functional Specification
 
@@ -90,11 +105,13 @@ tags: [web, host, commerce, whats-new, welcome-tour, onboarding, ux, mi-cuenta]
 | `WhatsNewPanel.astro` | Astro page | `/mi-cuenta/novedades/` — lista completa |
 | `WhatsNewBadge.client.tsx` | React island | Badge en nav con count de no vistos |
 
-#### 5.3 Tour library
+#### 5.3 Tour library — RESUELTO: driver.js v1.4.0
 
-- Admin usa `driver.js` o similar — verificar qué lib usa
-- Web puede usar la misma lib o una más ligera (shepherd.js, intro.js, o custom)
-- Consideración: web usa React islands, admin usa TanStack Start — diferente rendering
+- Web usa **`driver.js` v1.4.0**, la misma que admin (`apps/admin/package.json`).
+- Es vanilla JS → se instancia dentro de un React island (`client:idle`), apuntando a
+  selectores del DOM ya hidratado. No requiere wrapper React específico.
+- Se reusa la forma de `buildDriverSteps` del admin (`apps/admin/src/lib/build-driver-steps`)
+  como referencia, adaptando selectores y rutas al layout de web.
 
 #### 5.4 Tour config
 
@@ -107,8 +124,8 @@ tags: [web, host, commerce, whats-new, welcome-tour, onboarding, ux, mi-cuenta]
 #### 5.5 What's New data
 
 - Mismo backend que admin (ya filtra por rol)
-- Mismo render de markdown (admin usa `render-markdown.ts`)
-- Web necesita su propio render o reusar el de admin
+- **Render de markdown: portar el del admin** (`render-markdown.ts`) — no crear uno nuevo.
+  Mantiene paridad de render entre admin y web y evita divergencia de estilos.
 
 ### 6. Data Model
 
@@ -191,3 +208,14 @@ Owner request (2026-06-23): "soportar whats new y welcome en /mi-cuenta de app w
 - SPEC-175 (admin what's new) — precedent, mismo backend
 - SPEC-205 (host web foundation) — donde se integra
 - SPEC-239 (commerce listings) — commerce owners también necesitan tour
+
+---
+
+## Model Fit Verdict
+
+**BÁSICO.** Port de dos features ya implementadas en admin (SPEC-174/175), reusando el
+backend sin endpoints nuevos, la misma tour library (driver.js) y el mismo render de
+markdown. El trabajo es UI en React islands + Astro siguiendo el patrón del admin como
+referencia 1:1. La única sutileza es el D12 gate (welcome tour vs what's new no se
+stackean), que ya tiene patrón resuelto en admin (`useWelcomeTourPending`) a replicar.
+Criterios de aceptación cerrados y testeables. Sin decisiones abiertas.

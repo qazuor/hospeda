@@ -1,10 +1,12 @@
 {
     "specId": "SPEC-276",
-    "title": "Feature flag system — DB-backed, admin-managed, per-environment, gradual rollout",
+    "title": "Feature flag system — DB-backed on/off toggles with user & role override (dark launch + kill switch)",
     "type": "feature",
     "complexity": "medium",
     "status": "draft",
     "created": "2026-06-23T00:00:00Z",
+    "decided": "2026-06-23",
+    "modelFit": "basic",
     "startedAt": null,
     "approved": null,
     "completed": null,
@@ -16,7 +18,7 @@
         "api",
         "web",
         "config",
-        "gradual-rollout",
+        "kill-switch",
         "db"
     ]
 }

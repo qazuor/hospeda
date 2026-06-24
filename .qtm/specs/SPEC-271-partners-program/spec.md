@@ -1,175 +1,206 @@
 ---
 spec-id: SPEC-271
-title: Partners program — businesses/NGOs/institutions pay monthly to be listed as partners
+title: Partners program — admin-sold monthly listing (new entity reusing sponsorship shape + commerce billing)
 type: feature
 complexity: medium
 status: draft
 created: 2026-06-23T00:00:00Z
+decided: 2026-06-23
+model_fit: basic
 effort_estimate_hours: 20-32
-tags: [partners, billing, qzpay, admin, web, directory, advertising, commerce]
+tags: [partners, billing, qzpay, admin, web, directory]
 ---
 
 # SPEC-271: Partners program
+
+> ## ✅ ARCHITECTURE DECISION RESOLVED (2026-06-23)
+>
+> El relevamiento mostró que existe un sistema `sponsorship` VIVO (services
+> `sponsorship`/`postSponsorship`, rutas API, admin `sponsor-dashboard`,
+> `SponsorshipTierPgEnum`) que sponsorea posts/eventos con pago único. Partners es
+> distinto (standalone, billing recurrente QZPay), así que:
+>
+> **Decisión:** crear entidad **`partners` NUEVA**, sin tocar `sponsorship`. Reusar:
+> - el **SHAPE** de `sponsorship` (tiers/levels, logo/link, status, analytics, cron de
+>   expiry) — copiar el diseño, NO las tablas.
+> - el **billing recurrente** del patrón commerce SPEC-239 (`product_domain = 'partner'`,
+>   tabla link `partner_subscriptions`, reconciler de visibilidad).
+>
+> Esto aísla el feature (cero riesgo de regresión sobre sponsorship de posts), reutiliza
+> dos patrones ya probados, y NO introduce lógica nueva sutil → modelo básico.
+>
+> **Tiers:** bronze / silver / gold, diferenciados por **orden de aparición** (gold
+> primero) y **tamaño de card** en la página pública. El owner define los precios al
+> crear los `billing_plans` de partner. (Si se prefiere plan único, omitir el enum tier;
+> la estructura lo soporta.)
+
+---
 
 ## Part 1 — Functional Specification
 
 ### 1. Overview & Goals
 
-**Goal:** Crear un sistema de partners donde comercios, ONGs, e instituciones pagan un monto mensual para figurar como partners de Hospeda (publicidad/difusión). El flujo de venta es manual: un admin (persona física) gestiona el partner desde el admin panel, le envía un link de subscripción QZPay o registra pago manual, y el partner aparece en una lista pública de partners en la web.
-
-**Why now:** Monetización. Los partners aportan revenue recurrente sin ser hosts ni comercios con listings. Es publicidad directa (no commission-based como SPEC-239 commerce).
-
-**Key distinction:** NO es self-service. El admin vende el partner (persona física contacta al comercio/ONG, le ofrece el partnership, le envía el link de pago). El partner no se subscribe desde la web directamente.
+**Goal:** Sistema de partners donde comercios/ONGs/instituciones pagan mensual (QZPay) por
+figurar en una lista pública de partners. Venta **manual**: un admin crea el partner y le
+envía un link de pago (o registra pago manual). NO es self-service.
 
 ### 2. Out of Scope
 
-- Self-service partner signup (el partner no se subscribe solo)
-- Commission-based commerce listings (eso es SPEC-239)
-- Partner dashboard self-management (el admin gestiona todo)
-- Rotación/banners de publicidad (esto es listing de partners, no display ads)
+- Self-service signup · Commission-based listings (SPEC-239) · Partner self-dashboard ·
+  Display ads/banners (esto es listado, no rotación publicitaria)
 
 ### 3. User Flow
 
-#### 3.1 Admin flow (venta manual)
+(sin cambios respecto del original — admin vende, manda link QZPay o registra pago manual,
+sistema activa, partner aparece en `/partners/`). Pago manual activa sin QZPay.
 
-1. Admin contacta al comercio/ONG/institución (fuera del sistema)
-2. Admin crea el partner en el admin panel (datos: nombre, logo, web, descripción, tipo)
-3. Admin selecciona un plan de partner (tier: bronze/silver/gold o monto custom)
-4. Admin envía link de subscripción QZPay al partner (email/WhatsApp)
-5. Partner completa el pago via QZPay (MercadoPago)
-6. Sistema detecta pago → activa partner
-7. Partner aparece en la lista pública de partners en la web
+### 4. Data Model — qué clonar y de dónde
 
-#### 3.2 Pago manual
+#### 4.1 Tabla `partners` (nueva) — shape copiado de `sponsorships`
 
-1. Admin registra pago manual (efectivo, transferencia) en el admin panel
-2. Sistema activa partner sin QZPay
+| Columna | Tipo | Fuente del patrón |
+|---------|------|-------------------|
+| id | UUID PK | estándar |
+| slug | varchar unique | `sponsorships.slug` |
+| name | varchar(255) | nuevo (sponsorship no tiene name propio) |
+| type | enum COMMERCE/NGO/INSTITUTION | nuevo (`PartnerTypePgEnum`) |
+| tier | enum BRONZE/SILVER/GOLD | espejo de `SponsorshipTierPgEnum` |
+| logoUrl | text | `sponsorships.logoUrl` |
+| websiteUrl | text | `sponsorships.linkUrl` |
+| description | text | nuevo |
+| subscriptionStatus | enum PENDING/ACTIVE/PAST_DUE/CANCELLED | `sponsorships.sponsorshipStatus` |
+| lifecycleState | enum ACTIVE/ARCHIVED | `sponsorships.lifecycleState` |
+| analytics | jsonb {impressions,clicks} | `sponsorships.analytics` |
+| planId | varchar FK billing_plans | patrón commerce |
+| subscriptionId | varchar FK billing_subscriptions | patrón commerce |
+| startsAt / endsAt | timestamptz | `sponsorships.startsAt/endsAt` |
+| audit (createdAt/updatedAt/deletedAt/createdById/...) | | estándar BaseModel |
 
-#### 3.3 Web flow (visualización)
+Índices: replicar los de `sponsorships` relevantes — `(subscriptionStatus, lifecycleState)`
+para `findActivePartners`, y `(lifecycleState, endsAt)` para el cron de expiry.
 
-1. Usuario visita `/partners/` (o sección en home/footer)
-2. Ve lista de partners activos (grid de logos con link)
-3. Filtro por tipo (comercio/ONG/institución) opcional
-4. Click en partner → link externo al sitio del partner
+#### 4.2 Billing — patrón commerce SPEC-239 (recurrente)
 
-### 4. Data Model
+- `billing_plans` con `product_domain = 'partner'` (NUEVO domain; igual que commerce usa
+  `'commerce'`). NO incluir en `ALL_PLANS` (no exponerlo en `/public/plans`).
+- `partner_subscriptions` — tabla link (UNIQUE on `partner_id`), espejo de
+  `commerce_listing_subscriptions`. El reconciler de visibilidad decide si el partner se
+  muestra según la subscription activa.
+- `loadEntitlements()` ya filtra `product_domain = 'accommodation'`, así que un partner
+  con subscription NO contamina entitlements de host/commerce. Verificar que el filtro
+  excluya `'partner'` también (debería, por ser != accommodation).
+- Columna `product_domain` ya existe (extras `017-billing-plans-product-domain.column.sql`);
+  solo agregar el valor `'partner'` donde el enum/check lo liste.
 
-#### 4.1 Nueva tabla: `partners`
+### 5. Admin Panel (patrón SPEC-185 entity lists)
 
-| Columna | Tipo | Notas |
-|---------|------|-------|
-| id | UUID PK | |
-| name | varchar(255) | Nombre del partner |
-| slug | varchar(255) unique | URL slug |
-| type | enum | COMMERCE / NGO / INSTITUTION |
-| logo_url | varchar | URL del logo |
-| website_url | varchar | URL del sitio del partner |
-| description | text | Descripción corta |
-| lifecycleState | enum | ACTIVE / ARCHIVED |
-| subscriptionStatus | enum | PENDING / ACTIVE / PAST_DUE / CANCELLED |
-| planId | varchar FK | Referencia a billing_plans (plan de partner) |
-| subscriptionId | varchar FK | Referencia a billing_subscriptions |
-| startsAt | timestamptz | Inicio del partnership |
-| endsAt | timestamptz nullable | Fin (si no es recurring) |
-| createdById | UUID FK users | Admin que creó |
-| createdAt | timestamptz | |
-| updatedAt | timestamptz | |
-| deletedAt | timestamptz nullable | Soft delete |
-
-#### 4.2 Billing integration
-
-- Usa `billing_plans` con `product_domain = 'partner'` (nuevo domain, igual que SPEC-239 usa `'commerce'`)
-- Usa `billing_subscriptions` para trackear el pago mensual
-- QZPay start-paid route reutilizado (mismo patrón que commerce)
-- `commerce_listing_subscriptions` pattern: tabla link `partner_subscriptions` (UNIQUE on partner_id)
-
-### 5. Admin Panel
-
-- **Entity list**: `/partners/` — lista de partners con estado (activo/inactivo/past_due)
-- **Create/Edit**: form con nombre, tipo, logo, website, descripción, plan
-- **Send payment link**: botón que genera link QZPay y lo muestra para copiar/enviar
-- **Register manual payment**: botón para registrar pago manual (no QZPay)
-- **Permissions**: nuevo `PermissionEnum.PARTNER_MANAGE` (SUPER_ADMIN o STAFF con permiso)
+- Entity list `/partners/` con estado (activo/inactivo/past_due), filtro por tier/type.
+- Create/Edit form: name, type, tier, logo (upload), website, description, plan.
+- Botón **Send payment link**: genera link QZPay (start-paid con `product_domain='partner'`)
+  y lo muestra para copiar.
+- Botón **Register manual payment**: activa sin QZPay; **loggear en audit_log**.
+- Permiso nuevo `PermissionEnum.PARTNER_MANAGE`.
 
 ### 6. Web (público)
 
-- **Page**: `/[lang]/partners/` — grid de partners activos
-- **Component**: `PartnerCard.astro` — logo + nombre + link
-- **Filtro**: por tipo (comercio/ONG/institución) opcional
-- **SEO**: `SEOHead` con noindex=false (indexable), JSON-LD `ItemList`
-- **i18n**: textos en es/en/pt
+- Page `/[lang]/partners/` — grid de partners activos, ordenado por tier (gold→silver→bronze)
+  y dentro del tier por `startsAt`. Tamaño de card por tier.
+- `PartnerCard.astro` — logo + nombre + link externo (`rel="sponsored noopener"`).
+- Filtro por type. Indexable (noindex=false). JSON-LD `ItemList`.
+- i18n es/en/pt. Click registra `analytics.clicks` (endpoint público de tracking, opcional MVP).
 
 ### 7. API Routes
 
-| Route | Tier | Auth | Descripción |
-|-------|------|------|-------------|
-| `GET /api/v1/public/partners` | Public | None | Lista de partners activos |
-| `GET /api/v1/admin/partners` | Admin | PARTNER_MANAGE | Lista de todos los partners |
-| `POST /api/v1/admin/partners` | Admin | PARTNER_MANAGE | Crear partner |
-| `PATCH /api/v1/admin/partners/:id` | Admin | PARTNER_MANAGE | Editar partner |
-| `DELETE /api/v1/admin/partners/:id` | Admin | PARTNER_MANAGE | Soft delete partner |
-| `POST /api/v1/admin/partners/:id/send-link` | Admin | PARTNER_MANAGE | Generar link QZPay |
-| `POST /api/v1/admin/partners/:id/manual-payment` | Admin | PARTNER_MANAGE | Registrar pago manual |
+(sin cambios respecto del original: `GET /public/partners`, CRUD `/admin/partners`,
+`POST /admin/partners/:id/send-link`, `POST /admin/partners/:id/manual-payment`. Todas
+admin con `PARTNER_MANAGE`.)
 
-### 8. Tasks
+### 8. User Stories con Acceptance Checks
 
-| Task | Title | Status |
-|---|---|---|
-| T-271-01 | DB migration: `partners` table + `partner_subscriptions` link | pending |
-| T-271-02 | Schemas: partner schema (Zod) en @repo/schemas | pending |
-| T-271-03 | Billing: crear plan de partner con `product_domain = 'partner'` | pending |
-| T-271-04 | Service: PartnerService en @repo/service-core | pending |
-| T-271-05 | API routes: public + admin endpoints | pending |
-| T-271-06 | Admin: partner entity list + create/edit form | pending |
-| T-271-07 | Admin: send payment link (QZPay) + manual payment | pending |
-| T-271-08 | Admin: permission PARTNER_MANAGE + sidebar entry | pending |
-| T-271-09 | Web: `/partners/` page + PartnerCard component | pending |
-| T-271-10 | Web: i18n strings (es/en/pt) | pending |
-| T-271-11 | Web: SEO (SEOHead + JSON-LD ItemList) | pending |
-| T-271-12 | Cron: partner subscription expiry/deactivation | pending |
-| T-271-13 | Tests: service + API + admin + web | pending |
-| T-271-14 | Seed: partner test data | pending |
+#### US-1 — Admin vende y activa un partner
 
-### 9. Acceptance Criteria
+```
+GIVEN un admin con PARTNER_MANAGE
+WHEN crea un partner (name, type, tier, logo, website) y envía el link de pago
+THEN se genera un link QZPay con product_domain='partner'
+ AND al completarse el pago, subscriptionStatus pasa a ACTIVE
+ AND el partner aparece en /partners/ ordenado según su tier
+```
+Checks:
+- [ ] crear/editar/borrar partner desde admin
+- [ ] link QZPay generado usa `product_domain='partner'`
+- [ ] pago manual activa sin QZPay y queda en `audit_log`
+- [ ] partner ACTIVE visible; PENDING/PAST_DUE/CANCELLED/ARCHIVED NO visibles
 
-- [ ] Admin puede crear/editar/eliminar partners
-- [ ] Admin puede enviar link de pago QZPay al partner
-- [ ] Admin puede registrar pago manual
-- [ ] Partner activo aparece en `/partners/` en la web
-- [ ] Partner inactivo NO aparece en `/partners/`
-- [ ] Partner con subscription past_due no aparece hasta que se regularice
-- [ ] Filtro por tipo funciona en web
-- [ ] i18n completo en es/en/pt
-- [ ] SEO: page indexable, JSON-LD válido
-- [ ] Tests pasan con ≥90% coverage
+#### US-2 — Aislamiento de billing (no contaminar entitlements)
+
+```
+GIVEN un usuario que es host (accommodation) Y también partner
+WHEN se cargan sus entitlements de host
+THEN la subscription de partner (product_domain='partner') NO altera sus entitlements de accommodation
+```
+Checks:
+- [ ] test: `loadEntitlements()` ignora subscriptions con `product_domain='partner'`
+- [ ] el plan de partner NO aparece en `GET /public/plans`
+
+#### US-3 — Visualización pública correcta
+
+```
+GIVEN partners activos de distintos tiers
+WHEN un usuario visita /partners/
+THEN ve un grid ordenado gold→silver→bronze, con tamaño de card por tier
+ AND el filtro por type funciona
+ AND la página es indexable con JSON-LD ItemList válido
+```
+Checks:
+- [ ] orden por tier + startsAt
+- [ ] filtro type
+- [ ] JSON-LD ItemList válido (Schema.org validator)
+- [ ] i18n es/en/pt completo
+
+### 9. Tasks
+
+(las 14 del original siguen válidas; ajustes de fuente-de-patrón ya reflejados arriba.
+T-271-01 clona shape de sponsorship; T-271-03 usa product_domain='partner'; T-271-12 cron
+espeja el índice anticipatorio de sponsorship expiry.)
 
 ### 10. Risks
 
 | Risk | Mitigation |
-|---|---|
-| Conflicto con SPEC-239 commerce (product_domain) | Usar `product_domain = 'partner'` separado, no mezclar con commerce ni accommodation |
-| Logo quality/size variable | Validar dimensions en upload, recomendar SVG/PNG transparente |
-| Partner churn (cancela y queda visible) | Cron de deactivación + webhook QZPay para cancelación inmediata |
-| Pago manual sin audit trail | Loggear en audit_log cada pago manual registrado |
+|------|-----------|
+| Contaminar entitlements de accommodation/commerce | `product_domain='partner'` separado + test de aislamiento (US-2) |
+| Tocar sponsorship vivo por error | NO se toca: partners es entidad nueva, solo se copia el shape |
+| Partner churn queda visible | Reconciler de visibilidad (patrón commerce) + cron expiry + webhook QZPay cancelación |
+| Pago manual sin trazabilidad | audit_log en cada pago manual |
 
 ---
 
 ## Part 2 — Implementation Notes
 
-### Source
+### Fuentes de patrón (clonar, no importar)
 
-Owner request (2026-06-23): "sistema de partners, comercios/ong/instituciones que pagan un monto mensual por ser partner, figurando en lista de partners, osea, publicidad. Debe funcionar como commerce, si bien pagan con qzpay, el pedido inicial de pago se dispara desde el admin pasandole un link para subscribirse, o pago manual, no es subscripcion directa desde web, sino venta por un admin (persona física)."
-
-### Reference
-
-- Commerce pattern: SPEC-239 (commerce_listing_subscriptions, product_domain)
-- Billing: QZPay (`@qzuor/qzpay-core`), MercadoPago adapter
-- Sponsorship (existing): `packages/db/src/schemas/sponsorship/` — pattern similar pero para posts/events
-- Admin entity pattern: SPEC-185 (admin entity lists v2)
-- Web entity pattern: accommodations/destinos listing pages
+- **Shape de entidad:** `packages/db/src/schemas/sponsorship/sponsorship.dbschema.ts`
+  (slug, logoUrl, linkUrl, status, lifecycleState, analytics, índices de status+expiry).
+  Tiers: `SponsorshipTierPgEnum` en `enums.dbschema.ts:199`.
+- **Billing isolation:** patrón commerce SPEC-239 — ver `CLAUDE.md` sección "Commerce
+  subscription isolation (SPEC-239)": `product_domain`, `commerce_listing_subscriptions`,
+  reconciler. Extras `017-billing-plans-product-domain.column.sql`.
+- **Admin entity list:** SPEC-185 (entity lists v2).
+- **Web listing:** páginas de accommodations/destinos como referencia de grid + SEO.
 
 ### Cross-spec dependencies
 
-- SPEC-239 (commerce listings) — mismo patrón de billing isolation (product_domain)
-- SPEC-193 (billing go-live master) — billing system debe estar estable
-- SPEC-192 (billing catalog to DB) — plans en DB
+- SPEC-239 (commerce billing isolation) — mismo mecanismo product_domain.
+- SPEC-193/192 (billing en DB) — plans en DB; agregar el de partner.
+- SPEC-268 (SEO) — la página /partners necesita JSON-LD ItemList (ya contemplado).
+
+---
+
+## Model Fit Verdict
+
+**BÁSICO.** La decisión de arquitectura (entidad nueva, reuse de shape + billing) está
+cerrada, y los dos patrones a clonar (sponsorship shape, commerce billing isolation) están
+documentados y probados en el codebase. El trabajo es CRUD + integración de billing
+siguiendo convenciones (BaseCrudService, Zod schemas, route factories, product_domain). El
+único punto que merece un test cuidadoso es el aislamiento de entitlements (US-2), pero es
+un test, no lógica nueva. Sin decisiones abiertas ni invariantes de concurrencia.

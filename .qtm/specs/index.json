@@ -1607,7 +1607,7 @@
             "slug": "import-short-link-resolution",
             "type": "improvement",
             "complexity": "medium",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-257-import-short-link-resolution",
             "created": "2026-06-22T02:36:01Z",
             "base": "staging",
@@ -1761,7 +1761,7 @@
         },
         {
             "specId": "SPEC-265",
-            "title": "AI accommodation search — UI/UX improvements (transparency, onboarding, chat control, layout)",
+            "title": "AI accommodation search — UI/UX improvements (transparency, onboarding, chat control, hybrid layout)",
             "slug": "ai-search-ux",
             "type": "improvement",
             "complexity": "medium",
@@ -1833,8 +1833,8 @@
         },
         {
             "specId": "SPEC-267",
-            "title": "SEO entity fields — keep & improve vs remove in favor of Astro auto-generation",
-            "type": "evaluation",
+            "title": "SEO entity fields — Hybrid (keep title/description, remove keywords) + improve SEO tab UX",
+            "type": "feature",
             "complexity": "low",
             "status": "draft",
             "path": "SPEC-267-seo-fields-decision",
@@ -1845,7 +1845,7 @@
         },
         {
             "specId": "SPEC-268",
-            "title": "Web SEO audit & improvements — meta tags, JSON-LD, sitemap, robots, canonical",
+            "title": "Web SEO audit & improvements — 12 concrete findings + fix catalog",
             "type": "improvement",
             "complexity": "medium",
             "status": "draft",
@@ -1866,7 +1866,7 @@
         },
         {
             "specId": "SPEC-269",
-            "title": "Web performance audit & improvements — Core Web Vitals (LCP, INP, CLS), bundle, images",
+            "title": "Web performance audit & improvements — Core Web Vitals, 12 findings + fix catalog",
             "type": "improvement",
             "complexity": "medium",
             "status": "draft",
@@ -1888,7 +1888,7 @@
         },
         {
             "specId": "SPEC-270",
-            "title": "Web accessibility audit & improvements — WCAG 2.1 AA compliance",
+            "title": "Web accessibility audit & improvements — WCAG 2.1 AA, concrete findings + fix catalog",
             "type": "improvement",
             "complexity": "medium",
             "status": "draft",
@@ -1909,7 +1909,7 @@
         },
         {
             "specId": "SPEC-271",
-            "title": "Partners program — businesses/NGOs/institutions pay monthly to be listed as partners",
+            "title": "Partners program — admin-sold monthly listing (new entity reusing sponsorship shape + commerce billing)",
             "type": "feature",
             "complexity": "medium",
             "status": "draft",
@@ -1930,7 +1930,7 @@
         },
         {
             "specId": "SPEC-272",
-            "title": "Occupancy calendar — manual management + external sync (Google Calendar, Airbnb, Booking)",
+            "title": "Occupancy calendar — Phase 1 manual (basic) + Phase 2/3 external sync (advanced)",
             "type": "feature",
             "complexity": "high",
             "status": "draft",
@@ -1978,7 +1978,7 @@
         },
         {
             "specId": "SPEC-274",
-            "title": "Image search & import (Unsplash/Pexels) for events and posts",
+            "title": "Stock image search & import (Unsplash/Pexels) — admin editor, v1",
             "type": "feature",
             "complexity": "medium",
             "status": "draft",
@@ -2023,7 +2023,7 @@
         },
         {
             "specId": "SPEC-276",
-            "title": "Feature flag system — DB-backed, admin-managed, per-environment, gradual rollout",
+            "title": "Feature flag system — DB-backed on/off toggles with user & role override (dark launch + kill switch)",
             "type": "feature",
             "complexity": "medium",
             "status": "draft",
