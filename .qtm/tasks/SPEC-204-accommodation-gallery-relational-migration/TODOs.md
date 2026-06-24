@@ -9,6 +9,14 @@
 **Follow-up specs:** accommodation videos (remate); gastronomy+experiences media (twins, shared spec); events/destinations/posts (analysis).
 **Parallel start:** T-001 (db table) and T-005 (Zod schema)
 
+## Cutover progress (2026-06-23)
+
+- **Paso 1 — readers → table**: DONE (commits `e753a8f1a`, `b8e90eb4d`).
+- **Paso 2 — cut writes**: DONE — update stops managing gallery (`37e3162eb`), archive/restore table-only + getAccommodationsWithArchivedPhotos (`9dfeb3530`).
+- **Paso 3 — granular endpoints (T-017..T-021 + list)**: DONE — add (`24477c486`), remove/reorder/list (`111938dab`), set-featured/archive/restore (`97a5096d1`). 7 endpoints, 53 route tests, gate-matrix rows.
+- **Paso 4 — admin UI (T-022) + seed (T-027)**: PENDING. Admin gallery editing is non-functional until the UI is migrated to the granular endpoints.
+- **Paso 5 — strip blob (T-026) + retire MediaSchema photo fields (T-025) + integration validation pass (reds: media-tx T-011-i, e2e downgrade-restriction-selections) + route tests (T-023) + docs (T-029)**: PENDING.
+
 ---
 
 ## Phase P1 — Create + backfill + write-both (reads still on JSONB)
