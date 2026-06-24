@@ -292,5 +292,21 @@ describe('AccommodationMediaSchema', () => {
             );
             expect(result.success).toBe(false);
         });
+
+        // SPEC-204 regression: caption/description/alt/publicId map to NULLABLE DB
+        // columns, so the row schema MUST accept null. A non-nullable schema made the
+        // protected/admin getMedia endpoint 500 ("Response payload does not match
+        // declared schema") on real rows where alt/publicId are NULL.
+        it('should accept null for nullable optional string fields', () => {
+            const result = AccommodationMediaSchema.safeParse(
+                buildValidMedia({
+                    caption: null,
+                    description: null,
+                    alt: null,
+                    publicId: null
+                })
+            );
+            expect(result.success).toBe(true);
+        });
     });
 });

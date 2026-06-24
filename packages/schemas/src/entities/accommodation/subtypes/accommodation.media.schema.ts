@@ -59,6 +59,7 @@ export const AccommodationMediaSchema = z.object({
         .string()
         .min(3, { message: 'zodError.common.media.image.caption.min' })
         .max(100, { message: 'zodError.common.media.image.caption.max' })
+        .nullable()
         .optional(),
     /**
      * Longer description of photo content (max 300 chars).
@@ -68,6 +69,7 @@ export const AccommodationMediaSchema = z.object({
         .string()
         .min(10, { message: 'zodError.common.media.image.description.min' })
         .max(300, { message: 'zodError.common.media.image.description.max' })
+        .nullable()
         .optional(),
     /**
      * Accessible alt text for `<img alt>` and screen readers.
@@ -77,12 +79,17 @@ export const AccommodationMediaSchema = z.object({
         .string()
         .min(1, { message: 'zodError.common.media.image.alt.min' })
         .max(200, { message: 'zodError.common.media.image.alt.max' })
+        .nullable()
         .optional(),
     /**
      * Cloudinary `public_id` (e.g. `hospeda/dev/abc123`).
      * Optional — historic payloads and external URLs do not carry a Cloudinary id.
      */
-    publicId: z.string().min(1, { message: 'zodError.common.media.image.publicId.min' }).optional(),
+    publicId: z
+        .string()
+        .min(1, { message: 'zodError.common.media.image.publicId.min' })
+        .nullable()
+        .optional(),
     /**
      * Optional credits/source metadata (photographer, sourceUrl, license).
      * Nullable because the DB column is JSONB nullable.
