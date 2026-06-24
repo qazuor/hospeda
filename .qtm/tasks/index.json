@@ -800,9 +800,12 @@
         {
             "specId": "SPEC-253",
             "title": "Commerce owner editor — extended fields + single COMMERCE_EDIT_OWN permission",
-            "status": "in-progress",
+            "status": "completed",
             "progress": "31/31",
-            "path": "SPEC-253-commerce-owner-editor-extended-fields"
+            "path": "SPEC-253-commerce-owner-editor-extended-fields",
+            "archived": true,
+            "archivedAt": "2026-06-23",
+            "archiveNote": "Shipped + validated via PR #1822 (merged to staging 2026-06-23)."
         },
         {
             "specId": "SPEC-251",
