@@ -1930,7 +1930,7 @@
         },
         {
             "specId": "SPEC-272",
-            "title": "Occupancy calendar — manual management + external sync (Google Calendar, Airbnb, Booking)",
+            "title": "Occupancy calendar — Phase 1 manual (basic) + Phase 2/3 external sync (advanced)",
             "type": "feature",
             "complexity": "high",
             "status": "draft",
