@@ -8,27 +8,39 @@
             "id": "T-001",
             "title": "Add RETRYABLE_FAILURE_CODES constant and withRetry wrapper to apify-client.ts",
             "description": "Implement the R1 retry layer closest to the failure point — inside `apify-client.ts` so the orchestrator and response contract are unchanged.\n\n**What to create/modify:**\n- `packages/service-core/src/services/accommodation-import/adapters/apify-client.ts`\n  - Export `RETRYABLE_FAILURE_CODES: ReadonlySet<ImportFailureCode>` = `new Set(['source_blocked', 'timeout'])`\n  - Export `WithRetryInput<T>` interface: `{ fn: () => Promise<RunApifyActorResult>; maxRetries?: number; baseDelayMs?: number }`\n  - Export `withRetry(input: WithRetryInput): Promise<RunApifyActorResult>` — wraps one `runApifyActor` call: if `failureCode` is in `RETRYABLE_FAILURE_CODES`, sleep a jittered delay and retry; otherwise return immediately. Default `maxRetries = 2`, `baseDelayMs = 500`. Jitter: `delay = baseDelayMs + Math.random() * baseDelayMs` (uniform 0–100% jitter on the base). Hard cap: never exceed `maxRetries` attempts total (1 original + 2 retries = 3 calls max).\n  - Sleep helper: `function sleep(ms: number): Promise<void>` using `new Promise(resolve => setTimeout(resolve, ms))`.\n  - JSDoc on all exports.\n\n**Key constraints:**\n- `withRetry` does NOT import anything not already in this file.\n- Non-retryable codes (`invalid_url`, `credentials_missing`, `provider_error`, `nothing_found`) return immediately without any sleep.\n- The function never throws.\n\n**Acceptance criteria:**\n- `RETRYABLE_FAILURE_CODES` is exported and contains exactly `source_blocked` and `timeout`.\n- `withRetry` retries at most `maxRetries` times for retryable codes.\n- `withRetry` returns immediately (no sleep) for non-retryable codes.\n- `withRetry` returns the first successful result (items.length > 0 and no failureCode).\n- If all retries fail, returns the last failure result.\n\n**Testing:** See T-006.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-002", "T-003", "T-006"],
             "subtasks": [
-                { "title": "Export RETRYABLE_FAILURE_CODES constant", "completed": false },
-                { "title": "Implement sleep helper", "completed": false },
-                { "title": "Implement withRetry with jittered backoff", "completed": false },
-                { "title": "Add JSDoc to all new exports", "completed": false }
+                {
+                    "title": "Export RETRYABLE_FAILURE_CODES constant",
+                    "completed": true
+                },
+                {
+                    "title": "Implement sleep helper",
+                    "completed": true
+                },
+                {
+                    "title": "Implement withRetry with jittered backoff",
+                    "completed": true
+                },
+                {
+                    "title": "Add JSDoc to all new exports",
+                    "completed": true
+                }
             ],
             "tags": ["backend", "service-core", "resilience", "retry"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-24T21:31:59.000Z",
+                "completed": "2026-06-24T21:37:43.000Z"
             }
         },
         {
@@ -40,9 +52,18 @@
             "blockedBy": ["T-001"],
             "blocks": ["T-007"],
             "subtasks": [
-                { "title": "Import withRetry from apify-client", "completed": false },
-                { "title": "Wrap runApifyActor call site in withRetry", "completed": false },
-                { "title": "Verify existing adapter tests still pass", "completed": false }
+                {
+                    "title": "Import withRetry from apify-client",
+                    "completed": false
+                },
+                {
+                    "title": "Wrap runApifyActor call site in withRetry",
+                    "completed": false
+                },
+                {
+                    "title": "Verify existing adapter tests still pass",
+                    "completed": false
+                }
             ],
             "tags": ["backend", "service-core", "airbnb", "retry"],
             "phase": "core",
@@ -66,12 +87,18 @@
             "blockedBy": ["T-001"],
             "blocks": ["T-007"],
             "subtasks": [
-                { "title": "Import withRetry from apify-client", "completed": false },
+                {
+                    "title": "Import withRetry from apify-client",
+                    "completed": false
+                },
                 {
                     "title": "Identify and wrap only the actor call site (not JSON-LD)",
                     "completed": false
                 },
-                { "title": "Verify existing adapter tests still pass", "completed": false }
+                {
+                    "title": "Verify existing adapter tests still pass",
+                    "completed": false
+                }
             ],
             "tags": ["backend", "service-core", "booking", "retry"],
             "phase": "core",
@@ -95,12 +122,18 @@
             "blockedBy": [],
             "blocks": ["T-005"],
             "subtasks": [
-                { "title": "Add _runFallbackGenericExtract private method", "completed": false },
+                {
+                    "title": "Add _runFallbackGenericExtract private method",
+                    "completed": false
+                },
                 {
                     "title": "Reuse existing GenericAdapter instance from adapter registry",
                     "completed": false
                 },
-                { "title": "Guard with try/catch returning null on throw", "completed": false }
+                {
+                    "title": "Guard with try/catch returning null on throw",
+                    "completed": false
+                }
             ],
             "tags": ["backend", "service-core", "fallback", "generic-adapter"],
             "phase": "core",
@@ -136,7 +169,10 @@
                     "title": "Merge fallback RawExtraction preserving sourcePlatform",
                     "completed": false
                 },
-                { "title": "Add inline comment explaining R2 decision", "completed": false }
+                {
+                    "title": "Add inline comment explaining R2 decision",
+                    "completed": false
+                }
             ],
             "tags": ["backend", "service-core", "fallback", "orchestrator"],
             "phase": "core",
@@ -155,32 +191,35 @@
             "id": "T-006",
             "title": "Write unit tests for withRetry (retry policy, fail-fast, jitter, cap)",
             "description": "Comprehensive unit tests for the `withRetry` function in `apify-client.ts`.\n\n**Test file:** `packages/service-core/test/services/accommodation-import/adapters/apify-client.test.ts` (extend existing file — add a new `describe('withRetry', ...)` block).\n\n**Test cases to cover (AAA pattern):**\n1. Retries exactly `maxRetries` times on `source_blocked` before returning the failure.\n2. Retries exactly `maxRetries` times on `timeout` before returning the failure.\n3. Does NOT retry on `invalid_url` — returns immediately after first call.\n4. Does NOT retry on `credentials_missing` — returns immediately after first call.\n5. Does NOT retry on `provider_error` — returns immediately after first call.\n6. Does NOT retry on `nothing_found` — returns immediately after first call.\n7. Returns first success (items.length > 0) without retrying remaining attempts.\n8. Defaults to `maxRetries = 2` when not specified.\n9. Respects custom `maxRetries` (e.g. 0 = no retry).\n\n**Mocking approach:**\n- Mock `sleep` or use `vi.useFakeTimers()` to keep tests fast (no real delays).\n- The `fn` parameter is a `vi.fn()` that returns controlled `RunApifyActorResult` values.\n- Count how many times `fn` is called to assert retry count.\n\n**Acceptance criteria:**\n- All 9 test cases pass.\n- Tests do not take real wall-clock time (sleep is mocked or fake timers used).\n- Total call count assertions are exact (not ≥).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Set up describe block for withRetry in existing test file",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Mock sleep / use vi.useFakeTimers", "completed": false },
+                {
+                    "title": "Mock sleep / use vi.useFakeTimers",
+                    "completed": true
+                },
                 {
                     "title": "Write 9 test cases covering retry policy and fail-fast",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "service-core", "retry", "unit-test"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-24T21:37:43.000Z",
+                "completed": "2026-06-24T21:37:43.000Z"
             }
         },
         {
@@ -200,7 +239,10 @@
                     "title": "Add R1 retry integration tests to booking.adapter.test.ts",
                     "completed": false
                 },
-                { "title": "Verify fast execution with mocked sleep/timers", "completed": false }
+                {
+                    "title": "Verify fast execution with mocked sleep/timers",
+                    "completed": false
+                }
             ],
             "tags": ["testing", "service-core", "airbnb", "booking", "integration-test"],
             "phase": "testing",
@@ -263,7 +305,10 @@
                     "title": "Create __tests__/ImportFromUrl.test.tsx with jsdom environment header",
                     "completed": false
                 },
-                { "title": "Mock API and translations", "completed": false },
+                {
+                    "title": "Mock API and translations",
+                    "completed": false
+                },
                 {
                     "title": "Write 4 test cases covering spinner-clear invariant",
                     "completed": false
@@ -338,7 +383,10 @@
                     "title": "Document all apify*Actor config fields and their env vars",
                     "completed": false
                 },
-                { "title": "Record config seam audit result", "completed": false }
+                {
+                    "title": "Record config seam audit result",
+                    "completed": false
+                }
             ],
             "tags": ["docs", "r4", "provider-mitigation", "runbook", "ops"],
             "phase": "docs",
@@ -356,9 +404,9 @@
     ],
     "summary": {
         "total": 11,
-        "pending": 11,
+        "pending": 9,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 2,
         "blocked": 0,
         "averageComplexity": 2.2
     }
