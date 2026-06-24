@@ -50,6 +50,9 @@ import {
     AccommodationIaDataUpdateInputSchema,
     type AccommodationIdType,
     type AccommodationListWrapper,
+    type AccommodationMediaAddInput,
+    AccommodationMediaAddInputSchema,
+    type AccommodationMediaSingleOutput,
     type AccommodationOptionsItem,
     type AccommodationRatingInput,
     type AccommodationSearchInput,
@@ -70,6 +73,7 @@ import {
     type IdOrSlugParams,
     IdOrSlugParamsSchema,
     LifecycleStatusEnum,
+    ModerationStatusEnum,
     PermissionEnum,
     RoleEnum,
     ServiceErrorCode,
@@ -3077,6 +3081,86 @@ export class AccommodationService extends BaseCrudService<
                     );
                 }
                 return this.model.getMarketComparisonByOwnerId(validatedActor.id, execCtx?.tx);
+            }
+        });
+    }
+
+    /**
+     * Adds a photo to an accommodation gallery (SPEC-204 granular gallery endpoint).
+     *
+     * This is a URL-receiver method: the upload to Cloudinary has already happened
+     * via `POST /api/v1/admin/media/upload`. This method registers the already-uploaded
+     * URL as a new `accommodation_media` row.
+     *
+     * Permission model: delegates to `_canUpdate` (same as `addFaq` / `addIaData`).
+     * This enforces `ACCOMMODATION_UPDATE_ANY` OR (`ACCOMMODATION_UPDATE_OWN`
+     * + ownership), allowing HOSTs to add photos to their own accommodations.
+     *
+     * Plan cap enforcement is NOT done here — it is done in the route handler
+     * because `checkLimit` requires the Hono `Context` object (populated by
+     * `entitlementMiddleware`). The service receives a pre-screened request.
+     *
+     * `sortOrder` is computed as max(visible sortOrder) + 1 (append to end).
+     * When no visible rows exist yet, starts at 0.
+     *
+     * Server-controlled fields set here:
+     * - `state`      → `'visible'` (newly added photos are always visible)
+     * - `isFeatured` → `false` (featured is managed by a dedicated endpoint)
+     * - `sortOrder`  → max(current visible sortOrder) + 1
+     * - `moderationState` → defaults to `ModerationStatusEnum.PENDING` when not supplied
+     *
+     * @param actor - The actor performing the action.
+     * @param data  - Input containing accommodationId and the photo payload.
+     * @param ctx   - Optional service context for transaction propagation.
+     * @returns The created `AccommodationMedia` row, wrapped in a `{ media }` envelope.
+     */
+    public async addMedia(
+        actor: Actor,
+        data: AccommodationMediaAddInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<AccommodationMediaSingleOutput>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'addMedia',
+            input: { ...data, actor },
+            schema: AccommodationMediaAddInputSchema,
+            execute: async (validated) => {
+                const accommodation = await this.model.findById(validated.accommodationId, ctx?.tx);
+                if (!accommodation) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+                }
+                await this._canUpdate(actor, accommodation);
+
+                const mediaModel = new AccommodationMediaModel();
+
+                // Compute next sortOrder: max(visible sortOrder) + 1, or 0 if none yet.
+                // Using the base findAll with descending sort on sortOrder picks the
+                // highest current sortOrder in a single-row page — same pattern as addFaq.
+                const existing = await mediaModel.findAll(
+                    {
+                        accommodationId: validated.accommodationId,
+                        state: 'visible',
+                        deletedAt: null
+                    },
+                    { pageSize: 1, sortBy: 'sortOrder', sortOrder: 'desc' },
+                    undefined,
+                    ctx?.tx
+                );
+                const topOrder = existing.items[0]?.sortOrder ?? -1;
+                const nextSortOrder =
+                    typeof topOrder === 'number' && topOrder >= 0 ? topOrder + 1 : 0;
+
+                const rowToCreate = {
+                    ...validated.media,
+                    accommodationId: validated.accommodationId as AccommodationIdType,
+                    moderationState:
+                        validated.media.moderationState ?? ModerationStatusEnum.PENDING,
+                    state: 'visible' as const,
+                    isFeatured: false,
+                    sortOrder: nextSortOrder
+                };
+
+                const createdMedia = await mediaModel.create(rowToCreate, ctx?.tx);
+                return { media: createdMedia };
             }
         });
     }

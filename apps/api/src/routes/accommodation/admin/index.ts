@@ -5,6 +5,7 @@
 import { createRouter } from '../../../utils/create-app';
 import { adminAccommodationReviewRoutes } from '../reviews/admin/index.js';
 import { adminAddFaqRoute } from './addFaq';
+import { adminAddMediaRoute } from './addMedia';
 import { adminBatchAccommodationsRoute } from './batch';
 import { adminCreateAccommodationRoute } from './create';
 import { adminDeleteAccommodationRoute } from './delete';
@@ -73,5 +74,11 @@ app.route('/', adminUpdateFaqRoute);
 
 // DELETE /:id/faqs/:faqId - Remove FAQ from accommodation
 app.route('/', adminRemoveFaqRoute);
+
+// POST /:id/media - Add a photo to accommodation gallery
+// NOTE: Fixed-suffix routes like /:id/media/reorder MUST be registered BEFORE
+// /:id/media/:mediaId to prevent Hono matching "reorder" as a UUID param.
+// This comment block is the ordering anchor for future media endpoints.
+app.route('/', adminAddMediaRoute);
 
 export { app as adminAccommodationRoutes };

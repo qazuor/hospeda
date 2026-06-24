@@ -297,6 +297,7 @@
 | `PUT /api/v1/admin/accommodations/{id}/faqs/{faqId}` | `accommodation/admin/updateFaq.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
 | `DELETE /api/v1/admin/accommodations/{id}/faqs/{faqId}` | `accommodation/admin/removeFaq.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
 | `POST /api/v1/admin/accommodations/{id}/faqs/reorder` | `accommodation/admin/reorderFaqs.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
+| `POST /api/v1/admin/accommodations/{id}/media` | `accommodation/admin/addMedia.ts` | none | - | n/a | Admin write; PermissionEnum-gated; plan photo cap enforced in handler for owner-actors (bypassed for admins with ACCOMMODATION_UPDATE_ANY) |
 | **EXTERNAL REPUTATION — ADMIN (SPEC-237)** | | | | | |
 | `POST /api/v1/admin/accommodations/{id}/external-reputation/disable` | `accommodation-external-reputation/admin/disable-reputation.ts` | none | - | n/a | Admin soft-takedown (showLink=false + showReviews=false on all listings); gated by adminAuthMiddleware([ACCOMMODATION_UPDATE_ANY]); staff bypass entitlements so no billing gate |
 | **ACCOMMODATION REVIEWS — ADMIN** | | | | | |
