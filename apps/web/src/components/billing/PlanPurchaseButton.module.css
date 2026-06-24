@@ -196,7 +196,7 @@
     font-family: var(--font-sans);
     font-size: 0.8125rem;
     font-weight: 500;
-    color: var(--foreground-secondary, var(--foreground));
+    color: var(--core-muted-foreground, var(--foreground));
 }
 
 /* Row: input + apply button side by side */
@@ -211,7 +211,7 @@
     min-width: 0;
     padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
     border: 1px solid var(--border, #d1d5db);
-    border-radius: var(--radius-input, 6px);
+    border-radius: var(--radius-md, 6px);
     font-family: var(--font-sans);
     font-size: 0.875rem;
     background-color: var(--background);
@@ -279,7 +279,7 @@
     padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
     background-color: var(--success-a12);
     border: 1px solid var(--success);
-    border-radius: var(--radius-input, 6px);
+    border-radius: var(--radius-md, 6px);
 }
 
 .promoPreviewText {
@@ -296,7 +296,7 @@
     background: none;
     border: none;
     padding: 0;
-    color: var(--foreground-secondary, var(--foreground));
+    color: var(--core-muted-foreground, var(--foreground));
     font-family: var(--font-sans);
     font-size: 0.8125rem;
     text-decoration: underline;
