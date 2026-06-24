@@ -1,13 +1,15 @@
 {
     "specId": "SPEC-271",
-    "title": "Partners program — businesses/NGOs/institutions pay monthly to be listed as partners",
+    "title": "Partners program — admin-sold monthly listing (new entity reusing sponsorship shape + commerce billing)",
     "type": "feature",
     "complexity": "medium",
     "status": "draft",
     "created": "2026-06-23T00:00:00Z",
+    "decided": "2026-06-23",
+    "modelFit": "basic",
     "startedAt": null,
     "approved": null,
     "completed": null,
     "planFileRef": null,
-    "tags": ["partners", "billing", "qzpay", "admin", "web", "directory", "advertising", "commerce"]
+    "tags": ["partners", "billing", "qzpay", "admin", "web", "directory"]
 }
