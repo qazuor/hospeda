@@ -5,7 +5,7 @@
  * Returns full detail of a single social post, including related targets, media,
  * resolved hashtags, and last 10 publish logs.
  */
-import { IdSchema, PermissionEnum, SocialPostSchema } from '@repo/schemas';
+import { IdSchema, PermissionEnum, SocialPostDetailSchema } from '@repo/schemas';
 import { ServiceError, SocialPostService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../../utils/actor';
@@ -30,7 +30,7 @@ export const adminGetSocialPostByIdRoute = createAdminRoute({
     tags: ['Social Posts'],
     requiredPermissions: [PermissionEnum.SOCIAL_POST_VIEW],
     requestParams: { id: IdSchema },
-    responseSchema: SocialPostSchema.nullable(),
+    responseSchema: SocialPostDetailSchema.nullable(),
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const result = await postService.getPostDetail({
