@@ -43,6 +43,7 @@
 
 import type { ImportContext, ImportSourceAdapter, RawExtraction } from '../adapter.types.js';
 import { runApifyActor } from './apify-client.js';
+import { withRetry } from './with-retry.js';
 
 // ---------------------------------------------------------------------------
 // Price probe constants
@@ -851,20 +852,25 @@ export class AirbnbAdapter implements ImportSourceAdapter {
         // -------------------------------------------------------------------
         const actorLocale = mapAirbnbActorLocale(ctx.locale);
         const { checkIn, checkOut } = buildPriceProbeDates();
-        const result = await runApifyActor({
-            token,
-            actor,
-            actorInput: {
-                startUrls: [{ url: url.href }],
-                ...(actorLocale ? { locale: actorLocale } : {}),
-                checkIn,
-                checkOut,
-                adults: PRICE_PROBE_ADULTS,
-                currency: PRICE_PROBE_CURRENCY
-            },
-            // Apify actors run synchronously for 8-120s — use the longer Apify
-            // budget, not the short JSON-LD fetch timeout, or the run always aborts.
-            timeoutMs: ctx.apifyTimeoutMs ?? ctx.timeoutMs
+        // Retry transient blocks (source_blocked / timeout) before degrading;
+        // every other outcome returns on the first call (SPEC-277 R1).
+        const result = await withRetry({
+            fn: () =>
+                runApifyActor({
+                    token,
+                    actor,
+                    actorInput: {
+                        startUrls: [{ url: url.href }],
+                        ...(actorLocale ? { locale: actorLocale } : {}),
+                        checkIn,
+                        checkOut,
+                        adults: PRICE_PROBE_ADULTS,
+                        currency: PRICE_PROBE_CURRENCY
+                    },
+                    // Apify actors run synchronously for 8-120s — use the longer Apify
+                    // budget, not the short JSON-LD fetch timeout, or the run always aborts.
+                    timeoutMs: ctx.apifyTimeoutMs ?? ctx.timeoutMs
+                })
         });
 
         // Propagate transport-level failure codes (credentials_missing, timeout, provider_error).
