@@ -1,7 +1,7 @@
 ---
 id: SPEC-277
 title: Accommodation import — scraper resilience (retry, fallback chain, async, provider mitigation, manual path)
-status: in-progress
+status: completed
 type: improvement
 complexity: high
 dependsOn: [SPEC-258, SPEC-250]

@@ -1078,14 +1078,17 @@
         {
             "specId": "SPEC-277",
             "title": "Accommodation import — scraper resilience (retry, fallback chain, async, provider mitigation, manual path)",
-            "status": "in-progress",
+            "status": "completed",
             "progress": "11/11",
             "path": "SPEC-277-import-scraper-resilience",
             "parent": "SPEC-258",
             "branch": "spec/SPEC-277-import-scraper-resilience",
             "base": "staging",
             "createdAt": "2026-06-23T23:17:27Z",
-            "note": "Tasks atomized for R1/R2/R4/R5 (11 tasks; R3 async path deferred to follow-up spec). Scopes: R1 withRetry wrapper in apify-client + Airbnb/Booking adapters, R2 GenericAdapter fallback for Airbnb/Booking on source_blocked, R4 provider-mitigation runbook, R5 form-usability invariant tests for web+admin."
+            "note": "Tasks atomized for R1/R2/R4/R5 (11 tasks; R3 async path deferred to follow-up spec). Scopes: R1 withRetry wrapper in apify-client + Airbnb/Booking adapters, R2 GenericAdapter fallback for Airbnb/Booking on source_blocked, R4 provider-mitigation runbook, R5 form-usability invariant tests for web+admin.",
+            "archived": true,
+            "archivedAt": "2026-06-24",
+            "archiveNote": "R1/R2/R4/R5 complete (11/11). R3 async deferred to SPEC-281. PR #1848, pending final merge."
         },
         {
             "specId": "SPEC-278",
@@ -1098,6 +1101,18 @@
             "base": "staging",
             "createdAt": "2026-06-24T00:00:00Z",
             "note": "Doc-only spec; tasks NOT atomized yet. Formalizes Linear BETA-96: the ML import tier uses a static 6h access token with no refresh. Replace with OAuth 2.0 authorization-code + refresh-token rotation + token service (concurrency-safe). Unblocks SPEC-258 A3 (ML field enrichment). 5 open questions for the owner before atomizing."
+        },
+        {
+            "specId": "SPEC-281",
+            "title": "Accommodation import — async extraction path for slow/blocked sources (SPEC-277 R3)",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-281-import-scraper-async-path",
+            "parent": "SPEC-277",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-24T00:00:00Z",
+            "note": "Doc-only spec; tasks NOT atomized yet. Deferred R3 (async extraction path) carved out of SPEC-277. Reuses SPEC-250 async Apify helpers. 5 open questions for the owner before atomizing."
         }
     ],
     "standalone": {
