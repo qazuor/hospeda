@@ -1099,7 +1099,7 @@
         {
             "specId": "SPEC-270",
             "title": "Web accessibility audit — WCAG 2.1 AA",
-            "status": "in-progress",
+            "status": "completed",
             "progress": "7/7",
             "path": "SPEC-270-web-accessibility-audit",
             "branch": "spec/SPEC-270-web-accessibility-audit",
@@ -1108,7 +1108,9 @@
             "createdAt": "2026-06-23T00:00:00.000Z",
             "tasksAtomizedAt": "2026-06-24T00:00:00.000Z",
             "taskCount": 7,
-            "archived": false
+            "archived": true,
+            "archivedAt": "2026-06-24T00:00:00Z",
+            "archiveNote": "7/7. PR #1844 left green. Code-side remediation complete; manual keyboard/screen-reader verification procedure documented in docs/guides/web-accessibility-manual-testing.md."
         }
     ],
     "standalone": {
