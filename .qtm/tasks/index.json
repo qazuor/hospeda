@@ -819,7 +819,10 @@
             "title": "Extend apps/e2e with commerce-owner flows + seed fixtures",
             "status": "completed",
             "progress": "5/5",
-            "path": "SPEC-252-web-e2e-playwright-harness"
+            "path": "SPEC-252-web-e2e-playwright-harness",
+            "archived": true,
+            "archivedAt": "2026-06-24",
+            "archiveNote": "Merged to staging via PR #1751 (merge 627b7d638). All 5 tasks delivered; seed fix + auth helper + positive E2E + negative E2E + CI verify. Follow-up SPEC-261 stabilized + promoted tests to @p0."
         },
         {
             "specId": "SPEC-250",
