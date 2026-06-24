@@ -1,4 +1,24 @@
 {
+    "whatsNewModal": {
+        "title": "What's New",
+        "close": "Close",
+        "markAsRead": "Mark as read",
+        "markAllRead": "Mark all as read",
+        "noUnread": "No unread updates",
+        "viewAll": "View all updates",
+        "publishedAt": "Published on {{date}}"
+    },
+    "whatsNewBadge": {
+        "label": "What's New",
+        "unseenCount": "{{count}} unread"
+    },
+    "welcomeTour": {
+        "skip": "Skip tour",
+        "next": "Next",
+        "prev": "Previous",
+        "done": "Done",
+        "step": "Step {{current}} of {{total}}"
+    },
     "navigation": "Account navigation",
     "sections": "Account sections",
     "avatar": {
@@ -69,7 +89,13 @@
         "sections": {
             "appearance": "Appearance",
             "notifications": "Notifications",
+            "onboarding": "Onboarding",
             "newsletter": "Newsletter"
+        },
+        "onboarding": {
+            "restartTour": "Repeat welcome tour",
+            "restartTourDesc": "Replay the guided tour of your account panel",
+            "restarting": "Starting tour..."
         },
         "theme": {
             "label": "Theme",
@@ -331,6 +357,8 @@
                 "myMessagesDesc": "Conversations with hosts",
                 "newsletter": "Newsletter",
                 "newsletterDesc": "Manage your newsletter subscription",
+                "whatsNew": "What's New",
+                "whatsNewDesc": "Platform updates and announcements",
                 "myProperties": "My properties",
                 "myPropertiesDesc": "Manage your published accommodations",
                 "hostDashboard": "Host dashboard",

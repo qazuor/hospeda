@@ -37,6 +37,19 @@
             "note": "11 tasks across 4 phases (avg complexity 3.9). Backend endpoint T-002 in-progress. Critical path: T-001->T-002->T-003->T-005->T-007->T-008->T-009->T-010->T-011 (9 steps). Three parallel tracks after T-003: banner (T-004), plan-change flow (T-005..T-009), cancel (T-006). Converge at i18n (T-010) + smoke (T-011). Depends on SPEC-167 + SPEC-147."
         },
         {
+            "specId": "SPEC-275",
+            "title": "Web — What's New dialog + Welcome Tour for hosts and commerce owners in /mi-cuenta",
+            "status": "in-progress",
+            "progress": "0/13",
+            "path": "SPEC-275-web-whats-new-welcome-host",
+            "branch": "spec/SPEC-275-web-whats-new-welcome-host",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-275-web-whats-new-welcome-host",
+            "base": "staging",
+            "createdAt": "2026-06-24T00:00:00.000Z",
+            "tasksAtomizedAt": "2026-06-24T00:00:00.000Z",
+            "taskCount": 13
+        },
+        {
             "specId": "SPEC-239",
             "title": "Commerce listing core (merchant-with-subscription) + Gastronomía",
             "status": "in-progress",

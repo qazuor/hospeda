@@ -1,4 +1,24 @@
 {
+    "whatsNewModal": {
+        "title": "Novidades",
+        "close": "Fechar",
+        "markAsRead": "Marcar como lido",
+        "markAllRead": "Marcar tudo como lido",
+        "noUnread": "Nenhuma novidade não lida",
+        "viewAll": "Ver todas as novidades",
+        "publishedAt": "Publicado em {{date}}"
+    },
+    "whatsNewBadge": {
+        "label": "Novidades",
+        "unseenCount": "{{count}} não lidas"
+    },
+    "welcomeTour": {
+        "skip": "Pular tour",
+        "next": "Próximo",
+        "prev": "Anterior",
+        "done": "Concluir",
+        "step": "Passo {{current}} de {{total}}"
+    },
     "navigation": "Navegação da conta",
     "sections": "Seções da conta",
     "avatar": {
@@ -69,7 +89,13 @@
         "sections": {
             "appearance": "Aparência",
             "notifications": "Notificações",
-            "newsletter": "Newsletter"
+            "onboarding": "Onboarding",
+            "newsletter": "Boletim de novidades"
+        },
+        "onboarding": {
+            "restartTour": "Repetir tour de boas-vindas",
+            "restartTourDesc": "Veja novamente o tour guiado pelo painel da conta",
+            "restarting": "Iniciando tour..."
         },
         "theme": {
             "label": "Tema",
@@ -331,6 +357,8 @@
                 "myMessagesDesc": "Conversas com anfitriões",
                 "newsletter": "Boletim de novidades",
                 "newsletterDesc": "Gerencie sua assinatura do boletim",
+                "whatsNew": "Novidades",
+                "whatsNewDesc": "Novidades e atualizações da plataforma",
                 "myProperties": "Meus imóveis",
                 "myPropertiesDesc": "Gerencie suas acomodações publicadas",
                 "hostDashboard": "Painel do anfitrião",

@@ -2017,7 +2017,7 @@
             "title": "Web — What's New dialog + Welcome Tour for hosts and commerce owners in /mi-cuenta",
             "type": "feature",
             "complexity": "medium",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-275-web-whats-new-welcome-host",
             "created": "2026-06-23T00:00:00Z",
             "base": "staging",

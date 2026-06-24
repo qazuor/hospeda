@@ -45,6 +45,7 @@
         "astro": "^6.4.6",
         "better-auth": "^1.4.18",
         "clsx": "^2.1.1",
+        "driver.js": "1.4.0",
         "embla-carousel-autoplay": "^8.6.0",
         "embla-carousel-react": "^8.6.0",
         "glightbox": "^3.3.0",
