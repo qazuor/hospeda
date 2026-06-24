@@ -521,5 +521,23 @@ describe('SocialImagePipelineService', () => {
                 expect.objectContaining({ createdById: undefined })
             );
         });
+
+        it('should persist createdById as undefined when actorId is not a valid UUID (regression: gpt-action FK)', async () => {
+            // Regression: `social_assets.created_by_id` is a uuid FK to `users`.
+            // The GPT API-key actor id is the synthetic string 'gpt-action', which
+            // is NOT a UUID — passing it caused the insert to fail with
+            // "invalid input syntax for type uuid" and the asset row was lost.
+            // Arrange
+            const image: GptImagePayload = { mode: 'public_url', url: FAKE_IMAGE_URL };
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
+
+            // Act
+            await service.processImage({ image, actorId: 'gpt-action' });
+
+            // Assert
+            expect(assetModelMock.create).toHaveBeenCalledWith(
+                expect.objectContaining({ createdById: undefined })
+            );
+        });
     });
 });
