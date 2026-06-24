@@ -133,6 +133,10 @@ export interface ScheduleMutationInput {
     readonly id: string;
     readonly scheduledAt: string;
     readonly timezone: string;
+    /** Recurrence cadence — defaults to ONCE when omitted. */
+    readonly recurrenceType?: string;
+    /** Additional cadence params (e.g. `{ weekday: "TUESDAY" }` for WEEKLY). */
+    readonly recurrenceParamsJson?: Record<string, unknown>;
 }
 
 /** Input for the promote-hashtag mutation. */
@@ -143,6 +147,22 @@ export interface PromoteHashtagMutationInput {
     readonly platform?: string;
     readonly audienceId?: string;
     readonly priority?: number;
+}
+
+/** Partial update fields accepted by PATCH /admin/social/posts/:id. */
+export interface UpdateSocialPostInput {
+    readonly id: string;
+    readonly finalCaption?: string;
+    readonly finalHashtagsText?: string;
+    readonly notes?: string;
+    readonly internalNotes?: string;
+    readonly title?: string;
+}
+
+/** Input for the set-hashtags mutation (PUT /admin/social/posts/:id/hashtags). */
+export interface SetPostHashtagsInput {
+    readonly id: string;
+    readonly hashtags: readonly string[];
 }
 
 // ---------------------------------------------------------------------------
@@ -228,10 +248,25 @@ async function requestChangesSocialPostRequest(
 async function scheduleSocialPostRequest(
     input: ScheduleMutationInput
 ): Promise<TransitionScheduleResponse['data']> {
+    const body: Record<string, unknown> = {
+        scheduledAt: input.scheduledAt,
+        timezone: input.timezone
+    };
+
+    if (input.recurrenceType) {
+        body.recurrenceType = input.recurrenceType;
+    }
+
+    // Only include recurrenceParamsJson when the caller explicitly provides it
+    // (i.e. when recurrenceType === "WEEKLY" and weekday is set).
+    if (input.recurrenceParamsJson) {
+        body.recurrenceParamsJson = input.recurrenceParamsJson;
+    }
+
     const result = await fetchApi<TransitionScheduleResponse>({
         path: `/api/v1/admin/social/posts/${input.id}/schedule`,
         method: 'POST',
-        body: { scheduledAt: input.scheduledAt, timezone: input.timezone }
+        body
     });
     return result.data.data;
 }
@@ -239,6 +274,29 @@ async function scheduleSocialPostRequest(
 async function markReadySocialPostRequest(id: string): Promise<TransitionStatusResponse['data']> {
     const result = await fetchApi<TransitionStatusResponse>({
         path: `/api/v1/admin/social/posts/${id}/mark-ready`,
+        method: 'POST'
+    });
+    return result.data.data;
+}
+
+/** Aggregated dispatch outcome returned by the publish-now endpoint. */
+interface PublishNowResponse {
+    readonly success: boolean;
+    readonly data: {
+        readonly outcomes: ReadonlyArray<{
+            readonly targetId: string;
+            readonly platform: string;
+            readonly outcome: string;
+        }>;
+        readonly dispatched: number;
+        readonly skipped: number;
+        readonly failed: number;
+    };
+}
+
+async function publishNowSocialPostRequest(id: string): Promise<PublishNowResponse['data']> {
+    const result = await fetchApi<PublishNowResponse>({
+        path: `/api/v1/admin/social/posts/${id}/publish-now`,
         method: 'POST'
     });
     return result.data.data;
@@ -264,6 +322,29 @@ async function archiveSocialPostRequest(id: string): Promise<TransitionStatusRes
     const result = await fetchApi<TransitionStatusResponse>({
         path: `/api/v1/admin/social/posts/${id}/archive`,
         method: 'POST'
+    });
+    return result.data.data;
+}
+
+async function updateSocialPostRequest(
+    input: UpdateSocialPostInput
+): Promise<SocialPostDetailResponse['data']> {
+    const { id, ...body } = input;
+    const result = await fetchApi<SocialPostDetailResponse>({
+        path: `/api/v1/admin/social/posts/${id}`,
+        method: 'PATCH',
+        body
+    });
+    return result.data.data;
+}
+
+async function setPostHashtagsRequest(
+    input: SetPostHashtagsInput
+): Promise<SocialPostDetailResponse['data']> {
+    const result = await fetchApi<SocialPostDetailResponse>({
+        path: `/api/v1/admin/social/posts/${input.id}/hashtags`,
+        method: 'PUT',
+        body: { hashtags: input.hashtags }
     });
     return result.data.data;
 }
@@ -444,6 +525,22 @@ export function useMarkReadySocialPost() {
 }
 
 /**
+ * Mutation: publish a social post immediately via the Make.com dispatch.
+ * Dispatches every target right away (re-publishes terminal targets too).
+ * Invalidates both the list and the detail on settle.
+ */
+export function usePublishNowSocialPost() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (id: string) => publishNowSocialPostRequest(id),
+        onSettled: (_data, _error, id) => {
+            queryClient.invalidateQueries({ queryKey: socialPostQueryKeys.lists() });
+            queryClient.invalidateQueries({ queryKey: socialPostQueryKeys.detail(id) });
+        }
+    });
+}
+
+/**
  * Mutation: pause a social post.
  * Invalidates both the list and the detail on settle.
  */
@@ -484,6 +581,43 @@ export function useArchiveSocialPost() {
         onSettled: (_data, _error, id) => {
             queryClient.invalidateQueries({ queryKey: socialPostQueryKeys.lists() });
             queryClient.invalidateQueries({ queryKey: socialPostQueryKeys.detail(id) });
+        }
+    });
+}
+
+/**
+ * Mutation: partial update of a social post (PATCH /admin/social/posts/:id).
+ *
+ * Accepts any subset of editable fields (finalCaption, finalHashtagsText,
+ * notes, internalNotes, title). Invalidates the detail query on settle.
+ *
+ * Gate: caller must have SOCIAL_POST_UPDATE (enforced server-side).
+ */
+export function useUpdateSocialPost() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (input: UpdateSocialPostInput) => updateSocialPostRequest(input),
+        onSettled: (_data, _error, input) => {
+            queryClient.invalidateQueries({ queryKey: socialPostQueryKeys.detail(input.id) });
+        }
+    });
+}
+
+/**
+ * Mutation: replace the full hashtag set for a post (PUT /admin/social/posts/:id/hashtags).
+ *
+ * Sends an ordered array of hashtag strings (e.g. "#playa" or "playa").
+ * The backend reconciles with the catalog, creates missing entries, and
+ * regenerates the published text. Invalidates the detail query on settle.
+ *
+ * Gate: caller must have SOCIAL_POST_UPDATE (enforced server-side).
+ */
+export function useSetPostHashtags() {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn: (input: SetPostHashtagsInput) => setPostHashtagsRequest(input),
+        onSettled: (_data, _error, input) => {
+            queryClient.invalidateQueries({ queryKey: socialPostQueryKeys.detail(input.id) });
         }
     });
 }

@@ -47,6 +47,7 @@ export const adminRole: z.input<typeof RoleConfigSchema> = {
         'inicio',
         'catalogo',
         'editorial',
+        'marketing',
         'comunidad',
         'comercial',
         'plataforma',
