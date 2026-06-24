@@ -1833,8 +1833,8 @@
         },
         {
             "specId": "SPEC-267",
-            "title": "SEO entity fields — keep & improve vs remove in favor of Astro auto-generation",
-            "type": "evaluation",
+            "title": "SEO entity fields — Hybrid (keep title/description, remove keywords) + improve SEO tab UX",
+            "type": "feature",
             "complexity": "low",
             "status": "draft",
             "path": "SPEC-267-seo-fields-decision",
