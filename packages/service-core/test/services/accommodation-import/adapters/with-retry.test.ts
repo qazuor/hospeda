@@ -156,6 +156,22 @@ describe('withRetry', () => {
         expect(res.items).toHaveLength(1);
     });
 
+    it('treats an empty-items result with no failureCode as success — returns immediately', async () => {
+        // Arrange — a 2xx empty dataset is a content-level result (nothing_found
+        // is the caller's call), NOT a transport failure, so it must not retry.
+        const fn = vi
+            .fn<() => Promise<RunApifyActorResult>>()
+            .mockResolvedValue(result(undefined, []));
+
+        // Act
+        const res = await runWithTimers(() => withRetry({ fn }));
+
+        // Assert — single call, no retry on a failureCode-less empty result.
+        expect(fn).toHaveBeenCalledTimes(1);
+        expect(res.failureCode).toBeUndefined();
+        expect(res.items).toHaveLength(0);
+    });
+
     it('defaults to maxRetries = 2 (3 total calls) when not specified', async () => {
         // Arrange
         const fn = vi
