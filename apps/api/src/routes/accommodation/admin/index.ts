@@ -11,12 +11,15 @@ import { adminCreateAccommodationRoute } from './create';
 import { adminDeleteAccommodationRoute } from './delete';
 import { adminGetAccommodationByIdRoute } from './getById';
 import { adminGetFaqsRoute } from './getFaqs';
+import { adminGetMediaRoute } from './getMedia';
 import { adminHardDeleteAccommodationRoute } from './hardDelete';
 import { adminListAccommodationsRoute } from './list';
 import { adminAccommodationOptionsRoute } from './options';
 import { adminPatchAccommodationRoute } from './patch';
 import { adminRemoveFaqRoute } from './removeFaq';
+import { adminRemoveMediaRoute } from './removeMedia';
 import { adminReorderAccommodationFaqsRoute } from './reorderFaqs';
+import { adminReorderMediaRoute } from './reorderMedia';
 import { adminRestoreAccommodationRoute } from './restore';
 import { adminUpdateAccommodationRoute } from './update';
 import { adminUpdateFaqRoute } from './updateFaq';
@@ -75,10 +78,21 @@ app.route('/', adminUpdateFaqRoute);
 // DELETE /:id/faqs/:faqId - Remove FAQ from accommodation
 app.route('/', adminRemoveFaqRoute);
 
+// PATCH /:id/media/reorder - Reorder gallery photos
+// Registered BEFORE /:id/media/:mediaId so Hono does not resolve "reorder" as a UUID param
+// (same ordering rule as /:id/faqs/reorder above).
+app.route('/', adminReorderMediaRoute);
+
+// GET /:id/media - List gallery photos
+app.route('/', adminGetMediaRoute);
+
 // POST /:id/media - Add a photo to accommodation gallery
 // NOTE: Fixed-suffix routes like /:id/media/reorder MUST be registered BEFORE
 // /:id/media/:mediaId to prevent Hono matching "reorder" as a UUID param.
 // This comment block is the ordering anchor for future media endpoints.
 app.route('/', adminAddMediaRoute);
+
+// DELETE /:id/media/:mediaId - Remove a photo from accommodation gallery
+app.route('/', adminRemoveMediaRoute);
 
 export { app as adminAccommodationRoutes };

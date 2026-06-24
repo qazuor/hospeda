@@ -238,3 +238,97 @@ export const AccommodationMediaSingleOutputSchema = z.object({
 
 /** Inferred type for a single-media response. */
 export type AccommodationMediaSingleOutput = z.infer<typeof AccommodationMediaSingleOutputSchema>;
+
+/**
+ * List output schema for `GET /:id/media` responses.
+ * Wraps an ordered array of `AccommodationMedia` rows in a `media` key, mirroring
+ * the `{ faqs: [...] }` envelope used by FAQ list endpoints.
+ */
+export const AccommodationMediaListOutputSchema = z.object({
+    media: z.array(AccommodationMediaSchema)
+});
+
+/** Inferred type for a media list response. */
+export type AccommodationMediaListOutput = z.infer<typeof AccommodationMediaListOutputSchema>;
+
+// ----------------------------------------------------------------------------
+// Remove Input Schema (SPEC-204 T-018)
+// ----------------------------------------------------------------------------
+
+/**
+ * Service input schema for removing a single media row from an accommodation gallery.
+ * The row is soft-deleted and the remaining visible rows are resequenced.
+ */
+export const AccommodationMediaRemoveInputSchema = z.object({
+    /** UUID of the parent accommodation (from URL param `/:id`). */
+    accommodationId: AccommodationIdSchema,
+    /** UUID of the media row to remove (from URL param `/:mediaId`). */
+    mediaId: AccommodationMediaIdSchema
+});
+
+/** Inferred type for the remove-media service input. */
+export type AccommodationMediaRemoveInput = z.infer<typeof AccommodationMediaRemoveInputSchema>;
+
+// ----------------------------------------------------------------------------
+// Reorder Input Schema (SPEC-204 T-019)
+// ----------------------------------------------------------------------------
+
+/**
+ * HTTP payload schema for `PATCH /:id/media/reorder`.
+ * The caller supplies the full ordered list of visible media UUIDs; the service
+ * validates that this set matches the current visible rows exactly and then
+ * applies the new `sortOrder` positions.
+ */
+export const AccommodationMediaReorderPayloadSchema = z.object({
+    /**
+     * Ordered array of `accommodation_media` UUIDs.
+     * Must contain exactly the same IDs as the current visible rows — no extras,
+     * no missing entries. The service rejects any mismatch with `VALIDATION_ERROR`.
+     */
+    orderedIds: z
+        .array(AccommodationMediaIdSchema, {
+            message: 'zodError.accommodation.media.reorder.orderedIds.invalid'
+        })
+        .min(1, { message: 'zodError.accommodation.media.reorder.orderedIds.min' })
+});
+
+/** Inferred type for the reorder payload. */
+export type AccommodationMediaReorderPayload = z.infer<
+    typeof AccommodationMediaReorderPayloadSchema
+>;
+
+/**
+ * Service input schema for reordering an accommodation's gallery (SPEC-204 T-019).
+ * Combines the URL param `accommodationId` with the ordered-ids payload.
+ */
+export const AccommodationMediaReorderInputSchema = z.object({
+    /** UUID of the parent accommodation (from URL param `/:id`). */
+    accommodationId: AccommodationIdSchema,
+    /** Ordered array of visible media UUIDs. */
+    orderedIds: AccommodationMediaReorderPayloadSchema.shape.orderedIds
+});
+
+/** Inferred type for the reorder service input. */
+export type AccommodationMediaReorderInput = z.infer<typeof AccommodationMediaReorderInputSchema>;
+
+// ----------------------------------------------------------------------------
+// List Input Schema (SPEC-204 — GET /:id/media)
+// ----------------------------------------------------------------------------
+
+/**
+ * Service input schema for listing an accommodation's media rows.
+ * Supports an optional `state` filter (defaults to `'visible'`).
+ */
+export const AccommodationMediaListInputSchema = z.object({
+    /** UUID of the parent accommodation (from URL param `/:id`). */
+    accommodationId: AccommodationIdSchema,
+    /**
+     * Visibility state filter.
+     * Defaults to `'visible'` (active gallery photos).
+     * Pass `'archived'` to list photos moved out of the gallery.
+     */
+    state: AccommodationMediaStateSchema.optional()
+});
+
+/** Inferred type for the list-media service input. */
+export type AccommodationMediaListInput = z.infer<typeof AccommodationMediaListInputSchema>;

@@ -298,6 +298,9 @@
 | `DELETE /api/v1/admin/accommodations/{id}/faqs/{faqId}` | `accommodation/admin/removeFaq.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
 | `POST /api/v1/admin/accommodations/{id}/faqs/reorder` | `accommodation/admin/reorderFaqs.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
 | `POST /api/v1/admin/accommodations/{id}/media` | `accommodation/admin/addMedia.ts` | none | - | n/a | Admin write; PermissionEnum-gated; plan photo cap enforced in handler for owner-actors (bypassed for admins with ACCOMMODATION_UPDATE_ANY) |
+| `GET /api/v1/admin/accommodations/{id}/media` | `accommodation/admin/getMedia.ts` | none | - | n/a | Admin read; PermissionEnum-gated (SPEC-204 T-017) |
+| `PATCH /api/v1/admin/accommodations/{id}/media/reorder` | `accommodation/admin/reorderMedia.ts` | none | - | n/a | Admin write; PermissionEnum-gated; orderedIds must match visible rows exactly (SPEC-204 T-019) |
+| `DELETE /api/v1/admin/accommodations/{id}/media/{mediaId}` | `accommodation/admin/removeMedia.ts` | none | - | n/a | Admin write; PermissionEnum-gated; soft-deletes row + resequences sortOrder (SPEC-204 T-018) |
 | **EXTERNAL REPUTATION — ADMIN (SPEC-237)** | | | | | |
 | `POST /api/v1/admin/accommodations/{id}/external-reputation/disable` | `accommodation-external-reputation/admin/disable-reputation.ts` | none | - | n/a | Admin soft-takedown (showLink=false + showReviews=false on all listings); gated by adminAuthMiddleware([ACCOMMODATION_UPDATE_ANY]); staff bypass entitlements so no billing gate |
 | **ACCOMMODATION REVIEWS — ADMIN** | | | | | |

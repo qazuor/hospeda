@@ -52,6 +52,13 @@ import {
     type AccommodationListWrapper,
     type AccommodationMediaAddInput,
     AccommodationMediaAddInputSchema,
+    type AccommodationMediaListInput,
+    AccommodationMediaListInputSchema,
+    type AccommodationMediaListOutput,
+    type AccommodationMediaRemoveInput,
+    AccommodationMediaRemoveInputSchema,
+    type AccommodationMediaReorderInput,
+    AccommodationMediaReorderInputSchema,
     type AccommodationMediaSingleOutput,
     type AccommodationOptionsItem,
     type AccommodationRatingInput,
@@ -3161,6 +3168,216 @@ export class AccommodationService extends BaseCrudService<
 
                 const createdMedia = await mediaModel.create(rowToCreate, ctx?.tx);
                 return { media: createdMedia };
+            }
+        });
+    }
+
+    /**
+     * Removes a single photo from an accommodation gallery (SPEC-204 T-018).
+     *
+     * Steps:
+     * 1. Gate on `_canUpdate` (ANY or OWN + ownership — same as `addMedia`).
+     * 2. Verify the media row exists AND belongs to this accommodation.
+     * 3. Soft-delete the row (sets `deletedAt`).
+     * 4. Resequence the remaining visible rows to a dense 0-based `sortOrder`
+     *    (preserves their relative order). Both steps run in a single transaction.
+     *
+     * Does NOT touch Cloudinary — deleting the binary is a separate concern
+     * orchestrated by the caller. Only the DB row is affected.
+     *
+     * @param actor - The actor performing the action.
+     * @param data  - Input containing accommodationId and mediaId.
+     * @param ctx   - Optional service context for transaction propagation.
+     * @returns `{ success: true }` on success.
+     */
+    public async removeMedia(
+        actor: Actor,
+        data: AccommodationMediaRemoveInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<Success>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'removeMedia',
+            input: { ...data, actor },
+            schema: AccommodationMediaRemoveInputSchema,
+            execute: async (validated) => {
+                const accommodation = await this.model.findById(validated.accommodationId, ctx?.tx);
+                if (!accommodation) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+                }
+                await this._canUpdate(actor, accommodation);
+
+                const mediaModel = new AccommodationMediaModel();
+                const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
+                if (!mediaRow || mediaRow.accommodationId !== validated.accommodationId) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        'Media not found for this accommodation'
+                    );
+                }
+
+                // Soft-delete + resequence in a single transaction.
+                const doRemove = async (tx: DrizzleClient): Promise<void> => {
+                    await mediaModel.softDelete({ id: validated.mediaId }, tx);
+
+                    // Reload the remaining visible rows to resequence them.
+                    const { items: remaining } = await mediaModel.findByAccommodation({
+                        accommodationId: validated.accommodationId,
+                        state: 'visible',
+                        pageSize: 200,
+                        tx
+                    });
+
+                    // Apply dense 0-based sortOrder in the existing visual order.
+                    for (let i = 0; i < remaining.length; i++) {
+                        const row = remaining[i];
+                        if (row && row.sortOrder !== i) {
+                            await mediaModel.update({ id: row.id }, { sortOrder: i }, tx);
+                        }
+                    }
+                };
+
+                if (ctx?.tx) {
+                    await doRemove(ctx.tx);
+                } else {
+                    await withTransaction(doRemove);
+                }
+
+                return { success: true };
+            }
+        });
+    }
+
+    /**
+     * Reorders an accommodation's gallery photos (SPEC-204 T-019).
+     *
+     * Steps:
+     * 1. Gate on `_canUpdate` (ANY or OWN + ownership — same as `addMedia`).
+     * 2. Load all current VISIBLE rows for the accommodation.
+     * 3. Validate that `orderedIds` is exactly the set of current visible row ids
+     *    — no missing entries, no extras, no foreign ids. Rejects with
+     *    `VALIDATION_ERROR` on any mismatch.
+     * 4. Batch-update each row's `sortOrder` to its index in `orderedIds`.
+     *    All updates run in a single transaction.
+     *
+     * @param actor - The actor performing the action.
+     * @param data  - Input containing accommodationId and the ordered array of mediaId UUIDs.
+     * @param ctx   - Optional service context for transaction propagation.
+     * @returns The reordered list wrapped in a `{ media: [...] }` envelope.
+     */
+    public async reorderMedia(
+        actor: Actor,
+        data: AccommodationMediaReorderInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<AccommodationMediaListOutput>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'reorderMedia',
+            input: { ...data, actor },
+            schema: AccommodationMediaReorderInputSchema,
+            execute: async (validated) => {
+                const accommodation = await this.model.findById(validated.accommodationId, ctx?.tx);
+                if (!accommodation) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+                }
+                await this._canUpdate(actor, accommodation);
+
+                const mediaModel = new AccommodationMediaModel();
+
+                // Load all visible rows to validate and resequence.
+                const { items: visibleRows } = await mediaModel.findByAccommodation({
+                    accommodationId: validated.accommodationId,
+                    state: 'visible',
+                    pageSize: 200,
+                    tx: ctx?.tx
+                });
+
+                const existingIds = new Set(visibleRows.map((r) => r.id));
+
+                // Validate set equality: orderedIds must match existingIds exactly.
+                const inputIds = new Set(validated.orderedIds);
+                const missingIds = [...existingIds].filter((id) => !inputIds.has(id));
+                const extraIds = [...inputIds].filter((id) => !existingIds.has(id));
+
+                if (missingIds.length > 0 || extraIds.length > 0) {
+                    const details: string[] = [];
+                    if (missingIds.length > 0) details.push(`missing: ${missingIds.join(', ')}`);
+                    if (extraIds.length > 0)
+                        details.push(`unknown/foreign: ${extraIds.join(', ')}`);
+                    throw new ServiceError(
+                        ServiceErrorCode.VALIDATION_ERROR,
+                        `orderedIds does not match visible media for this accommodation — ${details.join('; ')}`
+                    );
+                }
+
+                // Build a map for fast row lookup so we can return the updated list.
+                const rowById = new Map(visibleRows.map((r) => [r.id, r]));
+
+                // Apply all sortOrder updates in a single transaction.
+                const doReorder = async (tx: DrizzleClient): Promise<void> => {
+                    for (let i = 0; i < validated.orderedIds.length; i++) {
+                        const id = validated.orderedIds[i];
+                        if (id !== undefined) {
+                            await mediaModel.update({ id }, { sortOrder: i }, tx);
+                        }
+                    }
+                };
+
+                if (ctx?.tx) {
+                    await doReorder(ctx.tx);
+                } else {
+                    await withTransaction(doReorder);
+                }
+
+                // Return the reordered rows with their updated sortOrder values.
+                const reordered = validated.orderedIds
+                    .map((id, idx) => {
+                        const row = rowById.get(id);
+                        return row ? { ...row, sortOrder: idx } : null;
+                    })
+                    .filter((r): r is NonNullable<typeof r> => r !== null);
+
+                return { media: reordered };
+            }
+        });
+    }
+
+    /**
+     * Lists the media rows for an accommodation gallery (SPEC-204).
+     *
+     * Returns all non-deleted rows ordered by `sortOrder ASC`. Supports an optional
+     * `state` filter (defaults to `'visible'`). Admin equivalent of
+     * `adminGetFaqs` — gated with `_canUpdate` so a VIEW_OWN HOST sees only their
+     * own accommodation's gallery.
+     *
+     * @param actor - The actor performing the action.
+     * @param data  - Input containing accommodationId and optional state filter.
+     * @param ctx   - Optional service context for transaction propagation.
+     * @returns The media list wrapped in a `{ media: [...] }` envelope.
+     */
+    public async adminGetMedia(
+        actor: Actor,
+        data: AccommodationMediaListInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<AccommodationMediaListOutput>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'adminGetMedia',
+            input: { ...data, actor },
+            schema: AccommodationMediaListInputSchema,
+            execute: async (validated) => {
+                const accommodation = await this.model.findById(validated.accommodationId, ctx?.tx);
+                if (!accommodation) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+                }
+                await this._canUpdate(actor, accommodation);
+
+                const mediaModel = new AccommodationMediaModel();
+                const { items } = await mediaModel.findByAccommodation({
+                    accommodationId: validated.accommodationId,
+                    state: validated.state ?? 'visible',
+                    pageSize: 200,
+                    tx: ctx?.tx
+                });
+
+                return { media: items };
             }
         });
     }
