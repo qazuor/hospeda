@@ -1845,7 +1845,7 @@
         },
         {
             "specId": "SPEC-268",
-            "title": "Web SEO audit & improvements — meta tags, JSON-LD, sitemap, robots, canonical",
+            "title": "Web SEO audit & improvements — 12 concrete findings + fix catalog",
             "type": "improvement",
             "complexity": "medium",
             "status": "draft",
