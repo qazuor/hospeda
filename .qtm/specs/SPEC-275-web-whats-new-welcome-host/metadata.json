@@ -5,18 +5,11 @@
     "complexity": "medium",
     "status": "draft",
     "created": "2026-06-23T00:00:00Z",
+    "decided": "2026-06-23",
+    "modelFit": "basic",
     "startedAt": null,
     "approved": null,
     "completed": null,
     "planFileRef": null,
-    "tags": [
-        "web",
-        "host",
-        "commerce",
-        "whats-new",
-        "welcome-tour",
-        "onboarding",
-        "ux",
-        "mi-cuenta"
-    ]
+    "tags": ["web", "host", "commerce", "whats-new", "welcome-tour", "onboarding", "ux", "mi-cuenta"]
 }
