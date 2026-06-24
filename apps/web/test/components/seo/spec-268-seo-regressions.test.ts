@@ -25,6 +25,10 @@ const photosPage = readFileSync(
     resolve(ROOT, 'pages/[lang]/alojamientos/[slug]/fotos.astro'),
     'utf8'
 );
+const attractionDetail = readFileSync(
+    resolve(ROOT, 'pages/[lang]/destinos/atraccion/[slug]/index.astro'),
+    'utf8'
+);
 const robotsPage = readFileSync(resolve(ROOT, 'pages/robots.txt.ts'), 'utf8');
 const seoHead = readFileSync(resolve(ROOT, 'components/seo/SEOHead.astro'), 'utf8');
 
@@ -47,6 +51,12 @@ describe('SPEC-268 SEO regressions', () => {
     it('photos page is noindex and canonicalizes to the parent detail page', () => {
         expect(photosPage).toContain('noindex={true}');
         expect(photosPage).toContain('canonicalPath={backUrl}');
+    });
+
+    it('attraction detail emits TouristAttraction JSON-LD on its canonical path', () => {
+        expect(attractionDetail).toContain('TouristAttractionJsonLd');
+        expect(attractionDetail).toContain('canonicalPath={canonicalPath}');
+        expect(attractionDetail).toContain('url={canonicalPath}');
     });
 
     it('robots disallows reset-password and verify-email routes', () => {
