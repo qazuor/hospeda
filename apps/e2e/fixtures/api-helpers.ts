@@ -292,7 +292,7 @@ export async function getMe(
 
 interface OnboardingStartResponse {
     data?: {
-        status: 'created' | 'resumed' | 'already_host';
+        status: 'created' | 'resumed';
         accommodationId?: string;
         accommodationSlug?: string;
     };
@@ -325,7 +325,7 @@ export async function startHostOnboarding(
     },
     config?: ApiHelperConfig
 ): Promise<{
-    readonly status: 'created' | 'resumed' | 'already_host';
+    readonly status: 'created' | 'resumed';
     readonly accommodationId: string | null;
     readonly accommodationSlug: string | null;
 }> {

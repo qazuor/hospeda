@@ -18,7 +18,7 @@
  *  1b. Host onboarding funnel exception
  *     - Route: POST /api/v1/protected/host-onboarding/start
  *     - ALLOW plan: tourist-free (must be able to enter the publish funnel)
- *     - ALLOW role: HOST without a paid subscription (service returns `already_host`)
+ *     - ALLOW role: HOST without a paid subscription (gate passes; host flows through normal create path)
  *
  *  2. EDIT_ACCOMMODATION_INFO
  *     - Route: PUT  /api/v1/protected/accommodations/:id (update)
@@ -488,7 +488,14 @@ describe('SPEC-145 T-012 + T-013 — enforcement gates BLOCK/ALLOW', () => {
             await expectGatePassed(res);
         });
 
-        it('ALLOW — HOST without subscription → POST /host-onboarding/start → already_host short-circuit', async () => {
+        it('ALLOW — HOST without subscription → POST /host-onboarding/start → gate passes (no 403 ENTITLEMENT_REQUIRED)', async () => {
+            // Regression guard: a HOST with no subscription must still be allowed
+            // through the entitlement gate. The short-circuit that returned
+            // `already_host` was removed — hosts now flow through the normal
+            // create/resume path. Any non-403-ENTITLEMENT_REQUIRED response is
+            // a passing gate (the service may return 400/404 on invalid destination,
+            // which is acceptable here since we're only testing the gate, not the
+            // full service contract).
             const user = await createTestUser({
                 email: `g1-host-onb-${randomUUID().slice(0, 8)}@example.com`,
                 role: RoleEnum.HOST
@@ -503,11 +510,12 @@ describe('SPEC-145 T-012 + T-013 — enforcement gates BLOCK/ALLOW', () => {
                 destinationId: randomUUID()
             });
 
+            // The HOST actor passes the entitlement gate (no 403
+            // ENTITLEMENT_REQUIRED). We assert only the gate here, not the
+            // response body: with a random destinationId the service returns a
+            // validation error rather than a created/resumed draft, and the
+            // gate behavior is the only contract this suite covers.
             await expectGatePassed(res);
-            const body = (await res.json()) as {
-                data?: { status?: string };
-            };
-            expect(body.data?.status).toBe('already_host');
         });
     });
 

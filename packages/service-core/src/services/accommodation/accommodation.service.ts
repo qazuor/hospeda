@@ -157,10 +157,9 @@ export class AccommodationService extends BaseCrudService<
 > {
     static readonly ENTITY_NAME = 'accommodation';
     /**
-     * Roles that already imply host-level capabilities. Users holding any of these
-     * skip onboarding (no draft is created for them) and are not auto-promoted on
-     * draft creation. Used by the `already_host` short-circuit in
-     * `createForOnboarding` and by the legacy `_assignHostRoleIfNeeded` hook.
+     * Roles that already imply host-level capabilities. Used to skip the USER → HOST
+     * promotion in `createForOnboarding` (the promotion is a no-op for an already-
+     * privileged actor) and by the `_assignHostRoleIfNeeded` hook.
      */
     private static readonly PRIVILEGED_ROLES: ReadonlySet<string> = new Set([
         RoleEnum.HOST,
@@ -1155,11 +1154,6 @@ export class AccommodationService extends BaseCrudService<
      *   Defensively re-promotes a `USER` who somehow has an active DRAFT (legacy
      *   data) so the admin-access invariant is restored.
      *
-     * - `already_host`  - the actor already holds a privileged role (HOST, ADMIN,
-     *   CLIENT_MANAGER, SUPER_ADMIN). No draft is created; the caller is expected to
-     *   redirect the user straight to the admin panel where they can create listings
-     *   through the standard CRUD flow.
-     *
      * Slug generation and destination validation reuse the same `_beforeCreate` hook
      * as the generic create flow, so the resulting row is structurally identical to
      * one that would have been produced by `create()`.
@@ -1189,9 +1183,6 @@ export class AccommodationService extends BaseCrudService<
                 }
 
                 const user = await this._userModel.findById(validatedActor.id, execCtx?.tx);
-                if (user && AccommodationService.PRIVILEGED_ROLES.has(user.role)) {
-                    return { status: 'already_host', accommodation: null };
-                }
 
                 const existingDraft = await this.model.findOne(
                     {
@@ -1264,10 +1255,9 @@ export class AccommodationService extends BaseCrudService<
                                 'Failed to create onboarding draft accommodation'
                             );
                         }
-                        // Promote USER -> HOST. No-op if the user is somehow
-                        // already privileged (the `already_host` short-circuit
-                        // above already returned), defensive against legacy
-                        // role rows.
+                        // Promote USER -> HOST. No-op if the actor is already HOST
+                        // or higher — an existing host creating another draft flows
+                        // here and the update is a benign no-op at the DB level.
                         if (user && user.role === RoleEnum.USER) {
                             await this._userModel.update(
                                 { id: validatedActor.id },

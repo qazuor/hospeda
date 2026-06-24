@@ -3,11 +3,12 @@
  *
  * Unit tests for the public-host-onboarding entry point of AccommodationService.
  *
- * Validates the three terminal states (`created`, `resumed`, `already_host`),
- * the idempotency contract (one DRAFT per USER), the privileged-role short-circuit,
- * the defense-in-depth `ownerId = actor.id` override, and the SPEC-258 B-API
- * expansion: import-provided fields (capacity, location, price, contactInfo,
- * amenityIds) are persisted in the draft and amenities are synced transactionally.
+ * Validates the two terminal states (`created`, `resumed`),
+ * the idempotency contract (one DRAFT per USER), the no-op role promotion for
+ * already-privileged actors, the defense-in-depth `ownerId = actor.id` override,
+ * and the SPEC-258 B-API expansion: import-provided fields (capacity, location,
+ * price, contactInfo, amenityIds) are persisted in the draft and amenities are
+ * synced transactionally.
  */
 
 import type { AccommodationModel, RAccommodationAmenityModel, UserModel } from '@repo/db';
@@ -271,24 +272,56 @@ describe('AccommodationService.createForOnboarding', () => {
         });
     });
 
-    describe('status: already_host (privileged role short-circuit)', () => {
-        it('returns already_host with null accommodation for HOST role', async () => {
-            // Arrange
+    describe('existing HOST actor — creates a new DRAFT (no short-circuit)', () => {
+        it('returns created with a new DRAFT for a HOST with no existing draft', async () => {
+            // Regression guard: the old short-circuit returned `already_host` for HOST
+            // actors. With the fix, an existing HOST flows through normally and gets
+            // a new DRAFT created so they do not lose their input.
             const actor = createHostActor({ id: 'user-host' });
             asMock(userModel.findById as Mock).mockResolvedValue({
                 id: 'user-host',
                 role: RoleEnum.HOST
             });
+            (accommodationModel.findOne as Mock).mockResolvedValue(null);
+            const created = createMockAccommodation({
+                id: 'acc-host-new',
+                ownerId: 'user-host',
+                lifecycleState: LifecycleStatusEnum.DRAFT
+            });
+            (accommodationModel.create as Mock).mockResolvedValue(created);
 
-            // Act
             const result = await service.createForOnboarding(actor, VALID_DRAFT_INPUT);
 
-            // Assert
             expect(result.error).toBeUndefined();
-            expect(result.data?.status).toBe('already_host');
-            expect(result.data?.accommodation).toBeNull();
-            // No DB writes when short-circuiting
-            expect(accommodationModel.findOne).not.toHaveBeenCalled();
+            expect(result.data?.status).toBe('created');
+            if (result.data?.status === 'created') {
+                expect(result.data.accommodation.id).toBe('acc-host-new');
+            }
+            expect(accommodationModel.create).toHaveBeenCalledTimes(1);
+        });
+
+        it('returns resumed (not created) for a HOST who already has an active DRAFT', async () => {
+            // The DRAFT idempotency guard fires before any create logic,
+            // so a HOST with an existing DRAFT gets `resumed`, not a second draft.
+            const actor = createHostActor({ id: 'user-host-draft' });
+            asMock(userModel.findById as Mock).mockResolvedValue({
+                id: 'user-host-draft',
+                role: RoleEnum.HOST
+            });
+            const existing = createMockAccommodation({
+                id: 'acc-host-existing',
+                ownerId: 'user-host-draft',
+                lifecycleState: LifecycleStatusEnum.DRAFT
+            });
+            (accommodationModel.findOne as Mock).mockResolvedValue(existing);
+
+            const result = await service.createForOnboarding(actor, VALID_DRAFT_INPUT);
+
+            expect(result.error).toBeUndefined();
+            expect(result.data?.status).toBe('resumed');
+            if (result.data?.status === 'resumed') {
+                expect(result.data.accommodation.id).toBe('acc-host-existing');
+            }
             expect(accommodationModel.create).not.toHaveBeenCalled();
         });
 
@@ -296,17 +329,21 @@ describe('AccommodationService.createForOnboarding', () => {
             ['ADMIN', RoleEnum.ADMIN],
             ['CLIENT_MANAGER', RoleEnum.CLIENT_MANAGER],
             ['SUPER_ADMIN', RoleEnum.SUPER_ADMIN]
-        ])('returns already_host for %s role', async (_label, role) => {
+        ])('returns created for a %s actor with no existing draft', async (_label, role) => {
             const actor = createSuperAdminActor({ id: 'user-priv' });
             asMock(userModel.findById as Mock).mockResolvedValue({
                 id: 'user-priv',
                 role
             });
+            (accommodationModel.findOne as Mock).mockResolvedValue(null);
+            (accommodationModel.create as Mock).mockResolvedValue(
+                createMockAccommodation({ id: 'acc-priv', ownerId: 'user-priv' })
+            );
 
             const result = await service.createForOnboarding(actor, VALID_DRAFT_INPUT);
 
-            expect(result.data?.status).toBe('already_host');
-            expect(accommodationModel.create).not.toHaveBeenCalled();
+            expect(result.data?.status).toBe('created');
+            expect(accommodationModel.create).toHaveBeenCalledTimes(1);
         });
     });
 
