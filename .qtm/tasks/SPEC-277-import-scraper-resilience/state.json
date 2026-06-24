@@ -47,70 +47,70 @@
             "id": "T-002",
             "title": "Wire withRetry into AirbnbAdapter.extract()",
             "description": "Replace the direct `runApifyActor(...)` call in `AirbnbAdapter.extract()` with `withRetry({ fn: () => runApifyActor(...) })` so the Airbnb path automatically retries on `source_blocked`/`timeout`.\n\n**What to modify:**\n- `packages/service-core/src/services/accommodation-import/adapters/airbnb.adapter.ts`\n  - Import `withRetry` from `./apify-client.js`.\n  - Locate the single `runApifyActor(...)` call and wrap it: `const { items, failureCode } = await withRetry({ fn: () => runApifyActor({ token, actor, actorInput, timeoutMs }) })`.\n  - No other changes to logic or interfaces.\n\n**Key constraints:**\n- The `extract()` method signature and return type (`Promise<RawExtraction>`) are unchanged.\n- The `ImportContext` shape is unchanged.\n- If `ctx.credentials.apifyToken` or `ctx.credentials.apifyAirbnbActor` is absent, the credential-missing early-return fires BEFORE `withRetry` is called (existing guard).\n\n**Acceptance criteria:**\n- Airbnb adapter now retries up to 2 times on `source_blocked` or `timeout` before returning a failure.\n- All existing airbnb adapter tests still pass.\n- The one-line diff is visible: only the `runApifyActor` call site changes.\n\n**Testing:** Covered by T-007 (adapter retry integration tests) plus the existing airbnb adapter test suite must remain green.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": ["T-007"],
             "subtasks": [
                 {
                     "title": "Import withRetry from apify-client",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Wrap runApifyActor call site in withRetry",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify existing adapter tests still pass",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["backend", "service-core", "airbnb", "retry"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-24T21:50:58.000Z",
+                "completed": "2026-06-24T21:50:58.000Z"
             }
         },
         {
             "id": "T-003",
             "title": "Wire withRetry into BookingAdapter.extract()",
             "description": "Replace the direct `runApifyActor(...)` call in `BookingAdapter.extract()` with `withRetry({ fn: () => runApifyActor(...) })` — same pattern as T-002 for the Booking adapter.\n\n**What to modify:**\n- `packages/service-core/src/services/accommodation-import/adapters/booking.adapter.ts`\n  - Import `withRetry` from `./apify-client.js`.\n  - Locate the `runApifyActor(...)` call(s) and wrap with `withRetry`.\n  - No other changes to logic or interfaces.\n\n**Key constraints:**\n- Booking adapter has a JSON-LD→actor escalation path (if JSON-LD succeeds, actor is skipped). Only the actor call site needs the retry wrapper — do NOT wrap the JSON-LD fetch.\n- The `extract()` method signature and return type are unchanged.\n\n**Acceptance criteria:**\n- Booking adapter retries actor call up to 2 times on `source_blocked`/`timeout`.\n- JSON-LD extraction path is unaffected.\n- All existing booking adapter tests still pass.\n\n**Testing:** Covered by T-007 (adapter retry integration tests) plus the existing booking adapter test suite must remain green.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": ["T-007"],
             "subtasks": [
                 {
                     "title": "Import withRetry from apify-client",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Identify and wrap only the actor call site (not JSON-LD)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify existing adapter tests still pass",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["backend", "service-core", "booking", "retry"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-24T21:50:58.000Z",
+                "completed": "2026-06-24T21:50:58.000Z"
             }
         },
         {
@@ -226,35 +226,35 @@
             "id": "T-007",
             "title": "Write adapter retry integration tests for Airbnb and Booking adapters",
             "description": "Add integration-level tests to the Airbnb and Booking adapter test files that verify `withRetry` is active and behaves correctly end-to-end through each adapter.\n\n**Test files to extend:**\n- `packages/service-core/test/services/accommodation-import/adapters/airbnb.adapter.test.ts`\n- `packages/service-core/test/services/accommodation-import/adapters/booking.adapter.test.ts`\n\n**Test cases per adapter (add as a new `describe('R1 retry integration', ...)` block):**\n1. When `runApifyActor` returns `source_blocked` twice then succeeds: adapter returns the successful extraction (verifies retry wiring is active).\n2. When `runApifyActor` returns `source_blocked` three times (exceeds cap): adapter returns `source_blocked` failure (verifies cap is enforced).\n3. When `runApifyActor` returns `credentials_missing` on the first call: adapter returns `credentials_missing` immediately without retrying.\n\n**Mocking:**\n- Use `vi.spyOn` or `vi.mock` on `runApifyActor` (or on `withRetry`) to control the sequence of return values.\n- Keep tests fast with fake timers or by mocking `sleep` inside `apify-client.ts`.\n\n**Acceptance criteria:**\n- 6 tests total (3 per adapter), all passing.\n- Tests confirm retry is wired in each adapter without testing `withRetry` itself (that's T-006).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002", "T-003"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Add R1 retry integration tests to airbnb.adapter.test.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add R1 retry integration tests to booking.adapter.test.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify fast execution with mocked sleep/timers",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "service-core", "airbnb", "booking", "integration-test"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-24T21:50:58.000Z",
+                "completed": "2026-06-24T21:50:58.000Z"
             }
         },
         {
@@ -404,9 +404,9 @@
     ],
     "summary": {
         "total": 11,
-        "pending": 9,
+        "pending": 6,
         "inProgress": 0,
-        "completed": 2,
+        "completed": 5,
         "blocked": 0,
         "averageComplexity": 2.2
     }
