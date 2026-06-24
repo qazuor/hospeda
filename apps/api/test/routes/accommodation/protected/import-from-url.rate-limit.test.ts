@@ -18,8 +18,8 @@ vi.hoisted(() => {
     process.env.HOSPEDA_IMPORT_RATE_LIMIT_RPH = '1';
 });
 
-vi.mock('@repo/utils', async (importActual) => {
-    const actual = await importActual<typeof import('@repo/utils')>();
+vi.mock('@repo/utils/safe-fetch', async (importActual) => {
+    const actual = await importActual<typeof import('@repo/utils/safe-fetch')>();
     return {
         ...actual,
         safeExternalFetch: vi.fn(async () => ({

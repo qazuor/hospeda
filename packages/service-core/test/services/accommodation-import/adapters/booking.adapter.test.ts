@@ -32,14 +32,14 @@ import type { ImportContext } from '../../../../src/services/accommodation-impor
 import { BookingAdapter } from '../../../../src/services/accommodation-import/adapters/booking.adapter.js';
 
 // ---------------------------------------------------------------------------
-// Mock safeExternalFetch from @repo/utils
+// Mock safeExternalFetch from @repo/utils/safe-fetch
 // ---------------------------------------------------------------------------
 
-vi.mock('@repo/utils', () => ({
+vi.mock('@repo/utils/safe-fetch', () => ({
     safeExternalFetch: vi.fn()
 }));
 
-import { safeExternalFetch } from '@repo/utils';
+import { safeExternalFetch } from '@repo/utils/safe-fetch';
 
 const mockSafeExternalFetch = vi.mocked(safeExternalFetch);
 

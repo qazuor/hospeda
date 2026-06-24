@@ -26,7 +26,7 @@ const { mockSafeExternalFetch } = vi.hoisted(() => ({
     mockSafeExternalFetch: vi.fn()
 }));
 
-vi.mock('@repo/utils', () => ({
+vi.mock('@repo/utils/safe-fetch', () => ({
     safeExternalFetch: mockSafeExternalFetch
 }));
 

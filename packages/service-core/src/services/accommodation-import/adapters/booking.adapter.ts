@@ -30,7 +30,7 @@
  * @module services/accommodation-import/adapters/booking
  */
 
-import { safeExternalFetch } from '@repo/utils';
+import { safeExternalFetch } from '@repo/utils/safe-fetch';
 import type { ImportContext, ImportSourceAdapter, RawExtraction } from '../adapter.types.js';
 import { extractJsonLd } from '../extractors/jsonld.js';
 import { runApifyActor } from './apify-client.js';

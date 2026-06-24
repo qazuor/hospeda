@@ -22,8 +22,8 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { mockCapture } = vi.hoisted(() => ({ mockCapture: vi.fn() }));
 
-vi.mock('@repo/utils', async (importActual) => {
-    const actual = await importActual<typeof import('@repo/utils')>();
+vi.mock('@repo/utils/safe-fetch', async (importActual) => {
+    const actual = await importActual<typeof import('@repo/utils/safe-fetch')>();
     return { ...actual, safeExternalFetch: vi.fn() };
 });
 
@@ -31,7 +31,7 @@ vi.mock('../../src/lib/posthog', () => ({
     getPostHogClient: () => ({ capture: mockCapture })
 }));
 
-import { safeExternalFetch } from '@repo/utils';
+import { safeExternalFetch } from '@repo/utils/safe-fetch';
 import { initApp } from '../../src/app.js';
 import type { AppOpenAPI } from '../../src/types.js';
 
