@@ -93,7 +93,8 @@ import {
     RoleEnum,
     ServiceErrorCode,
     SocialApprovalStatusEnum,
-    SocialPostStatusEnum
+    SocialPostStatusEnum,
+    SocialRecurrenceTypeEnum
 } from '@repo/schemas';
 import { describe, expect, it, vi } from 'vitest';
 import type { SocialAuditLogService } from '../../../src/services/social/social-audit-log.service';
@@ -1252,6 +1253,154 @@ describe('SocialPostService.schedule', () => {
             // Assert
             expect(result.data).toBeUndefined();
             expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // Recurrence persistence (SPEC-254)
+    // -------------------------------------------------------------------------
+
+    describe('recurrence — WEEKLY with weekday', () => {
+        it('should persist recurrenceType=WEEKLY and recurrenceParamsJson with weekday', async () => {
+            // Arrange
+            const postModel = createModelMock();
+            postModel.findOne.mockResolvedValue(
+                buildPostRow({ status: SocialPostStatusEnum.APPROVED })
+            );
+            postModel.update.mockResolvedValue(
+                buildPostRow({ status: SocialPostStatusEnum.SCHEDULED })
+            );
+            const { service } = buildService({ postModel });
+            const futureDate = new Date(Date.now() + 60_000);
+            const input: SchedulePostInput = {
+                actor: actorWithSchedulePerm,
+                postId: POST_ID,
+                scheduledAt: futureDate,
+                timezone: 'UTC',
+                recurrenceType: SocialRecurrenceTypeEnum.WEEKLY,
+                recurrenceParamsJson: { weekday: 'TUESDAY' }
+            };
+
+            // Act
+            const result = await service.schedule(input);
+
+            // Assert — no error
+            expect(result.error).toBeUndefined();
+
+            // Assert — model updated with recurrenceType and recurrenceParamsJson
+            expect(postModel.update).toHaveBeenCalledWith(
+                { id: POST_ID },
+                expect.objectContaining({
+                    recurrenceType: SocialRecurrenceTypeEnum.WEEKLY,
+                    recurrenceParamsJson: { weekday: 'TUESDAY' }
+                })
+            );
+        });
+    });
+
+    describe('recurrence — ONCE clears recurrenceParamsJson', () => {
+        it('should persist recurrenceType=ONCE and recurrenceParamsJson=null regardless of input', async () => {
+            // Arrange
+            const postModel = createModelMock();
+            postModel.findOne.mockResolvedValue(
+                buildPostRow({ status: SocialPostStatusEnum.APPROVED })
+            );
+            postModel.update.mockResolvedValue(
+                buildPostRow({ status: SocialPostStatusEnum.SCHEDULED })
+            );
+            const { service } = buildService({ postModel });
+            const futureDate = new Date(Date.now() + 60_000);
+            const input: SchedulePostInput = {
+                actor: actorWithSchedulePerm,
+                postId: POST_ID,
+                scheduledAt: futureDate,
+                timezone: 'UTC',
+                recurrenceType: SocialRecurrenceTypeEnum.ONCE
+                // No recurrenceParamsJson provided
+            };
+
+            // Act
+            const result = await service.schedule(input);
+
+            // Assert — no error
+            expect(result.error).toBeUndefined();
+
+            // Assert — recurrenceParamsJson is explicitly null for ONCE
+            expect(postModel.update).toHaveBeenCalledWith(
+                { id: POST_ID },
+                expect.objectContaining({
+                    recurrenceType: SocialRecurrenceTypeEnum.ONCE,
+                    recurrenceParamsJson: null
+                })
+            );
+        });
+
+        it('should default recurrenceType to ONCE and set recurrenceParamsJson=null when neither is provided', async () => {
+            // Arrange
+            const postModel = createModelMock();
+            postModel.findOne.mockResolvedValue(
+                buildPostRow({ status: SocialPostStatusEnum.APPROVED })
+            );
+            postModel.update.mockResolvedValue(
+                buildPostRow({ status: SocialPostStatusEnum.SCHEDULED })
+            );
+            const { service } = buildService({ postModel });
+            const futureDate = new Date(Date.now() + 60_000);
+            const input: SchedulePostInput = {
+                actor: actorWithSchedulePerm,
+                postId: POST_ID,
+                scheduledAt: futureDate,
+                timezone: 'UTC'
+                // recurrenceType intentionally omitted — should default to ONCE
+            };
+
+            // Act
+            const result = await service.schedule(input);
+
+            // Assert
+            expect(result.error).toBeUndefined();
+            expect(postModel.update).toHaveBeenCalledWith(
+                { id: POST_ID },
+                expect.objectContaining({
+                    recurrenceType: SocialRecurrenceTypeEnum.ONCE,
+                    recurrenceParamsJson: null
+                })
+            );
+        });
+    });
+
+    describe('recurrence — BIWEEKLY clears recurrenceParamsJson', () => {
+        it('should persist recurrenceType=BIWEEKLY and recurrenceParamsJson=null', async () => {
+            // Arrange
+            const postModel = createModelMock();
+            postModel.findOne.mockResolvedValue(
+                buildPostRow({ status: SocialPostStatusEnum.APPROVED })
+            );
+            postModel.update.mockResolvedValue(
+                buildPostRow({ status: SocialPostStatusEnum.SCHEDULED })
+            );
+            const { service } = buildService({ postModel });
+            const futureDate = new Date(Date.now() + 60_000);
+            const input: SchedulePostInput = {
+                actor: actorWithSchedulePerm,
+                postId: POST_ID,
+                scheduledAt: futureDate,
+                timezone: 'UTC',
+                recurrenceType: SocialRecurrenceTypeEnum.BIWEEKLY
+            };
+
+            // Act
+            const result = await service.schedule(input);
+
+            // Assert
+            expect(result.error).toBeUndefined();
+            expect(postModel.update).toHaveBeenCalledWith(
+                { id: POST_ID },
+                expect.objectContaining({
+                    recurrenceType: SocialRecurrenceTypeEnum.BIWEEKLY,
+                    recurrenceParamsJson: null
+                })
+            );
         });
     });
 });

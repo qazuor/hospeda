@@ -3,17 +3,22 @@
  *
  * Exercises the complete social automation pipeline against a real PostgreSQL
  * database, with external HTTP calls (Make.com webhook) mocked at the `fetch`
- * boundary so no real network traffic occurs:
+ * boundary so no real network traffic occurs.
+ *
+ * NOTE: `dispatchTarget` now uses a synchronous Make.com Webhook Response model:
+ * Make.com returns `{ status: 'SUCCESS', ... }` in the same HTTP round-trip,
+ * and the target is immediately set to PUBLISHED (no PUBLISHING intermediate state).
+ * Tests that exercise the legacy callback methods (`handleMakeCallbackClaim`,
+ * `handleMakeCallbackResult`) seed the PUBLISHING state directly via SQL.
  *
  *   Scenario A — ONCE recurrence (happy path):
  *     1. ingestDraft (no image pipeline) → post NEEDS_REVIEW / PENDING
  *     2. approve → APPROVED
  *     3. markReady → READY_TO_PUBLISH
  *     4. findEligibleTargets → the target appears in the eligible list
- *     5. dispatchTarget (fetch mocked → 200) → target=PUBLISHING; publish_log RETRYING
- *     6. handleMakeCallbackClaim → target=PUBLISHING, makeLastRunId recorded
- *     7. handleMakeCallbackResult SUCCESS → target=PUBLISHED; post=PUBLISHED;
- *        audit TARGET_PUBLISHED; nextRunAt=null (ONCE recurrence)
+ *     5. dispatchTarget (fetch mocked → Make SUCCESS) → target=PUBLISHED; publish_log SUCCESS
+ *     6. handleMakeCallbackClaim (legacy) → tested with SQL-seeded PUBLISHING state
+ *     7. handleMakeCallbackResult SUCCESS (legacy) → tested with SQL-seeded PUBLISHING state
  *
  *   Scenario B — WEEKLY recurrence:
  *     After a successful result callback, the cascade rearms the post:
@@ -235,8 +240,9 @@ async function queryAuditRows(
 // ---------------------------------------------------------------------------
 
 /**
- * Replaces the global `fetch` with a vitest spy that returns a 200 OK response,
- * simulating Make.com accepting the webhook dispatch.
+ * Replaces the global `fetch` with a vitest spy that returns a 200 OK response
+ * with a Make.com Webhook Response SUCCESS body, simulating Make.com publishing
+ * the post and returning the result synchronously.
  */
 function mockFetchSuccess(): void {
     vi.stubGlobal(
@@ -245,7 +251,11 @@ function mockFetchSuccess(): void {
             ok: true,
             status: 200,
             statusText: 'OK',
-            json: async () => ({ accepted: true })
+            json: async () => ({
+                status: 'SUCCESS',
+                externalPostId: 'mock-external-post-id',
+                externalPostUrl: 'https://instagram.com/p/mock-post'
+            })
         } satisfies Partial<Response> as Response)
     );
 }
@@ -335,7 +345,7 @@ describe('SPEC-254 T-050 — full social pipeline: ingest → dispatch → callb
     );
 
     it.skipIf(!dbAvailable)(
-        'Scenario A: dispatchTarget sets target=PUBLISHING and publish_log=RETRYING',
+        'Scenario A: dispatchTarget resolves synchronously to PUBLISHED and publish_log=SUCCESS',
         async () => {
             await withSocialTestTransaction(async (tx) => {
                 // Arrange
@@ -376,27 +386,28 @@ describe('SPEC-254 T-050 — full social pipeline: ingest → dispatch → callb
 
                 const targetId = bundle.target.id as string;
 
-                // Act — dispatch with webhook URL override (bypasses settings lookup)
+                // Act — dispatch with webhook URL override (bypasses settings lookup).
+                // mockFetchSuccess (in beforeEach) returns { status: 'SUCCESS', ... },
+                // so dispatchTarget resolves synchronously to 'published'.
                 const dispatchResult = await dispatchService.dispatchTarget({
                     target: bundle.target,
                     post: bundle.post,
                     makeApiKey: 'test-api-key',
-                    apiBaseUrl: 'https://api.hospeda.test',
                     webhookUrl: 'https://hook.make.com/test-webhook'
                 });
 
-                // Assert outcome
-                expect(dispatchResult.outcome).toBe('dispatched');
+                // Assert outcome — synchronous publish
+                expect(dispatchResult.outcome).toBe('published');
 
-                // Verify target status = PUBLISHING in DB
+                // Verify target status = PUBLISHED in DB
                 const targetRows = await tx.execute<{ status: string }>(sql`
                     SELECT status
                     FROM social_post_targets
                     WHERE id = ${targetId}
                 `);
-                expect(targetRows.rows?.[0]?.status).toBe(SocialPostStatusEnum.PUBLISHING);
+                expect(targetRows.rows?.[0]?.status).toBe(SocialPostStatusEnum.PUBLISHED);
 
-                // Verify publish_log has a RETRYING row
+                // Verify publish_log has a SUCCESS row
                 const logRows = await tx.execute<{ status: string }>(sql`
                     SELECT status
                     FROM social_publish_logs
@@ -405,16 +416,19 @@ describe('SPEC-254 T-050 — full social pipeline: ingest → dispatch → callb
                     ORDER BY created_at DESC
                     LIMIT 1
                 `);
-                expect(logRows.rows?.[0]?.status).toBe(SocialPublishResultStatusEnum.RETRYING);
+                expect(logRows.rows?.[0]?.status).toBe(SocialPublishResultStatusEnum.SUCCESS);
             });
         }
     );
 
     it.skipIf(!dbAvailable)(
-        'Scenario A: handleMakeCallbackClaim records PUBLISHING and makeLastRunId',
+        'Scenario A: handleMakeCallbackClaim records PUBLISHING and makeLastRunId (legacy callback method)',
         async () => {
             await withSocialTestTransaction(async (tx) => {
-                // Arrange
+                // Arrange — set up the target in PUBLISHING state directly via SQL,
+                // simulating what the old async dispatch model did before the target
+                // was handed to Make.com. The synchronous model no longer uses this
+                // code path in production, but we keep the method for compatibility.
                 await seedPlatformFormat(tx);
                 const actor = buildFullActor();
                 await seedActorUser(tx, actor);
@@ -433,7 +447,7 @@ describe('SPEC-254 T-050 — full social pipeline: ingest → dispatch → callb
                 );
                 const dispatchService = new SocialPublishDispatchService(serviceConfig);
 
-                // Pipeline: ingest → seed media → approve → markReady → dispatch
+                // Pipeline: ingest → seed media → approve → markReady
                 const ingestResult = await ingestionService.ingestDraft({
                     payload,
                     actorId: actor.id
@@ -450,13 +464,13 @@ describe('SPEC-254 T-050 — full social pipeline: ingest → dispatch → callb
                 if (!bundle) throw new Error('target bundle not found');
                 const targetId = bundle.target.id as string;
 
-                await dispatchService.dispatchTarget({
-                    target: bundle.target,
-                    post: bundle.post,
-                    makeApiKey: 'test-api-key',
-                    apiBaseUrl: 'https://api.hospeda.test',
-                    webhookUrl: 'https://hook.make.com/test-webhook'
-                });
+                // Set target to PUBLISHING directly (bypassing dispatchTarget which now
+                // resolves to PUBLISHED synchronously).
+                await tx.execute(sql`
+                    UPDATE social_post_targets
+                    SET status = 'PUBLISHING'
+                    WHERE id = ${targetId}
+                `);
 
                 const makeRunId = `run-${crypto.randomUUID()}`;
 
@@ -487,10 +501,13 @@ describe('SPEC-254 T-050 — full social pipeline: ingest → dispatch → callb
     );
 
     it.skipIf(!dbAvailable)(
-        'Scenario A: ONCE — handleMakeCallbackResult SUCCESS → target PUBLISHED, post PUBLISHED, audit TARGET_PUBLISHED, nextRunAt null',
+        'Scenario A: ONCE — handleMakeCallbackResult SUCCESS → target PUBLISHED, post PUBLISHED, audit TARGET_PUBLISHED, nextRunAt null (legacy callback method)',
         async () => {
             await withSocialTestTransaction(async (tx) => {
-                // Arrange
+                // Arrange — set up the target in PUBLISHING state directly via SQL.
+                // The synchronous model resolves to PUBLISHED immediately via
+                // dispatchTarget; this test exercises the legacy handleMakeCallbackResult
+                // method by seeding the PUBLISHING state manually.
                 await seedPlatformFormat(tx);
                 const actor = buildFullActor();
                 await seedActorUser(tx, actor);
@@ -509,7 +526,7 @@ describe('SPEC-254 T-050 — full social pipeline: ingest → dispatch → callb
                 );
                 const dispatchService = new SocialPublishDispatchService(serviceConfig);
 
-                // Pipeline: ingest → seed media → approve → markReady → dispatch → claim
+                // Pipeline: ingest → seed media → approve → markReady
                 const ingestResult = await ingestionService.ingestDraft({
                     payload,
                     actorId: actor.id
@@ -526,18 +543,13 @@ describe('SPEC-254 T-050 — full social pipeline: ingest → dispatch → callb
                 if (!bundle) throw new Error('target bundle not found');
                 const targetId = bundle.target.id as string;
 
-                await dispatchService.dispatchTarget({
-                    target: bundle.target,
-                    post: bundle.post,
-                    makeApiKey: 'test-api-key',
-                    apiBaseUrl: 'https://api.hospeda.test',
-                    webhookUrl: 'https://hook.make.com/test-webhook'
-                });
-
-                await dispatchService.handleMakeCallbackClaim({
-                    targetId,
-                    makeRunId: 'run-abc-123'
-                });
+                // Set target to PUBLISHING directly (bypassing dispatchTarget which now
+                // resolves to PUBLISHED synchronously).
+                await tx.execute(sql`
+                    UPDATE social_post_targets
+                    SET status = 'PUBLISHING'
+                    WHERE id = ${targetId}
+                `);
 
                 // Act — result callback SUCCESS
                 const resultResponse = await dispatchService.handleMakeCallbackResult({
@@ -608,10 +620,13 @@ describe('SPEC-254 T-050 — full social pipeline: ingest → dispatch → callb
     // -------------------------------------------------------------------------
 
     it.skipIf(!dbAvailable)(
-        'Scenario B: WEEKLY — after SUCCESS callback post rearms to APPROVED with future next_run_at and targets reset',
+        'Scenario B: WEEKLY — after SUCCESS callback post rearms to APPROVED with future next_run_at and targets reset (legacy callback method)',
         async () => {
             await withSocialTestTransaction(async (tx) => {
-                // Arrange
+                // Arrange — set up the target in PUBLISHING state directly via SQL.
+                // The synchronous model resolves to PUBLISHED immediately via
+                // dispatchTarget; this test exercises the legacy handleMakeCallbackResult
+                // method by seeding the PUBLISHING state manually.
                 await seedPlatformFormat(tx);
                 const actor = buildFullActor();
                 await seedActorUser(tx, actor);
@@ -656,18 +671,13 @@ describe('SPEC-254 T-050 — full social pipeline: ingest → dispatch → callb
                 if (!bundle) throw new Error('target bundle not found');
                 const targetId = bundle.target.id as string;
 
-                await dispatchService.dispatchTarget({
-                    target: bundle.target,
-                    post: bundle.post,
-                    makeApiKey: 'test-api-key',
-                    apiBaseUrl: 'https://api.hospeda.test',
-                    webhookUrl: 'https://hook.make.com/test-webhook'
-                });
-
-                await dispatchService.handleMakeCallbackClaim({
-                    targetId,
-                    makeRunId: 'run-weekly-001'
-                });
+                // Set target to PUBLISHING directly (bypassing dispatchTarget which now
+                // resolves to PUBLISHED synchronously).
+                await tx.execute(sql`
+                    UPDATE social_post_targets
+                    SET status = 'PUBLISHING'
+                    WHERE id = ${targetId}
+                `);
 
                 // Act — result callback SUCCESS
                 const beforeCallback = Date.now();

@@ -25,6 +25,8 @@
 
 import type {
     SocialAssetModel as SocialAssetModelType,
+    SocialCampaignModel as SocialCampaignModelType,
+    SocialContentBatchModel as SocialContentBatchModelType,
     SocialHashtagModel as SocialHashtagModelType,
     SocialPlatformFormatModel as SocialPlatformFormatModelType,
     SocialPostHashtagModel as SocialPostHashtagModelType,
@@ -36,6 +38,8 @@ import type {
 } from '@repo/db';
 import {
     SocialAssetModel,
+    SocialCampaignModel,
+    SocialContentBatchModel,
     SocialHashtagModel,
     SocialPlatformFormatModel,
     SocialPostHashtagModel,
@@ -55,7 +59,8 @@ import {
     ServiceErrorCode,
     SocialApprovalStatusEnum,
     SocialPostStatusEnum,
-    SocialPublishResultStatusEnum
+    SocialPublishResultStatusEnum,
+    SocialRecurrenceTypeEnum
 } from '@repo/schemas';
 import type { ServiceConfig, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
@@ -130,6 +135,26 @@ export interface ServiceWarning {
 }
 
 /**
+ * Minimal batch summary attached to {@link SocialPostDetail}.
+ */
+export interface SocialPostBatchSummary {
+    /** UUID of the batch. */
+    readonly id: string;
+    /** Human-readable batch name. */
+    readonly name: string;
+}
+
+/**
+ * Minimal campaign summary attached to {@link SocialPostDetail}.
+ */
+export interface SocialPostCampaignSummary {
+    /** UUID of the campaign. */
+    readonly id: string;
+    /** Human-readable campaign name. */
+    readonly name: string;
+}
+
+/**
  * Full detail shape returned by {@link SocialPostService.getPostDetail}.
  * Extends the raw post row with resolved related collections.
  */
@@ -142,6 +167,18 @@ export interface SocialPostDetail {
     readonly approvalStatus: string;
     readonly paused: boolean;
     readonly scheduledAt: Date | null;
+    /** Recurrence cadence (ONCE | WEEKLY | BIWEEKLY | MONTHLY). */
+    readonly recurrenceType: string;
+    /**
+     * Next cron pickup time. Null until the post is scheduled or marked ready.
+     * Also null after a one-shot post is published.
+     */
+    readonly nextRunAt: Date | null;
+    /**
+     * Additional params for the cadence (e.g. `{ weekday: "TUESDAY" }` for WEEKLY).
+     * Null when recurrenceType is ONCE, BIWEEKLY, or MONTHLY.
+     */
+    readonly recurrenceParamsJson: Record<string, unknown> | null;
     readonly captionBase: string;
     readonly finalCaption: string | null;
     readonly finalHashtagsText: string | null;
@@ -150,6 +187,10 @@ export interface SocialPostDetail {
     readonly gptHashtagPayloadJson: string[] | null;
     readonly createdAt: Date;
     readonly updatedAt: Date;
+    /** Resolved batch summary (id + name), or null when no batch is assigned. */
+    readonly batch: SocialPostBatchSummary | null;
+    /** Resolved campaign summary (id + name), or null when no campaign is assigned. */
+    readonly campaign: SocialPostCampaignSummary | null;
     /** All social_post_targets rows for this post. */
     readonly targets: ReadonlyArray<Record<string, unknown>>;
     /** All social_post_media rows, each enriched with the asset's cloudinaryUrl. */
@@ -282,6 +323,18 @@ export interface SchedulePostInput {
     readonly scheduledAt: Date;
     /** IANA timezone string (e.g. "America/Argentina/Buenos_Aires"). */
     readonly timezone: string;
+    /**
+     * Recurrence cadence for this post. Defaults to `ONCE` (no recurrence).
+     * When `WEEKLY`, `recurrenceParamsJson.weekday` must be provided.
+     */
+    readonly recurrenceType?: SocialRecurrenceTypeEnum;
+    /**
+     * Additional params for the selected cadence.
+     * - `WEEKLY`: `{ weekday: 'MONDAY' | 'TUESDAY' | ... }` — used by the
+     *   dispatch service to recompute `next_run_at` after each publish cycle.
+     * - `ONCE`, `BIWEEKLY`, `MONTHLY`: not required; service ignores this field.
+     */
+    readonly recurrenceParamsJson?: Record<string, unknown>;
 }
 
 /**
@@ -355,6 +408,10 @@ export interface ListPostsFilters {
      * Only honoured when the actor holds SOCIAL_POST_HARD_DELETE; otherwise silently forced to false.
      */
     readonly includeDeleted?: boolean;
+    /** Filter by campaign UUID (exact equality). */
+    readonly campaignId?: string;
+    /** Filter by content batch UUID (exact equality). */
+    readonly batchId?: string;
 }
 
 /**
@@ -462,6 +519,45 @@ export interface GetDashboardInput {
 }
 
 /**
+ * Single resolved hashtag item returned by {@link SocialPostService.setPostHashtags}.
+ */
+export interface SetPostHashtagsItem {
+    /** UUID of the hashtag catalog row (existing or newly created). */
+    readonly hashtagId: string;
+    /** Normalized hashtag string (lowercase, `#`-prefixed). */
+    readonly hashtag: string;
+    /** True when a new social_hashtags row was created during this operation. */
+    readonly isNew: boolean;
+}
+
+/**
+ * Data returned by {@link SocialPostService.setPostHashtags}.
+ */
+export interface SetPostHashtagsData {
+    /** Ordered list of resolved hashtag items after reconciliation. */
+    readonly hashtags: SetPostHashtagsItem[];
+    /** Regenerated finalHashtagsText — hashtags joined by a single space. */
+    readonly finalHashtagsText: string;
+}
+
+/**
+ * Input for {@link SocialPostService.setPostHashtags}.
+ */
+export interface SetPostHashtagsInput {
+    /** Actor performing the action — must hold SOCIAL_POST_UPDATE. */
+    readonly actor: Actor;
+    /** UUID of the post whose hashtag set is being replaced. */
+    readonly postId: string;
+    /**
+     * Ordered list of hashtag strings (e.g. `"#playa"` or `"playa"`).
+     * Each entry is normalized before catalog lookup. A missing `#` prefix is
+     * auto-prepended. Duplicate normalized values are deduplicated (first occurrence kept).
+     * An empty array clears all hashtags from the post.
+     */
+    readonly hashtags: readonly string[];
+}
+
+/**
  * Input for {@link SocialPostService.promoteHashtag}.
  */
 export interface PromoteHashtagInput {
@@ -526,6 +622,8 @@ export class SocialPostService {
     private readonly assetModel: SocialAssetModelType;
     private readonly publishLogModel: SocialPublishLogModelType;
     private readonly settingModel: SocialSettingModelType;
+    private readonly batchModel: SocialContentBatchModelType;
+    private readonly campaignModel: SocialCampaignModelType;
     private readonly auditLog: SocialAuditLogServiceType;
 
     constructor(
@@ -539,7 +637,9 @@ export class SocialPostService {
         postHashtagModel?: SocialPostHashtagModelType,
         assetModel?: SocialAssetModelType,
         publishLogModel?: SocialPublishLogModelType,
-        settingModel?: SocialSettingModelType
+        settingModel?: SocialSettingModelType,
+        batchModel?: SocialContentBatchModelType,
+        campaignModel?: SocialCampaignModelType
     ) {
         this.postModel = postModel ?? new SocialPostModel();
         this.postTargetModel = postTargetModel ?? new SocialPostTargetModel();
@@ -550,6 +650,8 @@ export class SocialPostService {
         this.assetModel = assetModel ?? new SocialAssetModel();
         this.publishLogModel = publishLogModel ?? new SocialPublishLogModel();
         this.settingModel = settingModel ?? new SocialSettingModel();
+        this.batchModel = batchModel ?? new SocialContentBatchModel();
+        this.campaignModel = campaignModel ?? new SocialCampaignModel();
         this.auditLog = auditLog ?? new SocialAuditLogService(config);
     }
 
@@ -969,7 +1071,8 @@ export class SocialPostService {
     public async schedule(
         input: SchedulePostInput
     ): Promise<ServiceOutput<SocialPostScheduleData>> {
-        const { actor, postId, scheduledAt, timezone } = input;
+        const { actor, postId, scheduledAt, timezone, recurrenceParamsJson } = input;
+        const recurrenceType = input.recurrenceType ?? SocialRecurrenceTypeEnum.ONCE;
 
         try {
             // Step 1: Permission
@@ -1003,6 +1106,14 @@ export class SocialPostService {
             }
 
             // Step 5: Update post
+            // Persist recurrenceParamsJson only for WEEKLY (weekday is meaningful there).
+            // For ONCE / BIWEEKLY / MONTHLY, always write null so stale weekday data is
+            // never left behind from a previous schedule call.
+            const persistedRecurrenceParams =
+                recurrenceType === SocialRecurrenceTypeEnum.WEEKLY
+                    ? (recurrenceParamsJson ?? null)
+                    : null;
+
             const updated = await this.postModel.update(
                 { id: postId },
                 {
@@ -1010,6 +1121,8 @@ export class SocialPostService {
                     scheduledAt,
                     timezone,
                     nextRunAt: scheduledAt,
+                    recurrenceType,
+                    recurrenceParamsJson: persistedRecurrenceParams,
                     updatedById: actor.id
                 }
             );
@@ -1538,6 +1651,12 @@ export class SocialPostService {
             if (filters.approvalStatus) {
                 where.approvalStatus = filters.approvalStatus;
             }
+            if (filters.campaignId) {
+                where.campaignId = filters.campaignId;
+            }
+            if (filters.batchId) {
+                where.batchId = filters.batchId;
+            }
 
             // Step 6: Build additional SQL conditions (safeIlike for title, date range)
             // These use drizzle-orm SQL helpers — safeIlike auto-escapes LIKE wildcards.
@@ -1706,7 +1825,33 @@ export class SocialPostService {
                 })
             );
 
-            // Step 5: Resolve hashtags via join table → catalog
+            // Step 5: Resolve batch summary (id + name), if assigned
+            const batchId = (post.batchId as string | null | undefined) ?? null;
+            let batch: { id: string; name: string } | null = null;
+            if (batchId) {
+                const batchRow = await this.batchModel.findOne({ id: batchId, deletedAt: null });
+                if (batchRow) {
+                    batch = { id: batchRow.id as string, name: batchRow.name as string };
+                }
+            }
+
+            // Step 6: Resolve campaign summary (id + name), if assigned
+            const campaignId = (post.campaignId as string | null | undefined) ?? null;
+            let campaign: { id: string; name: string } | null = null;
+            if (campaignId) {
+                const campaignRow = await this.campaignModel.findOne({
+                    id: campaignId,
+                    deletedAt: null
+                });
+                if (campaignRow) {
+                    campaign = {
+                        id: campaignRow.id as string,
+                        name: campaignRow.name as string
+                    };
+                }
+            }
+
+            // Step 7: Resolve hashtags via join table → catalog
             const { items: postHashtags } = await this.postHashtagModel.findAll(
                 { socialPostId: postId },
                 { page: 1, pageSize: 200 }
@@ -1722,7 +1867,7 @@ export class SocialPostService {
                 )
             ).filter((h): h is string => h !== null);
 
-            // Step 6: Load last 10 publish logs (newest first)
+            // Step 8: Load last 10 publish logs (newest first)
             const { items: publishLogs } = await this.publishLogModel.findAll(
                 { socialPostId: postId },
                 { page: 1, pageSize: 10, sortBy: 'createdAt', sortOrder: 'desc' }
@@ -1742,6 +1887,13 @@ export class SocialPostService {
                     approvalStatus: post.approvalStatus as string,
                     paused: post.paused as boolean,
                     scheduledAt: (post.scheduledAt as Date | null | undefined) ?? null,
+                    recurrenceType:
+                        (post.recurrenceType as string | undefined) ??
+                        SocialRecurrenceTypeEnum.ONCE,
+                    nextRunAt: (post.nextRunAt as Date | null | undefined) ?? null,
+                    recurrenceParamsJson:
+                        (post.recurrenceParamsJson as Record<string, unknown> | null | undefined) ??
+                        null,
                     captionBase: post.captionBase as string,
                     finalCaption: (post.finalCaption as string | null | undefined) ?? null,
                     finalHashtagsText:
@@ -1752,6 +1904,8 @@ export class SocialPostService {
                         (post.gptHashtagPayloadJson as string[] | null | undefined) ?? null,
                     createdAt: post.createdAt as Date,
                     updatedAt: post.updatedAt as Date,
+                    batch,
+                    campaign,
                     targets,
                     media,
                     hashtags,
@@ -2201,6 +2355,201 @@ export class SocialPostService {
                 error: {
                     code: ServiceErrorCode.INTERNAL_ERROR,
                     message: `Unexpected error during promoteHashtag: ${message}`
+                }
+            };
+        }
+    }
+
+    /**
+     * Replaces the full hashtag set of a social post with the provided ordered list.
+     *
+     * Workflow:
+     * 1. Permission check — SOCIAL_POST_UPDATE required.
+     * 2. Load post (NOT_FOUND if missing or soft-deleted).
+     * 3. Normalize each input hashtag (lowercase + `#` prefix).
+     * 4. Deduplicate by normalizedHashtag (first occurrence wins).
+     * 5. For each unique normalized hashtag:
+     *    - Look up existing catalog row by normalizedHashtag.
+     *    - If not found, create a new active catalog row (category = 'general').
+     * 6. Reconcile `social_post_hashtags`:
+     *    - Load current links for the post.
+     *    - Hard-delete links whose hashtagId is NOT in the desired set.
+     *    - Create missing links for hashtagIds in the desired set.
+     *    - Update `position` for existing links that are in the desired set.
+     * 7. Regenerate `finalHashtagsText` (normalized hashtags joined by space) and
+     *    persist it on the `social_posts` row.
+     * 8. Emit POST_HASHTAGS_UPDATED audit log.
+     * 9. Return the ordered resolved set plus the new finalHashtagsText.
+     *
+     * Permission required: SOCIAL_POST_UPDATE.
+     *
+     * @param input - Actor, postId, and ordered hashtag strings.
+     * @returns ServiceOutput with SetPostHashtagsData on success.
+     */
+    public async setPostHashtags(
+        input: SetPostHashtagsInput
+    ): Promise<ServiceOutput<SetPostHashtagsData>> {
+        const { actor, postId, hashtags: rawHashtags } = input;
+
+        try {
+            // Step 1: Permission
+            checkCanUpdatePost(actor);
+
+            // Step 2: Load post
+            const post = await this.postModel.findOne({ id: postId, deletedAt: null });
+            if (!post) {
+                throw new ServiceError(ServiceErrorCode.NOT_FOUND, `Post not found: ${postId}`);
+            }
+
+            // Step 3 + 4: Normalize and deduplicate
+            const seen = new Set<string>();
+            const normalized: string[] = [];
+            for (const raw of rawHashtags) {
+                const withHash = raw.startsWith('#') ? raw : `#${raw}`;
+                const norm = normalizeHashtag(withHash);
+                if (!seen.has(norm)) {
+                    seen.add(norm);
+                    normalized.push(norm);
+                }
+            }
+
+            // Step 5: Resolve catalog rows — lookup or create
+            const resolvedItems: SetPostHashtagsItem[] = await Promise.all(
+                normalized.map(async (norm) => {
+                    const existing = await this.hashtagModel.findOne({
+                        normalizedHashtag: norm
+                    });
+                    if (existing) {
+                        return {
+                            hashtagId: existing.id as string,
+                            hashtag: norm,
+                            isNew: false
+                        };
+                    }
+                    const created = await this.hashtagModel.create({
+                        hashtag: norm,
+                        normalizedHashtag: norm,
+                        category: 'general',
+                        platform: null,
+                        audienceId: null,
+                        priority: 0,
+                        active: true,
+                        createdById: actor.id
+                    });
+                    return {
+                        hashtagId: created.id as string,
+                        hashtag: norm,
+                        isNew: true
+                    };
+                })
+            );
+
+            // Step 6: Reconcile social_post_hashtags
+            const desiredHashtagIds = new Set(resolvedItems.map((i) => i.hashtagId));
+
+            // Load current links
+            const { items: currentLinks } = await this.postHashtagModel.findAll(
+                { socialPostId: postId },
+                { page: 1, pageSize: 500 }
+            );
+
+            // Hard-delete links no longer needed
+            for (const link of currentLinks) {
+                const linkHashtagId = link.hashtagId as string;
+                if (!desiredHashtagIds.has(linkHashtagId)) {
+                    const linkId = link.id as string;
+                    await this.postHashtagModel.hardDelete({ id: linkId });
+                }
+            }
+
+            // Build a map of existing links by hashtagId
+            const existingLinkByHashtagId = new Map<string, Record<string, unknown>>();
+            for (const link of currentLinks) {
+                existingLinkByHashtagId.set(link.hashtagId as string, link);
+            }
+
+            // Create missing links and update positions
+            for (let i = 0; i < resolvedItems.length; i++) {
+                const item = resolvedItems[i];
+                if (!item) continue;
+                const existingLink = existingLinkByHashtagId.get(item.hashtagId);
+                if (existingLink) {
+                    // Update position if changed
+                    if ((existingLink.position as number) !== i) {
+                        await this.postHashtagModel.update(
+                            { id: existingLink.id as string },
+                            { position: i }
+                        );
+                    }
+                } else {
+                    // Create new link
+                    await this.postHashtagModel.create({
+                        socialPostId: postId,
+                        hashtagId: item.hashtagId,
+                        position: i
+                    });
+                }
+            }
+
+            // Step 7: Regenerate finalHashtagsText and persist
+            const finalHashtagsText = normalized.join(' ');
+            await this.postModel.update(
+                { id: postId },
+                { finalHashtagsText, updatedById: actor.id }
+            );
+
+            // Step 8: Audit log
+            const addedIds = resolvedItems
+                .filter((i) => !existingLinkByHashtagId.has(i.hashtagId))
+                .map((i) => i.hashtagId);
+            const removedIds = currentLinks
+                .map((l) => l.hashtagId as string)
+                .filter((id) => !desiredHashtagIds.has(id));
+
+            await this.auditLog.log({
+                actorId: actor.id,
+                eventType: SocialAuditEvent.POST_HASHTAGS_UPDATED,
+                entityType: 'social_post',
+                entityId: postId,
+                metadata: {
+                    addedHashtagIds: addedIds,
+                    removedHashtagIds: removedIds,
+                    finalHashtagsText,
+                    total: resolvedItems.length
+                }
+            });
+
+            serviceLogger.info(
+                { postId, count: resolvedItems.length, actorId: actor.id },
+                'SocialPostService.setPostHashtags: hashtag set updated'
+            );
+
+            return {
+                data: {
+                    hashtags: resolvedItems,
+                    finalHashtagsText
+                }
+            };
+        } catch (err) {
+            if (err instanceof ServiceError) {
+                return {
+                    error: {
+                        code: err.code,
+                        message: err.message,
+                        details: err.details,
+                        reason: err.reason
+                    }
+                };
+            }
+            const message = err instanceof Error ? err.message : String(err);
+            serviceLogger.error(
+                { postId, error: message },
+                'SocialPostService.setPostHashtags: unexpected error'
+            );
+            return {
+                error: {
+                    code: ServiceErrorCode.INTERNAL_ERROR,
+                    message: `Unexpected error during setPostHashtags: ${message}`
                 }
             };
         }
