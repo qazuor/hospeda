@@ -19,7 +19,7 @@
  * @module services/accommodation-import/adapters/generic
  */
 
-import { safeExternalFetch } from '@repo/utils';
+import { safeExternalFetch } from '@repo/utils/safe-fetch';
 import type { ImportContext, ImportSourceAdapter, RawExtraction } from '../adapter.types.js';
 import { extractJsonLd } from '../extractors/jsonld.js';
 import { extractOpenGraph, stripHtmlToText } from '../extractors/meta.js';

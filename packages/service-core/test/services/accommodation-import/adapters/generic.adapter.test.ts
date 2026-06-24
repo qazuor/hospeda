@@ -33,12 +33,12 @@ import {
 // Module mock: @repo/utils safeExternalFetch
 // ---------------------------------------------------------------------------
 
-vi.mock('@repo/utils', () => ({
+vi.mock('@repo/utils/safe-fetch', () => ({
     safeExternalFetch: vi.fn()
 }));
 
 // Import after vi.mock so we get the mocked version.
-import { safeExternalFetch } from '@repo/utils';
+import { safeExternalFetch } from '@repo/utils/safe-fetch';
 
 const mockFetch = vi.mocked(safeExternalFetch);
 

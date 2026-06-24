@@ -30,7 +30,7 @@
  */
 
 import { type AccommodationImportResponse, AccommodationImportResponseSchema } from '@repo/schemas';
-import { safeExternalFetch } from '@repo/utils';
+import { safeExternalFetch } from '@repo/utils/safe-fetch';
 
 import type { Actor, ServiceConfig } from '../../types/index.js';
 import { AmenityService } from '../amenity/amenity.service.js';
