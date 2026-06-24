@@ -235,6 +235,31 @@ export function PlanPurchaseButton({
         currency
     });
 
+    // Effective price after a successfully applied promo. Only `discount` and
+    // `comp` change the headline price; `trial_extension` leaves it untouched
+    // (it extends the free trial, not the recurring amount). The card DOM
+    // (struck-through original + badge + trial days) is updated separately by
+    // the `useEffect` below; here we only swap the price shown inside the CTA.
+    const appliedPreview = promo.status === 'valid' ? promo.preview : null;
+    const freeLabel = t('pricing.free', 'Gratis');
+    const effectivePriceCents = ((): number => {
+        if (!appliedPreview) return displayPriceCents;
+        if (appliedPreview.effectKind === 'comp') return 0;
+        if (appliedPreview.effectKind === 'discount' && appliedPreview.finalAmount !== null) {
+            return appliedPreview.finalAmount;
+        }
+        return displayPriceCents;
+    })();
+    const hasPricePromo = appliedPreview !== null && effectivePriceCents !== displayPriceCents;
+    const effectiveFormattedPrice =
+        effectivePriceCents === 0
+            ? freeLabel
+            : formatPrice({ amount: effectivePriceCents / 100, currency });
+    // Precomputed badge copy (e.g. "50% de descuento por 3 meses") so the
+    // card-DOM effect below has a plain-string dependency instead of the
+    // `buildPreviewText` closure (keeps useEffect deps exhaustive + stable).
+    const promoBadgeText = appliedPreview ? buildPreviewText(appliedPreview) : '';
+
     const processingText = t('billing.checkout.button.processing', 'Procesando...');
     const processingAriaLabel = t('billing.checkout.button.processingAriaLabel', 'Procesando pago');
     const errorText = t(
@@ -463,6 +488,86 @@ export function PlanPurchaseButton({
         }));
     }
 
+    // ---------------------------------------------------------------------------
+    // Reflect the applied promo on the surrounding Astro card (price, trial days,
+    // badge). The headline price + trial days are SSG markup rendered OUTSIDE this
+    // island by PricingCardsGrid.astro, so we reach the ancestor `.pricing-card`
+    // and mutate it directly. Every mutation is fully reverted in the cleanup, so
+    // removing the code (or switching billing interval, which clears the promo)
+    // restores the original markup. Styles for the injected nodes live in a
+    // `<style is:global>` block in PricingCardsGrid.astro (the injected nodes lack
+    // Astro's scope attribute, so scoped CSS would not apply).
+    useEffect(() => {
+        const card = buttonRef.current?.closest('.pricing-card');
+        const preview = promo.status === 'valid' ? promo.preview : null;
+        if (!card || !preview) return;
+
+        const priceWrap = card.querySelector('.pricing-card__price');
+        if (!priceWrap) return;
+
+        const billingClass = billingInterval === 'annual' ? 'annual' : 'monthly';
+        const amountEl = card.querySelector<HTMLElement>(`.pricing-card__amount--${billingClass}`);
+        const trialEl = card.querySelector<HTMLElement>('.pricing-card__trial--monthly');
+
+        const injected: Element[] = [];
+        let trialOriginal: string | null = null;
+
+        priceWrap.classList.add('pricing-card__price--promo-active');
+
+        const injectBadge = (): void => {
+            if (!promoBadgeText) return;
+            const badge = document.createElement('span');
+            badge.className = 'pricing-card__promo-badge';
+            badge.textContent = promoBadgeText;
+            priceWrap.appendChild(badge);
+            injected.push(badge);
+        };
+
+        const injectNewAmount = (text: string): void => {
+            if (!amountEl) return;
+            amountEl.classList.add('pricing-card__amount--struck');
+            const promoAmount = document.createElement('span');
+            promoAmount.className = 'pricing-card__amount pricing-card__amount--promo';
+            promoAmount.textContent = text;
+            amountEl.insertAdjacentElement('afterend', promoAmount);
+            injected.push(promoAmount);
+        };
+
+        if (preview.effectKind === 'discount' && effectivePriceCents !== displayPriceCents) {
+            injectNewAmount(effectiveFormattedPrice);
+            injectBadge();
+        } else if (preview.effectKind === 'comp') {
+            injectNewAmount(freeLabel);
+            injectBadge();
+        } else if (preview.effectKind === 'trial_extension' && preview.extraDays && trialEl) {
+            trialOriginal = trialEl.textContent;
+            const baseDays = Number.parseInt(trialOriginal?.match(/\d+/)?.[0] ?? '0', 10);
+            const totalDays = baseDays + preview.extraDays;
+            trialEl.textContent = (trialOriginal ?? '').replace(/\d+/, String(totalDays));
+            trialEl.classList.add('pricing-card__trial--promo');
+            injectBadge();
+        }
+
+        return () => {
+            priceWrap.classList.remove('pricing-card__price--promo-active');
+            amountEl?.classList.remove('pricing-card__amount--struck');
+            for (const el of injected) el.remove();
+            if (trialEl && trialOriginal !== null) {
+                trialEl.textContent = trialOriginal;
+                trialEl.classList.remove('pricing-card__trial--promo');
+            }
+        };
+    }, [
+        promo.status,
+        promo.preview,
+        billingInterval,
+        promoBadgeText,
+        effectiveFormattedPrice,
+        effectivePriceCents,
+        displayPriceCents,
+        freeLabel
+    ]);
+
     /**
      * Handle button click.
      * Redirects unauthenticated users to sign-in; fires checkout POST for authenticated users.
@@ -584,7 +689,14 @@ export function PlanPurchaseButton({
                 ) : (
                     <span className={styles.idleContent}>
                         <span className={styles.ctaText}>{ctaText}</span>
-                        <span className={styles.price}>{formattedPrice}</span>
+                        {hasPricePromo ? (
+                            <span className={styles.price}>
+                                <s className={styles.priceStruck}>{formattedPrice}</s>{' '}
+                                <span className={styles.pricePromo}>{effectiveFormattedPrice}</span>
+                            </span>
+                        ) : (
+                            <span className={styles.price}>{formattedPrice}</span>
+                        )}
                     </span>
                 )}
             </button>
