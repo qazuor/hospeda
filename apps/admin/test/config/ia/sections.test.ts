@@ -14,6 +14,7 @@ const ALL_SIDEBAR_IDS = [
     'inicioSidebar',
     'catalogoSidebar',
     'editorialSidebar',
+    'marketingSidebar',
     'comunidadSidebar',
     'comercialSidebar',
     'plataformaSidebar',
@@ -40,12 +41,12 @@ const HOST_SECTION_IDS = ['miCuenta', 'misAlojamientos', 'consultas', 'miFactura
 
 describe('sections', () => {
     describe('registry shape', () => {
-        it('should export exactly 11 sections (7 original + 4 HOST)', () => {
+        it('should export exactly 12 sections (7 original + 4 HOST + 1 Marketing)', () => {
             // Arrange
             const keys = Object.keys(sections);
 
             // Assert
-            expect(keys).toHaveLength(11);
+            expect(keys).toHaveLength(12);
         });
 
         it('should contain all original section IDs', () => {
