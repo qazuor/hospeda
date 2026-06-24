@@ -232,9 +232,20 @@ export interface ImportContext {
 
     /**
      * Maximum wall-clock time (milliseconds) the adapter may spend fetching
-     * and parsing the URL before it must return whatever it has.
+     * and parsing the URL before it must return whatever it has. Sized for the
+     * fast structured-data path (JSON-LD / OpenGraph fetches).
      */
     readonly timeoutMs: number;
+
+    /**
+     * Maximum wall-clock time (milliseconds) for a synchronous Apify actor run
+     * (Airbnb, Booking fallback). Apify actors run server-side and routinely take
+     * 8-120s — far longer than {@link timeoutMs} — so they get their own, longer
+     * budget. Adapters that call `runApifyActor` use this instead of `timeoutMs`.
+     * Optional for backward compatibility; adapters fall back to `timeoutMs` when
+     * it is absent.
+     */
+    readonly apifyTimeoutMs?: number | undefined;
 
     /**
      * Maximum response body size (bytes) the adapter will accept from the

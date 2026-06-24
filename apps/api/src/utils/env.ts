@@ -613,6 +613,8 @@ export const ApiEnvBaseSchema = z.object({
     HOSPEDA_MERCADOLIBRE_TOKEN: z.string().optional(),
     /** Timeout in milliseconds for the safeExternalFetch utility used in import adapters */
     HOSPEDA_IMPORT_FETCH_TIMEOUT_MS: z.coerce.number().default(8000),
+    /** Timeout in milliseconds for synchronous Apify actor runs in import adapters (Airbnb, Booking fallback); actors take 8-120s so they get a longer budget than the fetch timeout */
+    HOSPEDA_IMPORT_APIFY_TIMEOUT_MS: z.coerce.number().default(120000),
     /** Maximum response body size in bytes for the safeExternalFetch utility used in import adapters */
     HOSPEDA_IMPORT_FETCH_MAX_BYTES: z.coerce.number().default(3000000),
     /** Per-user rate limit (requests per hour) for the accommodation import endpoint */
