@@ -78,7 +78,15 @@ vi.mock('@repo/billing', async (importOriginal) => {
 });
 
 import { randomUUID } from 'node:crypto';
-import { accommodations, billingSubscriptions, destinations, eq, ownerPromotions } from '@repo/db';
+import {
+    accommodationMedia,
+    accommodations,
+    billingSubscriptions,
+    destinations,
+    eq,
+    ownerPromotions
+} from '@repo/db';
+import type { InsertAccommodationMedia } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { initApp } from '../../../../src/app.js';
@@ -402,6 +410,34 @@ describe('SPEC-167 T-020 — keepSelections + restore-on-upgrade + idempotent re
                 updatedAt: new Date(now - 5000) // second most recent
             } as typeof accommodations.$inferInsert);
 
+        // Seed acc2's photos into accommodation_media (SPEC-204 cutover).
+        // The archive/restore primitives now read/write this table exclusively —
+        // the JSONB blob above is kept for other consumers but ignored by the
+        // photo-restriction logic.
+        // 1 featured row (sort_order=0) + 8 gallery rows (sort_order 1..8).
+        const featuredUrl = 'https://cdn.example.com/featured.jpg';
+        const acc2MediaRows: InsertAccommodationMedia[] = [
+            {
+                accommodationId: acc2Id,
+                url: featuredUrl,
+                state: 'visible',
+                isFeatured: true,
+                sortOrder: 0,
+                moderationState: 'APPROVED'
+            },
+            ...galleryUrls(0, ACC2_GALLERY_COUNT).map(
+                (url, i): InsertAccommodationMedia => ({
+                    accommodationId: acc2Id,
+                    url,
+                    state: 'visible',
+                    isFeatured: false,
+                    sortOrder: i + 1, // gallery starts at sort_order 1 (featured holds 0)
+                    moderationState: 'APPROVED'
+                })
+            )
+        ];
+        await testDb.getDb().insert(accommodationMedia).values(acc2MediaRows);
+
         // acc3: oldest → host explicitly selects this one to keep.
         acc3Id = randomUUID();
         await testDb
@@ -572,51 +608,63 @@ describe('SPEC-167 T-020 — keepSelections + restore-on-upgrade + idempotent re
         expect(postPromoMap[promo2Id]).toBe(true);
 
         // ── ASSERT: acc2 photos — host-pinned URLs kept, rest archived ──────────
-        // photoKeepMap[acc2Id] = first 4 URLs → those stay in gallery
-        // remaining 4 URLs (gallery-5..gallery-8) → moved to archivedGallery
-        const postAcc2Rows = await testDb
+        // After the cron runs archiveAccommodationPhotos with keepIds = first 4 URLs:
+        //   visible non-featured count = ACC2_GALLERY_KEPT_DEFAULT (4)
+        //   archived count             = ACC2_GALLERY_OVERFLOW (4)
+        //   featured row remains visible (is_featured=true, state='visible')
+        const postAcc2MediaRows = await testDb
             .getDb()
-            .select({ media: accommodations.media })
-            .from(accommodations)
-            .where(eq(accommodations.id, acc2Id));
+            .select({
+                url: accommodationMedia.url,
+                state: accommodationMedia.state,
+                isFeatured: accommodationMedia.isFeatured
+            })
+            .from(accommodationMedia)
+            .where(eq(accommodationMedia.accommodationId, acc2Id));
 
-        const postAcc2Media = postAcc2Rows[0]?.media as {
-            featuredImage?: { url: string };
-            gallery?: Array<{ url: string }>;
-            archivedGallery?: Array<{ url: string }>;
-        } | null;
+        const acc2FeaturedRows = postAcc2MediaRows.filter(
+            (r) => r.isFeatured && r.state === 'visible'
+        );
+        const acc2VisibleGallery = postAcc2MediaRows.filter(
+            (r) => !r.isFeatured && r.state === 'visible'
+        );
+        const acc2ArchivedRows = postAcc2MediaRows.filter((r) => r.state === 'archived');
 
-        expect(postAcc2Media, 'acc2 media must be present').toBeDefined();
+        // Featured image row preserved.
+        expect(
+            acc2FeaturedRows,
+            'acc2 featured row must remain visible after archive'
+        ).toHaveLength(1);
+        expect(acc2FeaturedRows[0]?.url).toBe('https://cdn.example.com/featured.jpg');
 
-        // Featured image preserved.
-        expect(postAcc2Media?.featuredImage?.url).toBe('https://cdn.example.com/featured.jpg');
+        // Photo conservation: visible gallery + archived = original gallery count.
+        expect(
+            acc2VisibleGallery.length + acc2ArchivedRows.length,
+            'photo conservation: visible gallery + archived must equal ACC2_GALLERY_COUNT'
+        ).toBe(ACC2_GALLERY_COUNT);
 
-        const keptGallery = postAcc2Media?.gallery ?? [];
-        const archivedGallery = postAcc2Media?.archivedGallery ?? [];
-
-        // Photo conservation: kept + archived = original gallery count.
-        expect(keptGallery.length + archivedGallery.length).toBe(ACC2_GALLERY_COUNT);
-
-        // The host-pinned URLs must all be in the kept gallery.
-        const keptUrls = new Set(keptGallery.map((p) => p.url));
+        // The host-pinned URLs must all be among the visible non-featured rows.
+        const visibleGalleryUrlSet = new Set(acc2VisibleGallery.map((r) => r.url));
         for (const pinnedUrl of acc2PhotoKeepUrls) {
-            expect(keptUrls.has(pinnedUrl), `pinned URL ${pinnedUrl} must remain in gallery`).toBe(
-                true
-            );
+            expect(
+                visibleGalleryUrlSet.has(pinnedUrl),
+                `pinned URL ${pinnedUrl} must remain visible`
+            ).toBe(true);
         }
 
+        // Visible gallery count = gallery slots kept (4).
+        expect(acc2VisibleGallery).toHaveLength(ACC2_GALLERY_KEPT_DEFAULT);
         // Archived count = overflow (gallery-5..gallery-8 = 4 items).
-        expect(archivedGallery.length).toBe(ACC2_GALLERY_OVERFLOW);
+        expect(acc2ArchivedRows).toHaveLength(ACC2_GALLERY_OVERFLOW);
 
-        // acc3 has no media → no photo restriction (no gallery was set up for it)
-        const postAcc3Rows = await testDb
+        // acc3 has no accommodation_media rows at all (no photos were seeded for it).
+        const postAcc3MediaRows = await testDb
             .getDb()
-            .select({ media: accommodations.media })
-            .from(accommodations)
-            .where(eq(accommodations.id, acc3Id));
-        const acc3Media = postAcc3Rows[0]?.media as { archivedGallery?: unknown[] } | null;
-        // acc3 has no archivedGallery (no photos were set up for it)
-        expect(acc3Media?.archivedGallery ?? []).toHaveLength(0);
+            .select({ state: accommodationMedia.state })
+            .from(accommodationMedia)
+            .where(eq(accommodationMedia.accommodationId, acc3Id));
+        const acc3ArchivedRows = postAcc3MediaRows.filter((r) => r.state === 'archived');
+        expect(acc3ArchivedRows).toHaveLength(0);
     });
 
     // =========================================================================
@@ -658,15 +706,15 @@ describe('SPEC-167 T-020 — keepSelections + restore-on-upgrade + idempotent re
         expect(preUpgradeAccMap[acc3Id]).toBe(false);
 
         // Verify acc2 has archived photos (pre-upgrade sanity).
-        const preUpgradeAcc2 = await testDb
+        const preUpgradeAcc2MediaRows = await testDb
             .getDb()
-            .select({ media: accommodations.media })
-            .from(accommodations)
-            .where(eq(accommodations.id, acc2Id));
-        const preAcc2Media = preUpgradeAcc2[0]?.media as {
-            archivedGallery?: Array<unknown>;
-        } | null;
-        expect(preAcc2Media?.archivedGallery?.length).toBe(ACC2_GALLERY_OVERFLOW);
+            .select({ state: accommodationMedia.state })
+            .from(accommodationMedia)
+            .where(eq(accommodationMedia.accommodationId, acc2Id));
+        const preUpgradeArchivedCount = preUpgradeAcc2MediaRows.filter(
+            (r) => r.state === 'archived'
+        ).length;
+        expect(preUpgradeArchivedCount).toBe(ACC2_GALLERY_OVERFLOW);
 
         // ── ACT — trigger upgrade restoration directly via the service ──────────
         // See file JSDoc for rationale: calling applyUpgradeRestorations directly
@@ -741,45 +789,49 @@ describe('SPEC-167 T-020 — keepSelections + restore-on-upgrade + idempotent re
         expect(postUpgradePromoMap[promo2Id]).toBe(false);
 
         // ── ASSERT: acc2 archived photos restored — count conservation ─────────
-        // Before: gallery=4, archivedGallery=4.
+        // Before: visible gallery=4, archived=4.
         // After restore (pro cap=15 > 4 kept + 4 archived = 8 total):
-        //   all archived photos should be moved back to gallery.
-        // Conservation: gallery + archivedGallery = original ACC2_GALLERY_COUNT.
-        const postUpgradeAcc2 = await testDb
+        //   all archived rows should be flipped back to visible.
+        // Conservation: visible non-featured + archived = original ACC2_GALLERY_COUNT.
+        const postUpgradeAcc2MediaRows = await testDb
             .getDb()
-            .select({ media: accommodations.media })
-            .from(accommodations)
-            .where(eq(accommodations.id, acc2Id));
+            .select({
+                url: accommodationMedia.url,
+                state: accommodationMedia.state,
+                isFeatured: accommodationMedia.isFeatured
+            })
+            .from(accommodationMedia)
+            .where(eq(accommodationMedia.accommodationId, acc2Id));
 
-        const postAcc2MediaUpgrade = postUpgradeAcc2[0]?.media as {
-            featuredImage?: { url: string };
-            gallery?: Array<{ url: string }>;
-            archivedGallery?: Array<{ url: string }>;
-        } | null;
-
-        expect(postAcc2MediaUpgrade, 'acc2 media must be present after upgrade').toBeDefined();
-
-        // Featured image preserved throughout.
-        expect(postAcc2MediaUpgrade?.featuredImage?.url).toBe(
-            'https://cdn.example.com/featured.jpg'
+        const postUpgradeFeaturedRows = postUpgradeAcc2MediaRows.filter(
+            (r) => r.isFeatured && r.state === 'visible'
+        );
+        const postUpgradeVisibleGallery = postUpgradeAcc2MediaRows.filter(
+            (r) => !r.isFeatured && r.state === 'visible'
+        );
+        const postUpgradeArchivedRows = postUpgradeAcc2MediaRows.filter(
+            (r) => r.state === 'archived'
         );
 
-        const restoredGallery = postAcc2MediaUpgrade?.gallery ?? [];
-        const remainingArchived = postAcc2MediaUpgrade?.archivedGallery ?? [];
-
-        // All archived photos should be moved back (pro cap=15 > 8 total photos).
+        // Featured row preserved throughout.
         expect(
-            restoredGallery.length + remainingArchived.length,
-            'photo conservation: gallery + archived must equal original gallery count'
+            postUpgradeFeaturedRows,
+            'acc2 featured row must remain visible after upgrade restore'
+        ).toHaveLength(1);
+        expect(postUpgradeFeaturedRows[0]?.url).toBe('https://cdn.example.com/featured.jpg');
+
+        // Photo conservation: visible gallery + archived = original ACC2_GALLERY_COUNT.
+        expect(
+            postUpgradeVisibleGallery.length + postUpgradeArchivedRows.length,
+            'photo conservation: visible gallery + archived must equal ACC2_GALLERY_COUNT'
         ).toBe(ACC2_GALLERY_COUNT);
 
-        // With cap=15 and only 8 photos total, restored gallery should hold all 8.
-        // remainingArchived should be empty (all restored).
+        // With pro cap=15 and only 8 photos total, all archived rows are restored.
         expect(
-            remainingArchived.length,
+            postUpgradeArchivedRows,
             'all archived photos must be restored when pro cap (15) > total photos (8)'
-        ).toBe(0);
-        expect(restoredGallery.length).toBe(ACC2_GALLERY_COUNT);
+        ).toHaveLength(0);
+        expect(postUpgradeVisibleGallery).toHaveLength(ACC2_GALLERY_COUNT);
 
         // Photos restored by the service (movedCount > 0 for acc2).
         expect(
