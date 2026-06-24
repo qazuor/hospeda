@@ -309,8 +309,13 @@ export class GenericAdapter implements ImportSourceAdapter {
         });
 
         if (!res.ok) {
-            // Blocked or failed — degrade gracefully, never throw.
-            return { sourcePlatform: 'generic' };
+            // Blocked or failed (bot detection / SSRF policy / timeout / non-2xx).
+            // The generic adapter treats all fetch failures as source_blocked since
+            // we cannot distinguish bot-detection from a legitimate server error at
+            // this layer without inspecting the actual status code, and safeExternalFetch
+            // abstracts that away. source_blocked is the safest classification because
+            // it tells the user "try again later" rather than blaming their URL.
+            return { sourcePlatform: 'generic', failureCode: 'source_blocked' };
         }
 
         const { body: html } = res;
@@ -326,7 +331,20 @@ export class GenericAdapter implements ImportSourceAdapter {
         // Step 4: Check whether Strategy B is needed.
         const usefulCount = countUsefulFields(structured);
 
-        if (usefulCount >= STRATEGY_B_THRESHOLD || ctx.aiExtract === undefined) {
+        if (usefulCount >= STRATEGY_B_THRESHOLD) {
+            // Enough structured data found — return as-is, no failureCode.
+            return structured;
+        }
+
+        if (ctx.aiExtract === undefined) {
+            // Fetch succeeded but the page has no recognisable accommodation data
+            // and AI extraction is disabled — signal nothing_found so the host
+            // receives an actionable message instead of a silent empty result.
+            if (usefulCount === 0) {
+                return { sourcePlatform: 'generic', failureCode: 'nothing_found' };
+            }
+            // Partial structured data — return it without a failureCode so the
+            // host can at least review what was found.
             return structured;
         }
 
@@ -336,7 +354,10 @@ export class GenericAdapter implements ImportSourceAdapter {
             const ai = await ctx.aiExtract({ text, locale: ctx.locale });
 
             if (ai === null) {
-                // AI produced nothing usable — return structured partial.
+                // AI produced nothing usable. If structured is also empty → nothing_found.
+                if (usefulCount === 0) {
+                    return { sourcePlatform: 'generic', failureCode: 'nothing_found' };
+                }
                 return structured;
             }
 

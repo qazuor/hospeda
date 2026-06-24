@@ -29,7 +29,11 @@
  * @module services/accommodation-import/accommodation-import.service
  */
 
-import { type AccommodationImportResponse, AccommodationImportResponseSchema } from '@repo/schemas';
+import {
+    type AccommodationImportResponse,
+    AccommodationImportResponseSchema,
+    type ImportFailureCode
+} from '@repo/schemas';
 import { safeExternalFetch } from '@repo/utils/safe-fetch';
 
 import type { Actor, ServiceConfig } from '../../types/index.js';
@@ -49,18 +53,11 @@ import { buildDestinationHint } from './resolvers/destination.js';
 // ---------------------------------------------------------------------------
 // Internal constants
 // ---------------------------------------------------------------------------
-
-/**
- * Human-readable message returned when the URL string cannot be parsed.
- */
-const MSG_INVALID_URL =
-    'No pudimos procesar la URL proporcionada. Verificá que sea una URL válida e intentá de nuevo.';
-
-/**
- * Human-readable message returned when no usable data could be extracted.
- */
-const MSG_NOTHING_EXTRACTED =
-    'No pudimos extraer información de esta URL. El sitio puede estar bloqueando el acceso o la URL no corresponde a un alojamiento.';
+// NOTE (SPEC-258 C.1): The old hardcoded Spanish message strings MSG_INVALID_URL
+// and MSG_NOTHING_EXTRACTED have been replaced by machine-readable `failureCode`
+// values on the response. The `message` field is now reserved for non-failure
+// advisory notices (e.g. AI-quota warning). Clients map the `failureCode` to a
+// localized string via i18n keys under `host.importFromUrl.errors.failure.*`.
 
 // ---------------------------------------------------------------------------
 // Short-link resolution
@@ -320,7 +317,7 @@ export class AccommodationImportService {
         try {
             parsedUrl = new URL(input.url);
         } catch {
-            return this._buildDegradedResponse(MSG_INVALID_URL);
+            return this._buildDegradedResponse('invalid_url');
         }
 
         // -----------------------------------------------------------------------
@@ -372,6 +369,14 @@ export class AccommodationImportService {
         const source = detectSource({ url: effectiveUrlStr });
         const adapter = this._pickAdapter(effectiveParsedUrl);
 
+        // When source is 'none' and no adapter could match the effective URL
+        // (i.e. even GenericAdapter could not pick it up — very unusual), treat
+        // as invalid_url. In practice GenericAdapter accepts any http(s) URL,
+        // so this branch fires only for truly unsupported schemes.
+        if (source === 'none' && !this.adapters.some((a) => a.supports(effectiveParsedUrl))) {
+            return this._buildDegradedResponse('invalid_url');
+        }
+
         // -----------------------------------------------------------------------
         // Step 3: Extract raw candidates from the URL.
         //
@@ -383,8 +388,8 @@ export class AccommodationImportService {
         try {
             raw = await adapter.extract(effectiveParsedUrl, input.context);
         } catch {
-            // Adapter threw — treat as empty extraction.
-            raw = { sourcePlatform: source };
+            // Adapter threw unexpectedly — treat as provider_error.
+            raw = { sourcePlatform: source, failureCode: 'provider_error' };
         }
 
         // -----------------------------------------------------------------------
@@ -447,20 +452,20 @@ export class AccommodationImportService {
                 : undefined;
 
         // -----------------------------------------------------------------------
-        // Step 8: Compute partial and determine effective source.
+        // Step 8: Compute partial and determine effective source + failureCode.
+        //
+        // Failure code precedence:
+        //  1. Propagate raw.failureCode when the adapter classified the failure.
+        //  2. When draft is empty and no hints exist and no adapter failureCode →
+        //     fall back to nothing_found.
+        //  3. When draft has content → no failureCode.
         //
         // A draft is considered "complete enough" only when it has name, summary,
         // and type — the three fields the creation form requires unconditionally.
-        // Note: even a fully-populated draft is still partial in practice because
-        // the destination FK is never auto-set (the host must confirm it from
-        // `destinationHint.candidates`). We document this in code but keep the
-        // formula simple: partial = !(name && summary && type).
         // -----------------------------------------------------------------------
         const hasMandatoryFields = Boolean(draft.name && draft.summary && draft.type);
         const partial = !hasMandatoryFields;
 
-        // When nothing useful was extracted (empty draft, no hints at all), signal
-        // source: 'none' so the UI can show a targeted empty-state message.
         const isDraftEmpty = Object.keys(draft).length === 0;
         const hasAnyHints =
             resolvedAmenityIds !== undefined ||
@@ -468,8 +473,19 @@ export class AccommodationImportService {
             destinationHint !== undefined ||
             mediaHints !== undefined;
 
+        // Determine the failureCode to surface on the response.
+        let responseFailureCode: ImportFailureCode | undefined;
+        if (raw.failureCode !== undefined) {
+            // Adapter already classified the failure — propagate it.
+            responseFailureCode = raw.failureCode;
+        } else if (isDraftEmpty && !hasAnyHints) {
+            // Source was reachable but yielded nothing recognisable as accommodation data.
+            responseFailureCode = 'nothing_found';
+        }
+        // If there is partial data (draft not empty or hints exist) → no failureCode.
+
+        // When nothing useful was extracted, signal source: 'none'.
         const effectiveSource = isDraftEmpty && !hasAnyHints ? ('none' as const) : source;
-        const message = isDraftEmpty && !hasAnyHints ? MSG_NOTHING_EXTRACTED : undefined;
 
         // -----------------------------------------------------------------------
         // Final guard: validate assembled object against the schema.
@@ -480,7 +496,7 @@ export class AccommodationImportService {
             source: effectiveSource,
             methodsUsed,
             partial,
-            ...(message !== undefined ? { message } : {}),
+            ...(responseFailureCode !== undefined ? { failureCode: responseFailureCode } : {}),
             ...(destinationHint !== undefined ? { destinationHint } : {}),
             ...(resolvedAmenityIds !== undefined ? { resolvedAmenityIds } : {}),
             ...(unresolvedAmenities !== undefined ? { unresolvedAmenities } : {}),
@@ -490,7 +506,7 @@ export class AccommodationImportService {
         const parsed = AccommodationImportResponseSchema.safeParse(assembled);
         if (!parsed.success) {
             // This should never happen in practice — degrade gracefully.
-            return this._buildDegradedResponse(MSG_NOTHING_EXTRACTED);
+            return this._buildDegradedResponse('provider_error');
         }
 
         return parsed.data;
@@ -525,20 +541,24 @@ export class AccommodationImportService {
     /**
      * Builds a minimally-safe degraded {@link AccommodationImportResponse}.
      *
-     * Used when URL parsing fails or the schema validation guard rejects the
-     * assembled response. Always returns `source: 'none'`, an empty draft,
-     * empty `methodsUsed`, and `partial: true`.
+     * Used when URL parsing fails, the URL is unsupported, the adapter throws
+     * unexpectedly, or the final Zod schema guard rejects the assembled object.
+     * Always returns `source: 'none'`, an empty draft, empty `methodsUsed`,
+     * `partial: true`, and the provided `failureCode`.
      *
-     * @param message - Human-readable explanation for the host.
+     * The `message` field is intentionally left undefined for machine-classified
+     * failures — clients map `failureCode` to a localized string via i18n.
+     *
+     * @param failureCode - Machine-readable failure classification.
      * @returns A valid degraded response.
      */
-    private _buildDegradedResponse(message: string): AccommodationImportResponse {
+    private _buildDegradedResponse(failureCode: ImportFailureCode): AccommodationImportResponse {
         return {
             draft: {},
             source: 'none',
             methodsUsed: [],
             partial: true,
-            message
+            failureCode
         };
     }
 }

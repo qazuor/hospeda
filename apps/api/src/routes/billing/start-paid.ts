@@ -15,9 +15,15 @@
  *   (preapproval/recurring via MP).
  * - `billingInterval: 'annual'` -> {@link initiatePaidAnnualSubscription}
  *   (one-time upfront charge via MP Checkout, SPEC-141 D1).
- * - `promoCode` present (monthly only) -> forwarded to the service,
- *   which honors only `free_trial_extension`-type promos (SPEC-126 D9).
- *   Unknown or discount-type codes surface as HTTP 422.
+ * - `promoCode` present (BOTH branches, SPEC-262 T-012 P2) -> forwarded to the
+ *   service, which honors:
+ *     - `trial_extension` -> `freeTrialDays` (monthly only; ignored on annual).
+ *     - `discount` -> lowered preapproval amount (monthly, FAIL-CLOSED) or a
+ *       reduced one-time line-item (annual).
+ *     - `comp` -> a `status='comp'` subscription with NO MercadoPago charge; the
+ *       response carries `appliedEffect: 'comp'` and an in-app success URL.
+ *   Unknown / inactive codes surface as HTTP 422; a discount that MP rejects
+ *   (after fail-closed cancellation) surfaces as HTTP 502.
  *
  * @module routes/billing/start-paid
  */
@@ -28,7 +34,7 @@ import {
     StartPaidSubscriptionResponseSchema
 } from '@repo/schemas';
 import type { StartPaidSubscriptionResponse } from '@repo/schemas';
-import { ServiceError } from '@repo/service-core';
+import { ServiceError, isAccommodationSubscription } from '@repo/service-core';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import {
@@ -36,6 +42,7 @@ import {
     mapProviderErrorToServiceError
 } from '../../lib/billing-provider-error';
 import { captureBillingError } from '../../lib/sentry';
+import { getActorFromContext } from '../../middlewares/actor';
 import { getQZPayBilling } from '../../middlewares/billing';
 import { idempotencyKeyMiddleware } from '../../middlewares/idempotency-key';
 import {
@@ -172,6 +179,13 @@ function mapServiceErrorToHttp(err: SubscriptionCheckoutError): HTTPException {
         case 'SAME_PLAN':
         case 'NOT_AN_UPGRADE':
             return new HTTPException(422, { message: err.message });
+        case 'DISCOUNT_APPLY_FAILED':
+            // SPEC-262 T-012 P2: MP rejected our fail-closed discount mutation and
+            // the just-created subscription was cancelled. The code itself is valid
+            // (so NOT 422) — the payment provider refused the amount change. 502
+            // (Bad Gateway) signals an upstream-provider failure, consistent with
+            // the SPEC-149 provider-error mapping family.
+            return new HTTPException(502, { message: err.message });
         case 'MISSING_INIT_POINT':
             return new HTTPException(500, { message: err.message });
         default: {
@@ -193,13 +207,15 @@ function mapServiceErrorToHttp(err: SubscriptionCheckoutError): HTTPException {
  * - 404 when the plan slug is unknown, has no active price for the
  *   requested interval, or (annual only) the resolved customer cannot
  *   be loaded.
- * - 422 when the promo code is not a valid `free_trial_extension` (D9),
+ * - 422 when the promo code is unknown / inactive / not classifiable,
  *   or when the payment provider rejects the request as a validation error
  *   (e.g. invalid card — maps to `VALIDATION_ERROR` / HTTP 400 via global handler).
  * - 500 when the qzpay create call returns no init point (adapter bug),
  *   or when any other unexpected error bubbles out.
  * - 502 when the payment provider returns a 5xx or unrecognised error
- *   (`PROVIDER_ERROR` via global error handler, SPEC-149).
+ *   (`PROVIDER_ERROR` via global error handler, SPEC-149), OR when a discount
+ *   code's FAIL-CLOSED preapproval mutation is rejected by MP and the
+ *   just-created subscription is cancelled (`DISCOUNT_APPLY_FAILED`, SPEC-262).
  * - 503 when billing is not configured, or the payment provider is
  *   rate-limiting us (`PROVIDER_RATE_LIMITED`, SPEC-149).
  * - 504 when the payment provider times out (`PROVIDER_TIMEOUT`, SPEC-149).
@@ -228,6 +244,8 @@ export const handleStartPaidSubscription = async (
         });
     }
 
+    const actor = getActorFromContext(c);
+
     const billing = getQZPayBilling();
 
     if (!billing) {
@@ -239,16 +257,50 @@ export const handleStartPaidSubscription = async (
     const locale = resolveReturnUrlLocale(c);
 
     try {
-        // SPEC-147 T-008 / Q7 guard: the cancel wins.
-        // If the customer has an existing subscription with cancelAtPeriodEnd=true,
-        // block re-subscription until the cancellation finalises. Creating a second
-        // subscription while a soft-cancel is winding down causes an ambiguous
-        // overlap (two concurrent subs for the same customer). The user must wait
-        // for the finalization cron to flip the soft-cancelled sub to 'cancelled'.
         const existingSubscriptions =
             await billing.subscriptions.getByCustomerId(billingCustomerId);
+
+        // SPEC-262 H2: block checkout when the customer already has ANY active
+        // ACCOMMODATION subscription (active, trialing, OR comp). Creating a second
+        // subscription on top of an existing one causes ambiguous entitlements —
+        // two subs for the same customer, neither clearly dominant.
+        // Comp subs are perpetual (100-year far-future) so the user cannot "wait
+        // them out" like a soft-cancel; they should contact support.
+        // SPEC-239 isolation: filter to accommodation-domain subs FIRST using the
+        // same predicate as the entitlement middleware, so a customer with an active
+        // COMMERCE subscription is never wrongly blocked here.
+        const hasActiveAccommodationSub = existingSubscriptions.some((sub) => {
+            if (!isAccommodationSubscription(sub)) return false;
+            // A soft-cancelled sub (cancelAtPeriodEnd=true) is intentionally NOT
+            // caught here — the dedicated SPEC-147 guard below handles it with the
+            // more specific SUBSCRIPTION_CANCEL_PENDING message. comp subs are
+            // perpetual (no cancelAtPeriodEnd) so they still match.
+            if (sub.cancelAtPeriodEnd === true) return false;
+            // Cast to string — QZPay's type union does not include 'comp' (our
+            // Hospeda-specific custom status) so a direct === comparison fails tsc.
+            const status = sub.status as string;
+            return status === 'active' || status === 'trialing' || status === 'comp';
+        });
+        if (hasActiveAccommodationSub) {
+            throw new ServiceError(
+                ServiceErrorCode.ALREADY_EXISTS,
+                'You already have an active subscription. To change your plan, use the plan-change endpoint.',
+                undefined,
+                'ALREADY_SUBSCRIBED'
+            );
+        }
+
+        // SPEC-147 T-008 / Q7 guard: the cancel wins.
+        // If the customer has an existing ACCOMMODATION subscription with
+        // cancelAtPeriodEnd=true, block re-subscription until the cancellation
+        // finalises. Creating a second subscription while a soft-cancel is winding
+        // down causes an ambiguous overlap. The user must wait for the finalization
+        // cron to flip the soft-cancelled sub to 'cancelled'.
+        // SPEC-239 isolation: filter to accommodation-domain subs — a soft-cancelled
+        // commerce sub must never block an accommodation checkout.
         const hasSoftCancelledSub = existingSubscriptions.some(
             (sub) =>
+                isAccommodationSubscription(sub) &&
                 (sub.status === 'active' || sub.status === 'trialing') &&
                 sub.cancelAtPeriodEnd === true
         );
@@ -282,6 +334,8 @@ export const handleStartPaidSubscription = async (
             body.billingInterval === 'annual'
                 ? await initiatePaidAnnualSubscription({
                       customerId: billingCustomerId,
+                      // SPEC-262 C1+H1: userId needed for full promo validation.
+                      userId: actor.id,
                       planSlug: body.planSlug,
                       billing,
                       urls: {
@@ -289,10 +343,13 @@ export const handleStartPaidSubscription = async (
                           cancelUrl: buildAnnualCancelUrl(locale),
                           notificationUrl: buildNotificationUrl()
                       },
-                      statementDescriptor: env.HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR
+                      statementDescriptor: env.HOSPEDA_MERCADO_PAGO_STATEMENT_DESCRIPTOR,
+                      promoCode: body.promoCode
                   })
                 : await initiatePaidMonthlySubscription({
                       customerId: billingCustomerId,
+                      // SPEC-262 C1+H1: userId needed for full promo validation.
+                      userId: actor.id,
                       planSlug: body.planSlug,
                       billing,
                       urls: {

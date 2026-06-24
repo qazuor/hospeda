@@ -831,8 +831,6 @@ export class AirbnbAdapter implements ImportSourceAdapter {
      *   `{ sourcePlatform: 'airbnb' }` on degradation.
      */
     async extract(url: URL, ctx: ImportContext): Promise<RawExtraction> {
-        const empty: RawExtraction = { sourcePlatform: this.source };
-
         // -------------------------------------------------------------------
         // Step 1: Credential degradation (US-11)
         // Both token AND actor ID are required; missing either → degrade.
@@ -841,7 +839,7 @@ export class AirbnbAdapter implements ImportSourceAdapter {
         const actor = ctx.credentials.apifyAirbnbActor;
 
         if (!token || !actor) {
-            return empty;
+            return { sourcePlatform: this.source, failureCode: 'credentials_missing' };
         }
 
         // -------------------------------------------------------------------
@@ -853,7 +851,7 @@ export class AirbnbAdapter implements ImportSourceAdapter {
         // -------------------------------------------------------------------
         const actorLocale = mapAirbnbActorLocale(ctx.locale);
         const { checkIn, checkOut } = buildPriceProbeDates();
-        const dataset = await runApifyActor({
+        const result = await runApifyActor({
             token,
             actor,
             actorInput: {
@@ -867,8 +865,14 @@ export class AirbnbAdapter implements ImportSourceAdapter {
             timeoutMs: ctx.timeoutMs
         });
 
-        if (dataset.length === 0) {
-            return empty;
+        // Propagate transport-level failure codes (credentials_missing, timeout, provider_error).
+        if (result.failureCode !== undefined) {
+            return { sourcePlatform: this.source, failureCode: result.failureCode };
+        }
+
+        // 2xx + empty array → anti-bot / source blocked (not a transport error).
+        if (result.items.length === 0) {
+            return { sourcePlatform: this.source, failureCode: 'source_blocked' };
         }
 
         // -------------------------------------------------------------------
@@ -876,7 +880,7 @@ export class AirbnbAdapter implements ImportSourceAdapter {
         // Cast to AirbnbItem — the interface deliberately omits review/rating
         // fields so they cannot be accessed regardless of what the actor sent.
         // -------------------------------------------------------------------
-        const firstItem = dataset[0] as AirbnbItem;
+        const firstItem = result.items[0] as AirbnbItem;
         return mapItemToRawExtraction(firstItem);
     }
 }

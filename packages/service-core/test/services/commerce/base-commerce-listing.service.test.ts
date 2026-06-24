@@ -597,12 +597,13 @@ describe('BaseCommerceListingService — _executeAdminSearch owner-scoping', () 
         // Until a dedicated COMMERCE_*_VIEW_OWN enum value exists, override the
         // owner-scoped permission to a distinct value so the scoping predicate
         // (!hasViewAll && hasViewOwn) actually engages and can be asserted.
+        // SPEC-253 D2=b: using COMMERCE_EDIT_OWN (per-section perms removed).
         Object.defineProperty(svc, '_viewOwnPermission', {
-            get: () => PermissionEnum.COMMERCE_SCHEDULE_EDIT_OWN,
+            get: () => PermissionEnum.COMMERCE_EDIT_OWN,
             configurable: true
         });
 
-        const ownerActor = makeActor([PermissionEnum.COMMERCE_SCHEDULE_EDIT_OWN], OWNER_ID);
+        const ownerActor = makeActor([PermissionEnum.COMMERCE_EDIT_OWN], OWNER_ID);
         await svc._executeAdminSearch({
             where: {},
             entityFilters: {},

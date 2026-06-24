@@ -222,7 +222,10 @@ describe('GooglePlacesAdapter', () => {
             const result = await adapter.extract(url, ctx);
 
             // Assert — degraded result, no fetch
-            expect(result).toStrictEqual({ sourcePlatform: 'google' });
+            expect(result).toStrictEqual({
+                sourcePlatform: 'google',
+                failureCode: 'credentials_missing'
+            });
             expect(mockFetch).not.toHaveBeenCalled();
         });
 
@@ -239,7 +242,10 @@ describe('GooglePlacesAdapter', () => {
             const result = await adapter.extract(url, ctx);
 
             // Assert
-            expect(result).toStrictEqual({ sourcePlatform: 'google' });
+            expect(result).toStrictEqual({
+                sourcePlatform: 'google',
+                failureCode: 'credentials_missing'
+            });
             expect(mockFetch).not.toHaveBeenCalled();
         });
     });
@@ -260,7 +266,7 @@ describe('GooglePlacesAdapter', () => {
 
             // Assert — MVP limitation: short-link resolution requires following
             // HTTP redirects which is out of scope. Degrade gracefully.
-            expect(result).toStrictEqual({ sourcePlatform: 'google' });
+            expect(result).toStrictEqual({ sourcePlatform: 'google', failureCode: 'invalid_url' });
             expect(mockFetch).not.toHaveBeenCalled();
         });
 
@@ -275,7 +281,7 @@ describe('GooglePlacesAdapter', () => {
             const result = await adapter.extract(url, ctx);
 
             // Assert
-            expect(result).toStrictEqual({ sourcePlatform: 'google' });
+            expect(result).toStrictEqual({ sourcePlatform: 'google', failureCode: 'invalid_url' });
             expect(mockFetch).not.toHaveBeenCalled();
         });
 
@@ -290,7 +296,7 @@ describe('GooglePlacesAdapter', () => {
             const result = await adapter.extract(url, ctx);
 
             // Assert
-            expect(result).toStrictEqual({ sourcePlatform: 'google' });
+            expect(result).toStrictEqual({ sourcePlatform: 'google', failureCode: 'invalid_url' });
             expect(mockFetch).not.toHaveBeenCalled();
         });
     });
@@ -465,7 +471,10 @@ describe('GooglePlacesAdapter', () => {
             const result = await adapter.extract(url, ctx);
 
             // Assert
-            expect(result).toStrictEqual({ sourcePlatform: 'google' });
+            expect(result).toStrictEqual({
+                sourcePlatform: 'google',
+                failureCode: 'credentials_missing'
+            });
         });
 
         it('should return { sourcePlatform: "google" } and not throw on a 500 response', async () => {
@@ -478,7 +487,8 @@ describe('GooglePlacesAdapter', () => {
 
             // Act & Assert
             await expect(adapter.extract(url, ctx)).resolves.toStrictEqual({
-                sourcePlatform: 'google'
+                sourcePlatform: 'google',
+                failureCode: 'provider_error'
             });
         });
 
@@ -492,7 +502,8 @@ describe('GooglePlacesAdapter', () => {
 
             // Act & Assert
             await expect(adapter.extract(url, ctx)).resolves.toStrictEqual({
-                sourcePlatform: 'google'
+                sourcePlatform: 'google',
+                failureCode: 'provider_error'
             });
         });
     });
@@ -749,7 +760,10 @@ describe('GooglePlacesAdapter', () => {
             const result = await adapter.extract(url, ctx);
 
             // Assert — graceful degradation, no throw
-            expect(result).toStrictEqual({ sourcePlatform: 'google' });
+            expect(result).toStrictEqual({
+                sourcePlatform: 'google',
+                failureCode: 'nothing_found'
+            });
         });
 
         it('should degrade to empty extraction when Text Search returns a non-2xx response', async () => {
@@ -762,7 +776,10 @@ describe('GooglePlacesAdapter', () => {
             const result = await adapter.extract(url, ctx);
 
             // Assert
-            expect(result).toStrictEqual({ sourcePlatform: 'google' });
+            expect(result).toStrictEqual({
+                sourcePlatform: 'google',
+                failureCode: 'nothing_found'
+            });
         });
 
         it('should degrade to empty extraction when Text Search fetch throws (network error)', async () => {
@@ -775,7 +792,10 @@ describe('GooglePlacesAdapter', () => {
             const result = await adapter.extract(url, ctx);
 
             // Assert
-            expect(result).toStrictEqual({ sourcePlatform: 'google' });
+            expect(result).toStrictEqual({
+                sourcePlatform: 'google',
+                failureCode: 'nothing_found'
+            });
         });
 
         it('should still use Place Details (not Text Search) for a ChIJ URL — Path A unchanged', async () => {

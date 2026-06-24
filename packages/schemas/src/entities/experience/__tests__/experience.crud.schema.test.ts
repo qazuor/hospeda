@@ -123,19 +123,122 @@ describe('ExperienceOwnerUpdateInputSchema', () => {
         expect(result.success).toBe(true);
     });
 
-    describe('identity fields are NOT part of owner update (admin-only)', () => {
-        it('should strip "type" from owner update payload (identity field)', () => {
-            // Zod strips unknown keys by default
-            const result = ExperienceOwnerUpdateInputSchema.safeParse({
-                type: ExperienceTypeEnum.EXCURSION
-            });
+    // -------------------------------------------------------------------------
+    // SPEC-253 T-027: newly owner-editable fields (T-014)
+    // -------------------------------------------------------------------------
+
+    describe('newly owner-editable fields (SPEC-253 T-014)', () => {
+        it('should accept type (SPEC-253 D1: now owner-editable, removed from identity-strip)', () => {
+            // Arrange
+            const input = { type: ExperienceTypeEnum.EXCURSION };
+
+            // Act
+            const result = ExperienceOwnerUpdateInputSchema.safeParse(input);
+
+            // Assert
+            expect(result.success).toBe(true);
             if (result.success) {
-                // type is not in the schema — it gets stripped
-                expect((result.data as Record<string, unknown>).type).toBeUndefined();
+                // type is now in the schema — it persists (NOT stripped)
+                expect((result.data as Record<string, unknown>).type).toBe(
+                    ExperienceTypeEnum.EXCURSION
+                );
             }
         });
 
-        it('should strip "name" from owner update payload (identity field)', () => {
+        it('should accept all experience type enum values', () => {
+            for (const type of Object.values(ExperienceTypeEnum)) {
+                const result = ExperienceOwnerUpdateInputSchema.safeParse({ type });
+                expect(result.success).toBe(true);
+            }
+        });
+
+        it('should reject an invalid type value', () => {
+            const result = ExperienceOwnerUpdateInputSchema.safeParse({ type: 'INVALID_TYPE' });
+            expect(result.success).toBe(false);
+        });
+
+        it('should accept priceFrom as a non-negative integer (SPEC-253 experience-only)', () => {
+            // Arrange
+            const result = ExperienceOwnerUpdateInputSchema.safeParse({ priceFrom: 100000 });
+
+            // Assert
+            expect(result.success).toBe(true);
+            if (result.success) {
+                // priceFrom persists (NOT stripped)
+                expect((result.data as Record<string, unknown>).priceFrom).toBe(100000);
+            }
+        });
+
+        it('should reject priceFrom that is negative (validation rule)', () => {
+            const result = ExperienceOwnerUpdateInputSchema.safeParse({ priceFrom: -1 });
+            expect(result.success).toBe(false);
+        });
+
+        it('should accept priceFrom = 0 (free / isPriceOnRequest companion)', () => {
+            const result = ExperienceOwnerUpdateInputSchema.safeParse({ priceFrom: 0 });
+            expect(result.success).toBe(true);
+        });
+
+        it('should accept priceUnit as a valid enum value (SPEC-253 experience-only)', () => {
+            // Arrange
+            const result = ExperienceOwnerUpdateInputSchema.safeParse({
+                priceUnit: ExperiencePriceUnitEnum.PER_DAY
+            });
+
+            // Assert
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect((result.data as Record<string, unknown>).priceUnit).toBe(
+                    ExperiencePriceUnitEnum.PER_DAY
+                );
+            }
+        });
+
+        it('should reject an invalid priceUnit value', () => {
+            const result = ExperienceOwnerUpdateInputSchema.safeParse({ priceUnit: 'per_decade' });
+            expect(result.success).toBe(false);
+        });
+
+        it('should accept summary within valid length bounds (10–300 chars)', () => {
+            const input = { summary: 'Un resumen válido con más de diez caracteres para el test.' };
+            const result = ExperienceOwnerUpdateInputSchema.safeParse(input);
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect((result.data as Record<string, unknown>).summary).toBe(input.summary);
+            }
+        });
+
+        it('should reject summary shorter than 10 characters', () => {
+            const result = ExperienceOwnerUpdateInputSchema.safeParse({ summary: 'Corto' });
+            expect(result.success).toBe(false);
+        });
+
+        it('should accept nameI18n with valid locale keys', () => {
+            const i18nValue = { es: 'Nombre ES', en: 'Name EN', pt: 'Nome PT' };
+            const result = ExperienceOwnerUpdateInputSchema.safeParse({ nameI18n: i18nValue });
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect((result.data as Record<string, unknown>).nameI18n).toEqual(i18nValue);
+            }
+        });
+
+        it('should accept summaryI18n, descriptionI18n, richDescriptionI18n simultaneously', () => {
+            const i18nValue = { es: 'Texto ES', en: 'Text EN', pt: 'Texto PT' };
+            const result = ExperienceOwnerUpdateInputSchema.safeParse({
+                summaryI18n: i18nValue,
+                descriptionI18n: i18nValue,
+                richDescriptionI18n: i18nValue
+            });
+            expect(result.success).toBe(true);
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // Admin-only identity fields — still stripped (AC-5 regression guard)
+    // -------------------------------------------------------------------------
+
+    describe('admin-only identity fields are still stripped by owner schema (AC-5 regression)', () => {
+        it('should strip "name" from owner update payload (legal identity — admin-only)', () => {
             const result = ExperienceOwnerUpdateInputSchema.safeParse({
                 name: 'New Name'
             });
@@ -144,12 +247,28 @@ describe('ExperienceOwnerUpdateInputSchema', () => {
             }
         });
 
-        it('should strip "priceFrom" from owner update payload (identity field)', () => {
+        it('should strip "slug" (legal identity — admin-only)', () => {
+            const result = ExperienceOwnerUpdateInputSchema.safeParse({ slug: 'new-slug' });
+            if (result.success) {
+                expect((result.data as Record<string, unknown>).slug).toBeUndefined();
+            }
+        });
+
+        it('should strip "description" (base description — owner edits i18n variants)', () => {
             const result = ExperienceOwnerUpdateInputSchema.safeParse({
-                priceFrom: 100000
+                description: 'A base description that should be stripped for owners.'
             });
             if (result.success) {
-                expect((result.data as Record<string, unknown>).priceFrom).toBeUndefined();
+                expect((result.data as Record<string, unknown>).description).toBeUndefined();
+            }
+        });
+
+        it('should strip "destinationId" (admin-only classification)', () => {
+            const result = ExperienceOwnerUpdateInputSchema.safeParse({
+                destinationId: VALID_UUID
+            });
+            if (result.success) {
+                expect((result.data as Record<string, unknown>).destinationId).toBeUndefined();
             }
         });
 
@@ -161,6 +280,20 @@ describe('ExperienceOwnerUpdateInputSchema', () => {
                 expect(
                     (result.data as Record<string, unknown>).hasActiveSubscription
                 ).toBeUndefined();
+            }
+        });
+
+        it('should strip "ownerId" (admin-only)', () => {
+            const result = ExperienceOwnerUpdateInputSchema.safeParse({ ownerId: VALID_UUID });
+            if (result.success) {
+                expect((result.data as Record<string, unknown>).ownerId).toBeUndefined();
+            }
+        });
+
+        it('should strip "isFeatured" (admin-only)', () => {
+            const result = ExperienceOwnerUpdateInputSchema.safeParse({ isFeatured: true });
+            if (result.success) {
+                expect((result.data as Record<string, unknown>).isFeatured).toBeUndefined();
             }
         });
     });

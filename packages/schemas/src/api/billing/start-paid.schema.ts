@@ -77,6 +77,24 @@ export const StartPaidSubscriptionResponseSchema = z.object({
         .uuid({ message: 'zodError.billing.startPaid.localSubscriptionId.invalid' }),
     expiresAt: z
         .string({ message: 'zodError.billing.startPaid.expiresAt.invalidType' })
-        .datetime({ message: 'zodError.billing.startPaid.expiresAt.invalid' })
+        .datetime({ message: 'zodError.billing.startPaid.expiresAt.invalid' }),
+    /**
+     * SPEC-262 T-012 P2: marker for a promo effect that changes the redirect
+     * semantics. Additive + optional so existing monthly/annual consumers (no
+     * promo, or a trial extension) are unaffected.
+     *
+     * - `'comp'` — a complimentary (free-forever) code was applied. There is NO
+     *   MercadoPago checkout: `checkoutUrl` is an in-app success sentinel URL the
+     *   front-end should treat as "already subscribed, go straight to success"
+     *   rather than redirecting to a payment provider.
+     * - `'discount'` — a discount was applied (the monthly preapproval amount was
+     *   lowered, or the annual line-item was reduced). A normal MP redirect to
+     *   `checkoutUrl` still follows; the marker is informational.
+     */
+    appliedEffect: z
+        .enum(['comp', 'discount'], {
+            message: 'zodError.billing.startPaid.appliedEffect.invalid'
+        })
+        .optional()
 });
 export type StartPaidSubscriptionResponse = z.infer<typeof StartPaidSubscriptionResponseSchema>;

@@ -4,7 +4,7 @@ title: Commerce owner editor — extended fields + single COMMERCE_EDIT_OWN perm
 slug: commerce-owner-editor-extended-fields
 type: feature
 complexity: medium
-status: draft
+status: in-progress
 created: 2026-06-20
 base: staging
 dependsOn:
@@ -74,19 +74,30 @@ The owner write path collapses to a **single `COMMERCE_EDIT_OWN`** permission:
   checks → one `COMMERCE_EDIT_OWN` (owner) OR `COMMERCE_EDIT_ALL` (staff) check.
 - Owner FAQ endpoints gate on `COMMERCE_EDIT_OWN`.
 
-**OPEN DECISION (D2 a vs b)** — the per-section `COMMERCE_*_EDIT_OWN` perms are ALSO
-used by the **admin panel** (`apps/admin/.../commerceSections.ts`), media gate, and
-their tests:
+**DECISION D2 — RESOLVED: (b) Full removal (owner, 2026-06-22).**
 
-- **(a)** Collapse only the OWNER path to `COMMERCE_EDIT_OWN`; keep the granular perms
-  for the admin panel. Less invasive. *(Recommended.)*
-- **(b)** Full removal of the per-section perms (rewrite admin section gating + media
-  perms + all tests). Cleaner enum, larger blast radius.
-  Owner to confirm a or b before implementation.
+The per-section `COMMERCE_*_EDIT_OWN` perms are removed entirely, not just on the owner
+path. Confirmed blast radius (10 per-section perms to delete from `PermissionEnum`):
+`COMMERCE_SCHEDULE_EDIT_OWN`, `COMMERCE_CONTACT_EDIT_OWN`, `COMMERCE_SOCIAL_EDIT_OWN`,
+`COMMERCE_MEDIA_EDIT_OWN`, `COMMERCE_MENU_EDIT_OWN`, `COMMERCE_PRICE_RANGE_EDIT_OWN`,
+`COMMERCE_RICH_DESCRIPTION_EDIT_OWN`, `COMMERCE_AMENITIES_EDIT_OWN`,
+`COMMERCE_FEATURES_EDIT_OWN`, `COMMERCE_FAQS_EDIT_OWN` → all collapse to a single
+`COMMERCE_EDIT_OWN`. Consumers to rewrite:
+
+- Admin panel section gating: `apps/admin/.../commerce/config/commerceSections.ts`,
+  `gastronomy/experience-consolidated.config.ts`, page hooks.
+- Media gate: `apps/api/src/routes/media/admin/permissions.ts`
+  (`COMMERCE_MEDIA_EDIT_OWN` → `COMMERCE_EDIT_OWN`).
+- All affected tests (~15: service-core commerce/gastronomy/experience permission tests +
+  api media permission-gate + commerce route tests).
+
+~~(a) Collapse only the owner path — rejected. Cleaner enum chosen over smaller blast radius.~~
 
 ## 5. Out of scope
 
-- The admin panel editor (unless D2=b forces touching its gating).
+- The admin panel **editor UI** itself (fields/forms). NOTE: D2=b DOES bring the admin
+  panel **section gating** (`commerceSections.ts` + consolidated configs) and the media
+  gate IN scope — they must migrate off the deleted per-section perms.
 - Identity fields kept read-only for owners: `name`, `slug`, `description` (base),
   `destinationId`, lifecycle/visibility/moderation/`isFeatured`/`ownerId`.
   - NOTE: the agreed set edits `nameI18n`/`descriptionI18n` while leaving base

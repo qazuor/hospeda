@@ -518,6 +518,13 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
                     name: item.name,
                     summary: item.summary,
                     description: item.description,
+                    // Seed i18n columns with valid empty-string locales (NOT null
+                    // sub-locales): I18nTextSchema requires strings, and the owner
+                    // editor round-trips these through the protected response (SPEC-253).
+                    nameI18n: { es: '', en: '', pt: '' },
+                    summaryI18n: { es: '', en: '', pt: '' },
+                    descriptionI18n: { es: '', en: '', pt: '' },
+                    richDescriptionI18n: { es: '', en: '', pt: '' },
                     type: item.type as (typeof gastronomies.$inferInsert)['type'],
                     priceRange: (item.priceRange ??
                         null) as (typeof gastronomies.$inferInsert)['priceRange'],

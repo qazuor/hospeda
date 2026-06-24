@@ -4,7 +4,7 @@
  *
  * The caller supplies an explicit { faqId, displayOrder }[] array.
  * The service validates that all faqId values belong to the specified experience.
- * Gated on COMMERCE_FAQS_EDIT_OWN (listing owner) or COMMERCE_EDIT_ALL (staff).
+ * Gated on COMMERCE_EDIT_OWN (listing owner) or COMMERCE_EDIT_ALL (staff).
  */
 import { ExperienceFaqRemoveOutputSchema, FaqReorderPayloadSchema } from '@repo/schemas';
 import { ExperienceService, ServiceError, reorderExperienceFaqs } from '@repo/service-core';

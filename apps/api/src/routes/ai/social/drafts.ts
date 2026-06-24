@@ -25,7 +25,8 @@
 
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { CreateSocialDraftResponseSchema, CreateSocialDraftSchema } from '@repo/schemas';
-import { SocialDraftIngestionService } from '@repo/service-core';
+import { SocialDraftIngestionService, SocialImagePipelineService } from '@repo/service-core';
+import { getMediaProvider } from '../../../services/media';
 import { getActorFromContext } from '../../../utils/actor';
 import { env } from '../../../utils/env';
 import { createApiKeyRoute } from '../../../utils/route-factory-tiered';
@@ -149,7 +150,19 @@ export const socialDraftsRoute = createApiKeyRoute({
         // Step 2: Call the ingestion service
         // ----------------------------------------------------------------
         const actor = getActorFromContext(ctx);
-        const service = new SocialDraftIngestionService({});
+
+        // Wire the image pipeline so GPT-supplied images (public URL or OpenAI
+        // file refs) are downloaded and re-uploaded to Cloudinary. Without an
+        // injected pipeline the ingestion service skips media entirely and
+        // reports assetStatus: 'pending' with no social_assets row created.
+        // The pipeline is only built when a media provider is configured; in
+        // non-development envs with missing Cloudinary creds getMediaProvider()
+        // returns null and the draft is still created (media marked pending).
+        const mediaProvider = getMediaProvider();
+        const imagePipeline = mediaProvider
+            ? new SocialImagePipelineService({}, mediaProvider)
+            : undefined;
+        const service = new SocialDraftIngestionService({}, imagePipeline);
 
         const result = await service.ingestDraft({
             // TYPE-WORKAROUND: the api-key route hands the validated body as unknown; narrow it to the draft input schema.

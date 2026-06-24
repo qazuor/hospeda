@@ -48,14 +48,23 @@ const { capturedHandlers } = vi.hoisted(() => ({
 // Service mock (controllable ingestDraft)
 // ---------------------------------------------------------------------------
 
-const { mockIngestDraft } = vi.hoisted(() => ({
-    mockIngestDraft: vi.fn()
-}));
+const { mockIngestDraft, IngestionServiceMock, ImagePipelineMock, mockGetMediaProvider } =
+    vi.hoisted(() => ({
+        mockIngestDraft: vi.fn(),
+        IngestionServiceMock: vi.fn().mockImplementation(() => ({
+            ingestDraft: mockIngestDraft
+        })),
+        ImagePipelineMock: vi.fn().mockImplementation(() => ({ kind: 'image-pipeline' })),
+        mockGetMediaProvider: vi.fn()
+    }));
 
 vi.mock('@repo/service-core', () => ({
-    SocialDraftIngestionService: vi.fn().mockImplementation(() => ({
-        ingestDraft: mockIngestDraft
-    }))
+    SocialDraftIngestionService: IngestionServiceMock,
+    SocialImagePipelineService: ImagePipelineMock
+}));
+
+vi.mock('../../../../src/services/media', () => ({
+    getMediaProvider: mockGetMediaProvider
 }));
 
 // ---------------------------------------------------------------------------
@@ -167,6 +176,10 @@ let draftsHandler: CapturedHandler | undefined;
 beforeEach(async () => {
     vi.clearAllMocks();
     capturedHandlers.clear();
+
+    // Default: a media provider IS configured, so the route should build and
+    // inject a SocialImagePipelineService. Individual tests override as needed.
+    mockGetMediaProvider.mockReturnValue({ upload: vi.fn() });
 
     // Trigger module evaluation so createApiKeyRoute is called and captures the handler
     await import('../../../../src/routes/ai/social/drafts');
@@ -351,6 +364,50 @@ describe('POST /api/v1/ai/social/drafts', () => {
                 draftId: 'draft-uuid-001',
                 captionBase: 'This is a test caption for social media.'
             });
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // Tests — Image pipeline wiring (regression for SPEC-254 image upload)
+    //
+    // Regression guard: the route MUST inject a SocialImagePipelineService into
+    // the ingestion service when a media provider is configured. A previous
+    // version constructed `new SocialDraftIngestionService({})` with no pipeline,
+    // so GPT-supplied images were never downloaded/uploaded to Cloudinary and
+    // every draft reported assetStatus: 'pending' with zero social_assets rows.
+    // -------------------------------------------------------------------------
+
+    describe('image pipeline wiring (regression)', () => {
+        it('builds the pipeline from the media provider and injects it into the ingestion service', async () => {
+            mockIngestDraft.mockResolvedValue(SUCCESS_RESULT);
+            const provider = { upload: vi.fn() };
+            mockGetMediaProvider.mockReturnValue(provider);
+            const ctx = buildCtxMock();
+
+            await draftsHandler!(ctx, {}, VALID_BODY, {});
+
+            // The pipeline was constructed with the configured media provider.
+            expect(ImagePipelineMock).toHaveBeenCalledOnce();
+            expect(ImagePipelineMock).toHaveBeenCalledWith({}, provider);
+
+            // The ingestion service received the pipeline as its second argument.
+            expect(IngestionServiceMock).toHaveBeenCalledOnce();
+            const ingestionArgs = IngestionServiceMock.mock.calls[0];
+            expect(ingestionArgs?.[1]).toBeDefined();
+            expect(ingestionArgs?.[1]).toBe(ImagePipelineMock.mock.results[0]?.value);
+        });
+
+        it('skips pipeline construction when no media provider is configured', async () => {
+            mockIngestDraft.mockResolvedValue(SUCCESS_RESULT);
+            mockGetMediaProvider.mockReturnValue(null);
+            const ctx = buildCtxMock();
+
+            await draftsHandler!(ctx, {}, VALID_BODY, {});
+
+            // No provider → no pipeline, and the ingestion service gets undefined.
+            expect(ImagePipelineMock).not.toHaveBeenCalled();
+            expect(IngestionServiceMock).toHaveBeenCalledOnce();
+            expect(IngestionServiceMock.mock.calls[0]?.[1]).toBeUndefined();
         });
     });
 

@@ -17,6 +17,7 @@ import {
     type ContentModerationTermAdminSearch,
     type CreateContentModerationTerm,
     ModerationCategoryEnum,
+    ServiceErrorCode,
     contentModerationTermAdminSearchSchema,
     createContentModerationTermSchema,
     updateContentModerationTermSchema
@@ -35,8 +36,15 @@ import {
     checkCanViewTerm
 } from './term.permissions';
 
+/**
+ * Hard ceiling on the number of rows a single bulk import may carry. Kept as a
+ * named constant so the cheap fail-fast guard in `bulkImport` and the schema's
+ * `.max()` backstop stay in sync.
+ */
+const MAX_BULK_IMPORT_ROWS = 5000;
+
 const BulkImportSchema = z.object({
-    rows: z.array(createContentModerationTermSchema).min(1).max(5000)
+    rows: z.array(createContentModerationTermSchema).min(1).max(MAX_BULK_IMPORT_ROWS)
 });
 
 export class ContentModerationTermService extends BaseCrudService<
@@ -187,6 +195,21 @@ export class ContentModerationTermService extends BaseCrudService<
         input: { rows: CreateContentModerationTerm[] },
         ctx?: ServiceContext
     ): Promise<ServiceOutput<{ createdCount: number }>> {
+        // Fail fast on oversized payloads BEFORE runWithLoggingAndValidation,
+        // which would otherwise serialize the entire input for logging and let
+        // Zod deep-parse every row before reporting the `.max()` violation. With
+        // thousands of rows that briefly materializes a large object graph,
+        // enough to OOM a vitest fork under CI concurrency. A cheap length check
+        // rejects the request without ever building that graph.
+        if (input.rows.length > MAX_BULK_IMPORT_ROWS) {
+            return {
+                error: {
+                    code: ServiceErrorCode.VALIDATION_ERROR,
+                    message: `bulkImport accepts at most ${MAX_BULK_IMPORT_ROWS} rows`
+                }
+            };
+        }
+
         return this.runWithLoggingAndValidation({
             methodName: 'bulkImport',
             input: { actor, ...input },

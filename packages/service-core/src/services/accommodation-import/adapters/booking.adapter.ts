@@ -850,18 +850,19 @@ export class BookingAdapter implements ImportSourceAdapter {
             const actor = ctx.credentials.apifyBookingActor;
 
             if (!token || !actor) {
-                // Credentials absent — skip fallback, return what we have.
+                // Credentials absent — skip fallback.
                 // If primary produced something (but < threshold), return it
                 // rather than a completely empty result.
                 if (!primaryBlocked && countUsefulFields(primaryExtraction) > 0) {
                     return primaryExtraction;
                 }
-                return empty;
+                // Both primary blocked and no Apify creds → credentials_missing.
+                return { sourcePlatform: this.source, failureCode: 'credentials_missing' };
             }
 
             // Build date-based price probe so the actor returns a real price.
             const { checkIn, checkOut } = buildPriceProbeDates();
-            const dataset = await runApifyActor({
+            const result = await runApifyActor({
                 token,
                 actor,
                 actorInput: {
@@ -874,13 +875,18 @@ export class BookingAdapter implements ImportSourceAdapter {
                 timeoutMs: ctx.timeoutMs
             });
 
-            if (dataset.length === 0) {
-                // Actor returned nothing — degrade.
-                return empty;
+            // Propagate transport-level failure codes from the Apify client.
+            if (result.failureCode !== undefined) {
+                return { sourcePlatform: this.source, failureCode: result.failureCode };
+            }
+
+            if (result.items.length === 0) {
+                // Actor returned nothing — Booking is heavily anti-bot.
+                return { sourcePlatform: this.source, failureCode: 'source_blocked' };
             }
 
             // Map the first dataset item (structurally excludes rating/review fields).
-            const firstItem = dataset[0] as BookingItem;
+            const firstItem = result.items[0] as BookingItem;
             return mapApifyItemToRawExtraction(firstItem);
         } catch {
             // Catch-all: no exception must escape `extract`.

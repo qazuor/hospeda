@@ -234,7 +234,10 @@ describe('GenericAdapter', () => {
             const result = await adapter.extract(url, ctx);
 
             // Assert — minimal degrade result
-            expect(result).toStrictEqual({ sourcePlatform: 'generic' });
+            expect(result).toStrictEqual({
+                sourcePlatform: 'generic',
+                failureCode: 'source_blocked'
+            });
             // AI must NOT be called when fetch failed
             expect(aiExtract).not.toHaveBeenCalled();
         });

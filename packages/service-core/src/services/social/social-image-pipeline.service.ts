@@ -6,6 +6,7 @@ import {
 import type { ImageProvider } from '@repo/media/server';
 import { SocialAssetSourceEnum, SocialMediaTypeEnum } from '@repo/schemas';
 import type { ServiceConfig } from '../../types';
+import { isUuid } from '../../utils/identifier';
 import { serviceLogger } from '../../utils/service-logger';
 import type { ServiceLogger } from '../../utils/service-logger';
 
@@ -251,7 +252,11 @@ export class SocialImagePipelineService {
                 height: height ?? undefined,
                 durationSeconds: durationSeconds ?? undefined,
                 altText: altText ?? undefined,
-                createdById: actorId ?? undefined
+                // `social_assets.created_by_id` is a uuid FK to `users`. Synthetic
+                // actors (e.g. the GPT API-key actor `gpt-action`) are NOT real
+                // user rows and are not valid UUIDs, so persist NULL for them
+                // rather than letting the insert fail on an invalid-uuid cast.
+                createdById: actorId && isUuid(actorId) ? actorId : undefined
             });
             assetId = asset.id;
         } catch (err) {

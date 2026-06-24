@@ -29,6 +29,13 @@ vi.mock('../../src/middlewares/billing', () => ({
     requireBilling: vi.fn(async (_c: unknown, next: () => Promise<void>) => next())
 }));
 
+// Mock the actor middleware so the handler resolves a fake actor (the real one
+// instantiates RRolePermissionModel at load — staging fix 05bc14a9e) without
+// requiring an actor in the test context.
+vi.mock('../../src/middlewares/actor', () => ({
+    getActorFromContext: vi.fn(() => ({ id: 'user-1', email: 'test@test.com', roles: [] }))
+}));
+
 vi.mock('../../src/lib/sentry', async (importOriginal) => {
     const actual = await importOriginal<typeof import('../../src/lib/sentry')>();
     return { ...actual, captureBillingError: vi.fn() };
@@ -84,7 +91,20 @@ vi.mock('@repo/db', () => {
         getDb: vi.fn(() => ({
             insert: vi.fn(() => insertChain)
         })),
-        billingSubscriptions: { __table: 'billing_subscriptions' }
+        billingSubscriptions: { __table: 'billing_subscriptions' },
+        // Required by role-permissions-cache.ts (loaded via the actor middleware at
+        // module load, staging fix 05bc14a9e). This test never resolves permissions,
+        // so empty findAll stubs suffice.
+        RRolePermissionModel: class MockRRolePermissionModel {
+            async findAll(_filters: unknown, _opts?: unknown) {
+                return { items: [], total: 0 };
+            }
+        },
+        RUserPermissionModel: class MockRUserPermissionModel {
+            async findAll(_filters: unknown, _opts?: unknown) {
+                return { items: [], total: 0 };
+            }
+        }
     };
 });
 

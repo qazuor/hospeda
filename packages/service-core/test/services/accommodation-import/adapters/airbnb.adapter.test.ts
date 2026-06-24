@@ -163,7 +163,10 @@ describe('AirbnbAdapter', () => {
             const result = await adapter.extract(url, ctx);
 
             // Assert
-            expect(result).toEqual({ sourcePlatform: 'airbnb' });
+            expect(result).toEqual({
+                sourcePlatform: 'airbnb',
+                failureCode: 'credentials_missing'
+            });
             expect(mockRunApifyActor).not.toHaveBeenCalled();
         });
 
@@ -176,7 +179,10 @@ describe('AirbnbAdapter', () => {
             const result = await adapter.extract(url, ctx);
 
             // Assert
-            expect(result).toEqual({ sourcePlatform: 'airbnb' });
+            expect(result).toEqual({
+                sourcePlatform: 'airbnb',
+                failureCode: 'credentials_missing'
+            });
             expect(mockRunApifyActor).not.toHaveBeenCalled();
         });
 
@@ -189,7 +195,10 @@ describe('AirbnbAdapter', () => {
             const result = await adapter.extract(url, ctx);
 
             // Assert
-            expect(result).toEqual({ sourcePlatform: 'airbnb' });
+            expect(result).toEqual({
+                sourcePlatform: 'airbnb',
+                failureCode: 'credentials_missing'
+            });
             expect(mockRunApifyActor).not.toHaveBeenCalled();
         });
 
@@ -202,7 +211,10 @@ describe('AirbnbAdapter', () => {
             const result = await adapter.extract(url, ctx);
 
             // Assert
-            expect(result).toEqual({ sourcePlatform: 'airbnb' });
+            expect(result).toEqual({
+                sourcePlatform: 'airbnb',
+                failureCode: 'credentials_missing'
+            });
             expect(mockRunApifyActor).not.toHaveBeenCalled();
         });
 
@@ -215,7 +227,10 @@ describe('AirbnbAdapter', () => {
             const result = await adapter.extract(url, ctx);
 
             // Assert
-            expect(result).toEqual({ sourcePlatform: 'airbnb' });
+            expect(result).toEqual({
+                sourcePlatform: 'airbnb',
+                failureCode: 'credentials_missing'
+            });
             expect(mockRunApifyActor).not.toHaveBeenCalled();
         });
     });
@@ -227,7 +242,7 @@ describe('AirbnbAdapter', () => {
     describe('extract() — empty dataset', () => {
         it('should return degraded extraction when the actor returns an empty array', async () => {
             // Arrange
-            mockRunApifyActor.mockResolvedValue([]);
+            mockRunApifyActor.mockResolvedValue({ items: [] });
             const ctx = makeCtx();
             const url = new URL('https://www.airbnb.com/rooms/12345');
 
@@ -235,7 +250,7 @@ describe('AirbnbAdapter', () => {
             const result = await adapter.extract(url, ctx);
 
             // Assert
-            expect(result).toEqual({ sourcePlatform: 'airbnb' });
+            expect(result).toEqual({ sourcePlatform: 'airbnb', failureCode: 'source_blocked' });
             expect(mockRunApifyActor).toHaveBeenCalledOnce();
         });
     });
@@ -247,7 +262,7 @@ describe('AirbnbAdapter', () => {
     describe('extract() — happy path', () => {
         it('should map name, description, type, coords, images, capacity from a full dataset item', async () => {
             // Arrange
-            mockRunApifyActor.mockResolvedValue([AIRBNB_ITEM_FULL]);
+            mockRunApifyActor.mockResolvedValue({ items: [AIRBNB_ITEM_FULL] });
             const ctx = makeCtx();
             const url = new URL('https://www.airbnb.com/rooms/99999');
 
@@ -302,7 +317,7 @@ describe('AirbnbAdapter', () => {
                 title: 'Apartamento céntrico',
                 description: 'Desc'
             };
-            mockRunApifyActor.mockResolvedValue([item]);
+            mockRunApifyActor.mockResolvedValue({ items: [item] });
 
             // Act
             const result = await adapter.extract(
@@ -320,7 +335,7 @@ describe('AirbnbAdapter', () => {
                 name: 'Test',
                 coordinates: { lat: -33.0, lng: -60.0 }
             };
-            mockRunApifyActor.mockResolvedValue([item]);
+            mockRunApifyActor.mockResolvedValue({ items: [item] });
 
             // Act
             const result = await adapter.extract(
@@ -340,7 +355,7 @@ describe('AirbnbAdapter', () => {
                 name: 'Test',
                 images: [{ url: 'https://cdn.airbnb.com/img/a.jpg' }]
             };
-            mockRunApifyActor.mockResolvedValue([item]);
+            mockRunApifyActor.mockResolvedValue({ items: [item] });
 
             // Act
             const result = await adapter.extract(
@@ -358,7 +373,7 @@ describe('AirbnbAdapter', () => {
                 name: 'Test',
                 pricing: { rate: 2500 }
             };
-            mockRunApifyActor.mockResolvedValue([item]);
+            mockRunApifyActor.mockResolvedValue({ items: [item] });
 
             // Act
             const result = await adapter.extract(
@@ -372,7 +387,7 @@ describe('AirbnbAdapter', () => {
 
         it('should pass the listing URL unchanged in the actorInput startUrls', async () => {
             // Arrange
-            mockRunApifyActor.mockResolvedValue([]);
+            mockRunApifyActor.mockResolvedValue({ items: [] });
             const url = new URL('https://www.airbnb.com/rooms/77777');
             const ctx = makeCtx();
 
@@ -389,7 +404,7 @@ describe('AirbnbAdapter', () => {
 
         it('should include price-probe date params in actorInput (SPEC-258)', async () => {
             // Arrange
-            mockRunApifyActor.mockResolvedValue([]);
+            mockRunApifyActor.mockResolvedValue({ items: [] });
 
             // Act
             await adapter.extract(new URL('https://www.airbnb.com/rooms/77777'), makeCtx());
@@ -412,7 +427,7 @@ describe('AirbnbAdapter', () => {
     describe('extract() — SPEC-222 reviews/ratings must be stripped', () => {
         it('should not include rating, reviewsCount, ratingBreakdown, reviews, starRating, reviewsList, or guestSatisfactionOverall when the dataset item contains them', async () => {
             // Arrange — AIRBNB_ITEM_FULL has all those forbidden keys
-            mockRunApifyActor.mockResolvedValue([AIRBNB_ITEM_FULL]);
+            mockRunApifyActor.mockResolvedValue({ items: [AIRBNB_ITEM_FULL] });
             const ctx = makeCtx();
             const url = new URL('https://www.airbnb.com/rooms/99999');
 
@@ -452,7 +467,7 @@ describe('AirbnbAdapter', () => {
                 name: 'Test',
                 summary: 'A cozy riverside cabin.'
             };
-            mockRunApifyActor.mockResolvedValue([item]);
+            mockRunApifyActor.mockResolvedValue({ items: [item] });
 
             // Act
             const result = await adapter.extract(
@@ -473,7 +488,7 @@ describe('AirbnbAdapter', () => {
                 name: 'Test',
                 publicDescription: 'Fallback summary text.'
             };
-            mockRunApifyActor.mockResolvedValue([item]);
+            mockRunApifyActor.mockResolvedValue({ items: [item] });
 
             // Act
             const result = await adapter.extract(
@@ -491,7 +506,7 @@ describe('AirbnbAdapter', () => {
                 name: 'Test',
                 amenities: ['WiFi', 'Pool', 'Air conditioning']
             };
-            mockRunApifyActor.mockResolvedValue([item]);
+            mockRunApifyActor.mockResolvedValue({ items: [item] });
 
             // Act
             const result = await adapter.extract(
@@ -513,7 +528,7 @@ describe('AirbnbAdapter', () => {
                     { title: 'Hot tub', available: false }
                 ]
             };
-            mockRunApifyActor.mockResolvedValue([item]);
+            mockRunApifyActor.mockResolvedValue({ items: [item] });
 
             // Act
             const result = await adapter.extract(
@@ -534,7 +549,7 @@ describe('AirbnbAdapter', () => {
                     { title: 'Kitchen', values: [{ title: 'Hot water' }, { title: 'Oven' }] }
                 ]
             };
-            mockRunApifyActor.mockResolvedValue([item]);
+            mockRunApifyActor.mockResolvedValue({ items: [item] });
 
             // Act
             const result = await adapter.extract(
@@ -552,7 +567,7 @@ describe('AirbnbAdapter', () => {
                 name: 'Test',
                 beds: 4
             };
-            mockRunApifyActor.mockResolvedValue([item]);
+            mockRunApifyActor.mockResolvedValue({ items: [item] });
 
             // Act
             const result = await adapter.extract(
@@ -570,7 +585,7 @@ describe('AirbnbAdapter', () => {
                 title: 'Casa',
                 metaDescription: 'Cheroga te ofrece tranquilidad y espacios naturales.'
             };
-            mockRunApifyActor.mockResolvedValue([item]);
+            mockRunApifyActor.mockResolvedValue({ items: [item] });
 
             // Act
             const result = await adapter.extract(
@@ -590,7 +605,7 @@ describe('AirbnbAdapter', () => {
                 title: 'Casa',
                 location: 'Concepción del Uruguay'
             };
-            mockRunApifyActor.mockResolvedValue([item]);
+            mockRunApifyActor.mockResolvedValue({ items: [item] });
 
             // Act
             const result = await adapter.extract(
@@ -608,7 +623,7 @@ describe('AirbnbAdapter', () => {
                 title: 'Casa',
                 subDescription: { items: ['11 guests', '3 bedrooms', '8 beds', '1 bath'] }
             };
-            mockRunApifyActor.mockResolvedValue([item]);
+            mockRunApifyActor.mockResolvedValue({ items: [item] });
 
             // Act
             const result = await adapter.extract(
@@ -629,7 +644,7 @@ describe('AirbnbAdapter', () => {
                 title: 'Casa',
                 subDescription: { items: ['11 huéspedes', '3 habitaciones', '8 camas', '1 baño'] }
             };
-            mockRunApifyActor.mockResolvedValue([item]);
+            mockRunApifyActor.mockResolvedValue({ items: [item] });
 
             // Act
             const result = await adapter.extract(
@@ -651,7 +666,7 @@ describe('AirbnbAdapter', () => {
                 personCapacity: 4,
                 subDescription: { items: ['11 guests', '2 bedrooms'] }
             };
-            mockRunApifyActor.mockResolvedValue([item]);
+            mockRunApifyActor.mockResolvedValue({ items: [item] });
 
             // Act
             const result = await adapter.extract(
@@ -679,7 +694,7 @@ describe('AirbnbAdapter', () => {
                     { title: 'Bathroom', values: [{ title: 'Body soap', available: true }] }
                 ]
             };
-            mockRunApifyActor.mockResolvedValue([item]);
+            mockRunApifyActor.mockResolvedValue({ items: [item] });
 
             // Act
             const result = await adapter.extract(
@@ -734,7 +749,7 @@ describe('AirbnbAdapter', () => {
                     }
                 ]
             };
-            mockRunApifyActor.mockResolvedValue([item]);
+            mockRunApifyActor.mockResolvedValue({ items: [item] });
 
             // Act
             const result = await adapter.extract(
@@ -770,7 +785,7 @@ describe('AirbnbAdapter', () => {
                     }
                 ]
             };
-            mockRunApifyActor.mockResolvedValue([item]);
+            mockRunApifyActor.mockResolvedValue({ items: [item] });
 
             // Act
             const result = await adapter.extract(
@@ -855,7 +870,7 @@ describe('AirbnbAdapter', () => {
                     }
                 ]
             };
-            mockRunApifyActor.mockResolvedValue([item]);
+            mockRunApifyActor.mockResolvedValue({ items: [item] });
 
             // Act
             const result = await adapter.extract(
@@ -899,7 +914,7 @@ describe('AirbnbAdapter', () => {
         it('should omit summary, amenityNames and beds when absent', async () => {
             // Arrange — a minimal item with none of the enrichment fields
             const item: Record<string, unknown> = { name: 'Test' };
-            mockRunApifyActor.mockResolvedValue([item]);
+            mockRunApifyActor.mockResolvedValue({ items: [item] });
 
             // Act
             const result = await adapter.extract(
@@ -921,7 +936,7 @@ describe('AirbnbAdapter', () => {
     describe('extract() — SPEC-257 locale', () => {
         it('should pass locale es-AR as actor input for ctx.locale "es"', async () => {
             // Arrange
-            mockRunApifyActor.mockResolvedValue([]);
+            mockRunApifyActor.mockResolvedValue({ items: [] });
             const url = new URL('https://www.airbnb.com.ar/rooms/77777');
             const ctx: ImportContext = { ...makeCtx(), locale: 'es' };
 
@@ -940,7 +955,7 @@ describe('AirbnbAdapter', () => {
 
         it('should map pt -> pt-BR and en -> en', async () => {
             // pt
-            mockRunApifyActor.mockResolvedValue([]);
+            mockRunApifyActor.mockResolvedValue({ items: [] });
             await adapter.extract(new URL('https://www.airbnb.com/rooms/1'), {
                 ...makeCtx(),
                 locale: 'pt'
@@ -951,7 +966,7 @@ describe('AirbnbAdapter', () => {
 
             // en
             mockRunApifyActor.mockClear();
-            mockRunApifyActor.mockResolvedValue([]);
+            mockRunApifyActor.mockResolvedValue({ items: [] });
             await adapter.extract(new URL('https://www.airbnb.com/rooms/1'), {
                 ...makeCtx(),
                 locale: 'en'
@@ -963,7 +978,7 @@ describe('AirbnbAdapter', () => {
 
         it('should not set a locale in the actor input when ctx.locale is absent', async () => {
             // Arrange
-            mockRunApifyActor.mockResolvedValue([]);
+            mockRunApifyActor.mockResolvedValue({ items: [] });
             const ctx: ImportContext = { ...makeCtx(), locale: undefined };
 
             // Act
@@ -1002,7 +1017,7 @@ describe('AirbnbAdapter', () => {
                     }
                 }
             };
-            mockRunApifyActor.mockResolvedValue([item]);
+            mockRunApifyActor.mockResolvedValue({ items: [item] });
 
             // Act
             const result = await adapter.extract(
@@ -1028,7 +1043,7 @@ describe('AirbnbAdapter', () => {
                     price: null
                 }
             };
-            mockRunApifyActor.mockResolvedValue([item]);
+            mockRunApifyActor.mockResolvedValue({ items: [item] });
 
             // Act
             const result = await adapter.extract(
@@ -1051,7 +1066,7 @@ describe('AirbnbAdapter', () => {
                     }
                 }
             };
-            mockRunApifyActor.mockResolvedValue([item]);
+            mockRunApifyActor.mockResolvedValue({ items: [item] });
 
             // Act
             const result = await adapter.extract(
@@ -1073,7 +1088,7 @@ describe('AirbnbAdapter', () => {
                     }
                 }
             };
-            mockRunApifyActor.mockResolvedValue([item]);
+            mockRunApifyActor.mockResolvedValue({ items: [item] });
 
             // Act
             const result = await adapter.extract(
@@ -1097,7 +1112,7 @@ describe('AirbnbAdapter', () => {
                     }
                 }
             };
-            mockRunApifyActor.mockResolvedValue([item]);
+            mockRunApifyActor.mockResolvedValue({ items: [item] });
 
             // Act
             const result = await adapter.extract(

@@ -137,6 +137,13 @@ export const GastronomyProtectedSchema = GastronomySchema.pick({
     type: true,
     summary: true,
     description: true,
+    // i18n translations — owner-editable, must round-trip to the owner editor
+    // (SPEC-253). Without these the protected getById strips them and the editor
+    // re-opens with empty TranslationPanel fields.
+    nameI18n: true,
+    summaryI18n: true,
+    descriptionI18n: true,
+    richDescriptionI18n: true,
     isFeatured: true,
     destinationId: true,
     media: true,

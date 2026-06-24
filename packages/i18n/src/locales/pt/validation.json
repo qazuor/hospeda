@@ -938,6 +938,9 @@
             }
         },
         "startPaid": {
+            "appliedEffect": {
+                "invalid": "O efeito aplicado não é válido"
+            },
             "billingInterval": {
                 "invalid": "O intervalo de faturamento não é válido"
             },

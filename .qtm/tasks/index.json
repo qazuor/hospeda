@@ -800,9 +800,12 @@
         {
             "specId": "SPEC-253",
             "title": "Commerce owner editor — extended fields + single COMMERCE_EDIT_OWN permission",
-            "status": "draft",
-            "progress": "0/0",
-            "path": "SPEC-253-commerce-owner-editor-extended-fields"
+            "status": "completed",
+            "progress": "31/31",
+            "path": "SPEC-253-commerce-owner-editor-extended-fields",
+            "archived": true,
+            "archivedAt": "2026-06-23",
+            "archiveNote": "Shipped + validated via PR #1822 (merged to staging 2026-06-23)."
         },
         {
             "specId": "SPEC-251",
@@ -856,7 +859,7 @@
         {
             "specId": "SPEC-258",
             "title": "Accommodation import — coverage gaps, limbo fields, UX surfacing & scraper resilience",
-            "status": "draft",
+            "status": "completed",
             "progress": "0/0",
             "path": "SPEC-258-import-coverage-ux-resilience",
             "parent": "SPEC-257",
@@ -864,6 +867,9 @@
             "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-258-import-coverage-ux-resilience",
             "base": "staging",
             "createdAt": "2026-06-22T14:53:31Z",
+            "archived": true,
+            "archivedAt": "2026-06-23",
+            "archiveNote": "Doc-only spec, tasks never atomized (progress stays 0/0). Shipped via 4 PRs to staging: #1809 amenity-synonym resolver, #1816 workstream A coverage, #1821 workstream B persistence, #1824 workstream C.1 failure-mode differentiation. C.4 cache rejected; remaining C resilience carved out to SPEC-277.",
             "note": "Doc-only spec; tasks NOT atomized yet. 3 workstreams: coverage, UX surfacing, scraper resilience."
         },
         {
@@ -1049,6 +1055,18 @@
             "tasksAtomizedAt": "2026-06-22T00:00:00.000Z",
             "taskCount": 29,
             "note": "Formalized + atomized 2026-06-22. Storage model = direct table-per-entity (accommodation_media, real FK); polymorphic + junction rejected. 3-phase dual-write (P1 create+backfill+write-both, P2 switch reads, P3 retire JSONB). Accommodation only; pattern reusable for other 5 gallery entities later. Spec still draft (not in-progress) until impl starts."
+        },
+        {
+            "specId": "SPEC-277",
+            "title": "Accommodation import — scraper resilience (retry, fallback chain, async, provider mitigation, manual path)",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-277-import-scraper-resilience",
+            "parent": "SPEC-258",
+            "branch": "spec/SPEC-277-import-scraper-resilience",
+            "base": "staging",
+            "createdAt": "2026-06-23T23:17:27Z",
+            "note": "Doc-only spec; tasks NOT atomized yet. Carved out of SPEC-258 workstream C after C.1 (failure-mode differentiation, SPEC-258 PR #1824) shipped and the import cache (C.4) was rejected. 5 remaining levers: R1 retry/backoff, R2 per-source fallback chain, R3 async path (reuse SPEC-250), R4 provider mitigation (config), R5 guaranteed manual path. 5 open questions for the owner before atomizing."
         }
     ],
     "standalone": {

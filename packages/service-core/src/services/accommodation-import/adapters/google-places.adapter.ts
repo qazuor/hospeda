@@ -510,11 +510,11 @@ export class GooglePlacesAdapter implements ImportSourceAdapter {
      */
     async extract(url: URL, ctx: ImportContext): Promise<RawExtraction> {
         // -------------------------------------------------------------------
-        // US-11: Credential degradation — no API key → empty extraction
+        // US-11: Credential degradation — no API key → credentials_missing
         // -------------------------------------------------------------------
         const apiKey = ctx.credentials.googlePlacesApiKey;
         if (!apiKey) {
-            return { sourcePlatform: this.source };
+            return { sourcePlatform: this.source, failureCode: 'credentials_missing' };
         }
 
         // -------------------------------------------------------------------
@@ -526,7 +526,7 @@ export class GooglePlacesAdapter implements ImportSourceAdapter {
         // and we proceed normally.
         // -------------------------------------------------------------------
         if (isShortLink(url)) {
-            return { sourcePlatform: this.source };
+            return { sourcePlatform: this.source, failureCode: 'invalid_url' };
         }
 
         // -------------------------------------------------------------------
@@ -565,23 +565,41 @@ export class GooglePlacesAdapter implements ImportSourceAdapter {
                 }
 
                 if (!response.ok) {
-                    // Non-2xx — degrade, do not throw
-                    return { sourcePlatform: this.source };
+                    // Map HTTP error status to a failure code.
+                    const { status } = response;
+                    const failureCode =
+                        status === 401 || status === 403
+                            ? ('credentials_missing' as const)
+                            : status === 429
+                              ? ('source_blocked' as const)
+                              : ('provider_error' as const);
+                    return { sourcePlatform: this.source, failureCode };
                 }
 
                 const json = (await response.json()) as
                     | PlacesDetailsApiResponse
                     | PlacesApiErrorResponse;
 
-                // If the response contains an error object, treat it as a failure
+                // If the response contains an error object, treat it as a failure.
                 if ('error' in json && json.error) {
-                    return { sourcePlatform: this.source };
+                    return { sourcePlatform: this.source, failureCode: 'provider_error' };
                 }
 
                 placeObject = json as PlacesDetailsApiResponse;
-            } catch {
-                // Network error, timeout, JSON parse error — degrade, do not throw
-                return { sourcePlatform: this.source };
+            } catch (err) {
+                // AbortError → timeout; anything else → provider_error.
+                const failureCode =
+                    err instanceof Error && err.name === 'AbortError'
+                        ? ('timeout' as const)
+                        : ('provider_error' as const);
+                return { sourcePlatform: this.source, failureCode };
+            }
+
+            // Check for Google-specific not-found status in the response body.
+            // The Places API (New) returns a 200 with a status field in some cases.
+            const maybeStatus = (placeObject as Record<string, unknown>).status;
+            if (maybeStatus === 'NOT_FOUND' || maybeStatus === 'ZERO_RESULTS') {
+                return { sourcePlatform: this.source, failureCode: 'nothing_found' };
             }
 
             return buildRawExtraction(placeObject);
@@ -597,7 +615,7 @@ export class GooglePlacesAdapter implements ImportSourceAdapter {
         const placeName = extractPlaceNameFromPath(url);
         if (!placeName) {
             // URL has no ChIJ Place ID AND no place name in path — cannot identify.
-            return { sourcePlatform: this.source };
+            return { sourcePlatform: this.source, failureCode: 'invalid_url' };
         }
 
         const coords = extractCoordsFromPath(url);
@@ -610,8 +628,8 @@ export class GooglePlacesAdapter implements ImportSourceAdapter {
         );
 
         if (!textSearchResult) {
-            // Text Search returned no results or failed — degrade gracefully.
-            return { sourcePlatform: this.source };
+            // Text Search returned no results or failed — nothing found.
+            return { sourcePlatform: this.source, failureCode: 'nothing_found' };
         }
 
         return buildRawExtraction(textSearchResult);
