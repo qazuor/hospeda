@@ -6,6 +6,7 @@
 
 | Guide | Description |
 |-------|-------------|
+| [Accommodation Gallery Architecture](accommodation-gallery-architecture.md) | Photo gallery subsystem: relational table, granular endpoints, permissions, plan cap, UI surfaces, migration carriles, and SPEC-280 compat debt |
 | [Adding a New Entity](adding-new-entity.md) | End-to-end tutorial: Schema, Model, Service, API, Frontend |
 | [Local Development Setup](local-development-setup.md) | PostgreSQL, Redis, Docker, environment configuration |
 | [Worktree Dev Environments](worktree-dev-environments.md) | One-command up/down for parallel worktrees: isolated ports + DB, auto-heal, test users (`wt:up` / `wt:down`) |
