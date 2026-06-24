@@ -4,6 +4,7 @@ import {
     type FeatureFlagCreateHttp,
     FeatureFlagCreateHttpSchema,
     type FeatureFlagPublicResponse,
+    FeatureFlagSchema,
     type FeatureFlagUpdateHttp,
     FeatureFlagUpdateHttpSchema,
     type FlagContext,
@@ -18,6 +19,10 @@ import { checkCanManageFlags } from './feature-flags.permissions';
 import { FeatureFlagModel } from '@repo/db';
 
 type FeatureFlagAdminSearch = z.infer<typeof FeatureFlagAdminSearchSchema>;
+
+function mapFeatureFlag(flag: unknown): FeatureFlag {
+    return FeatureFlagSchema.parse(flag);
+}
 
 export class FeatureFlagService {
     private readonly model: FeatureFlagModel;
@@ -56,16 +61,31 @@ export class FeatureFlagService {
     async adminList(
         actor: Actor,
         search: FeatureFlagAdminSearch
-    ): Promise<{ items: FeatureFlag[]; total: number }> {
+    ): Promise<{
+        items: FeatureFlag[];
+        pagination: {
+            page: number;
+            pageSize: number;
+            total: number;
+            totalPages: number;
+            hasNextPage: boolean;
+            hasPreviousPage: boolean;
+        };
+    }> {
         checkCanManageFlags(actor);
 
-        return this.model.findAll({
+        const result = await this.model.findAll({
             search: search.search,
             isActive: search.isActive,
             enabled: search.enabled,
             page: search.page,
             pageSize: search.pageSize
         });
+
+        return {
+            items: result.items.map((flag) => mapFeatureFlag(flag)),
+            pagination: result.pagination
+        };
     }
 
     async getById(actor: Actor, id: string): Promise<FeatureFlag> {
@@ -76,7 +96,7 @@ export class FeatureFlagService {
             throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Feature flag not found');
         }
 
-        return flag;
+        return mapFeatureFlag(flag);
     }
 
     async createFlag(actor: Actor, input: FeatureFlagCreateHttp): Promise<FeatureFlag> {
@@ -104,7 +124,7 @@ export class FeatureFlagService {
             performedById: actor.id
         });
 
-        return flag;
+        return mapFeatureFlag(flag);
     }
 
     async updateFlag(actor: Actor, id: string, input: FeatureFlagUpdateHttp): Promise<FeatureFlag> {
@@ -141,7 +161,7 @@ export class FeatureFlagService {
             performedById: actor.id
         });
 
-        return flag;
+        return mapFeatureFlag(flag);
     }
 
     async toggleFlag(
@@ -179,7 +199,7 @@ export class FeatureFlagService {
             performedById: actor.id
         });
 
-        return flag;
+        return mapFeatureFlag(flag);
     }
 
     async deleteFlag(actor: Actor, id: string): Promise<void> {
