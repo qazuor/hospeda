@@ -1067,6 +1067,18 @@
             "base": "staging",
             "createdAt": "2026-06-23T23:17:27Z",
             "note": "Doc-only spec; tasks NOT atomized yet. Carved out of SPEC-258 workstream C after C.1 (failure-mode differentiation, SPEC-258 PR #1824) shipped and the import cache (C.4) was rejected. 5 remaining levers: R1 retry/backoff, R2 per-source fallback chain, R3 async path (reuse SPEC-250), R4 provider mitigation (config), R5 guaranteed manual path. 5 open questions for the owner before atomizing."
+        },
+        {
+            "specId": "SPEC-278",
+            "title": "MercadoLibre OAuth refresh-token flow (make the ML import tier production-viable)",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-278-mercadolibre-oauth-refresh",
+            "parent": "SPEC-258",
+            "branch": "spec/SPEC-278-mercadolibre-oauth-refresh",
+            "base": "staging",
+            "createdAt": "2026-06-24T00:00:00Z",
+            "note": "Doc-only spec; tasks NOT atomized yet. Formalizes Linear BETA-96: the ML import tier uses a static 6h access token with no refresh. Replace with OAuth 2.0 authorization-code + refresh-token rotation + token service (concurrency-safe). Unblocks SPEC-258 A3 (ML field enrichment). 5 open questions for the owner before atomizing."
         }
     ],
     "standalone": {
