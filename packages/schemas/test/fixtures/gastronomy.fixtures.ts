@@ -35,67 +35,21 @@ const createGastronomyIdentityFields = () => ({
 });
 
 /**
- * Creates opening hours in the expected format.
+ * Creates opening hours in the expected schema format.
  */
 const createOpeningHoursFields = () => ({
     openingHours: faker.helpers.maybe(
         () => ({
-            monday: faker.helpers.maybe(
-                () => ({
-                    open: '09:00',
-                    close: '22:00',
-                    isClosed: false
-                }),
-                { probability: 0.8 }
-            ),
-            tuesday: faker.helpers.maybe(
-                () => ({
-                    open: '09:00',
-                    close: '22:00',
-                    isClosed: false
-                }),
-                { probability: 0.8 }
-            ),
-            wednesday: faker.helpers.maybe(
-                () => ({
-                    open: '09:00',
-                    close: '22:00',
-                    isClosed: false
-                }),
-                { probability: 0.8 }
-            ),
-            thursday: faker.helpers.maybe(
-                () => ({
-                    open: '09:00',
-                    close: '22:00',
-                    isClosed: false
-                }),
-                { probability: 0.8 }
-            ),
-            friday: faker.helpers.maybe(
-                () => ({
-                    open: '09:00',
-                    close: '23:59',
-                    isClosed: false
-                }),
-                { probability: 0.9 }
-            ),
-            saturday: faker.helpers.maybe(
-                () => ({
-                    open: '11:00',
-                    close: '23:59',
-                    isClosed: false
-                }),
-                { probability: 0.9 }
-            ),
-            sunday: faker.helpers.maybe(
-                () => ({
-                    open: '11:00',
-                    close: '20:00',
-                    isClosed: faker.datatype.boolean({ probability: 0.3 })
-                }),
-                { probability: 0.7 }
-            )
+            timezone: 'America/Argentina/Buenos_Aires',
+            days: {
+                mon: { closed: false, shifts: [{ open: '09:00', close: '22:00' }] },
+                tue: { closed: false, shifts: [{ open: '09:00', close: '22:00' }] },
+                wed: { closed: false, shifts: [{ open: '09:00', close: '22:00' }] },
+                thu: { closed: false, shifts: [{ open: '09:00', close: '22:00' }] },
+                fri: { closed: false, shifts: [{ open: '09:00', close: '23:59' }] },
+                sat: { closed: false, shifts: [{ open: '10:00', close: '23:59' }] },
+                sun: { closed: true, shifts: [] }
+            }
         }),
         { probability: 0.7 }
     )
