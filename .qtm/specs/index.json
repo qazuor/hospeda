@@ -1888,7 +1888,7 @@
         },
         {
             "specId": "SPEC-270",
-            "title": "Web accessibility audit & improvements — WCAG 2.1 AA compliance",
+            "title": "Web accessibility audit & improvements — WCAG 2.1 AA, concrete findings + fix catalog",
             "type": "improvement",
             "complexity": "medium",
             "status": "draft",
