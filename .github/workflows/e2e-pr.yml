@@ -212,6 +212,12 @@ jobs:
           HOSPEDA_SEO_VALIDATOR_BASE_URL="$HOSPEDA_E2E_WEB_URL" pnpm exec tsx scripts/ci/seo-validator.ts
           HOSPEDA_SITEMAP_VALIDATOR_BASE_URL="$HOSPEDA_E2E_WEB_URL" pnpm exec tsx scripts/ci/sitemap-validator.ts
 
+          # Lighthouse SEO CI guard (SPEC-268 acceptance criteria)
+          # Runs against the already-started preview server; fails if any page scores < 90.
+          echo "[Lighthouse] Running SEO audit..."
+          HOSPEDA_SEO_VALIDATOR_BASE_URL="$HOSPEDA_E2E_WEB_URL" \
+            pnpm --filter hospeda-web exec lhci autorun --config=./lighthouserc.json
+
           pnpm --filter hospeda-e2e e2e:test:p0
         env:
           PLAYWRIGHT_HTML_OPEN: never
