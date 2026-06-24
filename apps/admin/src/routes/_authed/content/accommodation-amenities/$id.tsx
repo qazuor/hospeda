@@ -5,6 +5,7 @@ import { useAmenityPage } from '@/features/amenities/hooks/useAmenityPage';
 import { useDeleteAmenityMutation } from '@/features/amenities/hooks/useAmenityQuery';
 import { useTranslations } from '@/hooks/use-translations';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
+import { defaultLocale, trans } from '@repo/i18n';
 import { PermissionEnum } from '@repo/schemas';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 
@@ -21,20 +22,34 @@ export const Route = createFileRoute('/_authed/content/accommodation-amenities/$
 /**
  * Amenity View Page Component
  */
+/**
+ * Resolves the amenity display label from its slug via @repo/i18n.
+ * Key: `accommodations.amenityNames.<slug>` in the default locale.
+ * Falls back to the entity id when no translation or slug is available.
+ */
+function resolveAmenityLabel(slug: string | null | undefined, fallback: string): string {
+    if (!slug) return fallback;
+    const key = `accommodations.amenityNames.${slug}`;
+    const translated = trans[defaultLocale as keyof typeof trans]?.[key];
+    if (translated && !translated.startsWith('[MISSING:')) return translated;
+    return slug;
+}
+
 function AmenityViewPage() {
     const { id } = Route.useParams();
     const navigate = useNavigate();
     const { t } = useTranslations();
     const entityData = useAmenityPage(id);
 
-    const amenity = entityData.entity as { name?: string } | undefined;
+    const amenity = entityData.entity as { slug?: string | null } | undefined;
+    const displayName = resolveAmenityLabel(amenity?.slug, id);
 
     return (
         <div className="space-y-4">
             <div className="flex justify-end">
                 <DeleteRowButton
                     entityId={id}
-                    entityName={amenity?.name || id}
+                    entityName={displayName}
                     entityLabel={t('admin-entities.entities.amenity.singular')}
                     permission={PermissionEnum.AMENITY_DELETE}
                     useDeleteMutation={useDeleteAmenityMutation}

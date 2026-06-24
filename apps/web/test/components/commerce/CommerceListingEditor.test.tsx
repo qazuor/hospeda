@@ -14,6 +14,20 @@ vi.mock('../../../src/components/commerce/CommerceListingEditor.module.css', () 
     default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })
 }));
 
+// Stub out the TranslationPanel so its "Descripción ampliada" label does not
+// collide with the same label on the standalone richDescription textarea inside
+// the editor itself.  Integration between the two components is tested separately
+// in CommerceTranslationPanel.test.tsx.
+vi.mock('../../../src/components/commerce/CommerceTranslationPanel.client', () => ({
+    CommerceTranslationPanel: () => null,
+    parseCommerceI18nValues: () => ({
+        nameI18n: { es: '', en: '', pt: '' },
+        summaryI18n: { es: '', en: '', pt: '' },
+        descriptionI18n: { es: '', en: '', pt: '' },
+        richDescriptionI18n: { es: '', en: '', pt: '' }
+    })
+}));
+
 vi.mock('../../../src/lib/i18n', () => ({
     // Mirror the real translator: a key with no translation resolves to
     // `[MISSING:<key>]` (not the bare key). `catalog-names` relies on that
@@ -261,11 +275,16 @@ describe('CommerceListingEditor', () => {
                         amenityIds: ['a1']
                     } as unknown as CommerceListingDetail
                 }
+                // SPEC-266: catalog items carry `slug` (no `name`). The amenity
+                // label resolves via translateAmenityName, which humanizes the
+                // slug when no i18n key exists (`wifi` → `Wifi`, `terraza` →
+                // `Terraza`). Features render `t(featureNames.<slug>, slug)`,
+                // which falls back to the raw slug.
                 amenities={[
-                    { id: 'a1', name: 'Wifi', category: null },
-                    { id: 'a2', name: 'Terraza', category: null }
+                    { id: 'a1', slug: 'wifi', category: null },
+                    { id: 'a2', slug: 'terraza', category: null }
                 ]}
-                features={[{ id: 'f1', name: 'Pet friendly', category: null }]}
+                features={[{ id: 'f1', slug: 'pet_friendly', category: null }]}
             />
         );
 
@@ -275,7 +294,7 @@ describe('CommerceListingEditor', () => {
 
         // Select a second amenity and a feature.
         fireEvent.click(screen.getByLabelText('Terraza'));
-        fireEvent.click(screen.getByLabelText('Pet friendly'));
+        fireEvent.click(screen.getByLabelText('pet_friendly'));
         fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
         await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));

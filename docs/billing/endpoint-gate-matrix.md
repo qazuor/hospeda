@@ -543,6 +543,7 @@
 | `GET /api/v1/admin/billing/metrics/approaching-limits` | `billing/admin/metrics.ts` | none | - | n/a | Admin read; PermissionEnum.BILLING_READ_ALL gated |
 | `GET /api/v1/admin/billing/metrics/lifecycle` | `billing/admin/metrics.ts` | none | - | n/a | Admin read; PermissionEnum.BILLING_READ_ALL gated |
 | `GET /api/v1/admin/billing/subscriptions/{id}/events` | `billing/admin/subscription-events.ts` | none | - | n/a | Admin read; PermissionEnum.BILLING_READ_ALL gated |
+| `GET /api/v1/admin/billing/subscriptions/{id}/promo-effect` | `billing/admin/subscription-promo-effect.ts` | none | - | n/a | Admin read; PermissionEnum.BILLING_READ_ALL gated; reads extras-carril columns via raw SQL |
 | `GET /api/v1/admin/billing/addons` | `billing/admin/addons.ts` | none | - | n/a | Admin read; PermissionEnum.BILLING_READ_ALL gated |
 | `GET /api/v1/admin/billing/addons/{id}` | `billing/admin/addons.ts` | none | - | n/a | Admin read; PermissionEnum.BILLING_READ_ALL gated |
 | `POST /api/v1/admin/billing/addons` | `billing/admin/addons.ts` | none | - | n/a | Admin write; PermissionEnum.BILLING_MANAGE gated |

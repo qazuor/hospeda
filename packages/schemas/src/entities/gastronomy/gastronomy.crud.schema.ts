@@ -89,31 +89,53 @@ export type GastronomyAdminCreateOutput = z.infer<typeof GastronomyAdminCreateOu
 /**
  * Schema for owner-managed operational updates to a gastronomy listing.
  *
- * Deliberately restricted to the sections a COMMERCE_OWNER may edit via
- * their own scoped permissions. Identity fields (name, slug, type,
- * destinationId) are **intentionally absent** — unknown keys are stripped
- * (Zod's default behaviour) so forged identity fields in the payload are
- * silently dropped before reaching the service layer.
+ * Deliberately restricted to the fields a COMMERCE_OWNER may edit via the
+ * single `COMMERCE_EDIT_OWN` permission (SPEC-253 D2=b). Identity fields that
+ * remain admin-only (`name`, `slug`, `description`, `destinationId`) are
+ * **intentionally absent** — unknown keys are stripped (Zod's default behaviour)
+ * so forged identity fields in the payload are silently dropped before reaching
+ * the service layer.
  *
- * Permitted operational sections:
- * - `openingHours` — schedule (gated by `commerce.schedule.editOwn`)
- * - `contactInfo`  — contact details (gated by `commerce.contact.editOwn`)
- * - `socialNetworks` — social links (gated by `commerce.social.editOwn`)
- * - `media`        — featured image, gallery, videos (gated by `commerce.media.editOwn`)
- * - `menuUrl`      — online menu URL (gated by `commerce.menu.editOwn`)
- * - `priceRange`   — price-range tier (gated by `commerce.priceRange.editOwn`)
- * - `richDescription` — rich-text description (gated by `commerce.richDescription.editOwn`)
- * - `amenityIds`   — junction sync (gated by `commerce.amenities.editOwn`)
- * - `featureIds`   — junction sync (gated by `commerce.features.editOwn`)
+ * Per SPEC-253 §3, the following fields are now owner-editable:
+ * - `type`             — listing sub-category (SPEC-253 D1: YES; removed from
+ *                        identity-strip guard, AC-5)
+ * - `summary`          — short marketing summary
+ * - `nameI18n`         — localized name translations (SPEC-212 pattern)
+ * - `summaryI18n`      — localized summary translations
+ * - `descriptionI18n`  — localized description translations
+ * - `richDescriptionI18n` — localized rich-text translations
+ *
+ * Previously-permitted operational sections (unchanged):
+ * - `openingHours`   — schedule (gated by `COMMERCE_EDIT_OWN`)
+ * - `contactInfo`    — contact details (gated by `COMMERCE_EDIT_OWN`)
+ * - `socialNetworks` — social links (gated by `COMMERCE_EDIT_OWN`)
+ * - `media`          — featured image, gallery, videos (gated by `COMMERCE_EDIT_OWN`)
+ * - `menuUrl`        — online menu URL (gated by `COMMERCE_EDIT_OWN`)
+ * - `priceRange`     — price-range tier (gated by `COMMERCE_EDIT_OWN`)
+ * - `richDescription`— rich-text description (gated by `COMMERCE_EDIT_OWN`)
+ * - `amenityIds`     — junction sync (gated by `COMMERCE_EDIT_OWN`)
+ * - `featureIds`     — junction sync (gated by `COMMERCE_EDIT_OWN`)
+ *
+ * NOT permitted for owner (admin-only):
+ * - `name`, `slug` (legal identity)
+ * - `description` (base description — owner edits the i18n variants)
+ * - `destinationId`, lifecycle/visibility/moderation/`isFeatured`/`ownerId`
+ * - `priceFrom`, `priceUnit` (gastronomy uses `priceRange` + `menuUrl` instead)
  */
 export const GastronomyOwnerUpdateInputSchema = GastronomySchema.pick({
+    type: true,
+    summary: true,
     openingHours: true,
     contactInfo: true,
     socialNetworks: true,
     media: true,
     menuUrl: true,
     priceRange: true,
-    richDescription: true
+    richDescription: true,
+    nameI18n: true,
+    summaryI18n: true,
+    descriptionI18n: true,
+    richDescriptionI18n: true
 })
     .partial()
     .extend({

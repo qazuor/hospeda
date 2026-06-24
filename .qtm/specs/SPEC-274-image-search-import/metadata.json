@@ -1,0 +1,27 @@
+{
+    "specId": "SPEC-274",
+    "title": "Stock image search & import (Unsplash/Pexels) — admin editor, v1",
+    "type": "feature",
+    "complexity": "medium",
+    "status": "draft",
+    "created": "2026-06-23T00:00:00Z",
+    "decided": "2026-06-23",
+    "modelFit": "basic",
+    "startedAt": null,
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": [
+        "images",
+        "media",
+        "search",
+        "import",
+        "unsplash",
+        "pexels",
+        "stock",
+        "events",
+        "posts",
+        "admin",
+        "editor"
+    ]
+}

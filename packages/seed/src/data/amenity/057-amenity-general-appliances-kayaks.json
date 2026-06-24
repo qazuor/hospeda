@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "057-amenity-general-appliances-kayaks",
-    "name": {
-        "es": "kayaks",
-        "en": "kayaks",
-        "pt": "kayaks"
-    },
     "slug": "kayaks",
     "description": {
         "es": "Kayaks disponibles",
         "en": "Kayaks disponibles",
         "pt": "Kayaks disponibles"
     },
+    "applicableVerticals": ["accommodation"],
     "type": "GENERAL_APPLIANCES",
     "icon": "KayakRentalIcon",
     "isBuiltin": false,

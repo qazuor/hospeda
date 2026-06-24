@@ -1,0 +1,742 @@
+{
+    "version": "1.0",
+    "specRef": "SPEC-253",
+    "title": "Commerce owner editor — extended fields + single COMMERCE_EDIT_OWN permission",
+    "created": "2026-06-22T00:00:00.000Z",
+    "summary": "Collapse 10 per-section COMMERCE_*_EDIT_OWN permissions into one COMMERCE_EDIT_OWN, migrate all 30+ consumer files, add new owner-editable fields (type, summary, i18n, FAQs, experience price), and polish web editor (remove phantom website, add linkedIn).",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Delete 10 per-section perms, add COMMERCE_EDIT_OWN to PermissionEnum",
+            "description": "In packages/schemas/src/enums/permission.enum.ts:\n- Remove the 10 SPEC-239 owner-scoped entries (lines ~849-858): COMMERCE_SCHEDULE_EDIT_OWN, COMMERCE_CONTACT_EDIT_OWN, COMMERCE_SOCIAL_EDIT_OWN, COMMERCE_MEDIA_EDIT_OWN, COMMERCE_MENU_EDIT_OWN, COMMERCE_PRICE_RANGE_EDIT_OWN, COMMERCE_RICH_DESCRIPTION_EDIT_OWN, COMMERCE_AMENITIES_EDIT_OWN, COMMERCE_FEATURES_EDIT_OWN, COMMERCE_FAQS_EDIT_OWN.\n- Add COMMERCE_EDIT_OWN = 'commerce.editOwn' in the same block (before the admin-level group).\n- Keep COMMERCE_CREATE, COMMERCE_VIEW_ALL, COMMERCE_EDIT_ALL, COMMERCE_DELETE, COMMERCE_MODERATE_REVIEW untouched.\nAcceptance: enum compiles, 10 old values gone, 1 new value present, count of commerce.* entries drops from 15 to 6.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-003", "T-004", "T-005", "T-006", "T-007", "T-008"],
+            "subtasks": [],
+            "tags": ["backend", "schemas", "permissions"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
+            },
+            "commitHash": "5ba40c277"
+        },
+        {
+            "id": "T-002",
+            "title": "Rewrite permission-commerce.test.ts for single COMMERCE_EDIT_OWN",
+            "description": "In packages/schemas/src/enums/__tests__/permission-commerce.test.ts:\n- Remove the 10 individual 'owner-scoped section edit permissions' it() blocks.\n- Remove the 'should have exactly 15 new COMMERCE entries' count assertion (or update to 6).\n- Add: it('should have COMMERCE_EDIT_OWN', () => expect(PermissionEnum.COMMERCE_EDIT_OWN).toBe('commerce.editOwn')).\n- Add: it('should have exactly 6 COMMERCE entries', ...) covering COMMERCE_EDIT_OWN + the 5 admin-level ones.\n- Covers AC-2 (enum side).\nAcceptance: all tests pass, no reference to old per-section perms.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "schemas", "permissions"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
+            },
+            "commitHash": "06f9832a4"
+        },
+        {
+            "id": "T-003",
+            "title": "Update seed: replace 10 per-section perms with COMMERCE_EDIT_OWN in COMMERCE_OWNER bundle",
+            "description": "In packages/seed/src/required/rolePermissions.seed.ts (lines ~958-978):\n- Find the COMMERCE_OWNER role block.\n- Replace the 10 PermissionEnum.COMMERCE_*_EDIT_OWN entries with a single PermissionEnum.COMMERCE_EDIT_OWN.\n- Keep all other permissions in the block unchanged.\nAcceptance: file compiles, no TypeScript errors on the removed enum members, seed runs without error (pnpm db:seed:test-users).",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["backend", "seed", "permissions"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
+            },
+            "commitHash": "4377aad66"
+        },
+        {
+            "id": "T-004",
+            "title": "Rewrite commerce.permissions.ts: collapse COMMERCE_OWNER_EDIT_PERMISSIONS + checkCanEditOwn signature",
+            "description": "In packages/service-core/src/services/commerce/commerce.permissions.ts:\n- Remove the COMMERCE_OWNER_EDIT_PERMISSIONS readonly array (was 10 entries).\n- Rewrite checkCanEditOwn(actor, entity, ownSectionPermission) → checkCanEditOwn(actor, entity): the ownSectionPermission parameter is eliminated because all sections now share one permission (COMMERCE_EDIT_OWN).\n  New logic: allow if COMMERCE_EDIT_ALL OR (COMMERCE_EDIT_OWN AND isOwner).\n- Rewrite checkCanEditOwnOrAll(actor, entity): allow if COMMERCE_EDIT_ALL OR (COMMERCE_EDIT_OWN AND isOwner). Remove the COMMERCE_OWNER_EDIT_PERMISSIONS.some() fan-out.\n- Update JSDoc on all modified functions.\n- Update the exports list in index.ts if needed.\nAcceptance: compiles, no reference to removed per-section perms.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-005", "T-006", "T-009"],
+            "subtasks": [],
+            "tags": ["backend", "service-core", "permissions"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
+            },
+            "commitHash": "a3c0efd37"
+        },
+        {
+            "id": "T-005",
+            "title": "Rewrite gastronomy.permissions.ts: drop checkGastronomyCanEditOwn section param, update checkGastronomyCanEditFaqs",
+            "description": "In packages/service-core/src/services/gastronomy/gastronomy.permissions.ts:\n- checkGastronomyCanEditOwn: remove ownSectionPermission parameter (was PermissionEnum); delegate to updated checkCanEditOwn(actor, entity) (no third arg).\n- checkGastronomyCanEditFaqs: change the call from checkCanEditOwn(actor, entity, PermissionEnum.COMMERCE_FAQS_EDIT_OWN) to checkCanEditOwn(actor, entity) — now gates on COMMERCE_EDIT_OWN.\n- Update JSDoc.\nAcceptance: compiles, no per-section perm references.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-006", "T-009"],
+            "subtasks": [],
+            "tags": ["backend", "service-core", "permissions"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
+            },
+            "commitHash": "e1a4497c4"
+        },
+        {
+            "id": "T-006",
+            "title": "Rewrite gastronomy.service.ts updateOwn: single COMMERCE_EDIT_OWN gate, add new fields",
+            "description": "In packages/service-core/src/services/gastronomy/gastronomy.service.ts, updateOwn():\n- Replace the 9-section per-field permission fan-out block with a single check:\n  if (!hasEditAll) { checkGastronomyCanEditOwn(actor, entity); } (one call, no section routing).\n- Extend the validated payload to include: type, summary, nameI18n, summaryI18n, descriptionI18n, richDescriptionI18n (once T-013 adds them to GastronomyOwnerUpdateInputSchema).\n- Update JSDoc to reflect collapsed gating model.\n- Keep ownership check (NOT_FOUND for non-owners) and EDIT_ALL bypass.\nAcceptance: compiles, updateOwn still delegates to this.update(), per-section checks gone.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005", "T-013"],
+            "blocks": ["T-009"],
+            "subtasks": [],
+            "tags": ["backend", "service-core", "gastronomy"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
+            },
+            "commitHash": "3af709357"
+        },
+        {
+            "id": "T-007",
+            "title": "Rewrite experience.permissions.ts + experience.service.ts updateOwn parallel to gastronomy",
+            "description": "Mirror T-005 and T-006 for the experience vertical:\n- packages/service-core/src/services/experience/experience.permissions.ts:\n  Same changes as T-005: drop ownSectionPermission param from checkExperienceCanEditOwn, update checkExperienceCanEditFaqs.\n- packages/service-core/src/services/experience/experience.service.ts, updateOwn():\n  Same changes as T-006: single checkExperienceCanEditOwn(actor, entity) gate, remove section fan-out. Also extend accepted fields: type, summary, nameI18n, summaryI18n, descriptionI18n, richDescriptionI18n, priceFrom, priceUnit (once T-014 adds them to ExperienceOwnerUpdateInputSchema).\nAcceptance: compiles, no per-section perm references.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-004", "T-014"],
+            "blocks": ["T-009"],
+            "subtasks": [],
+            "tags": ["backend", "service-core", "experience"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
+            },
+            "commitHash": "91c7fb69c"
+        },
+        {
+            "id": "T-008",
+            "title": "Update API FAQ routes (gastronomy + experience protected): COMMERCE_FAQS_EDIT_OWN → COMMERCE_EDIT_OWN",
+            "description": "The 8 protected FAQ route files reference COMMERCE_FAQS_EDIT_OWN in their JSDoc/comments (no runtime import of the enum — gating is done inside the service via checkGastronomyCanEditFaqs / checkExperienceCanEditFaqs). Update each file's header comment to reference COMMERCE_EDIT_OWN.\nFiles:\n- apps/api/src/routes/gastronomy/protected/addFaq.ts\n- apps/api/src/routes/gastronomy/protected/removeFaq.ts\n- apps/api/src/routes/gastronomy/protected/reorderFaqs.ts\n- apps/api/src/routes/gastronomy/protected/updateFaq.ts\n- apps/api/src/routes/experience/protected/addFaq.ts\n- apps/api/src/routes/experience/protected/removeFaq.ts\n- apps/api/src/routes/experience/protected/reorderFaqs.ts\n- apps/api/src/routes/experience/protected/updateFaq.ts\nIf any route directly imports COMMERCE_FAQS_EDIT_OWN for a runtime check (verify), replace with COMMERCE_EDIT_OWN.\nAcceptance: no TypeScript errors, comments are accurate.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["backend", "api", "permissions"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
+            },
+            "commitHash": "c8dc55c27"
+        },
+        {
+            "id": "T-009",
+            "title": "Rewrite service-core permission tests: commerce.permissions.test.ts, gastronomy.permissions.test.ts, experience.permissions.test.ts",
+            "description": "Update three test files after T-004/T-005/T-007:\n\npackages/service-core/test/services/commerce/commerce.permissions.test.ts:\n- Remove tests for checkCanEditOwn with per-section permission params.\n- Add tests: checkCanEditOwn allows owner+COMMERCE_EDIT_OWN, denies owner+no-perm, allows staff+COMMERCE_EDIT_ALL.\n- Add tests: checkCanEditOwnOrAll allows owner+COMMERCE_EDIT_OWN, denies stranger.\n\npackages/service-core/test/services/gastronomy/gastronomy.permissions.test.ts:\n- Remove per-section gating tests.\n- Add COMMERCE_EDIT_OWN variants for checkGastronomyCanEditOwn and checkGastronomyCanEditFaqs.\n\npackages/service-core/test/services/experience/experience.permissions.test.ts:\n- Same as gastronomy.\n\nEach test file should cover: allow-own, deny-stranger, staff-bypass for the updated helpers. Covers AC-2 at the service level.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-004", "T-005", "T-007"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "service-core", "permissions"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
+            },
+            "commitHash": "041567efe"
+        },
+        {
+            "id": "T-010",
+            "title": "Update gastronomy.service.test.ts and experience.service.test.ts: per-section permission blocks + T-022 regression",
+            "description": "packages/service-core/test/services/gastronomy/gastronomy.service.test.ts:\n- Remove per-section permission test blocks (COMMERCE_SCHEDULE_EDIT_OWN etc. test scenarios in updateOwn).\n- Add: owner with COMMERCE_EDIT_OWN can call updateOwn for any field group.\n- Update AC-3 identity-field regression (T-022 block, lines ~264-308): remove 'type' from the expected-stripped list (it is now owner-editable per AC-5 / D1). Verify 'name', 'slug', 'destinationId', lifecycle/visibility/moderation/isFeatured/ownerId still get stripped.\n- Add new positive test: 'type' in the payload reaches this.update() (is NOT stripped).\n\npackages/service-core/test/services/experience/experience.service.test.ts:\n- Same AC-3/T-022 update: remove 'type' from forbidden list, add positive assertion.\n- Remove per-section perm blocks.\n\nCovers AC-5.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-006", "T-007"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "service-core", "gastronomy", "experience"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
+            },
+            "commitHash": "1edac5535",
+            "blockBCommits": {
+                "gastronomy": "565b21e01",
+                "experience": "00d46449f"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Update media permission gate: COMMERCE_MEDIA_EDIT_OWN → COMMERCE_EDIT_OWN in permissions.ts",
+            "description": "In apps/api/src/routes/media/admin/permissions.ts:\n- In ENTITY_UPDATE_PERMISSIONS, replace PermissionEnum.COMMERCE_MEDIA_EDIT_OWN with PermissionEnum.COMMERCE_EDIT_OWN for both gastronomy and experience entries.\n- The OWN_ANY_ENTITIES set and anyPermission logic (COMMERCE_EDIT_ALL bypass) stay unchanged.\nAcceptance: compiles, no TypeScript errors from the removed enum member.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-012"],
+            "subtasks": [],
+            "tags": ["backend", "api", "media", "permissions"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
+            },
+            "commitHash": "bd86f274b"
+        },
+        {
+            "id": "T-012",
+            "title": "Update media permission-gate.test.ts: replace COMMERCE_MEDIA_EDIT_OWN with COMMERCE_EDIT_OWN",
+            "description": "In apps/api/test/routes/media/permission-gate.test.ts, the 'Commerce media permissions (SPEC-249 T-015b)' block (lines ~307-350):\n- Replace every occurrence of PermissionEnum.COMMERCE_MEDIA_EDIT_OWN with PermissionEnum.COMMERCE_EDIT_OWN.\n- Test names and logic stay the same (allow owner+COMMERCE_EDIT_OWN, deny non-owner+COMMERCE_EDIT_OWN, deny no-perm).\n- No new test cases needed; just the enum swap.\nCovers AC-2 (media gate side).",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-011"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "api", "media", "permissions"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
+            },
+            "commitHash": "97739544c"
+        },
+        {
+            "id": "T-013",
+            "title": "Update GastronomyOwnerUpdateInputSchema: add type, summary, nameI18n, summaryI18n, descriptionI18n, richDescriptionI18n",
+            "description": "In packages/schemas/src/entities/gastronomy/gastronomy.crud.schema.ts, GastronomyOwnerUpdateInputSchema:\n- Add to the .pick() call: type (GastronomyTypeEnum), summary, nameI18n, summaryI18n, descriptionI18n, richDescriptionI18n.\n- These are all already on GastronomySchema via CommerceIdentityFields and the vertical-specific type field.\n- Keep the existing .partial() so all are optional on the PATCH.\n- Remove 'type' from the comment listing identity fields NOT permitted for owner.\n- Update JSDoc to reflect the new permitted set.\n- Verify the gastronomy.crud.schema.ts file stays under 500 lines; split if needed.\nAcceptance: ExperienceOwnerUpdateInput type now includes the new fields; compiles; existing fields unchanged.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-006"],
+            "subtasks": [],
+            "tags": ["backend", "schemas", "gastronomy"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
+            },
+            "commitHash": "65f581e9f"
+        },
+        {
+            "id": "T-014",
+            "title": "Update ExperienceOwnerUpdateInputSchema: add type, summary, i18n fields, priceFrom, priceUnit",
+            "description": "In packages/schemas/src/entities/experience/experience.crud.schema.ts, ExperienceOwnerUpdateInputSchema:\n- Add to the .pick() call: type (ExperienceTypeEnum), summary, nameI18n, summaryI18n, descriptionI18n, richDescriptionI18n, priceFrom, priceUnit.\n- priceFrom is a z.number().nonnegative().nullish() (matches ExperienceSchema); priceUnit is ExperiencePriceUnitEnum nullish.\n- Remove 'type', 'priceFrom', 'priceUnit' from the comment block that lists NOT permitted identity fields.\n- Update JSDoc.\n- Remove SPEC-249 T-022 AC-3 comment that placed 'type'/'priceFrom'/'priceUnit' in the identity-strip category (now owner-editable per D1).\nAcceptance: ExperienceOwnerUpdateInput type includes the new fields; compiles.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-007"],
+            "subtasks": [],
+            "tags": ["backend", "schemas", "experience"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
+            },
+            "commitHash": "603d69b7c"
+        },
+        {
+            "id": "T-015",
+            "title": "Update admin commerceSections.ts: replace all per-section COMMERCE_*_EDIT_OWN with COMMERCE_EDIT_OWN",
+            "description": "In apps/admin/src/features/commerce/config/commerceSections.ts:\n- In createCommerceOperationalSection(), replace every occurrence of PermissionEnum.COMMERCE_CONTACT_EDIT_OWN, COMMERCE_SOCIAL_EDIT_OWN, COMMERCE_MEDIA_EDIT_OWN, COMMERCE_AMENITIES_EDIT_OWN, COMMERCE_FEATURES_EDIT_OWN (in section.permissions.edit and all field.permissions.edit arrays) with PermissionEnum.COMMERCE_EDIT_OWN.\n- In createCommerceIdentitySection(), the richDescription field.permissions.edit references COMMERCE_RICH_DESCRIPTION_EDIT_OWN — replace with COMMERCE_EDIT_OWN (or COMMERCE_EDIT_ALL if richDescription stays admin-only in the admin panel; confirm against spec §5 which keeps admin panel UI out of scope but still requires the enum migration).\n- Update the file JSDoc comment that lists the per-section perm names.\nAcceptance: compiles, no references to deleted enum members.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-016"],
+            "subtasks": [],
+            "tags": ["frontend", "admin", "permissions"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
+            },
+            "commitHash": "2af68c797"
+        },
+        {
+            "id": "T-016",
+            "title": "Update admin consolidated config tests for gastronomy and experience + JSDoc/docs cleanup",
+            "description": "In apps/admin/src/features/gastronomy/__tests__/gastronomy-consolidated.config.test.ts and apps/admin/src/features/experience/__tests__/experience-consolidated.config.test.ts:\n- If any test asserts specific permission enum values on the operational section fields (e.g. COMMERCE_CONTACT_EDIT_OWN), replace those assertions with COMMERCE_EDIT_OWN.\n- If tests pass no permission assertions currently (grep showed 0 hits), verify that the test still compiles after the enum change — the config pulls from the updated commerceSections.ts.\n- Add a smoke test asserting the operational section's edit permissions array includes COMMERCE_EDIT_OWN.\nAcceptance: tests compile and pass.\nAlso includes: JSDoc/comments in gastronomy.faq.ts, experience.faq.ts, experience.crud.schema.ts, and apps/api/docs/route-architecture.md updated to reference COMMERCE_EDIT_OWN.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-015"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "admin", "permissions"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
+            },
+            "commitHash": "ca49c7adc"
+        },
+        {
+            "id": "T-017",
+            "title": "Update gastronomy.faq.test.ts and experience.faq.test.ts: replace COMMERCE_FAQS_EDIT_OWN with COMMERCE_EDIT_OWN",
+            "description": "In packages/service-core/test/services/gastronomy/gastronomy.faq.test.ts and packages/service-core/test/services/experience/experience.faq.test.ts:\n- Find all test actors that carry PermissionEnum.COMMERCE_FAQS_EDIT_OWN in their permissions array and replace with PermissionEnum.COMMERCE_EDIT_OWN.\n- Ensure test descriptions still accurately reflect gating semantics.\n- If an existing test checks that an actor WITHOUT COMMERCE_FAQS_EDIT_OWN is denied, update to check WITHOUT COMMERCE_EDIT_OWN.\nAcceptance: tests compile and pass against the updated service helpers.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-005", "T-007"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "service-core", "gastronomy", "experience"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
+            },
+            "commitHash": "1dc900971"
+        },
+        {
+            "id": "T-018",
+            "title": "Update base-commerce-listing.service.test.ts: remove per-section perm references",
+            "description": "In packages/service-core/test/services/commerce/base-commerce-listing.service.test.ts:\n- Find and replace all actor setups that use per-section COMMERCE_*_EDIT_OWN permissions.\n- Replace with COMMERCE_EDIT_OWN where the test is exercising owner-edit access.\n- Add a 'should deny owner without COMMERCE_EDIT_OWN' negative test if not already present.\nAcceptance: compiles, all tests pass.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-004"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "service-core", "permissions"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
+            },
+            "commitHash": "da9d68ef8"
+        },
+        {
+            "id": "T-019",
+            "title": "Update spec-239 integration test: replace per-section perms with COMMERCE_EDIT_OWN",
+            "description": "In packages/service-core/test/integration/services/spec-239-gastronomy-commerce.integration.test.ts:\n- Replace actor setups and assertions that reference per-section COMMERCE_*_EDIT_OWN perms with COMMERCE_EDIT_OWN.\n- Ensure the integration test still exercises the full updateOwn flow (owner can edit all field groups with single perm, staff still passes with COMMERCE_EDIT_ALL).\nAcceptance: compiles and passes.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-006", "T-007"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "service-core", "integration"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
+            },
+            "commitHash": "1c7a75826"
+        },
+        {
+            "id": "T-020",
+            "title": "Add type select and summary textarea to CommerceListingEditor web component",
+            "description": "In apps/web/src/components/commerce/CommerceListingEditor.client.tsx:\n- Add a controlled select input for 'type': uses the GastronomyTypeEnum or ExperienceTypeEnum depending on the 'vertical' prop. Render the correct enum options per vertical. Wires to the PATCH payload as { type: ... }.\n- Add a controlled textarea for 'summary' (10-300 chars). Wires to the PATCH payload as { summary: ... }.\n- Both fields go in a new 'Información básica' section above the existing contact group.\n- Add the fields to the dirty tracking logic (markDirty('type'), markDirty('summary')).\n- Add them to the PATCH payload builder.\n- Update ContactValues / type interfaces as needed.\n- Polish: remove the phantom 'website' field from the ContactValues interface and from the rendered contact form inputs (AC-4). The owner ContactInfoSchema does not include website.\n- Add 'linkedIn' to SocialValues and SOCIAL_KEYS, add its text input in the social group (AC-4).\nCovers AC-1 (type, summary), AC-4 (website removal, linkedIn addition).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-013", "T-014"],
+            "blocks": ["T-021"],
+            "subtasks": [],
+            "tags": ["frontend", "web", "commerce"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
+            },
+            "commitHash": "72b6652a2"
+        },
+        {
+            "id": "T-021",
+            "title": "Add experience priceFrom + priceUnit fields to CommerceListingEditor",
+            "description": "In apps/web/src/components/commerce/CommerceListingEditor.client.tsx:\n- When vertical === 'experience', render a 'Precio' subsection with:\n  - A number input for priceFrom (label 'Precio desde', min 0, nullish).\n  - A select for priceUnit (ExperiencePriceUnitEnum values).\n- Both are behind a vertical === 'experience' conditional so gastronomy editors don't see them.\n- Wire to dirty tracking (markDirty('priceFrom'), markDirty('priceUnit')) and to the PATCH payload.\n- The existing isPriceOnRequest toggle (boolean) stays for experience; priceFrom/priceUnit are additional (not exclusive).\nCovers AC-1 (experience priceFrom/priceUnit).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-020"],
+            "blocks": ["T-022"],
+            "subtasks": [],
+            "tags": ["frontend", "web", "experience"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
+            },
+            "commitHash": "804778b2f"
+        },
+        {
+            "id": "T-022",
+            "title": "Add CommerceTranslationPanel component (replicating SPEC-212 TranslationPanel pattern)",
+            "description": "Create apps/web/src/components/commerce/CommerceTranslationPanel.client.tsx (and matching .module.css):\n- Replicate the SPEC-212 TranslationPanel pattern from apps/web/src/components/host/editor/TranslationPanel.client.tsx.\n- Renders a locale-tab UI (es / en / pt) for 4 i18n fields: nameI18n, summaryI18n, descriptionI18n, richDescriptionI18n.\n- Props: initialI18n: { nameI18n, summaryI18n, descriptionI18n, richDescriptionI18n } (all nullish), onChange: (field, locale, value) => void.\n- Each locale tab contains: text input for nameI18n[locale], textarea for summaryI18n[locale], textarea for descriptionI18n[locale], textarea for richDescriptionI18n[locale].\n- Uses vanilla CSS + CSS Modules (no Tailwind — web convention).\n- Named export only.\nCovers AC-3.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-021"],
+            "blocks": ["T-023"],
+            "subtasks": [],
+            "tags": ["frontend", "web", "i18n"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
+            },
+            "commitHash": "04bc0deb3"
+        },
+        {
+            "id": "T-023",
+            "title": "Wire CommerceTranslationPanel into CommerceListingEditor",
+            "description": "In apps/web/src/components/commerce/CommerceListingEditor.client.tsx:\n- Import and render CommerceTranslationPanel below the basic-info section.\n- Initialize with initialData.nameI18n, summaryI18n, descriptionI18n, richDescriptionI18n from the listing's current payload.\n- On onChange: merge the updated i18n object into state and mark dirty (e.g. markDirty('nameI18n')).\n- On save: include each dirty i18n field in the PATCH payload as top-level keys (nameI18n: { es: ..., en: ..., pt: ... }).\n- Use the existing CommerceListingDetail type — verify it exposes the 4 i18n fields from the protected getById endpoint; if not, update apps/web/src/lib/commerce/owner-listings.ts to include them.\nCovers AC-1 + AC-3.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-022"],
+            "blocks": ["T-025"],
+            "subtasks": [],
+            "tags": ["frontend", "web", "i18n"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
+            },
+            "commitHash": "0d45b58c9"
+        },
+        {
+            "id": "T-024",
+            "title": "Add CommerceFaqManager component (web owner FAQ UI)",
+            "description": "Create apps/web/src/components/commerce/CommerceFaqManager.client.tsx:\n- Renders a list of existing FAQs (question + answer rows).\n- Add FAQ button → inline form (question textarea, answer textarea, submit).\n- Edit FAQ: click row to expand inline edit form.\n- Remove FAQ: confirmation step, calls DELETE endpoint.\n- Reorder FAQs: up/down arrows or drag (minimal: up/down buttons suffice).\n- All 4 operations wire to the existing protected FAQ endpoints:\n  POST   /{vertical}/protected/:id/faqs (addFaq)\n  PATCH  /{vertical}/protected/:id/faqs/:faqId (updateFaq)\n  DELETE /{vertical}/protected/:id/faqs/:faqId (removeFaq)\n  PUT    /{vertical}/protected/:id/faqs/reorder (reorderFaqs)\n- Uses apiClient from @/lib/api/client.\n- Props: listingId, vertical, locale, initialFaqs.\n- Vanilla CSS + CSS Modules, named export.\nCovers AC-1 (FAQ management).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-025"],
+            "subtasks": [],
+            "tags": ["frontend", "web", "commerce", "faqs"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
+            },
+            "commitHash": "63a5fbb05"
+        },
+        {
+            "id": "T-025",
+            "title": "Integrate CommerceFaqManager and CommerceTranslationPanel into editar.astro page",
+            "description": "In apps/web/src/pages/[lang]/mi-cuenta/comercio/[vertical]/[id]/editar.astro:\n- Import CommerceFaqManager and pass it initialFaqs fetched SSR from the protected listFaqs endpoint (if available), or let it start empty and load on mount.\n- Import CommerceTranslationPanel (already wired via T-023 into CommerceListingEditor — verify it renders in the page; if CommerceListingEditor already renders it, no separate wiring needed here).\n- Verify the editar.astro page passes the new initialData fields (type, summary, nameI18n, summaryI18n, descriptionI18n, richDescriptionI18n, priceFrom, priceUnit for experience) down to CommerceListingEditor via the CommerceListingDetail type.\n- If CommerceListingDetail in apps/web/src/lib/commerce/owner-listings.ts is missing the new fields, extend the type here.\nCovers AC-1 (wiring all new fields to the rendered page).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-023", "T-024"],
+            "blocks": ["T-026"],
+            "subtasks": [],
+            "tags": ["frontend", "web", "commerce"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
+            },
+            "commitHash": "17a0c31f5"
+        },
+        {
+            "id": "T-026",
+            "title": "Write unit tests for CommerceTranslationPanel and CommerceFaqManager",
+            "description": "Create test files alongside or in a test/ dir near the components:\n- apps/web/src/components/commerce/CommerceTranslationPanel.test.tsx:\n  Test: renders 3 locale tabs (es/en/pt); switching tabs shows correct inputs; onChange fires with correct (field, locale, value); initial values are populated.\n- apps/web/src/components/commerce/CommerceFaqManager.test.tsx:\n  Test: renders initial FAQ list; Add FAQ form submits and calls addFaq endpoint mock; Remove FAQ shows confirmation; Reorder calls reorderFaqs endpoint.\n  Use vitest + @testing-library/react.\nCovers AC-3 (TranslationPanel UX) and AC-1 (FAQ manager behavior).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-022", "T-024"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "web", "commerce"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
+            },
+            "commitHash": "61e99df14"
+        },
+        {
+            "id": "T-027",
+            "title": "Write schema unit tests: GastronomyOwnerUpdateInputSchema and ExperienceOwnerUpdateInputSchema new fields",
+            "description": "In packages/schemas/src/entities/gastronomy/__tests__/ (create if absent) and packages/schemas/src/entities/experience/__tests__/:\n- Test that type, summary, nameI18n, summaryI18n, descriptionI18n, richDescriptionI18n are accepted as valid optional fields.\n- Test that name, slug, destinationId, ownerId, lifecycleStatus, visibility, moderationStatus, isFeatured are still rejected / stripped (not in the schema).\n- For experience: test priceFrom (number, nonneg) and priceUnit (ExperiencePriceUnitEnum) are accepted.\n- For gastronomy: test priceFrom, priceUnit are NOT in the schema (not applicable to gastronomy).\nCovers AC-5 (identity-strip) and AC-1 (new fields accepted).",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-013", "T-014"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "schemas"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": "2026-06-22T00:00:00.000Z",
+                "completed": "2026-06-22T00:00:00.000Z"
+            },
+            "commitHash": "6345b9197",
+            "experienceTestCommit": "91f4ec41a"
+        },
+        {
+            "id": "T-028",
+            "title": "Write E2E test: owner can edit type + i18n fields and changes persist on public ficha (SPEC-252 harness)",
+            "description": "Using the SPEC-252 Playwright E2E harness (apps/e2e/):\n- Sign in as a commerce owner (julieta@local.test or equivalent from SPEC-252 seed).\n- Navigate to /[lang]/mi-cuenta/comercio/[vertical]/[id]/editar.\n- Change the type select to a different value.\n- Fill in the Spanish name in the TranslationPanel (es tab, nameI18n.es).\n- Save the form.\n- Navigate to the public ficha URL.\n- Assert: the type badge reflects the new value; the es locale nameI18n is displayed.\nTag: @p0. Covers AC-1 (persist + appear on public ficha).",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-025"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "e2e", "commerce"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            },
+            "completedAt": "2026-06-23"
+        },
+        {
+            "id": "T-029",
+            "title": "Write E2E test: owner without COMMERCE_EDIT_OWN gets FORBIDDEN on PATCH updateOwn",
+            "description": "Using the SPEC-252 Playwright E2E harness or direct API assertion:\n- Use a USER-role actor (no COMMERCE_EDIT_OWN) to call PATCH /{vertical}/protected/:id (updateOwn endpoint) directly via fetch.\n- Assert HTTP 403 FORBIDDEN response.\n- Also assert: a COMMERCE_OWNER actor WITH COMMERCE_EDIT_OWN gets HTTP 200.\n- Assert: a staff actor with COMMERCE_EDIT_ALL gets HTTP 200.\nTag: @p0. Covers AC-2 (permission gate).",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-006", "T-007"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "e2e", "permissions"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            },
+            "completedAt": "2026-06-23"
+        },
+        {
+            "id": "T-030",
+            "title": "Write E2E test: contact has no website field; social includes linkedIn",
+            "description": "Using the SPEC-252 Playwright E2E harness:\n- Navigate to the owner editor for a commerce listing.\n- Assert: no input with label/aria-label 'Sitio Web' or id 'website' in the contact section.\n- Assert: an input for 'LinkedIn' is present in the social section and can be filled.\n- Save with a linkedIn value; reload; assert the value persists.\nTag: @p0. Covers AC-4.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-020"],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "e2e", "commerce"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            },
+            "completedAt": "2026-06-23"
+        },
+        {
+            "id": "T-031",
+            "title": "Final typecheck + full test run across affected packages",
+            "description": "Run across all affected packages to confirm zero regressions:\n- pnpm typecheck (packages/schemas, packages/service-core, apps/api, apps/admin, apps/web)\n- pnpm test (vitest, all affected packages)\n- pnpm lint\nFix any remaining TypeScript errors from the enum removal (the dist/ files will be stale — ensure a fresh build of packages/schemas before running dependent package tests).\nBlock: all prior tasks (T-001..T-030) should be complete.\nAcceptance: zero TS errors, zero test failures, biome lint clean.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [
+                "T-002",
+                "T-003",
+                "T-009",
+                "T-010",
+                "T-012",
+                "T-016",
+                "T-017",
+                "T-018",
+                "T-019",
+                "T-026",
+                "T-027",
+                "T-028",
+                "T-029",
+                "T-030"
+            ],
+            "blocks": [],
+            "subtasks": [],
+            "tags": ["testing", "ci", "cleanup"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-22T00:00:00.000Z",
+                "started": null,
+                "completed": null
+            },
+            "completedAt": "2026-06-23"
+        }
+    ]
+}

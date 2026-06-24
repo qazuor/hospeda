@@ -14,7 +14,15 @@
             "urlInvalid": "La URL no es válida.",
             "legalRequired": "Debés confirmar el aviso legal.",
             "submit": "No pudimos importar el alojamiento. Intentá de nuevo.",
-            "network": "No pudimos conectar con el servidor."
+            "network": "No pudimos conectar con el servidor.",
+            "failure": {
+                "invalidUrl": "Revisá que la URL sea válida y corresponda a un alojamiento.",
+                "sourceBlocked": "La fuente está temporalmente no disponible. Esperá unos minutos y probá de nuevo, o cargá los datos manualmente.",
+                "credentialsMissing": "No pudimos conectar con la fuente en este momento. Probá más tarde o cargá los datos manualmente.",
+                "providerError": "Hubo un problema al consultar la fuente. Probá de nuevo o cargá los datos manualmente.",
+                "timeout": "La fuente tardó demasiado en responder. Probá de nuevo o cargá los datos manualmente.",
+                "nothingFound": "No encontramos datos de alojamiento en esa URL. Podés cargar los datos manualmente."
+            }
         },
         "prefill": {
             "sectionToggle": "Importar desde una URL",
@@ -340,9 +348,45 @@
     },
     "miniForm": {
         "fields": {
+            "name": "Nombre del alojamiento",
+            "summary": "Descripción corta",
+            "summaryHint": "Una frase de presentación. Después podés ampliar todo en el panel.",
             "type": "Tipo de alojamiento",
-            "typePlaceholder": "Elegí una opción"
+            "typePlaceholder": "Elegí una opción",
+            "typeEmpty": "No hay tipos que coincidan"
         },
+        "importedExtras": {
+            "sectionTitle": "Esto importamos",
+            "fields": {
+                "description": "Descripción completa",
+                "maxGuests": "Huéspedes máx.",
+                "bedrooms": "Dormitorios",
+                "beds": "Camas",
+                "bathrooms": "Baños",
+                "basePrice": "Precio base por noche",
+                "street": "Calle",
+                "number": "Número",
+                "phone": "Teléfono",
+                "website": "Sitio web",
+                "coordinatesLabel": "Ubicación importada",
+                "amenitiesCount": "{{count}} amenidades importadas"
+            }
+        },
+        "errors": {
+            "name": "El nombre debe tener al menos 3 caracteres.",
+            "summary": "La descripción corta debe tener al menos 10 caracteres.",
+            "type": "Elegí el tipo de alojamiento.",
+            "destinationId": "Elegí la ciudad donde está tu alojamiento.",
+            "serviceUnavailable": "No pudimos contactar al servicio de facturación en este momento. Probá de nuevo en un minuto.",
+            "submit": "No pudimos crear el alojamiento. Probá de nuevo en un momento.",
+            "missingId": "No recibimos el ID del alojamiento creado. Probá de nuevo.",
+            "network": "No pudimos conectar con el servidor. Verificá tu conexión e intentá de nuevo."
+        },
+        "actions": {
+            "submit": "Crear y continuar en el panel",
+            "submitting": "Creando..."
+        },
+        "disclaimer": "Vamos a crear un borrador con estos datos. Después te llevamos al panel para completar fotos, precios y demás.",
         "types": {
             "APARTMENT": "Departamento",
             "HOUSE": "Casa",

@@ -14,7 +14,8 @@ export {
     lte,
     isNull,
     isNotNull,
-    inArray
+    inArray,
+    getTableColumns
 } from 'drizzle-orm';
 
 export * from './base/base.model.ts';

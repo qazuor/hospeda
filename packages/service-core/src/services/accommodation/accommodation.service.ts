@@ -175,10 +175,9 @@ export class AccommodationService extends BaseCrudService<
 > {
     static readonly ENTITY_NAME = 'accommodation';
     /**
-     * Roles that already imply host-level capabilities. Users holding any of these
-     * skip onboarding (no draft is created for them) and are not auto-promoted on
-     * draft creation. Used by the `already_host` short-circuit in
-     * `createForOnboarding` and by the legacy `_assignHostRoleIfNeeded` hook.
+     * Roles that already imply host-level capabilities. Used to skip the USER → HOST
+     * promotion in `createForOnboarding` (the promotion is a no-op for an already-
+     * privileged actor) and by the `_assignHostRoleIfNeeded` hook.
      */
     private static readonly PRIVILEGED_ROLES: ReadonlySet<string> = new Set([
         RoleEnum.HOST,
@@ -1180,11 +1179,6 @@ export class AccommodationService extends BaseCrudService<
      *   Defensively re-promotes a `USER` who somehow has an active DRAFT (legacy
      *   data) so the admin-access invariant is restored.
      *
-     * - `already_host`  - the actor already holds a privileged role (HOST, ADMIN,
-     *   CLIENT_MANAGER, SUPER_ADMIN). No draft is created; the caller is expected to
-     *   redirect the user straight to the admin panel where they can create listings
-     *   through the standard CRUD flow.
-     *
      * Slug generation and destination validation reuse the same `_beforeCreate` hook
      * as the generic create flow, so the resulting row is structurally identical to
      * one that would have been produced by `create()`.
@@ -1214,9 +1208,6 @@ export class AccommodationService extends BaseCrudService<
                 }
 
                 const user = await this._userModel.findById(validatedActor.id, execCtx?.tx);
-                if (user && AccommodationService.PRIVILEGED_ROLES.has(user.role)) {
-                    return { status: 'already_host', accommodation: null };
-                }
 
                 const existingDraft = await this.model.findOne(
                     {
@@ -1246,30 +1237,42 @@ export class AccommodationService extends BaseCrudService<
                     validatedActor.id
                 );
 
-                const processedData = await this._beforeCreate(
-                    domainInput,
-                    validatedActor,
-                    execCtx
-                );
-
-                const payload = {
-                    ...domainInput,
-                    ...processedData,
-                    ownerId: validatedActor.id,
-                    lifecycleState: LifecycleStatusEnum.DRAFT,
-                    lastWarnedAt: null,
-                    createdById: validatedActor.id,
-                    updatedById: validatedActor.id
-                } as Partial<Accommodation>;
-
-                // Wrap the draft insert AND the USER -> HOST role promotion in
-                // a single short transaction. Promoting at draft creation
-                // (rather than at first publish) is required so the owner can
-                // access the admin panel right away (`ACCESS_PANEL_ADMIN` is
-                // granted to HOST). The trial subscription is still deferred
-                // to the first publish — see `publish()`.
+                // Wrap the draft insert, slug generation, amenity junction sync,
+                // and USER -> HOST role promotion in a single short transaction.
+                //
+                // _beforeCreate is called INSIDE the transaction (not before it) so
+                // that ctx.hookState.pendingAmenityIds is captured into the same
+                // txCtx that _afterCreate reads from. Calling _beforeCreate outside
+                // the transaction would write hookState into execCtx, but _afterCreate
+                // is called with txCtx (a separate ServiceContext), so the junction
+                // data would be silently lost — amenities would never be synced.
+                // (SPEC-258 B-API fix)
+                //
+                // Promoting at draft creation (rather than at first publish) is
+                // required so the owner can access the admin panel right away
+                // (`ACCESS_PANEL_ADMIN` is granted to HOST). The trial subscription
+                // is still deferred to the first publish — see `publish()`.
                 const result = await withServiceTransaction(
                     async (txCtx) => {
+                        // Run _beforeCreate inside the tx so that hookState mutations
+                        // (pendingAmenityIds, pendingFeatureIds, slug) are visible to
+                        // _afterCreate which runs in the same txCtx.
+                        const processedData = await this._beforeCreate(
+                            domainInput,
+                            validatedActor,
+                            txCtx
+                        );
+
+                        const payload = {
+                            ...domainInput,
+                            ...processedData,
+                            ownerId: validatedActor.id,
+                            lifecycleState: LifecycleStatusEnum.DRAFT,
+                            lastWarnedAt: null,
+                            createdById: validatedActor.id,
+                            updatedById: validatedActor.id
+                        } as Partial<Accommodation>;
+
                         const next = await this.model.create(payload, txCtx.tx);
                         if (!next) {
                             throw new ServiceError(
@@ -1277,10 +1280,9 @@ export class AccommodationService extends BaseCrudService<
                                 'Failed to create onboarding draft accommodation'
                             );
                         }
-                        // Promote USER -> HOST. No-op if the user is somehow
-                        // already privileged (the `already_host` short-circuit
-                        // above already returned), defensive against legacy
-                        // role rows.
+                        // Promote USER -> HOST. No-op if the actor is already HOST
+                        // or higher — an existing host creating another draft flows
+                        // here and the update is a benign no-op at the DB level.
                         if (user && user.role === RoleEnum.USER) {
                             await this._userModel.update(
                                 { id: validatedActor.id },
@@ -1289,8 +1291,9 @@ export class AccommodationService extends BaseCrudService<
                             );
                         }
                         // Run _afterCreate INSIDE the transaction so that role
-                        // promotion + media shadow-writes are atomic. If either
-                        // throws, the whole tx rolls back (FIX 2, SPEC-204).
+                        // promotion + amenity junction sync + media shadow-writes
+                        // are all atomic. If any step throws, the whole tx rolls
+                        // back (FIX 2, SPEC-204; extended by SPEC-258 B-API).
                         const after = await this._afterCreate(next, validatedActor, txCtx);
                         return after;
                     },

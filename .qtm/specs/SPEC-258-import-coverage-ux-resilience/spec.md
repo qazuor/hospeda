@@ -96,10 +96,10 @@ Legend: **✅ mapped today** · **⚠️ limbo (available upstream, not mapped /
 |---|---|---|---|
 | A1 | Google | Map `place.types[]` → `RawExtraction.type` via the existing `mapAccommodationType` heuristic (types are already in the field mask, just discarded in `buildRawExtraction`). | Trivial |
 | A2 | Airbnb | Add `currency` to `AirbnbItem` + map to `price.currency` when the actor returns it. | Trivial |
-| A3 | MercadoLibre | Add a 2nd call to `/items/{id}/description` → `description`; scan `attributes` for `PROPERTY_TYPE`/`REAL_ESTATE_TYPE` → `type`, `BEDS` → `extraInfo.beds`, and amenity-type attributes → `amenityNames`. | Medium |
-| A4 | Booking | Add `beds`, `price`/`currency`, `facilities`/`amenities` to `BookingItem` + map them; reconsider the `USEFUL_FIELD_THRESHOLD` so type/capacity/amenities aren't dropped when JSON-LD barely passes (e.g. always try to enrich `type`+`capacity` via the actor even if JSON-LD gave name+description). | Medium |
+| A3 | MercadoLibre | **DEFERRED (2026-06-23).** Blocked on a prerequisite: the ML import tier is NOT production-viable today — it uses a static `HOSPEDA_MERCADOLIBRE_TOKEN` (no refresh flow), and ML access tokens expire ~6h, so the tier silently dies without manual rotation + redeploy. Enriching ML extraction polishes an unusable tier. **Prerequisite = a separate task/spec: ML OAuth refresh-token flow** (client_id/secret + persisted rotating refresh_token + token service). A3 resumes once that lands. Planned changes (for then): 2nd call to `/items/{id}/description` → `description`; scan `attributes` for `PROPERTY_TYPE`/`REAL_ESTATE_TYPE` → `type`, `BEDS` → `extraInfo.beds`, amenity attrs → `amenityNames`. | Medium |
+| A4 | Booking | **(Q2 RESOLVED: full coverage.)** Map JSON-LD `@type`→`type` (free, no actor). Add `beds`, `price`/`currency`, `facilities`/`amenities` to `BookingItem` + map them; escalate to the actor to enrich capacity/beds/amenities even when JSON-LD passed `USEFUL_FIELD_THRESHOLD`. | Medium |
 | A5 | Generic | Wire JSON-LD `priceRange` → `price` where it is numeric-parseable; map JSON-LD `@type` → `type`. | Low |
-| A6 | All | Decide SEO: either leave `seo.*` host-authored (document as intentional) or auto-derive `seo.title`/`seo.description` from name+locality+summary (no AI needed). | Low |
+| A6 | All | **(Q3 RESOLVED: leave host-authored.)** Doc-only: document `seo.*` as intentionally host-authored (edited in the panel). No code change. | Low |
 | A7 | Web | **Import analytics — PostHog events** (import attempt / success / failure-with-source / fields-prefilled count). Inherited from SPEC-222 T-028 (the smoke + legal copy parts shipped; the PostHog events were never wired). | Low |
 
 > Each A-task ships with the same non-mocked / real-shape test discipline SPEC-257
@@ -114,21 +114,38 @@ price, contact, country) is set on the draft and sent to the onboarding endpoint
 the host never sees it in the create step — so a rich import looks like it did almost
 nothing.
 
-**Options (pick during planning):**
+**DECISION (2026-06-23, owner): expand the mini-form with progressive disclosure,
+data-only, single import call.** Rejected: re-import (double Apify cost + higher
+anti-bot block risk) and cache (staleness + invalidation complexity). The import runs
+ONCE on the web onboarding step and the create form persists everything then; the panel
+becomes pure editing. Concretely:
 
-1. **Imported-summary panel (recommended)** — after a successful import, render a
-   compact, read-only "Esto importamos" block listing every prefilled field with its
-   value preview, source and confidence badge (the badge component already exists for
-   name/type/summary). E.g. "✓ 10 fotos · ✓ 8 amenities · ✓ 3 hab / 8 camas / 1 baño ·
-   ✓ coordenadas · ✓ precio $X". Non-editable here; editable in the panel.
-2. **Expand the mini-form** to show the high-value extras inline (description preview,
-   image thumbnails, capacity) before "Crear y continuar". Heavier; risks bloating the
-   "minimum viable" create step.
-3. **Carry confidence badges into the full panel** so the host sees on the edit page
-   which fields came from import (most already flow there; needs the badges rendered).
+1. **Single-call persistence.** `handleImported` stops discarding fields. The mini-form
+   captures every data field the import returned and submits them to an EXPANDED
+   `/host-onboarding/start`. `createForOnboarding` persists the scalars (description,
+   `extraInfo.{capacity,bedrooms,beds,bathrooms}`, `location.{coordinates,street,number}`,
+   `price.{price,currency}`, `contactInfo.{mobilePhone,website}`) into their JSONB columns
+   (reusing the existing flat→nested converter from `AccommodationCreateHttpSchema`) and
+   syncs amenities via `syncAmenityJunction()` inside its existing transaction (mirrors the
+   admin panel save path).
+2. **Progressive disclosure.** Only name/summary/type stay REQUIRED and always visible.
+   Every imported extra is OPTIONAL and rendered ONLY when the import actually returned a
+   value for it (fields with no data are not shown), each with the existing confidence
+   badge. The manual (non-import) path stays the original 4-field form. Optional fields
+   validate only when present (e.g. imported description shorter than min(30) must not
+   block submit).
+3. **Images are OUT of scope** — data-only. `imageUrls` are not persisted (no re-host
+   subsystem). The extracted `imageUrls` remain unconsumed; accepted tradeoff.
+4. **Amenities resolver enhancement** — `resolveAmenities` today matches strictly against
+   the ES name (exact). Add a static ES/EN/PT synonym/variant map + normalization
+   (lowercase, strip accents, singular/plural) + EN/PT fallback search so pileta/pool/
+   piscina all resolve to our "piscina" amenity. No DB table/migration; unmatched names
+   still flow to `unresolvedAmenities`.
 
-A blend of (1) for the create step + (3) for the panel is likely best: the host gets
-immediate proof of what was captured, then reviews/edits in the panel.
+**Slicing into chained PRs:** PR1 = workstream A (coverage). PR2 = amenities resolver
+enhancement (isolated, real-shape tests). PR3 = onboarding persistence (schema +
+`createForOnboarding`) + web mini-form progressive disclosure + i18n (endpoint and form
+are coupled, ship together).
 
 **AC examples:**
 
@@ -205,8 +222,19 @@ URL. El sitio puede estar bloqueando el acceso o la URL no corresponde a un aloj
 - Built directly from the SPEC-257 smoke findings + the per-adapter coverage audit
   (mechanisms, mapped vs limbo vs unavailable fields). The matrix in §2 is the
   authoritative current-state snapshot as of 2026-06-22.
-- **Open questions for planning:** (Q1) UX approach — imported-summary block vs expanded
-  mini-form vs panel-only badges (recommended: block + panel badges). (Q2) Booking
-  threshold strategy — always-enrich-type/capacity vs raise threshold. (Q3) SEO — auto-derive
-  vs leave manual. (Q4) Import cache TTL + storage (in-memory vs Redis). (Q5) Whether the
-  async import path is in scope here or deferred to align with SPEC-250.
+- **Open questions — status (updated 2026-06-23):**
+  - **(Q1) UX approach — RESOLVED.** Expand the mini-form with progressive disclosure +
+    single-call persistence (data-only). See the §B decision block above. The
+    "imported-summary block" and "re-import / cache" alternatives were rejected.
+  - **(Q2) Booking threshold strategy — RESOLVED (2026-06-23): full coverage.** Map
+    JSON-LD `@type`→type for free (no actor), AND escalate to the Apify actor to also
+    fetch capacity/beds/amenities even when JSON-LD passed `USEFUL_FIELD_THRESHOLD`.
+    Owner accepted the extra Apify cost for a single import (the cost-aversion was about
+    DOUBLE calls / re-import, not a well-targeted single enrichment).
+  - **(Q3) SEO — RESOLVED (2026-06-23): leave host-authored.** Do NOT auto-derive.
+    A6 becomes a doc-only task: document `seo.*` as intentionally host-authored
+    (edited in the panel). No code change.
+  - **(Q4) Import cache — REJECTED.** No cache (staleness + invalidation cost; the
+    single-call design makes it unnecessary).
+  - **(Q5) Async import path — DEFERRED to workstream C** (out of scope for the A+B
+    delivery in progress).

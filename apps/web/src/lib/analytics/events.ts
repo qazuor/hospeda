@@ -92,7 +92,29 @@ export const WebEvents = {
      * Anonymous user was prompted to log in when submitting NL search (SPEC-199 Q10).
      * Props: `locale`.
      */
-    AiSearchLoginPrompted: 'ai_search_login_prompted'
+    AiSearchLoginPrompted: 'ai_search_login_prompted',
+
+    // ── Property Import (SPEC-258) ────────────────────────────────────────────
+
+    /**
+     * Host triggered an import-from-URL attempt (SPEC-258 A7).
+     * Props: `source` (the detected ImportSource, e.g. 'airbnb').
+     * Fired after the import API call is initiated (i.e. the user submitted the URL form).
+     */
+    PropertyImportAttempted: 'property_import_attempted',
+
+    /**
+     * Import-from-URL completed successfully (SPEC-258 A7).
+     * Props: `source` (ImportSource), `fieldsPrefilled` (count of fields set in the form).
+     * No PII: counts only, no field values.
+     */
+    PropertyImportSucceeded: 'property_import_succeeded',
+
+    /**
+     * Import-from-URL failed (SPEC-258 A7).
+     * Props: `source` (ImportSource | 'unknown').
+     */
+    PropertyImportFailed: 'property_import_failed'
 } as const;
 
 /** Union of all explicit web event names — safe to use as a function argument type. */

@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "071-feature-covered_barbecue_area",
-    "name": {
-        "es": "Sector de barbacoa techado",
-        "en": "Sector de barbacoa techado",
-        "pt": "Sector de barbacoa techado"
-    },
     "slug": "covered_barbecue_area",
     "description": {
         "es": "Área de asado protegida de la intemperie con equipamiento completo y espacios para reuniones",
         "en": "Área de asado protegida de la intemperie con equipamiento completo y espacios para reuniones",
         "pt": "Área de asado protegida de la intemperie con equipamiento completo y espacios para reuniones"
     },
+    "applicableVerticals": ["accommodation"],
     "icon": "CoveredGrillAreaIcon",
     "isBuiltin": true,
     "isFeatured": false,

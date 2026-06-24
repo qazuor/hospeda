@@ -71,10 +71,13 @@ try {
             Accept: 'application/json'
         };
 
-        // Parallel fetch: accommodation detail + amenities + destinations
-        const [accomResponse, amenitiesResponse, destinationsResponse] = await Promise.all([
+        // Parallel fetch: accommodation detail + amenities + features + destinations
+        // SPEC-266: filter catalog endpoints to the accommodation vertical so only
+        // accommodation-scoped amenities/features appear in the editor checkboxes.
+        const [accomResponse, amenitiesResponse, featuresResponse, destinationsResponse] = await Promise.all([
             fetch(`${apiUrl}/api/v1/protected/accommodations/${accommodationId}`, { headers }),
-            fetch(`${apiUrl}/api/v1/public/amenities?pageSize=100`, { headers }),
+            fetch(`${apiUrl}/api/v1/public/amenities?pageSize=100&applicableVertical=accommodation`, { headers }),
+            fetch(`${apiUrl}/api/v1/public/features?pageSize=100&applicableVertical=accommodation`, { headers }),
             fetch(`${apiUrl}/api/v1/public/destinations?pageSize=100`, { headers })
         ]);
 
@@ -89,22 +92,11 @@ try {
             initialFeaturedImage = mediaResult.featuredImage;
             initialGallery = mediaResult.gallery;
 
-            // Separate amenities from features based on the nested relation
-            const allAmenities = rawAccom.amenities as Record<string, unknown>[] | undefined;
-            const allFeatures = rawAccom.features as Record<string, unknown>[] | undefined;
-
-            if (Array.isArray(allAmenities)) {
-                amenities = transformAmenityList({
-                    items: allAmenities.map((a) => (a.amenity ?? a) as Record<string, unknown>),
-                    locale
-                });
-            }
-            if (Array.isArray(allFeatures)) {
-                features = transformAmenityList({
-                    items: allFeatures.map((f) => (f.feature ?? f) as Record<string, unknown>),
-                    locale
-                });
-            }
+            // SPEC-266: amenity/feature names were dropped from the catalog.
+            // The selected IDs come from transformAccommodationEdit (amenityIds /
+            // featureIds). The full catalog for the checkbox groups is fetched
+            // separately below with ?applicableVertical=accommodation; the
+            // selected-items arrays here are kept as a fallback only.
         } else if (accomResponse.status === 404 || accomResponse.status === 403) {
             return Astro.redirect(`/${locale}/mi-cuenta/propiedades/`);
         } else {
@@ -133,14 +125,16 @@ try {
             }
         }
 
-        // Amenities catalog for the checkbox group (merge with accommodation's selected amenities)
+        // SPEC-266: amenity catalog filtered to accommodation vertical.
+        // The catalog is the primary source for the checkbox group — it includes
+        // all accommodation-scoped amenities regardless of which are currently
+        // selected. Labels are resolved client-side by slug via i18n.
         if (amenitiesResponse.ok) {
             const amenBody = (await amenitiesResponse.json()) as {
                 data?: { items?: Record<string, unknown>[] };
             };
             const catalogAmenities = transformAmenityList({
-                items: amenBody.data?.items ?? [],
-                locale
+                items: amenBody.data?.items ?? []
             });
             // Same 100-item page cap as destinations (see note above).
             if (catalogAmenities.length >= 100) {
@@ -148,10 +142,23 @@ try {
                     count: catalogAmenities.length
                 });
             }
-            // Merge: prefer catalog items, fall back to accommodation's selected items
-            if (amenities.length === 0) {
-                amenities = catalogAmenities;
+            amenities = catalogAmenities;
+        }
+
+        // SPEC-266: features catalog filtered to accommodation vertical.
+        if (featuresResponse.ok) {
+            const featBody = (await featuresResponse.json()) as {
+                data?: { items?: Record<string, unknown>[] };
+            };
+            const catalogFeatures = transformAmenityList({
+                items: featBody.data?.items ?? []
+            });
+            if (catalogFeatures.length >= 100) {
+                logger.warn('editar.astro: features catalog hit the 100-item page cap', {
+                    count: catalogFeatures.length
+                });
             }
+            features = catalogFeatures;
         }
     }
 } catch (err) {

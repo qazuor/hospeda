@@ -4,15 +4,14 @@
  * Specialized entry point for the public web "publicar" flow. Unlike the
  * generic `/api/v1/protected/accommodations/draft` endpoint, this one is
  * callable by any authenticated USER because it does NOT require the
- * `ACCOMMODATION_CREATE` permission. It encodes three terminal states the
+ * `ACCOMMODATION_CREATE` permission. It encodes two terminal states the
  * caller can hit:
  *
  *  - `created`     - a fresh DRAFT was inserted and the user can resume on
- *                    the admin panel to fill in the rest.
+ *                    the admin panel to fill in the rest. When the actor is
+ *                    already HOST (or higher) the role promotion is a no-op
+ *                    but the DRAFT is still created so their input is not lost.
  *  - `resumed`     - the user already had an active DRAFT; reuse that one.
- *  - `already_host` - the user is already HOST/ADMIN/CLIENT_MANAGER/SUPER_ADMIN;
- *                    no draft is created. The caller is expected to redirect
- *                    straight to the admin panel.
  *
  * A USER who creates or resumes onboarding is promoted to HOST during the
  * onboarding flow so they can access host surfaces immediately. The billing
@@ -41,7 +40,7 @@ const accommodationService = new AccommodationService({ logger: apiLogger });
  * Zod object schema; we represent the variants with nullable id fields.
  */
 const HostOnboardingStartResponseSchema = z.object({
-    status: z.enum(['created', 'resumed', 'already_host']),
+    status: z.enum(['created', 'resumed']),
     accommodationId: AccommodationIdSchema.nullable(),
     accommodationSlug: z.string().nullable()
 });
@@ -54,7 +53,7 @@ export const protectedHostOnboardingStartRoute = createProtectedRoute({
     path: '/start',
     summary: 'Start host onboarding',
     description:
-        'Creates or resumes a host onboarding draft for the authenticated user. Skips creation entirely when the user already holds a privileged role. No special permissions required.',
+        'Creates or resumes a host onboarding draft for the authenticated user. Existing hosts flow through normally — the role promotion is a no-op. No special permissions required.',
     tags: ['Host Onboarding'],
     requestBody: AccommodationCreateDraftHttpSchema,
     responseSchema: HostOnboardingStartResponseSchema,
@@ -82,14 +81,6 @@ export const protectedHostOnboardingStartRoute = createProtectedRoute({
                 'createForOnboarding returned no data and no error'
             );
         }
-        if (data.status === 'already_host') {
-            return {
-                status: 'already_host' as const,
-                accommodationId: null,
-                accommodationSlug: null
-            };
-        }
-
         // SPEC-143 Block 1: ensure a billing_customer row exists for the newly
         // promoted host. This is idempotent — if the customer already exists
         // (e.g. resumed path), the call is a no-op. We call it AFTER the
@@ -144,8 +135,11 @@ export const protectedHostOnboardingStartRoute = createProtectedRoute({
         // Funnel exception: `/host-onboarding/start` is the public publish entry
         // point for authenticated tourists. A tourist-free user must be able to
         // create the onboarding draft; the 14-day owner trial starts later on the
-        // first DRAFT -> ACTIVE publish, not here. Keep ONLY the limit guard so
-        // existing hosts still cannot exceed max_accommodations via this shortcut.
-        middlewares: [enforceAccommodationLimit()]
+        // first DRAFT -> ACTIVE publish, not here. Keep the limit guard so existing
+        // hosts still cannot exceed max_accommodations via this shortcut — but with
+        // `skipWhenActiveDraftExists` so a HOST who already has a DRAFT (and would
+        // therefore RESUME it, not create a new row) is not falsely blocked by the
+        // limit on re-entry.
+        middlewares: [enforceAccommodationLimit({ skipWhenActiveDraftExists: true })]
     }
 });

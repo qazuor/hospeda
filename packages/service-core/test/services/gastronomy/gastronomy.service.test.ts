@@ -62,17 +62,8 @@ function makeGastronomyEntity(overrides: Partial<Record<string, unknown>> = {}):
 const ownerActor: Actor = {
     id: OWNER_ID,
     role: RoleEnum.COMMERCE_OWNER,
-    permissions: [
-        PermissionEnum.COMMERCE_SCHEDULE_EDIT_OWN,
-        PermissionEnum.COMMERCE_CONTACT_EDIT_OWN,
-        PermissionEnum.COMMERCE_SOCIAL_EDIT_OWN,
-        PermissionEnum.COMMERCE_MEDIA_EDIT_OWN,
-        PermissionEnum.COMMERCE_MENU_EDIT_OWN,
-        PermissionEnum.COMMERCE_PRICE_RANGE_EDIT_OWN,
-        PermissionEnum.COMMERCE_RICH_DESCRIPTION_EDIT_OWN,
-        PermissionEnum.COMMERCE_AMENITIES_EDIT_OWN,
-        PermissionEnum.COMMERCE_FEATURES_EDIT_OWN
-    ]
+    // SPEC-253 D2=b: single COMMERCE_EDIT_OWN replaces 10 per-section perms
+    permissions: [PermissionEnum.COMMERCE_EDIT_OWN]
 };
 
 const staffActor: Actor = {
@@ -89,7 +80,8 @@ const staffActor: Actor = {
 const otherUserActor: Actor = {
     id: OTHER_USER,
     role: RoleEnum.COMMERCE_OWNER,
-    permissions: [PermissionEnum.COMMERCE_SCHEDULE_EDIT_OWN]
+    // SPEC-253 D2=b: COMMERCE_EDIT_OWN gives owner rights but entity.ownerId != OTHER_USER
+    permissions: [PermissionEnum.COMMERCE_EDIT_OWN]
 };
 
 // ---------------------------------------------------------------------------
@@ -200,12 +192,11 @@ describe('GastronomyService.updateOwn', () => {
         expect(result.error).toBeUndefined();
     });
 
-    it('should allow an owner with the section editOwn permission to update operational fields (US-5)', async () => {
-        // The owner holds COMMERCE_PRICE_RANGE_EDIT_OWN (an operational section
-        // permission) and owns the listing. updateOwn enforces per-section gating,
-        // then the base update()'s owner-aware _canUpdate (checkCanEditOwnOrAll)
-        // accepts the owner — no COMMERCE_EDIT_ALL is required. This is the core
-        // US-5 behavior: owners can edit operational fields on their own listing.
+    it('should allow an owner with COMMERCE_EDIT_OWN to update operational fields (US-5)', async () => {
+        // SPEC-253 D2=b: single COMMERCE_EDIT_OWN gate replaces per-section gating.
+        // The owner holds COMMERCE_EDIT_OWN and owns the listing. updateOwn enforces
+        // the single gate, then the base update()'s _canUpdate (checkCanEditOwnOrAll)
+        // accepts the owner — no COMMERCE_EDIT_ALL is required. Core US-5 behavior.
         const entity = makeGastronomyEntity();
         const service = makeService(entity);
         const result = await service.updateOwn(
@@ -216,10 +207,10 @@ describe('GastronomyService.updateOwn', () => {
         expect(result.error).toBeUndefined();
     });
 
-    it('should return FORBIDDEN when owner lacks the specific section permission (per-section gate)', async () => {
+    it('should return FORBIDDEN when owner lacks COMMERCE_EDIT_OWN (single gate)', async () => {
         const entity = makeGastronomyEntity();
         const service = makeService(entity);
-        // Actor is the owner but has NO permissions (not COMMERCE_PRICE_RANGE_EDIT_OWN, not COMMERCE_EDIT_ALL)
+        // Actor is the owner but has NO permissions (not COMMERCE_EDIT_OWN, not COMMERCE_EDIT_ALL)
         const actorNoPerm: Actor = {
             id: OWNER_ID,
             role: RoleEnum.COMMERCE_OWNER,
@@ -227,11 +218,72 @@ describe('GastronomyService.updateOwn', () => {
         };
         const result = await service.updateOwn(
             ENTITY_ID,
-            { priceRange: PriceRangeEnum.MID }, // valid schema; per-section check fires before base update
+            { priceRange: PriceRangeEnum.MID }, // valid schema; single perm check fires before base update
             actorNoPerm
         );
-        // Per-section gate fires first and rejects with FORBIDDEN
         expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+    });
+
+    // SPEC-253 T-010 Block B: new owner-editable fields persist correctly
+    it('should persist type when owner updates it (SPEC-253 AC-1/AC-5)', async () => {
+        const entity = makeGastronomyEntity();
+        const service = makeService(entity);
+        const mockUpdate = (service as AnyService).model.update;
+
+        const result = await service.updateOwn(
+            ENTITY_ID,
+            { type: GastronomyTypeEnum.CAFE },
+            ownerActor
+        );
+
+        expect(result.error).toBeUndefined();
+        expect(mockUpdate).toHaveBeenCalledTimes(1);
+        const updatePayload = (mockUpdate.mock.calls[0]?.[1] ?? {}) as Record<string, unknown>;
+        // type is now owner-editable (SPEC-253 AC-5 — removed from identity-strip set)
+        expect(updatePayload.type).toBe(GastronomyTypeEnum.CAFE);
+    });
+
+    it('should persist summary when owner updates it (SPEC-253 AC-1)', async () => {
+        const entity = makeGastronomyEntity();
+        const service = makeService(entity);
+        const mockUpdate = (service as AnyService).model.update;
+
+        const result = await service.updateOwn(
+            ENTITY_ID,
+            { summary: 'Un resumen actualizado con más de diez caracteres.' },
+            ownerActor
+        );
+
+        expect(result.error).toBeUndefined();
+        expect(mockUpdate).toHaveBeenCalledTimes(1);
+        const updatePayload = (mockUpdate.mock.calls[0]?.[1] ?? {}) as Record<string, unknown>;
+        expect(updatePayload.summary).toBe('Un resumen actualizado con más de diez caracteres.');
+    });
+
+    it('should persist nameI18n/summaryI18n/descriptionI18n/richDescriptionI18n (SPEC-253 AC-1)', async () => {
+        const entity = makeGastronomyEntity();
+        const service = makeService(entity);
+        const mockUpdate = (service as AnyService).model.update;
+        const i18nValue = { es: 'Texto ES', en: 'Text EN', pt: 'Texto PT' };
+
+        const result = await service.updateOwn(
+            ENTITY_ID,
+            {
+                nameI18n: i18nValue,
+                summaryI18n: i18nValue,
+                descriptionI18n: i18nValue,
+                richDescriptionI18n: i18nValue
+            },
+            ownerActor
+        );
+
+        expect(result.error).toBeUndefined();
+        expect(mockUpdate).toHaveBeenCalledTimes(1);
+        const updatePayload = (mockUpdate.mock.calls[0]?.[1] ?? {}) as Record<string, unknown>;
+        expect(updatePayload.nameI18n).toEqual(i18nValue);
+        expect(updatePayload.summaryI18n).toEqual(i18nValue);
+        expect(updatePayload.descriptionI18n).toEqual(i18nValue);
+        expect(updatePayload.richDescriptionI18n).toEqual(i18nValue);
     });
 
     it('should return VALIDATION_ERROR for invalid payload (extra unknown key does not cause error — stripped by schema)', async () => {
@@ -261,41 +313,47 @@ describe('GastronomyService.updateOwn', () => {
 // updateOwn — AC-3 identity-field regression (SPEC-249 T-022)
 // ---------------------------------------------------------------------------
 
-describe('GastronomyService.updateOwn — AC-3 identity-field regression (SPEC-249 T-022)', () => {
-    it('strips ALL forged identity/core fields while persisting the operational change', async () => {
+// SPEC-249 AC-3 regression updated per SPEC-253 AC-5:
+// `type` is NO LONGER stripped — owners can now edit the listing sub-category.
+// `summary` is also now owner-editable. Only legal identity fields (name/slug),
+// base description, destinationId, lifecycle/visibility/moderation/isFeatured/ownerId
+// remain admin-only and are stripped by the schema.
+describe('GastronomyService.updateOwn — AC-5 identity-field regression (SPEC-249 T-022 updated for SPEC-253)', () => {
+    it('strips admin-only identity fields; type/summary/i18n now PERSIST for owners', async () => {
         const entity = makeGastronomyEntity();
         const service = makeService(entity);
         const mockUpdate = (service as AnyService).model.update;
 
-        // Full forged identity/core set alongside one valid operational field.
         // biome-ignore lint/suspicious/noExplicitAny: simulating a forged HTTP body
-        const forgedPayload: any = {
-            priceRange: PriceRangeEnum.MID, // valid operational field — must persist
-            name: 'FORGED_NAME',
-            slug: 'forged-slug',
-            type: GastronomyTypeEnum.CAFE,
-            destinationId: '00000000-0000-4000-a000-0000000000ff',
-            lifecycleState: LifecycleStatusEnum.ARCHIVED,
-            visibility: VisibilityEnum.PRIVATE,
-            moderationState: ModerationStatusEnum.REJECTED,
-            isFeatured: true,
-            ownerId: '00000000-0000-4000-a000-0000000000fe'
+        const payload: any = {
+            priceRange: PriceRangeEnum.MID, // operational — must persist
+            type: GastronomyTypeEnum.CAFE, // NOW owner-editable (SPEC-253 D1) — must persist
+            summary: 'Un nuevo resumen válido de diez caracteres o más.', // owner-editable
+            name: 'FORGED_NAME', // admin-only legal identity — stripped
+            slug: 'forged-slug', // admin-only legal identity — stripped
+            destinationId: '00000000-0000-4000-a000-0000000000ff', // admin-only — stripped
+            lifecycleState: LifecycleStatusEnum.ARCHIVED, // lifecycle — stripped
+            visibility: VisibilityEnum.PRIVATE, // visibility — stripped
+            moderationState: ModerationStatusEnum.REJECTED, // moderation — stripped
+            isFeatured: true, // admin-only — stripped
+            ownerId: '00000000-0000-4000-a000-0000000000fe' // admin-only — stripped
         };
 
-        const result = await service.updateOwn(ENTITY_ID, forgedPayload, ownerActor);
+        const result = await service.updateOwn(ENTITY_ID, payload, ownerActor);
 
         expect(result.error).toBeUndefined();
-        // The base update MUST have been invoked (no silent skip).
         expect(mockUpdate).toHaveBeenCalledTimes(1);
         const updatePayload = (mockUpdate.mock.calls[0]?.[1] ?? {}) as Record<string, unknown>;
 
-        // The valid operational field persisted.
+        // Operational and now-owner-editable fields persist.
         expect(updatePayload.priceRange).toBe(PriceRangeEnum.MID);
-        // Every forged identity/core field was stripped by the owner-update schema.
+        expect(updatePayload.type).toBe(GastronomyTypeEnum.CAFE); // SPEC-253 AC-5: type persists
+        expect(updatePayload.summary).toBeDefined(); // owner-editable
+
+        // Admin-only identity fields are still stripped by the owner-update schema.
         for (const forbidden of [
             'name',
             'slug',
-            'type',
             'destinationId',
             'lifecycleState',
             'visibility',

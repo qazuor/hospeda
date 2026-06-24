@@ -19,6 +19,7 @@ import {
     desc,
     eq,
     getDb,
+    getTableColumns,
     isNull,
     lte,
     or,
@@ -67,6 +68,25 @@ interface ExtendedPromoCodeRow extends QZPayBillingPromoCode {
     /** Extra trial days for trial_extension effects */
     extra_days?: number | null;
 }
+
+/**
+ * Drizzle projection that augments the QZPay `billingPromoCodes` columns with the
+ * SPEC-262 extras-carril columns (`effect_kind`, `value_kind`, `duration_cycles`,
+ * `extra_days`).
+ *
+ * These columns exist in Postgres (added by `extras/018`) but are NOT declared in
+ * the QZPay Drizzle schema, so a bare `db.select()` omits them and the typed
+ * `PromoEffect` is lost — every read falls back to the legacy `type`/`value` path.
+ * Selecting them explicitly keeps {@link parseEffectFromRow} able to reconstruct
+ * the effect. Single-table query, so the raw column names are unambiguous.
+ */
+const promoCodeColumnsWithEffect = () => ({
+    ...getTableColumns(billingPromoCodes),
+    effect_kind: sql<string | null>`effect_kind`,
+    value_kind: sql<string | null>`value_kind`,
+    duration_cycles: sql<number | null>`duration_cycles`,
+    extra_days: sql<number | null>`extra_days`
+});
 
 /**
  * Parse the SPEC-262 extras-carril columns from a DB row into a `PromoEffect`.
@@ -339,7 +359,7 @@ export async function createPromoCode(
         if (input.effect) {
             const db = ctx?.tx ?? getDb();
             const [refreshed] = await db
-                .select()
+                .select(promoCodeColumnsWithEffect())
                 .from(billingPromoCodes)
                 .where(eq(billingPromoCodes.id, promoCode.id))
                 .limit(1);
@@ -447,7 +467,7 @@ export async function getPromoCodeByCode(code: string, ctx?: QueryContext) {
         const normalizedCode = code.toUpperCase();
 
         const [dbPromoCode] = await db
-            .select()
+            .select(promoCodeColumnsWithEffect())
             .from(billingPromoCodes)
             .where(eq(billingPromoCodes.code, normalizedCode))
             .limit(1);
@@ -495,7 +515,7 @@ export async function getPromoCodeById(id: string, ctx?: QueryContext) {
         const db = ctx?.tx ?? getDb();
 
         const [promoCode] = await db
-            .select()
+            .select(promoCodeColumnsWithEffect())
             .from(billingPromoCodes)
             .where(eq(billingPromoCodes.id, id))
             .limit(1);
@@ -755,7 +775,7 @@ export async function listPromoCodes(filters: ListPromoCodesFilters = {}, ctx?: 
         const total = countResult[0]?.value ?? 0;
 
         const items = await db
-            .select()
+            .select(promoCodeColumnsWithEffect())
             .from(billingPromoCodes)
             .where(whereClause)
             .orderBy(desc(billingPromoCodes.createdAt))

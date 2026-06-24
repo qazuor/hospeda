@@ -29,13 +29,90 @@
 
 import { OpenAPIHono, createRoute, z } from '@hono/zod-openapi';
 import {
+    CreateSocialDraftBaseSchema,
     CreateSocialDraftResponseSchema,
-    CreateSocialDraftSchema,
     SocialCatalogResponseDataSchema
 } from '@repo/schemas';
 import { PermissionEnum } from '@repo/schemas';
 import { env } from '../../../utils/env';
 import { createAdminRoute } from '../../../utils/route-factory';
+
+// ---------------------------------------------------------------------------
+// GPT-action-schema override for openaiFileIdRefs
+//
+// OpenAI's Custom GPT Actions convention requires the `openaiFileIdRefs`
+// property to be declared as `type: 'array', items: { type: 'string' }` in
+// the OpenAPI schema so that the platform recognises it as the file-injection
+// slot. At RUNTIME OpenAI injects objects (with download_link, id, name,
+// mime_type), but the schema declaration must use string items.
+//
+// CRITICAL: `openaiFileIdRefs` MUST be a DIRECT property of the request-body
+// root object — not nested inside `image` or any union branch. OpenAI only
+// auto-populates it when it finds the exact name at the top level of the body.
+//
+// We therefore build a modified draft schema for the OpenAPI document only —
+// the canonical CreateSocialDraftBaseSchema (used for runtime validation) stays
+// accurate with full object shapes. We extend the base schema (not the
+// superRefined version, which is a ZodEffects and cannot be extended) to
+// override `openaiFileIdRefs` with the OpenAI-required string-items variant.
+// ---------------------------------------------------------------------------
+
+/**
+ * Image payload variant for the GPT action schema document only.
+ *
+ * Intentionally a FLAT object with NO oneOf/anyOf so that the generated
+ * OpenAPI JSON stays flat. `openaiFileIdRefs` is NOT part of this schema
+ * anymore — it now lives at the TOP LEVEL of `CreateSocialDraftDocSchema`
+ * as a direct request-body property, which is where OpenAI expects to find it.
+ *
+ * The runtime `CreateSocialDraftSchema` in `@repo/schemas` uses `superRefine`
+ * for the same flat shape — this doc-only version omits `superRefine` because
+ * the OpenAPI generator does not need to execute validation logic.
+ */
+const GptImagePayloadDocSchema = z.object({
+    mode: z.enum(['public_url', 'openai_file_refs']),
+    /** Used when `mode === 'public_url'`. Direct HTTPS URL of the image. */
+    url: z.string().url().optional(),
+    /** Optional alt text for accessibility. */
+    altText: z.string().optional()
+});
+
+/**
+ * CreateSocialDraftSchema variant for OpenAPI doc generation only.
+ *
+ * Uses `CreateSocialDraftBaseSchema` (the plain `ZodObject`, not the
+ * `ZodEffects` returned by `.superRefine()`) so `.extend()` works.
+ *
+ * Key difference from the runtime schema:
+ * - `openaiFileIdRefs` is overridden here to use `items: { type: 'string' }`
+ *   per OpenAI's Custom GPT Actions convention (the platform recognises the
+ *   field by name + this type hint and injects the actual objects at runtime).
+ * - `image` loses `openaiFileIdRefs` (now at root) and has no oneOf/anyOf.
+ */
+const CreateSocialDraftDocSchema = CreateSocialDraftBaseSchema.extend({
+    image: GptImagePayloadDocSchema.optional(),
+    /**
+     * Auto-populated by OpenAI at runtime with the uploaded/generated image
+     * file references (download links). This file should be an image created
+     * by DALL·E or uploaded by the user. Max 10.
+     *
+     * Declared as `array<string>` per OpenAI's GPT Actions convention; actual
+     * injected values are objects with `download_link`, `id`, `name`,
+     * `mime_type`.
+     *
+     * NOT in `required` — OpenAI injects it automatically when needed.
+     */
+    openaiFileIdRefs: z
+        .array(z.string())
+        .optional()
+        .openapi({
+            items: { type: 'string' },
+            description:
+                'Auto-populated by OpenAI at runtime with the uploaded/generated ' +
+                'image file references (download links). This file should be an image ' +
+                'created by DALL·E or uploaded by the user. Max 10.'
+        })
+});
 
 // ---------------------------------------------------------------------------
 // OpenAPI 3.1 document builder
@@ -126,7 +203,7 @@ export function buildGptActionSchema(apiBaseUrl?: string): Record<string, unknow
                 description: 'Social draft payload',
                 content: {
                     'application/json': {
-                        schema: CreateSocialDraftSchema
+                        schema: CreateSocialDraftDocSchema
                     }
                 }
             }

@@ -222,7 +222,10 @@ describe('GooglePlacesAdapter', () => {
             const result = await adapter.extract(url, ctx);
 
             // Assert — degraded result, no fetch
-            expect(result).toStrictEqual({ sourcePlatform: 'google' });
+            expect(result).toStrictEqual({
+                sourcePlatform: 'google',
+                failureCode: 'credentials_missing'
+            });
             expect(mockFetch).not.toHaveBeenCalled();
         });
 
@@ -239,7 +242,10 @@ describe('GooglePlacesAdapter', () => {
             const result = await adapter.extract(url, ctx);
 
             // Assert
-            expect(result).toStrictEqual({ sourcePlatform: 'google' });
+            expect(result).toStrictEqual({
+                sourcePlatform: 'google',
+                failureCode: 'credentials_missing'
+            });
             expect(mockFetch).not.toHaveBeenCalled();
         });
     });
@@ -260,7 +266,7 @@ describe('GooglePlacesAdapter', () => {
 
             // Assert — MVP limitation: short-link resolution requires following
             // HTTP redirects which is out of scope. Degrade gracefully.
-            expect(result).toStrictEqual({ sourcePlatform: 'google' });
+            expect(result).toStrictEqual({ sourcePlatform: 'google', failureCode: 'invalid_url' });
             expect(mockFetch).not.toHaveBeenCalled();
         });
 
@@ -275,7 +281,7 @@ describe('GooglePlacesAdapter', () => {
             const result = await adapter.extract(url, ctx);
 
             // Assert
-            expect(result).toStrictEqual({ sourcePlatform: 'google' });
+            expect(result).toStrictEqual({ sourcePlatform: 'google', failureCode: 'invalid_url' });
             expect(mockFetch).not.toHaveBeenCalled();
         });
 
@@ -290,7 +296,7 @@ describe('GooglePlacesAdapter', () => {
             const result = await adapter.extract(url, ctx);
 
             // Assert
-            expect(result).toStrictEqual({ sourcePlatform: 'google' });
+            expect(result).toStrictEqual({ sourcePlatform: 'google', failureCode: 'invalid_url' });
             expect(mockFetch).not.toHaveBeenCalled();
         });
     });
@@ -465,7 +471,10 @@ describe('GooglePlacesAdapter', () => {
             const result = await adapter.extract(url, ctx);
 
             // Assert
-            expect(result).toStrictEqual({ sourcePlatform: 'google' });
+            expect(result).toStrictEqual({
+                sourcePlatform: 'google',
+                failureCode: 'credentials_missing'
+            });
         });
 
         it('should return { sourcePlatform: "google" } and not throw on a 500 response', async () => {
@@ -478,7 +487,8 @@ describe('GooglePlacesAdapter', () => {
 
             // Act & Assert
             await expect(adapter.extract(url, ctx)).resolves.toStrictEqual({
-                sourcePlatform: 'google'
+                sourcePlatform: 'google',
+                failureCode: 'provider_error'
             });
         });
 
@@ -492,7 +502,8 @@ describe('GooglePlacesAdapter', () => {
 
             // Act & Assert
             await expect(adapter.extract(url, ctx)).resolves.toStrictEqual({
-                sourcePlatform: 'google'
+                sourcePlatform: 'google',
+                failureCode: 'provider_error'
             });
         });
     });
@@ -749,7 +760,10 @@ describe('GooglePlacesAdapter', () => {
             const result = await adapter.extract(url, ctx);
 
             // Assert — graceful degradation, no throw
-            expect(result).toStrictEqual({ sourcePlatform: 'google' });
+            expect(result).toStrictEqual({
+                sourcePlatform: 'google',
+                failureCode: 'nothing_found'
+            });
         });
 
         it('should degrade to empty extraction when Text Search returns a non-2xx response', async () => {
@@ -762,7 +776,10 @@ describe('GooglePlacesAdapter', () => {
             const result = await adapter.extract(url, ctx);
 
             // Assert
-            expect(result).toStrictEqual({ sourcePlatform: 'google' });
+            expect(result).toStrictEqual({
+                sourcePlatform: 'google',
+                failureCode: 'nothing_found'
+            });
         });
 
         it('should degrade to empty extraction when Text Search fetch throws (network error)', async () => {
@@ -775,7 +792,10 @@ describe('GooglePlacesAdapter', () => {
             const result = await adapter.extract(url, ctx);
 
             // Assert
-            expect(result).toStrictEqual({ sourcePlatform: 'google' });
+            expect(result).toStrictEqual({
+                sourcePlatform: 'google',
+                failureCode: 'nothing_found'
+            });
         });
 
         it('should still use Place Details (not Text Search) for a ChIJ URL — Path A unchanged', async () => {
@@ -995,6 +1015,119 @@ describe('GooglePlacesAdapter', () => {
 
             // Assert
             expect(result.contactInfo?.mobilePhone?.value).toBe('(0344) 421-0000');
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // A1 (SPEC-258): place.types[] → raw.type mapping
+    // -----------------------------------------------------------------------
+    describe('extract() — A1: place.types[] mapped to raw.type (SPEC-258)', () => {
+        it('should map types: ["lodging", "hotel", ...] to type HOTEL tagged official_api', async () => {
+            // Arrange — "hotel" keyword maps to AccommodationTypeEnum.HOTEL
+            const response = {
+                ...makePlacesResponse(),
+                types: ['lodging', 'hotel', 'point_of_interest', 'establishment']
+            };
+            vi.stubGlobal('fetch', mockFetchOk(response));
+            const url = new URL(
+                'https://www.google.com/maps/place/Hotel?place_id=ChIJN1t_tDeuEmsRUsoyG83frY4'
+            );
+            const ctx = makeCtx();
+
+            // Act
+            const result = await adapter.extract(url, ctx);
+
+            // Assert
+            expect(result.type).toStrictEqual({ value: 'HOTEL', source: 'official_api' });
+        });
+
+        it('should map types: ["motel", ...] to type MOTEL tagged official_api', async () => {
+            // Arrange
+            const response = {
+                displayName: { text: 'Motel Los Pinos' },
+                types: ['motel', 'lodging', 'establishment']
+            };
+            vi.stubGlobal('fetch', mockFetchOk(response));
+            const url = new URL(
+                'https://www.google.com/maps/place/Motel?place_id=ChIJN1t_tDeuEmsRUsoyG83frY4'
+            );
+            const ctx = makeCtx();
+
+            // Act
+            const result = await adapter.extract(url, ctx);
+
+            // Assert
+            expect(result.type).toStrictEqual({ value: 'MOTEL', source: 'official_api' });
+        });
+
+        it('should pick the first matching type when multiple types map (first wins)', async () => {
+            // Arrange — "hostel" matches before "hotel" because it comes first
+            const response = {
+                displayName: { text: 'Hostel + Hotel' },
+                types: ['hostel', 'hotel', 'lodging']
+            };
+            vi.stubGlobal('fetch', mockFetchOk(response));
+            const url = new URL(
+                'https://www.google.com/maps/place/HostelHotel?place_id=ChIJN1t_tDeuEmsRUsoyG83frY4'
+            );
+            const ctx = makeCtx();
+
+            // Act
+            const result = await adapter.extract(url, ctx);
+
+            // Assert — hostel listed first, so HOSTEL wins over HOTEL
+            expect(result.type).toStrictEqual({ value: 'HOSTEL', source: 'official_api' });
+        });
+
+        it('should leave raw.type undefined when no type in types[] maps to a known accommodation type', async () => {
+            // Arrange — "point_of_interest" and "establishment" do not map
+            const response = {
+                displayName: { text: 'Generic Business' },
+                types: ['point_of_interest', 'establishment']
+            };
+            vi.stubGlobal('fetch', mockFetchOk(response));
+            const url = new URL(
+                'https://www.google.com/maps/place/Business?place_id=ChIJN1t_tDeuEmsRUsoyG83frY4'
+            );
+            const ctx = makeCtx();
+
+            // Act
+            const result = await adapter.extract(url, ctx);
+
+            // Assert — no confident type match → field absent
+            expect(result.type).toBeUndefined();
+        });
+
+        it('should leave raw.type undefined when place.types is absent', async () => {
+            // Arrange — response without types field at all
+            const { types: _dropped, ...responseNoTypes } = makePlacesResponse();
+            vi.stubGlobal('fetch', mockFetchOk(responseNoTypes));
+            const url = new URL(
+                'https://www.google.com/maps/place/Hotel?place_id=ChIJN1t_tDeuEmsRUsoyG83frY4'
+            );
+            const ctx = makeCtx();
+
+            // Act
+            const result = await adapter.extract(url, ctx);
+
+            // Assert
+            expect(result.type).toBeUndefined();
+        });
+
+        it('should tag type with source: "official_api"', async () => {
+            // Arrange
+            const response = { ...makePlacesResponse(), types: ['resort', 'lodging'] };
+            vi.stubGlobal('fetch', mockFetchOk(response));
+            const url = new URL(
+                'https://www.google.com/maps/place/Resort?place_id=ChIJN1t_tDeuEmsRUsoyG83frY4'
+            );
+            const ctx = makeCtx();
+
+            // Act
+            const result = await adapter.extract(url, ctx);
+
+            // Assert
+            expect(result.type?.source).toBe('official_api');
         });
     });
 });

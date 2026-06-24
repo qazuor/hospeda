@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "083-amenity-services-bar",
-    "name": {
-        "es": "bar",
-        "en": "bar",
-        "pt": "bar"
-    },
     "slug": "bar",
     "description": {
         "es": "Bar en el hotel",
         "en": "Bar en el hotel",
         "pt": "Bar en el hotel"
     },
+    "applicableVerticals": ["accommodation"],
     "type": "SERVICES",
     "icon": "BarServiceIcon",
     "isBuiltin": false,

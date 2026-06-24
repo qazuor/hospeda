@@ -1,4 +1,5 @@
 import { fetchApi } from '@/lib/api/client';
+import { type PromoEffect, PromoEffectKindEnum, ValueKindEnum } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
     CreatePromoCodePayload,
@@ -61,7 +62,32 @@ function mapResponseToPromoCode(item: Record<string, unknown>): PromoCode {
         isStackable: (item.isStackable as boolean | undefined) ?? false,
         minAmount: metadata.minAmount ?? null,
         status: deriveStatus(active, expiresAt),
-        createdAt: item.createdAt as string | undefined
+        createdAt: item.createdAt as string | undefined,
+        effect: (item.effect as PromoEffect | undefined) ?? undefined
+    };
+}
+
+/**
+ * Assemble the typed `effect` discriminated union (SPEC-262) from the form's
+ * flat effect-state fields. Mirrors `PromoEffectSchema` in @repo/schemas.
+ *
+ * Exported so the form dialog can validate the same assembled object against
+ * `PromoEffectSchema` client-side before submit (single source of assembly).
+ */
+export function buildEffect(payload: CreatePromoCodePayload): PromoEffect {
+    if (payload.effectKind === 'trial_extension') {
+        return { kind: PromoEffectKindEnum.TRIAL_EXTENSION, extraDays: payload.extraDays };
+    }
+    if (payload.effectKind === 'comp') {
+        return { kind: PromoEffectKindEnum.COMP };
+    }
+    return {
+        kind: PromoEffectKindEnum.DISCOUNT,
+        valueKind: payload.valueKind === 'fixed' ? ValueKindEnum.FIXED : ValueKindEnum.PERCENTAGE,
+        value: payload.discountValue,
+        // `null` means "forever" — only emit it when the toggle is explicitly on.
+        // A cleared cycles input must NOT silently become a forever discount.
+        durationCycles: payload.durationForever ? null : (payload.durationCycles ?? 1)
     };
 }
 
@@ -72,8 +98,7 @@ function mapResponseToPromoCode(item: Record<string, unknown>): PromoCode {
 function toCreateRequestBody(payload: CreatePromoCodePayload): Record<string, unknown> {
     const body: Record<string, unknown> = {
         code: payload.code.toUpperCase(),
-        discountType: payload.discountType,
-        discountValue: payload.discountValue,
+        effect: buildEffect(payload),
         isActive: payload.isActive,
         firstPurchaseOnly: payload.firstPurchaseOnly,
         isStackable: payload.isStackable

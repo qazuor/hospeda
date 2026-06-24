@@ -1,7 +1,7 @@
 /**
  * gastronomy.permissions.ts
  *
- * Thin gastronomy permission helpers (SPEC-239 T-038).
+ * Thin gastronomy permission helpers (SPEC-239 T-038 / SPEC-253 T-005).
  *
  * All real logic lives in the generic `commerce.permissions.ts` helpers that
  * consume `PermissionEnum.COMMERCE_*`.  This file re-exports or delegates to
@@ -12,8 +12,8 @@
  * Design decisions:
  * - NEVER check `actor.role` directly.  Only `PermissionEnum` values.
  * - These helpers are called by GastronomyService permission hooks only.
- * - Owner-scoped update section gates use `checkCanEditOwn` with the relevant
- *   `COMMERCE_*_EDIT_OWN` constant for the section being mutated.
+ * - Owner-scoped update gate uses `COMMERCE_EDIT_OWN` (single permission,
+ *   SPEC-253 D2=b). The per-section `COMMERCE_*_EDIT_OWN` perms are removed.
  */
 
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
@@ -79,24 +79,24 @@ export function checkGastronomyCanEditOwnOrAll(
 }
 
 /**
- * Checks if the actor may perform an operational (owner-scoped) update on their
- * own gastronomy listing for a given section.
+ * Checks if the actor may perform an owner-scoped update on their own gastronomy
+ * listing.
  *
  * Delegates to {@link checkCanEditOwn} which accepts either `COMMERCE_EDIT_ALL`
- * (staff bypass) or the specific `ownSectionPermission` when the actor is the
- * listing owner.
+ * (staff bypass) or `COMMERCE_EDIT_OWN` when the actor is the listing owner
+ * (SPEC-253 D2=b: section param is accepted for call-site compatibility but ignored).
  *
  * @param actor - The actor performing the action.
  * @param entity - The gastronomy entity being updated (must carry `ownerId`).
- * @param ownSectionPermission - The granular `editOwn` permission for this section.
+ * @param _ownSectionPermission - Ignored since SPEC-253 D2=b (kept for compatibility).
  * @throws {ServiceError} FORBIDDEN when neither condition is met.
  */
 export function checkGastronomyCanEditOwn(
     actor: Actor,
     entity: { ownerId?: string | null },
-    ownSectionPermission: PermissionEnum
+    _ownSectionPermission?: PermissionEnum
 ): void {
-    checkCanEditOwn(actor, entity, ownSectionPermission);
+    checkCanEditOwn(actor, entity);
 }
 
 /**
@@ -154,8 +154,8 @@ export function checkGastronomyCanModerateReview(actor: Actor): void {
 /**
  * Checks if the actor may create or edit FAQs on a gastronomy listing they own.
  *
- * Accepts either `COMMERCE_EDIT_ALL` (staff) or `COMMERCE_FAQS_EDIT_OWN`
- * when the actor is the listing owner.
+ * Accepts either `COMMERCE_EDIT_ALL` (staff) or `COMMERCE_EDIT_OWN` when the
+ * actor is the listing owner (SPEC-253 D2=b: replaces COMMERCE_FAQS_EDIT_OWN).
  *
  * @param actor - The actor performing the action.
  * @param entity - The gastronomy entity whose FAQs are being edited.
@@ -165,7 +165,7 @@ export function checkGastronomyCanEditFaqs(
     actor: Actor,
     entity: { ownerId?: string | null }
 ): void {
-    checkCanEditOwn(actor, entity, PermissionEnum.COMMERCE_FAQS_EDIT_OWN);
+    checkCanEditOwn(actor, entity);
 }
 
 /**

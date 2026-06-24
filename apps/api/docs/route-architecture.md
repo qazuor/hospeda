@@ -555,11 +555,11 @@ Reviews have their own admin sub-router mounted at
 |--------|------|-----------|-------|
 | `GET` | `/api/v1/protected/gastronomies/mine` | Auth only (owner-scoped) | Returns the session owner's OWN listings as summaries; `listOwn` hard-scopes to ownerId. Registered before `/{id}` (SPEC-249) |
 | `GET` | `/api/v1/protected/gastronomies/{id}` | Auth only | Returns `GastronomyProtectedSchema` (includes ownerId, contactInfo, audit fields) |
-| `PATCH` | `/api/v1/protected/gastronomies/{id}` | `COMMERCE_*_EDIT_OWN` (per-section, enforced in service) | Operational fields only; identity fields silently stripped by Zod |
-| `POST` | `/api/v1/protected/gastronomies/{id}/faqs` | `COMMERCE_FAQS_EDIT_OWN` | displayOrder auto-assigned as max+1 |
-| `PUT` | `/api/v1/protected/gastronomies/{id}/faqs/{faqId}` | `COMMERCE_FAQS_EDIT_OWN` | Update existing FAQ |
+| `PATCH` | `/api/v1/protected/gastronomies/{id}` | `COMMERCE_EDIT_OWN` (single perm, SPEC-253 D2=b) | Operational fields only; identity fields silently stripped by Zod |
+| `POST` | `/api/v1/protected/gastronomies/{id}/faqs` | `COMMERCE_EDIT_OWN` | displayOrder auto-assigned as max+1 |
+| `PUT` | `/api/v1/protected/gastronomies/{id}/faqs/{faqId}` | `COMMERCE_EDIT_OWN` | Update existing FAQ |
 | `DELETE` | `/api/v1/protected/gastronomies/{id}/faqs/{faqId}` | Auth only | Removal always allowed |
-| `PUT` | `/api/v1/protected/gastronomies/{id}/faqs/reorder` | `COMMERCE_FAQS_EDIT_OWN` | Bulk displayOrder update |
+| `PUT` | `/api/v1/protected/gastronomies/{id}/faqs/reorder` | `COMMERCE_EDIT_OWN` | Bulk displayOrder update |
 | `POST` | `/api/v1/protected/gastronomies/{gastronomyId}/reviews` | Auth only | Review starts in PENDING state; one per user per listing enforced |
 
 ### Admin tier
@@ -625,11 +625,11 @@ Reviews have their own admin sub-router mounted at
 |--------|------|-----------|-------|
 | `GET` | `/api/v1/protected/experiences/mine` | Auth only (owner-scoped) | Returns the session owner's OWN listings as summaries; `listOwn` hard-scopes to ownerId. Registered before `/{id}` (SPEC-249) |
 | `GET` | `/api/v1/protected/experiences/{id}` | Auth only | Returns `ExperienceProtectedSchema` (includes ownerId, contactInfo, audit fields) |
-| `PATCH` | `/api/v1/protected/experiences/{id}` | `COMMERCE_*_EDIT_OWN` (per-section, enforced in service) | Operational fields only; identity fields silently stripped by Zod |
-| `POST` | `/api/v1/protected/experiences/{id}/faqs` | `COMMERCE_FAQS_EDIT_OWN` | displayOrder auto-assigned as max+1 |
-| `PUT` | `/api/v1/protected/experiences/{id}/faqs/{faqId}` | `COMMERCE_FAQS_EDIT_OWN` | Update existing FAQ |
+| `PATCH` | `/api/v1/protected/experiences/{id}` | `COMMERCE_EDIT_OWN` (single perm, SPEC-253 D2=b) | Operational fields only; identity fields silently stripped by Zod |
+| `POST` | `/api/v1/protected/experiences/{id}/faqs` | `COMMERCE_EDIT_OWN` | displayOrder auto-assigned as max+1 |
+| `PUT` | `/api/v1/protected/experiences/{id}/faqs/{faqId}` | `COMMERCE_EDIT_OWN` | Update existing FAQ |
 | `DELETE` | `/api/v1/protected/experiences/{id}/faqs/{faqId}` | Auth only | Removal always allowed |
-| `PUT` | `/api/v1/protected/experiences/{id}/faqs/reorder` | `COMMERCE_FAQS_EDIT_OWN` | Bulk displayOrder update |
+| `PUT` | `/api/v1/protected/experiences/{id}/faqs/reorder` | `COMMERCE_EDIT_OWN` | Bulk displayOrder update |
 | `POST` | `/api/v1/protected/experiences/{experienceId}/reviews` | Auth only | Review starts in PENDING state; one per user per listing enforced |
 
 ### Admin tier

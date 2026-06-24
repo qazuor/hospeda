@@ -20,8 +20,8 @@
  *    filters (`type`, `hasActiveSubscription`, `destinationId`, `isFeatured`, …).
  * 3. **Owner update gate** — `updateOwn()` validates with
  *    `ExperienceOwnerUpdateInputSchema` (operational sections only), enforces
- *    ownership (`NOT_FOUND` for non-owners), and gates each section on the
- *    corresponding `COMMERCE_*_EDIT_OWN` permission.
+ *    ownership (`NOT_FOUND` for non-owners), and gates on a single
+ *    `COMMERCE_EDIT_OWN` permission (SPEC-253 D2=b; per-section perms removed).
  * 4. **Public projections** — `_projectPublicEntity` strips `adminInfo` and
  *    `ownerId` from public-tier responses.
  *
@@ -445,16 +445,9 @@ export class ExperienceService extends BaseCommerceListingService<
      * 2. **Ownership check**: a non-owner receives `NOT_FOUND` to prevent
      *    existence leakage (same pattern as SPEC-169 for accommodations).
      *    Staff holding `COMMERCE_EDIT_ALL` bypass the ownership check.
-     * 3. **Per-section permission checks**: each field group is gated on the
-     *    matching `COMMERCE_*_EDIT_OWN` permission:
-     *    - `openingHours`     → `COMMERCE_SCHEDULE_EDIT_OWN`
-     *    - `contactInfo`      → `COMMERCE_CONTACT_EDIT_OWN`
-     *    - `socialNetworks`   → `COMMERCE_SOCIAL_EDIT_OWN`
-     *    - `media`            → `COMMERCE_MEDIA_EDIT_OWN`
-     *    - `isPriceOnRequest` → `COMMERCE_PRICE_RANGE_EDIT_OWN`
-     *    - `richDescription`  → `COMMERCE_RICH_DESCRIPTION_EDIT_OWN`
-     *    - `amenityIds`       → `COMMERCE_AMENITIES_EDIT_OWN`
-     *    - `featureIds`       → `COMMERCE_FEATURES_EDIT_OWN`
+     * 3. **Single permission check** (SPEC-253 D2=b): gated on `COMMERCE_EDIT_OWN`
+     *    (owner) OR `COMMERCE_EDIT_ALL` (staff). The former per-section permissions
+     *    are removed — one check replaces all 8 conditional gates.
      * 4. **Delegation**: passes through to `this.update()` so that junction sync
      *    (`_beforeUpdate` / `_afterUpdate`) fires for amenity/feature changes.
      *
@@ -509,64 +502,10 @@ export class ExperienceService extends BaseCommerceListingService<
                 };
             }
 
-            // 4. Per-section permission checks (staff with EDIT_ALL bypass all).
+            // 4. Single permission check (SPEC-253 D2=b): COMMERCE_EDIT_OWN covers all
+            //    owner-accessible sections. Staff with EDIT_ALL bypass this gate.
             if (!hasEditAll) {
-                if (validated.openingHours !== undefined) {
-                    checkExperienceCanEditOwn(
-                        actor,
-                        entity,
-                        PermissionEnum.COMMERCE_SCHEDULE_EDIT_OWN
-                    );
-                }
-                if (validated.contactInfo !== undefined) {
-                    checkExperienceCanEditOwn(
-                        actor,
-                        entity,
-                        PermissionEnum.COMMERCE_CONTACT_EDIT_OWN
-                    );
-                }
-                if (validated.socialNetworks !== undefined) {
-                    checkExperienceCanEditOwn(
-                        actor,
-                        entity,
-                        PermissionEnum.COMMERCE_SOCIAL_EDIT_OWN
-                    );
-                }
-                if (validated.media !== undefined) {
-                    checkExperienceCanEditOwn(
-                        actor,
-                        entity,
-                        PermissionEnum.COMMERCE_MEDIA_EDIT_OWN
-                    );
-                }
-                if (validated.isPriceOnRequest !== undefined) {
-                    checkExperienceCanEditOwn(
-                        actor,
-                        entity,
-                        PermissionEnum.COMMERCE_PRICE_RANGE_EDIT_OWN
-                    );
-                }
-                if (validated.richDescription !== undefined) {
-                    checkExperienceCanEditOwn(
-                        actor,
-                        entity,
-                        PermissionEnum.COMMERCE_RICH_DESCRIPTION_EDIT_OWN
-                    );
-                }
-                if (validated.amenityIds !== undefined) {
-                    checkExperienceCanEditOwn(
-                        actor,
-                        entity,
-                        PermissionEnum.COMMERCE_AMENITIES_EDIT_OWN
-                    );
-                }
-                if (validated.featureIds !== undefined) {
-                    checkExperienceCanEditOwn(
-                        actor,
-                        entity,
-                        PermissionEnum.COMMERCE_FEATURES_EDIT_OWN
-                    );
-                }
+                checkExperienceCanEditOwn(actor, entity);
             }
 
             // 5. Delegate to base update() for junction sync + hook pipeline.
@@ -574,11 +513,11 @@ export class ExperienceService extends BaseCommerceListingService<
             //    so casting is safe here.  Base update signature: update(actor, id, data, ctx?).
             //
             //    Base update() runs _canUpdate, which is owner-aware
-            //    (checkExperienceCanEditOwnOrAll: COMMERCE_EDIT_ALL OR owner + an
-            //    operational editOwn permission). updateOwn() already enforced ownership
-            //    and per-section gating above, and the payload was validated against the
-            //    owner schema (operational fields only), so the original actor passes the
-            //    base gate without any privilege elevation.
+            //    (checkExperienceCanEditOwnOrAll: COMMERCE_EDIT_ALL OR owner +
+            //    COMMERCE_EDIT_OWN). updateOwn() already enforced ownership and the
+            //    single COMMERCE_EDIT_OWN gate above, and the payload was validated
+            //    against the owner schema (operational fields only), so the actor
+            //    passes the base gate without any privilege elevation.
             return this.update(
                 actor,
                 experienceId,

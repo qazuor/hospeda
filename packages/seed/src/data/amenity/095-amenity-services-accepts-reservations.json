@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "095-amenity-services-accepts-reservations",
+    "slug": "accepts_reservations",
+    "description": {
+        "es": "Acepta reservas previas para asegurar lugar",
+        "en": "Acepta reservas previas para asegurar lugar",
+        "pt": "Acepta reservas previas para asegurar lugar"
+    },
+    "applicableVerticals": ["gastronomy"],
+    "type": "SERVICES",
+    "icon": "Reception24hIcon",
+    "isBuiltin": false,
+    "isFeatured": true,
+    "displayWeight": 75
+}

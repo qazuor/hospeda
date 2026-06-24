@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "087-amenity-outdoors-shared-patio",
-    "name": {
-        "es": "shared_patio",
-        "en": "shared_patio",
-        "pt": "shared_patio"
-    },
     "slug": "shared_patio",
     "description": {
         "es": "Patio compartido",
         "en": "Patio compartido",
         "pt": "Patio compartido"
     },
+    "applicableVerticals": ["accommodation"],
     "type": "OUTDOORS",
     "icon": "SharedPatioIcon",
     "isBuiltin": false,

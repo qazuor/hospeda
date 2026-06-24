@@ -162,6 +162,16 @@ export interface JsonLdResult {
     readonly priceRange?: string;
 
     /**
+     * The matched schema.org `@type` string from the lodging node (e.g.
+     * `"Hotel"`, `"Apartment"`, `"BedAndBreakfast"`). Only the first lodging-
+     * relevant type is forwarded; arrays are searched left to right.
+     *
+     * The caller may run this through `mapAccommodationType` to convert it to
+     * an `AccommodationTypeEnum` value.
+     */
+    readonly lodgingType?: string;
+
+    /**
      * Raw locality string lifted from `address.addressLocality`.
      * Convenience alias for `RawExtraction.scrapedLocality`.
      */
@@ -389,6 +399,7 @@ interface MutableJsonLdResult {
     telephone?: string;
     url?: string;
     priceRange?: string;
+    lodgingType?: string;
     scrapedLocality?: string;
     scrapedCountry?: string;
 }
@@ -453,6 +464,22 @@ function mapNodeToResult(node: JsonLdNode): JsonLdResult {
     // priceRange
     if (typeof node.priceRange === 'string' && node.priceRange.length > 0) {
         result.priceRange = node.priceRange;
+    }
+
+    // lodgingType — forward the matched @type string so the adapter can map
+    // it to an AccommodationTypeEnum via mapAccommodationType. We only forward
+    // a type that is already confirmed by isLodgingNode (the caller guarantees
+    // this node passed that check). Pick the first lodging-relevant type found.
+    const rawType = node['@type'];
+    if (typeof rawType === 'string' && LODGING_TYPES.has(rawType)) {
+        result.lodgingType = rawType;
+    } else if (Array.isArray(rawType)) {
+        for (const t of rawType) {
+            if (typeof t === 'string' && LODGING_TYPES.has(t)) {
+                result.lodgingType = t;
+                break;
+            }
+        }
     }
 
     return result;

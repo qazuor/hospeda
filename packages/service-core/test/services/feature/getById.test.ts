@@ -12,9 +12,7 @@ describe('FeatureService.getById', () => {
     let featureModelMock: ReturnType<typeof createModelMock>;
     let loggerMock: ReturnType<typeof createLoggerMock>;
     let actor: Actor;
-    const feature = FeatureFactoryBuilder.create({
-        name: { es: 'Test Feature', en: 'Test Feature', pt: 'Test Feature' }
-    });
+    const feature = FeatureFactoryBuilder.create({});
 
     beforeEach(() => {
         featureModelMock = createModelMock(['findOne']);

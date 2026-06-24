@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "059-amenity-outdoors-beach-chairs-umbrellas",
-    "name": {
-        "es": "beach_chairs_umbrellas",
-        "en": "beach_chairs_umbrellas",
-        "pt": "beach_chairs_umbrellas"
-    },
     "slug": "beach_chairs_umbrellas",
     "description": {
         "es": "Reposeras y sombrillas",
         "en": "Reposeras y sombrillas",
         "pt": "Reposeras y sombrillas"
     },
+    "applicableVerticals": ["accommodation"],
     "type": "OUTDOORS",
     "icon": "BeachEquipmentIcon",
     "isBuiltin": false,

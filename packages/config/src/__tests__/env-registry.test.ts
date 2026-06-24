@@ -93,8 +93,11 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * - HOSPEDA_EXTREP_APIFY_RUN_TIMEOUT_MS (number, default 600000)
  *
  * 233 (SPEC-254): +4 social automation vars (GPT ingestion + Make publishing).
+ *
+ * 234 (NOSPEC import-apify-timeout): +1 HOSPEDA_IMPORT_APIFY_TIMEOUT_MS
+ * (separate Apify actor timeout from the short JSON-LD fetch timeout).
  */
-const EXPECTED_VAR_COUNT = 233;
+const EXPECTED_VAR_COUNT = 234;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;

@@ -1,5 +1,5 @@
 import { DEFAULT_PROMO_CODES } from '@repo/billing';
-import { billingPromoCodes, eq, getDb } from '@repo/db';
+import { billingPromoCodes, eq, getDb, sql } from '@repo/db';
 import { STATUS_ICONS } from '../utils/icons.js';
 import { logger } from '../utils/logger.js';
 import type { SeedContext } from '../utils/seedContext.js';
@@ -65,23 +65,49 @@ export async function seedBillingPromoCodes(_context: SeedContext): Promise<void
                     durationCycles: promoDef.durationCycles
                 };
 
-                // Insert promo code
-                await db.insert(billingPromoCodes).values({
-                    code: promoDef.code,
-                    type: 'percentage',
-                    value: promoDef.discountPercent,
-                    active: promoDef.isActive,
-                    maxUses: promoDef.maxRedemptions,
-                    usedCount: 0,
-                    expiresAt: promoDef.expiresAt,
-                    validPlans: promoDef.restrictedToPlans,
-                    newCustomersOnly: promoDef.newUserOnly,
-                    config,
-                    livemode: false
-                });
+                // Insert promo code (legacy columns via Drizzle)
+                const [inserted] = await db
+                    .insert(billingPromoCodes)
+                    .values({
+                        code: promoDef.code,
+                        type: 'percentage',
+                        value: promoDef.discountPercent,
+                        active: promoDef.isActive,
+                        maxUses: promoDef.maxRedemptions,
+                        usedCount: 0,
+                        expiresAt: promoDef.expiresAt,
+                        validPlans: promoDef.restrictedToPlans,
+                        newCustomersOnly: promoDef.newUserOnly,
+                        config,
+                        livemode: false
+                    })
+                    .returning({ id: billingPromoCodes.id });
+
+                // SPEC-262: persist the typed-effect columns. `effect_kind`,
+                // `value_kind`, `duration_cycles`, `extra_days` are extras-carril
+                // (added by extras/018) and NOT in the QZPay Drizzle schema, so
+                // Drizzle `.values()` above cannot set them — without this raw
+                // UPDATE the read path falls back to legacy and the typed effect
+                // (comp / trial_extension / multi-cycle discount) is lost.
+                if (inserted?.id) {
+                    const promoType = promoDef.type ?? 'discount';
+                    if (promoType === 'comp') {
+                        await db.execute(
+                            sql`UPDATE billing_promo_codes SET effect_kind = 'comp', value_kind = NULL, duration_cycles = NULL, extra_days = NULL WHERE id = ${inserted.id}`
+                        );
+                    } else if (promoType === 'free_trial_extension') {
+                        await db.execute(
+                            sql`UPDATE billing_promo_codes SET effect_kind = 'trial_extension', value_kind = NULL, duration_cycles = NULL, extra_days = ${promoDef.extraTrialDays ?? 0} WHERE id = ${inserted.id}`
+                        );
+                    } else {
+                        await db.execute(
+                            sql`UPDATE billing_promo_codes SET effect_kind = 'discount', value_kind = 'percentage', duration_cycles = ${promoDef.durationCycles}, extra_days = NULL WHERE id = ${inserted.id}`
+                        );
+                    }
+                }
 
                 logger.info(
-                    `${STATUS_ICONS.Success}  Seeded "${promoDef.code}" (${promoDef.discountPercent}% discount)`
+                    `${STATUS_ICONS.Success}  Seeded "${promoDef.code}" (${promoDef.type ?? 'discount'})`
                 );
                 seedCount++;
             } catch (error) {

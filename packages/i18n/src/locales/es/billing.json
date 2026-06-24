@@ -219,6 +219,23 @@
             "unauthCta": "Iniciá sesión para contratar",
             "currentPlan": "Plan actual",
             "currentPlanAriaLabel": "Este es tu plan actual"
+        },
+        "promoApply": {
+            "toggle": "¿Tenés un código de descuento?",
+            "label": "Código de descuento",
+            "inputPlaceholder": "Ingresá tu código",
+            "applyButton": "Aplicar",
+            "applying": "Verificando...",
+            "removeButton": "Quitar",
+            "discountPercentForever": "{{percent}}% de descuento para siempre",
+            "discountPercentCycles": "{{percent}}% de descuento por {{months}} meses",
+            "discountFixedForever": "${{amount}} de descuento para siempre",
+            "discountFixedCycles": "${{amount}} de descuento por {{months}} meses",
+            "trialExtension": "{{days}} días de prueba gratis adicionales",
+            "comp": "Gratis para siempre",
+            "errorInvalid": "El código ingresado no es válido. Revisalo e intentá de nuevo.",
+            "errorAnnualOutsideTrial": "Este código de descuento no aplica a planes anuales fuera del período de prueba.",
+            "errorGeneric": "No pudimos verificar el código. Intentá de nuevo."
         }
     },
     "limit": {

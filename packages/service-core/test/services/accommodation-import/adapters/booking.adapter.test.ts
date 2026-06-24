@@ -18,6 +18,12 @@
  * - Everything fails (blocked fetch + empty Apify dataset) → degraded, no throw.
  * - Threshold: JSON-LD with exactly 1 useful field → Apify fallback triggered.
  * - Both credentials absent after insufficient primary → degraded (not Apify).
+ * - SPEC-258 A4 (voyager/booking-scraper real shape):
+ *   - `type: "hotel"` → `result.type` from Apify path.
+ *   - `facilities[].facilities[].name` → `result.amenityNames` (flattened, deduped).
+ *   - `address: { city, country }` object → `scrapedLocality` / `scrapedCountry`.
+ *   - `location: { lat, lng }` coordinate strings → `result.location.coordinates`.
+ * - SPEC-258 A4a: JSON-LD `lodgingType` (schema.org @type) → `result.type`.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -26,14 +32,14 @@ import type { ImportContext } from '../../../../src/services/accommodation-impor
 import { BookingAdapter } from '../../../../src/services/accommodation-import/adapters/booking.adapter.js';
 
 // ---------------------------------------------------------------------------
-// Mock safeExternalFetch from @repo/utils
+// Mock safeExternalFetch from @repo/utils/safe-fetch
 // ---------------------------------------------------------------------------
 
-vi.mock('@repo/utils', () => ({
+vi.mock('@repo/utils/safe-fetch', () => ({
     safeExternalFetch: vi.fn()
 }));
 
-import { safeExternalFetch } from '@repo/utils';
+import { safeExternalFetch } from '@repo/utils/safe-fetch';
 
 const mockSafeExternalFetch = vi.mocked(safeExternalFetch);
 
@@ -151,6 +157,98 @@ const BOOKING_APIFY_ITEM_FULL: Record<string, unknown> = {
     starRating: 4,
     reviews: [{ author: 'usuario1', text: 'Muy bueno', date: '2025-03-01' }],
     ratingBreakdown: { cleanliness: 9.0, comfort: 8.5 }
+};
+
+/**
+ * A trimmed-but-faithful copy of the live `voyager/booking-scraper` probe
+ * for "Posta Torreón" (SPEC-258 probe-booking-raw.json).
+ *
+ * Key real-shape details:
+ * - `type: "hotel"` (NOT `propertyType`)
+ * - `address: { full, country, city }` object (NOT a string)
+ * - `location: { lat, lng }` as coordinate strings
+ * - `facilities: [{ name, facilities: [{ name, additionalInfo }] }]`
+ * - `images`: plain string array
+ * - `price: null`, `rooms: []` (no check-in/out dates given)
+ */
+const BOOKING_REAL_PROBE_ITEM: Record<string, unknown> = {
+    name: 'Posta Torreón',
+    type: 'hotel',
+    description:
+        'About this propertyComfortable Accommodations: Posta Torreón in Concepción del Uruguay offers spacious rooms with private bathrooms, air-conditioning, and free WiFi.',
+    location: { lat: '-32.487803', lng: '-58.233167' },
+    address: {
+        full: '799 Almafuerte 799, 3260 Concepción del Uruguay, Argentina',
+        country: 'ar',
+        city: 'Concepción del Uruguay'
+    },
+    price: null,
+    currency: null,
+    rooms: [],
+    images: [
+        'https://cf.bstatic.com/xdata/images/hotel/max1024x768/286073067.jpg',
+        'https://cf.bstatic.com/xdata/images/hotel/max1024x768/315726179.jpg'
+    ],
+    facilities: [
+        {
+            name: 'Great for your stay',
+            facilities: [
+                {
+                    name: 'Free WiFi',
+                    additionalInfo: { requiresAdditionalCharge: false, isOffSite: false }
+                },
+                {
+                    name: 'Non-smoking rooms',
+                    additionalInfo: { requiresAdditionalCharge: false, isOffSite: false },
+                    id: 16
+                },
+                {
+                    name: 'Flat-screen TV',
+                    additionalInfo: { requiresAdditionalCharge: false, isOffSite: false },
+                    id: 75
+                },
+                {
+                    name: 'Bar',
+                    additionalInfo: { requiresAdditionalCharge: false, isOffSite: false }
+                }
+            ],
+            overview: null,
+            id: null
+        },
+        {
+            name: 'Outdoors',
+            id: 13,
+            facilities: [
+                {
+                    name: 'Outdoor furniture',
+                    additionalInfo: { requiresAdditionalCharge: false, isOffSite: false },
+                    id: 222
+                }
+            ]
+        },
+        {
+            name: 'Parking',
+            id: 16,
+            overview: 'No parking available.',
+            facilities: []
+        },
+        {
+            name: 'General',
+            id: 1,
+            facilities: [
+                {
+                    name: 'Air conditioning',
+                    additionalInfo: { requiresAdditionalCharge: false, isOffSite: false },
+                    id: 109
+                },
+                {
+                    name: 'Non-smoking rooms',
+                    additionalInfo: { requiresAdditionalCharge: false, isOffSite: false },
+                    id: 16
+                }
+            ]
+        }
+    ]
 };
 
 // ---------------------------------------------------------------------------
@@ -308,7 +406,7 @@ describe('BookingAdapter', () => {
         it('should call runApifyActor when primary fetch is blocked and creds are present', async () => {
             // Arrange
             mockSafeExternalFetch.mockResolvedValue(fetchBlocked());
-            mockRunApifyActor.mockResolvedValue([BOOKING_APIFY_ITEM_FULL]);
+            mockRunApifyActor.mockResolvedValue({ items: [BOOKING_APIFY_ITEM_FULL] });
             const ctx = makeCtx();
             const url = new URL('https://www.booking.com/hotel/ar/x');
 
@@ -321,7 +419,14 @@ describe('BookingAdapter', () => {
                 expect.objectContaining({
                     token: 'test-apify-token',
                     actor: 'voyager/booking-scraper',
-                    actorInput: { startUrls: [{ url: url.href }] }
+                    // Price probe params are included in actorInput (SPEC-258).
+                    actorInput: expect.objectContaining({
+                        startUrls: [{ url: url.href }],
+                        checkIn: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+                        checkOut: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+                        adults: 2,
+                        currency: 'USD'
+                    })
                 })
             );
 
@@ -332,10 +437,25 @@ describe('BookingAdapter', () => {
             expect(result.description?.source).toBe('official_api');
         });
 
+        it('passes apifyTimeoutMs to the Apify fallback, not the short fetch timeout', async () => {
+            // Arrange — fetch timeout short (8s), Apify budget long (120s)
+            mockSafeExternalFetch.mockResolvedValue(fetchBlocked());
+            mockRunApifyActor.mockResolvedValue({ items: [BOOKING_APIFY_ITEM_FULL] });
+            const ctx: ImportContext = { ...makeCtx(), timeoutMs: 8_000, apifyTimeoutMs: 120_000 };
+
+            // Act
+            await adapter.extract(new URL('https://www.booking.com/hotel/ar/x'), ctx);
+
+            // Assert — the actor run gets the long Apify budget, not the 8s fetch timeout
+            expect(mockRunApifyActor).toHaveBeenCalledWith(
+                expect.objectContaining({ timeoutMs: 120_000 })
+            );
+        });
+
         it('should map Apify dataset item fields correctly', async () => {
             // Arrange
             mockSafeExternalFetch.mockResolvedValue(fetchBlocked());
-            mockRunApifyActor.mockResolvedValue([BOOKING_APIFY_ITEM_FULL]);
+            mockRunApifyActor.mockResolvedValue({ items: [BOOKING_APIFY_ITEM_FULL] });
 
             // Act
             const result = await adapter.extract(
@@ -366,7 +486,7 @@ describe('BookingAdapter', () => {
         it('should strip rating/review fields from Apify dataset item', async () => {
             // Arrange — BOOKING_APIFY_ITEM_FULL has rating, reviews, etc.
             mockSafeExternalFetch.mockResolvedValue(fetchBlocked());
-            mockRunApifyActor.mockResolvedValue([BOOKING_APIFY_ITEM_FULL]);
+            mockRunApifyActor.mockResolvedValue({ items: [BOOKING_APIFY_ITEM_FULL] });
 
             // Act
             const result = await adapter.extract(
@@ -408,7 +528,10 @@ describe('BookingAdapter', () => {
             );
 
             // Assert
-            expect(result).toEqual({ sourcePlatform: 'booking' });
+            expect(result).toEqual({
+                sourcePlatform: 'booking',
+                failureCode: 'credentials_missing'
+            });
             expect(mockRunApifyActor).not.toHaveBeenCalled();
         });
 
@@ -424,7 +547,10 @@ describe('BookingAdapter', () => {
             );
 
             // Assert
-            expect(result).toEqual({ sourcePlatform: 'booking' });
+            expect(result).toEqual({
+                sourcePlatform: 'booking',
+                failureCode: 'credentials_missing'
+            });
             expect(mockRunApifyActor).not.toHaveBeenCalled();
         });
 
@@ -436,7 +562,7 @@ describe('BookingAdapter', () => {
             // Act + Assert — must not throw
             await expect(
                 adapter.extract(new URL('https://www.booking.com/hotel/ar/x'), ctx)
-            ).resolves.toEqual({ sourcePlatform: 'booking' });
+            ).resolves.toEqual({ sourcePlatform: 'booking', failureCode: 'credentials_missing' });
         });
     });
 
@@ -448,7 +574,9 @@ describe('BookingAdapter', () => {
         it('should call runApifyActor when JSON-LD yields only 1 useful field (< threshold)', async () => {
             // Arrange — HTML_WITH_SPARSE_JSONLD has only "name" → 1 useful field
             mockSafeExternalFetch.mockResolvedValue(fetchOk(HTML_WITH_SPARSE_JSONLD));
-            mockRunApifyActor.mockResolvedValue([{ name: 'Hotel Fallback', description: 'Desc' }]);
+            mockRunApifyActor.mockResolvedValue({
+                items: [{ name: 'Hotel Fallback', description: 'Desc' }]
+            });
             const ctx = makeCtx();
 
             // Act
@@ -472,7 +600,7 @@ describe('BookingAdapter', () => {
         it('should return degraded result when fetch is blocked and Apify returns empty array', async () => {
             // Arrange
             mockSafeExternalFetch.mockResolvedValue(fetchBlocked());
-            mockRunApifyActor.mockResolvedValue([]);
+            mockRunApifyActor.mockResolvedValue({ items: [] });
             const ctx = makeCtx();
 
             // Act
@@ -482,7 +610,7 @@ describe('BookingAdapter', () => {
             );
 
             // Assert
-            expect(result).toEqual({ sourcePlatform: 'booking' });
+            expect(result).toEqual({ sourcePlatform: 'booking', failureCode: 'source_blocked' });
         });
 
         it('should not throw when safeExternalFetch itself rejects unexpectedly', async () => {
@@ -506,6 +634,243 @@ describe('BookingAdapter', () => {
             await expect(
                 adapter.extract(new URL('https://www.booking.com/hotel/ar/x'), ctx)
             ).resolves.toEqual({ sourcePlatform: 'booking' });
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // SPEC-258 A4: voyager/booking-scraper real shape
+    // -----------------------------------------------------------------------
+
+    describe('SPEC-258 A4 — voyager/booking-scraper real probe shape', () => {
+        it('should map type from top-level `type` field (not propertyType)', async () => {
+            // Arrange — real probe: `type: "hotel"` (no propertyType key)
+            mockSafeExternalFetch.mockResolvedValue(fetchBlocked());
+            mockRunApifyActor.mockResolvedValue({ items: [BOOKING_REAL_PROBE_ITEM] });
+
+            // Act
+            const result = await adapter.extract(
+                new URL(
+                    'https://www.booking.com/hotel/ar/boutique-antigua-posta-del-torreon.en-gb.html'
+                ),
+                makeCtx()
+            );
+
+            // Assert
+            expect(result.type).toEqual({ value: 'hotel', source: 'official_api' });
+        });
+
+        it('should extract scrapedLocality from nested address.city object', async () => {
+            // Arrange — real probe: `address: { full, country: "ar", city: "..." }`
+            mockSafeExternalFetch.mockResolvedValue(fetchBlocked());
+            mockRunApifyActor.mockResolvedValue({ items: [BOOKING_REAL_PROBE_ITEM] });
+
+            // Act
+            const result = await adapter.extract(
+                new URL('https://www.booking.com/hotel/ar/x'),
+                makeCtx()
+            );
+
+            // Assert
+            expect(result.scrapedLocality).toBe('Concepción del Uruguay');
+        });
+
+        it('should extract scrapedCountry from nested address.country object', async () => {
+            // Arrange — real probe: `address.country: "ar"`
+            mockSafeExternalFetch.mockResolvedValue(fetchBlocked());
+            mockRunApifyActor.mockResolvedValue({ items: [BOOKING_REAL_PROBE_ITEM] });
+
+            // Act
+            const result = await adapter.extract(
+                new URL('https://www.booking.com/hotel/ar/x'),
+                makeCtx()
+            );
+
+            // Assert
+            expect(result.scrapedCountry).toBe('ar');
+        });
+
+        it('should extract coordinates from nested location.lat/lng strings', async () => {
+            // Arrange — real probe: `location: { lat: "-32.487803", lng: "-58.233167" }`
+            mockSafeExternalFetch.mockResolvedValue(fetchBlocked());
+            mockRunApifyActor.mockResolvedValue({ items: [BOOKING_REAL_PROBE_ITEM] });
+
+            // Act
+            const result = await adapter.extract(
+                new URL('https://www.booking.com/hotel/ar/x'),
+                makeCtx()
+            );
+
+            // Assert
+            expect(result.location?.coordinates?.source).toBe('official_api');
+            const coords = result.location?.coordinates?.value as { lat: string; long: string };
+            expect(Number(coords.lat)).toBeCloseTo(-32.487803, 5);
+            expect(Number(coords.long)).toBeCloseTo(-58.233167, 5);
+        });
+
+        it('should flatten facilities groups into amenityNames and deduplicate', async () => {
+            // Arrange — real probe has "Non-smoking rooms" and "Flat-screen TV"
+            // duplicated across "Great for your stay" and "General" / "Media & Technology"
+            mockSafeExternalFetch.mockResolvedValue(fetchBlocked());
+            mockRunApifyActor.mockResolvedValue({ items: [BOOKING_REAL_PROBE_ITEM] });
+
+            // Act
+            const result = await adapter.extract(
+                new URL('https://www.booking.com/hotel/ar/x'),
+                makeCtx()
+            );
+
+            // Assert — amenities from all groups are present, duplicates removed
+            expect(result.amenityNames).toBeDefined();
+            expect(result.amenityNames).toContain('Free WiFi');
+            expect(result.amenityNames).toContain('Bar');
+            expect(result.amenityNames).toContain('Outdoor furniture');
+            expect(result.amenityNames).toContain('Air conditioning');
+            // "Non-smoking rooms" appears in two groups — should appear only once
+            const nonSmokingCount =
+                result.amenityNames?.filter((n) => n === 'Non-smoking rooms').length ?? 0;
+            expect(nonSmokingCount).toBe(1);
+            // Empty facilities group (Parking has no facilities) should not add anything
+            expect(result.amenityNames).not.toContain('Parking');
+            expect(result.amenityNames).not.toContain('No parking available.');
+        });
+
+        it('should map images from plain string array', async () => {
+            // Arrange — real probe: `images: ["https://...", "https://..."]`
+            mockSafeExternalFetch.mockResolvedValue(fetchBlocked());
+            mockRunApifyActor.mockResolvedValue({ items: [BOOKING_REAL_PROBE_ITEM] });
+
+            // Act
+            const result = await adapter.extract(
+                new URL('https://www.booking.com/hotel/ar/x'),
+                makeCtx()
+            );
+
+            // Assert
+            expect(result.imageUrls).toEqual([
+                'https://cf.bstatic.com/xdata/images/hotel/max1024x768/286073067.jpg',
+                'https://cf.bstatic.com/xdata/images/hotel/max1024x768/315726179.jpg'
+            ]);
+        });
+
+        it('should return empty amenityNames when all facility groups have empty arrays', async () => {
+            // Arrange
+            mockSafeExternalFetch.mockResolvedValue(fetchBlocked());
+            mockRunApifyActor.mockResolvedValue({
+                items: [
+                    {
+                        name: 'Hotel Empty',
+                        type: 'hotel',
+                        facilities: [{ name: 'Parking', facilities: [], overview: 'No parking.' }]
+                    }
+                ]
+            });
+
+            // Act
+            const result = await adapter.extract(
+                new URL('https://www.booking.com/hotel/ar/x'),
+                makeCtx()
+            );
+
+            // Assert — no amenityNames emitted
+            expect(result.amenityNames).toBeUndefined();
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // SPEC-258 A4a: JSON-LD lodgingType → result.type
+    // -----------------------------------------------------------------------
+
+    describe('SPEC-258 A4a — JSON-LD lodgingType forwarded as type', () => {
+        it('should map lodgingType from JSON-LD @type to result.type with jsonld source', async () => {
+            // Arrange — HTML_WITH_JSONLD_HOTEL has @type "Hotel"
+            mockSafeExternalFetch.mockResolvedValue(fetchOk(HTML_WITH_JSONLD_HOTEL));
+
+            // Act
+            const result = await adapter.extract(
+                new URL('https://www.booking.com/hotel/ar/x'),
+                makeCtx()
+            );
+
+            // Assert — type forwarded from JSON-LD @type
+            expect(result.type).toEqual({ value: 'Hotel', source: 'jsonld' });
+        });
+
+        it('should not set type when JSON-LD has no @type in lodging set', async () => {
+            // Arrange — HTML with a JSON-LD block whose @type is NOT a lodging type.
+            const htmlNonLodging = `<!DOCTYPE html><html><head>
+<script type="application/ld+json">
+{ "@context": "https://schema.org", "@type": "WebSite", "name": "Booking" }
+</script></head><body></body></html>`;
+            mockSafeExternalFetch.mockResolvedValue(fetchOk(htmlNonLodging));
+            mockRunApifyActor.mockResolvedValue({ items: [] });
+
+            // Act
+            const result = await adapter.extract(
+                new URL('https://www.booking.com/hotel/ar/x'),
+                makeCtx()
+            );
+
+            // Assert — no type when JSON-LD had no lodging @type
+            expect(result.type).toBeUndefined();
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // SPEC-258 price probe — Booking per-night price extraction
+    // -----------------------------------------------------------------------
+
+    /**
+     * A real-probe-shaped item WITH check-in/check-out dates sent.
+     * voyager/booking-scraper returns `price` as a TOTAL for the stay.
+     * 157.3 total ÷ 2 nights = 78.65 per night.
+     */
+    const BOOKING_PROBE_WITH_PRICE: Record<string, unknown> = {
+        name: 'Posta Torreón',
+        type: 'hotel',
+        description: 'Comfortable hotel near the city center.',
+        location: { lat: '-32.487803', lng: '-58.233167' },
+        address: {
+            full: '799 Almafuerte, Concepción del Uruguay',
+            country: 'ar',
+            city: 'Concepción del Uruguay'
+        },
+        price: 157.3,
+        currency: 'USD',
+        images: ['https://cf.bstatic.com/img1.jpg'],
+        facilities: []
+    };
+
+    describe('SPEC-258 price probe — Booking per-night price from actor total', () => {
+        it('should emit per-night price and USD currency when actor returns total price', async () => {
+            // Arrange
+            mockSafeExternalFetch.mockResolvedValue(fetchBlocked());
+            mockRunApifyActor.mockResolvedValue({ items: [BOOKING_PROBE_WITH_PRICE] });
+
+            // Act
+            const result = await adapter.extract(
+                new URL('https://www.booking.com/hotel/ar/x'),
+                makeCtx()
+            );
+
+            // Assert — 157.3 total ÷ 2 nights = 78.65 per night.
+            // Tagged 'text' (50% confidence) — date-specific estimate, not authoritative.
+            expect(result.price?.price).toEqual({ value: 78.65, source: 'text' });
+            expect(result.price?.currency).toEqual({ value: 'USD', source: 'text' });
+        });
+
+        it('should not emit price when actor returns null price (no dates sent)', async () => {
+            // Arrange — BOOKING_REAL_PROBE_ITEM has `price: null`
+            mockSafeExternalFetch.mockResolvedValue(fetchBlocked());
+            mockRunApifyActor.mockResolvedValue({ items: [BOOKING_REAL_PROBE_ITEM] });
+
+            // Act
+            const result = await adapter.extract(
+                new URL('https://www.booking.com/hotel/ar/x'),
+                makeCtx()
+            );
+
+            // Assert — no price candidate emitted
+            expect(result.price).toBeUndefined();
         });
     });
 });

@@ -77,23 +77,24 @@ export function checkCanEditAll(actor: Actor, _entity: unknown): void {
 /**
  * Verifies the actor may perform an operational edit on their own commerce listing.
  *
- * Accepts either `COMMERCE_EDIT_ALL` (staff) or the supplied `ownSectionPermission`
- * (the section-specific `editOwn` permission, e.g. `COMMERCE_SCHEDULE_EDIT_OWN`),
- * provided the actor is the listing's owner.
+ * Accepts either `COMMERCE_EDIT_ALL` (staff) or `COMMERCE_EDIT_OWN` (owner),
+ * provided the actor is the listing's owner. The `ownSectionPermission` parameter
+ * is kept for call-site compatibility but is ignored — all owner sections now
+ * collapse to the single `COMMERCE_EDIT_OWN` permission (SPEC-253 D2=b).
  *
  * @param actor - The actor performing the action.
  * @param entity - The entity being updated (must have `ownerId`).
- * @param ownSectionPermission - The granular `editOwn` permission for this section.
+ * @param _ownSectionPermission - Ignored (kept for call-site compatibility, SPEC-253).
  * @throws {ServiceError} FORBIDDEN when neither condition is met.
  */
 export function checkCanEditOwn(
     actor: Actor,
     entity: { ownerId?: string | null },
-    ownSectionPermission: PermissionEnum
+    _ownSectionPermission?: PermissionEnum
 ): void {
     if (
         hasPermission(actor, PermissionEnum.COMMERCE_EDIT_ALL) ||
-        (hasPermission(actor, ownSectionPermission) && isOwner(actor, entity))
+        (hasPermission(actor, PermissionEnum.COMMERCE_EDIT_OWN) && isOwner(actor, entity))
     ) {
         return;
     }
@@ -104,33 +105,15 @@ export function checkCanEditOwn(
 }
 
 /**
- * All granular operational `editOwn` permissions for commerce listings.
- * An owner holding at least one of these may reach the base update pipeline
- * (via `updateOwn`, which enforces per-section gating + operational-only payload).
- */
-const COMMERCE_OWNER_EDIT_PERMISSIONS: readonly PermissionEnum[] = [
-    PermissionEnum.COMMERCE_SCHEDULE_EDIT_OWN,
-    PermissionEnum.COMMERCE_CONTACT_EDIT_OWN,
-    PermissionEnum.COMMERCE_SOCIAL_EDIT_OWN,
-    PermissionEnum.COMMERCE_MEDIA_EDIT_OWN,
-    PermissionEnum.COMMERCE_MENU_EDIT_OWN,
-    PermissionEnum.COMMERCE_PRICE_RANGE_EDIT_OWN,
-    PermissionEnum.COMMERCE_RICH_DESCRIPTION_EDIT_OWN,
-    PermissionEnum.COMMERCE_AMENITIES_EDIT_OWN,
-    PermissionEnum.COMMERCE_FEATURES_EDIT_OWN,
-    PermissionEnum.COMMERCE_FAQS_EDIT_OWN
-] as const;
-
-/**
  * Verifies the actor may update a commerce listing through the base update pipeline
  * (`_canUpdate`). Accepts staff (`COMMERCE_EDIT_ALL`) OR the listing's owner holding
- * at least one granular operational `editOwn` permission.
+ * `COMMERCE_EDIT_OWN` (SPEC-253 D2=b: replaces the former 10 per-section perms).
  *
  * This is the owner-aware analogue of {@link checkCanEditAll}, mirroring how
  * `AccommodationService` accepts `UPDATE_ANY` OR (`UPDATE_OWN` + owner). Owner edits
- * additionally flow through `updateOwn`, which enforces per-section permissions and
- * validates the payload to operational fields only — so a passing owner can still
- * only persist operational changes, never identity/lifecycle/visibility fields.
+ * additionally flow through `updateOwn`, which validates the payload to operational
+ * fields only — so a passing owner can still only persist operational changes,
+ * never identity/lifecycle/visibility fields.
  *
  * @param actor - The actor performing the action.
  * @param entity - The entity being updated (must carry `ownerId`).
@@ -140,10 +123,7 @@ export function checkCanEditOwnOrAll(actor: Actor, entity: { ownerId?: string | 
     if (hasPermission(actor, PermissionEnum.COMMERCE_EDIT_ALL)) {
         return;
     }
-    if (
-        isOwner(actor, entity) &&
-        COMMERCE_OWNER_EDIT_PERMISSIONS.some((permission) => hasPermission(actor, permission))
-    ) {
+    if (isOwner(actor, entity) && hasPermission(actor, PermissionEnum.COMMERCE_EDIT_OWN)) {
         return;
     }
     throw new ServiceError(

@@ -1,0 +1,129 @@
+/* CommerceTranslationPanel.module.css — SPEC-253 T-022
+   Visual language mirrors TranslationPanel.module.css (SPEC-212) for consistency. */
+
+/* Section card — matches the fieldset pattern used by other editor sections */
+.section {
+    border: none;
+    padding: 0;
+    margin: 0 0 var(--space-5, 2rem);
+}
+
+.sectionTitle {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 1.125rem;
+    color: var(--core-foreground);
+    margin-bottom: var(--space-2, 0.5rem);
+    padding-bottom: var(--space-2, 0.5rem);
+    border-bottom: 1px solid var(--border);
+    display: block;
+}
+
+.sectionDescription {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+    margin: 0 0 var(--space-4, 1.5rem);
+}
+
+/* Locale tab bar */
+.tabBar {
+    display: flex;
+    gap: var(--space-2, 0.5rem);
+    margin-bottom: var(--space-4, 1.5rem);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: var(--space-2, 0.5rem);
+}
+
+.tab {
+    background: none;
+    border: none;
+    padding: 0.25rem 0.5rem;
+    cursor: pointer;
+    border-radius: var(--radius-md, 8px);
+}
+
+.tab:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.tabActive {
+    background-color: oklch(0.96 0.02 240 / 0.15);
+}
+
+/* Locale badge (mirrors TranslationPanel localeBadge) */
+.localeBadge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.25rem 0.625rem;
+    border-radius: var(--radius-pill, 9999px);
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    border: 1px solid transparent;
+    min-width: 2.25rem;
+}
+
+.localeBadgeActive {
+    background-color: oklch(0.96 0.02 240 / 0.15);
+    color: var(--brand-primary);
+    border-color: oklch(0.85 0.05 240 / 0.3);
+}
+
+.localeBadgePresent {
+    background-color: var(--success-a15, oklch(0.96 0.04 155 / 0.15));
+    color: var(--success, oklch(0.55 0.18 155));
+    border-color: var(--success-a30, oklch(0.85 0.08 155 / 0.3));
+}
+
+.localeBadgeMissing {
+    background-color: oklch(0.96 0.015 45 / 0.15);
+    color: var(--core-muted-foreground);
+    border-color: oklch(0.85 0.03 45 / 0.3);
+}
+
+/* Tab panel — contains the per-locale field cards */
+.tabPanel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 1rem);
+}
+
+/* One card per translatable field — mirrors TranslationPanel.fieldCard */
+.fieldCard {
+    padding: var(--space-3, 1rem);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 10px);
+    background-color: var(--core-card);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+}
+
+.fieldName {
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: var(--core-foreground);
+}
+
+.textarea {
+    width: 100%;
+    padding: var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 0.5rem);
+    background: var(--core-background);
+    color: var(--core-foreground);
+    font-family: var(--font-sans);
+    font-size: var(--text-body, 1rem);
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+.textarea:focus {
+    outline: 2px solid var(--brand-primary, var(--core-foreground));
+    outline-offset: 1px;
+}

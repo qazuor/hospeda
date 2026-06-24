@@ -1,30 +1,48 @@
 /**
- * Amenity Name Resolver (SPEC-222 T-012)
+ * Amenity Resolver (SPEC-222 T-012, enhanced SPEC-258, updated SPEC-266 T-003)
  *
- * Resolves scraped amenity name strings to Hospeda catalog amenity UUIDs by
- * querying the {@link AmenityService} for each name and applying a STRICT
- * case-insensitive exact-match rule against the Spanish locale of the catalog
- * entry.
+ * Resolves scraped amenity strings to Hospeda catalog amenity UUIDs by
+ * querying the {@link AmenityService} for each term and applying a two-step
+ * matching strategy. Accepts either a catalog slug (e.g. "air_conditioning")
+ * or a free-text variant (e.g. "Aire acondicionado") — synonyms bridge the gap.
  *
- * ## Matching rule (STRICT exact-CI)
+ * ## Background
  *
- * The underlying DB search uses `name->>'es' ILIKE %term%`, which is a
- * substring match — it will return hits whose Spanish name *contains* the
- * search term, not only entries whose name *equals* the term. To avoid
- * mis-resolution (e.g. searching "Pool" matching "Rooftop Pool"), the resolver
- * applies a second, client-side filter:
+ * The JSONB `name` column was dropped from the amenities table in SPEC-266 T-001.
+ * Matching now runs against the `slug` column — the single canonical text
+ * identifier — instead of the former `name.es` field.
  *
- *   `item.name.es.trim().toLowerCase() === inputName.trim().toLowerCase()`
+ * ## Matching strategy (in priority order)
  *
- * Only an item that passes this strict equality check is considered a
- * confident match and yields its `id`. Any ILIKE hit whose name does not
- * exactly match the input name (case-insensitively, after trimming) is treated
- * as a non-match and the original name goes to `unresolved`.
+ * 1. **Direct normalized match** — normalize the input (lowercase, strip
+ *    diacritics, collapse whitespace, simple plural fold) and compare against
+ *    the normalized `slug` of each search result. Equality (not substring) is
+ *    required, so "pool" never mis-resolves to "heated_pool".
  *
- * This bias (under-resolve rather than mis-resolve) is intentional: the host
- * reviews the `unresolved` list and manually picks the right amenity. A
- * wrong auto-resolution would silently associate the wrong amenity — that is
- * worse than leaving it unresolved (SPEC-222 AC-9.3).
+ * 2. **Synonym map lookup** — if step 1 finds nothing, look up the normalized
+ *    input in the static {@link AMENITY_SYNONYMS} dictionary. A hit yields a
+ *    canonical catalog slug (e.g. "pileta" → "pool"). The resolver then runs a
+ *    second `searchForList` call for that slug and applies the same normalized
+ *    match against `slug`. This covers regional variants
+ *    (pileta/piscina/pool), cross-language synonyms (Wi-Fi/wifi/internet), and
+ *    common spelling variants without any fuzzy matching.
+ *
+ * 3. **Unresolved** — anything that does not pass a confident match in steps 1
+ *    or 2 flows to `unresolved` for host review.
+ *
+ * ## Why we do NOT touch AmenityService
+ *
+ * The synonym-driven slug lookup reuses the existing `searchForList` path with
+ * the `slug` filter (exact-match on the catalog `slug` column). No new
+ * `getBySlug` helper was added to `AmenityService` — the search results already
+ * carry `slug`, which is all we need for the second-pass match.
+ *
+ * ## Conservative contract (SPEC-222 AC-9.3)
+ *
+ * Under-resolve is always preferable to mis-resolve. The host reviews the
+ * `unresolved` list and picks the right amenity manually. A wrong auto-
+ * resolution would silently associate the wrong amenity — that is worse than
+ * leaving it unresolved.
  *
  * @module services/accommodation-import/resolvers/amenities
  */
@@ -32,6 +50,7 @@
 import type { AmenitySearchForListOutput, AmenitySearchInput } from '@repo/schemas';
 import type { Actor } from '../../../types/index.js';
 import type { AmenityService } from '../../amenity/amenity.service.js';
+import { AMENITY_SYNONYMS, normalizeAmenityTerm } from './amenity-synonyms.js';
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -92,11 +111,60 @@ interface LookupParams {
 }
 
 /**
+ * Searches the catalog for `searchTerm` and returns the id of the first result
+ * whose normalized `slug` exactly equals `normalizedInput`
+ * (case/accent/whitespace insensitive).
+ *
+ * The `slug` is the single canonical text identifier after SPEC-266 dropped the
+ * JSONB `name` column.
+ *
+ * Returns `null` when no confident match exists or when `searchForList` throws.
+ *
+ * @param searchTerm - The term passed to `searchForList` (may differ from the
+ *   original input when doing a synonym-driven slug lookup).
+ * @param normalizedInput - Pre-normalized form of the term being matched, used
+ *   for the final equality check against the catalog `slug`.
+ * @param amenityService - Service instance.
+ * @param actor - Actor for permission checks.
+ * @returns Matched amenity UUID, or `null`.
+ */
+async function searchAndMatch(
+    searchTerm: string,
+    normalizedInput: string,
+    amenityService: Pick<AmenityService, 'searchForList'>,
+    actor: Actor
+): Promise<string | null> {
+    let result: AmenitySearchForListOutput;
+    try {
+        const searchInput: AmenitySearchInput = {
+            slug: searchTerm,
+            page: 1,
+            pageSize: 10
+        };
+        result = await amenityService.searchForList(actor, searchInput);
+    } catch {
+        return null;
+    }
+
+    // Match against the catalog `slug` — the single canonical text identifier
+    // after SPEC-266 T-001 dropped the JSONB `name` column.
+    const match = result.data.find(
+        (item) => normalizeAmenityTerm(item.slug ?? '') === normalizedInput
+    );
+
+    return match?.id ?? null;
+}
+
+/**
  * Attempts to resolve a single amenity name to a catalog UUID.
  *
- * Returns the amenity `id` when a STRICT case-insensitive exact match is found
- * against the Spanish locale (`name.es`) of at least one search result, or
- * `null` when no such match exists.
+ * Resolution order:
+ * 1. Direct search using the original name; match normalized input against the
+ *    catalog `slug`.
+ * 2. Synonym map lookup: normalize input → canonical slug → search for slug →
+ *    match normalized slug against `slug`.
+ *
+ * Returns `null` when neither step finds a confident match.
  *
  * Errors from `searchForList` are caught here so the caller can push the name
  * to `unresolved` without interrupting the rest of the batch.
@@ -112,26 +180,33 @@ async function lookupAmenityByName(params: LookupParams): Promise<string | null>
         return null;
     }
 
-    let result: AmenitySearchForListOutput;
-    try {
-        const searchInput: AmenitySearchInput = {
-            name: trimmedName,
-            page: 1,
-            pageSize: 10
-        };
-        result = await amenityService.searchForList(actor, searchInput);
-    } catch {
-        // searchForList threw — treat this name as unresolved.
-        return null;
+    const normalizedInput = normalizeAmenityTerm(trimmedName);
+
+    // Step 1: direct search — look for the original (trimmed) name in the DB and
+    // match normalized input against the catalog `slug`.
+    const directId = await searchAndMatch(trimmedName, normalizedInput, amenityService, actor);
+    if (directId !== null) {
+        return directId;
     }
 
-    const lowerInput = trimmedName.toLowerCase();
+    // Step 2: synonym map — if the normalized input maps to a canonical slug,
+    // search for that slug and match the normalized slug against `slug`.
+    const canonicalSlug = AMENITY_SYNONYMS.get(normalizedInput);
+    if (canonicalSlug !== undefined) {
+        // Normalize the slug as well (e.g. "air_conditioning" → same after strip)
+        const normalizedSlug = normalizeAmenityTerm(canonicalSlug);
+        const synonymId = await searchAndMatch(
+            canonicalSlug,
+            normalizedSlug,
+            amenityService,
+            actor
+        );
+        if (synonymId !== null) {
+            return synonymId;
+        }
+    }
 
-    // Apply STRICT exact-CI matching: the Spanish locale name must equal the
-    // input after trimming and lower-casing both sides.
-    const match = result.data.find((item) => item.name.es.trim().toLowerCase() === lowerInput);
-
-    return match?.id ?? null;
+    return null;
 }
 
 // ---------------------------------------------------------------------------
@@ -141,11 +216,12 @@ async function lookupAmenityByName(params: LookupParams): Promise<string | null>
 /**
  * Resolves scraped amenity name strings to Hospeda catalog amenity UUIDs.
  *
- * For each name in `input.names`, queries the amenity catalog via
- * `amenityService.searchForList` and applies a STRICT case-insensitive exact
- * match against the Spanish locale (`name.es`) of the results. A match yields
- * the amenity UUID; everything else (no match, fuzzy-only hit, or lookup error)
- * pushes the original name to `unresolved`.
+ * For each name in `input.names`, applies a two-step matching strategy:
+ * 1. Direct normalized match against the catalog `slug`.
+ * 2. Synonym-map lookup → canonical slug → second search + normalized match against `slug`.
+ *
+ * Anything that does not confidently match in either step (no match, partial
+ * hit, or lookup error) goes to `unresolved`.
  *
  * **Never throws.** Any per-name error is absorbed and the name goes to
  * `unresolved`; the rest of the batch is still processed.
@@ -162,7 +238,7 @@ async function lookupAmenityByName(params: LookupParams): Promise<string | null>
  *   amenityService,
  *   actor,
  * });
- * // amenityIds → ['uuid-wifi', 'uuid-pileta']
+ * // amenityIds → ['uuid-wifi', 'uuid-pool']
  * // unresolved → ['UnknownThing']
  * ```
  */

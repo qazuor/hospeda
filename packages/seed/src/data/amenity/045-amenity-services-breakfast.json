@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/amenity.schema.json",
     "id": "045-amenity-services-breakfast",
-    "name": {
-        "es": "breakfast",
-        "en": "breakfast",
-        "pt": "breakfast"
-    },
     "slug": "breakfast",
     "description": {
         "es": "Provisión de desayuno",
         "en": "Provisión de desayuno",
         "pt": "Provisión de desayuno"
     },
+    "applicableVerticals": ["accommodation"],
     "type": "SERVICES",
     "icon": "BreakfastIcon",
     "isBuiltin": false,

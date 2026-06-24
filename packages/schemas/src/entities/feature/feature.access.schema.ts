@@ -13,11 +13,13 @@ export const FeaturePublicSchema = FeatureSchema.pick({
     // Identification
     id: true,
     slug: true,
-    name: true,
 
     // Content
     description: true,
     icon: true,
+
+    // Verticals (SPEC-266)
+    applicableVerticals: true,
 
     // Visibility
     isFeatured: true,
@@ -41,9 +43,9 @@ export const FeatureProtectedSchema = FeatureSchema.pick({
     // All public fields
     id: true,
     slug: true,
-    name: true,
     description: true,
     icon: true,
+    applicableVerticals: true,
     isFeatured: true,
     isBuiltin: true,
     displayWeight: true,

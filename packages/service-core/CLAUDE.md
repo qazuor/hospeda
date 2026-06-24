@@ -1039,6 +1039,82 @@ See `packages/service-core/src/base/base.crud.read.ts` for the reference impleme
 - Services are the single source of truth for business logic
 - All database access goes through services, not directly to models
 
+## Promo Code Effect Engine (SPEC-262)
+
+The engine is fully DB-backed. All effect state lives in extras-carril columns
+(added via `pnpm db:apply-extras`); no config-file-only effects remain.
+
+### Effect kinds
+
+Three discriminated kinds, controlled by `billing_promo_codes.effect_kind` (varchar, `'discount' | 'trial_extension' | 'comp'`):
+
+| Kind | Parameters | What it does |
+|---|---|---|
+| `discount` | `value_kind` (`'percentage'`\|`'fixed'`), `value` (int), `duration_cycles` (int\|null) | Reduces the charge amount for N billing cycles, or forever when `duration_cycles = NULL`. |
+| `trial_extension` | `extra_days` (int) | Adds N days to the subscription trial period at signup or via `extendExistingSubscriptionTrial`. |
+| `comp` | — | Permanently comps the subscription; no MercadoPago preapproval is ever created. |
+
+### Seam files (relative to `packages/service-core/src/services/billing/promo-code/`)
+
+| File | Responsibility |
+|---|---|
+| `effect-reducer.ts` | Pure function `calculatePromoCodeEffect` — all monetary math, no DB access. Single source of truth for discount amounts and remaining-cycle computation. |
+| `promo-code.validation.ts` | Best-effort validation (`validatePromoCode`) — business-rule checks (expiry, maxUses, plan restrictions, minAmount). NOT race-safe; use for UI preview only. |
+| `promo-code.redemption.ts` | Atomic redemption (`tryRedeemAtomically` — SELECT FOR UPDATE), usage recording (`redeemAndRecordUsage`), and `applyPromoCode` (dispatches per effect kind). |
+| `promo-code.renewal.ts` | Multi-cycle discount renewal (`resolveRenewalPromoEffect`) — called on each `subscription_authorized_payment.created` webhook; decrements `promo_effect_remaining_cycles` and returns a typed `RenewalPromoDecision`. |
+| `promo-code.trial-extension.ts` | `extendExistingSubscriptionTrial` — applies a `trial_extension` promo to an already-active subscription (pushes `trial_end` on the DB row; MP date reconciliation is done by the caller). |
+| `promo-code.crud.ts` | CRUD operations and mapping of extras-carril columns to the typed `PromoEffect` discriminated union. |
+| `promo-code.service.ts` | Facade — re-exports all public functions and types so consumers import from a single entry point. |
+
+### Checkout-side resolution
+
+`apps/api/src/services/subscription-checkout-promo.service.ts` exports `resolveCheckoutPromoPlan`, which maps a raw code string to the `CheckoutPromoPlan` discriminated union:
+
+```
+{ kind: 'none' }        — no code supplied
+{ kind: 'trial' }       — trial_extension → freeTrialDays forwarded to qzpay
+{ kind: 'discount' }    — discount → discounted amount + cycle-counter seed inputs
+{ kind: 'comp' }        — comp → createCompSubscription (no MP preapproval)
+{ kind: 'invalid' }     — validation failed (caller maps to INVALID_PROMO_CODE)
+```
+
+### Comp subscription: why no MercadoPago preapproval
+
+A `comp` promo code causes `apps/api/src/services/subscription-comp-create.service.ts` to insert a `billing_subscriptions` row with `status = 'comp'` (the `SubscriptionStatusEnum.COMP` value) directly in DB, skipping qzpay entirely. Key consequences:
+
+- `mp_subscription_id` is NULL — no preapproval is created or charged.
+- The dunning cron excludes `status='comp'` rows.
+- `loadEntitlements` treats `comp` as an active accommodation subscription, so full plan entitlements are retained.
+- The insert, promo stamp, and redemption record are wrapped in one transaction for atomicity.
+
+### Multi-cycle discount: how the renewal counter works
+
+The extras-carril column `billing_subscriptions.promo_effect_remaining_cycles` (integer, nullable) is the cycle countdown:
+
+- `NULL` — forever discount (`duration_cycles = NULL` on the promo code); counter never decremented.
+- `N > 0` — N more discounted cycles remain.
+- `0` — discount exhausted; full price is already in effect for the next cycle.
+
+The counter is seeded at apply time and decremented exactly once per confirmed charge on the `subscription_authorized_payment.created` webhook path (via `resolveRenewalPromoEffect`). When decrement reaches 0, `resolveRenewalPromoEffect` returns action `restore-full` and the API layer calls `paymentAdapter.subscriptions.update(mpSubscriptionId, { transactionAmount: fullMajor })` to restore the preapproval amount. The full plan price (from `billing_prices.unit_amount` in centavos) is the source of truth — never a value read back from MercadoPago.
+
+### MP preapproval mutation spike
+
+The feasibility of mutating a live MercadoPago preapproval's `auto_recurring.transaction_amount` (required for the multi-cycle discount mechanism) was verified in:
+
+`packages/service-core/src/services/billing/promo-code/docs/mp-preapproval-mutation-spike.md`
+
+**Outcome A — GO.** The mutation is confirmed viable: Hospeda already performs this exact `PUT /preapproval/{id}` call in production (plan upgrade/downgrade cron). One staging verification remains (that restoring to the original authorized amount never requires payer re-authorization), but the mechanism is proven.
+
+### DB migration files (extras carril)
+
+| File | What it adds |
+|---|---|
+| `packages/db/src/migrations/extras/018-billing-promo-codes-effect-columns.column.sql` | `effect_kind`, `value_kind`, `duration_cycles`, `extra_days` on `billing_promo_codes` |
+| `packages/db/src/migrations/extras/019-billing-subscriptions-promo-effect-columns.column.sql` | `promo_effect_remaining_cycles` on `billing_subscriptions` |
+| `packages/db/src/migrations/extras/020-promo-code-effect-constraints-backfill.sql` | CHECK constraints + backfill of existing rows to the correct `effect_kind` |
+
+Apply with `pnpm db:apply-extras` (or `hops db-migrate --target=staging|prod`). Never use `drizzle-kit push` for these.
+
 ## Review Moderation (SPEC-166)
 
 Review moderation adds a `moderationState` (`PENDING | APPROVED | REJECTED`) to

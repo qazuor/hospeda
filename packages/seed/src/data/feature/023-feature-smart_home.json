@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "023-feature-smart_home",
-    "name": {
-        "es": "Casa inteligente",
-        "en": "Casa inteligente",
-        "pt": "Casa inteligente"
-    },
     "slug": "smart_home",
     "description": {
         "es": "Tecnología domótica avanzada con automatización de luces, climatización, seguridad y control remoto desde dispositivos móviles",
         "en": "Tecnología domótica avanzada con automatización de luces, climatización, seguridad y control remoto desde dispositivos móviles",
         "pt": "Tecnología domótica avanzada con automatización de luces, climatización, seguridad y control remoto desde dispositivos móviles"
     },
+    "applicableVerticals": ["accommodation"],
     "icon": "SmartHomeIcon",
     "isBuiltin": true,
     "isFeatured": false,

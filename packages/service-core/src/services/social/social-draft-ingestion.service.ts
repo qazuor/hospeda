@@ -455,7 +455,18 @@ export class SocialDraftIngestionService {
             let assetStatus: 'uploaded' | 'pending' | 'none' = 'none';
 
             if (payload.image) {
-                const imagePayload: GptImagePayload = payload.image as GptImagePayload;
+                // Thread the root-level `openaiFileIdRefs` (injected by OpenAI
+                // at the request-body root) into the image payload that the
+                // pipeline expects. The Zod schema moved `openaiFileIdRefs` out
+                // of the `image` sub-object to the request root so OpenAI can
+                // auto-populate it; the pipeline's internal `GptImagePayload`
+                // type still carries the field for unified access within the
+                // download logic.
+                const imagePayload: GptImagePayload = {
+                    ...payload.image,
+                    openaiFileIdRefs:
+                        payload.openaiFileIdRefs as GptImagePayload['openaiFileIdRefs']
+                };
 
                 if (this.imagePipeline) {
                     const imageResult = await this.imagePipeline.processImage({

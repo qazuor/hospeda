@@ -273,5 +273,36 @@ export const menuTree: readonly MenuItem[] = [
                 permission: PermissionEnum.ANALYTICS_VIEW
             }
         ]
+    },
+    {
+        titleKey: 'admin-menu.ai.title',
+        permission: PermissionEnum.AI_SETTINGS_MANAGE,
+        children: [
+            {
+                titleKey: 'admin-menu.ai.usage',
+                to: '/ai/usage',
+                permission: PermissionEnum.AI_SETTINGS_MANAGE
+            },
+            {
+                titleKey: 'admin-menu.ai.settings',
+                to: '/ai/settings',
+                permission: PermissionEnum.AI_SETTINGS_MANAGE
+            },
+            {
+                titleKey: 'admin-menu.ai.credentials',
+                to: '/ai/credentials',
+                permission: PermissionEnum.AI_SETTINGS_MANAGE
+            },
+            {
+                titleKey: 'admin-menu.ai.prompts',
+                to: '/ai/prompts',
+                permission: PermissionEnum.AI_SETTINGS_MANAGE
+            },
+            {
+                titleKey: 'admin-menu.ai.playground',
+                to: '/ai/playground',
+                permission: PermissionEnum.AI_SETTINGS_MANAGE
+            }
+        ]
     }
 ];

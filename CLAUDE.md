@@ -185,6 +185,13 @@ accommodation entitlement engine:
   not via a Drizzle-generated migration. Re-applied by `pnpm db:apply-extras`.
   See [`docs/decisions/ADR-035-commerce-core-gastronomy-separation.md`](docs/decisions/ADR-035-commerce-core-gastronomy-separation.md).
 
+#### Promo code effect engine (SPEC-262)
+
+- `billing_promo_codes.effect_kind` (varchar, extras 018) — `'discount' | 'trial_extension' | 'comp'`. All existing rows default to `'discount'` (backward-compat). `value_kind` (`'percentage'|'fixed'`), `duration_cycles` (int, null=forever), and `extra_days` (int) are the companion extras columns on the same table.
+- `billing_subscriptions.promo_effect_remaining_cycles` (integer, extras 019) — multi-cycle discount countdown. `NULL` = forever or no active discount; `N > 0` = N discounted cycles remain; `0` = exhausted (full price already restored). Decremented once per confirmed charge on the `subscription_authorized_payment.created` webhook by `resolveRenewalPromoEffect` in `packages/service-core/src/services/billing/promo-code/promo-code.renewal.ts`.
+- `billing_subscriptions.status = 'comp'` (`SubscriptionStatusEnum.COMP`) — a permanently-complimentary subscription. Created by `apps/api/src/services/subscription-comp-create.service.ts` as a direct DB insert with NO MercadoPago preapproval (`mp_subscription_id = NULL`). The dunning cron excludes it; `loadEntitlements` treats it as active. Not a 100% discount computation — an explicit status that cannot revert to full price.
+- These extras columns are applied by `pnpm db:apply-extras` (files 018/019/020 under `packages/db/src/migrations/extras/`). The MP preapproval mutation mechanism (lowering then restoring `transaction_amount`) was verified viable in the spike doc at `packages/service-core/src/services/billing/promo-code/docs/mp-preapproval-mutation-spike.md` (Outcome A — GO).
+
 ### Local testing for billing entitlements (SPEC-143)
 
 For entitlement gates, limit enforcement, route permission models, UI gates, and form persistence — work that has zero dependency on real MercadoPago — prefer **local-first** over staging redeploys.
@@ -404,6 +411,7 @@ Full details: [docs/guides/dependency-policy.md](docs/guides/dependency-policy.m
 
 ## Common Gotchas
 
+- **Amenity/feature catalog (SPEC-266)**: the `name` column was DROPPED. Display labels come from `@repo/i18n` (`accommodations.amenityNames.<slug>` / `accommodations.featureNames.<slug>`), keyed by `slug`. The amenity/feature slug regex now allows underscores (`^[a-z0-9]+(?:[-_][a-z0-9]+)*$`) — the slug IS the i18n key. Both tables carry `applicable_verticals text[]`; public catalog endpoints (`/api/v1/public/amenities|features`) accept `?applicableVertical=accommodation|gastronomy|experience` to scope results. **BETA-90** (remove `name` → i18n by slug) is ABSORBED by SPEC-266 — do not plan it separately.
 - **Biome `useDefaultParameterLast`**: Params with defaults MUST come after required params
 - **Biome `noExplicitAny`**: `biome-ignore` on interface/type properties does NOT work.. use proper types
 - **Biome `useExhaustiveDependencies`**: Pass whole objects (e.g. `[config]`) not individual properties

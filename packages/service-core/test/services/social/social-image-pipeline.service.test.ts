@@ -5,7 +5,7 @@
  *
  * Covers:
  * - Success path (public_url): asset created, cloudinaryUrl set, no warnings
- * - Success path (openai_file_refs): extracts downloadUrl from first fileRef
+ * - Success path (openai_file_refs): extracts download_link from first openaiFileIdRef
  * - social_post_media link row created when socialPostId is provided
  * - social_post_media link NOT created when socialPostId is absent
  * - Download timeout → graceful: assetId null, cloudinaryUrl null, warning
@@ -14,8 +14,8 @@
  * - social_assets create failure → graceful
  * - social_post_media create failure → non-fatal (assetId and cloudinaryUrl still returned)
  * - Video MIME type inferred as SocialMediaTypeEnum.VIDEO
- * - openai_file_refs mode stores fileId in openaiFileRef column
- * - Empty fileRefs array → graceful
+ * - openai_file_refs mode stores id in openaiFileRef column
+ * - Empty openaiFileIdRefs array → graceful
  *
  * SPEC-254 T-027.
  */
@@ -268,13 +268,18 @@ describe('SocialImagePipelineService', () => {
     // -------------------------------------------------------------------------
 
     describe('processImage — openai_file_refs mode', () => {
-        it('should extract downloadUrl from the first fileRef and succeed', async () => {
+        it('should extract download_link from the first openaiFileIdRef and succeed', async () => {
             // Arrange
             const image: GptImagePayload = {
                 mode: 'openai_file_refs',
-                fileRefs: [
-                    { fileId: 'file-abc123', downloadUrl: FAKE_IMAGE_URL },
-                    { fileId: 'file-def456', downloadUrl: 'https://example.com/other.jpg' }
+                openaiFileIdRefs: [
+                    {
+                        download_link: FAKE_IMAGE_URL,
+                        id: 'file-abc123',
+                        name: 'img.jpg',
+                        mime_type: 'image/jpeg'
+                    },
+                    { download_link: 'https://example.com/other.jpg', id: 'file-def456' }
                 ]
             };
             const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
@@ -282,7 +287,7 @@ describe('SocialImagePipelineService', () => {
             // Act
             const result = await service.processImage({ image, actorId: MOCK_ACTOR_UUID });
 
-            // Assert — only the first fileRef is processed
+            // Assert — only the first openaiFileIdRef is processed
             expect(fetchSpy).toHaveBeenCalledWith(FAKE_IMAGE_URL, expect.anything());
             expect(result.assetId).toBe(MOCK_ASSET_UUID);
             expect(result.cloudinaryUrl).not.toBeNull();
@@ -293,7 +298,7 @@ describe('SocialImagePipelineService', () => {
             // Arrange
             const image: GptImagePayload = {
                 mode: 'openai_file_refs',
-                fileRefs: [{ fileId: 'file-abc123', downloadUrl: FAKE_IMAGE_URL }]
+                openaiFileIdRefs: [{ download_link: FAKE_IMAGE_URL, id: 'file-abc123' }]
             };
             vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
 
@@ -306,11 +311,11 @@ describe('SocialImagePipelineService', () => {
             );
         });
 
-        it('should store the fileId in openaiFileRef column', async () => {
+        it('should store the id in openaiFileRef column', async () => {
             // Arrange
             const image: GptImagePayload = {
                 mode: 'openai_file_refs',
-                fileRefs: [{ fileId: 'file-abc123', downloadUrl: FAKE_IMAGE_URL }]
+                openaiFileIdRefs: [{ download_link: FAKE_IMAGE_URL, id: 'file-abc123' }]
             };
             vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
 
@@ -323,11 +328,11 @@ describe('SocialImagePipelineService', () => {
             );
         });
 
-        it('should return graceful failure when fileRefs array is empty', async () => {
+        it('should return graceful failure when openaiFileIdRefs array is empty', async () => {
             // Arrange
             const image: GptImagePayload = {
                 mode: 'openai_file_refs',
-                fileRefs: []
+                openaiFileIdRefs: []
             };
 
             // Act — no fetch call expected since downloadUrl will be ''
@@ -510,6 +515,24 @@ describe('SocialImagePipelineService', () => {
 
             // Act
             await service.processImage({ image });
+
+            // Assert
+            expect(assetModelMock.create).toHaveBeenCalledWith(
+                expect.objectContaining({ createdById: undefined })
+            );
+        });
+
+        it('should persist createdById as undefined when actorId is not a valid UUID (regression: gpt-action FK)', async () => {
+            // Regression: `social_assets.created_by_id` is a uuid FK to `users`.
+            // The GPT API-key actor id is the synthetic string 'gpt-action', which
+            // is NOT a UUID — passing it caused the insert to fail with
+            // "invalid input syntax for type uuid" and the asset row was lost.
+            // Arrange
+            const image: GptImagePayload = { mode: 'public_url', url: FAKE_IMAGE_URL };
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(makeOkResponse());
+
+            // Act
+            await service.processImage({ image, actorId: 'gpt-action' });
 
             // Assert
             expect(assetModelMock.create).toHaveBeenCalledWith(

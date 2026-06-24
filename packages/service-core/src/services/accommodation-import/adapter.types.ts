@@ -13,7 +13,12 @@
  * @module services/accommodation-import/adapter-types
  */
 
-import type { AccommodationImportDraft, FieldSource, ImportSource } from '@repo/schemas';
+import type {
+    AccommodationImportDraft,
+    FieldSource,
+    ImportFailureCode,
+    ImportSource
+} from '@repo/schemas';
 
 // ---------------------------------------------------------------------------
 // RawExtraction
@@ -130,7 +135,16 @@ export interface RawExtraction {
           }
         | undefined;
 
-    /** Candidate SEO metadata (mirrors `AccommodationImportDraft.seo`). */
+    /**
+     * Candidate SEO metadata (mirrors `AccommodationImportDraft.seo`).
+     *
+     * **A6 (SPEC-258) — intentionally NOT auto-derived on import.**
+     * SEO title and description are host-authored content: they require the
+     * host's own words, brand voice, and keyword intent. Auto-generating them
+     * from scraped text would produce generic copy that conflicts with the
+     * host's marketing strategy. Import adapters therefore leave this field
+     * absent; the host fills it manually in the panel after the import.
+     */
     readonly seo?:
         | {
               readonly title?: RawCandidateField | undefined;
@@ -168,6 +182,16 @@ export interface RawExtraction {
      * Used alongside `scrapedLocality` to narrow destination candidates.
      */
     readonly scrapedCountry?: string | undefined;
+
+    /**
+     * Machine-readable failure cause when this extraction yielded nothing.
+     *
+     * Set by adapters on their degraded empty-extraction returns so the
+     * orchestrator can propagate the specific failure classification to the
+     * API response. Absent on success or partial extractions that did return
+     * some usable data.
+     */
+    readonly failureCode?: ImportFailureCode | undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -208,9 +232,20 @@ export interface ImportContext {
 
     /**
      * Maximum wall-clock time (milliseconds) the adapter may spend fetching
-     * and parsing the URL before it must return whatever it has.
+     * and parsing the URL before it must return whatever it has. Sized for the
+     * fast structured-data path (JSON-LD / OpenGraph fetches).
      */
     readonly timeoutMs: number;
+
+    /**
+     * Maximum wall-clock time (milliseconds) for a synchronous Apify actor run
+     * (Airbnb, Booking fallback). Apify actors run server-side and routinely take
+     * 8-120s — far longer than {@link timeoutMs} — so they get their own, longer
+     * budget. Adapters that call `runApifyActor` use this instead of `timeoutMs`.
+     * Optional for backward compatibility; adapters fall back to `timeoutMs` when
+     * it is absent.
+     */
+    readonly apifyTimeoutMs?: number | undefined;
 
     /**
      * Maximum response body size (bytes) the adapter will accept from the

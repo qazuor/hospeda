@@ -12,7 +12,7 @@
  * What this validates:
  *  1. Posting `/host-onboarding/start` for a freshly-signed-up user returns
  *     `status='created'` with a non-null accommodationId.
- *  2. Posting the same payload a second time returns `status='already_host'`
+ *  2. Posting the same payload a second time returns `status='resumed'`
  *     and creates no new accommodation rows.
  *  3. Demoting the user back to USER (simulating legacy data) and posting
  *     a third time returns `status='resumed'`, references the same
@@ -49,7 +49,7 @@ test.describe('HOST-07a: onboarding idempotency + re-promotion @p0 @host @onboar
         userId = null;
     });
 
-    test('post1=created, post2=already_host, demote+post3=resumed (re-promoted)', async () => {
+    test('post1=created, post2=resumed, demote+post3=resumed (re-promoted)', async () => {
         const user = await signupUser({}, { apiBaseUrl: API_URL });
         userId = user.id;
         await forceVerifyEmail(user.id);
@@ -68,7 +68,7 @@ test.describe('HOST-07a: onboarding idempotency + re-promotion @p0 @host @onboar
         // The default owner-basico plan has max_accommodations=1. After Call 1
         // creates the first accommodation, the enforceAccommodationLimit middleware
         // blocks Call 2 (LIMIT_REACHED) before the idempotency handler can return
-        // 'already_host'. Pre-seeding owner-premium (max_accommodations=10) before
+        // the resumed DRAFT. Pre-seeding owner-premium (max_accommodations=10) before
         // Call 1 ensures the entitlement cache is populated with premium limits on
         // the first API call, so both Call 2 and Call 3 pass the limit check.
         // Note: createSubscription uses SELECT-or-INSERT for the billing_customers
@@ -124,7 +124,9 @@ test.describe('HOST-07a: onboarding idempotency + re-promotion @p0 @host @onboar
         );
         expect(accsAfter1.length).toBe(1);
 
-        // ── Call 2: already_host (no new rows) ─────────────────────────────
+        // ── Call 2: resumed (no new rows) ──────────────────────────────────
+        // The user is now HOST with an active DRAFT — the idempotency guard returns
+        // `resumed` instead of the old `already_host` short-circuit.
         // Note: If the API is running in a non-test mode (NODE_ENV !== 'test'), the rate
         // limiter may fire 429 on rapid sequential calls. We handle this gracefully by
         // annotating the test rather than hard-failing the run. The DB invariant (no new
@@ -149,8 +151,9 @@ test.describe('HOST-07a: onboarding idempotency + re-promotion @p0 @host @onboar
         }
 
         if (!secondCallRateLimited && second) {
-            expect(second.status).toBe('already_host');
-            expect(second.accommodationId).toBeNull();
+            // The user is HOST with an active DRAFT — idempotency guard returns `resumed`.
+            expect(second.status).toBe('resumed');
+            expect(second.accommodationId).not.toBeNull();
         }
 
         const accsAfter2 = await execSQL<{ id: string }>(

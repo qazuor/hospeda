@@ -4,7 +4,7 @@
  *
  * The caller supplies an explicit { faqId, displayOrder }[] array.
  * The service validates that all faqId values belong to the specified gastronomy.
- * Gated on COMMERCE_FAQS_EDIT_OWN (listing owner) or COMMERCE_EDIT_ALL (staff).
+ * Gated on COMMERCE_EDIT_OWN (listing owner) or COMMERCE_EDIT_ALL (staff).
  */
 import { FaqReorderPayloadSchema, GastronomyFaqRemoveOutputSchema } from '@repo/schemas';
 import { GastronomyService, ServiceError, reorderGastronomyFaqs } from '@repo/service-core';

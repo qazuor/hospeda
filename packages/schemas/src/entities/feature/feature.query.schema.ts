@@ -8,6 +8,7 @@ import {
 import { BaseSearchSchema, PaginationResultSchema } from '../../common/pagination.schema.js';
 import { createSearchMetadata } from '../../utils/openapi-metadata.factory.js';
 import { applyOpenApiMetadata } from '../../utils/openapi.utils.js';
+import { ApplicableVerticalSchema } from '../amenity/amenity.schema.js';
 import { FeatureSchema } from './feature.schema.js';
 
 /**
@@ -28,10 +29,12 @@ import { FeatureSchema } from './feature.schema.js';
  */
 export const FeatureFiltersSchema = z.object({
     // Basic filters
-    name: z.string().optional(),
     slug: z.string().optional(),
     category: z.string().optional(),
     icon: z.string().optional(),
+
+    /** Filter by applicable vertical (SPEC-266) */
+    applicableVertical: ApplicableVerticalSchema.optional(),
 
     // Availability filters
     isAvailable: z.boolean().optional(),
@@ -52,9 +55,6 @@ export const FeatureFiltersSchema = z.object({
     createdBefore: z.date().optional(),
 
     // Content pattern filters
-    nameStartsWith: z.string().min(1).max(50).optional(),
-    nameEndsWith: z.string().min(1).max(50).optional(),
-    nameContains: z.string().min(1).max(50).optional(),
     descriptionContains: z.string().min(1).max(100).optional(),
 
     // Popularity filters
@@ -84,10 +84,12 @@ export const FeatureFiltersSchema = z.object({
  */
 export const FeatureSearchSchema = BaseSearchSchema.extend({
     // Basic filters (flattened from FeatureFiltersSchema)
-    name: z.string().optional(),
     slug: z.string().optional(),
     category: z.string().optional(),
     icon: z.string().optional(),
+
+    /** Filter by applicable vertical (SPEC-266) */
+    applicableVertical: ApplicableVerticalSchema.optional(),
 
     // Availability filters
     isAvailable: z.boolean().optional(),
@@ -108,9 +110,6 @@ export const FeatureSearchSchema = BaseSearchSchema.extend({
     createdBefore: z.date().optional(),
 
     // Content pattern filters
-    nameStartsWith: z.string().min(1).max(50).optional(),
-    nameEndsWith: z.string().min(1).max(50).optional(),
-    nameContains: z.string().min(1).max(50).optional(),
     descriptionContains: z.string().min(1).max(100).optional(),
 
     // Popularity filters
@@ -142,8 +141,8 @@ export const FeatureSearchSchema = BaseSearchSchema.extend({
 export const FeatureListItemSchema = FeatureSchema.pick({
     id: true,
     slug: true,
-    name: true,
     description: true,
+    applicableVerticals: true,
     icon: true,
     isBuiltin: true,
     isFeatured: true,
@@ -158,7 +157,7 @@ export const FeatureListItemSchema = FeatureSchema.pick({
  */
 export const FeatureSearchResultItemSchema = FeatureListItemSchema.extend({
     score: z.number().min(0).max(1).optional(),
-    matchedFields: z.array(z.enum(['name', 'description', 'icon'])).optional()
+    matchedFields: z.array(z.enum(['slug', 'description', 'icon'])).optional()
 });
 
 // ============================================================================
@@ -231,8 +230,8 @@ export const FeaturePriorityDistributionSchema = z.object({
 export const FeatureSummarySchema = FeatureSchema.pick({
     id: true,
     slug: true,
-    name: true,
     description: true,
+    applicableVerticals: true,
     icon: true,
     isBuiltin: true,
     isFeatured: true
@@ -374,10 +373,12 @@ export const HttpFeatureSearchSchema = HttpPaginationSchema.merge(HttpSortingSch
     q: z.string().optional(),
 
     // Basic filters
-    name: z.string().optional(),
     slug: z.string().optional(),
     category: z.string().optional(),
     icon: z.string().optional(),
+
+    /** Filter by applicable vertical (SPEC-266) */
+    applicableVertical: ApplicableVerticalSchema.optional(),
 
     // Availability filters using factories
     isAvailable: HttpQueryFields.isAvailable(),

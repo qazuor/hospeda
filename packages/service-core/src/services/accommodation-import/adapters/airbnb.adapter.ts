@@ -18,20 +18,59 @@
  * `{ startUrls: [{ url: listingUrl }], locale? }` as the actor `INPUT`. The
  * `locale` (mapped from `ctx.locale` — see {@link mapAirbnbActorLocale}) makes
  * the actor return the listing in the user's language. The default actor is
- * `tri_angle/airbnb-scraper`, whose item shape this adapter maps (title,
- * description, metaDescription, subDescription.items, amenities, coordinates,
- * location). If you swap to an actor with a different schema, adjust both
- * `actorInput` and {@link mapItemToRawExtraction} — the provider is swappable
- * via the `ctx.credentials.apifyAirbnbActor` config value.
+ * `tri_angle/airbnb-rooms-urls-scraper` (accepts /rooms/ detail URLs; do NOT
+ * use `tri_angle/airbnb-scraper`, which is a search scraper that rejects detail
+ * URLs). The item shape mapped here: `title`, `description`, `metaDescription`,
+ * `subDescription.items`, `amenities` (grouped values array), `coordinates`,
+ * `images` (objects with `imageUrl` key), `location`. If you swap to an actor
+ * with a different schema, adjust both `actorInput` and
+ * {@link mapItemToRawExtraction} — the provider is swappable via the
+ * `ctx.credentials.apifyAirbnbActor` config value.
  *
  * NOTE: the locale MUST NOT be appended to the listing URL as `?locale=` — that
  * breaks the tri_angle actor (empty dataset). It goes in the actor input only.
+ *
+ * **Price probe (SPEC-258)**: the adapter sends `checkIn`, `checkOut`, `adults`,
+ * and `currency` in the actor input so the actor can return a real price. Dates
+ * are computed dynamically (today + {@link PRICE_PROBE_LEAD_DAYS} days for
+ * check-in, + {@link PRICE_PROBE_NIGHTS} nights for check-out). When the actor
+ * returns a parseable price, a per-night "from" figure is stored in
+ * `raw.price.price`. The `RawCandidateField` layer has no `confidence` field;
+ * the mapping step must apply a lower confidence to this orientative estimate.
  *
  * @module services/accommodation-import/adapters/airbnb
  */
 
 import type { ImportContext, ImportSourceAdapter, RawExtraction } from '../adapter.types.js';
 import { runApifyActor } from './apify-client.js';
+
+// ---------------------------------------------------------------------------
+// Price probe constants
+// ---------------------------------------------------------------------------
+
+/**
+ * Lead time in days ahead of today used as the check-in date for the price probe.
+ * A near-future date maximises the chance the listing has real pricing.
+ */
+const PRICE_PROBE_LEAD_DAYS = 30;
+
+/**
+ * Length of the price probe stay in nights. Two nights is the minimum that most
+ * OTA pricing engines accept and provides a meaningful per-night average.
+ */
+const PRICE_PROBE_NIGHTS = 2;
+
+/**
+ * Number of adults passed to the actor for the price probe.
+ */
+const PRICE_PROBE_ADULTS = 2;
+
+/**
+ * ISO 4217 currency code requested from the actor.
+ * The actor may return a display symbol (e.g. "$") — we ignore it and always
+ * store the currency we REQUESTED so the value is unambiguous.
+ */
+const PRICE_PROBE_CURRENCY = 'USD' as const;
 
 // ---------------------------------------------------------------------------
 // Airbnb dataset item type
@@ -53,34 +92,98 @@ interface AirbnbCoordinates {
 
 /**
  * Image entry — actors may return plain URL strings or objects with a `url`
- * property.
+ * property (generic shape) or `imageUrl` property (tri_angle/airbnb-rooms-urls-scraper
+ * returns `{ caption, imageUrl, orientation }` objects).
  */
-type AirbnbImageEntry = string | { readonly url?: string | null | undefined };
+type AirbnbImageEntry =
+    | string
+    | {
+          readonly url?: string | null | undefined;
+          readonly imageUrl?: string | null | undefined;
+      };
 
 /**
- * Pricing sub-object as returned by some actors.
+ * A single price line inside the `breakDown` object returned by
+ * `tri_angle/airbnb-rooms-urls-scraper` when check-in/out dates are given.
+ *
+ * Real probe shape (SPEC-258):
+ * ```json
+ * { "description": "2 nights x $157.32", "price": "$314.63" }
+ * ```
  */
-interface AirbnbPricing {
-    readonly rate?: number | string | null | undefined;
-    readonly price?: number | string | null | undefined;
+interface AirbnbPriceBreakDownLine {
+    readonly description?: string | null | undefined;
+    readonly price?: string | null | undefined;
 }
 
 /**
- * Amenity entry — Apify Airbnb actors return amenities heterogeneously: a plain
- * string array, an array of `{ title | name, available }` objects, or grouped
- * objects with a nested `values` array. {@link extractAmenityNames} normalises
- * all of these to a flat list of names.
+ * The `breakDown` sub-object inside the date-based price response.
  *
- * NOTE (SPEC-257): the exact actor field name(s) for amenities/summary/beds are
- * confirmed against the live Apify actor output during the smoke (T-010); the
- * candidate keys declared on {@link AirbnbItem} cover the known actor shapes.
+ * Real probe shape (SPEC-258):
+ * ```json
+ * {
+ *   "basePrice": { "description": "2 nights x $157.32", "price": "$314.63" },
+ *   "total":     { "price": "$315", "description": "Total (calculated price, may vary)" }
+ * }
+ * ```
+ */
+interface AirbnbPriceBreakDown {
+    readonly basePrice?: AirbnbPriceBreakDownLine | null | undefined;
+    readonly total?: AirbnbPriceBreakDownLine | null | undefined;
+}
+
+/**
+ * Price sub-object as returned by `tri_angle/airbnb-rooms-urls-scraper`.
+ *
+ * Two shapes:
+ * - **Dateless / unavailable**: `{ "label": "To get prices, specify check-in..." }`
+ *   (no `price` / `breakDown` fields).
+ * - **With dates**: `{ "label": "$315 for 2 nights", "qualifier": "for 2 nights",
+ *   "price": "$315", "breakDown": { "basePrice": {...}, "total": {...} } }`.
+ *
+ * This interface covers generic shapes too (`rate`, numeric `price` from other actors).
+ */
+interface AirbnbPricing {
+    readonly label?: string | null | undefined;
+    readonly qualifier?: string | null | undefined;
+    /** Total price as a currency-symbol string, e.g. `"$315"`. */
+    readonly price?: string | number | null | undefined;
+    readonly breakDown?: AirbnbPriceBreakDown | null | undefined;
+    // Generic actor fields
+    readonly rate?: number | string | null | undefined;
+}
+
+/**
+ * Amenity entry — Apify Airbnb actors return amenities heterogeneously:
+ *
+ * 1. **Plain string array** — older actors.
+ * 2. **Flat `{ title | name, available }` objects** — generic actors.
+ * 3. **Grouped objects** — `tri_angle/airbnb-rooms-urls-scraper` (real shape,
+ *    SPEC-258 probe):
+ *    ```json
+ *    { "title": "Internet and office", "values": [
+ *      { "title": "Wifi", "subtitle": "", "icon": "SYSTEM_WI_FI", "available": true }
+ *    ] }
+ *    ```
+ *    Group-level entries have a `values` array of individual amenity items.
+ *    Only items with `available !== false` are included. The "Not included" group
+ *    contains items with `available: false` (e.g. Washer, Dryer).
+ *
+ * A single interface covers all three shapes — the `values` field is optional,
+ * allowing the same type to represent both group entries (have `values`) and
+ * individual amenity items (no `values`, have `available`).
+ *
+ * {@link extractAmenityNames} normalises all shapes to a flat deduplicated name list.
  */
 type AirbnbAmenityEntry =
     | string
     | {
-          readonly name?: string | null | undefined;
           readonly title?: string | null | undefined;
+          readonly name?: string | null | undefined;
+          readonly subtitle?: string | null | undefined;
+          readonly icon?: string | null | undefined;
           readonly available?: boolean | null | undefined;
+          /** Present on group entries; absent on individual amenity items. */
           readonly values?: readonly AirbnbAmenityEntry[] | null | undefined;
       };
 
@@ -160,7 +263,9 @@ interface AirbnbItem {
     readonly bedrooms?: number | string | null | undefined;
     readonly bathrooms?: number | string | null | undefined;
 
-    // Price (flat number or nested object)
+    // Price — tri_angle/airbnb-rooms-urls-scraper always returns an object:
+    // dateless → { label: "To get prices..." }, with dates → { label, price, breakDown }.
+    // Generic actors may return a plain number or string.
     readonly price?: number | string | AirbnbPricing | null | undefined;
     readonly pricing?: AirbnbPricing | null | undefined;
 }
@@ -217,8 +322,13 @@ function extractCoordinates(
 // ---------------------------------------------------------------------------
 
 /**
- * Normalises a heterogeneous images array (strings or `{url}` objects) to a
- * plain string array of absolute URLs.
+ * Normalises a heterogeneous images array to a plain string array of absolute URLs.
+ *
+ * Handles three entry shapes:
+ * - Plain URL string.
+ * - `{ url: string }` — generic actor shape.
+ * - `{ imageUrl: string }` — `tri_angle/airbnb-rooms-urls-scraper` shape
+ *   (real probe: `{ caption, imageUrl, orientation }`).
  *
  * @param entries - Raw image entries from the dataset item.
  * @returns Array of URL strings; empty array when nothing is usable.
@@ -229,41 +339,163 @@ function extractImageUrls(entries: readonly AirbnbImageEntry[] | null | undefine
     for (const entry of entries) {
         if (typeof entry === 'string' && entry.length > 0) {
             result.push(entry);
-        } else if (
-            typeof entry === 'object' &&
-            entry !== null &&
-            typeof entry.url === 'string' &&
-            entry.url.length > 0
-        ) {
-            result.push(entry.url);
+        } else if (typeof entry === 'object' && entry !== null) {
+            // Prefer `imageUrl` (rooms-urls-scraper), fall back to `url` (generic shape).
+            const href =
+                (typeof entry.imageUrl === 'string' && entry.imageUrl.length > 0
+                    ? entry.imageUrl
+                    : null) ??
+                (typeof entry.url === 'string' && entry.url.length > 0 ? entry.url : null);
+            if (href !== null) {
+                result.push(href);
+            }
         }
     }
     return result;
 }
 
 // ---------------------------------------------------------------------------
-// Price extraction helper
+// Price extraction helpers
 // ---------------------------------------------------------------------------
 
 /**
- * Attempts to extract a clean numeric price from the various shapes Airbnb
- * actors use (`number`, `string`, `{ rate }`, `{ price }`).
+ * Parses a numeric price value from a currency-symbol string (e.g. `"$315"`,
+ * `"$157.32"`, `"$1,200.00"`).
  *
- * Returns `null` when the value is absent or non-numeric.
+ * Strategy (mirrors `generic.adapter.ts#parsePriceFromRange`):
+ * 1. Strip currency symbols and letter characters.
+ * 2. Remove comma thousands-separators (`,`).
+ * 3. Accept only strings that now match `^\d+(\.\d{1,2})?$` — at most two
+ *    decimal places. This rejects European-format strings like `"1.200"` (three
+ *    decimal places after the dot) which would otherwise be mis-parsed as `1.2`.
+ *    Under-resolve is safer than mis-resolve.
  *
- * @param raw - The raw `price` or `pricing` field from the dataset item.
- * @returns A finite number, or `null`.
+ * @param raw - A price string possibly prefixed with a currency symbol.
+ * @returns A positive finite number, or `null`.
  */
-function extractPrice(raw: number | string | AirbnbPricing | null | undefined): number | null {
+function parseCurrencyString(raw: string | null | undefined): number | null {
+    if (!raw || raw.trim().length === 0) return null;
+    // Remove currency symbols / letters; remove comma thousands-separators.
+    const cleaned = raw.replace(/[^0-9.,]/g, '').replace(/,/g, '');
+    // Reject if not a clean integer or decimal with ≤2 decimal places.
+    if (!/^\d+(\.\d{1,2})?$/.test(cleaned)) return null;
+    const n = Number(cleaned);
+    return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+/**
+ * Attempts to extract a per-night price from the price object returned by
+ * `tri_angle/airbnb-rooms-urls-scraper` when check-in/out dates are provided.
+ *
+ * **Extraction order (SPEC-258):**
+ * 1. Parse the per-night rate from `breakDown.basePrice.description`
+ *    (e.g. `"2 nights x $157.32"` → `157.32`). This is the most accurate
+ *    source because it's already per-night.
+ * 2. Fall back to dividing `breakDown.total.price` by `nights`
+ *    (e.g. `"$315"` ÷ 2 → `157.5`).
+ * 3. Fall back to dividing the top-level `price.price` string by `nights`.
+ * 4. Fall back to dividing a numeric/string top-level price by `nights`
+ *    (for generic actor shapes that return a flat number or string).
+ *
+ * Returns `null` when no price can be derived OR when the computed per-night
+ * value is `< 1` (a sub-$1/night result indicates a mis-parse or placeholder).
+ * Under-resolve is always safer than mis-resolve.
+ *
+ * @param raw - The raw `price` field from the dataset item.
+ * @param nights - Number of probe nights used to divide a total into per-night.
+ * @returns A finite per-night price `≥ 1`, or `null`.
+ */
+function extractPerNightPrice(
+    raw: number | string | AirbnbPricing | null | undefined,
+    nights: number
+): number | null {
     if (raw == null) return null;
-    if (typeof raw === 'number') return Number.isFinite(raw) ? raw : null;
-    if (typeof raw === 'string') {
-        const n = Number(raw.replace(/[^0-9.]/g, ''));
-        return Number.isFinite(n) && n > 0 ? n : null;
+
+    // Flat number (generic actors)
+    if (typeof raw === 'number') {
+        const perNight = raw / nights;
+        return Number.isFinite(perNight) && perNight >= 1 ? perNight : null;
     }
-    // AirbnbPricing object
-    const candidate = raw.rate ?? raw.price;
-    return extractPrice(candidate);
+
+    // Flat string (generic actors — e.g. "157.32")
+    if (typeof raw === 'string') {
+        const total = parseCurrencyString(raw);
+        if (total === null) return null;
+        const perNight = total / nights;
+        return Number.isFinite(perNight) && perNight >= 1 ? perNight : null;
+    }
+
+    // AirbnbPricing object (rooms-urls-scraper)
+    const pricing = raw;
+
+    // 1. Parse per-night from breakDown.basePrice.description: "N nights x $157.32"
+    const basePriceDesc = pricing.breakDown?.basePrice?.description;
+    if (typeof basePriceDesc === 'string') {
+        // Match "N nights x $<amount>" — extract the per-night dollar figure.
+        // Use parseCurrencyString for the captured amount so that European-format
+        // strings (e.g. "x $1.200") are rejected rather than mis-parsed as 1.2.
+        const perNightMatch = /x\s*\$?([\d,.]+)/i.exec(basePriceDesc);
+        if (perNightMatch?.[1]) {
+            const n = parseCurrencyString(perNightMatch[1]);
+            if (n !== null && n >= 1) return n;
+        }
+    }
+
+    // 2. Divide breakDown.total.price by nights
+    const totalPriceStr = pricing.breakDown?.total?.price;
+    if (totalPriceStr) {
+        const total = parseCurrencyString(String(totalPriceStr));
+        if (total !== null) {
+            const perNight = total / nights;
+            if (Number.isFinite(perNight) && perNight >= 1) return perNight;
+        }
+    }
+
+    // 3. Divide top-level price.price by nights (e.g. "$315")
+    const topPriceStr = pricing.price;
+    if (topPriceStr != null) {
+        const total =
+            typeof topPriceStr === 'number'
+                ? Number.isFinite(topPriceStr)
+                    ? topPriceStr
+                    : null
+                : parseCurrencyString(String(topPriceStr));
+        if (total !== null) {
+            const perNight = total / nights;
+            if (Number.isFinite(perNight) && perNight >= 1) return perNight;
+        }
+    }
+
+    // 4. Generic fallback: rate field
+    if (pricing.rate != null) {
+        const rateRaw =
+            typeof pricing.rate === 'number'
+                ? pricing.rate
+                : parseCurrencyString(String(pricing.rate));
+        if (rateRaw !== null && Number.isFinite(rateRaw) && rateRaw >= 1) return rateRaw;
+    }
+
+    return null;
+}
+
+/**
+ * Builds the check-in and check-out date strings (YYYY-MM-DD) for the price
+ * probe. Check-in is {@link PRICE_PROBE_LEAD_DAYS} days from today;
+ * check-out is {@link PRICE_PROBE_NIGHTS} nights later.
+ *
+ * Isolated into a pure helper so that tests can stub date generation if needed,
+ * and so that the single `new Date()` call is easy to audit.
+ *
+ * @returns `{ checkIn, checkOut }` as `YYYY-MM-DD` strings.
+ */
+function buildPriceProbeDates(): { readonly checkIn: string; readonly checkOut: string } {
+    const toYMD = (d: Date): string => d.toISOString().slice(0, 10);
+    const now = new Date();
+    const checkInDate = new Date(now);
+    checkInDate.setDate(now.getDate() + PRICE_PROBE_LEAD_DAYS);
+    const checkOutDate = new Date(checkInDate);
+    checkOutDate.setDate(checkInDate.getDate() + PRICE_PROBE_NIGHTS);
+    return { checkIn: toYMD(checkInDate), checkOut: toYMD(checkOutDate) };
 }
 
 // ---------------------------------------------------------------------------
@@ -483,11 +715,20 @@ function mapItemToRawExtraction(raw: AirbnbItem): RawExtraction {
         };
     }
 
-    // -- price -----------------------------------------------------------------
-    const priceValue = extractPrice(raw.price) ?? extractPrice(raw.pricing ?? null);
-    if (priceValue !== null) {
+    // -- price (per-night orientative "from" figure — SPEC-258) ---------------
+    // The actor is called with check-in/check-out dates so it can return real
+    // pricing. We derive a per-night figure and store it as an orientative
+    // "from" price. Tagged `source: 'text'` (→ 50% confidence via
+    // CONFIDENCE_BY_SOURCE) because this is a date-specific parsed estimate,
+    // NOT the listing's authoritative base price. Signals "plausible, requires
+    // host review" to the downstream mapping pipeline.
+    const perNightPrice =
+        extractPerNightPrice(raw.price, PRICE_PROBE_NIGHTS) ??
+        extractPerNightPrice(raw.pricing ?? null, PRICE_PROBE_NIGHTS);
+    if (perNightPrice !== null) {
         result.price = {
-            price: { value: priceValue, source: 'official_api' }
+            price: { value: perNightPrice, source: 'text' as const },
+            currency: { value: PRICE_PROBE_CURRENCY, source: 'text' as const }
         };
     }
 
@@ -590,8 +831,6 @@ export class AirbnbAdapter implements ImportSourceAdapter {
      *   `{ sourcePlatform: 'airbnb' }` on degradation.
      */
     async extract(url: URL, ctx: ImportContext): Promise<RawExtraction> {
-        const empty: RawExtraction = { sourcePlatform: this.source };
-
         // -------------------------------------------------------------------
         // Step 1: Credential degradation (US-11)
         // Both token AND actor ID are required; missing either → degrade.
@@ -600,28 +839,42 @@ export class AirbnbAdapter implements ImportSourceAdapter {
         const actor = ctx.credentials.apifyAirbnbActor;
 
         if (!token || !actor) {
-            return empty;
+            return { sourcePlatform: this.source, failureCode: 'credentials_missing' };
         }
 
         // -------------------------------------------------------------------
         // Step 2: Run the Apify actor
-        // actorInput shape: { startUrls: [{ url }] } — standard convention
-        // for most Airbnb Apify actors.  If the chosen actor expects a
-        // different schema (e.g. { urls: [...] }), update this object.
+        // actorInput shape: { startUrls: [{ url }], locale?, checkIn, checkOut,
+        // adults, currency } — standard convention for tri_angle actors.
+        // checkIn/checkOut are YYYY-MM-DD strings computed dynamically so the
+        // actor returns real pricing data (SPEC-258 price probe).
         // -------------------------------------------------------------------
         const actorLocale = mapAirbnbActorLocale(ctx.locale);
-        const dataset = await runApifyActor({
+        const { checkIn, checkOut } = buildPriceProbeDates();
+        const result = await runApifyActor({
             token,
             actor,
             actorInput: {
                 startUrls: [{ url: url.href }],
-                ...(actorLocale ? { locale: actorLocale } : {})
+                ...(actorLocale ? { locale: actorLocale } : {}),
+                checkIn,
+                checkOut,
+                adults: PRICE_PROBE_ADULTS,
+                currency: PRICE_PROBE_CURRENCY
             },
-            timeoutMs: ctx.timeoutMs
+            // Apify actors run synchronously for 8-120s — use the longer Apify
+            // budget, not the short JSON-LD fetch timeout, or the run always aborts.
+            timeoutMs: ctx.apifyTimeoutMs ?? ctx.timeoutMs
         });
 
-        if (dataset.length === 0) {
-            return empty;
+        // Propagate transport-level failure codes (credentials_missing, timeout, provider_error).
+        if (result.failureCode !== undefined) {
+            return { sourcePlatform: this.source, failureCode: result.failureCode };
+        }
+
+        // 2xx + empty array → anti-bot / source blocked (not a transport error).
+        if (result.items.length === 0) {
+            return { sourcePlatform: this.source, failureCode: 'source_blocked' };
         }
 
         // -------------------------------------------------------------------
@@ -629,7 +882,7 @@ export class AirbnbAdapter implements ImportSourceAdapter {
         // Cast to AirbnbItem — the interface deliberately omits review/rating
         // fields so they cannot be accessed regardless of what the actor sent.
         // -------------------------------------------------------------------
-        const firstItem = dataset[0] as AirbnbItem;
+        const firstItem = result.items[0] as AirbnbItem;
         return mapItemToRawExtraction(firstItem);
     }
 }

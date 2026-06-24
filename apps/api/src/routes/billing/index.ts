@@ -211,6 +211,15 @@ export function createBillingRoutesHandler(): AppOpenAPI {
     // idempotency-key middleware, no mutation.
     router.route('/subscriptions', downgradePreviewRouter);
 
+    // Mount user-facing promo code routes (validate + apply) BEFORE the qzpay
+    // wrapper. qzpay-hono ships a prebuilt `/promo-codes/validate` whose response
+    // shape predates SPEC-262 (no typed `effectPreview`). Hono uses first-match
+    // routing, so our custom router — which exposes effectPreview (T-012) — must be
+    // registered first or the prebuilt one wins and the web checkout preview breaks.
+    // Same ordering rule the downgrade-preview and soft-cancel routes rely on above.
+    // Admin promo code CRUD is mounted separately under /admin/billing/promo-codes.
+    router.route('/promo-codes', userPromoCodesRouter);
+
     // Mount QZPay pre-built billing routes with ownership verification.
     // The ownership middleware ensures users can only access their own billing
     // resources (customers, subscriptions, invoices, payments, entitlements).
@@ -222,10 +231,6 @@ export function createBillingRoutesHandler(): AppOpenAPI {
     qzpayWrapper.use('*', billingOwnershipMiddleware());
     qzpayWrapper.route('/', qzpayRoutes);
     router.route('/', qzpayWrapper);
-
-    // Mount user-facing promo code routes (validate + apply).
-    // Admin promo code CRUD is mounted separately under /admin/billing/promo-codes.
-    router.route('/promo-codes', userPromoCodesRouter);
 
     // Mount custom add-on routes
     router.route('/addons', addonsRouter);

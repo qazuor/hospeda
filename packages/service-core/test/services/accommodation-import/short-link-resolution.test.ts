@@ -30,7 +30,7 @@ import type { Actor, ServiceConfig } from '../../../src/types/index.js';
 // Module mocks — must be declared before any dynamic imports.
 // ---------------------------------------------------------------------------
 
-vi.mock('@repo/utils', () => ({
+vi.mock('@repo/utils/safe-fetch', () => ({
     safeExternalFetch: vi.fn()
 }));
 
@@ -62,7 +62,7 @@ vi.mock('../../../src/services/destination/destination.service.js', () => ({
     DestinationService: vi.fn()
 }));
 
-import { safeExternalFetch } from '@repo/utils';
+import { safeExternalFetch } from '@repo/utils/safe-fetch';
 import { AccommodationImportService } from '../../../src/services/accommodation-import/accommodation-import.service.js';
 import { AirbnbAdapter } from '../../../src/services/accommodation-import/adapters/airbnb.adapter.js';
 import { BookingAdapter } from '../../../src/services/accommodation-import/adapters/booking.adapter.js';

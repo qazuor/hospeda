@@ -124,6 +124,7 @@ vi.mock('@repo/db', () => ({
     and: vi.fn(),
     count: vi.fn(),
     desc: vi.fn(),
+    getTableColumns: vi.fn(() => ({})),
     isNull: vi.fn(),
     lte: vi.fn(),
     or: vi.fn(),

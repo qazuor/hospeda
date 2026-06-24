@@ -1,0 +1,16 @@
+{
+    "$schema": "../../schemas/amenity.schema.json",
+    "id": "100-amenity-services-private-events",
+    "slug": "private_events",
+    "description": {
+        "es": "Espacio disponible para eventos y celebraciones privadas",
+        "en": "Espacio disponible para eventos y celebraciones privadas",
+        "pt": "Espacio disponible para eventos y celebraciones privadas"
+    },
+    "applicableVerticals": ["gastronomy"],
+    "type": "SERVICES",
+    "icon": "CoveredGrillAreaIcon",
+    "isBuiltin": false,
+    "isFeatured": false,
+    "displayWeight": 40
+}

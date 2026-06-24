@@ -1,0 +1,12 @@
+{
+    "specId": "SPEC-279",
+    "title": "Cross-user data transfer (entity ownership migration A → B)",
+    "type": "feature",
+    "complexity": "high",
+    "status": "draft-exploration",
+    "created": "2026-06-22T00:00:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["admin", "data-migration", "ownership", "billing", "entitlements", "security", "high-risk"]
+}

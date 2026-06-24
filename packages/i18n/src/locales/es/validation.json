@@ -491,6 +491,10 @@
             "min": "El slug debe tener al menos {{min}} caracteres",
             "pattern": "El formato del slug no es válido",
             "required": "El slug es obligatorio"
+        },
+        "applicableVerticals": {
+            "min": "El applicable verticals debe tener al menos {{min}} caracteres",
+            "required": "El applicable verticals es obligatorio"
         }
     },
     "attraction": {
@@ -934,6 +938,9 @@
             }
         },
         "startPaid": {
+            "appliedEffect": {
+                "invalid": "El efecto aplicado no es válido"
+            },
             "billingInterval": {
                 "invalid": "El intervalo de facturación no es válido"
             },
@@ -2562,6 +2569,10 @@
             "min": "El slug debe tener al menos {{min}} caracteres",
             "pattern": "El formato del slug no es válido",
             "required": "El slug es obligatorio"
+        },
+        "applicableVerticals": {
+            "min": "El applicable verticals debe tener al menos {{min}} caracteres",
+            "required": "El applicable verticals es obligatorio"
         }
     },
     "field": {
@@ -3287,8 +3298,9 @@
             "required": "El draft id es obligatorio"
         },
         "image": {
-            "fileRefs": {
-                "required": "El file refs es obligatorio"
+            "openaiFileIdRefs": {
+                "required": "Se requiere al menos una referencia de archivo de OpenAI",
+                "invalidUrl": "La URL de descarga de OpenAI no es válida"
             },
             "url": {
                 "invalid": "El url no es válido"

@@ -15,21 +15,27 @@
  *    admin panel so they can complete the rest of the listing (price,
  *    photos, amenities, contact, etc.).
  *
- * The endpoint can answer with three terminal states:
+ * The endpoint can answer with two terminal states:
  *  - `created`     -> a fresh DRAFT was inserted, redirect to its edit page
  *                     (admin) or to the web property list.
  *  - `resumed`     -> the user already had an active DRAFT, same redirect.
- *  - `already_host` -> the user is already HOST/ADMIN, redirect to the admin
- *                      home (if allowed) or to the web property list.
  *
  * On 503 (billing layer unavailable), the form surfaces a retry-friendly
  * message instead of a generic error.
+ *
+ * SPEC-258 B-web: when an import returns extra fields (description, capacity,
+ * bedrooms, beds, bathrooms, price, currency, coordinates, street, number,
+ * phone, website, amenityIds), those are captured in state and submitted with
+ * the payload. They render in a collapsible "Esto importamos" section only when
+ * the import returned a value for each one (progressive disclosure).
  */
 
 import { SearchableSelect } from '@/components/form/SearchableSelect.client';
 import type { SelectableItem } from '@/components/form/SearchableSelect.client';
 import { ImportFromUrl } from '@/components/host/ImportFromUrl.client';
 import { getAccommodationTypeIcon } from '@/lib/accommodation-type-icons';
+import { WebEvents } from '@/lib/analytics/events';
+import { trackEvent } from '@/lib/analytics/posthog-client';
 import { translateApiError } from '@/lib/api-errors';
 import { destinationsApi } from '@/lib/api/endpoints';
 import { buildLimitReachedPayloadFromDetails } from '@/lib/billing-limit-error';
@@ -92,7 +98,39 @@ type ImportMeta = Readonly<{
     name?: FieldImportMeta;
     summary?: FieldImportMeta;
     type?: FieldImportMeta;
+    description?: FieldImportMeta;
+    maxGuests?: FieldImportMeta;
+    bedrooms?: FieldImportMeta;
+    beds?: FieldImportMeta;
+    bathrooms?: FieldImportMeta;
+    basePrice?: FieldImportMeta;
+    street?: FieldImportMeta;
+    number?: FieldImportMeta;
+    phone?: FieldImportMeta;
+    website?: FieldImportMeta;
+    coordinates?: FieldImportMeta;
 }>;
+
+/**
+ * Extra imported fields that are optional in the submit payload.
+ * Submitted only when a value exists (import returned it).
+ */
+type ImportedExtras = {
+    description?: string;
+    maxGuests?: number;
+    bedrooms?: number;
+    beds?: number;
+    bathrooms?: number;
+    basePrice?: number;
+    currency?: string;
+    latitude?: string;
+    longitude?: string;
+    street?: string;
+    number?: string;
+    phone?: string;
+    website?: string;
+    amenityIds?: ReadonlyArray<string>;
+};
 
 /**
  * Destination hint carried from the import response.
@@ -103,7 +141,7 @@ type DestinationHint = {
     readonly candidates: ReadonlyArray<{ readonly id: string; readonly name: string }>;
 };
 
-type OnboardingStartStatus = 'created' | 'resumed' | 'already_host';
+type OnboardingStartStatus = 'created' | 'resumed';
 
 /**
  * Force Better Auth to re-read the session from the database and rotate its
@@ -155,15 +193,44 @@ const ACCOMMODATION_TYPE_VALUES = Object.values(AccommodationTypeEnum);
 const CITY_AUTOCOMPLETE_LIMIT = 10;
 
 /**
+ * Renders a confidence badge matching the inline pattern used for name/summary/type.
+ */
+function ConfidenceBadge({
+    meta,
+    testId,
+    t
+}: {
+    readonly meta: FieldImportMeta;
+    readonly testId: string;
+    readonly t: (key: string, fallback: string) => string;
+}) {
+    return (
+        <span
+            className={styles.confidenceBadge}
+            data-testid={testId}
+        >
+            {t('host.importFromUrl.prefill.badge.imported', 'Importado')}
+            <span aria-hidden="true">{t('host.importFromUrl.prefill.badge.separator', '·')}</span>
+            {`${String(meta.confidence)}%`}
+            <span aria-hidden="true">{t('host.importFromUrl.prefill.badge.separator', '·')}</span>
+            {meta.source}
+        </span>
+    );
+}
+
+/**
  * Minimal create-property form. On submit, POSTs to the draft endpoint and
  * redirects to the admin edit page on success. Shows inline field errors and
  * a top-level submit error when the API fails.
+ *
+ * SPEC-258 B-web: when import data is present, extra optional fields are
+ * rendered in a collapsible section and submitted with the payload.
  */
 export function CreatePropertyMiniForm({
     locale,
     apiUrl,
     adminUrl,
-    accountPropertiesUrl,
+    accountPropertiesUrl: _accountPropertiesUrl,
     canAccessAdminPanel: _canAccessAdminPanel
 }: CreatePropertyMiniFormProps) {
     const { t } = createTranslations(locale);
@@ -171,6 +238,16 @@ export function CreatePropertyMiniForm({
     const nameId = useId();
     const summaryId = useId();
     const typeId = useId();
+    const descriptionId = useId();
+    const maxGuestsId = useId();
+    const bedroomsId = useId();
+    const bedsId = useId();
+    const bathroomsId = useId();
+    const basePriceId = useId();
+    const streetId = useId();
+    const numberFieldId = useId();
+    const phoneId = useId();
+    const websiteId = useId();
 
     const [name, setName] = useState('');
     const [summary, setSummary] = useState('');
@@ -185,6 +262,10 @@ export function CreatePropertyMiniForm({
     const [importMeta, setImportMeta] = useState<ImportMeta>({});
     const [importedOnce, setImportedOnce] = useState(false);
     const [destinationHint, setDestinationHint] = useState<DestinationHint | null>(null);
+
+    // SPEC-258: extras from the import (editable by the host, submitted flat)
+    const [extras, setExtras] = useState<ImportedExtras>({});
+    const [extrasOpen, setExtrasOpen] = useState(true);
 
     // Items for the accommodation type picker. Memoized so the dropdown
     // doesn't re-allocate on every render. Each item carries the matching
@@ -204,6 +285,7 @@ export function CreatePropertyMiniForm({
      * Called by the ImportFromUrl island after a successful import.
      * Pre-fills form fields from the response draft without submitting anything.
      * Per-field confidence badges are stored in `importMeta`.
+     * SPEC-258: also captures extra optional fields into `extras` state.
      */
     const handleImported = useCallback(
         (response: AccommodationImportResponse): void => {
@@ -211,7 +293,22 @@ export function CreatePropertyMiniForm({
                 name?: FieldImportMeta;
                 summary?: FieldImportMeta;
                 type?: FieldImportMeta;
+                description?: FieldImportMeta;
+                maxGuests?: FieldImportMeta;
+                bedrooms?: FieldImportMeta;
+                beds?: FieldImportMeta;
+                bathrooms?: FieldImportMeta;
+                basePrice?: FieldImportMeta;
+                street?: FieldImportMeta;
+                number?: FieldImportMeta;
+                phone?: FieldImportMeta;
+                website?: FieldImportMeta;
+                coordinates?: FieldImportMeta;
             } = {};
+
+            const nextExtras: ImportedExtras = {};
+
+            // ── Core fields (always-visible, required) ─────────────────────
 
             if (typeof response.draft.name?.value === 'string') {
                 setName(response.draft.name.value);
@@ -245,12 +342,135 @@ export function CreatePropertyMiniForm({
                 };
             }
 
+            // ── Description ────────────────────────────────────────────────
+
+            if (typeof response.draft.description?.value === 'string') {
+                nextExtras.description = response.draft.description.value;
+                nextMeta.description = {
+                    confidence: response.draft.description.confidence,
+                    source: response.draft.description.source
+                };
+            }
+
+            // ── Capacity / room counts ─────────────────────────────────────
+
+            if (typeof response.draft.extraInfo?.capacity?.value === 'number') {
+                nextExtras.maxGuests = response.draft.extraInfo.capacity.value;
+                nextMeta.maxGuests = {
+                    confidence: response.draft.extraInfo.capacity.confidence,
+                    source: response.draft.extraInfo.capacity.source
+                };
+            }
+
+            if (typeof response.draft.extraInfo?.bedrooms?.value === 'number') {
+                nextExtras.bedrooms = response.draft.extraInfo.bedrooms.value;
+                nextMeta.bedrooms = {
+                    confidence: response.draft.extraInfo.bedrooms.confidence,
+                    source: response.draft.extraInfo.bedrooms.source
+                };
+            }
+
+            if (typeof response.draft.extraInfo?.beds?.value === 'number') {
+                nextExtras.beds = response.draft.extraInfo.beds.value;
+                nextMeta.beds = {
+                    confidence: response.draft.extraInfo.beds.confidence,
+                    source: response.draft.extraInfo.beds.source
+                };
+            }
+
+            if (typeof response.draft.extraInfo?.bathrooms?.value === 'number') {
+                nextExtras.bathrooms = response.draft.extraInfo.bathrooms.value;
+                nextMeta.bathrooms = {
+                    confidence: response.draft.extraInfo.bathrooms.confidence,
+                    source: response.draft.extraInfo.bathrooms.source
+                };
+            }
+
+            // ── Price ──────────────────────────────────────────────────────
+
+            if (typeof response.draft.price?.price?.value === 'number') {
+                nextExtras.basePrice = response.draft.price.price.value;
+                nextMeta.basePrice = {
+                    confidence: response.draft.price.price.confidence,
+                    source: response.draft.price.price.source
+                };
+            }
+
+            if (typeof response.draft.price?.currency?.value === 'string') {
+                nextExtras.currency = response.draft.price.currency.value;
+            }
+
+            // ── Location ───────────────────────────────────────────────────
+
+            if (response.draft.location?.coordinates?.value) {
+                nextExtras.latitude = response.draft.location.coordinates.value.lat;
+                nextExtras.longitude = response.draft.location.coordinates.value.long;
+                nextMeta.coordinates = {
+                    confidence: response.draft.location.coordinates.confidence,
+                    source: response.draft.location.coordinates.source
+                };
+            }
+
+            if (typeof response.draft.location?.street?.value === 'string') {
+                nextExtras.street = response.draft.location.street.value;
+                nextMeta.street = {
+                    confidence: response.draft.location.street.confidence,
+                    source: response.draft.location.street.source
+                };
+            }
+
+            if (typeof response.draft.location?.number?.value === 'string') {
+                nextExtras.number = response.draft.location.number.value;
+                nextMeta.number = {
+                    confidence: response.draft.location.number.confidence,
+                    source: response.draft.location.number.source
+                };
+            }
+
+            // ── Contact ────────────────────────────────────────────────────
+
+            if (typeof response.draft.contactInfo?.mobilePhone?.value === 'string') {
+                nextExtras.phone = response.draft.contactInfo.mobilePhone.value;
+                nextMeta.phone = {
+                    confidence: response.draft.contactInfo.mobilePhone.confidence,
+                    source: response.draft.contactInfo.mobilePhone.source
+                };
+            }
+
+            if (typeof response.draft.contactInfo?.website?.value === 'string') {
+                nextExtras.website = response.draft.contactInfo.website.value;
+                nextMeta.website = {
+                    confidence: response.draft.contactInfo.website.confidence,
+                    source: response.draft.contactInfo.website.source
+                };
+            }
+
+            // ── Amenities (resolved UUIDs — submitted silently) ────────────
+
+            if (response.resolvedAmenityIds && response.resolvedAmenityIds.length > 0) {
+                nextExtras.amenityIds = response.resolvedAmenityIds;
+            }
+
             setImportMeta(nextMeta);
+            setExtras(nextExtras);
+
             // Only surface the "review the imported data" notice when at least one
             // field was actually pre-filled. A source:'none' / blocked-site response
             // returns an empty draft, so showing the notice then is misleading
             // (it invites the host to review data that does not exist).
-            setImportedOnce(Object.keys(nextMeta).length > 0);
+            const filledCount = Object.keys(nextMeta).length;
+            setImportedOnce(filledCount > 0);
+
+            // Count extras specifically for analytics (excludes name/summary/type)
+            const extraCount = Object.keys(nextMeta).filter(
+                (k) => k !== 'name' && k !== 'summary' && k !== 'type'
+            ).length;
+
+            // A7: fire import success event
+            trackEvent(WebEvents.PropertyImportSucceeded, {
+                source: response.source,
+                fieldsPrefilled: filledCount + extraCount
+            });
 
             // Destination hint: surface when the response carries locality or candidates.
             if (response.destinationHint) {
@@ -273,12 +493,28 @@ export function CreatePropertyMiniForm({
             }
 
             webLogger.info('CreatePropertyMiniForm: prefilled from import', {
-                fieldsFilled: Object.keys(nextMeta)
+                fieldsFilled: Object.keys(nextMeta),
+                extrasCount: Object.keys(nextExtras).length
             });
         },
         // typeItems is a memoized array — safe dep; setters from useState are stable.
         [typeItems]
     );
+
+    /**
+     * Called by ImportFromUrl when the user fires the import attempt (before
+     * the API call resolves). A7: fire attempt event here, before success/failure.
+     */
+    const handleImportAttempt = useCallback((source: string): void => {
+        trackEvent(WebEvents.PropertyImportAttempted, { source });
+    }, []);
+
+    /**
+     * Called by ImportFromUrl on import failure. A7: fire failure event.
+     */
+    const handleImportError = useCallback((source: string): void => {
+        trackEvent(WebEvents.PropertyImportFailed, { source });
+    }, []);
 
     // City picker uses async mode — hits the public destinations endpoint
     // (CITY-typed, name-only search scope, ranked client-side so prefix
@@ -383,20 +619,68 @@ export function CreatePropertyMiniForm({
 
         setIsSubmitting(true);
         try {
+            // Build the payload: required base fields + SPEC-258 optional extras
+            // (only fields that were imported and not cleared by the host).
+            const payload: Record<string, unknown> = {
+                name: name.trim(),
+                summary: summary.trim(),
+                // typeItem.id is the AccommodationType enum value; guaranteed by validate()
+                type: typeItem?.id ?? '',
+                // city.id is guaranteed by validate()
+                destinationId: city?.id ?? ''
+            };
+
+            // Append optional extras — coerce number inputs, omit cleared fields.
+            if (extras.description !== undefined && extras.description.trim() !== '') {
+                payload.description = extras.description.trim();
+            }
+            if (extras.maxGuests !== undefined) {
+                payload.maxGuests = extras.maxGuests;
+            }
+            if (extras.bedrooms !== undefined) {
+                payload.bedrooms = extras.bedrooms;
+            }
+            if (extras.bathrooms !== undefined) {
+                payload.bathrooms = extras.bathrooms;
+            }
+            if (extras.beds !== undefined) {
+                payload.beds = extras.beds;
+            }
+            if (extras.basePrice !== undefined) {
+                payload.basePrice = extras.basePrice;
+            }
+            if (extras.currency !== undefined) {
+                payload.currency = extras.currency;
+            }
+            if (extras.latitude !== undefined) {
+                payload.latitude = extras.latitude;
+            }
+            if (extras.longitude !== undefined) {
+                payload.longitude = extras.longitude;
+            }
+            if (extras.street !== undefined && extras.street.trim() !== '') {
+                payload.street = extras.street.trim();
+            }
+            if (extras.number !== undefined && extras.number.trim() !== '') {
+                payload.number = extras.number.trim();
+            }
+            if (extras.phone !== undefined && extras.phone.trim() !== '') {
+                payload.phone = extras.phone.trim();
+            }
+            if (extras.website !== undefined && extras.website.trim() !== '') {
+                payload.website = extras.website.trim();
+            }
+            if (extras.amenityIds && extras.amenityIds.length > 0) {
+                payload.amenityIds = extras.amenityIds;
+            }
+
             const response = await fetch(
                 `${apiUrl.replace(/\/$/, '')}/api/v1/protected/host-onboarding/start`,
                 {
                     method: 'POST',
                     credentials: 'include',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        name: name.trim(),
-                        summary: summary.trim(),
-                        // typeItem.id is the AccommodationType enum value; guaranteed by validate()
-                        type: typeItem?.id ?? '',
-                        // city.id is guaranteed by validate()
-                        destinationId: city?.id ?? ''
-                    })
+                    body: JSON.stringify(payload)
                 }
             );
 
@@ -462,25 +746,13 @@ export function CreatePropertyMiniForm({
 
             const adminBase = adminUrl.replace(/\/$/, '');
 
-            // `already_host`: the user already had an active HOST/ADMIN role
-            // before this submit — nothing changed in their permissions, so
-            // no session refresh is needed. Always send them to their own
-            // property list on the web app (`/me/accommodations` path resolved
-            // via `accountPropertiesUrl`). Redirecting admin-capable users to
-            // the global admin list (`/accommodations`) is confusing because
-            // they didn't create or resume any particular draft here.
-            if (data.status === 'already_host') {
-                window.location.href = accountPropertiesUrl;
-                return;
-            }
-
-            // `created` / `resumed`: the endpoint just promoted the user
-            // USER → HOST atomically with the draft creation. Better Auth's
-            // cookie cache still carries the pre-promotion `role=USER` for
-            // up to 5 minutes, so we force a session refresh from the DB
-            // before redirecting to the admin. Otherwise the admin guard
-            // would read the stale cookie and bounce the host to
-            // `/auth/forbidden?reason=host-missing-permission`.
+            // `created` / `resumed`: if the actor was a USER they were promoted
+            // to HOST atomically with the draft creation (an existing host is
+            // left unchanged). Better Auth's cookie cache may still carry the
+            // pre-promotion `role=USER` for up to 5 minutes, so we force a
+            // session refresh from the DB before redirecting to the admin.
+            // Otherwise the admin guard would read the stale cookie and bounce
+            // the host to `/auth/forbidden?reason=host-missing-permission`.
             await refreshSessionFromDatabase(apiUrl);
 
             if (!data.accommodationId) {
@@ -504,6 +776,22 @@ export function CreatePropertyMiniForm({
             setIsSubmitting(false);
         }
     }
+
+    // Whether there are any extras to show in the collapsible section
+    const hasExtras =
+        importedOnce &&
+        (importMeta.description !== undefined ||
+            importMeta.maxGuests !== undefined ||
+            importMeta.bedrooms !== undefined ||
+            importMeta.beds !== undefined ||
+            importMeta.bathrooms !== undefined ||
+            importMeta.basePrice !== undefined ||
+            importMeta.coordinates !== undefined ||
+            importMeta.street !== undefined ||
+            importMeta.number !== undefined ||
+            importMeta.phone !== undefined ||
+            importMeta.website !== undefined ||
+            (extras.amenityIds !== undefined && extras.amenityIds.length > 0));
 
     return (
         <form
@@ -538,6 +826,8 @@ export function CreatePropertyMiniForm({
                         <ImportFromUrl
                             locale={locale}
                             onImported={handleImported}
+                            onAttempt={handleImportAttempt}
+                            onError={handleImportError}
                         />
                     </div>
                 ) : null}
@@ -580,20 +870,11 @@ export function CreatePropertyMiniForm({
                         </span>
                     </label>
                     {importMeta.name ? (
-                        <span
-                            className={styles.confidenceBadge}
-                            data-testid="import-badge-name"
-                        >
-                            {t('host.importFromUrl.prefill.badge.imported', 'Importado')}
-                            <span aria-hidden="true">
-                                {t('host.importFromUrl.prefill.badge.separator', '·')}
-                            </span>
-                            {`${String(importMeta.name.confidence)}%`}
-                            <span aria-hidden="true">
-                                {t('host.importFromUrl.prefill.badge.separator', '·')}
-                            </span>
-                            {importMeta.name.source}
-                        </span>
+                        <ConfidenceBadge
+                            meta={importMeta.name}
+                            testId="import-badge-name"
+                            t={t}
+                        />
                     ) : null}
                 </div>
                 <input
@@ -621,20 +902,11 @@ export function CreatePropertyMiniForm({
             {/* Type — shared SearchableSelect in local mode (icon affordance per type). */}
             <div className="form-field">
                 {importMeta.type ? (
-                    <span
-                        className={styles.confidenceBadge}
-                        data-testid="import-badge-type"
-                    >
-                        {t('host.importFromUrl.prefill.badge.imported', 'Importado')}
-                        <span aria-hidden="true">
-                            {t('host.importFromUrl.prefill.badge.separator', '·')}
-                        </span>
-                        {`${String(importMeta.type.confidence)}%`}
-                        <span aria-hidden="true">
-                            {t('host.importFromUrl.prefill.badge.separator', '·')}
-                        </span>
-                        {importMeta.type.source}
-                    </span>
+                    <ConfidenceBadge
+                        meta={importMeta.type}
+                        testId="import-badge-type"
+                        t={t}
+                    />
                 ) : null}
                 <SearchableSelect
                     locale={locale}
@@ -750,20 +1022,11 @@ export function CreatePropertyMiniForm({
                         </span>
                     </label>
                     {importMeta.summary ? (
-                        <span
-                            className={styles.confidenceBadge}
-                            data-testid="import-badge-summary"
-                        >
-                            {t('host.importFromUrl.prefill.badge.imported', 'Importado')}
-                            <span aria-hidden="true">
-                                {t('host.importFromUrl.prefill.badge.separator', '·')}
-                            </span>
-                            {`${String(importMeta.summary.confidence)}%`}
-                            <span aria-hidden="true">
-                                {t('host.importFromUrl.prefill.badge.separator', '·')}
-                            </span>
-                            {importMeta.summary.source}
-                        </span>
+                        <ConfidenceBadge
+                            meta={importMeta.summary}
+                            testId="import-badge-summary"
+                            t={t}
+                        />
                     ) : null}
                 </div>
                 <textarea
@@ -793,6 +1056,477 @@ export function CreatePropertyMiniForm({
                     </p>
                 )}
             </div>
+
+            {/*
+             * SPEC-258 B-web: collapsible "Esto importamos" section.
+             * Renders only when at least one extra field was captured from the import.
+             * All fields are editable by the host. Each shows a confidence badge.
+             */}
+            {hasExtras ? (
+                <div
+                    className={styles.extrasSection}
+                    data-testid="imported-extras-section"
+                >
+                    <button
+                        type="button"
+                        className={styles.extrasToggle}
+                        aria-expanded={extrasOpen}
+                        onClick={() => setExtrasOpen((prev) => !prev)}
+                        data-testid="extras-toggle"
+                    >
+                        {t('host.miniForm.importedExtras.sectionTitle', 'Esto importamos')}
+                        <span
+                            className={`${styles.extrasToggleIcon} ${extrasOpen ? styles['extrasToggleIcon--open'] : ''}`}
+                            aria-hidden="true"
+                        >
+                            ▼
+                        </span>
+                    </button>
+
+                    {extrasOpen ? (
+                        <div className={styles.extrasBody}>
+                            {/* Description */}
+                            {importMeta.description !== undefined ? (
+                                <div className="form-field">
+                                    <div className={styles.fieldWithBadge}>
+                                        <label
+                                            className="form-label"
+                                            htmlFor={descriptionId}
+                                        >
+                                            {t(
+                                                'host.miniForm.importedExtras.fields.description',
+                                                'Descripción completa'
+                                            )}
+                                        </label>
+                                        <ConfidenceBadge
+                                            meta={importMeta.description}
+                                            testId="import-badge-description"
+                                            t={t}
+                                        />
+                                    </div>
+                                    <textarea
+                                        id={descriptionId}
+                                        className="form-textarea"
+                                        value={extras.description ?? ''}
+                                        onChange={(e) =>
+                                            setExtras((prev) => ({
+                                                ...prev,
+                                                description: e.target.value
+                                            }))
+                                        }
+                                        rows={5}
+                                        data-testid="extras-description"
+                                    />
+                                </div>
+                            ) : null}
+
+                            {/* Capacity row: maxGuests / bedrooms / beds / bathrooms */}
+                            {importMeta.maxGuests !== undefined ||
+                            importMeta.bedrooms !== undefined ||
+                            importMeta.beds !== undefined ||
+                            importMeta.bathrooms !== undefined ? (
+                                <div className={styles.extrasRow}>
+                                    {importMeta.maxGuests !== undefined ? (
+                                        <div className="form-field">
+                                            <div className={styles.fieldWithBadge}>
+                                                <label
+                                                    className="form-label"
+                                                    htmlFor={maxGuestsId}
+                                                >
+                                                    {t(
+                                                        'host.miniForm.importedExtras.fields.maxGuests',
+                                                        'Huéspedes máx.'
+                                                    )}
+                                                </label>
+                                                <ConfidenceBadge
+                                                    meta={importMeta.maxGuests}
+                                                    testId="import-badge-maxGuests"
+                                                    t={t}
+                                                />
+                                            </div>
+                                            <input
+                                                id={maxGuestsId}
+                                                className="form-input"
+                                                type="number"
+                                                min={0}
+                                                value={
+                                                    extras.maxGuests !== undefined
+                                                        ? String(extras.maxGuests)
+                                                        : ''
+                                                }
+                                                onChange={(e) => {
+                                                    const v = e.target.value;
+                                                    setExtras((prev) => ({
+                                                        ...prev,
+                                                        maxGuests: v === '' ? undefined : Number(v)
+                                                    }));
+                                                }}
+                                                data-testid="extras-maxGuests"
+                                            />
+                                        </div>
+                                    ) : null}
+
+                                    {importMeta.bedrooms !== undefined ? (
+                                        <div className="form-field">
+                                            <div className={styles.fieldWithBadge}>
+                                                <label
+                                                    className="form-label"
+                                                    htmlFor={bedroomsId}
+                                                >
+                                                    {t(
+                                                        'host.miniForm.importedExtras.fields.bedrooms',
+                                                        'Dormitorios'
+                                                    )}
+                                                </label>
+                                                <ConfidenceBadge
+                                                    meta={importMeta.bedrooms}
+                                                    testId="import-badge-bedrooms"
+                                                    t={t}
+                                                />
+                                            </div>
+                                            <input
+                                                id={bedroomsId}
+                                                className="form-input"
+                                                type="number"
+                                                min={0}
+                                                value={
+                                                    extras.bedrooms !== undefined
+                                                        ? String(extras.bedrooms)
+                                                        : ''
+                                                }
+                                                onChange={(e) => {
+                                                    const v = e.target.value;
+                                                    setExtras((prev) => ({
+                                                        ...prev,
+                                                        bedrooms: v === '' ? undefined : Number(v)
+                                                    }));
+                                                }}
+                                                data-testid="extras-bedrooms"
+                                            />
+                                        </div>
+                                    ) : null}
+
+                                    {importMeta.beds !== undefined ? (
+                                        <div className="form-field">
+                                            <div className={styles.fieldWithBadge}>
+                                                <label
+                                                    className="form-label"
+                                                    htmlFor={bedsId}
+                                                >
+                                                    {t(
+                                                        'host.miniForm.importedExtras.fields.beds',
+                                                        'Camas'
+                                                    )}
+                                                </label>
+                                                <ConfidenceBadge
+                                                    meta={importMeta.beds}
+                                                    testId="import-badge-beds"
+                                                    t={t}
+                                                />
+                                            </div>
+                                            <input
+                                                id={bedsId}
+                                                className="form-input"
+                                                type="number"
+                                                min={0}
+                                                value={
+                                                    extras.beds !== undefined
+                                                        ? String(extras.beds)
+                                                        : ''
+                                                }
+                                                onChange={(e) => {
+                                                    const v = e.target.value;
+                                                    setExtras((prev) => ({
+                                                        ...prev,
+                                                        beds: v === '' ? undefined : Number(v)
+                                                    }));
+                                                }}
+                                                data-testid="extras-beds"
+                                            />
+                                        </div>
+                                    ) : null}
+
+                                    {importMeta.bathrooms !== undefined ? (
+                                        <div className="form-field">
+                                            <div className={styles.fieldWithBadge}>
+                                                <label
+                                                    className="form-label"
+                                                    htmlFor={bathroomsId}
+                                                >
+                                                    {t(
+                                                        'host.miniForm.importedExtras.fields.bathrooms',
+                                                        'Baños'
+                                                    )}
+                                                </label>
+                                                <ConfidenceBadge
+                                                    meta={importMeta.bathrooms}
+                                                    testId="import-badge-bathrooms"
+                                                    t={t}
+                                                />
+                                            </div>
+                                            <input
+                                                id={bathroomsId}
+                                                className="form-input"
+                                                type="number"
+                                                min={0}
+                                                value={
+                                                    extras.bathrooms !== undefined
+                                                        ? String(extras.bathrooms)
+                                                        : ''
+                                                }
+                                                onChange={(e) => {
+                                                    const v = e.target.value;
+                                                    setExtras((prev) => ({
+                                                        ...prev,
+                                                        bathrooms: v === '' ? undefined : Number(v)
+                                                    }));
+                                                }}
+                                                data-testid="extras-bathrooms"
+                                            />
+                                        </div>
+                                    ) : null}
+                                </div>
+                            ) : null}
+
+                            {/* Base price */}
+                            {importMeta.basePrice !== undefined ? (
+                                <div className="form-field">
+                                    <div className={styles.fieldWithBadge}>
+                                        <label
+                                            className="form-label"
+                                            htmlFor={basePriceId}
+                                        >
+                                            {t(
+                                                'host.miniForm.importedExtras.fields.basePrice',
+                                                'Precio base por noche'
+                                            )}
+                                            {extras.currency ? (
+                                                <span
+                                                    className={styles.confidenceBadge}
+                                                    style={{ marginLeft: 'var(--space-2, 0.5rem)' }}
+                                                    data-testid="extras-currency-adornment"
+                                                >
+                                                    {extras.currency}
+                                                </span>
+                                            ) : null}
+                                        </label>
+                                        <ConfidenceBadge
+                                            meta={importMeta.basePrice}
+                                            testId="import-badge-basePrice"
+                                            t={t}
+                                        />
+                                    </div>
+                                    <input
+                                        id={basePriceId}
+                                        className="form-input"
+                                        type="number"
+                                        min={0}
+                                        value={
+                                            extras.basePrice !== undefined
+                                                ? String(extras.basePrice)
+                                                : ''
+                                        }
+                                        onChange={(e) => {
+                                            const v = e.target.value;
+                                            setExtras((prev) => ({
+                                                ...prev,
+                                                basePrice: v === '' ? undefined : Number(v)
+                                            }));
+                                        }}
+                                        data-testid="extras-basePrice"
+                                    />
+                                </div>
+                            ) : null}
+
+                            {/* Coordinates — read-only indicator */}
+                            {importMeta.coordinates !== undefined ? (
+                                <div
+                                    className={styles.extrasReadOnly}
+                                    data-testid="extras-coordinates"
+                                >
+                                    <span
+                                        className={styles.extrasReadOnlyIcon}
+                                        aria-hidden="true"
+                                    >
+                                        📍
+                                    </span>
+                                    <span>
+                                        {t(
+                                            'host.miniForm.importedExtras.fields.coordinatesLabel',
+                                            'Ubicación importada'
+                                        )}
+                                        {extras.latitude !== undefined &&
+                                        extras.longitude !== undefined
+                                            ? ` (${extras.latitude}, ${extras.longitude})`
+                                            : ''}
+                                    </span>
+                                    <ConfidenceBadge
+                                        meta={importMeta.coordinates}
+                                        testId="import-badge-coordinates"
+                                        t={t}
+                                    />
+                                </div>
+                            ) : null}
+
+                            {/* Street / number */}
+                            {importMeta.street !== undefined || importMeta.number !== undefined ? (
+                                <div className={styles.extrasRow}>
+                                    {importMeta.street !== undefined ? (
+                                        <div className="form-field">
+                                            <div className={styles.fieldWithBadge}>
+                                                <label
+                                                    className="form-label"
+                                                    htmlFor={streetId}
+                                                >
+                                                    {t(
+                                                        'host.miniForm.importedExtras.fields.street',
+                                                        'Calle'
+                                                    )}
+                                                </label>
+                                                <ConfidenceBadge
+                                                    meta={importMeta.street}
+                                                    testId="import-badge-street"
+                                                    t={t}
+                                                />
+                                            </div>
+                                            <input
+                                                id={streetId}
+                                                className="form-input"
+                                                type="text"
+                                                value={extras.street ?? ''}
+                                                onChange={(e) =>
+                                                    setExtras((prev) => ({
+                                                        ...prev,
+                                                        street: e.target.value
+                                                    }))
+                                                }
+                                                data-testid="extras-street"
+                                            />
+                                        </div>
+                                    ) : null}
+
+                                    {importMeta.number !== undefined ? (
+                                        <div className="form-field">
+                                            <div className={styles.fieldWithBadge}>
+                                                <label
+                                                    className="form-label"
+                                                    htmlFor={numberFieldId}
+                                                >
+                                                    {t(
+                                                        'host.miniForm.importedExtras.fields.number',
+                                                        'Número'
+                                                    )}
+                                                </label>
+                                                <ConfidenceBadge
+                                                    meta={importMeta.number}
+                                                    testId="import-badge-number"
+                                                    t={t}
+                                                />
+                                            </div>
+                                            <input
+                                                id={numberFieldId}
+                                                className="form-input"
+                                                type="text"
+                                                value={extras.number ?? ''}
+                                                onChange={(e) =>
+                                                    setExtras((prev) => ({
+                                                        ...prev,
+                                                        number: e.target.value
+                                                    }))
+                                                }
+                                                data-testid="extras-number"
+                                            />
+                                        </div>
+                                    ) : null}
+                                </div>
+                            ) : null}
+
+                            {/* Phone */}
+                            {importMeta.phone !== undefined ? (
+                                <div className="form-field">
+                                    <div className={styles.fieldWithBadge}>
+                                        <label
+                                            className="form-label"
+                                            htmlFor={phoneId}
+                                        >
+                                            {t(
+                                                'host.miniForm.importedExtras.fields.phone',
+                                                'Teléfono'
+                                            )}
+                                        </label>
+                                        <ConfidenceBadge
+                                            meta={importMeta.phone}
+                                            testId="import-badge-phone"
+                                            t={t}
+                                        />
+                                    </div>
+                                    <input
+                                        id={phoneId}
+                                        className="form-input"
+                                        type="text"
+                                        value={extras.phone ?? ''}
+                                        onChange={(e) =>
+                                            setExtras((prev) => ({
+                                                ...prev,
+                                                phone: e.target.value
+                                            }))
+                                        }
+                                        data-testid="extras-phone"
+                                    />
+                                </div>
+                            ) : null}
+
+                            {/* Website */}
+                            {importMeta.website !== undefined ? (
+                                <div className="form-field">
+                                    <div className={styles.fieldWithBadge}>
+                                        <label
+                                            className="form-label"
+                                            htmlFor={websiteId}
+                                        >
+                                            {t(
+                                                'host.miniForm.importedExtras.fields.website',
+                                                'Sitio web'
+                                            )}
+                                        </label>
+                                        <ConfidenceBadge
+                                            meta={importMeta.website}
+                                            testId="import-badge-website"
+                                            t={t}
+                                        />
+                                    </div>
+                                    <input
+                                        id={websiteId}
+                                        className="form-input"
+                                        type="text"
+                                        value={extras.website ?? ''}
+                                        onChange={(e) =>
+                                            setExtras((prev) => ({
+                                                ...prev,
+                                                website: e.target.value
+                                            }))
+                                        }
+                                        data-testid="extras-website"
+                                    />
+                                </div>
+                            ) : null}
+
+                            {/* Amenities — read-only count chip */}
+                            {extras.amenityIds && extras.amenityIds.length > 0 ? (
+                                <div data-testid="extras-amenities">
+                                    <span className={styles.extrasAmenityChip}>
+                                        ✓{' '}
+                                        {t(
+                                            'host.miniForm.importedExtras.fields.amenitiesCount',
+                                            `${String(extras.amenityIds.length)} amenidades importadas`
+                                        ).replace('{{count}}', String(extras.amenityIds.length))}
+                                    </span>
+                                </div>
+                            ) : null}
+                        </div>
+                    ) : null}
+                </div>
+            ) : null}
 
             {submitError && (
                 <p

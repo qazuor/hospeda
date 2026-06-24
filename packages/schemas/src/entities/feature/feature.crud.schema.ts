@@ -3,6 +3,7 @@ import { i18nText } from '../../common/i18n.schema.js';
 import { FeatureIdSchema } from '../../common/id.schema.js';
 import { LifecycleStatusEnumSchema } from '../../enums/index.js';
 import { stripShapeDefaults } from '../../utils/utils.js';
+import { ApplicableVerticalSchema } from '../amenity/amenity.schema.js';
 import { FeatureSchema } from './feature.schema.js';
 
 /**
@@ -27,7 +28,15 @@ import { FeatureSchema } from './feature.schema.js';
 export const FeatureCreateInputSchema = z
     .object({
         // Required fields
-        name: i18nText({ min: 2, max: 100 }),
+        /**
+         * Verticals this feature is applicable to (SPEC-266).
+         * At least one vertical is required.
+         */
+        applicableVerticals: z
+            .array(ApplicableVerticalSchema, {
+                message: 'zodError.feature.applicableVerticals.required'
+            })
+            .min(1, { message: 'zodError.feature.applicableVerticals.min' }),
 
         // Optional fields
         slug: z
@@ -36,7 +45,7 @@ export const FeatureCreateInputSchema = z
             })
             .min(3, { message: 'zodError.feature.slug.min' })
             .max(100, { message: 'zodError.feature.slug.max' })
-            .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, {
+            .regex(/^[a-z0-9]+(?:[-_][a-z0-9]+)*$/, {
                 message: 'zodError.feature.slug.pattern'
             })
             .optional(),

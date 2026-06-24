@@ -24,6 +24,9 @@ import {
     sql
 } from '@repo/db';
 import type { QueryContext } from '@repo/db';
+import type { EffectPreview } from '@repo/schemas';
+import { PromoEffectKindEnum } from '@repo/schemas';
+import { calculatePromoCodeEffect } from './effect-reducer.js';
 import { getPromoCodeByCode } from './promo-code.crud.js';
 import type {
     PromoCode,
@@ -189,6 +192,10 @@ export async function validatePromoCode(
             }
         }
 
+        // ---------------------------------------------------------------------------
+        // Back-compat: compute discountAmount using the legacy type+value fields.
+        // This keeps existing callers (who only read discountAmount) unchanged.
+        // ---------------------------------------------------------------------------
         let discountAmount: number | undefined;
         if (context.amount !== undefined) {
             if (promoData.type === 'percentage') {
@@ -198,7 +205,20 @@ export async function validatePromoCode(
             }
         }
 
-        return { valid: true, discountAmount };
+        // ---------------------------------------------------------------------------
+        // SPEC-262 T-012: build effectPreview from the typed effect when available.
+        //
+        // The PromoCode DTO already carries `effect?: PromoEffect` (populated by
+        // `mapDbToPromoCode` → `parseEffectFromRow` in promo-code.crud.ts).
+        // We reuse that mapping rather than re-deriving from raw DB columns, which
+        // ensures consistency with the CRUD layer.
+        //
+        // For the finalAmount field we call `calculatePromoCodeEffect` — the same
+        // pure reducer used by the charge path — so preview and charge agree.
+        // ---------------------------------------------------------------------------
+        const effectPreview = buildEffectPreview(promoData, context.amount);
+
+        return { valid: true, discountAmount, effectPreview };
     } catch (_error) {
         return {
             valid: false,
@@ -206,6 +226,95 @@ export async function validatePromoCode(
             errorMessage: 'Failed to validate promo code'
         };
     }
+}
+
+// ---------------------------------------------------------------------------
+// effectPreview builder (SPEC-262 T-012)
+// ---------------------------------------------------------------------------
+
+/**
+ * Build an {@link EffectPreview} from a validated promo code and an optional
+ * `amount` supplied by the caller.
+ *
+ * When the `PromoCode` DTO carries a typed `effect` (SPEC-262 codes or
+ * backfilled legacy codes), we delegate the monetary computation to
+ * `calculatePromoCodeEffect` — the same pure reducer used by the charge path —
+ * so the preview and the actual charge are always derived from the same source.
+ *
+ * When `effect` is absent (fully-legacy row, no backfill yet) we synthesise a
+ * best-effort discount preview from the legacy `type` + `value` fields so that
+ * the endpoint still returns something useful without the extras columns.
+ *
+ * `finalAmount` is `null` for `trial_extension` and `comp` effects because they
+ * do not produce a monetary discount on the base subscription amount.
+ * `finalAmount` is also `null` when `amount` was not provided (can't compute
+ * without knowing the base price).
+ *
+ * @param promoData - The validated `PromoCode` DTO (from `getPromoCodeByCode`)
+ * @param amount - Optional base amount in centavos from the validate request
+ * @returns Typed `EffectPreview` ready for the API response
+ */
+function buildEffectPreview(promoData: PromoCode, amount?: number): EffectPreview {
+    const effect = promoData.effect;
+
+    if (!effect) {
+        // Legacy code without SPEC-262 extras columns — synthesise a discount preview
+        // from the flat `type` + `value` fields (AC-4.3 backward compat).
+        const isPercentage = promoData.type === 'percentage';
+        let finalAmount: number | null = null;
+        if (amount !== undefined) {
+            if (isPercentage) {
+                finalAmount = Math.max(0, amount - Math.floor((amount * promoData.value) / 100));
+            } else {
+                finalAmount = Math.max(0, amount - Math.min(promoData.value, amount));
+            }
+        }
+        return {
+            effectKind: 'discount',
+            valueKind: isPercentage ? 'percentage' : 'fixed',
+            value: promoData.value,
+            durationCycles: null, // legacy rows don't store cycle count in extras columns
+            extraDays: null,
+            finalAmount
+        };
+    }
+
+    if (effect.kind === PromoEffectKindEnum.COMP) {
+        return {
+            effectKind: 'comp',
+            valueKind: null,
+            value: null,
+            durationCycles: null,
+            extraDays: null,
+            finalAmount: null
+        };
+    }
+
+    if (effect.kind === PromoEffectKindEnum.TRIAL_EXTENSION) {
+        return {
+            effectKind: 'trial_extension',
+            valueKind: null,
+            value: null,
+            durationCycles: null,
+            extraDays: effect.extraDays,
+            finalAmount: null
+        };
+    }
+
+    // DISCOUNT branch — use the pure reducer so preview and charge agree.
+    const baseAmount = amount ?? 0;
+    const mutation = calculatePromoCodeEffect(effect, baseAmount);
+    const finalAmount =
+        amount !== undefined && mutation.type === 'apply-discount' ? mutation.finalAmount : null;
+
+    return {
+        effectKind: 'discount',
+        valueKind: effect.valueKind,
+        value: effect.value,
+        durationCycles: effect.durationCycles,
+        extraDays: null,
+        finalAmount
+    };
 }
 
 /**

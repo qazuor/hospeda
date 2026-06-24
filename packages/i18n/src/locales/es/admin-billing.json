@@ -964,7 +964,16 @@
             "cancelled": "Cancelada",
             "pastDue": "Pago pendiente",
             "expired": "Expirada",
-            "paused": "Pausada"
+            "paused": "Pausada",
+            "comp": "Cortesía"
+        },
+        "promoEffect": {
+            "title": "Promoción activa",
+            "discountForCycles": "Descuento: -{value} por {count} ciclo(s) más",
+            "discountForever": "Descuento: -{value} indefinido",
+            "complimentary": "Cortesía (sin cobro)",
+            "trialExtended": "Trial extendido +{days} día(s)",
+            "exhausted": "Promoción agotada"
         },
         "filtersTitle": "Filtros",
         "searchLabel": "Buscar por usuario",
@@ -1332,7 +1341,20 @@
             "requiresFirstPurchaseLabel": "Solo para primera compra",
             "cancelButton": "Cancelar",
             "editSubmit": "Guardar cambios",
-            "createSubmit": "Crear código"
+            "createSubmit": "Crear código",
+            "effect": {
+                "kindLabel": "Tipo de efecto *",
+                "kindDiscount": "Descuento",
+                "kindTrialExtension": "Extensión de prueba",
+                "kindComp": "Cortesía (sin cobro)",
+                "immutableHint": "El tipo de efecto no se puede cambiar después de crear el código.",
+                "durationCyclesLabel": "Ciclos de duración",
+                "foreverLabel": "Para siempre",
+                "extraDaysLabel": "Días extra de prueba *",
+                "extraDaysHint": "X meses = X×30 días.",
+                "compNote": "El código deja la suscripción como cortesía: nunca se factura.",
+                "validationError": "Revisá los parámetros del efecto: porcentaje ≤ 100, días > 0, ciclos > 0."
+            }
         },
         "deleteDialog": {
             "title": "Eliminar código promocional",

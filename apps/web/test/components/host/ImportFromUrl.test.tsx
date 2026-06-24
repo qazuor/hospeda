@@ -136,6 +136,98 @@ describe('ImportFromUrl', () => {
     });
 });
 
+describe('ImportFromUrl — failureCode branch (SPEC-258 C.1)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    /** Helper: fill URL, tick legal, click submit, wait for mock to resolve. */
+    async function submitWithFailureCode(failureCode: string) {
+        mockImportFromUrl.mockResolvedValueOnce({
+            ok: true,
+            data: {
+                draft: {},
+                source: 'generic',
+                methodsUsed: [],
+                partial: false,
+                failureCode
+            }
+        });
+        const onImported = vi.fn();
+        const onError = vi.fn();
+        render(
+            <ImportFromUrl
+                locale="es"
+                onImported={onImported}
+                onError={onError}
+            />
+        );
+
+        fireEvent.click(screen.getByRole('checkbox', { name: /Confirmo/i }));
+        fireEvent.change(screen.getByRole('textbox', { name: /URL/i }), {
+            target: { value: 'https://www.airbnb.com.ar/rooms/123' }
+        });
+        fireEvent.click(screen.getByRole('button', { name: /Importar/i }));
+
+        // Wait for async submission to complete
+        await waitFor(() => expect(mockImportFromUrl).toHaveBeenCalledTimes(1));
+
+        return { onImported, onError };
+    }
+
+    it.each([
+        ['invalid_url', 'invalid_url'],
+        ['source_blocked', 'source_blocked'],
+        ['credentials_missing', 'credentials_missing'],
+        ['provider_error', 'provider_error'],
+        ['timeout', 'timeout'],
+        ['nothing_found', 'nothing_found']
+    ])(
+        'renders an error alert (not a success notice) for failureCode "%s"',
+        async (failureCode) => {
+            // Arrange + Act
+            const { onImported, onError } = await submitWithFailureCode(failureCode);
+
+            // Assert: error alert is shown
+            const alert = await screen.findByRole('alert');
+            expect(alert).toBeInTheDocument();
+
+            // Assert: onImported was NOT called
+            expect(onImported).not.toHaveBeenCalled();
+
+            // Assert: onError was called with the failureCode
+            await waitFor(() => expect(onError).toHaveBeenCalledWith(failureCode));
+        }
+    );
+
+    it('does NOT render a success notice when failureCode is present', async () => {
+        // Arrange
+        mockImportFromUrl.mockResolvedValueOnce({
+            ok: true,
+            data: {
+                draft: {},
+                source: 'generic',
+                methodsUsed: [],
+                partial: false,
+                failureCode: 'nothing_found',
+                message: 'some server message'
+            }
+        });
+        render(<ImportFromUrl locale="es" />);
+
+        // Act
+        fireEvent.click(screen.getByRole('checkbox', { name: /Confirmo/i }));
+        fireEvent.change(screen.getByRole('textbox', { name: /URL/i }), {
+            target: { value: 'https://www.airbnb.com.ar/rooms/123' }
+        });
+        fireEvent.click(screen.getByRole('button', { name: /Importar/i }));
+
+        // Assert: wait for error alert to appear, then verify no <output> notice
+        await screen.findByRole('alert');
+        expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    });
+});
+
 describe('ImportFromUrl i18n keys', () => {
     const localesDir = resolve(
         dirname(fileURLToPath(import.meta.url)),
@@ -154,7 +246,10 @@ describe('ImportFromUrl i18n keys', () => {
                 | {
                       fields?: Record<string, string>;
                       actions?: Record<string, string>;
-                      errors?: Record<string, string>;
+                      errors?: {
+                          urlInvalid?: string;
+                          failure?: Record<string, string>;
+                      };
                       help?: {
                           toggle?: string;
                           title?: string;
@@ -172,6 +267,18 @@ describe('ImportFromUrl i18n keys', () => {
             expect(block?.fields?.legalConfirm).toBeTruthy();
             expect(block?.actions?.submit).toBeTruthy();
             expect(block?.errors?.urlInvalid).toBeTruthy();
+            // SPEC-258 C.1: every failure-mode key must exist in each locale so a
+            // classified failure always resolves to localized text.
+            for (const key of [
+                'invalidUrl',
+                'sourceBlocked',
+                'credentialsMissing',
+                'providerError',
+                'timeout',
+                'nothingFound'
+            ]) {
+                expect(block?.errors?.failure?.[key]).toBeTruthy();
+            }
             expect(block?.help?.toggle).toBeTruthy();
             for (const platform of ['airbnb', 'booking', 'mercadolibre', 'google']) {
                 const entry = block?.help?.platforms?.[platform];

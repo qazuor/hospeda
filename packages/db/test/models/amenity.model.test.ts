@@ -169,8 +169,8 @@ describe('AmenityModel', () => {
 
         it('should handle pagination correctly', async () => {
             const mockFindMany = vi.fn().mockResolvedValue([
-                { id: '1', name: 'WiFi' },
-                { id: '2', name: 'Pool' }
+                { id: '1', slug: 'wifi' },
+                { id: '2', slug: 'pool' }
             ]);
             const mockCount = vi.spyOn(model, 'count').mockResolvedValue(10);
 
@@ -185,7 +185,7 @@ describe('AmenityModel', () => {
 
             const result = await model.findAllWithRelations(
                 { accommodations: true },
-                { name: 'WiFi' },
+                { slug: 'wifi' },
                 { page: 2, pageSize: 3 }
             );
 

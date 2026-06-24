@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "067-feature-yoga_meditation_area",
-    "name": {
-        "es": "Área de yoga y meditación",
-        "en": "Área de yoga y meditación",
-        "pt": "Área de yoga y meditación"
-    },
     "slug": "yoga_meditation_area",
     "description": {
         "es": "Espacio especialmente diseñado para prácticas de yoga, meditación y ejercicios de relajación",
         "en": "Espacio especialmente diseñado para prácticas de yoga, meditación y ejercicios de relajación",
         "pt": "Espacio especialmente diseñado para prácticas de yoga, meditación y ejercicios de relajación"
     },
+    "applicableVerticals": ["accommodation"],
     "icon": "YogaMeditationIcon",
     "isBuiltin": true,
     "isFeatured": false,

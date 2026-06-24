@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "077-feature-plastic_free_policy",
-    "name": {
-        "es": "Política sin plásticos",
-        "en": "Política sin plásticos",
-        "pt": "Política sin plásticos"
-    },
     "slug": "plastic_free_policy",
     "description": {
         "es": "Compromiso ambiental de operación libre de plásticos desechables utilizando alternativas biodegradables",
         "en": "Compromiso ambiental de operación libre de plásticos desechables utilizando alternativas biodegradables",
         "pt": "Compromiso ambiental de operación libre de plásticos desechables utilizando alternativas biodegradables"
     },
+    "applicableVerticals": ["accommodation"],
     "icon": "PlasticFreeIcon",
     "isBuiltin": true,
     "isFeatured": false,

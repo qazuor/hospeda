@@ -398,6 +398,157 @@
             }
         }
     },
+    "ai": {
+        "usage": {
+            "title": "AI Usage Dashboard",
+            "subtitle": "Monitor AI consumption by feature, model, and provider. All costs in µUSD (1 USD = 1,000,000 µUSD).",
+            "filter": {
+                "title": "Filters",
+                "windowMode": "Window mode",
+                "month": "Month",
+                "dateRange": "Date range",
+                "year": "Year",
+                "monthLabel": "Month",
+                "allMonths": "All months",
+                "from": "From (YYYY-MM-DD)",
+                "to": "To (YYYY-MM-DD)",
+                "feature": "Feature",
+                "allFeatures": "All features",
+                "provider": "Provider",
+                "allProviders": "All providers",
+                "model": "Model",
+                "modelPlaceholder": "e.g. gpt-4o-mini",
+                "reset": "Reset"
+            },
+            "months": {
+                "1": "January",
+                "2": "February",
+                "3": "March",
+                "4": "April",
+                "5": "May",
+                "6": "June",
+                "7": "July",
+                "8": "August",
+                "9": "September",
+                "10": "October",
+                "11": "November",
+                "12": "December"
+            },
+            "features": {
+                "text_improve": "Text Improve",
+                "chat": "Chat",
+                "search": "Search",
+                "support": "Support",
+                "translate": "Translate",
+                "accommodation_import": "Accommodation Import",
+                "post_generate": "Post Generate"
+            },
+            "providers": {
+                "openai": "OpenAI",
+                "anthropic": "Anthropic",
+                "stub": "Stub (test)"
+            },
+            "totals": {
+                "title": "Total Calls",
+                "tokensIn": "Tokens In",
+                "tokensOut": "Tokens Out",
+                "estCost": "Est. Cost",
+                "subtitle": "AI requests in window",
+                "subtitleTokensIn": "Prompt tokens consumed",
+                "subtitleTokensOut": "Completion tokens generated",
+                "subtitleCost": "{{total}} total tokens",
+                "loadError": "Failed to load usage totals.",
+                "loadErrorHint": "Check that the API is reachable and retry."
+            },
+            "table": {
+                "colFeature": "Feature",
+                "colModel": "Model",
+                "colProvider": "Provider",
+                "colCalls": "Calls",
+                "colTokensIn": "Tokens In",
+                "colTokensOut": "Tokens Out",
+                "colEstCost": "Est. Cost",
+                "colCostPer1k": "Cost / 1k tokens"
+            },
+            "byFeature": {
+                "title": "By Feature",
+                "desc_one": "{{count}} feature — ordered by cost",
+                "desc_other": "{{count}} features — ordered by cost",
+                "loading": "Loading feature data…",
+                "loadError": "Failed to load feature usage.",
+                "loadErrorHint": "Verify the API is reachable and try again.",
+                "empty": "No feature usage for the selected filters.",
+                "emptyHint": "Adjust the time window or remove filters to see data."
+            },
+            "byModel": {
+                "title": "By Model",
+                "desc_one": "{{count}} model — ordered by cost",
+                "desc_other": "{{count}} models — ordered by cost",
+                "loading": "Loading model data…",
+                "loadError": "Failed to load model usage.",
+                "loadErrorHint": "Verify the API is reachable and try again.",
+                "empty": "No model usage for the selected filters.",
+                "emptyHint": "Adjust the time window or remove filters to see data."
+            },
+            "byProvider": {
+                "title": "By Provider",
+                "desc_one": "{{count}} provider — ordered by cost",
+                "desc_other": "{{count}} providers — ordered by cost",
+                "loading": "Loading provider data…",
+                "loadError": "Failed to load provider usage.",
+                "loadErrorHint": "Verify the API is reachable and try again.",
+                "empty": "No provider usage for the selected filters.",
+                "emptyHint": "Adjust the time window or remove filters to see data."
+            },
+            "featureModel": {
+                "tableTitle": "Feature × Model",
+                "chartTitle": "Cost by Feature × Model",
+                "desc_one": "{{count}} pair — ordered by cost",
+                "desc_other": "{{count}} pairs — ordered by cost",
+                "chartDesc_one": "Cost distribution across {{features}} feature and {{models}} model",
+                "chartDesc_other": "Cost distribution across {{features}} features and {{models}} models",
+                "loading": "Loading feature × model data…",
+                "chartLoading": "Loading chart data…",
+                "loadError": "Failed to load feature × model usage.",
+                "chartLoadError": "Failed to load chart data.",
+                "loadErrorHint": "Verify the API is reachable and try again.",
+                "empty": "No feature × model usage for the selected filters.",
+                "chartEmpty": "No cost data for the selected filters.",
+                "emptyHint": "Adjust the time window or remove filters to see data.",
+                "legendEstCost": "Est. Cost (USD)",
+                "legendCalls": "Calls"
+            },
+            "daily": {
+                "title": "Daily Cost",
+                "desc_one": "{{count}} day — cost over time",
+                "desc_other": "{{count}} days — cost over time",
+                "loading": "Loading daily data…",
+                "loadError": "Failed to load daily usage.",
+                "loadErrorHint": "Verify the API is reachable and try again.",
+                "empty": "No daily usage for the selected filters.",
+                "emptyHint": "Adjust the time window or remove filters to see the chart.",
+                "legendEstCost": "Est. Cost (USD)",
+                "legendCalls": "Calls",
+                "truncationNotice": "Showing first {{shown}} of {{total}} days — narrow the window for the full range."
+            },
+            "a11y": {
+                "sectionTotals": "Usage totals",
+                "sectionByModel": "Usage by model",
+                "sectionByProvider": "Usage by provider",
+                "sectionByFeature": "Usage by feature",
+                "sectionFeatureModelChart": "Cost by feature and model chart",
+                "sectionFeatureModelTable": "Usage by feature and model table",
+                "sectionDailyChart": "Daily usage chart",
+                "tableByModel": "AI usage table grouped by model",
+                "tableByProvider": "AI usage table grouped by provider",
+                "tableByFeature": "AI usage table grouped by feature",
+                "tableByFeatureModel": "AI usage table by feature and model",
+                "chartFeatureModel": "Grouped bar chart showing estimated cost per feature broken down by model",
+                "chartDaily": "Area chart showing estimated AI cost per day over time",
+                "loadingAnnouncement": "Loading data…"
+            }
+        }
+    },
     "access": {
         "permissions": {
             "categories": {

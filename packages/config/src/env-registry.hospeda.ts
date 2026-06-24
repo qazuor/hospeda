@@ -1531,21 +1531,21 @@ export const HOSPEDA_ENV_VARS = [
     {
         name: 'HOSPEDA_APIFY_AIRBNB_ACTOR',
         description:
-            'Apify actor ID or slug for the Airbnb scraper. Allows swapping the scraper provider without a code deploy (e.g. "tri_angle/airbnb-scraper").',
+            'Apify actor ID or slug for the Airbnb rooms/detail scraper. Allows swapping the scraper provider without a code deploy. The default "tri_angle/airbnb-rooms-urls-scraper" accepts /rooms/ detail URLs and returns full listing data including grouped amenities.',
         descriptionEs:
-            'ID o slug del actor de Apify para el scraper de Airbnb. Permite cambiar el proveedor del scraper sin redesplegar código (ej: "tri_angle/airbnb-scraper").',
+            'ID o slug del actor de Apify para el scraper de rooms/detalle de Airbnb. Permite cambiar el proveedor del scraper sin redesplegar código. El default "tri_angle/airbnb-rooms-urls-scraper" acepta URLs de detalle /rooms/ y devuelve datos completos del listing incluyendo amenidades agrupadas.',
         type: 'string',
         required: false,
         secret: false,
-        defaultValue: 'tri_angle/airbnb-scraper',
-        exampleValue: 'tri_angle/airbnb-scraper',
+        defaultValue: 'tri_angle/airbnb-rooms-urls-scraper',
+        exampleValue: 'tri_angle/airbnb-rooms-urls-scraper',
         apps: ['api'],
         category: 'integrations',
         helpUrl: 'https://console.apify.com/actors',
         howToObtain:
-            'Find the actor on the Apify Store (https://apify.com/store) and copy its slug shown as "username/actor-name". The default "tri_angle/airbnb-scraper" works for Airbnb listings.',
+            'Find the actor on the Apify Store (https://apify.com/store) and copy its slug shown as "username/actor-name". The default "tri_angle/airbnb-rooms-urls-scraper" works for Airbnb /rooms/ detail URLs (NOT the search scraper tri_angle/airbnb-scraper, which rejects detail URLs).',
         howToObtainEs:
-            'Buscá el actor en el Apify Store (https://apify.com/store) y copiá su slug que aparece como "usuario/nombre-actor". El default "tri_angle/airbnb-scraper" funciona para listings de Airbnb.'
+            'Buscá el actor en el Apify Store (https://apify.com/store) y copiá su slug que aparece como "usuario/nombre-actor". El default "tri_angle/airbnb-rooms-urls-scraper" funciona para URLs de detalle /rooms/ de Airbnb (NO usar tri_angle/airbnb-scraper, que rechaza URLs de detalle).'
     },
     {
         name: 'HOSPEDA_APIFY_BOOKING_ACTOR',
@@ -1614,6 +1614,20 @@ export const HOSPEDA_ENV_VARS = [
         secret: false,
         defaultValue: '8000',
         exampleValue: '8000',
+        apps: ['api'],
+        category: 'integrations'
+    },
+    {
+        name: 'HOSPEDA_IMPORT_APIFY_TIMEOUT_MS',
+        description:
+            'Timeout in milliseconds for synchronous Apify actor runs in accommodation import adapters (Airbnb, Booking fallback). Apify actors run server-side and routinely take 8-120s, far longer than the JSON-LD/OpenGraph fetch timeout, so they get their own longer budget. Distinct from HOSPEDA_IMPORT_FETCH_TIMEOUT_MS, which stays short for fast structured-data fetches.',
+        descriptionEs:
+            'Timeout en milisegundos para las corridas sincrónicas de actores de Apify en los adaptadores de importación de alojamientos (Airbnb, fallback de Booking). Los actores de Apify corren del lado del servidor y suelen tardar 8-120s, mucho más que el timeout de fetch de JSON-LD/OpenGraph, por eso tienen su propio presupuesto más largo. Distinto de HOSPEDA_IMPORT_FETCH_TIMEOUT_MS, que se mantiene corto para los fetches rápidos de datos estructurados.',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '120000',
+        exampleValue: '120000',
         apps: ['api'],
         category: 'integrations'
     },

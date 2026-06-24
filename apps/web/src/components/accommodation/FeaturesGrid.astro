@@ -22,6 +22,21 @@ const { t } = createTranslations(lang as SupportedLocale);
 const hasSmoking = smokingAllowed === true;
 if (features.length === 0 && !hasSmoking) return;
 
+/**
+ * Translate feature label via i18n by slug, falling back to humanized slug.
+ * SPEC-266: `name` was dropped from the catalog; `feature.name` now holds the slug.
+ */
+function translateFeature(slug: string): string {
+  const key = `accommodations.featureNames.${slug}`;
+  const translated = t(key);
+  if (translated.startsWith('[MISSING:')) {
+    return slug
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+  }
+  return translated;
+}
+
 /** Resolve icon component from icon name. Returns null if not found. */
 function getIcon(iconName: string | null) {
   if (!iconName) return null;
@@ -35,7 +50,9 @@ function getIcon(iconName: string | null) {
   <div class="features-grid">
     {features.map((feature) => {
       const Icon = getIcon(feature.icon);
-      const displayName = feature.hostReWriteName ?? feature.name;
+      // hostReWriteName is a host-customized label (takes priority over i18n).
+      // Fall back to i18n lookup by slug (SPEC-266: feature.name holds the slug).
+      const displayName = feature.hostReWriteName ?? translateFeature(feature.name);
       return (
         <div class="feature-item">
           {Icon ? (

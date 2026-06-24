@@ -21,6 +21,16 @@ import styles from './ImportFromUrl.module.css';
 /** Platforms shown in the URL-acquisition help panel (US-7), in display order. */
 const HELP_PLATFORMS = ['airbnb', 'booking', 'mercadolibre', 'google'] as const;
 
+/**
+ * Converts a snake_case string to camelCase for i18n key mapping.
+ * Used to map `ImportFailureCode` values (snake_case) to their i18n keys (camelCase).
+ *
+ * @example snakeToCamel('invalid_url') // → 'invalidUrl'
+ */
+function snakeToCamel(value: string): string {
+    return value.replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase());
+}
+
 /** Props for the {@link ImportFromUrl} island. */
 export type ImportFromUrlProps = {
     /** Active UI locale (passed from Astro at hydration). */
@@ -31,13 +41,28 @@ export type ImportFromUrlProps = {
      * used standalone.
      */
     readonly onImported?: (response: AccommodationImportResponse) => void;
+    /**
+     * Called immediately before the import API call is fired (SPEC-258 A7).
+     * Receives the detected source string (from the submitted URL) — or
+     * `'unknown'` when the URL has not been inspected yet.
+     * Optional so the island can be used standalone.
+     */
+    readonly onAttempt?: (source: string) => void;
+    /**
+     * Called when the import fails (SPEC-258 A7 / C.1). Receives the machine-
+     * readable `ImportFailureCode` (e.g. `'source_blocked'`) when the API
+     * returns a classified failure on a 200 response, or `'unknown'` when the
+     * HTTP call itself fails (non-ok) and no code is available.
+     * Optional so the island can be used standalone.
+     */
+    readonly onError?: (failureCodeOrUnknown: string) => void;
 };
 
 /**
  * Renders the import-from-URL form: a URL input, a required legal-confirmation
  * checkbox, and a submit button gated on that checkbox.
  */
-export function ImportFromUrl({ locale, onImported }: ImportFromUrlProps) {
+export function ImportFromUrl({ locale, onImported, onAttempt, onError }: ImportFromUrlProps) {
     const { t } = createTranslations(locale);
     const urlInputId = useId();
     const legalCheckboxId = useId();
@@ -82,15 +107,31 @@ export function ImportFromUrl({ locale, onImported }: ImportFromUrlProps) {
         }
 
         setIsSubmitting(true);
+        // A7: fire attempt event before the API call
+        onAttempt?.('unknown');
         try {
             const result = await accommodationsImportApi.importFromUrl(parsed.data);
             if (!result.ok) {
+                onError?.('unknown');
                 setError(
                     t(
                         'host.importFromUrl.errors.submit',
                         'No pudimos importar el alojamiento. Intentá de nuevo.'
                     )
                 );
+                return;
+            }
+            // Branch 2: 200 response with a machine-readable failureCode — render as error,
+            // do NOT fire onImported (SPEC-258 C.1).
+            if (result.data.failureCode) {
+                const camelKey = snakeToCamel(result.data.failureCode);
+                setError(
+                    t(
+                        `host.importFromUrl.errors.failure.${camelKey}` as Parameters<typeof t>[0],
+                        result.data.failureCode
+                    )
+                );
+                onError?.(result.data.failureCode);
                 return;
             }
             if (result.data.message) {
@@ -101,6 +142,7 @@ export function ImportFromUrl({ locale, onImported }: ImportFromUrlProps) {
             webLogger.error('ImportFromUrl: import request failed', {
                 err: err instanceof Error ? err.message : String(err)
             });
+            onError?.('unknown');
             setError(
                 t('host.importFromUrl.errors.network', 'No pudimos conectar con el servidor.')
             );

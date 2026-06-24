@@ -514,6 +514,42 @@ describe('SocialDraftIngestionService.ingestDraft', () => {
             const imageWarn = result.data.warnings.find((w) => w.field === 'image');
             expect(imageWarn).toBeDefined();
         });
+
+        it('should thread root openaiFileIdRefs into the image pipeline for openai_file_refs mode', async () => {
+            // Arrange — root-level openaiFileIdRefs (injected by OpenAI at the request body root)
+            const imagePipeline = buildImagePipelineMock({
+                assetId: 'asset-uuid',
+                cloudinaryUrl: 'https://res.cloudinary.com/test/image/upload/v1/ai.jpg',
+                warnings: []
+            });
+            const mockProcessImage = imagePipeline.processImage as ReturnType<typeof vi.fn>;
+
+            const service = buildService({ imagePipeline });
+            await service.ingestDraft({
+                payload: buildPayload({
+                    image: { mode: 'openai_file_refs' },
+                    // openaiFileIdRefs lives at payload ROOT (not inside image)
+                    openaiFileIdRefs: [
+                        {
+                            download_link: 'https://files.oaiusercontent.com/fake.jpg',
+                            id: 'file-abc123'
+                        }
+                    ]
+                }),
+                actorId: 'actor-id'
+            });
+
+            // Assert — processImage must be called with openaiFileIdRefs merged in
+            expect(mockProcessImage).toHaveBeenCalledOnce();
+            const callArg = mockProcessImage.mock.calls[0]?.[0] as {
+                image: { mode: string; openaiFileIdRefs: unknown[] };
+            };
+            expect(callArg.image.mode).toBe('openai_file_refs');
+            expect(callArg.image.openaiFileIdRefs).toHaveLength(1);
+            expect(
+                (callArg.image.openaiFileIdRefs[0] as { download_link: string }).download_link
+            ).toBe('https://files.oaiusercontent.com/fake.jpg');
+        });
     });
 
     // --- Audit row failure ---

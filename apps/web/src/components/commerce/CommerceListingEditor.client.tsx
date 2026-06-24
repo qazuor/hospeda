@@ -1,16 +1,21 @@
 /**
  * @file CommerceListingEditor.client.tsx
  * @description Operational editor island for a commerce owner's listing
- * (SPEC-249 Part A). Native HTML form (no TanStack Form, per web conventions)
- * that edits ONLY the operational fields the owner may change and persists them
- * through the vertical's protected PATCH endpoint (`updateOwn`).
+ * (SPEC-249 Part A, extended in SPEC-253). Native HTML form (no TanStack Form,
+ * per web conventions) that edits ONLY the operational fields the owner may
+ * change and persists them through the vertical's protected PATCH endpoint
+ * (`updateOwn`).
  *
  * Identity/core fields are rendered read-only by the hosting page, not here.
  *
- * Field-group coverage:
+ * Field-group coverage (SPEC-253 additions marked *):
+ *   * type select (per-vertical enum, T-020)
+ *   * summary textarea (min 10 / max 300, T-020)
  *   T-012 mechanics + richDescription
- *   T-013 simple fields (contactInfo, price group: menuUrl/priceRange | isPriceOnRequest)
- *   T-014 structured fields (openingHours, socialNetworks)
+ *   T-013 simple fields (contactInfo — no website per AC-4)
+ *   T-013 social networks (facebook/instagram/twitter/tiktok/youtube + *linkedIn)
+ *   T-014 structured fields (openingHours)
+ *   T-014 price group (gastronomy: priceRange + menuUrl | experience: isPriceOnRequest + *priceFrom + *priceUnit)
  *   T-015 media gallery
  *   T-016 amenities / features
  */
@@ -19,11 +24,21 @@ import type { AmenityData } from '@/lib/api/types';
 import type { CommerceListingDetail, CommerceVertical } from '@/lib/commerce/owner-listings';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { PriceRangeEnum } from '@repo/schemas';
+import {
+    ExperiencePriceUnitEnum,
+    ExperienceTypeEnum,
+    GastronomyTypeEnum,
+    PriceRangeEnum
+} from '@repo/schemas';
 import type { Image, OpeningHours } from '@repo/schemas';
 import { type JSX, useCallback, useState } from 'react';
 import { AmenitiesFeaturesField } from './AmenitiesFeaturesField';
 import styles from './CommerceListingEditor.module.css';
+import {
+    type CommerceI18nValues,
+    CommerceTranslationPanel,
+    parseCommerceI18nValues
+} from './CommerceTranslationPanel.client';
 import { MediaField } from './MediaField';
 import { OpeningHoursField } from './OpeningHoursField';
 
@@ -48,20 +63,24 @@ type SaveStatus =
     | { readonly kind: 'success' }
     | { readonly kind: 'error'; readonly message: string };
 
-/** Subset of the contact JSONB block the owner edits in this surface. */
+/**
+ * Subset of the contact JSONB block the owner edits in this surface.
+ * NOTE: `website` is intentionally absent per SPEC-253 AC-4 — it is not
+ * exposed in the owner editor UI even though it exists in ContactInfoSchema.
+ */
 interface ContactValues {
     mobilePhone: string;
     workEmail: string;
-    website: string;
 }
 
-/** Social URLs the owner edits (subset of SocialNetwork). */
+/** Social URLs the owner edits (subset of SocialNetwork, includes linkedIn per AC-4). */
 interface SocialValues {
     facebook: string;
     instagram: string;
     twitter: string;
     tiktok: string;
     youtube: string;
+    linkedIn: string;
 }
 
 const SOCIAL_KEYS: ReadonlyArray<keyof SocialValues> = [
@@ -69,8 +88,18 @@ const SOCIAL_KEYS: ReadonlyArray<keyof SocialValues> = [
     'instagram',
     'twitter',
     'tiktok',
-    'youtube'
+    'youtube',
+    'linkedIn'
 ];
+
+/** Gastronomy type options in display order. */
+const GASTRONOMY_TYPE_OPTIONS = Object.values(GastronomyTypeEnum);
+
+/** Experience type options in display order. */
+const EXPERIENCE_TYPE_OPTIONS = Object.values(ExperienceTypeEnum);
+
+/** Experience price unit options. */
+const PRICE_UNIT_OPTIONS = Object.values(ExperiencePriceUnitEnum);
 
 /** Resolve the owner PATCH endpoint for the given vertical. */
 function patchPathFor({
@@ -113,20 +142,29 @@ export function CommerceListingEditor({
     const initialSocial = (data.socialNetworks ?? {}) as Record<string, unknown>;
     const initialMedia = (data.media ?? {}) as Record<string, unknown>;
 
+    // T-020: type select state (per-vertical enum value)
+    const [listingType, setListingType] = useState<string>(strField(data, 'type'));
+
+    // T-020: summary textarea state (min 10 / max 300)
+    const [summary, setSummary] = useState<string>(strField(data, 'summary'));
+    const [summaryError, setSummaryError] = useState<string>('');
+
     const [richDescription, setRichDescription] = useState<string>(
         strField(data, 'richDescription')
     );
+    // T-020: website removed from contact per AC-4; mobilePhone + workEmail only
     const [contact, setContact] = useState<ContactValues>({
         mobilePhone: strField(initialContact, 'mobilePhone'),
-        workEmail: strField(initialContact, 'workEmail'),
-        website: strField(initialContact, 'website')
+        workEmail: strField(initialContact, 'workEmail')
     });
+    // T-020: added linkedIn to social per AC-4
     const [social, setSocial] = useState<SocialValues>({
         facebook: strField(initialSocial, 'facebook'),
         instagram: strField(initialSocial, 'instagram'),
         twitter: strField(initialSocial, 'twitter'),
         tiktok: strField(initialSocial, 'tiktok'),
-        youtube: strField(initialSocial, 'youtube')
+        youtube: strField(initialSocial, 'youtube'),
+        linkedIn: strField(initialSocial, 'linkedIn')
     });
     const [openingHours, setOpeningHours] = useState<OpeningHours | null>(
         (data.openingHours as OpeningHours | null | undefined) ?? null
@@ -136,6 +174,12 @@ export function CommerceListingEditor({
     const [isPriceOnRequest, setIsPriceOnRequest] = useState<boolean>(
         data.isPriceOnRequest === true
     );
+    // T-021: experience-only pricing fields
+    const [priceFrom, setPriceFrom] = useState<number | null>(
+        typeof data.priceFrom === 'number' ? data.priceFrom : null
+    );
+    const [priceFromError, setPriceFromError] = useState<string>('');
+    const [priceUnit, setPriceUnit] = useState<string>(strField(data, 'priceUnit'));
     const [featuredImage, setFeaturedImage] = useState<Image | null>(
         (initialMedia.featuredImage as Image | undefined) ?? null
     );
@@ -160,6 +204,11 @@ export function CommerceListingEditor({
     );
     const [featureIds, setFeatureIds] = useState<ReadonlySet<string>>(
         () => new Set((data.featureIds as string[] | undefined) ?? [])
+    );
+
+    // T-023: i18n fields state (nameI18n, summaryI18n, descriptionI18n, richDescriptionI18n)
+    const [i18nValues, setI18nValues] = useState<CommerceI18nValues>(() =>
+        parseCommerceI18nValues(data)
     );
 
     const [dirty, setDirty] = useState<ReadonlySet<string>>(new Set());
@@ -231,17 +280,77 @@ export function CommerceListingEditor({
         [markDirty]
     );
 
+    /** Handle i18n panel changes — marks all four i18n fields dirty at once. */
+    const handleI18nChange = useCallback(
+        (updated: CommerceI18nValues) => {
+            setI18nValues(updated);
+            markDirty('i18n');
+        },
+        [markDirty]
+    );
+
+    /** Validate summary: if non-empty, must be 10–300 chars. */
+    const validateSummary = useCallback(
+        (value: string): boolean => {
+            if (value.length > 0 && value.length < 10) {
+                setSummaryError(
+                    t('commerce.owner.editor.validation.summaryMin', 'Mínimo 10 caracteres.')
+                );
+                return false;
+            }
+            if (value.length > 300) {
+                setSummaryError(
+                    t('commerce.owner.editor.validation.summaryMax', 'Máximo 300 caracteres.')
+                );
+                return false;
+            }
+            setSummaryError('');
+            return true;
+        },
+        [t]
+    );
+
+    /** Validate priceFrom: must be a non-negative integer when provided. */
+    const validatePriceFrom = useCallback(
+        (value: number | null): boolean => {
+            if (value !== null && (!Number.isInteger(value) || value < 0)) {
+                setPriceFromError(
+                    t(
+                        'commerce.owner.editor.validation.priceMustBePositive',
+                        'El precio debe ser un número positivo.'
+                    )
+                );
+                return false;
+            }
+            setPriceFromError('');
+            return true;
+        },
+        [t]
+    );
+
     /** Build the PATCH payload from the dirty field groups only. */
     const buildPayload = useCallback((): Record<string, unknown> => {
         const payload: Record<string, unknown> = {};
+        if (dirty.has('type')) {
+            payload.type = listingType || undefined;
+        }
+        if (dirty.has('summary')) {
+            payload.summary = summary || undefined;
+        }
+        // T-023: include i18n fields when any locale was edited
+        if (dirty.has('i18n')) {
+            payload.nameI18n = i18nValues.nameI18n;
+            payload.summaryI18n = i18nValues.summaryI18n;
+            payload.descriptionI18n = i18nValues.descriptionI18n;
+            payload.richDescriptionI18n = i18nValues.richDescriptionI18n;
+        }
         if (dirty.has('richDescription')) {
             payload.richDescription = richDescription;
         }
         if (dirty.has('contactInfo')) {
             payload.contactInfo = {
                 mobilePhone: nonEmpty(contact.mobilePhone),
-                workEmail: nonEmpty(contact.workEmail),
-                website: nonEmpty(contact.website)
+                workEmail: nonEmpty(contact.workEmail)
             };
         }
         if (dirty.has('socialNetworks')) {
@@ -250,7 +359,8 @@ export function CommerceListingEditor({
                 instagram: nonEmpty(social.instagram),
                 twitter: nonEmpty(social.twitter),
                 tiktok: nonEmpty(social.tiktok),
-                youtube: nonEmpty(social.youtube)
+                youtube: nonEmpty(social.youtube),
+                linkedIn: nonEmpty(social.linkedIn)
             };
         }
         if (dirty.has('openingHours')) {
@@ -278,9 +388,19 @@ export function CommerceListingEditor({
         if (dirty.has('isPriceOnRequest')) {
             payload.isPriceOnRequest = isPriceOnRequest;
         }
+        // T-021: experience-only
+        if (dirty.has('priceFrom')) {
+            payload.priceFrom = priceFrom ?? null;
+        }
+        if (dirty.has('priceUnit')) {
+            payload.priceUnit = priceUnit || null;
+        }
         return payload;
     }, [
         dirty,
+        listingType,
+        summary,
+        i18nValues,
         richDescription,
         contact,
         social,
@@ -288,6 +408,8 @@ export function CommerceListingEditor({
         priceRange,
         menuUrl,
         isPriceOnRequest,
+        priceFrom,
+        priceUnit,
         featuredImage,
         gallery,
         preservedMedia,
@@ -299,6 +421,14 @@ export function CommerceListingEditor({
         async (event: React.FormEvent<HTMLFormElement>) => {
             event.preventDefault();
             if (dirty.size === 0) {
+                return;
+            }
+            // Validate summary before submit
+            if (dirty.has('summary') && !validateSummary(summary)) {
+                return;
+            }
+            // Validate priceFrom before submit (experience only)
+            if (dirty.has('priceFrom') && !validatePriceFrom(priceFrom)) {
                 return;
             }
             setStatus({ kind: 'saving' });
@@ -318,11 +448,24 @@ export function CommerceListingEditor({
                 });
             }
         },
-        [dirty, vertical, listingId, buildPayload, t]
+        [
+            dirty,
+            vertical,
+            listingId,
+            buildPayload,
+            t,
+            validateSummary,
+            summary,
+            validatePriceFrom,
+            priceFrom
+        ]
     );
 
     const isSaving = status.kind === 'saving';
     const canSave = dirty.size > 0 && !isSaving;
+
+    const typeOptions =
+        vertical === 'gastronomy' ? GASTRONOMY_TYPE_OPTIONS : EXPERIENCE_TYPE_OPTIONS;
 
     return (
         <form
@@ -330,6 +473,67 @@ export function CommerceListingEditor({
             onSubmit={handleSubmit}
             aria-busy={isSaving}
         >
+            {/* T-020: type select */}
+            <section className={styles.section}>
+                <label
+                    className={styles.label}
+                    htmlFor="ce-type"
+                >
+                    {t('commerce.owner.editor.sections.type', 'Categoría')}
+                </label>
+                <select
+                    id="ce-type"
+                    className={styles.input}
+                    value={listingType}
+                    onChange={(event) => {
+                        setListingType(event.target.value);
+                        markDirty('type');
+                    }}
+                >
+                    <option value="">—</option>
+                    {typeOptions.map((opt) => (
+                        <option
+                            key={opt}
+                            value={opt}
+                        >
+                            {t(`commerce.owner.editor.typeOption.${opt}`, opt)}
+                        </option>
+                    ))}
+                </select>
+            </section>
+
+            {/* T-020: summary textarea (min 10 / max 300) */}
+            <section className={styles.section}>
+                <label
+                    className={styles.label}
+                    htmlFor="ce-summary"
+                >
+                    {t('commerce.owner.editor.sections.summary', 'Resumen')}
+                </label>
+                <textarea
+                    id="ce-summary"
+                    className={styles.textarea}
+                    value={summary}
+                    rows={3}
+                    minLength={10}
+                    maxLength={300}
+                    aria-describedby="ce-summary-hint"
+                    onChange={(event) => {
+                        setSummary(event.target.value);
+                        markDirty('summary');
+                        validateSummary(event.target.value);
+                    }}
+                />
+                <span
+                    id="ce-summary-hint"
+                    className={summaryError ? styles.error : styles.hint}
+                    aria-live="polite"
+                >
+                    {summaryError ||
+                        t('commerce.owner.editor.validation.summaryHint', `${summary.length}/300`)}
+                </span>
+            </section>
+
             <section className={styles.section}>
                 <label
                     className={styles.label}
@@ -349,6 +553,7 @@ export function CommerceListingEditor({
                 />
             </section>
 
+            {/* Contact: mobilePhone + workEmail only (no website per AC-4) */}
             <fieldset className={styles.section}>
                 <legend className={styles.label}>
                     {t('commerce.owner.editor.sections.contactInfo', 'Información de contacto')}
@@ -356,7 +561,7 @@ export function CommerceListingEditor({
                 <input
                     className={styles.input}
                     type="tel"
-                    aria-label={t('commerce.owner.editor.sections.contactInfo', 'Teléfono')}
+                    aria-label={t('commerce.owner.editor.contactField.mobilePhone', 'Teléfono')}
                     value={contact.mobilePhone}
                     placeholder="+54..."
                     onChange={(event) => updateContact({ mobilePhone: event.target.value })}
@@ -364,19 +569,13 @@ export function CommerceListingEditor({
                 <input
                     className={styles.input}
                     type="email"
-                    aria-label="email"
+                    aria-label={t('commerce.owner.editor.contactField.workEmail', 'Email')}
                     value={contact.workEmail}
                     onChange={(event) => updateContact({ workEmail: event.target.value })}
                 />
-                <input
-                    className={styles.input}
-                    type="url"
-                    aria-label="website"
-                    value={contact.website}
-                    onChange={(event) => updateContact({ website: event.target.value })}
-                />
             </fieldset>
 
+            {/* Social: facebook/instagram/twitter/tiktok/youtube + linkedIn (AC-4) */}
             <fieldset className={styles.section}>
                 <legend className={styles.label}>
                     {t('commerce.owner.editor.sections.socialNetworks', 'Redes sociales')}
@@ -388,7 +587,7 @@ export function CommerceListingEditor({
                         type="url"
                         aria-label={key}
                         value={social[key]}
-                        placeholder={`https://${key}.com/...`}
+                        placeholder={`https://${key === 'linkedIn' ? 'linkedin' : key}.com/...`}
                         onChange={(event) => updateSocial(key, event.target.value)}
                     />
                 ))}
@@ -422,6 +621,13 @@ export function CommerceListingEditor({
                     classes={styles}
                 />
             </section>
+
+            {/* T-023: i18n editing panel */}
+            <CommerceTranslationPanel
+                locale={locale}
+                initialValues={i18nValues}
+                onChange={handleI18nChange}
+            />
 
             {(amenities.length > 0 || features.length > 0) && (
                 <section className={styles.section}>
@@ -486,6 +692,7 @@ export function CommerceListingEditor({
                 </section>
             ) : (
                 <section className={styles.section}>
+                    {/* isPriceOnRequest toggle */}
                     <label className={styles.checkbox}>
                         <input
                             type="checkbox"
@@ -495,8 +702,70 @@ export function CommerceListingEditor({
                                 markDirty('isPriceOnRequest');
                             }}
                         />
-                        {t('commerce.owner.editor.sections.priceRange', 'Precio a consultar')}
+                        {t('commerce.owner.editor.sections.isPriceOnRequest', 'Precio a consultar')}
                     </label>
+
+                    {/* T-021: priceFrom — disabled when isPriceOnRequest */}
+                    <label
+                        className={styles.label}
+                        htmlFor="ce-priceFrom"
+                    >
+                        {t('commerce.owner.editor.sections.priceFrom', 'Precio desde (centavos)')}
+                    </label>
+                    <input
+                        id="ce-priceFrom"
+                        className={styles.input}
+                        type="number"
+                        min={0}
+                        step={1}
+                        disabled={isPriceOnRequest}
+                        value={priceFrom ?? ''}
+                        aria-describedby="ce-priceFrom-err"
+                        onChange={(event) => {
+                            const raw = event.target.value;
+                            const parsed = raw === '' ? null : Math.floor(Number(raw));
+                            setPriceFrom(parsed);
+                            markDirty('priceFrom');
+                            validatePriceFrom(parsed);
+                        }}
+                    />
+                    {priceFromError && (
+                        <span
+                            id="ce-priceFrom-err"
+                            className={styles.error}
+                            aria-live="polite"
+                        >
+                            {priceFromError}
+                        </span>
+                    )}
+
+                    {/* T-021: priceUnit select — disabled when isPriceOnRequest */}
+                    <label
+                        className={styles.label}
+                        htmlFor="ce-priceUnit"
+                    >
+                        {t('commerce.owner.editor.sections.priceUnit', 'Unidad de precio')}
+                    </label>
+                    <select
+                        id="ce-priceUnit"
+                        className={styles.input}
+                        value={priceUnit}
+                        disabled={isPriceOnRequest}
+                        onChange={(event) => {
+                            setPriceUnit(event.target.value);
+                            markDirty('priceUnit');
+                        }}
+                    >
+                        <option value="">—</option>
+                        {PRICE_UNIT_OPTIONS.map((unit) => (
+                            <option
+                                key={unit}
+                                value={unit}
+                            >
+                                {t(`commerce.owner.editor.priceUnitOption.${unit}`, unit)}
+                            </option>
+                        ))}
+                    </select>
                 </section>
             )}
 

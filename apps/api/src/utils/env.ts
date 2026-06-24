@@ -597,8 +597,14 @@ export const ApiEnvBaseSchema = z.object({
     // Accommodation import (SPEC-222)
     /** Apify API token for the Airbnb scraper actor and Booking.com fallback adapter */
     HOSPEDA_APIFY_TOKEN: z.string().optional(),
-    /** Apify actor ID/slug for the Airbnb scraper (swappable without a code deploy) */
-    HOSPEDA_APIFY_AIRBNB_ACTOR: z.string().optional(),
+    /**
+     * Apify actor ID/slug for the Airbnb rooms/detail scraper (swappable without a code deploy).
+     *
+     * Defaults to `tri_angle/airbnb-rooms-urls-scraper` — the actor that accepts
+     * /rooms/ detail URLs. Do NOT use `tri_angle/airbnb-scraper` (search scraper),
+     * which rejects detail URLs and returns an empty dataset.
+     */
+    HOSPEDA_APIFY_AIRBNB_ACTOR: z.string().default('tri_angle/airbnb-rooms-urls-scraper'),
     /** Apify actor ID/slug for the Booking.com scraper fallback (swappable without a code deploy) */
     HOSPEDA_APIFY_BOOKING_ACTOR: z.string().optional(),
     /** Google Places API (New) key for the Google Maps import tier */
@@ -607,6 +613,8 @@ export const ApiEnvBaseSchema = z.object({
     HOSPEDA_MERCADOLIBRE_TOKEN: z.string().optional(),
     /** Timeout in milliseconds for the safeExternalFetch utility used in import adapters */
     HOSPEDA_IMPORT_FETCH_TIMEOUT_MS: z.coerce.number().default(8000),
+    /** Timeout in milliseconds for synchronous Apify actor runs in import adapters (Airbnb, Booking fallback); actors take 8-120s so they get a longer budget than the fetch timeout */
+    HOSPEDA_IMPORT_APIFY_TIMEOUT_MS: z.coerce.number().default(120000),
     /** Maximum response body size in bytes for the safeExternalFetch utility used in import adapters */
     HOSPEDA_IMPORT_FETCH_MAX_BYTES: z.coerce.number().default(3000000),
     /** Per-user rate limit (requests per hour) for the accommodation import endpoint */

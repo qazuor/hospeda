@@ -258,8 +258,10 @@ describe('PromoCodeFormDialog', () => {
         expect(payload.code).toBe('SUMMER30');
         expect(payload.description).toBe('Summer sale');
         expect(payload.discountValue).toBe(30);
-        // CreatePromoCodePayload uses `discountType`, not `type` (updated in 3af9c5601)
-        expect(payload.discountType).toBe('percentage');
+        // SPEC-262: the payload now carries a typed effect (effectKind + valueKind)
+        // instead of the removed flat `discountType` field.
+        expect(payload.effectKind).toBe('discount');
+        expect(payload.valueKind).toBe('percentage');
     });
 
     it('calls onClose when cancel button is clicked', async () => {

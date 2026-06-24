@@ -68,16 +68,15 @@ export interface AccommodationPublishDeps {
  * Outcome of `AccommodationService.createForOnboarding`.
  *
  * - `created`: a fresh DRAFT was inserted for the actor and the onboarding flow
- *   promotes them from `USER` to `HOST` so they can access host surfaces.
+ *   promotes them from `USER` to `HOST` so they can access host surfaces. When the
+ *   actor is already `HOST` (or higher) the role promotion is a no-op but a new
+ *   DRAFT is still created so they don't lose their input.
  * - `resumed`: the actor already had an active DRAFT — that one is returned and the
  *   caller should resume the onboarding flow on it instead of creating a new one.
- * - `already_host`: the actor is already `HOST` (or higher). No draft is created;
- *   the caller is expected to redirect to the admin panel directly.
  */
 export type HostOnboardingResult =
     | { status: 'created'; accommodation: Accommodation }
-    | { status: 'resumed'; accommodation: Accommodation }
-    | { status: 'already_host'; accommodation: null };
+    | { status: 'resumed'; accommodation: Accommodation };
 
 /**
  * Per-request hook state for AccommodationService lifecycle hooks.

@@ -20,7 +20,7 @@ describe('AmenityService.create', () => {
     let loggerMock: ReturnType<typeof createLoggerMock>;
     let actor: Actor;
     const input = {
-        name: { es: 'Test Amenity', en: 'Test Amenity', pt: 'Test Amenity' },
+        slug: 'test-amenity',
         type: AmenitiesTypeEnum.GENERAL_APPLIANCES,
         icon: '🛏️',
         description: {
@@ -28,6 +28,7 @@ describe('AmenityService.create', () => {
             en: 'A test amenity desc',
             pt: 'A test amenity desc'
         },
+        applicableVerticals: ['accommodation'] as ('gastronomy' | 'experience' | 'accommodation')[],
         isFeatured: false,
         lifecycleState: 'ACTIVE' as any,
         isBuiltin: false,
@@ -60,10 +61,10 @@ describe('AmenityService.create', () => {
     });
 
     it('should return VALIDATION_ERROR for invalid input', async () => {
-        // name with empty es locale violates min:2
+        // empty slug violates min:3
         const result = await service.create(actor, {
             ...input,
-            name: { es: '', en: '', pt: '' }
+            slug: ''
         });
         expectValidationError(result);
     });
@@ -74,7 +75,7 @@ describe('AmenityService.create', () => {
         expectInternalError(result);
     });
 
-    it('should generate a unique slug if name is duplicated', async () => {
+    it('should create with a unique slug', async () => {
         asMock(amenityModelMock.findOne)
             .mockResolvedValueOnce(null) // first slug is unique
             .mockResolvedValueOnce({ ...createdAmenity, slug: 'test-amenity' }) // second slug exists
@@ -84,11 +85,11 @@ describe('AmenityService.create', () => {
             ...createdAmenity,
             slug: 'test-amenity-2'
         });
-        // First creation — slug is derived from name.es
+        // First creation — slug matches input
         const result1 = await service.create(actor, input);
         expectSuccess(result1);
         expect(result1.data?.slug).toBe('test-amenity');
-        // Second creation with same name — slug gets a suffix
+        // Second creation with same slug — model returns a suffixed slug
         const result2 = await service.create(actor, input);
         expectSuccess(result2);
         expect(result2.data?.slug).toMatch(/^test-amenity(-\d+)?$/);
@@ -103,8 +104,13 @@ describe('AmenityService.create', () => {
             description: undefined
         });
         const minimalInput = {
-            name: { es: 'Minimal Amenity', en: 'Minimal Amenity', pt: 'Minimal Amenity' },
+            slug: 'minimal-amenity',
             type: AmenitiesTypeEnum.GENERAL_APPLIANCES,
+            applicableVerticals: ['accommodation'] as (
+                | 'gastronomy'
+                | 'experience'
+                | 'accommodation'
+            )[],
             isFeatured: false,
             lifecycleState: 'ACTIVE' as any,
             isBuiltin: false,
@@ -116,10 +122,9 @@ describe('AmenityService.create', () => {
         expect(result.data?.description).toBeUndefined();
     });
 
-    it('should reject null for required fields', async () => {
-        // name is required — passing null triggers validation error
-        // @ts-expect-error
-        const result = await service.create(actor, { ...input, name: null });
+    it('should reject too-short slug (below min:3)', async () => {
+        // slug min is 3 characters
+        const result = await service.create(actor, { ...input, slug: 'ab' });
         expectValidationError(result);
     });
 });

@@ -15,7 +15,8 @@ import type {
     UserBookmark,
     UserCancelSubscriptionResponse,
     UserProtected,
-    UserPublic
+    UserPublic,
+    ValidationResult
 } from '@repo/schemas';
 import { apiClient } from './client';
 import type { ApiResult, PaginatedResponse } from './types';
@@ -620,25 +621,43 @@ export const billingApi = {
      * trial-to-paid transitions, and idempotency. The legacy `/checkout`
      * endpoint was deprecated in SPEC-126.
      *
-     * @param params - Plan slug and billing interval
-     * @returns The checkout URL to redirect the user to
+     * When a `promoCode` is supplied and the server resolves it to a `comp`
+     * (free-forever) effect, `appliedEffect` in the response is `'comp'` and
+     * `checkoutUrl` is an **in-app success sentinel URL** — NOT a MercadoPago
+     * redirect. The caller should still follow `checkoutUrl` via
+     * `window.location.href`; the sentinel page handles the success flow
+     * without touching the payment provider (SPEC-262 T-012).
+     *
+     * @param params - Plan slug, billing interval, and optional promo code
+     * @returns The checkout URL to redirect the user to, plus metadata
      *
      * @example
      * ```ts
-     * const result = await billingApi.createCheckout({ planSlug: 'owner-pro', billingInterval: 'annual' });
+     * const result = await billingApi.createCheckout({ planSlug: 'owner-pro', billingInterval: 'annual', promoCode: 'WELCOME50' });
      * if (result.ok) window.location.href = result.data.checkoutUrl;
      * ```
      */
     createCheckout({
         planSlug,
-        billingInterval
+        billingInterval,
+        promoCode
     }: {
         readonly planSlug: string;
         readonly billingInterval: 'monthly' | 'annual';
-    }): Promise<ApiResult<{ readonly checkoutUrl: string }>> {
+        readonly promoCode?: string;
+    }): Promise<
+        ApiResult<{
+            readonly checkoutUrl: string;
+            readonly appliedEffect?: 'comp' | 'discount';
+        }>
+    > {
+        const body: Record<string, unknown> = { planSlug, billingInterval };
+        if (promoCode) {
+            body.promoCode = promoCode;
+        }
         return apiClient.postProtected({
             path: `${PROTECTED}/billing/subscriptions/start-paid`,
-            body: { planSlug, billingInterval },
+            body,
             // `/start-paid` is wrapped by `idempotencyKeyMiddleware` (SPEC-143
             // T-143-60). A fresh UUID v4 per click means double-click retries
             // get the cached response (no duplicate MP preference + sub row)
@@ -647,6 +666,48 @@ export const billingApi = {
             // double-click case; the middleware covers the network-level retry
             // case (slow network → user reloads, etc.).
             headers: { 'X-Idempotency-Key': crypto.randomUUID() }
+        });
+    },
+
+    /**
+     * Validate a promo code before checkout and preview its effect.
+     *
+     * Rate-limited to 5 requests/minute server-side. Always call on an
+     * explicit user action ("Aplicar"), NOT on every keystroke.
+     *
+     * The `userId` MUST equal the session user's id; the route returns 403
+     * otherwise. `amount` (in centavos) is forwarded so the server can
+     * calculate and return `effectPreview.finalAmount` for discount codes.
+     * The web only has `planSlug`, not `planId`, so `planId` is intentionally
+     * omitted from this call.
+     *
+     * @param params.code - Promo code string entered by the user
+     * @param params.userId - Authenticated user's UUID (from session)
+     * @param params.amount - Base price in centavos for discount preview (optional)
+     * @returns Validation result including `effectPreview` when the code is valid
+     *
+     * @example
+     * ```ts
+     * const result = await billingApi.validatePromoCode({ code: 'PROMO20', userId: 'uuid-...', amount: 120000 });
+     * if (result.ok && result.data.valid) console.log(result.data.effectPreview);
+     * ```
+     */
+    validatePromoCode({
+        code,
+        userId,
+        amount
+    }: {
+        readonly code: string;
+        readonly userId: string;
+        readonly amount?: number;
+    }): Promise<ApiResult<ValidationResult>> {
+        const body: { code: string; userId: string; amount?: number } = { code, userId };
+        if (amount !== undefined) {
+            body.amount = amount;
+        }
+        return apiClient.postProtected({
+            path: `${PROTECTED}/billing/promo-codes/validate`,
+            body
         });
     },
 

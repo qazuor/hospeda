@@ -90,3 +90,87 @@ export const SocialPostSchema = z.object({
 
 /** TypeScript type inferred from {@link SocialPostSchema}. */
 export type SocialPost = z.infer<typeof SocialPostSchema>;
+
+/**
+ * Minimal projection returned by the admin list endpoint
+ * (`GET /api/v1/admin/social/posts`).
+ *
+ * The list query does NOT hydrate the full {@link SocialPostSchema} entity —
+ * it returns a lightweight row for table rendering (title, status, target
+ * platforms, thumbnail, schedule). Mirrors `SocialPostListItem` in
+ * `@repo/service-core` (`SocialPostService.list`). Using the full entity schema
+ * as the list response contract is incorrect: the projection omits most entity
+ * fields, so validation would reject every row once the list is non-empty.
+ */
+export const SocialPostListItemSchema = z.object({
+    id: z.string().uuid({ message: 'zodError.socialPost.id.uuid' }),
+    title: z.string(),
+    slug: z.string(),
+    status: SocialPostStatusEnumSchema,
+    approvalStatus: SocialApprovalStatusEnumSchema,
+    paused: z.boolean(),
+    /** Target platforms derived from `social_post_targets`. */
+    platforms: z.array(z.string()),
+    /** Cloudinary URL of the first media asset, or null when there is none. */
+    thumbnailUrl: z.string().nullable(),
+    /** Scheduled publication datetime, or null. */
+    scheduledAt: z.coerce.date().nullable(),
+    createdAt: z.coerce.date()
+});
+
+/** TypeScript type inferred from {@link SocialPostListItemSchema}. */
+export type SocialPostListItem = z.infer<typeof SocialPostListItemSchema>;
+
+/**
+ * Detail DTO schema returned by {@link SocialPostService.getPostDetail}.
+ *
+ * This is the shape of `GET /api/v1/admin/social/posts/{id}` — a RICHER
+ * projection than the full entity {@link SocialPostSchema}: it omits DB-only
+ * fields (`draftId`, `source`, `createdById`, `updatedById`) that the service
+ * does not hydrate, and includes denormalised relation arrays (`targets`,
+ * `media`, `publishLogs`, `hashtags`) that the entity schema does not have.
+ *
+ * The `targets`, `media`, and `publishLogs` arrays use a permissive row schema
+ * (`z.record(z.string(), z.unknown())`) so that arbitrary raw columns — including
+ * `cloudinaryUrl` enriched on media rows — survive `stripWithSchema` without
+ * being dropped.
+ *
+ * Mirrors `SocialPostDetail` in `@repo/service-core`.
+ */
+export const SocialPostDetailSchema = z.object({
+    id: z.string(),
+    title: z.string(),
+    slug: z.string(),
+    status: z.string(),
+    approvalStatus: z.string(),
+    paused: z.boolean(),
+    scheduledAt: z.coerce.date().nullable(),
+    captionBase: z.string(),
+    finalCaption: z.string().nullable(),
+    finalHashtagsText: z.string().nullable(),
+    notes: z.string().nullable(),
+    internalNotes: z.string().nullable(),
+    gptHashtagPayloadJson: z.array(z.string()).nullable(),
+    createdAt: z.coerce.date(),
+    updatedAt: z.coerce.date(),
+    /** Resolved hashtag strings for the post. */
+    hashtags: z.array(z.string()),
+    /**
+     * Raw `social_post_targets` rows — open record so all columns are preserved
+     * after response stripping.
+     */
+    targets: z.array(z.record(z.string(), z.unknown())),
+    /**
+     * Raw `social_post_media` rows enriched with `cloudinaryUrl` — open record
+     * so the extra column survives response stripping.
+     */
+    media: z.array(z.record(z.string(), z.unknown())),
+    /**
+     * Last 10 `social_publish_log` rows (newest first) — open record so all
+     * payload columns are preserved after response stripping.
+     */
+    publishLogs: z.array(z.record(z.string(), z.unknown()))
+});
+
+/** TypeScript type inferred from {@link SocialPostDetailSchema}. */
+export type SocialPostDetailSchemaType = z.infer<typeof SocialPostDetailSchema>;

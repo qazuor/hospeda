@@ -17,6 +17,53 @@ import { AccommodationTypeEnumSchema } from '../../enums/index.js';
 import { LanguageEnumSchema } from '../user/user.settings.schema.js';
 
 // ---------------------------------------------------------------------------
+// ImportFailureCodeSchema
+// ---------------------------------------------------------------------------
+
+/**
+ * Machine-readable enum classifying why an accommodation import attempt failed.
+ *
+ * Used as the `failureCode` field on {@link AccommodationImportResponseSchema}
+ * so that API clients can display a localized, context-aware error message
+ * instead of a generic fallback. Absent when the import succeeded.
+ *
+ * Values:
+ * - `invalid_url`          — URL is unparseable, unsupported, or an unresolvable short-link.
+ * - `source_blocked`       — Anti-bot page, empty dataset on 2xx, or rate-limited (429).
+ *                            TRANSIENT — never blame the host's URL.
+ * - `credentials_missing`  — Missing API key / token, or 401/403 from the provider.
+ * - `provider_error`       — Non-2xx (other than 401/403/429), malformed response,
+ *                            bad actor slug, or unexpected throw.
+ * - `timeout`              — `AbortController` fired (`timeoutMs` exceeded).
+ * - `nothing_found`        — Source was reached successfully but the page has no
+ *                            accommodation data (genuine empty result).
+ *
+ * @example
+ * ```ts
+ * ImportFailureCodeSchema.parse('source_blocked'); // ok
+ * ImportFailureCodeSchema.parse('unknown');        // throws
+ * ```
+ */
+export const ImportFailureCodeSchema = z.enum([
+    'invalid_url',
+    'source_blocked',
+    'credentials_missing',
+    'provider_error',
+    'timeout',
+    'nothing_found'
+]);
+
+/**
+ * TypeScript type inferred from {@link ImportFailureCodeSchema}.
+ *
+ * @example
+ * ```ts
+ * const code: ImportFailureCode = 'source_blocked';
+ * ```
+ */
+export type ImportFailureCode = z.infer<typeof ImportFailureCodeSchema>;
+
+// ---------------------------------------------------------------------------
 // ImportSourceSchema
 // ---------------------------------------------------------------------------
 
@@ -414,8 +461,20 @@ export const AccommodationImportResponseSchema = z.object({
     /**
      * Optional human-readable message from the importer (e.g. a warning
      * about rate-limiting, a fallback notice, or a quality advisory).
+     * Left undefined for machine-classified failures — use `failureCode` instead.
      */
     message: z.string().optional(),
+    /**
+     * Machine-readable cause when extraction failed.
+     *
+     * Clients map this code to a localized user-facing error message
+     * (e.g. `t('host.importFromUrl.errors.failure.sourceBlocked')`). Absent on
+     * success. See {@link ImportFailureCodeSchema} for the full set of values.
+     *
+     * Presence of this field always means the import yielded no usable data —
+     * callers MUST NOT treat a 200 response with `failureCode` as a success.
+     */
+    failureCode: ImportFailureCodeSchema.optional(),
     /**
      * Optional locality resolution hint to help the host map the scraped
      * address to a Hospeda destination record.

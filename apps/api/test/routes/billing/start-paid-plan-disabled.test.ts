@@ -28,6 +28,10 @@ vi.mock('../../../src/middlewares/billing', () => ({
     requireBilling: vi.fn(async (_c: unknown, next: () => Promise<void>) => next())
 }));
 
+vi.mock('../../../src/middlewares/actor', () => ({
+    getActorFromContext: vi.fn(() => ({ id: 'user-1', email: 'test@test.com', roles: [] }))
+}));
+
 vi.mock('../../../src/lib/sentry', async (importOriginal) => {
     const actual = await importOriginal<typeof import('../../../src/lib/sentry')>();
     return { ...actual, captureBillingError: vi.fn() };

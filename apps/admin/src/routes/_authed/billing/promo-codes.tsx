@@ -81,8 +81,18 @@ function BillingPromoCodesPage() {
 
     const handleFormSubmit = (formData: CreatePromoCodePayload) => {
         if (selectedPromoCode) {
+            // The effect is immutable after creation, so only the mutable fields
+            // are forwarded. Build an explicit UpdatePromoCodePayload instead of
+            // spreading CreatePromoCodePayload — the latter would leak effect
+            // fields the strict UpdatePromoCodeSchema rejects.
             updateMutation.mutate(
-                { id: selectedPromoCode.id, ...formData },
+                {
+                    id: selectedPromoCode.id,
+                    description: formData.description,
+                    expiryDate: formData.expiryDate,
+                    maxUses: formData.maxUses,
+                    isActive: formData.isActive
+                },
                 {
                     onSuccess: () => {
                         addToast({

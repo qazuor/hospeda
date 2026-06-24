@@ -7,7 +7,8 @@ export type SubscriptionStatus =
     | 'cancelled'
     | 'past_due'
     | 'expired'
-    | 'paused';
+    | 'paused'
+    | 'comp';
 
 /**
  * Subscription data structure

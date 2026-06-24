@@ -1,0 +1,15 @@
+{
+    "specId": "SPEC-267",
+    "title": "SEO entity fields — Hybrid (keep title/description, remove keywords) + improve SEO tab UX",
+    "type": "feature",
+    "complexity": "low",
+    "status": "draft",
+    "created": "2026-06-23T00:00:00Z",
+    "decided": "2026-06-23",
+    "modelFit": "basic",
+    "startedAt": null,
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["seo", "web", "admin", "schemas", "db", "ux"]
+}

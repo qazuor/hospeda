@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "030-feature-full_rental",
-    "name": {
-        "es": "Alquiler completo",
-        "en": "Alquiler completo",
-        "pt": "Alquiler completo"
-    },
     "slug": "full_rental",
     "description": {
         "es": "Renta de toda la propiedad de forma exclusiva, sin compartir espacios con otros huéspedes o propietarios",
         "en": "Renta de toda la propiedad de forma exclusiva, sin compartir espacios con otros huéspedes o propietarios",
         "pt": "Renta de toda la propiedad de forma exclusiva, sin compartir espacios con otros huéspedes o propietarios"
     },
+    "applicableVerticals": ["accommodation"],
     "icon": "EntirePropertyIcon",
     "isBuiltin": true,
     "isFeatured": false,

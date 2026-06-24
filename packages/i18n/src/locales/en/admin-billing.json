@@ -964,7 +964,16 @@
             "cancelled": "Cancelled",
             "pastDue": "Past Due",
             "expired": "Expired",
-            "paused": "Paused"
+            "paused": "Paused",
+            "comp": "Complimentary"
+        },
+        "promoEffect": {
+            "title": "Active promotion",
+            "discountForCycles": "Discount: -{value} for {count} more cycle(s)",
+            "discountForever": "Discount: -{value} forever",
+            "complimentary": "Complimentary (never billed)",
+            "trialExtended": "Trial extended +{days} day(s)",
+            "exhausted": "Promo exhausted"
         },
         "filtersTitle": "Filters",
         "searchLabel": "Search by user",
@@ -1332,7 +1341,20 @@
             "requiresFirstPurchaseLabel": "First purchase only",
             "cancelButton": "Cancel",
             "editSubmit": "Save changes",
-            "createSubmit": "Create code"
+            "createSubmit": "Create code",
+            "effect": {
+                "kindLabel": "Effect type *",
+                "kindDiscount": "Discount",
+                "kindTrialExtension": "Trial extension",
+                "kindComp": "Complimentary (never billed)",
+                "immutableHint": "The effect type cannot be changed after the code is created.",
+                "durationCyclesLabel": "Duration cycles",
+                "foreverLabel": "Forever",
+                "extraDaysLabel": "Extra trial days *",
+                "extraDaysHint": "X months = X×30 days.",
+                "compNote": "This code marks the subscription complimentary: it is never billed.",
+                "validationError": "Check the effect parameters: percentage ≤ 100, days > 0, cycles > 0."
+            }
         },
         "deleteDialog": {
             "title": "Delete promo code",

@@ -96,7 +96,7 @@ describe('runApifyActor', () => {
             const result = await runApifyActor(makeInput());
 
             // Assert
-            expect(result).toEqual(items);
+            expect(result).toEqual({ items });
         });
 
         it('should return an empty array when the endpoint returns an empty array', async () => {
@@ -107,10 +107,10 @@ describe('runApifyActor', () => {
             const result = await runApifyActor(makeInput());
 
             // Assert
-            expect(result).toEqual([]);
+            expect(result).toEqual({ items: [] });
         });
 
-        it('should return [] when the endpoint returns an object instead of an array', async () => {
+        it('should return { items:[], failureCode } when the endpoint returns an object instead of an array', async () => {
             // Arrange — some actors may erroneously return an object
             vi.stubGlobal(
                 'fetch',
@@ -125,7 +125,7 @@ describe('runApifyActor', () => {
             const result = await runApifyActor(makeInput());
 
             // Assert
-            expect(result).toEqual([]);
+            expect(result).toEqual({ items: [], failureCode: 'provider_error' });
         });
     });
 
@@ -177,7 +177,7 @@ describe('runApifyActor', () => {
             const result = await runApifyActor(makeInput({ actor: 'not-a-valid-slug' }));
 
             // Assert
-            expect(result).toEqual([]);
+            expect(result).toEqual({ items: [], failureCode: 'provider_error' });
             expect(mockFetch).not.toHaveBeenCalled();
         });
 
@@ -198,7 +198,7 @@ describe('runApifyActor', () => {
     });
 
     describe('error handling', () => {
-        it('should return [] for a 401 Unauthorized response without throwing', async () => {
+        it('should return { items: [], failureCode: credentials_missing } for a 401 response', async () => {
             // Arrange
             vi.stubGlobal('fetch', mockFetchError(401));
 
@@ -206,10 +206,32 @@ describe('runApifyActor', () => {
             const result = await runApifyActor(makeInput());
 
             // Assert
-            expect(result).toEqual([]);
+            expect(result).toEqual({ items: [], failureCode: 'credentials_missing' });
         });
 
-        it('should return [] for a 404 Not Found response without throwing', async () => {
+        it('should return { items: [], failureCode: credentials_missing } for a 403 response', async () => {
+            // Arrange
+            vi.stubGlobal('fetch', mockFetchError(403));
+
+            // Act
+            const result = await runApifyActor(makeInput());
+
+            // Assert
+            expect(result).toEqual({ items: [], failureCode: 'credentials_missing' });
+        });
+
+        it('should return { items: [], failureCode: source_blocked } for a 429 response', async () => {
+            // Arrange
+            vi.stubGlobal('fetch', mockFetchError(429));
+
+            // Act
+            const result = await runApifyActor(makeInput());
+
+            // Assert
+            expect(result).toEqual({ items: [], failureCode: 'source_blocked' });
+        });
+
+        it('should return { items: [], failureCode: provider_error } for a 404 response', async () => {
             // Arrange
             vi.stubGlobal('fetch', mockFetchError(404));
 
@@ -217,10 +239,10 @@ describe('runApifyActor', () => {
             const result = await runApifyActor(makeInput());
 
             // Assert
-            expect(result).toEqual([]);
+            expect(result).toEqual({ items: [], failureCode: 'provider_error' });
         });
 
-        it('should return [] for a 500 server error response without throwing', async () => {
+        it('should return { items: [], failureCode: provider_error } for a 500 response', async () => {
             // Arrange
             vi.stubGlobal('fetch', mockFetchError(500));
 
@@ -228,10 +250,10 @@ describe('runApifyActor', () => {
             const result = await runApifyActor(makeInput());
 
             // Assert
-            expect(result).toEqual([]);
+            expect(result).toEqual({ items: [], failureCode: 'provider_error' });
         });
 
-        it('should return [] when fetch throws a network error without re-throwing', async () => {
+        it('should return { items: [], failureCode: provider_error } when fetch throws a network error', async () => {
             // Arrange
             vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network failure')));
 
@@ -239,10 +261,10 @@ describe('runApifyActor', () => {
             const result = await runApifyActor(makeInput());
 
             // Assert
-            expect(result).toEqual([]);
+            expect(result).toEqual({ items: [], failureCode: 'provider_error' });
         });
 
-        it('should return [] when fetch throws an AbortError (simulated timeout) without re-throwing', async () => {
+        it('should return { items: [], failureCode: timeout } when AbortError is thrown', async () => {
             // Arrange
             const abortError = new DOMException('The operation was aborted', 'AbortError');
             vi.stubGlobal('fetch', vi.fn().mockRejectedValue(abortError));
@@ -251,7 +273,7 @@ describe('runApifyActor', () => {
             const result = await runApifyActor(makeInput({ timeoutMs: 1 }));
 
             // Assert
-            expect(result).toEqual([]);
+            expect(result).toEqual({ items: [], failureCode: 'timeout' });
         });
     });
 });

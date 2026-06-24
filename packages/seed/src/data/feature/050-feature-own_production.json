@@ -1,17 +1,13 @@
 {
     "$schema": "../../schemas/feature.schema.json",
     "id": "050-feature-own_production",
-    "name": {
-        "es": "Producción propia",
-        "en": "Producción propia",
-        "pt": "Producción propia"
-    },
     "slug": "own_production",
     "description": {
         "es": "Elaboración in-situ de productos gastronómicos como dulces caseros, vinos, quesos o conservas",
         "en": "Elaboración in-situ de productos gastronómicos como dulces caseros, vinos, quesos o conservas",
         "pt": "Elaboración in-situ de productos gastronómicos como dulces caseros, vinos, quesos o conservas"
     },
+    "applicableVerticals": ["accommodation"],
     "icon": "OwnProductionIcon",
     "isBuiltin": true,
     "isFeatured": false,

@@ -800,9 +800,12 @@
         {
             "specId": "SPEC-253",
             "title": "Commerce owner editor — extended fields + single COMMERCE_EDIT_OWN permission",
-            "status": "draft",
-            "progress": "0/0",
-            "path": "SPEC-253-commerce-owner-editor-extended-fields"
+            "status": "completed",
+            "progress": "31/31",
+            "path": "SPEC-253-commerce-owner-editor-extended-fields",
+            "archived": true,
+            "archivedAt": "2026-06-23",
+            "archiveNote": "Shipped + validated via PR #1822 (merged to staging 2026-06-23)."
         },
         {
             "specId": "SPEC-251",
@@ -840,7 +843,7 @@
         {
             "specId": "SPEC-257",
             "title": "Accommodation import short-link resolution + adapter enrichment",
-            "status": "in-progress",
+            "status": "completed",
             "progress": "19/19",
             "path": "SPEC-257-import-short-link-resolution",
             "parent": "SPEC-222",
@@ -851,12 +854,15 @@
             "tasksAtomizedAt": "2026-06-22T02:36:01Z",
             "taskCount": 19,
             "averageComplexity": 2.36,
+            "archived": true,
+            "archivedAt": "2026-06-24",
+            "archiveNote": "Drift fix: shipped + merged to staging via PR #1754 (short-link resolution + locale + adapter mapping); safe-fetch undici-7 ordering fix shipped separately in #1747. Index lagged at in-progress. Follow-up SPEC-258 already completed.",
             "note": "11 tasks across 5 phases (setup 1, core 4, integration 4, testing 1, docs 1). SPEC-222 short-link follow-up."
         },
         {
             "specId": "SPEC-258",
             "title": "Accommodation import — coverage gaps, limbo fields, UX surfacing & scraper resilience",
-            "status": "draft",
+            "status": "completed",
             "progress": "0/0",
             "path": "SPEC-258-import-coverage-ux-resilience",
             "parent": "SPEC-257",
@@ -864,6 +870,9 @@
             "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-258-import-coverage-ux-resilience",
             "base": "staging",
             "createdAt": "2026-06-22T14:53:31Z",
+            "archived": true,
+            "archivedAt": "2026-06-23",
+            "archiveNote": "Doc-only spec, tasks never atomized (progress stays 0/0). Shipped via 4 PRs to staging: #1809 amenity-synonym resolver, #1816 workstream A coverage, #1821 workstream B persistence, #1824 workstream C.1 failure-mode differentiation. C.4 cache rejected; remaining C resilience carved out to SPEC-277.",
             "note": "Doc-only spec; tasks NOT atomized yet. 3 workstreams: coverage, UX surfacing, scraper resilience."
         },
         {
@@ -884,12 +893,14 @@
         {
             "specId": "SPEC-260",
             "title": "AI Usage Dashboard",
-            "status": "draft",
-            "progress": "0/23",
+            "status": "completed",
+            "progress": "23/23",
             "path": "SPEC-260-ai-usage-dashboard",
-            "branch": "spec/SPEC-260-ai-usage-dashboard",
+            "branch": "feat/SPEC-260-ai-usage-dashboard",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-260-ai-usage-dashboard",
             "base": "staging",
+            "archived": true,
+            "archivedAt": "2026-06-23",
             "createdAt": "2026-06-22T00:00:00Z",
             "tasksAtomizedAt": "2026-06-22T00:00:00Z",
             "taskCount": 23,
@@ -899,8 +910,8 @@
         {
             "specId": "SPEC-262",
             "title": "Billing Promo-Code Typed Effect Engine",
-            "status": "in-progress",
-            "progress": "9/15",
+            "status": "completed",
+            "progress": "14/15",
             "path": "SPEC-262-billing-promo-code-effect-engine",
             "branch": "spec/SPEC-262-billing-promo-code-effect-engine",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-262-billing-promo-code-effect-engine",
@@ -909,7 +920,10 @@
             "tasksAtomizedAt": "2026-06-22T18:30:00.000Z",
             "taskCount": 15,
             "averageComplexity": 2.53,
-            "note": "15 tasks across 6 phases (spike 1, core 6, integration 5, testing 2, docs 1). T-001 MP spike gates case-3 renewal tasks (T-007). Critical path: T-002->T-003->T-004->T-005->T-006->T-009->T-011->T-012->T-013->T-014->T-015 (11 steps). T-001 spike runs in parallel with DB/schema track. SPEC-143 billing CORE smoke (staging+prod) mandatory gate before merge. T-001 DONE (2026-06-22): MP amount-mutation spike = Outcome A GO — Hospeda already mutates preapproval transactionAmount in prod (downgrade cron + upgrade webhook); case-3 unblocked, no redesign. See promo-code/docs/mp-preapproval-mutation-spike.md."
+            "note": "15 tasks across 6 phases (spike 1, core 6, integration 5, testing 2, docs 1). T-001 MP spike gates case-3 renewal tasks (T-007). Critical path: T-002->T-003->T-004->T-005->T-006->T-009->T-011->T-012->T-013->T-014->T-015 (11 steps). T-001 spike runs in parallel with DB/schema track. SPEC-143 billing CORE smoke (staging+prod) mandatory gate before merge. T-001 DONE (2026-06-22): MP amount-mutation spike = Outcome A GO — Hospeda already mutates preapproval transactionAmount in prod (downgrade cron + upgrade webhook); case-3 unblocked, no redesign. See promo-code/docs/mp-preapproval-mutation-spike.md.",
+            "archived": true,
+            "archivedAt": "2026-06-23",
+            "archiveNote": "14/15. Closed by owner request. T-001..T-013 + T-015 merged to staging (#1819/#1829/#1807/#1810/#1814/#1833). T-014 (MercadoPago staging+prod smoke, billing-CORE gate) deliberately NOT run at archive — remains the owner's mandatory gate before staging->main, enforced independently by the billing-testing rule."
         },
         {
             "specId": "SPEC-261",
@@ -1004,14 +1018,18 @@
         {
             "specId": "SPEC-266",
             "title": "Amenities & features catalog by vertical (scoping + i18n source-of-truth)",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "completed",
+            "progress": "13/13",
             "path": "SPEC-266-amenities-feature-catalog-by-vertical",
-            "branch": "docs/SPEC-266-amenities-feature-catalog-by-vertical",
+            "branch": "spec/SPEC-266-amenities-feature-catalog-by-vertical",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-266-amenities-feature-catalog-by-vertical",
             "base": "staging",
             "createdAt": "2026-06-23T02:10:00Z",
-            "note": "Doc-only spec; tasks NOT atomized yet. Scope amenities/features catalog by vertical (Options A/B/C, decide at planning) + absorb BETA-90 (drop name column -> i18n by slug). SPEC-249 follow-up."
+            "taskCount": 13,
+            "note": "Catalog scoped by vertical via applicable_verticals text[] (migration 0028, idempotent backfill); dropped name column, slug is the i18n key; featureNames namespace added. Editors (web aloj+commerce, admin) and public pages migrated to slug+i18n. Seed re-tagged 170 + 36 new.",
+            "archived": true,
+            "archivedAt": "2026-06-23",
+            "archiveNote": "Shipped via PR #1812 (merge a35f81ccc) to staging. Absorbed BETA-90. Resolved a 234-commit staging drift merge: preserved SPEC-258 amenity synonyms reaponted to slug; fixed post-merge i18n validation keys + public schema name->slug contract."
         },
         {
             "specId": "SPEC-254",
@@ -1053,6 +1071,30 @@
             "createdAt": "2026-06-24T00:00:00.000Z",
             "taskCount": 0,
             "note": "Created as the SPEC-204 compat-debt follow-up (absorbs T-025 + T-028). Not atomized yet; gated on SPEC-204 merge."
+        },
+        {
+            "specId": "SPEC-277",
+            "title": "Accommodation import — scraper resilience (retry, fallback chain, async, provider mitigation, manual path)",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-277-import-scraper-resilience",
+            "parent": "SPEC-258",
+            "branch": "spec/SPEC-277-import-scraper-resilience",
+            "base": "staging",
+            "createdAt": "2026-06-23T23:17:27Z",
+            "note": "Doc-only spec; tasks NOT atomized yet. Carved out of SPEC-258 workstream C after C.1 (failure-mode differentiation, SPEC-258 PR #1824) shipped and the import cache (C.4) was rejected. 5 remaining levers: R1 retry/backoff, R2 per-source fallback chain, R3 async path (reuse SPEC-250), R4 provider mitigation (config), R5 guaranteed manual path. 5 open questions for the owner before atomizing."
+        },
+        {
+            "specId": "SPEC-278",
+            "title": "MercadoLibre OAuth refresh-token flow (make the ML import tier production-viable)",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-278-mercadolibre-oauth-refresh",
+            "parent": "SPEC-258",
+            "branch": "spec/SPEC-278-mercadolibre-oauth-refresh",
+            "base": "staging",
+            "createdAt": "2026-06-24T00:00:00Z",
+            "note": "Doc-only spec; tasks NOT atomized yet. Formalizes Linear BETA-96: the ML import tier uses a static 6h access token with no refresh. Replace with OAuth 2.0 authorization-code + refresh-token rotation + token service (concurrency-safe). Unblocks SPEC-258 A3 (ML field enrichment). 5 open questions for the owner before atomizing."
         }
     ],
     "standalone": {

@@ -446,4 +446,72 @@ describe('extractJsonLd', () => {
             });
         }
     });
+
+    // -------------------------------------------------------------------------
+    // A5 (SPEC-258): lodgingType forwarding
+    // -------------------------------------------------------------------------
+    describe('A5 (SPEC-258) — lodgingType forwarding', () => {
+        it('should expose lodgingType = "Hotel" when @type is "Hotel"', () => {
+            // Arrange
+            const node = { '@type': 'Hotel', name: 'Hotel Sol' };
+            const html = scriptBlock(node);
+
+            // Act
+            const result = extractJsonLd({ html });
+
+            // Assert
+            expect(result.lodgingType).toBe('Hotel');
+        });
+
+        it('should expose lodgingType = "Apartment" when @type is "Apartment"', () => {
+            // Arrange
+            const node = { '@type': 'Apartment', name: 'Depto Centro' };
+            const html = scriptBlock(node);
+
+            // Act
+            const result = extractJsonLd({ html });
+
+            // Assert
+            expect(result.lodgingType).toBe('Apartment');
+        });
+
+        it('should expose the first lodging-relevant type when @type is an array', () => {
+            // Arrange — first type is non-lodging, second is lodging
+            const node = { '@type': ['LocalBusiness', 'Hotel'], name: 'Mixed Types Place' };
+            const html = scriptBlock(node);
+
+            // Act
+            const result = extractJsonLd({ html });
+
+            // Assert — LocalBusiness is a lodging type too; it wins as first match
+            expect(result.lodgingType).toBe('LocalBusiness');
+        });
+
+        it('should expose lodgingType for all lodging-relevant @type values', () => {
+            // Spot-check a handful: LodgingBusiness, BedAndBreakfast, Resort, Hostel
+            for (const t of ['LodgingBusiness', 'BedAndBreakfast', 'Resort', 'Hostel']) {
+                // Arrange
+                const node = { '@type': t, name: `${t} place` };
+                const html = scriptBlock(node);
+
+                // Act
+                const result = extractJsonLd({ html });
+
+                // Assert
+                expect(result.lodgingType).toBe(t);
+            }
+        });
+
+        it('should not expose lodgingType for non-lodging @type (returns undefined)', () => {
+            // Arrange — WebSite is not a lodging type
+            const node = { '@type': 'WebSite', name: 'Ignored' };
+            const html = scriptBlock(node);
+
+            // Act — extractJsonLd only processes lodging nodes; this block is skipped
+            const result = extractJsonLd({ html });
+
+            // Assert — empty result (node was not lodging-relevant)
+            expect(result.lodgingType).toBeUndefined();
+        });
+    });
 });
