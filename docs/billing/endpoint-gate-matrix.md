@@ -52,6 +52,11 @@
 | `POST /api/v1/protected/accommodations/{id}/faqs` | `accommodation/protected/addFaq.ts` | gate | `edit_accommodation_info` | wired | requireEntitlement(EDIT_ACCOMMODATION_INFO) middleware wired (SPEC-145 T-004) |
 | `PUT /api/v1/protected/accommodations/{id}/faqs/{faqId}` | `accommodation/protected/updateFaq.ts` | gate | `edit_accommodation_info` | wired | requireEntitlement(EDIT_ACCOMMODATION_INFO) middleware wired (SPEC-145 T-004) |
 | `DELETE /api/v1/protected/accommodations/{id}/faqs/{faqId}` | `accommodation/protected/removeFaq.ts` | none | - | n/a | Deletion ungated; removing own content is always allowed |
+| `GET /api/v1/protected/accommodations/{id}/media` | `accommodation/protected/getMedia.ts` | none | - | n/a | Read own gallery; auth + ownership via service _canUpdate sufficient |
+| `POST /api/v1/protected/accommodations/{id}/media` | `accommodation/protected/addMedia.ts` | gate+limit | `edit_accommodation_info`, `max_photos_per_accommodation` | wired | requireEntitlement(EDIT_ACCOMMODATION_INFO) + plan cap enforced inline (SPEC-204) |
+| `DELETE /api/v1/protected/accommodations/{id}/media/{mediaId}` | `accommodation/protected/removeMedia.ts` | none | - | n/a | Deletion ungated; removing own photo always allowed |
+| `PATCH /api/v1/protected/accommodations/{id}/media/reorder` | `accommodation/protected/reorderMedia.ts` | gate | `edit_accommodation_info` | wired | requireEntitlement(EDIT_ACCOMMODATION_INFO) — gallery mutation |
+| `PUT /api/v1/protected/accommodations/{id}/media/{mediaId}/featured` | `accommodation/protected/setFeaturedMedia.ts` | gate | `edit_accommodation_info` | wired | requireEntitlement(EDIT_ACCOMMODATION_INFO) — gallery mutation |
 | `GET /api/v1/protected/accommodations/my/favorites-breakdown` | `accommodation/protected/hostFavoritesBreakdown.ts` | gate | `view_advanced_stats` | wired | requireEntitlement(VIEW_ADVANCED_STATS) middleware wired (SPEC-145 T-006) |
 | `GET /api/v1/protected/accommodations/my/market-comparison` | `accommodation/protected/hostMarketComparison.ts` | gate | `view_advanced_stats` | wired | requireEntitlement(VIEW_ADVANCED_STATS) middleware wired (SPEC-145 T-006) |
 | **EXTERNAL REPUTATION — PROTECTED (SPEC-237)** | | | | | |
