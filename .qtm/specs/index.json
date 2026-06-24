@@ -1576,7 +1576,10 @@
             "base": "staging",
             "origin": "SPEC-249 T-025: apps/e2e exists (mature harness + CI); gaps are missing commerce tests and seed fixtures (no logueable experience owner, profile_completed=false)",
             "dependsOn": ["SPEC-249"],
-            "tags": ["e2e", "playwright", "testing", "seed", "commerce"]
+            "tags": ["e2e", "playwright", "testing", "seed", "commerce"],
+            "archived": true,
+            "archivedAt": "2026-06-24",
+            "completionRef": "PR #1751 (merge 627b7d638)"
         },
         {
             "specId": "SPEC-250",
