@@ -30,7 +30,7 @@
  */
 
 import type { AccommodationExternalListing } from '@repo/schemas';
-import { safeExternalFetch } from '@repo/utils';
+import { safeExternalFetch } from '@repo/utils/safe-fetch';
 import { startApifyRun } from '../../accommodation-import/adapters/apify-client.js';
 import type { ReputationAdapter, ReputationFetchResult } from './adapter.types.js';
 import { emptyReputationResult } from './adapter.types.js';
