@@ -236,6 +236,28 @@ export interface MediaImage {
 }
 
 /**
+ * A media row returned by the relational accommodation_media endpoints.
+ *
+ * Extends `MediaImage` with the DB `id` (UUID) required to call the
+ * per-operation granular endpoints (remove, set-featured). The `isFeatured`
+ * flag indicates whether this row is the designated featured (portada) image.
+ *
+ * SPEC-204: this replaces the old JSONB-embedded `MediaImage` shape for all
+ * photo-editor operations that need to persist to the DB.
+ */
+export interface AccommodationMediaItem {
+    /** Database UUID — required for removeMedia / setFeaturedMedia calls. */
+    readonly id: string;
+    readonly url: string;
+    readonly publicId: string;
+    readonly caption?: string;
+    readonly alt?: string;
+    readonly width?: number;
+    readonly height?: number;
+    readonly isFeatured: boolean;
+}
+
+/**
  * Amenity item for the editor's multi-checkbox group.
  * Fetched from the public amenities endpoint.
  */

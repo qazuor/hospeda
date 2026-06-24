@@ -2473,3 +2473,127 @@ export const accommodationsImportApi = {
         });
     }
 };
+
+// --- Accommodation Media (Protected — SPEC-204) ---
+
+/**
+ * Row shape returned by the accommodation_media relational endpoints.
+ * The `id` is the DB UUID needed for removeMedia / setFeaturedMedia.
+ */
+export interface AccommodationMediaRow {
+    readonly id: string;
+    readonly url: string;
+    readonly publicId?: string;
+    readonly caption?: string;
+    readonly description?: string;
+    readonly alt?: string;
+    readonly isFeatured: boolean;
+    readonly sortOrder: number;
+    readonly state: 'visible' | 'archived';
+    readonly moderationState: string;
+}
+
+/**
+ * Granular per-operation protected endpoints for accommodation photo management.
+ *
+ * These endpoints replace the old JSONB-embedded media approach (SPEC-204).
+ * Each operation persists immediately to the `accommodation_media` relational
+ * table — the parent PATCH no longer carries photo data.
+ *
+ * @example
+ * ```ts
+ * const list = await accommodationMediaApi.listMedia({ id: 'acc-uuid' });
+ * const added = await accommodationMediaApi.addMedia({ id: 'acc-uuid', body: { url, publicId } });
+ * await accommodationMediaApi.removeMedia({ id: 'acc-uuid', mediaId: added.data.media.id });
+ * await accommodationMediaApi.setFeaturedMedia({ id: 'acc-uuid', mediaId: added.data.media.id });
+ * ```
+ */
+export const accommodationMediaApi = {
+    /**
+     * List visible media rows for an accommodation.
+     *
+     * @param params - Accommodation ID, optional state filter, optional SSR cookie
+     * @returns `{ media: AccommodationMediaRow[] }`
+     */
+    listMedia({
+        id,
+        state = 'visible',
+        cookieHeader
+    }: {
+        readonly id: string;
+        readonly state?: 'visible' | 'archived';
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<{ readonly media: readonly AccommodationMediaRow[] }>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/accommodations/${id}/media`,
+            params: { state },
+            cookieHeader
+        });
+    },
+
+    /**
+     * Add a new media row for an accommodation.
+     * `sortOrder` and `isFeatured` are server-controlled.
+     *
+     * @param params - Accommodation ID and media body
+     * @returns `{ media: AccommodationMediaRow }` — the newly created row (with DB id)
+     */
+    addMedia({
+        id,
+        body
+    }: {
+        readonly id: string;
+        readonly body: {
+            readonly url: string;
+            readonly publicId?: string;
+            readonly caption?: string;
+            readonly description?: string;
+            readonly alt?: string;
+            readonly moderationState?: string;
+        };
+    }): Promise<ApiResult<{ readonly media: AccommodationMediaRow }>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/accommodations/${id}/media`,
+            body
+        });
+    },
+
+    /**
+     * Delete a media row by its DB UUID.
+     * Also removes the Cloudinary asset on the server side.
+     *
+     * @param params - Accommodation ID and media row ID (DB UUID)
+     * @returns Delete result
+     */
+    removeMedia({
+        id,
+        mediaId
+    }: {
+        readonly id: string;
+        readonly mediaId: string;
+    }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.delete({
+            path: `${PROTECTED}/accommodations/${id}/media/${mediaId}`
+        });
+    },
+
+    /**
+     * Mark a media row as the featured (portada) image.
+     * Enforces the single-featured invariant: the previous featured row is
+     * automatically unmarked by the server and becomes a normal visible row.
+     *
+     * @param params - Accommodation ID and media row ID (DB UUID) to feature
+     * @returns `{ media: AccommodationMediaRow }` — the updated row
+     */
+    setFeaturedMedia({
+        id,
+        mediaId
+    }: {
+        readonly id: string;
+        readonly mediaId: string;
+    }): Promise<ApiResult<{ readonly media: AccommodationMediaRow }>> {
+        return apiClient.put({
+            path: `${PROTECTED}/accommodations/${id}/media/${mediaId}/featured`
+        });
+    }
+};
