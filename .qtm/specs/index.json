@@ -2087,6 +2087,26 @@
                 "credentials",
                 "spec-258-followup"
             ]
+        },
+        {
+            "specId": "SPEC-279",
+            "title": "Cross-user data transfer (entity ownership migration A → B)",
+            "type": "feature",
+            "complexity": "high",
+            "status": "draft-exploration",
+            "path": "SPEC-279-cross-user-data-transfer",
+            "created": "2026-06-22T00:00:00Z",
+            "base": "staging",
+            "origin": "Renumbered from SPEC-263 (number collision: SPEC-263 already taken by security-deps-moderate-remediation in staging). Admin-driven feature to migrate entity ownership from user A to user B incl. billing/entitlements. HIGH RISK — draft-exploration, blocked for dev until open questions in spec sections 8/9 are closed.",
+            "tags": [
+                "admin",
+                "data-migration",
+                "ownership",
+                "billing",
+                "entitlements",
+                "security",
+                "high-risk"
+            ]
         }
     ]
 }
