@@ -1,0 +1,23 @@
+{
+    "specId": "SPEC-278",
+    "title": "MercadoLibre OAuth refresh-token flow (make the ML import tier production-viable)",
+    "type": "feature",
+    "complexity": "high",
+    "status": "draft",
+    "created": "2026-06-24T00:00:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "dependsOn": [],
+    "tags": [
+        "mercadolibre",
+        "oauth",
+        "accommodation-import",
+        "service-core",
+        "api",
+        "admin",
+        "db",
+        "credentials",
+        "spec-258-followup"
+    ]
+}

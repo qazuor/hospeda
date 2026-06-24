@@ -2061,6 +2061,29 @@
                 "anti-bot",
                 "spec-258-followup"
             ]
+        },
+        {
+            "specId": "SPEC-278",
+            "title": "MercadoLibre OAuth refresh-token flow (make the ML import tier production-viable)",
+            "type": "feature",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-278-mercadolibre-oauth-refresh",
+            "created": "2026-06-24T00:00:00Z",
+            "base": "staging",
+            "origin": "Formalizes Linear BETA-96. The MercadoLibre import tier uses a static 6h access token with no refresh, so it dies silently in prod. Replace with OAuth 2.0 authorization-code + refresh-token rotation + a token service. Unblocks SPEC-258 A3 (ML enrichment). Discovered during SPEC-258 workstream A.",
+            "dependsOn": [],
+            "tags": [
+                "mercadolibre",
+                "oauth",
+                "accommodation-import",
+                "service-core",
+                "api",
+                "admin",
+                "db",
+                "credentials",
+                "spec-258-followup"
+            ]
         }
     ]
 }
