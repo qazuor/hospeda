@@ -843,7 +843,7 @@
         {
             "specId": "SPEC-257",
             "title": "Accommodation import short-link resolution + adapter enrichment",
-            "status": "in-progress",
+            "status": "completed",
             "progress": "19/19",
             "path": "SPEC-257-import-short-link-resolution",
             "parent": "SPEC-222",
@@ -854,6 +854,9 @@
             "tasksAtomizedAt": "2026-06-22T02:36:01Z",
             "taskCount": 19,
             "averageComplexity": 2.36,
+            "archived": true,
+            "archivedAt": "2026-06-24",
+            "archiveNote": "Drift fix: shipped + merged to staging via PR #1754 (short-link resolution + locale + adapter mapping); safe-fetch undici-7 ordering fix shipped separately in #1747. Index lagged at in-progress. Follow-up SPEC-258 already completed.",
             "note": "11 tasks across 5 phases (setup 1, core 4, integration 4, testing 1, docs 1). SPEC-222 short-link follow-up."
         },
         {

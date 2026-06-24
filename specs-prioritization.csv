@@ -104,7 +104,7 @@ rank|spec|name|avance|prioridad|estado|estado_manual|estado_real|descripcion|por
 102|SPEC-252|Web functional E2E (Playwright) harness + login fixtures + CI|-|-|done|-|index staging: status=draft; web lacks functional Playwright harness (SPEC-249 T-025); includes commerce-owner seed/profile fixtures; dep SPEC-249 done|-|-|-|-|-|-|SPEC-249|-
 103|SPEC-253|Commerce owner editor — extended fields + single COMMERCE_EDIT_OWN permission|-|-|done|-|index staging: status=draft; expands SPEC-249 owner editor (type/summary/i18n/faqs/exp-price) + collapses per-section perms to COMMERCE_EDIT_OWN; dep SPEC-249 done|-|-|-|-|-|-|SPEC-249|-
 105|SPEC-258|Accommodation import — coverage gaps, limbo fields, UX surfacing & scraper resilience|-|-|done|-|index staging: completed+archived 2026-06-23; 4 PRs (#1809 amenities, #1816 coverage A, #1821 persistence B, #1824 failure-modes C.1); C.4 cache rejected, rest of C -> SPEC-277|-|-|-|-|-|-|SPEC-257|-
-104|SPEC-257|Accommodation import short-link resolution + adapter enrichment|-|-|in progress|-|-|-|-|-|-|-|-|SPEC-222|-
+104|SPEC-257|Accommodation import short-link resolution + adapter enrichment|-|-|done|-|-|-|-|-|-|-|-|SPEC-222|-
 106|SPEC-259|Systematic Chrome smoke testing of staging features (post-e2fb184)|-|-|done|-|-|-|-|-|-|-|-|-|-
 107|SPEC-260|AI Usage Dashboard|-|-|done|-|index staging: status=draft archived=False (extends existing AI metering SPEC-173; no unmet deps)|-|-|-|-|-|-|SPEC-173|-
 108|SPEC-261|Stabilize commerce-owner E2E and promote back to @p0|-|-|done|-|index staging: status=draft; SPEC-252 follow-up — commerce E2E specs deprioritized @p0->@p1 (React-19 dirty-tracking won't trip in headless CI); needs a local Playwright trace to fix|-|-|-|-|-|-|SPEC-252|-

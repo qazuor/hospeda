@@ -3,7 +3,7 @@ spec-id: SPEC-257
 title: Accommodation import short-link resolution + adapter enrichment
 type: improvement
 complexity: medium
-status: draft
+status: completed
 created: 2026-06-22T02:36:01Z
 ---
 

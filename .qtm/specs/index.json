@@ -1607,7 +1607,7 @@
             "slug": "import-short-link-resolution",
             "type": "improvement",
             "complexity": "medium",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-257-import-short-link-resolution",
             "created": "2026-06-22T02:36:01Z",
             "base": "staging",
