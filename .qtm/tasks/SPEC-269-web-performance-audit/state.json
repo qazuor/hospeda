@@ -1,0 +1,498 @@
+{
+    "version": "1.0",
+    "title": "Web performance audit & improvements — Core Web Vitals, 12 findings + fix catalog",
+    "specRef": "SPEC-269",
+    "created": "2026-06-24T00:00:00Z",
+    "summary": {
+        "total": 13,
+        "byStatus": {
+            "pending": 13,
+            "in_progress": 0,
+            "completed": 0
+        },
+        "byPhase": {
+            "core": 3,
+            "integration": 8,
+            "ci": 1,
+            "testing": 1
+        },
+        "averageComplexity": 2.85
+    },
+    "tasks": [
+        {
+            "id": "T-269-01",
+            "title": "Run Lighthouse audit to capture baseline scores (home/listing/detail, mobile+desktop)",
+            "description": "Capture a reproducible performance baseline on three key page types before any fix lands, so T-269-11 can show concrete delta.\n\nWhat to do:\n- Start `apps/web` locally (or against staging) and run Lighthouse on a minimum of:\n  - Home: `/{lang}/`\n  - Accommodation listing: `/{lang}/alojamientos/`\n  - Accommodation detail: `/{lang}/alojamientos/<slug>` (pick one with a hero image)\n  Optionally: one event/destination/gastronomy/experience/post detail.\n- Metrics to capture per run: Performance score, LCP, INP, CLS, TBT, FCP. Do **mobile** (Moto G Power throttle) AND desktop.\n- Run each page 3-5 times and record the median. Lighthouse scores are noisy; a single run is unreliable.\n- Save the raw JSON or the HTML report to `.qtm/specs/SPEC-269-web-performance-audit/lighthouse-baseline/` (one file per page+device).\n- Summarise the baseline in a markdown table in that same directory (or in this task's progress notes).\n\nKey files to read first (context only, not to change):\n- `apps/web/lighthouserc.json` — existing config; use it as the Lighthouse CLI config.\n- `apps/web/package.json:22` — existing `lighthouse` script; run via `pnpm --filter web lighthouse`.\n\nAcceptance criteria:\n- At least 6 Lighthouse reports saved (3 pages × mobile+desktop).\n- A summary markdown table with scores exists at the baseline path.\n- No code changes.\n\nTesting: This task IS the test — its output is the baseline document that T-269-11 compares against.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-269-11"],
+            "subtasks": [
+                {
+                    "title": "Run Lighthouse on home (mobile + desktop), save reports",
+                    "completed": false
+                },
+                {
+                    "title": "Run Lighthouse on accommodation listing (mobile + desktop), save reports",
+                    "completed": false
+                },
+                {
+                    "title": "Run Lighthouse on accommodation detail (mobile + desktop), save reports",
+                    "completed": false
+                },
+                {
+                    "title": "Write baseline summary markdown table",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "performance", "lighthouse", "baseline", "audit"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-24T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-269-02a",
+            "title": "Add rollup-plugin-visualizer + build:analyze script + capture bundle baseline snapshot",
+            "description": "Instrument the `apps/web` build so the bundle composition is visible and comparable across sessions — mirroring the SPEC-190 pattern used for the admin app.\n\nWhat to do:\n1. Install `rollup-plugin-visualizer` as a dev dependency in `apps/web`.\n2. Add a `build:analyze` script to `apps/web/package.json` that runs `astro build` with the visualizer plugin enabled (outputs `stats.html` into `apps/web/dist/` or similar). See `.qtm/specs/SPEC-190-admin-bundle-perf-icons-and-codesplit/spec.md` for the exact pattern.\n3. Run `pnpm --filter web build:analyze` to produce the first snapshot.\n4. Inspect the treemap and **identify** every chunk >500KB (don't fix yet — that is T-269-02b). Log them with their estimated size in the progress notes.\n5. Save the generated `stats.html` snapshot to `.qtm/specs/SPEC-269-web-performance-audit/bundle-baseline/stats.html` (gitignored? check if .gitignore needs an exception for the snapshot).\n\nKey files affected:\n- `apps/web/package.json` — add `rollup-plugin-visualizer` devDep + `build:analyze` script.\n- `apps/web/astro.config.mjs:146-194` — add the visualizer plugin in a conditional block (only when `ANALYZE=true` or similar env flag, so normal builds are not affected).\n\nAcceptance criteria:\n- `pnpm --filter web build:analyze` succeeds and produces a `stats.html` treemap.\n- The `build:analyze` script does NOT run the visualizer on a normal `pnpm --filter web build` (guard it behind an env flag).\n- At least 2 chunks >500KB are identified in the progress notes (per F3 recon finding).\n- `pnpm --filter web typecheck` remains green.\n\nTesting: visual inspection of the treemap + script execution test (the `build:analyze` command succeeds without errors).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-269-02b"],
+            "subtasks": [
+                {
+                    "title": "Add rollup-plugin-visualizer devDep to apps/web",
+                    "completed": false
+                },
+                {
+                    "title": "Add build:analyze script + visualizer plugin in astro.config.mjs (env-guarded)",
+                    "completed": false
+                },
+                {
+                    "title": "Run build:analyze and save stats.html baseline snapshot",
+                    "completed": false
+                },
+                {
+                    "title": "Identify and log all chunks >500KB in progress notes",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "bundle", "performance", "rollup", "visualizer", "build"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-24T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-269-02b",
+            "title": "Define manualChunks in astro.config.mjs and iterate to 0 chunks >500KB",
+            "description": "Use the visualizer output from T-269-02a to define `manualChunks` in `vite.build.rollupOptions.output.manualChunks` inside `apps/web/astro.config.mjs`, iterating until no chunk exceeds 500KB.\n\nContext (from recon F3):\n- Currently `astro.config.mjs:146-194` has NO `rollupOptions`.\n- Two chunks exceed 500KB (~1MB and ~770KB). Their contents are unknown until T-269-02a instruments.\n- Likely candidates: leaflet (~150KB gzip), tiptap (~heavy), recharts. But leaflet is auth-only host editor, tiptap/recharts too — those are `host/` islands that public visitors don't load.\n- The goal is that the **public page bundle** has 0 chunks >500KB. Auth-only islands (host editor: tiptap, recharts) may live in their own chunks as long as each stays <500KB.\n\nApproach:\n1. Read T-269-02a's findings (which specific islands/libraries cause the big chunks).\n2. Add `vite.build.rollupOptions.output.manualChunks` to `astro.config.mjs`. Typical groups:\n   - `vendor-react`: react, react-dom\n   - `vendor-leaflet`: leaflet, react-leaflet (separate from public bundle)\n   - `vendor-tiptap`: all @tiptap/* (auth-only host chunk)\n   - `vendor-recharts`: recharts (auth-only host chunk)\n3. Re-run `pnpm --filter web build:analyze` after each `manualChunks` change.\n4. Repeat the measure-tune loop until `stats.html` shows 0 chunks >500KB.\n5. Verify no islands break (load the home, a listing, and a detail page; open the host editor too).\n\nKey files affected:\n- `apps/web/astro.config.mjs` — add `vite.build.rollupOptions.output.manualChunks`.\n\nAcceptance criteria:\n- `pnpm --filter web build:analyze` shows 0 chunks >500KB in the final treemap.\n- `pnpm --filter web build` (without analyze) succeeds without Rollup errors.\n- Public pages (home, listing, detail) load correctly in a browser (no dynamic-chunk 404 errors in DevTools).\n- Host editor islands (tiptap, recharts, leaflet) still render correctly in the host dashboard.\n- `pnpm --filter web typecheck` remains green.\n\nTesting: visual treemap verification + manual browser smoke on home/listing/detail + host editor.",
+            "status": "pending",
+            "complexity": 6,
+            "blockedBy": ["T-269-02a"],
+            "blocks": ["T-269-11"],
+            "subtasks": [
+                {
+                    "title": "Analyse T-269-02a treemap to identify the exact libraries causing big chunks",
+                    "completed": false
+                },
+                {
+                    "title": "Add initial manualChunks config to astro.config.mjs",
+                    "completed": false
+                },
+                {
+                    "title": "Measure-tune loop until 0 chunks >500KB",
+                    "completed": false
+                },
+                {
+                    "title": "Browser smoke: public pages + host editor all load correctly",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "bundle", "performance", "rollup", "manualChunks", "astro"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-24T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-269-03a",
+            "title": "Add <link rel=preload as=image> for home hero first frame in BaseLayout/index.astro (F7)",
+            "description": "Add a `<link rel=\"preload\" as=\"image\">` tag for the first hero image of the home page into the `<head>` — this allows the browser to start fetching the LCP candidate image before it encounters the `<img>` tag inside the hydrated rotator.\n\nRecon finding F7: the home page has no preload hint for the hero image.\n\nWhat to do:\n1. In `apps/web/src/pages/[lang]/index.astro` (or `BaseLayout.astro`), locate where the hero's first image URL is available (it should be computed server-side during Astro SSR — see `HeroSection.astro:69-84` where `getImage()` is called for the first slide).\n2. Add a `<link rel=\"preload\" as=\"image\" imagesrcset=\"...\" imagesizes=\"...\">` tag in the `<head>` using the srcset/sizes already generated by `getImage()` for the first slide.\n3. Ensure the preload is specific to the home page (do not preload hero images on listing/detail pages).\n4. Complement T-269-03b (which adds the static first-frame `<img>` SSR); both together resolve hero LCP.\n\nKey files affected:\n- `apps/web/src/pages/[lang]/index.astro` — add `<link rel=preload>` for hero first image.\n- `apps/web/src/components/home/HeroSection.astro:69-84` — read to understand how `getImage()` produces the srcset for the first slide; pass that data up to the page's `<head>`.\n\nAcceptance criteria:\n- `pnpm --filter web build` succeeds.\n- The rendered home HTML (view-source) contains `<link rel=\"preload\" as=\"image\" imagesrcset=...>` referencing the first hero image URL.\n- The preload tag is ONLY present on the home page, not on other pages.\n- `pnpm --filter web typecheck` and `pnpm --filter web lint` remain green.\n\nTesting: `pnpm --filter web build` + view-source check on the home HTML + spot-check that listing pages do NOT have the preload tag.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-269-11"],
+            "subtasks": [
+                {
+                    "title": "Trace how HeroSection.astro computes the first-slide srcset (lines 69-84)",
+                    "completed": false
+                },
+                {
+                    "title": "Pass first-slide srcset/sizes up to the home page <head>",
+                    "completed": false
+                },
+                {
+                    "title": "Add <link rel=preload as=image imagesrcset=... imagesizes=...> in index.astro head slot",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "lcp", "preload", "hero", "performance", "f7"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-24T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-269-03b",
+            "title": "Hero static first-frame SSR + HeroImageRotator hydrates on top without flicker (F1)",
+            "description": "Render the first hero slide as a static `<img>` server-side in `HeroSection.astro`, visible without JS. The `HeroImageRotator` then hydrates on top and takes over the rotator behavior, reusing the same first-frame dimensions/src so there is no visual flicker.\n\nRecon finding F1 (HIGH): currently `HeroImageRotator` is `client:load` and the hero `<img>` only exists AFTER React hydrates — the browser cannot discover or preload the LCP image until hydration completes.\n\nApproach (from spec §5 F1 fix catalog):\n1. In `HeroSection.astro:120`, add a static `<img>` SSR render of the first slide:\n   - Use the WebP srcset already generated by `getImage()` at lines 69-84.\n   - Set `fetchpriority=\"high\"` and `loading=\"eager\"` on this static img.\n   - Give it a stable `id` or data attribute so the rotator can find/take-over it.\n2. In `HeroImageRotator.client.tsx:108-114`, update the initial render so its first frame:\n   - Mounts with the same `src`/srcset/dimensions as the SSR image.\n   - Does NOT hide/fade/replace the SSR image at mount time (stable opacity from the start).\n   - After hydration, the rotator's React state starts at index 0 (= the SSR image) to avoid any flicker.\n3. Test the hydration cycle: SSR shows image → React mounts → image stays visible → rotator starts cycling.\n\nKey files affected:\n- `apps/web/src/components/home/HeroSection.astro` — add static first-frame `<img>` tag.\n- `apps/web/src/components/home/HeroImageRotator.client.tsx:108-114` — update initial render to be stable at index 0.\n\nAcceptance criteria:\n- The home page HTML (view-source) contains an `<img>` tag for the first hero image, present BEFORE any JS runs.\n- When JS is disabled, the first hero image still renders (static fallback).\n- When JS is enabled, the hero rotator hydrates without any visible flash/flicker (opacity stays stable throughout mount).\n- The Lighthouse LCP element for the home page is the hero `<img>` (not a JS-rendered img).\n- `pnpm --filter web typecheck` and `pnpm --filter web lint` remain green.\n\nTesting: manual browser smoke (DevTools → Performance panel LCP marker + JS-disabled render test) + TypeScript build.",
+            "status": "pending",
+            "complexity": 5,
+            "blockedBy": [],
+            "blocks": ["T-269-11"],
+            "subtasks": [
+                {
+                    "title": "Add static first-frame <img> SSR in HeroSection.astro with fetchpriority=high",
+                    "completed": false
+                },
+                {
+                    "title": "Update HeroImageRotator.client.tsx initial render to start at index 0 matching SSR img",
+                    "completed": false
+                },
+                {
+                    "title": "Verify stable opacity at hydration (no flicker) with DevTools Performance",
+                    "completed": false
+                },
+                {
+                    "title": "Test JS-disabled render: static hero image still visible",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "lcp", "hero", "hydration", "ssr", "performance", "f1"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-24T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-269-04",
+            "title": "Change ImageGallery to client:load on accommodation detail page (F2)",
+            "description": "The `ImageGallery` on the accommodation detail page uses `client:visible`, which defers hydration until the component scrolls into view. Since the gallery is above the fold on desktop, this delays the LCP image (the first gallery image is the LCP candidate).\n\nRecon finding F2 (HIGH): `[lang]/alojamientos/[slug].astro:482` mounts `ImageGallery` with `client:visible`.\n\nFix: change the directive to `client:load`.\n\nWhat to do:\n1. Open `apps/web/src/pages/[lang]/alojamientos/[slug].astro`.\n2. At line 482, change `<ImageGallery client:visible ...>` to `<ImageGallery client:load ...>`.\n3. Verify the gallery renders immediately on page load (not deferred).\n4. Check no regression on mobile: on mobile the gallery may be below the fold — `client:load` is still correct because the browser starts hydrating immediately, and the LCP benefit on desktop outweighs the tiny extra hydration cost on mobile.\n\nKey files affected:\n- `apps/web/src/pages/[lang]/alojamientos/[slug].astro:482` — change `client:visible` → `client:load`.\n\nAcceptance criteria:\n- `<ImageGallery client:load>` in the built HTML for accommodation detail pages.\n- The gallery is interactive immediately when the detail page loads (no waiting for scroll).\n- `pnpm --filter web build` succeeds.\n- `pnpm --filter web typecheck` and `pnpm --filter web lint` remain green.\n\nTesting: manual browser smoke on an accommodation detail page verifying the gallery is interactive on load + `pnpm --filter web build`.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-269-11"],
+            "subtasks": [
+                {
+                    "title": "Change client:visible → client:load for ImageGallery in alojamientos/[slug].astro:482",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "lcp", "hydration", "gallery", "performance", "f2"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-24T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-269-05",
+            "title": "Add width/height to avatar <img> tags and normalize ImageGallery lightbox img dimensions (F6/F12)",
+            "description": "Fix two categories of layout-shift-inducing images by adding explicit width/height attributes.\n\nRecon findings F6 (MEDIUM) and F12 (LOW):\n- F6: Avatar `<img>` tags in `mi-cuenta/index.astro:145` and `UserMenu.client.tsx:540` have no width/height → browser does not know the space to reserve → CLS.\n- F12: `ImageGallery.client.tsx:297` lightbox `<img>` has no dimensions — not a real CLS risk (modal already open) but worth normalising.\n\nWhat to do:\n\n**F6 — Avatars:**\n1. In `apps/web/src/pages/[lang]/mi-cuenta/index.astro:145`, add `width={40} height={40}` (or the correct rendered size) to the avatar `<img>` and ensure `style=\"object-fit: cover;\"` (or an equivalent CSS class) is present.\n2. In `apps/web/src/components/shared/navigation/UserMenu.client.tsx:540`, same change — add `width={40} height={40}` and `style={{ objectFit: 'cover' }}` to the avatar `<img>`.\n3. If the avatar size is a variable, derive width/height from the same variable (don't hardcode if the component already has a `size` prop).\n\n**F12 — ImageGallery lightbox:**\n4. In `apps/web/src/components/accommodation/ImageGallery.client.tsx:297`, add `width` and `height` attributes. The natural dimensions of the Cloudinary image are available via the image object; pass them through. If not available, use a meaningful default (e.g. `width={1200} height={800}`) with `object-fit: contain` on the lightbox layout.\n\nKey files affected:\n- `apps/web/src/pages/[lang]/mi-cuenta/index.astro:145`\n- `apps/web/src/components/shared/navigation/UserMenu.client.tsx:540`\n- `apps/web/src/components/accommodation/ImageGallery.client.tsx:297`\n\nAcceptance criteria:\n- Both avatar `<img>` tags have `width` and `height` attributes.\n- Avatars do not cause layout shift when the page loads (check in DevTools Layout Shift regions).\n- The ImageGallery lightbox `<img>` has dimensions.\n- `pnpm --filter web typecheck` and `pnpm --filter web lint` remain green.\n\nTesting: DevTools CLS check on the profile page and NavBar + `pnpm --filter web build`.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-269-11"],
+            "subtasks": [
+                {
+                    "title": "Add width/height to avatar img in mi-cuenta/index.astro:145",
+                    "completed": false
+                },
+                {
+                    "title": "Add width/height + objectFit to avatar img in UserMenu.client.tsx:540",
+                    "completed": false
+                },
+                {
+                    "title": "Add width/height to lightbox img in ImageGallery.client.tsx:297",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "cls", "images", "avatar", "gallery", "performance", "f6", "f12"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-24T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-269-06",
+            "title": "Change FavoriteButton in event cards from client:load to client:visible (F5)",
+            "description": "Event cards (`EventCardFeatured` and `EventCardHorizontal`) render `FavoriteButton` with `client:load`, while all other card types (`AccommodationCard`, `ArticleCard`, `DestinationCard`) use `client:visible`. This inconsistency causes unnecessary hydration work for below-the-fold event cards on page load.\n\nRecon finding F5 (MEDIUM):\n- `EventCardFeatured.astro:96` — `<FavoriteButton client:load ...>`\n- `EventCardHorizontal.astro:114` — `<FavoriteButton client:load ...>`\n- Reference pattern: `AccommodationCard.astro:135`, `ArticleCard.astro:117`, `DestinationCard.astro:126` all use `client:visible`.\n\nFix: change both to `client:visible`.\n\nWhat to do:\n1. In `apps/web/src/components/events/EventCardFeatured.astro:96`, change `client:load` to `client:visible` on `FavoriteButton`.\n2. In `apps/web/src/components/events/EventCardHorizontal.astro:114`, same change.\n3. Verify the favorite button still works when the card is scrolled into view (deferred hydration = hydrates on intersection).\n\nKey files affected:\n- `apps/web/src/components/events/EventCardFeatured.astro:96`\n- `apps/web/src/components/events/EventCardHorizontal.astro:114`\n\nAcceptance criteria:\n- Both files use `<FavoriteButton client:visible ...>`.\n- The favorite button functions correctly when event cards are in view (click → toggle).\n- `pnpm --filter web build` succeeds.\n- `pnpm --filter web typecheck` and `pnpm --filter web lint` remain green.\n\nTesting: `pnpm --filter web build` + manual smoke on the events listing page verifying FavoriteButton is interactive after scrolling.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-269-11"],
+            "subtasks": [
+                {
+                    "title": "Change FavoriteButton client:load → client:visible in EventCardFeatured.astro:96",
+                    "completed": false
+                },
+                {
+                    "title": "Change FavoriteButton client:load → client:visible in EventCardHorizontal.astro:114",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "hydration", "events", "favorite", "performance", "f5"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-24T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-269-07",
+            "title": "Lazy-import leaflet in LocationMap and ListingMap islands (F4)",
+            "description": "Convert the static leaflet/react-leaflet imports in `LocationMap.client.tsx` and `ListingMap.client.tsx` to dynamic imports, mirroring the pattern already used in `host/editor/LocationPickerMap.client.tsx:44-56`.\n\nRecon finding F4 (MEDIUM): leaflet (~150KB gzip) is a static import in two public map islands, so it enters the main bundle even on pages where no map is visible.\n\nReference pattern from `LocationPickerMap.client.tsx:44-56`:\n```ts\nconst L = await import('leaflet');\nconst { MapContainer, TileLayer, Marker } = await import('react-leaflet');\n```\n\nWhat to do:\n1. In `apps/web/src/components/maps/LocationMap.client.tsx:8-15`, replace static `import leaflet from 'leaflet'` / `import ... from 'react-leaflet'` with `await import(...)` inside the component body (inside `useEffect` or an async initializer).\n2. In `apps/web/src/components/maps/ListingMap.client.tsx:17-34`, same change.\n3. Handle the CSS side-effect import for leaflet (`import 'leaflet/dist/leaflet.css'`) — it must also become dynamic or be moved to a static chunk that doesn't affect the public critical path. One option: `await import('leaflet/dist/leaflet.css')` inside the effect.\n4. Ensure the maps still render correctly once lazily loaded.\n\nKey files affected:\n- `apps/web/src/components/maps/LocationMap.client.tsx:8-15`\n- `apps/web/src/components/maps/ListingMap.client.tsx:17-34`\n\nAcceptance criteria:\n- `pnpm --filter web build:analyze` (after T-269-02a is complete) shows leaflet in a separate chunk, NOT in the public page bundle.\n- Maps on accommodation detail/listing pages render correctly after lazy load.\n- No leaflet-related TypeScript errors.\n- `pnpm --filter web typecheck` and `pnpm --filter web lint` remain green.\n\nTesting: `pnpm --filter web build` + DevTools Network tab: leaflet chunk loads on-demand when the map island mounts, not on initial page load.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-269-11"],
+            "subtasks": [
+                {
+                    "title": "Convert LocationMap.client.tsx leaflet/react-leaflet imports to dynamic imports",
+                    "completed": false
+                },
+                {
+                    "title": "Convert ListingMap.client.tsx leaflet/react-leaflet imports to dynamic imports",
+                    "completed": false
+                },
+                {
+                    "title": "Handle leaflet CSS side-effect import (dynamic or separate chunk)",
+                    "completed": false
+                },
+                {
+                    "title": "Browser smoke: maps render correctly after lazy load",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "bundle", "leaflet", "maps", "lazy-import", "performance", "f4"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-24T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-269-08",
+            "title": "Add fetchpriority=high to destination detail hero images (F8)",
+            "description": "The destination detail page already uses `loading=\"eager\"` on its hero images but is missing `fetchpriority=\"high\"`, which signals the browser to prioritise fetching these images in the preload scanner.\n\nRecon finding F8 (LOW): `apps/web/src/pages/[lang]/destinos/[...path].astro:412,419` — the hero `<img>` tags have `loading=\"eager\"` but no `fetchpriority`. Compare with `apps/web/src/pages/[lang]/atraccion/[slug]/index.astro:58-59` which correctly uses both.\n\nWhat to do:\n1. Open `apps/web/src/pages/[lang]/destinos/[...path].astro`.\n2. At lines 412 and 419 (the hero `<img>` tags — confirm the exact lines), add `fetchpriority=\"high\"`.\n3. Verify no other hero images on this page are missing `fetchpriority` (audit the nearby lines).\n\nKey files affected:\n- `apps/web/src/pages/[lang]/destinos/[...path].astro:412,419`\n\nAcceptance criteria:\n- Both hero `<img>` elements on the destination detail page have `fetchpriority=\"high\"` and `loading=\"eager\"`.\n- `pnpm --filter web build` succeeds.\n- `pnpm --filter web typecheck` and `pnpm --filter web lint` remain green.\n\nTesting: `pnpm --filter web build` + view-source check on a destination detail page to confirm both attributes are present.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-269-11"],
+            "subtasks": [
+                {
+                    "title": "Add fetchpriority=high to hero imgs in destinos/[...path].astro:412,419",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "lcp", "images", "fetchpriority", "destinations", "performance", "f8"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-24T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-269-09",
+            "title": "INP audit: review search and filter island event handlers, debounce where needed",
+            "description": "Audit the interactive islands that handle user input (search box, filters, any event-driven UI) and add debouncing where a handler fires on every keystroke or scroll event without throttling, which can cause INP (Interaction to Next Paint) to exceed 200ms.\n\nThis is an investigation-first task — the spec recon could not measure INP from code alone. The implementer must:\n1. Identify the islands that handle user interaction: the AI search box (if applicable), accommodation filter form, events/destinations filter components, etc.\n2. For each, open DevTools → Performance panel, interact with the element (type, toggle a filter), and look for long tasks (>50ms) triggered by the event handler.\n3. If a handler fires on every keypress without debouncing (e.g., a `onChange` that triggers a fetch or DOM update per character), add a `debounce` (typically 300ms for search inputs, 150ms for filter toggles).\n4. Check for the AI search bar specifically — it was noted in spec §9 as a likely INP source.\n\nKey files to audit (trace from the page templates):\n- AI natural-language search input component in `apps/web/src/components/search/`\n- Accommodation filter panel in `apps/web/src/components/accommodation/`\n- Any island that calls `fetch()` or updates state on `onChange`\n\nNote: if no handlers actually fire on every keystroke (e.g., they already debounce or are form submits), document that as a finding and close this task with no code changes.\n\nAcceptance criteria:\n- Every interactive handler that fires on user input is either already debounced or has a debounce added.\n- INP measured in DevTools is <200ms for the most common interactions (search box typing, filter toggle).\n- No regressions: existing search/filter functionality works as before.\n- `pnpm --filter web typecheck` and `pnpm --filter web lint` remain green.\n\nTesting: DevTools Performance panel → measure INP for search + filter interactions before and after any debounce changes. Document results in progress notes.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-269-11"],
+            "subtasks": [
+                {
+                    "title": "Identify all interactive islands with onChange/keydown/input event handlers",
+                    "completed": false
+                },
+                {
+                    "title": "Measure INP for each island in DevTools Performance panel",
+                    "completed": false
+                },
+                {
+                    "title": "Add debounce to handlers that fire on every keystroke without throttling",
+                    "completed": false
+                },
+                {
+                    "title": "Document INP findings (before/after) in progress notes",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "inp", "performance", "debounce", "search", "filters", "islands"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-24T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-269-10",
+            "title": "Add @lhci/cli devDependency and report-only Lighthouse CI job (F9)",
+            "description": "Wire up Lighthouse CI so every PR gets a performance score visible in the CI output — but as a report-only (non-blocking) job so flaky scores don't block merges.\n\nRecon finding F9 (MEDIUM): `apps/web/lighthouserc.json` exists and `apps/web/package.json:22` has a `lighthouse` script, but `@lhci/cli` is NOT in devDependencies and NO GitHub Actions workflow references it.\n\nWhat to do:\n1. Add `@lhci/cli` to `apps/web/package.json` devDependencies (latest stable version).\n2. Update `apps/web/lighthouserc.json` if needed (verify the `collect.url`, `upload.target`, and assert settings are correct for a report-only mode).\n3. Create (or update) a GitHub Actions workflow file at `.github/workflows/lighthouse-ci.yml` that:\n   - Triggers on PRs to `staging` (or all PRs).\n   - Builds `apps/web` (or uses a preview URL if one is available).\n   - Runs `pnpm --filter web lighthouse` (which calls `lhci autorun`).\n   - Is marked `continue-on-error: true` OR has `assert.preset: none` so it never blocks the PR.\n   - Uploads the Lighthouse report as a CI artifact or to a public storage (LHCI's `temporary-public-storage` is fine for now).\n4. Document in the workflow comment that the job is REPORT-ONLY and will be promoted to a blocking gate in a follow-up after baselines stabilise.\n\nKey files affected:\n- `apps/web/package.json` — add `@lhci/cli` devDep.\n- `apps/web/lighthouserc.json` — update if needed (assert preset: none, or report-only config).\n- `.github/workflows/lighthouse-ci.yml` — new or updated CI workflow.\n\nAcceptance criteria:\n- `@lhci/cli` appears in `apps/web/package.json` devDependencies.\n- A CI workflow exists that runs Lighthouse on PRs.\n- The workflow is `continue-on-error: true` (non-blocking).\n- The workflow produces a visible artifact or score link in the CI output.\n- The existing CI suite (`pnpm --filter web build`, typecheck, lint) is not affected.\n\nTesting: open a draft PR and verify the Lighthouse CI job appears in the checks list and produces a report (even if scores are low). A local `pnpm --filter web lighthouse` run that exits 0 is also sufficient for the code review gate.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-269-11"],
+            "subtasks": [
+                {
+                    "title": "Add @lhci/cli to apps/web package.json devDependencies",
+                    "completed": false
+                },
+                {
+                    "title": "Update lighthouserc.json for report-only mode (assert.preset: none or similar)",
+                    "completed": false
+                },
+                {
+                    "title": "Create .github/workflows/lighthouse-ci.yml with continue-on-error: true",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "ci", "lighthouse", "performance", "github-actions", "f9", "f10"],
+            "phase": "ci",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-24T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-269-11",
+            "title": "Re-run Lighthouse post-fix and verify score ≥90 mobile on key pages",
+            "description": "After all fix tasks (T-269-02b, T-269-03a, T-269-03b, T-269-04, T-269-05, T-269-06, T-269-07, T-269-08, T-269-09, T-269-10) are complete, re-run Lighthouse to verify the global acceptance criteria from spec §7 are met.\n\nThis is the final validation task — it must not start until all fix tasks are done.\n\nWhat to do:\n1. Run Lighthouse on the same pages and with the same methodology as T-269-01 (3-5 runs, take median).\n2. Compare to the T-269-01 baseline.\n3. Verify against the global acceptance criteria:\n   - Lighthouse Performance ≥90 mobile on home, accommodation listing, accommodation detail.\n   - LCP <2.5s on key pages (home hero paints without waiting for hydration).\n   - INP <200ms on key pages.\n   - CLS <0.1 on key pages.\n   - 0 chunks >500KB in the build (verify via `pnpm --filter web build:analyze`).\n   - Leaflet NOT in the initial bundle (visible in treemap).\n   - Event card `FavoriteButton` uses `client:visible` (code review check).\n   - CI runs Lighthouse report-only job (CI check).\n4. Save the post-fix reports alongside the baseline in `.qtm/specs/SPEC-269-web-performance-audit/lighthouse-post-fix/`.\n5. Write a final summary comparing baseline vs post-fix scores.\n\nIf any criterion is not met, the relevant fix task must be reopened and iterated.\n\nAcceptance criteria (per spec §7):\n- Performance score ≥90 mobile on home, listing, detail.\n- LCP <2.5s, INP <200ms, CLS <0.1 on key pages.\n- 0 chunks >500KB in `pnpm --filter web build:analyze` output.\n- All code-level ACs verified (leaflet lazy, FavoriteButton directive, CI job).\n- Post-fix report saved and compared to baseline.\n\nTesting: this task IS the test (Lighthouse runs + treemap check + manual functional smoke to confirm no regressions).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [
+                "T-269-01",
+                "T-269-02b",
+                "T-269-03a",
+                "T-269-03b",
+                "T-269-04",
+                "T-269-05",
+                "T-269-06",
+                "T-269-07",
+                "T-269-08",
+                "T-269-09",
+                "T-269-10"
+            ],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Re-run Lighthouse (3-5 runs, median) on home/listing/detail mobile+desktop",
+                    "completed": false
+                },
+                {
+                    "title": "Run pnpm --filter web build:analyze and verify 0 chunks >500KB",
+                    "completed": false
+                },
+                {
+                    "title": "Verify LCP <2.5s, INP <200ms, CLS <0.1 on key pages",
+                    "completed": false
+                },
+                {
+                    "title": "Save post-fix reports and write baseline-vs-post-fix comparison",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "performance", "lighthouse", "validation", "core-web-vitals"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-06-24T00:00:00Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ]
+}
