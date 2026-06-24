@@ -2062,7 +2062,7 @@
             "title": "Accommodation import — scraper resilience (retry, fallback chain, async, provider mitigation, manual path)",
             "type": "improvement",
             "complexity": "high",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-277-import-scraper-resilience",
             "created": "2026-06-23T23:17:27Z",
             "base": "staging",

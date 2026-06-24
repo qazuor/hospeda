@@ -1078,14 +1078,14 @@
         {
             "specId": "SPEC-277",
             "title": "Accommodation import — scraper resilience (retry, fallback chain, async, provider mitigation, manual path)",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "in-progress",
+            "progress": "0/11",
             "path": "SPEC-277-import-scraper-resilience",
             "parent": "SPEC-258",
             "branch": "spec/SPEC-277-import-scraper-resilience",
             "base": "staging",
             "createdAt": "2026-06-23T23:17:27Z",
-            "note": "Doc-only spec; tasks NOT atomized yet. Carved out of SPEC-258 workstream C after C.1 (failure-mode differentiation, SPEC-258 PR #1824) shipped and the import cache (C.4) was rejected. 5 remaining levers: R1 retry/backoff, R2 per-source fallback chain, R3 async path (reuse SPEC-250), R4 provider mitigation (config), R5 guaranteed manual path. 5 open questions for the owner before atomizing."
+            "note": "Tasks atomized for R1/R2/R4/R5 (11 tasks; R3 async path deferred to follow-up spec). Scopes: R1 withRetry wrapper in apify-client + Airbnb/Booking adapters, R2 GenericAdapter fallback for Airbnb/Booking on source_blocked, R4 provider-mitigation runbook, R5 form-usability invariant tests for web+admin."
         },
         {
             "specId": "SPEC-278",
