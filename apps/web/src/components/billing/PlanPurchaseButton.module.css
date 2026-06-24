@@ -108,6 +108,18 @@
     opacity: 0.88;
 }
 
+/* Promo-applied price inside the CTA: original struck through, new price bold. */
+.priceStruck {
+    opacity: 0.6;
+    text-decoration: line-through;
+    font-weight: 400;
+}
+
+.pricePromo {
+    font-weight: 800;
+    opacity: 1;
+}
+
 /* ---------------------------------------------------------------------------
  * Loading content (spinner + text)
  * ------------------------------------------------------------------------- */
