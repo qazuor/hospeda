@@ -1761,7 +1761,7 @@
         },
         {
             "specId": "SPEC-265",
-            "title": "AI accommodation search — UI/UX improvements (transparency, onboarding, chat control, layout)",
+            "title": "AI accommodation search — UI/UX improvements (transparency, onboarding, chat control, hybrid layout)",
             "slug": "ai-search-ux",
             "type": "improvement",
             "complexity": "medium",
