@@ -150,6 +150,172 @@
 }
 
 /* ---------------------------------------------------------------------------
+ * Promo code section
+ * ------------------------------------------------------------------------- */
+
+.promoSection {
+    margin-top: var(--space-1, 0.25rem);
+    width: 100%;
+}
+
+/* Toggle link to reveal promo field */
+.promoToggle {
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--brand-accent);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    text-decoration: underline;
+    cursor: pointer;
+    display: inline-block;
+    width: 100%;
+    text-align: center;
+    line-height: 1.4;
+    transition: color var(--duration-fast, 0.15s) ease;
+}
+
+.promoToggle:hover {
+    color: var(--brand-accent-lm06);
+}
+
+.promoToggle:focus-visible {
+    outline: 2px solid var(--brand-accent);
+    outline-offset: 2px;
+    border-radius: 2px;
+}
+
+/* Container for the expanded promo input */
+.promoField {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 0.25rem);
+}
+
+.promoLabel {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--core-muted-foreground, var(--foreground));
+}
+
+/* Row: input + apply button side by side */
+.promoInputRow {
+    display: flex;
+    gap: var(--space-2, 0.5rem);
+    align-items: stretch;
+}
+
+.promoInput {
+    flex: 1;
+    min-width: 0;
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    border: 1px solid var(--border, #d1d5db);
+    border-radius: var(--radius-md, 6px);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    background-color: var(--background);
+    color: var(--foreground);
+    transition: border-color var(--duration-fast, 0.15s) ease;
+}
+
+.promoInput:focus {
+    outline: none;
+    border-color: var(--brand-accent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--brand-accent) 20%, transparent);
+}
+
+.promoInput:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.promoApplyButton {
+    flex-shrink: 0;
+    padding: var(--space-2, 0.5rem) var(--space-4, 1rem);
+    border: 1px solid var(--brand-accent);
+    border-radius: var(--radius-button, 8px);
+    background-color: transparent;
+    color: var(--brand-accent);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color var(--duration-fast, 0.15s) ease, color var(--duration-fast, 0.15s)
+        ease;
+}
+
+.promoApplyButton:hover:not(:disabled) {
+    background-color: var(--brand-accent);
+    color: var(--accent-foreground);
+}
+
+.promoApplyButton:focus-visible {
+    outline: 2px solid var(--brand-accent);
+    outline-offset: 2px;
+}
+
+.promoApplyButton:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+/* Error below the input row */
+.promoErrorMessage {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--destructive);
+    line-height: 1.4;
+}
+
+/* Valid code / success state */
+.promoSuccess {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-2, 0.5rem) var(--space-3, 0.75rem);
+    background-color: var(--success-a12);
+    border: 1px solid var(--success);
+    border-radius: var(--radius-md, 6px);
+}
+
+.promoPreviewText {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--success);
+    line-height: 1.3;
+}
+
+.promoRemoveButton {
+    flex-shrink: 0;
+    background: none;
+    border: none;
+    padding: 0;
+    color: var(--core-muted-foreground, var(--foreground));
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    text-decoration: underline;
+    cursor: pointer;
+    opacity: 0.75;
+    transition: opacity var(--duration-fast, 0.15s) ease;
+}
+
+.promoRemoveButton:hover {
+    opacity: 1;
+}
+
+.promoRemoveButton:focus-visible {
+    outline: 2px solid var(--brand-accent);
+    outline-offset: 2px;
+    border-radius: 2px;
+}
+
+/* ---------------------------------------------------------------------------
  * Reduced motion
  * ------------------------------------------------------------------------- */
 

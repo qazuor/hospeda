@@ -6,13 +6,14 @@
  * unauthenticated, redirects to the sign-in page with a return redirect. If
  * authenticated, calls `billingApi.createCheckout` (the Hospeda-custom
  * `start-paid` route) and follows the returned `checkoutUrl` to the
- * MercadoPago payment page.
+ * MercadoPago payment page (or the in-app success sentinel for `comp` plans).
  *
  * Hydration: client:load — checkout CTAs are interactive immediately.
  */
 
+import type { EffectPreview } from '@repo/schemas';
 import type { JSX } from 'react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { billingApi, userApi } from '../../lib/api/endpoints-protected';
 import { useSession } from '../../lib/auth-client';
 import type { SupportedLocale } from '../../lib/i18n';
@@ -110,6 +111,39 @@ function formatPrice({
     return `${prefix} ${amount.toLocaleString('es-AR')}`;
 }
 
+/**
+ * Convert centavos to major-unit string for display in promo effect messages.
+ * E.g. 50000 cents → "500" (formatted as es-AR integer).
+ *
+ * @param cents - Amount in centavos
+ * @returns Major-unit formatted string
+ */
+function centsToDisplay(cents: number): string {
+    return (cents / 100).toLocaleString('es-AR');
+}
+
+// ---------------------------------------------------------------------------
+// Promo state types
+// ---------------------------------------------------------------------------
+
+/** State machine for the promo code field */
+type PromoStatus = 'idle' | 'applying' | 'valid' | 'error';
+
+interface PromoState {
+    /** Whether the promo code section is expanded */
+    readonly expanded: boolean;
+    /** Raw code string typed by the user */
+    readonly code: string;
+    /** Current status of the promo apply flow */
+    readonly status: PromoStatus;
+    /** Validated effect preview (set when status === 'valid') */
+    readonly preview: EffectPreview | null;
+    /** Error message to show (set when status === 'error') */
+    readonly errorMsg: string | null;
+    /** The successfully applied code forwarded to checkout (set when status === 'valid') */
+    readonly appliedCode: string | null;
+}
+
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
@@ -126,6 +160,14 @@ function formatPrice({
  * The button is disabled while a checkout request is in flight to prevent
  * double-submission. The `aria-label` is updated to the processing label
  * during loading so assistive technology announces the state change.
+ *
+ * A collapsible promo-code section is shown when the user is authenticated
+ * and the plan is available. Validating a code previews the effect; a valid
+ * code is forwarded to `createCheckout` on submit.
+ *
+ * For `comp` promo codes, `checkoutUrl` is an in-app success sentinel URL
+ * (no MercadoPago redirect) — `window.location.href = checkoutUrl` is still
+ * the correct action and the sentinel page handles the success flow.
  *
  * @example
  * ```astro
@@ -160,6 +202,24 @@ export function PlanPurchaseButton({
     const [billingInterval, setBillingInterval] = useState<'monthly' | 'annual'>('monthly');
     const buttonRef = useRef<HTMLButtonElement | null>(null);
 
+    // ---------------------------------------------------------------------------
+    // Promo code state
+    // ---------------------------------------------------------------------------
+
+    const [promo, setPromo] = useState<PromoState>({
+        expanded: false,
+        code: '',
+        status: 'idle',
+        preview: null,
+        errorMsg: null,
+        appliedCode: null
+    });
+
+    // Per-island unique id so the promo input/label association stays correct
+    // when several <PlanPurchaseButton> islands render on the same pricing page
+    // (a hardcoded id would collide across cards and break <label htmlFor>).
+    const promoInputId = useId();
+
     const { t } = createTranslations(locale);
 
     const isAuthenticated = !sessionPending && Boolean(session?.user);
@@ -187,6 +247,21 @@ export function PlanPurchaseButton({
         'Este es tu plan actual'
     );
     const monthlyOnlyLabel = t('pricing.monthlyOnly', 'Solo plan mensual');
+
+    // Promo i18n strings
+    const promoToggleLabel = t(
+        'billing.checkout.promoApply.toggle',
+        '¿Tenés un código de descuento?'
+    );
+    const promoLabel = t('billing.checkout.promoApply.label', 'Código de descuento');
+    const promoPlaceholder = t('billing.checkout.promoApply.inputPlaceholder', 'Ingresá tu código');
+    const promoApplyButton = t('billing.checkout.promoApply.applyButton', 'Aplicar');
+    const promoApplying = t('billing.checkout.promoApply.applying', 'Verificando...');
+    const promoRemoveButton = t('billing.checkout.promoApply.removeButton', 'Quitar');
+    const promoErrorGeneric = t(
+        'billing.checkout.promoApply.errorGeneric',
+        'No pudimos verificar el código. Intentá de nuevo.'
+    );
 
     // Fetch the user's current subscription once they're authenticated. Shared
     // across every PlanPurchaseButton on the page via subscriptionPromise so a
@@ -226,7 +301,167 @@ export function PlanPurchaseButton({
         };
     }, []);
 
+    // Invalidate any applied promo when the billing interval changes. The code
+    // was previewed (and `appliedCode` captured) against the previous interval's
+    // price; carrying it over would forward a code to checkout that the user
+    // never previewed against the now-selected amount — a real-money mismatch,
+    // especially for fixed-amount discounts. Keep the typed code + expanded
+    // state so the user can simply re-apply against the new price.
+    // biome-ignore lint/correctness/useExhaustiveDependencies: billingInterval is a trigger-only dependency — the effect must re-run when it changes, though its value is not read in the body.
+    useEffect(() => {
+        setPromo((prev) =>
+            prev.appliedCode === null && prev.status !== 'valid'
+                ? prev
+                : { ...prev, status: 'idle', preview: null, errorMsg: null, appliedCode: null }
+        );
+    }, [billingInterval]);
+
     const isCurrentPlan = isAuthenticated && currentPlanSlug === planSlug;
+
+    // Show the promo section only when the user can interact with checkout
+    const showPromoSection = isAuthenticated && !isCurrentPlan && !isAnnualUnavailable;
+
+    // ---------------------------------------------------------------------------
+    // Promo helpers
+    // ---------------------------------------------------------------------------
+
+    /**
+     * Build a human-readable preview string from the validated `EffectPreview`.
+     *
+     * @param preview - Effect preview object from the validate endpoint
+     * @returns Localised summary string for display
+     */
+    function buildPreviewText(preview: EffectPreview): string {
+        const { effectKind, valueKind, value, durationCycles, extraDays } = preview;
+
+        if (effectKind === 'comp') {
+            return t('billing.checkout.promoApply.comp', 'Gratis para siempre');
+        }
+
+        if (effectKind === 'trial_extension' && extraDays !== null) {
+            return t(
+                'billing.checkout.promoApply.trialExtension',
+                '{{days}} días de prueba gratis adicionales'
+            ).replace('{{days}}', String(extraDays));
+        }
+
+        if (effectKind === 'discount') {
+            if (valueKind === 'percentage' && value !== null) {
+                const months = durationCycles;
+                if (months === null) {
+                    return t(
+                        'billing.checkout.promoApply.discountPercentForever',
+                        '{{percent}}% de descuento para siempre'
+                    ).replace('{{percent}}', String(value));
+                }
+                return t(
+                    'billing.checkout.promoApply.discountPercentCycles',
+                    '{{percent}}% de descuento por {{months}} meses'
+                )
+                    .replace('{{percent}}', String(value))
+                    .replace('{{months}}', String(months));
+            }
+            if (valueKind === 'fixed' && value !== null) {
+                // `value` is the discount amount in centavos — the copy reads
+                // "$X de descuento" (X OFF), so it must use the discount, NOT
+                // `finalAmount` (which is the resulting price after the discount).
+                const displayAmount = centsToDisplay(value);
+                const months = durationCycles;
+                if (months === null) {
+                    return t(
+                        'billing.checkout.promoApply.discountFixedForever',
+                        '${{amount}} de descuento para siempre'
+                    ).replace('{{amount}}', displayAmount);
+                }
+                return t(
+                    'billing.checkout.promoApply.discountFixedCycles',
+                    '${{amount}} de descuento por {{months}} meses'
+                )
+                    .replace('{{amount}}', displayAmount)
+                    .replace('{{months}}', String(months));
+            }
+        }
+
+        // Degenerate case: a valid effect arrived with fields we can't render.
+        // Return empty rather than a misleading default (never imply "free
+        // forever" for a code we couldn't summarize).
+        return '';
+    }
+
+    /**
+     * Handle "Aplicar" click on the promo code section.
+     * Calls the validate endpoint and updates promo state accordingly.
+     */
+    async function handleApplyPromo(): Promise<void> {
+        const code = promo.code.trim();
+        if (!code || !session?.user) return;
+
+        setPromo((prev) => ({ ...prev, status: 'applying', errorMsg: null }));
+
+        try {
+            const result = await billingApi.validatePromoCode({
+                code,
+                userId: session.user.id,
+                amount: displayPriceCents
+            });
+
+            if (!result.ok) {
+                setPromo((prev) => ({
+                    ...prev,
+                    status: 'error',
+                    errorMsg: promoErrorGeneric,
+                    appliedCode: null
+                }));
+                return;
+            }
+
+            const { valid, errorMessage, effectPreview } = result.data;
+
+            if (!valid || !effectPreview) {
+                setPromo((prev) => ({
+                    ...prev,
+                    status: 'error',
+                    errorMsg:
+                        errorMessage ??
+                        t(
+                            'billing.checkout.promoApply.errorInvalid',
+                            'El código ingresado no es válido. Revisalo e intentá de nuevo.'
+                        ),
+                    appliedCode: null
+                }));
+                return;
+            }
+
+            setPromo((prev) => ({
+                ...prev,
+                status: 'valid',
+                preview: effectPreview,
+                errorMsg: null,
+                appliedCode: code
+            }));
+        } catch {
+            setPromo((prev) => ({
+                ...prev,
+                status: 'error',
+                errorMsg: promoErrorGeneric,
+                appliedCode: null
+            }));
+        }
+    }
+
+    /**
+     * Remove the applied promo code and reset the section to idle.
+     */
+    function handleRemovePromo(): void {
+        setPromo((prev) => ({
+            ...prev,
+            status: 'idle',
+            code: '',
+            preview: null,
+            errorMsg: null,
+            appliedCode: null
+        }));
+    }
 
     /**
      * Handle button click.
@@ -261,14 +496,27 @@ export function PlanPurchaseButton({
         try {
             const result = await billingApi.createCheckout({
                 planSlug,
-                billingInterval
+                billingInterval,
+                ...(promo.appliedCode ? { promoCode: promo.appliedCode } : {})
             });
 
             if (!result.ok || !result.data.checkoutUrl) {
-                setError(errorText);
+                // TODO(SPEC-262): when start-paid surfaces a distinguishable
+                // errorCode for a discount rejected on annual outside trial, map
+                // it to `billing.checkout.promoApply.errorAnnualOutsideTrial`
+                // (the key already ships in all locales). Until then, fall back
+                // to the generic checkout error — safe, never misleading.
+                const checkoutError = t(
+                    'billing.checkout.button.error',
+                    'No pudimos iniciar el pago. Intenta de nuevo.'
+                );
+                setError(checkoutError);
                 return;
             }
 
+            // For comp promo codes, checkoutUrl is an in-app success sentinel URL
+            // (not a MercadoPago redirect). window.location.href handles both cases
+            // correctly — the sentinel page manages the success flow.
             window.location.href = result.data.checkoutUrl;
         } catch {
             setError(errorText);
@@ -292,6 +540,7 @@ export function PlanPurchaseButton({
             <button
                 ref={buttonRef}
                 type="button"
+                data-testid="plan-cta-button"
                 disabled={buttonDisabled}
                 aria-label={buttonAriaLabel}
                 aria-busy={loading}
@@ -347,6 +596,100 @@ export function PlanPurchaseButton({
                 >
                     {error}
                 </p>
+            )}
+
+            {/* Promo code section — only shown when the user can actually checkout */}
+            {showPromoSection && (
+                <div className={styles.promoSection}>
+                    {promo.expanded ? (
+                        <div className={styles.promoField}>
+                            {promo.status !== 'valid' ? (
+                                <>
+                                    <label
+                                        htmlFor={promoInputId}
+                                        className={styles.promoLabel}
+                                    >
+                                        {promoLabel}
+                                    </label>
+                                    <div className={styles.promoInputRow}>
+                                        <input
+                                            id={promoInputId}
+                                            type="text"
+                                            className={styles.promoInput}
+                                            placeholder={promoPlaceholder}
+                                            value={promo.code}
+                                            onChange={(e) =>
+                                                setPromo((prev) => ({
+                                                    ...prev,
+                                                    code: e.target.value,
+                                                    status: 'idle',
+                                                    errorMsg: null
+                                                }))
+                                            }
+                                            onKeyDown={(e) => {
+                                                if (
+                                                    e.key === 'Enter' &&
+                                                    promo.code.trim() &&
+                                                    promo.status !== 'applying'
+                                                ) {
+                                                    void handleApplyPromo();
+                                                }
+                                            }}
+                                            disabled={promo.status === 'applying'}
+                                            aria-label={promoLabel}
+                                            autoComplete="off"
+                                            spellCheck={false}
+                                        />
+                                        <button
+                                            type="button"
+                                            className={styles.promoApplyButton}
+                                            onClick={() => void handleApplyPromo()}
+                                            disabled={
+                                                !promo.code.trim() || promo.status === 'applying'
+                                            }
+                                            aria-busy={promo.status === 'applying'}
+                                        >
+                                            {promo.status === 'applying'
+                                                ? promoApplying
+                                                : promoApplyButton}
+                                        </button>
+                                    </div>
+                                    {promo.status === 'error' && promo.errorMsg && (
+                                        <p
+                                            role="alert"
+                                            className={styles.promoErrorMessage}
+                                        >
+                                            {promo.errorMsg}
+                                        </p>
+                                    )}
+                                </>
+                            ) : (
+                                /* Valid code — show preview */
+                                <div className={styles.promoSuccess}>
+                                    {/* <output> carries an implicit role="status" */}
+                                    <output className={styles.promoPreviewText}>
+                                        {promo.preview ? buildPreviewText(promo.preview) : ''}
+                                    </output>
+                                    <button
+                                        type="button"
+                                        className={styles.promoRemoveButton}
+                                        onClick={handleRemovePromo}
+                                    >
+                                        {promoRemoveButton}
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <button
+                            type="button"
+                            className={styles.promoToggle}
+                            onClick={() => setPromo((prev) => ({ ...prev, expanded: true }))}
+                        >
+                            {promoToggleLabel}
+                        </button>
+                    )}
+                </div>
             )}
         </div>
     );

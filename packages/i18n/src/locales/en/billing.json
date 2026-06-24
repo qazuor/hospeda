@@ -219,6 +219,23 @@
             "unauthCta": "Sign in to subscribe",
             "currentPlan": "Current plan",
             "currentPlanAriaLabel": "This is your current plan"
+        },
+        "promoApply": {
+            "toggle": "Have a discount code?",
+            "label": "Discount code",
+            "inputPlaceholder": "Enter your code",
+            "applyButton": "Apply",
+            "applying": "Verifying...",
+            "removeButton": "Remove",
+            "discountPercentForever": "{{percent}}% discount forever",
+            "discountPercentCycles": "{{percent}}% discount for {{months}} months",
+            "discountFixedForever": "${{amount}} discount forever",
+            "discountFixedCycles": "${{amount}} discount for {{months}} months",
+            "trialExtension": "{{days}} extra free trial days",
+            "comp": "Free forever",
+            "errorInvalid": "The code you entered is not valid. Please check it and try again.",
+            "errorAnnualOutsideTrial": "This discount code does not apply to annual plans outside the trial period.",
+            "errorGeneric": "We could not verify the code. Please try again."
         }
     },
     "limit": {
