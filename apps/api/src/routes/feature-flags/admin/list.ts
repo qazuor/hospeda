@@ -1,5 +1,6 @@
 import {
-    FeatureFlagAdminListResponseSchema,
+    FeatureFlagAdminSchema,
+    type FeatureFlagAdminSearch,
     FeatureFlagAdminSearchSchema,
     PermissionEnum
 } from '@repo/schemas';
@@ -17,9 +18,9 @@ export const adminListFeatureFlagsRoute = createAdminListRoute({
     tags: ['Feature Flags'],
     requiredPermissions: [PermissionEnum.FEATURE_FLAG_MANAGE],
     requestQuery: FeatureFlagAdminSearchSchema.omit({ page: true, pageSize: true }).shape,
-    responseSchema: FeatureFlagAdminListResponseSchema,
+    responseSchema: FeatureFlagAdminSchema,
     handler: async (ctx, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
-        return featureFlagService.adminList(actor, query ?? {});
+        return featureFlagService.adminList(actor, query as FeatureFlagAdminSearch);
     }
 });

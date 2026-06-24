@@ -20,6 +20,6 @@ export const adminGetFeatureFlagAuditLogRoute = createAdminRoute({
     responseSchema: FeatureFlagAuditLogResponseSchema,
     handler: async (ctx, params) => {
         const actor = getActorFromContext(ctx);
-        return featureFlagService.getAuditLog(actor, params.id);
+        return featureFlagService.getAuditLog(actor, params.id as string);
     }
 });

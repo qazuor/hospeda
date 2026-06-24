@@ -1,6 +1,7 @@
 import {
     FeatureFlagAdminSchema,
     FeatureFlagIdSchema,
+    type FeatureFlagToggleHttp,
     FeatureFlagToggleHttpSchema,
     PermissionEnum
 } from '@repo/schemas';
@@ -23,6 +24,12 @@ export const adminToggleFeatureFlagRoute = createAdminRoute({
     responseSchema: FeatureFlagAdminSchema,
     handler: async (ctx, params, body) => {
         const actor = getActorFromContext(ctx);
-        return featureFlagService.toggleFlag(actor, params.id, body.isActive, body.reason);
+        const payload = body as FeatureFlagToggleHttp;
+        return featureFlagService.toggleFlag(
+            actor,
+            params.id as string,
+            payload.isActive,
+            payload.reason
+        );
     }
 });

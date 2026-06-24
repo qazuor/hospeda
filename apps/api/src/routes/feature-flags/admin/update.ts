@@ -1,6 +1,7 @@
 import {
     FeatureFlagAdminSchema,
     FeatureFlagIdSchema,
+    type FeatureFlagUpdateHttp,
     FeatureFlagUpdateHttpSchema,
     PermissionEnum
 } from '@repo/schemas';
@@ -22,6 +23,10 @@ export const adminUpdateFeatureFlagRoute = createAdminRoute({
     responseSchema: FeatureFlagAdminSchema,
     handler: async (ctx, params, body) => {
         const actor = getActorFromContext(ctx);
-        return featureFlagService.updateFlag(actor, params.id, body);
+        return featureFlagService.updateFlag(
+            actor,
+            params.id as string,
+            body as FeatureFlagUpdateHttp
+        );
     }
 });

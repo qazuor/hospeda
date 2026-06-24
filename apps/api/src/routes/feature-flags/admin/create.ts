@@ -1,4 +1,9 @@
-import { FeatureFlagAdminSchema, FeatureFlagCreateHttpSchema, PermissionEnum } from '@repo/schemas';
+import {
+    FeatureFlagAdminSchema,
+    type FeatureFlagCreateHttp,
+    FeatureFlagCreateHttpSchema,
+    PermissionEnum
+} from '@repo/schemas';
 import { FeatureFlagService } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { createAdminRoute } from '../../../utils/route-factory-tiered';
@@ -16,6 +21,6 @@ export const adminCreateFeatureFlagRoute = createAdminRoute({
     responseSchema: FeatureFlagAdminSchema,
     handler: async (ctx, _params, body) => {
         const actor = getActorFromContext(ctx);
-        return featureFlagService.createFlag(actor, body);
+        return featureFlagService.createFlag(actor, body as FeatureFlagCreateHttp);
     }
 });

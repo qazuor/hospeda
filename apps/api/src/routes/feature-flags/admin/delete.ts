@@ -20,7 +20,7 @@ export const adminDeleteFeatureFlagRoute = createAdminRoute({
     responseSchema: FeatureFlagDeleteResponseSchema,
     handler: async (ctx, params) => {
         const actor = getActorFromContext(ctx);
-        await featureFlagService.deleteFlag(actor, params.id);
+        await featureFlagService.deleteFlag(actor, params.id as string);
         return { success: true };
     }
 });

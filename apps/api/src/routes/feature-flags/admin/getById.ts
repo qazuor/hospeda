@@ -16,6 +16,6 @@ export const adminGetFeatureFlagByIdRoute = createAdminRoute({
     responseSchema: FeatureFlagAdminSchema,
     handler: async (ctx, params) => {
         const actor = getActorFromContext(ctx);
-        return featureFlagService.getById(actor, params.id);
+        return featureFlagService.getById(actor, params.id as string);
     }
 });
