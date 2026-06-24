@@ -122,13 +122,30 @@ export const SocialPostListItemSchema = z.object({
 export type SocialPostListItem = z.infer<typeof SocialPostListItemSchema>;
 
 /**
+ * Minimal batch summary embedded in the post detail response.
+ */
+export const SocialPostBatchSummarySchema = z.object({
+    id: z.string().uuid(),
+    name: z.string()
+});
+
+/**
+ * Minimal campaign summary embedded in the post detail response.
+ */
+export const SocialPostCampaignSummarySchema = z.object({
+    id: z.string().uuid(),
+    name: z.string()
+});
+
+/**
  * Detail DTO schema returned by {@link SocialPostService.getPostDetail}.
  *
  * This is the shape of `GET /api/v1/admin/social/posts/{id}` — a RICHER
  * projection than the full entity {@link SocialPostSchema}: it omits DB-only
  * fields (`draftId`, `source`, `createdById`, `updatedById`) that the service
  * does not hydrate, and includes denormalised relation arrays (`targets`,
- * `media`, `publishLogs`, `hashtags`) that the entity schema does not have.
+ * `media`, `publishLogs`, `hashtags`) plus resolved `batch`/`campaign` summaries
+ * that the entity schema does not have.
  *
  * The `targets`, `media`, and `publishLogs` arrays use a permissive row schema
  * (`z.record(z.string(), z.unknown())`) so that arbitrary raw columns — including
@@ -144,15 +161,32 @@ export const SocialPostDetailSchema = z.object({
     status: z.string(),
     approvalStatus: z.string(),
     paused: z.boolean(),
-    scheduledAt: z.coerce.date().nullable(),
+    scheduledAt: z.coerce.date().nullish(),
+    /** Recurrence cadence (ONCE | WEEKLY | BIWEEKLY | MONTHLY). */
+    recurrenceType: z.string(),
+    /**
+     * Next cron pickup time. The DB column is nullable — use `.nullish()` (not
+     * `.optional()`) so that both `null` (DB value) and `undefined` (key absent)
+     * are accepted without Zod rejecting the response.
+     */
+    nextRunAt: z.coerce.date().nullish(),
+    /**
+     * Additional params for the cadence (e.g. `{ weekday: "TUESDAY" }` for WEEKLY).
+     * Null when recurrenceType is ONCE, BIWEEKLY, or MONTHLY.
+     */
+    recurrenceParamsJson: z.record(z.string(), z.unknown()).nullish(),
     captionBase: z.string(),
-    finalCaption: z.string().nullable(),
-    finalHashtagsText: z.string().nullable(),
-    notes: z.string().nullable(),
-    internalNotes: z.string().nullable(),
-    gptHashtagPayloadJson: z.array(z.string()).nullable(),
+    finalCaption: z.string().nullish(),
+    finalHashtagsText: z.string().nullish(),
+    notes: z.string().nullish(),
+    internalNotes: z.string().nullish(),
+    gptHashtagPayloadJson: z.array(z.string()).nullish(),
     createdAt: z.coerce.date(),
     updatedAt: z.coerce.date(),
+    /** Resolved batch summary (id + name), or null when no batch is assigned. */
+    batch: SocialPostBatchSummarySchema.nullish(),
+    /** Resolved campaign summary (id + name), or null when no campaign is assigned. */
+    campaign: SocialPostCampaignSummarySchema.nullish(),
     /** Resolved hashtag strings for the post. */
     hashtags: z.array(z.string()),
     /**

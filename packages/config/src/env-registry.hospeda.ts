@@ -1770,6 +1770,23 @@ export const HOSPEDA_ENV_VARS = [
             "Elegí un PIN numérico (ej: 6 dígitos), luego hashealo: `node -e \"const bcrypt=require('bcrypt'); bcrypt.hash('TU_PIN',12).then(h=>console.log(h))\"`. Guardá solo el hash resultante acá, nunca el PIN crudo. Para rotar, generá un nuevo PIN y un nuevo hash."
     },
     {
+        name: 'HOSPEDA_OPERATOR_PIN',
+        description:
+            'Plaintext operator PIN compared directly against the `operatorPin` submitted to the Custom GPT social-draft endpoint. Supersedes HOSPEDA_OPERATOR_PIN_HASH (the prior unsalted SHA-256 hash was removed). TEMPORARY: restore a hashed comparison (HOSPEDA_OPERATOR_PIN_HASH) before production.',
+        descriptionEs:
+            'PIN del operador en texto plano que se compara directamente contra el `operatorPin` enviado al endpoint de borradores sociales del Custom GPT. Reemplaza a HOSPEDA_OPERATOR_PIN_HASH (el hash SHA-256 sin sal previo fue removido). TEMPORAL: restaurar una comparación hasheada (HOSPEDA_OPERATOR_PIN_HASH) antes de producción.',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: '123456',
+        apps: ['api'],
+        category: 'social-automation',
+        howToObtain:
+            'Choose a numeric PIN (e.g. 4-6 digits) and set it here. The same value must be entered as `operatorPin` in the Custom GPT action. NOTE: temporary plaintext setup — restore HOSPEDA_OPERATOR_PIN_HASH (hashed) before production.',
+        howToObtainEs:
+            'Elegí un PIN numérico (ej: 4-6 dígitos) y poné el valor acá. El mismo valor debe ingresarse como `operatorPin` en la acción del Custom GPT. NOTA: setup temporal en texto plano — restaurar HOSPEDA_OPERATOR_PIN_HASH (hasheado) antes de producción.'
+    },
+    {
         name: 'HOSPEDA_MAKE_API_KEY',
         description:
             'Outbound API key our backend sends to Make.com in the `x-make-apikey` header when pushing social-publish jobs. Authenticates the Hospeda API against the Make.com scenario webhook.',

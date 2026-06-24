@@ -34,7 +34,9 @@ const EMPTY_FILTERS: SocialPostFiltersValue = {
     search: '',
     status: '',
     approvalStatus: '',
-    platform: ''
+    platform: '',
+    batchId: '',
+    campaignId: ''
 };
 
 const PAGE_SIZE = 20;
@@ -54,13 +56,20 @@ function SocialPostsPage() {
         search: filters.search || undefined,
         status: filters.status || undefined,
         approvalStatus: filters.approvalStatus || undefined,
-        platform: filters.platform || undefined
+        platform: filters.platform || undefined,
+        batchId: filters.batchId || undefined,
+        campaignId: filters.campaignId || undefined
     });
 
     const items = data?.items ?? [];
     const pagination = data?.pagination;
     const isFiltered =
-        !!filters.search || !!filters.status || !!filters.approvalStatus || !!filters.platform;
+        !!filters.search ||
+        !!filters.status ||
+        !!filters.approvalStatus ||
+        !!filters.platform ||
+        !!filters.batchId ||
+        !!filters.campaignId;
 
     const handleFiltersChange = (next: SocialPostFiltersValue) => {
         setFilters(next);

@@ -56,7 +56,7 @@ describe('superAdminRole', () => {
         expect(result.enabled).toBe(true);
     });
 
-    it('should have all 7 sections in mainMenu', () => {
+    it('should have all 8 sections in mainMenu', () => {
         // Arrange
         const result = RoleConfigSchema.parse(superAdminRole);
         // Assert
@@ -64,6 +64,7 @@ describe('superAdminRole', () => {
             'inicio',
             'catalogo',
             'editorial',
+            'marketing',
             'comunidad',
             'comercial',
             'plataforma',
@@ -128,7 +129,7 @@ describe('adminRole', () => {
         expect(result.enabled).toBe(true);
     });
 
-    it('should have all 7 sections in mainMenu', () => {
+    it('should have all 8 sections in mainMenu', () => {
         // Arrange
         const result = RoleConfigSchema.parse(adminRole);
         // Assert
@@ -136,6 +137,7 @@ describe('adminRole', () => {
             'inicio',
             'catalogo',
             'editorial',
+            'marketing',
             'comunidad',
             'comercial',
             'plataforma',
@@ -286,7 +288,13 @@ describe('editorRole', () => {
         // Arrange
         const result = RoleConfigSchema.parse(editorRole);
         // Assert
-        expect(result.mainMenu).toEqual(['inicio', 'editorial', 'analisis', 'miCuenta']);
+        expect(result.mainMenu).toEqual([
+            'inicio',
+            'editorial',
+            'marketing',
+            'analisis',
+            'miCuenta'
+        ]);
     });
 
     it('should reference editorDashboard', () => {
@@ -331,7 +339,13 @@ describe('editorRole', () => {
         // Arrange
         const result = RoleConfigSchema.parse(editorRole);
         // Assert
-        expect(result.mobile?.bottomNav).toEqual(['inicio', 'editorial', 'analisis', 'miCuenta']);
+        expect(result.mobile?.bottomNav).toEqual([
+            'inicio',
+            'editorial',
+            'marketing',
+            'analisis',
+            'miCuenta'
+        ]);
     });
 
     it('should override inicioSidebar.dashboard label to "Dashboard editorial"', () => {

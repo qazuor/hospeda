@@ -39,6 +39,7 @@
     "portEnvWrites": [
         {
             "file": "apps/api/.env.local",
+            "$comment": "HOSPEDA_QZPAY_TEST_CONTROL_ENABLED is NOT port-derived: it enables the QZPay billing engine locally with the MercadoPago stub (no real MP token), so plan entitlements/limits resolve correctly in worktree dev. Lives here because wt-env.sh upserts these vars on every wt:up. DEV-LOCAL ONLY — production/staging never run wt:up and the module hard-gates against this flag.",
             "vars": {
                 "API_PORT": "{api}",
                 "HOSPEDA_API_URL": "http://localhost:{api}",
@@ -47,7 +48,8 @@
                 "API_CORS_ORIGINS": "http://localhost:{admin},http://localhost:{web}",
                 "HOSPEDA_BETTER_AUTH_URL": "http://localhost:{api}/api/auth",
                 "PUBLIC_API_URL": "http://localhost:{api}",
-                "PUBLIC_SITE_URL": "http://localhost:{web}"
+                "PUBLIC_SITE_URL": "http://localhost:{web}",
+                "HOSPEDA_QZPAY_TEST_CONTROL_ENABLED": "true"
             }
         },
         {

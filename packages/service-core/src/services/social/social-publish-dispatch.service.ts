@@ -59,9 +59,11 @@ import {
     SocialPublishLogModel,
     SocialSettingModel
 } from '@repo/db';
-import type { SocialMakePayload } from '@repo/schemas';
+import type { MakeWebhookResponse, SocialMakePayload } from '@repo/schemas';
 import {
+    MakeWebhookResponseSchema,
     ServiceErrorCode,
+    SocialApprovalStatusEnum,
     SocialPostStatusEnum,
     SocialPublishResultStatusEnum,
     SocialRecurrenceTypeEnum
@@ -107,14 +109,6 @@ export interface BuildMakePayloadInput {
     readonly target: Record<string, unknown>;
     /** The parent post row from the same bundle. */
     readonly post: Record<string, unknown>;
-    /**
-     * Base URL of the Hospeda API (e.g. `https://api.hospeda.com.ar`).
-     *
-     * Sourced by the caller from env `HOSPEDA_API_URL`. This method must NOT
-     * read env variables directly so it remains a pure assembly function that
-     * is trivially unit-testable without any env setup.
-     */
-    readonly apiBaseUrl: string;
 }
 
 /**
@@ -132,11 +126,14 @@ export interface BuildMakePayloadResult {
 /**
  * Possible outcomes of a single {@link SocialPublishDispatchService.dispatchTarget} call.
  *
- * - `dispatched`          — HTTP POST succeeded (2xx); a RETRYING log row was inserted;
- *                           the target was set to PUBLISHING.
- * - `retry_scheduled`     — HTTP POST failed but retryCount < 3; retryCount incremented;
- *                           target reset to APPROVED for the next cron run.
- * - `exhausted`           — HTTP POST failed and retryCount was already >= 3 at the time
+ * - `published`           — Make.com responded synchronously with `{ status: 'SUCCESS' }`;
+ *                           target set to PUBLISHED; publish log SUCCESS inserted;
+ *                           `cascadePostStatus` called to finalise the post.
+ * - `retry_scheduled`     — Make.com responded with `{ status: 'FAILED' }`, body parse
+ *                           failed, OR the HTTP POST failed (non-2xx / network error),
+ *                           and retryCount < 3; retryCount incremented; target reset to
+ *                           APPROVED for the next cron run.
+ * - `exhausted`           — Failure occurred and retryCount was already >= 3 at the time
  *                           of the failure; target set to FAILED; audit event logged.
  * - `skipped_no_webhook`  — `make_webhook_url` setting is empty/missing; no dispatch
  *                           attempted; target status unchanged.
@@ -144,7 +141,7 @@ export interface BuildMakePayloadResult {
  *                           (optimistic lock detected 0 affected rows); no work done.
  */
 export type DispatchOutcome =
-    | 'dispatched'
+    | 'published'
     | 'retry_scheduled'
     | 'exhausted'
     | 'skipped_no_webhook'
@@ -164,12 +161,6 @@ export interface DispatchTargetInput {
      * service-core.
      */
     readonly makeApiKey: string;
-    /**
-     * Base URL of the Hospeda API (e.g. `https://api.hospeda.com.ar`).
-     * Used to construct `callbackClaimUrl` / `callbackResultUrl` via `buildMakePayload`.
-     * Provided by the cron caller from env `HOSPEDA_API_URL`.
-     */
-    readonly apiBaseUrl: string;
     /**
      * Optional webhook URL override — when set, skips the live settings look-up.
      * Primarily for testing. In production, pass `undefined` and the method
@@ -332,6 +323,54 @@ export interface HandleMakeCallbackResultResult {
 }
 
 // ---------------------------------------------------------------------------
+// dispatchPostNow types (SPEC-254 "Publish Now" endpoint)
+// ---------------------------------------------------------------------------
+
+/**
+ * Single-target outcome item returned by {@link SocialPublishDispatchService.dispatchPostNow}.
+ */
+export interface DispatchPostNowTargetOutcome {
+    /** UUID of the `social_post_targets` row. */
+    readonly targetId: string;
+    /** Social platform name (e.g. 'INSTAGRAM'). */
+    readonly platform: string;
+    /** Outcome string from `dispatchTarget`. */
+    readonly outcome: string;
+}
+
+/**
+ * Input for {@link SocialPublishDispatchService.dispatchPostNow}.
+ */
+export interface DispatchPostNowInput {
+    /** UUID of the `social_posts` row to publish immediately. */
+    readonly postId: string;
+    /**
+     * Make.com API key sent in the `x-make-apikey` header.
+     * Sourced by the caller from `env.HOSPEDA_MAKE_API_KEY`.
+     * Never read env inside service-core.
+     */
+    readonly makeApiKey: string;
+}
+
+/**
+ * Return value of {@link SocialPublishDispatchService.dispatchPostNow}.
+ */
+export interface DispatchPostNowResult {
+    /** Per-target dispatch outcomes. */
+    readonly outcomes: DispatchPostNowTargetOutcome[];
+    /**
+     * Number of targets that were published synchronously (`outcome === 'published'`).
+     * With the synchronous Make.com Webhook Response model, a successful round-trip
+     * resolves immediately to `published` rather than `dispatched`.
+     */
+    readonly dispatched: number;
+    /** Number of targets skipped (skipped_no_webhook or skipped_locked). */
+    readonly skipped: number;
+    /** Number of targets that failed or were exhausted. */
+    readonly failed: number;
+}
+
+// ---------------------------------------------------------------------------
 // Eligibility constants
 // ---------------------------------------------------------------------------
 
@@ -383,8 +422,13 @@ const MAX_RETRY_COUNT = 3;
 
 /**
  * Timeout in milliseconds for the Make.com webhook HTTP POST.
+ *
+ * Raised to 40 s to accommodate the synchronous Make.com Webhook Response
+ * model: Make must execute its scenario (API call + response assembly) before
+ * the HTTP round-trip completes.  The previous 15 s was sized for the
+ * async fire-and-forget model.
  */
-const MAKE_WEBHOOK_TIMEOUT_MS = 15_000;
+const MAKE_WEBHOOK_TIMEOUT_MS = 40_000;
 
 /**
  * `social_settings` key for the Make.com webhook URL.
@@ -608,24 +652,24 @@ export class SocialPublishDispatchService {
      *   `post.footer_id`; empty string when `footer_id` is null.
      * - `mediaUrls` — Cloudinary URLs of the post's `social_post_media` rows
      *   ordered by `position` ASC; non-null URLs only.
-     * - `callbackClaimUrl` — `${apiBaseUrl}/api/v1/integrations/make/social/jobs/${targetId}/claim`
-     * - `callbackResultUrl` — `${apiBaseUrl}/api/v1/integrations/make/social/jobs/${targetId}/result`
      *
-     * @param input - The eligible bundle + API base URL.
+     * The async callback fields (`callbackClaimUrl`, `callbackResultUrl`) have been
+     * removed: Make.com now responds synchronously and Hospeda no longer needs to
+     * receive callbacks.
+     *
+     * @param input - The eligible bundle (target + post).
      * @returns `{ payload }` — the fully assembled Make.com dispatch payload.
      *
      * @example
      * ```ts
      * const { payload } = await service.buildMakePayload({
      *   target: bundle.target,
-     *   post: bundle.post,
-     *   apiBaseUrl: 'https://api.hospeda.com.ar'
+     *   post: bundle.post
      * });
-     * // payload.callbackClaimUrl === 'https://api.hospeda.com.ar/api/v1/integrations/make/social/jobs/<targetId>/claim'
      * ```
      */
     public async buildMakePayload(input: BuildMakePayloadInput): Promise<BuildMakePayloadResult> {
-        const { target, post, apiBaseUrl } = input;
+        const { target, post } = input;
 
         const targetId = target.id as string;
         const postId = post.id as string;
@@ -676,10 +720,6 @@ export class SocialPublishDispatchService {
         const scheduledAt = (post.scheduledAt as Date | null | undefined) ?? null;
         const timezone = post.timezone as string;
 
-        // -- Callback URLs ---------------------------------------------------------
-        const callbackClaimUrl = `${apiBaseUrl}/api/v1/integrations/make/social/jobs/${targetId}/claim`;
-        const callbackResultUrl = `${apiBaseUrl}/api/v1/integrations/make/social/jobs/${targetId}/result`;
-
         const payload: SocialMakePayload = {
             targetId,
             postId,
@@ -691,18 +731,17 @@ export class SocialPublishDispatchService {
             footerFinal,
             mediaUrls,
             scheduledAt,
-            timezone,
-            callbackClaimUrl,
-            callbackResultUrl
+            timezone
         };
 
         return { payload };
     }
 
     /**
-     * Dispatches a single eligible target to Make.com via HTTP POST.
+     * Dispatches a single eligible target to Make.com via HTTP POST and resolves
+     * the outcome synchronously from the Webhook Response body.
      *
-     * ## Steps (US-11)
+     * ## Steps (US-11, synchronous model)
      * 1. **Webhook read** — load `make_webhook_url` from `social_settings` (or
      *    use `input.webhookUrl` override for tests). If empty/missing → return
      *    `{ outcome: 'skipped_no_webhook' }` with a warning log. Target unchanged.
@@ -713,17 +752,22 @@ export class SocialPublishDispatchService {
      *    conditional WHERE) because `BaseModelImpl.update` does not expose a
      *    WHERE-clause guard on the caller side. The weaker guarantee is documented:
      *    two concurrent cron runs that both read the target as APPROVED may both
-     *    set it to PUBLISHING and dispatch — the second Make callback will be a
-     *    no-op or idempotent depending on Make.com's deduplication. This is
-     *    acceptable for the current risk level; a proper atomic CAS can be added
-     *    with a raw-SQL helper when needed.
-     * 3. **Build payload** — `buildMakePayload({ target, post, apiBaseUrl })`.
+     *    set it to PUBLISHING and dispatch — the last write wins at the DB layer.
+     *    This is acceptable for the current risk level; a proper atomic CAS can be
+     *    added with a raw-SQL helper when needed.
+     * 3. **Build payload** — `buildMakePayload({ target, post })`.
      *    Persists the outbound payload JSON to `target.makePayloadJson`.
      * 4. **HTTP POST** — `fetch(webhookUrl, { method:'POST', headers: {...}, body })`.
-     *    Wrapped in try/catch (network/timeout treated as failure).
-     * 5. **On 2xx** — insert `social_publish_logs` row (status=RETRYING); set
-     *    post status to PUBLISHING if not already; return `{ outcome: 'dispatched' }`.
-     * 6. **On failure** (non-2xx OR exception):
+     *    Timeout: 40 s (raised from 15 s to accommodate Make.com's scenario execution).
+     *    Wrapped in try/catch (network / timeout errors treated as failure).
+     * 5. **Transport failure** (non-2xx OR thrown exception) → same retry/exhaustion
+     *    path as before (step 6 below).
+     * 6. **On 2xx** — read response body and parse with `MakeWebhookResponseSchema`:
+     *    - `status === 'SUCCESS'` → update target to PUBLISHED (publishedAt, externalPostId,
+     *      externalPostUrl), insert publish log SUCCESS, log audit TARGET_PUBLISHED, call
+     *      `cascadePostStatus({ postId })`; return `{ outcome: 'published' }`.
+     *    - `status === 'FAILED'` or body not parseable → treat as failure (step 7).
+     * 7. **On failure** (transport error, non-2xx, or Make FAILED / unparseable body):
      *    - `retryCount < 3` → increment retryCount, reset target to APPROVED,
      *      insert log (status=FAILED); return `{ outcome:'retry_scheduled', retryCount }`.
      *    - `retryCount >= 3` → set target to FAILED, insert log (status=FAILED),
@@ -738,10 +782,10 @@ export class SocialPublishDispatchService {
      * guarantees at most 4 total dispatch attempts (initial + 3 retries).
      *
      * ## Env injection
-     * `makeApiKey` and `apiBaseUrl` are always passed in by the cron caller.
+     * `makeApiKey` is always passed in by the cron caller.
      * This service NEVER reads `process.env` directly.
      *
-     * @param input - Target, post, credentials, and optional webhook URL override.
+     * @param input - Target, post, Make.com API key, and optional webhook URL override.
      * @returns `{ outcome }` describing the result of this dispatch attempt.
      *
      * @example
@@ -750,15 +794,14 @@ export class SocialPublishDispatchService {
      *   target: bundle.target,
      *   post: bundle.post,
      *   makeApiKey: env.MAKE_API_KEY,
-     *   apiBaseUrl: env.HOSPEDA_API_URL,
      * });
-     * if (result.outcome === 'dispatched') {
-     *   logger.info('Dispatch submitted; awaiting Make callback');
+     * if (result.outcome === 'published') {
+     *   logger.info('Target published synchronously via Make.com');
      * }
      * ```
      */
     public async dispatchTarget(input: DispatchTargetInput): Promise<DispatchTargetResult> {
-        const { target, post, makeApiKey, apiBaseUrl, webhookUrl: webhookOverride } = input;
+        const { target, post, makeApiKey, webhookUrl: webhookOverride } = input;
 
         const targetId = target.id as string;
         const postId = post.id as string;
@@ -807,7 +850,7 @@ export class SocialPublishDispatchService {
         // -------------------------------------------------------------------------
         // Step 3: Build payload and persist it to makePayloadJson
         // -------------------------------------------------------------------------
-        const { payload } = await this.buildMakePayload({ target, post, apiBaseUrl });
+        const { payload } = await this.buildMakePayload({ target, post });
 
         await this.targetModel.update(
             { id: targetId },
@@ -816,9 +859,12 @@ export class SocialPublishDispatchService {
         );
 
         // -------------------------------------------------------------------------
-        // Step 4: HTTP POST to Make.com webhook
+        // Step 4: HTTP POST to Make.com webhook (synchronous Webhook Response model)
+        //
+        // Make.com executes its scenario and returns the publish result in the HTTP
+        // body of the same round-trip. Timeout is 40 s to allow scenario execution.
         // -------------------------------------------------------------------------
-        let httpSuccess = false;
+        let makeResponse: MakeWebhookResponse | null = null;
         let failureMessage = '';
 
         try {
@@ -841,7 +887,27 @@ export class SocialPublishDispatchService {
             }
 
             if (response.ok) {
-                httpSuccess = true;
+                // 2xx: read and parse the synchronous Make.com Webhook Response body.
+                // If the body does not conform to the schema, treat it as a failure.
+                let rawBody: unknown;
+                try {
+                    rawBody = await response.json();
+                } catch {
+                    failureMessage = 'Make.com response body is not valid JSON';
+                }
+
+                if (!failureMessage) {
+                    const parsed = MakeWebhookResponseSchema.safeParse(rawBody);
+                    if (parsed.success) {
+                        makeResponse = parsed.data;
+                        if (makeResponse.status === 'FAILED') {
+                            failureMessage =
+                                makeResponse.errorMessage ?? 'Make.com reported FAILED status';
+                        }
+                    } else {
+                        failureMessage = `Make.com response did not match expected schema: ${parsed.error.message}`;
+                    }
+                }
             } else {
                 failureMessage = `HTTP ${response.status}: ${response.statusText}`;
             }
@@ -850,36 +916,61 @@ export class SocialPublishDispatchService {
         }
 
         // -------------------------------------------------------------------------
-        // Step 5: Success path
+        // Step 5: SUCCESS path — Make.com reported publication success
         // -------------------------------------------------------------------------
-        if (httpSuccess) {
-            // Insert publish log row: status = RETRYING (waiting for Make callback)
+        if (makeResponse?.status === 'SUCCESS') {
+            const publishedAt = new Date();
+
+            // Update target: PUBLISHED with external post identifiers
+            await this.targetModel.update(
+                { id: targetId },
+                {
+                    status: SocialPostStatusEnum.PUBLISHED,
+                    publishedAt,
+                    externalPostId: makeResponse.externalPostId ?? null,
+                    externalPostUrl: makeResponse.externalPostUrl ?? null
+                }
+            );
+
+            // Insert publish log: SUCCESS
             await this.publishLogModel.create({
                 socialPostId: postId,
                 socialPostTargetId: targetId,
                 platform,
                 publishFormat,
-                status: SocialPublishResultStatusEnum.RETRYING,
-                message: 'Dispatched to Make; awaiting callback',
+                status: SocialPublishResultStatusEnum.SUCCESS,
+                message: 'Published via Make (synchronous)',
+                externalPostId: makeResponse.externalPostId ?? null,
+                externalPostUrl: makeResponse.externalPostUrl ?? null,
                 // TYPE-WORKAROUND: serialize the typed Make payload into the jsonb publish-log column (Record<string, unknown>).
                 requestPayloadJson: payload as unknown as Record<string, unknown>
             });
 
-            // Advance post to PUBLISHING if it is not already
-            const currentPostStatus = post.status as string | undefined;
-            if (currentPostStatus !== SocialPostStatusEnum.PUBLISHING) {
-                await this.postModel.update(
-                    { id: postId },
-                    { status: SocialPostStatusEnum.PUBLISHING }
-                );
-            }
+            // Audit: TARGET_PUBLISHED
+            await this.auditLog.log({
+                eventType: SocialAuditEvent.TARGET_PUBLISHED,
+                entityType: 'social_post_target',
+                entityId: targetId,
+                metadata: {
+                    postId,
+                    externalPostId: makeResponse.externalPostId ?? null
+                }
+            });
+
+            // Cascade post-level status (may finalise post and rearm recurrence)
+            await this.cascadePostStatus({ postId });
 
             serviceLogger.info(
-                { targetId, postId },
-                'SocialPublishDispatchService.dispatchTarget: dispatched to Make; awaiting callback'
+                {
+                    targetId,
+                    postId,
+                    externalPostId: makeResponse.externalPostId,
+                    externalPostUrl: makeResponse.externalPostUrl
+                },
+                'SocialPublishDispatchService.dispatchTarget: target PUBLISHED synchronously via Make'
             );
 
-            return { outcome: 'dispatched' };
+            return { outcome: 'published' };
         }
 
         // -------------------------------------------------------------------------
@@ -1643,5 +1734,156 @@ export class SocialPublishDispatchService {
         const daysToAdd = (targetIndex - currentIndex + 7) % 7;
 
         return new Date(now.getTime() + daysToAdd * 24 * 60 * 60 * 1000);
+    }
+
+    // ---------------------------------------------------------------------------
+    // Public "publish now" API (SPEC-254 "Publish Now" endpoint)
+    // ---------------------------------------------------------------------------
+
+    /**
+     * Immediately dispatches ALL targets of a post to Make.com, bypassing the
+     * cron schedule.  Resets any terminal targets (PUBLISHED / FAILED / PUBLISHING)
+     * to APPROVED + retryCount=0 before dispatching so that already-published posts
+     * can be re-posted on demand.
+     *
+     * ## Guards
+     * 1. Post must exist (`NOT_FOUND` when absent or soft-deleted).
+     * 2. `post.approvalStatus` must be `APPROVED` (`VALIDATION_ERROR / NOT_APPROVED`).
+     * 3. Post must have at least one `social_post_media` row (`VALIDATION_ERROR / NO_MEDIA`).
+     *
+     * ## Re-publish semantics
+     * Targets already in a terminal state (PUBLISHED / FAILED / PUBLISHING) are reset
+     * to `{ status: APPROVED, retryCount: 0 }` before dispatch.  This mirrors the
+     * cron's clean-slate rearm logic and guarantees Make.com receives a fresh dispatch.
+     *
+     * ## Dispatch
+     * Targets are dispatched sequentially (same pattern as the cron job) to avoid
+     * hammering Make.com.  Each target's outcome is collected and returned; one
+     * target failure does NOT abort the rest of the batch.
+     *
+     * @param input - Post ID and Make.com API key.
+     * @returns Per-target outcomes with dispatched / skipped / failed counts.
+     *
+     * @throws {ServiceError} `NOT_FOUND`         — post does not exist.
+     * @throws {ServiceError} `VALIDATION_ERROR`  — post is not approved (`NOT_APPROVED`)
+     *                                              or has no media (`NO_MEDIA`).
+     *
+     * @example
+     * ```ts
+     * const result = await service.dispatchPostNow({
+     *   postId: 'abc-123',
+     *   makeApiKey: env.HOSPEDA_MAKE_API_KEY ?? '',
+     * });
+     * // result.outcomes[0].outcome === 'published' | 'skipped_no_webhook' | ...
+     * ```
+     */
+    public async dispatchPostNow(input: DispatchPostNowInput): Promise<DispatchPostNowResult> {
+        const { postId, makeApiKey } = input;
+
+        // -------------------------------------------------------------------------
+        // Guard 1: Post must exist and not be soft-deleted
+        // -------------------------------------------------------------------------
+        const post = await this.postModel.findOne({ id: postId, deletedAt: null });
+        if (!post) {
+            throw new ServiceError(ServiceErrorCode.NOT_FOUND, `social_posts not found: ${postId}`);
+        }
+
+        // -------------------------------------------------------------------------
+        // Guard 2: Post must be approved
+        // -------------------------------------------------------------------------
+        if (post.approvalStatus !== SocialApprovalStatusEnum.APPROVED) {
+            throw new ServiceError(
+                ServiceErrorCode.VALIDATION_ERROR,
+                'Post must be approved to publish',
+                undefined,
+                'NOT_APPROVED'
+            );
+        }
+
+        // -------------------------------------------------------------------------
+        // Guard 3: Post must have at least one media row (same check as findEligibleTargets)
+        // -------------------------------------------------------------------------
+        const { items: mediaRows } = await this.postMediaModel.findAll(
+            { socialPostId: postId },
+            { page: 1, pageSize: 1 }
+        );
+        if (mediaRows.length === 0) {
+            throw new ServiceError(
+                ServiceErrorCode.VALIDATION_ERROR,
+                'Post must have at least one media item to publish',
+                undefined,
+                'NO_MEDIA'
+            );
+        }
+
+        // -------------------------------------------------------------------------
+        // Load ALL targets for this post (regardless of status)
+        // -------------------------------------------------------------------------
+        const { items: allTargets } = await this.targetModel.findAll(
+            { socialPostId: postId },
+            { page: 1, pageSize: 1000 }
+        );
+
+        // -------------------------------------------------------------------------
+        // Reset terminal targets to APPROVED + retryCount=0 (re-publish semantics)
+        // -------------------------------------------------------------------------
+        const terminalSet = new Set<string>(TERMINAL_TARGET_STATUSES);
+        for (const target of allTargets) {
+            const status = target.status as string | undefined;
+            if (status !== undefined && terminalSet.has(status)) {
+                await this.targetModel.update(
+                    { id: target.id as string },
+                    { status: SocialPostStatusEnum.APPROVED, retryCount: 0 }
+                );
+                // Mutate the in-memory copy so dispatchTarget sees the reset status
+                (target as Record<string, unknown>).status = SocialPostStatusEnum.APPROVED;
+                (target as Record<string, unknown>).retryCount = 0;
+            }
+        }
+
+        // -------------------------------------------------------------------------
+        // Dispatch targets sequentially — one failure must not abort the batch
+        // -------------------------------------------------------------------------
+        const outcomes: DispatchPostNowTargetOutcome[] = [];
+        let dispatched = 0;
+        let skipped = 0;
+        let failed = 0;
+
+        for (const target of allTargets) {
+            const targetId = target.id as string;
+            const platform = (target.platform as string | undefined) ?? '';
+
+            try {
+                const result = await this.dispatchTarget({ target, post, makeApiKey });
+                outcomes.push({ targetId, platform, outcome: result.outcome });
+
+                if (
+                    result.outcome === 'skipped_no_webhook' ||
+                    result.outcome === 'skipped_locked'
+                ) {
+                    skipped++;
+                } else if (result.outcome === 'exhausted' || result.outcome === 'retry_scheduled') {
+                    failed++;
+                } else {
+                    // 'published' — synchronously resolved to terminal success
+                    dispatched++;
+                }
+            } catch (err) {
+                const message = err instanceof Error ? err.message : String(err);
+                outcomes.push({ targetId, platform, outcome: `error: ${message}` });
+                failed++;
+                serviceLogger.error(
+                    { targetId, postId, error: message },
+                    'SocialPublishDispatchService.dispatchPostNow: target dispatch error — continuing batch'
+                );
+            }
+        }
+
+        serviceLogger.info(
+            { postId, dispatched, skipped, failed, targetCount: allTargets.length },
+            'SocialPublishDispatchService.dispatchPostNow: completed'
+        );
+
+        return { outcomes, dispatched, skipped, failed };
     }
 }

@@ -1,0 +1,22 @@
+{
+    "specId": "SPEC-281",
+    "title": "Accommodation import — async extraction path for slow/blocked sources (SPEC-277 R3)",
+    "type": "improvement",
+    "complexity": "high",
+    "status": "draft",
+    "created": "2026-06-24T00:00:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "dependsOn": ["SPEC-250", "SPEC-277"],
+    "tags": [
+        "accommodation-import",
+        "service-core",
+        "web",
+        "admin",
+        "async",
+        "apify",
+        "polling",
+        "spec-277-followup"
+    ]
+}

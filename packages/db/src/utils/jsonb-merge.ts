@@ -8,8 +8,12 @@ import { sql } from 'drizzle-orm';
  *
  * For each key in `data`:
  * - If the key is in `mergeableColumns` AND the table has that column AND the value is
- *   not `null`, the assignment becomes `column || <value>::jsonb` (PostgreSQL shallow
- *   JSONB merge).
+ *   not `null`, the assignment becomes `COALESCE(column, '{}'::jsonb) || <value>::jsonb`
+ *   (PostgreSQL shallow JSONB merge). The `COALESCE` is required because the bare `||`
+ *   operator returns SQL `NULL` when the existing column value is `NULL`
+ *   (`NULL || '{...}'::jsonb` → `NULL`), which would silently drop the patch on any
+ *   nullable JSONB column that has not been set yet. Coalescing to an empty object
+ *   makes the merge start from `{}` so the patch always lands.
  * - Otherwise the plain value is used (standard replacement). In particular, a `null`
  *   value for a mergeable column falls through to plain assignment so the column is set
  *   to SQL `NULL` (explicit clear). This is deliberate: `existing::jsonb || 'null'::jsonb`
@@ -40,7 +44,7 @@ import { sql } from 'drizzle-orm';
  *   accommodations,
  *   ['media']
  * );
- * // setClause.media → sql`accommodations.media || '{"gallery":[]}'::jsonb`
+ * // setClause.media → sql`COALESCE(accommodations.media, '{}'::jsonb) || '{"gallery":[]}'::jsonb`
  * // setClause.name  → 'Updated'
  * ```
  */
@@ -56,7 +60,8 @@ export function buildMergeSetClause(
         if (mergeableColumns.includes(key) && key in tableRecord && value !== null) {
             // Use PostgreSQL JSONB || operator for shallow merge.
             // JSON.stringify is safe here: value comes from a typed Partial<T> patch.
-            result[key] = sql`${tableRecord[key] as SQL}::jsonb || ${JSON.stringify(value)}::jsonb`;
+            result[key] =
+                sql`COALESCE(${tableRecord[key] as SQL}, '{}'::jsonb) || ${JSON.stringify(value)}::jsonb`;
         } else {
             // Plain assignment — including `null`, which clears the column (see JSDoc).
             result[key] = value;

@@ -14,7 +14,7 @@ export const SocialAuditLogSchema = z.object({
      * Acting user UUID. Nullable — system/cron events have no actor.
      * No FK constraint by design: audit rows must survive user deletion.
      */
-    actorId: z.string().uuid({ message: 'zodError.socialAuditLog.actorId.uuid' }).optional(),
+    actorId: z.string().uuid({ message: 'zodError.socialAuditLog.actorId.uuid' }).nullish(),
     /**
      * Semantic event type, e.g. "POST_APPROVED", "POST_REJECTED",
      * "POST_SCHEDULED", "TARGET_PUBLISHED", "HASHTAG_PROMOTED",
@@ -26,11 +26,11 @@ export const SocialAuditLogSchema = z.object({
     /** UUID of the entity being audited (stored as text for flexibility) */
     entityId: z.string().min(1, { message: 'zodError.socialAuditLog.entityId.required' }),
     /** Entity state before the transition. Null for creation events. */
-    oldValueJson: z.record(z.string(), z.unknown()).optional(),
+    oldValueJson: z.record(z.string(), z.unknown()).nullish(),
     /** Entity state after the transition. */
-    newValueJson: z.record(z.string(), z.unknown()).optional(),
+    newValueJson: z.record(z.string(), z.unknown()).nullish(),
     /** Extra context bag (e.g. reason, feedback, warnings). */
-    metadataJson: z.record(z.string(), z.unknown()).optional(),
+    metadataJson: z.record(z.string(), z.unknown()).nullish(),
     createdAt: z.coerce.date({ message: 'zodError.common.createdAt.required' })
 });
 

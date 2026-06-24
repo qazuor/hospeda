@@ -3,9 +3,11 @@
  * @description Filter bar for the admin social posts list page (SPEC-254 T-039).
  *
  * Provides free-text search, pipeline-status dropdown, approval-status dropdown,
- * and platform dropdown. Follows the same pattern as CommentsFilters.tsx.
+ * platform dropdown, batch dropdown, and campaign dropdown.
+ * Follows the same pattern as CommentsFilters.tsx.
  */
 
+import { useSocialBatchesList, useSocialCampaignsList } from '@/hooks/use-social-catalog';
 import { useTranslations } from '@/hooks/use-translations';
 import type { TranslationKey } from '@repo/i18n';
 import { SocialApprovalStatusEnum, SocialPlatformEnum, SocialPostStatusEnum } from '@repo/schemas';
@@ -16,6 +18,8 @@ export interface SocialPostFiltersValue {
     readonly status: string;
     readonly approvalStatus: string;
     readonly platform: string;
+    readonly batchId: string;
+    readonly campaignId: string;
 }
 
 /** Props for {@link SocialPostFilters}. */
@@ -32,6 +36,12 @@ export interface SocialPostFiltersProps {
  */
 export function SocialPostFilters({ value, onChange }: SocialPostFiltersProps) {
     const { t } = useTranslations();
+
+    const { data: batchesData } = useSocialBatchesList({ pageSize: 100 });
+    const { data: campaignsData } = useSocialCampaignsList({ pageSize: 100 });
+
+    const batches = batchesData?.items ?? [];
+    const campaigns = campaignsData?.items ?? [];
 
     return (
         <div className="flex flex-wrap items-end gap-3">
@@ -126,6 +136,58 @@ export function SocialPostFilters({ value, onChange }: SocialPostFiltersProps) {
                             value={p}
                         >
                             {t(`social.posts.platforms.${p}` as TranslationKey)}
+                        </option>
+                    ))}
+                </select>
+            </div>
+
+            {/* Batch filter */}
+            <div className="flex flex-col gap-1">
+                <label
+                    htmlFor="filter-batch"
+                    className="text-muted-foreground text-xs"
+                >
+                    {t('social.posts.filters.batch')}
+                </label>
+                <select
+                    id="filter-batch"
+                    className="rounded-md border bg-background px-3 py-1.5 text-sm"
+                    value={value.batchId}
+                    onChange={(e) => onChange({ ...value, batchId: e.target.value })}
+                >
+                    <option value="">{t('social.posts.filters.batchAll')}</option>
+                    {batches.map((b) => (
+                        <option
+                            key={b.id}
+                            value={b.id}
+                        >
+                            {b.name}
+                        </option>
+                    ))}
+                </select>
+            </div>
+
+            {/* Campaign filter */}
+            <div className="flex flex-col gap-1">
+                <label
+                    htmlFor="filter-campaign"
+                    className="text-muted-foreground text-xs"
+                >
+                    {t('social.posts.filters.campaign')}
+                </label>
+                <select
+                    id="filter-campaign"
+                    className="rounded-md border bg-background px-3 py-1.5 text-sm"
+                    value={value.campaignId}
+                    onChange={(e) => onChange({ ...value, campaignId: e.target.value })}
+                >
+                    <option value="">{t('social.posts.filters.campaignAll')}</option>
+                    {campaigns.map((c) => (
+                        <option
+                            key={c.id}
+                            value={c.id}
+                        >
+                            {c.name}
                         </option>
                     ))}
                 </select>

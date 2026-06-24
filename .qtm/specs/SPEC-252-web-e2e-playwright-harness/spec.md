@@ -4,7 +4,7 @@ title: Extend apps/e2e with commerce-owner flows + seed fixtures
 slug: web-e2e-playwright-harness
 type: feature
 complexity: medium
-status: in-progress
+status: completed
 created: 2026-06-20
 base: staging
 dependsOn:

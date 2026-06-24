@@ -819,7 +819,10 @@
             "title": "Extend apps/e2e with commerce-owner flows + seed fixtures",
             "status": "completed",
             "progress": "5/5",
-            "path": "SPEC-252-web-e2e-playwright-harness"
+            "path": "SPEC-252-web-e2e-playwright-harness",
+            "archived": true,
+            "archivedAt": "2026-06-24",
+            "archiveNote": "Merged to staging via PR #1751 (merge 627b7d638). All 5 tasks delivered; seed fix + auth helper + positive E2E + negative E2E + CI verify. Follow-up SPEC-261 stabilized + promoted tests to @p0."
         },
         {
             "specId": "SPEC-250",
@@ -1075,14 +1078,17 @@
         {
             "specId": "SPEC-277",
             "title": "Accommodation import — scraper resilience (retry, fallback chain, async, provider mitigation, manual path)",
-            "status": "draft",
-            "progress": "0/0",
+            "status": "completed",
+            "progress": "11/11",
             "path": "SPEC-277-import-scraper-resilience",
             "parent": "SPEC-258",
             "branch": "spec/SPEC-277-import-scraper-resilience",
             "base": "staging",
             "createdAt": "2026-06-23T23:17:27Z",
-            "note": "Doc-only spec; tasks NOT atomized yet. Carved out of SPEC-258 workstream C after C.1 (failure-mode differentiation, SPEC-258 PR #1824) shipped and the import cache (C.4) was rejected. 5 remaining levers: R1 retry/backoff, R2 per-source fallback chain, R3 async path (reuse SPEC-250), R4 provider mitigation (config), R5 guaranteed manual path. 5 open questions for the owner before atomizing."
+            "note": "Tasks atomized for R1/R2/R4/R5 (11 tasks; R3 async path deferred to follow-up spec). Scopes: R1 withRetry wrapper in apify-client + Airbnb/Booking adapters, R2 GenericAdapter fallback for Airbnb/Booking on source_blocked, R4 provider-mitigation runbook, R5 form-usability invariant tests for web+admin.",
+            "archived": true,
+            "archivedAt": "2026-06-24",
+            "archiveNote": "R1/R2/R4/R5 complete (11/11). R3 async deferred to SPEC-281. PR #1848, pending final merge."
         },
         {
             "specId": "SPEC-278",
@@ -1111,6 +1117,18 @@
             "archived": true,
             "archivedAt": "2026-06-24T00:00:00Z",
             "archiveNote": "7/7. PR #1844 left green. Code-side remediation complete; manual keyboard/screen-reader verification procedure documented in docs/guides/web-accessibility-manual-testing.md."
+        },
+        {
+            "specId": "SPEC-281",
+            "title": "Accommodation import — async extraction path for slow/blocked sources (SPEC-277 R3)",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-281-import-scraper-async-path",
+            "parent": "SPEC-277",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-24T00:00:00Z",
+            "note": "Doc-only spec; tasks NOT atomized yet. Deferred R3 (async extraction path) carved out of SPEC-277. Reuses SPEC-250 async Apify helpers. 5 open questions for the owner before atomizing."
         }
     ],
     "standalone": {

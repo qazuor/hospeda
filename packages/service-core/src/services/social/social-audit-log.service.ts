@@ -86,6 +86,11 @@ export const SocialAuditEvent = {
      * A hashtag was promoted from a draft/suggestion to the active catalog.
      */
     HASHTAG_PROMOTED: 'HASHTAG_PROMOTED',
+    /**
+     * The full hashtag set of a post was replaced via setPostHashtags.
+     * Metadata includes added/removed hashtag IDs and the new finalHashtagsText.
+     */
+    POST_HASHTAGS_UPDATED: 'POST_HASHTAGS_UPDATED',
 
     // ---- Platform format configuration ---------------------------------------
     /**
