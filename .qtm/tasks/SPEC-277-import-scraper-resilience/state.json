@@ -117,74 +117,74 @@
             "id": "T-004",
             "title": "Implement runFallbackGenericExtract helper function",
             "description": "Add a private helper `_runFallbackGenericExtract(url: URL, context: ImportContext): Promise<RawExtraction | null>` (or a standalone module-private function) that invokes `GenericAdapter.extract()` against a given URL and returns the result, or `null` on any throw.\n\n**What to create/modify:**\n- `packages/service-core/src/services/accommodation-import/accommodation-import.service.ts`\n  - Add private method `_runFallbackGenericExtract(url: URL, context: ImportContext): Promise<RawExtraction | null>` to `AccommodationImportService`.\n  - The method: instantiates (or reuses) `GenericAdapter`, calls `adapter.extract(url, context)` in a try/catch, returns the result on success or `null` on any throw.\n  - This is a single cheap `safeExternalFetch` (the GenericAdapter path) — no actor call, no Apify token required.\n  - JSDoc explaining: fallback purpose, source platforms it applies to, cost contract (single fetch).\n\n**Key constraints:**\n- `GenericAdapter` is already in the adapter registry — reuse the existing instance at `this.adapters[this.adapters.length - 1]` (it is always the GenericAdapter) rather than constructing a new one.\n- The method never throws — returns `null` on any failure.\n- No changes to any public interface or the adapter registry.\n\n**Acceptance criteria:**\n- `_runFallbackGenericExtract` exists as a private method on `AccommodationImportService`.\n- It returns a `RawExtraction` when GenericAdapter succeeds.\n- It returns `null` when GenericAdapter throws.\n- It makes exactly one `safeExternalFetch` call (via the GenericAdapter) — no additional network calls.\n\n**Testing:** Covered by T-008 (fallback chain tests).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-005"],
             "subtasks": [
                 {
                     "title": "Add _runFallbackGenericExtract private method",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Reuse existing GenericAdapter instance from adapter registry",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Guard with try/catch returning null on throw",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["backend", "service-core", "fallback", "generic-adapter"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-24T22:29:38.000Z",
+                "completed": "2026-06-24T22:29:38.000Z"
             }
         },
         {
             "id": "T-005",
             "title": "Wire R2 fallback chain into AccommodationImportService.importFromUrl()",
             "description": "After Step 3 (primary extraction), check if the primary adapter returned `source_blocked` AND the source is Airbnb or Booking. If so, call `_runFallbackGenericExtract()` and merge its result as a partial draft.\n\n**What to modify:**\n- `packages/service-core/src/services/accommodation-import/accommodation-import.service.ts`\n  - Between Step 3 (adapter extraction) and Step 4 (mapRawToDraft), insert R2 fallback logic:\n    1. Condition: `raw.failureCode === 'source_blocked' && (source === 'airbnb' || source === 'booking')`\n    2. When true: call `await this._runFallbackGenericExtract(effectiveParsedUrl, input.context)`\n    3. If fallback returns a non-null `RawExtraction` with at least one useful field (name, summary, or imageUrls): replace `raw` with the fallback extraction but:\n       - Force `raw.failureCode = undefined` (fallback succeeded at transport level)\n       - Force `partial: true` via the existing `partial` computation path (fallback rarely has name+summary+type)\n       - Keep `sourcePlatform` as the original source (`airbnb`/`booking`) for accurate labelling — do NOT relabel as `generic`\n    4. If fallback returns null or yields zero useful fields: keep original `raw` (the `source_blocked` result); the response degrades normally.\n  - Add an inline comment explaining the R2 decision: which sources, cost guard, partial=true invariant.\n\n**Key constraints:**\n- Fallback is only attempted ONCE (no retry on the fallback itself).\n- `partial: true` on a fallback result — the existing `hasMandatoryFields` check handles this automatically since OG/JSON-LD rarely returns all three mandatory fields (name + summary + type).\n- Never relabel the `source` field on the response — it stays `airbnb`/`booking` so the host knows where the data came from.\n- The orchestrator contract (`importFromUrl` signature, `AccommodationImportResponse` shape) is unchanged.\n\n**Acceptance criteria:**\n- When Airbnb/Booking primary returns `source_blocked`, the orchestrator attempts GenericAdapter fallback.\n- A fallback result with at least name or description yields `partial: true` with real per-field source/confidence in the draft.\n- When fallback returns nothing, the response is the original `source_blocked` failure.\n- No other source (Google, MercadoLibre, Generic) triggers the fallback.\n\n**Testing:** Covered by T-008.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-004"],
             "blocks": ["T-008"],
             "subtasks": [
                 {
                     "title": "Add fallback trigger condition (source_blocked + airbnb/booking)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Call _runFallbackGenericExtract and inspect result",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Merge fallback RawExtraction preserving sourcePlatform",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add inline comment explaining R2 decision",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["backend", "service-core", "fallback", "orchestrator"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-24T22:29:38.000Z",
+                "completed": "2026-06-24T22:29:38.000Z"
             }
         },
         {
@@ -261,35 +261,35 @@
             "id": "T-008",
             "title": "Write service-level tests for R2 fallback chain",
             "description": "Extend the accommodation import service test file with scenarios covering the R2 fallback chain (Airbnb/Booking primary blocked → GenericAdapter fallback).\n\n**Test file:** `packages/service-core/test/services/accommodation-import/accommodation-import.service.test.ts` (add a new `describe('R2 fallback chain', ...)` block).\n\n**Test cases (AAA pattern):**\n1. Airbnb primary returns `source_blocked`; fallback Generic returns name+description via OG: response has `partial: true`, `source: 'airbnb'`, populated `draft.name`, and no `failureCode`.\n2. Booking primary returns `source_blocked`; fallback Generic returns name via OG: same assertions for Booking.\n3. Airbnb primary returns `source_blocked`; fallback Generic returns nothing (empty extraction): response has `failureCode: 'source_blocked'` (original failure propagated).\n4. Airbnb primary returns `credentials_missing` (non-retryable): fallback is NOT triggered; response has `failureCode: 'credentials_missing'`.\n5. GooglePlaces primary returns `source_blocked`: fallback is NOT triggered (only Airbnb/Booking trigger it); response has `failureCode: 'source_blocked'`.\n\n**Mocking:**\n- Mock the individual adapters (AirbnbAdapter, BookingAdapter, GenericAdapter) via `vi.spyOn` on `extract()`.\n- The service is instantiated normally; adapters are spied on after construction.\n\n**Acceptance criteria:**\n- 5 test cases, all passing.\n- Tests confirm the source-scoping rule (only Airbnb/Booking trigger fallback).\n- Tests confirm `partial: true` on a successful fallback.\n- Tests confirm fallback failure gracefully propagates original `source_blocked`.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-005"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Add R2 fallback chain describe block to service test file",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Mock AirbnbAdapter.extract and GenericAdapter.extract via vi.spyOn",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write 5 test cases covering trigger/no-trigger and success/failure",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "service-core", "fallback", "integration-test"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-24T22:29:38.000Z",
+                "completed": "2026-06-24T22:29:38.000Z"
             }
         },
         {
@@ -366,47 +366,47 @@
             "id": "T-011",
             "title": "Write provider-mitigation runbook (R4)",
             "description": "Create the R4 runbook documenting how to swap a blocked actor or route through a residential proxy without a code deploy, using the existing `ctx.credentials.apify*Actor` config fields.\n\n**File to create:** `packages/service-core/src/services/accommodation-import/docs/provider-mitigation-runbook.md`\n\n**Content to cover:**\n1. **Overview:** Why provider mitigation is config-only (actors are already configurable via `ctx.credentials`; no code change needed).\n2. **Config fields:** Table listing `apifyAirbnbActor`, `apifyBookingActor`, `apifyGooglePlacesActor` (and any other `apify*Actor` fields present in `ImportContext`), their env var names, current defaults, and which adapters read them.\n3. **Runbook — swapping an actor:** Step-by-step for an ops person:\n   a. Identify the blocked actor and alternative (e.g. `tri_angle/airbnb-rooms-urls-scraper` → `dtrungtin/airbnb-scraper`).\n   b. Locate the env var on Coolify (or `hops env-set api HOSPEDA_APIFY_AIRBNB_ACTOR <new-slug>`).\n   c. Trigger a redeploy.\n   d. Verify with a test import from the admin panel.\n4. **Runbook — residential proxy:** Note that the Apify actor input accepts a `proxyConfiguration` key; document how to set it if the actor supports it (reference to Apify docs for the specific actor).\n5. **Config seam audit result:** State whether all adapter `apify*Actor` fields are correctly sourced from `ImportContext.credentials` (confirming no code seam is missing, or flagging one if found during implementation).\n\n**Acceptance criteria:**\n- File exists and covers all 5 content areas.\n- No new code is written — this is documentation only.\n- If a config seam is found missing during the audit (step 5), file a note in this doc AND create a follow-up GitHub issue (do NOT silently skip it).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Create docs/ directory in accommodation-import service",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write runbook covering actor swap and proxy steps",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Document all apify*Actor config fields and their env vars",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Record config seam audit result",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs", "r4", "provider-mitigation", "runbook", "ops"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-24T22:29:38.000Z",
+                "completed": "2026-06-24T22:29:38.000Z"
             }
         }
     ],
     "summary": {
         "total": 11,
-        "pending": 4,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 7,
+        "completed": 11,
         "blocked": 0,
         "averageComplexity": 2.2
     }
