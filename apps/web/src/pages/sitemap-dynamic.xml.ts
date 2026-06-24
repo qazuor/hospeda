@@ -223,7 +223,7 @@ export const GET: APIRoute = async () => {
             fetchAllEntities(apiUrl, `${base}/destinations`),
             fetchAllEntities(apiUrl, `${base}/events`),
             fetchAllEntities(apiUrl, `${base}/posts`),
-            fetchAllEntities(apiUrl, `${base}/gastronomy`),
+            fetchAllEntities(apiUrl, `${base}/gastronomies`),
             fetchAllEntities(apiUrl, `${base}/experiences`)
         ]);
 

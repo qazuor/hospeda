@@ -122,10 +122,10 @@ const canonicalPath = buildUrl({ locale, path: `experiencias/${experience.slug}/
 // --- SEO ---
 // SEOHead (via DetailLayout) already appends " | Hospeda", so the fallback is the
 // bare name — appending it here too produced a duplicated "… | Hospeda | Hospeda".
-const seoTitle = experience.seo?.title ?? experience.name;
+const seoTitle = experience.seo?.title?.trim() || experience.name;
 const seoDescription =
-    experience.seo?.description ??
-    experience.summary ??
+    experience.seo?.description?.trim() ||
+    experience.summary ||
     t('experience.listing.subtitle', 'Experiencias y servicios en el Litoral Entrerriano');
 ---
 

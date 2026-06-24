@@ -137,10 +137,10 @@ const jsonLdPriceRange = gastronomy.priceRange ? priceRangeMap[gastronomy.priceR
 // --- SEO ---
 // SEOHead (via DetailLayout) already appends " | Hospeda", so the fallback is the
 // bare name — appending it here too produced a duplicated "… | Hospeda | Hospeda".
-const seoTitle = gastronomy.seo?.title ?? gastronomy.name;
+const seoTitle = gastronomy.seo?.title?.trim() || gastronomy.name;
 const seoDescription =
-    gastronomy.seo?.description ??
-    gastronomy.summary ??
+    gastronomy.seo?.description?.trim() ||
+    gastronomy.summary ||
     t('gastronomy.listing.subtitle', 'Gastronomía en el Litoral Entrerriano');
 ---
 

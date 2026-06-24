@@ -5,7 +5,8 @@
  * Strategy: mock fetch() and the env helpers, then call the GET handler directly.
  * Asserts that:
  *  - Valid XML is returned with correct Content-Type and Cache-Control headers.
- *  - Each entity (accommodation, destination, event, post) is represented in the output.
+ *  - Each entity (accommodation, destination, event, post, gastronomy, experience)
+ *    is represented in the output.
  *  - All 3 locales (es, en, pt) are emitted for each entity.
  *  - Correct URL path prefixes are used (/alojamientos/, /destinos/, /eventos/, /publicaciones/).
  *  - SPEC-157 REQ-2: the es locale carries the /es prefix so sitemap URLs match
@@ -237,6 +238,78 @@ describe('sitemap-dynamic.xml — GET handler', () => {
         expect(body).toContain('https://hospeda.test/es/publicaciones/turismo-litoral/');
         expect(body).toContain('https://hospeda.test/en/publicaciones/turismo-litoral/');
         expect(body).toContain('https://hospeda.test/pt/publicaciones/turismo-litoral/');
+    });
+
+    it('emits gastronomy entries with /gastronomia/ path for all 3 locales', async () => {
+        const fetchMock = vi.fn();
+
+        // accommodations, destinations, events, posts — all empty
+        fetchMock.mockImplementationOnce(() => Promise.resolve(makeEmptyApiResponse()));
+        fetchMock.mockImplementationOnce(() => Promise.resolve(makeEmptyApiResponse()));
+        fetchMock.mockImplementationOnce(() => Promise.resolve(makeEmptyApiResponse()));
+        fetchMock.mockImplementationOnce(() => Promise.resolve(makeEmptyApiResponse()));
+        // gastronomies: 1 item
+        fetchMock.mockImplementationOnce(() =>
+            Promise.resolve(makeApiResponse([{ slug: 'la-parrilla-del-puerto' }]))
+        );
+        // gastronomies page 2 empty
+        fetchMock.mockImplementationOnce(() => Promise.resolve(makeEmptyApiResponse()));
+        // experiences empty
+        fetchMock.mockResolvedValue(makeEmptyApiResponse());
+
+        vi.stubGlobal('fetch', fetchMock);
+
+        const response = await GET({});
+        const body = await response.text();
+
+        expect(body).toContain('https://hospeda.test/es/gastronomia/la-parrilla-del-puerto/');
+        expect(body).toContain('https://hospeda.test/en/gastronomia/la-parrilla-del-puerto/');
+        expect(body).toContain('https://hospeda.test/pt/gastronomia/la-parrilla-del-puerto/');
+    });
+
+    it('emits experience entries with /experiencias/ path for all 3 locales', async () => {
+        const fetchMock = vi.fn();
+
+        // accommodations, destinations, events, posts, gastronomies — all empty
+        fetchMock.mockImplementationOnce(() => Promise.resolve(makeEmptyApiResponse()));
+        fetchMock.mockImplementationOnce(() => Promise.resolve(makeEmptyApiResponse()));
+        fetchMock.mockImplementationOnce(() => Promise.resolve(makeEmptyApiResponse()));
+        fetchMock.mockImplementationOnce(() => Promise.resolve(makeEmptyApiResponse()));
+        fetchMock.mockImplementationOnce(() => Promise.resolve(makeEmptyApiResponse()));
+        // experiences: 1 item
+        fetchMock.mockImplementationOnce(() =>
+            Promise.resolve(makeApiResponse([{ slug: 'excursion-rio-uruguay-concepcion' }]))
+        );
+        // experiences page 2 empty
+        fetchMock.mockImplementationOnce(() => Promise.resolve(makeEmptyApiResponse()));
+
+        vi.stubGlobal('fetch', fetchMock);
+
+        const response = await GET({});
+        const body = await response.text();
+
+        expect(body).toContain(
+            'https://hospeda.test/es/experiencias/excursion-rio-uruguay-concepcion/'
+        );
+        expect(body).toContain(
+            'https://hospeda.test/en/experiencias/excursion-rio-uruguay-concepcion/'
+        );
+        expect(body).toContain(
+            'https://hospeda.test/pt/experiencias/excursion-rio-uruguay-concepcion/'
+        );
+    });
+
+    it('emits home at priority 1.0 and listing pages at priority 0.7', async () => {
+        vi.stubGlobal('fetch', vi.fn().mockResolvedValue(makeEmptyApiResponse()));
+
+        const response = await GET({});
+        const body = await response.text();
+
+        expect(body).toContain('<loc>https://hospeda.test/es/</loc>');
+        expect(body).toContain('<priority>1.0</priority>');
+        expect(body).toContain('<loc>https://hospeda.test/es/gastronomia/</loc>');
+        expect(body).toContain('<loc>https://hospeda.test/es/experiencias/</loc>');
+        expect(body).toContain('<priority>0.7</priority>');
     });
 
     it('emits every es-locale URL with the /es prefix (SPEC-157 REQ-2 regression)', async () => {
