@@ -907,8 +907,8 @@
         {
             "specId": "SPEC-262",
             "title": "Billing Promo-Code Typed Effect Engine",
-            "status": "in-progress",
-            "progress": "9/15",
+            "status": "completed",
+            "progress": "14/15",
             "path": "SPEC-262-billing-promo-code-effect-engine",
             "branch": "spec/SPEC-262-billing-promo-code-effect-engine",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-262-billing-promo-code-effect-engine",
@@ -917,7 +917,10 @@
             "tasksAtomizedAt": "2026-06-22T18:30:00.000Z",
             "taskCount": 15,
             "averageComplexity": 2.53,
-            "note": "15 tasks across 6 phases (spike 1, core 6, integration 5, testing 2, docs 1). T-001 MP spike gates case-3 renewal tasks (T-007). Critical path: T-002->T-003->T-004->T-005->T-006->T-009->T-011->T-012->T-013->T-014->T-015 (11 steps). T-001 spike runs in parallel with DB/schema track. SPEC-143 billing CORE smoke (staging+prod) mandatory gate before merge. T-001 DONE (2026-06-22): MP amount-mutation spike = Outcome A GO — Hospeda already mutates preapproval transactionAmount in prod (downgrade cron + upgrade webhook); case-3 unblocked, no redesign. See promo-code/docs/mp-preapproval-mutation-spike.md."
+            "note": "15 tasks across 6 phases (spike 1, core 6, integration 5, testing 2, docs 1). T-001 MP spike gates case-3 renewal tasks (T-007). Critical path: T-002->T-003->T-004->T-005->T-006->T-009->T-011->T-012->T-013->T-014->T-015 (11 steps). T-001 spike runs in parallel with DB/schema track. SPEC-143 billing CORE smoke (staging+prod) mandatory gate before merge. T-001 DONE (2026-06-22): MP amount-mutation spike = Outcome A GO — Hospeda already mutates preapproval transactionAmount in prod (downgrade cron + upgrade webhook); case-3 unblocked, no redesign. See promo-code/docs/mp-preapproval-mutation-spike.md.",
+            "archived": true,
+            "archivedAt": "2026-06-23",
+            "archiveNote": "14/15. Closed by owner request. T-001..T-013 + T-015 merged to staging (#1819/#1829/#1807/#1810/#1814/#1833). T-014 (MercadoPago staging+prod smoke, billing-CORE gate) deliberately NOT run at archive — remains the owner's mandatory gate before staging->main, enforced independently by the billing-testing rule."
         },
         {
             "specId": "SPEC-261",

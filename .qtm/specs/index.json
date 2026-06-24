@@ -1706,7 +1706,7 @@
             "slug": "billing-promo-code-effect-engine",
             "type": "feature",
             "complexity": "high",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-262-billing-promo-code-effect-engine",
             "created": "2026-06-22T18:17:18.089Z",
             "base": "staging",
@@ -1726,7 +1726,10 @@
                 "cron",
                 "admin",
                 "spec-143-gate"
-            ]
+            ],
+            "archived": true,
+            "archivedAt": "2026-06-23",
+            "archiveNote": "14/15. T-001..T-013 + T-015 merged to staging (#1819 backend, #1829 web checkout UI, #1807/#1810 admin, #1814 regression, #1833 docs + closeout). Closed by owner request. T-014 (MercadoPago staging+prod smoke, billing-CORE gate) was deliberately NOT executed at archive time; it remains the owner's mandatory gate before staging->main, enforced independently by the billing-testing rule in CLAUDE.md regardless of spec status."
         },
         {
             "specId": "SPEC-261",
