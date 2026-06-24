@@ -106,6 +106,7 @@ export const accommodationTabs: TabConfig[] = [
     { id: 'amenities', label: 'Amenidades', labelKey: 'admin-tabs.amenities', href: '/amenities' },
     { id: 'reviews', label: 'Reseñas', labelKey: 'admin-tabs.reviews', href: '/reviews' },
     { id: 'pricing', label: 'Precios', labelKey: 'admin-tabs.pricing', href: '/pricing' },
+    { id: 'seo', label: 'SEO', labelKey: 'admin-tabs.seo', href: '/seo' },
     {
         id: 'faqs',
         label: 'Preguntas frecuentes',
@@ -129,6 +130,7 @@ export const destinationTabs: TabConfig[] = [
         href: '/accommodations'
     },
     { id: 'events', label: 'Eventos', labelKey: 'admin-tabs.events', href: '/events' },
+    { id: 'seo', label: 'SEO', labelKey: 'admin-tabs.seo', href: '/seo' },
     {
         id: 'faqs',
         label: 'Preguntas frecuentes',
@@ -151,7 +153,8 @@ export const userTabs: TabConfig[] = [
 export const eventTabs: TabConfig[] = [
     { id: 'overview', label: 'General', labelKey: 'admin-tabs.overview', href: '' },
     { id: 'tickets', label: 'Entradas', labelKey: 'admin-tabs.tickets', href: '/tickets' },
-    { id: 'attendees', label: 'Asistentes', labelKey: 'admin-tabs.attendees', href: '/attendees' }
+    { id: 'attendees', label: 'Asistentes', labelKey: 'admin-tabs.attendees', href: '/attendees' },
+    { id: 'seo', label: 'SEO', labelKey: 'admin-tabs.seo', href: '/seo' }
 ];
 
 export const postTabs: TabConfig[] = [

@@ -1,33 +1,33 @@
-import { PageTabs, postTabs } from '@/components/layout/PageTabs';
+import { PageTabs, eventTabs } from '@/components/layout/PageTabs';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { SeoEditor } from '@/components/seo/SeoEditor';
 import { buildSeoPreviewUrl } from '@/components/seo/seo-editor.utils';
 import { env } from '@/env';
-import { usePostQuery, useUpdatePostMutation } from '@/features/posts/hooks/usePostQuery';
+import { useEventQuery, useUpdateEventMutation } from '@/features/events/hooks/useEventQuery';
 import { createFileRoute } from '@tanstack/react-router';
 
-export const Route = createFileRoute('/_authed/posts/$id_/seo')({
-    component: PostSeoPage
+export const Route = createFileRoute('/_authed/events/$id_/seo')({
+    component: EventSeoPage
 });
 
-function PostSeoPage() {
+function EventSeoPage() {
     const { id } = Route.useParams();
-    const { data: post, isLoading } = usePostQuery(id);
-    const updatePost = useUpdatePostMutation(id);
+    const { data: event, isLoading } = useEventQuery(id);
+    const updateEvent = useUpdateEventMutation(id);
 
     const previewUrl = buildSeoPreviewUrl({
         siteUrl: env.VITE_SITE_URL,
         locale: 'es',
-        pathSegment: 'publicaciones',
-        slug: post?.slug
+        pathSegment: 'eventos',
+        slug: event?.slug
     });
 
     return (
-        <SidebarPageLayout titleKey="admin-pages.titles.postsView">
+        <SidebarPageLayout titleKey="admin-pages.titles.eventsView">
             <div className="space-y-4">
                 <PageTabs
-                    tabs={postTabs}
-                    basePath={`/posts/${id}`}
+                    tabs={eventTabs}
+                    basePath={`/events/${id}`}
                 />
 
                 {isLoading ? (
@@ -40,15 +40,17 @@ function PostSeoPage() {
                     </div>
                 ) : (
                     <SeoEditor
-                        seo={post?.seo}
-                        fallbackTitle={post?.title ?? ''}
-                        fallbackDescription={post?.summary ?? ''}
+                        seo={event?.seo}
+                        fallbackTitle={event?.name ?? ''}
+                        fallbackDescription={event?.summary ?? ''}
                         previewUrl={previewUrl}
-                        isSaving={updatePost.isPending}
+                        isSaving={updateEvent.isPending}
                         saveError={
-                            updatePost.error instanceof Error ? updatePost.error.message : undefined
+                            updateEvent.error instanceof Error
+                                ? updateEvent.error.message
+                                : undefined
                         }
-                        onSave={(seo) => updatePost.mutateAsync({ seo })}
+                        onSave={(seo) => updateEvent.mutateAsync({ seo })}
                     />
                 )}
             </div>
