@@ -1,4 +1,4 @@
-import { boolean, jsonb, pgTable, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import { boolean, jsonb, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 
 export const featureFlags = pgTable('feature_flags', {
     id: uuid('id').defaultRandom().primaryKey(),

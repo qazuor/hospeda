@@ -1,4 +1,5 @@
 import { and, count, desc, eq, getTableColumns, or, sql } from 'drizzle-orm';
+import type { SQL } from 'drizzle-orm';
 import { getDb } from '../../client';
 import { featureFlagAuditLog, featureFlags } from '../../schemas/feature-flags';
 import type { DrizzleClient } from '../../types';
@@ -14,7 +15,14 @@ export interface ListFeatureFlagsInput {
 
 export interface ListFeatureFlagsResult {
     items: SelectFeatureFlag[];
-    total: number;
+    pagination: {
+        page: number;
+        pageSize: number;
+        total: number;
+        totalPages: number;
+        hasNextPage: boolean;
+        hasPreviousPage: boolean;
+    };
 }
 
 export interface CreateFeatureFlagInput {
@@ -68,12 +76,17 @@ export class FeatureFlagModel {
         const db = this.getClient(tx);
         const { search, isActive, enabled: enabledFilter, page = 1, pageSize = 50 } = input;
 
-        const conditions: ReturnType<typeof eq>[] = [];
+        const conditions: SQL<unknown>[] = [];
 
         if (search) {
-            conditions.push(
-                or(safeIlike(featureFlags.key, search), safeIlike(featureFlags.description, search))
+            const searchCondition = or(
+                safeIlike(featureFlags.key, search),
+                safeIlike(featureFlags.description, search)
             );
+
+            if (searchCondition) {
+                conditions.push(searchCondition);
+            }
         }
 
         if (isActive !== undefined) {
@@ -94,9 +107,22 @@ export class FeatureFlagModel {
             .limit(pageSize)
             .offset((page - 1) * pageSize);
 
-        const [{ total }] = await db.select({ total: count() }).from(featureFlags).where(where);
+        const [countRow] = await db.select({ total: count() }).from(featureFlags).where(where);
+        const total = countRow?.total ?? 0;
 
-        return { items, total };
+        const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+        return {
+            items,
+            pagination: {
+                page,
+                pageSize,
+                total,
+                totalPages,
+                hasNextPage: page < totalPages,
+                hasPreviousPage: page > 1
+            }
+        };
     }
 
     async findById(id: string, tx?: DrizzleClient): Promise<SelectFeatureFlag | null> {

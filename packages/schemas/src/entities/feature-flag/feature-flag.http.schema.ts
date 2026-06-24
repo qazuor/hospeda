@@ -14,7 +14,7 @@ export const FeatureFlagPublicSchema = z.object({
 
 export type FeatureFlagPublic = z.infer<typeof FeatureFlagPublicSchema>;
 
-export const FeatureFlagPublicResponseSchema = z.record(z.string(), z.boolean());
+export const FeatureFlagPublicResponseSchema = z.object({}).catchall(z.boolean());
 
 export type FeatureFlagPublicResponse = z.infer<typeof FeatureFlagPublicResponseSchema>;
 
