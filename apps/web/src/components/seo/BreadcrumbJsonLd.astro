@@ -14,6 +14,8 @@
  * ```
  */
 
+import JsonLd from './JsonLd.astro';
+
 interface BreadcrumbItem {
     /** Display name for this breadcrumb level */
     readonly name: string;
@@ -38,8 +40,6 @@ const jsonLd = {
         item: item.url,
     })),
 };
-
-const jsonLdContent = JSON.stringify(jsonLd, null, 0).replace(/</g, '\\u003c');
 ---
 
-<script type="application/ld+json" set:html={jsonLdContent} />
+<JsonLd data={jsonLd} />
