@@ -21,7 +21,7 @@ const postService = new SocialPostService({ logger: apiLogger });
 /**
  * GET /api/v1/admin/social/posts
  * List social posts — Admin endpoint.
- * Supports filtering by status, approvalStatus, platform, search, date range, and includeDeleted.
+ * Supports filtering by status, approvalStatus, platform, search, date range, includeDeleted, campaignId, and batchId.
  */
 export const adminListSocialPostsRoute = createAdminListRoute({
     method: 'get',
@@ -51,7 +51,9 @@ export const adminListSocialPostsRoute = createAdminListRoute({
                 search: q?.search as string | undefined,
                 createdAtFrom: q?.createdAtFrom as Date | undefined,
                 createdAtTo: q?.createdAtTo as Date | undefined,
-                includeDeleted: q?.includeDeleted as boolean | undefined
+                includeDeleted: q?.includeDeleted as boolean | undefined,
+                campaignId: q?.campaignId as string | undefined,
+                batchId: q?.batchId as string | undefined
             }
         });
 
