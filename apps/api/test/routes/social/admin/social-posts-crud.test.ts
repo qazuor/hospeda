@@ -466,6 +466,9 @@ describe('admin social post CRUD + dashboard + logs routes — SPEC-254 T-037', 
         it('returns updated post on success', async () => {
             const updatedPost = { ...POST_DETAIL_FIXTURE, ...validPatch };
             mockUpdatePost.mockResolvedValue({ data: updatedPost, error: undefined });
+            // Route fetches a fresh full detail after patching so the response
+            // validates against SocialPostDetailSchema (getPostDetail called internally).
+            mockGetPostDetail.mockResolvedValue({ data: updatedPost, error: undefined });
 
             const handler = getHandler('patch', '/{id}');
             const ctx = buildMockCtx() as unknown as Context;

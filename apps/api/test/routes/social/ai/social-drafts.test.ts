@@ -79,18 +79,18 @@ vi.mock('../../../../src/utils/route-factory-tiered', () => ({
 }));
 
 // ---------------------------------------------------------------------------
-// Env mock — provide a known PIN hash for tests
-// sha256('test-pin-1234') = 4c6a6bdba0f1192b774c1bcf437df50b8324cb0c484eac1528ca6bfeafa7ec62
+// Env mock — provide a known plaintext PIN for tests
+// The route now compares env.HOSPEDA_OPERATOR_PIN directly (plaintext, SPEC-254
+// resolved decision #1: PIN stored in env as-is, no hashing needed).
 // ---------------------------------------------------------------------------
 
 const TEST_PIN = 'test-pin-1234';
-const TEST_PIN_HASH = '4c6a6bdba0f1192b774c1bcf437df50b8324cb0c484eac1528ca6bfeafa7ec62';
 const TEST_AI_KEY = 'test-ai-secret-key';
 
 vi.mock('../../../../src/utils/env', () => ({
     env: {
         HOSPEDA_AI_SOCIAL_KEY: TEST_AI_KEY,
-        HOSPEDA_OPERATOR_PIN_HASH: TEST_PIN_HASH
+        HOSPEDA_OPERATOR_PIN: TEST_PIN
     }
 }));
 
