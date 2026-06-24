@@ -1124,4 +1124,36 @@ describe('AirbnbAdapter', () => {
             expect(result.price).toBeUndefined();
         });
     });
+
+    describe('extract() — Apify timeout budget', () => {
+        it('passes apifyTimeoutMs to runApifyActor when set, not the short fetch timeout', async () => {
+            // Arrange — fetch timeout short (8s), Apify budget long (120s)
+            mockRunApifyActor.mockResolvedValue({ items: [AIRBNB_ITEM_FULL] });
+            const ctx: ImportContext = { ...makeCtx(), timeoutMs: 8_000, apifyTimeoutMs: 120_000 };
+            const url = new URL('https://www.airbnb.com/rooms/99999');
+
+            // Act
+            await adapter.extract(url, ctx);
+
+            // Assert — the actor run gets the long budget, not the 8s fetch timeout
+            expect(mockRunApifyActor).toHaveBeenCalledWith(
+                expect.objectContaining({ timeoutMs: 120_000 })
+            );
+        });
+
+        it('falls back to timeoutMs when apifyTimeoutMs is absent', async () => {
+            // Arrange — legacy context without apifyTimeoutMs
+            mockRunApifyActor.mockResolvedValue({ items: [AIRBNB_ITEM_FULL] });
+            const ctx = makeCtx();
+            const url = new URL('https://www.airbnb.com/rooms/99999');
+
+            // Act
+            await adapter.extract(url, ctx);
+
+            // Assert — falls back to the fetch timeout (15s in makeCtx)
+            expect(mockRunApifyActor).toHaveBeenCalledWith(
+                expect.objectContaining({ timeoutMs: 15_000 })
+            );
+        });
+    });
 });

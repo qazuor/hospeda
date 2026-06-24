@@ -312,6 +312,7 @@ export const protectedImportFromUrlRoute = createProtectedRoute({
         const context: ImportContext = {
             locale,
             timeoutMs: env.HOSPEDA_IMPORT_FETCH_TIMEOUT_MS,
+            apifyTimeoutMs: env.HOSPEDA_IMPORT_APIFY_TIMEOUT_MS,
             maxBytes: env.HOSPEDA_IMPORT_FETCH_MAX_BYTES,
             aiMaxChars: env.HOSPEDA_IMPORT_AI_MAX_CHARS,
             credentials: {

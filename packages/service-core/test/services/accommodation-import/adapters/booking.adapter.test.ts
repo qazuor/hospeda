@@ -437,6 +437,21 @@ describe('BookingAdapter', () => {
             expect(result.description?.source).toBe('official_api');
         });
 
+        it('passes apifyTimeoutMs to the Apify fallback, not the short fetch timeout', async () => {
+            // Arrange — fetch timeout short (8s), Apify budget long (120s)
+            mockSafeExternalFetch.mockResolvedValue(fetchBlocked());
+            mockRunApifyActor.mockResolvedValue({ items: [BOOKING_APIFY_ITEM_FULL] });
+            const ctx: ImportContext = { ...makeCtx(), timeoutMs: 8_000, apifyTimeoutMs: 120_000 };
+
+            // Act
+            await adapter.extract(new URL('https://www.booking.com/hotel/ar/x'), ctx);
+
+            // Assert — the actor run gets the long Apify budget, not the 8s fetch timeout
+            expect(mockRunApifyActor).toHaveBeenCalledWith(
+                expect.objectContaining({ timeoutMs: 120_000 })
+            );
+        });
+
         it('should map Apify dataset item fields correctly', async () => {
             // Arrange
             mockSafeExternalFetch.mockResolvedValue(fetchBlocked());

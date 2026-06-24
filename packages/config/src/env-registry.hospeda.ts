@@ -1618,6 +1618,20 @@ export const HOSPEDA_ENV_VARS = [
         category: 'integrations'
     },
     {
+        name: 'HOSPEDA_IMPORT_APIFY_TIMEOUT_MS',
+        description:
+            'Timeout in milliseconds for synchronous Apify actor runs in accommodation import adapters (Airbnb, Booking fallback). Apify actors run server-side and routinely take 8-120s, far longer than the JSON-LD/OpenGraph fetch timeout, so they get their own longer budget. Distinct from HOSPEDA_IMPORT_FETCH_TIMEOUT_MS, which stays short for fast structured-data fetches.',
+        descriptionEs:
+            'Timeout en milisegundos para las corridas sincrónicas de actores de Apify en los adaptadores de importación de alojamientos (Airbnb, fallback de Booking). Los actores de Apify corren del lado del servidor y suelen tardar 8-120s, mucho más que el timeout de fetch de JSON-LD/OpenGraph, por eso tienen su propio presupuesto más largo. Distinto de HOSPEDA_IMPORT_FETCH_TIMEOUT_MS, que se mantiene corto para los fetches rápidos de datos estructurados.',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '120000',
+        exampleValue: '120000',
+        apps: ['api'],
+        category: 'integrations'
+    },
+    {
         name: 'HOSPEDA_IMPORT_FETCH_MAX_BYTES',
         description:
             'Maximum response body size in bytes for the safeExternalFetch utility used in accommodation import adapters. Responses exceeding this limit are rejected.',

@@ -862,7 +862,9 @@ export class AirbnbAdapter implements ImportSourceAdapter {
                 adults: PRICE_PROBE_ADULTS,
                 currency: PRICE_PROBE_CURRENCY
             },
-            timeoutMs: ctx.timeoutMs
+            // Apify actors run synchronously for 8-120s — use the longer Apify
+            // budget, not the short JSON-LD fetch timeout, or the run always aborts.
+            timeoutMs: ctx.apifyTimeoutMs ?? ctx.timeoutMs
         });
 
         // Propagate transport-level failure codes (credentials_missing, timeout, provider_error).
