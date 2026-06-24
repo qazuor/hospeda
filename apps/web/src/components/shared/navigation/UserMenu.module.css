@@ -200,7 +200,12 @@
 .signOutButton:focus-visible {
     background-color: var(--core-foreground-a05);
     color: var(--brand-primary);
-    outline: none;
+}
+
+.menuLink:focus-visible,
+.signOutButton:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: -2px;
 }
 
 .signOutButton {

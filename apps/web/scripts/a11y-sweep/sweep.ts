@@ -5,8 +5,10 @@ import AxeBuilder from '@axe-core/playwright';
 import { chromium } from '@playwright/test';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:4321';
+const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:3001';
 const ONLY_URL = process.env.ONLY_URL;
 const DRY_RUN = process.env.DRY_RUN === '1';
+const REQUIRE_DYNAMIC_ROUTES = process.env.REQUIRE_DYNAMIC_ROUTES === '1';
 const REPORT_DIR = resolve(import.meta.dirname, '_fixtures');
 
 const DESKTOP = { width: 1280, height: 800 };
@@ -32,6 +34,45 @@ const INVENTORY: ReadonlyArray<{ url: string; name: string }> = [
     { url: '/pt/', name: 'Home PT' }
 ];
 
+type DetailRouteSpec = {
+    name: string;
+    apiPath: string;
+    toUrl: (item: Record<string, unknown>) => string | null;
+};
+
+const DETAIL_ROUTE_SPECS: ReadonlyArray<DetailRouteSpec> = [
+    {
+        name: 'Accommodation Detail',
+        apiPath: '/api/v1/public/accommodations?page=1&pageSize=1',
+        toUrl: (item) => buildEntityUrl({ basePath: 'alojamientos', slug: item.slug })
+    },
+    {
+        name: 'Destination Detail',
+        apiPath: '/api/v1/public/destinations?page=1&pageSize=1',
+        toUrl: (item) => buildEntityUrl({ basePath: 'destinos', slug: item.slug })
+    },
+    {
+        name: 'Event Detail',
+        apiPath: '/api/v1/public/events?page=1&pageSize=1',
+        toUrl: (item) => buildEntityUrl({ basePath: 'eventos', slug: item.slug })
+    },
+    {
+        name: 'Post Detail',
+        apiPath: '/api/v1/public/posts?page=1&pageSize=1',
+        toUrl: (item) => buildEntityUrl({ basePath: 'publicaciones', slug: item.slug })
+    },
+    {
+        name: 'Gastronomy Detail',
+        apiPath: '/api/v1/public/gastronomies?page=1&pageSize=1',
+        toUrl: (item) => buildEntityUrl({ basePath: 'gastronomia', slug: item.slug })
+    },
+    {
+        name: 'Experience Detail',
+        apiPath: '/api/v1/public/experiences?page=1&pageSize=1',
+        toUrl: (item) => buildEntityUrl({ basePath: 'experiencias', slug: item.slug })
+    }
+];
+
 type PageResult = {
     url: string;
     name: string;
@@ -48,12 +89,84 @@ type PageResult = {
     durationMs: number;
 };
 
-function filterEntries(): ReadonlyArray<{ url: string; name: string }> {
-    let entries = INVENTORY;
+function filterEntries(
+    entriesInput: ReadonlyArray<{ url: string; name: string }>
+): ReadonlyArray<{ url: string; name: string }> {
+    let entries = entriesInput;
     if (ONLY_URL) {
         entries = entries.filter((e) => e.url === ONLY_URL || e.url.endsWith(ONLY_URL));
     }
     return entries;
+}
+
+function buildEntityUrl({
+    basePath,
+    slug
+}: {
+    basePath: string;
+    slug: unknown;
+}): string | null {
+    if (typeof slug !== 'string' || slug.trim().length === 0) {
+        return null;
+    }
+
+    return `/es/${basePath}/${slug}/`;
+}
+
+async function fetchFirstListItem({
+    apiPath
+}: {
+    apiPath: string;
+}): Promise<Record<string, unknown> | null> {
+    const url = `${API_BASE_URL.replace(/\/$/, '')}${apiPath}`;
+    const response = await fetch(url);
+
+    if (!response.ok) {
+        throw new Error(`HTTP ${response.status} for ${apiPath}`);
+    }
+
+    const json = (await response.json()) as {
+        ok?: boolean;
+        data?: { items?: ReadonlyArray<Record<string, unknown>> };
+    };
+
+    if (json.ok === false) {
+        throw new Error(`API returned ok=false for ${apiPath}`);
+    }
+
+    return json.data?.items?.[0] ?? null;
+}
+
+async function discoverDetailEntries(): Promise<ReadonlyArray<{ url: string; name: string }>> {
+    const discovered: Array<{ url: string; name: string }> = [];
+    const failures: string[] = [];
+
+    for (const spec of DETAIL_ROUTE_SPECS) {
+        try {
+            const item = await fetchFirstListItem({ apiPath: spec.apiPath });
+            const url = item ? spec.toUrl(item) : null;
+
+            if (!url) {
+                failures.push(`${spec.name}: no slug discovered`);
+                continue;
+            }
+
+            discovered.push({ name: spec.name, url });
+        } catch (error) {
+            failures.push(`${spec.name}: ${(error as Error).message}`);
+        }
+    }
+
+    if (failures.length > 0) {
+        const message = `Dynamic route discovery failed:\n- ${failures.join('\n- ')}`;
+        if (REQUIRE_DYNAMIC_ROUTES) {
+            throw new Error(message);
+        }
+
+        console.warn(`\nWARN: ${message}\n`);
+    }
+
+    return discovered;
 }
 
 async function sweepEntry(
@@ -128,7 +241,8 @@ async function sweepEntry(
 }
 
 async function main() {
-    const entries = filterEntries();
+    const detailEntries = await discoverDetailEntries();
+    const entries = filterEntries([...INVENTORY, ...detailEntries]);
 
     if (entries.length === 0) {
         console.error(`No entries match ONLY_URL=${ONLY_URL}`);
@@ -195,6 +309,11 @@ async function main() {
     );
 
     await browser.close();
+
+    if (summary.error > 0) {
+        console.error('\nFAIL: One or more pages could not be analyzed.');
+        process.exit(1);
+    }
 
     if (summary.totalCritical > 0 || summary.totalSerious > 0) {
         console.error('\nFAIL: Critical or serious axe violations found.');

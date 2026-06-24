@@ -233,8 +233,9 @@
     transition: border-color 0.15s ease;
 }
 
-.textarea:focus {
-    outline: none;
+.textarea:focus-visible {
+    outline: 2px solid var(--brand-primary, #2563eb);
+    outline-offset: 2px;
     border-color: var(--brand-primary, #2563eb);
     /* Fallback for browsers that do not support color-mix() (e.g. Chrome <111) */
     box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
