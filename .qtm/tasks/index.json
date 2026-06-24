@@ -1079,7 +1079,7 @@
             "specId": "SPEC-277",
             "title": "Accommodation import — scraper resilience (retry, fallback chain, async, provider mitigation, manual path)",
             "status": "in-progress",
-            "progress": "5/11",
+            "progress": "7/11",
             "path": "SPEC-277-import-scraper-resilience",
             "parent": "SPEC-258",
             "branch": "spec/SPEC-277-import-scraper-resilience",

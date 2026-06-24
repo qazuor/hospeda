@@ -296,70 +296,70 @@
             "id": "T-009",
             "title": "Write ImportFromUrl.client.tsx invariant test — form stays usable after full failure",
             "description": "Add a test file for `ImportFromUrl.client.tsx` asserting R5: after a fully-failed import (all retries and fallback exhausted), the web form is 100% usable for manual entry — no spinner trap, submit button re-enabled, non-blaming error note shown.\n\n**Test file to create:** `apps/web/src/components/host/__tests__/ImportFromUrl.test.tsx`\n\n**Test cases (AAA pattern):**\n1. After a 200 response with `failureCode: 'source_blocked'`: `isSubmitting` reverts to false (submit button re-enabled), a non-blaming i18n error key is displayed (e.g. `host.importFromUrl.errors.failure.sourceBlocked`), the URL input is still editable.\n2. After a 200 response with `failureCode: 'timeout'`: same assertions.\n3. After a non-200 HTTP error: submit button re-enabled, network error message shown, URL input is still editable.\n4. While the request is in flight (`isSubmitting = true`): submit button is disabled, no error message shown.\n\n**Mocking:**\n- Mock `accommodationsImportApi.importFromUrl` via `vi.mock` or `vi.fn()`.\n- Use `@testing-library/react` with jsdom environment.\n- Mock `createTranslations` to return key-as-value.\n\n**Key assertions:**\n- `button[type=button]` (or the submit button) is NOT disabled after failure resolves.\n- No `aria-busy` or loading spinner element is present after failure resolves.\n- An error message element is visible with the correct i18n key.\n- The URL input `value` is preserved (user can edit without re-typing).\n\n**Acceptance criteria:**\n- 4 test cases pass.\n- No test uses `screen.getByRole('button', { disabled: true })` after the async failure resolves — the button must be enabled.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Create __tests__/ImportFromUrl.test.tsx with jsdom environment header",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Mock API and translations",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write 4 test cases covering spinner-clear invariant",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "web", "r5", "manual-path", "react", "unit-test"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-24T22:09:58.000Z",
+                "completed": "2026-06-24T22:09:58.000Z"
             }
         },
         {
             "id": "T-010",
             "title": "Write ImportFromUrlSection.tsx invariant test — form stays usable after full failure",
             "description": "Extend `ImportFromUrlSection.test.tsx` (admin) with an R5 invariant `describe` block asserting the section returns to a fully usable state after a completely failed import.\n\n**Test file to extend:** `apps/admin/src/features/accommodations/components/__tests__/ImportFromUrlSection.test.tsx`\n\n**Test cases to add (new `describe('R5 manual path invariant', ...)` block):**\n1. After mutation returns with `failureCode: 'source_blocked'` (all retries exhausted on server): `isPending` reverts to false, an error alert is shown, the URL input is editable, and `setFieldValue` is NOT called (no partial prefill on classified failure).\n2. After mutation returns with `failureCode: 'timeout'`: same assertions.\n3. After mutation throws (network error): `isPending` reverts to false, error alert shown, inputs editable.\n\n**Key assertions:**\n- `currentMutationState.isPending` is `false` after the failure resolves (using the existing mock pattern in this test file).\n- An error `role='alert'` element is present.\n- No `LoaderIcon` or spinner element is visible.\n- `mockSetFieldValue` is not called (no form prefill on classified failure).\n\n**Acceptance criteria:**\n- 3 new test cases pass alongside the existing 7 tests.\n- Tests follow the existing mock setup pattern in this file (`currentMutationState`, `mockMutateAsync`, etc.).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Add R5 invariant describe block to ImportFromUrlSection.test.tsx",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write 3 test cases reusing existing mock infrastructure",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Assert isPending=false, error visible, setFieldValue not called",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "admin", "r5", "manual-path", "react", "unit-test"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "passed",
+                "typecheck": "passed",
+                "tests": "passed"
             },
             "timestamps": {
                 "created": "2026-06-24T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-24T22:09:58.000Z",
+                "completed": "2026-06-24T22:09:58.000Z"
             }
         },
         {
@@ -404,9 +404,9 @@
     ],
     "summary": {
         "total": 11,
-        "pending": 6,
+        "pending": 4,
         "inProgress": 0,
-        "completed": 5,
+        "completed": 7,
         "blocked": 0,
         "averageComplexity": 2.2
     }
