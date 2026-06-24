@@ -908,7 +908,7 @@
             "specId": "SPEC-262",
             "title": "Billing Promo-Code Typed Effect Engine",
             "status": "in-progress",
-            "progress": "9/15",
+            "progress": "14/15",
             "path": "SPEC-262-billing-promo-code-effect-engine",
             "branch": "spec/SPEC-262-billing-promo-code-effect-engine",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-262-billing-promo-code-effect-engine",
