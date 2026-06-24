@@ -1978,7 +1978,7 @@
         },
         {
             "specId": "SPEC-274",
-            "title": "Image search & import (Unsplash/Pexels) for events and posts",
+            "title": "Stock image search & import (Unsplash/Pexels) — admin editor, v1",
             "type": "feature",
             "complexity": "medium",
             "status": "draft",
