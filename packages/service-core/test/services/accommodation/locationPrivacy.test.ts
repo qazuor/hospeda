@@ -18,7 +18,11 @@ import * as permissionHelpers from '../../../src/services/accommodation/accommod
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import { createAccommodationWithMockIds } from '../../factories/accommodationFactory';
 import { createActor } from '../../factories/actorFactory';
-import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
+import {
+    createLoggerMock,
+    createModelMock,
+    makeMediaModelStub
+} from '../../utils/modelMockFactory';
 
 const mockLogger = createLoggerMock();
 const TEST_SALT = 'test-location-salt-fixed-for-deterministic-tests-32+chars';
@@ -44,9 +48,21 @@ describe('AccommodationService — SPEC-097 location privacy', () => {
         originalSalt = process.env.HOSPEDA_LOCATION_SALT;
         process.env.HOSPEDA_LOCATION_SALT = TEST_SALT;
         model = createModelMock();
+        // SPEC-204 T-013: _afterGetByField/_afterList/_afterSearch now call
+        // findByAccommodations on the media model. Inject a stub returning an empty
+        // Map so the read hooks preserve the entity's original `media` without a DB.
         service = new AccommodationService(
             { logger: mockLogger },
-            model as unknown as AccommodationModel
+            model as unknown as AccommodationModel,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            // biome-ignore lint/suspicious/noExplicitAny: test stub
+            makeMediaModelStub() as any
         );
         vi.clearAllMocks();
     });
