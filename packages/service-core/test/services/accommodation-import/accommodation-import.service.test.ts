@@ -877,6 +877,8 @@ describe('AccommodationImportService', () => {
                 name: expect.objectContaining({ value: 'Cabaña Vista al Río' })
             });
             expect(result.failureCode).toBeUndefined();
+            // The fallback mechanism was actually invoked (not coincidentally matched).
+            expect(fakeGeneric.extract).toHaveBeenCalledOnce();
         });
 
         it('should use the generic fallback and return partial=true with source=booking when booking primary returns source_blocked and fallback has useful data', async () => {
@@ -903,6 +905,37 @@ describe('AccommodationImportService', () => {
                 name: expect.objectContaining({ value: 'Cabaña Vista al Río' })
             });
             expect(result.failureCode).toBeUndefined();
+            expect(fakeGeneric.extract).toHaveBeenCalledOnce();
+        });
+
+        it('should accept an images-only fallback (no name/summary) as useful and keep source=airbnb', async () => {
+            // Arrange — Airbnb blocked; fallback yields only imageUrls (3rd branch
+            // of the hasUsefulFallback guard).
+            fakeAirbnb.supports.mockReturnValue(true);
+            fakeAirbnb.extract.mockResolvedValue({
+                sourcePlatform: 'airbnb',
+                failureCode: 'source_blocked'
+            } as RawExtraction);
+            fakeGeneric.extract.mockResolvedValue({
+                sourcePlatform: 'airbnb',
+                imageUrls: ['https://example.com/a.jpg']
+            } as RawExtraction);
+
+            const service = new AccommodationImportService(fakeCtx);
+
+            // Act
+            const result = await service.importFromUrl(
+                { url: 'https://www.airbnb.com/rooms/99999', context: fakeContext },
+                fakeActor
+            );
+
+            // Assert — images-only is still useful: failureCode cleared, source kept,
+            // and the source did not degrade to 'none' (mediaHints keep it alive).
+            expect(fakeGeneric.extract).toHaveBeenCalledOnce();
+            expect(result.failureCode).toBeUndefined();
+            expect(result.source).toBe('airbnb');
+            expect(result.partial).toBe(true);
+            expect(result.mediaHints).toMatchObject({ imageUrls: ['https://example.com/a.jpg'] });
         });
 
         it('should keep failureCode=source_blocked when airbnb primary is blocked and fallback yields only an empty extraction', async () => {

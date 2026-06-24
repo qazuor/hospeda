@@ -410,6 +410,9 @@ export class AccommodationImportService {
                 effectiveParsedUrl,
                 input.context
             );
+            // Useful = at least one of name / summary / images. Optional chaining
+            // tolerates a null/undefined fallback; the `fallback &&` in the `if`
+            // both guards that case and narrows the type for the spread below.
             const hasUsefulFallback = Boolean(
                 fallback?.name?.value ||
                     fallback?.summary?.value ||
