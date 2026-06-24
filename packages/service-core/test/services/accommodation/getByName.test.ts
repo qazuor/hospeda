@@ -7,7 +7,11 @@ import { ServiceError } from '../../../src/types';
 import { createAccommodationWithMockIds } from '../../factories/accommodationFactory';
 import { createActor } from '../../factories/actorFactory';
 import { expectInternalError } from '../../helpers/assertions';
-import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
+import {
+    createLoggerMock,
+    createModelMock,
+    makeMediaModelStub
+} from '../../utils/modelMockFactory';
 import { asMock } from '../../utils/test-utils';
 
 const mockLogger = createLoggerMock();
@@ -27,7 +31,16 @@ describe('AccommodationService.getByName', () => {
         model.findOneWithRelations = vi.fn();
         service = new AccommodationService(
             { logger: mockLogger },
-            model as unknown as AccommodationModel
+            model as unknown as AccommodationModel,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            // biome-ignore lint/suspicious/noExplicitAny: test stub
+            makeMediaModelStub() as any
         );
         actor = createViewActor();
         entity = createEntity();

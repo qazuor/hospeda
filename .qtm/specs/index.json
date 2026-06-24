@@ -1832,6 +1832,18 @@
             "archiveNote": "Merged to staging via PR #1782 (52/52). Migration renumbered to 0026 after staging advanced."
         },
         {
+            "specId": "SPEC-280",
+            "title": "Accommodation media: remove composed blob shape from API responses",
+            "type": "refactor",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-280-accommodation-media-blob-response-cleanup",
+            "created": "2026-06-24T00:00:00Z",
+            "dependsOn": ["SPEC-204"],
+            "tags": ["media", "gallery", "schema", "cleanup", "tech-debt"],
+            "note": "SPEC-204 compat-debt cleanup: remove the composed media.featuredImage/gallery shape from accommodation API responses, migrate read-clients (web transforms/cards, admin score-signals/columns) to the relational AccommodationMedia[] list, and retire the photo fields from MediaSchema/HttpMediaSchema (videos stay). Absorbs SPEC-204 T-025 + T-028. Gated on SPEC-204 merge."
+        },
+        {
             "specId": "SPEC-267",
             "title": "SEO entity fields — Hybrid (keep title/description, remove keywords) + improve SEO tab UX",
             "type": "feature",

@@ -1,0 +1,12 @@
+{
+    "specId": "SPEC-280",
+    "title": "Accommodation media: remove composed blob shape from API responses",
+    "type": "refactor",
+    "complexity": "high",
+    "status": "draft",
+    "created": "2026-06-24T00:00:00Z",
+    "approved": null,
+    "completed": null,
+    "planFileRef": null,
+    "tags": ["media", "gallery", "schema", "cleanup", "tech-debt", "accommodation", "api"]
+}

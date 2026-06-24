@@ -1052,15 +1052,25 @@
             "specId": "SPEC-204",
             "title": "Accommodation gallery migration to relational table",
             "status": "in-progress",
-            "progress": "11/29",
+            "progress": "27/29",
             "path": "SPEC-204-accommodation-gallery-relational-migration",
-            "branch": "spec/SPEC-204-accommodation-gallery-relational-migration",
+            "branch": "spec/SPEC-204-accommodation-gallery-relational-migration-phase-2",
             "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-204-accommodation-gallery-relational-migration",
             "base": "staging",
             "createdAt": "2026-06-22T00:00:00.000Z",
             "tasksAtomizedAt": "2026-06-22T00:00:00.000Z",
             "taskCount": 29,
-            "note": "Formalized + atomized 2026-06-22. Storage model = direct table-per-entity (accommodation_media, real FK); polymorphic + junction rejected. 3-phase dual-write (P1 create+backfill+write-both, P2 switch reads, P3 retire JSONB). Accommodation only; pattern reusable for other 5 gallery entities later. Spec still draft (not in-progress) until impl starts."
+            "note": "Closeout 2026-06-24: 27/29 done (T-025/T-028 deferred to SPEC-280). Direct cutover shipped — granular admin+protected media endpoints, web owner editor + admin gallery sub-tab (both per-operation), 021 blob-strip, seed T-027, docs T-029. getMedia 500 (schema not nullable) found via local smoke + fixed. Awaiting PR to staging."
+        },
+        {
+            "specId": "SPEC-280",
+            "title": "Accommodation media: remove composed blob shape from API responses",
+            "status": "draft",
+            "path": "SPEC-280-accommodation-media-blob-response-cleanup",
+            "base": "staging",
+            "createdAt": "2026-06-24T00:00:00.000Z",
+            "taskCount": 0,
+            "note": "Created as the SPEC-204 compat-debt follow-up (absorbs T-025 + T-028). Not atomized yet; gated on SPEC-204 merge."
         },
         {
             "specId": "SPEC-277",

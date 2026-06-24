@@ -10,7 +10,9 @@
  *   T-011-h  — create() with a `media` payload and NO junction fields succeeds
  *              and writes rows to `accommodation_media`.
  *   T-011-i  — update() with a `media`-only payload (no junction fields) succeeds
- *              and syncs the `accommodation_media` table.
+ *              and does NOT write `accommodation_media` (SPEC-204 cutover: the
+ *              gallery is managed by the granular media endpoints, not the bulk
+ *              update path).
  *
  * IMPORTANT: The bug only manifests when the service opens its OWN transaction
  * (i.e. no external ctx.tx). Therefore these tests do NOT use
@@ -266,7 +268,7 @@ describe('SPEC-204 FIX 1 regression — AccommodationService media-only tx', () 
     // -----------------------------------------------------------------------
 
     it.skipIf(!dbAvailable)(
-        'T-011-i: update() with media-only payload and no junction fields succeeds and syncs accommodation_media rows',
+        'T-011-i: update() with media-only payload succeeds and does NOT write accommodation_media rows (gallery managed by granular endpoints)',
         async () => {
             // Arrange: seed user + destination + accommodation COMMITTED.
             const { userId, destinationId } = await seedCommittedUserAndDestination();
@@ -294,19 +296,16 @@ describe('SPEC-204 FIX 1 regression — AccommodationService media-only tx', () 
             expect(result.error).toBeUndefined();
             expect(result.data).toBeDefined();
 
-            // Assert: accommodation_media rows reflect the updated media
+            // SPEC-204 cutover: UPDATE no longer manages the gallery, so a
+            // media-only update must NOT write any accommodation_media rows.
+            // The accommodation was seeded without media rows; it stays empty.
             const db = getServiceTestDb();
             const rows = await db
                 .select()
                 .from(accommodationMedia)
                 .where(eq(accommodationMedia.accommodationId, accommodationId));
 
-            // Only the featured image was supplied — expect exactly 1 row
-            expect(rows.length).toBe(1);
-            const featured = rows.find((r) => r.isFeatured);
-            expect(featured).toBeDefined();
-            expect(featured?.url).toBe('https://cdn.example.com/update-regression-featured.jpg');
-            expect(featured?.state).toBe('visible');
+            expect(rows.length).toBe(0);
         }
     );
 });

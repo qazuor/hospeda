@@ -19,6 +19,7 @@ import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import type { ServiceConfig } from '../../../src/types';
+import { makeMediaModelStub } from '../../utils/modelMockFactory';
 
 vi.mock('../../../src/services/destination/destination.service', () => ({
     DestinationService: vi.fn().mockImplementation(() => ({}))
@@ -92,7 +93,19 @@ describe('AccommodationService.findOptions (SPEC-169 §5.5)', () => {
         vi.clearAllMocks();
         mockModel = new MockAccommodationModel();
         mockModel.searchWithRelations.mockResolvedValue({ items: [], total: 0 });
-        service = new AccommodationService({} as ServiceConfig, mockModel as never);
+        service = new AccommodationService(
+            {} as ServiceConfig,
+            mockModel as never,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            // biome-ignore lint/suspicious/noExplicitAny: test stub
+            makeMediaModelStub() as any
+        );
     });
 
     it('projects { id, label, slug, type, destination } for a matched row', async () => {

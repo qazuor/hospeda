@@ -29,16 +29,30 @@ import { createAuthenticatedRequest, createMockAdminActor } from '../../helpers/
 // Provider mock (hoisted so vi.mock() can reference it)
 // ---------------------------------------------------------------------------
 
-const { mockUpload, mockDelete, providerState } = vi.hoisted(() => ({
+const { mockUpload, mockDelete, providerState, mockFindByAccommodation } = vi.hoisted(() => ({
     mockUpload: vi.fn(),
     mockDelete: vi.fn(),
-    providerState: { configured: true as boolean }
+    providerState: { configured: true as boolean },
+    // SPEC-204: accommodation gallery count now comes from the relational table.
+    mockFindByAccommodation: vi.fn()
 }));
 
 vi.mock('../../../src/services/media', () => ({
     getMediaProvider: () =>
         providerState.configured ? { upload: mockUpload, delete: mockDelete } : null
 }));
+
+// SPEC-204: stub accommodationMediaModel so the route can count visible rows
+// from the relational table without a live database connection.
+vi.mock('@repo/db', async (importOriginal) => {
+    const actual = await importOriginal<Record<string, unknown>>();
+    return {
+        ...actual,
+        accommodationMediaModel: {
+            findByAccommodation: mockFindByAccommodation
+        }
+    };
+});
 
 import {
     AccommodationService,
@@ -171,6 +185,11 @@ describe('Gallery cap enforcement — per-entity SSOT (SPEC-078-GAPS)', () => {
             height: 1080
         });
         mockDelete.mockReset();
+        // Default: empty gallery (0 visible rows). Individual accommodation
+        // tests override this via mockResolvedValueOnce before the at-cap/below-cap
+        // stubs fire so both gallery-cap checks get consistent counts.
+        mockFindByAccommodation.mockReset();
+        mockFindByAccommodation.mockResolvedValue({ items: [], total: 0 });
         resetMetrics();
     });
 
@@ -183,9 +202,15 @@ describe('Gallery cap enforcement — per-entity SSOT (SPEC-078-GAPS)', () => {
     describe('accommodation (cap = 50)', () => {
         it('rejects upload #51: gallery full at 50 items → 422 GALLERY_LIMIT_EXCEEDED with limit=50', async () => {
             // Arrange: gallery is AT the cap (50 items).
+            // SPEC-204: accommodation gallery count comes from the relational
+            // table; stub both the entity lookup and the media count.
+            const cap = ENTITY_GALLERY_CAPS.accommodation;
             vi.spyOn(AccommodationService.prototype, 'getById').mockImplementationOnce(
-                buildEntityStubFn(ENTITY_GALLERY_CAPS.accommodation)
+                buildEntityStubFn(cap)
             );
+            // findByAccommodation is called twice: once for the plan-cap check
+            // (3d-i) and once for the absolute gallery-cap check (3d).
+            mockFindByAccommodation.mockResolvedValue({ items: [], total: cap });
 
             // Act
             const res = await upload(app, 'accommodation', PermissionEnum.ACCOMMODATION_UPDATE_ANY);
@@ -197,16 +222,19 @@ describe('Gallery cap enforcement — per-entity SSOT (SPEC-078-GAPS)', () => {
                 error: { code: string; details: { limit: number; currentCount: number } };
             };
             expect(body.error.code).toBe('GALLERY_LIMIT_EXCEEDED');
-            expect(body.error.details.limit).toBe(ENTITY_GALLERY_CAPS.accommodation);
-            expect(body.error.details.currentCount).toBe(ENTITY_GALLERY_CAPS.accommodation);
+            expect(body.error.details.limit).toBe(cap);
+            expect(body.error.details.currentCount).toBe(cap);
             expect(mockUpload).not.toHaveBeenCalled();
         });
 
         it('allows upload #50: one slot remaining (49 items) → 200', async () => {
             // Arrange: one slot below cap.
+            const belowCap = ENTITY_GALLERY_CAPS.accommodation - 1;
             vi.spyOn(AccommodationService.prototype, 'getById').mockImplementationOnce(
-                buildEntityStubFn(ENTITY_GALLERY_CAPS.accommodation - 1)
+                buildEntityStubFn(belowCap)
             );
+            // Both plan-cap and gallery-cap checks receive the same count.
+            mockFindByAccommodation.mockResolvedValue({ items: [], total: belowCap });
 
             // Act
             const res = await upload(app, 'accommodation', PermissionEnum.ACCOMMODATION_UPDATE_ANY);

@@ -311,6 +311,9 @@ export function createDbMock() {
             async findFeatured(_accommodationId: string) {
                 return null;
             }
+            async findByAccommodations(_input: unknown) {
+                return new Map();
+            }
             async create(_data: unknown, _tx?: unknown) {
                 return null;
             }
@@ -805,6 +808,20 @@ export function createDbMock() {
         // an instance (not a class) because userPushTokenModel is a singleton.
         userPushTokenModel: {
             upsertByToken: vi.fn().mockResolvedValue({ id: 'upt_mock_id' })
+        },
+
+        // SPEC-204 T-013/T-014: AccommodationMediaModel singleton. The relational
+        // read hooks (_afterGetByField/_afterList/_afterSearch) and the admin/protected
+        // media upload routes import this singleton at module scope and call
+        // findByAccommodation/findByAccommodations. Exported as an instance (not a
+        // class) because accommodationMediaModel is a singleton in @repo/db. Defaults
+        // to an empty gallery; tests override per-case (e.g. the gallery-cap test).
+        accommodationMediaModel: {
+            findByAccommodation: vi.fn().mockResolvedValue({ items: [], total: 0 }),
+            findByAccommodations: vi.fn().mockResolvedValue(new Map()),
+            findFeatured: vi.fn().mockResolvedValue(null),
+            create: vi.fn().mockResolvedValue(null),
+            hardDelete: vi.fn().mockResolvedValue(undefined)
         },
 
         // SPEC-239: Gastronomy singleton model instances. GastronomyService,

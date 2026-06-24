@@ -26,6 +26,28 @@ import {
 } from '../../src/middlewares/limit-enforcement';
 import type { AppBindings } from '../../src/types';
 
+// ---------------------------------------------------------------------------
+// Hoist model mock — must be before vi.mock() calls that reference it.
+// SPEC-204 T-014: enforcePhotoLimit() now reads from the relational table via
+// accommodationMediaModel.findByAccommodation(), not the JSONB blob.
+// ---------------------------------------------------------------------------
+
+const { mockFindByAccommodation } = vi.hoisted(() => ({
+    mockFindByAccommodation: vi.fn()
+}));
+
+// Stub @repo/db so photo-limit tests can control the visible-row total returned
+// by the relational table without a live database connection.
+vi.mock('@repo/db', async (importOriginal) => {
+    const actual = await importOriginal<Record<string, unknown>>();
+    return {
+        ...actual,
+        accommodationMediaModel: {
+            findByAccommodation: mockFindByAccommodation
+        }
+    };
+});
+
 // Mock dependencies
 vi.mock('../../src/utils/actor', () => ({
     getActorFromContext: vi.fn()
@@ -414,29 +436,10 @@ describe('Limit Enforcement Middleware', () => {
             // Set up limit in context
             mockLimitsMap.set(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 10);
 
-            // Use media JSONB structure: 1 featuredImage + 4 gallery = 5 total (under limit of 10)
-            const mockGetById = vi.fn().mockResolvedValue({
-                success: true,
-                data: {
-                    id: 'accommodation-id-123',
-                    media: {
-                        featuredImage: {
-                            url: 'https://example.com/featured.jpg',
-                            moderationState: 'approved'
-                        },
-                        gallery: Array.from({ length: 4 }, (_, i) => ({
-                            url: `https://example.com/${i}.jpg`,
-                            moderationState: 'approved'
-                        }))
-                    }
-                }
-            });
-            vi.mocked(AccommodationService).mockImplementation(
-                () =>
-                    ({
-                        getById: mockGetById
-                    }) as unknown as AccommodationService
-            );
+            // SPEC-204 T-014: middleware reads visible row count from the relational
+            // table, not the JSONB blob. Stub the model to return 5 visible rows
+            // (below the limit of 10) — the exact blob shape is irrelevant now.
+            mockFindByAccommodation.mockResolvedValue({ total: 5 });
 
             const middleware = enforcePhotoLimit();
             await middleware(mockContext, mockNext);
@@ -450,29 +453,8 @@ describe('Limit Enforcement Middleware', () => {
             // Set up limit in context
             mockLimitsMap.set(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 10);
 
-            // Use media JSONB structure: 1 featuredImage + 9 gallery = 10 total (at limit)
-            const mockGetById = vi.fn().mockResolvedValue({
-                success: true,
-                data: {
-                    id: 'accommodation-id-123',
-                    media: {
-                        featuredImage: {
-                            url: 'https://example.com/featured.jpg',
-                            moderationState: 'approved'
-                        },
-                        gallery: Array.from({ length: 9 }, (_, i) => ({
-                            url: `https://example.com/${i}.jpg`,
-                            moderationState: 'approved'
-                        }))
-                    }
-                }
-            });
-            vi.mocked(AccommodationService).mockImplementation(
-                () =>
-                    ({
-                        getById: mockGetById
-                    }) as unknown as AccommodationService
-            );
+            // SPEC-204 T-014: table reports 10 visible rows (at the limit of 10) → block.
+            mockFindByAccommodation.mockResolvedValue({ total: 10 });
 
             const middleware = enforcePhotoLimit();
 
@@ -495,15 +477,8 @@ describe('Limit Enforcement Middleware', () => {
             // Set up limit in context
             mockLimitsMap.set(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 10);
 
-            const mockGetById = vi.fn().mockResolvedValue({
-                data: { id: 'accommodation-id-123' }
-            });
-            vi.mocked(AccommodationService).mockImplementation(
-                () =>
-                    ({
-                        getById: mockGetById
-                    }) as unknown as AccommodationService
-            );
+            // SPEC-204 T-014: no visible rows yet → total 0, well below limit 10.
+            mockFindByAccommodation.mockResolvedValue({ total: 0 });
 
             const middleware = enforcePhotoLimit();
             await middleware(mockContext, mockNext);
@@ -511,96 +486,42 @@ describe('Limit Enforcement Middleware', () => {
             expect(mockNext).toHaveBeenCalled();
         });
 
-        it('should count 0 when media.gallery is not an array (line 260 false branch)', async () => {
-            // Coverage target: limit-enforcement.ts line 260.
-            // `Array.isArray(media.gallery) ? media.gallery.length : 0` — the `: 0` branch
-            // fires when gallery is absent/not-array (e.g. null, string, plain object).
+        it('should use the relational table total directly (not inspect media blob shape)', async () => {
+            // SPEC-204 T-014: the middleware no longer reads media.gallery or
+            // media.featuredImage. It relies entirely on the visible row count from
+            // the accommodation_media table. Any blob-shape edge cases (gallery not
+            // an array, featuredImage absent, etc.) are irrelevant at this layer.
+            // This test confirms the table total drives the decision when total < limit.
             vi.mocked(getActorFromContext).mockReturnValue(mockActor);
             mockLimitsMap.set(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 10);
 
-            const mockGetById = vi.fn().mockResolvedValue({
-                success: true,
-                data: {
-                    id: 'accommodation-id-123',
-                    media: {
-                        // gallery is a plain object, not an array — triggers the ternary false branch
-                        gallery: { 0: { url: 'https://example.com/0.jpg' } },
-                        featuredImage: { url: 'https://example.com/featured.jpg' }
-                    }
-                }
-            });
-            vi.mocked(AccommodationService).mockImplementation(
-                () =>
-                    ({
-                        getById: mockGetById
-                    }) as unknown as AccommodationService
-            );
+            // Table returns 1 visible row — under limit 10.
+            mockFindByAccommodation.mockResolvedValue({ total: 1 });
 
             const middleware = enforcePhotoLimit();
             await middleware(mockContext, mockNext);
 
-            // gallery counted as 0 (not array) + 1 featuredImage = 1 total — under limit 10
             expect(mockNext).toHaveBeenCalled();
-        });
-
-        it('should count 0 for featuredImage when absent (line 261 false branch)', async () => {
-            // Coverage target: limit-enforcement.ts line 261.
-            // `media.featuredImage ? 1 : 0` — the `: 0` branch fires when featuredImage is falsy.
-            vi.mocked(getActorFromContext).mockReturnValue(mockActor);
-            mockLimitsMap.set(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 10);
-
-            const mockGetById = vi.fn().mockResolvedValue({
-                success: true,
-                data: {
-                    id: 'accommodation-id-123',
-                    media: {
-                        // no featuredImage key — falsy → 0 count
-                        gallery: Array.from({ length: 3 }, (_v, i) => ({
-                            url: `https://example.com/${i}.jpg`
-                        }))
-                    }
-                }
+            // findByAccommodation must have been called with state:'visible'
+            expect(mockFindByAccommodation).toHaveBeenCalledWith({
+                accommodationId: 'accommodation-id-123',
+                state: 'visible'
             });
-            vi.mocked(AccommodationService).mockImplementation(
-                () =>
-                    ({
-                        getById: mockGetById
-                    }) as unknown as AccommodationService
-            );
-
-            const middleware = enforcePhotoLimit();
-            await middleware(mockContext, mockNext);
-
-            // 3 gallery + 0 featured = 3 total — under limit 10
-            expect(mockNext).toHaveBeenCalled();
         });
 
         it('should use ?? fallback message when upgradeMessage is undefined (line 291)', async () => {
-            // Coverage target: limit-enforcement.ts line 291.
-            // `limitCheck.upgradeMessage ?? 'Photo limit reached'` — the right-hand fallback
-            // fires when checkLimit returns allowed=false with upgradeMessage=undefined.
-            // This is a defensive branch; checkLimit normally always provides upgradeMessage
-            // when !allowed, but the ?? guard is there for edge cases.
+            // Coverage target: limit-enforcement.ts — `limitCheck.upgradeMessage ?? 'Photo limit reached'`.
+            // The right-hand fallback fires when checkLimit returns allowed=false with
+            // upgradeMessage=undefined. This is a defensive branch.
+            //
+            // SPEC-204 T-014: findByAccommodation must resolve first so the middleware
+            // reaches the checkLimit call. The mockReturnValueOnce on checkLimit is
+            // consumed immediately after the DB query succeeds.
             vi.mocked(getActorFromContext).mockReturnValue(mockActor);
             mockLimitsMap.set(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 1);
 
-            // 1 featuredImage + 0 gallery = 1 → at limit
-            const mockGetById = vi.fn().mockResolvedValue({
-                success: true,
-                data: {
-                    id: 'accommodation-id-123',
-                    media: {
-                        featuredImage: { url: 'https://example.com/featured.jpg' },
-                        gallery: []
-                    }
-                }
-            });
-            vi.mocked(AccommodationService).mockImplementation(
-                () =>
-                    ({
-                        getById: mockGetById
-                    }) as unknown as AccommodationService
-            );
+            // Table returns 1 visible row — middleware will call checkLimit next.
+            mockFindByAccommodation.mockResolvedValue({ total: 1 });
 
             // Inject a synthetic checkLimit result that omits upgradeMessage so the
             // ?? right-hand fallback string 'Photo limit reached' is used.
@@ -623,21 +544,17 @@ describe('Limit Enforcement Middleware', () => {
             expect((thrown as ServiceError).message).toBe('Photo limit reached');
         });
 
-        it('should call next() when an unexpected non-ServiceError is thrown inside the try block (photo limit catch)', async () => {
-            // Coverage target: limit-enforcement.ts lines 303-314 (enforcePhotoLimit catch block).
+        it('should call next() when findByAccommodation throws unexpectedly (photo limit catch)', async () => {
+            // Coverage target: enforcePhotoLimit catch block.
             // The catch re-throws ServiceError/HTTPException; for any other error it logs
-            // and calls next() to avoid blocking the user on monitoring failures.
+            // and calls next() to avoid blocking the user on a count failure.
+            // SPEC-204 T-014: the unexpected throw now comes from findByAccommodation,
+            // not from AccommodationService.getById.
             vi.mocked(getActorFromContext).mockReturnValue(mockActor);
             mockLimitsMap.set(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 10);
 
-            // Make getById throw a raw Error (not ServiceError, not HTTPException)
-            const mockGetById = vi.fn().mockRejectedValue(new RangeError('Unexpected proxy error'));
-            vi.mocked(AccommodationService).mockImplementation(
-                () =>
-                    ({
-                        getById: mockGetById
-                    }) as unknown as AccommodationService
-            );
+            // Make findByAccommodation throw a raw Error (not ServiceError, not HTTPException)
+            mockFindByAccommodation.mockRejectedValue(new RangeError('Unexpected proxy error'));
 
             const middleware = enforcePhotoLimit();
             await middleware(mockContext, mockNext);
@@ -646,24 +563,17 @@ describe('Limit Enforcement Middleware', () => {
             expect(mockNext).toHaveBeenCalled();
         });
 
-        it('should call next() and log with String() when a non-Error is thrown in photo catch (line 311)', async () => {
-            // Coverage target: limit-enforcement.ts line 311.
-            // `error instanceof Error ? error.message : String(error)` — the String(error)
-            // branch fires when a non-Error value is thrown.
+        it('should call next() and log with String() when a non-Error is thrown by findByAccommodation', async () => {
+            // Coverage target: `error instanceof Error ? error.message : String(error)`
+            // in the photo limit catch block. The String(error) branch fires when a
+            // non-Error value is thrown. SPEC-204: the throw site is findByAccommodation.
             vi.mocked(getActorFromContext).mockReturnValue(mockActor);
             mockLimitsMap.set(LimitKey.MAX_PHOTOS_PER_ACCOMMODATION, 10);
 
-            // Make getById throw a plain object (NOT an Error instance)
-            const mockGetById = vi.fn().mockImplementation(() => {
-                // eslint-disable-next-line @typescript-eslint/no-throw-literal
-                throw { code: 'PROXY_ERROR', detail: 'non-error-throw' };
+            // Throw a plain number (NOT an Error instance) — triggers String(error) path.
+            mockFindByAccommodation.mockImplementation(() => {
+                throw 42;
             });
-            vi.mocked(AccommodationService).mockImplementation(
-                () =>
-                    ({
-                        getById: mockGetById
-                    }) as unknown as AccommodationService
-            );
 
             const middleware = enforcePhotoLimit();
             await middleware(mockContext, mockNext);

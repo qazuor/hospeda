@@ -1290,5 +1290,33 @@
             "onDragEnd": "La pregunta quedó en la posición {{position}}.",
             "onDragCancel": "Reordenamiento cancelado. La pregunta volvió a la posición {{position}}."
         }
+    },
+    "gallery": {
+        "title": "Galería de fotos",
+        "portada": {
+            "title": "Portada",
+            "description": "La imagen principal que se muestra al inicio",
+            "empty": "Sin portada. Subí una imagen para establecerla.",
+            "actions": {
+                "upload": "Subir portada",
+                "replace": "Reemplazar portada",
+                "remove": "Quitar portada"
+            }
+        },
+        "grid": {
+            "title": "Galería",
+            "empty": "No hay fotos en la galería. Subí la primera.",
+            "cap": "Límite alcanzado ({{count}} fotos). Eliminá una para agregar otra.",
+            "actions": {
+                "add": "Agregar foto"
+            }
+        },
+        "errors": {
+            "loadFailed": "No se pudo cargar la galería. Intentá de nuevo.",
+            "addFailed": "No se pudo agregar la foto. Intentá de nuevo.",
+            "removeFailed": "No se pudo eliminar la foto. Intentá de nuevo.",
+            "setFeaturedFailed": "No se pudo establecer la portada. Intentá de nuevo.",
+            "uploadFailed": "No se pudo subir la imagen. Intentá de nuevo."
+        }
     }
 }

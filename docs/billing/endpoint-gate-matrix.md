@@ -52,6 +52,11 @@
 | `POST /api/v1/protected/accommodations/{id}/faqs` | `accommodation/protected/addFaq.ts` | gate | `edit_accommodation_info` | wired | requireEntitlement(EDIT_ACCOMMODATION_INFO) middleware wired (SPEC-145 T-004) |
 | `PUT /api/v1/protected/accommodations/{id}/faqs/{faqId}` | `accommodation/protected/updateFaq.ts` | gate | `edit_accommodation_info` | wired | requireEntitlement(EDIT_ACCOMMODATION_INFO) middleware wired (SPEC-145 T-004) |
 | `DELETE /api/v1/protected/accommodations/{id}/faqs/{faqId}` | `accommodation/protected/removeFaq.ts` | none | - | n/a | Deletion ungated; removing own content is always allowed |
+| `GET /api/v1/protected/accommodations/{id}/media` | `accommodation/protected/getMedia.ts` | none | - | n/a | Read own gallery; auth + ownership via service _canUpdate sufficient |
+| `POST /api/v1/protected/accommodations/{id}/media` | `accommodation/protected/addMedia.ts` | gate+limit | `edit_accommodation_info`, `max_photos_per_accommodation` | wired | requireEntitlement(EDIT_ACCOMMODATION_INFO) + plan cap enforced inline (SPEC-204) |
+| `DELETE /api/v1/protected/accommodations/{id}/media/{mediaId}` | `accommodation/protected/removeMedia.ts` | none | - | n/a | Deletion ungated; removing own photo always allowed |
+| `PATCH /api/v1/protected/accommodations/{id}/media/reorder` | `accommodation/protected/reorderMedia.ts` | gate | `edit_accommodation_info` | wired | requireEntitlement(EDIT_ACCOMMODATION_INFO) — gallery mutation |
+| `PUT /api/v1/protected/accommodations/{id}/media/{mediaId}/featured` | `accommodation/protected/setFeaturedMedia.ts` | gate | `edit_accommodation_info` | wired | requireEntitlement(EDIT_ACCOMMODATION_INFO) — gallery mutation |
 | `GET /api/v1/protected/accommodations/my/favorites-breakdown` | `accommodation/protected/hostFavoritesBreakdown.ts` | gate | `view_advanced_stats` | wired | requireEntitlement(VIEW_ADVANCED_STATS) middleware wired (SPEC-145 T-006) |
 | `GET /api/v1/protected/accommodations/my/market-comparison` | `accommodation/protected/hostMarketComparison.ts` | gate | `view_advanced_stats` | wired | requireEntitlement(VIEW_ADVANCED_STATS) middleware wired (SPEC-145 T-006) |
 | **EXTERNAL REPUTATION — PROTECTED (SPEC-237)** | | | | | |
@@ -297,6 +302,13 @@
 | `PUT /api/v1/admin/accommodations/{id}/faqs/{faqId}` | `accommodation/admin/updateFaq.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
 | `DELETE /api/v1/admin/accommodations/{id}/faqs/{faqId}` | `accommodation/admin/removeFaq.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
 | `POST /api/v1/admin/accommodations/{id}/faqs/reorder` | `accommodation/admin/reorderFaqs.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
+| `POST /api/v1/admin/accommodations/{id}/media` | `accommodation/admin/addMedia.ts` | none | - | n/a | Admin write; PermissionEnum-gated; plan photo cap enforced in handler for owner-actors (bypassed for admins with ACCOMMODATION_UPDATE_ANY) |
+| `GET /api/v1/admin/accommodations/{id}/media` | `accommodation/admin/getMedia.ts` | none | - | n/a | Admin read; PermissionEnum-gated (SPEC-204 T-017) |
+| `PATCH /api/v1/admin/accommodations/{id}/media/reorder` | `accommodation/admin/reorderMedia.ts` | none | - | n/a | Admin write; PermissionEnum-gated; orderedIds must match visible rows exactly (SPEC-204 T-019) |
+| `DELETE /api/v1/admin/accommodations/{id}/media/{mediaId}` | `accommodation/admin/removeMedia.ts` | none | - | n/a | Admin write; PermissionEnum-gated; soft-deletes row + resequences sortOrder (SPEC-204 T-018) |
+| `PUT /api/v1/admin/accommodations/{id}/media/{mediaId}/featured` | `accommodation/admin/setFeaturedMedia.ts` | none | - | n/a | Admin write; PermissionEnum-gated; clear-then-set in TX; archived photos rejected before DB (SPEC-204 T-020) |
+| `POST /api/v1/admin/accommodations/{id}/media/{mediaId}/archive` | `accommodation/admin/archiveMedia.ts` | none | - | n/a | Admin write; PermissionEnum-gated; featured photos rejected before DB; flips state=archived (SPEC-204 T-021a) |
+| `POST /api/v1/admin/accommodations/{id}/media/{mediaId}/restore` | `accommodation/admin/restoreMedia.ts` | none | - | n/a | Admin write; PermissionEnum-gated; appends at max(visible sortOrder)+1; plan cap not enforced on restore (SPEC-204 T-021b) |
 | **EXTERNAL REPUTATION — ADMIN (SPEC-237)** | | | | | |
 | `POST /api/v1/admin/accommodations/{id}/external-reputation/disable` | `accommodation-external-reputation/admin/disable-reputation.ts` | none | - | n/a | Admin soft-takedown (showLink=false + showReviews=false on all listings); gated by adminAuthMiddleware([ACCOMMODATION_UPDATE_ANY]); staff bypass entitlements so no billing gate |
 | **ACCOMMODATION REVIEWS — ADMIN** | | | | | |

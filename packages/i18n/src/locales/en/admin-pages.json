@@ -1290,5 +1290,33 @@
             "onDragEnd": "Question dropped at position {{position}}.",
             "onDragCancel": "Reordering cancelled. Question returned to position {{position}}."
         }
+    },
+    "gallery": {
+        "title": "Photo gallery",
+        "portada": {
+            "title": "Cover photo",
+            "description": "The main image shown at the top",
+            "empty": "No cover photo. Upload one to set it.",
+            "actions": {
+                "upload": "Upload cover",
+                "replace": "Replace cover",
+                "remove": "Remove cover"
+            }
+        },
+        "grid": {
+            "title": "Gallery",
+            "empty": "No photos in the gallery yet. Upload the first one.",
+            "cap": "Limit reached ({{count}} photos). Delete one to add another.",
+            "actions": {
+                "add": "Add photo"
+            }
+        },
+        "errors": {
+            "loadFailed": "Could not load the gallery. Please try again.",
+            "addFailed": "Could not add the photo. Please try again.",
+            "removeFailed": "Could not remove the photo. Please try again.",
+            "setFeaturedFailed": "Could not set the cover photo. Please try again.",
+            "uploadFailed": "Could not upload the image. Please try again."
+        }
     }
 }

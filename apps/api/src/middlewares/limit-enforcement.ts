@@ -19,6 +19,7 @@
  */
 
 import { LimitKey } from '@repo/billing';
+import { accommodationMediaModel } from '@repo/db';
 import { LifecycleStatusEnum, ServiceErrorCode } from '@repo/schemas';
 import {
     AccommodationService,
@@ -275,32 +276,18 @@ export function enforcePhotoLimit(): AppMiddleware {
                 return;
             }
 
-            // Get current photo count for this accommodation
-            const accommodationService = new AccommodationService({ logger: apiLogger });
-            const accommodationResult = await accommodationService.getById(actor, accommodationId);
-
-            if (accommodationResult.error) {
-                apiLogger.error(
-                    `Failed to get accommodation for photo limit check: ${accommodationResult.error.message}`
-                );
-                // Continue - don't block on fetch failure
-                await next();
-                return;
-            }
-
-            // Count photos from the accommodation's media JSONB field.
-            // Media structure: { featuredImage?: Image, gallery?: Image[] }
-            const accommodation = accommodationResult.data;
-            let currentPhotoCount = 0;
-            if (accommodation?.media && typeof accommodation.media === 'object') {
-                const media = accommodation.media as {
-                    featuredImage?: unknown;
-                    gallery?: unknown[];
-                };
-                const galleryCount = Array.isArray(media.gallery) ? media.gallery.length : 0;
-                const featuredCount = media.featuredImage ? 1 : 0;
-                currentPhotoCount = galleryCount + featuredCount;
-            }
+            // SPEC-204 T-014: count visible accommodation_media rows directly.
+            // The relational table is the read source of truth (T-013); a single
+            // count query is far cheaper than getById (which loads relations and
+            // composes the media object) on every upload. `state: 'visible'` covers
+            // the featured image + active gallery (both are visible rows), matching
+            // the prior `gallery.length + (featuredImage ? 1 : 0)` semantics.
+            // A query failure is swallowed by the method-level catch (logs + next()),
+            // preserving the "don't block uploads on a count failure" behavior.
+            const { total: currentPhotoCount } = await accommodationMediaModel.findByAccommodation({
+                accommodationId,
+                state: 'visible'
+            });
 
             // Check limit
             const limitCheck = checkLimit({

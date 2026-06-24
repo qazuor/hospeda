@@ -14,8 +14,16 @@
  * `UserBookmarkCollectionService.getCollectionById`.
  */
 
-import { events, type DrizzleClient, accommodations, destinations, getDb, posts } from '@repo/db';
-import type { EntityTypeEnum, Media, UserBookmark } from '@repo/schemas';
+import {
+    events,
+    type DrizzleClient,
+    accommodationMediaModel,
+    accommodations,
+    destinations,
+    getDb,
+    posts
+} from '@repo/db';
+import type { EntityTypeEnum, UserBookmark } from '@repo/schemas';
 import { inArray } from 'drizzle-orm';
 
 /**
@@ -48,10 +56,6 @@ const ENRICHABLE_TYPES: readonly EnrichableEntityType[] = [
     'POST'
 ] as const;
 
-function extractImageUrl(media: Media | null | undefined): string | null {
-    return media?.featuredImage?.url ?? null;
-}
-
 /**
  * Bookmark shape returned by enrichment. Extends the persisted UserBookmark
  * with the three nullable entity fields. Consumers that don't need enrichment
@@ -64,8 +68,11 @@ export type UserBookmarkWithEntityInfo = UserBookmark & BookmarkEntityInfo;
  *
  * Strategy:
  * 1. Group bookmark entity IDs by `entityType`.
- * 2. Run one batched `SELECT id, name|title, slug, media WHERE id IN (...)`
- *    per known entity type (max 4 queries regardless of bookmark count).
+ * 2. Run one batched query per known entity type (max 4 queries regardless of bookmark count):
+ *    - ACCOMMODATION: `SELECT id, name, slug WHERE id IN (...)` + one additional
+ *      `findByAccommodations` call to the relational `accommodation_media` table
+ *      for the featured image URL (SPEC-204 — no longer read from the JSONB blob).
+ *    - DESTINATION / EVENT / POST: `SELECT id, name|title, slug, media WHERE id IN (...)`.
  * 3. Merge the lookup into each bookmark; missing/unknown types leave the
  *    three info fields as `null`.
  *
@@ -100,79 +107,100 @@ export async function enrichBookmarksWithEntityInfo(
     const postIds = idsByType.get('POST') ?? [];
 
     // Run all per-type queries in parallel — they are independent.
-    const [accommodationRows, destinationRows, eventRows, postRows] = await Promise.all([
-        accommodationIds.length > 0
-            ? db
-                  .select({
-                      id: accommodations.id,
-                      name: accommodations.name,
-                      slug: accommodations.slug,
-                      media: accommodations.media
+    // SPEC-204: accommodation rows no longer select `media` (JSONB blob).
+    // Featured image URLs are loaded from the relational accommodation_media
+    // table via a single batched findByAccommodations call after these queries.
+    const [accommodationRows, accommodationMediaMap, destinationRows, eventRows, postRows] =
+        await Promise.all([
+            accommodationIds.length > 0
+                ? db
+                      .select({
+                          id: accommodations.id,
+                          name: accommodations.name,
+                          slug: accommodations.slug
+                      })
+                      .from(accommodations)
+                      .where(inArray(accommodations.id, accommodationIds))
+                : Promise.resolve([]),
+            // Batch-load featured visible media rows for all accommodation ids.
+            // One extra query max, no N+1. Accommodations with no featured photo
+            // are simply absent from the map.
+            accommodationIds.length > 0
+                ? accommodationMediaModel.findByAccommodations({
+                      accommodationIds,
+                      state: 'visible',
+                      tx
                   })
-                  .from(accommodations)
-                  .where(inArray(accommodations.id, accommodationIds))
-            : Promise.resolve([]),
-        destinationIds.length > 0
-            ? db
-                  .select({
-                      id: destinations.id,
-                      name: destinations.name,
-                      slug: destinations.slug,
-                      media: destinations.media
-                  })
-                  .from(destinations)
-                  .where(inArray(destinations.id, destinationIds))
-            : Promise.resolve([]),
-        eventIds.length > 0
-            ? db
-                  .select({
-                      id: events.id,
-                      name: events.name,
-                      slug: events.slug,
-                      media: events.media
-                  })
-                  .from(events)
-                  .where(inArray(events.id, eventIds))
-            : Promise.resolve([]),
-        postIds.length > 0
-            ? db
-                  .select({
-                      id: posts.id,
-                      title: posts.title,
-                      slug: posts.slug,
-                      media: posts.media
-                  })
-                  .from(posts)
-                  .where(inArray(posts.id, postIds))
-            : Promise.resolve([])
-    ]);
+                : Promise.resolve(new Map()),
+            destinationIds.length > 0
+                ? db
+                      .select({
+                          id: destinations.id,
+                          name: destinations.name,
+                          slug: destinations.slug,
+                          media: destinations.media
+                      })
+                      .from(destinations)
+                      .where(inArray(destinations.id, destinationIds))
+                : Promise.resolve([]),
+            eventIds.length > 0
+                ? db
+                      .select({
+                          id: events.id,
+                          name: events.name,
+                          slug: events.slug,
+                          media: events.media
+                      })
+                      .from(events)
+                      .where(inArray(events.id, eventIds))
+                : Promise.resolve([]),
+            postIds.length > 0
+                ? db
+                      .select({
+                          id: posts.id,
+                          title: posts.title,
+                          slug: posts.slug,
+                          media: posts.media
+                      })
+                      .from(posts)
+                      .where(inArray(posts.id, postIds))
+                : Promise.resolve([])
+        ]);
 
     for (const row of accommodationRows) {
+        // Resolve featured image from the relational media map (SPEC-204).
+        const mediaRows = (
+            accommodationMediaMap as Map<string, { isFeatured: boolean; url: string }[]>
+        ).get(row.id);
+        const featuredRow = mediaRows?.find((m) => m.isFeatured);
         lookup.set(row.id, {
             entityName: row.name,
             entitySlug: row.slug,
-            entityImage: extractImageUrl(row.media)
+            entityImage: featuredRow?.url ?? null
         });
     }
     for (const row of destinationRows) {
+        const media = row.media as { featuredImage?: { url?: string } } | null | undefined;
         lookup.set(row.id, {
             entityName: row.name,
             entitySlug: row.slug,
-            entityImage: extractImageUrl(row.media)
+            entityImage: media?.featuredImage?.url ?? null
         });
     }
     for (const row of eventRows) {
+        const media = row.media as { featuredImage?: { url?: string } } | null | undefined;
         lookup.set(row.id, {
             entityName: row.name,
             entitySlug: row.slug,
-            entityImage: extractImageUrl(row.media)
+            entityImage: media?.featuredImage?.url ?? null
         });
     }
     for (const row of postRows) {
+        const media = row.media as { featuredImage?: { url?: string } } | null | undefined;
         lookup.set(row.id, {
             entityName: row.title,
             entitySlug: row.slug,
-            entityImage: extractImageUrl(row.media)
+            entityImage: media?.featuredImage?.url ?? null
         });
     }
 

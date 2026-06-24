@@ -22,6 +22,7 @@
  *     before being returned — malformed provider output fails with 500.
  */
 import { LimitKey } from '@repo/billing';
+import { accommodationMediaModel } from '@repo/db';
 import { generateGalleryId } from '@repo/media';
 import { resolveEnvironment, validateMediaFile } from '@repo/media/server';
 import {
@@ -394,16 +395,22 @@ export const adminUploadMediaRoute = createAdminRoute({
         if (entityType === 'accommodation' && role === 'gallery') {
             const accommodation = entityResult.data as {
                 ownerId?: string | null;
-                media?: { featuredImage?: unknown; gallery?: unknown[] };
             };
 
             // Only enforce when the actor is the owner. Admin override is by
             // design — see semantic note above.
             if (accommodation.ownerId && accommodation.ownerId === actor.id) {
-                const media = accommodation.media;
-                const galleryCount = Array.isArray(media?.gallery) ? media.gallery.length : 0;
-                const featuredCount = media?.featuredImage ? 1 : 0;
-                const currentPhotoCount = galleryCount + featuredCount;
+                // SPEC-204 T-014: count visible accommodation_media rows from
+                // the relational table — the same pattern as limit-enforcement.ts
+                // `enforcePhotoLimit()`. `state: 'visible'` covers both the
+                // featured image row (is_featured=true, state='visible') and every
+                // active gallery row, matching the prior
+                // `gallery.length + (featuredImage ? 1 : 0)` semantics.
+                const { total: currentPhotoCount } =
+                    await accommodationMediaModel.findByAccommodation({
+                        accommodationId: entityId,
+                        state: 'visible'
+                    });
 
                 const planLimitCheck = checkLimit({
                     context: ctx,
@@ -457,8 +464,21 @@ export const adminUploadMediaRoute = createAdminRoute({
         // upper bound applied to non-accommodation entities and to admin
         // uploads where the plan limit is bypassed.
         if (role === 'gallery') {
-            const entityMedia = (entityResult.data as { media?: { gallery?: unknown[] } }).media;
-            const currentGalleryCount = entityMedia?.gallery?.length ?? 0;
+            // SPEC-204: for accommodations, count from the relational table.
+            // For other entity types (destination, event, post), the JSONB blob
+            // is still the source of truth.
+            let currentGalleryCount: number;
+            if (entityType === 'accommodation') {
+                const { total } = await accommodationMediaModel.findByAccommodation({
+                    accommodationId: entityId,
+                    state: 'visible'
+                });
+                currentGalleryCount = total;
+            } else {
+                const entityMedia = (entityResult.data as { media?: { gallery?: unknown[] } })
+                    .media;
+                currentGalleryCount = entityMedia?.gallery?.length ?? 0;
+            }
             const galleryLimit = getGalleryCap(entityType);
             if (currentGalleryCount >= galleryLimit) {
                 return createErrorResponse(

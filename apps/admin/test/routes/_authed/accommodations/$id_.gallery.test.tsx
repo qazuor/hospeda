@@ -1,10 +1,14 @@
 /**
- * @file Accommodation Gallery Redirect Route Test
+ * @file Accommodation Gallery Route Test
  *
- * SPEC-078-GAPS GAP-073: The standalone accommodation gallery page has been
- * removed. The legacy `/accommodations/:id/gallery` URL must redirect to
- * `/accommodations/:id/edit#gallery-section` so any existing inbound link
- * lands on the merged edit page anchored at the gallery section.
+ * SPEC-204: the legacy redirect stub at `/accommodations/:id/gallery` (which
+ * forwarded to `/accommodations/:id/edit#gallery-section`) has been replaced by
+ * the real GalleryManager page — the relational `accommodation_media` table is
+ * now the source of truth for accommodation photos.
+ *
+ * This test verifies the route mounts a page component rather than performing a
+ * redirect. The page's rendering behavior is covered by the GalleryManager
+ * component tests.
  */
 
 import { describe, expect, it, vi } from 'vitest';
@@ -15,52 +19,20 @@ vi.mock('@tanstack/react-router', () => {
         createFileRoute:
             (_path: string) =>
             <T extends Record<string, unknown>>(options: T) =>
-                options,
-        redirect: (options: unknown) => {
-            const error = new Error('redirect') as Error & {
-                isRedirect: true;
-                options: unknown;
-            };
-            error.isRedirect = true;
-            error.options = options;
-            return error;
-        }
+                options
     };
 });
 
 describe('Route /_authed/accommodations/$id_/gallery', () => {
-    it('redirects to the edit page anchored at the gallery section', async () => {
+    it('mounts a page component instead of a redirect stub', () => {
         const route = mod.Route as unknown as {
-            beforeLoad: (ctx: { params: { id: string } }) => void;
-            component: () => null;
+            component?: unknown;
+            beforeLoad?: unknown;
         };
 
-        const params = { id: 'acc-123' };
-
-        let thrown: unknown;
-        try {
-            route.beforeLoad({ params });
-        } catch (error) {
-            thrown = error;
-        }
-
-        const redirectError = thrown as
-            | (Error & { isRedirect?: boolean; options?: Record<string, unknown> })
-            | undefined;
-
-        expect(redirectError).toBeDefined();
-        expect(redirectError?.isRedirect).toBe(true);
-        expect(redirectError?.options).toEqual({
-            to: '/accommodations/$id/edit',
-            params: { id: 'acc-123' },
-            hash: 'gallery-section',
-            replace: true
-        });
-    });
-
-    it('exposes a no-op fallback component', async () => {
-        const route = mod.Route as unknown as { component: () => null };
-
-        expect(route.component()).toBeNull();
+        // The real page route exposes a render component...
+        expect(typeof route.component).toBe('function');
+        // ...and, unlike the old redirect stub, has no beforeLoad redirect.
+        expect(route.beforeLoad).toBeUndefined();
     });
 });

@@ -11,6 +11,7 @@ import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AccommodationService } from '../../../src/services/accommodation/accommodation.service';
 import type { Actor, ServiceConfig } from '../../../src/types';
+import { makeMediaModelStub } from '../../utils/modelMockFactory';
 
 vi.mock('../../../src/services/destination/destination.service', () => ({
     DestinationService: vi.fn().mockImplementation(() => ({}))
@@ -58,7 +59,19 @@ describe('AccommodationService.adminGetById (SPEC-169)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         model = new MockAccommodationModel();
-        service = new AccommodationService({} as ServiceConfig, model as never);
+        service = new AccommodationService(
+            {} as ServiceConfig,
+            model as never,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            // biome-ignore lint/suspicious/noExplicitAny: test stub
+            makeMediaModelStub() as any
+        );
     });
 
     it('VIEW_ALL actor gets any accommodation, incl. another owner (AC-4)', async () => {
@@ -107,7 +120,19 @@ describe('AccommodationService.adminGetFaqs (SPEC-169)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         model = new MockAccommodationModel();
-        service = new AccommodationService({} as ServiceConfig, model as never);
+        service = new AccommodationService(
+            {} as ServiceConfig,
+            model as never,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            // biome-ignore lint/suspicious/noExplicitAny: test stub
+            makeMediaModelStub() as any
+        );
     });
 
     it('VIEW_OWN actor gets FAQs of their OWN accommodation (AC-8)', async () => {

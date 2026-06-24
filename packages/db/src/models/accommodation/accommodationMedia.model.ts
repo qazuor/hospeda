@@ -1,5 +1,5 @@
 import type { AccommodationMedia } from '@repo/schemas';
-import { and, asc, count, eq, isNull } from 'drizzle-orm';
+import { and, asc, count, eq, inArray, isNull } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { accommodationMedia } from '../../schemas/accommodation/accommodation_media.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
@@ -34,6 +34,20 @@ interface FindByAccommodationInput {
 interface FindFeaturedInput {
     /** The accommodation UUID whose featured image is requested. */
     accommodationId: string;
+    /** Optional transaction client. */
+    tx?: DrizzleClient;
+}
+
+/**
+ * Input type for `findByAccommodations` (batch read).
+ */
+interface FindByAccommodationsInput {
+    /** The accommodation UUIDs to load media for (one query, grouped by id). */
+    accommodationIds: readonly string[];
+    /**
+     * Optional state filter ('visible' | 'archived'). Omit to return all states.
+     */
+    state?: 'visible' | 'archived';
     /** Optional transaction client. */
     tx?: DrizzleClient;
 }
@@ -181,6 +195,82 @@ export class AccommodationMediaModel extends BaseModelImpl<AccommodationMedia> {
                 logError(this.entityName, 'findFeatured', logContext, err);
             } catch {}
             throw new DbError(this.entityName, 'findFeatured', logContext, err.message);
+        }
+    }
+
+    /**
+     * Batch-loads non-deleted media rows for multiple accommodations in a single
+     * query, grouped by `accommodationId`. This is the canonical read used by
+     * list/search composition (SPEC-204 T-013) to avoid the N+1 that would result
+     * from calling {@link findByAccommodation} once per list item.
+     *
+     * Rows are returned ordered by `sort_order ASC` within each accommodation's
+     * array (the SQL `ORDER BY` is global, but `sort_order` is the only ordering
+     * key and grouping preserves it). Accommodations with no media are simply
+     * absent from the returned map — callers should default to `[]`.
+     *
+     * Unlike {@link findByAccommodation} this finder is intentionally NOT paginated:
+     * it loads the full media set for the given ids so composition is complete. A
+     * single list page of accommodations × their galleries stays well within a
+     * reasonable row budget.
+     *
+     * @param input.accommodationIds - UUIDs to load (empty array → empty map, no query).
+     * @param input.state            - Optional state filter ('visible' | 'archived').
+     * @param input.tx               - Optional transaction client.
+     * @returns Map of accommodationId → ordered media rows.
+     */
+    async findByAccommodations(
+        input: FindByAccommodationsInput
+    ): Promise<Map<string, AccommodationMedia[]>> {
+        const { accommodationIds, state, tx } = input;
+        const grouped = new Map<string, AccommodationMedia[]>();
+        if (accommodationIds.length === 0) return grouped;
+
+        const db = this.getClient(tx);
+        const logContext = { count: accommodationIds.length, state };
+
+        try {
+            const conditions = [
+                inArray(accommodationMedia.accommodationId, [...accommodationIds]),
+                isNull(accommodationMedia.deletedAt)
+            ];
+            if (state !== undefined) {
+                conditions.push(eq(accommodationMedia.state, state));
+            }
+
+            // Secondary sort by `id` guarantees a deterministic order even when two
+            // rows of the same accommodation share a `sort_order` value (should not
+            // happen by design, but keeps the composed gallery order stable regardless).
+            const rows = (await db
+                .select()
+                .from(accommodationMedia)
+                .where(and(...conditions))
+                .orderBy(
+                    asc(accommodationMedia.sortOrder),
+                    asc(accommodationMedia.id)
+                )) as AccommodationMedia[];
+
+            for (const row of rows) {
+                const list = grouped.get(row.accommodationId);
+                if (list) {
+                    list.push(row);
+                } else {
+                    grouped.set(row.accommodationId, [row]);
+                }
+            }
+            try {
+                logQuery(this.entityName, 'findByAccommodations', logContext, {
+                    accommodations: grouped.size,
+                    rows: rows.length
+                });
+            } catch {}
+            return grouped;
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            try {
+                logError(this.entityName, 'findByAccommodations', logContext, err);
+            } catch {}
+            throw new DbError(this.entityName, 'findByAccommodations', logContext, err.message);
         }
     }
 }

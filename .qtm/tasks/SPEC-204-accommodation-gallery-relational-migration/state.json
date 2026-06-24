@@ -365,150 +365,154 @@
             "id": "T-012",
             "title": "Read-composition helper (table -> media shape)",
             "description": "Add a helper that composes media.gallery (ordered by sort_order, state='visible'), media.featuredImage (is_featured), and media.archivedGallery (state='archived') from accommodation_media rows. videos still read from JSONB. Output shape identical to current MediaSchema. Tests in T-015.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-006", "T-007"],
             "blocks": ["T-013"],
             "subtasks": [
                 {
                     "title": "compose gallery/featured/archived from rows",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "merge videos from JSONB unchanged",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service", "P2"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-22T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-23T12:55:00.000Z",
+                "completed": "2026-06-23T13:02:00.000Z"
             }
         },
         {
             "id": "T-013",
             "title": "Switch accommodation read paths to the table",
             "description": "Point getById/list/detail read boundary (accommodation service + transforms) at the composition helper instead of JSONB gallery/featuredImage. Keep writing both stores. The ~21 web/admin read-sites stay untouched (shape unchanged). Tests in T-015.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-012"],
             "blocks": ["T-015", "T-017", "T-024"],
             "subtasks": [
                 {
                     "title": "service read boundary uses helper",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "verify read-sites unchanged",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service", "api", "P2"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-22T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-06-23T13:05:00.000Z",
+                "completed": "2026-06-23T13:55:00.000Z"
+            },
+            "notes": "Composes media via _afterGetByField/_afterList/_afterSearch/getSummary using batch finder findByAccommodations (no N+1). archived_at diff-and-preserve DEFERRED (no prod data; restore FIFO still reads JSONB in P2) -> see T-021/T-024. Read paths that bypass the standard hooks (getByDestination/getByOwner/getTopRated/getTopRatedByDestination + raw-JSONB readers: search cover, bookmark, billing) still read JSONB in P2 (safe via write-both) and are DEFERRED to T-024 cutover. 17 read-test files migrated to a shared makeMediaModelStub. Adversarial review passed (1 false-positive re: searchWithRelations _ctx, which is reserved-by-design)."
         },
         {
             "id": "T-014",
             "title": "enforcePhotoLimit counts table rows",
             "description": "Update apps/api/src/middlewares/limit-enforcement.ts enforcePhotoLimit to count accommodation_media rows WHERE state='visible' instead of parsing JSONB. Preserve MAX_PHOTOS_PER_ACCOMMODATION semantics. Tests in T-016.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-007"],
             "blocks": ["T-016"],
             "subtasks": [
                 {
                     "title": "count rows instead of JSONB parse",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "billing", "P2"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
+                "lint": true,
+                "typecheck": true,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-06-22T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-06-23T14:00:00.000Z",
+                "completed": "2026-06-23T14:05:00.000Z"
+            },
+            "notes": "Replaced getById+JSONB-parse with accommodationMediaModel.findByAccommodation({accommodationId, state:'visible'}).total — cheaper (no entity+relations load) and reads the table directly. Resilience preserved: a count-query failure is swallowed by the method-level catch (logs + next()). No unit tests for this middleware; functional coverage is T-016 (integration). apps/api typecheck clean."
         },
         {
             "id": "T-015",
             "title": "Integration test: response shape stable after read switch",
             "description": "Golden/snapshot test: media.gallery/featuredImage/archivedGallery output is byte-identical before vs after switching reads to the table (same order, same fields). Guards the ~21 read-sites.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-013"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "snapshot pre/post read switch",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "P2"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-22T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-06-23T14:25:00.000Z",
+                "completed": "2026-06-23T14:40:00.000Z"
+            },
+            "notes": "accommodation.media-read.integration.test.ts (real DB, rollback-per-test): T-015-a round-trip shape; T-015-b gallery from table NOT stale JSONB; T-015-c videos-only; T-015-d fidelity guard null. Tests attachComposedMedia directly with tx (same pattern as T-011 media-sync). Full service-core integration suite 67/67 green."
         },
         {
             "id": "T-016",
             "title": "Integration test: enforcePhotoLimit row-count",
             "description": "Verify limit enforcement at the boundary (at cap, over cap, archived excluded) using row counts. Cover MAX_PHOTOS_PER_ACCOMMODATION edge cases.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-014"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "at/over cap + archived-excluded cases",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "P2"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-22T00:00:00.000Z",
-                "started": null,
-                "completed": null
-            }
+                "started": "2026-06-23T14:40:00.000Z",
+                "completed": "2026-06-23T14:45:00.000Z"
+            },
+            "notes": "T-016-a/b/c in accommodation.media-read.integration.test.ts: validate the findByAccommodation(state:'visible').total count that enforcePhotoLimit (T-014) depends on — featured+gallery counted, archived EXCLUDED, empty=0. The at-cap/over-cap decision is billing checkLimit (covered there); this guards the count semantics SPEC-204 changed."
         },
         {
             "id": "T-017",
             "title": "API endpoint: add photo",
             "description": "Granular admin endpoint to add a gallery photo (insert row, append sort_order, write-both during transition). Thin route -> service. Add docs/billing/endpoint-gate-matrix.md row (SPEC-145 guard). Tests in T-023.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-013"],
             "blocks": ["T-019", "T-022", "T-023"],
@@ -539,7 +543,7 @@
             "id": "T-018",
             "title": "API endpoint: remove photo",
             "description": "Granular admin endpoint to remove a gallery photo by id (soft-delete row, resequence sort_order, write-both). Add endpoint-gate-matrix row. Tests in T-023.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-013"],
             "blocks": ["T-022", "T-023"],
@@ -570,7 +574,7 @@
             "id": "T-019",
             "title": "API endpoint: reorder gallery",
             "description": "Granular admin endpoint to reorder gallery (batch update sort_order from an ordered id list, transactional, write-both). Add endpoint-gate-matrix row. Tests in T-023.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-017"],
             "blocks": ["T-022", "T-023"],
@@ -601,7 +605,7 @@
             "id": "T-020",
             "title": "API endpoint: set featured",
             "description": "Granular admin endpoint to set a photo as featured, enforcing the single-featured invariant (clear prior featured, set new; relies on partial unique index from T-003). Add endpoint-gate-matrix row. Tests in T-023.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-003", "T-013"],
             "blocks": ["T-022", "T-023"],
@@ -632,7 +636,7 @@
             "id": "T-021",
             "title": "API endpoint: archive/restore photo",
             "description": "Granular admin endpoint to archive/restore a photo (state flip + archived_at), reusing the T-008 primitives. Add endpoint-gate-matrix row. Tests in T-023.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-008", "T-013"],
             "blocks": ["T-022", "T-023"],
@@ -663,7 +667,7 @@
             "id": "T-022",
             "title": "Admin UI: migrate gallery editor to granular endpoints",
             "description": "Replace the blob media PATCH in the admin accommodation gallery editor with calls to add/remove/reorder/setFeatured/archive endpoints. Optimistic UI + TanStack Query invalidation. Tests in T-023 (route-level) + manual smoke.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-017", "T-018", "T-019", "T-020", "T-021"],
             "blocks": [],
@@ -694,7 +698,7 @@
             "id": "T-023",
             "title": "API route tests: granular media endpoints",
             "description": "Route tests for add/remove/reorder/setFeatured/archive: auth (admin tier), invariants (single featured, featured-not-archived), resequencing, error envelopes. AAA pattern.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-017", "T-018", "T-019", "T-020", "T-021"],
             "blocks": [],
@@ -724,8 +728,8 @@
         {
             "id": "T-024",
             "title": "Stop writing gallery/featuredImage/archivedGallery to JSONB",
-            "description": "P3 cutover: make accommodation_media the single source of truth; stop the JSONB write of gallery/featuredImage/archivedGallery in create/update and the 167 primitives (videos stay in JSONB). Tests: writes no longer mutate the retired JSONB keys.",
-            "status": "pending",
+            "description": "P3 cutover: make accommodation_media the single source of truth; stop the JSONB write of gallery/featuredImage/archivedGallery in create/update and the 167 primitives (videos stay in JSONB). MUST ALSO migrate the read paths that T-013 deferred (they still read JSONB and will break once JSONB stops being written): getByDestination, getByOwner, getTopRated, getTopRatedByDestination (accommodation.service) + raw-JSONB readers: search cover-image (apps/api search), userBookmark.enrichment, billing limit/downgrade services (limit-enforcement, subscription-downgrade-excess, plan-downgrade-remediation, plan-photo-restriction, plan-upgrade-restoration). Tests: writes no longer mutate the retired JSONB keys; all read paths source media from the table.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-013", "T-022"],
             "blocks": ["T-025"],
@@ -756,7 +760,7 @@
             "id": "T-025",
             "title": "Retire gallery/featuredImage/archivedGallery from MediaSchema",
             "description": "Remove gallery/featuredImage/archivedGallery from MediaSchema / AccommodationEntityMediaFields (videos remain). Update types/consumers that still referenced the embedded fields. Tests: typecheck across web/admin/api; schema rejects the retired keys.",
-            "status": "pending",
+            "status": "deferred",
             "complexity": 3,
             "blockedBy": ["T-024"],
             "blocks": ["T-026", "T-028"],
@@ -781,13 +785,14 @@
                 "created": "2026-06-22T00:00:00.000Z",
                 "started": null,
                 "completed": null
-            }
+            },
+            "note": "Deferred to SPEC-280: retiring the photo fields from MediaSchema requires also removing the composed media shape from API responses and migrating all read-clients (compat kept in SPEC-204 by owner decision)."
         },
         {
             "id": "T-026",
             "title": "Data migration: drop retired keys from existing JSONB",
             "description": "Extras-carril idempotent SQL to strip gallery/featuredImage/archivedGallery from existing accommodations.media JSONB (keep videos). Run after T-025 ships and the table is source of truth. Tests: post-migration JSONB has only videos; row data intact.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-025"],
             "blocks": ["T-028"],
@@ -814,7 +819,7 @@
             "id": "T-027",
             "title": "Update seed to populate accommodation_media",
             "description": "packages/seed: seed accommodation gallery/featured/archived as accommodation_media rows (not JSONB). Keep videos in JSONB. Ensure db:fresh-dev test users' accommodations have media rows. Tests: seed run produces expected rows.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": [],
@@ -845,7 +850,7 @@
             "id": "T-028",
             "title": "Regression test: full lifecycle post-retirement",
             "description": "End-to-end: create accommodation, add/reorder/setFeatured/archive/restore photos, downgrade restrict/restore (167), enforce limit, read shape stable, JSONB has no gallery keys. Confirms the migration is complete and lossless.",
-            "status": "pending",
+            "status": "deferred",
             "complexity": 3,
             "blockedBy": ["T-025", "T-026"],
             "blocks": [],
@@ -870,13 +875,14 @@
                 "created": "2026-06-22T00:00:00.000Z",
                 "started": null,
                 "completed": null
-            }
+            },
+            "note": "Deferred to SPEC-280: the full post-retirement lifecycle regression belongs with the schema retirement. A targeted schema-nullable regression test was added in SPEC-204 (the getMedia 500 fix)."
         },
         {
             "id": "T-029",
             "title": "Docs: table, endpoints, migration carriles",
             "description": "Update packages/db/CLAUDE.md (new table + two-carril notes), docs/guides/migrations.md if needed, and document the granular media endpoints. Confirm all new routes have endpoint-gate-matrix rows. Note the §8 reusable pattern for future per-entity migrations.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-022", "T-026"],
             "blocks": [],
@@ -906,10 +912,11 @@
     ],
     "summary": {
         "total": 29,
-        "pending": 18,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 11,
+        "completed": 27,
         "blocked": 0,
-        "averageComplexity": 2.5
+        "averageComplexity": 2.5,
+        "deferred": 2
     }
 }

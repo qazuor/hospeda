@@ -124,12 +124,16 @@ export interface AccommodationHookState extends Record<string, unknown> {
      */
     pendingAiAssistedFields?: readonly string[];
     /**
-     * Media value extracted from create/update input (SPEC-204, T-007 write-both).
-     * Stored here by `_beforeCreate`/`_beforeUpdate` so `_afterCreate`/`_afterUpdate`
-     * can mirror it into the `accommodation_media` relational table inside the
-     * same transaction (shadow copy; P1 reads still use JSONB).
+     * Media value extracted from CREATE input (SPEC-204, T-007).
+     * Stored here by `_beforeCreate` so `_afterCreate` can mirror it into the
+     * `accommodation_media` relational table inside the same transaction.
      *
-     * Three-way contract:
+     * SPEC-204 DIRECT CUTOVER: this field is NO LONGER captured for UPDATE.
+     * The `accommodation_media` table is the sole source of truth for photos;
+     * gallery management on the update path goes through dedicated media
+     * endpoints, not the bulk update path.
+     *
+     * Three-way contract (create path only):
      * - `undefined` → field was absent in the input (no-op; leave existing rows untouched).
      * - `null`      → media was explicitly cleared; delete all rows.
      * - defined     → full replace (delete-all then re-insert).
