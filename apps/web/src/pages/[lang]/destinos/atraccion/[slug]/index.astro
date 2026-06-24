@@ -8,6 +8,7 @@
 import DetailLayout from '@/layouts/DetailLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
+import TouristAttractionJsonLd from '@/components/seo/TouristAttractionJsonLd.astro';
 import { attractionsApi } from '@/lib/api/endpoints';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -29,9 +30,17 @@ const featuredImage = getMediaUrl(rawFeaturedImage, { preset: 'hero' });
 const destObj = attraction.destination as Record<string, unknown> | undefined;
 const destName = String(destObj?.name || '');
 const destSlug = String(destObj?.slug || '');
+const canonicalPath = buildUrl({ locale, path: `destinos/atraccion/${slug}/` });
 ---
 
-<DetailLayout locale={locale} title={name} description={description} showBreadcrumbs={true} showSidebar={true}>
+<DetailLayout locale={locale} title={name} description={description} canonicalPath={canonicalPath} showBreadcrumbs={true} showSidebar={true}>
+	<TouristAttractionJsonLd
+		slot="head-extra"
+		name={name}
+		description={String(description || '')}
+		url={canonicalPath}
+		image={featuredImage}
+	/>
 	<Breadcrumbs slot="breadcrumbs" locale={locale} items={[
 		{ label: t('destinations.title', 'Destinos'), path: 'destinos' },
 		...(destSlug ? [{ label: destName, path: `destinos/${destSlug}` }] : []),

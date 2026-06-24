@@ -16,6 +16,7 @@
 import DetailLayout from '@/layouts/DetailLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import { ImageGallery } from '@/components/ImageGallery.client';
+import TouristAttractionJsonLd from '@/components/seo/TouristAttractionJsonLd.astro';
 import ExperienceHero from '@/components/experience/ExperienceHero.astro';
 import ExperienceInfo from '@/components/experience/ExperienceInfo.astro';
 import ExperienceContactCTA from '@/components/experience/ExperienceContactCTA.astro';
@@ -140,6 +141,13 @@ const seoDescription =
     ogSubtitle={experience.destinationName}
     ogRating={experience.averageRating > 0 ? experience.averageRating.toFixed(1) : undefined}
 >
+    <TouristAttractionJsonLd
+        slot="head-extra"
+        name={experience.name}
+        description={seoDescription}
+        url={canonicalPath}
+        image={experience.featuredImage.url}
+    />
     <Breadcrumbs
         slot="breadcrumbs"
         locale={locale}
