@@ -138,6 +138,12 @@
             },
             "sortOrder": {
                 "int": "El orden de visualización debe ser un número entero"
+            },
+            "reorder": {
+                "orderedIds": {
+                    "invalid": "La lista ordenada debe ser un arreglo de UUIDs válidos",
+                    "min": "La lista ordenada debe contener al menos {{min}} elemento"
+                }
             }
         }
     },

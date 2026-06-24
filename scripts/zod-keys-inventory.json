@@ -24,6 +24,8 @@
         "zodError.accommodation.location.street.max",
         "zodError.accommodation.location.street.min",
         "zodError.accommodation.location.street.required",
+        "zodError.accommodation.media.reorder.orderedIds.invalid",
+        "zodError.accommodation.media.reorder.orderedIds.min",
         "zodError.accommodation.media.sortOrder.int",
         "zodError.accommodation.media.state.invalid",
         "zodError.accommodation.name.max",
@@ -1568,9 +1570,9 @@
         "zodError.validation.sanitization.failed",
         "zodError.validation.zod.failed"
     ],
-    "total": 1567,
+    "total": 1569,
     "byNamespace": {
-        "accommodation": 52,
+        "accommodation": 54,
         "accommodationAmenity": 4,
         "accommodationExternalListing": 1,
         "accommodationExternalReputation": 2,
