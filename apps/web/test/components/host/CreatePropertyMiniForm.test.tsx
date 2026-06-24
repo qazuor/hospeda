@@ -1,7 +1,7 @@
 /**
  * @file CreatePropertyMiniForm.test.tsx
- * @description Tests for CreatePropertyMiniForm — focus on the `already_host`
- * post-submit redirect behaviour and import prefill (T-025).
+ * @description Tests for CreatePropertyMiniForm — focus on post-submit redirect
+ * behaviour and import prefill (T-025).
  *
  * SPEC-258 B-web: adds test coverage for imported extras (progressive
  * disclosure section), manual-path visibility guard, and submit payload
@@ -297,127 +297,9 @@ function getSubmitButton(): HTMLElement {
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('CreatePropertyMiniForm — already_host redirect', () => {
-    it('redirects to accountPropertiesUrl when API returns already_host (non-admin user)', async () => {
-        // Arrange
-        vi.stubGlobal(
-            'fetch',
-            vi.fn().mockResolvedValue(
-                buildFetchResponse({
-                    ok: true,
-                    body: {
-                        data: {
-                            status: 'already_host',
-                            accommodationId: null,
-                            accommodationSlug: null
-                        }
-                    }
-                })
-            )
-        );
-        const user = userEvent.setup();
-        render(
-            <CreatePropertyMiniForm
-                {...DEFAULT_PROPS}
-                canAccessAdminPanel={false}
-            />
-        );
-
-        await fillAllFields(user);
-
-        // Act
-        await act(async () => {
-            await user.click(getSubmitButton());
-        });
-
-        // Assert — must redirect to the own property list, NOT the global admin list.
-        await waitFor(() => {
-            expect(window.location.href).toBe('/es/mi-cuenta/propiedades/');
-        });
-    });
-
-    it('redirects to accountPropertiesUrl when API returns already_host (admin-capable user)', async () => {
-        // Arrange — even when canAccessAdminPanel is true, already_host must NOT
-        // redirect to the global admin accommodation list.
-        vi.stubGlobal(
-            'fetch',
-            vi.fn().mockResolvedValue(
-                buildFetchResponse({
-                    ok: true,
-                    body: {
-                        data: {
-                            status: 'already_host',
-                            accommodationId: null,
-                            accommodationSlug: null
-                        }
-                    }
-                })
-            )
-        );
-        const user = userEvent.setup();
-        render(
-            <CreatePropertyMiniForm
-                {...DEFAULT_PROPS}
-                canAccessAdminPanel={true}
-            />
-        );
-
-        await fillAllFields(user);
-
-        // Act
-        await act(async () => {
-            await user.click(getSubmitButton());
-        });
-
-        // Assert — must be the web property list, never the global admin list.
-        await waitFor(() => {
-            expect(window.location.href).toBe('/es/mi-cuenta/propiedades/');
-            expect(window.location.href).not.toContain('http://localhost:3000/accommodations');
-        });
-    });
-
-    it('does NOT redirect to the global admin list when API returns already_host', async () => {
-        // Arrange — regression guard: the old code sent admin-capable users to
-        // `${adminBase}/accommodations` (the global list). Verify it is gone.
-        vi.stubGlobal(
-            'fetch',
-            vi.fn().mockResolvedValue(
-                buildFetchResponse({
-                    ok: true,
-                    body: {
-                        data: {
-                            status: 'already_host',
-                            accommodationId: null,
-                            accommodationSlug: null
-                        }
-                    }
-                })
-            )
-        );
-        const user = userEvent.setup();
-        render(
-            <CreatePropertyMiniForm
-                {...DEFAULT_PROPS}
-                canAccessAdminPanel={true}
-                adminUrl="http://localhost:3000"
-            />
-        );
-
-        await fillAllFields(user);
-
-        await act(async () => {
-            await user.click(getSubmitButton());
-        });
-
-        await waitFor(() => {
-            // Must NOT be the raw admin global list URL.
-            expect(window.location.href).not.toBe('http://localhost:3000/accommodations');
-        });
-    });
-
-    it('redirects to admin edit page (not accountPropertiesUrl) on created status', async () => {
-        // Regression guard: the `created` branch must still redirect to the admin
-        // edit page — this tests that we only changed the already_host branch.
+describe('CreatePropertyMiniForm — post-submit redirect', () => {
+    it('redirects to admin edit page on created status', async () => {
+        // Regression guard: `created` must redirect to the admin edit page.
         vi.stubGlobal(
             'fetch',
             vi
@@ -864,18 +746,25 @@ describe('CreatePropertyMiniForm — submit payload with extras (SPEC-258)', () 
     });
 
     it('does NOT include extra fields in the payload when no import occurred', async () => {
-        const fetchMock = vi.fn().mockResolvedValueOnce(
-            buildFetchResponse({
-                ok: true,
-                body: {
-                    data: {
-                        status: 'already_host',
-                        accommodationId: null,
-                        accommodationSlug: null
+        // Use a `resumed` response with a valid id so the form progresses past
+        // the null-id guard and we can inspect the request payload cleanly.
+        const fetchMock = vi
+            .fn()
+            // First call: onboarding endpoint
+            .mockResolvedValueOnce(
+                buildFetchResponse({
+                    ok: true,
+                    body: {
+                        data: {
+                            status: 'resumed',
+                            accommodationId: 'acc-manual-test',
+                            accommodationSlug: 'acc-manual-test-slug'
+                        }
                     }
-                }
-            })
-        );
+                })
+            )
+            // Second call: refreshSessionFromDatabase (best-effort, swallows errors)
+            .mockResolvedValueOnce(buildFetchResponse({ ok: true, body: {} }));
 
         vi.stubGlobal('fetch', fetchMock);
 

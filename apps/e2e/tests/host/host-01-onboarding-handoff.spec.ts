@@ -20,7 +20,7 @@
  *  6. Filling remaining fields + clicking Publicar transitions to ACTIVE
  *     and creates a billing_subscriptions row with status='trialing'.
  *  7. Public detail page shows the accommodation within ISR window.
- *  8. Idempotency: re-firing mini-form returns `already_host` with no
+ *  8. Idempotency: re-firing mini-form returns `resumed` with no
  *     new accommodation row.
  *  9. No Sentry errors logged.
  *
@@ -278,16 +278,16 @@ test.describe('HOST-01: web→admin onboarding handoff @p0 @host @onboarding @bi
 
         // The host now has 1 ACTIVE accommodation. The default owner-basico plan
         // has max_accommodations=1, so the enforceAccommodationLimit middleware
-        // blocks the retry before the handler can return 'already_host'. Upgrade
+        // blocks the retry before the handler can return 'resumed'. Upgrade
         // to owner-premium (max=10) so the idempotency path is exercised.
         //
         // NOTE (cache): The entitlement cache has a 5-minute TTL keyed by
         // billingCustomerId. After upgrading the subscription via direct DB insert,
         // the in-process API cache may still carry the old owner-basico limits.
-        // In that case, the retry receives 403 LIMIT_REACHED instead of 'already_host'.
+        // In that case, the retry receives 403 LIMIT_REACHED instead of 'resumed'.
         // Both outcomes are acceptable idempotency behaviors — the critical invariant
         // is that no NEW accommodation row is inserted regardless of the response.
-        // The 'already_host' assertion is only made when the server returns 200.
+        // The 'resumed' assertion is only made when the server returns 200.
         const premiumPlanRows = await execSQL<{ id: string }>(
             `SELECT id FROM billing_plans
              WHERE name = 'owner-premium' AND active = true
@@ -313,8 +313,9 @@ test.describe('HOST-01: web→admin onboarding handoff @p0 @host @onboarding @bi
                 },
                 { apiBaseUrl: API_URL }
             );
-            expect(retryResult.status).toBe('already_host');
-            expect(retryResult.accommodationId).toBeNull();
+            // The host already has an active DRAFT — idempotency guard returns `resumed`.
+            expect(retryResult.status).toBe('resumed');
+            expect(retryResult.accommodationId).not.toBeNull();
         } catch (err) {
             const msg = err instanceof Error ? err.message : String(err);
             if (msg.includes('LIMIT_REACHED') || msg.includes('403')) {
@@ -328,7 +329,7 @@ test.describe('HOST-01: web→admin onboarding handoff @p0 @host @onboarding @bi
                         'HOST-01 idempotency retry blocked by cached owner-basico entitlement ' +
                         '(LIMIT_REACHED 403). Cache TTL is 5 minutes; DB invariant still verified. ' +
                         'This is expected in persistent-server local runs after the subscription was ' +
-                        'upgraded via direct DB insert.'
+                        'upgraded via direct DB insert. Expected response would have been `resumed`.'
                 });
             } else {
                 throw err;
@@ -336,7 +337,7 @@ test.describe('HOST-01: web→admin onboarding handoff @p0 @host @onboarding @bi
         }
 
         // No new accommodations inserted by retry — invariant holds regardless
-        // of whether the server returned 200 already_host or 403 LIMIT_REACHED.
+        // of whether the server returned 200 resumed or 403 LIMIT_REACHED.
         const accsAfterRetry = await execSQL('SELECT id FROM accommodations WHERE owner_id = $1', [
             user.id
         ]);

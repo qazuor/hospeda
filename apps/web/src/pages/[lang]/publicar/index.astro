@@ -49,6 +49,42 @@ const cameFromAdmin = Astro.url.searchParams.get('from') === 'admin';
 // simple "logged in → /publicar/nueva/" swap on the final CTA banner.
 const isAuthenticated = Boolean(Astro.locals.user);
 
+// Redirect existing hosts straight to their account: this is the MARKETING
+// landing, which is pointless for someone who already publishes. The criterion
+// is ">=1 owned accommodation" (NOT role) — a host who deleted all their
+// listings (owned count 0) should still see the funnel. We mirror nueva.astro:
+// GET /accommodations?pageSize=1 and read pagination.total. The fetch is
+// non-fatal: on any error we fall through and render the landing normally.
+// (The actual creation FORM at /publicar/nueva/ must NOT redirect, or the
+// "Publicar otra" button from /mi-cuenta/propiedades/ would loop.)
+if (isAuthenticated) {
+	try {
+		const cookieHeader = Astro.request.headers.get('cookie');
+		if (cookieHeader) {
+			const ownedResponse = await fetch(
+				`${getApiUrl()}/api/v1/protected/accommodations?page=1&pageSize=1`,
+				{ headers: { cookie: cookieHeader } }
+			);
+			if (ownedResponse.ok) {
+				const ownedJson = (await ownedResponse.json()) as {
+					data?: { pagination?: { total?: number } };
+				};
+				const total = ownedJson.data?.pagination?.total;
+				if (typeof total === 'number' && total > 0) {
+					return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta/propiedades' }));
+				}
+			} else {
+				logger.warn('publicar/index: owned-accommodations fetch returned non-ok', {
+					status: ownedResponse.status
+				});
+			}
+		}
+	} catch (error) {
+		logger.warn('publicar/index: failed to fetch owned count for host redirect', { error });
+		// Non-fatal: render the landing normally on error.
+	}
+}
+
 // F1-UI: For authenticated HOST users, check trial status.
 // If isExpired is true, the trial callout is replaced with the expired banner.
 type TrialStatusData = {

@@ -15,12 +15,10 @@
  *    admin panel so they can complete the rest of the listing (price,
  *    photos, amenities, contact, etc.).
  *
- * The endpoint can answer with three terminal states:
+ * The endpoint can answer with two terminal states:
  *  - `created`     -> a fresh DRAFT was inserted, redirect to its edit page
  *                     (admin) or to the web property list.
  *  - `resumed`     -> the user already had an active DRAFT, same redirect.
- *  - `already_host` -> the user is already HOST/ADMIN, redirect to the admin
- *                      home (if allowed) or to the web property list.
  *
  * On 503 (billing layer unavailable), the form surfaces a retry-friendly
  * message instead of a generic error.
@@ -143,7 +141,7 @@ type DestinationHint = {
     readonly candidates: ReadonlyArray<{ readonly id: string; readonly name: string }>;
 };
 
-type OnboardingStartStatus = 'created' | 'resumed' | 'already_host';
+type OnboardingStartStatus = 'created' | 'resumed';
 
 /**
  * Force Better Auth to re-read the session from the database and rotate its
@@ -232,7 +230,7 @@ export function CreatePropertyMiniForm({
     locale,
     apiUrl,
     adminUrl,
-    accountPropertiesUrl,
+    accountPropertiesUrl: _accountPropertiesUrl,
     canAccessAdminPanel: _canAccessAdminPanel
 }: CreatePropertyMiniFormProps) {
     const { t } = createTranslations(locale);
@@ -748,25 +746,13 @@ export function CreatePropertyMiniForm({
 
             const adminBase = adminUrl.replace(/\/$/, '');
 
-            // `already_host`: the user already had an active HOST/ADMIN role
-            // before this submit — nothing changed in their permissions, so
-            // no session refresh is needed. Always send them to their own
-            // property list on the web app (`/me/accommodations` path resolved
-            // via `accountPropertiesUrl`). Redirecting admin-capable users to
-            // the global admin list (`/accommodations`) is confusing because
-            // they didn't create or resume any particular draft here.
-            if (data.status === 'already_host') {
-                window.location.href = accountPropertiesUrl;
-                return;
-            }
-
-            // `created` / `resumed`: the endpoint just promoted the user
-            // USER → HOST atomically with the draft creation. Better Auth's
-            // cookie cache still carries the pre-promotion `role=USER` for
-            // up to 5 minutes, so we force a session refresh from the DB
-            // before redirecting to the admin. Otherwise the admin guard
-            // would read the stale cookie and bounce the host to
-            // `/auth/forbidden?reason=host-missing-permission`.
+            // `created` / `resumed`: if the actor was a USER they were promoted
+            // to HOST atomically with the draft creation (an existing host is
+            // left unchanged). Better Auth's cookie cache may still carry the
+            // pre-promotion `role=USER` for up to 5 minutes, so we force a
+            // session refresh from the DB before redirecting to the admin.
+            // Otherwise the admin guard would read the stale cookie and bounce
+            // the host to `/auth/forbidden?reason=host-missing-permission`.
             await refreshSessionFromDatabase(apiUrl);
 
             if (!data.accommodationId) {
