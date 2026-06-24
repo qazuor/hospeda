@@ -2023,7 +2023,7 @@
         },
         {
             "specId": "SPEC-276",
-            "title": "Feature flag system — DB-backed, admin-managed, per-environment, gradual rollout",
+            "title": "Feature flag system — DB-backed on/off toggles with user & role override (dark launch + kill switch)",
             "type": "feature",
             "complexity": "medium",
             "status": "draft",
