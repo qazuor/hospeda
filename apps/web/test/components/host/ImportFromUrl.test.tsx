@@ -228,6 +228,134 @@ describe('ImportFromUrl — failureCode branch (SPEC-258 C.1)', () => {
     });
 });
 
+describe('R5 manual path invariant (SPEC-277)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    /**
+     * Sets up mockImportFromUrl to return a 200 with failureCode, renders the
+     * component, fills the URL, ticks legal, clicks submit, and waits for the
+     * async call to settle.
+     *
+     * @param failureCode - The failure code returned in the 200 response.
+     */
+    async function submitWithClassifiedFailure(failureCode: string) {
+        mockImportFromUrl.mockResolvedValueOnce({
+            ok: true,
+            data: {
+                draft: {},
+                source: 'generic',
+                methodsUsed: [],
+                partial: false,
+                failureCode
+            }
+        });
+        render(<ImportFromUrl locale="es" />);
+
+        fireEvent.click(screen.getByRole('checkbox', { name: /Confirmo/i }));
+        fireEvent.change(screen.getByRole('textbox', { name: /URL/i }), {
+            target: { value: 'https://www.airbnb.com.ar/rooms/123' }
+        });
+        fireEvent.click(screen.getByRole('button', { name: /Importar/i }));
+
+        // Wait for the async call to settle
+        await waitFor(() => expect(mockImportFromUrl).toHaveBeenCalledTimes(1));
+    }
+
+    it('re-enables submit and shows error after source_blocked failure — URL input stays editable', async () => {
+        // Arrange + Act
+        await submitWithClassifiedFailure('source_blocked');
+
+        // Assert: error alert is shown (non-blaming fallback text is the failureCode key)
+        const alert = await screen.findByRole('alert');
+        expect(alert).toBeInTheDocument();
+
+        // Assert: submit button is re-enabled (not disabled after failure)
+        const button = screen.getByRole('button', { name: /Importar/i });
+        expect(button).not.toBeDisabled();
+
+        // Assert: URL input is still editable (not disabled, value preserved)
+        const urlInput = screen.getByRole('textbox', { name: /URL/i });
+        expect(urlInput).not.toBeDisabled();
+        expect(urlInput).toHaveValue('https://www.airbnb.com.ar/rooms/123');
+    });
+
+    it('re-enables submit and shows error after timeout failure — URL input stays editable', async () => {
+        // Arrange + Act
+        await submitWithClassifiedFailure('timeout');
+
+        // Assert: error alert is shown
+        const alert = await screen.findByRole('alert');
+        expect(alert).toBeInTheDocument();
+
+        // Assert: submit button is re-enabled
+        const button = screen.getByRole('button', { name: /Importar/i });
+        expect(button).not.toBeDisabled();
+
+        // Assert: URL input is still editable with its value intact
+        const urlInput = screen.getByRole('textbox', { name: /URL/i });
+        expect(urlInput).not.toBeDisabled();
+        expect(urlInput).toHaveValue('https://www.airbnb.com.ar/rooms/123');
+    });
+
+    it('re-enables submit and shows network error after non-200 HTTP failure — URL input stays editable', async () => {
+        // Arrange: mock returns a non-ok response (HTTP error path)
+        mockImportFromUrl.mockResolvedValueOnce({ ok: false });
+        render(<ImportFromUrl locale="es" />);
+
+        fireEvent.click(screen.getByRole('checkbox', { name: /Confirmo/i }));
+        fireEvent.change(screen.getByRole('textbox', { name: /URL/i }), {
+            target: { value: 'https://www.airbnb.com.ar/rooms/456' }
+        });
+
+        // Act
+        fireEvent.click(screen.getByRole('button', { name: /Importar/i }));
+        await waitFor(() => expect(mockImportFromUrl).toHaveBeenCalledTimes(1));
+
+        // Assert: a non-blaming error alert is shown
+        const alert = await screen.findByRole('alert');
+        expect(alert).toBeInTheDocument();
+
+        // Assert: submit button is re-enabled
+        const button = screen.getByRole('button', { name: /Importar/i });
+        expect(button).not.toBeDisabled();
+
+        // Assert: URL input is still editable with its value intact
+        const urlInput = screen.getByRole('textbox', { name: /URL/i });
+        expect(urlInput).not.toBeDisabled();
+        expect(urlInput).toHaveValue('https://www.airbnb.com.ar/rooms/456');
+    });
+
+    it('disables submit and shows no error while the request is in flight', async () => {
+        // Arrange: deferred promise so we can assert mid-flight state
+        let resolveImport!: (value: unknown) => void;
+        const pendingPromise = new Promise((resolve) => {
+            resolveImport = resolve;
+        });
+        mockImportFromUrl.mockReturnValueOnce(pendingPromise);
+
+        render(<ImportFromUrl locale="es" />);
+        fireEvent.click(screen.getByRole('checkbox', { name: /Confirmo/i }));
+        fireEvent.change(screen.getByRole('textbox', { name: /URL/i }), {
+            target: { value: 'https://www.airbnb.com.ar/rooms/789' }
+        });
+
+        // Act: click submit — the promise is still pending
+        fireEvent.click(screen.getByRole('button', { name: /Importar/i }));
+
+        // Assert in-flight: button disabled, no error alert
+        await waitFor(() => {
+            expect(screen.getByRole('button', { name: /Importando/i })).toBeDisabled();
+        });
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+
+        // Cleanup: resolve the promise so the component settles before teardown
+        resolveImport({ ok: false });
+        await waitFor(() => expect(mockImportFromUrl).toHaveBeenCalledTimes(1));
+    });
+});
+
 describe('ImportFromUrl i18n keys', () => {
     const localesDir = resolve(
         dirname(fileURLToPath(import.meta.url)),

@@ -2062,7 +2062,7 @@
             "title": "Accommodation import — scraper resilience (retry, fallback chain, async, provider mitigation, manual path)",
             "type": "improvement",
             "complexity": "high",
-            "status": "draft",
+            "status": "completed",
             "path": "SPEC-277-import-scraper-resilience",
             "created": "2026-06-23T23:17:27Z",
             "base": "staging",
@@ -2078,7 +2078,10 @@
                 "apify",
                 "anti-bot",
                 "spec-258-followup"
-            ]
+            ],
+            "archived": true,
+            "archivedAt": "2026-06-24",
+            "archiveNote": "11/11 tasks: R1 retry/backoff, R2 per-source Generic fallback, R4 provider-mitigation runbook, R5 manual-path invariant. R3 (async path) deferred to SPEC-281. Shipped via PR #1848 (CI green); R2/R4 + runbook move appended to the same PR per owner. Pending final merge to staging."
         },
         {
             "specId": "SPEC-278",
@@ -2121,6 +2124,28 @@
                 "entitlements",
                 "security",
                 "high-risk"
+            ]
+        },
+        {
+            "specId": "SPEC-281",
+            "title": "Accommodation import — async extraction path for slow/blocked sources (SPEC-277 R3)",
+            "type": "improvement",
+            "complexity": "high",
+            "status": "draft",
+            "path": "SPEC-281-import-scraper-async-path",
+            "created": "2026-06-24T00:00:00Z",
+            "base": "staging",
+            "origin": "SPEC-277 R3 deferred: the async extraction path (202+poll reusing SPEC-250 helpers) is the heaviest lever (two client surfaces + new route shape) and was carved out of SPEC-277 into its own follow-up.",
+            "dependsOn": ["SPEC-250", "SPEC-277"],
+            "tags": [
+                "accommodation-import",
+                "service-core",
+                "web",
+                "admin",
+                "async",
+                "apify",
+                "polling",
+                "spec-277-followup"
             ]
         }
     ]

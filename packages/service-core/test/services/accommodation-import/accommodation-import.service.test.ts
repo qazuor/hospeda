@@ -826,4 +826,193 @@ describe('AccommodationImportService', () => {
             expect(result.destinationHint).toBeUndefined();
         });
     });
+
+    // -------------------------------------------------------------------------
+    // R2 fallback chain (SPEC-277)
+    //
+    // When the primary Airbnb / Booking adapter returns source_blocked, the
+    // orchestrator makes one cheap GenericAdapter (JSON-LD / OpenGraph) pass
+    // against the same URL. Other sources and other failureCodes do NOT trigger
+    // the fallback.
+    // -------------------------------------------------------------------------
+    describe('R2 fallback chain', () => {
+        /**
+         * Builds a minimal RawExtraction that represents a useful OG/JSON-LD
+         * fallback with a name field from OpenGraph.
+         *
+         * @param sourcePlatform - The source label to stamp on the fallback.
+         * @returns A RawExtraction with name and summary set via opengraph.
+         */
+        function buildUsefulFallbackRaw(sourcePlatform: 'airbnb' | 'booking'): RawExtraction {
+            return {
+                sourcePlatform,
+                name: { value: 'Cabaña Vista al Río', source: 'opengraph' },
+                summary: { value: 'A riverside cabin with mountain views.', source: 'opengraph' }
+            };
+        }
+
+        it('should use the generic fallback and return partial=true with source=airbnb when airbnb primary returns source_blocked and fallback has useful data', async () => {
+            // Arrange — Airbnb primary returns source_blocked; fallback has name.
+            fakeAirbnb.supports.mockReturnValue(true);
+            fakeAirbnb.extract.mockResolvedValue({
+                sourcePlatform: 'airbnb',
+                failureCode: 'source_blocked'
+            } as RawExtraction);
+            // GenericAdapter is the last entry in the registry and is called by
+            // _runFallbackGenericExtract. We configure it to return useful OG data.
+            fakeGeneric.extract.mockResolvedValue(buildUsefulFallbackRaw('airbnb'));
+
+            const service = new AccommodationImportService(fakeCtx);
+
+            // Act
+            const result = await service.importFromUrl(
+                { url: 'https://www.airbnb.com/rooms/99999', context: fakeContext },
+                fakeActor
+            );
+
+            // Assert — fallback data was used; failureCode cleared; source stays 'airbnb'.
+            expect(result.source).toBe('airbnb');
+            expect(result.partial).toBe(true); // OG rarely yields name+summary+type
+            expect(result.draft).toMatchObject({
+                name: expect.objectContaining({ value: 'Cabaña Vista al Río' })
+            });
+            expect(result.failureCode).toBeUndefined();
+            // The fallback mechanism was actually invoked (not coincidentally matched).
+            expect(fakeGeneric.extract).toHaveBeenCalledOnce();
+        });
+
+        it('should use the generic fallback and return partial=true with source=booking when booking primary returns source_blocked and fallback has useful data', async () => {
+            // Arrange — Booking primary returns source_blocked; fallback has name.
+            fakeBooking.supports.mockReturnValue(true);
+            fakeBooking.extract.mockResolvedValue({
+                sourcePlatform: 'booking',
+                failureCode: 'source_blocked'
+            } as RawExtraction);
+            fakeGeneric.extract.mockResolvedValue(buildUsefulFallbackRaw('booking'));
+
+            const service = new AccommodationImportService(fakeCtx);
+
+            // Act
+            const result = await service.importFromUrl(
+                { url: 'https://www.booking.com/hotel/ar/test.html', context: fakeContext },
+                fakeActor
+            );
+
+            // Assert — fallback data was used; source stays 'booking'.
+            expect(result.source).toBe('booking');
+            expect(result.partial).toBe(true);
+            expect(result.draft).toMatchObject({
+                name: expect.objectContaining({ value: 'Cabaña Vista al Río' })
+            });
+            expect(result.failureCode).toBeUndefined();
+            expect(fakeGeneric.extract).toHaveBeenCalledOnce();
+        });
+
+        it('should accept an images-only fallback (no name/summary) as useful and keep source=airbnb', async () => {
+            // Arrange — Airbnb blocked; fallback yields only imageUrls (3rd branch
+            // of the hasUsefulFallback guard).
+            fakeAirbnb.supports.mockReturnValue(true);
+            fakeAirbnb.extract.mockResolvedValue({
+                sourcePlatform: 'airbnb',
+                failureCode: 'source_blocked'
+            } as RawExtraction);
+            fakeGeneric.extract.mockResolvedValue({
+                sourcePlatform: 'airbnb',
+                imageUrls: ['https://example.com/a.jpg']
+            } as RawExtraction);
+
+            const service = new AccommodationImportService(fakeCtx);
+
+            // Act
+            const result = await service.importFromUrl(
+                { url: 'https://www.airbnb.com/rooms/99999', context: fakeContext },
+                fakeActor
+            );
+
+            // Assert — images-only is still useful: failureCode cleared, source kept,
+            // and the source did not degrade to 'none' (mediaHints keep it alive).
+            expect(fakeGeneric.extract).toHaveBeenCalledOnce();
+            expect(result.failureCode).toBeUndefined();
+            expect(result.source).toBe('airbnb');
+            expect(result.partial).toBe(true);
+            expect(result.mediaHints).toMatchObject({ imageUrls: ['https://example.com/a.jpg'] });
+        });
+
+        it('should keep failureCode=source_blocked when airbnb primary is blocked and fallback yields only an empty extraction', async () => {
+            // Arrange — Airbnb primary returns source_blocked; fallback returns
+            // bare extraction with no useful fields (hasUsefulFallback = false).
+            fakeAirbnb.supports.mockReturnValue(true);
+            fakeAirbnb.extract.mockResolvedValue({
+                sourcePlatform: 'airbnb',
+                failureCode: 'source_blocked'
+            } as RawExtraction);
+            // Fallback returns an extraction with only sourcePlatform — no name,
+            // no summary, no imageUrls — so hasUsefulFallback remains false.
+            fakeGeneric.extract.mockResolvedValue({
+                sourcePlatform: 'airbnb'
+            } as RawExtraction);
+
+            const service = new AccommodationImportService(fakeCtx);
+
+            // Act
+            const result = await service.importFromUrl(
+                { url: 'https://www.airbnb.com/rooms/empty-fallback', context: fakeContext },
+                fakeActor
+            );
+
+            // Assert — original failure is preserved because fallback was not useful.
+            expect(result.failureCode).toBe('source_blocked');
+        });
+
+        it('should NOT trigger the fallback when airbnb primary returns credentials_missing', async () => {
+            // Arrange — Airbnb primary returns credentials_missing (non-retryable).
+            // The R2 fallback only fires on source_blocked, not other failureCodes.
+            fakeAirbnb.supports.mockReturnValue(true);
+            fakeAirbnb.extract.mockResolvedValue({
+                sourcePlatform: 'airbnb',
+                failureCode: 'credentials_missing'
+            } as RawExtraction);
+            // Reset GenericAdapter so a call would be detectable.
+            fakeGeneric.extract.mockResolvedValue({ sourcePlatform: 'generic' });
+
+            const service = new AccommodationImportService(fakeCtx);
+
+            // Act
+            const result = await service.importFromUrl(
+                { url: 'https://www.airbnb.com/rooms/no-creds', context: fakeContext },
+                fakeActor
+            );
+
+            // Assert — failureCode from primary propagated; GenericAdapter NOT called
+            // for the fallback (it may have been called 0 times total because the
+            // primary adapter matches, so GenericAdapter is not the selected adapter).
+            expect(result.failureCode).toBe('credentials_missing');
+            // GenericAdapter extract must not have been called at all.
+            expect(fakeGeneric.extract).not.toHaveBeenCalled();
+        });
+
+        it('should NOT trigger the fallback when google primary returns source_blocked (only airbnb/booking opt in)', async () => {
+            // Arrange — GooglePlaces primary returns source_blocked.
+            // Only airbnb and booking opt into the R2 fallback chain.
+            fakeGoogle.supports.mockReturnValue(true);
+            fakeGoogle.extract.mockResolvedValue({
+                sourcePlatform: 'google',
+                failureCode: 'source_blocked'
+            } as RawExtraction);
+            fakeGeneric.extract.mockResolvedValue({ sourcePlatform: 'generic' });
+
+            const service = new AccommodationImportService(fakeCtx);
+
+            // Act
+            const result = await service.importFromUrl(
+                { url: 'https://maps.google.com/maps/place/test-place', context: fakeContext },
+                fakeActor
+            );
+
+            // Assert — source_blocked propagated; no fallback for google source.
+            expect(result.failureCode).toBe('source_blocked');
+            // GenericAdapter extract must not have been called at all.
+            expect(fakeGeneric.extract).not.toHaveBeenCalled();
+        });
+    });
 });

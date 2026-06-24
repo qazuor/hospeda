@@ -176,3 +176,98 @@ describe('ImportFromUrlSection — failureCode branch (SPEC-258 C.1)', () => {
         expect(screen.queryByTestId('import-failure-error')).not.toBeInTheDocument();
     });
 });
+
+describe('R5 manual path invariant (SPEC-277)', () => {
+    beforeEach(() => {
+        resetAll();
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('isPending reverts to false and shows failure-error alert after source_blocked — no prefill, URL stays editable', async () => {
+        // Arrange
+        mockMutateAsync.mockResolvedValueOnce({
+            draft: {},
+            source: 'generic',
+            methodsUsed: [],
+            partial: false,
+            failureCode: 'source_blocked'
+        });
+
+        // Act
+        await renderAndSubmit();
+
+        // Assert: mutation.isPending is false (mocked value, component renders non-pending button)
+        const button = screen.getByTestId('import-submit-btn');
+        expect(button).not.toBeDisabled();
+
+        // Assert: failure-error alert is shown with the i18n key for source_blocked
+        const alert = await screen.findByRole('alert');
+        expect(alert).toBeInTheDocument();
+        expect(alert.textContent).toContain('host.importFromUrl.errors.failure.sourceBlocked');
+
+        // Assert: setFieldValue was NOT called (no form prefill on classified failure)
+        expect(mockSetFieldValue).not.toHaveBeenCalled();
+
+        // Assert: URL input is still editable
+        const urlInput = screen.getByRole('textbox');
+        expect(urlInput).not.toBeDisabled();
+    });
+
+    it('isPending reverts to false and shows failure-error alert after timeout — no prefill, URL stays editable', async () => {
+        // Arrange
+        mockMutateAsync.mockResolvedValueOnce({
+            draft: {},
+            source: 'generic',
+            methodsUsed: [],
+            partial: false,
+            failureCode: 'timeout'
+        });
+
+        // Act
+        await renderAndSubmit();
+
+        // Assert: button is re-enabled (isPending false)
+        const button = screen.getByTestId('import-submit-btn');
+        expect(button).not.toBeDisabled();
+
+        // Assert: failure-error alert with the timeout i18n key
+        const alert = await screen.findByRole('alert');
+        expect(alert).toBeInTheDocument();
+        expect(alert.textContent).toContain('host.importFromUrl.errors.failure.timeout');
+
+        // Assert: no form prefill on classified failure
+        expect(mockSetFieldValue).not.toHaveBeenCalled();
+
+        // Assert: URL input stays editable
+        const urlInput = screen.getByRole('textbox');
+        expect(urlInput).not.toBeDisabled();
+    });
+
+    it('isPending reverts to false and shows network error alert when mutateAsync throws', async () => {
+        // Arrange: simulate a network-level throw from the mutation
+        mockMutateAsync.mockRejectedValueOnce(new Error('Network failure'));
+        // After the throw, the mutation mock surfaces an error via currentMutationState
+        currentMutationState.error = new Error('Network failure');
+
+        // Act
+        await renderAndSubmit();
+
+        // Assert: mutation.error is set → network error alert is shown
+        const alert = await screen.findByRole('alert');
+        expect(alert).toBeInTheDocument();
+
+        // Assert: button is re-enabled (isPending is false in currentMutationState)
+        const button = screen.getByTestId('import-submit-btn');
+        expect(button).not.toBeDisabled();
+
+        // Assert: URL input is still editable
+        const urlInput = screen.getByRole('textbox');
+        expect(urlInput).not.toBeDisabled();
+
+        // Assert: no form prefill happened
+        expect(mockSetFieldValue).not.toHaveBeenCalled();
+    });
+});
