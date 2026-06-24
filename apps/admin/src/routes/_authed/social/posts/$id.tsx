@@ -1,11 +1,18 @@
 /**
  * @file _authed/social/posts/$id.tsx
- * @description Admin social post detail page (SPEC-254 T-040).
+ * @description Admin social post detail page — hybrid 2-column layout (SPEC-254 T-040).
  *
- * Tabs: Content | Media | Targets | Logs | Audit
- * Sticky action bar with status-gated, permission-gated transitions.
- * Promote-hashtag modal for GPT suggestions.
- * ARIA live regions for mutation feedback.
+ * Layout:
+ *   Header (full width)
+ *     Back link + title + status/approval badges
+ *   Body (2 columns)
+ *     Left (~2/3): SocialPostPreviewCard (image + caption + hashtags)
+ *                  + secondary tabs: Details / Targets / Logs / Audit
+ *     Right (~1/3): SocialPostSidePanel (metadata card + actions card)
+ *
+ * The SocialPostSidePanel owns all mutation state, replacing the old
+ * SocialPostActionBar (sticky bottom bar). The PromoteHashtagModal and the
+ * delete confirmation dialog are retained from the original implementation.
  *
  * Permission gate: SOCIAL_POST_VIEW (server-side enforced).
  */
@@ -27,17 +34,16 @@ import { useDeleteSocialPost, useSocialPostDetail } from '@/hooks/use-social-pos
 import { useTranslations } from '@/hooks/use-translations';
 import { useHasPermission } from '@/hooks/use-user-permissions';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
-
 import { PermissionEnum } from '@repo/schemas';
 import { Link, createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useState } from 'react';
 import { PromoteHashtagModal } from './-components/PromoteHashtagModal';
-import { SocialPostActionBar } from './-components/SocialPostActionBar';
 import { SocialPostApprovalBadge } from './-components/SocialPostApprovalBadge';
 import { SocialPostAuditTab } from './-components/SocialPostAuditTab';
-import { SocialPostContentTab } from './-components/SocialPostContentTab';
+import { SocialPostDetailsTab } from './-components/SocialPostDetailsTab';
 import { SocialPostLogsTab } from './-components/SocialPostLogsTab';
-import { SocialPostMediaTab } from './-components/SocialPostMediaTab';
+import { SocialPostPreviewCard } from './-components/SocialPostPreviewCard';
+import { SocialPostSidePanel } from './-components/SocialPostSidePanel';
 import { SocialPostStatusBadge } from './-components/SocialPostStatusBadge';
 import { SocialPostTargetsTab } from './-components/SocialPostTargetsTab';
 
@@ -56,7 +62,7 @@ export const Route = createFileRoute('/_authed/social/posts/$id')({
 // Main page component
 // ---------------------------------------------------------------------------
 
-/** Admin social post detail page. */
+/** Admin social post detail page — hybrid 2-column layout. */
 function SocialPostDetailPage() {
     const { id } = Route.useParams();
     const { t } = useTranslations();
@@ -94,9 +100,12 @@ function SocialPostDetailPage() {
                 className="space-y-4 p-6"
                 data-testid="post-detail-loading"
             >
+                <div className="h-4 w-32 animate-pulse rounded bg-muted" />
                 <div className="h-8 w-64 animate-pulse rounded bg-muted" />
-                <div className="h-4 w-40 animate-pulse rounded bg-muted" />
-                <div className="mt-6 h-64 animate-pulse rounded bg-muted" />
+                <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
+                    <div className="col-span-2 h-96 animate-pulse rounded-xl bg-muted" />
+                    <div className="h-64 animate-pulse rounded-xl bg-muted" />
+                </div>
             </div>
         );
     }
@@ -140,14 +149,22 @@ function SocialPostDetailPage() {
         );
     }
 
-    const status = post.status;
-    const paused = post.paused;
+    const { status, paused } = post;
 
     return (
         <RoutePermissionGuard permissions={[PermissionEnum.SOCIAL_POST_VIEW]}>
-            <div className="flex min-h-screen flex-col pb-24">
-                {/* Header */}
-                <div className="space-y-1 p-6">
+            <div className="flex flex-col gap-6 p-6 pb-10">
+                {/* ── HEADER (full width) ─────────────────────────────────── */}
+                <div className="space-y-2">
+                    {/* Back link */}
+                    <Link
+                        to="/social/posts"
+                        className="inline-flex items-center gap-1 text-muted-foreground text-sm hover:text-primary"
+                    >
+                        ← {t('social.posts.detail.backToList')}
+                    </Link>
+
+                    {/* Title + badges row */}
                     <div className="flex flex-wrap items-start justify-between gap-3">
                         <div className="flex flex-wrap items-center gap-2">
                             <h1
@@ -164,149 +181,159 @@ function SocialPostDetailPage() {
                                 </span>
                             )}
                         </div>
-                        {/* Header action button: quick archive (soft-delete) with confirmation */}
-                        <div className="flex items-center gap-2">
-                            {canArchive && (
-                                <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    onClick={() => setShowDeleteDialog(true)}
-                                    disabled={deleteMutation.isPending}
-                                    data-testid="delete-btn"
-                                >
-                                    {t('social.posts.detail.delete.label')}
-                                </Button>
-                            )}
-                        </div>
+
+                        {/* Quick archive button (hard delete from header) */}
+                        {canArchive && (
+                            <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => setShowDeleteDialog(true)}
+                                disabled={deleteMutation.isPending}
+                                data-testid="delete-btn"
+                            >
+                                {t('social.posts.detail.delete.label')}
+                            </Button>
+                        )}
                     </div>
-                    <Link
-                        to="/social/posts"
-                        className="text-muted-foreground text-sm hover:text-primary"
-                    >
-                        {t('social.posts.detail.backToList')}
-                    </Link>
                 </div>
 
-                {/* Tabs */}
-                <div className="flex-1 px-6 pb-4">
-                    <Tabs
-                        defaultValue="content"
-                        data-testid="post-detail-tabs"
-                    >
-                        <TabsList>
-                            <TabsTrigger
-                                value="content"
-                                data-testid="tab-content"
-                            >
-                                {t('social.posts.detail.tabs.content')}
-                            </TabsTrigger>
-                            <TabsTrigger
-                                value="media"
-                                data-testid="tab-media"
-                            >
-                                {t('social.posts.detail.tabs.media')}
-                            </TabsTrigger>
-                            <TabsTrigger
-                                value="targets"
-                                data-testid="tab-targets"
-                            >
-                                {t('social.posts.detail.tabs.targets')}
-                            </TabsTrigger>
-                            <TabsTrigger
-                                value="logs"
-                                data-testid="tab-logs"
-                            >
-                                {t('social.posts.detail.tabs.logs')}
-                            </TabsTrigger>
-                            <TabsTrigger
-                                value="audit"
-                                data-testid="tab-audit"
-                            >
-                                {t('social.posts.detail.tabs.audit')}
-                            </TabsTrigger>
-                        </TabsList>
+                {/* ── BODY: 2-column grid ─────────────────────────────────── */}
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+                    {/* Preview column (~1/3) */}
+                    <div className="lg:col-span-4">
+                        {/* Visual preview card */}
+                        <SocialPostPreviewCard
+                            media={post.media}
+                            captionBase={post.captionBase}
+                            finalCaption={post.finalCaption}
+                            finalHashtagsText={post.finalHashtagsText}
+                            hashtags={post.hashtags}
+                            canPromote={canPromote}
+                            gptHashtagPayloadJson={post.gptHashtagPayloadJson}
+                            onPromote={setPromoteTag}
+                        />
+                    </div>
 
-                        <TabsContent value="content">
-                            <SocialPostContentTab
-                                post={post}
-                                canPromote={canPromote}
-                                onPromote={setPromoteTag}
-                            />
-                        </TabsContent>
+                    {/* Tabs column (~5/12) */}
+                    <div className="min-w-0 lg:col-span-5">
+                        {/* Secondary tabs */}
+                        <Tabs
+                            defaultValue="details"
+                            data-testid="post-detail-secondary-tabs"
+                        >
+                            <TabsList>
+                                <TabsTrigger
+                                    value="details"
+                                    data-testid="tab-details"
+                                >
+                                    {t('social.posts.detail.secondaryTabs.details')}
+                                </TabsTrigger>
+                                <TabsTrigger
+                                    value="targets"
+                                    data-testid="tab-targets"
+                                >
+                                    {t('social.posts.detail.secondaryTabs.targets')}
+                                </TabsTrigger>
+                                <TabsTrigger
+                                    value="logs"
+                                    data-testid="tab-logs"
+                                >
+                                    {t('social.posts.detail.secondaryTabs.logs')}
+                                </TabsTrigger>
+                                <TabsTrigger
+                                    value="audit"
+                                    data-testid="tab-audit"
+                                >
+                                    {t('social.posts.detail.secondaryTabs.audit')}
+                                </TabsTrigger>
+                            </TabsList>
 
-                        <TabsContent value="media">
-                            <SocialPostMediaTab media={post.media} />
-                        </TabsContent>
+                            <TabsContent value="details">
+                                <SocialPostDetailsTab post={post} />
+                            </TabsContent>
 
-                        <TabsContent value="targets">
-                            <SocialPostTargetsTab targets={post.targets} />
-                        </TabsContent>
+                            <TabsContent value="targets">
+                                <SocialPostTargetsTab targets={post.targets} />
+                            </TabsContent>
 
-                        <TabsContent value="logs">
-                            <SocialPostLogsTab logs={post.publishLogs} />
-                        </TabsContent>
+                            <TabsContent value="logs">
+                                <SocialPostLogsTab logs={post.publishLogs} />
+                            </TabsContent>
 
-                        <TabsContent value="audit">
-                            <SocialPostAuditTab postId={id} />
-                        </TabsContent>
-                    </Tabs>
+                            <TabsContent value="audit">
+                                <SocialPostAuditTab postId={id} />
+                            </TabsContent>
+                        </Tabs>
+                    </div>
+
+                    {/* Side panel column (~1/4) */}
+                    <div className="lg:col-span-3">
+                        <SocialPostSidePanel
+                            postId={id}
+                            postTitle={post.title}
+                            status={status}
+                            approvalStatus={post.approvalStatus}
+                            paused={paused}
+                            scheduledAt={post.scheduledAt}
+                            targets={post.targets}
+                            batch={post.batch}
+                            campaign={post.campaign}
+                            recurrenceType={post.recurrenceType}
+                            nextRunAt={post.nextRunAt}
+                            recurrenceParamsJson={post.recurrenceParamsJson}
+                        />
+                    </div>
                 </div>
-
-                {/* Sticky action bar (includes ARIA live regions + dialogs) */}
-                <SocialPostActionBar
-                    postId={id}
-                    postTitle={post.title}
-                    status={status}
-                    paused={paused}
-                />
-
-                {/* Promote-hashtag modal */}
-                {promoteTag !== null && (
-                    <PromoteHashtagModal
-                        postId={id}
-                        hashtag={promoteTag}
-                        open={true}
-                        onClose={() => setPromoteTag(null)}
-                    />
-                )}
-
-                {/* Delete (archive) confirmation dialog */}
-                <AlertDialog
-                    open={showDeleteDialog}
-                    onOpenChange={(open) => {
-                        if (!open) setShowDeleteDialog(false);
-                    }}
-                >
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>
-                                {t('social.posts.detail.delete.confirmTitle')}
-                            </AlertDialogTitle>
-                            <AlertDialogDescription>
-                                {t('social.posts.detail.delete.confirmDesc')}
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel
-                                onClick={() => setShowDeleteDialog(false)}
-                                disabled={deleteMutation.isPending}
-                            >
-                                {t('social.posts.detail.delete.cancel')}
-                            </AlertDialogCancel>
-                            <AlertDialogAction
-                                onClick={handleDeleteConfirm}
-                                disabled={deleteMutation.isPending}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                data-testid="delete-confirm-btn"
-                            >
-                                {deleteMutation.isPending
-                                    ? t('social.posts.detail.delete.deleting')
-                                    : t('social.posts.detail.delete.confirm')}
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
             </div>
+
+            {/* ── MODALS ──────────────────────────────────────────────────── */}
+
+            {/* Promote-hashtag modal */}
+            {promoteTag !== null && (
+                <PromoteHashtagModal
+                    postId={id}
+                    hashtag={promoteTag}
+                    open={true}
+                    onClose={() => setPromoteTag(null)}
+                />
+            )}
+
+            {/* Delete (archive) confirmation dialog */}
+            <AlertDialog
+                open={showDeleteDialog}
+                onOpenChange={(open) => {
+                    if (!open) setShowDeleteDialog(false);
+                }}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            {t('social.posts.detail.delete.confirmTitle')}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {t('social.posts.detail.delete.confirmDesc')}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel
+                            onClick={() => setShowDeleteDialog(false)}
+                            disabled={deleteMutation.isPending}
+                        >
+                            {t('social.posts.detail.delete.cancel')}
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleDeleteConfirm}
+                            disabled={deleteMutation.isPending}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            data-testid="delete-confirm-btn"
+                        >
+                            {deleteMutation.isPending
+                                ? t('social.posts.detail.delete.deleting')
+                                : t('social.posts.detail.delete.confirm')}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </RoutePermissionGuard>
     );
 }

@@ -3413,6 +3413,10 @@
         "timezone": {
             "required": "[PT] El timezone es obligatorio"
         },
+        "weekday": {
+            "invalid": "[PT] El día de la semana no es válido",
+            "requiredForWeekly": "[PT] El día de la semana es obligatorio para la recurrencia semanal"
+        },
         "title": {
             "required": "[PT] El title es obligatorio"
         }

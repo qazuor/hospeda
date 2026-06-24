@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ZodError } from 'zod';
+import { ScheduleSocialPostSchema } from '../../entities/social/social-post.http.schema.js';
 import { SocialApprovalStatusEnum } from '../social-approval-status.enum.js';
 import { SocialApprovalStatusEnumSchema } from '../social-approval-status.schema.js';
 import { SocialAssetSourceEnum } from '../social-asset-source.enum.js';
@@ -655,6 +656,153 @@ describe('SocialRecurrenceTypeEnum', () => {
 
         it('should throw ZodError on parse of an invalid value', () => {
             expect(() => SocialRecurrenceTypeEnumSchema.parse('INVALID')).toThrowError(ZodError);
+        });
+    });
+});
+
+// ----------------------------------------------------------------------------
+// ScheduleSocialPostSchema — cross-field recurrence refinement (SPEC-254)
+// ----------------------------------------------------------------------------
+
+describe('ScheduleSocialPostSchema — recurrence cross-field validation', () => {
+    const futureDate = new Date(Date.now() + 3_600_000).toISOString();
+
+    describe('WEEKLY recurrence', () => {
+        it('should accept WEEKLY with a valid weekday', () => {
+            // Arrange / Act
+            const result = ScheduleSocialPostSchema.safeParse({
+                scheduledAt: futureDate,
+                timezone: 'UTC',
+                recurrenceType: 'WEEKLY',
+                recurrenceParamsJson: { weekday: 'TUESDAY' }
+            });
+
+            // Assert
+            expect(result.success).toBe(true);
+        });
+
+        it('should reject WEEKLY without recurrenceParamsJson', () => {
+            // Arrange / Act
+            const result = ScheduleSocialPostSchema.safeParse({
+                scheduledAt: futureDate,
+                timezone: 'UTC',
+                recurrenceType: 'WEEKLY'
+            });
+
+            // Assert
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                const paths = result.error.issues.map((i) => i.path.join('.'));
+                expect(paths).toContain('recurrenceParamsJson.weekday');
+            }
+        });
+
+        it('should reject WEEKLY when weekday is an invalid day name', () => {
+            // Arrange / Act
+            const result = ScheduleSocialPostSchema.safeParse({
+                scheduledAt: futureDate,
+                timezone: 'UTC',
+                recurrenceType: 'WEEKLY',
+                recurrenceParamsJson: { weekday: 'FUNDAY' }
+            });
+
+            // Assert
+            expect(result.success).toBe(false);
+        });
+
+        it('should reject WEEKLY when weekday is lowercase', () => {
+            // Arrange / Act
+            const result = ScheduleSocialPostSchema.safeParse({
+                scheduledAt: futureDate,
+                timezone: 'UTC',
+                recurrenceType: 'WEEKLY',
+                recurrenceParamsJson: { weekday: 'tuesday' }
+            });
+
+            // Assert
+            expect(result.success).toBe(false);
+        });
+    });
+
+    describe('ONCE recurrence (default)', () => {
+        it('should accept ONCE without recurrenceParamsJson', () => {
+            // Arrange / Act
+            const result = ScheduleSocialPostSchema.safeParse({
+                scheduledAt: futureDate,
+                timezone: 'UTC'
+            });
+
+            // Assert
+            expect(result.success).toBe(true);
+            if (result.success) {
+                expect(result.data.recurrenceType).toBe(SocialRecurrenceTypeEnum.ONCE);
+            }
+        });
+
+        it('should accept ONCE even when recurrenceParamsJson is provided (not an error)', () => {
+            // Arrange / Act — the schema does not reject extra params for non-WEEKLY types,
+            // but the service will ignore/null them out.
+            const result = ScheduleSocialPostSchema.safeParse({
+                scheduledAt: futureDate,
+                timezone: 'UTC',
+                recurrenceType: 'ONCE',
+                recurrenceParamsJson: { weekday: 'MONDAY' }
+            });
+
+            // Assert
+            expect(result.success).toBe(true);
+        });
+    });
+
+    describe('BIWEEKLY recurrence', () => {
+        it('should accept BIWEEKLY without recurrenceParamsJson', () => {
+            // Arrange / Act
+            const result = ScheduleSocialPostSchema.safeParse({
+                scheduledAt: futureDate,
+                timezone: 'UTC',
+                recurrenceType: 'BIWEEKLY'
+            });
+
+            // Assert
+            expect(result.success).toBe(true);
+        });
+    });
+
+    describe('MONTHLY recurrence', () => {
+        it('should accept MONTHLY without recurrenceParamsJson', () => {
+            // Arrange / Act
+            const result = ScheduleSocialPostSchema.safeParse({
+                scheduledAt: futureDate,
+                timezone: 'UTC',
+                recurrenceType: 'MONTHLY'
+            });
+
+            // Assert
+            expect(result.success).toBe(true);
+        });
+    });
+
+    describe('required base fields', () => {
+        it('should reject when timezone is missing', () => {
+            // Arrange / Act
+            const result = ScheduleSocialPostSchema.safeParse({
+                scheduledAt: futureDate,
+                recurrenceType: 'ONCE'
+            });
+
+            // Assert
+            expect(result.success).toBe(false);
+        });
+
+        it('should reject when scheduledAt is missing', () => {
+            // Arrange / Act
+            const result = ScheduleSocialPostSchema.safeParse({
+                timezone: 'UTC',
+                recurrenceType: 'ONCE'
+            });
+
+            // Assert
+            expect(result.success).toBe(false);
         });
     });
 });

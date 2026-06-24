@@ -758,6 +758,8 @@
 | `POST /api/v1/admin/social/posts/{id}/request-changes` | `social/admin/posts/request-changes.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
 | `POST /api/v1/admin/social/posts/{id}/schedule` | `social/admin/posts/schedule.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
 | `POST /api/v1/admin/social/posts/{id}/unpause` | `social/admin/posts/unpause.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `POST /api/v1/admin/social/posts/{id}/publish-now` | `social/admin/posts/publish-now.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + SOCIAL_POST_SCHEDULE permission gated, no entitlement gate |
+| `PUT /api/v1/admin/social/posts/{id}/hashtags` | `social/admin/posts/set-hashtags.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + SOCIAL_POST_UPDATE permission gated, no entitlement gate |
 | `GET /api/v1/admin/social/publish-logs` | `social/admin/publish-logs/list.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
 | `GET /api/v1/admin/social/settings` | `social/admin/settings/list.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
 | `PATCH /api/v1/admin/social/settings/{key}` | `social/admin/settings/patch-by-key.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |

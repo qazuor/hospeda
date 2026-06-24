@@ -45,7 +45,7 @@ import type { RoleConfigSchema } from '../schema';
 export const editorRole: z.input<typeof RoleConfigSchema> = {
     enabled: true,
     label: { es: 'Editor', en: 'Editor', pt: 'Editor' },
-    mainMenu: ['inicio', 'editorial', 'analisis', 'miCuenta'],
+    mainMenu: ['inicio', 'editorial', 'marketing', 'analisis', 'miCuenta'],
     dashboard: 'editorDashboard',
     topbar: {
         showSearch: true,
@@ -53,7 +53,7 @@ export const editorRole: z.input<typeof RoleConfigSchema> = {
         accountInMenu: true
     },
     mobile: {
-        bottomNav: ['inicio', 'editorial', 'analisis', 'miCuenta'],
+        bottomNav: ['inicio', 'editorial', 'marketing', 'analisis', 'miCuenta'],
         fab: null
     },
     labelOverrides: {

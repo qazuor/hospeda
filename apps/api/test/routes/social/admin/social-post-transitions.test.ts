@@ -434,7 +434,9 @@ describe('admin social post state-transition routes — SPEC-254 T-036', () => {
                 actor: ADMIN_ACTOR,
                 postId: POST_ID,
                 scheduledAt: futureDate,
-                timezone: validBody.timezone
+                timezone: validBody.timezone,
+                recurrenceType: 'ONCE',
+                recurrenceParamsJson: undefined
             });
         });
 

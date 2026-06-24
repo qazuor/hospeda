@@ -57,7 +57,6 @@ const TARGET_ID = '00000000-0000-4000-8001-000000000001';
 const TARGET_ID_2 = '00000000-0000-4000-8001-000000000007';
 const POST_ID = '00000000-0000-4000-8001-000000000002';
 const PLATFORM_FORMAT_ID = '00000000-0000-4000-8001-000000000003';
-const API_BASE_URL = 'https://api.hospeda.com.ar';
 const WEBHOOK_URL = 'https://hook.make.com/edge-case-test';
 const MAKE_API_KEY = 'edge-case-make-api-key';
 
@@ -260,7 +259,6 @@ describe('SocialPublishDispatchService.dispatchTarget — retry boundary (retryC
             target,
             post,
             makeApiKey: MAKE_API_KEY,
-            apiBaseUrl: API_BASE_URL,
             webhookUrl: WEBHOOK_URL
         });
 
@@ -280,7 +278,6 @@ describe('SocialPublishDispatchService.dispatchTarget — retry boundary (retryC
             target,
             post,
             makeApiKey: MAKE_API_KEY,
-            apiBaseUrl: API_BASE_URL,
             webhookUrl: WEBHOOK_URL
         });
 
@@ -304,7 +301,6 @@ describe('SocialPublishDispatchService.dispatchTarget — retry boundary (retryC
             target,
             post,
             makeApiKey: MAKE_API_KEY,
-            apiBaseUrl: API_BASE_URL,
             webhookUrl: WEBHOOK_URL
         });
 
@@ -329,7 +325,6 @@ describe('SocialPublishDispatchService.dispatchTarget — retry boundary (retryC
             target,
             post,
             makeApiKey: MAKE_API_KEY,
-            apiBaseUrl: API_BASE_URL,
             webhookUrl: WEBHOOK_URL
         });
 
@@ -354,7 +349,6 @@ describe('SocialPublishDispatchService.dispatchTarget — retry boundary (retryC
             target,
             post,
             makeApiKey: MAKE_API_KEY,
-            apiBaseUrl: API_BASE_URL,
             webhookUrl: WEBHOOK_URL
         });
 
@@ -377,7 +371,6 @@ describe('SocialPublishDispatchService.dispatchTarget — retry boundary (retryC
             target,
             post,
             makeApiKey: MAKE_API_KEY,
-            apiBaseUrl: API_BASE_URL,
             webhookUrl: WEBHOOK_URL
         });
 
@@ -402,7 +395,6 @@ describe('SocialPublishDispatchService.dispatchTarget — retry boundary (retryC
             target,
             post,
             makeApiKey: MAKE_API_KEY,
-            apiBaseUrl: API_BASE_URL,
             webhookUrl: WEBHOOK_URL
         });
 
@@ -449,7 +441,6 @@ describe('SocialPublishDispatchService.dispatchTarget — sibling isolation on r
             target,
             post,
             makeApiKey: MAKE_API_KEY,
-            apiBaseUrl: API_BASE_URL,
             webhookUrl: WEBHOOK_URL
         });
 
@@ -481,7 +472,6 @@ describe('SocialPublishDispatchService.dispatchTarget — sibling isolation on r
             target,
             post,
             makeApiKey: MAKE_API_KEY,
-            apiBaseUrl: API_BASE_URL,
             webhookUrl: WEBHOOK_URL
         });
 
