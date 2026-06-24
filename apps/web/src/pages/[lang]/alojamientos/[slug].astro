@@ -479,7 +479,7 @@ const faqSections = accommodation.faqs.map((faq) => ({
             variant="detail"
             locale={locale}
             viewAllHref={`/${locale}/alojamientos/${slug}/fotos/`}
-            client:visible
+            client:load
         />
         <QuickFacts extraInfo={accommodation.extraInfo} lang={locale} />
         {accommodation.richDescription ? (
