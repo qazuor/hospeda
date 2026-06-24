@@ -12,6 +12,9 @@ const REPORT_DIR = resolve(import.meta.dirname, '_fixtures');
 const DESKTOP = { width: 1280, height: 800 };
 const PAGE_TIMEOUT = 25_000;
 const NAV_WAIT = 'networkidle' as const;
+const THEMES = ['light', 'dark'] as const;
+
+type Theme = (typeof THEMES)[number];
 
 const INVENTORY: ReadonlyArray<{ url: string; name: string }> = [
     { url: '/es/', name: 'Home' },
@@ -32,6 +35,7 @@ const INVENTORY: ReadonlyArray<{ url: string; name: string }> = [
 type PageResult = {
     url: string;
     name: string;
+    theme: Theme;
     status: 'ok' | 'error';
     error?: string;
     axe?: {
@@ -54,12 +58,14 @@ function filterEntries(): ReadonlyArray<{ url: string; name: string }> {
 
 async function sweepEntry(
     page: import('@playwright/test').Page,
-    entry: { url: string; name: string }
+    entry: { url: string; name: string },
+    theme: Theme
 ): Promise<PageResult> {
     const t0 = Date.now();
     const result: PageResult = {
         url: entry.url,
         name: entry.name,
+        theme,
         status: 'ok',
         durationMs: 0
     };
@@ -77,6 +83,12 @@ async function sweepEntry(
             result.durationMs = Date.now() - t0;
             return result;
         }
+
+        await page.emulateMedia({ colorScheme: theme });
+        await page.evaluate((currentTheme) => {
+            window.localStorage.setItem('theme', currentTheme);
+            document.documentElement.setAttribute('data-theme', currentTheme);
+        }, theme);
 
         // Wait for h1 or content to render
         try {
@@ -123,12 +135,16 @@ async function main() {
         process.exit(1);
     }
 
-    console.log(`\nA11y sweep — ${entries.length} pages (DRY_RUN=${DRY_RUN})`);
+    console.log(
+        `\nA11y sweep — ${entries.length} pages x ${THEMES.length} themes (DRY_RUN=${DRY_RUN})`
+    );
     console.log(`Base URL: ${BASE_URL}\n`);
 
     if (DRY_RUN) {
         for (const entry of entries) {
-            console.log(`  ${entry.name}: ${entry.url}`);
+            for (const theme of THEMES) {
+                console.log(`  ${entry.name} [${theme}]: ${entry.url}`);
+            }
         }
         return;
     }
@@ -146,15 +162,17 @@ async function main() {
     const results: PageResult[] = [];
 
     for (const entry of entries) {
-        process.stdout.write(`  ${entry.url} ... `);
-        const r = await sweepEntry(page, entry);
-        results.push(r);
+        for (const theme of THEMES) {
+            process.stdout.write(`  ${entry.url} [${theme}] ... `);
+            const r = await sweepEntry(page, entry, theme);
+            results.push(r);
 
-        const tag =
-            r.status === 'ok' && r.axe
-                ? `OK (${r.durationMs}ms, axe=${r.axe.violations}v c${r.axe.critical}/s${r.axe.serious})`
-                : `ERR (${r.error})`;
-        console.log(tag);
+            const tag =
+                r.status === 'ok' && r.axe
+                    ? `OK (${r.durationMs}ms, axe=${r.axe.violations}v c${r.axe.critical}/s${r.axe.serious})`
+                    : `ERR (${r.error})`;
+            console.log(tag);
+        }
     }
 
     const summary = {

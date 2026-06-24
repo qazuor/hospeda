@@ -23,6 +23,7 @@
 
 import { announcementsApi } from '@/lib/api/endpoints';
 import { filterActiveByDate, pickAnnouncementText } from '@/lib/announcements';
+import { createTranslations } from '@/lib/i18n';
 
 export interface Props {
     /** Current page locale (e.g. 'es', 'en', 'pt'). Drives copy selection. */
@@ -30,6 +31,7 @@ export interface Props {
 }
 
 const { locale } = Astro.props;
+const { t } = createTranslations(locale as 'es' | 'en' | 'pt');
 
 const response = await announcementsApi.list();
 const all = response.ok ? response.data : [];
@@ -41,12 +43,7 @@ const variantToneClass: Record<string, string> = {
     danger: 'global-announcement--danger'
 };
 
-const dismissAriaLabel =
-    locale === 'en'
-        ? 'Dismiss announcement'
-        : locale === 'pt'
-          ? 'Fechar comunicado'
-          : 'Cerrar anuncio';
+const dismissAriaLabel = t('announcements.dismiss', 'Cerrar anuncio');
 
 const cspNonce = Astro.locals.cspNonce ?? '';
 ---

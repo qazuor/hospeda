@@ -538,8 +538,7 @@ export function UserMenu({
                 {user.avatarUrl ? (
                     <img
                         src={user.avatarUrl}
-                        alt=""
-                        aria-hidden="true"
+                        alt={displayName}
                         className={styles.avatar}
                     />
                 ) : (
