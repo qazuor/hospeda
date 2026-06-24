@@ -88,6 +88,33 @@ describe('buildMergeSetClause — unit', () => {
         expect(found).toBe(true);
     });
 
+    // SPEC-254 regression: the merge fragment must wrap the existing column in
+    // COALESCE(col, '{}'::jsonb). Without it, `NULL || '{...}'::jsonb` evaluates to
+    // SQL NULL, so a patch against a nullable JSONB column that has not been set yet
+    // (e.g. social_posts.recurrence_params_json on a never-scheduled post) is silently
+    // dropped. This test fails if anyone removes the COALESCE wrapper.
+    it('TC2c: wraps the existing column in COALESCE so NULL columns merge correctly', () => {
+        // Arrange
+        const data: Record<string, unknown> = { media: { weekday: 'TUESDAY' } };
+
+        // Act
+        const result = buildMergeSetClause(data, tableWithMedia, ['media']);
+
+        // Assert: the SQL fragment for 'media' must contain a COALESCE wrapper.
+        // Drizzle SQL literal chunks are objects carrying a `value` array of strings.
+        const mediaValue = result.media as Record<string, unknown>;
+        const chunks = mediaValue.queryChunks as Array<unknown>;
+        const hasCoalesce = chunks.some((c) => {
+            if (typeof c === 'string') return c.includes('COALESCE');
+            const val = (c as Record<string, unknown>)?.value;
+            if (Array.isArray(val))
+                return val.some((v) => typeof v === 'string' && v.includes('COALESCE'));
+            if (typeof val === 'string') return val.includes('COALESCE');
+            return false;
+        });
+        expect(hasCoalesce).toBe(true);
+    });
+
     it('TC3: skips mergeable keys absent from the table — falls back to plain value', () => {
         // Arrange: 'media' is declared mergeable but tableWithoutMedia has no 'media' column
         const data: Record<string, unknown> = { media: { gallery: [1, 2, 3] } };
@@ -587,6 +614,41 @@ describe('BaseModel JSONB merge semantics — integration', () => {
             const data = row?.data as { featuredImage?: unknown; gallery?: unknown[] };
             expect(data.featuredImage).toEqual(featuredImage);
             expect(data.gallery).toEqual(gallery);
+        }
+    );
+
+    // TC12 — SPEC-254: merging a patch into a row whose JSONB column is NULL must
+    // yield the patch, not NULL. Reproduces the recurrence_params_json bug: a
+    // never-scheduled post has recurrence_params_json = NULL, and `NULL || patch`
+    // returns NULL (dropping the weekday). The COALESCE wrapper fixes it.
+    it.skipIf(!dbAvailable)(
+        'TC12 (SPEC-254): COALESCE merge into a NULL JSONB column yields the patch',
+        async () => {
+            // Arrange: insert a row with data = SQL NULL (not JSON 'null')
+            const insertResult = await db.execute(
+                sql`INSERT INTO ${sql.identifier(JSONB_TEST_TABLE)} (data)
+                    VALUES (NULL) RETURNING id`
+            );
+            const id = (insertResult as unknown as { rows: Array<{ id: string }> }).rows[0]?.id;
+            if (!id) throw new Error('TC12: no id returned');
+
+            // Sanity: bare `||` against NULL returns NULL (the bug)
+            const buggy = await db.execute(
+                sql`SELECT (data || ${JSON.stringify({ weekday: 'TUESDAY' })}::jsonb) AS r
+                    FROM ${sql.identifier(JSONB_TEST_TABLE)} WHERE id = ${id}::uuid`
+            );
+            expect((buggy as unknown as { rows: Array<{ r: unknown }> }).rows[0]?.r).toBeNull();
+
+            // Act: apply the fixed merge — COALESCE(data, '{}') || patch
+            await db.execute(
+                sql`UPDATE ${sql.identifier(JSONB_TEST_TABLE)}
+                    SET data = COALESCE(data, '{}'::jsonb) || ${JSON.stringify({ weekday: 'TUESDAY' })}::jsonb
+                    WHERE id = ${id}::uuid`
+            );
+
+            // Assert: the patch landed
+            const row = await readRow(db, id);
+            expect(row?.data).toEqual({ weekday: 'TUESDAY' });
         }
     );
 });
