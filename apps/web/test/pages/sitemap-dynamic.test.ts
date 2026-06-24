@@ -345,8 +345,9 @@ describe('sitemap-dynamic.xml — GET handler', () => {
         expect(body).toContain('/eventos/ok-event/');
         expect(body).toContain('/publicaciones/ok-post/');
 
-        // Destinations absent (fetch failed)
-        expect(body).not.toContain('/destinos/');
+        // Destination detail absent (fetch failed); listing still present
+        expect(body).not.toContain('/destinos/concordia');
+        expect(body).toContain('/es/destinos/</loc>');
 
         // XML is still valid
         expect(body).toContain('<?xml version="1.0"');
@@ -363,8 +364,15 @@ describe('sitemap-dynamic.xml — GET handler', () => {
         expect(body).toContain('<?xml version="1.0"');
         expect(body).toContain('<urlset');
         expect(body).toContain('</urlset>');
-        // No <url> entries
-        expect(body).not.toContain('<url>');
+        // Home page and listing pages are always emitted (priority 1.0/0.7)
+        // even when API fetches fail — these are statically-known routes.
+        expect(body).toContain('<loc>https://hospeda.test/es/</loc>');
+        expect(body).toContain('<loc>https://hospeda.test/es/alojamientos/</loc>');
+        expect(body).toContain('<loc>https://hospeda.test/es/destinos/</loc>');
+        expect(body).toContain('<loc>https://hospeda.test/es/gastronomia/</loc>');
+        expect(body).toContain('<loc>https://hospeda.test/es/experiencias/</loc>');
+        // Entity detail pages (priority 0.8) are absent when API fails
+        expect(body).not.toContain('/hotel-test');
     });
 
     it('returns HTTP 503 when env is not configured', async () => {
