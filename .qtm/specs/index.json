@@ -1866,7 +1866,7 @@
         },
         {
             "specId": "SPEC-269",
-            "title": "Web performance audit & improvements — Core Web Vitals (LCP, INP, CLS), bundle, images",
+            "title": "Web performance audit & improvements — Core Web Vitals, 12 findings + fix catalog",
             "type": "improvement",
             "complexity": "medium",
             "status": "draft",
