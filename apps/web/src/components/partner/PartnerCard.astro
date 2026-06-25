@@ -1,0 +1,182 @@
+---
+/**
+ * @file PartnerCard.astro
+ * @description Partner card for the partners listing page.
+ * Displays partner name, type, tier, logo, and description.
+ */
+
+import { buildUrl } from '@/lib/urls';
+import { createTranslations } from '@/lib/i18n';
+import type { PartnerCardData } from '@/data/types';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+    readonly data: PartnerCardData;
+    readonly locale: SupportedLocale;
+    readonly eager?: boolean;
+}
+
+const { data, locale, eager = false } = Astro.props;
+const { t } = createTranslations(locale);
+
+const detailUrl = data.websiteUrl || buildUrl({ locale, path: `/partners/${data.slug}/` });
+const isExternal = Boolean(data.websiteUrl);
+
+const PARTNER_TYPE_LABELS: Record<string, string> = {
+    BUSINESS: 'business',
+    NGO: 'ONG',
+    INSTITUTION: 'Institución',
+    GOVERNMENT: 'Gobierno'
+};
+
+const PARTNER_TIER_LABELS: Record<string, string> = {
+    BASIC: 'Básico',
+    STANDARD: 'Estándar',
+    PREMIUM: 'Premium'
+};
+---
+
+<a
+    href={detailUrl}
+    class:list={['partner-card', { 'partner-card--featured': data.isFeatured }]}
+    {...isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {}}
+    aria-label={data.name}
+>
+    <div class="partner-card__logo">
+        {data.logoUrl ? (
+            <img
+                src={data.logoUrl}
+                alt={data.name}
+                class="partner-card__logo-img"
+                loading={eager ? 'eager' : 'lazy'}
+                decoding="async"
+            />
+        ) : (
+            <div class="partner-card__logo-placeholder">
+                {data.name.charAt(0).toUpperCase()}
+            </div>
+        )}
+    </div>
+
+    <div class="partner-card__content">
+        <div class="partner-card__badges">
+            <span class="partner-card__type">
+                {PARTNER_TYPE_LABELS[data.type] || data.type}
+            </span>
+            <span class="partner-card__tier">
+                {PARTNER_TIER_LABELS[data.tier] || data.tier}
+            </span>
+        </div>
+
+        <h3 class="partner-card__name">{data.name}</h3>
+
+        {data.description && (
+            <p class="partner-card__description">{data.description}</p>
+        )}
+    </div>
+</a>
+
+<style>
+    .partner-card {
+        display: flex;
+        flex-direction: column;
+        background: var(--core-card);
+        border-radius: var(--radius-card);
+        overflow: hidden;
+        box-shadow: var(--shadow-card);
+        transition: transform var(--duration-normal) ease, box-shadow var(--duration-normal) ease;
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .partner-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-card-hover);
+    }
+
+    .partner-card--featured {
+        border: 2px solid var(--brand-accent);
+    }
+
+    .partner-card__logo {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 160px;
+        background: var(--surface-warm);
+        padding: var(--space-4);
+    }
+
+    .partner-card__logo-img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+    }
+
+    .partner-card__logo-placeholder {
+        width: 64px;
+        height: 64px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: var(--radius-md);
+        background: var(--brand-primary);
+        color: var(--primary-foreground);
+        font-family: var(--font-heading);
+        font-size: 1.75rem;
+        font-weight: 700;
+    }
+
+    .partner-card__content {
+        padding: var(--space-5);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+    }
+
+    .partner-card__badges {
+        display: flex;
+        gap: var(--space-2);
+        flex-wrap: wrap;
+    }
+
+    .partner-card__type,
+    .partner-card__tier {
+        font-family: var(--font-sans);
+        font-size: 0.75rem;
+        font-weight: 500;
+        padding: 0.2rem 0.6rem;
+        border-radius: var(--radius-pill);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .partner-card__type {
+        background: oklch(from var(--brand-primary) l c h / 0.15);
+        color: var(--brand-primary);
+    }
+
+    .partner-card__tier {
+        background: oklch(from var(--brand-accent) l c h / 0.15);
+        color: var(--brand-accent);
+    }
+
+    .partner-card__name {
+        font-family: var(--font-heading);
+        font-weight: 600;
+        font-size: 1.1rem;
+        color: var(--core-foreground);
+        margin: 0;
+    }
+
+    .partner-card__description {
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        color: var(--core-muted-foreground);
+        margin: 0;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+</style>
