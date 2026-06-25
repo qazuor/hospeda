@@ -104,17 +104,21 @@ jobs:
       - name: Build packages and web app
         run: pnpm exec turbo run build --filter=hospeda-web...
 
-      # astro preview serves the built output on port 4321, which matches the
-      # URLs in lighthouserc.json. We background it with & and give it a few
-      # seconds to become ready before lhci tries to reach it.
-      - name: Start astro preview server
+      # Serve the built output on port 4321, matching the URLs in
+      # lighthouserc.json. The @astrojs/node standalone adapter emits
+      # dist/server/index.js (a self-contained HTTP server honoring HOST/PORT)
+      # — NOT the dist/server/entry.mjs that `astro preview` looks for, so we
+      # start the standalone server directly. We background it with & and wait
+      # until it answers before lhci tries to reach it.
+      - name: Start production preview server
         working-directory: apps/web
         run: |
-          pnpm preview --port 4321 &
+          HOST=127.0.0.1 PORT=4321 node ./dist/server/index.js &
           echo "PREVIEW_PID=$!" >> $GITHUB_ENV
-          # Wait up to 30 s for the preview server to be ready
+          # Wait up to 30 s for the server to be ready (root redirects to a
+          # locale, so probe a real localized page).
           for i in $(seq 1 30); do
-            if curl -s -o /dev/null -w "%{http_code}" http://localhost:4321/ | grep -qE '^[23]'; then
+            if curl -s -o /dev/null -w "%{http_code}" http://localhost:4321/es/ | grep -qE '^[23]'; then
               echo "Preview server ready after ${i}s"
               break
             fi
