@@ -73,6 +73,7 @@ export const partnersConfig: EntityConfig<Partner> = {
     detailPath: '/partners/[id]',
 
     // Schemas
+    // TYPE-WORKAROUND: PartnerListItemSchema is a subset schema; cast to full Partner type for DataTable typing
     listItemSchema: PartnerListItemSchema as unknown as z.ZodSchema<Partner>,
 
     // Search configuration

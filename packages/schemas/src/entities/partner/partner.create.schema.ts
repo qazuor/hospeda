@@ -1,6 +1,4 @@
-// biome-ignore lint/style/useImportType: z is used in z.infer() for type inference
-import { z } from 'zod';
-// biome-ignore lint/style/useImportType: partnerSchema is used as runtime value in .omit()
+import type { z } from 'zod';
 import { partnerSchema } from './partner.schema.js';
 
 /**

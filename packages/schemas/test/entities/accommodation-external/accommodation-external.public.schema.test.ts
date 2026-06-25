@@ -451,7 +451,6 @@ describe('buildExternalReputationBlock', () => {
             ];
 
             // Act
-            // biome-ignore lint/suspicious/noExplicitAny: intentionally passing invalid data for test
             const block = buildExternalReputationBlock(sources as any, SNIPPETS_TTL_MS);
 
             // Assert

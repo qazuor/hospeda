@@ -29,6 +29,44 @@ import {
     publicDestinationRoutes
 } from './destination';
 import { adminEventRoutes, protectedEventRoutes, publicEventRoutes } from './event';
+import {
+    adminEventLocationRoutes,
+    protectedEventLocationRoutes,
+    publicEventLocationRoutes
+} from './event-location';
+import {
+    adminEventOrganizerRoutes,
+    protectedEventOrganizerRoutes,
+    publicEventOrganizerRoutes
+} from './event-organizer';
+import {
+    adminExperienceRoutes,
+    protectedExperienceRoutes,
+    publicExperienceRoutes
+} from './experience';
+import { adminFeatureRoutes, protectedFeatureRoutes, publicFeatureRoutes } from './feature';
+import {
+    adminGastronomyRoutes,
+    protectedGastronomyRoutes,
+    publicGastronomyRoutes
+} from './gastronomy';
+import { protectedHostRoutes } from './host';
+import { protectedHostOnboardingRoutes } from './host-onboarding';
+import { adminHostTradeRoutes, protectedHostTradeRoutes } from './host-trade';
+import { adminPostRoutes, protectedPostRoutes, publicPostRoutes } from './post';
+import {
+    adminPostTagAssignmentRoutes,
+    adminPostTagCrudRoutes,
+    publicPostTagRoutes
+} from './tag/post-tag/index.js';
+import {
+    adminEntityTagRoutes,
+    adminInternalTagRoutes,
+    adminOwnTagRoutes,
+    adminSystemTagRoutes,
+    adminUserTagModerationRoutes
+} from './tag/user-tag/index.js';
+
 import { adminOwnerPromotionRoutes, protectedOwnerPromotionRoutes } from './owner-promotion';
 import {
     adminCreatePartnerRoute,

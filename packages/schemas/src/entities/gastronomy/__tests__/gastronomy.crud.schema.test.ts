@@ -255,7 +255,6 @@ describe('GastronomyOwnerUpdateInputSchema', () => {
         it('should strip priceFrom silently (experience-only field — not valid for gastronomy)', () => {
             // Arrange: priceFrom is experience-only; if present in a gastronomy payload
             // it must be stripped by Zod's unknown-key stripping behaviour.
-            // biome-ignore lint/suspicious/noExplicitAny: simulating a cross-vertical forged payload
             const result = GastronomyOwnerUpdateInputSchema.safeParse({
                 priceFrom: 100000 // experience-only — must be stripped
             } as Record<string, unknown>);
@@ -269,7 +268,6 @@ describe('GastronomyOwnerUpdateInputSchema', () => {
         });
 
         it('should strip priceUnit silently (experience-only field — not valid for gastronomy)', () => {
-            // biome-ignore lint/suspicious/noExplicitAny: simulating a cross-vertical forged payload
             const result = GastronomyOwnerUpdateInputSchema.safeParse({
                 priceUnit: 'per_person' // experience-only — must be stripped
             } as Record<string, unknown>);
