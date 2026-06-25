@@ -114,6 +114,24 @@ export const CLIENT_WEB_ENV_VARS = [
             'Seteá `/api/event` una vez deployado el Cloudflare Worker en infra/cloudflare/sentry-tunnel/ para este entorno (route staging: `staging.hospeda.com.ar/api/event`, prod: `hospeda.com.ar/api/event`). EL ORDEN DE DEPLOY IMPORTA: el Worker debe estar vivo primero — el mismo flip de env saca la entrada externa *.sentry.io del CSP, así que si el path del tunnel da 404, se pierden todos los reportes de error del browser. Hermano de PUBLIC_POSTHOG_HOST (PostHog usa un path DISTINTO, /api/relay, y un Worker DISTINTO — no los mezcles). Dejalo sin setear para reportar directo a Sentry (default; *.sentry.io queda en el CSP).'
     },
     {
+        name: 'PUBLIC_SENTRY_TRACES_SAMPLE_RATE',
+        description:
+            'Sentry tracing sample rate for the web app (0.0–1.0). Defaults to 0.1 if unset.',
+        descriptionEs:
+            'Tasa de muestreo de trazas de Sentry para la web (0.0–1.0). Por defecto 0.1 si no está seteada.',
+        type: 'number',
+        required: false,
+        secret: false,
+        defaultValue: '0.1',
+        exampleValue: '1.0',
+        apps: ['web'],
+        category: 'client-web',
+        howToObtain:
+            'Floating-point string between 0.0 and 1.0 controlling what fraction of web transactions Sentry records performance traces for. 0.1 (10%) is the production default — enough for CWV trends at low cost. Set to 1.0 on hospeda-web-staging so every request is traced and Core Web Vitals data is never starved by sampling. Increase temporarily on prod only when debugging a performance regression.',
+        howToObtainEs:
+            'Número flotante entre 0.0 y 1.0 que controla qué fracción de transacciones web Sentry registra para trazas de performance. 0.1 (10%) es el default de prod — suficiente para tendencias CWV a bajo costo. Setealo en 1.0 en hospeda-web-staging para que cada request sea traceado y los datos de Core Web Vitals nunca queden sin muestra. Aumentá temporalmente en prod solo cuando estés debuggeando una regresión de performance.'
+    },
+    {
         name: 'PUBLIC_ENABLE_LOGGING',
         description: 'Enable verbose client-side logging in the web app',
         descriptionEs: 'Activa el logging verboso del lado cliente en la web',
