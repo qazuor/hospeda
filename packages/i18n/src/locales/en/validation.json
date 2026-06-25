@@ -1430,6 +1430,9 @@
                     },
                     "sourceUrl": {
                         "invalid": "[EN] El source url no es válido"
+                    },
+                    "provider": {
+                        "invalid": "Provider must be unsplash, pexels, or user-upload"
                     }
                 },
                 "caption": {
