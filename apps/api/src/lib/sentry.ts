@@ -123,10 +123,45 @@ export function initializeSentry(config: SentryConfig = {}): boolean {
             // layer uses the Result pattern, see addon.checkout.ts
             // `validation.valid === false` branch). The filter remains as
             // defensive infrastructure for future capture sites.
+            //
+            // SPEC-180: extended denylist:
+            // - Drop "Request error caught by Sentry middleware" noise — the
+            //   middleware logs the error for structured logs; capturing the
+            //   raw exception again would double-count HTTP errors (the route
+            //   handler already threw, Sentry will re-capture the root cause
+            //   via another capture site if needed).
+            // - Drop events whose extra contains a `responseBody` dump (can
+            //   contain PII and very large payloads that inflate quota).
             beforeSend(event, _hint) {
                 // Drop events explicitly tagged as expected.
                 if (event.tags && event.tags.expected_error === 'true') {
                     return null;
+                }
+
+                // Drop Sentry-middleware-level double-captures of HTTP errors.
+                // These are re-thrown to the route error handler which surfaces
+                // the real root cause; the middleware log is enough for diagnostics.
+                const middlewareMessage = 'Request error caught by Sentry middleware';
+                if (event.message === middlewareMessage) {
+                    return null;
+                }
+                // Also match when the middleware error lands as an exception value
+                if (
+                    event.exception?.values?.some(
+                        (v) => typeof v.value === 'string' && v.value.includes(middlewareMessage)
+                    )
+                ) {
+                    return null;
+                }
+
+                // Drop events with a response body dump in extra — these may
+                // contain large/PII payloads and inflate the Sentry quota.
+                if (event.extra && 'responseBody' in event.extra) {
+                    const { responseBody: _responseBody, ...safeExtra } = event.extra as Record<
+                        string,
+                        unknown
+                    >;
+                    event.extra = safeExtra;
                 }
 
                 // Remove sensitive data from breadcrumbs
