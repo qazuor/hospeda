@@ -6,9 +6,9 @@
     "summary": {
         "total": 13,
         "byStatus": {
-            "pending": 2,
+            "pending": 0,
             "in_progress": 0,
-            "completed": 11
+            "completed": 13
         },
         "byPhase": {
             "core": 3,
@@ -23,7 +23,7 @@
             "id": "T-269-01",
             "title": "Run Lighthouse audit to capture baseline scores (home/listing/detail, mobile+desktop)",
             "description": "Capture a reproducible performance baseline on three key page types before any fix lands, so T-269-11 can show concrete delta.\n\nWhat to do:\n- Start `apps/web` locally (or against staging) and run Lighthouse on a minimum of:\n  - Home: `/{lang}/`\n  - Accommodation listing: `/{lang}/alojamientos/`\n  - Accommodation detail: `/{lang}/alojamientos/<slug>` (pick one with a hero image)\n  Optionally: one event/destination/gastronomy/experience/post detail.\n- Metrics to capture per run: Performance score, LCP, INP, CLS, TBT, FCP. Do **mobile** (Moto G Power throttle) AND desktop.\n- Run each page 3-5 times and record the median. Lighthouse scores are noisy; a single run is unreliable.\n- Save the raw JSON or the HTML report to `.qtm/specs/SPEC-269-web-performance-audit/lighthouse-baseline/` (one file per page+device).\n- Summarise the baseline in a markdown table in that same directory (or in this task's progress notes).\n\nKey files to read first (context only, not to change):\n- `apps/web/lighthouserc.json` — existing config; use it as the Lighthouse CLI config.\n- `apps/web/package.json:22` — existing `lighthouse` script; run via `pnpm --filter web lighthouse`.\n\nAcceptance criteria:\n- At least 6 Lighthouse reports saved (3 pages × mobile+desktop).\n- A summary markdown table with scores exists at the baseline path.\n- No code changes.\n\nTesting: This task IS the test — its output is the baseline document that T-269-11 compares against.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-269-11"],
@@ -54,8 +54,8 @@
             },
             "timestamps": {
                 "created": "2026-06-24T00:00:00Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-25T00:00:00Z",
+                "completed": "2026-06-25T00:00:00Z"
             }
         },
         {
@@ -457,7 +457,7 @@
             "id": "T-269-11",
             "title": "Re-run Lighthouse post-fix and verify score ≥90 mobile on key pages",
             "description": "After all fix tasks (T-269-02b, T-269-03a, T-269-03b, T-269-04, T-269-05, T-269-06, T-269-07, T-269-08, T-269-09, T-269-10) are complete, re-run Lighthouse to verify the global acceptance criteria from spec §7 are met.\n\nThis is the final validation task — it must not start until all fix tasks are done.\n\nWhat to do:\n1. Run Lighthouse on the same pages and with the same methodology as T-269-01 (3-5 runs, take median).\n2. Compare to the T-269-01 baseline.\n3. Verify against the global acceptance criteria:\n   - Lighthouse Performance ≥90 mobile on home, accommodation listing, accommodation detail.\n   - LCP <2.5s on key pages (home hero paints without waiting for hydration).\n   - INP <200ms on key pages.\n   - CLS <0.1 on key pages.\n   - 0 chunks >500KB in the build (verify via `pnpm --filter web build:analyze`).\n   - Leaflet NOT in the initial bundle (visible in treemap).\n   - Event card `FavoriteButton` uses `client:visible` (code review check).\n   - CI runs Lighthouse report-only job (CI check).\n4. Save the post-fix reports alongside the baseline in `.qtm/specs/SPEC-269-web-performance-audit/lighthouse-post-fix/`.\n5. Write a final summary comparing baseline vs post-fix scores.\n\nIf any criterion is not met, the relevant fix task must be reopened and iterated.\n\nAcceptance criteria (per spec §7):\n- Performance score ≥90 mobile on home, listing, detail.\n- LCP <2.5s, INP <200ms, CLS <0.1 on key pages.\n- 0 chunks >500KB in `pnpm --filter web build:analyze` output.\n- All code-level ACs verified (leaflet lazy, FavoriteButton directive, CI job).\n- Post-fix report saved and compared to baseline.\n\nTesting: this task IS the test (Lighthouse runs + treemap check + manual functional smoke to confirm no regressions).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [
                 "T-269-01",
@@ -494,14 +494,14 @@
             "tags": ["web", "performance", "lighthouse", "validation", "core-web-vitals"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
+                "lint": true,
                 "typecheck": null,
-                "tests": null
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-06-24T00:00:00Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-25T00:00:00Z",
+                "completed": "2026-06-25T00:00:00Z"
             }
         }
     ]
