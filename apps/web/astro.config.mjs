@@ -233,44 +233,6 @@ export default defineConfig({
                     process.env.PUBLIC_SENTRY_RELEASE ||
                     ''
             )
-        },
-        build: {
-            rollupOptions: {
-                output: {
-                    // ---------------------------------------------------------------------------
-                    // Stable vendor chunks for long-term HTTP caching (SPEC-269 T-269-02b).
-                    //
-                    // Goals:
-                    //   - react / react-dom / scheduler change only on React upgrades → long TTL.
-                    //   - @sentry/* loaded broadly across pages → benefits from a stable chunk.
-                    //
-                    // Intentionally NOT forced into chunks:
-                    //   - leaflet / react-leaflet / react-leaflet-cluster — already lazy via
-                    //     Part A; Vite will place them in their own async chunk automatically.
-                    //   - tiptap / recharts — route-lazy islands; Vite handles them well.
-                    //   - @repo/i18n web.* locale bundles (~989 KB) — irreducible per-locale
-                    //     split deferred to a dedicated spec.
-                    // ---------------------------------------------------------------------------
-                    manualChunks(id) {
-                        // React runtime — changes only on React version bumps.
-                        if (
-                            id.includes('/node_modules/react/') ||
-                            id.includes('/node_modules/react-dom/') ||
-                            id.includes('/node_modules/scheduler/')
-                        ) {
-                            return 'vendor-react';
-                        }
-                        // Sentry SDK — loaded broadly; isolating prevents it from
-                        // busting unrelated vendor caches on every SDK update.
-                        if (id.includes('/node_modules/@sentry/')) {
-                            return 'vendor-sentry';
-                        }
-                        // All other node_modules fall through to Vite's default
-                        // chunking strategy (returns undefined → no forced chunk).
-                        return undefined;
-                    }
-                }
-            }
         }
     }
 });

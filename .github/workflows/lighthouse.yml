@@ -104,16 +104,13 @@ jobs:
       - name: Build packages and web app
         run: pnpm exec turbo run build --filter=hospeda-web...
 
-      # Serve the built output on port 4321, matching the URLs in
-      # lighthouserc.json. The @astrojs/node standalone adapter emits
-      # dist/server/index.js (a self-contained HTTP server honoring HOST/PORT)
-      # — NOT the dist/server/entry.mjs that `astro preview` looks for, so we
-      # start the standalone server directly. We background it with & and wait
-      # until it answers before lhci tries to reach it.
-      - name: Start production preview server
+      # astro preview serves the standalone build (dist/server/entry.mjs) on
+      # port 4321, matching the URLs in lighthouserc.json. We background it with
+      # & and wait until it answers before lhci tries to reach it.
+      - name: Start astro preview server
         working-directory: apps/web
         run: |
-          HOST=127.0.0.1 PORT=4321 node ./dist/server/index.js &
+          pnpm preview --port 4321 &
           echo "PREVIEW_PID=$!" >> $GITHUB_ENV
           # Wait up to 30 s for the server to be ready (root redirects to a
           # locale, so probe a real localized page).
