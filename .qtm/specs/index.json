@@ -791,7 +791,7 @@
             "title": "E2E Nightly Test Suite Repair",
             "type": "chore",
             "complexity": "high",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-105-e2e-nightly-suite-repair"
         },
         {
@@ -2072,7 +2072,7 @@
             "title": "Sentry Observability Hardening — source maps, environments, and logger-driven capture",
             "type": "fix",
             "complexity": "medium-high",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-180-sentry-observability",
             "created": "2026-06-01T00:00:00.000Z",
             "branch": "spec/SPEC-180-sentry-observability",
@@ -2090,7 +2090,8 @@
                 "admin",
                 "ops"
             ],
-            "archived": false
+            "archived": true,
+            "archivedAt": "2026-06-25"
         }
     ]
 }

@@ -63,6 +63,12 @@ export const serverEnvBaseSchema = z.object({
         .string()
         .regex(/^(\/[\w/-]+)?$/, 'PUBLIC_SENTRY_TUNNEL must be an absolute path like /api/event')
         .optional(),
+    /**
+     * Sentry tracing sample rate for the web app (0.0–1.0).
+     * Set to 1.0 on staging to avoid starving CWV data at 10% sampling.
+     * Defaults to 0.1 if unset.
+     */
+    PUBLIC_SENTRY_TRACES_SAMPLE_RATE: z.coerce.number().min(0).max(1).optional(),
     PUBLIC_VERSION: z.string().optional(),
     /**
      * Kill switch for the feedback FAB widget in the web app.

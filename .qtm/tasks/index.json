@@ -361,6 +361,13 @@
             "archiveNote": "Status drift fixed 2026-05-15: spec was archived in specs/index.json but tasks/index.json status field was not flipped. Last reported progress was 26/92 — bumped to full since spec is closed."
         },
         {
+            "specId": "SPEC-105",
+            "title": "E2E Nightly Test Suite Repair",
+            "status": "in-progress",
+            "progress": "0/6",
+            "path": "SPEC-105-e2e-nightly-suite-repair"
+        },
+        {
             "specId": "SPEC-119",
             "title": "Accommodation Example Seeds Realism",
             "status": "completed",
@@ -721,9 +728,11 @@
         {
             "specId": "SPEC-180",
             "title": "Sentry Observability Hardening — source maps, environments, and logger-driven capture",
-            "status": "in-progress",
-            "progress": "0/14",
-            "path": "SPEC-180-sentry-observability"
+            "status": "completed",
+            "progress": "14/14",
+            "path": "SPEC-180-sentry-observability",
+            "archived": true,
+            "archivedAt": "2026-06-25"
         }
     ],
     "standalone": {

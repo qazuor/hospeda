@@ -64,7 +64,7 @@ if (dsn && crashReportingAllowed) {
             }
         },
 
-        tracesSampleRate: 0.1,
+        tracesSampleRate: import.meta.env.PUBLIC_SENTRY_TRACES_SAMPLE_RATE ?? 0.1,
         replaysSessionSampleRate: 0.1,
         replaysOnErrorSampleRate: 1.0,
 
