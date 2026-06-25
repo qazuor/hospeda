@@ -791,7 +791,7 @@
             "title": "E2E Nightly Test Suite Repair",
             "type": "chore",
             "complexity": "high",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-105-e2e-nightly-suite-repair"
         },
         {
