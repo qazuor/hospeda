@@ -85,6 +85,7 @@ import {
 import { protectedAiRoutes } from './ai/protected/index.js';
 import { aiSocialCatalogRoute, aiSocialDraftsRoute } from './ai/social/index.js';
 import { adminAppLogRoutes } from './app-logs';
+import { adminAuditLogRoutes, adminSecurityLogRoutes } from './audit-logs';
 // ─── Non-entity route imports ─────────────────────────────────────────────────
 import { adminAuthRoutes, authRoutes, protectedAuthRoutes } from './auth';
 import { betterAuthHandler } from './auth/handler';
@@ -459,6 +460,10 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
         // Admin app log viewer (SPEC-184)
         app.route('/api/v1/admin/logs', adminAppLogRoutes);
+
+        // Admin audit & security log viewers (SPEC-162)
+        app.route('/api/v1/admin/audit-logs', adminAuditLogRoutes);
+        app.route('/api/v1/admin/security-logs', adminSecurityLogRoutes);
 
         // Admin view stats (SPEC-197 T-008–T-011)
         app.route('/api/v1/admin/views', adminViewsRoutes);
