@@ -3,6 +3,7 @@
  * @module logger/logger
  */
 
+import { hasCaptureHook, invokeCaptureHook } from './capture.js';
 import {
     clearCategories,
     getCategoryByKey,
@@ -109,6 +110,24 @@ function logWithLevel(
     // exist so the no-hook path stays allocation-free.
     if (hasHooks()) {
         dispatchHooks(buildLogEntry(level, value, label, options));
+    }
+
+    // SPEC-180 BETA-64: forward ERROR-level entries to the capture hook (e.g.
+    // Sentry) when the call site opts in with `{ capture: true }`. This is
+    // deliberately opt-in — expected errors (404s, validation failures, known
+    // domain errors) must NOT set `capture: true`.
+    if (level === LogLevel.ERROR && options?.capture === true && hasCaptureHook()) {
+        const extra: Record<string, unknown> = {};
+        if (label !== undefined) {
+            extra.label = label;
+        }
+        if (options.category !== undefined) {
+            extra.category = options.category;
+        }
+        if (typeof value !== 'string') {
+            extra.data = value;
+        }
+        invokeCaptureHook(value, extra);
     }
 
     // TODO: Implement file logging if save is enabled
