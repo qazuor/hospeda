@@ -721,9 +721,11 @@
         {
             "specId": "SPEC-180",
             "title": "Sentry Observability Hardening — source maps, environments, and logger-driven capture",
-            "status": "in-progress",
-            "progress": "0/14",
-            "path": "SPEC-180-sentry-observability"
+            "status": "completed",
+            "progress": "14/14",
+            "path": "SPEC-180-sentry-observability",
+            "archived": true,
+            "archivedAt": "2026-06-25"
         }
     ],
     "standalone": {
