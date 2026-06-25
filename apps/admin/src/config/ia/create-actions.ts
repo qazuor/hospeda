@@ -198,6 +198,17 @@ export const createActions: Record<string, CreateAction> = {
     },
 
     /**
+     * Create a new partner. Gated by PARTNER_MANAGE.
+     */
+    newPartner: {
+        id: 'newPartner',
+        label: { es: 'Nuevo partner', en: 'New partner', pt: 'Novo partner' },
+        route: '/partners/new',
+        icon: 'UsersManagementIcon',
+        permissions: ['PARTNER_MANAGE']
+    },
+
+    /**
      * Create a new promo code. Gated by DISCOUNT_CODE_CREATE.
      * Real route: apps/admin/src/routes/_authed/billing/promo-codes.tsx
      * (no dedicated /new route — action triggers modal, route points to list)

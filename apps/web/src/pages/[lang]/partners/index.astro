@@ -13,9 +13,12 @@ import ListingLayout from '@/layouts/ListingLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import ListingPageHeader from '@/components/shared/layout/ListingPageHeader.astro';
 import PartnerCard from '@/components/partner/PartnerCard.astro';
+import ItemListJsonLd from '@/components/seo/ItemListJsonLd.astro';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import Pagination from '@/components/shared/feedback/Pagination.astro';
+import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
+import type { FilterGroup } from '@/components/shared/filters/FilterSidebar.client';
 import { partnerApi } from '@/lib/api/endpoints';
 import { toPartnerCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
@@ -57,6 +60,27 @@ const cards = items.map((item) =>
 
 const baseUrl = buildUrl({ locale, path: 'partners' });
 const canonicalPath = page > 1 ? `${baseUrl}page/${page}/` : baseUrl;
+
+const filterGroups: FilterGroup[] = [
+    {
+        id: 'type',
+        label: t('partners.listing.typeFilter', 'Tipo de partner'),
+        type: 'checkbox',
+        options: [
+            { value: 'commerce', label: t('partners.types.commerce', 'Comercio') },
+            { value: 'ngo', label: t('partners.types.ngo', 'ONG') },
+            { value: 'institution', label: t('partners.types.institution', 'Institución') }
+        ]
+    }
+];
+
+const initialParams: Record<string, string> = {};
+if (type) initialParams.type = type;
+
+const itemListEntries = cards.map((card) => ({
+    url: card.websiteUrl ?? new URL(baseUrl, Astro.site ?? Astro.url.origin).href,
+    name: card.name
+}));
 ---
 
 <ListingLayout
@@ -67,11 +91,29 @@ const canonicalPath = page > 1 ? `${baseUrl}page/${page}/` : baseUrl;
         'Conocé a las organizaciones que apoyan a Hospeda'
     )}
     canonicalPath={canonicalPath}
+    showFilters={true}
+    filterPosition="left"
 >
+    <ItemListJsonLd
+        slot="head-extra"
+        name={t('partners.listing.title', 'Socios')}
+        items={itemListEntries}
+        numberOfItems={total}
+        startPosition={(page - 1) * pageSize + 1}
+    />
+
     <Breadcrumbs
         slot="breadcrumbs"
         locale={locale}
         items={[{ label: t('partners.listing.title', 'Socios') }]}
+    />
+
+    <FilterSidebar
+        slot="filters"
+        client:load
+        locale={locale}
+        filters={filterGroups}
+        initialParams={initialParams}
     />
 
     <ListingPageHeader

@@ -19,62 +19,75 @@ interface Props {
 const { data, locale, eager = false } = Astro.props;
 const { t } = createTranslations(locale);
 
-const detailUrl = data.websiteUrl || buildUrl({ locale, path: `/partners/${data.slug}/` });
-const isExternal = Boolean(data.websiteUrl);
-
-const PARTNER_TYPE_LABELS: Record<string, string> = {
-    BUSINESS: 'business',
-    NGO: 'ONG',
-    INSTITUTION: 'Institución',
-    GOVERNMENT: 'Gobierno'
-};
-
-const PARTNER_TIER_LABELS: Record<string, string> = {
-    BASIC: 'Básico',
-    STANDARD: 'Estándar',
-    PREMIUM: 'Premium'
-};
+const detailUrl = data.websiteUrl || buildUrl({ locale, path: 'partners' });
+const tierClass = `partner-card--${data.tier}`;
 ---
 
-<a
-    href={detailUrl}
-    class:list={['partner-card', { 'partner-card--featured': data.isFeatured }]}
-    {...isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {}}
-    aria-label={data.name}
->
-    <div class="partner-card__logo">
-        {data.logoUrl ? (
-            <img
-                src={data.logoUrl}
-                alt={data.name}
-                class="partner-card__logo-img"
-                loading={eager ? 'eager' : 'lazy'}
-                decoding="async"
-            />
-        ) : (
-            <div class="partner-card__logo-placeholder">
-                {data.name.charAt(0).toUpperCase()}
-            </div>
-        )}
-    </div>
-
-    <div class="partner-card__content">
-        <div class="partner-card__badges">
-            <span class="partner-card__type">
-                {PARTNER_TYPE_LABELS[data.type] || data.type}
-            </span>
-            <span class="partner-card__tier">
-                {PARTNER_TIER_LABELS[data.tier] || data.tier}
-            </span>
+{data.websiteUrl ? (
+    <a
+        href={detailUrl}
+        class:list={['partner-card', tierClass, { 'partner-card--featured': data.isFeatured }]}
+        target="_blank"
+        rel="sponsored noopener"
+        aria-label={data.name}
+    >
+        <div class="partner-card__logo">
+            {data.logoUrl ? (
+                <img
+                    src={data.logoUrl}
+                    alt={data.name}
+                    class="partner-card__logo-img"
+                    loading={eager ? 'eager' : 'lazy'}
+                    decoding="async"
+                />
+            ) : (
+                <div class="partner-card__logo-placeholder">
+                    {data.name.charAt(0).toUpperCase()}
+                </div>
+            )}
         </div>
 
-        <h3 class="partner-card__name">{data.name}</h3>
+        <div class="partner-card__content">
+            <div class="partner-card__badges">
+                <span class="partner-card__type">{t(`partners.types.${data.type}`, data.type)}</span>
+                <span class="partner-card__tier">{t(`partners.tiers.${data.tier}`, data.tier)}</span>
+            </div>
 
-        {data.description && (
-            <p class="partner-card__description">{data.description}</p>
-        )}
-    </div>
-</a>
+            <h3 class="partner-card__name">{data.name}</h3>
+
+            {data.description && <p class="partner-card__description">{data.description}</p>}
+        </div>
+    </a>
+) : (
+    <article class:list={['partner-card', tierClass, { 'partner-card--featured': data.isFeatured }]}>
+        <div class="partner-card__logo">
+            {data.logoUrl ? (
+                <img
+                    src={data.logoUrl}
+                    alt={data.name}
+                    class="partner-card__logo-img"
+                    loading={eager ? 'eager' : 'lazy'}
+                    decoding="async"
+                />
+            ) : (
+                <div class="partner-card__logo-placeholder">
+                    {data.name.charAt(0).toUpperCase()}
+                </div>
+            )}
+        </div>
+
+        <div class="partner-card__content">
+            <div class="partner-card__badges">
+                <span class="partner-card__type">{t(`partners.types.${data.type}`, data.type)}</span>
+                <span class="partner-card__tier">{t(`partners.tiers.${data.tier}`, data.tier)}</span>
+            </div>
+
+            <h3 class="partner-card__name">{data.name}</h3>
+
+            {data.description && <p class="partner-card__description">{data.description}</p>}
+        </div>
+    </article>
+)}
 
 <style>
     .partner-card {
@@ -96,6 +109,22 @@ const PARTNER_TIER_LABELS: Record<string, string> = {
 
     .partner-card--featured {
         border: 2px solid var(--brand-accent);
+    }
+
+    .partner-card--gold {
+        min-height: 100%;
+    }
+
+    .partner-card--gold .partner-card__logo {
+        height: 200px;
+    }
+
+    .partner-card--silver .partner-card__logo {
+        height: 176px;
+    }
+
+    .partner-card--bronze .partner-card__logo {
+        height: 152px;
     }
 
     .partner-card__logo {

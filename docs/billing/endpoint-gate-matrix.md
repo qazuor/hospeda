@@ -766,9 +766,10 @@
 | `GET /api/v1/admin/social/publish-logs` | `social/admin/publish-logs/list.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
 | `GET /api/v1/admin/social/settings` | `social/admin/settings/list.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
 | `PATCH /api/v1/admin/social/settings/{key}` | `social/admin/settings/patch-by-key.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
-| `GET /api/v1/admin/partners` | `partners/admin/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated (PARTNER_VIEW_ALL) (SPEC-271) |
+| `GET /api/v1/admin/partners` | `partners/admin/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated (PARTNER_MANAGE) (SPEC-271) |
+| `GET /api/v1/admin/partners/plans` | `partners/admin/list-plans.ts` | none | - | n/a | Admin plan lookup for partner billing setup; PermissionEnum-gated (PARTNER_MANAGE) (SPEC-271) |
 | `POST /api/v1/admin/partners` | `partners/admin/create.ts` | none | - | n/a | Admin write; PermissionEnum-gated (PARTNER_MANAGE) (SPEC-271) |
-| `GET /api/v1/admin/partners/{id}` | `partners/admin/get.ts` | none | - | n/a | Admin read; PermissionEnum-gated (PARTNER_VIEW_ALL) (SPEC-271) |
+| `GET /api/v1/admin/partners/{id}` | `partners/admin/get.ts` | none | - | n/a | Admin read; PermissionEnum-gated (PARTNER_MANAGE) (SPEC-271) |
 | `PUT /api/v1/admin/partners/{id}` | `partners/admin/update.ts` | none | - | n/a | Admin write; PermissionEnum-gated (PARTNER_MANAGE) (SPEC-271) |
 | `DELETE /api/v1/admin/partners/{id}` | `partners/admin/delete.ts` | none | - | n/a | Admin soft-delete; PermissionEnum-gated (PARTNER_MANAGE) (SPEC-271) |
 | `POST /api/v1/admin/partners/{id}/send-link` | `partners/admin/send-link.ts` | none | - | n/a | Admin action; PermissionEnum-gated (PARTNER_MANAGE) (SPEC-271) |

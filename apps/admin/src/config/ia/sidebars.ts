@@ -659,6 +659,19 @@ const comercialSidebar: SidebarInput = {
                     route: '/sponsors',
                     permissions: ['POST_SPONSOR_VIEW'],
                     onMissing: 'hide'
+                },
+                {
+                    type: 'link',
+                    id: 'partners',
+                    label: {
+                        es: 'Partners',
+                        en: 'Partners',
+                        pt: 'Partners'
+                    },
+                    icon: 'UsersManagementIcon',
+                    route: '/partners',
+                    permissions: ['PARTNER_MANAGE'],
+                    onMissing: 'hide'
                 }
             ]
         },

@@ -1,0 +1,18 @@
+{
+    "listing": {
+        "title": "Partners",
+        "subtitle": "Meet the organizations that support Hospeda",
+        "emptyState": "No partners are currently available.",
+        "typeFilter": "Partner type"
+    },
+    "types": {
+        "commerce": "Business",
+        "ngo": "NGO",
+        "institution": "Institution"
+    },
+    "tiers": {
+        "gold": "Gold",
+        "silver": "Silver",
+        "bronze": "Bronze"
+    }
+}
