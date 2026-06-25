@@ -34,6 +34,7 @@ import { safeExternalFetch } from '@repo/utils/safe-fetch';
 import type { ImportContext, ImportSourceAdapter, RawExtraction } from '../adapter.types.js';
 import { extractJsonLd } from '../extractors/jsonld.js';
 import { runApifyActor } from './apify-client.js';
+import { withRetry } from './with-retry.js';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -862,19 +863,24 @@ export class BookingAdapter implements ImportSourceAdapter {
 
             // Build date-based price probe so the actor returns a real price.
             const { checkIn, checkOut } = buildPriceProbeDates();
-            const result = await runApifyActor({
-                token,
-                actor,
-                actorInput: {
-                    startUrls: [{ url: url.href }],
-                    checkIn,
-                    checkOut,
-                    adults: PRICE_PROBE_ADULTS,
-                    currency: PRICE_PROBE_CURRENCY
-                },
-                // Apify actors run synchronously for 8-120s — use the longer Apify
-                // budget, not the short JSON-LD fetch timeout, or the run always aborts.
-                timeoutMs: ctx.apifyTimeoutMs ?? ctx.timeoutMs
+            // Retry transient blocks (source_blocked / timeout) before degrading;
+            // only the actor call is wrapped — the JSON-LD path above is untouched (SPEC-277 R1).
+            const result = await withRetry({
+                fn: () =>
+                    runApifyActor({
+                        token,
+                        actor,
+                        actorInput: {
+                            startUrls: [{ url: url.href }],
+                            checkIn,
+                            checkOut,
+                            adults: PRICE_PROBE_ADULTS,
+                            currency: PRICE_PROBE_CURRENCY
+                        },
+                        // Apify actors run synchronously for 8-120s — use the longer Apify
+                        // budget, not the short JSON-LD fetch timeout, or the run always aborts.
+                        timeoutMs: ctx.apifyTimeoutMs ?? ctx.timeoutMs
+                    })
             });
 
             // Propagate transport-level failure codes from the Apify client.

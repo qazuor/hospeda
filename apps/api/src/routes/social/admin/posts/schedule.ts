@@ -6,7 +6,8 @@ import {
     IdSchema,
     PermissionEnum,
     ScheduleSocialPostSchema,
-    SocialPostScheduleResponseSchema
+    SocialPostScheduleResponseSchema,
+    SocialRecurrenceTypeEnum
 } from '@repo/schemas';
 import { ServiceError, SocialPostService } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -40,8 +41,20 @@ export const adminScheduleSocialPostRoute = createAdminRoute({
         const postId = params.id as string;
         const scheduledAt = body.scheduledAt as Date;
         const timezone = body.timezone as string;
+        const recurrenceType =
+            (body.recurrenceType as SocialRecurrenceTypeEnum | undefined) ??
+            SocialRecurrenceTypeEnum.ONCE;
+        const recurrenceParamsJson =
+            (body.recurrenceParamsJson as Record<string, unknown> | undefined) ?? undefined;
 
-        const result = await postService.schedule({ actor, postId, scheduledAt, timezone });
+        const result = await postService.schedule({
+            actor,
+            postId,
+            scheduledAt,
+            timezone,
+            recurrenceType,
+            recurrenceParamsJson
+        });
 
         if (result.error) {
             throw new ServiceError(

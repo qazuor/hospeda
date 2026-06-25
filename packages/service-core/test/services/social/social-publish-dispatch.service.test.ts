@@ -52,6 +52,7 @@ import type {
     SocialSettingModel
 } from '@repo/db';
 import {
+    SocialApprovalStatusEnum,
     SocialPostStatusEnum,
     SocialPublishResultStatusEnum,
     SocialRecurrenceTypeEnum
@@ -79,7 +80,6 @@ const PLATFORM_FORMAT_ID = '00000000-0000-4000-8000-000000000003';
 const FOOTER_ID = '00000000-0000-4000-8000-000000000004';
 const ASSET_ID_1 = '00000000-0000-4000-8000-000000000005';
 const ASSET_ID_2 = '00000000-0000-4000-8000-000000000006';
-const API_BASE_URL = 'https://api.hospeda.com.ar';
 const WEBHOOK_URL = 'https://hook.make.com/abc123';
 const MAKE_API_KEY = 'test-make-api-key';
 
@@ -190,8 +190,20 @@ function buildWebhookSetting(value: string): Record<string, unknown> {
 
 /**
  * Builds a minimal Response-like object for mocking fetch.
+ *
+ * When `ok` is true, `jsonBody` is returned by `response.json()`.
+ * Defaults to a Make.com SUCCESS response so that the synchronous dispatch
+ * path resolves to `{ outcome: 'published' }` without extra mocking.
  */
-function buildFetchResponse(status: number, ok: boolean): Response {
+function buildFetchResponse(
+    status: number,
+    ok: boolean,
+    jsonBody: unknown = {
+        status: 'SUCCESS',
+        externalPostId: 'ext-id-123',
+        externalPostUrl: 'https://instagram.com/p/abc'
+    }
+): Response {
     return {
         ok,
         status,
@@ -202,8 +214,8 @@ function buildFetchResponse(status: number, ok: boolean): Response {
         url: WEBHOOK_URL,
         body: null,
         bodyUsed: false,
-        json: () => Promise.resolve({}),
-        text: () => Promise.resolve(''),
+        json: () => Promise.resolve(jsonBody),
+        text: () => Promise.resolve(JSON.stringify(jsonBody)),
         blob: () => Promise.resolve(new Blob()),
         arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
         formData: () => Promise.resolve(new FormData()),
@@ -525,8 +537,7 @@ describe('SocialPublishDispatchService.buildMakePayload — SPEC-254 T-044', () 
     ): BuildMakePayloadInput {
         return {
             target: buildTarget(targetOverrides),
-            post: buildPost(postOverrides),
-            apiBaseUrl: API_BASE_URL
+            post: buildPost(postOverrides)
         };
     }
 
@@ -563,8 +574,9 @@ describe('SocialPublishDispatchService.buildMakePayload — SPEC-254 T-044', () 
             expect(payload).toHaveProperty('mediaUrls');
             expect(payload).toHaveProperty('scheduledAt');
             expect(payload).toHaveProperty('timezone');
-            expect(payload).toHaveProperty('callbackClaimUrl');
-            expect(payload).toHaveProperty('callbackResultUrl');
+            // Callback URLs removed: Make.com responds synchronously now
+            expect(payload).not.toHaveProperty('callbackClaimUrl');
+            expect(payload).not.toHaveProperty('callbackResultUrl');
         });
 
         it('sets correct targetId and postId in the payload', async () => {
@@ -584,11 +596,11 @@ describe('SocialPublishDispatchService.buildMakePayload — SPEC-254 T-044', () 
     });
 
     // -------------------------------------------------------------------------
-    // Callback URL composition
+    // No callback URL fields (synchronous model)
     // -------------------------------------------------------------------------
 
-    describe('callback URL composition', () => {
-        it('composes callbackClaimUrl from apiBaseUrl and targetId', async () => {
+    describe('no callback URL fields (synchronous Make.com model)', () => {
+        it('does not include callbackClaimUrl or callbackResultUrl in the payload', async () => {
             // Arrange
             mocks.platformFormatModel.findOne.mockResolvedValue(buildPlatformFormat());
             mocks.postMediaModel.findAll.mockResolvedValue({ items: [], total: 0 });
@@ -598,42 +610,9 @@ describe('SocialPublishDispatchService.buildMakePayload — SPEC-254 T-044', () 
             // Act
             const { payload } = await service.buildMakePayload(input);
 
-            // Assert
-            expect(payload.callbackClaimUrl).toBe(
-                `${API_BASE_URL}/api/v1/integrations/make/social/jobs/${TARGET_ID}/claim`
-            );
-        });
-
-        it('composes callbackResultUrl from apiBaseUrl and targetId', async () => {
-            // Arrange
-            mocks.platformFormatModel.findOne.mockResolvedValue(buildPlatformFormat());
-            mocks.postMediaModel.findAll.mockResolvedValue({ items: [], total: 0 });
-
-            const input = buildMinimalInput();
-
-            // Act
-            const { payload } = await service.buildMakePayload(input);
-
-            // Assert
-            expect(payload.callbackResultUrl).toBe(
-                `${API_BASE_URL}/api/v1/integrations/make/social/jobs/${TARGET_ID}/result`
-            );
-        });
-
-        it('correctly uses a different targetId in callback URLs', async () => {
-            // Arrange
-            const differentTargetId = '99999999-0000-4000-8000-000000000099';
-            mocks.platformFormatModel.findOne.mockResolvedValue(buildPlatformFormat());
-            mocks.postMediaModel.findAll.mockResolvedValue({ items: [], total: 0 });
-
-            const input = buildMinimalInput({ id: differentTargetId });
-
-            // Act
-            const { payload } = await service.buildMakePayload(input);
-
-            // Assert
-            expect(payload.callbackClaimUrl).toContain(differentTargetId);
-            expect(payload.callbackResultUrl).toContain(differentTargetId);
+            // Assert — Make.com now responds synchronously; no callback URLs needed
+            expect(payload).not.toHaveProperty('callbackClaimUrl');
+            expect(payload).not.toHaveProperty('callbackResultUrl');
         });
     });
 
@@ -951,8 +930,7 @@ describe('SocialPublishDispatchService.dispatchTarget — SPEC-254 T-045', () =>
             const result = await service.dispatchTarget({
                 target: buildTarget(),
                 post: buildPost(),
-                makeApiKey: MAKE_API_KEY,
-                apiBaseUrl: API_BASE_URL
+                makeApiKey: MAKE_API_KEY
             });
 
             // Assert
@@ -971,8 +949,7 @@ describe('SocialPublishDispatchService.dispatchTarget — SPEC-254 T-045', () =>
             const result = await service.dispatchTarget({
                 target: buildTarget(),
                 post: buildPost(),
-                makeApiKey: MAKE_API_KEY,
-                apiBaseUrl: API_BASE_URL
+                makeApiKey: MAKE_API_KEY
             });
 
             // Assert
@@ -982,34 +959,63 @@ describe('SocialPublishDispatchService.dispatchTarget — SPEC-254 T-045', () =>
         });
 
         it('uses the webhookUrl override param directly and does NOT query settings', async () => {
-            // Arrange — webhook override provided; no settings query needed
+            // Arrange — webhook override provided; no settings query needed.
+            // The default buildFetchResponse returns a Make SUCCESS body.
             vi.spyOn(globalThis, 'fetch').mockResolvedValue(buildFetchResponse(200, true));
+            // cascadePostStatus dependencies
+            mocks.postModel.findOne.mockResolvedValue(
+                buildPost({ status: SocialPostStatusEnum.PUBLISHED })
+            );
+            mocks.targetModel.findAll.mockResolvedValue({
+                items: [
+                    { id: TARGET_ID, socialPostId: POST_ID, status: SocialPostStatusEnum.PUBLISHED }
+                ],
+                total: 1
+            });
 
             // Act
             const result = await service.dispatchTarget({
                 target: buildTarget(),
                 post: buildPost(),
                 makeApiKey: MAKE_API_KEY,
-                apiBaseUrl: API_BASE_URL,
                 webhookUrl: WEBHOOK_URL
             });
 
-            // Assert — dispatched without touching settingModel
-            expect(result.outcome).toBe('dispatched');
+            // Assert — published synchronously; settings not queried (override used)
+            expect(result.outcome).toBe('published');
             expect(mocks.settingModel.findOne).not.toHaveBeenCalled();
         });
     });
 
     // -------------------------------------------------------------------------
-    // Success path (2xx)
+    // Success path (2xx + Make SUCCESS body)
     // -------------------------------------------------------------------------
 
-    describe('success path (2xx)', () => {
+    describe('success path (2xx + Make SUCCESS response)', () => {
+        const successBody = {
+            status: 'SUCCESS',
+            externalPostId: 'ext-id-123',
+            externalPostUrl: 'https://instagram.com/p/abc'
+        };
+
         beforeEach(() => {
-            vi.spyOn(globalThis, 'fetch').mockResolvedValue(buildFetchResponse(200, true));
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+                buildFetchResponse(200, true, successBody)
+            );
+            // cascadePostStatus needs postModel.findOne (reloads post for recurrence)
+            // and targetModel.findAll (checks all targets terminal)
+            mocks.postModel.findOne.mockResolvedValue(
+                buildPost({ status: SocialPostStatusEnum.PUBLISHED })
+            );
+            mocks.targetModel.findAll.mockResolvedValue({
+                items: [
+                    { id: TARGET_ID, socialPostId: POST_ID, status: SocialPostStatusEnum.PUBLISHED }
+                ],
+                total: 1
+            });
         });
 
-        it('returns dispatched on HTTP 200', async () => {
+        it('returns published on HTTP 200 + Make SUCCESS body', async () => {
             // Arrange
             const target = buildTarget();
             const post = buildPost();
@@ -1019,12 +1025,11 @@ describe('SocialPublishDispatchService.dispatchTarget — SPEC-254 T-045', () =>
                 target,
                 post,
                 makeApiKey: MAKE_API_KEY,
-                apiBaseUrl: API_BASE_URL,
                 webhookUrl: WEBHOOK_URL
             });
 
             // Assert
-            expect(result.outcome).toBe('dispatched');
+            expect(result.outcome).toBe('published');
         });
 
         it('sets target status to PUBLISHING (optimistic lock) before HTTP call', async () => {
@@ -1037,7 +1042,6 @@ describe('SocialPublishDispatchService.dispatchTarget — SPEC-254 T-045', () =>
                 target,
                 post,
                 makeApiKey: MAKE_API_KEY,
-                apiBaseUrl: API_BASE_URL,
                 webhookUrl: WEBHOOK_URL
             });
 
@@ -1047,7 +1051,7 @@ describe('SocialPublishDispatchService.dispatchTarget — SPEC-254 T-045', () =>
             expect(firstUpdateCall[1]).toMatchObject({ status: SocialPostStatusEnum.PUBLISHING });
         });
 
-        it('inserts a publish_log row with status RETRYING on success', async () => {
+        it('sets target to PUBLISHED with externalPostId and externalPostUrl on SUCCESS', async () => {
             // Arrange
             const target = buildTarget();
             const post = buildPost();
@@ -1057,64 +1061,72 @@ describe('SocialPublishDispatchService.dispatchTarget — SPEC-254 T-045', () =>
                 target,
                 post,
                 makeApiKey: MAKE_API_KEY,
-                apiBaseUrl: API_BASE_URL,
+                webhookUrl: WEBHOOK_URL
+            });
+
+            // Assert: a target update with PUBLISHED status and external identifiers
+            const updateCalls = (mocks.targetModel.update as ReturnType<typeof vi.fn>).mock.calls;
+            const publishedUpdate = updateCalls.find(
+                (call) =>
+                    (call[1] as Record<string, unknown>)?.status === SocialPostStatusEnum.PUBLISHED
+            );
+            expect(publishedUpdate).toBeDefined();
+            expect(publishedUpdate?.[1]).toMatchObject({
+                status: SocialPostStatusEnum.PUBLISHED,
+                externalPostId: successBody.externalPostId,
+                externalPostUrl: successBody.externalPostUrl
+            });
+        });
+
+        it('inserts a publish_log row with status SUCCESS on Make SUCCESS response', async () => {
+            // Arrange
+            const target = buildTarget();
+            const post = buildPost();
+
+            // Act
+            await service.dispatchTarget({
+                target,
+                post,
+                makeApiKey: MAKE_API_KEY,
                 webhookUrl: WEBHOOK_URL
             });
 
             // Assert
             expect(mocks.publishLogModel.create).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    status: SocialPublishResultStatusEnum.RETRYING,
+                    status: SocialPublishResultStatusEnum.SUCCESS,
                     socialPostId: POST_ID,
                     socialPostTargetId: TARGET_ID
                 })
             );
         });
 
-        it('sets post status to PUBLISHING when post is not already PUBLISHING', async () => {
+        it('calls cascadePostStatus after SUCCESS to finalise the post', async () => {
             // Arrange
             const target = buildTarget();
-            const post = buildPost({ status: SocialPostStatusEnum.READY_TO_PUBLISH });
+            const post = buildPost();
+            const cascadeSpy = vi.spyOn(service, 'cascadePostStatus').mockResolvedValue({
+                outcome: 'post_published',
+                nextRunAt: null
+            });
 
             // Act
             await service.dispatchTarget({
                 target,
                 post,
                 makeApiKey: MAKE_API_KEY,
-                apiBaseUrl: API_BASE_URL,
                 webhookUrl: WEBHOOK_URL
             });
 
-            // Assert: postModel.update called with PUBLISHING status
-            expect(mocks.postModel.update).toHaveBeenCalledWith(
-                { id: POST_ID },
-                { status: SocialPostStatusEnum.PUBLISHING }
-            );
-        });
-
-        it('does NOT update post status when post is already PUBLISHING', async () => {
-            // Arrange
-            const target = buildTarget();
-            const post = buildPost({ status: SocialPostStatusEnum.PUBLISHING });
-
-            // Act
-            await service.dispatchTarget({
-                target,
-                post,
-                makeApiKey: MAKE_API_KEY,
-                apiBaseUrl: API_BASE_URL,
-                webhookUrl: WEBHOOK_URL
-            });
-
-            // Assert: postModel.update should NOT be called
-            expect(mocks.postModel.update).not.toHaveBeenCalled();
+            // Assert
+            expect(cascadeSpy).toHaveBeenCalledWith({ postId: POST_ID });
         });
 
         it('sends x-make-apikey header and the payload as JSON body', async () => {
             // Arrange
             const fetchSpy = vi
                 .spyOn(globalThis, 'fetch')
-                .mockResolvedValue(buildFetchResponse(200, true));
+                .mockResolvedValue(buildFetchResponse(200, true, successBody));
             const target = buildTarget();
             const post = buildPost();
 
@@ -1123,7 +1135,6 @@ describe('SocialPublishDispatchService.dispatchTarget — SPEC-254 T-045', () =>
                 target,
                 post,
                 makeApiKey: MAKE_API_KEY,
-                apiBaseUrl: API_BASE_URL,
                 webhookUrl: WEBHOOK_URL
             });
 
@@ -1134,26 +1145,27 @@ describe('SocialPublishDispatchService.dispatchTarget — SPEC-254 T-045', () =>
             expect(headers?.['x-make-apikey']).toBe(MAKE_API_KEY);
             expect(headers?.['content-type']).toBe('application/json');
 
-            // Assert body contains the payload
+            // Assert body contains the payload (no callback URL fields)
             const body = fetchOptions?.body as string | undefined;
             expect(typeof body).toBe('string');
             const parsed = JSON.parse(body ?? '{}') as Record<string, unknown>;
             expect(parsed.targetId).toBe(TARGET_ID);
             expect(parsed.postId).toBe(POST_ID);
+            expect(parsed).not.toHaveProperty('callbackClaimUrl');
+            expect(parsed).not.toHaveProperty('callbackResultUrl');
         });
 
         it('POSTs to the correct webhook URL', async () => {
             // Arrange
             const fetchSpy = vi
                 .spyOn(globalThis, 'fetch')
-                .mockResolvedValue(buildFetchResponse(200, true));
+                .mockResolvedValue(buildFetchResponse(200, true, successBody));
 
             // Act
             await service.dispatchTarget({
                 target: buildTarget(),
                 post: buildPost(),
                 makeApiKey: MAKE_API_KEY,
-                apiBaseUrl: API_BASE_URL,
                 webhookUrl: WEBHOOK_URL
             });
 
@@ -1162,6 +1174,46 @@ describe('SocialPublishDispatchService.dispatchTarget — SPEC-254 T-045', () =>
                 WEBHOOK_URL,
                 expect.objectContaining({ method: 'POST' })
             );
+        });
+
+        it('returns retry_scheduled when Make response body is FAILED status', async () => {
+            // Arrange — 2xx but Make reported failure
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+                buildFetchResponse(200, true, {
+                    status: 'FAILED',
+                    errorMessage: 'IG rejected post'
+                })
+            );
+
+            // Act
+            const result = await service.dispatchTarget({
+                target: buildTarget({ retryCount: 0 }),
+                post: buildPost(),
+                makeApiKey: MAKE_API_KEY,
+                webhookUrl: WEBHOOK_URL
+            });
+
+            // Assert — Make FAILED counts as a publish failure → retry path
+            expect(result.outcome).toBe('retry_scheduled');
+            expect(result.retryCount).toBe(1);
+        });
+
+        it('returns retry_scheduled when Make response body is not parseable JSON schema', async () => {
+            // Arrange — 2xx but body doesn't match schema
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+                buildFetchResponse(200, true, { unexpected: 'shape' })
+            );
+
+            // Act
+            const result = await service.dispatchTarget({
+                target: buildTarget({ retryCount: 0 }),
+                post: buildPost(),
+                makeApiKey: MAKE_API_KEY,
+                webhookUrl: WEBHOOK_URL
+            });
+
+            // Assert — unparseable body treated as failure
+            expect(result.outcome).toBe('retry_scheduled');
         });
     });
 
@@ -1181,7 +1233,6 @@ describe('SocialPublishDispatchService.dispatchTarget — SPEC-254 T-045', () =>
                 target,
                 post,
                 makeApiKey: MAKE_API_KEY,
-                apiBaseUrl: API_BASE_URL,
                 webhookUrl: WEBHOOK_URL
             });
 
@@ -1201,7 +1252,6 @@ describe('SocialPublishDispatchService.dispatchTarget — SPEC-254 T-045', () =>
                 target,
                 post,
                 makeApiKey: MAKE_API_KEY,
-                apiBaseUrl: API_BASE_URL,
                 webhookUrl: WEBHOOK_URL
             });
 
@@ -1225,7 +1275,6 @@ describe('SocialPublishDispatchService.dispatchTarget — SPEC-254 T-045', () =>
                 target,
                 post,
                 makeApiKey: MAKE_API_KEY,
-                apiBaseUrl: API_BASE_URL,
                 webhookUrl: WEBHOOK_URL
             });
 
@@ -1250,7 +1299,6 @@ describe('SocialPublishDispatchService.dispatchTarget — SPEC-254 T-045', () =>
                 target,
                 post,
                 makeApiKey: MAKE_API_KEY,
-                apiBaseUrl: API_BASE_URL,
                 webhookUrl: WEBHOOK_URL
             });
 
@@ -1270,7 +1318,6 @@ describe('SocialPublishDispatchService.dispatchTarget — SPEC-254 T-045', () =>
                 target,
                 post,
                 makeApiKey: MAKE_API_KEY,
-                apiBaseUrl: API_BASE_URL,
                 webhookUrl: WEBHOOK_URL
             });
 
@@ -1304,7 +1351,6 @@ describe('SocialPublishDispatchService.dispatchTarget — SPEC-254 T-045', () =>
                 target,
                 post,
                 makeApiKey: MAKE_API_KEY,
-                apiBaseUrl: API_BASE_URL,
                 webhookUrl: WEBHOOK_URL
             });
 
@@ -1327,7 +1373,6 @@ describe('SocialPublishDispatchService.dispatchTarget — SPEC-254 T-045', () =>
                 target,
                 post,
                 makeApiKey: MAKE_API_KEY,
-                apiBaseUrl: API_BASE_URL,
                 webhookUrl: WEBHOOK_URL
             });
 
@@ -1355,7 +1400,6 @@ describe('SocialPublishDispatchService.dispatchTarget — SPEC-254 T-045', () =>
                 target,
                 post,
                 makeApiKey: MAKE_API_KEY,
-                apiBaseUrl: API_BASE_URL,
                 webhookUrl: WEBHOOK_URL
             });
 
@@ -1392,7 +1436,6 @@ describe('SocialPublishDispatchService.dispatchTarget — SPEC-254 T-045', () =>
                 target,
                 post,
                 makeApiKey: MAKE_API_KEY,
-                apiBaseUrl: API_BASE_URL,
                 webhookUrl: WEBHOOK_URL
             });
 
@@ -1426,7 +1469,6 @@ describe('SocialPublishDispatchService.dispatchTarget — SPEC-254 T-045', () =>
                 target,
                 post,
                 makeApiKey: MAKE_API_KEY,
-                apiBaseUrl: API_BASE_URL,
                 webhookUrl: WEBHOOK_URL
             });
 
@@ -1461,7 +1503,6 @@ describe('SocialPublishDispatchService.dispatchTarget — SPEC-254 T-045', () =>
                 target,
                 post,
                 makeApiKey: MAKE_API_KEY,
-                apiBaseUrl: API_BASE_URL,
                 webhookUrl: WEBHOOK_URL
             });
 
@@ -1497,7 +1538,6 @@ describe('SocialPublishDispatchService.dispatchTarget — SPEC-254 T-045', () =>
                 target,
                 post,
                 makeApiKey: MAKE_API_KEY,
-                apiBaseUrl: API_BASE_URL,
                 webhookUrl: WEBHOOK_URL
             });
 
@@ -1527,7 +1567,6 @@ describe('SocialPublishDispatchService.dispatchTarget — SPEC-254 T-045', () =>
                 target,
                 post,
                 makeApiKey: MAKE_API_KEY,
-                apiBaseUrl: API_BASE_URL,
                 webhookUrl: WEBHOOK_URL
             });
 
@@ -2937,6 +2976,331 @@ describe('SocialPublishDispatchService.handleMakeCallbackResult — SPEC-254 T-0
 
             // Assert — still retrying (newRetryCount=2 < 3)
             expect(result.status).toBe('APPROVED');
+        });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// dispatchPostNow — SPEC-254 "Publish Now" endpoint
+// ---------------------------------------------------------------------------
+
+describe('SocialPublishDispatchService.dispatchPostNow — SPEC-254 Publish Now', () => {
+    let service: SocialPublishDispatchService;
+    let mocks: Mocks;
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        const built = buildService();
+        service = built.service;
+        mocks = built.mocks;
+
+        // Default happy-path setup:
+        //  - postModel returns an APPROVED post
+        //  - postMediaModel returns one media row (guard passes)
+        //  - targetModel.findAll returns one APPROVED target
+        //  - targetModel.update and postModel.update succeed
+        //  - publishLogModel.create succeeds
+        //  - platformFormatModel.findOne for buildMakePayload
+        mocks.postModel.findOne.mockResolvedValue(buildPost({ approvalStatus: 'APPROVED' }));
+        mocks.postMediaModel.findAll.mockResolvedValue({
+            items: [buildMediaRow(ASSET_ID_1, 0)],
+            total: 1
+        });
+        mocks.targetModel.findAll.mockResolvedValue({
+            items: [buildTarget()],
+            total: 1
+        });
+        mocks.targetModel.update.mockResolvedValue({ rowCount: 1 });
+        mocks.postModel.update.mockResolvedValue({ rowCount: 1 });
+        mocks.publishLogModel.create.mockResolvedValue({ id: 'log-id' });
+        mocks.platformFormatModel.findOne.mockResolvedValue(buildPlatformFormat());
+        // No media asset URLs needed for dispatch — postMediaModel already returns rows
+        mocks.assetModel.findOne.mockResolvedValue(
+            buildAsset(ASSET_ID_1, 'https://res.cloudinary.com/demo/image/upload/sample.jpg')
+        );
+        // Default: webhook URL resolves from settings
+        mocks.settingModel.findOne.mockResolvedValue(buildWebhookSetting(WEBHOOK_URL));
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    // -------------------------------------------------------------------------
+    // Guard: post not found
+    // -------------------------------------------------------------------------
+
+    describe('guard: post not found', () => {
+        it('throws NOT_FOUND when the post does not exist', async () => {
+            // Arrange
+            mocks.postModel.findOne.mockResolvedValue(null);
+
+            // Act + Assert
+            await expect(
+                service.dispatchPostNow({
+                    postId: POST_ID,
+                    makeApiKey: MAKE_API_KEY
+                })
+            ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // Guard: post not approved
+    // -------------------------------------------------------------------------
+
+    describe('guard: post not approved', () => {
+        it('throws VALIDATION_ERROR with reason NOT_APPROVED when post is PENDING', async () => {
+            // Arrange
+            mocks.postModel.findOne.mockResolvedValue(
+                buildPost({ approvalStatus: SocialApprovalStatusEnum.PENDING })
+            );
+
+            // Act + Assert
+            await expect(
+                service.dispatchPostNow({
+                    postId: POST_ID,
+                    makeApiKey: MAKE_API_KEY
+                })
+            ).rejects.toMatchObject({ code: 'VALIDATION_ERROR', reason: 'NOT_APPROVED' });
+        });
+
+        it('throws VALIDATION_ERROR with reason NOT_APPROVED when post is REJECTED', async () => {
+            // Arrange
+            mocks.postModel.findOne.mockResolvedValue(
+                buildPost({ approvalStatus: SocialApprovalStatusEnum.REJECTED })
+            );
+
+            // Act + Assert
+            await expect(
+                service.dispatchPostNow({
+                    postId: POST_ID,
+                    makeApiKey: MAKE_API_KEY
+                })
+            ).rejects.toMatchObject({ code: 'VALIDATION_ERROR', reason: 'NOT_APPROVED' });
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // Guard: no media
+    // -------------------------------------------------------------------------
+
+    describe('guard: no media', () => {
+        it('throws VALIDATION_ERROR with reason NO_MEDIA when post has no media rows', async () => {
+            // Arrange
+            mocks.postMediaModel.findAll.mockResolvedValue({ items: [], total: 0 });
+
+            // Act + Assert
+            await expect(
+                service.dispatchPostNow({
+                    postId: POST_ID,
+                    makeApiKey: MAKE_API_KEY
+                })
+            ).rejects.toMatchObject({ code: 'VALIDATION_ERROR', reason: 'NO_MEDIA' });
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // Happy path: non-terminal targets dispatched
+    // -------------------------------------------------------------------------
+
+    describe('happy path: non-terminal targets', () => {
+        it('calls dispatchTarget once per target and returns outcomes with published', async () => {
+            // Arrange
+            const dispatchSpy = vi.spyOn(service, 'dispatchTarget');
+            dispatchSpy.mockResolvedValue({ outcome: 'published' });
+
+            // Act
+            const result = await service.dispatchPostNow({
+                postId: POST_ID,
+                makeApiKey: MAKE_API_KEY
+            });
+
+            // Assert
+            expect(dispatchSpy).toHaveBeenCalledOnce();
+            expect(result.dispatched).toBe(1);
+            expect(result.skipped).toBe(0);
+            expect(result.failed).toBe(0);
+            expect(result.outcomes).toHaveLength(1);
+            expect(result.outcomes[0]).toMatchObject({
+                targetId: TARGET_ID,
+                outcome: 'published'
+            });
+        });
+
+        it('counts skipped_no_webhook outcome as skipped', async () => {
+            // Arrange
+            const dispatchSpy = vi.spyOn(service, 'dispatchTarget');
+            dispatchSpy.mockResolvedValue({ outcome: 'skipped_no_webhook' });
+
+            // Act
+            const result = await service.dispatchPostNow({
+                postId: POST_ID,
+                makeApiKey: MAKE_API_KEY
+            });
+
+            // Assert
+            expect(result.dispatched).toBe(0);
+            expect(result.skipped).toBe(1);
+            expect(result.failed).toBe(0);
+        });
+
+        it('counts exhausted outcome as failed', async () => {
+            // Arrange
+            const dispatchSpy = vi.spyOn(service, 'dispatchTarget');
+            dispatchSpy.mockResolvedValue({ outcome: 'exhausted' });
+
+            // Act
+            const result = await service.dispatchPostNow({
+                postId: POST_ID,
+                makeApiKey: MAKE_API_KEY
+            });
+
+            // Assert
+            expect(result.dispatched).toBe(0);
+            expect(result.skipped).toBe(0);
+            expect(result.failed).toBe(1);
+        });
+
+        it('counts retry_scheduled outcome as failed', async () => {
+            // Arrange
+            const dispatchSpy = vi.spyOn(service, 'dispatchTarget');
+            dispatchSpy.mockResolvedValue({ outcome: 'retry_scheduled', retryCount: 1 });
+
+            // Act
+            const result = await service.dispatchPostNow({
+                postId: POST_ID,
+                makeApiKey: MAKE_API_KEY
+            });
+
+            // Assert — retry_scheduled counts as failed in the aggregate
+            expect(result.dispatched).toBe(0);
+            expect(result.skipped).toBe(0);
+            expect(result.failed).toBe(1);
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // Re-publish: terminal targets reset before dispatch
+    // -------------------------------------------------------------------------
+
+    describe('re-publish: terminal target reset', () => {
+        it('resets a PUBLISHED target to APPROVED+retryCount=0 before dispatching', async () => {
+            // Arrange
+            const publishedTarget = buildTarget({
+                status: SocialPostStatusEnum.PUBLISHED,
+                retryCount: 2
+            });
+            mocks.targetModel.findAll.mockResolvedValue({
+                items: [publishedTarget],
+                total: 1
+            });
+
+            const dispatchSpy = vi.spyOn(service, 'dispatchTarget');
+            dispatchSpy.mockResolvedValue({ outcome: 'published' });
+
+            // Act
+            await service.dispatchPostNow({
+                postId: POST_ID,
+                makeApiKey: MAKE_API_KEY
+            });
+
+            // Assert: targetModel.update was first called to reset the terminal target
+            const updateCalls = (mocks.targetModel.update as ReturnType<typeof vi.fn>).mock.calls;
+            const resetCall = updateCalls.find(
+                (call: unknown[]) =>
+                    typeof call[1] === 'object' &&
+                    call[1] !== null &&
+                    (call[1] as Record<string, unknown>).status === SocialPostStatusEnum.APPROVED &&
+                    (call[1] as Record<string, unknown>).retryCount === 0
+            );
+            expect(resetCall).toBeDefined();
+
+            // dispatchTarget should have been called once with the (now-reset) target
+            expect(dispatchSpy).toHaveBeenCalledOnce();
+            const dispatchCallArg = dispatchSpy.mock.calls[0]?.[0];
+            expect(dispatchCallArg?.target.status).toBe(SocialPostStatusEnum.APPROVED);
+            expect(dispatchCallArg?.target.retryCount).toBe(0);
+        });
+
+        it('resets a FAILED target to APPROVED+retryCount=0 before dispatching', async () => {
+            // Arrange
+            const failedTarget = buildTarget({
+                status: SocialPostStatusEnum.FAILED,
+                retryCount: 3
+            });
+            mocks.targetModel.findAll.mockResolvedValue({
+                items: [failedTarget],
+                total: 1
+            });
+
+            const dispatchSpy = vi.spyOn(service, 'dispatchTarget');
+            dispatchSpy.mockResolvedValue({ outcome: 'published' });
+
+            // Act
+            const result = await service.dispatchPostNow({
+                postId: POST_ID,
+                makeApiKey: MAKE_API_KEY
+            });
+
+            // Assert
+            expect(dispatchSpy).toHaveBeenCalledOnce();
+            expect(result.dispatched).toBe(1);
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // Multiple targets
+    // -------------------------------------------------------------------------
+
+    describe('multiple targets', () => {
+        it('dispatches all targets sequentially and aggregates outcomes', async () => {
+            // Arrange
+            const target1 = buildTarget({ id: TARGET_ID, platform: 'INSTAGRAM' });
+            const target2 = buildTarget({ id: TARGET_ID_2, platform: 'FACEBOOK' });
+            mocks.targetModel.findAll.mockResolvedValue({ items: [target1, target2], total: 2 });
+
+            const dispatchSpy = vi.spyOn(service, 'dispatchTarget');
+            dispatchSpy
+                .mockResolvedValueOnce({ outcome: 'published' })
+                .mockResolvedValueOnce({ outcome: 'skipped_no_webhook' });
+
+            // Act
+            const result = await service.dispatchPostNow({
+                postId: POST_ID,
+                makeApiKey: MAKE_API_KEY
+            });
+
+            // Assert
+            expect(dispatchSpy).toHaveBeenCalledTimes(2);
+            expect(result.dispatched).toBe(1);
+            expect(result.skipped).toBe(1);
+            expect(result.failed).toBe(0);
+            expect(result.outcomes).toHaveLength(2);
+        });
+
+        it('continues dispatching remaining targets even if one throws', async () => {
+            // Arrange
+            const target1 = buildTarget({ id: TARGET_ID, platform: 'INSTAGRAM' });
+            const target2 = buildTarget({ id: TARGET_ID_2, platform: 'FACEBOOK' });
+            mocks.targetModel.findAll.mockResolvedValue({ items: [target1, target2], total: 2 });
+
+            const dispatchSpy = vi.spyOn(service, 'dispatchTarget');
+            dispatchSpy
+                .mockRejectedValueOnce(new Error('network failure'))
+                .mockResolvedValueOnce({ outcome: 'published' });
+
+            // Act
+            const result = await service.dispatchPostNow({
+                postId: POST_ID,
+                makeApiKey: MAKE_API_KEY
+            });
+
+            // Assert — second target still dispatched despite first throwing
+            expect(dispatchSpy).toHaveBeenCalledTimes(2);
+            expect(result.dispatched).toBe(1);
+            expect(result.failed).toBe(1);
+            expect(result.outcomes).toHaveLength(2);
         });
     });
 });

@@ -47,6 +47,7 @@ export const superAdminRole: z.input<typeof RoleConfigSchema> = {
         'inicio',
         'catalogo',
         'editorial',
+        'marketing',
         'comunidad',
         'comercial',
         'plataforma',

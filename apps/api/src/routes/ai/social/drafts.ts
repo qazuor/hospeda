@@ -23,7 +23,7 @@
  * @see SPEC-254 T-029
  */
 
-import { createHash, timingSafeEqual } from 'node:crypto';
+import { timingSafeEqual } from 'node:crypto';
 import { CreateSocialDraftResponseSchema, CreateSocialDraftSchema } from '@repo/schemas';
 import { SocialDraftIngestionService, SocialImagePipelineService } from '@repo/service-core';
 import { getMediaProvider } from '../../../services/media';
@@ -32,64 +32,42 @@ import { env } from '../../../utils/env';
 import { createApiKeyRoute } from '../../../utils/route-factory-tiered';
 
 // ---------------------------------------------------------------------------
-// PIN hash helpers
+// Operator PIN validation
 // ---------------------------------------------------------------------------
 
 /**
- * Fixed salt used when hashing the operator PIN.
- * Must match the value used when `HOSPEDA_OPERATOR_PIN_HASH` was generated.
+ * Validates the incoming operator PIN against the plaintext PIN stored in the
+ * `HOSPEDA_OPERATOR_PIN` env var, using a constant-time comparison to prevent
+ * timing attacks.
  *
- * Algorithm: `sha256(pin + HOSPEDA_OPERATOR_PIN_SALT)`
- * where HOSPEDA_OPERATOR_PIN_SALT is stored as its own env var (or embedded here).
- *
- * Per spec resolved decision #1 the hash stored in env is:
- *   `sha256(pin + secret_salt)`
- * where the salt prevents rainbow-table attacks on short PINs.
- *
- * We use the env var HOSPEDA_OPERATOR_PIN_HASH directly as the comparison target.
- * The incoming PIN is hashed the same way and compared using timingSafeEqual.
- */
-const PIN_HASH_ALGORITHM = 'sha256';
-
-/**
- * Hashes a raw PIN string into a hex digest using SHA-256.
- * Both sides of the timingSafeEqual comparison must be hashed the same way.
- *
- * @param pin - Raw PIN string from the request body.
- * @returns Hex-encoded SHA-256 digest.
- */
-function hashPin(pin: string): string {
-    return createHash(PIN_HASH_ALGORITHM).update(pin).digest('hex');
-}
-
-/**
- * Validates the incoming operator PIN against the stored hash using
- * constant-time comparison to prevent timing attacks.
+ * The PIN is stored in the env var exactly as the operator types it into the
+ * Custom GPT — no hashing — so the configured value and the value entered in the
+ * GPT are guaranteed to be the same string. (Previously the env held a SHA-256
+ * hash, which made it impossible to tell which raw PIN it corresponded to.)
  *
  * Returns `false` when:
- *  - The stored hash env var is absent/empty.
+ *  - The `HOSPEDA_OPERATOR_PIN` env var is absent/empty.
  *  - The provided PIN is absent/empty.
- *  - The digests do not match.
+ *  - The PINs do not match (length or content).
  *
  * @param providedPin - Raw PIN string from the request body.
  * @returns `true` when the PIN is valid.
  */
 function validateOperatorPin(providedPin: string | undefined): boolean {
-    const expectedHash = env.HOSPEDA_OPERATOR_PIN_HASH;
-    if (!expectedHash || expectedHash.trim() === '') return false;
+    const expectedPin = env.HOSPEDA_OPERATOR_PIN;
+    if (!expectedPin || expectedPin.trim() === '') return false;
     if (!providedPin || providedPin.trim() === '') return false;
 
-    const providedHash = hashPin(providedPin);
+    const provided = Buffer.from(providedPin, 'utf8');
+    const expected = Buffer.from(expectedPin, 'utf8');
 
-    // Both digests must be the same length for timingSafeEqual.
-    // SHA-256 hex is always 64 chars — guard defensively.
-    if (providedHash.length !== expectedHash.length) return false;
+    // timingSafeEqual requires equal-length buffers; a length mismatch is a
+    // guaranteed non-match, so short-circuit (this leaks only the length, not
+    // the content).
+    if (provided.length !== expected.length) return false;
 
     try {
-        return timingSafeEqual(
-            Buffer.from(providedHash, 'utf8'),
-            Buffer.from(expectedHash, 'utf8')
-        );
+        return timingSafeEqual(provided, expected);
     } catch {
         return false;
     }

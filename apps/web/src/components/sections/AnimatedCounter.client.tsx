@@ -10,8 +10,8 @@
 
 import { useReducedMotion } from '@/hooks/use-reduced-motion';
 import type { SupportedLocale } from '@/lib/i18n';
-import { resolveWebIcon } from '@/lib/icon-map';
-import { toBcp47Locale } from '@repo/i18n';
+import { resolveStatsIcon } from '@/lib/stats-icons';
+import { toBcp47Locale } from '@repo/i18n/web';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import styles from './AnimatedCounter.module.css';
 
@@ -171,7 +171,7 @@ export function AnimatedCounter({
     }
 
     // counter variant
-    const IconComponent = icon ? resolveWebIcon({ iconName: icon }) : undefined;
+    const IconComponent = icon ? resolveStatsIcon({ iconName: icon }) : undefined;
 
     return (
         <div

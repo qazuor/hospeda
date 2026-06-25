@@ -7,7 +7,7 @@
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { resolveIcon } from '@repo/icons/resolver';
+import { resolveWebIcon } from '@/lib/icon-map';
 import { DateRangeFilter } from './DateRangeFilter';
 import { DualRangeFilter } from './DualRangeFilter';
 import styles from './FilterGroupContent.module.css';
@@ -416,7 +416,7 @@ interface PriorityChipButtonProps {
 }
 
 function PriorityChipButton({ label, icon, isActive, onToggle }: PriorityChipButtonProps) {
-    const IconComponent = icon ? resolveIcon({ iconName: icon }) : undefined;
+    const IconComponent = icon ? resolveWebIcon({ iconName: icon }) : undefined;
     return (
         <button
             type="button"

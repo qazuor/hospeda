@@ -17,6 +17,7 @@ import { useTranslations } from '@/hooks/use-translations';
 
 import { PermissionEnum } from '@repo/schemas';
 import type { SocialPostListItem } from '@repo/service-core';
+import { Link } from '@tanstack/react-router';
 import { SocialPostApprovalBadge } from './SocialPostApprovalBadge';
 import { SocialPostPlatformIcons } from './SocialPostPlatformIcons';
 import { SocialPostStatusBadge } from './SocialPostStatusBadge';
@@ -91,7 +92,14 @@ export function SocialPostsTable({ items }: SocialPostsTableProps) {
                         >
                             {/* Title */}
                             <td className="max-w-xs px-4 py-3 font-medium">
-                                {truncate(post.title)}
+                                <Link
+                                    to="/social/posts/$id"
+                                    params={{ id: post.id }}
+                                    className="text-primary hover:underline"
+                                    data-testid={`post-link-${post.id}`}
+                                >
+                                    {truncate(post.title)}
+                                </Link>
                             </td>
 
                             {/* Pipeline status */}

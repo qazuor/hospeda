@@ -638,6 +638,13 @@ export const ApiEnvBaseSchema = z.object({
      */
     HOSPEDA_OPERATOR_PIN_HASH: z.string().optional(),
     /**
+     * Plaintext operator PIN for the GPT drafts endpoint, stored exactly as the
+     * operator types it into the Custom GPT. Compared in constant time against
+     * the `operatorPin` in the request body. Supersedes HOSPEDA_OPERATOR_PIN_HASH.
+     * Required when the social GPT drafts route is mounted (SPEC-254 Phase 2).
+     */
+    HOSPEDA_OPERATOR_PIN: z.string().optional(),
+    /**
      * Outbound key sent in `x-make-apikey` when pushing publish jobs to Make.com.
      * Required when the Make.com publish route is mounted (SPEC-254 Phase 4).
      */

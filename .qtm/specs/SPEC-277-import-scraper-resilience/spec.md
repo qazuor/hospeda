@@ -1,7 +1,7 @@
 ---
 id: SPEC-277
 title: Accommodation import — scraper resilience (retry, fallback chain, async, provider mitigation, manual path)
-status: draft
+status: completed
 type: improvement
 complexity: high
 dependsOn: [SPEC-258, SPEC-250]
@@ -108,37 +108,58 @@ single blocking request can take 8–120s. This spec makes the importer resilien
   reasoning as SPEC-258 (single import call).
 - **Importing reviews/ratings** — permanently excluded (SPEC-222 hard rule).
 - **Failure-mode classification itself** — already shipped in SPEC-258 C.1.
+- **R3 async path — DEFERRED** to a follow-up spec (heaviest lever; UX+state in two forms). Not in SPEC-277.
 
-## 6. Tasks (suggested, by lever)
+## 6. Tasks (by lever — R1/R2/R4/R5 in scope; R3 deferred)
 
-- **R1 Retry:** retryable-code policy + jittered backoff wrapper around the
-  actor/fetch call; unit tests asserting retry only on `source_blocked`/`timeout`
-  and fail-fast otherwise; cap/ceiling test.
-- **R2 Fallback chain:** actor→Generic fallback on block/empty; partial-draft
-  source/confidence preservation; tests with a mocked blocked primary + JSON-LD
-  secondary.
-- **R3 Async path (candidate for its own PR):** wire SPEC-250 async helpers for
-  Airbnb/Booking; `202 + poll` route shape; client polling UX in both forms; tests.
-- **R4 Provider mitigation:** runbook + config doc for proxy/alternative actor via
-  `ctx.credentials.apify*Actor`; no code unless a small config seam is missing.
-- **R5 Manual path:** end-to-end invariant test that a fully-failed import leaves
-  the create form usable (no spinner trap / disabled state) with a non-blaming note.
+- **R1 Retry:** retryable-code policy constant + `withRetry` jittered-backoff
+  wrapper around `runApifyActor`; unit tests asserting retry only on
+  `source_blocked`/`timeout` and fail-fast for `invalid_url`, `credentials_missing`,
+  `nothing_found`, `provider_error`; cap/ceiling test; integration in Airbnb and
+  Booking adapters.
+- **R2 Fallback chain:** actor→Generic fallback for Airbnb/Booking on
+  `source_blocked`; partial draft preservation with real per-field `source`/confidence
+  and `partial: true`; `GenericAdapter` called as a single cheap fetch (not another
+  actor run); tests with mocked blocked primary + JSON-LD/OG secondary.
+- **R3 Async path — DEFERRED** to a follow-up spec. The open sub-questions (which
+  sources go async, polling UX in the onboarding mini-form and admin panel) move
+  to that spec.
+- **R4 Provider mitigation (doc/config only):** runbook documenting how to swap
+  actor or proxy via `ctx.credentials.apifyAirbnbActor` / `ctx.credentials.apifyBookingActor`
+  - Coolify env redeploy; no code unless a small config seam is found missing during
+  audit (one task, flagged).
+- **R5 Manual path:** end-to-end invariant tests that a fully-failed import leaves
+  `ImportFromUrl.client.tsx` (web) and `ImportFromUrlSection.tsx` (admin) fully
+  usable — no spinner trap, submit button re-enabled, non-blaming error note visible.
 
-## 7. Open questions (resolve before atomizing)
+## 7. Decisions (locked 2026-06-24)
 
-1. **R1 retry budget** — 1 or 2 retries? Backoff base + jitter shape? Confirm the
-   retryable set is exactly `{source_blocked, timeout}`.
-2. **R2 scope** — always attempt the Generic fallback on a block, or only for
-   specific sources (Airbnb/Booking)? Is a partial OG-only draft (name+image+desc)
-   worth showing, or does it under-deliver vs. the manual path?
-3. **R3 async** — in scope for this spec or split to its own follow-up? Which
-   sources go async? What is the polling UX in the onboarding mini-form and the
-   admin panel (inline spinner + fill-when-ready vs. background + notify)?
-4. **R4** — doc/config only, or is a small code seam needed to select an alternate
-   actor at runtime? Which proxy/actor options are actually available on the Apify
-   plan?
-5. **Sequencing** — chained PRs: R1+R5 first (cheap, high value), then R2, then R3
-   (heaviest) — or fold R5 into R1? Confirm the slice.
+All five open questions resolved by the owner before task atomization:
+
+1. **R1 retry budget (RESOLVED):** 2 retries maximum. Jittered backoff: base
+   500ms–1s + random jitter per attempt to avoid lockstep hammering. Retryable
+   set is exactly `{source_blocked, timeout}` — all other codes fail fast without
+   retrying (`invalid_url`, `credentials_missing`, `provider_error`, `nothing_found`).
+
+2. **R2 scope (RESOLVED):** Trigger Generic (JSON-LD/OG) fallback ONLY for
+   Airbnb/Booking on block/empty. A partial OG-only draft (name + image +
+   description) IS worth showing — tag `partial: true` with real per-field
+   source/confidence; never relabel a fallback partial as a full import. Cost
+   guard: single cheap `safeExternalFetch`, not another actor run.
+
+3. **R3 async path (DEFERRED):** Scope of this spec is R1 + R2 + R4 + R5 only.
+   R3 (async path, 202+poll, client polling UX) is the heaviest lever and is
+   deferred to a dedicated follow-up spec. The open sub-questions (which sources
+   go async, polling UX shape in both forms) move there.
+
+4. **R4 provider mitigation (RESOLVED):** Doc/config only. No new code unless a
+   small config seam is genuinely missing (one task, flagged by implementer).
+   Runbook documents swapping actor/proxy via `ctx.credentials.apify*Actor` +
+   Coolify env + redeploy.
+
+5. **Sequencing (RESOLVED):** Two PR slices: (1) R1+R5 first (high value, cheap),
+   (2) R2 second. R4 (doc/config) lands alongside either slice. Task dependencies
+   reflect this ordering.
 
 ## Revision history
 
@@ -146,3 +167,9 @@ single blocking request can take 8–120s. This spec makes the importer resilien
   (failure-mode differentiation) shipped in SPEC-258 PR #1824 and the import cache
   (C.4) was rejected. Remaining levers R1–R5 documented; open questions for the
   owner pending before task atomization.
+- 2026-06-24 — Decisions locked; status set to in-progress. R1: 2 retries, jittered
+  backoff (base 500ms–1s + random jitter), retryable set = `{source_blocked, timeout}`.
+  R2: Airbnb/Booking only, partial OG draft is worth showing (`partial: true`), single
+  cheap fetch cost guard. R3 async path DEFERRED to a follow-up spec. R4: doc/config
+  only, no new code unless a config seam is found missing. Tasks atomized for R1/R2/R4/R5
+  (N=11 tasks across core/integration/testing/docs phases).

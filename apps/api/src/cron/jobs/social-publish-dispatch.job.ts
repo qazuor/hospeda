@@ -65,7 +65,7 @@ export const socialPublishDispatchJob: CronJobDefinition = {
         'Dispatch approved social post targets to Make.com for publication (SPEC-254 US-11)',
     schedule: '*/5 * * * *', // Every 5 minutes
     enabled: true,
-    timeoutMs: 120_000, // 2 minutes — allows up to ~8 sequential targets at 15s each
+    timeoutMs: 120_000, // 2 minutes — allows up to ~3 sequential targets at 40s each
 
     handler: async (ctx) => {
         const { logger, startedAt, dryRun } = ctx;
@@ -93,10 +93,9 @@ export const socialPublishDispatchJob: CronJobDefinition = {
             };
         }
 
-        // Snapshot the env values we will pass into service methods.
+        // Snapshot the env value we will pass into service methods.
         // Service-core must NEVER access env directly (testability constraint).
         const makeApiKey = env.HOSPEDA_MAKE_API_KEY;
-        const apiBaseUrl = env.HOSPEDA_API_URL;
 
         try {
             const cronResult = await withTransaction<CronTransactionResult>(async (_tx) => {
@@ -140,8 +139,10 @@ export const socialPublishDispatchJob: CronJobDefinition = {
                 }
 
                 // Outcome tallies
+                // `published`  — Make responded SUCCESS synchronously; target is PUBLISHED.
+                // `retry_scheduled` / `exhausted` — failure path.
                 const outcomes: Record<string, number> = {
-                    dispatched: 0,
+                    published: 0,
                     retry_scheduled: 0,
                     exhausted: 0,
                     skipped_no_webhook: 0,
@@ -156,8 +157,7 @@ export const socialPublishDispatchJob: CronJobDefinition = {
                         const result = await dispatchService.dispatchTarget({
                             target,
                             post,
-                            makeApiKey,
-                            apiBaseUrl
+                            makeApiKey
                         });
                         outcomes[result.outcome] = (outcomes[result.outcome] ?? 0) + 1;
 
@@ -192,8 +192,8 @@ export const socialPublishDispatchJob: CronJobDefinition = {
                     success: totalErrors === 0,
                     message:
                         totalErrors === 0
-                            ? `Dispatched ${outcomes.dispatched ?? 0} target(s) successfully`
-                            : `Dispatched with ${totalErrors} error(s) out of ${totalAttempted} target(s)`,
+                            ? `Published ${outcomes.published ?? 0} target(s) successfully`
+                            : `Published with ${totalErrors} error(s) out of ${totalAttempted} target(s)`,
                     processed: totalAttempted,
                     errors: totalErrors,
                     durationMs,

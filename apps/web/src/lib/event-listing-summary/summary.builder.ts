@@ -14,7 +14,7 @@
  * ("eventos") since events do not have a type-driven subject phrase.
  */
 
-import { toBcp47Locale } from '@repo/i18n';
+import { toBcp47Locale } from '@repo/i18n/web';
 import { SORT_KEY_PHRASES, getPhrase } from './summary.catalogs';
 import { FILTER_DESCRIPTORS, FLOW_MODIFIER_KEYS } from './summary.descriptors';
 import type {

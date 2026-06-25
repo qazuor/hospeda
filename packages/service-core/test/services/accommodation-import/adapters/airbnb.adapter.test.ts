@@ -1125,6 +1125,97 @@ describe('AirbnbAdapter', () => {
         });
     });
 
+    // -----------------------------------------------------------------------
+    // R1 retry integration (SPEC-277)
+    // -----------------------------------------------------------------------
+
+    describe('R1 retry integration', () => {
+        /**
+         * Fake-timer helpers are scoped INSIDE this describe so the real-timer
+         * behavior of every other describe block is completely undisturbed.
+         *
+         * Pattern used per test:
+         *   vi.useFakeTimers();
+         *   const p = adapter.extract(url, ctx);
+         *   await vi.runAllTimersAsync();   // drains the sleep() inside withRetry
+         *   const result = await p;
+         *   vi.useRealTimers();
+         */
+
+        const url = new URL('https://www.airbnb.com/rooms/99999');
+
+        it('should succeed on the 3rd attempt after two source_blocked results', async () => {
+            // Arrange — first two calls return source_blocked (retryable),
+            // third call returns a valid dataset item.
+            mockRunApifyActor
+                .mockResolvedValueOnce({ items: [], failureCode: 'source_blocked' })
+                .mockResolvedValueOnce({ items: [], failureCode: 'source_blocked' })
+                .mockResolvedValueOnce({ items: [AIRBNB_ITEM_FULL] });
+            const ctx = makeCtx();
+
+            // Act — start the promise, flush fake timers to skip sleep(), then await
+            vi.useFakeTimers();
+            const p = adapter.extract(url, ctx);
+            await vi.runAllTimersAsync();
+            const result = await p;
+            vi.useRealTimers();
+
+            // Assert — extraction is successful (no failureCode, name mapped)
+            expect(result.sourcePlatform).toBe('airbnb');
+            expect(result.failureCode).toBeUndefined();
+            expect(result.name?.value).toBe('Cabaña del Río');
+
+            // Exactly 3 calls: 1 initial + 2 retries
+            expect(mockRunApifyActor).toHaveBeenCalledTimes(3);
+        });
+
+        it('should return source_blocked after exhausting all 3 attempts', async () => {
+            // Arrange — all three calls return source_blocked
+            mockRunApifyActor
+                .mockResolvedValueOnce({ items: [], failureCode: 'source_blocked' })
+                .mockResolvedValueOnce({ items: [], failureCode: 'source_blocked' })
+                .mockResolvedValueOnce({ items: [], failureCode: 'source_blocked' });
+            const ctx = makeCtx();
+
+            // Act
+            vi.useFakeTimers();
+            const p = adapter.extract(url, ctx);
+            await vi.runAllTimersAsync();
+            const result = await p;
+            vi.useRealTimers();
+
+            // Assert — adapter propagates the last failure code
+            expect(result).toEqual({ sourcePlatform: 'airbnb', failureCode: 'source_blocked' });
+
+            // Retry cap enforced: exactly 3 calls (1 + 2 retries = cap)
+            expect(mockRunApifyActor).toHaveBeenCalledTimes(3);
+        });
+
+        it('should not retry credentials_missing and return immediately after 1 call', async () => {
+            // Arrange — non-retryable failure code on first call
+            mockRunApifyActor.mockResolvedValueOnce({
+                items: [],
+                failureCode: 'credentials_missing'
+            });
+            const ctx = makeCtx();
+
+            // Act — no fake timers needed (no sleep will occur), but use them
+            // defensively to ensure any accidental sleep would not block the test
+            vi.useFakeTimers();
+            const p = adapter.extract(url, ctx);
+            await vi.runAllTimersAsync();
+            const result = await p;
+            vi.useRealTimers();
+
+            // Assert — fail-fast: returned on first call, no retry
+            expect(result).toEqual({
+                sourcePlatform: 'airbnb',
+                failureCode: 'credentials_missing'
+            });
+            expect(mockRunApifyActor).toHaveBeenCalledTimes(1);
+        });
+    });
+
     describe('extract() — Apify timeout budget', () => {
         it('passes apifyTimeoutMs to runApifyActor when set, not the short fetch timeout', async () => {
             // Arrange — fetch timeout short (8s), Apify budget long (120s)
