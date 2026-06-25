@@ -10,11 +10,12 @@ import {
     AuditLogsPageComponent,
     AuditLogsRoute
 } from '@/features/audit-logs/config/audit-logs.config';
-import { requireAdminApiAccess } from '@/lib/admin-api-access';
+import { requireAdminPermission } from '@/lib/admin-api-access';
+import { PermissionEnum } from '@repo/schemas';
 import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/_authed/platform/ops/audit-logs')({
     validateSearch: AuditLogsRoute.options.validateSearch,
-    beforeLoad: ({ context }) => requireAdminApiAccess(context),
+    beforeLoad: ({ context }) => requireAdminPermission(context, PermissionEnum.AUDIT_LOG_VIEW),
     component: AuditLogsPageComponent
 });
