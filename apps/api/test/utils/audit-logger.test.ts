@@ -100,7 +100,14 @@ vi.mock('@repo/logger', () => {
 
 import { logger } from '@repo/logger';
 // Imports must come after vi.mock declarations.
-import { AuditEventType, auditLog } from '../../src/utils/audit-logger';
+import {
+    AuditEventType,
+    __resetAuditLogPersisterForTests,
+    auditLog,
+    buildPersistedAuditRecord,
+    classifyAuditLogType,
+    registerAuditLogPersister
+} from '../../src/utils/audit-logger';
 
 /**
  * Retrieve the `info` mock from the audit logger instance that was created
@@ -1039,6 +1046,180 @@ describe('audit-logger', () => {
 
             // Act & Assert - existing try-catch in auditLog should catch the Sentry error
             expect(() => auditLog(entry)).not.toThrow();
+
+            consoleErrorSpy.mockRestore();
+        });
+    });
+});
+
+describe('audit-logger — queryable persistence (SPEC-162)', () => {
+    afterEach(() => {
+        __resetAuditLogPersisterForTests();
+    });
+
+    describe('classifyAuditLogType', () => {
+        it.each([
+            AuditEventType.AUTH_LOGIN_FAILED,
+            AuditEventType.AUTH_LOGIN_SUCCESS,
+            AuditEventType.AUTH_LOCKOUT,
+            AuditEventType.AUTH_PASSWORD_CHANGED,
+            AuditEventType.ACCESS_DENIED,
+            AuditEventType.SESSION_SIGNOUT
+        ])('classifies %s as security', (event) => {
+            expect(classifyAuditLogType(event)).toBe('security');
+        });
+
+        it.each([
+            AuditEventType.BILLING_MUTATION,
+            AuditEventType.PERMISSION_CHANGE,
+            AuditEventType.USER_ADMIN_MUTATION,
+            AuditEventType.ROUTE_MUTATION
+        ])('classifies %s as audit', (event) => {
+            expect(classifyAuditLogType(event)).toBe('audit');
+        });
+    });
+
+    describe('buildPersistedAuditRecord', () => {
+        it('maps a security login-failed entry (email -> targetId, ip, no actorId)', () => {
+            const entry = {
+                auditEvent: AuditEventType.AUTH_LOGIN_FAILED,
+                email: 'attacked@example.com',
+                ip: '1.2.3.4',
+                reason: 'invalid_credentials',
+                attemptNumber: 3,
+                locked: false,
+                timestamp: '2026-06-03T10:00:00.000Z'
+            };
+            const record = buildPersistedAuditRecord(
+                entry as never,
+                { ...entry },
+                /* isCritical */ true
+            );
+
+            expect(record.logType).toBe('security');
+            expect(record.eventType).toBe(AuditEventType.AUTH_LOGIN_FAILED);
+            expect(record.severity).toBe('critical');
+            expect(record.actorId).toBeUndefined();
+            expect(record.ip).toBe('1.2.3.4');
+            expect(record.targetId).toBe('attacked@example.com');
+            expect(record.loggedAt).toEqual(new Date('2026-06-03T10:00:00.000Z'));
+        });
+
+        it('maps a permission-change entry (targetUserId -> targetId, actor uuid kept)', () => {
+            const actorId = 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11';
+            const targetUserId = 'b1ffcd00-9c0b-4ef8-bb6d-6bb9bd380a22';
+            const entry = {
+                auditEvent: AuditEventType.PERMISSION_CHANGE,
+                actorId,
+                targetUserId,
+                changeType: 'role_assignment',
+                oldValue: 'user',
+                newValue: 'admin',
+                timestamp: '2026-06-03T10:00:00.000Z'
+            };
+            const record = buildPersistedAuditRecord(entry as never, { ...entry }, true);
+
+            expect(record.logType).toBe('audit');
+            expect(record.actorId).toBe(actorId);
+            expect(record.targetId).toBe(targetUserId);
+        });
+
+        it('maps a billing-mutation entry (resourceType:resourceId -> targetId)', () => {
+            const entry = {
+                auditEvent: AuditEventType.BILLING_MUTATION,
+                actorId: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
+                action: 'create',
+                resourceType: 'promo_code',
+                resourceId: 'pc-123',
+                timestamp: '2026-06-03T10:00:00.000Z'
+            };
+            const record = buildPersistedAuditRecord(entry as never, { ...entry }, true);
+
+            expect(record.targetId).toBe('promo_code:pc-123');
+        });
+
+        it('drops a non-UUID actorId (anonymous) so it never violates the uuid column', () => {
+            const entry = {
+                auditEvent: AuditEventType.ROUTE_MUTATION,
+                actorId: 'anonymous',
+                actorRole: 'guest',
+                method: 'POST',
+                path: '/api/v1/protected/x',
+                statusCode: 201,
+                timestamp: '2026-06-03T10:00:00.000Z'
+            };
+            const record = buildPersistedAuditRecord(entry as never, { ...entry }, false);
+
+            expect(record.actorId).toBeUndefined();
+            expect(record.actorRole).toBe('guest');
+            expect(record.severity).toBe('info');
+            expect(record.method).toBe('POST');
+            expect(record.path).toBe('/api/v1/protected/x');
+            expect(record.statusCode).toBe(201);
+        });
+
+        it('uses the resource field as path for ACCESS_DENIED', () => {
+            const entry = {
+                auditEvent: AuditEventType.ACCESS_DENIED,
+                actorId: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
+                actorRole: 'user',
+                resource: '/api/v1/admin/users',
+                method: 'GET',
+                statusCode: 403,
+                reason: 'insufficient_permissions',
+                timestamp: '2026-06-03T10:00:00.000Z'
+            };
+            const record = buildPersistedAuditRecord(entry as never, { ...entry }, true);
+
+            expect(record.path).toBe('/api/v1/admin/users');
+            expect(record.statusCode).toBe(403);
+        });
+    });
+
+    describe('persister integration via auditLog', () => {
+        it('forwards a mapped record to the registered persister', () => {
+            const persister = vi.fn();
+            registerAuditLogPersister(persister);
+
+            auditLog({
+                auditEvent: AuditEventType.AUTH_LOGIN_FAILED,
+                email: 'a@b.com',
+                ip: '1.2.3.4',
+                reason: 'invalid_credentials',
+                attemptNumber: 1,
+                locked: false
+            });
+
+            expect(persister).toHaveBeenCalledOnce();
+            const record = persister.mock.calls[0]?.[0] as { logType: string; severity: string };
+            expect(record.logType).toBe('security');
+            expect(record.severity).toBe('critical');
+        });
+
+        it('does not call any persister when none is registered', () => {
+            // No persister registered (afterEach reset). Must not throw.
+            expect(() =>
+                auditLog({
+                    auditEvent: AuditEventType.SESSION_SIGNOUT,
+                    actorId: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
+                    ip: '1.2.3.4'
+                })
+            ).not.toThrow();
+        });
+
+        it('never throws when the persister throws (logging call site is protected)', () => {
+            registerAuditLogPersister(() => {
+                throw new Error('persist boom');
+            });
+            const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+            expect(() =>
+                auditLog({
+                    auditEvent: AuditEventType.AUTH_LOGIN_SUCCESS,
+                    email: 'a@b.com',
+                    ip: '1.2.3.4'
+                })
+            ).not.toThrow();
 
             consoleErrorSpy.mockRestore();
         });

@@ -626,7 +626,8 @@
             "title": "Admin Audit & Security Log Query Layer",
             "type": "feature",
             "complexity": "high",
-            "status": "draft",
+            "status": "in-progress",
+            "lastUpdated": "2026-06-25T00:00:00Z",
             "path": "SPEC-162-admin-audit-security-log-query",
             "created": "2026-05-26T00:00:00Z",
             "discoveredDuring": "Admin dashboard redefinition session 2026-05-26. SUPER_ADMIN audit-log + security-log widgets: logging infra (audit-logger.ts, AuditEventType) is logger-only, not queryable. Needs a queryable store + admin endpoints gated by AUDIT_LOG_VIEW / SECURITY_LOG_VIEW.",
@@ -1884,7 +1885,7 @@
             "title": "Web performance audit & improvements — Core Web Vitals, 12 findings + fix catalog",
             "type": "improvement",
             "complexity": "medium",
-            "status": "in-progress",
+            "status": "completed",
             "path": "SPEC-269-web-performance-audit",
             "created": "2026-06-23T00:00:00Z",
             "startedAt": "2026-06-24T00:00:00Z",
@@ -1900,7 +1901,9 @@
                 "cls",
                 "bundle",
                 "images"
-            ]
+            ],
+            "archived": true,
+            "archivedAt": "2026-06-25T00:00:00Z"
         },
         {
             "specId": "SPEC-270",
