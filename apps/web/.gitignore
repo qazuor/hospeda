@@ -19,3 +19,7 @@ tests/visual-snapshots/diff/
 # Bundle analysis artifact emitted by `pnpm build:analyze` (rollup-plugin-visualizer).
 # Local-only — regenerate on demand, never commit (SPEC-269 T-269-02a).
 stats.html
+
+# Lighthouse CI reports/output (lhci autorun). Local-only — regenerate on
+# demand, never commit (SPEC-269 T-269-11).
+.lighthouseci/
