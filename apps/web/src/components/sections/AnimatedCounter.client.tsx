@@ -11,7 +11,7 @@
 import { useReducedMotion } from '@/hooks/use-reduced-motion';
 import type { SupportedLocale } from '@/lib/i18n';
 import { resolveWebIcon } from '@/lib/icon-map';
-import { toBcp47Locale } from '@repo/i18n';
+import { toBcp47Locale } from '@repo/i18n/web';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import styles from './AnimatedCounter.module.css';
 
