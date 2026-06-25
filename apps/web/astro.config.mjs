@@ -102,7 +102,13 @@ export default defineConfig({
         // source maps belong to, and the auth token used to upload them.
         // `dsn` is intentionally NOT passed here (deprecated path in
         // @sentry/astro >= 10; would warn at every build).
-        ...(process.env.PUBLIC_SENTRY_DSN
+        //
+        // SPEC-180 BETA-66: gate on SENTRY_AUTH_TOKEN, NOT on PUBLIC_SENTRY_DSN.
+        // The DSN lives in sentry.client.config.ts and sentry.server.config.ts
+        // (runtime). The plugin only needs the token to upload source maps at
+        // build time. Gating on the DSN skips source-map upload even when a
+        // valid token is present but the DSN env var was not passed as a build arg.
+        ...(process.env.SENTRY_AUTH_TOKEN
             ? [
                   sentry({
                       org: 'qazuor',
