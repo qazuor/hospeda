@@ -6,9 +6,9 @@
     "summary": {
         "total": 13,
         "byStatus": {
-            "pending": 8,
+            "pending": 7,
             "in_progress": 0,
-            "completed": 5
+            "completed": 6
         },
         "byPhase": {
             "core": 3,
@@ -382,7 +382,7 @@
             "id": "T-269-09",
             "title": "INP audit: review search and filter island event handlers, debounce where needed",
             "description": "Audit the interactive islands that handle user input (search box, filters, any event-driven UI) and add debouncing where a handler fires on every keystroke or scroll event without throttling, which can cause INP (Interaction to Next Paint) to exceed 200ms.\n\nThis is an investigation-first task — the spec recon could not measure INP from code alone. The implementer must:\n1. Identify the islands that handle user interaction: the AI search box (if applicable), accommodation filter form, events/destinations filter components, etc.\n2. For each, open DevTools → Performance panel, interact with the element (type, toggle a filter), and look for long tasks (>50ms) triggered by the event handler.\n3. If a handler fires on every keypress without debouncing (e.g., a `onChange` that triggers a fetch or DOM update per character), add a `debounce` (typically 300ms for search inputs, 150ms for filter toggles).\n4. Check for the AI search bar specifically — it was noted in spec §9 as a likely INP source.\n\nKey files to audit (trace from the page templates):\n- AI natural-language search input component in `apps/web/src/components/search/`\n- Accommodation filter panel in `apps/web/src/components/accommodation/`\n- Any island that calls `fetch()` or updates state on `onChange`\n\nNote: if no handlers actually fire on every keystroke (e.g., they already debounce or are form submits), document that as a finding and close this task with no code changes.\n\nAcceptance criteria:\n- Every interactive handler that fires on user input is either already debounced or has a debounce added.\n- INP measured in DevTools is <200ms for the most common interactions (search box typing, filter toggle).\n- No regressions: existing search/filter functionality works as before.\n- `pnpm --filter web typecheck` and `pnpm --filter web lint` remain green.\n\nTesting: DevTools Performance panel → measure INP for search + filter interactions before and after any debounce changes. Document results in progress notes.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-269-11"],
@@ -411,10 +411,11 @@
                 "typecheck": null,
                 "tests": null
             },
+            "auditResult": "Audit-only, no code change (per spec note). All public-page search/filter handlers already debounced: SearchResultsLive 300ms, FilterSidebar commit-on-blur/useFilterDebounce 500ms, ListingMap 300ms+500ms, SearchBar in-memory+click-nav, SearchChatPanel send-on-enter. Two non-public marginal candidates deferred (SelectSearchFilter in-memory re-render, BetaSearch Fuse.js on internal docs site). Owner decision: close without changes (YAGNI).",
             "timestamps": {
                 "created": "2026-06-24T00:00:00Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-24T00:00:00Z",
+                "completed": "2026-06-24T00:00:00Z"
             }
         },
         {
