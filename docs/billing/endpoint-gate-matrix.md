@@ -889,6 +889,22 @@ regardless of subscription state.
 
 ---
 
+## Partners — Admin
+
+All admin partner routes are PermissionEnum-gated (no billing entitlement gate).
+
+| Route (METHOD) | Handler file | Decision | EntitlementKey | Status | Reason |
+|---|---|---|---|---|---|
+| `GET /api/v1/admin/partners` | `partners/admin/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated (PARTNER_VIEW_ALL) (SPEC-271) |
+| `POST /api/v1/admin/partners` | `partners/admin/create.ts` | none | - | n/a | Admin write; PermissionEnum-gated (PARTNER_MANAGE) (SPEC-271) |
+| `GET /api/v1/admin/partners/{id}` | `partners/admin/get.ts` | none | - | n/a | Admin read; PermissionEnum-gated (PARTNER_VIEW_ALL) (SPEC-271) |
+| `PUT /api/v1/admin/partners/{id}` | `partners/admin/update.ts` | none | - | n/a | Admin write; PermissionEnum-gated (PARTNER_MANAGE) (SPEC-271) |
+| `DELETE /api/v1/admin/partners/{id}` | `partners/admin/delete.ts` | none | - | n/a | Admin soft-delete; PermissionEnum-gated (PARTNER_MANAGE) (SPEC-271) |
+| `POST /api/v1/admin/partners/{id}/send-link` | `partners/admin/send-link.ts` | none | - | n/a | Admin action; PermissionEnum-gated (PARTNER_MANAGE) (SPEC-271) |
+| `POST /api/v1/admin/partners/{id}/manual-payment` | `partners/admin/manual-payment.ts` | none | - | n/a | Admin action; PermissionEnum-gated (PARTNER_MANAGE) (SPEC-271) |
+
+---
+
 ## Reserved — Phantom Gates (Route Pending)
 
 These middleware functions exist in the codebase but the routes they are intended
@@ -938,7 +954,7 @@ update the counter logic and set `Status = wired` in the main table.
 | `gate` | 11 | All `to-wire` (T-145-03); `PATCH /accommodations/{id}` partially wired (rich-desc + video) |
 | `limit` | 5 | 4 `wired` (MAX_ACCOMMODATIONS ×3, MAX_PHOTOS ×2), 1 in `gate+limit` |
 | `gate+limit` | 3 | Bookmark create (wired), owner-promotion create (partially wired), accommodation patch (partially wired) |
-| `none` | ~320 | Admin PermissionEnum-gated or pure auth-sufficient reads |
+| `none` | ~327 | Admin PermissionEnum-gated or pure auth-sufficient reads |
 | `reserved` | 14 | 12 phantom gates + 2 limit stubs |
 
 ### Routes to wire (feeds T-145-03 through T-145-05)
