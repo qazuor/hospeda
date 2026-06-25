@@ -45,12 +45,17 @@ interface ToggleResponse {
     };
 }
 
+// SPEC-105 T-105-04: GET /user-bookmarks returns { data: { bookmarks: [...], total: N } }
+// NOT a flat array on data. Using data.bookmarks to access the list.
 interface BookmarkListResponse {
-    readonly data?: ReadonlyArray<{
-        readonly id: string;
-        readonly entityId: string;
-        readonly entityType: string;
-    }>;
+    readonly data?: {
+        readonly bookmarks: ReadonlyArray<{
+            readonly id: string;
+            readonly entityId: string;
+            readonly entityType: string;
+        }>;
+        readonly total: number;
+    };
 }
 
 test.describe('E2E-08: entity smoke tests (DESTINATION, EVENT, POST) @p1 @favorites @smoke @spec-098', () => {
@@ -129,7 +134,7 @@ test.describe('E2E-08: entity smoke tests (DESTINATION, EVENT, POST) @p1 @favori
         });
         expect(listRes.ok()).toBe(true);
         const listBody = (await listRes.json()) as BookmarkListResponse;
-        const found = listBody.data?.some(
+        const found = listBody.data?.bookmarks?.some(
             (bm) => bm.entityId === entityId && bm.entityType === entityType
         );
         expect(found, `${entityType} bookmark not found in GET list`).toBe(true);
