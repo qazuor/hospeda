@@ -3441,6 +3441,10 @@
         "timezone": {
             "required": "El timezone es obligatorio"
         },
+        "weekday": {
+            "invalid": "El día de la semana no es válido",
+            "requiredForWeekly": "El día de la semana es obligatorio para la recurrencia semanal"
+        },
         "title": {
             "required": "El title es obligatorio"
         }
