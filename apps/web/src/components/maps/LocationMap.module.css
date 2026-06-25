@@ -49,6 +49,29 @@
     border-top: 1px solid var(--border, #e5e5e5);
 }
 
+/* ─── Lazy-load skeleton ────────────────────────────────────────────────────
+ * Shown inside the Suspense fallback while the Leaflet async chunk loads.
+ * Matches the map container's min-height so there is no CLS on reveal.     */
+.skeleton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 560px;
+    background-color: var(--surface-warm, #faf6f0);
+}
+
+@media (max-width: 1024px) {
+    .skeleton {
+        min-height: 480px;
+    }
+}
+
+@media (max-width: 768px) {
+    .skeleton {
+        min-height: 400px;
+    }
+}
+
 /* ─── Activation hint overlay ──────────────────────────────────────────────
  * Sits on top of the map while scroll-wheel zoom is disabled. Covers the
  * tile area (NOT the disclaimer below) so the page can scroll naturally
