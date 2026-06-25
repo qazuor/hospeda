@@ -6,6 +6,7 @@ export * from './experience/index.js';
 export * from './commerce-lead/index.js';
 export * from './ai/index.js';
 export * from './appLogEntry/index.js';
+export * from './auditLogEntry/index.js';
 export * from './conversation/index.js';
 export * from './contentModeration/index.js';
 export * from './cronRun/index.js';
