@@ -1320,6 +1320,8 @@
         "zodError.socialPost.slug.required",
         "zodError.socialPost.timezone.required",
         "zodError.socialPost.title.required",
+        "zodError.socialPost.weekday.invalid",
+        "zodError.socialPost.weekday.requiredForWeekly",
         "zodError.socialPostFooter.content.required",
         "zodError.socialPostFooter.id.uuid",
         "zodError.socialPostFooter.name.required",
@@ -1576,7 +1578,7 @@
         "zodError.validation.sanitization.failed",
         "zodError.validation.zod.failed"
     ],
-    "total": 1575,
+    "total": 1577,
     "byNamespace": {
         "accommodation": 54,
         "accommodationAmenity": 4,
@@ -1646,7 +1648,7 @@
         "socialHashtagSet": 4,
         "socialPlatform": 2,
         "socialPlatformFormat": 1,
-        "socialPost": 17,
+        "socialPost": 19,
         "socialPostFooter": 4,
         "socialPostHashtag": 3,
         "socialPostMedia": 3,
