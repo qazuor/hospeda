@@ -68,6 +68,12 @@ project:hospeda app_type:api event_type:webhook_failure
 
 ## DSNs and Environment Variables
 
+> **SPEC-180 note**: Variable names were updated in SPEC-035 to use the `HOSPEDA_` prefix
+> for server-side variables. The old `SENTRY_ENVIRONMENT`, `SENTRY_TRACES_SAMPLE_RATE`, etc.
+> names are **no longer valid** — the API's Zod validator rejects them. Use the names below.
+> `SENTRY_AUTH_TOKEN` (no prefix) is the standard Sentry CLI convention for source-map upload
+> at build time; it is a build-time secret that must NOT be set as a runtime env var.
+
 ### Production (.env)
 
 ```bash
@@ -78,36 +84,50 @@ project:hospeda app_type:api event_type:webhook_failure
 # API - hospeda-api project
 HOSPEDA_SENTRY_DSN=https://31c6b2d7db0789020567a65cb20bf796@o4508855548313600.ingest.us.sentry.io/4510829690028032
 HOSPEDA_SENTRY_PROJECT=hospeda
-SENTRY_ENVIRONMENT=production
-SENTRY_TRACES_SAMPLE_RATE=0.1
-SENTRY_PROFILES_SAMPLE_RATE=0.1
-SENTRY_DEBUG=false
+# CRITICAL: must be 'production' in prod, 'staging' in staging.
+# Without this, staging events land in the prod bucket (BETA-50).
+HOSPEDA_SENTRY_ENVIRONMENT=production
 
-# Web App - hospeda-web project
+# Web App - hospeda-web project (baked into the bundle at build time)
 PUBLIC_SENTRY_DSN=https://f2e64d188706860ecff62b23ff2fb8d6@o4508855548313600.ingest.us.sentry.io/4510829690486784
-PUBLIC_SENTRY_PROJECT=hospeda
+PUBLIC_SENTRY_ENVIRONMENT=production
 
-# Admin App - hospeda-admin project
+# Admin App - hospeda-admin project (baked into the bundle at build time)
 VITE_SENTRY_DSN=https://1bd1f0f8e4bfc2aa0bd2b64fcd13db97@o4508855548313600.ingest.us.sentry.io/4510829690814464
-VITE_SENTRY_PROJECT=hospeda
+VITE_SENTRY_ENVIRONMENT=production
+
+# Source-map upload token — BUILD-TIME ONLY, do NOT set as runtime env in Coolify.
+# Set as a Coolify build-arg in the application's build-time environment config.
+# (SPEC-180 BETA-66)
+SENTRY_AUTH_TOKEN=<your-sentry-auth-token>
 ```
 
 ### Staging
 
 ```bash
-SENTRY_ENVIRONMENT=staging
-SENTRY_TRACES_SAMPLE_RATE=1.0    # 100% in staging for debugging
-SENTRY_DEBUG=true
+# API
+HOSPEDA_SENTRY_ENVIRONMENT=staging    # was: SENTRY_ENVIRONMENT=staging (stale, now rejected)
+
+# Web (build args)
+PUBLIC_SENTRY_ENVIRONMENT=staging
+
+# Admin (build args)
+VITE_SENTRY_ENVIRONMENT=staging
 ```
 
 ### Values by Environment
 
 | Variable | Development | Staging | Production |
 |----------|-------------|---------|------------|
-| `SENTRY_ENVIRONMENT` | `development` | `staging` | `production` |
-| `SENTRY_TRACES_SAMPLE_RATE` | `1.0` | `1.0` | `0.1` |
-| `SENTRY_PROFILES_SAMPLE_RATE` | `1.0` | `1.0` | `0.1` |
-| `SENTRY_DEBUG` | `true` | `true` | `false` |
+| `HOSPEDA_SENTRY_ENVIRONMENT` (API) | not set | `staging` | `production` |
+| `PUBLIC_SENTRY_ENVIRONMENT` (web build arg) | not set | `staging` | `production` |
+| `VITE_SENTRY_ENVIRONMENT` (admin build arg) | not set | `staging` | `production` |
+
+> **Source-map upload** (SPEC-180 BETA-66): set `SENTRY_AUTH_TOKEN` as a **Coolify
+> build-arg** (not a runtime env var) in each of the three apps' build-time configuration.
+> The API's `tsup` does not upload source maps (they are inlined by tsup for Node);
+> the web (`@sentry/astro` plugin) and admin (`@sentry/vite-plugin`) upload during
+> `astro build` / `vite build` respectively.
 
 ## Alert Configuration
 
