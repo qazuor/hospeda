@@ -147,6 +147,20 @@
             }
         }
     },
+    "featureFlag": {
+        "description": {
+            "max": "La descripción no puede superar los {{max}} caracteres",
+            "min": "La descripción debe tener al menos {{min}} caracteres"
+        },
+        "key": {
+            "invalidPattern": "El formato de la clave no es válido",
+            "max": "La clave no puede superar los {{max}} caracteres",
+            "min": "La clave debe tener al menos {{min}} caracteres"
+        },
+        "reason": {
+            "max": "La razón no puede superar los {{max}} caracteres"
+        }
+    },
     "accommodationAmenity": {
         "additionalCostPercent": {
             "max": "El additional cost percent no puede superar los {{max}} caracteres",
