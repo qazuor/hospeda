@@ -397,7 +397,10 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.SOCIAL_SETTINGS_MANAGE,
         PermissionEnum.SOCIAL_PUBLISH_LOG_VIEW,
         PermissionEnum.SOCIAL_AUDIT_LOG_VIEW,
-        PermissionEnum.SOCIAL_DISPATCH_MANAGE
+        PermissionEnum.SOCIAL_DISPATCH_MANAGE,
+
+        // FEATURE FLAGS: Kill switch + dark launch management (SPEC-276) — SUPER_ADMIN-only.
+        PermissionEnum.FEATURE_FLAG_MANAGE
     ],
 
     [RoleEnum.ADMIN]: [

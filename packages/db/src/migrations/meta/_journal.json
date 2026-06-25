@@ -225,6 +225,13 @@
             "when": 1782414297231,
             "tag": "0031_glamorous_mysterio",
             "breakpoints": true
+        },
+        {
+            "idx": 32,
+            "version": "7",
+            "when": 1782420866263,
+            "tag": "0032_stale_james_howlett",
+            "breakpoints": true
         }
     ]
 }

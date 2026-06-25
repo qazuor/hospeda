@@ -1,4 +1,4 @@
-import { and, count, desc, eq, getTableColumns, or, sql } from 'drizzle-orm';
+import { and, count, desc, eq, getTableColumns, isNull, or, sql } from 'drizzle-orm';
 import type { SQL } from 'drizzle-orm';
 import { getDb } from '../../client';
 import { featureFlagAuditLog, featureFlags } from '../../schemas/feature-flags';
@@ -96,6 +96,8 @@ export class FeatureFlagModel {
         if (enabledFilter !== undefined) {
             conditions.push(eq(featureFlags.enabled, enabledFilter));
         }
+
+        conditions.push(isNull(featureFlags.deletedAt));
 
         const where = conditions.length > 0 ? and(...conditions) : undefined;
 
@@ -197,6 +199,16 @@ export class FeatureFlagModel {
             .where(eq(featureFlags.id, id))
             .returning(getTableColumns(featureFlags));
         return result ?? null;
+    }
+
+    async softDelete(id: string, tx?: DrizzleClient): Promise<void> {
+        const db = this.getClient(tx);
+        await db
+            .update(featureFlags)
+            .set({
+                deletedAt: sql`now()`
+            })
+            .where(eq(featureFlags.id, id));
     }
 
     async delete(id: string, tx?: DrizzleClient): Promise<void> {

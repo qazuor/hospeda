@@ -241,6 +241,11 @@ export const menuTree: readonly MenuItem[] = [
                     PermissionEnum.HOST_TRADE_CREATE,
                     PermissionEnum.HOST_TRADE_UPDATE
                 ]
+            },
+            {
+                titleKey: 'admin-menu.platform.featureFlags',
+                to: '/platform/feature-flags',
+                permission: PermissionEnum.FEATURE_FLAG_MANAGE
             }
         ]
     },

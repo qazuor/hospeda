@@ -98,7 +98,11 @@ import { adminCronRoutes } from './cron-admin';
 import { docsIndexRoutes, scalarRoutes, swaggerRoutes } from './docs';
 import { adminExchangeRateRoutes } from './exchange-rates/admin/index.js';
 import { publicExchangeRateRoutes } from './exchange-rates/public/index.js';
-import { adminFeatureFlagRoutes, publicFeatureFlagRoutes } from './feature-flags';
+import {
+    adminFeatureFlagRoutes,
+    protectedFeatureFlagRoutes,
+    publicFeatureFlagRoutes
+} from './feature-flags';
 import { publicFeedbackRoutes } from './feedback';
 import { adminGeocodingRoutes, protectedGeocodingRoutes } from './geocoding';
 import { dbHealthRoutes, healthRoutes, liveRoutes, readyRoutes } from './health';
@@ -279,6 +283,9 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
         // Feature flags (public key-value map — no auth)
         app.route('/api/v1/public/flags', publicFeatureFlagRoutes);
+
+        // Feature flags for current user (protected — with user/role context)
+        app.route('/api/v1/protected/feature-flags', protectedFeatureFlagRoutes);
 
         // Platform statistics
         app.route('/api/v1/public/stats', publicStatsRoutes);

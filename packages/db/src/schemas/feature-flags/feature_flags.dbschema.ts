@@ -11,6 +11,7 @@ export const featureFlags = pgTable('feature_flags', {
     enabledForRoles: text('enabled_for_roles').array().notNull().default([]),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+    deletedAt: timestamp('deleted_at', { withTimezone: true }),
     createdById: uuid('created_by_id'),
     updatedById: uuid('updated_by_id')
 });

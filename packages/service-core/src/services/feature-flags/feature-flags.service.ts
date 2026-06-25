@@ -24,6 +24,39 @@ function mapFeatureFlag(flag: unknown): FeatureFlag {
     return FeatureFlagSchema.parse(flag);
 }
 
+interface CachedFlag {
+    flag: FeatureFlag;
+    timestamp: number;
+}
+
+const FLAG_CACHE_TTL_MS = 60 * 1000;
+const featureFlagCache = new Map<string, CachedFlag>();
+
+function clearFeatureFlagCache(key?: string): void {
+    if (key) {
+        featureFlagCache.delete(key);
+    } else {
+        featureFlagCache.clear();
+    }
+}
+
+function getFromCache(key: string): FeatureFlag | null {
+    const cached = featureFlagCache.get(key);
+    if (!cached) return null;
+    if (Date.now() - cached.timestamp > FLAG_CACHE_TTL_MS) {
+        featureFlagCache.delete(key);
+        return null;
+    }
+    return cached.flag;
+}
+
+function setInCache(flag: FeatureFlag): void {
+    featureFlagCache.set(flag.key, {
+        flag,
+        timestamp: Date.now()
+    });
+}
+
 export class FeatureFlagService {
     private readonly model: FeatureFlagModel;
 
@@ -43,8 +76,14 @@ export class FeatureFlagService {
     async evaluateFlag(key: string, context?: FlagContext): Promise<boolean> {
         const parsed = FlagContextSchema.parse(context ?? {});
 
-        const flag = await this.model.findByKey(key);
+        const cached = getFromCache(key);
+        const flag = cached ?? (await this.model.findByKey(key));
+
         if (!flag) return false;
+
+        if (!cached && flag) {
+            setInCache(flag);
+        }
 
         if (!flag.isActive) return false;
 
@@ -117,6 +156,8 @@ export class FeatureFlagService {
             createdById: actor.id
         });
 
+        setInCache(flag);
+
         await this.model.createAuditLog({
             flagId: flag.id,
             action: 'created',
@@ -148,6 +189,9 @@ export class FeatureFlagService {
                 'Failed to update feature flag'
             );
         }
+
+        clearFeatureFlagCache(existing.key);
+        setInCache(flag);
 
         await this.model.createAuditLog({
             flagId: id,
@@ -190,6 +234,9 @@ export class FeatureFlagService {
             );
         }
 
+        clearFeatureFlagCache(existing.key);
+        setInCache(flag);
+
         await this.model.createAuditLog({
             flagId: id,
             action: isActive ? 'activated' : 'deactivated',
@@ -210,7 +257,20 @@ export class FeatureFlagService {
             throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Feature flag not found');
         }
 
-        await this.model.delete(id);
+        clearFeatureFlagCache(existing.key);
+
+        await this.model.createAuditLog({
+            flagId: id,
+            action: 'deleted',
+            previousValue: {
+                key: existing.key,
+                enabled: existing.enabled,
+                isActive: existing.isActive
+            },
+            performedById: actor.id
+        });
+
+        await this.model.softDelete(id);
     }
 
     async getAuditLog(actor: Actor, flagId: string): Promise<Array<Record<string, unknown>>> {
