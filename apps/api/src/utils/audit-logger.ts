@@ -293,6 +293,8 @@ export function buildPersistedAuditRecord(
     scrubbed: Record<string, unknown>,
     isCritical: boolean
 ): CreateAuditLogEntry {
+    // TYPE-WORKAROUND: AuditEntry is a discriminated union; flatten to an index
+    // signature so the field extractors can pluck heterogeneous optional keys.
     const raw = entry as unknown as Record<string, unknown>;
     return {
         logType: classifyAuditLogType(entry.auditEvent),
