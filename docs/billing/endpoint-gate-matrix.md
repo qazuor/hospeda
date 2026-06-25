@@ -379,6 +379,14 @@
 | `DELETE /api/v1/admin/features/{id}/hard` | `feature/admin/hardDelete.ts` | none | - | n/a | Admin hard-delete; PermissionEnum-gated |
 | `POST /api/v1/admin/features/{id}/restore` | `feature/admin/restore.ts` | none | - | n/a | Admin restore; PermissionEnum-gated |
 | `POST /api/v1/admin/features/batch` | `feature/admin/batch.ts` | none | - | n/a | Admin batch; PermissionEnum-gated |
+| **FEATURE FLAGS — ADMIN** | | | | | |
+| `GET /api/v1/admin/flags` | `feature-flags/admin/list.ts` | none | - | n/a | Admin read; PermissionEnum.FEATURE_FLAG_MANAGE-gated, no billing entitlement gate |
+| `POST /api/v1/admin/flags` | `feature-flags/admin/create.ts` | none | - | n/a | Admin write; PermissionEnum.FEATURE_FLAG_MANAGE-gated, no billing entitlement gate |
+| `GET /api/v1/admin/flags/{id}` | `feature-flags/admin/getById.ts` | none | - | n/a | Admin read; PermissionEnum.FEATURE_FLAG_MANAGE-gated, no billing entitlement gate |
+| `PATCH /api/v1/admin/flags/{id}` | `feature-flags/admin/update.ts` | none | - | n/a | Admin write; PermissionEnum.FEATURE_FLAG_MANAGE-gated, no billing entitlement gate |
+| `POST /api/v1/admin/flags/{id}/toggle` | `feature-flags/admin/toggle.ts` | none | - | n/a | Admin kill-switch toggle; PermissionEnum.FEATURE_FLAG_MANAGE-gated, no billing entitlement gate |
+| `DELETE /api/v1/admin/flags/{id}` | `feature-flags/admin/delete.ts` | none | - | n/a | Admin delete; PermissionEnum.FEATURE_FLAG_MANAGE-gated, no billing entitlement gate |
+| `GET /api/v1/admin/flags/{id}/audit` | `feature-flags/admin/auditLog.ts` | none | - | n/a | Admin audit-log read; PermissionEnum.FEATURE_FLAG_MANAGE-gated, no billing entitlement gate |
 | **ATTRACTION — ADMIN** | | | | | |
 | `GET /api/v1/admin/attractions` | `attraction/admin/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
 | `POST /api/v1/admin/attractions` | `attraction/admin/create.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
