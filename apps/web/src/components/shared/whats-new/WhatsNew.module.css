@@ -76,7 +76,7 @@
     justify-content: space-between;
     gap: 0.5rem;
     padding: 1rem 1.5rem;
-    border-bottom: 1px solid var(--border-color, oklch(0.87 0 0));
+    border-bottom: 1px solid var(--border);
 }
 
 .panelTitle {
@@ -125,7 +125,7 @@
 }
 
 .entryList li + li {
-    border-top: 1px solid var(--border-color, oklch(0.87 0 0));
+    border-top: 1px solid var(--border);
 }
 
 .entryRow {
@@ -290,7 +290,7 @@
 .entryBody hr {
     margin: 1rem 0;
     border: none;
-    border-top: 1px solid var(--border-color, oklch(0.87 0 0));
+    border-top: 1px solid var(--border);
 }
 
 /* ─── Dialog footer for mark-all-read ─── */
