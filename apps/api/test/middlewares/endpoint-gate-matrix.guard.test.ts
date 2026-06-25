@@ -309,6 +309,7 @@ function shouldIncludeRouteFile(relPath: string): boolean {
         'auth/',
         'billing/',
         'app-logs/',
+        'audit-logs/',
         'cron-admin/',
         'event/comments/public/',
         'experience/public/'
