@@ -1,6 +1,7 @@
 export { publicPartnersRoutes } from './public/index.js';
 export {
     adminListPartnersRoute,
+    adminListPartnerPlansRoute,
     adminGetPartnerRoute,
     adminCreatePartnerRoute,
     adminUpdatePartnerRoute,

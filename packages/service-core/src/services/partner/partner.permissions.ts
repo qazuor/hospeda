@@ -73,7 +73,7 @@ export function checkCanRestore(actor: Actor, _entity: Partner): void {
  * @throws {ServiceError} If the permission check fails.
  */
 export function checkCanView(actor: Actor, _entity: Partner): void {
-    if (!actor || !actor.id || !actor.permissions.includes(PermissionEnum.PARTNER_VIEW_ALL)) {
+    if (!actor || !actor.id || !actor.permissions.includes(PermissionEnum.PARTNER_MANAGE)) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
             'Permission denied: Insufficient permissions to view partners'
@@ -86,7 +86,7 @@ export function checkCanView(actor: Actor, _entity: Partner): void {
  * @throws {ServiceError} If the permission check fails.
  */
 export function checkCanList(actor: Actor): void {
-    if (!actor || !actor.id || !actor.permissions.includes(PermissionEnum.PARTNER_VIEW_ALL)) {
+    if (!actor || !actor.id || !actor.permissions.includes(PermissionEnum.PARTNER_MANAGE)) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
             'Permission denied: Insufficient permissions to list partners'
@@ -99,7 +99,7 @@ export function checkCanList(actor: Actor): void {
  * @throws {ServiceError} If the permission check fails.
  */
 export function checkCanSearch(actor: Actor): void {
-    if (!actor || !actor.id || !actor.permissions.includes(PermissionEnum.PARTNER_VIEW_ALL)) {
+    if (!actor || !actor.id || !actor.permissions.includes(PermissionEnum.PARTNER_MANAGE)) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
             'Permission denied: Insufficient permissions to search partners'
@@ -112,7 +112,7 @@ export function checkCanSearch(actor: Actor): void {
  * @throws {ServiceError} If the permission check fails.
  */
 export function checkCanCount(actor: Actor): void {
-    if (!actor || !actor.id || !actor.permissions.includes(PermissionEnum.PARTNER_VIEW_ALL)) {
+    if (!actor || !actor.id || !actor.permissions.includes(PermissionEnum.PARTNER_MANAGE)) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
             'Permission denied: Insufficient permissions to count partners'
@@ -125,7 +125,7 @@ export function checkCanCount(actor: Actor): void {
  * @throws {ServiceError} If the permission check fails.
  */
 export function checkCanAdminList(actor: Actor): void {
-    if (!actor || !actor.id || !actor.permissions.includes(PermissionEnum.PARTNER_VIEW_ALL)) {
+    if (!actor || !actor.id || !actor.permissions.includes(PermissionEnum.PARTNER_MANAGE)) {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
             'Permission denied: Insufficient permissions for partner admin list'

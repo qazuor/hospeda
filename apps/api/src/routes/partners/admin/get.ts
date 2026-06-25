@@ -12,7 +12,7 @@ import { createAdminRoute } from '../../../utils/route-factory';
 /**
  * GET /api/v1/admin/partners/{id}
  * Get partner by ID - Admin endpoint
- * Requires PARTNER_VIEW_ALL permission
+ * Requires PARTNER_MANAGE permission
  */
 export const adminGetPartnerRoute = createAdminRoute({
     method: 'get',
@@ -20,7 +20,7 @@ export const adminGetPartnerRoute = createAdminRoute({
     summary: 'Get partner by ID (admin)',
     description: 'Returns a single partner with full admin details',
     tags: ['Partners'],
-    requiredPermissions: [PermissionEnum.PARTNER_VIEW_ALL],
+    requiredPermissions: [PermissionEnum.PARTNER_MANAGE],
     requestParams: { id: z.string().uuid() },
     responseSchema: partnerSchema,
     handler: async (ctx, params) => {

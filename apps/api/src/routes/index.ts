@@ -72,6 +72,7 @@ import {
     adminCreatePartnerRoute,
     adminDeletePartnerRoute,
     adminGetPartnerRoute,
+    adminListPartnerPlansRoute,
     adminListPartnersRoute,
     adminManualPaymentRoute,
     adminSendPaymentLinkRoute,
@@ -416,6 +417,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/experiences', adminExperienceRoutes);
         // Partners program admin management (SPEC-271)
         app.route('/api/v1/admin/partners', adminListPartnersRoute);
+        app.route('/api/v1/admin/partners', adminListPartnerPlansRoute);
         app.route('/api/v1/admin/partners', adminGetPartnerRoute);
         app.route('/api/v1/admin/partners', adminCreatePartnerRoute);
         app.route('/api/v1/admin/partners', adminUpdatePartnerRoute);

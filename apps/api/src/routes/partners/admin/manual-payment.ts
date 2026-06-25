@@ -6,6 +6,7 @@ import { PartnerService } from '@repo/service-core';
  */
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';
+import { AuditEventType, auditLog } from '../../../utils/audit-logger';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
 
@@ -33,6 +34,14 @@ export const adminManualPaymentRoute = createAdminRoute({
         const { note } = body as { note?: string };
 
         const result = await partnerService.registerManualPayment(actor, id, note);
+
+        auditLog({
+            auditEvent: AuditEventType.BILLING_MUTATION,
+            actorId: actor.id,
+            action: 'update',
+            resourceType: 'partner-manual-payment',
+            resourceId: id
+        });
 
         return result;
     }

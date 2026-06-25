@@ -1,4 +1,5 @@
 export { adminListPartnersRoute } from './list.js';
+export { adminListPartnerPlansRoute } from './list-plans.js';
 export { adminGetPartnerRoute } from './get.js';
 export { adminCreatePartnerRoute } from './create.js';
 export { adminUpdatePartnerRoute } from './update.js';

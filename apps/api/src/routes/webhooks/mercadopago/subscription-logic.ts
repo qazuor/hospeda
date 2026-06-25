@@ -21,6 +21,7 @@ import { clearEntitlementCache } from '../../../middlewares/entitlement.js';
 import { handleSubscriptionCancellationAddons } from '../../../services/addon-lifecycle.service.js';
 import { handlePlanChangeAddonRecalculation } from '../../../services/addon-plan-change.service.js';
 import { reconcileCommerceListingForSubscription } from '../../../services/commerce-reconcile.service.js';
+import { reconcilePartnerForSubscription } from '../../../services/partner-reconcile.service.js';
 import { apiLogger } from '../../../utils/logger.js';
 import { sendNotification } from '../../../utils/notification-helper.js';
 
@@ -631,6 +632,12 @@ export async function processSubscriptionUpdated({
     // No-op for accommodation subs (no commerce_listing_subscriptions row).
     // Non-blocking: never breaks webhook processing.
     await reconcileCommerceListingForSubscription({
+        subscriptionId: localSubscription.id,
+        subscriptionStatus: mappedStatus,
+        source: 'mp-webhook'
+    });
+
+    await reconcilePartnerForSubscription({
         subscriptionId: localSubscription.id,
         subscriptionStatus: mappedStatus,
         source: 'mp-webhook'
