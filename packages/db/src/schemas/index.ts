@@ -1,6 +1,7 @@
 export * from './accommodation/index.ts';
 export * from './accommodation-external/index.ts';
 export * from './ai/index.ts';
+export * from './audit-log/index.ts';
 export * from './commerce/index.ts';
 export * from './app-log/index.ts';
 export * from './conversation/index.ts';
