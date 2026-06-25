@@ -157,6 +157,35 @@ export default defineConfig({
                     });
                 }
             },
+            // Force `@repo/icons` to resolve to its package SOURCE (per-file
+            // icon wrappers under packages/icons/src), NOT the prebuilt
+            // `dist/index.js` tsup barrel.
+            //
+            // WHY: `@repo/icons` ships a `dist/index.js` that is a single
+            // pre-concatenated barrel. Astro's build resolves the bare
+            // specifier through the package `exports` map (-> dist) BEFORE the
+            // `resolve.alias` above can redirect it, so the alias was a no-op
+            // for the build. A pre-bundled barrel cannot be tree-shaken per
+            // export, so EVERY island that imported a single icon dragged all
+            // ~247 wrappers into one shared, eager chunk loaded on the home.
+            // Resolving to source (per-file modules with `sideEffects: false`)
+            // lets Rollup tree-shake per icon: a page bundles only the icons it
+            // renders. `enforce: 'pre'` runs this before exports resolution.
+            // Web-only — admin already aliases @repo/icons to src in its own
+            // vite config, so this does not touch the shared package. (SPEC-269)
+            {
+                name: 'hospeda-icons-source-resolver',
+                enforce: 'pre',
+                resolveId(source) {
+                    if (source === '@repo/icons') {
+                        return resolve(rootDir, 'packages/icons/src/index.ts');
+                    }
+                    if (source === '@repo/icons/resolver') {
+                        return resolve(rootDir, 'packages/icons/src/resolver.ts');
+                    }
+                    return null;
+                }
+            },
             // Bundle analysis — only when ANALYZE=1 (pnpm build:analyze).
             // Emits a treemap of the client bundle to apps/web/stats.html so we
             // can see which islands/deps land in the large chunks (SPEC-269 T-269-02a).
