@@ -6,8 +6,8 @@
     "summary": {
         "total": 13,
         "byStatus": {
-            "pending": 13,
-            "in_progress": 0,
+            "pending": 9,
+            "in_progress": 4,
             "completed": 0
         },
         "byPhase": {
@@ -214,7 +214,7 @@
             "id": "T-269-04",
             "title": "Change ImageGallery to client:load on accommodation detail page (F2)",
             "description": "The `ImageGallery` on the accommodation detail page uses `client:visible`, which defers hydration until the component scrolls into view. Since the gallery is above the fold on desktop, this delays the LCP image (the first gallery image is the LCP candidate).\n\nRecon finding F2 (HIGH): `[lang]/alojamientos/[slug].astro:482` mounts `ImageGallery` with `client:visible`.\n\nFix: change the directive to `client:load`.\n\nWhat to do:\n1. Open `apps/web/src/pages/[lang]/alojamientos/[slug].astro`.\n2. At line 482, change `<ImageGallery client:visible ...>` to `<ImageGallery client:load ...>`.\n3. Verify the gallery renders immediately on page load (not deferred).\n4. Check no regression on mobile: on mobile the gallery may be below the fold — `client:load` is still correct because the browser starts hydrating immediately, and the LCP benefit on desktop outweighs the tiny extra hydration cost on mobile.\n\nKey files affected:\n- `apps/web/src/pages/[lang]/alojamientos/[slug].astro:482` — change `client:visible` → `client:load`.\n\nAcceptance criteria:\n- `<ImageGallery client:load>` in the built HTML for accommodation detail pages.\n- The gallery is interactive immediately when the detail page loads (no waiting for scroll).\n- `pnpm --filter web build` succeeds.\n- `pnpm --filter web typecheck` and `pnpm --filter web lint` remain green.\n\nTesting: manual browser smoke on an accommodation detail page verifying the gallery is interactive on load + `pnpm --filter web build`.",
-            "status": "pending",
+            "status": "in_progress",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-269-11"],
@@ -227,13 +227,13 @@
             "tags": ["web", "lcp", "hydration", "gallery", "performance", "f2"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
+                "lint": true,
                 "typecheck": null,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-06-24T00:00:00Z",
-                "started": null,
+                "started": "2026-06-24T00:00:00Z",
                 "completed": null
             }
         },
@@ -241,7 +241,7 @@
             "id": "T-269-05",
             "title": "Add width/height to avatar <img> tags and normalize ImageGallery lightbox img dimensions (F6/F12)",
             "description": "Fix two categories of layout-shift-inducing images by adding explicit width/height attributes.\n\nRecon findings F6 (MEDIUM) and F12 (LOW):\n- F6: Avatar `<img>` tags in `mi-cuenta/index.astro:145` and `UserMenu.client.tsx:540` have no width/height → browser does not know the space to reserve → CLS.\n- F12: `ImageGallery.client.tsx:297` lightbox `<img>` has no dimensions — not a real CLS risk (modal already open) but worth normalising.\n\nWhat to do:\n\n**F6 — Avatars:**\n1. In `apps/web/src/pages/[lang]/mi-cuenta/index.astro:145`, add `width={40} height={40}` (or the correct rendered size) to the avatar `<img>` and ensure `style=\"object-fit: cover;\"` (or an equivalent CSS class) is present.\n2. In `apps/web/src/components/shared/navigation/UserMenu.client.tsx:540`, same change — add `width={40} height={40}` and `style={{ objectFit: 'cover' }}` to the avatar `<img>`.\n3. If the avatar size is a variable, derive width/height from the same variable (don't hardcode if the component already has a `size` prop).\n\n**F12 — ImageGallery lightbox:**\n4. In `apps/web/src/components/accommodation/ImageGallery.client.tsx:297`, add `width` and `height` attributes. The natural dimensions of the Cloudinary image are available via the image object; pass them through. If not available, use a meaningful default (e.g. `width={1200} height={800}`) with `object-fit: contain` on the lightbox layout.\n\nKey files affected:\n- `apps/web/src/pages/[lang]/mi-cuenta/index.astro:145`\n- `apps/web/src/components/shared/navigation/UserMenu.client.tsx:540`\n- `apps/web/src/components/accommodation/ImageGallery.client.tsx:297`\n\nAcceptance criteria:\n- Both avatar `<img>` tags have `width` and `height` attributes.\n- Avatars do not cause layout shift when the page loads (check in DevTools Layout Shift regions).\n- The ImageGallery lightbox `<img>` has dimensions.\n- `pnpm --filter web typecheck` and `pnpm --filter web lint` remain green.\n\nTesting: DevTools CLS check on the profile page and NavBar + `pnpm --filter web build`.",
-            "status": "pending",
+            "status": "in_progress",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-269-11"],
@@ -262,13 +262,13 @@
             "tags": ["web", "cls", "images", "avatar", "gallery", "performance", "f6", "f12"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
+                "lint": true,
                 "typecheck": null,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-06-24T00:00:00Z",
-                "started": null,
+                "started": "2026-06-24T00:00:00Z",
                 "completed": null
             }
         },
@@ -276,7 +276,7 @@
             "id": "T-269-06",
             "title": "Change FavoriteButton in event cards from client:load to client:visible (F5)",
             "description": "Event cards (`EventCardFeatured` and `EventCardHorizontal`) render `FavoriteButton` with `client:load`, while all other card types (`AccommodationCard`, `ArticleCard`, `DestinationCard`) use `client:visible`. This inconsistency causes unnecessary hydration work for below-the-fold event cards on page load.\n\nRecon finding F5 (MEDIUM):\n- `EventCardFeatured.astro:96` — `<FavoriteButton client:load ...>`\n- `EventCardHorizontal.astro:114` — `<FavoriteButton client:load ...>`\n- Reference pattern: `AccommodationCard.astro:135`, `ArticleCard.astro:117`, `DestinationCard.astro:126` all use `client:visible`.\n\nFix: change both to `client:visible`.\n\nWhat to do:\n1. In `apps/web/src/components/events/EventCardFeatured.astro:96`, change `client:load` to `client:visible` on `FavoriteButton`.\n2. In `apps/web/src/components/events/EventCardHorizontal.astro:114`, same change.\n3. Verify the favorite button still works when the card is scrolled into view (deferred hydration = hydrates on intersection).\n\nKey files affected:\n- `apps/web/src/components/events/EventCardFeatured.astro:96`\n- `apps/web/src/components/events/EventCardHorizontal.astro:114`\n\nAcceptance criteria:\n- Both files use `<FavoriteButton client:visible ...>`.\n- The favorite button functions correctly when event cards are in view (click → toggle).\n- `pnpm --filter web build` succeeds.\n- `pnpm --filter web typecheck` and `pnpm --filter web lint` remain green.\n\nTesting: `pnpm --filter web build` + manual smoke on the events listing page verifying FavoriteButton is interactive after scrolling.",
-            "status": "pending",
+            "status": "in_progress",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-269-11"],
@@ -293,13 +293,13 @@
             "tags": ["web", "hydration", "events", "favorite", "performance", "f5"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
+                "lint": true,
                 "typecheck": null,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-06-24T00:00:00Z",
-                "started": null,
+                "started": "2026-06-24T00:00:00Z",
                 "completed": null
             }
         },
@@ -346,7 +346,7 @@
             "id": "T-269-08",
             "title": "Add fetchpriority=high to destination detail hero images (F8)",
             "description": "The destination detail page already uses `loading=\"eager\"` on its hero images but is missing `fetchpriority=\"high\"`, which signals the browser to prioritise fetching these images in the preload scanner.\n\nRecon finding F8 (LOW): `apps/web/src/pages/[lang]/destinos/[...path].astro:412,419` — the hero `<img>` tags have `loading=\"eager\"` but no `fetchpriority`. Compare with `apps/web/src/pages/[lang]/atraccion/[slug]/index.astro:58-59` which correctly uses both.\n\nWhat to do:\n1. Open `apps/web/src/pages/[lang]/destinos/[...path].astro`.\n2. At lines 412 and 419 (the hero `<img>` tags — confirm the exact lines), add `fetchpriority=\"high\"`.\n3. Verify no other hero images on this page are missing `fetchpriority` (audit the nearby lines).\n\nKey files affected:\n- `apps/web/src/pages/[lang]/destinos/[...path].astro:412,419`\n\nAcceptance criteria:\n- Both hero `<img>` elements on the destination detail page have `fetchpriority=\"high\"` and `loading=\"eager\"`.\n- `pnpm --filter web build` succeeds.\n- `pnpm --filter web typecheck` and `pnpm --filter web lint` remain green.\n\nTesting: `pnpm --filter web build` + view-source check on a destination detail page to confirm both attributes are present.",
-            "status": "pending",
+            "status": "in_progress",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-269-11"],
@@ -359,13 +359,13 @@
             "tags": ["web", "lcp", "images", "fetchpriority", "destinations", "performance", "f8"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
+                "lint": true,
                 "typecheck": null,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-06-24T00:00:00Z",
-                "started": null,
+                "started": "2026-06-24T00:00:00Z",
                 "completed": null
             }
         },
