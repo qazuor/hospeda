@@ -37,8 +37,8 @@ export const partnerSchema = z.object({
     analytics: partnerAnalyticsSchema.default({}),
     planId: z.string().uuid().nullable().optional(),
     subscriptionId: z.string().uuid().nullable().optional(),
-    startsAt: z.date(),
-    endsAt: z.date().nullable().optional(),
+    startsAt: z.coerce.date(),
+    endsAt: z.coerce.date().nullable().optional(),
     ...BaseAuditFields
 });
 

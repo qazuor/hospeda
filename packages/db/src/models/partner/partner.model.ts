@@ -1,6 +1,6 @@
 import type { Partner } from '@repo/schemas';
 import type { LifecycleStatusEnum, PartnerSubscriptionStatusEnum } from '@repo/schemas';
-import { and, asc, desc, eq, gte, isNull, lte } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, isNull, lte, or, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { getDb } from '../../client.js';
 import type {
@@ -10,6 +10,7 @@ import type {
 import type { SelectPartnerSubscription } from '../../schemas/partner/index.js';
 import { partners } from '../../schemas/partner/partner.dbschema.js';
 import { partnerSubscriptions } from '../../schemas/partner/partner_subscription.dbschema.js';
+import { safeIlike } from '../../utils/drizzle-helpers.ts';
 
 export interface SearchPartnerFilters {
     q?: string;
@@ -64,16 +65,11 @@ export class PartnerModel extends BaseModelImpl<Partner> {
             );
         }
 
-        // Text search on name and description (placeholder - implement with safeIlike or search index)
+        // Text search on name and description.
         if (filters.q) {
-            // const searchTerm = `%${filters.q.toLowerCase()}%`;
-            // TODO: Implement proper text search with safeIlike or search index
-            // conditions.push(
-            //     or(
-            //         safeIlike(partners.name, filters.q),
-            //         safeIlike(partners.description, filters.q)
-            //     )
-            // );
+            conditions.push(
+                or(safeIlike(partners.name, filters.q), safeIlike(partners.description, filters.q))
+            );
         }
 
         // Type filter
@@ -106,9 +102,8 @@ export class PartnerModel extends BaseModelImpl<Partner> {
         const sortOrder = filters.sortOrder || 'desc';
 
         if (sortBy === 'tier') {
-            // Custom ordering for tier: gold > silver > bronze
             query.orderBy(
-                desc(partners.tier), // This will sort alphabetically: silver > gold > bronze, so we need custom
+                sql`CASE ${partners.tier} WHEN 'gold' THEN 0 WHEN 'silver' THEN 1 WHEN 'bronze' THEN 2 ELSE 99 END`,
                 desc(partners.startsAt)
             );
         } else if (sortBy === 'startsAt') {

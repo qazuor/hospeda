@@ -1,6 +1,6 @@
 import { relations } from 'drizzle-orm';
 import { index, jsonb, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
-import { billingSubscriptions } from '../../billing/index.ts';
+import { billingPlans, billingSubscriptions } from '../../billing/index.ts';
 import {
     LifecycleStatusPgEnum,
     PartnerSubscriptionStatusPgEnum,
@@ -33,7 +33,7 @@ export const partners = pgTable(
             .default('pending'),
         lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
         analytics: jsonb('analytics').$type<PartnerAnalytics>().default({}),
-        planId: uuid('plan_id').references(() => billingSubscriptions.id, {
+        planId: uuid('plan_id').references(() => billingPlans.id, {
             onDelete: 'set null'
         }),
         subscriptionId: uuid('subscription_id').references(() => billingSubscriptions.id, {
@@ -75,9 +75,9 @@ export const partnersRelations = relations(partners, ({ one }) => ({
     createdBy: one(users, { fields: [partners.createdById], references: [users.id] }),
     updatedBy: one(users, { fields: [partners.updatedById], references: [users.id] }),
     deletedBy: one(users, { fields: [partners.deletedById], references: [users.id] }),
-    plan: one(billingSubscriptions, {
+    plan: one(billingPlans, {
         fields: [partners.planId],
-        references: [billingSubscriptions.id]
+        references: [billingPlans.id]
     }),
     subscription: one(billingSubscriptions, {
         fields: [partners.subscriptionId],

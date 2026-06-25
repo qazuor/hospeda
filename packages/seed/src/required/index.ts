@@ -18,6 +18,7 @@ import { seedExchangeRateConfig } from './exchangeRateConfig.seed.js';
 import { seedExchangeRates } from './exchangeRates.seed.js';
 import { seedFeatures } from './features.seed.js';
 import { seedInternalTags } from './internalTags.seed.js';
+import { seedPartnerPlan } from './partnerPlan.seed.js';
 import { seedPostTags } from './postTags.seed.js';
 import { seedRevalidationConfig } from './revalidationConfig.seed.js';
 import { seedRolePermissions } from './rolePermissions.seed.js';
@@ -148,6 +149,11 @@ export async function runRequiredSeeds(context: SeedContext): Promise<void> {
         //      ALL_PLANS so it stays excluded from accommodation plan lists;
         //      stamps billing_plans.product_domain='commerce'.
         await seedCommercePlan(context);
+
+        // 12.2 Load the partner-directory plan (SPEC-271). Separate from
+        //      ALL_PLANS so it stays excluded from accommodation plan lists;
+        //      stamps billing_plans.product_domain='partner'.
+        await seedPartnerPlan(context);
 
         // 13. Load billing add-ons (after plans, uses entitlements and limits)
         await seedBillingAddons(context);

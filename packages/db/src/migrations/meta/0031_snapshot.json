@@ -12283,10 +12283,10 @@
                 }
             },
             "foreignKeys": {
-                "partners_plan_id_billing_subscriptions_id_fk": {
-                    "name": "partners_plan_id_billing_subscriptions_id_fk",
+                "partners_plan_id_billing_plans_id_fk": {
+                    "name": "partners_plan_id_billing_plans_id_fk",
                     "tableFrom": "partners",
-                    "tableTo": "billing_subscriptions",
+                    "tableTo": "billing_plans",
                     "columnsFrom": ["plan_id"],
                     "columnsTo": ["id"],
                     "onDelete": "set null",
