@@ -59,6 +59,13 @@ vi.mock('leaflet/dist/images/marker-icon-2x.png', () => ({ default: 'icon-retina
 vi.mock('leaflet/dist/images/marker-icon.png', () => ({ default: 'icon.png' }));
 vi.mock('leaflet/dist/images/marker-shadow.png', () => ({ default: 'shadow.png' }));
 
+// Short-circuit the FavoriteButton dependency chain (Auth, endpoints-protected,
+// billing-limit-error, toast-store) so the lazy pre-warm in beforeAll resolves
+// quickly on cold CI runners instead of timing out in 10 s.
+vi.mock('@/components/shared/favorite/FavoriteButton.client', () => ({
+    FavoriteButton: () => null
+}));
+
 import { render, screen } from '@testing-library/react';
 import { ListingMap } from '../../../src/components/maps/ListingMap.client';
 
