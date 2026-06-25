@@ -6,9 +6,9 @@
     "summary": {
         "total": 13,
         "byStatus": {
-            "pending": 7,
+            "pending": 4,
             "in_progress": 0,
-            "completed": 6
+            "completed": 9
         },
         "byPhase": {
             "core": 3,
@@ -62,7 +62,7 @@
             "id": "T-269-02a",
             "title": "Add rollup-plugin-visualizer + build:analyze script + capture bundle baseline snapshot",
             "description": "Instrument the `apps/web` build so the bundle composition is visible and comparable across sessions — mirroring the SPEC-190 pattern used for the admin app.\n\nWhat to do:\n1. Install `rollup-plugin-visualizer` as a dev dependency in `apps/web`.\n2. Add a `build:analyze` script to `apps/web/package.json` that runs `astro build` with the visualizer plugin enabled (outputs `stats.html` into `apps/web/dist/` or similar). See `.qtm/specs/SPEC-190-admin-bundle-perf-icons-and-codesplit/spec.md` for the exact pattern.\n3. Run `pnpm --filter web build:analyze` to produce the first snapshot.\n4. Inspect the treemap and **identify** every chunk >500KB (don't fix yet — that is T-269-02b). Log them with their estimated size in the progress notes.\n5. Save the generated `stats.html` snapshot to `.qtm/specs/SPEC-269-web-performance-audit/bundle-baseline/stats.html` (gitignored? check if .gitignore needs an exception for the snapshot).\n\nKey files affected:\n- `apps/web/package.json` — add `rollup-plugin-visualizer` devDep + `build:analyze` script.\n- `apps/web/astro.config.mjs:146-194` — add the visualizer plugin in a conditional block (only when `ANALYZE=true` or similar env flag, so normal builds are not affected).\n\nAcceptance criteria:\n- `pnpm --filter web build:analyze` succeeds and produces a `stats.html` treemap.\n- The `build:analyze` script does NOT run the visualizer on a normal `pnpm --filter web build` (guard it behind an env flag).\n- At least 2 chunks >500KB are identified in the progress notes (per F3 recon finding).\n- `pnpm --filter web typecheck` remains green.\n\nTesting: visual inspection of the treemap + script execution test (the `build:analyze` command succeeds without errors).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-269-02b", "T-269-07"],
@@ -93,15 +93,15 @@
             },
             "timestamps": {
                 "created": "2026-06-24T00:00:00Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-24T00:00:00Z",
+                "completed": "2026-06-24T00:00:00Z"
             }
         },
         {
             "id": "T-269-02b",
             "title": "Define manualChunks in astro.config.mjs and iterate to 0 chunks >500KB",
             "description": "Use the visualizer output from T-269-02a to define `manualChunks` in `vite.build.rollupOptions.output.manualChunks` inside `apps/web/astro.config.mjs`, iterating until no chunk exceeds 500KB.\n\nContext (from recon F3):\n- Currently `astro.config.mjs:146-194` has NO `rollupOptions`.\n- Two chunks exceed 500KB (~1MB and ~770KB). Their contents are unknown until T-269-02a instruments.\n- Likely candidates: leaflet (~150KB gzip), tiptap (~heavy), recharts. But leaflet is auth-only host editor, tiptap/recharts too — those are `host/` islands that public visitors don't load.\n- The goal is that the **public page bundle** has 0 chunks >500KB. Auth-only islands (host editor: tiptap, recharts) may live in their own chunks as long as each stays <500KB.\n\nApproach:\n1. Read T-269-02a's findings (which specific islands/libraries cause the big chunks).\n2. Add `vite.build.rollupOptions.output.manualChunks` to `astro.config.mjs`. Typical groups:\n   - `vendor-react`: react, react-dom\n   - `vendor-leaflet`: leaflet, react-leaflet (separate from public bundle)\n   - `vendor-tiptap`: all @tiptap/* (auth-only host chunk)\n   - `vendor-recharts`: recharts (auth-only host chunk)\n3. Re-run `pnpm --filter web build:analyze` after each `manualChunks` change.\n4. Repeat the measure-tune loop until `stats.html` shows 0 chunks >500KB.\n5. Verify no islands break (load the home, a listing, and a detail page; open the host editor too).\n\nKey files affected:\n- `apps/web/astro.config.mjs` — add `vite.build.rollupOptions.output.manualChunks`.\n\nAcceptance criteria:\n- `pnpm --filter web build:analyze` shows 0 chunks >500KB in the final treemap.\n- `pnpm --filter web build` (without analyze) succeeds without Rollup errors.\n- Public pages (home, listing, detail) load correctly in a browser (no dynamic-chunk 404 errors in DevTools).\n- Host editor islands (tiptap, recharts, leaflet) still render correctly in the host dashboard.\n- `pnpm --filter web typecheck` remains green.\n\nTesting: visual treemap verification + manual browser smoke on home/listing/detail + host editor.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 6,
             "blockedBy": ["T-269-02a"],
             "blocks": ["T-269-11"],
@@ -132,8 +132,8 @@
             },
             "timestamps": {
                 "created": "2026-06-24T00:00:00Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-24T00:00:00Z",
+                "completed": "2026-06-24T00:00:00Z"
             }
         },
         {
@@ -307,7 +307,7 @@
             "id": "T-269-07",
             "title": "Lazy-import leaflet in LocationMap and ListingMap islands (F4)",
             "description": "[SPEC CORRECTION 2026-06-24] F4 is NOT a 1-line import swap. LocationMap/ListingMap use react-leaflet (JSX components), not raw Leaflet; the cited LocationPickerMap import(\"leaflet\") is not what defers the bundle — the React.lazy wrapper in LocationPicker.client.tsx:26 is. Correct fix: extract the react-leaflet inner of each map into a separate component and lazy-load via React.lazy + Suspense (mirror LocationPicker.client.tsx:26), so react-leaflet+leaflet land in a dynamic chunk. Coordinate with T-269-02b (manualChunks); measure with the T-269-02a visualizer. Owner decision (2026-06-24): regroup F4 with the bundle work. Touches ~6 LocationMap call sites — verify hydration.\n\n--- original ---\nConvert the static leaflet/react-leaflet imports in `LocationMap.client.tsx` and `ListingMap.client.tsx` to dynamic imports, mirroring the pattern already used in `host/editor/LocationPickerMap.client.tsx:44-56`.\n\nRecon finding F4 (MEDIUM): leaflet (~150KB gzip) is a static import in two public map islands, so it enters the main bundle even on pages where no map is visible.\n\nReference pattern from `LocationPickerMap.client.tsx:44-56`:\n```ts\nconst L = await import('leaflet');\nconst { MapContainer, TileLayer, Marker } = await import('react-leaflet');\n```\n\nWhat to do:\n1. In `apps/web/src/components/maps/LocationMap.client.tsx:8-15`, replace static `import leaflet from 'leaflet'` / `import ... from 'react-leaflet'` with `await import(...)` inside the component body (inside `useEffect` or an async initializer).\n2. In `apps/web/src/components/maps/ListingMap.client.tsx:17-34`, same change.\n3. Handle the CSS side-effect import for leaflet (`import 'leaflet/dist/leaflet.css'`) — it must also become dynamic or be moved to a static chunk that doesn't affect the public critical path. One option: `await import('leaflet/dist/leaflet.css')` inside the effect.\n4. Ensure the maps still render correctly once lazily loaded.\n\nKey files affected:\n- `apps/web/src/components/maps/LocationMap.client.tsx:8-15`\n- `apps/web/src/components/maps/ListingMap.client.tsx:17-34`\n\nAcceptance criteria:\n- `pnpm --filter web build:analyze` (after T-269-02a is complete) shows leaflet in a separate chunk, NOT in the public page bundle.\n- Maps on accommodation detail/listing pages render correctly after lazy load.\n- No leaflet-related TypeScript errors.\n- `pnpm --filter web typecheck` and `pnpm --filter web lint` remain green.\n\nTesting: `pnpm --filter web build` + DevTools Network tab: leaflet chunk loads on-demand when the map island mounts, not on initial page load.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-269-02a"],
             "blocks": ["T-269-11"],
@@ -347,8 +347,8 @@
             },
             "timestamps": {
                 "created": "2026-06-24T00:00:00Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-24T00:00:00Z",
+                "completed": "2026-06-24T00:00:00Z"
             }
         },
         {
