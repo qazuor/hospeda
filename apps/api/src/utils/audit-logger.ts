@@ -7,6 +7,7 @@
 
 import { AuditEventType, LoggerColors, logger } from '@repo/logger';
 import type { AuditEventTypeValue } from '@repo/logger';
+import type { AuditLogType, CreateAuditLogEntry } from '@repo/schemas';
 import * as Sentry from '@sentry/node';
 
 // Re-export so existing callers that import from this module are unaffected.
@@ -155,6 +156,163 @@ const CRITICAL_AUDIT_EVENTS = new Set<AuditEventTypeValue>([
     AuditEventType.USER_ADMIN_MUTATION
 ]);
 
+/**
+ * Audit event types that belong to the SECURITY log family (auth-related).
+ * Everything not in this set is classified as an AUDIT-family event
+ * (admin actions). The classification drives the `logType` discriminator on the
+ * persisted `audit_log_entries` row (SPEC-162), which in turn determines which
+ * permission (AUDIT_LOG_VIEW vs SECURITY_LOG_VIEW) can read the entry back.
+ */
+const SECURITY_AUDIT_EVENTS = new Set<AuditEventTypeValue>([
+    AuditEventType.AUTH_LOGIN_FAILED,
+    AuditEventType.AUTH_LOGIN_SUCCESS,
+    AuditEventType.AUTH_LOCKOUT,
+    AuditEventType.AUTH_PASSWORD_CHANGED,
+    AuditEventType.ACCESS_DENIED,
+    AuditEventType.SESSION_SIGNOUT
+]);
+
+/**
+ * Classifies an audit event into its log family.
+ *
+ * @param event - The audit event type.
+ * @returns `'security'` for auth-related events, `'audit'` otherwise.
+ */
+export function classifyAuditLogType(event: AuditEventTypeValue): AuditLogType {
+    return SECURITY_AUDIT_EVENTS.has(event) ? 'security' : 'audit';
+}
+
+/**
+ * Persister callback used to make audit/security events queryable (SPEC-162).
+ *
+ * Injected once at API startup via {@link registerAuditLogPersister}. Decoupled
+ * by design so this leaf utility never imports `@repo/db` / `@repo/service-core`
+ * (which would invert the dependency graph and complicate unit testing). The
+ * persister itself MUST be non-throwing / fire-and-forget — `auditLog` calls it
+ * synchronously inside its try/catch but does not await it.
+ */
+export type AuditLogPersister = (record: CreateAuditLogEntry) => void;
+
+let auditLogPersister: AuditLogPersister | undefined;
+
+/**
+ * Registers the persister that stores audit/security events into the queryable
+ * store. Call once at server startup, AFTER the database has been initialized.
+ *
+ * @param persister - The persister callback (fire-and-forget).
+ */
+export function registerAuditLogPersister(persister: AuditLogPersister): void {
+    auditLogPersister = persister;
+}
+
+/**
+ * Test-only helper: clears the registered persister so each test starts clean.
+ */
+export function __resetAuditLogPersisterForTests(): void {
+    auditLogPersister = undefined;
+}
+
+/** Reads a string-ish field off the raw entry, returning undefined when absent. */
+function readStr(entry: Record<string, unknown>, key: string): string | undefined {
+    const value = entry[key];
+    return typeof value === 'string' && value.length > 0 ? value : undefined;
+}
+
+/** Reads a number-ish field off the raw entry, returning undefined when absent. */
+function readNum(entry: Record<string, unknown>, key: string): number | undefined {
+    const value = entry[key];
+    return typeof value === 'number' ? value : undefined;
+}
+
+/** Matches a canonical UUID (any version). */
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Reads a UUID field off the raw entry. Returns undefined for non-UUID values
+ * (e.g. the `'anonymous'` actor marker on unauthenticated route mutations) so
+ * the value never violates the uuid column / schema; the original marker is
+ * still preserved in the `data` payload and the `actorRole` column.
+ */
+function readUuid(entry: Record<string, unknown>, key: string): string | undefined {
+    const value = readStr(entry, key);
+    return value && UUID_RE.test(value) ? value : undefined;
+}
+
+/**
+ * Resolves the `targetId` column from the heterogeneous entry shapes:
+ * - login/lockout events → the `email` under attack
+ * - permission/user-admin mutations → `targetUserId`
+ * - billing mutations → `resourceType:resourceId`
+ *
+ * @param entry - The raw audit entry as a record.
+ * @returns The target identifier, or undefined when none applies.
+ */
+function resolveTargetId(entry: Record<string, unknown>): string | undefined {
+    const targetUserId = readStr(entry, 'targetUserId');
+    if (targetUserId) return targetUserId;
+    const resourceId = readStr(entry, 'resourceId');
+    if (resourceId) {
+        const resourceType = readStr(entry, 'resourceType');
+        return resourceType ? `${resourceType}:${resourceId}` : resourceId;
+    }
+    return readStr(entry, 'email');
+}
+
+/**
+ * Builds a short, human-readable summary for the persisted `message` column.
+ * The full structured payload is preserved in `data`, so this stays terse.
+ *
+ * @param entry - The raw audit entry as a record.
+ * @returns A one-line summary string.
+ */
+function buildSummary(entry: Record<string, unknown>): string {
+    const event = String(entry.auditEvent);
+    const subject = readStr(entry, 'email') ?? resolveTargetId(entry) ?? readStr(entry, 'actorId');
+    const ip = readStr(entry, 'ip');
+    const method = readStr(entry, 'method');
+    const path = readStr(entry, 'path') ?? readStr(entry, 'resource');
+    const parts = [event];
+    if (method && path) parts.push(`${method} ${path}`);
+    if (subject) parts.push(subject);
+    if (ip) parts.push(`from ${ip}`);
+    return parts.join(' ');
+}
+
+/**
+ * Maps a scrubbed audit entry to the persister's create input (SPEC-162).
+ * Flat columns are extracted from the (non-sensitive) entry fields for indexing
+ * and filtering; the full scrubbed payload is stored under `data`.
+ *
+ * @param entry - The raw audit entry (already timestamped).
+ * @param scrubbed - The redacted payload to store under `data`.
+ * @param isCritical - Whether the event is in {@link CRITICAL_AUDIT_EVENTS}.
+ * @returns The create input for the audit log persister.
+ */
+export function buildPersistedAuditRecord(
+    entry: AuditEntry & { timestamp?: string },
+    scrubbed: Record<string, unknown>,
+    isCritical: boolean
+): CreateAuditLogEntry {
+    // TYPE-WORKAROUND: AuditEntry is a discriminated union; flatten to an index
+    // signature so the field extractors can pluck heterogeneous optional keys.
+    const raw = entry as unknown as Record<string, unknown>;
+    return {
+        logType: classifyAuditLogType(entry.auditEvent),
+        eventType: entry.auditEvent,
+        severity: isCritical ? 'critical' : 'info',
+        actorId: readUuid(raw, 'actorId'),
+        actorRole: readStr(raw, 'actorRole'),
+        targetId: resolveTargetId(raw),
+        ip: readStr(raw, 'ip'),
+        method: readStr(raw, 'method'),
+        path: readStr(raw, 'path') ?? readStr(raw, 'resource'),
+        statusCode: readNum(raw, 'statusCode'),
+        message: buildSummary(raw),
+        data: scrubbed,
+        loggedAt: new Date(entry.timestamp ?? new Date().toISOString())
+    };
+}
+
 /** Regex pattern matching sensitive field names that must be redacted */
 const SENSITIVE_PATTERNS =
     /password|token|secret|session_id|cookie|authorization|credential|creditcard|credit_card|ssn|apikey|api_key|privatekey|private_key|accesskey|access_key/i;
@@ -255,6 +413,15 @@ export function auditLog(entry: AuditEntry): void {
             data: scrubbed,
             timestamp: new Date(fullEntry.timestamp as string).getTime() / 1000
         });
+
+        // Persist the event to the queryable store so it is readable from the
+        // admin audit/security log viewers (SPEC-162). Fire-and-forget: the
+        // persister is responsible for swallowing its own async failures, and
+        // building the record here is guarded by the surrounding try/catch so a
+        // mapping error never breaks the logging call site.
+        if (auditLogPersister) {
+            auditLogPersister(buildPersistedAuditRecord(fullEntry, scrubbed, isCritical));
+        }
     } catch (error) {
         // Last-resort fallback: use console.error so that a broken audit logger
         // never silently swallows the failure or propagates into the caller.

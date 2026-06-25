@@ -25,6 +25,7 @@ import { count } from 'drizzle-orm';
 import { initApp } from './app';
 import { startCronScheduler } from './cron';
 import { registerAppLogDbSink } from './lib/app-log-sink';
+import { registerAuditLogPersistence } from './lib/audit-log-sink';
 import { createEntityResolver } from './lib/entity-resolver';
 import { shutdownPostHog } from './lib/posthog';
 import { closeSentry, initializeSentry } from './lib/sentry';
@@ -125,6 +126,11 @@ const startServer = async (): Promise<void> => {
         // Register the logger db-sink AFTER DB init so WARN/ERROR entries are
         // persisted to app_log_entries (SPEC-184). Fire-and-forget by design.
         registerAppLogDbSink();
+
+        // Register the audit-log persister AFTER DB init so audit/security
+        // events become queryable from the admin viewers (SPEC-162).
+        // Fire-and-forget by design.
+        registerAuditLogPersistence();
 
         // SPEC-103 T-073: fail-fast healthcheck against an essential table.
         // The /health endpoint does NOT touch the DB by design, so an

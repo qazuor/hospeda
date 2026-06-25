@@ -185,6 +185,7 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
 
         // SYSTEM: All permissions
         PermissionEnum.AUDIT_LOG_VIEW,
+        PermissionEnum.SECURITY_LOG_VIEW,
         PermissionEnum.SYSTEM_MAINTENANCE_MODE,
         PermissionEnum.TRANSLATIONS_MANAGE,
         PermissionEnum.MULTILANGUAGE_CONTENT_EDIT,
@@ -562,7 +563,8 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.HOST_MESSAGE_SEND,
 
         // SYSTEM: Most permissions (no maintenance mode)
-        PermissionEnum.AUDIT_LOG_VIEW,
+        // NOTE: AUDIT_LOG_VIEW / SECURITY_LOG_VIEW are SUPER_ADMIN-only (SPEC-162)
+        // and are intentionally NOT granted to ADMIN.
         PermissionEnum.TRANSLATIONS_MANAGE,
         PermissionEnum.MULTILANGUAGE_CONTENT_EDIT,
         PermissionEnum.DASHBOARD_BASE_VIEW,
