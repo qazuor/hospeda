@@ -9,23 +9,30 @@ Date: 2026-06-25 · Branch `spec/SPEC-269-web-performance-audit` (post all fixes
 - **Absolute local Lighthouse performance scores are not trustworthy** in this
   environment and must NOT be used as a pass/fail number. The real ≥90 check
   belongs to a clean CI runner / production behind Cloudflare.
-- Two pre-existing **CI harness bugs** were found and fixed (the Lighthouse CI
-  job had never actually measured anything).
+- A **CI harness bug** plus a **production-breaking regression** were found and
+  fixed when this branch ran in CI for the first time (no PR existed before).
 
-## Harness bugs fixed (both shipped this task)
+## Bugs found + fixed
 
-1. `lighthouserc.json` had `settings.preset: "mobile"` — an **invalid** value.
-   Lighthouse only accepts `perf` / `experimental` / `desktop`; mobile is the
-   default form factor (no preset). Every run aborted with
-   `Invalid values: Argument: preset, Given: "mobile"`. Removed the line.
-2. `.github/workflows/lighthouse.yml` started the server with `pnpm preview`,
-   which looks for `dist/server/entry.mjs`. The `@astrojs/node` **standalone**
-   adapter (this version) emits `dist/server/index.js` instead, so preview
-   never started; lhci then ran against nothing and `continue-on-error: true`
-   masked it. Now the workflow starts `node ./dist/server/index.js`
-   (HOST/PORT env) directly.
-
-Net effect: before this task the report-only CI Lighthouse job was a no-op.
+1. **Lighthouse preset (harness bug).** `lighthouserc.json` had
+   `settings.preset: "mobile"` — an **invalid** value. Lighthouse only accepts
+   `perf` / `experimental` / `desktop`; mobile is the default form factor (no
+   preset). Every run aborted with `Invalid values: Argument: preset, Given:
+   "mobile"`. Removed the line. Before this, the report-only CI job was a no-op.
+2. **Standalone server entry (production-breaking regression).** T-269-02b added
+   `vite.build.rollupOptions.output.manualChunks`. On the `@astrojs/node`
+   **standalone** SSR pass, the mere presence of that `output` object stops the
+   adapter from emitting `dist/server/entry.mjs` (it emitted `index.js` instead).
+   The web Dockerfile `CMD ["node", "dist/server/entry.mjs"]`, `astro preview`
+   (the E2E webServer), and the Lighthouse preview all need `entry.mjs`, so the
+   prod container and both preview servers failed to boot — surfaced as the E2E
+   P0 "webServer was not able to start" failure. Fix: the vendor split was only a
+   cache nice-to-have and never produced a >500KB chunk, so `manualChunks` was
+   removed entirely; `entry.mjs` is emitted again and `astro preview` serves
+   `/es/` 200. A client-only guard via the Vite `config` / `configResolved` hook
+   was tried first, but rolldown-vite ignored the returned/mutated `output`, so
+   dropping it was the safe call. A future vendor split must NOT use a static
+   `output` object on the standalone build — it clobbers the server entry.
 
 ## Why local perf scores are noise here
 
