@@ -1,3 +1,26 @@
+/**
+ * Sentry browser-side configuration for hospeda-web.
+ *
+ * Auto-discovered by `@sentry/astro` at build time (no explicit import needed
+ * from the app). Only configures runtime behavior — DSN, environment, sampling,
+ * integrations. Source-map upload is configured in `astro.config.mjs` via the
+ * `@sentry/astro` Vite plugin (SPEC-180 BETA-66).
+ *
+ * PRIVACY NOTE — crash reporting consent gate:
+ * Sentry is initialized ONLY when the user has explicitly opted in to crash
+ * reporting via the cookie-consent banner (`consent.crashReporting === true`).
+ * This is an intentional privacy decision, NOT a bug:
+ *   - Crash reporting is a separate consent category from analytics/tracking.
+ *   - Users who reject all optional cookies (first visit, no cookie) get
+ *     NO Sentry initialization at all — the SDK stays dormant.
+ *   - Users who accept crash reporting get full error and replay coverage.
+ * Do NOT remove the consent gate without a privacy/legal review.
+ *
+ * SPEC-180 BETA-64: the `capture` LoggerOptions flag is NOT used here — the
+ * web app does not use `@repo/logger`. Client-side errors reach Sentry via
+ * the `@sentry/astro` SDK's automatic instrumentation (uncaught exceptions,
+ * unhandled rejections, and the replay integration).
+ */
 import * as Sentry from '@sentry/astro';
 import { getConsent } from './src/lib/cookie-consent';
 

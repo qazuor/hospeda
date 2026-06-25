@@ -1,11 +1,15 @@
 /**
  * Sentry Configuration Tests
  *
- * Tests for Sentry initialization and error tracking functionality.
+ * Tests for:
+ * - Sentry initialization and error tracking functionality.
+ * - `applyBeforeSend` filter (SPEC-180 T-007) — extracted as a pure function
+ *   so it can be unit-tested without mocking the full Sentry.init() lifecycle.
  *
  * @module test/lib/sentry
  */
 
+import type { ErrorEvent } from '@sentry/node';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as envModule from '../../src/utils/env';
 
@@ -52,6 +56,7 @@ vi.mock('@sentry/profiling-node', () => ({
     nodeProfilingIntegration: vi.fn(() => ({}))
 }));
 
+import { BEFORE_SEND_NOISE_PATTERNS, applyBeforeSend } from '../../src/lib/sentry';
 import * as SentryModule from '../../src/lib/sentry';
 
 describe('Sentry Configuration', () => {
@@ -417,6 +422,224 @@ describe('Billing Error Handler', () => {
             }).not.toThrow();
 
             expect(mockCaptureException).toHaveBeenCalledTimes(3);
+        });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// applyBeforeSend — pure filter function unit tests (SPEC-180 T-007)
+//
+// These tests verify the extracted `applyBeforeSend` function without
+// initializing Sentry. They are a regression guard for the denylist logic
+// and a correctness check for breadcrumb scrubbing.
+// ---------------------------------------------------------------------------
+
+/**
+ * Helper to build a minimal ErrorEvent with optional overrides.
+ *
+ * In the Sentry SDK, `ErrorEvent` is a `BaseEvent` with `type` omitted (undefined),
+ * distinguishing it from `Transaction` and `Profile` events. We cast through unknown
+ * because test-constructed literals won't satisfy all optional SDK fields.
+ */
+function makeEvent(overrides: Partial<ErrorEvent> = {}): ErrorEvent {
+    return {
+        event_id: 'test-event-id',
+        ...overrides
+    } as unknown as ErrorEvent;
+}
+
+describe('applyBeforeSend', () => {
+    describe('expected_error:true tag — drop', () => {
+        it('should drop events tagged expected_error=true', () => {
+            // Arrange
+            const event = makeEvent({ tags: { expected_error: 'true' } });
+
+            // Act
+            const result = applyBeforeSend(event);
+
+            // Assert — regression guard for SPEC-143 T-143-47 convention
+            expect(result).toBeNull();
+        });
+
+        it('should pass through events tagged expected_error=false', () => {
+            // Arrange
+            const event = makeEvent({ tags: { expected_error: 'false' } });
+
+            // Act
+            const result = applyBeforeSend(event);
+
+            // Assert
+            expect(result).not.toBeNull();
+        });
+    });
+
+    describe('middleware noise message — drop', () => {
+        it('should drop events whose message matches the Sentry middleware noise string', () => {
+            // Arrange
+            const event = makeEvent({ message: 'Request error caught by Sentry middleware' });
+
+            // Act
+            const result = applyBeforeSend(event);
+
+            // Assert
+            expect(result).toBeNull();
+        });
+
+        it('should drop events whose exception value contains the middleware noise string', () => {
+            // Arrange
+            const event = makeEvent({
+                exception: {
+                    values: [
+                        {
+                            value: 'Request error caught by Sentry middleware at handleRequest:42'
+                        }
+                    ]
+                }
+            });
+
+            // Act
+            const result = applyBeforeSend(event);
+
+            // Assert
+            expect(result).toBeNull();
+        });
+    });
+
+    describe('BEFORE_SEND_NOISE_PATTERNS denylist — drop', () => {
+        it('should export BEFORE_SEND_NOISE_PATTERNS as a readonly array', () => {
+            expect(Array.isArray(BEFORE_SEND_NOISE_PATTERNS)).toBe(true);
+            expect(BEFORE_SEND_NOISE_PATTERNS.length).toBeGreaterThan(0);
+        });
+
+        it('should drop messages matching the 5xx HTTP logger pattern', () => {
+            // Arrange
+            const event = makeEvent({ message: '[http] GET /api/v1/test responded with 500' });
+
+            // Act
+            const result = applyBeforeSend(event);
+
+            // Assert
+            expect(result).toBeNull();
+        });
+
+        it('should drop messages matching the transform-pipeline body dump pattern', () => {
+            // Arrange
+            const event = makeEvent({ message: '[transform] response body: {"foo":"bar"}' });
+
+            // Act
+            const result = applyBeforeSend(event);
+
+            // Assert
+            expect(result).toBeNull();
+        });
+    });
+
+    describe('responseBody in extra — strip (not drop)', () => {
+        it('should strip responseBody from event.extra while keeping the event', () => {
+            // Arrange
+            const event = makeEvent({
+                extra: { responseBody: '{"sensitive":"data"}', requestId: 'req-abc' }
+            });
+
+            // Act
+            const result = applyBeforeSend(event);
+
+            // Assert — event is kept but responseBody is removed
+            expect(result).not.toBeNull();
+            expect((result?.extra as Record<string, unknown>).responseBody).toBeUndefined();
+            expect((result?.extra as Record<string, unknown>).requestId).toBe('req-abc');
+        });
+
+        it('should pass through events whose extra has no responseBody', () => {
+            // Arrange
+            const event = makeEvent({ extra: { requestId: 'req-xyz' } });
+
+            // Act
+            const result = applyBeforeSend(event);
+
+            // Assert
+            expect(result).not.toBeNull();
+            expect((result?.extra as Record<string, unknown>).requestId).toBe('req-xyz');
+        });
+    });
+
+    describe('breadcrumb scrubbing', () => {
+        it('should redact breadcrumb data keys that contain token/key/secret/password', () => {
+            // Arrange
+            const event = makeEvent({
+                breadcrumbs: [
+                    {
+                        category: 'auth',
+                        data: {
+                            accessToken: 'abc123',
+                            apiKey: 'sk-secret',
+                            password: 'hunter2',
+                            username: 'alice'
+                        }
+                    }
+                ]
+            });
+
+            // Act
+            const result = applyBeforeSend(event);
+
+            // Assert
+            expect(result).not.toBeNull();
+            const crumb = result?.breadcrumbs?.[0];
+            expect(crumb?.data?.accessToken).toBe('[REDACTED]');
+            expect(crumb?.data?.apiKey).toBe('[REDACTED]');
+            expect(crumb?.data?.password).toBe('[REDACTED]');
+            // Non-sensitive key preserved
+            expect(crumb?.data?.username).toBe('alice');
+        });
+
+        it('should leave breadcrumbs without data untouched', () => {
+            // Arrange
+            const event = makeEvent({
+                breadcrumbs: [{ category: 'navigation', message: 'page transition' }]
+            });
+
+            // Act
+            const result = applyBeforeSend(event);
+
+            // Assert
+            expect(result).not.toBeNull();
+            expect(result?.breadcrumbs?.[0]?.message).toBe('page transition');
+        });
+    });
+
+    describe('actionable events — pass through', () => {
+        it('should pass through actionable error events with no matching patterns', () => {
+            // Arrange
+            const event = makeEvent({
+                message: 'cron bootstrap failure: DB_CONNECTION_REFUSED',
+                tags: { module: 'cron' },
+                exception: {
+                    values: [{ type: 'Error', value: 'ECONNREFUSED' }]
+                }
+            });
+
+            // Act
+            const result = applyBeforeSend(event);
+
+            // Assert
+            expect(result).not.toBeNull();
+            expect(result?.message).toBe('cron bootstrap failure: DB_CONNECTION_REFUSED');
+        });
+
+        it('should pass through events with no message and no matching tags', () => {
+            // Arrange — minimal event with only an exception and no noise markers
+            const event = makeEvent({
+                exception: {
+                    values: [{ type: 'TypeError', value: 'Cannot read property x of undefined' }]
+                }
+            });
+
+            // Act
+            const result = applyBeforeSend(event);
+
+            // Assert
+            expect(result).not.toBeNull();
         });
     });
 });

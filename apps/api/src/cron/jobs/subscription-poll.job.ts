@@ -43,6 +43,17 @@ import type { CronJobDefinition, CronJobResult } from '../types.js';
 const ADVISORY_LOCK_KEY = 1007;
 
 /**
+ * Module-level counter for consecutive subscription-poll failures.
+ *
+ * SPEC-180 BETA-64 rate-limit: the subscription-poll cron runs every minute,
+ * so a persistent MP outage would generate 1 Sentry event/minute without
+ * throttling. Instead, capture only on the FIRST failure and then every 10th
+ * consecutive failure, silencing the intermediate ones. Reset to 0 on success
+ * so a recovery always starts a fresh failure sequence.
+ */
+let consecutivePollFailures = 0;
+
+/**
  * Maximum number of due polling jobs processed per cron tick. Keeps the
  * batch bounded so a single iteration cannot starve MP's REST budget or
  * exceed the cron tick window.
@@ -831,6 +842,27 @@ export const subscriptionPollJob: CronJobDefinition = {
                 }
                 if (result.error) {
                     batchErrors += 1;
+
+                    // SPEC-180 BETA-64: rate-limit Sentry captures for recurring
+                    // poll failures to avoid flooding Sentry during MP outages.
+                    // Capture only the 1st failure and then every 10th consecutive
+                    // failure; skip intermediate ones.
+                    consecutivePollFailures += 1;
+                    const shouldCapture =
+                        consecutivePollFailures === 1 || consecutivePollFailures % 10 === 0;
+                    logger.error(
+                        'subscription-poll: job processing error',
+                        {
+                            jobId: job.id,
+                            subscriptionId: job.subscriptionId,
+                            consecutiveFailures: consecutivePollFailures,
+                            error: result.error.message
+                        },
+                        shouldCapture ? { capture: true } : undefined
+                    );
+                } else if (result.handled) {
+                    // Successful processing: reset consecutive failure counter.
+                    consecutivePollFailures = 0;
                 }
             }
             return { processed: batchProcessed, errors: batchErrors, locked: true };

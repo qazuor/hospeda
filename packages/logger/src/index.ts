@@ -12,6 +12,13 @@
  */
 
 export { registerCategoryInternal } from './categories.js';
+export {
+    hasCaptureHook,
+    invokeCaptureHook,
+    registerCaptureHook,
+    unregisterCaptureHook
+} from './capture.js';
+export type { CaptureHookFn } from './capture.js';
 export { configureLogger, resetLoggerConfig } from './config.js';
 export {
     createLogger,

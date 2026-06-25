@@ -426,6 +426,7 @@ export async function processSubscriptionUpdated({
         subscriptionId: localSubscription.id
     });
     if (!transitionGuard.valid) {
+        // SPEC-180: invalid transitions are actionable (indicate MP/local state divergence).
         apiLogger.error(
             {
                 subscriptionId: localSubscription.id,
@@ -437,7 +438,8 @@ export async function processSubscriptionUpdated({
                 source,
                 reason: transitionGuard.reason
             },
-            'Subscription webhook: invalid status transition — skipping status write and all dependent side effects'
+            'Subscription webhook: invalid status transition — skipping status write and all dependent side effects',
+            { capture: true }
         );
         return { success: true, statusChanged: false };
     }
@@ -555,6 +557,7 @@ export async function processSubscriptionUpdated({
             subscriptionId: localSubscription.id
         });
         if (!txTransitionGuard.valid) {
+            // SPEC-180: in-transaction transition guard failure is actionable.
             apiLogger.error(
                 {
                     subscriptionId: localSubscription.id,
@@ -567,7 +570,8 @@ export async function processSubscriptionUpdated({
                     source,
                     reason: txTransitionGuard.reason
                 },
-                'Subscription webhook tx: invalid transition on fresh status — committing nothing'
+                'Subscription webhook tx: invalid transition on fresh status — committing nothing',
+                { capture: true }
             );
             txStatusChanged = false;
             return;
