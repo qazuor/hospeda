@@ -1884,9 +1884,10 @@
             "title": "Web performance audit & improvements — Core Web Vitals, 12 findings + fix catalog",
             "type": "improvement",
             "complexity": "medium",
-            "status": "draft",
+            "status": "in-progress",
             "path": "SPEC-269-web-performance-audit",
             "created": "2026-06-23T00:00:00Z",
+            "startedAt": "2026-06-24T00:00:00Z",
             "base": "staging",
             "origin": "Owner question 2026-06-23: split de 'analisis y mejora de seo, performance y accesibilidad' en 3 specs. Esta es la parte performance.",
             "tags": [

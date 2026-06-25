@@ -410,6 +410,7 @@ const safeDescriptionHtml = renderContent({
 					height={675}
 					format="webp"
 					loading="eager"
+					fetchpriority="high"
 					class="dest-detail__hero-img"
 				/>
 			) : (
@@ -417,6 +418,7 @@ const safeDescriptionHtml = renderContent({
 					src={featuredImageObj.url}
 					alt={featuredImageObj.caption ?? name}
 					loading="eager"
+					fetchpriority="high"
 					class="dest-detail__hero-img"
 					width="1200"
 					height="675"

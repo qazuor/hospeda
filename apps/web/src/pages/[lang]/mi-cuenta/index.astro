@@ -142,7 +142,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
             <div class="account__avatar" aria-hidden="true">
                 <span class="account__avatar-ring" aria-hidden="true" />
                 {user.image ? (
-                    <img src={user.image} alt="" class="account__avatar-img" />
+                    <img src={user.image} alt="" class="account__avatar-img" width="104" height="104" />
                 ) : (
                     <span class="account__avatar-initials">{initials}</span>
                 )}

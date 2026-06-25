@@ -111,7 +111,7 @@ const placeholderStyle = `background: linear-gradient(135deg, ${categoryColors.b
     <!-- FavoriteButton island: top-right over photo area, OUTSIDE the <a> link (HTML semantics) -->
     <div class="event-card-h__fav-wrapper">
         <FavoriteButton
-            client:load
+            client:visible
             entityId={data.id}
             entityType="EVENT"
             initialIsFavorited={data.isFavorited}

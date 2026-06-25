@@ -1113,6 +1113,20 @@
             "base": "staging",
             "createdAt": "2026-06-24T00:00:00Z",
             "note": "Doc-only spec; tasks NOT atomized yet. Deferred R3 (async extraction path) carved out of SPEC-277. Reuses SPEC-250 async Apify helpers. 5 open questions for the owner before atomizing."
+        },
+        {
+            "specId": "SPEC-269",
+            "title": "Web performance audit & improvements — Core Web Vitals, 12 findings + fix catalog",
+            "status": "in-progress",
+            "progress": "13/13",
+            "path": "SPEC-269-web-performance-audit",
+            "branch": "spec/SPEC-269-web-performance-audit",
+            "base": "staging",
+            "createdAt": "2026-06-24T00:00:00Z",
+            "tasksAtomizedAt": "2026-06-24T00:00:00Z",
+            "taskCount": 13,
+            "averageComplexity": 2.85,
+            "note": "13 tasks across 4 phases (core 3, integration 8, ci 1, testing 1); spec §6 lists 12 task IDs but T-269-02 and T-269-03 each split into a/b = 13 total. All fix tasks (T-269-03a through T-269-10) are independent and run in parallel. Only sequential chains: T-269-02a→T-269-02b and all fixes→T-269-11. POTENTE: T-269-02b (manualChunks tuning) + T-269-03b (hero SSR first-frame). SPEC-190 bundle pattern reused for apps/web."
         }
     ],
     "standalone": {

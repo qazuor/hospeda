@@ -19,6 +19,7 @@ import CtaOwnersSection from "@/components/sections/CtaOwnersSection.astro";
 import DestinationsSection from "@/components/sections/DestinationsSection.astro";
 import FeaturedAccommodationsSection from "@/components/sections/FeaturedAccommodationsSection.astro";
 import HeroSection from "@/components/sections/HeroSection.astro";
+import { HERO_IMAGE_SIZES, HERO_RAW_SLIDES, buildHeroVariants } from "@/components/sections/hero-images";
 import LatestArticlesSection from "@/components/sections/LatestArticlesSection.astro";
 import NextEventsSection from "@/components/sections/NextEventsSection.astro";
 import NextEventsSectionSkeleton from "@/components/skeletons/NextEventsSectionSkeleton.astro";
@@ -50,6 +51,12 @@ const { t } = createTranslations(locale);
 // format for schema.org Organization logo (Google requires min 112×112, 1:1).
 const siteUrl = getSiteUrl().replace(/\/$/, '');
 const logoUrl = `${siteUrl}/android-chrome-512x512.png`;
+
+// LCP: preload the first hero slide so the browser fetches it as early as the
+// stylesheet, before any island JS. The responsive candidates and `sizes` match
+// the rotator's first <img> exactly (shared via hero-images.ts), so the preload
+// resolves to the same resource the hero paints — no duplicate download.
+const heroFirstSlide = await buildHeroVariants({ rawImage: HERO_RAW_SLIDES[0] });
 
 // Fetch city destinations for the search bar (SSG — fetched at build time)
 const destinationsResult = await destinationsApi.list({
@@ -162,6 +169,16 @@ const categoryTiles = [
     canonicalPath={`/${locale}/`}
     ogTagline={t("home.hero.tagline", "Descubrí el Litoral")}
 >
+    <!-- LCP: preload the first hero slide (responsive, high priority) -->
+    <link
+        slot="head-extra"
+        rel="preload"
+        as="image"
+        imagesrcset={heroFirstSlide.srcset}
+        imagesizes={HERO_IMAGE_SIZES}
+        fetchpriority="high"
+    />
+
     <!-- Site-level structured data (SPEC-157 REQ-5) -->
     <WebSiteJsonLd slot="head-extra" name={BRAND_NAME} url={siteUrl} locale={locale} />
     <OrganizationJsonLd

@@ -4,7 +4,7 @@
  * subcomponents (SPEC-113 polish).
  */
 
-import { resolveValidationMessage } from '@repo/i18n';
+import { resolveValidationMessage } from '@repo/i18n/web';
 import type { ProfileEditInput } from '@repo/schemas';
 
 /**

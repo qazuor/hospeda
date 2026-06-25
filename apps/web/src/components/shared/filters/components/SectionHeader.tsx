@@ -11,7 +11,7 @@
  */
 
 import type { SupportedLocale } from '@/lib/i18n';
-import { resolveIcon } from '@repo/icons/resolver';
+import { resolveWebIcon } from '@/lib/icon-map';
 import styles from './SectionHeader.module.css';
 
 interface SectionHeaderProps {
@@ -23,7 +23,7 @@ interface SectionHeaderProps {
 }
 
 export function SectionHeader({ label, icon }: SectionHeaderProps) {
-    const IconComponent = icon ? resolveIcon({ iconName: icon }) : undefined;
+    const IconComponent = icon ? resolveWebIcon({ iconName: icon }) : undefined;
     return (
         <div
             className={styles.sectionHeader}

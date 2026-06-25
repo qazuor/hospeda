@@ -8,7 +8,7 @@
 
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { resolveIcon } from '@repo/icons/resolver';
+import { resolveWebIcon } from '@/lib/icon-map';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import styles from './IconChipsFilter.module.css';
 import type { IconChipsFilterConfig } from './filter.types';
@@ -31,7 +31,7 @@ interface ChipButtonProps {
 }
 
 function ChipButton({ optionValue, label, icon, isActive, onToggle }: ChipButtonProps) {
-    const IconComponent = icon ? resolveIcon({ iconName: icon }) : undefined;
+    const IconComponent = icon ? resolveWebIcon({ iconName: icon }) : undefined;
     return (
         <button
             type="button"

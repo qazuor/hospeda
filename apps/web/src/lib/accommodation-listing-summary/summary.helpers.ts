@@ -5,7 +5,7 @@
  * can be unit-tested in isolation.
  */
 
-import { toBcp47Locale } from '@repo/i18n';
+import { toBcp47Locale } from '@repo/i18n/web';
 import type { SummaryLocale } from './summary.types';
 
 // ---------------------------------------------------------------------------

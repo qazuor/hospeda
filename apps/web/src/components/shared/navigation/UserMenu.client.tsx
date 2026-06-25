@@ -540,6 +540,8 @@ export function UserMenu({
                         src={user.avatarUrl}
                         alt=""
                         aria-hidden="true"
+                        width={28}
+                        height={28}
                         className={styles.avatar}
                     />
                 ) : (
