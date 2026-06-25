@@ -982,8 +982,17 @@ const plataformaSidebar: SidebarInput = {
             id: 'audit-log',
             label: { es: 'Log de auditoría', en: 'Audit log', pt: 'Log de auditoria' },
             icon: 'LogsIcon',
-            route: '/analytics/debug',
+            route: '/platform/ops/audit-logs',
             permissions: ['AUDIT_LOG_VIEW'],
+            onMissing: 'hide'
+        },
+        {
+            type: 'link',
+            id: 'security-log',
+            label: { es: 'Log de seguridad', en: 'Security log', pt: 'Log de segurança' },
+            icon: 'ShieldIcon',
+            route: '/platform/ops/security-logs',
+            permissions: ['SECURITY_LOG_VIEW'],
             onMissing: 'hide'
         }
     ]
