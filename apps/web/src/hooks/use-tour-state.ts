@@ -36,6 +36,7 @@ interface TourStateData {
 let sharedTourState: { data: TourStateData; timestamp: number } | null = null;
 
 const CACHE_TTL = 60_000;
+const TOUR_STATE_EVENT = 'hospeda:tour-state-updated';
 
 function getCachedState(): TourStateData | null {
     if (!sharedTourState) return null;
@@ -48,6 +49,11 @@ function getCachedState(): TourStateData | null {
 
 function setCachedState(data: TourStateData): void {
     sharedTourState = { data, timestamp: Date.now() };
+}
+
+function emitTourStateUpdate(data: TourStateData): void {
+    if (typeof window === 'undefined') return;
+    window.dispatchEvent(new CustomEvent<TourStateData>(TOUR_STATE_EVENT, { detail: data }));
 }
 
 export function clearTourStateCache(): void {
@@ -82,6 +88,21 @@ export function useTourState(): UseTourStateReturn {
         mountedRef.current = true;
         return () => {
             mountedRef.current = false;
+        };
+    }, []);
+
+    useEffect(() => {
+        function handleUpdate(event: Event): void {
+            const customEvent = event as CustomEvent<TourStateData>;
+            const nextState = customEvent.detail;
+            setCachedState(nextState);
+            setTourState(nextState);
+            setIsLoading(false);
+        }
+
+        window.addEventListener(TOUR_STATE_EVENT, handleUpdate as EventListener);
+        return () => {
+            window.removeEventListener(TOUR_STATE_EVENT, handleUpdate as EventListener);
         };
     }, []);
 
@@ -149,10 +170,13 @@ export function useTourState(): UseTourStateReturn {
         ({ tourId, version }: { tourId: string; version: number }): void => {
             setTourState((prev) => {
                 if (!prev) return prev;
-                return {
+                const nextState = {
                     ...prev,
                     tours: { ...prev.tours, [tourId]: version }
                 };
+                setCachedState(nextState);
+                emitTourStateUpdate(nextState);
+                return nextState;
             });
 
             const body: TourProgressBody = { tourId, version };
