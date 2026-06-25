@@ -539,28 +539,26 @@ export async function signInExistingUser(
 }
 
 /**
- * Creates a conversation row linking guest and host on a specific
- * accommodation. Used by MSG-01 and resilience tests that need a
- * pre-existing conversation.
+ * Creates a conversation row for an authenticated guest on a specific accommodation.
+ * The host is derived from the accommodation's owner_id — no host column exists.
+ * Used by MSG-01 and resilience tests that need a pre-existing conversation.
+ *
+ * SPEC-105 T-105-04: fixed column drift — conversations table has user_id (guest)
+ * and accommodation_id only; host is always resolved via accommodations.owner_id.
+ * Valid statuses: PENDING_VERIFICATION | PENDING_OWNER | PENDING_GUEST | OPEN | CLOSED | BLOCKED.
  */
 export async function createConversation(options: {
     readonly guestUserId: string;
-    readonly hostUserId: string;
     readonly accommodationId: string;
     readonly subject?: string;
 }): Promise<{ readonly id: string }> {
     const rows = await execSQL<{ id: string }>(
         `INSERT INTO conversations (
-             guest_user_id, host_user_id, accommodation_id,
+             user_id, accommodation_id,
              subject, status, created_at, updated_at
-         ) VALUES ($1, $2, $3, $4, 'ACTIVE', NOW(), NOW())
+         ) VALUES ($1, $2, $3, 'OPEN', NOW(), NOW())
          RETURNING id`,
-        [
-            options.guestUserId,
-            options.hostUserId,
-            options.accommodationId,
-            options.subject ?? 'E2E test conversation'
-        ]
+        [options.guestUserId, options.accommodationId, options.subject ?? 'E2E test conversation']
     );
     const id = rows[0]?.id;
     if (!id) throw new Error('createConversation: insert returned no id');
