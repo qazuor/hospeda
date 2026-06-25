@@ -47,26 +47,26 @@
             "id": "T-002",
             "title": "Reproduce public-pages CSP crawl baseline (T-014 scope)",
             "description": "Using the same technique as SPEC-046 T-014 (curl or Playwright headless + console violation capture), crawl the main public routes: /, /es/, /es/alojamientos/, /es/destinos/, /es/blog/. For each route: capture any CSP violation reports emitted to the browser console and any Sentry CSP ingestion. Document results to compare against authenticated crawl (T-016). Tests: none (operational baseline).",
-            "status": "in_progress",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": ["T-016"],
             "subtasks": [
                 {
                     "title": "Crawl / and /es/ public routes",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Crawl /es/alojamientos/ and /es/destinos/",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Crawl /es/blog/",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Document all console CSP violations per route",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["csp", "crawl", "web"],
@@ -79,7 +79,7 @@
             "timestamps": {
                 "created": "2026-06-25T00:00:00.000Z",
                 "started": "2026-06-25T20:55:16.000Z",
-                "completed": null
+                "completed": "2026-06-25T21:09:18.000Z"
             }
         },
         {
@@ -909,26 +909,26 @@
             "id": "T-024",
             "title": "[OPTIONAL 2.E] Run logo-pattern blind-spot sweep across apps/web/src",
             "description": "Optional per spec 2.E. From SPEC-046 T-006 lesson: inline style with interpolated values like style={`background: ${color}`} bypasses nonce and would block under enforce CSP. Run: grep -rE 'style=.*\\$\\{' apps/web/src/ and audit each result. For each hit: determine if the interpolated value is a finite enum (safe) or dynamic user input (unsafe). Document findings. If unsafe patterns found: raise a follow-up task or fix inline. Tests: none (audit sweep).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Run grep -rE 'style=.*\\${' apps/web/src/",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Audit each match: enum-safe vs dynamic",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Document findings",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Raise follow-up tasks for any unsafe patterns",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["csp", "audit", "optional", "cleanup", "web"],
@@ -940,38 +940,38 @@
             },
             "timestamps": {
                 "created": "2026-06-25T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-25T21:11:30.000Z",
+                "completed": "2026-06-25T21:12:34.000Z"
             }
         },
         {
             "id": "T-025",
             "title": "[OPTIONAL 2.E] Fix Sentry environment config \u2014 wire HOSPEDA_ENV instead of import.meta.env.MODE",
             "description": "Optional per spec 2.E. import.meta.env.MODE always evaluates to 'production' on built artifacts, causing staging traces to appear under 'production' in Sentry. Fix: wire HOSPEDA_ENV (or a PUBLIC_HOSPEDA_ENV env var) to the Sentry environment config in apps/web. Add env var to: packages/config/src/env-registry.*.ts (PUBLIC_HOSPEDA_ENV), apps/web/src/utils/env.ts, apps/web/.env.example. IMPORTANT: after step 4, tell the user to set PUBLIC_HOSPEDA_ENV=staging in Coolify for hospeda-web-staging. Run pnpm env:check:registry.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
                 {
-                    "title": "Add PUBLIC_HOSPEDA_ENV to env registry",
-                    "completed": false
+                    "title": "PUBLIC_SENTRY_ENVIRONMENT already in env registry (env-registry.client.ts:84)",
+                    "completed": true
                 },
                 {
-                    "title": "Add Zod validation in apps/web/src/utils/env.ts",
-                    "completed": false
+                    "title": "Already validated in apps/web/src/env.ts (line 44)",
+                    "completed": true
                 },
                 {
-                    "title": "Update apps/web/.env.example",
-                    "completed": false
+                    "title": "Already in apps/web/.env.example (line 101)",
+                    "completed": true
                 },
                 {
-                    "title": "Wire to Sentry environment config",
-                    "completed": false
+                    "title": "Already wired in sentry.client.config.ts and sentry.server.config.ts",
+                    "completed": true
                 },
                 {
-                    "title": "Run pnpm env:check:registry",
-                    "completed": false
+                    "title": "No registry changes needed \u2014 var already exists",
+                    "completed": true
                 }
             ],
             "tags": ["sentry", "env", "optional", "cleanup"],
@@ -983,34 +983,34 @@
             },
             "timestamps": {
                 "created": "2026-06-25T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-25T21:30:00.000Z",
+                "completed": "2026-06-25T21:30:00.000Z"
             }
         },
         {
             "id": "T-026",
             "title": "[OPTIONAL 2.E] Bump staging tracing sample-rate to 1.0 via env-controlled config",
             "description": "Optional per spec 2.E. tracesSampleRate: 0.1 starves staging of CWV data. Make it env-controlled: read PUBLIC_SENTRY_TRACES_SAMPLE_RATE (or similar) in apps/web Sentry init, default to 0.1. Tell the user to set it to 1.0 in Coolify for hospeda-web-staging after implementation. Add to env registry (PUBLIC_SENTRY_TRACES_SAMPLE_RATE). Run pnpm env:check:registry. Tests: verify env var is validated by Zod.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Add PUBLIC_SENTRY_TRACES_SAMPLE_RATE to env registry",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Wire to Sentry tracesSampleRate in apps/web init",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update apps/web/.env.example",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Run pnpm env:check:registry",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["sentry", "env", "optional", "cleanup"],
@@ -1022,8 +1022,8 @@
             },
             "timestamps": {
                 "created": "2026-06-25T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-25T21:30:00.000Z",
+                "completed": "2026-06-25T21:35:00.000Z"
             }
         },
         {
@@ -1107,9 +1107,9 @@
     ],
     "summary": {
         "total": 28,
-        "pending": 28,
-        "inProgress": 0,
-        "completed": 0,
+        "pending": 19,
+        "inProgress": 1,
+        "completed": 8,
         "blocked": 0,
         "averageComplexity": 1.8
     }
