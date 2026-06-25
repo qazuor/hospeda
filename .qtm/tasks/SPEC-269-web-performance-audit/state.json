@@ -6,9 +6,9 @@
     "summary": {
         "total": 13,
         "byStatus": {
-            "pending": 9,
+            "pending": 8,
             "in_progress": 0,
-            "completed": 4
+            "completed": 5
         },
         "byPhase": {
             "core": 3,
@@ -421,7 +421,7 @@
             "id": "T-269-10",
             "title": "Add @lhci/cli devDependency and report-only Lighthouse CI job (F9)",
             "description": "Wire up Lighthouse CI so every PR gets a performance score visible in the CI output — but as a report-only (non-blocking) job so flaky scores don't block merges.\n\nRecon finding F9 (MEDIUM): `apps/web/lighthouserc.json` exists and `apps/web/package.json:22` has a `lighthouse` script, but `@lhci/cli` is NOT in devDependencies and NO GitHub Actions workflow references it.\n\nWhat to do:\n1. Add `@lhci/cli` to `apps/web/package.json` devDependencies (latest stable version).\n2. Update `apps/web/lighthouserc.json` if needed (verify the `collect.url`, `upload.target`, and assert settings are correct for a report-only mode).\n3. Create (or update) a GitHub Actions workflow file at `.github/workflows/lighthouse-ci.yml` that:\n   - Triggers on PRs to `staging` (or all PRs).\n   - Builds `apps/web` (or uses a preview URL if one is available).\n   - Runs `pnpm --filter web lighthouse` (which calls `lhci autorun`).\n   - Is marked `continue-on-error: true` OR has `assert.preset: none` so it never blocks the PR.\n   - Uploads the Lighthouse report as a CI artifact or to a public storage (LHCI's `temporary-public-storage` is fine for now).\n4. Document in the workflow comment that the job is REPORT-ONLY and will be promoted to a blocking gate in a follow-up after baselines stabilise.\n\nKey files affected:\n- `apps/web/package.json` — add `@lhci/cli` devDep.\n- `apps/web/lighthouserc.json` — update if needed (assert preset: none, or report-only config).\n- `.github/workflows/lighthouse-ci.yml` — new or updated CI workflow.\n\nAcceptance criteria:\n- `@lhci/cli` appears in `apps/web/package.json` devDependencies.\n- A CI workflow exists that runs Lighthouse on PRs.\n- The workflow is `continue-on-error: true` (non-blocking).\n- The workflow produces a visible artifact or score link in the CI output.\n- The existing CI suite (`pnpm --filter web build`, typecheck, lint) is not affected.\n\nTesting: open a draft PR and verify the Lighthouse CI job appears in the checks list and produces a report (even if scores are low). A local `pnpm --filter web lighthouse` run that exits 0 is also sufficient for the code review gate.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": [],
             "blocks": ["T-269-11"],
@@ -442,14 +442,14 @@
             "tags": ["web", "ci", "lighthouse", "performance", "github-actions", "f9", "f10"],
             "phase": "ci",
             "qualityGate": {
-                "lint": null,
+                "lint": true,
                 "typecheck": null,
                 "tests": null
             },
             "timestamps": {
                 "created": "2026-06-24T00:00:00Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-24T00:00:00Z",
+                "completed": "2026-06-24T00:00:00Z"
             }
         },
         {

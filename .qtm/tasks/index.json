@@ -1118,7 +1118,7 @@
             "specId": "SPEC-269",
             "title": "Web performance audit & improvements — Core Web Vitals, 12 findings + fix catalog",
             "status": "in-progress",
-            "progress": "4/13",
+            "progress": "5/13",
             "path": "SPEC-269-web-performance-audit",
             "branch": "spec/SPEC-269-web-performance-audit",
             "base": "staging",
