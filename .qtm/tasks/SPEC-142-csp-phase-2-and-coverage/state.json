@@ -8,45 +8,77 @@
             "id": "T-001",
             "title": "Audit current CSP middleware config and document baseline state",
             "description": "Read apps/web/src/lib/middleware-helpers.ts and any related CSP config files. Document: current directives per category (script-src, style-src, frame-src, connect-src, img-src, font-src), Report-Only header name, nonce injection point, and report-uri. Also list which routes the middleware applies to. Output: a concise markdown checklist to guide the remaining tasks. Tests: none (audit only).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-002", "T-003", "T-006"],
             "subtasks": [
-                { "title": "Read middleware-helpers.ts", "completed": false },
-                { "title": "List all CSP directive groups", "completed": false },
-                { "title": "Identify report-uri endpoint", "completed": false },
-                { "title": "Note which routes are excluded from middleware", "completed": false }
+                {
+                    "title": "Read middleware-helpers.ts",
+                    "completed": true
+                },
+                {
+                    "title": "List all CSP directive groups",
+                    "completed": true
+                },
+                {
+                    "title": "Identify report-uri endpoint",
+                    "completed": true
+                },
+                {
+                    "title": "Note which routes are excluded from middleware",
+                    "completed": true
+                }
             ],
             "tags": ["csp", "audit", "web"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-25T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-25T20:52:48.000Z",
+                "completed": "2026-06-25T20:55:03.000Z"
             }
         },
         {
             "id": "T-002",
             "title": "Reproduce public-pages CSP crawl baseline (T-014 scope)",
             "description": "Using the same technique as SPEC-046 T-014 (curl or Playwright headless + console violation capture), crawl the main public routes: /, /es/, /es/alojamientos/, /es/destinos/, /es/blog/. For each route: capture any CSP violation reports emitted to the browser console and any Sentry CSP ingestion. Document results to compare against authenticated crawl (T-016). Tests: none (operational baseline).",
-            "status": "pending",
+            "status": "in_progress",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": ["T-016"],
             "subtasks": [
-                { "title": "Crawl / and /es/ public routes", "completed": false },
-                { "title": "Crawl /es/alojamientos/ and /es/destinos/", "completed": false },
-                { "title": "Crawl /es/blog/", "completed": false },
-                { "title": "Document all console CSP violations per route", "completed": false }
+                {
+                    "title": "Crawl / and /es/ public routes",
+                    "completed": false
+                },
+                {
+                    "title": "Crawl /es/alojamientos/ and /es/destinos/",
+                    "completed": false
+                },
+                {
+                    "title": "Crawl /es/blog/",
+                    "completed": false
+                },
+                {
+                    "title": "Document all console CSP violations per route",
+                    "completed": false
+                }
             ],
             "tags": ["csp", "crawl", "web"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-25T00:00:00.000Z",
-                "started": null,
+                "started": "2026-06-25T20:55:16.000Z",
                 "completed": null
             }
         },
@@ -54,53 +86,82 @@
             "id": "T-003",
             "title": "Diagnose why /es/ home route does not emit CSP header",
             "description": "From SPEC-046 T-014 finding: /es/ body has nonce-stamped tags (middleware ran) but the response header Content-Security-Policy-Report-Only is missing. Diagnose the root cause: (1) curl -I https://staging.hospeda.com.ar/es/ with verbose tracing; (2) add temporary debug log in middleware step 9 to confirm it sets the header for /es/; (3) check Astro node-adapter response wrapping for prerendered routes; (4) check Coolify/Traefik header-stripping rules. Document the root cause clearly before implementing the fix in T-004. Tests: none (diagnostic).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": ["T-004"],
             "subtasks": [
-                { "title": "curl -I staging /es/ — confirm header absence", "completed": false },
+                {
+                    "title": "curl -I staging /es/ \u2014 confirm header absence",
+                    "completed": true
+                },
                 {
                     "title": "Add debug log to middleware and deploy to staging",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Check Astro prerender/node-adapter response flow", "completed": false },
-                { "title": "Check Traefik/Coolify header stripping rules", "completed": false },
-                { "title": "Document root cause", "completed": false }
+                {
+                    "title": "Check Astro prerender/node-adapter response flow",
+                    "completed": true
+                },
+                {
+                    "title": "Check Traefik/Coolify header stripping rules",
+                    "completed": true
+                },
+                {
+                    "title": "Document root cause",
+                    "completed": true
+                }
             ],
             "tags": ["csp", "debug", "web", "middleware"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-25T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-25T20:55:16.000Z",
+                "completed": "2026-06-25T20:57:54.000Z"
             }
         },
         {
             "id": "T-004",
             "title": "Implement fix for home CSP header emission in middleware or Astro adapter",
             "description": "Based on the root cause identified in T-003, implement the fix so /es/ consistently emits Content-Security-Policy-Report-Only. Likely locations: apps/web/src/middleware.ts, apps/web/src/lib/middleware-helpers.ts, or astro.config.ts (headers config). The fix must not break other routes. Unit tests: add/update test in apps/web/src/lib/__tests__/csp-middleware.test.ts verifying the header is set for all routes including /es/. Run pnpm typecheck --filter=hospeda-web and pnpm lint before committing.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003"],
             "blocks": ["T-005", "T-018"],
             "subtasks": [
-                { "title": "Implement fix in identified file(s)", "completed": false },
+                {
+                    "title": "Implement fix in identified file(s)",
+                    "completed": true
+                },
                 {
                     "title": "Deploy to staging and curl /es/ to confirm header present",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Verify other routes still emit header", "completed": false },
-                { "title": "Run typecheck + lint", "completed": false }
+                {
+                    "title": "Verify other routes still emit header",
+                    "completed": true
+                },
+                {
+                    "title": "Run typecheck + lint",
+                    "completed": true
+                }
             ],
             "tags": ["csp", "fix", "web", "middleware"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-25T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-25T20:57:54.000Z",
+                "completed": "2026-06-25T21:03:12.000Z"
             }
         },
         {
@@ -112,13 +173,26 @@
             "blockedBy": ["T-004"],
             "blocks": ["T-007", "T-008", "T-009", "T-010", "T-019"],
             "subtasks": [
-                { "title": "curl -I /es/ on staging", "completed": false },
-                { "title": "Confirm header present and matches other routes", "completed": false },
-                { "title": "Document pass/fail", "completed": false }
+                {
+                    "title": "curl -I /es/ on staging",
+                    "completed": false
+                },
+                {
+                    "title": "Confirm header present and matches other routes",
+                    "completed": false
+                },
+                {
+                    "title": "Document pass/fail",
+                    "completed": false
+                }
             ],
             "tags": ["csp", "verification", "web"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-25T00:00:00.000Z",
                 "started": null,
@@ -129,7 +203,7 @@
             "id": "T-006",
             "title": "Set up staging authenticated session for crawl (test credentials and session token)",
             "description": "Create or identify a staging test account with HOST role that has at least one accommodation in /mi-cuenta/propiedades/ and an active billing subscription (to access /es/suscriptores/checkout/). Obtain a valid session cookie (using pnpm db:seed:ready-user or manually seeded user). Document the credentials and session capture method so T-007/T-008/T-009/T-010 can reuse them. Tests: none (setup only). Reference: docs/migration/mercadopago-sandbox-runbook.md for MP sandbox test users.",
-            "status": "pending",
+            "status": "in_progress",
             "complexity": 1,
             "blockedBy": ["T-001"],
             "blocks": ["T-007", "T-008", "T-009", "T-010"],
@@ -142,38 +216,61 @@
                     "title": "Ensure account has accommodation + active subscription",
                     "completed": false
                 },
-                { "title": "Capture session cookie for authenticated crawl", "completed": false },
-                { "title": "Document credentials and session capture method", "completed": false }
+                {
+                    "title": "Capture session cookie for authenticated crawl",
+                    "completed": false
+                },
+                {
+                    "title": "Document credentials and session capture method",
+                    "completed": false
+                }
             ],
             "tags": ["csp", "crawl", "setup", "staging"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-25T00:00:00.000Z",
-                "started": null,
+                "started": "2026-06-25T20:55:16.000Z",
                 "completed": null
             }
         },
         {
             "id": "T-007",
-            "title": "Crawl auth flows authenticated — sign-in, sign-up, OAuth callback + form submission",
-            "description": "Using the session from T-006, crawl /es/auth/sign-in/ and /es/auth/sign-up/ — including form submission and redirect flow (not just page load). Capture all CSP violation reports in browser DevTools console. For OAuth: note any callback URL violations. Log violations with format: {route, violatedDirective, blockedUri, count}. This is part of 2.A authenticated crawl. Tests: none (operational crawl). Output: structured violation log for T-016 consolidation.",
+            "title": "Crawl auth flows authenticated \u2014 sign-in, sign-up, OAuth callback + form submission",
+            "description": "Using the session from T-006, crawl /es/auth/sign-in/ and /es/auth/sign-up/ \u2014 including form submission and redirect flow (not just page load). Capture all CSP violation reports in browser DevTools console. For OAuth: note any callback URL violations. Log violations with format: {route, violatedDirective, blockedUri, count}. This is part of 2.A authenticated crawl. Tests: none (operational crawl). Output: structured violation log for T-016 consolidation.",
             "status": "pending",
             "complexity": 2,
             "blockedBy": ["T-005", "T-006"],
             "blocks": ["T-016"],
             "subtasks": [
-                { "title": "Crawl /es/auth/sign-in/ with form submission", "completed": false },
-                { "title": "Crawl /es/auth/sign-up/ with form submission", "completed": false },
+                {
+                    "title": "Crawl /es/auth/sign-in/ with form submission",
+                    "completed": false
+                },
+                {
+                    "title": "Crawl /es/auth/sign-up/ with form submission",
+                    "completed": false
+                },
                 {
                     "title": "Trigger OAuth flow and capture callback violations",
                     "completed": false
                 },
-                { "title": "Log all violations in structured format", "completed": false }
+                {
+                    "title": "Log all violations in structured format",
+                    "completed": false
+                }
             ],
             "tags": ["csp", "crawl", "auth", "staging"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-25T00:00:00.000Z",
                 "started": null,
@@ -182,7 +279,7 @@
         },
         {
             "id": "T-008",
-            "title": "Crawl mi-cuenta routes authenticated — favoritos, colecciones, historial",
+            "title": "Crawl mi-cuenta routes authenticated \u2014 favoritos, colecciones, historial",
             "description": "Authenticated crawl of /es/mi-cuenta/favoritos/, /es/mi-cuenta/colecciones/, /colecciones/[id]/, /es/mi-cuenta/historial/. Open each route with the session from T-006. Trigger island interactions (FavoriteButton, MoveToCollectionModal, CreateEditCollectionModal, CollectionDetailActions). Capture all CSP violations. Log format: {route, violatedDirective, blockedUri, count}. Tests: none (operational crawl). Output: structured violation log for T-016.",
             "status": "pending",
             "complexity": 2,
@@ -201,12 +298,22 @@
                     "title": "Crawl /colecciones/[id]/ with CollectionDetailActions",
                     "completed": false
                 },
-                { "title": "Crawl /es/mi-cuenta/historial/ activity feed", "completed": false },
-                { "title": "Log all violations in structured format", "completed": false }
+                {
+                    "title": "Crawl /es/mi-cuenta/historial/ activity feed",
+                    "completed": false
+                },
+                {
+                    "title": "Log all violations in structured format",
+                    "completed": false
+                }
             ],
             "tags": ["csp", "crawl", "mi-cuenta", "staging"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-25T00:00:00.000Z",
                 "started": null,
@@ -215,24 +322,37 @@
         },
         {
             "id": "T-009",
-            "title": "Crawl owner routes authenticated — propiedades/* including file upload and image previews",
-            "description": "Authenticated crawl of /es/mi-cuenta/propiedades/* owner forms — large surface with many inputs, file upload, and image previews. Interact with each sub-route (create, edit, manage). Capture all CSP violations. Log format: {route, violatedDirective, blockedUri, count}. Pay special attention to inline styles in image preview components (SPEC-046 T-006 blind spot). Tests: none (operational crawl). Output: structured violation log for T-016.",
+            "title": "Crawl owner routes authenticated \u2014 propiedades/* including file upload and image previews",
+            "description": "Authenticated crawl of /es/mi-cuenta/propiedades/* owner forms \u2014 large surface with many inputs, file upload, and image previews. Interact with each sub-route (create, edit, manage). Capture all CSP violations. Log format: {route, violatedDirective, blockedUri, count}. Pay special attention to inline styles in image preview components (SPEC-046 T-006 blind spot). Tests: none (operational crawl). Output: structured violation log for T-016.",
             "status": "pending",
             "complexity": 2,
             "blockedBy": ["T-005", "T-006"],
             "blocks": ["T-016"],
             "subtasks": [
-                { "title": "Crawl /es/mi-cuenta/propiedades/ list view", "completed": false },
-                { "title": "Crawl property create/edit form pages", "completed": false },
+                {
+                    "title": "Crawl /es/mi-cuenta/propiedades/ list view",
+                    "completed": false
+                },
+                {
+                    "title": "Crawl property create/edit form pages",
+                    "completed": false
+                },
                 {
                     "title": "Trigger file upload and image preview interactions",
                     "completed": false
                 },
-                { "title": "Log all violations in structured format", "completed": false }
+                {
+                    "title": "Log all violations in structured format",
+                    "completed": false
+                }
             ],
             "tags": ["csp", "crawl", "owner", "staging"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-25T00:00:00.000Z",
                 "started": null,
@@ -241,8 +361,8 @@
         },
         {
             "id": "T-010",
-            "title": "Crawl checkout → MercadoPago Brick load with CSP violation capture",
-            "description": "Highest-risk crawl. Using authenticated session + MP sandbox credentials, navigate to /es/suscriptores/precios/ then /es/suscriptores/checkout/. Let the MP Brick widget fully load. Capture ALL CSP violations in DevTools console — pay attention to frame-src (iframe), connect-src (API calls), script-src (SDK load), img-src (card icons), font-src (MP fonts). Note the exact violatedDirective and blockedUri for each. This drives T-011 research and T-012/T-013/T-014 config fixes. Tests: none (operational crawl).",
+            "title": "Crawl checkout \u2192 MercadoPago Brick load with CSP violation capture",
+            "description": "Highest-risk crawl. Using authenticated session + MP sandbox credentials, navigate to /es/suscriptores/precios/ then /es/suscriptores/checkout/. Let the MP Brick widget fully load. Capture ALL CSP violations in DevTools console \u2014 pay attention to frame-src (iframe), connect-src (API calls), script-src (SDK load), img-src (card icons), font-src (MP fonts). Note the exact violatedDirective and blockedUri for each. This drives T-011 research and T-012/T-013/T-014 config fixes. Tests: none (operational crawl).",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-005", "T-006"],
@@ -271,7 +391,11 @@
             ],
             "tags": ["csp", "crawl", "mercadopago", "checkout", "staging"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-25T00:00:00.000Z",
                 "started": null,
@@ -280,21 +404,37 @@
         },
         {
             "id": "T-011",
-            "title": "Research MP Brick CSP requirements — map violations to required allowlist entries",
+            "title": "Research MP Brick CSP requirements \u2014 map violations to required allowlist entries",
             "description": "Using T-010 violation log + MP developer docs (CSP section), map each violation to the exact CSP directive and domain value to allow. Build a table: {directive, domain, reason}. Compare with what the spec anticipated (frame-src mlstatic.com/mercadopago.com, connect-src api.mercadopago.com, img-src mlstatic.com, font-src mlstatic.com). Note any unexpected domains. Reference: https://www.mercadopago.com.ar/developers/en/docs/checkout-bricks/additional-content/security/csp. Tests: none (research task). Output: table drives T-012/T-013/T-014.",
             "status": "pending",
             "complexity": 2,
             "blockedBy": ["T-010"],
             "blocks": ["T-012", "T-013", "T-014"],
             "subtasks": [
-                { "title": "Read MP CSP documentation", "completed": false },
-                { "title": "Map each T-010 violation to directive + domain", "completed": false },
-                { "title": "Identify any unexpected domains not in spec", "completed": false },
-                { "title": "Produce {directive, domain, reason} table", "completed": false }
+                {
+                    "title": "Read MP CSP documentation",
+                    "completed": false
+                },
+                {
+                    "title": "Map each T-010 violation to directive + domain",
+                    "completed": false
+                },
+                {
+                    "title": "Identify any unexpected domains not in spec",
+                    "completed": false
+                },
+                {
+                    "title": "Produce {directive, domain, reason} table",
+                    "completed": false
+                }
             ],
             "tags": ["csp", "mercadopago", "research"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-25T00:00:00.000Z",
                 "started": null,
@@ -304,19 +444,32 @@
         {
             "id": "T-012",
             "title": "Add frame-src entries for mercadopago.com and mlstatic.com to CSP config",
-            "description": "In apps/web/src/lib/middleware-helpers.ts (or equivalent CSP builder), add frame-src allowlist entries: https://*.mercadopago.com https://*.mlstatic.com (and any additional domains found in T-011). Current frame-src is 'none' — this is a required change for MP Brick PCI-scoped iframe. Run pnpm typecheck --filter=hospeda-web and pnpm lint. Unit test: update apps/web/src/lib/__tests__/csp-middleware.test.ts to assert frame-src includes these domains.",
+            "description": "In apps/web/src/lib/middleware-helpers.ts (or equivalent CSP builder), add frame-src allowlist entries: https://*.mercadopago.com https://*.mlstatic.com (and any additional domains found in T-011). Current frame-src is 'none' \u2014 this is a required change for MP Brick PCI-scoped iframe. Run pnpm typecheck --filter=hospeda-web and pnpm lint. Unit test: update apps/web/src/lib/__tests__/csp-middleware.test.ts to assert frame-src includes these domains.",
             "status": "pending",
             "complexity": 2,
             "blockedBy": ["T-011"],
             "blocks": ["T-015"],
             "subtasks": [
-                { "title": "Add frame-src entries in CSP builder", "completed": false },
-                { "title": "Run typecheck + lint", "completed": false },
-                { "title": "Update unit test for frame-src directive", "completed": false }
+                {
+                    "title": "Add frame-src entries in CSP builder",
+                    "completed": false
+                },
+                {
+                    "title": "Run typecheck + lint",
+                    "completed": false
+                },
+                {
+                    "title": "Update unit test for frame-src directive",
+                    "completed": false
+                }
             ],
             "tags": ["csp", "mercadopago", "web", "middleware"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-25T00:00:00.000Z",
                 "started": null,
@@ -332,13 +485,26 @@
             "blockedBy": ["T-011"],
             "blocks": ["T-015"],
             "subtasks": [
-                { "title": "Add connect-src entry in CSP builder", "completed": false },
-                { "title": "Run typecheck + lint", "completed": false },
-                { "title": "Update unit test for connect-src directive", "completed": false }
+                {
+                    "title": "Add connect-src entry in CSP builder",
+                    "completed": false
+                },
+                {
+                    "title": "Run typecheck + lint",
+                    "completed": false
+                },
+                {
+                    "title": "Update unit test for connect-src directive",
+                    "completed": false
+                }
             ],
             "tags": ["csp", "mercadopago", "web", "middleware"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-25T00:00:00.000Z",
                 "started": null,
@@ -354,9 +520,18 @@
             "blockedBy": ["T-011"],
             "blocks": ["T-015"],
             "subtasks": [
-                { "title": "Add img-src entry for mlstatic.com", "completed": false },
-                { "title": "Add font-src entry for mlstatic.com", "completed": false },
-                { "title": "Run typecheck + lint", "completed": false },
+                {
+                    "title": "Add img-src entry for mlstatic.com",
+                    "completed": false
+                },
+                {
+                    "title": "Add font-src entry for mlstatic.com",
+                    "completed": false
+                },
+                {
+                    "title": "Run typecheck + lint",
+                    "completed": false
+                },
                 {
                     "title": "Update unit test for img-src and font-src directives",
                     "completed": false
@@ -364,7 +539,11 @@
             ],
             "tags": ["csp", "mercadopago", "web", "middleware"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-25T00:00:00.000Z",
                 "started": null,
@@ -380,15 +559,34 @@
             "blockedBy": ["T-012", "T-013", "T-014"],
             "blocks": ["T-017"],
             "subtasks": [
-                { "title": "Trigger Coolify redeploy for web staging", "completed": false },
-                { "title": "Open checkout page with session + MP sandbox", "completed": false },
-                { "title": "Verify zero CSP console errors during Brick load", "completed": false },
-                { "title": "Attempt test payment flow end-to-end", "completed": false },
-                { "title": "Document pass/fail with screenshots if needed", "completed": false }
+                {
+                    "title": "Trigger Coolify redeploy for web staging",
+                    "completed": false
+                },
+                {
+                    "title": "Open checkout page with session + MP sandbox",
+                    "completed": false
+                },
+                {
+                    "title": "Verify zero CSP console errors during Brick load",
+                    "completed": false
+                },
+                {
+                    "title": "Attempt test payment flow end-to-end",
+                    "completed": false
+                },
+                {
+                    "title": "Document pass/fail with screenshots if needed",
+                    "completed": false
+                }
             ],
             "tags": ["csp", "mercadopago", "staging", "verification"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-25T00:00:00.000Z",
                 "started": null,
@@ -404,14 +602,30 @@
             "blockedBy": ["T-002", "T-007", "T-008", "T-009"],
             "blocks": ["T-017", "T-027"],
             "subtasks": [
-                { "title": "Merge T-007/T-008/T-009 violation logs", "completed": false },
-                { "title": "Compare with T-002 public baseline", "completed": false },
-                { "title": "Assess each violation: fix-needed vs acceptable", "completed": false },
-                { "title": "Draft assertions (a)-(g) for the report", "completed": false }
+                {
+                    "title": "Merge T-007/T-008/T-009 violation logs",
+                    "completed": false
+                },
+                {
+                    "title": "Compare with T-002 public baseline",
+                    "completed": false
+                },
+                {
+                    "title": "Assess each violation: fix-needed vs acceptable",
+                    "completed": false
+                },
+                {
+                    "title": "Draft assertions (a)-(g) for the report",
+                    "completed": false
+                }
             ],
             "tags": ["csp", "report", "verification"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-25T00:00:00.000Z",
                 "started": null,
@@ -427,18 +641,34 @@
             "blockedBy": ["T-015", "T-016"],
             "blocks": ["T-020"],
             "subtasks": [
-                { "title": "Open Sentry CSP violation dashboard", "completed": false },
-                { "title": "Filter last 7 days for hospeda-web", "completed": false },
+                {
+                    "title": "Open Sentry CSP violation dashboard",
+                    "completed": false
+                },
+                {
+                    "title": "Filter last 7 days for hospeda-web",
+                    "completed": false
+                },
                 {
                     "title": "Count net-new violation types vs SPEC-046 baseline",
                     "completed": false
                 },
-                { "title": "Confirm MP Brick violations removed after T-015", "completed": false },
-                { "title": "Document pass/fail — gate for T-020", "completed": false }
+                {
+                    "title": "Confirm MP Brick violations removed after T-015",
+                    "completed": false
+                },
+                {
+                    "title": "Document pass/fail \u2014 gate for T-020",
+                    "completed": false
+                }
             ],
             "tags": ["csp", "sentry", "verification", "pre-flip"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-25T00:00:00.000Z",
                 "started": null,
@@ -448,33 +678,46 @@
         {
             "id": "T-018",
             "title": "Write unit tests for CSP middleware home-route header emission",
-            "description": "In apps/web/src/lib/__tests__/csp-middleware.test.ts (create if not exists): add test cases verifying that the middleware sets Content-Security-Policy-Report-Only for /es/ (home route) — the bug fixed in T-004. Test that the header value is non-empty and contains key directives (default-src, script-src, frame-src). Also test that the middleware does NOT skip any route. Run pnpm test --filter=hospeda-web to confirm green.",
-            "status": "pending",
+            "description": "In apps/web/src/lib/__tests__/csp-middleware.test.ts (create if not exists): add test cases verifying that the middleware sets Content-Security-Policy-Report-Only for /es/ (home route) \u2014 the bug fixed in T-004. Test that the header value is non-empty and contains key directives (default-src, script-src, frame-src). Also test that the middleware does NOT skip any route. Run pnpm test --filter=hospeda-web to confirm green.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-004"],
             "blocks": [],
             "subtasks": [
-                { "title": "Create/open csp-middleware.test.ts", "completed": false },
-                { "title": "Write test: /es/ emits CSP header", "completed": false },
+                {
+                    "title": "Create/open csp-middleware.test.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Write test: /es/ emits CSP header",
+                    "completed": true
+                },
                 {
                     "title": "Write test: header value contains expected directives",
-                    "completed": false
+                    "completed": true
                 },
-                { "title": "Run pnpm test --filter=hospeda-web", "completed": false }
+                {
+                    "title": "Run pnpm test --filter=hospeda-web",
+                    "completed": true
+                }
             ],
             "tags": ["csp", "testing", "web", "middleware"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-25T00:00:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-06-25T21:03:12.000Z",
+                "completed": "2026-06-25T21:05:08.000Z"
             }
         },
         {
             "id": "T-019",
             "title": "Write integration test verifying home /es/ route emits CSP header",
-            "description": "In apps/web/src/lib/__tests__/ or apps/web/test/: add an integration test (using Astro test utilities or a simple HTTP test) that starts the web server and verifies /es/ response includes Content-Security-Policy-Report-Only header. This is a regression test for the gap found in SPEC-046 T-014. Pattern: startTestServer → fetch('/es/') → assert headers. Run pnpm test --filter=hospeda-web.",
+            "description": "In apps/web/src/lib/__tests__/ or apps/web/test/: add an integration test (using Astro test utilities or a simple HTTP test) that starts the web server and verifies /es/ response includes Content-Security-Policy-Report-Only header. This is a regression test for the gap found in SPEC-046 T-014. Pattern: startTestServer \u2192 fetch('/es/') \u2192 assert headers. Run pnpm test --filter=hospeda-web.",
             "status": "pending",
             "complexity": 2,
             "blockedBy": ["T-005"],
@@ -484,13 +727,26 @@
                     "title": "Create integration test file for route header verification",
                     "completed": false
                 },
-                { "title": "Implement HTTP test for /es/ CSP header", "completed": false },
-                { "title": "Assert header name and non-empty value", "completed": false },
-                { "title": "Run pnpm test --filter=hospeda-web", "completed": false }
+                {
+                    "title": "Implement HTTP test for /es/ CSP header",
+                    "completed": false
+                },
+                {
+                    "title": "Assert header name and non-empty value",
+                    "completed": false
+                },
+                {
+                    "title": "Run pnpm test --filter=hospeda-web",
+                    "completed": false
+                }
             ],
             "tags": ["csp", "testing", "web", "integration"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-25T00:00:00.000Z",
                 "started": null,
@@ -506,14 +762,30 @@
             "blockedBy": ["T-017"],
             "blocks": ["T-021"],
             "subtasks": [
-                { "title": "Confirm all pre-requisites are green", "completed": false },
-                { "title": "Change header name in middleware-helpers.ts", "completed": false },
-                { "title": "Run typecheck + lint", "completed": false },
-                { "title": "Commit and push to trigger staging deploy", "completed": false }
+                {
+                    "title": "Confirm all pre-requisites are green",
+                    "completed": false
+                },
+                {
+                    "title": "Change header name in middleware-helpers.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Run typecheck + lint",
+                    "completed": false
+                },
+                {
+                    "title": "Commit and push to trigger staging deploy",
+                    "completed": false
+                }
             ],
             "tags": ["csp", "enforce", "web", "phase-2"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-25T00:00:00.000Z",
                 "started": null,
@@ -537,12 +809,22 @@
                     "title": "Monitor Sentry CSP block events at 4h, 12h, 24h, 48h",
                     "completed": false
                 },
-                { "title": "Check for user reports of broken UX", "completed": false },
-                { "title": "Document 48h soak result (pass/rollback)", "completed": false }
+                {
+                    "title": "Check for user reports of broken UX",
+                    "completed": false
+                },
+                {
+                    "title": "Document 48h soak result (pass/rollback)",
+                    "completed": false
+                }
             ],
             "tags": ["csp", "enforce", "sentry", "staging", "monitoring"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-25T00:00:00.000Z",
                 "started": null,
@@ -566,11 +848,18 @@
                     "title": "Add test for header presence across multiple routes",
                     "completed": false
                 },
-                { "title": "Run pnpm test --filter=hospeda-web", "completed": false }
+                {
+                    "title": "Run pnpm test --filter=hospeda-web",
+                    "completed": false
+                }
             ],
             "tags": ["csp", "testing", "enforce", "regression"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-25T00:00:00.000Z",
                 "started": null,
@@ -586,14 +875,30 @@
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
-                { "title": "Locate Sentry initialization in apps/web", "completed": false },
-                { "title": "Add beforeSend filter for eval-probe CSP reports", "completed": false },
-                { "title": "Write unit test for the filter function", "completed": false },
-                { "title": "Run typecheck + lint + test", "completed": false }
+                {
+                    "title": "Locate Sentry initialization in apps/web",
+                    "completed": false
+                },
+                {
+                    "title": "Add beforeSend filter for eval-probe CSP reports",
+                    "completed": false
+                },
+                {
+                    "title": "Write unit test for the filter function",
+                    "completed": false
+                },
+                {
+                    "title": "Run typecheck + lint + test",
+                    "completed": false
+                }
             ],
             "tags": ["csp", "sentry", "optional", "cleanup"],
             "phase": "cleanup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-25T00:00:00.000Z",
                 "started": null,
@@ -609,14 +914,30 @@
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
-                { "title": "Run grep -rE 'style=.*\\${' apps/web/src/", "completed": false },
-                { "title": "Audit each match: enum-safe vs dynamic", "completed": false },
-                { "title": "Document findings", "completed": false },
-                { "title": "Raise follow-up tasks for any unsafe patterns", "completed": false }
+                {
+                    "title": "Run grep -rE 'style=.*\\${' apps/web/src/",
+                    "completed": false
+                },
+                {
+                    "title": "Audit each match: enum-safe vs dynamic",
+                    "completed": false
+                },
+                {
+                    "title": "Document findings",
+                    "completed": false
+                },
+                {
+                    "title": "Raise follow-up tasks for any unsafe patterns",
+                    "completed": false
+                }
             ],
             "tags": ["csp", "audit", "optional", "cleanup", "web"],
             "phase": "cleanup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-25T00:00:00.000Z",
                 "started": null,
@@ -625,22 +946,41 @@
         },
         {
             "id": "T-025",
-            "title": "[OPTIONAL 2.E] Fix Sentry environment config — wire HOSPEDA_ENV instead of import.meta.env.MODE",
+            "title": "[OPTIONAL 2.E] Fix Sentry environment config \u2014 wire HOSPEDA_ENV instead of import.meta.env.MODE",
             "description": "Optional per spec 2.E. import.meta.env.MODE always evaluates to 'production' on built artifacts, causing staging traces to appear under 'production' in Sentry. Fix: wire HOSPEDA_ENV (or a PUBLIC_HOSPEDA_ENV env var) to the Sentry environment config in apps/web. Add env var to: packages/config/src/env-registry.*.ts (PUBLIC_HOSPEDA_ENV), apps/web/src/utils/env.ts, apps/web/.env.example. IMPORTANT: after step 4, tell the user to set PUBLIC_HOSPEDA_ENV=staging in Coolify for hospeda-web-staging. Run pnpm env:check:registry.",
             "status": "pending",
             "complexity": 2,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
-                { "title": "Add PUBLIC_HOSPEDA_ENV to env registry", "completed": false },
-                { "title": "Add Zod validation in apps/web/src/utils/env.ts", "completed": false },
-                { "title": "Update apps/web/.env.example", "completed": false },
-                { "title": "Wire to Sentry environment config", "completed": false },
-                { "title": "Run pnpm env:check:registry", "completed": false }
+                {
+                    "title": "Add PUBLIC_HOSPEDA_ENV to env registry",
+                    "completed": false
+                },
+                {
+                    "title": "Add Zod validation in apps/web/src/utils/env.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Update apps/web/.env.example",
+                    "completed": false
+                },
+                {
+                    "title": "Wire to Sentry environment config",
+                    "completed": false
+                },
+                {
+                    "title": "Run pnpm env:check:registry",
+                    "completed": false
+                }
             ],
             "tags": ["sentry", "env", "optional", "cleanup"],
             "phase": "cleanup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-25T00:00:00.000Z",
                 "started": null,
@@ -660,13 +1000,26 @@
                     "title": "Add PUBLIC_SENTRY_TRACES_SAMPLE_RATE to env registry",
                     "completed": false
                 },
-                { "title": "Wire to Sentry tracesSampleRate in apps/web init", "completed": false },
-                { "title": "Update apps/web/.env.example", "completed": false },
-                { "title": "Run pnpm env:check:registry", "completed": false }
+                {
+                    "title": "Wire to Sentry tracesSampleRate in apps/web init",
+                    "completed": false
+                },
+                {
+                    "title": "Update apps/web/.env.example",
+                    "completed": false
+                },
+                {
+                    "title": "Run pnpm env:check:registry",
+                    "completed": false
+                }
             ],
             "tags": ["sentry", "env", "optional", "cleanup"],
             "phase": "cleanup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-25T00:00:00.000Z",
                 "started": null,
@@ -682,16 +1035,26 @@
             "blockedBy": ["T-016"],
             "blocks": [],
             "subtasks": [
-                { "title": "Write assertions (a)-(f) from crawl data", "completed": false },
+                {
+                    "title": "Write assertions (a)-(f) from crawl data",
+                    "completed": false
+                },
                 {
                     "title": "Write assertion (g): MP Brick verification result",
                     "completed": false
                 },
-                { "title": "Commit report to spec branch", "completed": false }
+                {
+                    "title": "Commit report to spec branch",
+                    "completed": false
+                }
             ],
             "tags": ["csp", "report", "docs", "verification"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-25T00:00:00.000Z",
                 "started": null,
@@ -707,15 +1070,34 @@
             "blockedBy": ["T-021"],
             "blocks": [],
             "subtasks": [
-                { "title": "Update CLAUDE.md CSP section", "completed": false },
-                { "title": "Update web docs with enforce status + MP domains", "completed": false },
-                { "title": "Flip spec.md status to completed", "completed": false },
-                { "title": "Run index-sync to close spec in both indexes", "completed": false },
-                { "title": "Update specs-prioritization.csv estado to done", "completed": false }
+                {
+                    "title": "Update CLAUDE.md CSP section",
+                    "completed": false
+                },
+                {
+                    "title": "Update web docs with enforce status + MP domains",
+                    "completed": false
+                },
+                {
+                    "title": "Flip spec.md status to completed",
+                    "completed": false
+                },
+                {
+                    "title": "Run index-sync to close spec in both indexes",
+                    "completed": false
+                },
+                {
+                    "title": "Update specs-prioritization.csv estado to done",
+                    "completed": false
+                }
             ],
             "tags": ["docs", "spec-close", "csp"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-06-25T00:00:00.000Z",
                 "started": null,
