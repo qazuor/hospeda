@@ -104,8 +104,13 @@ export function useWhatsNew(): UseWhatsNewReturn {
                     throw new Error(`Failed to fetch What's New: ${res.status}`);
                 }
 
-                const body = (await res.json()) as { readonly data?: readonly WhatsNewItem[] };
-                const data = body.data ?? [];
+                const body = (await res.json()) as {
+                    readonly data?: {
+                        readonly items?: readonly WhatsNewItem[];
+                        readonly unseenCount?: number;
+                    };
+                };
+                const data = body.data?.items ?? [];
 
                 setCache(data);
                 if (!cancelled && mountedRef.current) {
@@ -145,7 +150,7 @@ export function useWhatsNew(): UseWhatsNewReturn {
             method: 'PATCH',
             credentials: 'include',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ entryIds })
+            body: JSON.stringify({ ids: entryIds })
         }).catch(() => {});
     }, []);
 

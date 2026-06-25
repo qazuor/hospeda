@@ -1,142 +1,114 @@
 /**
- * @file render-markdown.ts
- * @description Lightweight markdown-to-HTML converter for What's New entries.
+ * renderMarkdownToHtml — sanitised markdown-to-HTML converter for What's New.
  *
- * Supports a safe subset of markdown (bold, italic, links, headers, lists,
- * paragraphs). Output is sanitised to strip script/event-handler attributes.
+ * Uses a headless TipTap `Editor` instance (no DOM mount) plus DOMPurify as a
+ * defence-in-depth sanitisation pass (AC-13).
  *
- * The source markdown originates from the curated whats-new.ts data file,
- * not from user input, but we sanitise defensively regardless.
+ * ## Security (AC-13)
+ *
+ * Two layers:
+ *  1. TipTap StarterKit schema allowlist — ProseMirror serialisation never emits
+ *     `<script>`, `<iframe>`, or `on*` event handler attributes.
+ *  2. DOMPurify — explicit `ALLOWED_TAGS` / `FORBID_TAGS` allowlist.
+ *
+ * The source markdown originates from the curated `whats-new.ts` data file (not
+ * user-supplied), but we sanitise defensively regardless.
+ *
+ * ## Rendering approach
+ *
+ * `new Editor({ content: markdownString, extensions: [StarterKit, Markdown] })`
+ * then `editor.getHTML()`. The Markdown extension parses the markdown string into
+ * a ProseMirror document; `getHTML()` serialises it using TipTap's HTML
+ * serialiser. The editor is never mounted in the DOM and is destroyed immediately
+ * after `getHTML()` is called, so there is no DOM overhead.
+ *
+ * Isolated in its own module so tests can mock it without pulling the TipTap
+ * runtime. `Editor` is imported from `@tiptap/react` (a declared dependency that
+ * re-exports it from `@tiptap/core`) so typecheck never depends on a transitive
+ * package.
+ *
+ * @module render-markdown
+ * @see apps/web/src/components/account/WhatsNewModal.client.tsx — consumer
+ * @see SPEC-275 §7.2, §12, AC-13
  */
 
-const HTML_ESCAPE_RE = /[&<>"']/g;
-const HTML_ESCAPE_MAP: Record<string, string> = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;'
-};
+import { Editor } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import DOMPurify from 'dompurify';
+import { Markdown } from 'tiptap-markdown';
 
-function escapeHtml(text: string): string {
-    return text.replace(HTML_ESCAPE_RE, (ch) => HTML_ESCAPE_MAP[ch] ?? ch);
-}
+/** DOMPurify allowed tags for rendered markdown (AC-13). */
+const DOMPURIFY_ALLOWED_TAGS = [
+    'p',
+    'br',
+    'strong',
+    'em',
+    'u',
+    's',
+    'del',
+    'h1',
+    'h2',
+    'h3',
+    'h4',
+    'h5',
+    'h6',
+    'ul',
+    'ol',
+    'li',
+    'blockquote',
+    'pre',
+    'code',
+    'a',
+    'hr'
+] as const;
 
-function sanitiseHtml(html: string): string {
-    return html
-        .replace(/<script[\s>]/gi, '&lt;script')
-        .replace(/<\/script>/gi, '&lt;/script')
-        .replace(/<iframe[\s>]/gi, '&lt;iframe')
-        .replace(/<\/iframe>/gi, '&lt;/iframe')
-        .replace(/<object[\s>]/gi, '&lt;object')
-        .replace(/<\/object>/gi, '&lt;/object')
-        .replace(/<embed[\s>]/gi, '&lt;embed')
-        .replace(/on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '')
-        .replace(/javascript\s*:/gi, 'blocked:');
-}
+/** DOMPurify allowed attributes (AC-13). */
+const DOMPURIFY_ALLOWED_ATTR = ['href', 'target', 'rel'] as const;
 
 /**
  * Converts a markdown string to sanitised HTML.
  *
- * Supports: paragraphs, bold, italic, inline code, links, h1-h6,
- * unordered lists, ordered lists, horizontal rules, and line breaks.
+ * Uses a headless TipTap `Editor` + `getHTML()` + DOMPurify.
+ * The editor is created, queried, and destroyed in a single synchronous call.
  *
  * @param markdown - Raw markdown body string from a `WhatsNewItem`.
  * @returns Sanitised HTML string. Falls back to escaped plain text on error.
  */
 export function renderMarkdownToHtml(markdown: string): string {
-    if (!markdown) return '';
+    let html = '';
+    let editor: Editor | null = null;
 
     try {
-        const lines = markdown.split('\n');
-        const htmlParts: string[] = [];
-        let inList: 'ul' | 'ol' | null = null;
+        editor = new Editor({
+            extensions: [StarterKit, Markdown],
+            content: markdown
+        });
 
-        function closeList(): void {
-            if (inList) {
-                htmlParts.push(`</${inList}>`);
-                inList = null;
-            }
-        }
-
-        for (const rawLine of lines) {
-            const line = rawLine;
-
-            const ulMatch = line.match(/^[-*+]\s+(.*)$/);
-            const olMatch = line.match(/^\d+[.)]\s+(.*)$/);
-
-            if (ulMatch) {
-                if (inList !== 'ul') {
-                    closeList();
-                    htmlParts.push('<ul>');
-                    inList = 'ul';
-                }
-                htmlParts.push(`<li>${inlineMarkdown(ulMatch[1])}</li>`);
-                continue;
-            }
-
-            if (olMatch) {
-                if (inList !== 'ol') {
-                    closeList();
-                    htmlParts.push('<ol>');
-                    inList = 'ol';
-                }
-                htmlParts.push(`<li>${inlineMarkdown(olMatch[1])}</li>`);
-                continue;
-            }
-
-            closeList();
-
-            const trimmed = line.trim();
-
-            if (trimmed === '') {
-                htmlParts.push('');
-                continue;
-            }
-
-            if (trimmed === '---' || trimmed === '***' || trimmed === '___') {
-                htmlParts.push('<hr />');
-                continue;
-            }
-
-            const hMatch = trimmed.match(/^(#{1,6})\s+(.*)$/);
-            if (hMatch) {
-                const level = hMatch[1].length;
-                htmlParts.push(`<h${level}>${inlineMarkdown(hMatch[2])}</h${level}>`);
-                continue;
-            }
-
-            htmlParts.push(`<p>${inlineMarkdown(trimmed)}</p>`);
-        }
-
-        closeList();
-
-        const raw = htmlParts.join('\n');
-        return sanitiseHtml(raw);
+        html = editor.getHTML();
     } catch {
-        return `<p>${escapeHtml(markdown)}</p>`;
+        // Fallback: escape raw text into a paragraph.
+        html = `<p>${markdown
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')}</p>`;
+    } finally {
+        editor?.destroy();
     }
-}
 
-function inlineMarkdown(text: string): string {
-    let result = escapeHtml(text);
+    // Defence-in-depth DOMPurify pass (AC-13).
+    if (typeof window !== 'undefined' && DOMPurify.isSupported) {
+        return DOMPurify.sanitize(html, {
+            ALLOWED_TAGS: [...DOMPURIFY_ALLOWED_TAGS],
+            ALLOWED_ATTR: [...DOMPURIFY_ALLOWED_ATTR],
+            FORBID_TAGS: ['script', 'iframe', 'object', 'embed', 'form'],
+            FORBID_ATTR: ['onerror', 'onload', 'onclick', 'onmouseover']
+        });
+    }
 
-    result = result.replace(/`([^`]+)`/g, '<code>$1</code>');
-
-    result = result.replace(/\[([^\]]+)\]\(([^)]+)\)/g, (_match, linkText: string, url: string) => {
-        const safeUrl =
-            url.startsWith('http://') || url.startsWith('https://') || url.startsWith('/')
-                ? url.replace(/[^\w:/?#[\]@!$&'()*+,;=.\-]/g, '')
-                : '#';
-        return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">${linkText}</a>`;
-    });
-
-    result = result.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
-    result = result.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-    result = result.replace(/\*(.+?)\*/g, '<em>$1</em>');
-    result = result.replace(/~~(.+?)~~/g, '<del>$1</del>');
-
-    result = result.replace(/ {2}\n/g, '<br />');
-
-    return result;
+    // No DOMPurify available (SSR / non-browser runtime): never return raw
+    // HTML without the second sanitisation layer. The modal only renders
+    // client-side (it opens from effects/interactions), so this path is not
+    // reachable in practice — but if it ever is, degrade to escaped plain
+    // text instead of single-layer HTML (AC-13 defence-in-depth).
+    return `<p>${markdown.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</p>`;
 }
