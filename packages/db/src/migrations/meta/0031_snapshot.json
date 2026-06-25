@@ -12072,7 +12072,7 @@
                 },
                 "plan_id": {
                     "name": "plan_id",
-                    "type": "varchar(36)",
+                    "type": "uuid",
                     "primaryKey": false,
                     "notNull": false
                 },

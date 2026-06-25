@@ -33,7 +33,7 @@ export const partners = pgTable(
             .default('pending'),
         lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
         analytics: jsonb('analytics').$type<PartnerAnalytics>().default({}),
-        planId: varchar('plan_id', { length: 36 }).references(() => billingSubscriptions.id, {
+        planId: uuid('plan_id').references(() => billingSubscriptions.id, {
             onDelete: 'set null'
         }),
         subscriptionId: uuid('subscription_id').references(() => billingSubscriptions.id, {

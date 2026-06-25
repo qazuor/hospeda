@@ -19,7 +19,7 @@ CREATE TABLE "partners" (
 	"subscription_status" "partner_subscription_status_enum" DEFAULT 'pending' NOT NULL,
 	"lifecycle_state" "lifecycle_status_enum" DEFAULT 'ACTIVE' NOT NULL,
 	"analytics" jsonb DEFAULT '{}'::jsonb,
-	"plan_id" varchar(36),
+	"plan_id" uuid,
 	"subscription_id" uuid,
 	"starts_at" timestamp with time zone NOT NULL,
 	"ends_at" timestamp with time zone,
