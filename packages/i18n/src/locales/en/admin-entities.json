@@ -91,6 +91,16 @@
             "plural": "Application logs",
             "description": "WARN and ERROR events emitted by system services"
         },
+        "auditLog": {
+            "singular": "Audit event",
+            "plural": "Audit log",
+            "description": "Sensitive administrative actions recorded for traceability"
+        },
+        "securityLog": {
+            "singular": "Security event",
+            "plural": "Security log",
+            "description": "Authentication events: login failures, lockouts, and access denied"
+        },
         "hostTrade": {
             "singular": "Trade",
             "plural": "Trades",
@@ -280,6 +290,14 @@
             "request": "Request",
             "userId": "User",
             "message": "Message"
+        },
+        "auditLog": {
+            "loggedAt": "Date/Time",
+            "severity": "Severity",
+            "eventType": "Event",
+            "actor": "Actor",
+            "target": "Target",
+            "message": "Detail"
         }
     },
     "actions": {
