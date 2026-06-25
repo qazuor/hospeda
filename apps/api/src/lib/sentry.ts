@@ -8,10 +8,105 @@
  */
 
 import * as Sentry from '@sentry/node';
+import type { ErrorEvent, EventHint } from '@sentry/node';
 import { nodeProfilingIntegration } from '@sentry/profiling-node';
 import type { Context } from 'hono';
 import { env } from '../utils/env';
 import { apiLogger } from '../utils/logger';
+
+/**
+ * Known noise patterns in Sentry event messages that should be dropped
+ * before they consume quota or trigger alerts.
+ *
+ * - Per-request 5xx middleware message: already captured at the route level
+ *   with full request context; this re-capture is redundant.
+ * - Transform-pipeline body dumps: may contain PII and inflate quota.
+ *
+ * Exported for testability (SPEC-180 T-007).
+ */
+export const BEFORE_SEND_NOISE_PATTERNS: readonly RegExp[] = [
+    /^\[http\].*responded with 5\d\d/i,
+    /^\[transform\].*body:/i
+] as const;
+
+/**
+ * Sentry `beforeSend` filter extracted as a pure function for testability.
+ *
+ * Drops known noise events (double-captures, PII dumps) and scrubs sensitive
+ * data from breadcrumbs before the event reaches the Sentry quota pipeline.
+ *
+ * Return `null` to drop the event; return the (mutated) event to keep it.
+ *
+ * Exported for testing (SPEC-180 T-007).
+ *
+ * @param event - The Sentry error event being evaluated.
+ * @returns The event to send, or `null` to drop it.
+ */
+export function applyBeforeSend(event: ErrorEvent, _hint?: EventHint): ErrorEvent | null {
+    // Drop events explicitly tagged as expected — these are domain-normal
+    // errors that the operator does NOT need in the alert pipeline.
+    if (event.tags && event.tags.expected_error === 'true') {
+        return null;
+    }
+
+    // Drop Sentry-middleware-level double-captures of HTTP errors.
+    // These are re-thrown to the route error handler which surfaces
+    // the real root cause; the middleware log is enough for diagnostics.
+    const middlewareMessage = 'Request error caught by Sentry middleware';
+    if (event.message === middlewareMessage) {
+        return null;
+    }
+    // Also match when the middleware error lands as an exception value.
+    if (
+        event.exception?.values?.some(
+            (v) => typeof v.value === 'string' && v.value.includes(middlewareMessage)
+        )
+    ) {
+        return null;
+    }
+
+    // Drop events whose message matches known noise patterns.
+    const msg = event.message ?? '';
+    if (BEFORE_SEND_NOISE_PATTERNS.some((re) => re.test(msg))) {
+        return null;
+    }
+
+    // Drop (strip) events with a response body dump in extra — these may
+    // contain large/PII payloads and inflate the Sentry quota. We strip the
+    // key rather than dropping the whole event so the rest of the context
+    // (stack trace, tags) is preserved.
+    if (event.extra && 'responseBody' in event.extra) {
+        const { responseBody: _responseBody, ...safeExtra } = event.extra as Record<
+            string,
+            unknown
+        >;
+        event.extra = safeExtra;
+    }
+
+    // Remove sensitive data from breadcrumbs.
+    if (event.breadcrumbs) {
+        event.breadcrumbs = event.breadcrumbs.map((breadcrumb) => {
+            if (breadcrumb.data) {
+                // Redact tokens, keys, secrets, and passwords.
+                const sanitized = { ...breadcrumb.data };
+                for (const key of Object.keys(sanitized)) {
+                    if (
+                        key.toLowerCase().includes('token') ||
+                        key.toLowerCase().includes('key') ||
+                        key.toLowerCase().includes('secret') ||
+                        key.toLowerCase().includes('password')
+                    ) {
+                        sanitized[key] = '[REDACTED]';
+                    }
+                }
+                breadcrumb.data = sanitized;
+            }
+            return breadcrumb;
+        });
+    }
+
+    return event;
+}
 
 /**
  * Sentry configuration options
@@ -107,87 +202,11 @@ export function initializeSentry(config: SentryConfig = {}): boolean {
                 : // biome-ignore lint/suspicious/noExplicitAny: Sentry version mismatch between profiling-node and node packages
                   { integrations: [nodeProfilingIntegration()] as any }),
 
-            // Before send hook - filter sensitive data + drop expected-error events.
-            //
-            // SPEC-143 T-143-47 introduced the `expected_error:true` tag
-            // convention for noise reduction. When any capture site (route,
-            // service, cron, webhook handler) attaches this tag, the event
-            // is dropped here before it reaches the Sentry quota and alert
-            // pipeline. Use this for errors that are a normal part of the
-            // domain — expired promo codes, revoked sponsorships, customer
-            // overrides past expiry — that the operator does NOT need to
-            // see in the alert stream. Pair with apiLogger.info or .warn
-            // so the events still appear in structured logs.
-            //
-            // Promo expired errors today do NOT reach Sentry (the service
-            // layer uses the Result pattern, see addon.checkout.ts
-            // `validation.valid === false` branch). The filter remains as
-            // defensive infrastructure for future capture sites.
-            //
-            // SPEC-180: extended denylist:
-            // - Drop "Request error caught by Sentry middleware" noise — the
-            //   middleware logs the error for structured logs; capturing the
-            //   raw exception again would double-count HTTP errors (the route
-            //   handler already threw, Sentry will re-capture the root cause
-            //   via another capture site if needed).
-            // - Drop events whose extra contains a `responseBody` dump (can
-            //   contain PII and very large payloads that inflate quota).
-            beforeSend(event, _hint) {
-                // Drop events explicitly tagged as expected.
-                if (event.tags && event.tags.expected_error === 'true') {
-                    return null;
-                }
-
-                // Drop Sentry-middleware-level double-captures of HTTP errors.
-                // These are re-thrown to the route error handler which surfaces
-                // the real root cause; the middleware log is enough for diagnostics.
-                const middlewareMessage = 'Request error caught by Sentry middleware';
-                if (event.message === middlewareMessage) {
-                    return null;
-                }
-                // Also match when the middleware error lands as an exception value
-                if (
-                    event.exception?.values?.some(
-                        (v) => typeof v.value === 'string' && v.value.includes(middlewareMessage)
-                    )
-                ) {
-                    return null;
-                }
-
-                // Drop events with a response body dump in extra — these may
-                // contain large/PII payloads and inflate the Sentry quota.
-                if (event.extra && 'responseBody' in event.extra) {
-                    const { responseBody: _responseBody, ...safeExtra } = event.extra as Record<
-                        string,
-                        unknown
-                    >;
-                    event.extra = safeExtra;
-                }
-
-                // Remove sensitive data from breadcrumbs
-                if (event.breadcrumbs) {
-                    event.breadcrumbs = event.breadcrumbs.map((breadcrumb) => {
-                        if (breadcrumb.data) {
-                            // Remove tokens, keys, secrets
-                            const sanitized = { ...breadcrumb.data };
-                            for (const key of Object.keys(sanitized)) {
-                                if (
-                                    key.toLowerCase().includes('token') ||
-                                    key.toLowerCase().includes('key') ||
-                                    key.toLowerCase().includes('secret') ||
-                                    key.toLowerCase().includes('password')
-                                ) {
-                                    sanitized[key] = '[REDACTED]';
-                                }
-                            }
-                            breadcrumb.data = sanitized;
-                        }
-                        return breadcrumb;
-                    });
-                }
-
-                return event;
-            },
+            // Before send hook — delegate to the pure `applyBeforeSend` function
+            // so the filter logic is unit-testable independently of Sentry.init().
+            // See SPEC-180 T-007 + the exported `applyBeforeSend` above for full
+            // drop/scrub rationale and SPEC-143 T-143-47 expected_error convention.
+            beforeSend: applyBeforeSend,
 
             // Before breadcrumb hook - filter sensitive breadcrumbs
             beforeBreadcrumb(breadcrumb) {
