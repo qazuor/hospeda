@@ -10,14 +10,58 @@
     },
     "whatsNewBadge": {
         "label": "What's New",
-        "unseenCount": "{{count}} unread"
+        "unseenCount": "{{count}} unread",
+        "labelNone": "No updates"
+    },
+    "whatsNewPanel": {
+        "title": "What's New",
+        "empty": "No updates yet",
+        "markAllRead": "Mark all as read",
+        "seeEntry": "View"
+    },
+    "status": {
+        "new": "New"
     },
     "welcomeTour": {
         "skip": "Skip tour",
         "next": "Next",
         "prev": "Previous",
         "done": "Done",
-        "step": "Step {{current}} of {{total}}"
+        "step": "Step {{current}} of {{total}}",
+        "restart": "View tour",
+        "running": "Tour in progress...",
+        "greetingHost": {
+            "title": "Welcome to your hosting dashboard",
+            "body": "From here you can manage your account, your properties and your accommodation activity."
+        },
+        "greetingCommerce": {
+            "title": "Welcome to your commerce dashboard",
+            "body": "From here you can manage your account and the public content of your business."
+        },
+        "properties": {
+            "title": "Your properties",
+            "body": "In this section you can create, edit and review all your properties."
+        },
+        "hostDashboard": {
+            "title": "Host dashboard",
+            "body": "Here you have a quick summary of your accommodation activity and inquiries."
+        },
+        "messages": {
+            "title": "Your inquiries",
+            "body": "Review and reply to messages related to your activity on Hospeda."
+        },
+        "promotions": {
+            "title": "Promotions",
+            "body": "Publish and manage promotions to highlight your offer."
+        },
+        "profile": {
+            "title": "Your profile",
+            "body": "Update your personal information, preferences and account settings."
+        },
+        "commerce": {
+            "title": "Your business",
+            "body": "Edit the public content, opening hours and visible details of your business."
+        }
     },
     "navigation": "Account navigation",
     "sections": "Account sections",
@@ -35,6 +79,10 @@
             "uploadFailed": "Failed to upload the image",
             "updateFailed": "Failed to update the profile",
             "unexpectedResponse": "Unexpected server response"
+        },
+        "whatsNew": {
+            "title": "What's New",
+            "desc": "Platform updates and announcements"
         }
     },
     "editProfile": {

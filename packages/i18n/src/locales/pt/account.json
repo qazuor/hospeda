@@ -10,14 +10,58 @@
     },
     "whatsNewBadge": {
         "label": "Novidades",
-        "unseenCount": "{{count}} não lidas"
+        "unseenCount": "{{count}} não lidas",
+        "labelNone": "Sem novidades"
+    },
+    "whatsNewPanel": {
+        "title": "Novidades",
+        "empty": "Nenhuma novidade ainda",
+        "markAllRead": "Marcar tudo como lido",
+        "seeEntry": "Ver"
+    },
+    "status": {
+        "new": "Novo"
     },
     "welcomeTour": {
         "skip": "Pular tour",
         "next": "Próximo",
         "prev": "Anterior",
         "done": "Concluir",
-        "step": "Passo {{current}} de {{total}}"
+        "step": "Passo {{current}} de {{total}}",
+        "restart": "Ver tour",
+        "running": "Tour em andamento...",
+        "greetingHost": {
+            "title": "Bem-vindo ao seu painel de hospedagem",
+            "body": "Daqui você pode gerenciar sua conta, seus imóveis e a atividade da sua acomodação."
+        },
+        "greetingCommerce": {
+            "title": "Bem-vindo ao seu painel comercial",
+            "body": "Daqui você pode gerenciar sua conta e o conteúdo público do seu negócio."
+        },
+        "properties": {
+            "title": "Seus imóveis",
+            "body": "Nesta seção você pode criar, editar e revisar todos os seus imóveis."
+        },
+        "hostDashboard": {
+            "title": "Painel do anfitrião",
+            "body": "Aqui você tem um resumo rápido da atividade das suas acomodações e consultas."
+        },
+        "messages": {
+            "title": "Suas consultas",
+            "body": "Revise e responda as mensagens relacionadas à sua atividade na Hospeda."
+        },
+        "promotions": {
+            "title": "Promoções",
+            "body": "Publique e gerencie promoções para destacar sua proposta."
+        },
+        "profile": {
+            "title": "Seu perfil",
+            "body": "Atualize suas informações pessoais, preferências e configurações da conta."
+        },
+        "commerce": {
+            "title": "Seu negócio",
+            "body": "Edite o conteúdo público, horários e dados visíveis do seu negócio."
+        }
     },
     "navigation": "Navegação da conta",
     "sections": "Seções da conta",
@@ -35,6 +79,10 @@
             "uploadFailed": "Erro ao enviar a imagem",
             "updateFailed": "Erro ao atualizar o perfil",
             "unexpectedResponse": "Resposta inesperada do servidor"
+        },
+        "whatsNew": {
+            "title": "Novidades",
+            "desc": "Novidades e atualizações da plataforma"
         }
     },
     "editProfile": {

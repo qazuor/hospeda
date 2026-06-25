@@ -10,14 +10,58 @@
     },
     "whatsNewBadge": {
         "label": "Novedades",
-        "unseenCount": "{{count}} sin leer"
+        "unseenCount": "{{count}} sin leer",
+        "labelNone": "No hay novedades"
+    },
+    "whatsNewPanel": {
+        "title": "Novedades",
+        "empty": "No hay novedades aún",
+        "markAllRead": "Marcar todo como leído",
+        "seeEntry": "Ver"
+    },
+    "status": {
+        "new": "Nuevo"
     },
     "welcomeTour": {
         "skip": "Saltar tour",
         "next": "Siguiente",
         "prev": "Anterior",
         "done": "Listo",
-        "step": "Paso {{current}} de {{total}}"
+        "step": "Paso {{current}} de {{total}}",
+        "restart": "Ver tour",
+        "running": "Tour en curso...",
+        "greetingHost": {
+            "title": "Bienvenido a tu panel de hospedaje",
+            "body": "Desde aca podes gestionar tu cuenta, tus propiedades y la actividad de tu alojamiento."
+        },
+        "greetingCommerce": {
+            "title": "Bienvenido a tu panel comercial",
+            "body": "Desde aca podes gestionar tu cuenta y el contenido publico de tu comercio."
+        },
+        "properties": {
+            "title": "Tus propiedades",
+            "body": "En esta seccion podes crear, editar y revisar todas tus propiedades."
+        },
+        "hostDashboard": {
+            "title": "Panel del anfitrion",
+            "body": "Aca tenes un resumen rapido de la actividad de tus alojamientos y consultas."
+        },
+        "messages": {
+            "title": "Tus consultas",
+            "body": "Revisa y responde los mensajes vinculados a tu actividad en Hospeda."
+        },
+        "promotions": {
+            "title": "Promociones",
+            "body": "Publica y administra promociones para destacar tu propuesta."
+        },
+        "profile": {
+            "title": "Tu perfil",
+            "body": "Actualiza tu informacion personal, preferencias y configuracion de cuenta."
+        },
+        "commerce": {
+            "title": "Tu comercio",
+            "body": "Edita el contenido, horarios y datos visibles de tu comercio."
+        }
     },
     "navigation": "Navegación de cuenta",
     "sections": "Secciones de cuenta",
@@ -123,6 +167,10 @@
         },
         "errors": {
             "fetchFailed": "Error al cargar las preferencias"
+        },
+        "whatsNew": {
+            "title": "Novedades",
+            "desc": "Novedades y actualizaciones de la plataforma"
         }
     },
     "subscription": {

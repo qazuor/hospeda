@@ -21,6 +21,7 @@ import { isHostRole } from '@/lib/account-roles';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountStatsGrid from '@/components/account/AccountStatsGrid.astro';
 import AccountSectionCards from '@/components/account/AccountSectionCards.astro';
+import { DashboardController } from '@/components/account/DashboardController.client';
 import {
     UserIcon,
     SettingsIcon,
@@ -178,6 +179,13 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
         <!-- Navigation cards grid (secondary) -->
         <AccountSectionCards locale={locale} navItems={navItems} />
     </div>
+
+    <!-- What's New + Tour: auto-trigger controllers (D12 gate) -->
+    <DashboardController
+        locale={locale}
+        userRole={user.role}
+        client:idle
+    />
 </AccountLayout>
 
 <style>
