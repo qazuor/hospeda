@@ -626,7 +626,7 @@
             "title": "Admin Audit & Security Log Query Layer",
             "type": "feature",
             "complexity": "high",
-            "status": "in-progress",
+            "status": "completed",
             "lastUpdated": "2026-06-25T00:00:00Z",
             "path": "SPEC-162-admin-audit-security-log-query",
             "created": "2026-05-26T00:00:00Z",
@@ -634,7 +634,9 @@
             "dependsOn": [],
             "enables": ["SPEC-155"],
             "firstAllocatedViaEngramProtocol": true,
-            "tags": ["audit", "security", "observability", "super-admin", "backend", "phase-2"]
+            "tags": ["audit", "security", "observability", "super-admin", "backend", "phase-2"],
+            "archived": true,
+            "archivedAt": "2026-06-25T00:00:00Z"
         },
         {
             "specId": "SPEC-163",
