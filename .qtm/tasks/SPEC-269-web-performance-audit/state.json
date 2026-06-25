@@ -65,7 +65,7 @@
             "status": "pending",
             "complexity": 2,
             "blockedBy": [],
-            "blocks": ["T-269-02b"],
+            "blocks": ["T-269-02b", "T-269-07"],
             "subtasks": [
                 {
                     "title": "Add rollup-plugin-visualizer devDep to apps/web",
@@ -306,10 +306,10 @@
         {
             "id": "T-269-07",
             "title": "Lazy-import leaflet in LocationMap and ListingMap islands (F4)",
-            "description": "Convert the static leaflet/react-leaflet imports in `LocationMap.client.tsx` and `ListingMap.client.tsx` to dynamic imports, mirroring the pattern already used in `host/editor/LocationPickerMap.client.tsx:44-56`.\n\nRecon finding F4 (MEDIUM): leaflet (~150KB gzip) is a static import in two public map islands, so it enters the main bundle even on pages where no map is visible.\n\nReference pattern from `LocationPickerMap.client.tsx:44-56`:\n```ts\nconst L = await import('leaflet');\nconst { MapContainer, TileLayer, Marker } = await import('react-leaflet');\n```\n\nWhat to do:\n1. In `apps/web/src/components/maps/LocationMap.client.tsx:8-15`, replace static `import leaflet from 'leaflet'` / `import ... from 'react-leaflet'` with `await import(...)` inside the component body (inside `useEffect` or an async initializer).\n2. In `apps/web/src/components/maps/ListingMap.client.tsx:17-34`, same change.\n3. Handle the CSS side-effect import for leaflet (`import 'leaflet/dist/leaflet.css'`) — it must also become dynamic or be moved to a static chunk that doesn't affect the public critical path. One option: `await import('leaflet/dist/leaflet.css')` inside the effect.\n4. Ensure the maps still render correctly once lazily loaded.\n\nKey files affected:\n- `apps/web/src/components/maps/LocationMap.client.tsx:8-15`\n- `apps/web/src/components/maps/ListingMap.client.tsx:17-34`\n\nAcceptance criteria:\n- `pnpm --filter web build:analyze` (after T-269-02a is complete) shows leaflet in a separate chunk, NOT in the public page bundle.\n- Maps on accommodation detail/listing pages render correctly after lazy load.\n- No leaflet-related TypeScript errors.\n- `pnpm --filter web typecheck` and `pnpm --filter web lint` remain green.\n\nTesting: `pnpm --filter web build` + DevTools Network tab: leaflet chunk loads on-demand when the map island mounts, not on initial page load.",
+            "description": "[SPEC CORRECTION 2026-06-24] F4 is NOT a 1-line import swap. LocationMap/ListingMap use react-leaflet (JSX components), not raw Leaflet; the cited LocationPickerMap import(\"leaflet\") is not what defers the bundle — the React.lazy wrapper in LocationPicker.client.tsx:26 is. Correct fix: extract the react-leaflet inner of each map into a separate component and lazy-load via React.lazy + Suspense (mirror LocationPicker.client.tsx:26), so react-leaflet+leaflet land in a dynamic chunk. Coordinate with T-269-02b (manualChunks); measure with the T-269-02a visualizer. Owner decision (2026-06-24): regroup F4 with the bundle work. Touches ~6 LocationMap call sites — verify hydration.\n\n--- original ---\nConvert the static leaflet/react-leaflet imports in `LocationMap.client.tsx` and `ListingMap.client.tsx` to dynamic imports, mirroring the pattern already used in `host/editor/LocationPickerMap.client.tsx:44-56`.\n\nRecon finding F4 (MEDIUM): leaflet (~150KB gzip) is a static import in two public map islands, so it enters the main bundle even on pages where no map is visible.\n\nReference pattern from `LocationPickerMap.client.tsx:44-56`:\n```ts\nconst L = await import('leaflet');\nconst { MapContainer, TileLayer, Marker } = await import('react-leaflet');\n```\n\nWhat to do:\n1. In `apps/web/src/components/maps/LocationMap.client.tsx:8-15`, replace static `import leaflet from 'leaflet'` / `import ... from 'react-leaflet'` with `await import(...)` inside the component body (inside `useEffect` or an async initializer).\n2. In `apps/web/src/components/maps/ListingMap.client.tsx:17-34`, same change.\n3. Handle the CSS side-effect import for leaflet (`import 'leaflet/dist/leaflet.css'`) — it must also become dynamic or be moved to a static chunk that doesn't affect the public critical path. One option: `await import('leaflet/dist/leaflet.css')` inside the effect.\n4. Ensure the maps still render correctly once lazily loaded.\n\nKey files affected:\n- `apps/web/src/components/maps/LocationMap.client.tsx:8-15`\n- `apps/web/src/components/maps/ListingMap.client.tsx:17-34`\n\nAcceptance criteria:\n- `pnpm --filter web build:analyze` (after T-269-02a is complete) shows leaflet in a separate chunk, NOT in the public page bundle.\n- Maps on accommodation detail/listing pages render correctly after lazy load.\n- No leaflet-related TypeScript errors.\n- `pnpm --filter web typecheck` and `pnpm --filter web lint` remain green.\n\nTesting: `pnpm --filter web build` + DevTools Network tab: leaflet chunk loads on-demand when the map island mounts, not on initial page load.",
             "status": "pending",
             "complexity": 3,
-            "blockedBy": [],
+            "blockedBy": ["T-269-02a"],
             "blocks": ["T-269-11"],
             "subtasks": [
                 {
@@ -329,7 +329,16 @@
                     "completed": false
                 }
             ],
-            "tags": ["web", "bundle", "leaflet", "maps", "lazy-import", "performance", "f4"],
+            "tags": [
+                "web",
+                "bundle",
+                "leaflet",
+                "maps",
+                "lazy-import",
+                "performance",
+                "f4",
+                "bundle"
+            ],
             "phase": "integration",
             "qualityGate": {
                 "lint": null,
