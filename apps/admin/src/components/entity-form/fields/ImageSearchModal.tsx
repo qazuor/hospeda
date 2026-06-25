@@ -56,7 +56,7 @@ export interface ImageSearchModalProps {
     /** Entity UUID */
     entityId: string;
     /** Role: featured or gallery */
-    role: 'featured' | 'gallery';
+    targetRole: 'featured' | 'gallery';
 }
 
 interface SearchState {
@@ -90,7 +90,7 @@ export const ImageSearchModal: React.FC<ImageSearchModalProps> = ({
     onImageImported,
     entityType,
     entityId,
-    role
+    targetRole
 }) => {
     const { t } = useTranslations();
     const [isOpen, setIsOpen] = React.useState(open ?? false);
@@ -214,7 +214,7 @@ export const ImageSearchModal: React.FC<ImageSearchModalProps> = ({
                     photographerUrl: selectedImageRef.current.photographerUrl,
                     entityType,
                     entityId,
-                    role
+                    targetRole
                 }
             });
 
