@@ -9,8 +9,6 @@ import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
 
-const partnerService = new PartnerService({ logger: apiLogger });
-
 /**
  * PUT /api/v1/admin/partners/{id}
  * Update partner - Admin endpoint
@@ -27,6 +25,7 @@ export const adminUpdatePartnerRoute = createAdminRoute({
     requestBody: updatePartnerSchema,
     responseSchema: partnerSchema,
     handler: async (ctx, params, body) => {
+        const partnerService = new PartnerService({ logger: apiLogger });
         const actor = getActorFromContext(ctx);
         const id = params.id as string;
 

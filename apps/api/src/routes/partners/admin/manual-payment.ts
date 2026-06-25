@@ -9,8 +9,6 @@ import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
 
-const partnerService = new PartnerService({ logger: apiLogger });
-
 /**
  * POST /api/v1/admin/partners/{id}/manual-payment
  * Register manual payment - Admin endpoint
@@ -29,6 +27,7 @@ export const adminManualPaymentRoute = createAdminRoute({
     }),
     responseSchema: partnerSchema,
     handler: async (ctx, params, body) => {
+        const partnerService = new PartnerService({ logger: apiLogger });
         const actor = getActorFromContext(ctx);
         const id = params.id as string;
         const { note } = body as { note?: string };

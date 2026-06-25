@@ -9,8 +9,6 @@ import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createAdminListRoute } from '../../../utils/route-factory';
 
-const partnerService = new PartnerService({ logger: apiLogger });
-
 /**
  * GET /api/v1/admin/partners
  * List all partners - Admin endpoint
@@ -26,6 +24,7 @@ export const adminListPartnersRoute = createAdminListRoute({
     requestQuery: adminSearchPartnerSchema.omit({ page: true, pageSize: true }).shape,
     responseSchema: partnerSchema,
     handler: async (ctx, _params, _body, query) => {
+        const partnerService = new PartnerService({ logger: apiLogger });
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
 

@@ -9,18 +9,17 @@ import {
 } from '@repo/schemas';
 import { PartnerService, ServiceError } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
+import { createRouter } from '../../../utils/create-app';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createPublicListRoute } from '../../../utils/route-factory';
-
-const partnerService = new PartnerService({ logger: apiLogger });
 
 /**
  * GET /api/v1/public/partners
  * List active partners for public display
  * No authentication required
  */
-export const publicListPartnersRoute = createPublicListRoute({
+const publicListPartnersRoute = createPublicListRoute({
     method: 'get',
     path: '/',
     summary: 'List active partners',
@@ -29,6 +28,7 @@ export const publicListPartnersRoute = createPublicListRoute({
     requestQuery: PartnerSearchHttpSchema.shape,
     responseSchema: PartnerPublicSchema,
     handler: async (ctx, _params, _body, query) => {
+        const partnerService = new PartnerService({ logger: apiLogger });
         const actor = getActorFromContext(ctx);
         const { page, pageSize } = extractPaginationParams(query || {});
 
@@ -53,4 +53,7 @@ export const publicListPartnersRoute = createPublicListRoute({
     }
 });
 
-export const publicPartnersRoutes = [publicListPartnersRoute];
+const router = createRouter();
+router.route('/', publicListPartnersRoute);
+
+export { router as publicPartnersRoutes };

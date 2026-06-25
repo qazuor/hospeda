@@ -9,8 +9,6 @@ import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
 
-const partnerService = new PartnerService({ logger: apiLogger });
-
 /**
  * GET /api/v1/admin/partners/{id}
  * Get partner by ID - Admin endpoint
@@ -26,6 +24,7 @@ export const adminGetPartnerRoute = createAdminRoute({
     requestParams: { id: z.string().uuid() },
     responseSchema: partnerSchema,
     handler: async (ctx, params) => {
+        const partnerService = new PartnerService({ logger: apiLogger });
         const actor = getActorFromContext(ctx);
         const id = params.id as string;
 

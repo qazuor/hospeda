@@ -9,8 +9,6 @@ import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
 
-const partnerService = new PartnerService({ logger: apiLogger });
-
 /**
  * DELETE /api/v1/admin/partners/{id}
  * Delete partner - Admin endpoint
@@ -29,6 +27,7 @@ export const adminDeletePartnerRoute = createAdminRoute({
         message: z.string()
     }),
     handler: async (ctx, params) => {
+        const partnerService = new PartnerService({ logger: apiLogger });
         const actor = getActorFromContext(ctx);
         const id = params.id as string;
 

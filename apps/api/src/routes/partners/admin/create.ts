@@ -8,8 +8,6 @@ import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
 
-const partnerService = new PartnerService({ logger: apiLogger });
-
 /**
  * POST /api/v1/admin/partners
  * Create partner - Admin endpoint
@@ -25,6 +23,7 @@ export const adminCreatePartnerRoute = createAdminRoute({
     requestBody: createPartnerSchema,
     responseSchema: partnerSchema,
     handler: async (ctx, _params, body) => {
+        const partnerService = new PartnerService({ logger: apiLogger });
         const actor = getActorFromContext(ctx);
 
         const result = await partnerService.create(
