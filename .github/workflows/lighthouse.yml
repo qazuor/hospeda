@@ -1,0 +1,138 @@
+name: Lighthouse CI (report-only)
+
+# SPEC-269 T-269-10: Non-blocking Lighthouse CI for apps/web.
+#
+# This workflow is INTENTIONALLY report-only — it never blocks a PR.
+# Scores are inherently flaky (network emulation, parallel runner load) so
+# we collect reports and upload them to temporary-public-storage for human
+# review. The lhci step carries `continue-on-error: true` so any score
+# regression or lhci failure produces a warning annotation but never
+# transitions the check to failure.
+#
+# To promote this to a hard gate (fail on score regression), remove the
+# `continue-on-error: true` from the "Run Lighthouse CI" step and change
+# the assert.assertions level from "warn" to "error" in lighthouserc.json.
+# That promotion is planned as a follow-up spec task (SPEC-269 T-269-11).
+
+on:
+  pull_request:
+    branches:
+      - staging
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+  workflow_dispatch:
+
+# Cancel superseded runs for the same PR to avoid wasting runner minutes.
+# Matches the concurrency pattern used by ci.yml.
+concurrency:
+  group: lighthouse-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+# Shared env block mirrors ci.yml exactly: same placeholder strategy for
+# PUBLIC_SENTRY_DSN / PUBLIC_POSTHOG_KEY, same URL fallbacks to .invalid
+# so the web build does not abort on missing secrets.
+env:
+  HOSPEDA_BETTER_AUTH_SECRET: ${{ secrets.HOSPEDA_BETTER_AUTH_SECRET || 'ci-placeholder-better-auth-secret-min-32-chars' }}
+  HOSPEDA_API_URL: ${{ secrets.HOSPEDA_API_URL || 'https://example.invalid' }}
+  HOSPEDA_SITE_URL: ${{ secrets.HOSPEDA_SITE_URL || 'https://example.invalid' }}
+  HOSPEDA_ADMIN_URL: ${{ secrets.HOSPEDA_ADMIN_URL || 'https://example.invalid' }}
+  HOSPEDA_REVALIDATION_SECRET: ${{ secrets.HOSPEDA_REVALIDATION_SECRET || 'ci-placeholder-revalidation-secret-min-32-characters' }}
+  PUBLIC_API_URL: ${{ secrets.HOSPEDA_API_URL || 'https://example.invalid' }}
+  PUBLIC_SITE_URL: ${{ secrets.HOSPEDA_SITE_URL || 'https://example.invalid' }}
+  PUBLIC_ADMIN_URL: ${{ secrets.HOSPEDA_ADMIN_URL || 'https://example.invalid' }}
+  # PUBLIC_SENTRY_DSN and PUBLIC_POSTHOG_KEY are required by the web build
+  # in production mode. A syntactically valid placeholder is enough for CI
+  # because the bundle is never deployed from this workflow.
+  PUBLIC_SENTRY_DSN: ${{ secrets.PUBLIC_SENTRY_DSN || 'https://ci-placeholder.invalid' }}
+  PUBLIC_POSTHOG_KEY: ${{ secrets.PUBLIC_POSTHOG_KEY || 'phc_ci_placeholder' }}
+  # Tells the env guard to accept .invalid placeholder URLs (same role as
+  # in ci.yml — see SPEC-219 T-006).
+  ALLOW_PLACEHOLDER_ENV_URLS: 'true'
+  HOSPEDA_CLOUDINARY_CLOUD_NAME: ${{ secrets.HOSPEDA_CLOUDINARY_CLOUD_NAME }}
+  HOSPEDA_CLOUDINARY_API_KEY: ${{ secrets.HOSPEDA_CLOUDINARY_API_KEY }}
+  HOSPEDA_CLOUDINARY_API_SECRET: ${{ secrets.HOSPEDA_CLOUDINARY_API_SECRET }}
+
+jobs:
+  lighthouse:
+    name: Lighthouse (mobile, report-only)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      # Node + pnpm setup mirrors the composite .github/actions/setup action
+      # used by ci.yml. We cannot reuse the composite here because it also
+      # runs `pnpm install --frozen-lockfile`, which we need, so we inline
+      # the same steps for clarity and to stay in sync with future setup
+      # action changes.
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Get pnpm store directory
+        id: pnpm-store
+        shell: bash
+        run: echo "path=$(pnpm store path --silent)" >> $GITHUB_OUTPUT
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-store.outputs.path }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Build shared packages first (same dependency order as ci.yml build
+      # job), then build the web app in production mode so the Astro output
+      # in apps/web/dist/ is what Lighthouse actually measures.
+      - name: Build packages and web app
+        run: pnpm exec turbo run build --filter=hospeda-web...
+
+      # astro preview serves the built output on port 4321, which matches the
+      # URLs in lighthouserc.json. We background it with & and give it a few
+      # seconds to become ready before lhci tries to reach it.
+      - name: Start astro preview server
+        working-directory: apps/web
+        run: |
+          pnpm preview --port 4321 &
+          echo "PREVIEW_PID=$!" >> $GITHUB_ENV
+          # Wait up to 30 s for the preview server to be ready
+          for i in $(seq 1 30); do
+            if curl -s -o /dev/null -w "%{http_code}" http://localhost:4321/ | grep -qE '^[23]'; then
+              echo "Preview server ready after ${i}s"
+              break
+            fi
+            sleep 1
+          done
+
+      # Run Lighthouse CI against the astro preview. The report-only intent
+      # is enforced at two levels:
+      #   1. lighthouserc.json uses "warn" (not "error") for all assertions,
+      #      so lhci itself exits 0 even when scores are below the threshold.
+      #   2. continue-on-error: true means even a non-zero exit (e.g. lhci
+      #      infrastructure failure, Chrome crash) does not fail the job.
+      # The public report URL is printed to the job log by lhci after upload.
+      - name: Run Lighthouse CI
+        continue-on-error: true
+        working-directory: apps/web
+        run: pnpm lighthouse
+
+      - name: Stop astro preview server
+        if: always()
+        run: kill $PREVIEW_PID 2>/dev/null || true
