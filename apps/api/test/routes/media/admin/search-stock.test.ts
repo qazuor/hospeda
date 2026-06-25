@@ -10,6 +10,14 @@
  *
  * @module test/routes/media/admin/search-stock
  */
+
+// ---------------------------------------------------------------------------
+// Environment setup (before any module loads)
+// ---------------------------------------------------------------------------
+
+process.env.NODE_ENV = 'test';
+process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
+
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';

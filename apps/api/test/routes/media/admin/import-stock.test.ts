@@ -10,6 +10,14 @@
  *
  * @module test/routes/media/admin/import-stock
  */
+
+// ---------------------------------------------------------------------------
+// Environment setup (before any module loads)
+// ---------------------------------------------------------------------------
+
+process.env.NODE_ENV = 'test';
+process.env.HOSPEDA_ALLOW_MOCK_ACTOR = 'true';
+
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -38,14 +46,23 @@ vi.mock('../../../../src/utils/env', async (importOriginal) => {
 // ---------------------------------------------------------------------------
 // Provider and service mocks
 // ---------------------------------------------------------------------------
-// Provider and service mocks
-// ---------------------------------------------------------------------------
 
 const mockUpload = vi.fn();
 const mockImport = vi.fn();
 const mockGetById = vi.fn();
+const mockFindByAccommodation = vi.fn();
 
 const providerState = vi.hoisted(() => ({ configured: true as boolean }));
+
+vi.mock('@repo/db', async (importOriginal) => {
+    const actual = await importOriginal<Record<string, unknown>>();
+    return {
+        ...actual,
+        accommodationMediaModel: {
+            findByAccommodation: mockFindByAccommodation
+        }
+    };
+});
 
 vi.mock('../../../../src/services/media', () => ({
     getMediaProvider: () =>
@@ -71,18 +88,6 @@ vi.mock('@repo/service-core', async (importOriginal) => {
         PostService: vi.fn().mockImplementation(() => ({
             getById: mockGetById
         }))
-    };
-});
-
-// SPEC-204: accommodation media count from relational table
-const mockFindByAccommodation = vi.fn();
-vi.mock('@repo/db', async (importOriginal) => {
-    const actual = await importOriginal<Record<string, unknown>>();
-    return {
-        ...actual,
-        accommodationMediaModel: {
-            findByAccommodation: mockFindByAccommodation
-        }
     };
 });
 
