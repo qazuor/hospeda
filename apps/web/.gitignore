@@ -15,3 +15,7 @@ playwright-visual-report/
 tests/visual-snapshots/baseline/
 tests/visual-snapshots/actual/
 tests/visual-snapshots/diff/
+
+# Bundle analysis artifact emitted by `pnpm build:analyze` (rollup-plugin-visualizer).
+# Local-only — regenerate on demand, never commit (SPEC-269 T-269-02a).
+stats.html

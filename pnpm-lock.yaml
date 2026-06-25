@@ -956,6 +956,9 @@ importers:
       jsdom:
         specifier: ^26.0.0
         version: 26.0.0
+      rollup-plugin-visualizer:
+        specifier: ^7.0.1
+        version: 7.0.1(rolldown@1.0.3)(rollup@4.62.0)
       typescript:
         specifier: 5.9.3
         version: 5.9.3

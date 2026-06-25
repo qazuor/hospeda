@@ -6,6 +6,7 @@
     "scripts": {
         "dev": "astro dev --port 4321",
         "build": "astro build",
+        "build:analyze": "ANALYZE=1 astro build",
         "preview": "astro preview",
         "test": "vitest run --passWithNoTests",
         "test:watch": "vitest",
@@ -74,6 +75,7 @@
         "@types/react-dom": "19.2.3",
         "@types/sanitize-html": "^2.16.0",
         "@vitejs/plugin-react": "^4",
+        "rollup-plugin-visualizer": "^7.0.1",
         "@vitest/coverage-v8": "^3.2.4",
         "identity-obj-proxy": "^3.0.0",
         "jsdom": "^26.0.0",

@@ -5,6 +5,7 @@ import react from '@astrojs/react';
 import sitemap from '@astrojs/sitemap';
 import sentry from '@sentry/astro';
 import { defineConfig } from 'astro/config';
+import { visualizer } from 'rollup-plugin-visualizer';
 import { validateWebEnv } from './src/env.ts';
 import { ALLOWED_REMOTE_HOSTS } from './src/lib/media.ts';
 import { buildSitemapAlternateLinks, isExcludedSitemapPage } from './src/lib/seo-config.ts';
@@ -155,7 +156,20 @@ export default defineConfig({
                         next();
                     });
                 }
-            }
+            },
+            // Bundle analysis — only when ANALYZE=1 (pnpm build:analyze).
+            // Emits a treemap of the client bundle to apps/web/stats.html so we
+            // can see which islands/deps land in the large chunks (SPEC-269 T-269-02a).
+            ...(process.env.ANALYZE
+                ? [
+                      visualizer({
+                          open: false,
+                          filename: 'stats.html',
+                          gzipSize: true,
+                          brotliSize: true
+                      })
+                  ]
+                : [])
         ],
         envDir: appDir,
         resolve: {
