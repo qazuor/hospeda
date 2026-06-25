@@ -165,9 +165,9 @@ jobs:
       - name: Run CI scripts (raw-ilike + SEO + sitemap)
         if: always()
         run: |
-          bash scripts/ci/check-raw-ilike.sh
-          pnpm exec tsx scripts/ci/seo-validator.ts
-          pnpm exec tsx scripts/ci/sitemap-validator.ts
+          bash scripts/check-unsafe-ilike.sh
+          pnpm exec tsx scripts/seo-validator.ts
+          pnpm exec tsx scripts/sitemap-validator.ts
 
       - name: Upload Playwright HTML report
         if: always()
