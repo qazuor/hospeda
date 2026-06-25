@@ -79,10 +79,6 @@
             "uploadFailed": "Failed to upload the image",
             "updateFailed": "Failed to update the profile",
             "unexpectedResponse": "Unexpected server response"
-        },
-        "whatsNew": {
-            "title": "What's New",
-            "desc": "Platform updates and announcements"
         }
     },
     "editProfile": {
@@ -171,6 +167,10 @@
         },
         "errors": {
             "fetchFailed": "Error loading preferences"
+        },
+        "whatsNew": {
+            "title": "What's New",
+            "desc": "Platform updates and announcements"
         }
     },
     "subscription": {

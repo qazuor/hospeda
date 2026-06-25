@@ -79,10 +79,6 @@
             "uploadFailed": "Erro ao enviar a imagem",
             "updateFailed": "Erro ao atualizar o perfil",
             "unexpectedResponse": "Resposta inesperada do servidor"
-        },
-        "whatsNew": {
-            "title": "Novidades",
-            "desc": "Novidades e atualizações da plataforma"
         }
     },
     "editProfile": {
@@ -171,6 +167,10 @@
         },
         "errors": {
             "fetchFailed": "Erro ao carregar as preferências"
+        },
+        "whatsNew": {
+            "title": "Novidades",
+            "desc": "Novidades e atualizações da plataforma"
         }
     },
     "subscription": {

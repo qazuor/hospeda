@@ -69,7 +69,7 @@ export const tourProgressGetHandler = async (
 export const tourProgressHandler = async (
     ctx: Context,
     body: { tourId: string; version: number },
-    svc: TourProgressUserService = userService as unknown as TourProgressUserService
+    svc: TourProgressUserService = userService as unknown as TourProgressUserService // TYPE-WORKAROUND: UserService lacks tour methods; cast to narrow interface for DI/testability
 ): Promise<{ success: true }> => {
     const actor = getActorFromContext(ctx);
 
