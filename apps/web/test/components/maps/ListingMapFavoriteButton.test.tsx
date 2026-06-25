@@ -7,7 +7,7 @@
  * the popup content without needing a real Leaflet DOM environment.
  */
 
-import { describe, expect, it, vi } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 // Override Circle to render children so popup content is reachable in tests.
 vi.mock('react-leaflet', () => ({
@@ -104,6 +104,12 @@ vi.mock('@/store/toast-store', () => ({ addToast: vi.fn() }));
 import { render, screen } from '@testing-library/react';
 import { ListingMap } from '../../../src/components/maps/ListingMap.client';
 
+// Pre-warm the lazy inner chunk (React.lazy, SPEC-269) so it resolves within the
+// default findBy timeout even on a cold module graph when this file runs alone.
+beforeAll(async () => {
+    await import('../../../src/components/maps/ListingMapInner.client');
+});
+
 const i18n = {
     attribution: '© OSM',
     approximateDisclaimer: 'Ubicación aproximada.',
@@ -119,7 +125,7 @@ const baseItem = {
 };
 
 describe('ListingMap — FavoriteButton in popup (T-044)', () => {
-    it('renders FavoriteButton inside the accommodation popup', () => {
+    it('renders FavoriteButton inside the accommodation popup', async () => {
         render(
             <ListingMap
                 mode="accommodation-list"
@@ -135,10 +141,12 @@ describe('ListingMap — FavoriteButton in popup (T-044)', () => {
         // The FavoriteButton renders an icon stack (commit 35b93bca1): one
         // visible icon plus one hidden fill icon for the CSS hover preview.
         // Use getAllByTestId and assert at least one icon is present.
-        expect(screen.getAllByTestId('favorite-icon').length).toBeGreaterThanOrEqual(1);
+        // Inner map is lazy-loaded (React.lazy + Suspense, SPEC-269): await the
+        // first query so the chunk (and its popup FavoriteButton) resolves.
+        expect((await screen.findAllByTestId('favorite-icon')).length).toBeGreaterThanOrEqual(1);
     });
 
-    it('uses compact icon size (18) for FavoriteButton in popup', () => {
+    it('uses compact icon size (18) for FavoriteButton in popup', async () => {
         render(
             <ListingMap
                 mode="accommodation-list"
@@ -152,11 +160,11 @@ describe('ListingMap — FavoriteButton in popup (T-044)', () => {
         );
 
         // Both icons in the stack use the compact size (18) — check the first one.
-        const icons = screen.getAllByTestId('favorite-icon');
+        const icons = await screen.findAllByTestId('favorite-icon');
         expect(icons[0]).toHaveAttribute('data-size', '18');
     });
 
-    it('FavoriteButton is not rendered for destination-list mode', () => {
+    it('FavoriteButton is not rendered for destination-list mode', async () => {
         render(
             <ListingMap
                 mode="destination-list"
@@ -176,11 +184,14 @@ describe('ListingMap — FavoriteButton in popup (T-044)', () => {
             />
         );
 
+        // Await the lazy inner map (a marker renders in destination mode) so the
+        // absence assertion runs after the chunk has actually mounted.
+        await screen.findByTestId('marker');
         // Destination popups do not have a FavoriteButton.
         expect(screen.queryByTestId('favorite-icon')).not.toBeInTheDocument();
     });
 
-    it('renders FavoriteButton with aria-pressed=false when item is not favorited', () => {
+    it('renders FavoriteButton with aria-pressed=false when item is not favorited', async () => {
         render(
             <ListingMap
                 mode="accommodation-list"
@@ -193,11 +204,11 @@ describe('ListingMap — FavoriteButton in popup (T-044)', () => {
             />
         );
 
-        const btn = screen.getByRole('button', { name: /favorito/i });
+        const btn = await screen.findByRole('button', { name: /favorito/i });
         expect(btn).toHaveAttribute('aria-pressed', 'false');
     });
 
-    it('renders FavoriteButton with aria-pressed=true when item is pre-hydrated as favorited', () => {
+    it('renders FavoriteButton with aria-pressed=true when item is pre-hydrated as favorited', async () => {
         render(
             <ListingMap
                 mode="accommodation-list"
@@ -210,7 +221,7 @@ describe('ListingMap — FavoriteButton in popup (T-044)', () => {
             />
         );
 
-        const btn = screen.getByRole('button', { name: /favorito/i });
+        const btn = await screen.findByRole('button', { name: /favorito/i });
         expect(btn).toHaveAttribute('aria-pressed', 'true');
     });
 });
