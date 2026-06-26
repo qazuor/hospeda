@@ -745,6 +745,73 @@
             "base": "staging",
             "createdAt": "2026-06-26T00:00:00Z",
             "note": "Doc-only spec; tasks NOT atomized yet. SPEC-211 follow-up: graduated per-plan AI usage limits (ai_search + consumer-side ai_chat quota), reverting 211 G-2/G-4 metering. OQ-1/2/4/5/6 resolved; OQ-3 (values) deferred to implementation. Advertising half is SPEC-282."
+        },
+        {
+            "specId": "SPEC-284",
+            "title": "Personalized Recommendations Feed",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-284-recommendations-feed",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-26T00:00:00Z",
+            "note": "Doc-only spec; tasks NOT atomized. Build the phantom recommendations feature (CAN_VIEW_RECOMMENDATIONS). Surfaced in SPEC-282 review."
+        },
+        {
+            "specId": "SPEC-285",
+            "title": "Owner Promotions — Tourist-Facing Display",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-285-owner-promotions-tourist-display",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-26T00:00:00Z",
+            "note": "Doc-only spec; tasks NOT atomized. Owner-create promotions built; tourist-facing display missing. Surfaced in SPEC-282 review."
+        },
+        {
+            "specId": "SPEC-286",
+            "title": "Alerts & Offers — Multichannel Notifications",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-286-alerts-offers-multichannel-notifications",
+            "parent": "SPEC-285",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-26T00:00:00Z",
+            "note": "Doc-only spec; tasks NOT atomized. Merges phantom price alerts + owner-promo offers, multichannel (email/whatsapp/push), per-plan limits. Depends on SPEC-285. Surfaced in SPEC-282 review."
+        },
+        {
+            "specId": "SPEC-287",
+            "title": "Favorites Collections — Per-Plan Limits",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-287-favorites-collections-per-plan-limits",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-26T00:00:00Z",
+            "note": "Doc-only spec; tasks NOT atomized. Move built collections feature from env-var cap to per-plan billing LimitKey (free tourist excluded). Surfaced in SPEC-282 review."
+        },
+        {
+            "specId": "SPEC-288",
+            "title": "Accommodation Comparison",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-288-accommodation-comparison",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-26T00:00:00Z",
+            "note": "Doc-only spec; tasks NOT atomized. Build phantom compare feature (CAN_COMPARE_ACCOMMODATIONS + MAX_COMPARE_ITEMS). Surfaced in SPEC-282 review."
+        },
+        {
+            "specId": "SPEC-289",
+            "title": "Search History",
+            "status": "draft",
+            "progress": "0/0",
+            "path": "SPEC-289-search-history",
+            "branch": null,
+            "base": "staging",
+            "createdAt": "2026-06-26T00:00:00Z",
+            "note": "Doc-only spec; tasks NOT atomized. Build phantom search-history feature (CAN_VIEW_SEARCH_HISTORY). Surfaced in SPEC-282 review."
         }
     ],
     "standalone": {
