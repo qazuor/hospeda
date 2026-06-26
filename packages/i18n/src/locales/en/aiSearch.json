@@ -47,6 +47,7 @@
         "maxPrice": "Up to {{value}}",
         "city": "City: {{value}}",
         "destinationId": "Destination filtered",
+        "destinationName": "Destination: {{value}}",
         "hasPool": "Has pool",
         "hasWifi": "Has WiFi",
         "allowsPets": "Pets allowed",

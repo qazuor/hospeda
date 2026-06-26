@@ -229,6 +229,24 @@
     flex-shrink: 0;
 }
 
+/* ─── Low-confidence notice (SPEC-265 A2) ─────────────────────────────────────
+   Shown when the model's confidence is below threshold. Uses a warm amber
+   palette (not red — this is a suggestion, not an error).
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.lowConfidenceNotice {
+    margin: 0 1.25rem;
+    padding: 0.75rem 1rem;
+    font-family: var(--font-sans, sans-serif);
+    font-size: 0.8125rem;
+    line-height: 1.45;
+    color: var(--brand-accent, #f97316);
+    background-color: oklch(from var(--brand-accent, #f97316) l c h / 0.08);
+    border-radius: var(--radius-md, 0.625rem);
+    border-left: 3px solid var(--brand-accent, #f97316);
+    flex-shrink: 0;
+}
+
 /* ─── T-011 chips mount point ─────────────────────────────────────────────────
    Region between thread and results where the active-filter chips render.
    Chips are rendered by T-011 (IntentChipsList or equivalent).

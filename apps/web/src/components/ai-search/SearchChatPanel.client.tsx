@@ -50,18 +50,32 @@ import { useSearchChat } from './useSearchChat';
  *   When false, the chat UI is replaced by a login CTA (W14).
  * @property currentUrl - Full URL of the current page, used to build the
  *   post-login redirect href. Pass `Astro.url.href` from the host page.
+ * @property destinations - Catalog of city destinations for chip label
+ *   resolution (SPEC-265 A3). A record of `{ [uuid]: name }` built from the
+ *   `destinationsApi.list` result in the host page. When provided, the
+ *   destination filter chip shows the real city name instead of a generic
+ *   "Destino filtrado" label.
  */
 export interface SearchChatPanelProps {
     readonly locale: SupportedLocale;
     readonly apiUrl: string;
     readonly isAuthenticated: boolean;
     readonly currentUrl: string;
+    readonly destinations?: Readonly<Record<string, string>>;
 }
 
 // ─── Skeleton constants ─────────────────────────────────────────────────────
 
 /** Number of skeleton cards to show while results are loading. */
 const SKELETON_COUNT = 3;
+
+/**
+ * Confidence threshold below which the low-confidence notice is shown
+ * (SPEC-265 A2). When the model's self-assessed confidence is below this
+ * value, the UI displays `aiSearch.lowConfidenceMessage` suggesting the
+ * user reformulate their query. No numeric badge is shown.
+ */
+const LOW_CONFIDENCE_THRESHOLD = 0.4;
 
 /** Stable keys for the decorative loading skeletons (avoids array-index keys). */
 const SKELETON_KEYS: readonly string[] = Array.from(
@@ -189,7 +203,8 @@ export function SearchChatPanel({
     locale,
     apiUrl,
     isAuthenticated,
-    currentUrl
+    currentUrl,
+    destinations
 }: SearchChatPanelProps) {
     const { t } = createTranslations(locale);
     const [draft, setDraft] = useState('');
@@ -239,6 +254,12 @@ export function SearchChatPanel({
     const hasMessages = chat.messages.length > 0;
     const showThinking = chat.isStreaming && !chat.currentReply;
     const showResults = chat.results.length > 0 || chat.resultsLoading;
+
+    // Low-confidence notice (SPEC-265 A2): show when the model's confidence
+    // is below threshold AND a turn has completed (not during streaming).
+    // No numeric badge — just the reformulation suggestion from i18n.
+    const isLowConfidence =
+        !chat.isStreaming && chat.confidence !== null && chat.confidence < LOW_CONFIDENCE_THRESHOLD;
 
     // Build redirect URLs for the login CTA shown to anonymous visitors (W14).
     const loginHref = buildLoginRedirect({ locale, currentUrl });
@@ -399,8 +420,23 @@ export function SearchChatPanel({
                         filters={chat.currentFilters}
                         onRemove={chat.removeFilter}
                         locale={locale}
+                        destinations={destinations}
                     />
                 </div>
+
+                {/* Low-confidence notice (SPEC-265 A2) */}
+                {isLowConfidence && (
+                    <output
+                        className={styles.lowConfidenceNotice}
+                        aria-live="polite"
+                        data-testid="ai-search-low-confidence"
+                    >
+                        {t(
+                            'aiSearch.lowConfidenceMessage',
+                            'No pudimos interpretar tu búsqueda. Probá reformularla con otras palabras.'
+                        )}
+                    </output>
+                )}
 
                 {/* Results section */}
                 {showResults && (

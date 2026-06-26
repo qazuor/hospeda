@@ -831,6 +831,7 @@ const emptyStateSuggestions = [
 		apiUrl={getApiUrl()}
 		isAuthenticated={isAuthenticated}
 		currentUrl={Astro.url.href}
+		destinations={Object.fromEntries(destinations.map((d) => [d.id, d.name]))}
 	/>
 
 	{hasError && !result.ok && (

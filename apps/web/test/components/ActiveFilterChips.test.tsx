@@ -323,4 +323,41 @@ describe('ActiveFilterChips', () => {
             expect(screen.getByRole('list').tagName).toBe('UL');
         });
     });
+
+    // ── Destination chip resolution (SPEC-265 A3) ──────────────────────────────
+
+    describe('destination chip resolution (SPEC-265 A3)', () => {
+        const DESTINATION_CATALOG: Record<string, string> = {
+            '11111111-1111-4111-8111-111111111111': 'Concepción del Uruguay',
+            '22222222-2222-4222-8222-222222222222': 'Gualeguaychú'
+        };
+
+        it('shows the real destination name when catalog is provided and UUID matches', () => {
+            renderChips({
+                filters: { destinationId: '11111111-1111-4111-8111-111111111111' },
+                destinations: DESTINATION_CATALOG
+            });
+            const chip = screen.getByRole('listitem');
+            // Mock t interpolates {{value}} — 'Destino: Concepción del Uruguay'
+            expect(chip.textContent).toContain('Concepción del Uruguay');
+        });
+
+        it('falls back to generic label when catalog is provided but UUID not found', () => {
+            renderChips({
+                filters: { destinationId: '99999999-9999-4999-9999-999999999999' },
+                destinations: DESTINATION_CATALOG
+            });
+            const chip = screen.getByRole('listitem');
+            // Falls back to 'Destino filtrado'
+            expect(chip.textContent).toContain('Destino filtrado');
+        });
+
+        it('shows generic label when no destinations catalog is provided', () => {
+            renderChips({
+                filters: { destinationId: '11111111-1111-4111-8111-111111111111' }
+            });
+            const chip = screen.getByRole('listitem');
+            expect(chip.textContent).toContain('Destino filtrado');
+        });
+    });
 });

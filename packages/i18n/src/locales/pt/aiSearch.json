@@ -47,6 +47,7 @@
         "maxPrice": "Até {{value}}",
         "city": "Cidade: {{value}}",
         "destinationId": "Destino filtrado",
+        "destinationName": "Destino: {{value}}",
         "hasPool": "Com piscina",
         "hasWifi": "Com WiFi",
         "allowsPets": "Aceita animais",
