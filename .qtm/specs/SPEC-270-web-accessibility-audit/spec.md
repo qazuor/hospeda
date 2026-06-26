@@ -3,10 +3,12 @@ spec-id: SPEC-270
 title: Web accessibility audit & improvements — WCAG 2.1 AA, concrete findings + fix catalog
 type: improvement
 complexity: medium
-status: draft
+status: completed
 created: 2026-06-23T00:00:00Z
 audited: 2026-06-23
 model_fit: basic
+started: 2026-06-24T00:00:00Z
+completed: 2026-06-24T00:00:00Z
 effort_estimate_hours: 16-24
 tags: [accessibility, web, audit, wcag, a11y, aria, keyboard, contrast]
 ---
@@ -25,6 +27,7 @@ tags: [accessibility, web, audit, wcag, a11y, aria, keyboard, contrast]
 > botón primario** (3.47:1) — ambos FAIL para texto normal, PASS para texto grande.
 >
 > **Decisión del owner:** crear un token de texto dedicado.
+>
 > - `--brand-primary` = river500 (sin cambios) → fondos, acentos, botones.
 > - `--brand-primary-text` = **river700** (L≈0.48) → links/texto de marca sobre fondo
 >   claro. Verificado: **~6.5:1** (PASS holgado). Target objetivo: cualquier shade river
@@ -137,7 +140,9 @@ WHEN se mide su contraste
 THEN usa --brand-primary-text (river700) y da ≥4.5:1
  AND los botones primarios tienen texto bold y dan ≥3:1
 ```
+
 Checks:
+
 - [ ] `--brand-primary-text` definido (river700, L≈0.48) y verificado ≥4.5:1 con el script de contraste
 - [ ] nav links activos y links inline de marca migrados al nuevo token
 - [ ] botones primarios con `font-weight: 700`
@@ -149,7 +154,9 @@ GIVEN cualquier página pública clave
 WHEN corre el sweep axe-core (wcag2a/2aa/21a/21aa)
 THEN 0 violations critical/serious
 ```
+
 Checks:
+
 - [ ] sweep axe creado y corriendo en CI
 - [ ] 0 critical/serious en home, los 6 listados, un detail por entidad
 - [ ] el guard falla el build si aparece una violation critical/serious
@@ -162,7 +169,9 @@ THEN las de contenido tienen alt descriptivo (no el título repetido)
  AND avatares usan el nombre del usuario
  AND todos los tap targets son ≥44×44px
 ```
+
 Checks:
+
 - [ ] B1/B2/B3 corregidos
 - [ ] ScrollToTop y MobileMenu auth button ≥44×44 en mobile
 
@@ -173,7 +182,9 @@ GIVEN navego por teclado
 THEN cada elemento enfocable tiene indicador visible (≥3:1)
  AND landmarks y roles ARIA son correctos
 ```
+
 Checks:
+
 - [ ] C1/C2/C3 resueltos (todo `:focus-visible` con indicador visible)
 - [ ] footer `role=contentinfo`, BetaSearch `role=dialog`, danger banners `role=alert`
 

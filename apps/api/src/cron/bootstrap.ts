@@ -36,8 +36,14 @@ function buildContext(jobName: string): CronJobContext {
                 apiLogger.info({ message: `[CRON:${jobName}] ${message}`, ...data }),
             warn: (message, data) =>
                 apiLogger.warn({ message: `[CRON:${jobName}] ${message}`, ...data }),
-            error: (message, data) =>
-                apiLogger.error({ message: `[CRON:${jobName}] ${message}`, ...data }),
+            // SPEC-180: propagate `capture` option so job handlers can opt in to
+            // Sentry forwarding via `ctx.logger.error(msg, data, { capture: true })`.
+            error: (message, data, options) =>
+                apiLogger.error(
+                    { message: `[CRON:${jobName}] ${message}`, ...data },
+                    undefined,
+                    options?.capture ? { capture: true } : undefined
+                ),
             debug: (message, data) =>
                 apiLogger.debug({ message: `[CRON:${jobName}] ${message}`, ...data })
         },

@@ -1587,7 +1587,8 @@ describe('processSubscriptionUpdated', () => {
                     from: SubscriptionStatusEnum.EXPIRED,
                     to: SubscriptionStatusEnum.ACTIVE
                 }),
-                expect.stringContaining('invalid status transition')
+                expect.stringContaining('invalid status transition'),
+                { capture: true }
             );
 
             guardSpy.mockRestore();

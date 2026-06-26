@@ -93,14 +93,17 @@ test.describe('MSG-01: guest contacts host, host replies @p1 @messaging @cross-a
         expect(conversationId, 'conversationId must be returned').toBeTruthy();
 
         // ── 2. Host lists conversations and finds the new one ─────────────
-        const listRes = await page.request.get(`${API_URL}/api/v1/protected/conversations`, {
+        // SPEC-105 T-105-04: host inbox is at /conversations/owner (not /conversations,
+        // which is the guest inbox filtered by user_id). Response shape is paginated:
+        // { data: { items: [...], pagination: {...} } }.
+        const listRes = await page.request.get(`${API_URL}/api/v1/protected/conversations/owner`, {
             headers: { cookie: host.sessionCookie }
         });
         expect(listRes.ok()).toBe(true);
         const listBody = (await listRes.json()) as {
-            data?: ReadonlyArray<{ id: string }>;
+            data?: { items: ReadonlyArray<{ id: string }>; pagination: unknown };
         };
-        const conversationIds = listBody.data?.map((row) => row.id) ?? [];
+        const conversationIds = listBody.data?.items?.map((row) => row.id) ?? [];
         expect(
             conversationIds.includes(conversationId as string),
             `host conversations list should include ${conversationId}`

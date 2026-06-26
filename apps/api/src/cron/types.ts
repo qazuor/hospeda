@@ -5,6 +5,20 @@
  */
 
 /**
+ * Options for a cron logger call. A subset of `LoggerOptions` from
+ * `@repo/logger`, kept here to avoid a direct import cycle.
+ */
+export interface CronLogOptions {
+    /**
+     * When `true` on an `error` call, forwards the logged value to the
+     * registered capture hook (e.g. Sentry). Only honoured at `error` level;
+     * silently ignored on `info`/`warn`/`debug`.
+     * @see SPEC-180 BETA-64
+     */
+    capture?: boolean;
+}
+
+/**
  * Context passed to every cron job handler
  * Provides logging, timing, and execution mode information
  */
@@ -13,7 +27,12 @@ export interface CronJobContext {
     logger: {
         info: (message: string, data?: Record<string, unknown>) => void;
         warn: (message: string, data?: Record<string, unknown>) => void;
-        error: (message: string, data?: Record<string, unknown>) => void;
+        /**
+         * Log an error. Pass `options.capture = true` for genuinely actionable
+         * errors that should create a Sentry issue (startup failures, unrecoverable
+         * cron errors). Omit `capture` for expected/transient errors.
+         */
+        error: (message: string, data?: Record<string, unknown>, options?: CronLogOptions) => void;
         debug: (message: string, data?: Record<string, unknown>) => void;
     };
     /** Timestamp when the job execution started */

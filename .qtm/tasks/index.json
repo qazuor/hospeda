@@ -2,18 +2,6 @@
     "version": "1.0",
     "epics": [
         {
-            "specId": "SPEC-162",
-            "title": "Admin Audit & Security Log Query Layer",
-            "status": "in-progress",
-            "progress": "0/1",
-            "path": "SPEC-162-admin-audit-security-log-query",
-            "branch": "spec/SPEC-162-admin-audit-security-log-query",
-            "worktree": "/home/qazuor/projects/WEBS/hospeda-162-admin-audit-security-log-query",
-            "base": "staging",
-            "createdAt": "2026-06-25T00:00:00.000Z",
-            "note": "Implementation in progress: queryable audit/security log persistence (audit_log_entries table) + admin endpoints gated by AUDIT_LOG_VIEW / SECURITY_LOG_VIEW, mirroring the SPEC-184 app_log_entries pattern."
-        },
-        {
             "specId": "SPEC-129",
             "title": "Security Audit \u2014 Dependency Vulnerabilities Remediation",
             "status": "completed",
@@ -1130,6 +1118,22 @@
             "note": "Doc-only spec; tasks NOT atomized yet. Formalizes Linear BETA-96: the ML import tier uses a static 6h access token with no refresh. Replace with OAuth 2.0 authorization-code + refresh-token rotation + token service (concurrency-safe). Unblocks SPEC-258 A3 (ML field enrichment). 5 open questions for the owner before atomizing."
         },
         {
+            "specId": "SPEC-270",
+            "title": "Web accessibility audit — WCAG 2.1 AA",
+            "status": "completed",
+            "progress": "7/7",
+            "path": "SPEC-270-web-accessibility-audit",
+            "branch": "spec/SPEC-270-web-accessibility-audit",
+            "worktree": "/home/qazuor/projects/WEBS/hospeda-SPEC-270-web-accessibility-audit",
+            "base": "staging",
+            "createdAt": "2026-06-23T00:00:00.000Z",
+            "tasksAtomizedAt": "2026-06-24T00:00:00.000Z",
+            "taskCount": 7,
+            "archived": true,
+            "archivedAt": "2026-06-24T00:00:00Z",
+            "archiveNote": "7/7. PR #1844 left green. Code-side remediation complete; manual keyboard/screen-reader verification procedure documented in docs/guides/web-accessibility-manual-testing.md."
+        },
+        {
             "specId": "SPEC-281",
             "title": "Accommodation import \u2014 async extraction path for slow/blocked sources (SPEC-277 R3)",
             "status": "draft",
@@ -1140,22 +1144,6 @@
             "base": "staging",
             "createdAt": "2026-06-24T00:00:00Z",
             "note": "Doc-only spec; tasks NOT atomized yet. Deferred R3 (async extraction path) carved out of SPEC-277. Reuses SPEC-250 async Apify helpers. 5 open questions for the owner before atomizing."
-        },
-        {
-            "specId": "SPEC-269",
-            "title": "Web performance audit & improvements \u2014 Core Web Vitals, 12 findings + fix catalog",
-            "status": "completed",
-            "progress": "13/13",
-            "archived": true,
-            "archivedAt": "2026-06-25",
-            "path": "SPEC-269-web-performance-audit",
-            "branch": "spec/SPEC-269-web-performance-audit",
-            "base": "staging",
-            "createdAt": "2026-06-24T00:00:00Z",
-            "tasksAtomizedAt": "2026-06-24T00:00:00Z",
-            "taskCount": 13,
-            "averageComplexity": 2.85,
-            "note": "13 tasks across 4 phases (core 3, integration 8, ci 1, testing 1); spec \u00a76 lists 12 task IDs but T-269-02 and T-269-03 each split into a/b = 13 total. All fix tasks (T-269-03a through T-269-10) are independent and run in parallel. Only sequential chains: T-269-02a\u2192T-269-02b and all fixes\u2192T-269-11. POTENTE: T-269-02b (manualChunks tuning) + T-269-03b (hero SSR first-frame). SPEC-190 bundle pattern reused for apps/web."
         }
     ],
     "standalone": {

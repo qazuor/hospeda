@@ -36,24 +36,30 @@ test.describe('E2E-10: filter sub-route ISR cache hit @p1 @cache @cross-app', ()
         const queryA = '?pageSize=10&sort=createdAt';
         const queryB = '?pageSize=5&sort=createdAt';
 
+        // SPEC-105 T-105-04: public list response shape is paginated:
+        // { data: { items: [...], pagination: {...} } } — NOT a flat array on data.
+        type PaginatedBody = {
+            data?: { items: ReadonlyArray<{ id: string }>; pagination: unknown };
+        };
+
         const firstA = await page.request.get(`${API_URL}/api/v1/public/accommodations${queryA}`);
         expect(firstA.ok(), `first request A should be 200 (got ${firstA.status()})`).toBe(true);
-        const firstABody = (await firstA.json()) as { data?: ReadonlyArray<{ id: string }> };
+        const firstABody = (await firstA.json()) as PaginatedBody;
 
         const secondA = await page.request.get(`${API_URL}/api/v1/public/accommodations${queryA}`);
         expect(secondA.ok(), `second request A should be 200 (got ${secondA.status()})`).toBe(true);
-        const secondABody = (await secondA.json()) as { data?: ReadonlyArray<{ id: string }> };
+        const secondABody = (await secondA.json()) as PaginatedBody;
 
         // ── 1. Same query → same data shape (and identical first ids) ────
-        const idsFirstA = firstABody.data?.map((row) => row.id) ?? [];
-        const idsSecondA = secondABody.data?.map((row) => row.id) ?? [];
+        const idsFirstA = firstABody.data?.items?.map((row) => row.id) ?? [];
+        const idsSecondA = secondABody.data?.items?.map((row) => row.id) ?? [];
         expect(idsSecondA, 'identical query must return identical id sequence').toEqual(idsFirstA);
 
         // ── 2. Different query: pageSize=5 may return fewer rows ──────────
         const firstB = await page.request.get(`${API_URL}/api/v1/public/accommodations${queryB}`);
         expect(firstB.ok()).toBe(true);
-        const firstBBody = (await firstB.json()) as { data?: ReadonlyArray<{ id: string }> };
-        const idsFirstB = firstBBody.data?.map((row) => row.id) ?? [];
+        const firstBBody = (await firstB.json()) as PaginatedBody;
+        const idsFirstB = firstBBody.data?.items?.map((row) => row.id) ?? [];
 
         // pageSize=5 should not exceed pageSize=10's row count.
         expect(

@@ -32,7 +32,11 @@
 .trigger:focus-visible {
     background: var(--surface-warm, oklch(0.97 0.01 60));
     border-color: var(--primary, oklch(0.55 0.17 264));
-    outline: none;
+}
+
+.trigger:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
 }
 
 .triggerLabel {
@@ -100,7 +104,11 @@
 .closeBtn:hover,
 .closeBtn:focus-visible {
     background: var(--surface-warm, oklch(0.97 0.01 60));
-    outline: none;
+}
+
+.closeBtn:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
 }
 
 /* ── List ───────────────────────────────────────────────────────────────── */
@@ -133,7 +141,11 @@
 .item:hover,
 .item:focus-visible {
     background: var(--surface-warm, oklch(0.97 0.01 60));
-    outline: none;
+}
+
+.item:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: -2px;
 }
 
 .itemIcon {

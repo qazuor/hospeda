@@ -169,8 +169,8 @@ describe('theme exports', () => {
         // 155 was the prior count; grew to 208 after SSOT icon+color passes added
         // event-category (8), post-category (18), user-role (7), auth-provider (5),
         // amenity-type (12) and sponsor-type (3) token families.
-        expect(Object.keys(webLight)).toHaveLength(208); // post-SSOT sponsors/amenities/auth/post-categories
-        expect(Object.keys(webDark)).toHaveLength(56);
+        expect(Object.keys(webLight)).toHaveLength(209); // + brand-primary-text
+        expect(Object.keys(webDark)).toHaveLength(57);
         // Admin: 39 was prior count (17 core + 12 brand + 10 per-accommodation-type).
         // Grew to 92 after the same SSOT passes added event-category/post-category/
         // user-role/auth-provider/amenity-type/sponsor-type families to admin-light.

@@ -147,7 +147,7 @@ const securePaymentsLabel = t("footer.trustSignals.securePayments", "Pagos segur
 const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisiones ocultas");
 ---
 
-<footer class="footer">
+<footer class="footer" role="contentinfo">
     <!-- Wave decoration overlapping the section above -->
     <div class="footer__wave" aria-hidden="true">
         <svg viewBox="0 0 1440 80" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
@@ -556,7 +556,9 @@ const noCommissionsLabel = t("footer.trustSignals.noCommissions", "Sin comisione
         color: var(--footer-fg-muted);
     }
 
-    .footer__newsletter-input:focus {
+    .footer__newsletter-input:focus-visible {
+        outline: 2px solid var(--footer-link-hover);
+        outline-offset: 2px;
         border-color: var(--footer-fg-a50);
         background-color: var(--footer-fg-a12);
     }

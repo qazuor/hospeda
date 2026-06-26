@@ -4,7 +4,7 @@
  * are NOT generator round-trip tests (T-153-17 does that against the
  * full seed manifest). They cover:
  *
- *   - the right NUMBER of keys per theme (145 light + 56 dark),
+ *   - the right NUMBER of keys per theme (209 light + 57 dark),
  *   - a sample of values are correctly referenced from the underlying
  *     token modules (palette refs, semantic refs, raw strings),
  *   - the dark theme is a strict subset of light (no orphan overrides
@@ -31,13 +31,13 @@ function serializeThemeValue(value: unknown): string {
 }
 
 describe('webLight — coverage', () => {
-    it('declares all 208 web :root tokens', () => {
+    it('declares all 209 web :root tokens', () => {
         // 155 was the prior count (accommodation-type tokens + base). Count grew
         // to 208 after the SSOT icon+color passes added event-category (8),
         // post-category (18), user-role (7), auth-provider (5), amenity-type (12)
         // and sponsor-type (3) token families. Adding or removing entries should
         // be intentional.
-        expect(Object.keys(webLight)).toHaveLength(208); // post-SSOT sponsors/amenities/auth/post-categories
+        expect(Object.keys(webLight)).toHaveLength(209); // + brand-primary-text
     });
 
     it('declares the 10 per-accommodation-type tokens referencing palette primitives', () => {
@@ -151,9 +151,9 @@ describe('webLight — radius / spacing / typography / shadows / motion / z-inde
 });
 
 describe('webDark — coverage', () => {
-    it('declares 56 dark overrides', () => {
-        // 56 matches the Phase 0 extractor count for tokens.dark.
-        expect(Object.keys(webDark)).toHaveLength(56);
+    it('declares 57 dark overrides', () => {
+        // 57 matches the current extractor count for tokens.dark after adding brand-primary-text.
+        expect(Object.keys(webDark)).toHaveLength(57);
     });
 
     it('every dark key has a corresponding light declaration', () => {

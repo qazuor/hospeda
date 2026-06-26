@@ -140,10 +140,10 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
         <div class="account__header-inner">
             <!-- Avatar: photo when available, initials fallback otherwise (BETA-32) -->
-            <div class="account__avatar" aria-hidden="true">
+            <div class="account__avatar">
                 <span class="account__avatar-ring" aria-hidden="true" />
                 {user.image ? (
-                    <img src={user.image} alt="" class="account__avatar-img" width="104" height="104" />
+                    <img src={user.image} alt={user.name} class="account__avatar-img" width="104" height="104" />
                 ) : (
                     <span class="account__avatar-initials">{initials}</span>
                 )}

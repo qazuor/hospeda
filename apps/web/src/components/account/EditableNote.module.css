@@ -85,7 +85,6 @@
     line-height: 1.5;
     color: var(--core-foreground);
     background-color: var(--core-card);
-    outline: none;
     box-shadow: 0 0 0 3px var(--brand-primary-a15);
     transition: border-color var(--duration-normal, 0.4s) ease, box-shadow
         var(--duration-normal, 0.4s) ease;
@@ -182,6 +181,10 @@
 }
 
 .cancelBtn:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+.textarea:focus-visible {
     outline: 2px solid var(--brand-primary);
     outline-offset: 2px;
 }

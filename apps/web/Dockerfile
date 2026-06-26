@@ -45,6 +45,11 @@ ARG SOURCE_COMMIT
 ARG HOSPEDA_GIT_SHA=${SOURCE_COMMIT}
 ARG PUBLIC_SENTRY_RELEASE=${HOSPEDA_GIT_SHA}
 ARG PUBLIC_SENTRY_ENVIRONMENT
+# SPEC-180 BETA-66: SENTRY_AUTH_TOKEN is a build-time secret used by the
+# @sentry/astro plugin to upload source maps during `astro build`. It must
+# NOT be forwarded to the runner stage — it is only needed at build time.
+ARG SENTRY_AUTH_TOKEN
+ENV SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN
 ENV HOSPEDA_API_URL=$HOSPEDA_API_URL \
     HOSPEDA_SITE_URL=$HOSPEDA_SITE_URL \
     HOSPEDA_ADMIN_URL=$HOSPEDA_ADMIN_URL \
