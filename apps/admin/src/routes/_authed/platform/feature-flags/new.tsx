@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { fetchApi } from '@/lib/api/fetch-api';
+import { fetchApi } from '@/lib/api/client';
 /**
  * Create Feature Flag page — admin panel.
  */
@@ -32,7 +32,8 @@ function CreateFeatureFlag() {
         };
 
         try {
-            await fetchApi('/api/v1/admin/feature-flags', {
+            await fetchApi({
+                path: '/api/v1/admin/feature-flags',
                 method: 'POST',
                 body: JSON.stringify(data)
             });

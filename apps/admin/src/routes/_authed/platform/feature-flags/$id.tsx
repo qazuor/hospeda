@@ -1,7 +1,7 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { fetchApi } from '@/lib/api/fetch-api';
+import { fetchApi } from '@/lib/api/client';
 import type { FeatureFlag } from '@repo/schemas';
 import { useSuspenseQuery } from '@tanstack/react-query';
 /**
@@ -13,8 +13,8 @@ function ViewFeatureFlag({ params }: { params: { id: string } }) {
     const { data: flag } = useSuspenseQuery<FeatureFlag>({
         queryKey: ['feature-flag', params.id],
         queryFn: async () => {
-            const response = await fetchApi(`/api/v1/admin/feature-flags/${params.id}`);
-            return response as FeatureFlag;
+            const response = await fetchApi({ path: `/api/v1/admin/feature-flags/${params.id}` });
+            return response.data as FeatureFlag;
         }
     });
 
@@ -134,8 +134,8 @@ export const Route = createFileRoute('/_authed/platform/feature-flags/$id')({
         await context.queryClient.ensureQueryData({
             queryKey: ['feature-flag', params.id],
             queryFn: async () => {
-                const response = await fetchApi(`/api/v1/admin/feature-flags/${params.id}`);
-                return response as FeatureFlag;
+                const response = await fetchApi({ path: `/api/v1/admin/feature-flags/${params.id}` });
+                return response.data as FeatureFlag;
             }
         });
     }

@@ -1,8 +1,9 @@
-import { EntityListPage } from '@/components/entity-list/EntityListPage';
 import { DataTable } from '@/components/table/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { fetchApi } from '@/lib/api/client';
+import { AddIcon } from '@repo/icons';
 import type { FeatureFlag } from '@repo/schemas';
 import { useSuspenseQuery } from '@tanstack/react-query';
 /**
@@ -10,6 +11,7 @@ import { useSuspenseQuery } from '@tanstack/react-query';
  */
 import { createFileRoute } from '@tanstack/react-router';
 import type { ColumnDef } from '@tanstack/react-table';
+import { Link } from '@tanstack/react-router';
 
 type FeatureFlagListResponse = {
     items: FeatureFlag[];
@@ -72,14 +74,21 @@ const columns: ColumnDef<FeatureFlag>[] = [
                     size="sm"
                     asChild
                 >
-                    <a href={`/platform/feature-flags/${row.original.id}`}>View</a>
+                    <Link to="/platform/feature-flags/$id" params={{ id: row.original.id }}>
+                        View
+                    </Link>
                 </Button>
                 <Button
                     variant="ghost"
                     size="sm"
                     asChild
                 >
-                    <a href={`/platform/feature-flags/${row.original.id}/edit`}>Edit</a>
+                    <Link
+                        to="/platform/feature-flags/$id_/edit"
+                        params={{ id: row.original.id }}
+                    >
+                        Edit
+                    </Link>
                 </Button>
             </div>
         )
@@ -98,28 +107,45 @@ function FeatureFlagsList() {
     });
 
     return (
-        <EntityListPage
-            entityName="Feature Flag"
-            entityNamePlural="Feature Flags"
-            basePath="/platform/feature-flags"
-            createPath="/platform/feature-flags/new"
-        >
-            <DataTable
-                columns={columns}
-                data={data.items}
-                pagination={{
-                    page: data.pagination.page,
-                    pageSize: data.pagination.pageSize,
-                    total: data.pagination.total,
-                    totalPages: data.pagination.totalPages,
-                    hasNextPage: data.pagination.hasNextPage,
-                    hasPreviousPage: data.pagination.hasPreviousPage
-                }}
-                searchPlaceholder="Search flags by key or description..."
-                enableSearch
-                enableFilters={false}
-            />
-        </EntityListPage>
+        <div className="p-6">
+            <div className="mb-6 flex items-center justify-between">
+                <div>
+                    <h1 className="font-bold font-mono text-3xl">Feature Flags</h1>
+                    <p className="text-muted-foreground">
+                        Manage feature flags for dark launch and kill switch functionality
+                    </p>
+                </div>
+                <Button asChild>
+                    <Link to="/platform/feature-flags/new">
+                        <AddIcon className="mr-2 h-4 w-4" />
+                        Create Flag
+                    </Link>
+                </Button>
+            </div>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>All Feature Flags</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <DataTable
+                        columns={columns}
+                        data={data.items}
+                        pagination={{
+                            page: data.pagination.page,
+                            pageSize: data.pagination.pageSize,
+                            total: data.pagination.total,
+                            totalPages: data.pagination.totalPages,
+                            hasNextPage: data.pagination.hasNextPage,
+                            hasPreviousPage: data.pagination.hasPreviousPage
+                        }}
+                        searchPlaceholder="Search flags by key or description..."
+                        enableSearch
+                        enableFilters={false}
+                    />
+                </CardContent>
+            </Card>
+        </div>
     );
 }
 

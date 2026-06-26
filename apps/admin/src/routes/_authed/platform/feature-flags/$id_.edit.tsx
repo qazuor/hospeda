@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { fetchApi } from '@/lib/api/fetch-api';
+import { fetchApi } from '@/lib/api/client';
 import type { FeatureFlag } from '@repo/schemas';
 import { useMutation, useQueryClient, useSuspenseQuery } from '@tanstack/react-query';
 /**
@@ -22,18 +22,19 @@ function EditFeatureFlag({ params }: { params: { id: string } }) {
     const { data: flag } = useSuspenseQuery<FeatureFlag>({
         queryKey: ['feature-flag', params.id],
         queryFn: async () => {
-            const response = await fetchApi(`/api/v1/admin/feature-flags/${params.id}`);
-            return response as FeatureFlag;
+            const response = await fetchApi({ path: `/api/v1/admin/feature-flags/${params.id}` });
+            return response.data as FeatureFlag;
         }
     });
 
     const updateMutation = useMutation({
         mutationFn: async (data: Partial<FeatureFlag>) => {
-            const response = await fetchApi(`/api/v1/admin/feature-flags/${params.id}`, {
+            const response = await fetchApi({
+                path: `/api/v1/admin/feature-flags/${params.id}`,
                 method: 'PATCH',
                 body: JSON.stringify(data)
             });
-            return response as FeatureFlag;
+            return response.data as FeatureFlag;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['feature-flag', params.id] });
@@ -191,8 +192,8 @@ export const Route = createFileRoute('/_authed/platform/feature-flags/$id_/edit'
         await context.queryClient.ensureQueryData({
             queryKey: ['feature-flag', params.id],
             queryFn: async () => {
-                const response = await fetchApi(`/api/v1/admin/feature-flags/${params.id}`);
-                return response as FeatureFlag;
+                const response = await fetchApi({ path: `/api/v1/admin/feature-flags/${params.id}` });
+                return response.data as FeatureFlag;
             }
         });
     }
