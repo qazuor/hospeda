@@ -181,19 +181,13 @@ export const ImageSearchModal: React.FC<ImageSearchModalProps> = ({
         }
     }, [searchState.provider, searchState.query, searchState.orientation, searchState.page, t]);
 
-    const debouncedSearch = React.useMemo(() => {
+    React.useEffect(() => {
+        if (!searchState.query.trim()) return;
         const timeout = setTimeout(() => {
-            if (searchState.query.trim()) {
-                performSearch();
-            }
+            performSearch();
         }, 300);
-
         return () => clearTimeout(timeout);
     }, [performSearch, searchState.query]);
-
-    React.useEffect(() => {
-        debouncedSearch();
-    }, [debouncedSearch]);
 
     const handleImport = async () => {
         if (!selectedImageRef.current) return;
@@ -214,7 +208,7 @@ export const ImageSearchModal: React.FC<ImageSearchModalProps> = ({
                     photographerUrl: selectedImageRef.current.photographerUrl,
                     entityType,
                     entityId,
-                    targetRole
+                    role: targetRole
                 }
             });
 
