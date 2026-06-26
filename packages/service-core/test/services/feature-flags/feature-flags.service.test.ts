@@ -429,11 +429,11 @@ describe('FeatureFlagService', () => {
     describe('deleteFlag()', () => {
         it('deletes flag when it exists', async () => {
             mockModel.findById.mockResolvedValue(mockFlag);
-            mockModel.delete.mockResolvedValue(undefined);
+            mockModel.softDelete.mockResolvedValue(undefined);
 
             await service.deleteFlag(actor, mockFlag.id);
 
-            expect(mockModel.delete).toHaveBeenCalledWith(mockFlag.id);
+            expect(mockModel.softDelete).toHaveBeenCalledWith(mockFlag.id);
         });
 
         it('throws NOT_FOUND when flag does not exist', async () => {

@@ -140,6 +140,8 @@
 | `GET /api/v1/public/auth/reset-password/check` | `auth/reset-password-check.ts` | none | - | n/a | Public token-check endpoint; no auth needed |
 | `POST /api/v1/public/auth/signup-as-host` | `auth/signup-as-host.ts` | none | - | n/a | Registration endpoint; no entitlement gate |
 | `GET /api/v1/public/auth/status` | `auth/status.ts` | none | - | n/a | Public auth readiness check |
+| **FEATURE FLAGS — PROTECTED** | | | | | |
+| `GET /api/v1/protected/feature-flags/me` | `feature-flags/protected/getMe.ts` | none | - | n/a | Evaluated feature flags for current user; auth-only sufficient (no billing entitlement gate) |
 | **USER — PROTECTED** | | | | | |
 | `GET /api/v1/protected/users/me/entitlements` | `user/protected/entitlements.ts` | none | - | n/a | Returns the caller's own entitlements; always accessible |
 | `GET /api/v1/protected/users/{id}` | `user/protected/getById.ts` | none | - | n/a | Read own profile; auth-only sufficient |
