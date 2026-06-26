@@ -1,7 +1,7 @@
 import { PageTabs, postTabs } from '@/components/layout/PageTabs';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { SeoEditor } from '@/components/seo/SeoEditor';
-import { buildSeoPreviewUrl } from '@/components/seo/seo-editor.utils';
+import { SEO_DEFAULT_LOCALE, buildSeoPreviewUrl } from '@/components/seo/seo-editor.utils';
 import { env } from '@/env';
 import { usePostQuery, useUpdatePostMutation } from '@/features/posts/hooks/usePostQuery';
 import { createFileRoute } from '@tanstack/react-router';
@@ -17,7 +17,7 @@ function PostSeoPage() {
 
     const previewUrl = buildSeoPreviewUrl({
         siteUrl: env.VITE_SITE_URL,
-        locale: 'es',
+        locale: SEO_DEFAULT_LOCALE,
         pathSegment: 'publicaciones',
         slug: post?.slug
     });

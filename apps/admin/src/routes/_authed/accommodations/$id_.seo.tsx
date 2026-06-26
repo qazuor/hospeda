@@ -1,5 +1,5 @@
 import { SeoEditor } from '@/components/seo/SeoEditor';
-import { buildSeoPreviewUrl } from '@/components/seo/seo-editor.utils';
+import { SEO_DEFAULT_LOCALE, buildSeoPreviewUrl } from '@/components/seo/seo-editor.utils';
 import { env } from '@/env';
 import { AccommodationSubTabLayout } from '@/features/accommodations/components/AccommodationSubTabLayout';
 import {
@@ -19,7 +19,7 @@ function AccommodationSeoPage() {
 
     const previewUrl = buildSeoPreviewUrl({
         siteUrl: env.VITE_SITE_URL,
-        locale: 'es',
+        locale: SEO_DEFAULT_LOCALE,
         pathSegment: 'alojamientos',
         slug: accommodation?.slug as string | undefined
     });

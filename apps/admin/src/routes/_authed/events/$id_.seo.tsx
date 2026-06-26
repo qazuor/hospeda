@@ -1,7 +1,7 @@
 import { PageTabs, eventTabs } from '@/components/layout/PageTabs';
 import { SidebarPageLayout } from '@/components/layout/SidebarPageLayout';
 import { SeoEditor } from '@/components/seo/SeoEditor';
-import { buildSeoPreviewUrl } from '@/components/seo/seo-editor.utils';
+import { SEO_DEFAULT_LOCALE, buildSeoPreviewUrl } from '@/components/seo/seo-editor.utils';
 import { env } from '@/env';
 import { useEventQuery, useUpdateEventMutation } from '@/features/events/hooks/useEventQuery';
 import { createFileRoute } from '@tanstack/react-router';
@@ -17,7 +17,7 @@ function EventSeoPage() {
 
     const previewUrl = buildSeoPreviewUrl({
         siteUrl: env.VITE_SITE_URL,
-        locale: 'es',
+        locale: SEO_DEFAULT_LOCALE,
         pathSegment: 'eventos',
         slug: event?.slug
     });
