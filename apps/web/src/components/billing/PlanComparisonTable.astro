@@ -1,23 +1,29 @@
 ---
 /**
  * @file PlanComparisonTable.astro
- * @description Detailed plan comparison table showing every entitlement and
- * limit for each plan, grouped by category. Used by the owner comparison page
- * (/suscriptores/planes/comparar/) and the tourist comparison page
- * (/suscriptores/turistas/comparar/).
+ * @description Curated plan comparison table with explicit, ordered row configs
+ * per audience. Each row has a labelKey (i18n), a typed cell definition, a
+ * status (available | upcoming), and an optional noteKey. Numeric cells read
+ * real limit values from plan data; literal cells use explicit yes/no values.
  *
- * Renders a semantically accessible <table> with:
- * - Plan names + monthly prices as column headers
- * - Entitlement rows (checkmark / dash) grouped by category
- * - Limit rows (numeric value / "Ilimitado" / dash) in a limits group
- * - Sticky first column (row labels) + horizontal scroll on mobile
+ * Owner audience filters out complex plans and renders a teaser note below.
+ * Tourist audience shows experience + AI groups.
+ *
+ * Renders a semantically accessible <table> with sticky first column and
+ * horizontal scroll on mobile.
+ *
+ * @prop locale - Active locale.
+ * @prop plans - Plans from the API (may include complex plans for owners —
+ *   they are filtered out inside this component).
+ * @prop audience - `'owner'` or `'tourist'`.
+ * @prop intlLocale - BCP-47 locale string for Intl.NumberFormat.
  */
 
 import { CheckIcon, MinusIcon } from '@repo/icons';
+import { LimitKey } from '@repo/billing';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { getEntitlementName, getLimitName, getComparisonGroupLabel, getPlanName } from '@/lib/billing-i18n';
-import type { EntitlementKey } from '@/lib/billing-i18n';
+import { getComparisonGroupLabel, getPlanName } from '@/lib/billing-i18n';
 import type { PublicPlanData } from '@/lib/billing/fetch-plans';
 
 interface Props {
@@ -33,70 +39,149 @@ const { t } = createTranslations(locale);
 const unlimitedLabel = t('billing.comparison.unlimited', 'Ilimitado');
 const notIncludedLabel = t('billing.comparison.notIncluded', 'No incluido');
 const includedLabel = t('billing.comparison.included', 'Incluido');
+const upcomingLabel = t('billing.comparison.upcoming', 'Próximamente');
 
-interface EntitlementGroup {
+// Complex plans are included by the /planes/comparar/ page but must NOT appear
+// as columns in this table. Filter them out; we render a teaser below instead.
+const activePlans = audience === 'owner'
+	? plans.filter((p) => p.category === 'owner')
+	: plans;
+
+// ---------------------------------------------------------------------------
+// Row model types
+// ---------------------------------------------------------------------------
+
+type YesNo = 'yes' | 'no';
+
+interface LimitCell {
+	readonly kind: 'limit';
+	/** Strongly-typed limit key — reads the real value from plan.limits. */
+	readonly key: LimitKey;
+}
+interface LiteralsCell {
+	readonly kind: 'literals';
+	/** One value per plan column (in sort order). */
+	readonly values: readonly YesNo[];
+}
+interface AllYesCell { readonly kind: 'all-yes' }
+interface AllNoCell { readonly kind: 'all-no' }
+interface AllUnlimitedCell { readonly kind: 'all-unlimited' }
+
+type RowCellDef = LimitCell | LiteralsCell | AllYesCell | AllNoCell | AllUnlimitedCell;
+type CellRendered = YesNo | 'unlimited' | number;
+
+interface RowConfig {
 	readonly id: string;
-	readonly keys: readonly string[];
+	readonly labelKey: string;
+	readonly cell: RowCellDef;
+	readonly status: 'available' | 'upcoming';
+	readonly noteKey?: string | undefined;
 }
 
-const OWNER_ENTITLEMENTS: readonly string[] = [
-	'publish_accommodations', 'edit_accommodation_info', 'view_basic_stats',
-	'view_advanced_stats', 'respond_reviews', 'priority_support',
-	'featured_listing', 'custom_branding', 'create_promotions',
+interface GroupConfig {
+	readonly id: string;
+	readonly rows: readonly RowConfig[];
+}
+
+// ---------------------------------------------------------------------------
+// Tourist rows (reused by owner's asTourist group)
+// ---------------------------------------------------------------------------
+
+const TOURIST_EXPERIENCE_ROWS: readonly RowConfig[] = [
+	{ id: 'favorites',      labelKey: 'billing.comparison.row.favorites',      cell: { kind: 'limit',    key: LimitKey.MAX_FAVORITES },            status: 'available' },
+	{ id: 'collections',    labelKey: 'billing.comparison.row.collections',    cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },            status: 'upcoming'  },
+	{ id: 'reviews',        labelKey: 'billing.comparison.row.reviews',        cell: { kind: 'all-yes' },                                           status: 'available' },
+	{ id: 'recommendations',labelKey: 'billing.comparison.row.recommendations',cell: { kind: 'all-yes' },                                           status: 'upcoming'  },
+	{ id: 'compare',        labelKey: 'billing.comparison.row.compare',        cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },            status: 'upcoming'  },
+	{ id: 'searchHistory',  labelKey: 'billing.comparison.row.searchHistory',  cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },            status: 'upcoming'  },
+	{ id: 'alertsOffers',   labelKey: 'billing.comparison.row.alertsOffers',   cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },            status: 'upcoming'  },
+	{ id: 'whatsappDisplay',labelKey: 'billing.comparison.row.whatsappDisplay',cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },            status: 'available' },
+	{ id: 'whatsappDirect', labelKey: 'billing.comparison.row.whatsappDirect', cell: { kind: 'literals', values: ['no', 'no',  'yes'] },            status: 'available' },
 ];
 
-const ACCOMMODATION_ENTITLEMENTS: readonly string[] = [
-	'can_use_rich_description', 'can_embed_video', 'can_use_calendar',
-	'can_sync_external_calendar', 'can_contact_whatsapp_display',
-	'can_contact_whatsapp_direct', 'has_verification_badge',
+const TOURIST_AI_ROWS: readonly RowConfig[] = [
+	{ id: 'aiSearch', labelKey: 'billing.comparison.row.aiSearch', cell: { kind: 'all-yes' }, status: 'available', noteKey: 'billing.comparison.note.aiSearch'      },
+	{ id: 'aiChat',   labelKey: 'billing.comparison.row.aiChat',   cell: { kind: 'all-yes' }, status: 'available', noteKey: 'billing.comparison.note.aiChatTourist' },
 ];
 
-const COMPLEX_ENTITLEMENTS: readonly string[] = [
-	'multi_property_management', 'consolidated_analytics',
-	'centralized_booking', 'staff_management',
+// Convert a tourist cell to its tourist-VIP value for the owner asTourist group.
+function asVipForAll(cell: RowCellDef): RowCellDef {
+	if (cell.kind === 'limit') return { kind: 'all-unlimited' };
+	if (cell.kind === 'literals') {
+		const vipValue = cell.values[cell.values.length - 1];
+		return vipValue === 'yes' ? { kind: 'all-yes' } : { kind: 'all-no' };
+	}
+	return cell;
+}
+
+const OWNER_AS_TOURIST_ROWS: readonly RowConfig[] = [
+	...TOURIST_EXPERIENCE_ROWS,
+	...TOURIST_AI_ROWS,
+].map((row) => ({ ...row, cell: asVipForAll(row.cell) }));
+
+// ---------------------------------------------------------------------------
+// Owner-specific rows
+// ---------------------------------------------------------------------------
+
+const OWNER_ROWS: readonly RowConfig[] = [
+	{ id: 'publish',           labelKey: 'billing.comparison.row.publish',           cell: { kind: 'limit',    key: LimitKey.MAX_ACCOMMODATIONS },               status: 'available' },
+	{ id: 'photos',            labelKey: 'billing.comparison.row.photos',            cell: { kind: 'limit',    key: LimitKey.MAX_PHOTOS_PER_ACCOMMODATION },      status: 'available' },
+	{ id: 'editInfo',          labelKey: 'billing.comparison.row.editInfo',          cell: { kind: 'all-yes' },                                                   status: 'available' },
+	{ id: 'respondReviews',    labelKey: 'billing.comparison.row.respondReviews',    cell: { kind: 'all-yes' },                                                   status: 'upcoming'  },
+	{ id: 'basicStats',        labelKey: 'billing.comparison.row.basicStats',        cell: { kind: 'all-yes' },                                                   status: 'available' },
+	{ id: 'advancedStats',     labelKey: 'billing.comparison.row.advancedStats',     cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },                    status: 'available' },
+	{ id: 'calendar',          labelKey: 'billing.comparison.row.calendar',          cell: { kind: 'all-yes' },                                                   status: 'upcoming'  },
+	{ id: 'richDescription',   labelKey: 'billing.comparison.row.richDescription',   cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },                    status: 'available' },
+	{ id: 'video',             labelKey: 'billing.comparison.row.video',             cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },                    status: 'available' },
+	{ id: 'promotions',        labelKey: 'billing.comparison.row.promotions',        cell: { kind: 'limit',    key: LimitKey.MAX_ACTIVE_PROMOTIONS },             status: 'upcoming'  },
+	{ id: 'prioritySupport',   labelKey: 'billing.comparison.row.prioritySupport',   cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },                    status: 'available' },
+	{ id: 'featured',          labelKey: 'billing.comparison.row.featured',          cell: { kind: 'literals', values: ['no', 'yes', 'yes'] },                    status: 'upcoming'  },
+	{ id: 'branding',          labelKey: 'billing.comparison.row.branding',          cell: { kind: 'literals', values: ['no', 'no',  'yes'] },                    status: 'upcoming'  },
+	{ id: 'verificationBadge', labelKey: 'billing.comparison.row.verificationBadge', cell: { kind: 'literals', values: ['no', 'no',  'yes'] },                    status: 'upcoming'  },
 ];
 
-const TOURIST_ENTITLEMENTS: readonly string[] = [
-	'save_favorites', 'write_reviews', 'read_reviews', 'ad_free',
-	'price_alerts', 'exclusive_deals', 'vip_support',
-	'vip_promotions_access', 'can_compare_accommodations',
-	'can_attach_review_photos', 'can_view_search_history',
-	'can_view_recommendations',
+const OWNER_AI_ROWS: readonly RowConfig[] = [
+	{ id: 'aiTextImprove', labelKey: 'billing.comparison.row.aiTextImprove', cell: { kind: 'limit', key: LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH },         status: 'available' },
+	{ id: 'aiTranslate',   labelKey: 'billing.comparison.row.aiTranslate',   cell: { kind: 'limit', key: LimitKey.MAX_AI_TRANSLATE_PER_MONTH },            status: 'available' },
+	{ id: 'aiImport',      labelKey: 'billing.comparison.row.aiImport',      cell: { kind: 'limit', key: LimitKey.MAX_AI_ACCOMMODATION_IMPORT_PER_MONTH }, status: 'available' },
+	{ id: 'aiChatOwner',   labelKey: 'billing.comparison.row.aiChatOwner',   cell: { kind: 'limit', key: LimitKey.MAX_AI_CHAT_PER_MONTH },                 status: 'available', noteKey: 'billing.comparison.note.aiChatOwner'   },
+	{ id: 'aiSupport',     labelKey: 'billing.comparison.row.aiSupport',     cell: { kind: 'all-no' },                                                     status: 'upcoming',  noteKey: 'billing.comparison.note.aiSupportAddon' },
 ];
 
-const AI_ENTITLEMENTS: readonly string[] = [
-	'ai_text_improve', 'ai_chat', 'ai_search', 'ai_support',
-	'ai_translate', 'ai_accommodation_import',
+const TOURIST_GROUPS: readonly GroupConfig[] = [
+	{ id: 'experience', rows: TOURIST_EXPERIENCE_ROWS },
+	{ id: 'ai',         rows: TOURIST_AI_ROWS         },
 ];
 
-const OWNER_LIMITS: readonly string[] = [
-	'max_accommodations', 'max_photos_per_accommodation',
-	'max_active_promotions', 'max_properties', 'max_staff_accounts',
-	'max_ai_text_improve_per_month', 'max_ai_chat_per_month',
-	'max_ai_translate_per_month', 'max_ai_accommodation_import_per_month',
+const OWNER_GROUPS: readonly GroupConfig[] = [
+	{ id: 'asTourist',  rows: OWNER_AS_TOURIST_ROWS },
+	{ id: 'asOwner',    rows: OWNER_ROWS            },
+	{ id: 'aiBusiness', rows: OWNER_AI_ROWS         },
 ];
 
-const TOURIST_LIMITS: readonly string[] = [
-	'max_favorites', 'max_active_alerts', 'max_compare_items',
-	'max_ai_text_improve_per_month', 'max_ai_chat_per_month',
-	'max_ai_search_per_month', 'max_ai_support_per_month',
-	'max_ai_translate_per_month',
-];
+const groups = audience === 'owner' ? OWNER_GROUPS : TOURIST_GROUPS;
 
-const OWNER_GROUPS: readonly EntitlementGroup[] = [
-	{ id: 'owner', keys: OWNER_ENTITLEMENTS },
-	{ id: 'accommodation', keys: ACCOMMODATION_ENTITLEMENTS },
-	{ id: 'complex', keys: COMPLEX_ENTITLEMENTS },
-	{ id: 'ai', keys: AI_ENTITLEMENTS },
-];
+// ---------------------------------------------------------------------------
+// Rendering helpers
+// ---------------------------------------------------------------------------
 
-const TOURIST_GROUPS: readonly EntitlementGroup[] = [
-	{ id: 'tourist', keys: TOURIST_ENTITLEMENTS },
-	{ id: 'ai', keys: AI_ENTITLEMENTS },
-];
-
-const entitlementGroups = audience === 'owner' ? OWNER_GROUPS : TOURIST_GROUPS;
-const limitKeys = audience === 'owner' ? OWNER_LIMITS : TOURIST_LIMITS;
+function getCellRendered(cell: RowCellDef, plan: PublicPlanData, planIndex: number): CellRendered {
+	switch (cell.kind) {
+		case 'limit': {
+			if (!(cell.key in plan.limits)) return 'no';
+			const val = plan.limits[cell.key];
+			return val === -1 ? 'unlimited' : val;
+		}
+		case 'literals':
+			return cell.values[planIndex] ?? 'no';
+		case 'all-yes':
+			return 'yes';
+		case 'all-no':
+			return 'no';
+		case 'all-unlimited':
+			return 'unlimited';
+	}
+}
 
 function formatPriceArs(cents: number): string {
 	if (cents === 0) return t('pricing.free', 'Gratis');
@@ -112,22 +197,6 @@ function formatPriceArs(cents: number): string {
 		return `$${pesos.toLocaleString('es-AR')}`;
 	}
 }
-
-function hasEntitlement(plan: PublicPlanData, key: string): boolean {
-	return plan.entitlements.includes(key);
-}
-
-function getLimitValue(plan: PublicPlanData, key: string): number | null {
-	const limits = plan.limits as Record<string, number>;
-	if (!(key in limits)) return null;
-	return limits[key];
-}
-
-function formatLimitValue(value: number | null): string {
-	if (value === null) return '—';
-	if (value === -1) return unlimitedLabel;
-	return String(value);
-}
 ---
 
 <div class="comparison-table__wrapper" role="region" aria-label={t('pricing.comparison.link', 'Comparativa')} tabindex="0">
@@ -137,7 +206,7 @@ function formatLimitValue(value: number | null): string {
 				<th scope="col" class="comparison-table__label-col">
 					<span class="sr-only">{t('pricing.features.label', 'Incluye')}</span>
 				</th>
-				{plans.map((plan) => (
+				{activePlans.map((plan) => (
 					<th scope="col" class="comparison-table__plan-col">
 						<span class="comparison-table__plan-name">{getPlanName({ plan, t })}</span>
 						<span class="comparison-table__plan-price">{formatPriceArs(plan.monthlyPriceArs)}</span>
@@ -148,65 +217,59 @@ function formatLimitValue(value: number | null): string {
 				))}
 			</tr>
 		</thead>
-		{entitlementGroups.map((group) => (
+		{groups.map((group) => (
 			<tbody>
 				<tr class="comparison-table__group-header">
-					<th scope="rowgroup" colspan={plans.length + 1}>
+					<th scope="rowgroup" colspan={activePlans.length + 1}>
 						{getComparisonGroupLabel({ group: group.id, t })}
 					</th>
 				</tr>
-				{group.keys.map((key) => (
+				{group.rows.map((row) => (
 					<tr>
 						<th scope="row" class="comparison-table__label-col">
-							{getEntitlementName({ key: key as EntitlementKey, t })}
-						</th>
-						{plans.map((plan) => (
-							<td class="comparison-table__cell">
-								{hasEntitlement(plan, key) ? (
-									<span class="comparison-table__icon comparison-table__icon--included" role="img" aria-label={includedLabel}>
-										<CheckIcon size="sm" weight="bold" color="currentColor" />
-									</span>
-								) : (
-									<span class="comparison-table__icon comparison-table__icon--not-included" role="img" aria-label={notIncludedLabel}>
-										<MinusIcon size="sm" weight="regular" color="currentColor" />
-									</span>
+							<span class="comparison-table__row-label">
+								{t(row.labelKey)}
+								{row.status === 'upcoming' && (
+									<span class="comparison-table__badge--upcoming">{upcomingLabel}</span>
 								)}
-							</td>
-						))}
+							</span>
+							{row.noteKey && (
+								<span class="comparison-table__row-note">{t(row.noteKey)}</span>
+							)}
+						</th>
+						{activePlans.map((plan, idx) => {
+							const result = getCellRendered(row.cell, plan, idx);
+							const isNumeric = typeof result === 'number' || result === 'unlimited';
+							return (
+								<td class:list={['comparison-table__cell', { 'comparison-table__cell--limit': isNumeric }]}>
+									{result === 'yes' ? (
+										<span class="comparison-table__icon comparison-table__icon--included" role="img" aria-label={includedLabel}>
+											<CheckIcon size="sm" weight="bold" color="currentColor" />
+										</span>
+									) : result === 'no' ? (
+										<span class="comparison-table__icon comparison-table__icon--not-included" role="img" aria-label={notIncludedLabel}>
+											<MinusIcon size="sm" weight="regular" color="currentColor" />
+										</span>
+									) : (
+										<span class:list={['comparison-table__limit-value', { 'comparison-table__limit-value--unlimited': result === 'unlimited' }]}>
+											{result === 'unlimited' ? unlimitedLabel : result}
+										</span>
+									)}
+								</td>
+							);
+						})}
 					</tr>
 				))}
 			</tbody>
 		))}
-		<tbody>
-			<tr class="comparison-table__group-header">
-				<th scope="rowgroup" colspan={plans.length + 1}>
-					{getComparisonGroupLabel({ group: 'limits', t })}
-				</th>
-			</tr>
-			{limitKeys.map((key) => (
-				<tr>
-					<th scope="row" class="comparison-table__label-col">
-						{getLimitName({ key, t })}
-					</th>
-					{plans.map((plan) => {
-						const value = getLimitValue(plan, key);
-						const isUnlimited = value === -1;
-						return (
-							<td class="comparison-table__cell comparison-table__cell--limit">
-								<span class:list={[
-									'comparison-table__limit-value',
-									{ 'comparison-table__limit-value--unlimited': isUnlimited }
-								]}>
-									{formatLimitValue(value)}
-								</span>
-							</td>
-						);
-					})}
-				</tr>
-			))}
-		</tbody>
 	</table>
 </div>
+
+{audience === 'owner' && (
+	<p class="comparison-table__complex-teaser">
+		{t('billing.comparison.complexTeaser', 'Planes especiales para complejos y hoteles — próximamente')}
+	</p>
+)}
 
 <style>
 	.comparison-table__wrapper {
@@ -341,15 +404,53 @@ function formatLimitValue(value: number | null): string {
 		font-weight: 700;
 	}
 
+	.comparison-table__row-label {
+		display: flex;
+		align-items: center;
+		gap: var(--space-2);
+		flex-wrap: wrap;
+	}
+
+	.comparison-table__badge--upcoming {
+		display: inline-block;
+		font-size: var(--text-caption);
+		font-family: var(--font-sans);
+		font-weight: 600;
+		color: var(--brand-accent);
+		background-color: var(--brand-primary-a15);
+		border: 1px solid var(--brand-primary-a30);
+		border-radius: var(--radius-pill, 999px);
+		padding: 1px var(--space-2);
+		white-space: nowrap;
+		line-height: 1.4;
+	}
+
+	.comparison-table__row-note {
+		display: block;
+		font-size: var(--text-caption);
+		font-family: var(--font-sans);
+		font-weight: 400;
+		color: var(--core-muted-foreground);
+		margin-top: var(--space-1);
+		font-style: italic;
+	}
+
+	.comparison-table__complex-teaser {
+		max-width: var(--container-max);
+		margin: var(--space-6) auto 0;
+		padding: 0 var(--space-container-x);
+		text-align: center;
+		font-family: var(--font-sans);
+		font-size: var(--text-body-sm);
+		color: var(--core-muted-foreground);
+		font-style: italic;
+	}
+
 	.comparison-table tbody tr:hover {
 		background-color: var(--surface-warm);
 	}
 
 	.comparison-table tbody tr:hover .comparison-table__label-col {
-		background-color: var(--surface-warm);
-	}
-
-	.comparison-table__group-header:hover th {
 		background-color: var(--surface-warm);
 	}
 

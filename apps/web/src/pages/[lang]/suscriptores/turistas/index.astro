@@ -118,16 +118,18 @@ const headingMain = headingWords.join(' ');
 		/>
 	</section>
 
-	<section class="comparison-link section">
-		<div class="comparison-link__container">
-			<GradientButton
-				href={buildUrl({ locale, path: 'suscriptores/turistas/comparar' })}
-				label={t('pricing.comparison.link', 'Ver comparativa detallada')}
-				variant="outline-primary"
-				icon="true"
-			/>
-		</div>
-	</section>
+	{hasPlans && (
+		<section class="comparison-link section">
+			<div class="comparison-link__container">
+				<GradientButton
+					href={buildUrl({ locale, path: 'suscriptores/turistas/comparar' })}
+					label={t('pricing.comparison.link', 'Ver comparativa detallada')}
+					variant="outline-primary"
+					icon="true"
+				/>
+			</div>
+		</section>
+	)}
 </MarketingLayout>
 
 <style>
