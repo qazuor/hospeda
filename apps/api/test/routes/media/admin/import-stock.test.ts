@@ -47,9 +47,9 @@ vi.mock('../../../../src/utils/env', async (importOriginal) => {
 // Provider and service mocks
 // ---------------------------------------------------------------------------
 
-const mockUpload = vi.fn();
-const mockImport = vi.fn();
-const mockGetById = vi.fn();
+const mockUpload = vi.hoisted(() => vi.fn());
+const mockImport = vi.hoisted(() => vi.fn());
+const mockGetById = vi.hoisted(() => vi.fn());
 const mockFindByAccommodation = vi.hoisted(() => vi.fn());
 
 const providerState = vi.hoisted(() => ({ configured: true as boolean }));
@@ -435,7 +435,7 @@ describe('POST /api/v1/admin/media/import-stock — stock image import (SPEC-274
                 downloadLocation: 'https://api.unsplash.com/photos/uns-1/download',
                 photographer: 'Alice',
                 photographerUrl: 'https://unsplash.com/@alice',
-                folder: 'hospeda/accommodations/00000000-0000-4000-8000-0000000000aa'
+                folder: 'hospeda/test/accommodations/00000000-0000-4000-8000-0000000000aa'
             });
         });
 
