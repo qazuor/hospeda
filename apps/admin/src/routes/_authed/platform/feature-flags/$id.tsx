@@ -9,12 +9,20 @@ import { useSuspenseQuery } from '@tanstack/react-query';
  */
 import { createFileRoute } from '@tanstack/react-router';
 
-function ViewFeatureFlag({ params }: { params: { id: string } }) {
+export const Route = createFileRoute('/_authed/platform/feature-flags/$id')({
+    component: ViewFeatureFlag,
+    loader: async ({ params }) => ({ id: params.id })
+});
+
+function ViewFeatureFlag() {
+    const { id } = Route.useParams();
     const { data: flag } = useSuspenseQuery<FeatureFlag>({
-        queryKey: ['feature-flag', params.id],
+        queryKey: ['feature-flag', id],
         queryFn: async () => {
-            const response = await fetchApi({ path: `/api/v1/admin/feature-flags/${params.id}` });
-            return response.data as FeatureFlag;
+            const response = await fetchApi<FeatureFlag>({
+                path: `/api/v1/admin/feature-flags/${id}`
+            });
+            return response.data;
         }
     });
 
@@ -127,20 +135,5 @@ function ViewFeatureFlag({ params }: { params: { id: string } }) {
         </div>
     );
 }
-
-export const Route = createFileRoute('/_authed/platform/feature-flags/$id')({
-    component: ViewFeatureFlag,
-    loader: async ({ params, context }) => {
-        await context.queryClient.ensureQueryData({
-            queryKey: ['feature-flag', params.id],
-            queryFn: async () => {
-                const response = await fetchApi({
-                    path: `/api/v1/admin/feature-flags/${params.id}`
-                });
-                return response.data as FeatureFlag;
-            }
-        });
-    }
-});
 
 export default ViewFeatureFlag;

@@ -1,4 +1,4 @@
-import { fetchApi } from '@/lib/api/fetch-api';
+import { fetchApi } from '@/lib/api/client';
 import { useQuery } from '@tanstack/react-query';
 
 /**
@@ -12,8 +12,10 @@ export function useFeatureFlag(key: string) {
     const { data, isLoading, error } = useQuery<Record<string, boolean>>({
         queryKey: ['feature-flags', 'me'],
         queryFn: async () => {
-            const response = await fetchApi('/api/v1/protected/feature-flags/me');
-            return response as Record<string, boolean>;
+            const response = await fetchApi<Record<string, boolean>>({
+                path: '/api/v1/protected/feature-flags/me'
+            });
+            return response.data;
         },
         staleTime: 60 * 1000,
         gcTime: 5 * 60 * 1000

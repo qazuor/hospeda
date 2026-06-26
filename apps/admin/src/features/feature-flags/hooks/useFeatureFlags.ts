@@ -1,4 +1,4 @@
-import { fetchApi } from '@/lib/api/fetch-api';
+import { fetchApi } from '@/lib/api/client';
 import type { FeatureFlag, FeatureFlagAdminSearch } from '@repo/schemas';
 
 export interface FeatureFlagListResponse {
@@ -28,8 +28,10 @@ export function createFeatureFlagHooks() {
         const queryKey = [entityName, 'list', queryParams.toString()];
 
         const queryFn = async () => {
-            const response = await fetchApi(`${apiEndpoint}?${queryParams.toString()}`);
-            return response as FeatureFlagListResponse;
+            const response = await fetchApi<FeatureFlagListResponse>({
+                path: `${apiEndpoint}?${queryParams.toString()}`
+            });
+            return response.data;
         };
 
         return { queryKey, queryFn };
@@ -39,8 +41,8 @@ export function createFeatureFlagHooks() {
         const queryKey = [entityName, 'byId', id];
 
         const queryFn = async () => {
-            const response = await fetchApi(`${apiEndpoint}/${id}`);
-            return response as FeatureFlag;
+            const response = await fetchApi<FeatureFlag>({ path: `${apiEndpoint}/${id}` });
+            return response.data;
         };
 
         return { queryKey, queryFn };
@@ -48,11 +50,12 @@ export function createFeatureFlagHooks() {
 
     const useCreate = () => {
         const mutationFn = async (data: Partial<FeatureFlag>) => {
-            const response = await fetchApi(apiEndpoint, {
+            const response = await fetchApi<FeatureFlag>({
+                path: apiEndpoint,
                 method: 'POST',
-                body: JSON.stringify(data)
+                body: data
             });
-            return response as FeatureFlag;
+            return response.data;
         };
 
         return { mutationFn };
@@ -60,11 +63,12 @@ export function createFeatureFlagHooks() {
 
     const useUpdate = () => {
         const mutationFn = async ({ id, data }: { id: string; data: Partial<FeatureFlag> }) => {
-            const response = await fetchApi(`${apiEndpoint}/${id}`, {
+            const response = await fetchApi<FeatureFlag>({
+                path: `${apiEndpoint}/${id}`,
                 method: 'PATCH',
-                body: JSON.stringify(data)
+                body: data
             });
-            return response as FeatureFlag;
+            return response.data;
         };
 
         return { mutationFn };
@@ -72,9 +76,7 @@ export function createFeatureFlagHooks() {
 
     const useDelete = () => {
         const mutationFn = async (id: string) => {
-            await fetchApi(`${apiEndpoint}/${id}`, {
-                method: 'DELETE'
-            });
+            await fetchApi({ path: `${apiEndpoint}/${id}`, method: 'DELETE' });
         };
 
         return { mutationFn };
@@ -90,11 +92,12 @@ export function createFeatureFlagHooks() {
             isActive: boolean;
             reason?: string;
         }) => {
-            const response = await fetchApi(`${apiEndpoint}/${id}/toggle`, {
+            const response = await fetchApi<FeatureFlag>({
+                path: `${apiEndpoint}/${id}/toggle`,
                 method: 'POST',
-                body: JSON.stringify({ isActive, reason })
+                body: { isActive, reason }
             });
-            return response as FeatureFlag;
+            return response.data;
         };
 
         return { mutationFn };
@@ -104,8 +107,10 @@ export function createFeatureFlagHooks() {
         const queryKey = [entityName, 'auditLog', flagId];
 
         const queryFn = async () => {
-            const response = await fetchApi(`${apiEndpoint}/${flagId}/audit`);
-            return response as Array<Record<string, unknown>>;
+            const response = await fetchApi<Array<Record<string, unknown>>>({
+                path: `${apiEndpoint}/${flagId}/audit`
+            });
+            return response.data;
         };
 
         return { queryKey, queryFn };

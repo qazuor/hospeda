@@ -1,3 +1,4 @@
+import type { DataTableColumn } from '@/components/table/DataTable';
 import { DataTable } from '@/components/table/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,9 +10,7 @@ import { useSuspenseQuery } from '@tanstack/react-query';
 /**
  * Feature Flags list page — admin panel for managing feature flags (dark launch + kill switch).
  */
-import { createFileRoute } from '@tanstack/react-router';
-import { Link } from '@tanstack/react-router';
-import type { ColumnDef } from '@tanstack/react-table';
+import { Link, createFileRoute } from '@tanstack/react-router';
 
 type FeatureFlagListResponse = {
     items: FeatureFlag[];
@@ -25,48 +24,44 @@ type FeatureFlagListResponse = {
     };
 };
 
-const columns: ColumnDef<FeatureFlag>[] = [
+const columns: readonly DataTableColumn<FeatureFlag>[] = [
     {
+        id: 'key',
         accessorKey: 'key',
         header: 'Key',
+        cell: ({ row }) => <div className="font-medium font-mono text-sm">{row.key}</div>
+    },
+    {
+        id: 'description',
+        accessorKey: 'description',
+        header: 'Description',
         cell: ({ row }) => (
-            <div className="font-medium font-mono text-sm">{row.getValue('key')}</div>
+            <div className="max-w-md truncate text-muted-foreground">{row.description || '—'}</div>
         )
     },
     {
-        accessorKey: 'description',
-        header: 'Description',
-        cell: ({ row }) => {
-            const description = row.getValue('description') as string;
-            return (
-                <div className="max-w-md truncate text-muted-foreground">{description || '—'}</div>
-            );
-        }
-    },
-    {
+        id: 'enabled',
         accessorKey: 'enabled',
         header: 'Default',
-        cell: ({ row }) => {
-            const enabled = row.getValue('enabled') as boolean;
-            return (
-                <Badge variant={enabled ? 'default' : 'secondary'}>{enabled ? 'ON' : 'OFF'}</Badge>
-            );
-        }
+        cell: ({ row }) => (
+            <Badge variant={row.enabled ? 'default' : 'secondary'}>
+                {row.enabled ? 'ON' : 'OFF'}
+            </Badge>
+        )
     },
     {
+        id: 'isActive',
         accessorKey: 'isActive',
         header: 'Status',
-        cell: ({ row }) => {
-            const isActive = row.getValue('isActive') as boolean;
-            return (
-                <Badge variant={isActive ? 'success' : 'destructive'}>
-                    {isActive ? 'Active' : 'Killed'}
-                </Badge>
-            );
-        }
+        cell: ({ row }) => (
+            <Badge variant={row.isActive ? 'success' : 'destructive'}>
+                {row.isActive ? 'Active' : 'Killed'}
+            </Badge>
+        )
     },
     {
         id: 'actions',
+        header: 'Actions',
         cell: ({ row }) => (
             <div className="flex items-center gap-2">
                 <Button
@@ -76,7 +71,7 @@ const columns: ColumnDef<FeatureFlag>[] = [
                 >
                     <Link
                         to="/platform/feature-flags/$id"
-                        params={{ id: row.original.id }}
+                        params={{ id: row.id }}
                     >
                         View
                     </Link>
@@ -87,8 +82,8 @@ const columns: ColumnDef<FeatureFlag>[] = [
                     asChild
                 >
                     <Link
-                        to="/platform/feature-flags/$id_/edit"
-                        params={{ id: row.original.id }}
+                        to="/platform/feature-flags/$id/edit"
+                        params={{ id: row.id }}
                     >
                         Edit
                     </Link>
@@ -102,10 +97,10 @@ function FeatureFlagsList() {
     const { data } = useSuspenseQuery<FeatureFlagListResponse>({
         queryKey: ['feature-flags', 'list'],
         queryFn: async () => {
-            const response = await fetchApi({
+            const response = await fetchApi<FeatureFlagListResponse>({
                 path: '/api/v1/admin/feature-flags?page=1&pageSize=50'
             });
-            return response.data as FeatureFlagListResponse;
+            return response.data;
         }
     });
 
@@ -154,17 +149,7 @@ function FeatureFlagsList() {
 
 export const Route = createFileRoute('/_authed/platform/feature-flags/')({
     component: FeatureFlagsList,
-    loader: async ({ context }) => {
-        await context.queryClient.ensureQueryData({
-            queryKey: ['feature-flags', 'list'],
-            queryFn: async () => {
-                const response = await fetchApi({
-                    path: '/api/v1/admin/feature-flags?page=1&pageSize=50'
-                });
-                return response.data as FeatureFlagListResponse;
-            }
-        });
-    }
+    loader: async () => undefined
 });
 
 export default FeatureFlagsList;
