@@ -178,3 +178,13 @@ export const eventOrganizerTabs: TabConfig[] = [
     { id: 'events', label: 'Eventos', labelKey: 'admin-tabs.events', href: '/events' },
     { id: 'contact', label: 'Contacto', labelKey: 'admin-tabs.contact', href: '/contact' }
 ];
+
+export const gastronomyTabs: TabConfig[] = [
+    { id: 'overview', label: 'General', labelKey: 'admin-tabs.overview', href: '' },
+    { id: 'seo', label: 'SEO', labelKey: 'admin-tabs.seo', href: '/seo' }
+];
+
+export const experienceTabs: TabConfig[] = [
+    { id: 'overview', label: 'General', labelKey: 'admin-tabs.overview', href: '' },
+    { id: 'seo', label: 'SEO', labelKey: 'admin-tabs.seo', href: '/seo' }
+];

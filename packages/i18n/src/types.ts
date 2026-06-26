@@ -4531,6 +4531,8 @@ export type TranslationKey =
     | 'admin-pages.titles.eventsList'
     | 'admin-pages.titles.eventsNew'
     | 'admin-pages.titles.eventsView'
+    | 'admin-pages.titles.gastronomiesView'
+    | 'admin-pages.titles.experiencesView'
     | 'admin-pages.titles.myAccommodations'
     | 'admin-pages.titles.myProfile'
     | 'admin-pages.titles.mySettings'
