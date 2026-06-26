@@ -17,4 +17,10 @@ export interface GalleryImage {
     alt?: string;
     order: number;
     moderationState: ModerationStatusEnum;
+    attribution?: {
+        photographer: string;
+        sourceUrl: string;
+        license: string;
+        provider: 'unsplash' | 'pexels';
+    };
 }
