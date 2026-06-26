@@ -69,6 +69,9 @@ const DISALLOW_PATHS: ReadonlyArray<string> = [
     '/*/signin',
     '/*/signup',
     '/*/forgot-password',
+    '/*/reset-password',
+    '/*/verify-email',
+    '/*/verify-email-sent',
     '/_server-islands/',
     ...SITEMAP_EXCLUDED_PATHS
 ];

@@ -137,8 +137,10 @@ export default defineConfig({
                 if (url.pathname.endsWith('.xml')) {
                     return item;
                 }
+                const isHomePage = /^\/(es|en|pt)\/$/.test(url.pathname);
                 return {
                     ...item,
+                    ...(isHomePage ? { priority: 1.0, changefreq: 'daily' } : {}),
                     links: buildSitemapAlternateLinks({
                         pathname: url.pathname,
                         siteUrl: HOSPEDA_SITE_URL
