@@ -30,6 +30,7 @@ import {
     billingSubscriptions,
     commerceListingSubscriptions,
     getDb,
+    partnerSubscriptions,
     sql,
     withTransaction
 } from '@repo/db';
@@ -754,6 +755,108 @@ export async function initiateCommerceMonthlySubscription(
         resourceType: 'subscription',
         planSlug,
         sourceLabel: 'start-commerce-monthly'
+    });
+
+    return {
+        checkoutUrl,
+        localSubscriptionId: subscription.id,
+        expiresAt: new Date(Date.now() + PENDING_PROVIDER_TTL_MS).toISOString()
+    };
+}
+
+export interface InitiatePartnerMonthlySubscriptionInput {
+    readonly customerId: string;
+    readonly planId: string;
+    readonly partnerId: string;
+    readonly billing: QZPayBilling;
+    readonly urls: {
+        readonly paymentMethodReturnUrl: string;
+        readonly notificationUrl: string;
+    };
+    readonly db?: DrizzleClient;
+}
+
+export interface InitiatePartnerMonthlySubscriptionResult {
+    readonly checkoutUrl: string;
+    readonly localSubscriptionId: string;
+    readonly expiresAt: string;
+}
+
+/**
+ * Initiate a monthly partner-directory subscription (SPEC-271).
+ */
+export async function initiatePartnerMonthlySubscription(
+    input: InitiatePartnerMonthlySubscriptionInput
+): Promise<InitiatePartnerMonthlySubscriptionResult> {
+    const { customerId, planId, partnerId, billing, urls } = input;
+
+    const plan = await billing.plans.get(planId);
+    if (!plan) {
+        throw new SubscriptionCheckoutError('PLAN_NOT_FOUND', `Plan '${planId}' not found`);
+    }
+
+    const monthlyPrice = findMonthlyPrice(plan.prices);
+    if (!monthlyPrice) {
+        throw new SubscriptionCheckoutError(
+            'NO_MONTHLY_PRICE',
+            `Plan '${planId}' has no active monthly price`
+        );
+    }
+
+    const subscription: QZPaySubscriptionWithHelpers = await billing.subscriptions.create({
+        customerId,
+        planId: plan.id,
+        priceId: monthlyPrice.id,
+        mode: 'paid',
+        billingInterval: 'monthly',
+        paymentMethodReturnUrl: urls.paymentMethodReturnUrl,
+        notificationUrl: urls.notificationUrl,
+        metadata: {
+            source: 'start-partner-monthly',
+            createdBy: 'partner-subscription-flow',
+            productDomain: ProductDomainEnum.PARTNER,
+            partnerId
+        }
+    });
+
+    const checkoutUrl = subscription.providerInitPoint ?? subscription.providerSandboxInitPoint;
+    if (!checkoutUrl) {
+        throw new SubscriptionCheckoutError(
+            'MISSING_INIT_POINT',
+            'Payment provider did not return a checkout URL'
+        );
+    }
+
+    await withTransaction(async (tx) => {
+        await tx.execute(
+            sql`UPDATE billing_subscriptions SET product_domain = ${ProductDomainEnum.PARTNER} WHERE id = ${subscription.id}`
+        );
+
+        await tx
+            .insert(partnerSubscriptions)
+            .values({
+                subscriptionId: subscription.id,
+                productDomain: ProductDomainEnum.PARTNER,
+                partnerId,
+                status: subscription.status
+            })
+            .onConflictDoUpdate({
+                target: partnerSubscriptions.partnerId,
+                set: {
+                    subscriptionId: subscription.id,
+                    status: subscription.status,
+                    updatedAt: new Date()
+                }
+            });
+    }, input.db);
+
+    await schedulePollingForSubscription({
+        billing,
+        subscriptionId: subscription.id,
+        providerResourceId: subscription.providerSubscriptionIds?.mercadopago ?? '',
+        resourceType: 'subscription',
+        planSlug: plan.name,
+        sourceLabel: 'start-partner-monthly'
     });
 
     return {

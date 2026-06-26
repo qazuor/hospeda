@@ -8,9 +8,10 @@
  *
  * **Filtering contract (safety invariant)**
  * - `null` / `undefined` / `'accommodation'` → include (accommodation domain).
- * - `'commerce'` → exclude from accommodation-side reads.
- * - Any other unexpected value → include (fail-open; never silently drop a real
- *   accommodation sub due to an unexpected value).
+ * - `'commerce'` / `'partner'` → exclude from accommodation-side reads.
+ * - Any other unexpected value → exclude (fail-closed; once additional domains
+ *   exist, silently treating them as accommodation would contaminate host
+ *   entitlements).
  *
  * This makes the filter a strict **no-op on all existing data and tests** —
  * the column default means every real row is treated as accommodation until
@@ -18,9 +19,6 @@
  *
  * @module services/billing/subscription/subscription-product-domain
  */
-
-/** The only `product_domain` value that identifies a commerce subscription. */
-const COMMERCE_DOMAIN = 'commerce' as const;
 
 /**
  * Returns `true` when the subscription belongs to the accommodation domain.
@@ -31,12 +29,12 @@ const COMMERCE_DOMAIN = 'commerce' as const;
  * is read by casting `sub` to `Record<string, unknown>` so that bracket
  * access avoids `any` and keeps strict-mode happy.
  *
- * **Inclusion rule**: include unless explicitly `'commerce'`.
+ * **Inclusion rule**: include only when the row is clearly accommodation.
  * - `undefined` (column not yet in SELECT) → include
  * - `null` (legacy row, column exists but value is NULL) → include
  * - `'accommodation'` (explicit default) → include
- * - `'commerce'` (new commerce sub) → **exclude**
- * - anything else (future domains) → include (fail-open)
+ * - `'commerce'` / `'partner'` → **exclude**
+ * - anything else (future domains) → exclude (fail-closed)
  *
  * @param sub - Any object returned by `billing.subscriptions.getByCustomerId()`.
  * @returns `true` when the subscription should be visible to the accommodation engine.
@@ -64,7 +62,14 @@ export function isAccommodationSubscription(sub: unknown): boolean {
     // effective regardless of the read path — critical so a commerce sub is never
     // silently treated as accommodation (the SPEC-239 isolation invariant).
     const productDomain = record.productDomain ?? record.product_domain;
-    // Exclude ONLY when the value is explicitly 'commerce'.
-    // null / undefined / 'accommodation' / any-other-value → include.
-    return productDomain !== COMMERCE_DOMAIN;
+    // Include legacy rows (null / undefined) and explicit accommodation rows.
+    if (
+        productDomain === null ||
+        productDomain === undefined ||
+        productDomain === 'accommodation'
+    ) {
+        return true;
+    }
+
+    return false;
 }

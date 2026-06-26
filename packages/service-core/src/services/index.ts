@@ -31,6 +31,7 @@ export * from './postSponsorship/postSponsorship.service';
 export * from './sponsorship';
 export * from './stats';
 export * from './owner-promotion';
+export * from './partner/partner.service';
 export * from './tag/tag.service';
 export * from './tag/post-tag.service';
 export * from './tag/post-tag.permissions';

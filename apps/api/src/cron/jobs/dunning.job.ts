@@ -28,6 +28,7 @@ import { getQZPayBilling } from '../../middlewares/billing.js';
 import { clearEntitlementCache } from '../../middlewares/entitlement.js';
 import { sendSubscriptionCancelledNotification } from '../../routes/webhooks/mercadopago/notifications.js';
 import { reconcileCommerceListingForSubscription } from '../../services/commerce-reconcile.service.js';
+import { reconcilePartnerForSubscription } from '../../services/partner-reconcile.service.js';
 import { loadBillingSettings } from '../../utils/billing-settings.js';
 import { apiLogger } from '../../utils/logger.js';
 import type { CronJobDefinition } from '../types.js';
@@ -361,6 +362,11 @@ export const dunningJob: CronJobDefinition = {
                                     subscriptionStatus: 'active',
                                     source: 'dunning-cron'
                                 });
+                                await reconcilePartnerForSubscription({
+                                    subscriptionId: event.subscriptionId,
+                                    subscriptionStatus: 'active',
+                                    source: 'dunning-cron'
+                                });
                                 break;
                             case 'subscription.canceled_nonpayment':
                                 apiLogger.warn(
@@ -424,6 +430,11 @@ export const dunningJob: CronJobDefinition = {
                                 // subscription (cancelled → PRIVATE). No-op for accommodation
                                 // subs; non-blocking (never breaks the cron).
                                 await reconcileCommerceListingForSubscription({
+                                    subscriptionId: event.subscriptionId,
+                                    subscriptionStatus: 'cancelled',
+                                    source: 'dunning-cron'
+                                });
+                                await reconcilePartnerForSubscription({
                                     subscriptionId: event.subscriptionId,
                                     subscriptionStatus: 'cancelled',
                                     source: 'dunning-cron'

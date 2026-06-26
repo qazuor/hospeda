@@ -31,6 +31,9 @@ import {
     NewsletterSubscriberStatusEnum,
     NotificationRecipientSideEnum,
     OwnerPromotionDiscountTypeEnum,
+    PartnerSubscriptionStatusEnum,
+    PartnerTierEnum,
+    PartnerTypeEnum,
     PaymentStatusEnum,
     PermissionCategoryEnum,
     PermissionEffectEnum,
@@ -330,3 +333,13 @@ export const SocialRecurrenceTypePgEnum = pgEnum(
 );
 
 export const SocialSourcePgEnum = pgEnum('social_source_enum', enumToTuple(SocialSourceEnum));
+
+// Partner enums (SPEC-271)
+export const PartnerTypePgEnum = pgEnum('partner_type_enum', enumToTuple(PartnerTypeEnum));
+
+export const PartnerTierPgEnum = pgEnum('partner_tier_enum', enumToTuple(PartnerTierEnum));
+
+export const PartnerSubscriptionStatusPgEnum = pgEnum(
+    'partner_subscription_status_enum',
+    enumToTuple(PartnerSubscriptionStatusEnum)
+);

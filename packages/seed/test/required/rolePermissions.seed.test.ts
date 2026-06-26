@@ -161,6 +161,28 @@ describe('ROLE_PERMISSIONS — SPEC-170 permission-management gate (SUPER_ADMIN-
 });
 
 // ---------------------------------------------------------------------------
+// SPEC-271 — Partner admin permissions seeded to staff roles
+// ---------------------------------------------------------------------------
+
+describe('ROLE_PERMISSIONS — SPEC-271 partner admin grants', () => {
+    type RoleKey = keyof typeof ROLE_PERMISSIONS;
+    const superAdminPerms = ROLE_PERMISSIONS[
+        SUPER_ADMIN as unknown as RoleKey
+    ] as readonly string[];
+    const adminPerms = ROLE_PERMISSIONS[ADMIN as unknown as RoleKey] as readonly string[];
+
+    for (const perm of ['partner.viewAll', 'partner.manage'] as const) {
+        it(`grants "${perm}" to SUPER_ADMIN`, () => {
+            expect(superAdminPerms).toContain(perm);
+        });
+
+        it(`grants "${perm}" to ADMIN`, () => {
+            expect(adminPerms).toContain(perm);
+        });
+    }
+});
+
+// ---------------------------------------------------------------------------
 // SPEC-156 — Platform Settings V1 role bundle assignments (D1, AC-22..AC-27)
 // ---------------------------------------------------------------------------
 // Literal permission values from packages/schemas/src/enums/permission.enum.ts

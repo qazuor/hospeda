@@ -100,6 +100,7 @@ import { getQZPayBilling } from '../../middlewares/billing.js';
 import { clearEntitlementCache } from '../../middlewares/entitlement.js';
 import { handleSubscriptionCancellationAddons } from '../../services/addon-lifecycle-cancellation.service.js';
 import { reconcileCommerceListingForSubscription } from '../../services/commerce-reconcile.service.js';
+import { reconcilePartnerForSubscription } from '../../services/partner-reconcile.service.js';
 import { sendNotification } from '../../utils/notification-helper.js';
 import type { CronJobDefinition, CronJobResult } from '../types.js';
 
@@ -519,6 +520,12 @@ async function finalizeOne(
         // (cancelled → PRIVATE). No-op for accommodation subs; non-blocking so a
         // reconcile failure never breaks the cron.
         await reconcileCommerceListingForSubscription({
+            subscriptionId,
+            subscriptionStatus: 'cancelled',
+            source: 'finalize-cancelled-cron'
+        });
+
+        await reconcilePartnerForSubscription({
             subscriptionId,
             subscriptionStatus: 'cancelled',
             source: 'finalize-cancelled-cron'

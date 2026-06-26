@@ -364,6 +364,10 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.COMMERCE_DELETE,
         PermissionEnum.COMMERCE_MODERATE_REVIEW,
 
+        // PARTNER: Partner directory billing + admin management (SPEC-271).
+        PermissionEnum.PARTNER_VIEW_ALL,
+        PermissionEnum.PARTNER_MANAGE,
+
         // HOST_TRADE: Admin-curated host trades directory (SPEC-241) — full CRUD.
         PermissionEnum.HOST_TRADE_VIEW,
         PermissionEnum.HOST_TRADE_VIEW_ALL,
@@ -684,6 +688,10 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.COMMERCE_EDIT_ALL,
         PermissionEnum.COMMERCE_DELETE,
         PermissionEnum.COMMERCE_MODERATE_REVIEW,
+
+        // PARTNER: Partner directory billing + admin management (SPEC-271).
+        PermissionEnum.PARTNER_VIEW_ALL,
+        PermissionEnum.PARTNER_MANAGE,
 
         // HOST_TRADE: Admin-curated host trades directory (SPEC-241) — full CRUD.
         PermissionEnum.HOST_TRADE_VIEW,

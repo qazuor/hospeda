@@ -19,6 +19,7 @@ export * from './exchange-rate/index.ts';
 export * from './host-trade/index.ts';
 export * from './newsletter/index.ts';
 export * from './owner-promotion/index.ts';
+export * from './partner/index.ts';
 export * from './platform/index.ts';
 export * from './post/index.ts';
 export * from './revalidation/index.ts';

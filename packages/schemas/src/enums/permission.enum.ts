@@ -63,6 +63,8 @@ export enum PermissionCategoryEnum {
     /** Commerce listings (gastronomy, experience). Added in SPEC-239. */
     COMMERCE = 'COMMERCE',
     HOST_TRADE = 'HOST_TRADE',
+    /** Partners program (SPEC-271). */
+    PARTNER = 'PARTNER',
     /** Social media publish pipeline (SPEC-254). */
     SOCIAL_POST = 'SOCIAL_POST',
     SOCIAL_HASHTAG = 'SOCIAL_HASHTAG',
@@ -868,6 +870,13 @@ export enum PermissionEnum {
     COMMERCE_EDIT_ALL = 'commerce.editAll', // Allows editing any commerce listing regardless of ownership.
     COMMERCE_DELETE = 'commerce.delete', // Allows soft-deleting any commerce listing.
     COMMERCE_MODERATE_REVIEW = 'commerce.moderateReview', // Allows moderating reviews on commerce listings.
+
+    // PARTNER: Partners program (SPEC-271)
+    PARTNER_CREATE = 'partner.create', // Allows creating a new partner.
+    PARTNER_UPDATE = 'partner.update', // Allows updating a partner.
+    PARTNER_DELETE = 'partner.delete', // Allows soft-deleting a partner.
+    PARTNER_VIEW_ALL = 'partner.viewAll', // Allows viewing all partners (admin).
+    PARTNER_MANAGE = 'partner.manage', // Allows managing partner (create, update, delete, send link, manual payment).
 
     // HOST_TRADE: Admin-curated host trades/services directory (SPEC-241). Host-only read perk; admin-only CRUD.
     HOST_TRADE_VIEW = 'hostTrade.view', // Allows an authenticated host to read active trade listings for their accommodation destinations.

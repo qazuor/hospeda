@@ -68,6 +68,17 @@ import {
 } from './tag/user-tag/index.js';
 
 import { adminOwnerPromotionRoutes, protectedOwnerPromotionRoutes } from './owner-promotion';
+import {
+    adminCreatePartnerRoute,
+    adminDeletePartnerRoute,
+    adminGetPartnerRoute,
+    adminListPartnerPlansRoute,
+    adminListPartnersRoute,
+    adminManualPaymentRoute,
+    adminSendPaymentLinkRoute,
+    adminUpdatePartnerRoute,
+    publicPartnersRoutes
+} from './partners';
 // ─── Entities with admin-only or specialized tiers ──────────────────────────
 import { adminPostSponsorRoutes } from './postSponsor';
 
@@ -235,6 +246,8 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/public/gastronomies', publicGastronomyRoutes);
         // Commerce listings: experience (SPEC-240 T-019)
         app.route('/api/v1/public/experiences', publicExperienceRoutes);
+        // Partners program public listing (SPEC-271)
+        app.route('/api/v1/public/partners', publicPartnersRoutes);
         // Commerce lead intake — public acquisition form (SPEC-239 T-047 US-1)
         app.route('/api/v1/public/commerce', publicCommerceRoutes);
         app.route('/api/v1/public/destinations', publicDestinationRoutes);
@@ -413,6 +426,15 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/gastronomies', adminGastronomyRoutes);
         // Commerce listings: experience (SPEC-240 T-021)
         app.route('/api/v1/admin/experiences', adminExperienceRoutes);
+        // Partners program admin management (SPEC-271)
+        app.route('/api/v1/admin/partners', adminListPartnersRoute);
+        app.route('/api/v1/admin/partners', adminListPartnerPlansRoute);
+        app.route('/api/v1/admin/partners', adminGetPartnerRoute);
+        app.route('/api/v1/admin/partners', adminCreatePartnerRoute);
+        app.route('/api/v1/admin/partners', adminUpdatePartnerRoute);
+        app.route('/api/v1/admin/partners', adminDeletePartnerRoute);
+        app.route('/api/v1/admin/partners', adminSendPaymentLinkRoute);
+        app.route('/api/v1/admin/partners', adminManualPaymentRoute);
         // Commerce leads admin management (SPEC-239 T-047)
         app.route('/api/v1/admin/commerce', adminCommerceRoutes);
         app.route('/api/v1/admin/destinations', adminDestinationRoutes);

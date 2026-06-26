@@ -158,17 +158,24 @@ describe('SPEC-239 T-051: isAccommodationSubscription predicate', () => {
         ).toBe(false);
     });
 
-    it('should return true for an unknown future domain value (fail-open)', () => {
-        // Any value that is not 'commerce' is treated as accommodation to avoid
-        // accidentally dropping real accommodation subscriptions when new domains
-        // are added.
+    it('should return FALSE when productDomain is "partner"', () => {
+        expect(
+            isAccommodationSubscription({
+                id: 'sub-1',
+                status: 'active',
+                productDomain: 'partner'
+            })
+        ).toBe(false);
+    });
+
+    it('should return false for an unknown future domain value (fail-closed)', () => {
         expect(
             isAccommodationSubscription({
                 id: 'sub-1',
                 status: 'active',
                 productDomain: 'future_domain'
             })
-        ).toBe(true);
+        ).toBe(false);
     });
 
     it('should return true for a non-object primitive (defensive — should never happen)', () => {

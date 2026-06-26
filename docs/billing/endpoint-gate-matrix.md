@@ -776,6 +776,14 @@
 | `GET /api/v1/admin/social/publish-logs` | `social/admin/publish-logs/list.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
 | `GET /api/v1/admin/social/settings` | `social/admin/settings/list.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
 | `PATCH /api/v1/admin/social/settings/{key}` | `social/admin/settings/patch-by-key.ts` | none | - | n/a | Admin-only social automation route (SPEC-254); auth + PermissionEnum gated, no entitlement gate |
+| `GET /api/v1/admin/partners` | `partners/admin/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated (PARTNER_MANAGE) (SPEC-271) |
+| `GET /api/v1/admin/partners/plans` | `partners/admin/list-plans.ts` | none | - | n/a | Admin plan lookup for partner billing setup; PermissionEnum-gated (PARTNER_MANAGE) (SPEC-271) |
+| `POST /api/v1/admin/partners` | `partners/admin/create.ts` | none | - | n/a | Admin write; PermissionEnum-gated (PARTNER_MANAGE) (SPEC-271) |
+| `GET /api/v1/admin/partners/{id}` | `partners/admin/get.ts` | none | - | n/a | Admin read; PermissionEnum-gated (PARTNER_MANAGE) (SPEC-271) |
+| `PUT /api/v1/admin/partners/{id}` | `partners/admin/update.ts` | none | - | n/a | Admin write; PermissionEnum-gated (PARTNER_MANAGE) (SPEC-271) |
+| `DELETE /api/v1/admin/partners/{id}` | `partners/admin/delete.ts` | none | - | n/a | Admin soft-delete; PermissionEnum-gated (PARTNER_MANAGE) (SPEC-271) |
+| `POST /api/v1/admin/partners/{id}/send-link` | `partners/admin/send-link.ts` | none | - | n/a | Admin action; PermissionEnum-gated (PARTNER_MANAGE) (SPEC-271) |
+| `POST /api/v1/admin/partners/{id}/manual-payment` | `partners/admin/manual-payment.ts` | none | - | n/a | Admin action; PermissionEnum-gated (PARTNER_MANAGE) (SPEC-271) |
 
 ---
 
@@ -948,7 +956,7 @@ update the counter logic and set `Status = wired` in the main table.
 | `gate` | 11 | All `to-wire` (T-145-03); `PATCH /accommodations/{id}` partially wired (rich-desc + video) |
 | `limit` | 5 | 4 `wired` (MAX_ACCOMMODATIONS ×3, MAX_PHOTOS ×2), 1 in `gate+limit` |
 | `gate+limit` | 3 | Bookmark create (wired), owner-promotion create (partially wired), accommodation patch (partially wired) |
-| `none` | ~320 | Admin PermissionEnum-gated or pure auth-sufficient reads |
+| `none` | ~327 | Admin PermissionEnum-gated or pure auth-sufficient reads |
 | `reserved` | 14 | 12 phantom gates + 2 limit stubs |
 
 ### Routes to wire (feeds T-145-03 through T-145-05)

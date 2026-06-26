@@ -17,8 +17,12 @@ describe('ProductDomainEnum', () => {
             expect(ProductDomainEnum.COMMERCE).toBe('commerce');
         });
 
-        it('should have exactly 2 values', () => {
-            expect(Object.values(ProductDomainEnum)).toHaveLength(2);
+        it('should define PARTNER', () => {
+            expect(ProductDomainEnum.PARTNER).toBe('partner');
+        });
+
+        it('should have exactly 3 values', () => {
+            expect(Object.values(ProductDomainEnum)).toHaveLength(3);
         });
     });
 
@@ -32,6 +36,11 @@ describe('ProductDomainEnum', () => {
 
         it('should accept "commerce"', () => {
             const result = ProductDomainEnumSchema.safeParse('commerce');
+            expect(result.success).toBe(true);
+        });
+
+        it('should accept "partner"', () => {
+            const result = ProductDomainEnumSchema.safeParse('partner');
             expect(result.success).toBe(true);
         });
 
@@ -66,9 +75,9 @@ describe('ProductDomainEnum', () => {
 
         it('should return the enum member when parsing a valid value', () => {
             // Arrange / Act
-            const parsed = ProductDomainEnumSchema.parse('commerce');
+            const parsed = ProductDomainEnumSchema.parse('partner');
             // Assert
-            expect(parsed).toBe(ProductDomainEnum.COMMERCE);
+            expect(parsed).toBe(ProductDomainEnum.PARTNER);
         });
 
         it('should throw ZodError on parse of an invalid value', () => {

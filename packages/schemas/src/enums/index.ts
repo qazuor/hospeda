@@ -149,6 +149,16 @@ export * from './sponsorship-target-type.schema.js';
 export * from './sponsorship-tier.enum.js';
 export * from './sponsorship-tier.schema.js';
 
+// Partner enums (SPEC-271)
+export * from './partner-type.enum.js';
+export * from './partner-type.schema.js';
+
+export * from './partner-tier.enum.js';
+export * from './partner-tier.schema.js';
+
+export * from './partner-subscription-status.enum.js';
+export * from './partner-subscription-status.schema.js';
+
 export * from './subscription-status.enum.js';
 export * from './subscription-status.schema.js';
 

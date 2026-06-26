@@ -167,7 +167,6 @@ describe('AmenitySchema — applicableVerticals (SPEC-266)', () => {
     it('should REJECT unknown vertical value', () => {
         const result = AmenitySchema.safeParse({
             ...baseAmenity(),
-            // biome-ignore lint/suspicious/noExplicitAny: testing runtime rejection
             applicableVerticals: ['invalid_vertical'] as any
         });
         expect(result.success).toBe(false);
@@ -239,7 +238,6 @@ describe('FeatureSchema — applicableVerticals (SPEC-266)', () => {
     it('should REJECT unknown vertical', () => {
         const result = FeatureSchema.safeParse({
             ...baseFeature(),
-            // biome-ignore lint/suspicious/noExplicitAny: testing runtime rejection
             applicableVerticals: ['hotel'] as any
         });
         expect(result.success).toBe(false);
