@@ -57,6 +57,19 @@ function setInCache(flag: FeatureFlag): void {
     });
 }
 
+function evaluateFlagWithCache(flag: FeatureFlag, context: FlagContext): boolean {
+    if (!flag.isActive) return false;
+
+    if (context.userId) {
+        if (flag.forceOnUserIds.includes(context.userId)) return true;
+        if (flag.forceOffUserIds.includes(context.userId)) return false;
+    }
+
+    if (context.role && flag.enabledForRoles.includes(context.role)) return true;
+
+    return flag.enabled;
+}
+
 export class FeatureFlagService {
     private readonly model: FeatureFlagModel;
 
@@ -77,24 +90,17 @@ export class FeatureFlagService {
         const parsed = FlagContextSchema.parse(context ?? {});
 
         const cached = getFromCache(key);
-        const flag = cached ?? (await this.model.findByKey(key));
-
-        if (!flag) return false;
-
-        if (!cached && flag) {
-            setInCache(flag);
+        if (cached) {
+            return evaluateFlagWithCache(cached, parsed);
         }
 
-        if (!flag.isActive) return false;
+        const flagFromDb = await this.model.findByKey(key);
+        if (!flagFromDb) return false;
 
-        if (parsed.userId) {
-            if (flag.forceOnUserIds.includes(parsed.userId)) return true;
-            if (flag.forceOffUserIds.includes(parsed.userId)) return false;
-        }
+        const flag = mapFeatureFlag(flagFromDb);
+        setInCache(flag);
 
-        if (parsed.role && flag.enabledForRoles.includes(parsed.role)) return true;
-
-        return flag.enabled;
+        return evaluateFlagWithCache(flag, parsed);
     }
 
     async adminList(
@@ -156,7 +162,8 @@ export class FeatureFlagService {
             createdById: actor.id
         });
 
-        setInCache(flag);
+        const mappedFlag = mapFeatureFlag(flag);
+        setInCache(mappedFlag);
 
         await this.model.createAuditLog({
             flagId: flag.id,
@@ -165,7 +172,7 @@ export class FeatureFlagService {
             performedById: actor.id
         });
 
-        return mapFeatureFlag(flag);
+        return mappedFlag;
     }
 
     async updateFlag(actor: Actor, id: string, input: FeatureFlagUpdateHttp): Promise<FeatureFlag> {
@@ -191,7 +198,8 @@ export class FeatureFlagService {
         }
 
         clearFeatureFlagCache(existing.key);
-        setInCache(flag);
+        const mappedFlag = mapFeatureFlag(flag);
+        setInCache(mappedFlag);
 
         await this.model.createAuditLog({
             flagId: id,
@@ -205,7 +213,7 @@ export class FeatureFlagService {
             performedById: actor.id
         });
 
-        return mapFeatureFlag(flag);
+        return mappedFlag;
     }
 
     async toggleFlag(
@@ -235,7 +243,8 @@ export class FeatureFlagService {
         }
 
         clearFeatureFlagCache(existing.key);
-        setInCache(flag);
+        const mappedFlag = mapFeatureFlag(flag);
+        setInCache(mappedFlag);
 
         await this.model.createAuditLog({
             flagId: id,
@@ -246,7 +255,7 @@ export class FeatureFlagService {
             performedById: actor.id
         });
 
-        return mapFeatureFlag(flag);
+        return mappedFlag;
     }
 
     async deleteFlag(actor: Actor, id: string): Promise<void> {
