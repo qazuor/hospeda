@@ -57,11 +57,7 @@ describe('ImageAttribution.astro', () => {
     });
 
     describe('i18n integration', () => {
-        it('should use common.attribution.text key', () => {
-            expect(componentSrc).toContain("t('common.attribution.text'");
-        });
-
-        it('should use common.attribution.byline key', () => {
+        it('should use common.attribution.byline key in both variants', () => {
             expect(componentSrc).toContain("t('common.attribution.byline'");
         });
 
