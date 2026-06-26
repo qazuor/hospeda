@@ -756,6 +756,7 @@ export function createDbMock() {
         EventModel: GenericMockModel,
         EventOrganizerModel: GenericMockModel,
         ExchangeRateConfigModel: GenericMockModel,
+        FeatureFlagModel: GenericMockModel,
         FeatureModel: GenericMockModel,
         HostTradeModel: GenericMockModel,
         NotificationScheduleModel: GenericMockModel,

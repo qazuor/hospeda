@@ -626,14 +626,17 @@
             "title": "Admin Audit & Security Log Query Layer",
             "type": "feature",
             "complexity": "high",
-            "status": "draft",
+            "status": "completed",
+            "lastUpdated": "2026-06-25T00:00:00Z",
             "path": "SPEC-162-admin-audit-security-log-query",
             "created": "2026-05-26T00:00:00Z",
             "discoveredDuring": "Admin dashboard redefinition session 2026-05-26. SUPER_ADMIN audit-log + security-log widgets: logging infra (audit-logger.ts, AuditEventType) is logger-only, not queryable. Needs a queryable store + admin endpoints gated by AUDIT_LOG_VIEW / SECURITY_LOG_VIEW.",
             "dependsOn": [],
             "enables": ["SPEC-155"],
             "firstAllocatedViaEngramProtocol": true,
-            "tags": ["audit", "security", "observability", "super-admin", "backend", "phase-2"]
+            "tags": ["audit", "security", "observability", "super-admin", "backend", "phase-2"],
+            "archived": true,
+            "archivedAt": "2026-06-25T00:00:00Z"
         },
         {
             "specId": "SPEC-163",
@@ -1851,15 +1854,12 @@
             "title": "SEO entity fields — Hybrid (keep title/description, remove keywords) + improve SEO tab UX",
             "type": "feature",
             "complexity": "low",
-            "status": "completed",
+            "status": "draft",
             "path": "SPEC-267-seo-fields-decision",
             "created": "2026-06-23T00:00:00Z",
             "base": "staging",
             "origin": "Owner question 2026-06-23: campos SEO en entidades existen pero probablemente no se usan. Decidir si keep & improve / remove / hybrid.",
-            "tags": ["evaluation", "seo", "web", "admin", "schemas", "db", "architecture"],
-            "archived": true,
-            "archivedAt": "2026-06-24",
-            "archiveNote": "WS-1/2/3 complete: keywords removed from schema + DB cleanup (022 migration), title/description verified, shared SeoEditor with SERP preview + char counters + auto-fallback badges for posts/accommodations/destinations/events, tabs added to PageTabs, i18n es/en/pt, CI green. PR #1843."
+            "tags": ["evaluation", "seo", "web", "admin", "schemas", "db", "architecture"]
         },
         {
             "specId": "SPEC-268",
@@ -1887,9 +1887,10 @@
             "title": "Web performance audit & improvements — Core Web Vitals, 12 findings + fix catalog",
             "type": "improvement",
             "complexity": "medium",
-            "status": "draft",
+            "status": "completed",
             "path": "SPEC-269-web-performance-audit",
             "created": "2026-06-23T00:00:00Z",
+            "startedAt": "2026-06-24T00:00:00Z",
             "base": "staging",
             "origin": "Owner question 2026-06-23: split de 'analisis y mejora de seo, performance y accesibilidad' en 3 specs. Esta es la parte performance.",
             "tags": [
@@ -1902,22 +1903,20 @@
                 "cls",
                 "bundle",
                 "images"
-            ]
+            ],
+            "archived": true,
+            "archivedAt": "2026-06-25T00:00:00Z"
         },
         {
             "specId": "SPEC-270",
             "title": "Web accessibility audit & improvements — WCAG 2.1 AA, concrete findings + fix catalog",
             "type": "improvement",
             "complexity": "medium",
-            "status": "completed",
+            "status": "draft",
             "path": "SPEC-270-web-accessibility-audit",
             "created": "2026-06-23T00:00:00Z",
             "base": "staging",
             "origin": "Owner question 2026-06-23: split de 'analisis y mejora de seo, performance y accesibilidad' en 3 specs. Esta es la parte accesibilidad.",
-            "completed": "2026-06-24T00:00:00Z",
-            "archived": true,
-            "archivedAt": "2026-06-24T00:00:00Z",
-            "archiveNote": "SPEC-270 code-side remediation shipped on PR #1844. Includes contrast token split (`brand-primary-text`), alt/focus/tap-target/landmark fixes, light+dark axe sweep in CI, entity-detail sweep coverage, and the manual keyboard/screen-reader procedure documented in docs/guides/web-accessibility-manual-testing.md.",
             "tags": [
                 "accessibility",
                 "web",
@@ -2048,9 +2047,10 @@
             "title": "Feature flag system — DB-backed on/off toggles with user & role override (dark launch + kill switch)",
             "type": "feature",
             "complexity": "medium",
-            "status": "draft",
+            "status": "completed",
             "path": "SPEC-276-feature-flag-system",
             "created": "2026-06-23T00:00:00Z",
+            "completed": "2026-06-25",
             "base": "staging",
             "origin": "Owner question 2026-06-23: sistema de feature flag. DB-backed, admin-managed, gradual rollout, kill switches.",
             "tags": [

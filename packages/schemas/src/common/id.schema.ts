@@ -224,3 +224,9 @@ export const AccommodationExternalReputationIdSchema = BaseIdSchema;
 export type AccommodationExternalReputationIdType = z.infer<
     typeof AccommodationExternalReputationIdSchema
 >;
+
+export const FeatureFlagIdSchema = BaseIdSchema;
+export type FeatureFlagIdType = z.infer<typeof FeatureFlagIdSchema>;
+
+export const FeatureFlagAuditIdSchema = BaseIdSchema;
+export type FeatureFlagAuditIdType = z.infer<typeof FeatureFlagAuditIdSchema>;

@@ -16,8 +16,6 @@
  * ```
  */
 
-import JsonLd from './seo/JsonLd.astro';
-
 interface BreadcrumbItem {
     /** Visible label for this breadcrumb level */
     readonly label: string;
@@ -58,12 +56,14 @@ const jsonLd = {
     })),
 };
 
+const jsonLdContent = JSON.stringify(jsonLd, null, 0).replace(/</g, '\\u003c');
+
 const hasMany = items.length > 3;
 ---
 
 <Fragment>
     {/* JSON-LD injected into the page head via slot */}
-    <JsonLd data={jsonLd} />
+    <script type="application/ld+json" set:html={jsonLdContent} />
 
     <nav
         class="breadcrumbs"

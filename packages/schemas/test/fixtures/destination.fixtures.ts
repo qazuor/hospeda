@@ -199,7 +199,8 @@ export const createDestinationEdgeCases = (): any => ({
     isFeatured: false,
     seo: {
         title: 'F'.repeat(30), // Minimum SEO title length
-        description: 'G'.repeat(70) // Minimum SEO description length
+        description: 'G'.repeat(70), // Minimum SEO description length
+        keywords: ['min']
     },
     tags: [
         {

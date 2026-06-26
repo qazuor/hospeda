@@ -38,6 +38,20 @@
         "featureIds": {
             "invalidUuid": "El ID de característica debe ser un UUID válido"
         },
+        "featureFlag": {
+            "description": {
+                "max": "La descripción no puede superar los {{max}} caracteres",
+                "min": "La descripción debe tener al menos {{min}} caracteres"
+            },
+            "key": {
+                "invalidPattern": "El formato de la clave no es válido",
+                "max": "La clave no puede superar los {{max}} caracteres",
+                "min": "La clave debe tener al menos {{min}} caracteres"
+            },
+            "reason": {
+                "max": "La razón no puede superar los {{max}} caracteres"
+            }
+        },
         "location": {
             "apartment": {
                 "max": "El apartment no puede superar los {{max}} caracteres",
@@ -1549,6 +1563,9 @@
                 "min": "La descripción debe tener al menos {{min}} caracteres",
                 "required": "La descripción es obligatoria"
             },
+            "keywords": {
+                "required": "El palabras clave es obligatorio"
+            },
             "title": {
                 "max": "El título no puede superar los {{max}} caracteres",
                 "min": "El título debe tener al menos {{min}} caracteres",
@@ -2579,6 +2596,20 @@
         "applicableVerticals": {
             "min": "El applicable verticals debe tener al menos {{min}} caracteres",
             "required": "El applicable verticals es obligatorio"
+        }
+    },
+    "featureFlag": {
+        "description": {
+            "max": "La descripción no puede superar los {{max}} caracteres",
+            "min": "La descripción debe tener al menos {{min}} caracteres"
+        },
+        "key": {
+            "invalidPattern": "El formato de la clave no es válido",
+            "max": "La clave no puede superar los {{max}} caracteres",
+            "min": "La clave debe tener al menos {{min}} caracteres"
+        },
+        "reason": {
+            "max": "La razón no puede superar los {{max}} caracteres"
         }
     },
     "field": {

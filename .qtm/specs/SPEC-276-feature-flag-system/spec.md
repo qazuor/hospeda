@@ -3,9 +3,10 @@ spec-id: SPEC-276
 title: Feature flag system — DB-backed on/off toggles with user & role override (dark launch + kill switch)
 type: feature
 complexity: medium
-status: draft
+status: completed
 created: 2026-06-23T00:00:00Z
 decided: 2026-06-23
+completed: 2026-06-25
 model_fit: basic
 effort_estimate_hours: 12-18
 tags: [feature-flags, infrastructure, admin, api, web, config, kill-switch, db]
@@ -28,6 +29,7 @@ tags: [feature-flags, infrastructure, admin, api, web, config, kill-switch, db]
 >    para staff (testing interno) antes de soltarla a todos.
 >
 > **Decisiones del owner:**
+>
 > - **Tipos soportados:** on/off **global** (fijo) + **override por usuario** (listas
 >   force-on / force-off) + **override por rol** (staff testing). **NADA de billing.**
 > - **SE DESCARTAN (no diferidos, fuera de scope):** rollout por porcentaje, hash
@@ -324,6 +326,7 @@ decisiones owner (ver banner).
 **BÁSICO.** Al realinear el scope a la visión real del owner (on/off + override por
 usuario/rol, sin billing/porcentaje/A-B), desaparecen TODAS las partes potentes que tenía
 el spec original:
+
 - **Sin hash determinístico ni porcentaje** → la evaluación es comparar listas (`includes`).
 - **Sin plan-targeting** → no hace falta plumbing de plan en el context (los entitlements
   ya cubren plan-gating).

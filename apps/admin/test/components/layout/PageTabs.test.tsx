@@ -48,7 +48,6 @@ vi.mock('@/hooks/use-translations', () => ({
                 'admin-tabs.amenities': 'Amenities',
                 'admin-tabs.reviews': 'Reviews',
                 'admin-tabs.pricing': 'Pricing',
-                'admin-tabs.seo': 'SEO',
                 'admin-nav.tabs.pageSections': 'Page sections'
             };
             return translations[key] || key;
@@ -260,27 +259,25 @@ describe('PageTabs', () => {
     describe('pre-defined tab configurations', () => {
         it('should export accommodationTabs', () => {
             expect(accommodationTabs).toBeDefined();
-            expect(accommodationTabs).toHaveLength(7);
+            expect(accommodationTabs).toHaveLength(6);
             expect(accommodationTabs.map((t) => t.id)).toEqual([
                 'overview',
                 'gallery',
                 'amenities',
                 'reviews',
                 'pricing',
-                'seo',
                 'faqs'
             ]);
         });
 
         it('should export destinationTabs', () => {
             expect(destinationTabs).toBeDefined();
-            expect(destinationTabs).toHaveLength(6);
+            expect(destinationTabs).toHaveLength(5);
             expect(destinationTabs.map((t) => t.id)).toEqual([
                 'overview',
                 'attractions',
                 'accommodations',
                 'events',
-                'seo',
                 'faqs'
             ]);
         });
@@ -293,8 +290,8 @@ describe('PageTabs', () => {
 
         it('should export eventTabs', () => {
             expect(eventTabs).toBeDefined();
-            expect(eventTabs).toHaveLength(4);
-            expect(eventTabs.map((t) => t.id)).toEqual(['overview', 'tickets', 'attendees', 'seo']);
+            expect(eventTabs).toHaveLength(3);
+            expect(eventTabs.map((t) => t.id)).toEqual(['overview', 'tickets', 'attendees']);
         });
 
         it('should export postTabs', () => {

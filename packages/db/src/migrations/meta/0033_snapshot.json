@@ -1,6 +1,6 @@
 {
-    "id": "c0358165-07e3-4e6f-8c2b-bc53098a05e8",
-    "prevId": "fd4517c2-3e29-4811-98f5-2fdc868c85dd",
+    "id": "68d973da-7b39-4d5f-901f-0838fa017593",
+    "prevId": "c0358165-07e3-4e6f-8c2b-bc53098a05e8",
     "version": "7",
     "dialect": "postgresql",
     "tables": {
@@ -19722,6 +19722,169 @@
             "checkConstraints": {},
             "isRLSEnabled": false
         },
+        "public.feature_flag_audit_log": {
+            "name": "feature_flag_audit_log",
+            "schema": "",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "uuid",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "default": "gen_random_uuid()"
+                },
+                "flag_id": {
+                    "name": "flag_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "action": {
+                    "name": "action",
+                    "type": "varchar(50)",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "previous_value": {
+                    "name": "previous_value",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "new_value": {
+                    "name": "new_value",
+                    "type": "jsonb",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "reason": {
+                    "name": "reason",
+                    "type": "varchar(500)",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "performed_by_id": {
+                    "name": "performed_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {},
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "policies": {},
+            "checkConstraints": {},
+            "isRLSEnabled": false
+        },
+        "public.feature_flags": {
+            "name": "feature_flags",
+            "schema": "",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "uuid",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "default": "gen_random_uuid()"
+                },
+                "key": {
+                    "name": "key",
+                    "type": "varchar(100)",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "description": {
+                    "name": "description",
+                    "type": "varchar(2000)",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "''"
+                },
+                "enabled": {
+                    "name": "enabled",
+                    "type": "boolean",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": false
+                },
+                "is_active": {
+                    "name": "is_active",
+                    "type": "boolean",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": true
+                },
+                "force_on_user_ids": {
+                    "name": "force_on_user_ids",
+                    "type": "uuid[]",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "'{}'"
+                },
+                "force_off_user_ids": {
+                    "name": "force_off_user_ids",
+                    "type": "uuid[]",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "'{}'"
+                },
+                "enabled_for_roles": {
+                    "name": "enabled_for_roles",
+                    "type": "text[]",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "'{}'"
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "deleted_at": {
+                    "name": "deleted_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "created_by_id": {
+                    "name": "created_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "updated_by_id": {
+                    "name": "updated_by_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {},
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "policies": {},
+            "checkConstraints": {},
+            "isRLSEnabled": false
+        },
         "public.billing_addons": {
             "name": "billing_addons",
             "schema": "",
@@ -25307,6 +25470,7 @@
                 "subscription.view.own",
                 "user.update.self",
                 "ai.settings.manage",
+                "platform.featureFlag.manage",
                 "moderation.term.view",
                 "moderation.term.create",
                 "moderation.term.update",

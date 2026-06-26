@@ -38,6 +38,20 @@
         "featureIds": {
             "invalidUuid": "[EN] El ID de característica debe ser un UUID válido"
         },
+        "featureFlag": {
+            "description": {
+                "max": "Description cannot exceed {{max}} characters",
+                "min": "Description must be at least {{min}} characters"
+            },
+            "key": {
+                "invalidPattern": "Key format is invalid",
+                "max": "Key cannot exceed {{max}} characters",
+                "min": "Key must be at least {{min}} characters"
+            },
+            "reason": {
+                "max": "Reason cannot exceed {{max}} characters"
+            }
+        },
         "location": {
             "apartment": {
                 "max": "[EN] El apartment no puede superar los {{max}} caracteres",
@@ -145,6 +159,20 @@
                     "min": "The ordered list must contain at least {{min}} item"
                 }
             }
+        }
+    },
+    "featureFlag": {
+        "description": {
+            "max": "Description cannot exceed {{max}} characters",
+            "min": "Description must be at least {{min}} characters"
+        },
+        "key": {
+            "invalidPattern": "Key format is invalid",
+            "max": "Key cannot exceed {{max}} characters",
+            "min": "Key must be at least {{min}} characters"
+        },
+        "reason": {
+            "max": "Reason cannot exceed {{max}} characters"
         }
     },
     "accommodationAmenity": {
@@ -1548,6 +1576,9 @@
                 "max": "[EN] La descripción no puede superar los {{max}} caracteres",
                 "min": "[EN] La descripción debe tener al menos {{min}} caracteres",
                 "required": "[EN] La descripción es obligatoria"
+            },
+            "keywords": {
+                "required": "[EN] El palabras clave es obligatorio"
             },
             "title": {
                 "max": "[EN] El título no puede superar los {{max}} caracteres",

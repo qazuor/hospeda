@@ -156,6 +156,7 @@ export const BaseProductSchema = z.object({
         .object({
             title: z.string().max(60).optional(),
             description: z.string().max(160).optional(),
+            keywords: z.array(z.string()).optional()
         })
         .optional(),
 

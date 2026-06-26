@@ -3,7 +3,6 @@ import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
 import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { getAccommodationAnchorIds } from '@/components/entity-pages/utils/section-sorter';
-import { PageTabs, accommodationTabs } from '@/components/layout/PageTabs';
 import { AccommodationQualityScore } from '@/features/accommodations/components/AccommodationQualityScore';
 import { AiTextImproveFieldAddon } from '@/features/accommodations/components/AiTextImproveFieldAddon';
 import { useAccommodationHeaderProps } from '@/features/accommodations/hooks/useAccommodationHeaderProps';
@@ -98,11 +97,7 @@ function AccommodationEditPage() {
             ]}
         >
             <div className="space-y-4">
-                <div className="flex items-center justify-between gap-4">
-                    <PageTabs
-                        tabs={accommodationTabs}
-                        basePath={`/accommodations/${id}`}
-                    />
+                <div className="flex justify-end">
                     <RevalidateEntityButton
                         entityType="accommodation"
                         entityId={id}

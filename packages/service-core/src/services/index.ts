@@ -46,6 +46,7 @@ export * from './gastronomy';
 export * from './experience';
 export * from './moderation';
 export * from './social';
+export * from './feature-flags';
 export * from './media';
 
 // HookState types for service consumers

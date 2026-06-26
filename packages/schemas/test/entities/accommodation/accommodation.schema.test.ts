@@ -266,7 +266,8 @@ describe('AccommodationSchema', () => {
                 seo: {
                     title: 'This is a comprehensive SEO title for the accommodation page',
                     description:
-                        'This is a detailed SEO description that provides comprehensive information about the accommodation and its amenities for search engines.'
+                        'This is a detailed SEO description that provides comprehensive information about the accommodation and its amenities for search engines.',
+                    keywords: ['hotel', 'accommodation']
                 },
                 adminInfo: {
                     notes: 'Admin notes',

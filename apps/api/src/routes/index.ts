@@ -109,6 +109,11 @@ import { adminCronRoutes } from './cron-admin';
 import { docsIndexRoutes, scalarRoutes, swaggerRoutes } from './docs';
 import { adminExchangeRateRoutes } from './exchange-rates/admin/index.js';
 import { publicExchangeRateRoutes } from './exchange-rates/public/index.js';
+import {
+    adminFeatureFlagRoutes,
+    protectedFeatureFlagRoutes,
+    publicFeatureFlagRoutes
+} from './feature-flags';
 import { publicFeedbackRoutes } from './feedback';
 import { adminGeocodingRoutes, protectedGeocodingRoutes } from './geocoding';
 import { dbHealthRoutes, healthRoutes, liveRoutes, readyRoutes } from './health';
@@ -288,6 +293,12 @@ export const setupRoutes = (app: AppOpenAPI) => {
 
         // Unified public search (SPEC-096 / REQ-096-04)
         app.route('/api/v1/public/search', publicSearchRoutes);
+
+        // Feature flags (public key-value map — no auth)
+        app.route('/api/v1/public/flags', publicFeatureFlagRoutes);
+
+        // Feature flags for current user (protected — with user/role context)
+        app.route('/api/v1/protected/feature-flags', protectedFeatureFlagRoutes);
 
         // Platform statistics
         app.route('/api/v1/public/stats', publicStatsRoutes);
@@ -543,6 +554,9 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // POST /result — Make reports the publish outcome SUCCESS/FAILED (US-13).
         app.route('/api/v1/integrations/make/social/jobs', makeClaimCallbackRoute);
         app.route('/api/v1/integrations/make/social/jobs', makeResultCallbackRoute);
+
+        // Feature flags admin (FEATURE_FLAG_MANAGE permission — SUPER_ADMIN only)
+        app.route('/api/v1/admin/flags', adminFeatureFlagRoutes);
 
         // Media (entity image uploads + asset deletion)
         app.route('/api/v1/admin/media', adminMediaRoutes);

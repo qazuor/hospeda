@@ -5,8 +5,7 @@
  * Strategy: mock fetch() and the env helpers, then call the GET handler directly.
  * Asserts that:
  *  - Valid XML is returned with correct Content-Type and Cache-Control headers.
- *  - Each entity (accommodation, destination, event, post, gastronomy, experience)
- *    is represented in the output.
+ *  - Each entity (accommodation, destination, event, post) is represented in the output.
  *  - All 3 locales (es, en, pt) are emitted for each entity.
  *  - Correct URL path prefixes are used (/alojamientos/, /destinos/, /eventos/, /publicaciones/).
  *  - SPEC-157 REQ-2: the es locale carries the /es prefix so sitemap URLs match
@@ -240,80 +239,6 @@ describe('sitemap-dynamic.xml — GET handler', () => {
         expect(body).toContain('https://hospeda.test/pt/publicaciones/turismo-litoral/');
     });
 
-    it('emits gastronomy entries with /gastronomia/ path for all 3 locales', async () => {
-        const fetchMock = vi.fn();
-
-        // accommodations, destinations, events, posts — all empty
-        fetchMock.mockImplementationOnce(() => Promise.resolve(makeEmptyApiResponse()));
-        fetchMock.mockImplementationOnce(() => Promise.resolve(makeEmptyApiResponse()));
-        fetchMock.mockImplementationOnce(() => Promise.resolve(makeEmptyApiResponse()));
-        fetchMock.mockImplementationOnce(() => Promise.resolve(makeEmptyApiResponse()));
-        // gastronomies: 1 item
-        fetchMock.mockImplementationOnce(() =>
-            Promise.resolve(makeApiResponse([{ slug: 'la-parrilla-del-puerto' }]))
-        );
-        // gastronomies page 2 empty
-        fetchMock.mockImplementationOnce(() => Promise.resolve(makeEmptyApiResponse()));
-        // experiences empty
-        fetchMock.mockResolvedValue(makeEmptyApiResponse());
-
-        vi.stubGlobal('fetch', fetchMock);
-
-        const response = await GET({});
-        const body = await response.text();
-
-        expect(body).toContain('https://hospeda.test/es/gastronomia/la-parrilla-del-puerto/');
-        expect(body).toContain('https://hospeda.test/en/gastronomia/la-parrilla-del-puerto/');
-        expect(body).toContain('https://hospeda.test/pt/gastronomia/la-parrilla-del-puerto/');
-    });
-
-    it('emits experience entries with /experiencias/ path for all 3 locales', async () => {
-        const fetchMock = vi.fn();
-
-        // accommodations, destinations, events, posts, gastronomies — all empty
-        fetchMock.mockImplementationOnce(() => Promise.resolve(makeEmptyApiResponse()));
-        fetchMock.mockImplementationOnce(() => Promise.resolve(makeEmptyApiResponse()));
-        fetchMock.mockImplementationOnce(() => Promise.resolve(makeEmptyApiResponse()));
-        fetchMock.mockImplementationOnce(() => Promise.resolve(makeEmptyApiResponse()));
-        fetchMock.mockImplementationOnce(() => Promise.resolve(makeEmptyApiResponse()));
-        // experiences: 1 item
-        fetchMock.mockImplementationOnce(() =>
-            Promise.resolve(makeApiResponse([{ slug: 'excursion-rio-uruguay-concepcion' }]))
-        );
-        // experiences page 2 empty
-        fetchMock.mockImplementationOnce(() => Promise.resolve(makeEmptyApiResponse()));
-
-        vi.stubGlobal('fetch', fetchMock);
-
-        const response = await GET({});
-        const body = await response.text();
-
-        expect(body).toContain(
-            'https://hospeda.test/es/experiencias/excursion-rio-uruguay-concepcion/'
-        );
-        expect(body).toContain(
-            'https://hospeda.test/en/experiencias/excursion-rio-uruguay-concepcion/'
-        );
-        expect(body).toContain(
-            'https://hospeda.test/pt/experiencias/excursion-rio-uruguay-concepcion/'
-        );
-    });
-
-    it('emits listing pages at priority 0.7 but NOT the home (home lives in static sitemap)', async () => {
-        vi.stubGlobal('fetch', vi.fn().mockResolvedValue(makeEmptyApiResponse()));
-
-        const response = await GET({});
-        const body = await response.text();
-
-        // Listing pages (SSR, not included by @astrojs/sitemap) must be here
-        expect(body).toContain('<loc>https://hospeda.test/es/gastronomia/</loc>');
-        expect(body).toContain('<loc>https://hospeda.test/es/experiencias/</loc>');
-        expect(body).toContain('<priority>0.7</priority>');
-        // Home is SSG — @astrojs/sitemap handles it with priority 1.0 (astro.config.mjs).
-        // The dynamic sitemap must NOT duplicate it.
-        expect(body).not.toContain('<loc>https://hospeda.test/es/</loc>');
-    });
-
     it('emits every es-locale URL with the /es prefix (SPEC-157 REQ-2 regression)', async () => {
         const fetchMock = vi.fn();
 
@@ -420,9 +345,8 @@ describe('sitemap-dynamic.xml — GET handler', () => {
         expect(body).toContain('/eventos/ok-event/');
         expect(body).toContain('/publicaciones/ok-post/');
 
-        // Destination detail absent (fetch failed); listing still present
-        expect(body).not.toContain('/destinos/concordia');
-        expect(body).toContain('/es/destinos/</loc>');
+        // Destinations absent (fetch failed)
+        expect(body).not.toContain('/destinos/');
 
         // XML is still valid
         expect(body).toContain('<?xml version="1.0"');
@@ -439,15 +363,8 @@ describe('sitemap-dynamic.xml — GET handler', () => {
         expect(body).toContain('<?xml version="1.0"');
         expect(body).toContain('<urlset');
         expect(body).toContain('</urlset>');
-        // Listing pages are always emitted (priority 0.7) even when API fetches fail.
-        // Home is NOT emitted here — it belongs to the static sitemap (@astrojs/sitemap).
-        expect(body).not.toContain('<loc>https://hospeda.test/es/</loc>');
-        expect(body).toContain('<loc>https://hospeda.test/es/alojamientos/</loc>');
-        expect(body).toContain('<loc>https://hospeda.test/es/destinos/</loc>');
-        expect(body).toContain('<loc>https://hospeda.test/es/gastronomia/</loc>');
-        expect(body).toContain('<loc>https://hospeda.test/es/experiencias/</loc>');
-        // Entity detail pages (priority 0.8) are absent when API fails
-        expect(body).not.toContain('/hotel-test');
+        // No <url> entries
+        expect(body).not.toContain('<url>');
     });
 
     it('returns HTTP 503 when env is not configured', async () => {
