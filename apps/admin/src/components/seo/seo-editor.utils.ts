@@ -2,8 +2,11 @@ import type { Seo } from '@repo/schemas';
 
 export const SEO_LIMITS = {
     title: { min: 50, max: 60 },
-    description: { min: 120, max: 155 }
+    description: { min: 120, max: 155, validationMax: 160 }
 } as const;
+
+/** Default locale used in SEO preview URLs. */
+export const SEO_DEFAULT_LOCALE = 'es' as const;
 
 export interface SeoFormValues {
     readonly title: string;
@@ -72,18 +75,29 @@ export const truncateSeoPreview = ({
 export const getSeoCounterTone = ({
     length,
     min,
-    max
+    max,
+    validationMax
 }: {
     readonly length: number;
     readonly min: number;
     readonly max: number;
+    readonly validationMax?: number;
 }): string => {
     if (length === 0) {
         return 'text-muted-foreground';
     }
 
-    if (length > max) {
-        return 'text-destructive';
+    if (validationMax !== undefined) {
+        if (length > validationMax) {
+            return 'text-destructive';
+        }
+        if (length > max) {
+            return 'text-warning';
+        }
+    } else {
+        if (length > max) {
+            return 'text-destructive';
+        }
     }
 
     if (length < min) {

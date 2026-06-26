@@ -211,7 +211,8 @@ export function SeoEditor({
                                     getSeoCounterTone({
                                         length: values.description.length,
                                         min: SEO_LIMITS.description.min,
-                                        max: SEO_LIMITS.description.max
+                                        max: SEO_LIMITS.description.max,
+                                        validationMax: SEO_LIMITS.description.validationMax
                                     })
                                 )}
                                 data-testid="seo-description-counter"
