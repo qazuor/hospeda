@@ -134,7 +134,9 @@ export const Route = createFileRoute('/_authed/platform/feature-flags/$id')({
         await context.queryClient.ensureQueryData({
             queryKey: ['feature-flag', params.id],
             queryFn: async () => {
-                const response = await fetchApi({ path: `/api/v1/admin/feature-flags/${params.id}` });
+                const response = await fetchApi({
+                    path: `/api/v1/admin/feature-flags/${params.id}`
+                });
                 return response.data as FeatureFlag;
             }
         });

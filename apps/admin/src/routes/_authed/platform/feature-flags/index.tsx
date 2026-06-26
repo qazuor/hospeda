@@ -10,8 +10,8 @@ import { useSuspenseQuery } from '@tanstack/react-query';
  * Feature Flags list page — admin panel for managing feature flags (dark launch + kill switch).
  */
 import { createFileRoute } from '@tanstack/react-router';
-import type { ColumnDef } from '@tanstack/react-table';
 import { Link } from '@tanstack/react-router';
+import type { ColumnDef } from '@tanstack/react-table';
 
 type FeatureFlagListResponse = {
     items: FeatureFlag[];
@@ -74,7 +74,10 @@ const columns: ColumnDef<FeatureFlag>[] = [
                     size="sm"
                     asChild
                 >
-                    <Link to="/platform/feature-flags/$id" params={{ id: row.original.id }}>
+                    <Link
+                        to="/platform/feature-flags/$id"
+                        params={{ id: row.original.id }}
+                    >
                         View
                     </Link>
                 </Button>
